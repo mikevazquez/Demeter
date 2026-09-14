@@ -14,9 +14,7 @@ const navItems = [
   { href: "/admin/configuracion", label: "Configuración", enabled: false },
 ];
 
-export default async function AdminLayout({
-  children,
-}: Readonly<{ children: React.ReactNode }>) {
+export default async function AdminLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const { studio, membership } = await getAdminContext();
 
   return (
