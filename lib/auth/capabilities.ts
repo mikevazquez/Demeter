@@ -1,0 +1,25 @@
+export const CAPABILITIES = {
+  ADMIN_PORTAL: "admin.portal",
+  STUDENTS_READ: "students.read",
+  STUDENTS_WRITE: "students.write",
+  STUDENTS_ARCHIVE: "students.archive",
+  INSTRUCTORS_READ: "instructors.read",
+  INSTRUCTORS_WRITE: "instructors.write",
+  SCHEDULE_READ: "schedule.read",
+  SCHEDULE_WRITE: "schedule.write",
+  ATTENDANCE_WRITE: "attendance.write",
+  PRODUCTS_READ: "products.read",
+  PRODUCTS_WRITE: "products.write",
+  SALES_READ: "sales.read",
+  SALES_WRITE: "sales.write",
+  REPORTS_READ: "reports.read",
+  SETTINGS_WRITE: "settings.write",
+  STUDENT_PORTAL: "student.portal",
+  STUDENT_PROFILE_SELF: "student.profile.self",
+  STUDENT_BOOKING_SELF: "student.booking.self",
+  INSTRUCTOR_PORTAL: "instructor.portal",
+} as const;
+
+export type Capability = (typeof CAPABILITIES)[keyof typeof CAPABILITIES];
+
+export type CanonicalStudioRole = "owner" | "admin" | "reception" | "instructor" | "student";
