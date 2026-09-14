@@ -38,11 +38,7 @@ export default async function AdminPage() {
   }
 
   const [{ data: studio }, { data: profile }] = await Promise.all([
-    supabase
-      .from("studios")
-      .select("name, timezone")
-      .eq("id", membership.studio_id)
-      .single(),
+    supabase.from("studios").select("name, timezone").eq("id", membership.studio_id).single(),
     supabase.from("profiles").select("full_name").eq("id", user.id).maybeSingle(),
   ]);
 
@@ -54,8 +50,7 @@ export default async function AdminPage() {
     month: "2-digit",
     day: "2-digit",
   }).formatToParts(now);
-  const part = (type: string) =>
-    todayParts.find((item) => item.type === type)?.value ?? "";
+  const part = (type: string) => todayParts.find((item) => item.type === type)?.value ?? "";
   const todayLocal = `${part("year")}-${part("month")}-${part("day")}`;
   const offsetName =
     new Intl.DateTimeFormat("en-US", {
@@ -102,18 +97,13 @@ export default async function AdminPage() {
   }
   const reservationsCount = reservations?.length ?? 0;
 
-  const templateIds = [
-    ...new Set((sessions ?? []).map((session) => session.template_id)),
-  ];
+  const templateIds = [...new Set((sessions ?? []).map((session) => session.template_id))];
   const { data: templates } = templateIds.length
     ? await supabase.from("class_templates").select("id, name").in("id", templateIds)
     : { data: [] as { id: string; name: string }[] };
   const templateMap = new Map((templates ?? []).map((item) => [item.id, item.name]));
 
-  const totalCapacity = (sessions ?? []).reduce(
-    (sum, session) => sum + session.capacity,
-    0,
-  );
+  const totalCapacity = (sessions ?? []).reduce((sum, session) => sum + session.capacity, 0);
   const occupancy =
     totalCapacity > 0 ? Math.round((reservationsCount / totalCapacity) * 100) : null;
   const nextSession = (sessions ?? []).find(
@@ -170,9 +160,7 @@ export default async function AdminPage() {
                   : "Sin próxima clase"}
               </h2>
             </div>
-            {nextSession ? (
-              <span className="status-pill">{nextSession.status}</span>
-            ) : null}
+            {nextSession ? <span className="status-pill">{nextSession.status}</span> : null}
           </div>
 
           {nextSession ? (
@@ -199,9 +187,7 @@ export default async function AdminPage() {
               </Link>
             </>
           ) : (
-            <div className="empty-state compact-empty">
-              No quedan clases programadas para hoy.
-            </div>
+            <div className="empty-state compact-empty">No quedan clases programadas para hoy.</div>
           )}
         </article>
 
