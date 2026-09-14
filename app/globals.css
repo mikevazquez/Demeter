@@ -47,6 +47,7 @@ button:disabled { cursor: not-allowed; opacity: .5; }
 .switch-copy a { font-weight: 700; color: var(--text); }
 .notice { margin: 0 0 20px; padding: 13px 15px; border-radius: 12px; font-size: 14px; line-height: 1.45; }
 .notice.error { background: #fff0f2; color: #9b2736; border: 1px solid #ffd2d9; }
+.notice.success { background: #eef9f3; color: var(--success); border: 1px solid #cdebdc; }
 
 .dashboard-shell { min-height: 100vh; width: min(1320px, 100%); margin: 0 auto; padding: 32px; }
 .topbar { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; padding: 20px 0 34px; }
