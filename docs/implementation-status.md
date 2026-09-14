@@ -15,22 +15,26 @@ Este archivo no sustituye el Documento Maestro ni Jira. Sirve únicamente para r
 ## F0 · Fundaciones
 
 - SF-001 Repo oficial: **COMPLETO** — `mikevazquez/Demeter`, rama `main`.
-- SF-002 Estructura modular: **PARCIAL** — existe separación `app`, `lib`, `supabase`, pero falta completar capa application/domain definida.
-- SF-003 ESLint/Prettier/typecheck: **PARCIAL** — typecheck existe; faltan ESLint y Prettier.
-- SF-004 CI: **PENDIENTE** — falta pipeline reproducible con install, format, lint, typecheck, test y build.
-- SF-005 Env validation: **PARCIAL** — existe `.env.example`; falta validación formal de variables.
-- SF-006 Supabase/Vercel: **PARCIAL** — Supabase y despliegue funcional existen; quedan proyectos Vercel duplicados/históricos y actualmente el plan bloquea builds por rate limit.
-- SF-007 ADR arquitectura: **PARCIAL** — existe documentación de decisiones, falta ADR formal en repo.
+- SF-002 Estructura modular: **PARCIAL** — existe separación `app`, `components`, `lib`, `supabase`, `tests` y `docs`; falta completar la capa application/domain al entrar en reglas de negocio complejas.
+- SF-003 ESLint/Prettier/typecheck: **COMPLETO** — configuración versionada y verificada por CI.
+- SF-004 CI: **COMPLETO** — pipeline reproducible con `npm ci`, format check, lint, typecheck, unit tests y build. Última ejecución base verificada en verde.
+- SF-005 Env validation: **COMPLETO** — `.env.example` sin secretos y acceso a variables públicas centralizado/validado en `lib/env.ts`.
+- SF-006 Supabase/Vercel: **PARCIAL** — Supabase oficial y despliegue funcional existen; quedan proyectos Vercel duplicados/históricos y el plan está bloqueando temporalmente nuevos builds por rate limit.
+- SF-007 ADR arquitectura: **COMPLETO** — ADR versionado en `docs/adr/0001-studio-flow-architecture.md`.
+
+F0 queda **operativamente cerrada salvo saneamiento externo de Vercel y evolución natural de la capa domain/application**. No se bloquea F1 por esas dos tareas residuales.
 
 ## F1 · Sistema visual / shell
 
-- SF-008 Tokens visuales: **EN CORRECCIÓN** — se migró a dark UI carbón/azul, `#FF0A8A`, estados verde/ámbar/rojo.
-- SF-009 Admin shell responsive: **EN CORRECCIÓN** — añadido sidebar desktop y shell adaptativo.
-- SF-010 Componentes base: **PARCIAL** — estilos existen, faltan componentes reutilizables formales.
-- SF-011 Estados UI: **PARCIAL** — hay empty/error/success; faltan loading/unauthorized consistentes.
-- SF-012 Navegación admin: **EN CORRECCIÓN** — navegación canónica añadida; módulos aún no implementados quedan explícitamente deshabilitados.
-- SF-013 Hoy: **PARCIAL** — funcional con KPIs y clases del día; necesita validación visual final contra mockup M01.
-- SF-014 Shell móvil: **EN CORRECCIÓN** — bottom navigation añadida; pendiente UAT responsive real.
+- SF-008 Tokens visuales: **IMPLEMENTADO, PENDIENTE UAT** — dark UI carbón/azul, `#FF0A8A`, estados verde/ámbar/rojo y superficies/bordes normalizados contra M01.
+- SF-009 Admin shell responsive: **IMPLEMENTADO, PENDIENTE UAT** — sidebar desktop/tablet y adaptación móvil.
+- SF-010 Componentes base: **IMPLEMENTADO, ADOPCIÓN PROGRESIVA** — `Button`, `Card`, `Badge`, `Input` y `StatePanel` reutilizables; las pantallas existentes se migrarán sin rehacer lógica.
+- SF-011 Estados UI: **IMPLEMENTADO COMO SISTEMA, ADOPCIÓN PARCIAL** — loading/empty/error/unauthorized/success disponibles; falta aplicarlos de forma uniforme en cada pantalla conforme se cierra su Epic.
+- SF-012 Navegación admin: **IMPLEMENTADO, PENDIENTE UAT** — taxonomía canónica; módulos no construidos aparecen deshabilitados, no simulados.
+- SF-013 Hoy: **IMPLEMENTADO CONTRA M01, PENDIENTE UAT** — saludo, KPIs operativos reales, próxima clase destacada, acciones rápidas y agenda del día; no se inventan KPIs comerciales de F13.
+- SF-014 Shell móvil: **IMPLEMENTADO, PENDIENTE UAT** — bottom navigation y layouts responsive; falta prueba física iPad/móvil.
+
+F1 no se declara cerrada hasta que exista un deployment disponible y se haga UAT visual real en desktop/iPad/móvil, como exige el Documento Maestro.
 
 ## F2 · Auth / tenant / permisos
 
@@ -106,9 +110,8 @@ Se implementaron partes de F5–F7 antes de cerrar F1, F3 y F4. No se eliminará
 
 ## Próximo orden obligatorio
 
-1. Completar F0 faltante crítico: tooling/CI/ADR/env validation.
-2. Cerrar F1 y realizar UAT visual de Hoy, Agenda y Alumnas.
-3. Terminar F2 pendiente, especialmente RLS tests y contrato de login Student MVP teléfono+contraseña.
-4. Completar F3 Alumnas.
-5. Implementar F4 Instructores.
-6. Retomar F5 → F6 → F7 en orden, reutilizando lo compatible ya construido.
+1. UAT visual de F1 en cuanto Vercel permita un deployment nuevo.
+2. Mientras el deployment está bloqueado, completar F2 sin adelantar OTP: capabilities, AdminContext, login Student MVP teléfono+contraseña y pruebas RLS.
+3. Completar F3 Alumnas y validar M02.
+4. Implementar F4 Instructores.
+5. Retomar F5 → F6 → F7 en orden, reutilizando lo compatible ya construido.
