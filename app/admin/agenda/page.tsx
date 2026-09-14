@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { agendaLookbackIso } from "@/lib/time";
 import { createDiscipline, createSession, createTemplate } from "./actions";
 
 function formatDateTime(value: string, timeZone: string) {
@@ -67,7 +68,7 @@ export default async function AgendaPage({
       .from("class_sessions")
       .select("id, starts_at, ends_at, capacity, status, notes, template_id, location_id")
       .eq("studio_id", membership.studio_id)
-      .gte("starts_at", new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString())
+      .gte("starts_at", agendaLookbackIso())
       .order("starts_at", { ascending: true })
       .limit(30),
   ]);
