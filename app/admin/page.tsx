@@ -54,7 +54,8 @@ export default async function AdminPage() {
     month: "2-digit",
     day: "2-digit",
   }).formatToParts(now);
-  const part = (type: string) => todayParts.find((item) => item.type === type)?.value ?? "";
+  const part = (type: string) =>
+    todayParts.find((item) => item.type === type)?.value ?? "";
   const todayLocal = `${part("year")}-${part("month")}-${part("day")}`;
   const offsetName =
     new Intl.DateTimeFormat("en-US", {
@@ -101,13 +102,18 @@ export default async function AdminPage() {
   }
   const reservationsCount = reservations?.length ?? 0;
 
-  const templateIds = [...new Set((sessions ?? []).map((session) => session.template_id))];
+  const templateIds = [
+    ...new Set((sessions ?? []).map((session) => session.template_id)),
+  ];
   const { data: templates } = templateIds.length
     ? await supabase.from("class_templates").select("id, name").in("id", templateIds)
     : { data: [] as { id: string; name: string }[] };
   const templateMap = new Map((templates ?? []).map((item) => [item.id, item.name]));
 
-  const totalCapacity = (sessions ?? []).reduce((sum, session) => sum + session.capacity, 0);
+  const totalCapacity = (sessions ?? []).reduce(
+    (sum, session) => sum + session.capacity,
+    0,
+  );
   const occupancy =
     totalCapacity > 0 ? Math.round((reservationsCount / totalCapacity) * 100) : null;
   const nextSession = (sessions ?? []).find(
@@ -145,7 +151,11 @@ export default async function AdminPage() {
         <article className="stat-card">
           <span>Ocupación del día</span>
           <strong>{occupancy === null ? "—" : `${occupancy}%`}</strong>
-          <small>{totalCapacity ? `${reservationsCount} de ${totalCapacity} lugares` : "Sin cupo programado"}</small>
+          <small>
+            {totalCapacity
+              ? `${reservationsCount} de ${totalCapacity} lugares`
+              : "Sin cupo programado"}
+          </small>
         </article>
       </section>
 
@@ -154,9 +164,15 @@ export default async function AdminPage() {
           <div className="panel-heading">
             <div>
               <p className="eyebrow">PRÓXIMA CLASE</p>
-              <h2>{nextSession ? templateMap.get(nextSession.template_id) ?? "Clase" : "Sin próxima clase"}</h2>
+              <h2>
+                {nextSession
+                  ? (templateMap.get(nextSession.template_id) ?? "Clase")
+                  : "Sin próxima clase"}
+              </h2>
             </div>
-            {nextSession ? <span className="status-pill">{nextSession.status}</span> : null}
+            {nextSession ? (
+              <span className="status-pill">{nextSession.status}</span>
+            ) : null}
           </div>
 
           {nextSession ? (
@@ -175,7 +191,10 @@ export default async function AdminPage() {
                   <span>capacidad</span>
                 </div>
               </div>
-              <Link className="primary-button next-class-action" href={`/admin/agenda/${nextSession.id}`}>
+              <Link
+                className="primary-button next-class-action"
+                href={`/admin/agenda/${nextSession.id}`}
+              >
                 Abrir clase
               </Link>
             </>
@@ -231,7 +250,9 @@ export default async function AdminPage() {
                   </div>
                   <div className="session-copy">
                     <strong>{templateMap.get(session.template_id) ?? "Clase"}</strong>
-                    <span>{booked} reservadas · {session.capacity} lugares</span>
+                    <span>
+                      {booked} reservadas · {session.capacity} lugares
+                    </span>
                   </div>
                   <div className="session-meta">
                     <span className="status-pill">{session.status}</span>
