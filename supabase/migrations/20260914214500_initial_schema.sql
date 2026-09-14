@@ -107,6 +107,7 @@ create table public.reservations (
   unique (session_id, student_user_id)
 );
 
+create index studio_memberships_user_idx on public.studio_memberships(user_id, active);
 create index class_sessions_studio_starts_at_idx on public.class_sessions(studio_id, starts_at);
 create index reservations_student_idx on public.reservations(student_user_id, booked_at desc);
 create index student_packages_student_idx on public.student_packages(student_user_id, expires_on);
@@ -121,7 +122,50 @@ alter table public.packages enable row level security;
 alter table public.student_packages enable row level security;
 alter table public.reservations enable row level security;
 
+revoke all on all tables in schema public from anon, authenticated;
 grant select, insert, update, delete on all tables in schema public to authenticated;
+
+create schema if not exists private;
+revoke all on schema private from public;
+grant usage on schema private to authenticated;
+
+create or replace function private.is_studio_member(target_studio_id uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select exists (
+    select 1
+    from public.studio_memberships sm
+    where sm.studio_id = target_studio_id
+      and sm.user_id = (select auth.uid())
+      and sm.active
+  );
+$$;
+
+create or replace function private.has_studio_role(target_studio_id uuid, allowed_roles public.studio_role[])
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select exists (
+    select 1
+    from public.studio_memberships sm
+    where sm.studio_id = target_studio_id
+      and sm.user_id = (select auth.uid())
+      and sm.active
+      and sm.role = any(allowed_roles)
+  );
+$$;
+
+revoke execute on function private.is_studio_member(uuid) from public, anon;
+revoke execute on function private.has_studio_role(uuid, public.studio_role[]) from public, anon;
+grant execute on function private.is_studio_member(uuid) to authenticated;
+grant execute on function private.has_studio_role(uuid, public.studio_role[]) to authenticated;
 
 create policy profiles_select_self on public.profiles for select to authenticated
   using ((select auth.uid()) = id);
@@ -130,50 +174,34 @@ create policy profiles_update_self on public.profiles for update to authenticate
   with check ((select auth.uid()) = id);
 
 create policy studios_member_select on public.studios for select to authenticated
-  using (exists (
-    select 1 from public.studio_memberships sm
-    where sm.studio_id = studios.id and sm.user_id = (select auth.uid()) and sm.active
-  ));
+  using ((select private.is_studio_member(id)));
 
 create policy memberships_member_select on public.studio_memberships for select to authenticated
-  using (user_id = (select auth.uid()) or exists (
-    select 1 from public.studio_memberships me
-    where me.studio_id = studio_memberships.studio_id
-      and me.user_id = (select auth.uid())
-      and me.active
-      and me.role in ('owner','admin')
-  ));
+  using (
+    user_id = (select auth.uid())
+    or (select private.has_studio_role(studio_id, array['owner','admin']::public.studio_role[]))
+  );
 
 create policy disciplines_member_select on public.disciplines for select to authenticated
-  using (exists (select 1 from public.studio_memberships sm where sm.studio_id = disciplines.studio_id and sm.user_id = (select auth.uid()) and sm.active));
+  using ((select private.is_studio_member(studio_id)));
 create policy templates_member_select on public.class_templates for select to authenticated
-  using (exists (select 1 from public.studio_memberships sm where sm.studio_id = class_templates.studio_id and sm.user_id = (select auth.uid()) and sm.active));
+  using ((select private.is_studio_member(studio_id)));
 create policy sessions_member_select on public.class_sessions for select to authenticated
-  using (exists (select 1 from public.studio_memberships sm where sm.studio_id = class_sessions.studio_id and sm.user_id = (select auth.uid()) and sm.active));
+  using ((select private.is_studio_member(studio_id)));
 create policy packages_member_select on public.packages for select to authenticated
-  using (exists (select 1 from public.studio_memberships sm where sm.studio_id = packages.studio_id and sm.user_id = (select auth.uid()) and sm.active));
+  using ((select private.is_studio_member(studio_id)));
 
 create policy student_packages_select on public.student_packages for select to authenticated
   using (
-    student_user_id = (select auth.uid()) or exists (
-      select 1 from public.studio_memberships sm
-      where sm.studio_id = student_packages.studio_id
-        and sm.user_id = (select auth.uid())
-        and sm.active
-        and sm.role in ('owner','admin','coach')
-    )
+    student_user_id = (select auth.uid())
+    or (select private.has_studio_role(studio_id, array['owner','admin','coach']::public.studio_role[]))
   );
 
 create policy reservations_select on public.reservations for select to authenticated
   using (
-    student_user_id = (select auth.uid()) or exists (
-      select 1 from public.studio_memberships sm
-      where sm.studio_id = reservations.studio_id
-        and sm.user_id = (select auth.uid())
-        and sm.active
-        and sm.role in ('owner','admin','coach')
-    )
+    student_user_id = (select auth.uid())
+    or (select private.has_studio_role(studio_id, array['owner','admin','coach']::public.studio_role[]))
   );
 
--- Writes are intentionally restricted until the authenticated service flows are implemented.
--- We will add role-specific insert/update/delete policies in a subsequent migration.
+-- Writes remain intentionally closed by RLS until the authenticated command flows
+-- (admin CRUD, reservations, package credit handling) are implemented and tested.
