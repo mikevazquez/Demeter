@@ -27,17 +27,24 @@ export default async function StudentPage() {
 
   const { data: activePackage } = await supabase
     .from("student_packages")
-    .select("credits_remaining, credits_total, expires_on, packages(name)")
+    .select("credits_remaining, credits_total, expires_on, package_id")
     .eq("student_user_id", user.id)
     .gte("expires_on", new Date().toISOString().slice(0, 10))
     .order("expires_on", { ascending: true })
     .limit(1)
     .maybeSingle();
 
-  const packageRelation = activePackage?.packages;
-  const packageName = Array.isArray(packageRelation)
-    ? packageRelation[0]?.name
-    : packageRelation?.name;
+  let packageName: string | null = null;
+
+  if (activePackage?.package_id) {
+    const { data: packageRecord } = await supabase
+      .from("packages")
+      .select("name")
+      .eq("id", activePackage.package_id)
+      .maybeSingle();
+
+    packageName = packageRecord?.name ?? null;
+  }
 
   return (
     <main className="dashboard-shell">
