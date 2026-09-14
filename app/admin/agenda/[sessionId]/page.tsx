@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
 import { bookStudent, cancelReservation } from "./actions";
+import { CAPABILITIES } from "@/lib/auth/capabilities";
+import { getAdminContext } from "@/lib/auth/admin-context";
 
 export default async function SessionDetailPage({
   params,
@@ -12,20 +13,7 @@ export default async function SessionDetailPage({
 }) {
   const { sessionId } = await params;
   const query = await searchParams;
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/login/admin");
-
-  const { data: membership } = await supabase
-    .from("studio_memberships")
-    .select("studio_id, role")
-    .eq("user_id", user.id)
-    .eq("active", true)
-    .maybeSingle();
-  if (!membership || !["owner", "admin", "coach"].includes(membership.role))
-    redirect("/login/admin?error=access");
+  const { supabase, membership, studio, can } = await getAdminContext(CAPABILITIES.SCHEDULE_READ);
 
   const { data: session } = await supabase
     .from("class_sessions")
@@ -36,14 +24,12 @@ export default async function SessionDetailPage({
   if (!session) redirect("/admin/agenda");
 
   const [
-    { data: studio },
     { data: template },
     { data: location },
     { data: students },
     { data: reservations },
     { data: assignments },
   ] = await Promise.all([
-    supabase.from("studios").select("name, timezone").eq("id", membership.studio_id).single(),
     supabase
       .from("class_templates")
       .select("name, discipline_id")
@@ -70,7 +56,7 @@ export default async function SessionDetailPage({
       .eq("studio_id", membership.studio_id),
   ]);
 
-  const timeZone = studio?.timezone ?? "America/Mexico_City";
+  const timeZone = studio.timezone ?? "America/Mexico_City";
   const dateLabel = new Intl.DateTimeFormat("es-MX", {
     timeZone,
     weekday: "long",
@@ -103,7 +89,7 @@ export default async function SessionDetailPage({
   const eligibleStudents = (students ?? []).filter(
     (student) => eligibleStudentIds.has(student.id) && !bookedStudentIds.has(student.id),
   );
-  const canEdit = ["owner", "admin"].includes(membership.role);
+  const canEdit = can(CAPABILITIES.SCHEDULE_WRITE);
   const available = Math.max(session.capacity - (reservations?.length ?? 0), 0);
 
   return (
@@ -113,7 +99,7 @@ export default async function SessionDetailPage({
           <Link className="back-link compact" href="/admin/agenda">
             ← Agenda
           </Link>
-          <p className="eyebrow">DETALLE DE CLASE · {studio?.name ?? "ESTUDIO"}</p>
+          <p className="eyebrow">DETALLE DE CLASE · {studio.name}</p>
           <h1 className="dashboard-title">{template?.name ?? "Clase"}</h1>
           <p>
             {dateLabel} · {location?.name ?? "Sin ubicación"}
@@ -195,7 +181,7 @@ export default async function SessionDetailPage({
           <p className="eyebrow">NUEVA RESERVA</p>
           <h2>Agregar alumna</h2>
           {!canEdit ? (
-            <p>Solo owner y admin pueden crear reservas.</p>
+            <p>No tienes permiso para crear reservas.</p>
           ) : (
             <form action={bookStudent} className="compact-form reservation-form">
               <input type="hidden" name="session_id" value={sessionId} />
