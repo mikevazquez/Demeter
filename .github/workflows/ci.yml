@@ -33,12 +33,6 @@ jobs:
       - name: Install
         run: npm ci
 
-      - name: Prettier diagnostic
-        run: |
-          npx prettier --write app/admin/layout.tsx app/auth/actions.ts lib/auth/admin-context.ts
-          git diff -- app/admin/layout.tsx app/auth/actions.ts lib/auth/admin-context.ts
-          git diff --quiet -- app/admin/layout.tsx app/auth/actions.ts lib/auth/admin-context.ts
-
       - name: Format check
         run: npm run format:check
 
