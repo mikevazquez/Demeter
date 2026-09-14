@@ -99,7 +99,10 @@
   border-radius: 15px;
   background: var(--bg-soft);
   text-decoration: none;
-  transition: border-color 0.18s ease, transform 0.18s ease, background 0.18s ease;
+  transition:
+    border-color 0.18s ease,
+    transform 0.18s ease,
+    background 0.18s ease;
 }
 
 .quick-action-list a:hover {
