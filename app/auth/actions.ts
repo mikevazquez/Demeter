@@ -12,7 +12,9 @@ function loginPath(mode: "admin" | "student") {
 export async function signIn(formData: FormData) {
   const password = String(formData.get("password") ?? "");
   const mode = formData.get("mode") === "student" ? "student" : "admin";
-  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  const email = String(formData.get("email") ?? "")
+    .trim()
+    .toLowerCase();
   const phone = normalizeMexicanPhone(String(formData.get("phone") ?? ""));
 
   if (!password || (mode === "admin" ? !email : !phone)) {
