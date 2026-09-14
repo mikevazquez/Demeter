@@ -6,7 +6,9 @@ import { createClient } from "@/lib/supabase/server";
 
 async function requireAdmin() {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   if (!user) redirect("/login/admin");
 
   const { data: membership } = await supabase
@@ -45,7 +47,10 @@ function normalizeMexicanPhone(value: string) {
 
 export async function createStudent(formData: FormData) {
   const fullName = String(formData.get("full_name") ?? "").trim();
-  const email = String(formData.get("email") ?? "").trim().toLowerCase() || null;
+  const email =
+    String(formData.get("email") ?? "")
+      .trim()
+      .toLowerCase() || null;
   const phone = normalizeMexicanPhone(String(formData.get("phone") ?? ""));
 
   if (!fullName || !phone) redirect("/admin/alumnas?error=student_phone");
@@ -81,7 +86,14 @@ export async function createPackage(formData: FormData) {
   const pricePesos = Number(formData.get("price_pesos"));
   const classCredits = creditsRaw === "" ? null : Number(creditsRaw);
 
-  if (!name || !Number.isInteger(validityDays) || validityDays <= 0 || !Number.isFinite(pricePesos) || pricePesos < 0 || (classCredits !== null && (!Number.isInteger(classCredits) || classCredits <= 0))) {
+  if (
+    !name ||
+    !Number.isInteger(validityDays) ||
+    validityDays <= 0 ||
+    !Number.isFinite(pricePesos) ||
+    pricePesos < 0 ||
+    (classCredits !== null && (!Number.isInteger(classCredits) || classCredits <= 0))
+  ) {
     redirect("/admin/alumnas?error=package");
   }
 
@@ -103,12 +115,24 @@ export async function assignPackage(formData: FormData) {
   const studentId = String(formData.get("student_id") ?? "");
   const packageId = String(formData.get("package_id") ?? "");
   const startsOn = String(formData.get("starts_on") ?? "");
-  if (!studentId || !packageId || !/^\d{4}-\d{2}-\d{2}$/.test(startsOn)) redirect("/admin/alumnas?error=assignment");
+  if (!studentId || !packageId || !/^\d{4}-\d{2}-\d{2}$/.test(startsOn))
+    redirect("/admin/alumnas?error=assignment");
 
   const { supabase, studioId } = await requireAdmin();
   const [{ data: student }, { data: packageRecord }] = await Promise.all([
-    supabase.from("students").select("id, user_id").eq("id", studentId).eq("studio_id", studioId).single(),
-    supabase.from("packages").select("id, class_credits, validity_days").eq("id", packageId).eq("studio_id", studioId).eq("active", true).single(),
+    supabase
+      .from("students")
+      .select("id, user_id")
+      .eq("id", studentId)
+      .eq("studio_id", studioId)
+      .single(),
+    supabase
+      .from("packages")
+      .select("id, class_credits, validity_days")
+      .eq("id", packageId)
+      .eq("studio_id", studioId)
+      .eq("active", true)
+      .single(),
   ]);
 
   if (!student || !packageRecord) redirect("/admin/alumnas?error=assignment");

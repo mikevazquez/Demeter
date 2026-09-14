@@ -19,7 +19,9 @@ export function LoginCard({ mode, error }: LoginCardProps) {
   return (
     <main className="auth-shell">
       <section className="auth-card">
-        <Link className="back-link" href="/">← Inicio</Link>
+        <Link className="back-link" href="/">
+          ← Inicio
+        </Link>
         <p className="eyebrow">DEMETER · STUDIO FLOW</p>
         <h1 className="auth-title">{isAdmin ? "Administración" : "Portal de alumna"}</h1>
         <p className="auth-copy">
@@ -34,13 +36,27 @@ export function LoginCard({ mode, error }: LoginCardProps) {
           <input type="hidden" name="mode" value={mode} />
           <label>
             Correo
-            <input name="email" type="email" autoComplete="email" required placeholder="tu@correo.com" />
+            <input
+              name="email"
+              type="email"
+              autoComplete="email"
+              required
+              placeholder="tu@correo.com"
+            />
           </label>
           <label>
             Contraseña
-            <input name="password" type="password" autoComplete="current-password" required placeholder="••••••••" />
+            <input
+              name="password"
+              type="password"
+              autoComplete="current-password"
+              required
+              placeholder="••••••••"
+            />
           </label>
-          <button className="primary-button" type="submit">Entrar</button>
+          <button className="primary-button" type="submit">
+            Entrar
+          </button>
         </form>
 
         <p className="switch-copy">

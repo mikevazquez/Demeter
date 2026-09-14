@@ -1,9 +1,4 @@
-import type {
-  ButtonHTMLAttributes,
-  HTMLAttributes,
-  InputHTMLAttributes,
-  ReactNode,
-} from "react";
+import type { ButtonHTMLAttributes, HTMLAttributes, InputHTMLAttributes, ReactNode } from "react";
 
 function cx(...values: Array<string | false | null | undefined>) {
   return values.filter(Boolean).join(" ");
@@ -57,7 +52,10 @@ export function StatePanel({
   tone?: "loading" | "empty" | "error" | "unauthorized" | "success";
 }) {
   return (
-    <section className={cx("ui-state", `ui-state-${tone}`)} role={tone === "error" ? "alert" : undefined}>
+    <section
+      className={cx("ui-state", `ui-state-${tone}`)}
+      role={tone === "error" ? "alert" : undefined}
+    >
       <strong>{title}</strong>
       {children ? <div>{children}</div> : null}
     </section>

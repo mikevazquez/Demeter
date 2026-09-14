@@ -4,7 +4,9 @@ import { signOut } from "@/app/auth/actions";
 
 export default async function StudentPage() {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   if (!user) redirect("/login/student");
 
@@ -54,14 +56,22 @@ export default async function StudentPage() {
           <h1 className="dashboard-title">Hola</h1>
           <p>{studio?.name ?? "Tu estudio"}</p>
         </div>
-        <form action={signOut}><button className="ghost-button" type="submit">Cerrar sesión</button></form>
+        <form action={signOut}>
+          <button className="ghost-button" type="submit">
+            Cerrar sesión
+          </button>
+        </form>
       </header>
 
       <section className="student-hero">
         <div>
           <p className="eyebrow">TU PAQUETE ACTIVO</p>
           <h2>{packageName ?? "Sin paquete activo"}</h2>
-          <p>{activePackage ? `Vence el ${activePackage.expires_on}` : "Cuando tengas un paquete activo aparecerá aquí."}</p>
+          <p>
+            {activePackage
+              ? `Vence el ${activePackage.expires_on}`
+              : "Cuando tengas un paquete activo aparecerá aquí."}
+          </p>
         </div>
         <div className="credits-block">
           <strong>{activePackage?.credits_remaining ?? 0}</strong>
@@ -71,13 +81,30 @@ export default async function StudentPage() {
 
       <section className="panel-grid">
         <article className="panel">
-          <div className="panel-heading"><div><p className="eyebrow">PRÓXIMAS CLASES</p><h2>Tu agenda</h2></div><button className="secondary-button" disabled>Reservar</button></div>
+          <div className="panel-heading">
+            <div>
+              <p className="eyebrow">PRÓXIMAS CLASES</p>
+              <h2>Tu agenda</h2>
+            </div>
+            <button className="secondary-button" disabled>
+              Reservar
+            </button>
+          </div>
           <div className="empty-state">No tienes clases reservadas todavía.</div>
         </article>
         <article className="panel">
           <p className="eyebrow">TU ACTIVIDAD</p>
           <h2>Estadísticas</h2>
-          <div className="mini-stats"><div><strong>0</strong><span>racha</span></div><div><strong>—</strong><span>clase favorita</span></div></div>
+          <div className="mini-stats">
+            <div>
+              <strong>0</strong>
+              <span>racha</span>
+            </div>
+            <div>
+              <strong>—</strong>
+              <span>clase favorita</span>
+            </div>
+          </div>
         </article>
       </section>
     </main>

@@ -21,7 +21,9 @@ export default async function AgendaPage({
 }) {
   const params = await searchParams;
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   if (!user) redirect("/login/admin");
 
@@ -36,11 +38,31 @@ export default async function AgendaPage({
     redirect("/login/admin?error=access");
   }
 
-  const [{ data: studio }, { data: disciplines }, { data: templates }, { data: locations }, { data: sessions }] = await Promise.all([
+  const [
+    { data: studio },
+    { data: disciplines },
+    { data: templates },
+    { data: locations },
+    { data: sessions },
+  ] = await Promise.all([
     supabase.from("studios").select("name, timezone").eq("id", membership.studio_id).single(),
-    supabase.from("disciplines").select("id, name, active").eq("studio_id", membership.studio_id).order("name"),
-    supabase.from("class_templates").select("id, name, duration_minutes, capacity, discipline_id").eq("studio_id", membership.studio_id).eq("active", true).order("name"),
-    supabase.from("studio_locations").select("id, name, address").eq("studio_id", membership.studio_id).eq("active", true).order("name"),
+    supabase
+      .from("disciplines")
+      .select("id, name, active")
+      .eq("studio_id", membership.studio_id)
+      .order("name"),
+    supabase
+      .from("class_templates")
+      .select("id, name, duration_minutes, capacity, discipline_id")
+      .eq("studio_id", membership.studio_id)
+      .eq("active", true)
+      .order("name"),
+    supabase
+      .from("studio_locations")
+      .select("id, name, address")
+      .eq("studio_id", membership.studio_id)
+      .eq("active", true)
+      .order("name"),
     supabase
       .from("class_sessions")
       .select("id, starts_at, ends_at, capacity, status, notes, template_id, location_id")
@@ -60,7 +82,9 @@ export default async function AgendaPage({
     <main className="dashboard-shell">
       <header className="topbar">
         <div>
-          <Link className="back-link compact" href="/admin">← Hoy</Link>
+          <Link className="back-link compact" href="/admin">
+            ← Hoy
+          </Link>
           <p className="eyebrow">AGENDA · {studio?.name ?? "ESTUDIO"}</p>
           <h1 className="dashboard-title">Calendario</h1>
           <p>Configura disciplinas y tipos de clase, y programa sesiones reales.</p>
@@ -71,7 +95,11 @@ export default async function AgendaPage({
       </header>
 
       {params.created ? <div className="notice success">Cambio guardado correctamente.</div> : null}
-      {params.error ? <div className="notice error">No se pudo guardar. Revisa los datos e inténtalo de nuevo.</div> : null}
+      {params.error ? (
+        <div className="notice error">
+          No se pudo guardar. Revisa los datos e inténtalo de nuevo.
+        </div>
+      ) : null}
 
       <section className="agenda-layout">
         <div className="agenda-main">
@@ -85,7 +113,10 @@ export default async function AgendaPage({
             </div>
 
             {(sessions?.length ?? 0) === 0 ? (
-              <div className="empty-state">Aún no hay sesiones programadas. Crea una disciplina, un tipo de clase y después agenda la primera sesión.</div>
+              <div className="empty-state">
+                Aún no hay sesiones programadas. Crea una disciplina, un tipo de clase y después
+                agenda la primera sesión.
+              </div>
             ) : (
               <div className="session-list">
                 {sessions?.map((session) => {
@@ -94,11 +125,19 @@ export default async function AgendaPage({
                     <div className="session-row" key={session.id}>
                       <div className="session-time">
                         <strong>{formatDateTime(session.starts_at, timeZone)}</strong>
-                        <span>{formatDateTime(session.ends_at, timeZone).split(",").pop()?.trim()}</span>
+                        <span>
+                          {formatDateTime(session.ends_at, timeZone).split(",").pop()?.trim()}
+                        </span>
                       </div>
                       <div className="session-copy">
                         <strong>{template?.name ?? "Clase"}</strong>
-                        <span>{template ? disciplineMap.get(template.discipline_id) : "Sin disciplina"} · {session.location_id ? locationMap.get(session.location_id) ?? "Ubicación" : "Sin ubicación"}</span>
+                        <span>
+                          {template ? disciplineMap.get(template.discipline_id) : "Sin disciplina"}{" "}
+                          ·{" "}
+                          {session.location_id
+                            ? (locationMap.get(session.location_id) ?? "Ubicación")
+                            : "Sin ubicación"}
+                        </span>
                       </div>
                       <div className="session-meta">
                         <span>{session.capacity} lugares</span>
@@ -114,7 +153,9 @@ export default async function AgendaPage({
 
         <aside className="agenda-sidebar">
           {!canEdit ? (
-            <article className="panel"><p>Tu rol puede consultar la agenda, pero solo owner y admin pueden modificarla.</p></article>
+            <article className="panel">
+              <p>Tu rol puede consultar la agenda, pero solo owner y admin pueden modificarla.</p>
+            </article>
           ) : (
             <>
               <article className="panel compact-panel">
@@ -122,7 +163,9 @@ export default async function AgendaPage({
                 <h2>Nueva disciplina</h2>
                 <form action={createDiscipline} className="compact-form">
                   <input name="name" required placeholder="Ej. Pole Fitness" />
-                  <button className="primary-button" type="submit">Agregar</button>
+                  <button className="primary-button" type="submit">
+                    Agregar
+                  </button>
                 </form>
               </article>
 
@@ -132,14 +175,39 @@ export default async function AgendaPage({
                 <form action={createTemplate} className="compact-form">
                   <input name="name" required placeholder="Ej. Pole Fitness Básico" />
                   <select name="discipline_id" required defaultValue="">
-                    <option value="" disabled>Disciplina</option>
-                    {disciplines?.filter((item) => item.active).map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+                    <option value="" disabled>
+                      Disciplina
+                    </option>
+                    {disciplines
+                      ?.filter((item) => item.active)
+                      .map((item) => (
+                        <option key={item.id} value={item.id}>
+                          {item.name}
+                        </option>
+                      ))}
                   </select>
                   <div className="form-split">
-                    <input name="duration_minutes" type="number" min="15" max="360" defaultValue="60" required aria-label="Duración en minutos" />
-                    <input name="capacity" type="number" min="1" defaultValue="8" required aria-label="Capacidad" />
+                    <input
+                      name="duration_minutes"
+                      type="number"
+                      min="15"
+                      max="360"
+                      defaultValue="60"
+                      required
+                      aria-label="Duración en minutos"
+                    />
+                    <input
+                      name="capacity"
+                      type="number"
+                      min="1"
+                      defaultValue="8"
+                      required
+                      aria-label="Capacidad"
+                    />
                   </div>
-                  <button className="primary-button" type="submit" disabled={!disciplines?.length}>Crear tipo</button>
+                  <button className="primary-button" type="submit" disabled={!disciplines?.length}>
+                    Crear tipo
+                  </button>
                 </form>
               </article>
 
@@ -148,16 +216,33 @@ export default async function AgendaPage({
                 <h2>Nueva sesión</h2>
                 <form action={createSession} className="compact-form">
                   <select name="template_id" required defaultValue="">
-                    <option value="" disabled>Tipo de clase</option>
-                    {templates?.map((item) => <option key={item.id} value={item.id}>{item.name} · {item.duration_minutes} min</option>)}
+                    <option value="" disabled>
+                      Tipo de clase
+                    </option>
+                    {templates?.map((item) => (
+                      <option key={item.id} value={item.id}>
+                        {item.name} · {item.duration_minutes} min
+                      </option>
+                    ))}
                   </select>
                   <select name="location_id" defaultValue={locations?.[0]?.id ?? ""}>
                     <option value="">Sin ubicación</option>
-                    {locations?.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+                    {locations?.map((item) => (
+                      <option key={item.id} value={item.id}>
+                        {item.name}
+                      </option>
+                    ))}
                   </select>
-                  <input name="starts_at" type="datetime-local" required aria-label="Fecha y hora" />
+                  <input
+                    name="starts_at"
+                    type="datetime-local"
+                    required
+                    aria-label="Fecha y hora"
+                  />
                   <textarea name="notes" rows={3} placeholder="Notas opcionales" />
-                  <button className="primary-button" type="submit" disabled={!templates?.length}>Programar clase</button>
+                  <button className="primary-button" type="submit" disabled={!templates?.length}>
+                    Programar clase
+                  </button>
                 </form>
               </article>
             </>

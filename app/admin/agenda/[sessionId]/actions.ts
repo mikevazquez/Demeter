@@ -6,7 +6,9 @@ import { createClient } from "@/lib/supabase/server";
 
 async function requireAdmin() {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   if (!user) redirect("/login/admin");
 
   const { data: membership } = await supabase
@@ -16,7 +18,8 @@ async function requireAdmin() {
     .eq("active", true)
     .maybeSingle();
 
-  if (!membership || !["owner", "admin"].includes(membership.role)) redirect("/login/admin?error=access");
+  if (!membership || !["owner", "admin"].includes(membership.role))
+    redirect("/login/admin?error=access");
   return { supabase, studioId: membership.studio_id };
 }
 
@@ -26,10 +29,18 @@ export async function bookStudent(formData: FormData) {
   if (!sessionId || !studentId) redirect(`/admin/agenda/${sessionId}?error=booking`);
 
   const { supabase, studioId } = await requireAdmin();
-  const { data: session } = await supabase.from("class_sessions").select("id").eq("id", sessionId).eq("studio_id", studioId).single();
+  const { data: session } = await supabase
+    .from("class_sessions")
+    .select("id")
+    .eq("id", sessionId)
+    .eq("studio_id", studioId)
+    .single();
   if (!session) redirect("/admin/agenda");
 
-  const { error } = await supabase.rpc("admin_book_student", { target_session_id: sessionId, target_student_id: studentId });
+  const { error } = await supabase.rpc("admin_book_student", {
+    target_session_id: sessionId,
+    target_student_id: studentId,
+  });
   if (error) redirect(`/admin/agenda/${sessionId}?error=${encodeURIComponent(error.message)}`);
 
   revalidatePath(`/admin/agenda/${sessionId}`);
@@ -43,7 +54,9 @@ export async function cancelReservation(formData: FormData) {
   if (!sessionId || !reservationId) redirect(`/admin/agenda/${sessionId}?error=cancel`);
 
   const { supabase } = await requireAdmin();
-  const { error } = await supabase.rpc("admin_cancel_reservation", { target_reservation_id: reservationId });
+  const { error } = await supabase.rpc("admin_cancel_reservation", {
+    target_reservation_id: reservationId,
+  });
   if (error) redirect(`/admin/agenda/${sessionId}?error=cancel`);
 
   revalidatePath(`/admin/agenda/${sessionId}`);

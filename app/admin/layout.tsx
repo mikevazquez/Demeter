@@ -44,7 +44,9 @@ export default function AdminLayout({ children }: Readonly<{ children: React.Rea
         <div className="sidebar-footer">
           <span className="sidebar-caption">Administración</span>
           <form action={signOut}>
-            <button type="submit" className="sidebar-signout">Cerrar sesión</button>
+            <button type="submit" className="sidebar-signout">
+              Cerrar sesión
+            </button>
           </form>
         </div>
       </aside>
