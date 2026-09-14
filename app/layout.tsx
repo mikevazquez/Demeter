@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./tailwind.css";
 import "./globals.css";
+import "./ui-primitives.css";
 
 export const metadata: Metadata = {
   title: "Studio Flow",
