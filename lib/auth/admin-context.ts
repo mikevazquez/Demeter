@@ -20,15 +20,8 @@ export async function getAdminContext(requiredCapability?: Capability) {
   if (!membership) redirect("/login/admin?error=access");
 
   const [{ data: studio }, { data: roleCapabilities }] = await Promise.all([
-    supabase
-      .from("studios")
-      .select("id, name, timezone")
-      .eq("id", membership.studio_id)
-      .single(),
-    supabase
-      .from("role_capabilities")
-      .select("capability_key")
-      .eq("role", membership.role),
+    supabase.from("studios").select("id, name, timezone").eq("id", membership.studio_id).single(),
+    supabase.from("role_capabilities").select("capability_key").eq("role", membership.role),
   ]);
 
   if (!studio) redirect("/login/admin?error=access");
