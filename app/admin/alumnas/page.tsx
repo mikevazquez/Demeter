@@ -44,6 +44,14 @@ export default async function StudentsPage({
   }
   const today = new Date().toISOString().slice(0, 10);
 
+  const errorMessage = params.error === "student_phone"
+    ? "El teléfono es obligatorio. Ingresa 10 dígitos de México o un número internacional con código de país."
+    : params.error === "phone_exists"
+      ? "Ya existe una alumna con ese teléfono en este estudio."
+      : params.error
+        ? "No se pudo guardar. Revisa los datos e inténtalo de nuevo."
+        : null;
+
   return (
     <main className="dashboard-shell">
       <header className="topbar">
@@ -57,7 +65,7 @@ export default async function StudentsPage({
       </header>
 
       {params.created ? <div className="notice success">Cambio guardado correctamente.</div> : null}
-      {params.error ? <div className="notice error">No se pudo guardar. Revisa los datos e inténtalo de nuevo.</div> : null}
+      {errorMessage ? <div className="notice error">{errorMessage}</div> : null}
 
       <section className="agenda-layout">
         <div className="agenda-main">
@@ -79,7 +87,7 @@ export default async function StudentsPage({
                     <div className="student-row" key={student.id}>
                       <div>
                         <strong>{student.full_name}</strong>
-                        <span>{student.email ?? student.phone ?? "Sin contacto"}</span>
+                        <span>{student.phone}{student.email ? ` · ${student.email}` : ""}</span>
                       </div>
                       <div className="student-package-summary">
                         <strong>{currentPackage?.name ?? "Sin paquete activo"}</strong>
@@ -113,9 +121,10 @@ export default async function StudentsPage({
                 <p className="eyebrow">1 · ALUMNA</p>
                 <h2>Nueva alumna</h2>
                 <form action={createStudent} className="compact-form">
-                  <input name="full_name" required placeholder="Nombre completo" />
-                  <input name="email" type="email" placeholder="Correo opcional" />
-                  <input name="phone" type="tel" placeholder="Teléfono opcional" />
+                  <input name="full_name" required placeholder="Nombre completo" autoComplete="name" />
+                  <input name="phone" type="tel" inputMode="tel" required placeholder="Teléfono · 10 dígitos" autoComplete="tel" aria-describedby="student-phone-help" />
+                  <small id="student-phone-help">Obligatorio. Se guarda como +52 y será el identificador de acceso de la alumna.</small>
+                  <input name="email" type="email" placeholder="Correo opcional" autoComplete="email" />
                   <button className="primary-button" type="submit">Agregar alumna</button>
                 </form>
               </article>
