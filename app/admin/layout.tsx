@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { signOut } from "@/app/auth/actions";
+import "./hoy.css";
 
 const navItems = [
   { href: "/admin", label: "Hoy", enabled: true },
