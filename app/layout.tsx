@@ -1,14 +1,15 @@
 import type { Metadata } from "next";
+import "./tailwind.css";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Demeter",
+  title: "Studio Flow",
   description: "Administración de estudios boutique",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="es">
+    <html lang="es-MX">
       <body>{children}</body>
     </html>
   );
