@@ -34,6 +34,11 @@ export default async function StudentPage() {
     .limit(1)
     .maybeSingle();
 
+  const packageRelation = activePackage?.packages;
+  const packageName = Array.isArray(packageRelation)
+    ? packageRelation[0]?.name
+    : packageRelation?.name;
+
   return (
     <main className="dashboard-shell">
       <header className="topbar">
@@ -48,7 +53,7 @@ export default async function StudentPage() {
       <section className="student-hero">
         <div>
           <p className="eyebrow">TU PAQUETE ACTIVO</p>
-          <h2>{activePackage?.packages && !Array.isArray(activePackage.packages) ? activePackage.packages.name : "Sin paquete activo"}</h2>
+          <h2>{packageName ?? "Sin paquete activo"}</h2>
           <p>{activePackage ? `Vence el ${activePackage.expires_on}` : "Cuando tengas un paquete activo aparecerá aquí."}</p>
         </div>
         <div className="credits-block">
