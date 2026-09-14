@@ -15,7 +15,7 @@
 html, body { margin: 0; min-height: 100%; }
 body { background: var(--bg); color: var(--text); font-family: Arial, Helvetica, sans-serif; }
 a { color: inherit; }
-button, input { font: inherit; }
+button, input, select, textarea { font: inherit; }
 button { cursor: pointer; }
 button:disabled { cursor: not-allowed; opacity: .5; }
 
@@ -36,6 +36,7 @@ button:disabled { cursor: not-allowed; opacity: .5; }
 .auth-shell { min-height: 100vh; display: grid; place-items: center; padding: 28px; }
 .auth-card { width: min(520px, 100%); background: var(--surface); border: 1px solid var(--line); border-radius: 28px; padding: clamp(28px, 6vw, 48px); box-shadow: 0 20px 60px rgba(0,0,0,.05); }
 .back-link { display: inline-block; margin-bottom: 40px; color: var(--muted); text-decoration: none; font-size: 14px; }
+.back-link.compact { margin-bottom: 22px; }
 .auth-title { margin: 0; font-size: clamp(40px, 7vw, 62px); line-height: .95; letter-spacing: -.05em; }
 .auth-copy { margin: 18px 0 28px; color: var(--muted); line-height: 1.6; }
 .auth-form { display: grid; gap: 18px; }
@@ -53,7 +54,7 @@ button:disabled { cursor: not-allowed; opacity: .5; }
 .topbar { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; padding: 20px 0 34px; }
 .dashboard-title { margin: 0; font-size: clamp(38px, 6vw, 72px); line-height: .98; letter-spacing: -.05em; }
 .topbar p { color: var(--muted); }
-.ghost-button, .secondary-button { border: 1px solid var(--line); background: var(--surface); border-radius: 12px; padding: 11px 14px; font-weight: 700; }
+.ghost-button, .secondary-button { border: 1px solid var(--line); background: var(--surface); border-radius: 12px; padding: 11px 14px; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; }
 .stat-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
 .stat-card { padding: 22px; background: var(--surface); border: 1px solid var(--line); border-radius: 20px; }
 .stat-card span, .stat-card small { display: block; color: var(--muted); }
@@ -77,10 +78,35 @@ button:disabled { cursor: not-allowed; opacity: .5; }
 .mini-stats strong { font-size: 30px; }
 .mini-stats span { margin-top: 6px; color: var(--muted); font-size: 13px; }
 
+.toolbar-actions { display: flex; gap: 10px; align-items: center; }
+.agenda-layout { display: grid; grid-template-columns: minmax(0, 1.8fr) minmax(300px, .8fr); gap: 16px; align-items: start; }
+.agenda-main, .agenda-sidebar { min-width: 0; }
+.agenda-sidebar { display: grid; gap: 16px; }
+.compact-panel { padding: 20px; }
+.compact-form { display: grid; gap: 10px; margin-top: 18px; }
+.compact-form input, .compact-form select, .compact-form textarea { width: 100%; border: 1px solid var(--line); background: white; border-radius: 12px; padding: 12px 13px; outline: none; color: var(--text); }
+.compact-form textarea { resize: vertical; }
+.form-split { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.count-badge { min-width: 36px; height: 36px; display: inline-grid; place-items: center; border-radius: 999px; background: var(--surface-soft); border: 1px solid var(--line); font-weight: 800; }
+.session-list { display: grid; gap: 10px; margin-top: 24px; }
+.session-row { display: grid; grid-template-columns: 160px minmax(0, 1fr) auto; gap: 18px; align-items: center; padding: 18px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface-soft); }
+.session-time strong, .session-time span, .session-copy strong, .session-copy span, .session-meta span { display: block; }
+.session-time strong, .session-copy strong { font-size: 15px; }
+.session-time span, .session-copy span, .session-meta { color: var(--muted); font-size: 12px; }
+.session-time span, .session-copy span { margin-top: 5px; }
+.session-meta { text-align: right; display: grid; gap: 7px; justify-items: end; }
+.status-pill { display: inline-flex !important; padding: 5px 8px; border-radius: 999px; background: #ecece7; color: #5c5c57; font-size: 10px !important; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; }
+
+@media (max-width: 980px) {
+  .agenda-layout { grid-template-columns: 1fr; }
+}
+
 @media (max-width: 860px) {
   .portal-grid, .stat-grid, .panel-grid { grid-template-columns: 1fr; }
   .student-hero { align-items: flex-start; flex-direction: column; }
   .credits-block { text-align: left; }
+  .session-row { grid-template-columns: 1fr; gap: 10px; }
+  .session-meta { text-align: left; justify-items: start; }
 }
 
 @media (max-width: 560px) {

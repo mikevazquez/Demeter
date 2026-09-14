@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { signOut } from "@/app/auth/actions";
@@ -21,9 +22,60 @@ export default async function AdminPage() {
 
   const { data: studio } = await supabase
     .from("studios")
-    .select("name")
+    .select("name, timezone")
     .eq("id", membership.studio_id)
     .single();
+
+  const timeZone = studio?.timezone ?? "America/Mexico_City";
+  const todayParts = new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(new Date());
+  const part = (type: string) => todayParts.find((item) => item.type === type)?.value ?? "";
+  const todayLocal = `${part("year")}-${part("month")}-${part("day")}`;
+  const offsetFormatter = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    timeZoneName: "longOffset",
+    hour: "2-digit",
+  });
+  const offsetName = offsetFormatter.formatToParts(new Date()).find((item) => item.type === "timeZoneName")?.value ?? "GMT-06:00";
+  const offset = offsetName.replace("GMT", "") || "+00:00";
+  const start = new Date(`${todayLocal}T00:00:00${offset}`);
+  const end = new Date(start.getTime() + 24 * 60 * 60 * 1000);
+
+  const [{ data: sessions }, { count: activeStudents }, { count: reservationsCount }] = await Promise.all([
+    supabase
+      .from("class_sessions")
+      .select("id, starts_at, ends_at, capacity, status, template_id")
+      .eq("studio_id", membership.studio_id)
+      .gte("starts_at", start.toISOString())
+      .lt("starts_at", end.toISOString())
+      .order("starts_at", { ascending: true }),
+    supabase
+      .from("studio_memberships")
+      .select("*", { count: "exact", head: true })
+      .eq("studio_id", membership.studio_id)
+      .eq("role", "student")
+      .eq("active", true),
+    supabase
+      .from("reservations")
+      .select("*", { count: "exact", head: true })
+      .eq("studio_id", membership.studio_id)
+      .gte("booked_at", start.toISOString())
+      .lt("booked_at", end.toISOString())
+      .eq("status", "booked"),
+  ]);
+
+  const templateIds = [...new Set((sessions ?? []).map((session) => session.template_id))];
+  const { data: templates } = templateIds.length
+    ? await supabase.from("class_templates").select("id, name").in("id", templateIds)
+    : { data: [] as { id: string; name: string }[] };
+  const templateMap = new Map((templates ?? []).map((item) => [item.id, item.name]));
+
+  const totalCapacity = (sessions ?? []).reduce((sum, session) => sum + session.capacity, 0);
+  const occupancy = totalCapacity > 0 ? Math.round(((reservationsCount ?? 0) / totalCapacity) * 100) : null;
 
   return (
     <main className="dashboard-shell">
@@ -32,26 +84,41 @@ export default async function AdminPage() {
           <p className="eyebrow">ADMINISTRACIÓN</p>
           <h1 className="dashboard-title">Hoy en {studio?.name ?? "tu estudio"}</h1>
         </div>
-        <form action={signOut}><button className="ghost-button" type="submit">Cerrar sesión</button></form>
+        <div className="toolbar-actions">
+          <Link className="secondary-button" href="/admin/agenda">Agenda</Link>
+          <form action={signOut}><button className="ghost-button" type="submit">Cerrar sesión</button></form>
+        </div>
       </header>
 
       <section className="stat-grid">
-        <article className="stat-card"><span>Clases hoy</span><strong>0</strong><small>Agenda lista para conectar</small></article>
-        <article className="stat-card"><span>Reservas hoy</span><strong>0</strong><small>Sin registros todavía</small></article>
-        <article className="stat-card"><span>Alumnas activas</span><strong>0</strong><small>Se llenará con membresías</small></article>
-        <article className="stat-card"><span>Ocupación</span><strong>—</strong><small>Disponible al cargar clases</small></article>
+        <article className="stat-card"><span>Clases hoy</span><strong>{sessions?.length ?? 0}</strong><small>Sesiones programadas</small></article>
+        <article className="stat-card"><span>Reservas hoy</span><strong>{reservationsCount ?? 0}</strong><small>Reservas registradas</small></article>
+        <article className="stat-card"><span>Alumnas activas</span><strong>{activeStudents ?? 0}</strong><small>Membresías activas</small></article>
+        <article className="stat-card"><span>Ocupación</span><strong>{occupancy === null ? "—" : `${occupancy}%`}</strong><small>Sobre capacidad del día</small></article>
       </section>
 
       <section className="panel-grid">
         <article className="panel">
-          <div className="panel-heading"><div><p className="eyebrow">AGENDA</p><h2>Próximas clases</h2></div><button className="secondary-button" disabled>Nueva clase</button></div>
-          <div className="empty-state">Todavía no hay clases programadas. La siguiente fase conectará agenda, capacidad y reservaciones.</div>
+          <div className="panel-heading"><div><p className="eyebrow">AGENDA</p><h2>Clases de hoy</h2></div><Link className="secondary-button" href="/admin/agenda">Administrar</Link></div>
+          {(sessions?.length ?? 0) === 0 ? (
+            <div className="empty-state">Todavía no hay clases programadas para hoy. Entra a Agenda para crear la primera.</div>
+          ) : (
+            <div className="session-list">
+              {sessions?.map((session) => (
+                <div className="session-row" key={session.id}>
+                  <div className="session-time"><strong>{new Intl.DateTimeFormat("es-MX", { timeZone, hour: "2-digit", minute: "2-digit" }).format(new Date(session.starts_at))}</strong><span>hasta {new Intl.DateTimeFormat("es-MX", { timeZone, hour: "2-digit", minute: "2-digit" }).format(new Date(session.ends_at))}</span></div>
+                  <div className="session-copy"><strong>{templateMap.get(session.template_id) ?? "Clase"}</strong><span>{session.capacity} lugares</span></div>
+                  <div className="session-meta"><span className="status-pill">{session.status}</span></div>
+                </div>
+              ))}
+            </div>
+          )}
         </article>
         <article className="panel">
           <p className="eyebrow">ACCESO</p>
           <h2>Rol actual</h2>
           <div className="role-pill">{membership.role}</div>
-          <p>La sesión ya está protegida por Supabase Auth y las reglas RLS de Studio Flow.</p>
+          <p>La sesión está protegida por Supabase Auth y las reglas RLS de Studio Flow.</p>
         </article>
       </section>
     </main>
