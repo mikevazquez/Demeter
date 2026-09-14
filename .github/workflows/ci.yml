@@ -21,10 +21,17 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
 
-      - name: Prepare lockfile when missing
+      - name: Generate lockfile when missing
         run: test -f package-lock.json || npm install --package-lock-only
+
+      - name: Upload generated lockfile
+        if: ${{ hashFiles('package-lock.json') != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: package-lock
+          path: package-lock.json
+          if-no-files-found: error
 
       - name: Install
         run: npm ci
