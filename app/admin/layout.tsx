@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { signOut } from "@/app/auth/actions";
+import { getAdminContext } from "@/lib/auth/admin-context";
 import "./hoy.css";
 
 const navItems = [
@@ -13,7 +14,11 @@ const navItems = [
   { href: "/admin/configuracion", label: "Configuración", enabled: false },
 ];
 
-export default function AdminLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+export default async function AdminLayout({
+  children,
+}: Readonly<{ children: React.ReactNode }>) {
+  const { studio, membership } = await getAdminContext();
+
   return (
     <div className="admin-shell">
       <aside className="admin-sidebar" aria-label="Navegación principal">
@@ -21,7 +26,7 @@ export default function AdminLayout({ children }: Readonly<{ children: React.Rea
           <span className="brand-mark">SF</span>
           <div>
             <strong>Studio Flow</strong>
-            <small>Demeter Fitness</small>
+            <small>{studio.name}</small>
           </div>
         </div>
 
@@ -43,7 +48,7 @@ export default function AdminLayout({ children }: Readonly<{ children: React.Rea
         </nav>
 
         <div className="sidebar-footer">
-          <span className="sidebar-caption">Administración</span>
+          <span className="sidebar-caption">{membership.role}</span>
           <form action={signOut}>
             <button type="submit" className="sidebar-signout">
               Cerrar sesión
