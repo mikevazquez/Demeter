@@ -23,13 +23,44 @@ async function requireAdmin() {
   return { supabase, studioId: membership.studio_id };
 }
 
+function normalizeMexicanPhone(value: string) {
+  const raw = value.trim();
+  if (!raw) return null;
+
+  const digits = raw.replace(/\D/g, "");
+  let normalized: string;
+
+  if (raw.startsWith("+") && digits.length >= 8 && digits.length <= 15) {
+    normalized = `+${digits}`;
+  } else if (digits.length === 10) {
+    normalized = `+52${digits}`;
+  } else if (digits.length === 12 && digits.startsWith("52")) {
+    normalized = `+${digits}`;
+  } else {
+    return null;
+  }
+
+  return /^\+[1-9][0-9]{7,14}$/.test(normalized) ? normalized : null;
+}
+
 export async function createStudent(formData: FormData) {
   const fullName = String(formData.get("full_name") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim().toLowerCase() || null;
-  const phone = String(formData.get("phone") ?? "").trim() || null;
-  if (!fullName) redirect("/admin/alumnas?error=student");
+  const phone = normalizeMexicanPhone(String(formData.get("phone") ?? ""));
+
+  if (!fullName || !phone) redirect("/admin/alumnas?error=student_phone");
 
   const { supabase, studioId } = await requireAdmin();
+
+  const { data: existing } = await supabase
+    .from("students")
+    .select("id")
+    .eq("studio_id", studioId)
+    .eq("phone", phone)
+    .maybeSingle();
+
+  if (existing) redirect("/admin/alumnas?error=phone_exists");
+
   const { error } = await supabase.from("students").insert({
     studio_id: studioId,
     full_name: fullName,
