@@ -1,6 +1,8 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { CAPABILITIES } from "@/lib/auth/capabilities";
+import { normalizeMexicanPhone } from "@/lib/phone";
 import { createClient } from "@/lib/supabase/server";
 
 function loginPath(mode: "admin" | "student") {
@@ -8,16 +10,18 @@ function loginPath(mode: "admin" | "student") {
 }
 
 export async function signIn(formData: FormData) {
-  const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
   const mode = formData.get("mode") === "student" ? "student" : "admin";
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  const phone = normalizeMexicanPhone(String(formData.get("phone") ?? ""));
 
-  if (!email || !password) {
+  if (!password || (mode === "admin" ? !email : !phone)) {
     redirect(`${loginPath(mode)}?error=missing`);
   }
 
   const supabase = await createClient();
-  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+  const credentials = mode === "admin" ? { email, password } : { phone: phone!, password };
+  const { data, error } = await supabase.auth.signInWithPassword(credentials);
 
   if (error || !data.user) {
     redirect(`${loginPath(mode)}?error=invalid`);
@@ -25,7 +29,7 @@ export async function signIn(formData: FormData) {
 
   const { data: membership } = await supabase
     .from("studio_memberships")
-    .select("role, active")
+    .select("studio_id, role, active")
     .eq("user_id", data.user.id)
     .eq("active", true)
     .limit(1)
@@ -36,14 +40,18 @@ export async function signIn(formData: FormData) {
     redirect(`${loginPath(mode)}?error=pending`);
   }
 
-  if (mode === "admin" && !["owner", "admin", "coach"].includes(membership.role)) {
-    await supabase.auth.signOut();
-    redirect("/login/admin?error=access");
-  }
+  const requiredCapability =
+    mode === "admin" ? CAPABILITIES.ADMIN_PORTAL : CAPABILITIES.STUDENT_PORTAL;
+  const { data: roleCapability } = await supabase
+    .from("role_capabilities")
+    .select("capability_key")
+    .eq("role", membership.role)
+    .eq("capability_key", requiredCapability)
+    .maybeSingle();
 
-  if (mode === "student" && membership.role !== "student") {
+  if (!roleCapability) {
     await supabase.auth.signOut();
-    redirect("/login/student?error=access");
+    redirect(`${loginPath(mode)}?error=access`);
   }
 
   redirect(mode === "admin" ? "/admin" : "/student");
