@@ -41,10 +41,7 @@ export async function bookStudentFromToday(formData: FormData) {
     target_session_id: sessionId,
     target_student_id: studentId,
   });
-  if (error)
-    redirect(
-      withQuery(sessionReturnUrl(returnDate, sessionId), "error", error.message),
-    );
+  if (error) redirect(withQuery(sessionReturnUrl(returnDate, sessionId), "error", error.message));
 
   revalidatePath("/admin");
   revalidatePath(`/admin/agenda/${sessionId}`);
