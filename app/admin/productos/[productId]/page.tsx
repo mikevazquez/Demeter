@@ -1,7 +1,8 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { getAdminContext } from "@/lib/auth/admin-context";
-import { setProductActive } from "../actions";
+import { duplicateProduct, setProductActive } from "../actions";
 
 const labels: Record<string, string> = {
   package: "Paquete",
@@ -89,14 +90,40 @@ export default async function ProductDetailPage({
           )}
         </div>
       </section>
+      <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+        <h2 className="font-semibold text-white">Reglas</h2>
+        <p className="mt-2 text-sm text-zinc-400">
+          {product.unlimited
+            ? `Acceso ilimitado durante ${product.validity_days} días.`
+            : `${product.credit_limit} créditos disponibles durante ${product.validity_days} días desde el inicio de la adquisición.`}
+        </p>
+        <p className="mt-2 text-xs text-zinc-500">
+          Los movimientos de crédito se registran en ledger; las reservas y asistencias aplicarán
+          sus efectos en F7 y F8.
+        </p>
+      </section>
       {ctx.can("products.write") ? (
-        <form action={setProductActive}>
-          <input type="hidden" name="product_id" value={product.id} />
-          <input type="hidden" name="active" value={product.active ? "false" : "true"} />
-          <button className="rounded-xl border border-white/10 px-4 py-2.5 text-sm font-medium text-white hover:bg-white/[0.05]">
-            {product.active ? "Desactivar producto" : "Reactivar producto"}
-          </button>
-        </form>
+        <section className="flex flex-wrap gap-3">
+          <Link
+            href={`/admin/productos/${product.id}/editar`}
+            className="rounded-xl bg-fuchsia-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-fuchsia-500"
+          >
+            Editar producto
+          </Link>
+          <form action={duplicateProduct}>
+            <input type="hidden" name="product_id" value={product.id} />
+            <button className="rounded-xl border border-white/10 px-4 py-2.5 text-sm font-medium text-white hover:bg-white/[0.05]">
+              Duplicar
+            </button>
+          </form>
+          <form action={setProductActive}>
+            <input type="hidden" name="product_id" value={product.id} />
+            <input type="hidden" name="active" value={product.active ? "false" : "true"} />
+            <button className="rounded-xl border border-white/10 px-4 py-2.5 text-sm font-medium text-white hover:bg-white/[0.05]">
+              {product.active ? "Desactivar producto" : "Reactivar producto"}
+            </button>
+          </form>
+        </section>
       ) : null}
     </main>
   );
