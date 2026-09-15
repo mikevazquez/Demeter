@@ -1,0 +1,43 @@
+name: F8 Format Once
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/f8-format-once.yml
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    if: github.event.head_commit.message == 'Run one-time F8 formatter'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Format F8 source files
+        run: >-
+          npx prettier --write
+          app/admin/actions.ts
+          app/admin/page.tsx
+          app/admin/hoy/SessionOperations.tsx
+          app/admin/roster-uat.css
+          tests/f8-attendance-contract.test.ts
+      - name: Commit formatting
+        run: |
+          if git diff --quiet; then
+            echo "No formatting changes needed"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/admin/actions.ts app/admin/page.tsx app/admin/hoy/SessionOperations.tsx app/admin/roster-uat.css tests/f8-attendance-contract.test.ts
+          git commit -m "Apply Prettier formatting for F8"
+          git push origin main
