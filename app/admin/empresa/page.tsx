@@ -56,7 +56,9 @@ export default async function CompanyPage() {
         <div>
           <p className="eyebrow">EMPRESA · {ctx.studio.name}</p>
           <h1 className="dashboard-title">Empresa</h1>
-          <p>Todo lo necesario para configurar y operar tu estudio, sin llenar el menú principal.</p>
+          <p>
+            Todo lo necesario para configurar y operar tu estudio, sin llenar el menú principal.
+          </p>
         </div>
       </header>
 
