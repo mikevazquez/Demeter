@@ -20,7 +20,8 @@ function parseProductForm(formData: FormData) {
   const isEnrollment = productType === "enrollment";
   const unlimited = isEnrollment ? false : formData.get("unlimited") === "on";
   const pricePesos = Number(formData.get("price") ?? 0);
-  const validityDays = parsePositiveInt(formData.get("validity_days"), "validity_days");
+  const validityRaw = String(formData.get("validity_days") ?? "").trim();
+  const validityDays = isEnrollment && !validityRaw ? null : parsePositiveInt(validityRaw, "validity_days");
   const creditLimit = isEnrollment
     ? null
     : unlimited
