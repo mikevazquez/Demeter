@@ -288,12 +288,16 @@ export default async function SessionDetailPage({
                     </strong>
                     <span>{reservation.status === "reserved" ? "Reservada" : "Asistió"}</span>
                   </div>
-                  {canEdit && session.status !== "cancelled" && reservation.status === "reserved" ? (
+                  {canEdit &&
+                  session.status !== "cancelled" &&
+                  reservation.status === "reserved" ? (
                     <form action={cancelReservation}>
                       <input type="hidden" name="session_id" value={sessionId} />
                       <input type="hidden" name="reservation_id" value={reservation.id} />
                       <button className="ghost-button" type="submit">
-                        {lateCancellation ? "Cancelar · consume crédito" : "Cancelar · devuelve crédito"}
+                        {lateCancellation
+                          ? "Cancelar · consume crédito"
+                          : "Cancelar · devuelve crédito"}
                       </button>
                     </form>
                   ) : null}
@@ -310,7 +314,8 @@ export default async function SessionDetailPage({
             <p>La sesión no admite nuevas reservas.</p>
           ) : available === 0 ? (
             <div className="empty-state">
-              Clase llena. El sobrecupo automático está bloqueado; la lista de espera llegará en 1.1.
+              Clase llena. El sobrecupo automático está bloqueado; la lista de espera llegará en
+              1.1.
             </div>
           ) : (
             <form action={bookStudent} className="compact-form reservation-form">
@@ -322,7 +327,7 @@ export default async function SessionDetailPage({
                 {candidates.map((student) => {
                   const eligibility = eligibilityMap.get(student.id);
                   const reason = eligibility?.reason_code
-                    ? eligibilityCopy[eligibility.reason_code] ?? "no elegible"
+                    ? (eligibilityCopy[eligibility.reason_code] ?? "no elegible")
                     : null;
                   return (
                     <option key={student.id} value={student.id} disabled={!eligibility?.eligible}>
@@ -336,10 +341,13 @@ export default async function SessionDetailPage({
                   );
                 })}
               </select>
-              {!candidates.length ? <small>No hay más alumnas disponibles para esta clase.</small> : null}
+              {!candidates.length ? (
+                <small>No hay más alumnas disponibles para esta clase.</small>
+              ) : null}
               {candidates.length > 0 && !eligibleStudents.length ? (
                 <small>
-                  Ninguna alumna disponible cumple actualmente las reglas de paquete, disciplina y créditos.
+                  Ninguna alumna disponible cumple actualmente las reglas de paquete, disciplina y
+                  créditos.
                 </small>
               ) : null}
               <button className="primary-button" type="submit" disabled={!eligibleStudents.length}>
