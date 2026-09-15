@@ -1,0 +1,28 @@
+name: Format F5 once
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/format-f5-once.yml'
+permissions:
+  contents: write
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Format F5 files
+        run: npx prettier --write 'app/admin/agenda/[sessionId]/actions.ts' 'app/admin/agenda/[sessionId]/page.tsx' 'app/admin/agenda/actions.ts' 'app/admin/agenda/page.tsx' 'app/admin/instructores/[instructorId]/page.tsx'
+      - name: Commit formatting
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/admin/agenda app/admin/instructores/[instructorId]/page.tsx
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "Format F5 agenda files"
+          git push
