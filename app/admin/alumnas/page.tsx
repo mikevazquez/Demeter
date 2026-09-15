@@ -14,9 +14,7 @@ export default async function StudentsPage({
     ? params.status!
     : "active";
 
-  const { supabase, studio, membership, can } = await getAdminContext(
-    CAPABILITIES.STUDENTS_READ,
-  );
+  const { supabase, studio, membership, can } = await getAdminContext(CAPABILITIES.STUDENTS_READ);
   const canEdit = can(CAPABILITIES.STUDENTS_WRITE);
 
   let studentsQuery = supabase
@@ -68,9 +66,7 @@ export default async function StudentsPage({
         </div>
       </header>
 
-      {params.created ? (
-        <div className="notice success">Alumna creada correctamente.</div>
-      ) : null}
+      {params.created ? <div className="notice success">Alumna creada correctamente.</div> : null}
       {errorMessage ? <div className="notice error">{errorMessage}</div> : null}
 
       <section className="agenda-layout">
@@ -150,8 +146,7 @@ export default async function StudentsPage({
               <p className="eyebrow">ALTA RÁPIDA</p>
               <h2>Nueva alumna</h2>
               <p>
-                Nombre y teléfono bastan para crear el expediente. Apellido y correo son
-                opcionales.
+                Nombre y teléfono bastan para crear el expediente. Apellido y correo son opcionales.
               </p>
               <form action={createStudent} className="compact-form">
                 <div className="form-split">
