@@ -191,7 +191,9 @@ export function SessionOperations({
                             <input type="hidden" name="return_date" value={returnDate} />
                             <input type="hidden" name="status" value="attended" />
                             <button
-                              className={item.status === "attended" ? "is-selected is-attended" : ""}
+                              className={
+                                item.status === "attended" ? "is-selected is-attended" : ""
+                              }
                               type="submit"
                               disabled={item.status === "attended"}
                               aria-pressed={item.status === "attended"}

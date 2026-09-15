@@ -53,18 +53,13 @@ export async function bookStudentFromToday(formData: FormData) {
     redirect(withQuery(sessionReturnUrl(returnDate, sessionId), "error", "forbidden"));
   }
 
-  const { data: eligibility, error: eligibilityError } = await supabase.rpc(
-    "booking_eligibility",
-    {
-      target_session_id: sessionId,
-      target_student_id: studentId,
-    },
-  );
+  const { data: eligibility, error: eligibilityError } = await supabase.rpc("booking_eligibility", {
+    target_session_id: sessionId,
+    target_student_id: studentId,
+  });
 
   if (eligibilityError) {
-    redirect(
-      withQuery(sessionReturnUrl(returnDate, sessionId), "error", eligibilityError.message),
-    );
+    redirect(withQuery(sessionReturnUrl(returnDate, sessionId), "error", eligibilityError.message));
   }
 
   const result = (eligibility ?? {}) as {
