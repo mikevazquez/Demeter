@@ -85,7 +85,10 @@ export function SessionOperations({
                       <strong>{item.creditsLabel}</strong>
                       <span>{item.expiresLabel}</span>
                     </div>
-                    <div className="today-attendance-preview" aria-label="Acciones de asistencia disponibles en F8">
+                    <div
+                      className="today-attendance-preview"
+                      aria-label="Acciones de asistencia disponibles en F8"
+                    >
                       <button type="button" disabled title="Se habilita en F8">
                         ✓ Asistió
                       </button>
@@ -94,7 +97,10 @@ export function SessionOperations({
                       </button>
                     </div>
                     {canEdit && item.status === "reserved" ? (
-                      <form action={cancelReservationFromToday} className="today-cancel-form">
+                      <form
+                        action={cancelReservationFromToday}
+                        className="today-cancel-form"
+                      >
                         <input type="hidden" name="session_id" value={sessionId} />
                         <input type="hidden" name="reservation_id" value={item.id} />
                         <input type="hidden" name="return_date" value={returnDate} />
@@ -103,7 +109,9 @@ export function SessionOperations({
                         </button>
                       </form>
                     ) : (
-                      <span className="status-pill">{item.status === "attended" ? "Asistió" : "Reservada"}</span>
+                      <span className="status-pill">
+                        {item.status === "attended" ? "Asistió" : "Reservada"}
+                      </span>
                     )}
                   </article>
                 ))}
@@ -132,7 +140,11 @@ export function SessionOperations({
                       Selecciona una alumna
                     </option>
                     {candidates.map((candidate) => (
-                      <option key={candidate.id} value={candidate.id} disabled={!candidate.eligible}>
+                      <option
+                        key={candidate.id}
+                        value={candidate.id}
+                        disabled={!candidate.eligible}
+                      >
                         {candidate.fullName} · {candidate.detail}
                       </option>
                     ))}
@@ -142,7 +154,9 @@ export function SessionOperations({
                   </button>
                 </form>
               )}
-              {!candidates.length ? <small>No hay más alumnas activas disponibles.</small> : null}
+              {!candidates.length ? (
+                <small>No hay más alumnas activas disponibles.</small>
+              ) : null}
               {candidates.length > 0 && !eligibleCount ? (
                 <small>Ninguna alumna disponible puede reservar esta clase actualmente.</small>
               ) : null}
