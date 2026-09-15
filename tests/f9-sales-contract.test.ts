@@ -64,6 +64,14 @@ describe("F9 sales contracts", () => {
     expect(refundFunction).not.toContain("update public.credit_ledger");
   });
 
+  it("persists the refund reason without column-parameter ambiguity", () => {
+    const fix = source("supabase/migrations/20260915223341_f9_refund_reason_fix.sql");
+
+    expect(fix).toContain("v_reason := trim(refund_reason)");
+    expect(fix).toContain("refund_reason=coalesce(pa.refund_reason,v_reason)");
+    expect(fix).toContain("v_reason,(select auth.uid())");
+  });
+
   it("blocks refund and void while future reservations use the acquisition", () => {
     const migration = source("supabase/migrations/20260915222558_f9_refunds_voids.sql");
 
