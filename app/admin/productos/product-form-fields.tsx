@@ -11,11 +11,19 @@ type ProductFormFieldsProps = {
   disciplines: Discipline[];
   initialProductType?: string;
   initialPrice?: number;
-  initialValidityDays?: number;
+  initialValidityDays?: number | null;
   initialCreditLimit?: number | null;
   initialUnlimited?: boolean;
   selectedDisciplineIds?: string[];
 };
+
+type EnrollmentValidity = "30" | "90" | "180" | "365" | "lifetime" | "custom";
+
+function enrollmentValidityFromDays(days: number | null | undefined): EnrollmentValidity {
+  if (days == null) return "lifetime";
+  if (days === 30 || days === 90 || days === 180 || days === 365) return String(days) as EnrollmentValidity;
+  return "custom";
+}
 
 export function ProductFormFields({
   disciplines,
@@ -27,6 +35,12 @@ export function ProductFormFields({
   selectedDisciplineIds = [],
 }: ProductFormFieldsProps) {
   const [productType, setProductType] = useState(initialProductType);
+  const [enrollmentValidity, setEnrollmentValidity] = useState<EnrollmentValidity>(() =>
+    enrollmentValidityFromDays(initialValidityDays),
+  );
+  const [customValidityDays, setCustomValidityDays] = useState(() =>
+    enrollmentValidityFromDays(initialValidityDays) === "custom" ? (initialValidityDays ?? 30) : 30,
+  );
   const isEnrollment = productType === "enrollment";
   const selected = new Set(selectedDisciplineIds);
 
@@ -63,22 +77,58 @@ export function ProductFormFields({
           />
         </label>
 
-        <label className="text-sm text-zinc-300">
-          Vigencia (días)
-          <input
-            name="validity_days"
-            type="number"
-            min="1"
-            required
-            defaultValue={initialValidityDays}
-            className="mt-2 w-full rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 text-white"
-          />
-          {isEnrollment ? (
-            <span className="mt-1 block text-xs text-zinc-500">
-              Define cuántos días estará vigente la inscripción desde la venta.
-            </span>
-          ) : null}
-        </label>
+        {isEnrollment ? (
+          <>
+            <label className="text-sm text-zinc-300">
+              Vigencia
+              <select
+                value={enrollmentValidity}
+                onChange={(event) => setEnrollmentValidity(event.target.value as EnrollmentValidity)}
+                className="mt-2 w-full rounded-xl border border-white/10 bg-zinc-950 px-3 py-2.5 text-white"
+              >
+                <option value="30">30 días</option>
+                <option value="90">3 meses</option>
+                <option value="180">6 meses</option>
+                <option value="365">1 año</option>
+                <option value="lifetime">Vitalicia</option>
+                <option value="custom">Días específicos</option>
+              </select>
+            </label>
+
+            {enrollmentValidity === "custom" ? (
+              <label className="text-sm text-zinc-300">
+                Días de vigencia
+                <input
+                  name="validity_days"
+                  type="number"
+                  min="1"
+                  required
+                  value={customValidityDays}
+                  onChange={(event) => setCustomValidityDays(Number(event.target.value))}
+                  className="mt-2 w-full rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 text-white"
+                />
+              </label>
+            ) : (
+              <input
+                type="hidden"
+                name="validity_days"
+                value={enrollmentValidity === "lifetime" ? "" : enrollmentValidity}
+              />
+            )}
+          </>
+        ) : (
+          <label className="text-sm text-zinc-300">
+            Vigencia (días)
+            <input
+              name="validity_days"
+              type="number"
+              min="1"
+              required
+              defaultValue={initialValidityDays ?? 30}
+              className="mt-2 w-full rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 text-white"
+            />
+          </label>
+        )}
 
         {!isEnrollment ? (
           <label className="text-sm text-zinc-300">
@@ -98,6 +148,9 @@ export function ProductFormFields({
             <p className="text-sm font-semibold text-fuchsia-200">Inscripción administrativa</p>
             <p className="mt-1 text-sm leading-6 text-zinc-400">
               La inscripción no es un paquete: no otorga clases, créditos ni acceso a disciplinas.
+            </p>
+            <p className="mt-2 text-xs leading-5 text-zinc-500">
+              Si eliges Vitalicia, la inscripción no tendrá fecha de vencimiento.
             </p>
           </div>
         ) : null}
