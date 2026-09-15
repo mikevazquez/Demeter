@@ -81,7 +81,9 @@ export default async function EnrollmentPolicyPage({
         </article>
         <article className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
           <p className="text-xs uppercase tracking-wide text-zinc-500">Producto</p>
-          <strong className="mt-2 block text-lg text-white">{selected?.name ?? "Sin asignar"}</strong>
+          <strong className="mt-2 block text-lg text-white">
+            {selected?.name ?? "Sin asignar"}
+          </strong>
         </article>
       </section>
 
@@ -131,10 +133,12 @@ export default async function EnrollmentPolicyPage({
               <option value="">Sin asignar</option>
               {enrollmentProducts.map((product) => (
                 <option key={product.id} value={product.id} disabled={!product.active}>
-                  {product.name} · {new Intl.NumberFormat("es-MX", {
+                  {product.name} ·{" "}
+                  {new Intl.NumberFormat("es-MX", {
                     style: "currency",
                     currency: product.currency,
-                  }).format(product.price_minor / 100)} · {product.validity_days} días
+                  }).format(product.price_minor / 100)}{" "}
+                  · {product.validity_days} días
                   {!product.active ? " · inactivo" : ""}
                 </option>
               ))}
@@ -158,7 +162,8 @@ export default async function EnrollmentPolicyPage({
           </label>
 
           <div className="rounded-xl border border-sky-500/20 bg-sky-500/[0.06] p-4 text-xs leading-5 text-sky-100/80">
-            Las excepciones, primera clase/primera compra, renovación y reglas por producto quedan en
+            Las excepciones, primera clase/primera compra, renovación y reglas por producto quedan
+            en
             <code className="mx-1 rounded bg-black/20 px-1.5 py-0.5">rules</code> y tendrán editor
             completo en F12. Esta pantalla no inventa valores por defecto.
           </div>

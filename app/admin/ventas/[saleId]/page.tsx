@@ -202,7 +202,10 @@ export default async function SaleDetailPage({
           ["Neto cobrado", netCollected],
           ["Saldo", balance],
         ].map(([label, value]) => (
-          <article key={String(label)} className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+          <article
+            key={String(label)}
+            className="rounded-2xl border border-white/10 bg-white/[0.03] p-5"
+          >
             <p className="text-xs uppercase tracking-wide text-zinc-500">{label}</p>
             <strong className="mt-2 block text-2xl text-white">
               {money(Number(value), sale.currency)}
@@ -214,7 +217,8 @@ export default async function SaleDetailPage({
       <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
         <h2 className="font-semibold text-white">Productos y derechos</h2>
         <p className="mt-1 text-sm text-zinc-400">
-          Un producto puede generar una adquisición de clases o un estado de inscripción; nunca ambos.
+          Un producto puede generar una adquisición de clases o un estado de inscripción; nunca
+          ambos.
         </p>
         <div className="mt-4 divide-y divide-white/10">
           {(lines ?? []).map((line) => {
@@ -244,7 +248,9 @@ export default async function SaleDetailPage({
                       <span
                         className={`rounded-full px-2.5 py-1 text-xs font-medium ${isRefunded ? "bg-rose-500/15 text-rose-300" : "bg-emerald-500/15 text-emerald-300"}`}
                       >
-                        {isRefunded ? "Reembolsado · Inactivo" : statusLabel(fulfillmentStatus ?? "sin estado")}
+                        {isRefunded
+                          ? "Reembolsado · Inactivo"
+                          : statusLabel(fulfillmentStatus ?? "sin estado")}
                       </span>
                     </div>
                     <p className="mt-1 text-sm text-zinc-400">
@@ -330,7 +336,13 @@ export default async function SaleDetailPage({
                         />
                       </label>
                       <label className="flex items-start gap-2 text-xs text-zinc-300 md:col-span-2">
-                        <input type="checkbox" name="confirm_refund" value="yes" required className="mt-0.5" />
+                        <input
+                          type="checkbox"
+                          name="confirm_refund"
+                          value="yes"
+                          required
+                          className="mt-0.5"
+                        />
                         Confirmo que el dinero se devolverá manualmente y que el derecho de esta
                         línea dejará de poder utilizarse.
                       </label>
@@ -358,7 +370,10 @@ export default async function SaleDetailPage({
         ) : (
           <div className="mt-4 divide-y divide-white/10">
             {payments.map((payment) => (
-              <div key={payment.id} className="grid gap-2 py-3 md:grid-cols-[120px_1fr_auto] md:items-center">
+              <div
+                key={payment.id}
+                className="grid gap-2 py-3 md:grid-cols-[120px_1fr_auto] md:items-center"
+              >
                 <span className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
                   {payment.kind === "refund" ? "Reembolso" : "Pago"}
                 </span>
@@ -381,7 +396,9 @@ export default async function SaleDetailPage({
                     }).format(new Date(payment.created_at))}
                   </p>
                 </div>
-                <strong className={payment.kind === "refund" ? "text-rose-300" : "text-emerald-300"}>
+                <strong
+                  className={payment.kind === "refund" ? "text-rose-300" : "text-emerald-300"}
+                >
                   {payment.kind === "refund" ? "−" : "+"}
                   {money(payment.amount_minor, sale.currency)}
                 </strong>
@@ -418,7 +435,9 @@ export default async function SaleDetailPage({
                 defaultValue=""
                 className="rounded-xl border border-white/10 bg-zinc-950 px-3 py-3 text-white"
               >
-                <option value="" disabled>Selecciona método</option>
+                <option value="" disabled>
+                  Selecciona método
+                </option>
                 <option value="efectivo">Efectivo</option>
                 <option value="transferencia">Transferencia</option>
                 <option value="tarjeta">Tarjeta</option>
@@ -427,11 +446,17 @@ export default async function SaleDetailPage({
             </label>
             <label className="grid gap-1.5 text-sm text-zinc-300">
               Referencia
-              <input name="payment_reference" className="rounded-xl border border-white/10 bg-black/20 px-3 py-3 text-white" />
+              <input
+                name="payment_reference"
+                className="rounded-xl border border-white/10 bg-black/20 px-3 py-3 text-white"
+              />
             </label>
             <label className="grid gap-1.5 text-sm text-zinc-300">
               Notas
-              <input name="payment_notes" className="rounded-xl border border-white/10 bg-black/20 px-3 py-3 text-white" />
+              <input
+                name="payment_notes"
+                className="rounded-xl border border-white/10 bg-black/20 px-3 py-3 text-white"
+              />
             </label>
             <div className="md:col-span-2 md:text-right">
               <button className="rounded-xl bg-fuchsia-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-fuchsia-500">
@@ -462,7 +487,13 @@ export default async function SaleDetailPage({
                 />
               </label>
               <label className="flex items-start gap-2 text-xs text-zinc-300">
-                <input type="checkbox" name="confirm_void" value="yes" required className="mt-0.5" />
+                <input
+                  type="checkbox"
+                  name="confirm_void"
+                  value="yes"
+                  required
+                  className="mt-0.5"
+                />
                 Confirmo que la venta se marcará como anulada y los derechos activos asociados se
                 inactivarán sin borrar su historia.
               </label>

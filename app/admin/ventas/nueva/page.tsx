@@ -53,8 +53,7 @@ export default async function NewSalePage({
   const visibleProducts = (products ?? []).filter(
     (product) =>
       product.product_type !== "enrollment" ||
-      (enrollmentPolicy?.enabled &&
-        enrollmentPolicy.enrollment_product_template_id === product.id),
+      (enrollmentPolicy?.enabled && enrollmentPolicy.enrollment_product_template_id === product.id),
   );
 
   return (
