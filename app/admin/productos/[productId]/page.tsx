@@ -11,7 +11,7 @@ const labels: Record<string, string> = {
 };
 
 type ProductDiscipline = {
-  disciplines: { name: string } | null;
+  disciplines: { name: string }[];
 };
 
 export default async function ProductDetailPage({
@@ -26,10 +26,12 @@ export default async function ProductDetailPage({
     .select(
       "id,name,description,product_type,price_minor,currency,credit_limit,validity_days,unlimited,active,product_template_disciplines(disciplines(name))",
     )
-    .eq("studio_id", ctx.studioId)
+    .eq("studio_id", ctx.studio.id)
     .eq("id", productId)
     .maybeSingle();
   if (!product) notFound();
+
+  const productDisciplines: ProductDiscipline[] = product.product_template_disciplines ?? [];
 
   return (
     <main className="mx-auto max-w-4xl space-y-6">
@@ -73,13 +75,13 @@ export default async function ProductDetailPage({
       <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
         <h2 className="font-semibold text-white">Disciplinas incluidas</h2>
         <div className="mt-3 flex flex-wrap gap-2">
-          {product.product_template_disciplines?.length ? (
-            (product.product_template_disciplines as ProductDiscipline[]).map((item, index) => (
+          {productDisciplines.length ? (
+            productDisciplines.map((item, index) => (
               <span
                 key={index}
                 className="rounded-full bg-white/[0.06] px-3 py-1 text-sm text-zinc-300"
               >
-                {item.disciplines?.name}
+                {item.disciplines[0]?.name}
               </span>
             ))
           ) : (
