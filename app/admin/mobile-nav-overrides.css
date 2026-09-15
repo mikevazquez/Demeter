@@ -1,0 +1,13 @@
+@media (max-width: 760px) {
+  .admin-shell {
+    padding-bottom: calc(124px + env(safe-area-inset-bottom));
+  }
+
+  .admin-content {
+    padding-bottom: calc(92px + env(safe-area-inset-bottom));
+  }
+
+  .dashboard-shell {
+    padding-bottom: calc(112px + env(safe-area-inset-bottom));
+  }
+}
