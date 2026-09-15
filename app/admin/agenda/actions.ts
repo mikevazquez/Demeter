@@ -93,15 +93,13 @@ export async function createTemplate(formData: FormData) {
   if (!name || !disciplineId || !Number.isFinite(durationMinutes) || !Number.isFinite(capacity))
     redirect("/admin/agenda?error=template");
   const { supabase, studio } = await getAdminContext(CAPABILITIES.SCHEDULE_WRITE);
-  const { error } = await supabase
-    .from("class_templates")
-    .insert({
-      studio_id: studio.id,
-      discipline_id: disciplineId,
-      name,
-      duration_minutes: durationMinutes,
-      capacity,
-    });
+  const { error } = await supabase.from("class_templates").insert({
+    studio_id: studio.id,
+    discipline_id: disciplineId,
+    name,
+    duration_minutes: durationMinutes,
+    capacity,
+  });
   if (error) redirect("/admin/agenda?error=template");
   revalidatePath("/admin/agenda");
   redirect("/admin/agenda?created=template");
