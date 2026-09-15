@@ -38,6 +38,7 @@ export default async function ProductDetailPage({
 
   const productDisciplines: ProductDiscipline[] = product.product_template_disciplines ?? [];
   const isEnrollment = product.product_type === "enrollment";
+  const validityLabel = product.validity_days == null ? "Vitalicia" : `${product.validity_days} días`;
   const statusMessage =
     status === "activated"
       ? "Producto activado correctamente. Ya está disponible para su uso."
@@ -96,7 +97,7 @@ export default async function ProductDetailPage({
 
         <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
           <p className="text-xs text-zinc-500">Vigencia</p>
-          <p className="mt-2 text-xl font-semibold text-white">{product.validity_days} días</p>
+          <p className="mt-2 text-xl font-semibold text-white">{validityLabel}</p>
         </div>
       </section>
 
@@ -124,7 +125,9 @@ export default async function ProductDetailPage({
         <h2 className="font-semibold text-white">Reglas</h2>
         <p className="mt-2 text-sm text-zinc-400">
           {isEnrollment
-            ? `Al venderse crea una inscripción vigente durante ${product.validity_days} días. No otorga clases, créditos ni acceso a disciplinas.`
+            ? product.validity_days == null
+              ? "Al venderse crea una inscripción vitalicia, sin fecha de vencimiento. No otorga clases, créditos ni acceso a disciplinas."
+              : `Al venderse crea una inscripción vigente durante ${product.validity_days} días. No otorga clases, créditos ni acceso a disciplinas.`
             : product.unlimited
               ? `Acceso ilimitado durante ${product.validity_days} días.`
               : `${product.credit_limit} créditos disponibles durante ${product.validity_days} días desde el inicio de la adquisición.`}
