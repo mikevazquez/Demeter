@@ -3,52 +3,169 @@
   padding: 16px;
   border: 1px solid rgba(255, 10, 138, 0.22);
   border-radius: 16px;
-  background: linear-gradient(145deg, rgba(255, 10, 138, 0.07), rgba(255, 255, 255, 0.018) 42%);
+  background: linear-gradient(
+    145deg,
+    rgba(255, 10, 138, 0.07),
+    rgba(255, 255, 255, 0.018) 42%
+  );
 }
-.today-roster-header { display:flex; align-items:flex-end; justify-content:space-between; gap:16px; }
-.today-roster-kicker { color:#ff75bc; font-size:10px; font-weight:900; letter-spacing:.16em; }
-.today-roster-header h3 { margin:4px 0 0; font-size:21px; }
-.today-roster-count { display:grid; text-align:right; }
-.today-roster-count strong { font-size:24px; }
-.today-roster-count span { color:var(--muted); font-size:11px; }
-.today-student-list { display:grid; gap:8px; }
+.today-roster-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+}
+.today-roster-kicker {
+  color: #ff75bc;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.16em;
+}
+.today-roster-header h3 {
+  margin: 4px 0 0;
+  font-size: 21px;
+}
+.today-roster-count {
+  display: grid;
+  text-align: right;
+}
+.today-roster-count strong {
+  font-size: 24px;
+}
+.today-roster-count span {
+  color: var(--muted);
+  font-size: 11px;
+}
+.today-student-list {
+  display: grid;
+  gap: 8px;
+}
 .today-student-card {
-  display:grid;
-  grid-template-columns:38px minmax(150px,1.2fr) minmax(140px,.9fr) auto auto;
-  align-items:center;
-  gap:10px;
-  padding:10px 12px;
-  border:1px solid rgba(255,117,188,.34);
-  border-left:3px solid #ff0a8a;
-  border-radius:12px;
-  background:linear-gradient(100deg,rgba(255,10,138,.13),rgba(255,255,255,.055) 52%,rgba(255,255,255,.035));
-  box-shadow:0 8px 22px rgba(0,0,0,.18);
+  display: grid;
+  grid-template-columns: 38px minmax(150px, 1.2fr) minmax(140px, 0.9fr) auto auto;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid rgba(255, 117, 188, 0.34);
+  border-left: 3px solid #ff0a8a;
+  border-radius: 12px;
+  background: linear-gradient(
+    100deg,
+    rgba(255, 10, 138, 0.13),
+    rgba(255, 255, 255, 0.055) 52%,
+    rgba(255, 255, 255, 0.035)
+  );
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.18);
 }
-.today-student-avatar { display:grid; place-items:center; width:38px; height:38px; border-radius:11px; background:rgba(255,10,138,.2); color:#ff9ace; font-size:12px; font-weight:900; }
-.today-student-identity,.today-student-balance { display:grid; gap:3px; }
-.today-student-identity strong { font-size:15px; color:#fff; }
-.today-student-identity span,.today-student-balance span { color:var(--muted); font-size:10px; }
-.today-student-balance strong { color:#fff; font-size:13px; }
-.today-attendance-preview { display:flex; gap:5px; }
-.today-attendance-preview button { padding:7px 9px; border:1px solid var(--line); border-radius:9px; background:rgba(255,255,255,.025); color:var(--muted); font:inherit; font-size:10px; font-weight:800; opacity:.62; }
-.today-cancel-form { justify-self:end; }
-.add-student-secondary { margin-top:4px; padding:14px; border:1px solid var(--line); border-radius:14px; background:rgba(255,255,255,.015); }
-@media (max-width:980px) {
- .today-student-card { grid-template-columns:38px 1fr auto; }
- .today-student-balance { grid-column:2; }
- .today-attendance-preview { grid-column:2; }
- .today-cancel-form { grid-column:3; grid-row:2/4; }
+.today-student-avatar {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
+  background: rgba(255, 10, 138, 0.2);
+  color: #ff9ace;
+  font-size: 12px;
+  font-weight: 900;
 }
-@media (max-width:640px) {
- .roster-priority { padding:11px; }
- .today-roster-header { align-items:flex-start; }
- .today-roster-header h3 { font-size:18px; }
- .today-roster-count strong { font-size:20px; }
- .today-student-card { grid-template-columns:36px 1fr; gap:8px; padding:9px 10px; }
- .today-student-avatar { width:36px; height:36px; }
- .today-student-balance,.today-attendance-preview,.today-cancel-form { grid-column:1/-1; }
- .today-attendance-preview { display:grid; grid-template-columns:1fr 1fr; }
- .today-cancel-form { justify-self:stretch; }
- .today-inline-danger { width:100%; }
- .add-student-secondary { padding:11px; }
+.today-student-identity,
+.today-student-balance {
+  display: grid;
+  gap: 3px;
+}
+.today-student-identity strong {
+  color: #fff;
+  font-size: 15px;
+}
+.today-student-identity span,
+.today-student-balance span {
+  color: var(--muted);
+  font-size: 10px;
+}
+.today-student-balance strong {
+  color: #fff;
+  font-size: 13px;
+}
+.today-attendance-preview {
+  display: flex;
+  gap: 5px;
+}
+.today-attendance-preview button {
+  padding: 7px 9px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.025);
+  color: var(--muted);
+  font: inherit;
+  font-size: 10px;
+  font-weight: 800;
+  opacity: 0.62;
+}
+.today-cancel-form {
+  justify-self: end;
+}
+.add-student-secondary {
+  margin-top: 4px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.015);
+}
+
+@media (max-width: 980px) {
+  .today-student-card {
+    grid-template-columns: 38px 1fr auto;
+  }
+  .today-student-balance {
+    grid-column: 2;
+  }
+  .today-attendance-preview {
+    grid-column: 2;
+  }
+  .today-cancel-form {
+    grid-row: 2/4;
+    grid-column: 3;
+  }
+}
+
+@media (max-width: 640px) {
+  .roster-priority {
+    padding: 11px;
+  }
+  .today-roster-header {
+    align-items: flex-start;
+  }
+  .today-roster-header h3 {
+    font-size: 18px;
+  }
+  .today-roster-count strong {
+    font-size: 20px;
+  }
+  .today-student-card {
+    grid-template-columns: 36px 1fr;
+    gap: 8px;
+    padding: 9px 10px;
+  }
+  .today-student-avatar {
+    width: 36px;
+    height: 36px;
+  }
+  .today-student-balance,
+  .today-attendance-preview,
+  .today-cancel-form {
+    grid-column: 1/-1;
+  }
+  .today-attendance-preview {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+  .today-cancel-form {
+    justify-self: stretch;
+  }
+  .today-inline-danger {
+    width: 100%;
+  }
+  .add-student-secondary {
+    padding: 11px;
+  }
 }
