@@ -2,7 +2,31 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getAdminContext } from "@/lib/auth/admin-context";
-import { setStudentLifecycle, updateStudent } from "./actions";
+import {
+  setStudentLifecycle,
+  updateDynamicProfileFields,
+  updateStudent,
+} from "./actions";
+
+const structuralFieldKeys = new Set(["first_name", "last_name", "phone", "email"]);
+
+function optionValues(options: unknown): string[] {
+  if (Array.isArray(options)) return options.filter((value): value is string => typeof value === "string");
+
+  if (options && typeof options === "object" && "choices" in options) {
+    const choices = (options as { choices?: unknown }).choices;
+    if (Array.isArray(choices)) {
+      return choices.filter((value): value is string => typeof value === "string");
+    }
+  }
+
+  return [];
+}
+
+function scalarValue(value: unknown): string {
+  if (typeof value === "string" || typeof value === "number") return String(value);
+  return "";
+}
 
 export default async function StudentProfilePage({
   params,
@@ -26,22 +50,37 @@ export default async function StudentProfilePage({
 
   if (!student) notFound();
 
-  const [{ data: person }, { data: contacts }] = await Promise.all([
-    student.person_id
-      ? supabase
-          .from("persons")
-          .select("id, first_name, last_name")
-          .eq("id", student.person_id)
-          .maybeSingle()
-      : Promise.resolve({ data: null }),
-    student.person_id
-      ? supabase
-          .from("person_contacts")
-          .select("kind, value, is_primary")
-          .eq("person_id", student.person_id)
-          .order("kind")
-      : Promise.resolve({ data: [] }),
-  ]);
+  const [{ data: person }, { data: contacts }, { data: definitions }, { data: fieldValues }] =
+    await Promise.all([
+      student.person_id
+        ? supabase
+            .from("persons")
+            .select("id, first_name, last_name")
+            .eq("id", student.person_id)
+            .maybeSingle()
+        : Promise.resolve({ data: null }),
+      student.person_id
+        ? supabase
+            .from("person_contacts")
+            .select("kind, value, is_primary")
+            .eq("person_id", student.person_id)
+            .order("kind")
+        : Promise.resolve({ data: [] }),
+      supabase
+        .from("profile_field_definitions")
+        .select("id, key, label, field_type, required, options, sort_order")
+        .eq("studio_id", studio.id)
+        .eq("entity_type", "student")
+        .eq("active", true)
+        .order("sort_order")
+        .order("label"),
+      student.person_id
+        ? supabase
+            .from("profile_field_values")
+            .select("definition_id, value")
+            .eq("person_id", student.person_id)
+        : Promise.resolve({ data: [] }),
+    ]);
 
   const phone = contacts?.find((item) => item.kind === "phone")?.value ?? student.phone;
   const email = contacts?.find((item) => item.kind === "email")?.value ?? student.email ?? "";
@@ -49,6 +88,10 @@ export default async function StudentProfilePage({
   const lastName = person?.last_name ?? student.full_name.split(" ").slice(1).join(" ");
   const canEdit = can(CAPABILITIES.STUDENTS_WRITE);
   const canArchive = can(CAPABILITIES.STUDENTS_ARCHIVE);
+  const dynamicDefinitions = (definitions ?? []).filter(
+    (definition) => !structuralFieldKeys.has(definition.key),
+  );
+  const valueMap = new Map((fieldValues ?? []).map((item) => [item.definition_id, item.value]));
 
   return (
     <main className="dashboard-shell">
@@ -71,7 +114,9 @@ export default async function StudentProfilePage({
         <div className="notice error">
           {query.error === "phone_exists"
             ? "Ese teléfono ya pertenece a otra alumna."
-            : "No se pudo guardar el cambio."}
+            : query.error === "profile_fields"
+              ? "No se pudieron guardar los campos adicionales. Revisa sus valores."
+              : "No se pudo guardar el cambio."}
         </div>
       ) : null}
 
@@ -81,7 +126,7 @@ export default async function StudentProfilePage({
           <strong className="stat-word">
             {student.profile_status === "complete" ? "Completo" : "Incompleto"}
           </strong>
-          <small>Nombre, apellido, teléfono y correo</small>
+          <small>Según los campos requeridos configurados</small>
         </article>
         <article className="stat-card">
           <span>Estado</span>
@@ -154,6 +199,151 @@ export default async function StudentProfilePage({
             </div>
           </div>
         </article>
+      </section>
+
+      <section className="panel">
+        <div className="panel-heading">
+          <div>
+            <p className="eyebrow">CAMPOS ADICIONALES</p>
+            <h2>Información configurable</h2>
+          </div>
+          <span className="count-badge">{dynamicDefinitions.length}</span>
+        </div>
+
+        {dynamicDefinitions.length === 0 ? (
+          <div className="empty-state">
+            No hay campos adicionales configurados para alumnas. El expediente base ya usa nombre,
+            apellido, teléfono y correo.
+          </div>
+        ) : canEdit ? (
+          <form action={updateDynamicProfileFields} className="compact-form">
+            <input type="hidden" name="student_id" value={student.id} />
+            {dynamicDefinitions.map((definition) => {
+              const fieldName = `field_${definition.id}`;
+              const currentValue = valueMap.get(definition.id);
+              const options = optionValues(definition.options);
+
+              if (definition.field_type === "long_text") {
+                return (
+                  <label key={definition.id}>
+                    <span>
+                      {definition.label}
+                      {definition.required ? " *" : ""}
+                    </span>
+                    <textarea
+                      name={fieldName}
+                      required={definition.required}
+                      defaultValue={scalarValue(currentValue)}
+                    />
+                  </label>
+                );
+              }
+
+              if (definition.field_type === "boolean") {
+                return (
+                  <label key={definition.id} className="checkbox-field">
+                    <input
+                      name={fieldName}
+                      type="checkbox"
+                      value="true"
+                      defaultChecked={currentValue === true}
+                    />
+                    <span>{definition.label}</span>
+                  </label>
+                );
+              }
+
+              if (definition.field_type === "single_select") {
+                return (
+                  <label key={definition.id}>
+                    <span>
+                      {definition.label}
+                      {definition.required ? " *" : ""}
+                    </span>
+                    <select
+                      name={fieldName}
+                      required={definition.required}
+                      defaultValue={scalarValue(currentValue)}
+                    >
+                      <option value="">Seleccionar</option>
+                      {options.map((option) => (
+                        <option key={option} value={option}>
+                          {option}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                );
+              }
+
+              if (definition.field_type === "multi_select") {
+                const selected = Array.isArray(currentValue)
+                  ? currentValue.filter((value): value is string => typeof value === "string")
+                  : [];
+                return (
+                  <label key={definition.id}>
+                    <span>
+                      {definition.label}
+                      {definition.required ? " *" : ""}
+                    </span>
+                    <select
+                      name={fieldName}
+                      multiple
+                      required={definition.required}
+                      defaultValue={selected}
+                    >
+                      {options.map((option) => (
+                        <option key={option} value={option}>
+                          {option}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                );
+              }
+
+              return (
+                <label key={definition.id}>
+                  <span>
+                    {definition.label}
+                    {definition.required ? " *" : ""}
+                  </span>
+                  <input
+                    name={fieldName}
+                    type={definition.field_type === "number" ? "number" : definition.field_type}
+                    required={definition.required}
+                    defaultValue={scalarValue(currentValue)}
+                  />
+                </label>
+              );
+            })}
+            <button className="primary-button" type="submit">
+              Guardar campos adicionales
+            </button>
+          </form>
+        ) : (
+          <div className="student-list">
+            {dynamicDefinitions.map((definition) => {
+              const currentValue = valueMap.get(definition.id);
+              const displayValue = Array.isArray(currentValue)
+                ? currentValue.join(", ")
+                : typeof currentValue === "boolean"
+                  ? currentValue
+                    ? "Sí"
+                    : "No"
+                  : scalarValue(currentValue) || "Sin dato";
+
+              return (
+                <div className="student-row" key={definition.id}>
+                  <div>
+                    <strong>{definition.label}</strong>
+                    <span>{displayValue}</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </section>
 
       {canArchive ? (
