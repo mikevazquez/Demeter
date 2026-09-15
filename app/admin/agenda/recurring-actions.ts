@@ -2,8 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { CAPABILITIES } from "@/lib/auth/capabilities";
+
 import { getAdminContext } from "@/lib/auth/admin-context";
+import { CAPABILITIES } from "@/lib/auth/capabilities";
 
 type ScheduleRow = {
   weekday: number;
@@ -20,6 +21,7 @@ export async function createActivity(formData: FormData) {
   const durationMinutes = Number(formData.get("duration_minutes"));
   const capacity = Number(formData.get("capacity"));
   const creditCost = Number(formData.get("credit_cost"));
+
   if (
     !name ||
     !disciplineId ||
@@ -29,19 +31,21 @@ export async function createActivity(formData: FormData) {
     capacity < 1 ||
     !Number.isInteger(creditCost) ||
     creditCost < 1
-  )
+  ) {
     redirect("/admin/agenda?error=activity");
-  const { error } = await supabase
-    .from("class_templates")
-    .insert({
-      studio_id: studio.id,
-      discipline_id: disciplineId,
-      name,
-      duration_minutes: durationMinutes,
-      capacity,
-      credit_cost: creditCost,
-    });
+  }
+
+  const { error } = await supabase.from("class_templates").insert({
+    studio_id: studio.id,
+    discipline_id: disciplineId,
+    name,
+    duration_minutes: durationMinutes,
+    capacity,
+    credit_cost: creditCost,
+  });
+
   if (error) redirect("/admin/agenda?error=activity");
+
   revalidatePath("/admin/agenda");
   redirect("/admin/agenda?created=activity");
 }
@@ -52,12 +56,17 @@ export async function createRecurringSchedules(formData: FormData) {
   const startsOn = String(formData.get("starts_on") ?? "");
   const notes = String(formData.get("notes") ?? "").trim() || null;
   let rows: ScheduleRow[] = [];
+
   try {
     rows = JSON.parse(String(formData.get("schedule_rows") ?? "[]"));
   } catch {
     redirect("/admin/agenda?error=schedule");
   }
-  if (!templateId || !startsOn || !rows.length) redirect("/admin/agenda?error=schedule");
+
+  if (!templateId || !startsOn || !rows.length) {
+    redirect("/admin/agenda?error=schedule");
+  }
+
   const { data: template } = await supabase
     .from("class_templates")
     .select("id,capacity")
@@ -65,7 +74,9 @@ export async function createRecurringSchedules(formData: FormData) {
     .eq("studio_id", studio.id)
     .eq("active", true)
     .maybeSingle();
+
   if (!template) redirect("/admin/agenda?error=schedule");
+
   const inserts = rows.map((row) => ({
     studio_id: studio.id,
     template_id: templateId,
@@ -77,14 +88,17 @@ export async function createRecurringSchedules(formData: FormData) {
     notes,
     starts_on: startsOn,
   }));
+
   for (const row of inserts) {
     if (
       !Number.isInteger(row.weekday) ||
       row.weekday < 0 ||
       row.weekday > 6 ||
       !/^\d{2}:\d{2}$/.test(row.local_time)
-    )
+    ) {
       redirect("/admin/agenda?error=schedule");
+    }
+
     if (row.instructor_id) {
       const { data } = await supabase
         .from("instructors")
@@ -93,8 +107,10 @@ export async function createRecurringSchedules(formData: FormData) {
         .eq("studio_id", studio.id)
         .eq("status", "active")
         .maybeSingle();
+
       if (!data) redirect("/admin/agenda?error=instructor");
     }
+
     if (row.space_id) {
       const { data } = await supabase
         .from("spaces")
@@ -103,22 +119,29 @@ export async function createRecurringSchedules(formData: FormData) {
         .eq("studio_id", studio.id)
         .eq("active", true)
         .maybeSingle();
-      if (!data || (data.capacity && row.capacity > data.capacity))
+
+      if (!data || (data.capacity && row.capacity > data.capacity)) {
         redirect("/admin/agenda?error=space");
+      }
     }
   }
+
   const { data: schedules, error } = await supabase
     .from("recurring_schedules")
     .insert(inserts)
     .select("id");
+
   if (error || !schedules) redirect("/admin/agenda?error=schedule");
+
   for (const schedule of schedules) {
     const { error: materializeError } = await supabase.rpc("materialize_recurring_schedule", {
       p_schedule_id: schedule.id,
       p_through: null,
     });
+
     if (materializeError) redirect("/admin/agenda?error=conflict");
   }
+
   revalidatePath("/admin/agenda");
   revalidatePath("/admin");
   redirect("/admin/agenda?created=schedule");
