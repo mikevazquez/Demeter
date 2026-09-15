@@ -1,13 +1,13 @@
 import Link from "next/link";
 
 import { getAdminContext } from "@/lib/auth/admin-context";
-import { CAPABILITIES } from "@/lib/auth/capabilities";
+import { CAPABILITIES, type Capability } from "@/lib/auth/capabilities";
 
 type CompanySection = {
   title: string;
   description: string;
   href: string;
-  capability: string;
+  capability: Capability;
   eyebrow: string;
   secondaryHref?: string;
   secondaryLabel?: string;
