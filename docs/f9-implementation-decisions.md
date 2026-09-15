@@ -129,9 +129,12 @@ Actualmente el portal de alumna todavía no expone un flujo activo de reservar d
 
 ## Estado de F9
 
-F9 permanece **ABIERTA**.
+F9 permanece **ABIERTA por UAT**.
 
-- SF-083–SF-092 están integradas en `main`.
-- SF-093 está implementada técnicamente en la rama `_f9_enrollment`, incluida la integración real con `booking_eligibility`.
-- Falta pasar la rama por PR/CI/Vercel, integrarla en `main`, verificar producción y ejecutar UAT comercial.
-- F9 sólo podrá cerrarse formalmente después de esas verificaciones y de la aprobación de UAT del usuario.
+- SF-083–SF-093 están integradas en `main`.
+- SF-093 se integró mediante PR #9 en el merge `b353eb38a5273b275ddd78fea9ba842ce78b5a7c`.
+- El PR pasó format, lint, typecheck, unit tests y build.
+- El preview de Vercel y el despliegue de producción del merge quedaron en estado `success`.
+- Las migraciones de inscripción están aplicadas en Supabase y las invariantes de datos revisadas no presentan inconsistencias.
+- Falta ejecutar UAT comercial en producción y obtener aprobación explícita del usuario.
+- F9 sólo podrá cerrarse formalmente después de esa aprobación; no se inicia F10 antes del cierre.
