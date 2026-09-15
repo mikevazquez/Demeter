@@ -26,8 +26,7 @@ export default async function StudentsPage({
     ? params.status!
     : "active";
 
-  const { supabase, studio, membership, can } =
-    await getAdminContext(CAPABILITIES.STUDENTS_READ);
+  const { supabase, studio, membership, can } = await getAdminContext(CAPABILITIES.STUDENTS_READ);
   const canEdit = can(CAPABILITIES.STUDENTS_WRITE);
 
   let studentsQuery = supabase
