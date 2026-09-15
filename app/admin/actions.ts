@@ -11,7 +11,9 @@ function todayReturnUrl(returnDate: string) {
 }
 
 function withQuery(url: string, key: string, value: string) {
-  return `${url}${url.includes("?") ? "&" : "?"}${key}=${encodeURIComponent(value)}`;
+  const [base, hash] = url.split("#", 2);
+  const next = `${base}${base.includes("?") ? "&" : "?"}${key}=${encodeURIComponent(value)}`;
+  return hash ? `${next}#${hash}` : next;
 }
 
 function sessionReturnUrl(returnDate: string, sessionId: string) {
@@ -39,7 +41,8 @@ export async function bookStudentFromToday(formData: FormData) {
     target_session_id: sessionId,
     target_student_id: studentId,
   });
-  if (error) redirect(withQuery(sessionReturnUrl(returnDate, sessionId), "error", error.message));
+  if (error)
+    redirect(withQuery(sessionReturnUrl(returnDate, sessionId), "error", error.message));
 
   revalidatePath("/admin");
   revalidatePath(`/admin/agenda/${sessionId}`);
