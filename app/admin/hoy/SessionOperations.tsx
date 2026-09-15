@@ -66,7 +66,9 @@ export function SessionOperations({
                     <span>{item.creditsLabel}</span>
                     <span>{item.expiresLabel}</span>
                   </div>
-                  <span className="status-pill">{item.status === "attended" ? "Asistió" : "Reservada"}</span>
+                  <span className="status-pill">
+                    {item.status === "attended" ? "Asistió" : "Reservada"}
+                  </span>
                   {canEdit && item.status === "reserved" ? (
                     <form action={cancelReservationFromToday}>
                       <input type="hidden" name="session_id" value={sessionId} />
@@ -94,7 +96,9 @@ export function SessionOperations({
                 <span>{available} lugares libres</span>
               </div>
               {available <= 0 ? (
-                <div className="today-drawer-empty">Clase llena. No se permiten sobrecupos automáticos.</div>
+                <div className="today-drawer-empty">
+                  Clase llena. No se permiten sobrecupos automáticos.
+                </div>
               ) : (
                 <form action={bookStudentFromToday} className="today-walkin-form">
                   <input type="hidden" name="session_id" value={sessionId} />
@@ -104,7 +108,11 @@ export function SessionOperations({
                       Selecciona una alumna
                     </option>
                     {candidates.map((candidate) => (
-                      <option key={candidate.id} value={candidate.id} disabled={!candidate.eligible}>
+                      <option
+                        key={candidate.id}
+                        value={candidate.id}
+                        disabled={!candidate.eligible}
+                      >
                         {candidate.fullName} · {candidate.detail}
                       </option>
                     ))}
@@ -118,7 +126,10 @@ export function SessionOperations({
                 <small>No hay más alumnas activas disponibles para esta clase.</small>
               ) : null}
               {candidates.length > 0 && !eligibleCount ? (
-                <small>Ninguna alumna disponible cumple actualmente las reglas de paquete, disciplina y créditos.</small>
+                <small>
+                  Ninguna alumna disponible cumple actualmente las reglas de paquete, disciplina y
+                  créditos.
+                </small>
               ) : null}
             </div>
           ) : null}
