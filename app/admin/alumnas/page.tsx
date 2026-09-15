@@ -3,6 +3,18 @@ import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { createStudent } from "./actions";
 
+const lifecycleLabels: Record<string, string> = {
+  active: "Activa",
+  inactive: "Inactiva",
+  archived: "Archivada",
+};
+
+const filterLabels: Record<string, string> = {
+  active: "Activas",
+  inactive: "Inactivas",
+  archived: "Archivadas",
+};
+
 export default async function StudentsPage({
   searchParams,
 }: {
@@ -36,19 +48,15 @@ export default async function StudentsPage({
   const { data: students } = await studentsQuery;
 
   const errorMessage =
-    params.error === "student_phone"
-      ? "Nombre y teléfono son obligatorios. Usa 10 dígitos de México o un número internacional con código de país."
-      : params.error === "phone_exists"
-        ? "Ya existe una alumna con ese teléfono en este estudio."
-        : params.error
-          ? "No se pudo guardar. Revisa los datos e inténtalo de nuevo."
-          : null;
-
-  const statusLabel: Record<string, string> = {
-    active: "Activas",
-    inactive: "Inactivas",
-    archived: "Archivadas",
-  };
+    params.error === "first_name_required"
+      ? "El nombre es obligatorio."
+      : params.error === "phone_invalid"
+        ? "Ingresa un teléfono válido: 10 dígitos de México o un número internacional con código de país."
+        : params.error === "phone_exists"
+          ? "Ya existe una alumna con ese teléfono en este estudio."
+          : params.error
+            ? "No se pudo guardar. Revisa los datos e inténtalo de nuevo."
+            : null;
 
   return (
     <main className="dashboard-shell">
@@ -66,7 +74,9 @@ export default async function StudentsPage({
         </div>
       </header>
 
-      {params.created ? <div className="notice success">Alumna creada correctamente.</div> : null}
+      {params.created === "student" ? (
+        <div className="notice success">Alumna creada correctamente.</div>
+      ) : null}
       {errorMessage ? <div className="notice error">{errorMessage}</div> : null}
 
       <section className="agenda-layout">
@@ -75,7 +85,7 @@ export default async function StudentsPage({
             <div className="panel-heading">
               <div>
                 <p className="eyebrow">DIRECTORIO</p>
-                <h2>{statusLabel[status]}</h2>
+                <h2>{filterLabels[status]}</h2>
               </div>
               <span className="count-badge">{students?.length ?? 0}</span>
             </div>
@@ -104,7 +114,7 @@ export default async function StudentsPage({
               <div className="empty-state">
                 {query
                   ? "No encontramos alumnas que coincidan con la búsqueda."
-                  : `No hay alumnas ${statusLabel[status].toLowerCase()} todavía.`}
+                  : `No hay alumnas ${filterLabels[status].toLowerCase()} todavía.`}
               </div>
             ) : (
               <div className="student-list">
@@ -127,7 +137,7 @@ export default async function StudentsPage({
                           ? "Perfil completo"
                           : "Perfil incompleto"}
                       </strong>
-                      <span>{student.lifecycle_status}</span>
+                      <span>{lifecycleLabels[student.lifecycle_status] ?? student.lifecycle_status}</span>
                     </div>
                   </Link>
                 ))}
