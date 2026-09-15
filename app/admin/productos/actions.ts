@@ -34,7 +34,7 @@ export async function createProduct(formData: FormData) {
   const { data: product, error } = await ctx.supabase
     .from("product_templates")
     .insert({
-      studio_id: ctx.studioId,
+      studio_id: ctx.studio.id,
       name,
       description,
       product_type: productType,
@@ -54,7 +54,7 @@ export async function createProduct(formData: FormData) {
       .from("product_template_disciplines")
       .insert(
         disciplineIds.map((disciplineId) => ({
-          studio_id: ctx.studioId,
+          studio_id: ctx.studio.id,
           product_template_id: product.id,
           discipline_id: disciplineId,
         })),
@@ -74,7 +74,7 @@ export async function setProductActive(formData: FormData) {
     .from("product_templates")
     .update({ active, updated_at: new Date().toISOString() })
     .eq("id", productId)
-    .eq("studio_id", ctx.studioId);
+    .eq("studio_id", ctx.studio.id);
   if (error) throw new Error(error.message);
   revalidatePath("/admin/productos");
   revalidatePath(`/admin/productos/${productId}`);
