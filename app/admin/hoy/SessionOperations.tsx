@@ -97,10 +97,7 @@ export function SessionOperations({
                       </button>
                     </div>
                     {canEdit && item.status === "reserved" ? (
-                      <form
-                        action={cancelReservationFromToday}
-                        className="today-cancel-form"
-                      >
+                      <form action={cancelReservationFromToday} className="today-cancel-form">
                         <input type="hidden" name="session_id" value={sessionId} />
                         <input type="hidden" name="reservation_id" value={item.id} />
                         <input type="hidden" name="return_date" value={returnDate} />
@@ -154,9 +151,7 @@ export function SessionOperations({
                   </button>
                 </form>
               )}
-              {!candidates.length ? (
-                <small>No hay más alumnas activas disponibles.</small>
-              ) : null}
+              {!candidates.length ? <small>No hay más alumnas activas disponibles.</small> : null}
               {candidates.length > 0 && !eligibleCount ? (
                 <small>Ninguna alumna disponible puede reservar esta clase actualmente.</small>
               ) : null}
