@@ -7,11 +7,17 @@ export type AdminNavItem = {
   href: string;
   label: string;
   enabled: boolean;
+  activeFor?: string[];
 };
 
-function isActivePath(pathname: string, href: string) {
+function matchesPath(pathname: string, href: string) {
   if (href === "/admin") return pathname === href;
   return pathname === href || pathname.startsWith(`${href}/`);
+}
+
+function isActivePath(pathname: string, item: AdminNavItem) {
+  if (matchesPath(pathname, item.href)) return true;
+  return item.activeFor?.some((href) => matchesPath(pathname, href)) ?? false;
 }
 
 export function AdminNavigation({ items }: { items: AdminNavItem[] }) {
@@ -30,7 +36,7 @@ export function AdminNavigation({ items }: { items: AdminNavItem[] }) {
           );
         }
 
-        const active = isActivePath(pathname, item.href);
+        const active = isActivePath(pathname, item);
         return (
           <Link
             key={item.label}
@@ -49,16 +55,12 @@ export function AdminNavigation({ items }: { items: AdminNavItem[] }) {
 
 export function AdminMobileNavigation({ items }: { items: AdminNavItem[] }) {
   const pathname = usePathname();
-  const mobileItems = items.filter(
-    (item) =>
-      item.enabled &&
-      ["/admin", "/admin/agenda", "/admin/alumnas", "/admin/ventas"].includes(item.href),
-  );
+  const mobileItems = items.filter((item) => item.enabled);
 
   return (
     <nav className="admin-mobile-nav" aria-label="Navegación móvil">
       {mobileItems.map((item) => {
-        const active = isActivePath(pathname, item.href);
+        const active = isActivePath(pathname, item);
         return (
           <Link
             key={item.href}
