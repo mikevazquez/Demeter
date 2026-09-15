@@ -17,6 +17,10 @@
   text-transform: capitalize;
 }
 
+.hoy-role-pill {
+  opacity: 0.72;
+}
+
 .hoy-primary-grid {
   display: grid;
   grid-template-columns: minmax(0, 1.45fr) minmax(280px, 0.75fr);
@@ -134,17 +138,109 @@
 }
 
 @media (max-width: 640px) {
-  .hoy-header {
-    flex-direction: column;
-    gap: 8px;
+  .hoy-dashboard {
+    gap: 12px;
   }
 
-  .next-class-capacity {
-    gap: 22px;
+  .hoy-header {
+    display: block;
+    padding: 4px 0 8px;
+  }
+
+  .hoy-header .dashboard-title {
+    font-size: 42px;
+  }
+
+  .hoy-date {
+    margin-top: 7px;
+    font-size: 14px;
+  }
+
+  .hoy-role-pill {
+    margin-top: 12px;
+    padding: 5px 9px;
+    font-size: 9px;
+    opacity: 0.55;
+  }
+
+  .hoy-primary-grid {
+    gap: 12px;
+  }
+
+  .next-class-card {
+    min-height: 0;
+    padding: 20px;
   }
 
   .next-class-time {
-    align-items: flex-start;
-    flex-direction: column;
+    align-items: baseline;
+    flex-direction: row;
+    margin-top: 20px;
+  }
+
+  .next-class-time strong {
+    font-size: 48px;
+  }
+
+  .next-class-time span {
+    font-size: 13px;
+  }
+
+  .next-class-capacity {
+    gap: 28px;
+    margin-top: 20px;
+  }
+
+  .next-class-action {
+    width: 100%;
+    margin-top: 20px;
+  }
+
+  .hoy-quick-card {
+    padding: 18px 20px;
+  }
+
+  .quick-action-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin-top: 14px;
+  }
+
+  .quick-action-list a {
+    padding: 13px;
+  }
+
+  .quick-action-list strong {
+    font-size: 12px;
+    line-height: 1.35;
+  }
+
+  .hoy-stat-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .hoy-stat-grid .stat-card {
+    min-height: 0;
+    padding: 15px;
+    border-radius: 16px;
+  }
+
+  .hoy-stat-grid .stat-card span {
+    font-size: 12px;
+  }
+
+  .hoy-stat-grid .stat-card strong {
+    margin: 8px 0 4px;
+    font-size: 30px;
+  }
+
+  .hoy-stat-grid .stat-card small {
+    font-size: 10px;
+    line-height: 1.35;
+  }
+
+  .hoy-schedule-panel {
+    padding: 20px;
   }
 }
