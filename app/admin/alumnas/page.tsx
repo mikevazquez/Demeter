@@ -26,7 +26,8 @@ export default async function StudentsPage({
     ? params.status!
     : "active";
 
-  const { supabase, studio, membership, can } = await getAdminContext(CAPABILITIES.STUDENTS_READ);
+  const { supabase, studio, membership, can } =
+    await getAdminContext(CAPABILITIES.STUDENTS_READ);
   const canEdit = can(CAPABILITIES.STUDENTS_WRITE);
 
   let studentsQuery = supabase
@@ -137,7 +138,9 @@ export default async function StudentsPage({
                           ? "Perfil completo"
                           : "Perfil incompleto"}
                       </strong>
-                      <span>{lifecycleLabels[student.lifecycle_status] ?? student.lifecycle_status}</span>
+                      <span>
+                        {lifecycleLabels[student.lifecycle_status] ?? student.lifecycle_status}
+                      </span>
                     </div>
                   </Link>
                 ))}
