@@ -6,6 +6,8 @@ import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { normalizeMexicanPhone } from "@/lib/phone";
 
+const structuralFieldKeys = new Set(["first_name", "last_name", "phone", "email"]);
+
 export async function updateStudent(formData: FormData) {
   const studentId = String(formData.get("student_id") ?? "");
   const firstName = String(formData.get("first_name") ?? "").trim();
@@ -37,6 +39,71 @@ export async function updateStudent(formData: FormData) {
   revalidatePath(`/admin/alumnas/${studentId}`);
   revalidatePath("/admin/alumnas");
   redirect(`/admin/alumnas/${studentId}?saved=1`);
+}
+
+export async function updateDynamicProfileFields(formData: FormData) {
+  const studentId = String(formData.get("student_id") ?? "");
+  if (!studentId) redirect("/admin/alumnas?error=profile_fields");
+
+  const { supabase, studio } = await getAdminContext(CAPABILITIES.STUDENTS_WRITE);
+  const { data: definitions, error: definitionsError } = await supabase
+    .from("profile_field_definitions")
+    .select("id, key, field_type")
+    .eq("studio_id", studio.id)
+    .eq("entity_type", "student")
+    .eq("active", true);
+
+  if (definitionsError) redirect(`/admin/alumnas/${studentId}?error=profile_fields`);
+
+  const values: Record<string, unknown> = {};
+
+  for (const definition of definitions ?? []) {
+    if (structuralFieldKeys.has(definition.key)) continue;
+
+    const fieldName = `field_${definition.id}`;
+    const rawValue = formData.get(fieldName);
+
+    if (definition.field_type === "boolean") {
+      values[definition.key] = formData.getAll(fieldName).includes("true");
+      continue;
+    }
+
+    if (definition.field_type === "multi_select") {
+      values[definition.key] = formData
+        .getAll(fieldName)
+        .map(String)
+        .filter((value) => value.trim() !== "");
+      continue;
+    }
+
+    const textValue = rawValue === null ? "" : String(rawValue).trim();
+    if (!textValue) {
+      values[definition.key] = null;
+      continue;
+    }
+
+    if (definition.field_type === "number") {
+      const numberValue = Number(textValue);
+      if (!Number.isFinite(numberValue)) {
+        redirect(`/admin/alumnas/${studentId}?error=profile_fields`);
+      }
+      values[definition.key] = numberValue;
+      continue;
+    }
+
+    values[definition.key] = textValue;
+  }
+
+  const { error } = await supabase.rpc("admin_set_student_profile_fields", {
+    p_student_id: studentId,
+    p_values: values,
+  });
+
+  if (error) redirect(`/admin/alumnas/${studentId}?error=profile_fields`);
+
+  revalidatePath(`/admin/alumnas/${studentId}`);
+  revalidatePath("/admin/alumnas");
+  redirect(`/admin/alumnas/${studentId}?saved=fields`);
 }
 
 export async function setStudentLifecycle(formData: FormData) {
