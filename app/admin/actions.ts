@@ -26,7 +26,10 @@ export async function bookStudentFromToday(formData: FormData) {
     target_session_id: sessionId,
     target_student_id: studentId,
   });
-  if (error) redirect(`${returnUrl}${returnUrl.includes("?") ? "&" : "?"}error=${encodeURIComponent(error.message)}`);
+  if (error)
+    redirect(
+      `${returnUrl}${returnUrl.includes("?") ? "&" : "?"}error=${encodeURIComponent(error.message)}`,
+    );
 
   revalidatePath("/admin");
   revalidatePath(`/admin/agenda/${sessionId}`);
