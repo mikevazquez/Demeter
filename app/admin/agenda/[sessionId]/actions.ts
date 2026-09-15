@@ -2,8 +2,11 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { CAPABILITIES } from "@/lib/auth/capabilities";
+
 import { getAdminContext } from "@/lib/auth/admin-context";
+import { CAPABILITIES } from "@/lib/auth/capabilities";
+
+type AdminSupabaseClient = Awaited<ReturnType<typeof getAdminContext>>["supabase"];
 
 function zonedDateTimeToUtc(localDateTime: string, timeZone: string) {
   const [datePart, timePart] = localDateTime.split("T");
@@ -36,7 +39,7 @@ function zonedDateTimeToUtc(localDateTime: string, timeZone: string) {
 }
 
 async function validateResources(
-  supabase: any,
+  supabase: AdminSupabaseClient,
   studioId: string,
   instructorId: string | null,
   spaceId: string | null,
