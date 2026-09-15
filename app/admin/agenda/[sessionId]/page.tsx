@@ -4,29 +4,268 @@ import { bookStudent, cancelReservation, cancelSession, updateSession } from "./
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getAdminContext } from "@/lib/auth/admin-context";
 
-export default async function SessionDetailPage({ params, searchParams }: { params: Promise<{ sessionId: string }>; searchParams: Promise<{ error?: string; created?: string }> }) {
-  const { sessionId } = await params; const query = await searchParams; const { supabase, studio, can } = await getAdminContext(CAPABILITIES.SCHEDULE_READ);
-  const { data: session } = await supabase.from("class_sessions").select("id, template_id, starts_at, ends_at, capacity, status, notes, space_id, instructor_id").eq("id", sessionId).eq("studio_id", studio.id).single(); if (!session) redirect("/admin/agenda");
-  const [{ data: template }, { data: spaces }, { data: instructors }, { data: persons }, { data: students }, { data: reservations }, { data: assignments }] = await Promise.all([
-    supabase.from("class_templates").select("name, discipline_id, duration_minutes").eq("id", session.template_id).single(),
-    supabase.from("spaces").select("id, name, capacity").eq("studio_id", studio.id).eq("active", true).order("name"),
-    supabase.from("instructors").select("id, person_id").eq("studio_id", studio.id).eq("status", "active"),
+export default async function SessionDetailPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ sessionId: string }>;
+  searchParams: Promise<{ error?: string; created?: string }>;
+}) {
+  const { sessionId } = await params;
+  const query = await searchParams;
+  const { supabase, studio, can } = await getAdminContext(CAPABILITIES.SCHEDULE_READ);
+  const { data: session } = await supabase
+    .from("class_sessions")
+    .select("id, template_id, starts_at, ends_at, capacity, status, notes, space_id, instructor_id")
+    .eq("id", sessionId)
+    .eq("studio_id", studio.id)
+    .single();
+  if (!session) redirect("/admin/agenda");
+  const [
+    { data: template },
+    { data: spaces },
+    { data: instructors },
+    { data: persons },
+    { data: students },
+    { data: reservations },
+    { data: assignments },
+  ] = await Promise.all([
+    supabase
+      .from("class_templates")
+      .select("name, discipline_id, duration_minutes")
+      .eq("id", session.template_id)
+      .single(),
+    supabase
+      .from("spaces")
+      .select("id, name, capacity")
+      .eq("studio_id", studio.id)
+      .eq("active", true)
+      .order("name"),
+    supabase
+      .from("instructors")
+      .select("id, person_id")
+      .eq("studio_id", studio.id)
+      .eq("status", "active"),
     supabase.from("persons").select("id, first_name, last_name").eq("studio_id", studio.id),
-    supabase.from("students").select("id, full_name, active").eq("studio_id", studio.id).eq("active", true).order("full_name"),
-    supabase.from("reservations").select("id, student_id, status, student_package_id").eq("session_id", sessionId).neq("status", "cancelled").order("booked_at"),
-    supabase.from("student_packages").select("id, student_id, credits_remaining, starts_on, expires_on").eq("studio_id", studio.id),
+    supabase
+      .from("students")
+      .select("id, full_name, active")
+      .eq("studio_id", studio.id)
+      .eq("active", true)
+      .order("full_name"),
+    supabase
+      .from("reservations")
+      .select("id, student_id, status, student_package_id")
+      .eq("session_id", sessionId)
+      .neq("status", "cancelled")
+      .order("booked_at"),
+    supabase
+      .from("student_packages")
+      .select("id, student_id, credits_remaining, starts_on, expires_on")
+      .eq("studio_id", studio.id),
   ]);
-  const timeZone = studio.timezone ?? "America/Mexico_City"; const personMap = new Map((persons ?? []).map((p) => [p.id, [p.first_name, p.last_name].filter(Boolean).join(" ")])); const instructorMap = new Map((instructors ?? []).map((i) => [i.id, personMap.get(i.person_id) ?? "Instructor"])); const spaceMap = new Map((spaces ?? []).map((s) => [s.id, s.name]));
-  const dateLabel = new Intl.DateTimeFormat("es-MX", { timeZone, weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" }).format(new Date(session.starts_at));
-  const localInput = new Intl.DateTimeFormat("sv-SE", { timeZone, year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" }).format(new Date(session.starts_at)).replace(" ", "T");
-  const studentMap = new Map((students ?? []).map((s) => [s.id, s.full_name])); const bookedStudentIds = new Set((reservations ?? []).map((r) => r.student_id).filter(Boolean)); const classDate = new Intl.DateTimeFormat("en-CA", { timeZone, year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(session.starts_at));
-  const eligibleStudentIds = new Set((assignments ?? []).filter((i) => i.student_id && i.starts_on <= classDate && i.expires_on >= classDate && (i.credits_remaining === null || i.credits_remaining > 0)).map((i) => i.student_id)); const eligibleStudents = (students ?? []).filter((s) => eligibleStudentIds.has(s.id) && !bookedStudentIds.has(s.id)); const canEdit = can(CAPABILITIES.SCHEDULE_WRITE); const available = Math.max(session.capacity - (reservations?.length ?? 0), 0);
-  const errorCopy: Record<string,string> = { conflict: "El instructor o espacio ya está ocupado en ese horario.", space: "El espacio no admite ese cupo.", edit: "No se pudieron guardar los cambios." };
-  return <main className="dashboard-shell"><header className="topbar"><div><Link className="back-link compact" href="/admin/agenda">← Agenda</Link><p className="eyebrow">DETALLE DE CLASE · {studio.name}</p><h1 className="dashboard-title">{template?.name ?? "Clase"}</h1><p>{dateLabel} · {session.space_id ? spaceMap.get(session.space_id) ?? "Espacio" : "Sin espacio"} · {session.instructor_id ? instructorMap.get(session.instructor_id) ?? "Instructor" : "Sin instructor"}</p></div></header>
-    {query.created ? <div className="notice success">Cambio guardado correctamente.</div> : null}{query.error ? <div className="notice error">{errorCopy[query.error] ?? "No se pudo completar la operación."}</div> : null}
-    <section className="stat-grid"><article className="stat-card"><span>Capacidad</span><strong>{session.capacity}</strong><small>Lugares totales</small></article><article className="stat-card"><span>Reservas</span><strong>{reservations?.length ?? 0}</strong><small>Activas</small></article><article className="stat-card"><span>Disponibles</span><strong>{available}</strong><small>Lugares libres</small></article><article className="stat-card"><span>Estado</span><strong className="stat-word">{session.status}</strong><small>Estado de sesión</small></article></section>
-    {canEdit && session.status !== "cancelled" ? <section className="panel"><p className="eyebrow">EDITAR SESIÓN</p><h2>Horario y recursos</h2><form action={updateSession} className="compact-form"><input type="hidden" name="session_id" value={sessionId}/><input name="starts_at" type="datetime-local" defaultValue={localInput} required/><select name="instructor_id" defaultValue={session.instructor_id ?? ""}><option value="">Sin instructor</option>{instructors?.map((i) => <option key={i.id} value={i.id}>{instructorMap.get(i.id)}</option>)}</select><select name="space_id" defaultValue={session.space_id ?? ""}><option value="">Sin espacio</option>{spaces?.map((s) => <option key={s.id} value={s.id}>{s.name}{s.capacity ? ` · máx. ${s.capacity}` : ""}</option>)}</select><input name="capacity" type="number" min="1" defaultValue={session.capacity} required/><textarea name="notes" rows={3} defaultValue={session.notes ?? ""}/><button className="primary-button" type="submit">Guardar cambios</button></form><form action={cancelSession}><input type="hidden" name="session_id" value={sessionId}/><button className="ghost-button" type="submit">Cancelar sesión</button></form></section> : null}
-    <section className="panel-grid"><article className="panel"><div className="panel-heading"><div><p className="eyebrow">ASISTENTES</p><h2>Reservaciones</h2></div></div>{(reservations?.length ?? 0) === 0 ? <div className="empty-state">Todavía no hay alumnas reservadas.</div> : <div className="student-list">{reservations?.map((r) => <div className="student-row" key={r.id}><div><strong>{r.student_id ? studentMap.get(r.student_id) ?? "Alumna" : "Alumna"}</strong><span>{r.status}</span></div>{canEdit && session.status !== "cancelled" ? <form action={cancelReservation}><input type="hidden" name="session_id" value={sessionId}/><input type="hidden" name="reservation_id" value={r.id}/><button className="ghost-button" type="submit">Cancelar</button></form> : null}</div>)}</div>}</article>
-      <article className="panel"><p className="eyebrow">NUEVA RESERVA</p><h2>Agregar alumna</h2>{!canEdit || session.status === "cancelled" ? <p>La sesión no admite nuevas reservas.</p> : <form action={bookStudent} className="compact-form reservation-form"><input type="hidden" name="session_id" value={sessionId}/><select name="student_id" required defaultValue=""><option value="" disabled>Alumna con paquete vigente</option>{eligibleStudents.map((s) => <option key={s.id} value={s.id}>{s.full_name}</option>)}</select><button className="primary-button" type="submit" disabled={eligibleStudents.length === 0 || available === 0}>Reservar lugar</button></form>}</article></section>
-  </main>;
+  const timeZone = studio.timezone ?? "America/Mexico_City";
+  const personMap = new Map(
+    (persons ?? []).map((p) => [p.id, [p.first_name, p.last_name].filter(Boolean).join(" ")]),
+  );
+  const instructorMap = new Map(
+    (instructors ?? []).map((i) => [i.id, personMap.get(i.person_id) ?? "Instructor"]),
+  );
+  const spaceMap = new Map((spaces ?? []).map((s) => [s.id, s.name]));
+  const dateLabel = new Intl.DateTimeFormat("es-MX", {
+    timeZone,
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(session.starts_at));
+  const localInput = new Intl.DateTimeFormat("sv-SE", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  })
+    .format(new Date(session.starts_at))
+    .replace(" ", "T");
+  const studentMap = new Map((students ?? []).map((s) => [s.id, s.full_name]));
+  const bookedStudentIds = new Set((reservations ?? []).map((r) => r.student_id).filter(Boolean));
+  const classDate = new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date(session.starts_at));
+  const eligibleStudentIds = new Set(
+    (assignments ?? [])
+      .filter(
+        (i) =>
+          i.student_id &&
+          i.starts_on <= classDate &&
+          i.expires_on >= classDate &&
+          (i.credits_remaining === null || i.credits_remaining > 0),
+      )
+      .map((i) => i.student_id),
+  );
+  const eligibleStudents = (students ?? []).filter(
+    (s) => eligibleStudentIds.has(s.id) && !bookedStudentIds.has(s.id),
+  );
+  const canEdit = can(CAPABILITIES.SCHEDULE_WRITE);
+  const available = Math.max(session.capacity - (reservations?.length ?? 0), 0);
+  const errorCopy: Record<string, string> = {
+    conflict: "El instructor o espacio ya está ocupado en ese horario.",
+    space: "El espacio no admite ese cupo.",
+    edit: "No se pudieron guardar los cambios.",
+  };
+  return (
+    <main className="dashboard-shell">
+      <header className="topbar">
+        <div>
+          <Link className="back-link compact" href="/admin/agenda">
+            ← Agenda
+          </Link>
+          <p className="eyebrow">DETALLE DE CLASE · {studio.name}</p>
+          <h1 className="dashboard-title">{template?.name ?? "Clase"}</h1>
+          <p>
+            {dateLabel} ·{" "}
+            {session.space_id ? (spaceMap.get(session.space_id) ?? "Espacio") : "Sin espacio"} ·{" "}
+            {session.instructor_id
+              ? (instructorMap.get(session.instructor_id) ?? "Instructor")
+              : "Sin instructor"}
+          </p>
+        </div>
+      </header>
+      {query.created ? <div className="notice success">Cambio guardado correctamente.</div> : null}
+      {query.error ? (
+        <div className="notice error">
+          {errorCopy[query.error] ?? "No se pudo completar la operación."}
+        </div>
+      ) : null}
+      <section className="stat-grid">
+        <article className="stat-card">
+          <span>Capacidad</span>
+          <strong>{session.capacity}</strong>
+          <small>Lugares totales</small>
+        </article>
+        <article className="stat-card">
+          <span>Reservas</span>
+          <strong>{reservations?.length ?? 0}</strong>
+          <small>Activas</small>
+        </article>
+        <article className="stat-card">
+          <span>Disponibles</span>
+          <strong>{available}</strong>
+          <small>Lugares libres</small>
+        </article>
+        <article className="stat-card">
+          <span>Estado</span>
+          <strong className="stat-word">{session.status}</strong>
+          <small>Estado de sesión</small>
+        </article>
+      </section>
+      {canEdit && session.status !== "cancelled" ? (
+        <section className="panel">
+          <p className="eyebrow">EDITAR SESIÓN</p>
+          <h2>Horario y recursos</h2>
+          <form action={updateSession} className="compact-form">
+            <input type="hidden" name="session_id" value={sessionId} />
+            <input name="starts_at" type="datetime-local" defaultValue={localInput} required />
+            <select name="instructor_id" defaultValue={session.instructor_id ?? ""}>
+              <option value="">Sin instructor</option>
+              {instructors?.map((i) => (
+                <option key={i.id} value={i.id}>
+                  {instructorMap.get(i.id)}
+                </option>
+              ))}
+            </select>
+            <select name="space_id" defaultValue={session.space_id ?? ""}>
+              <option value="">Sin espacio</option>
+              {spaces?.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name}
+                  {s.capacity ? ` · máx. ${s.capacity}` : ""}
+                </option>
+              ))}
+            </select>
+            <input name="capacity" type="number" min="1" defaultValue={session.capacity} required />
+            <textarea name="notes" rows={3} defaultValue={session.notes ?? ""} />
+            <button className="primary-button" type="submit">
+              Guardar cambios
+            </button>
+          </form>
+          <form action={cancelSession}>
+            <input type="hidden" name="session_id" value={sessionId} />
+            <button className="ghost-button" type="submit">
+              Cancelar sesión
+            </button>
+          </form>
+        </section>
+      ) : null}
+      <section className="panel-grid">
+        <article className="panel">
+          <div className="panel-heading">
+            <div>
+              <p className="eyebrow">ASISTENTES</p>
+              <h2>Reservaciones</h2>
+            </div>
+          </div>
+          {(reservations?.length ?? 0) === 0 ? (
+            <div className="empty-state">Todavía no hay alumnas reservadas.</div>
+          ) : (
+            <div className="student-list">
+              {reservations?.map((r) => (
+                <div className="student-row" key={r.id}>
+                  <div>
+                    <strong>
+                      {r.student_id ? (studentMap.get(r.student_id) ?? "Alumna") : "Alumna"}
+                    </strong>
+                    <span>{r.status}</span>
+                  </div>
+                  {canEdit && session.status !== "cancelled" ? (
+                    <form action={cancelReservation}>
+                      <input type="hidden" name="session_id" value={sessionId} />
+                      <input type="hidden" name="reservation_id" value={r.id} />
+                      <button className="ghost-button" type="submit">
+                        Cancelar
+                      </button>
+                    </form>
+                  ) : null}
+                </div>
+              ))}
+            </div>
+          )}
+        </article>
+        <article className="panel">
+          <p className="eyebrow">NUEVA RESERVA</p>
+          <h2>Agregar alumna</h2>
+          {!canEdit || session.status === "cancelled" ? (
+            <p>La sesión no admite nuevas reservas.</p>
+          ) : (
+            <form action={bookStudent} className="compact-form reservation-form">
+              <input type="hidden" name="session_id" value={sessionId} />
+              <select name="student_id" required defaultValue="">
+                <option value="" disabled>
+                  Alumna con paquete vigente
+                </option>
+                {eligibleStudents.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.full_name}
+                  </option>
+                ))}
+              </select>
+              <button
+                className="primary-button"
+                type="submit"
+                disabled={eligibleStudents.length === 0 || available === 0}
+              >
+                Reservar lugar
+              </button>
+            </form>
+          )}
+        </article>
+      </section>
+    </main>
+  );
 }
