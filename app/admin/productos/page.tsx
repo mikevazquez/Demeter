@@ -6,6 +6,7 @@ const labels: Record<string, string> = {
   package: "Paquete",
   membership: "Membresía",
   single_class: "Clase suelta",
+  enrollment: "Inscripción",
   other: "Otro",
 };
 
@@ -25,7 +26,7 @@ export default async function ProductsPage() {
           <p className="text-sm text-zinc-400">Catálogo comercial</p>
           <h1 className="text-3xl font-semibold text-white">Productos</h1>
           <p className="mt-1 text-sm text-zinc-400">
-            Paquetes, membresías y clases disponibles para tu estudio.
+            Paquetes, membresías, clases e inscripción disponibles para tu estudio.
           </p>
         </div>
         {ctx.can("products.write") ? (
@@ -42,7 +43,7 @@ export default async function ProductsPage() {
         <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-8 text-center">
           <h2 className="font-semibold text-white">Aún no hay productos</h2>
           <p className="mt-2 text-sm text-zinc-400">
-            Crea el primer paquete o membresía para comenzar el catálogo.
+            Crea el primer producto para comenzar el catálogo.
           </p>
         </section>
       ) : (
@@ -79,7 +80,11 @@ export default async function ProductsPage() {
                   </p>
                 </div>
                 <p className="text-sm text-zinc-300">
-                  {product.unlimited ? "Ilimitado" : `${product.credit_limit} créditos`}
+                  {product.product_type === "enrollment"
+                    ? "Sin créditos"
+                    : product.unlimited
+                      ? "Ilimitado"
+                      : `${product.credit_limit} créditos`}
                 </p>
               </div>
             </Link>

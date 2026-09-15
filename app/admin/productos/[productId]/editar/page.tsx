@@ -38,8 +38,8 @@ export default async function EditProductPage({
         <p className="text-sm text-zinc-400">Productos · Editor</p>
         <h1 className="text-3xl font-semibold text-white">Editar {product.name}</h1>
         <p className="mt-1 text-sm text-zinc-400">
-          Ajusta la información y reglas del producto. Las adquisiciones existentes conservan su
-          propia vigencia y créditos.
+          Ajusta la información y reglas del producto. Las adquisiciones e inscripciones existentes
+          conservan su propia historia.
         </p>
       </header>
       <form
@@ -68,6 +68,7 @@ export default async function EditProductPage({
               <option value="package">Paquete</option>
               <option value="membership">Membresía</option>
               <option value="single_class">Clase suelta</option>
+              <option value="enrollment">Inscripción</option>
               <option value="other">Otro</option>
             </select>
           </label>
@@ -92,6 +93,9 @@ export default async function EditProductPage({
               defaultValue={product.credit_limit ?? 1}
               className="mt-2 w-full rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 text-white"
             />
+            <span className="mt-1 block text-xs text-zinc-500">
+              Se ignora si el tipo es Inscripción.
+            </span>
           </label>
           <label className="text-sm text-zinc-300">
             Vigencia (días)
@@ -112,7 +116,7 @@ export default async function EditProductPage({
             defaultChecked={product.unlimited}
             className="h-4 w-4"
           />
-          Membresía ilimitada
+          Membresía ilimitada (no aplica a Inscripción)
         </label>
         <label className="block text-sm text-zinc-300">
           Descripción
@@ -125,6 +129,9 @@ export default async function EditProductPage({
         </label>
         <fieldset>
           <legend className="text-sm font-medium text-white">Disciplinas incluidas</legend>
+          <p className="mt-1 text-xs text-zinc-500">
+            Si el tipo es Inscripción, las disciplinas se eliminan/ignoran al guardar.
+          </p>
           <div className="mt-3 grid gap-2 sm:grid-cols-2">
             {disciplines?.map((discipline) => (
               <label

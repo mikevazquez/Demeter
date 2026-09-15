@@ -17,6 +17,8 @@ const errorCopy: Record<string, string> = {
   payment_exceeds_balance: "El pago inicial no puede ser mayor al total de la venta.",
   payment_method_required: "Selecciona un método cuando registres un pago inicial.",
   student_not_operable: "La alumna no está activa para realizar la venta.",
+  enrollment_product_not_configured:
+    "La inscripción seleccionada no corresponde a la política activa de este estudio.",
 };
 
 export default async function NewSalePage({
@@ -27,7 +29,7 @@ export default async function NewSalePage({
   const ctx = await getAdminContext(CAPABILITIES.SALES_WRITE);
   const params = await searchParams;
 
-  const [{ data: students }, { data: products }] = await Promise.all([
+  const [{ data: students }, { data: products }, { data: enrollmentPolicy }] = await Promise.all([
     ctx.supabase
       .from("students")
       .select("id,full_name,phone")
@@ -41,7 +43,18 @@ export default async function NewSalePage({
       .eq("studio_id", ctx.studio.id)
       .eq("active", true)
       .order("name"),
+    ctx.supabase
+      .from("enrollment_policies")
+      .select("enabled,enrollment_product_template_id")
+      .eq("studio_id", ctx.studio.id)
+      .maybeSingle(),
   ]);
+
+  const visibleProducts = (products ?? []).filter(
+    (product) =>
+      product.product_type !== "enrollment" ||
+      (enrollmentPolicy?.enabled && enrollmentPolicy.enrollment_product_template_id === product.id),
+  );
 
   return (
     <main className="space-y-6">
@@ -53,8 +66,8 @@ export default async function NewSalePage({
           <p className="mt-4 text-sm text-zinc-400">FL-12 · Venta manual</p>
           <h1 className="text-3xl font-semibold text-white">Nueva venta</h1>
           <p className="mt-1 text-sm text-zinc-400">
-            Confirma alumna, producto(s) y pago. La adquisición y sus créditos se crean una sola vez
-            al confirmar.
+            Al confirmar se crea una sola vez la adquisición o inscripción correspondiente. Los
+            pagos posteriores no duplican derechos ni créditos.
           </p>
         </div>
       </header>
@@ -66,7 +79,7 @@ export default async function NewSalePage({
         </div>
       ) : null}
 
-      {!students?.length || !products?.length ? (
+      {!students?.length || !visibleProducts.length ? (
         <section className="rounded-2xl border border-amber-500/20 bg-amber-500/[0.07] p-6">
           <h2 className="font-semibold text-amber-100">Falta información para vender</h2>
           <p className="mt-2 text-sm text-amber-100/70">
@@ -111,10 +124,11 @@ export default async function NewSalePage({
               <div className="w-full">
                 <h2 className="font-semibold text-white">Productos</h2>
                 <p className="mt-1 text-sm text-zinc-400">
-                  Puedes incluir más de un producto distinto en la misma venta.
+                  Puedes incluir más de un producto distinto. La inscripción sólo aparece cuando la
+                  política del estudio está habilitada.
                 </p>
                 <div className="mt-4 grid gap-3 md:grid-cols-2">
-                  {products.map((product) => (
+                  {visibleProducts.map((product) => (
                     <label
                       key={product.id}
                       className="flex cursor-pointer items-start gap-3 rounded-xl border border-white/10 bg-black/20 p-4 has-[:checked]:border-fuchsia-500/60 has-[:checked]:bg-fuchsia-500/[0.08]"
@@ -128,10 +142,9 @@ export default async function NewSalePage({
                       <span className="min-w-0 flex-1">
                         <span className="block font-medium text-white">{product.name}</span>
                         <span className="mt-1 block text-sm text-zinc-400">
-                          {product.unlimited
-                            ? "Ilimitado"
-                            : `${product.credit_limit ?? 0} créditos`}{" "}
-                          · {product.validity_days} días
+                          {product.product_type === "enrollment"
+                            ? `Inscripción · ${product.validity_days} días`
+                            : `${product.unlimited ? "Ilimitado" : `${product.credit_limit ?? 0} créditos`} · ${product.validity_days} días`}
                         </span>
                         <strong className="mt-2 block text-sm text-fuchsia-200">
                           {money(product.price_minor, product.currency)}

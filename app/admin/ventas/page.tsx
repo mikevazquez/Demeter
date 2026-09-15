@@ -54,27 +54,21 @@ export default async function SalesPage({
       ? ctx.supabase.from("students").select("id,full_name").in("id", studentIds)
       : Promise.resolve({ data: [] as { id: string; full_name: string }[] }),
     saleIds.length
-      ? ctx.supabase.from("sale_lines").select("id,sale_id,line_total_minor").in("sale_id", saleIds)
+      ? ctx.supabase
+          .from("sale_lines")
+          .select("id,sale_id,line_total_minor,refunded_at")
+          .in("sale_id", saleIds)
       : Promise.resolve({
-          data: [] as { id: string; sale_id: string; line_total_minor: number }[],
+          data: [] as {
+            id: string;
+            sale_id: string;
+            line_total_minor: number;
+            refunded_at: string | null;
+          }[],
         }),
   ]);
 
-  const lineIds = (lines ?? []).map((line) => line.id);
-  const { data: acquisitions } = lineIds.length
-    ? await ctx.supabase
-        .from("product_acquisitions")
-        .select("sale_line_id,refunded_at")
-        .in("sale_line_id", lineIds)
-    : { data: [] as { sale_line_id: string | null; refunded_at: string | null }[] };
-
   const studentMap = new Map((students ?? []).map((student) => [student.id, student.full_name]));
-  const refundedLineIds = new Set(
-    (acquisitions ?? [])
-      .filter((acquisition) => acquisition.refunded_at)
-      .map((acquisition) => acquisition.sale_line_id)
-      .filter((id): id is string => Boolean(id)),
-  );
   const grossPaidMap = new Map<string, number>();
   const refundMap = new Map<string, number>();
   const collectibleMap = new Map<string, number>();
@@ -85,7 +79,7 @@ export default async function SalesPage({
   }
 
   for (const line of lines ?? []) {
-    if (!refundedLineIds.has(line.id)) {
+    if (!line.refunded_at) {
       collectibleMap.set(
         line.sale_id,
         (collectibleMap.get(line.sale_id) ?? 0) + line.line_total_minor,
@@ -122,14 +116,22 @@ export default async function SalesPage({
             Total, cobrado, reembolsos y saldo se conservan como conceptos separados.
           </p>
         </div>
-        {ctx.can(CAPABILITIES.SALES_WRITE) ? (
+        <div className="flex flex-wrap gap-2">
           <Link
-            href="/admin/ventas/nueva"
-            className="rounded-xl bg-fuchsia-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-fuchsia-500"
+            href="/admin/ventas/inscripcion"
+            className="rounded-xl border border-white/10 px-4 py-2.5 text-sm font-semibold text-zinc-200 hover:bg-white/[0.04]"
           >
-            Nueva venta
+            Inscripción
           </Link>
-        ) : null}
+          {ctx.can(CAPABILITIES.SALES_WRITE) ? (
+            <Link
+              href="/admin/ventas/nueva"
+              className="rounded-xl bg-fuchsia-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-fuchsia-500"
+            >
+              Nueva venta
+            </Link>
+          ) : null}
+        </div>
       </header>
 
       <form className="grid gap-3 rounded-2xl border border-white/10 bg-white/[0.03] p-4 md:grid-cols-[1fr_180px_auto]">

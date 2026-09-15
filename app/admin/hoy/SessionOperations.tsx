@@ -38,6 +38,8 @@ type SessionOperationsProps = {
   canCreateStudent: boolean;
 };
 
+const walkinFallbackDetails = new Set(["sin paquete activo", "fuera de paquete", "sin créditos"]);
+
 function initials(name: string) {
   return name
     .trim()
@@ -119,7 +121,9 @@ export function SessionOperations({
                 ? "Ese teléfono ya pertenece a una alumna. Agrégala como alumna existente."
                 : error === "session_full"
                   ? "La clase ya está llena."
-                  : "No se pudo completar la operación.",
+                  : error === "enrollment_required"
+                    ? "La alumna necesita una inscripción vigente para reservar esta clase."
+                    : "No se pudo completar la operación.",
         });
       }
     });
@@ -311,19 +315,30 @@ export function SessionOperations({
                     <option value="" disabled>
                       Selecciona una alumna
                     </option>
-                    {candidates.map((candidate) => (
-                      <option key={candidate.id} value={candidate.id}>
-                        {candidate.fullName} · {candidate.detail}
-                        {candidate.eligible ? "" : " · walk-in / venta pendiente"}
-                      </option>
-                    ))}
+                    {candidates.map((candidate) => {
+                      const canFallbackToWalkin = walkinFallbackDetails.has(candidate.detail);
+                      return (
+                        <option
+                          key={candidate.id}
+                          value={candidate.id}
+                          disabled={!candidate.eligible && !canFallbackToWalkin}
+                        >
+                          {candidate.fullName} · {candidate.detail}
+                          {candidate.eligible
+                            ? ""
+                            : canFallbackToWalkin
+                              ? " · walk-in / venta pendiente"
+                              : " · bloqueada"}
+                        </option>
+                      );
+                    })}
                   </select>
                   <button className="primary-button" type="submit" disabled={!candidates.length}>
                     Agregar a la clase
                   </button>
                   <small>
-                    Si no tiene paquete o créditos válidos, se agregará como walk-in y quedará
-                    pendiente resolver la venta o paquete en el flujo comercial.
+                    El fallback walk-in sólo aplica cuando falta paquete, cobertura o créditos. Si
+                    existe otro requisito obligatorio, debe resolverse antes de reservar.
                   </small>
                 </form>
               ) : null}
