@@ -30,11 +30,16 @@ describe("F8 attendance contracts", () => {
     expect(operations).toContain("attendance-corrected");
   });
 
-  it("consumes the reservation credit snapshot once and skips finite consumption for unlimited products", () => {
-    const migration = source("supabase/migrations/20260915190000_f8_attendance_core.sql");
+  it("converts the finite hold into one final consumption and leaves unlimited products untouched", () => {
+    const migration = source(
+      "supabase/migrations/20260915204501_f8_finalize_credit_hold_conversion.sql",
+    );
 
     expect(migration).toContain("v_reservation.credits_held");
     expect(migration).toContain("not coalesce(v_reservation.unlimited, false)");
+    expect(migration).toContain("cl.movement_type = 'reserve'");
+    expect(migration).toContain("'release'");
+    expect(migration).toContain("'consume'");
     expect(migration).toContain("on conflict (reservation_id, movement_type) do nothing");
   });
 
