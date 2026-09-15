@@ -29,13 +29,21 @@ export async function signIn(formData: FormData) {
     redirect(`${loginPath(mode)}?error=invalid`);
   }
 
-  const { data: membership } = await supabase
-    .from("studio_memberships")
-    .select("studio_id, role, active")
-    .eq("user_id", data.user.id)
-    .eq("active", true)
-    .limit(1)
-    .maybeSingle();
+  const [{ data: account }, { data: membership }] = await Promise.all([
+    supabase.from("user_accounts").select("status").eq("id", data.user.id).maybeSingle(),
+    supabase
+      .from("studio_memberships")
+      .select("studio_id, role, active")
+      .eq("user_id", data.user.id)
+      .eq("active", true)
+      .limit(1)
+      .maybeSingle(),
+  ]);
+
+  if (!account || account.status !== "active") {
+    await supabase.auth.signOut();
+    redirect(`${loginPath(mode)}?error=access`);
+  }
 
   if (!membership) {
     await supabase.auth.signOut();
@@ -44,14 +52,17 @@ export async function signIn(formData: FormData) {
 
   const requiredCapability =
     mode === "admin" ? CAPABILITIES.ADMIN_PORTAL : CAPABILITIES.STUDENT_PORTAL;
-  const { data: roleCapability } = await supabase
-    .from("role_capabilities")
-    .select("capability_key")
-    .eq("role", membership.role)
-    .eq("capability_key", requiredCapability)
-    .maybeSingle();
+  const [{ data: studio }, { data: roleCapability }] = await Promise.all([
+    supabase.from("studios").select("status").eq("id", membership.studio_id).maybeSingle(),
+    supabase
+      .from("role_capabilities")
+      .select("capability_key")
+      .eq("role", membership.role)
+      .eq("capability_key", requiredCapability)
+      .maybeSingle(),
+  ]);
 
-  if (!roleCapability) {
+  if (!studio || studio.status !== "active" || !roleCapability) {
     await supabase.auth.signOut();
     redirect(`${loginPath(mode)}?error=access`);
   }
