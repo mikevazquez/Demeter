@@ -11,7 +11,10 @@ export async function createInstructor(formData: FormData) {
   const lastName = String(formData.get("last_name") ?? "").trim();
   const rawPhone = String(formData.get("phone") ?? "").trim();
   const phone = rawPhone ? normalizeMexicanPhone(rawPhone) : null;
-  const email = String(formData.get("email") ?? "").trim().toLowerCase() || null;
+  const email =
+    String(formData.get("email") ?? "")
+      .trim()
+      .toLowerCase() || null;
   const bio = String(formData.get("bio") ?? "").trim() || null;
 
   if (!firstName) redirect("/admin/instructores?error=first_name_required");
