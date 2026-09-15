@@ -1,0 +1,48 @@
+name: Format Once
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Format affected UI files
+        run: |
+          npx prettier --write \
+            app/admin/page.tsx \
+            app/admin/alumnas/page.tsx \
+            app/admin/alumnas/actions.ts \
+            'app/admin/alumnas/[studentId]/page.tsx' \
+            'app/admin/alumnas/[studentId]/actions.ts'
+
+      - name: Commit formatting when needed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/admin/page.tsx app/admin/alumnas/page.tsx app/admin/alumnas/actions.ts 'app/admin/alumnas/[studentId]/page.tsx' 'app/admin/alumnas/[studentId]/actions.ts'
+          if git diff --cached --quiet; then
+            echo "No formatting changes needed"
+          else
+            git commit -m "Apply Prettier to Studio Flow UI"
+            git push origin HEAD:main
+          fi
