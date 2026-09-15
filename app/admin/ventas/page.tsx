@@ -7,11 +7,23 @@ function money(value: number, currency: string) {
   return new Intl.NumberFormat("es-MX", { style: "currency", currency }).format(value / 100);
 }
 
-function paymentState(total: number, paid: number, saleStatus: string) {
+function paymentState(
+  collectibleTotal: number,
+  grossPaid: number,
+  refunded: number,
+  saleStatus: string,
+) {
   if (saleStatus === "voided")
     return { label: "Anulada", className: "bg-rose-500/15 text-rose-300" };
-  if (paid <= 0) return { label: "Pendiente", className: "bg-amber-500/15 text-amber-300" };
-  if (paid < total) return { label: "Parcial", className: "bg-sky-500/15 text-sky-300" };
+  if (refunded > 0 && refunded >= grossPaid)
+    return { label: "Reembolsada", className: "bg-rose-500/15 text-rose-300" };
+  if (refunded > 0)
+    return { label: "Con reembolso", className: "bg-orange-500/15 text-orange-300" };
+
+  const netCollected = grossPaid - refunded;
+  if (netCollected <= 0) return { label: "Pendiente", className: "bg-amber-500/15 text-amber-300" };
+  if (netCollected < collectibleTotal)
+    return { label: "Parcial", className: "bg-sky-500/15 text-sky-300" };
   return { label: "Pagada", className: "bg-emerald-500/15 text-emerald-300" };
 }
 
@@ -34,30 +46,63 @@ export default async function SalesPage({
   const saleIds = (sales ?? []).map((sale) => sale.id);
   const studentIds = [...new Set((sales ?? []).map((sale) => sale.student_id))];
 
-  const [{ data: payments }, { data: students }] = await Promise.all([
+  const [{ data: payments }, { data: students }, { data: lines }] = await Promise.all([
     saleIds.length
       ? ctx.supabase.from("payments").select("sale_id,kind,amount_minor").in("sale_id", saleIds)
       : Promise.resolve({ data: [] as { sale_id: string; kind: string; amount_minor: number }[] }),
     studentIds.length
       ? ctx.supabase.from("students").select("id,full_name").in("id", studentIds)
       : Promise.resolve({ data: [] as { id: string; full_name: string }[] }),
+    saleIds.length
+      ? ctx.supabase.from("sale_lines").select("id,sale_id,line_total_minor").in("sale_id", saleIds)
+      : Promise.resolve({
+          data: [] as { id: string; sale_id: string; line_total_minor: number }[],
+        }),
   ]);
 
+  const lineIds = (lines ?? []).map((line) => line.id);
+  const { data: acquisitions } = lineIds.length
+    ? await ctx.supabase
+        .from("product_acquisitions")
+        .select("sale_line_id,refunded_at")
+        .in("sale_line_id", lineIds)
+    : { data: [] as { sale_line_id: string | null; refunded_at: string | null }[] };
+
   const studentMap = new Map((students ?? []).map((student) => [student.id, student.full_name]));
-  const paidMap = new Map<string, number>();
+  const refundedLineIds = new Set(
+    (acquisitions ?? [])
+      .filter((acquisition) => acquisition.refunded_at)
+      .map((acquisition) => acquisition.sale_line_id)
+      .filter((id): id is string => Boolean(id)),
+  );
+  const grossPaidMap = new Map<string, number>();
+  const refundMap = new Map<string, number>();
+  const collectibleMap = new Map<string, number>();
+
   for (const payment of payments ?? []) {
-    const current = paidMap.get(payment.sale_id) ?? 0;
-    paidMap.set(
-      payment.sale_id,
-      current + (payment.kind === "refund" ? -payment.amount_minor : payment.amount_minor),
-    );
+    const target = payment.kind === "refund" ? refundMap : grossPaidMap;
+    target.set(payment.sale_id, (target.get(payment.sale_id) ?? 0) + payment.amount_minor);
+  }
+
+  for (const line of lines ?? []) {
+    if (!refundedLineIds.has(line.id)) {
+      collectibleMap.set(
+        line.sale_id,
+        (collectibleMap.get(line.sale_id) ?? 0) + line.line_total_minor,
+      );
+    }
   }
 
   const visibleSales = (sales ?? []).filter((sale) => {
-    const paid = paidMap.get(sale.id) ?? 0;
-    const state = paymentState(sale.total_minor, paid, sale.status).label.toLocaleLowerCase(
-      "es-MX",
-    );
+    const grossPaid = grossPaidMap.get(sale.id) ?? 0;
+    const refunded = refundMap.get(sale.id) ?? 0;
+    const collectibleTotal = collectibleMap.get(sale.id) ?? sale.total_minor;
+    const state = paymentState(
+      collectibleTotal,
+      grossPaid,
+      refunded,
+      sale.status,
+    ).label.toLocaleLowerCase("es-MX");
     const studentName = studentMap.get(sale.student_id) ?? "Alumna";
     const matchesQuery =
       !query ||
@@ -74,7 +119,7 @@ export default async function SalesPage({
           <p className="text-sm text-zinc-400">Comercial</p>
           <h1 className="text-3xl font-semibold text-white">Ventas</h1>
           <p className="mt-1 text-sm text-zinc-400">
-            Total, pagos y saldo se registran por separado para conservar la historia real.
+            Total, cobrado, reembolsos y saldo se conservan como conceptos separados.
           </p>
         </div>
         {ctx.can(CAPABILITIES.SALES_WRITE) ? (
@@ -103,6 +148,8 @@ export default async function SalesPage({
           <option value="pagada">Pagada</option>
           <option value="parcial">Parcial</option>
           <option value="pendiente">Pendiente</option>
+          <option value="con reembolso">Con reembolso</option>
+          <option value="reembolsada">Reembolsada</option>
           <option value="anulada">Anulada</option>
         </select>
         <button className="rounded-xl border border-white/10 px-4 py-2.5 text-sm font-semibold text-white">
@@ -114,7 +161,7 @@ export default async function SalesPage({
         <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-8 text-center">
           <h2 className="font-semibold text-white">No hay ventas que mostrar</h2>
           <p className="mt-2 text-sm text-zinc-400">
-            Cuando registres una venta aparecerá aquí con su total, pagado y saldo.
+            Cuando registres una venta aparecerá aquí con su historia comercial.
           </p>
         </section>
       ) : (
@@ -123,15 +170,18 @@ export default async function SalesPage({
             <span>Folio</span>
             <span>Alumna</span>
             <span>Total</span>
-            <span>Pagado</span>
+            <span>Neto</span>
             <span>Saldo</span>
             <span>Estado</span>
           </div>
           <div className="divide-y divide-white/10">
             {visibleSales.map((sale) => {
-              const paid = paidMap.get(sale.id) ?? 0;
-              const balance = Math.max(sale.total_minor - paid, 0);
-              const state = paymentState(sale.total_minor, paid, sale.status);
+              const grossPaid = grossPaidMap.get(sale.id) ?? 0;
+              const refunded = refundMap.get(sale.id) ?? 0;
+              const netCollected = grossPaid - refunded;
+              const collectibleTotal = collectibleMap.get(sale.id) ?? sale.total_minor;
+              const balance = Math.max(collectibleTotal - netCollected, 0);
+              const state = paymentState(collectibleTotal, grossPaid, refunded, sale.status);
               return (
                 <Link
                   key={sale.id}
@@ -145,7 +195,9 @@ export default async function SalesPage({
                   <span className="text-sm text-zinc-300">
                     {money(sale.total_minor, sale.currency)}
                   </span>
-                  <span className="text-sm text-zinc-300">{money(paid, sale.currency)}</span>
+                  <span className="text-sm text-zinc-300">
+                    {money(netCollected, sale.currency)}
+                  </span>
                   <span className="text-sm font-medium text-white">
                     {money(balance, sale.currency)}
                   </span>

@@ -87,3 +87,70 @@ export async function registerSalePaymentAction(formData: FormData) {
   revalidatePath(`/admin/ventas/${saleId}`);
   redirect(`/admin/ventas/${saleId}?created=payment`);
 }
+
+export async function refundSaleLineAction(formData: FormData) {
+  const saleId = String(formData.get("sale_id") ?? "");
+  const saleLineId = String(formData.get("sale_line_id") ?? "");
+  const refundMinor = moneyToMinor(String(formData.get("refund_amount") ?? ""));
+  const refundMethod = String(formData.get("refund_method") ?? "").trim();
+  const refundReason = String(formData.get("refund_reason") ?? "").trim();
+  const refundReference = String(formData.get("refund_reference") ?? "").trim();
+  const refundNotes = String(formData.get("refund_notes") ?? "").trim();
+  const confirmed = String(formData.get("confirm_refund") ?? "") === "yes";
+
+  if (
+    !saleId ||
+    !saleLineId ||
+    refundMinor === null ||
+    refundMinor <= 0 ||
+    !refundMethod ||
+    !refundReason ||
+    !confirmed
+  ) {
+    redirect(errorUrl(`/admin/ventas/${saleId}`, "refund_invalid"));
+  }
+
+  const { supabase } = await getAdminContext(CAPABILITIES.SALES_WRITE);
+  const { error } = await supabase.rpc("refund_sale_line", {
+    target_sale_line_id: saleLineId,
+    refund_amount_minor: refundMinor,
+    refund_method: refundMethod,
+    refund_reason: refundReason,
+    refund_reference: refundReference || null,
+    refund_notes: refundNotes || null,
+  });
+
+  if (error) {
+    redirect(errorUrl(`/admin/ventas/${saleId}`, error.message));
+  }
+
+  revalidatePath("/admin/ventas");
+  revalidatePath(`/admin/ventas/${saleId}`);
+  revalidatePath("/admin/alumnas");
+  redirect(`/admin/ventas/${saleId}?created=refund`);
+}
+
+export async function voidSaleAction(formData: FormData) {
+  const saleId = String(formData.get("sale_id") ?? "");
+  const reason = String(formData.get("void_reason") ?? "").trim();
+  const confirmed = String(formData.get("confirm_void") ?? "") === "yes";
+
+  if (!saleId || !reason || !confirmed) {
+    redirect(errorUrl(`/admin/ventas/${saleId}`, "void_invalid"));
+  }
+
+  const { supabase } = await getAdminContext(CAPABILITIES.SALES_WRITE);
+  const { error } = await supabase.rpc("void_sale", {
+    target_sale_id: saleId,
+    target_reason: reason,
+  });
+
+  if (error) {
+    redirect(errorUrl(`/admin/ventas/${saleId}`, error.message));
+  }
+
+  revalidatePath("/admin/ventas");
+  revalidatePath(`/admin/ventas/${saleId}`);
+  revalidatePath("/admin/alumnas");
+  redirect(`/admin/ventas/${saleId}?created=void`);
+}
