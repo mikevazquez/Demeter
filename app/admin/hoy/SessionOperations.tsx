@@ -76,7 +76,6 @@ export function SessionOperations({
   const canAddNew = !isCompleted && canCreateStudent;
   const canAddWalkin = canAddExisting || canAddNew;
   const showNewWalkin = canAddNew && (newWalkin || !canAddExisting);
-  const eligibleCount = candidates.filter((candidate) => candidate.eligible).length;
   const attendanceCount = roster.filter((item) => item.status === "attended").length;
   const noShowCount = roster.filter((item) => item.status === "no_show").length;
   const pendingCount = roster.filter((item) => item.status === "reserved").length;
@@ -104,9 +103,11 @@ export function SessionOperations({
                     ? "No-show registrado."
                     : created === "walkin"
                       ? "Walk-in registrada y agregada a la clase."
-                      : created === "cancel"
-                        ? "Reserva cancelada correctamente."
-                        : "Reserva creada correctamente.",
+                      : created === "walkin-existing"
+                        ? "Alumna agregada como walk-in. La venta o paquete queda pendiente."
+                        : created === "cancel"
+                          ? "Reserva cancelada correctamente."
+                          : "Reserva creada correctamente.",
         });
       } else if (error) {
         setFeedback({
@@ -189,7 +190,12 @@ export function SessionOperations({
                             <input type="hidden" name="reservation_id" value={item.id} />
                             <input type="hidden" name="return_date" value={returnDate} />
                             <input type="hidden" name="status" value="attended" />
-                            <button type="submit" disabled={item.status === "attended"}>
+                            <button
+                              className={item.status === "attended" ? "is-selected is-attended" : ""}
+                              type="submit"
+                              disabled={item.status === "attended"}
+                              aria-pressed={item.status === "attended"}
+                            >
                               ✓ Asistió
                             </button>
                           </form>
@@ -198,7 +204,12 @@ export function SessionOperations({
                             <input type="hidden" name="reservation_id" value={item.id} />
                             <input type="hidden" name="return_date" value={returnDate} />
                             <input type="hidden" name="status" value="no_show" />
-                            <button type="submit" disabled={item.status === "no_show"}>
+                            <button
+                              className={item.status === "no_show" ? "is-selected is-no-show" : ""}
+                              type="submit"
+                              disabled={item.status === "no_show"}
+                              aria-pressed={item.status === "no_show"}
+                            >
                               No show
                             </button>
                           </form>
@@ -299,18 +310,19 @@ export function SessionOperations({
                       Selecciona una alumna
                     </option>
                     {candidates.map((candidate) => (
-                      <option
-                        key={candidate.id}
-                        value={candidate.id}
-                        disabled={!candidate.eligible}
-                      >
+                      <option key={candidate.id} value={candidate.id}>
                         {candidate.fullName} · {candidate.detail}
+                        {candidate.eligible ? "" : " · walk-in / venta pendiente"}
                       </option>
                     ))}
                   </select>
-                  <button className="primary-button" type="submit" disabled={!eligibleCount}>
+                  <button className="primary-button" type="submit" disabled={!candidates.length}>
                     Agregar a la clase
                   </button>
+                  <small>
+                    Si no tiene paquete o créditos válidos, se agregará como walk-in y quedará
+                    pendiente resolver la venta o paquete en el flujo comercial.
+                  </small>
                 </form>
               ) : null}
             </section>
