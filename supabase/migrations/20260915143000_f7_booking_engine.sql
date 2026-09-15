@@ -1,0 +1,402 @@
+create type public.reservation_status_v2 as enum (
+  'reserved',
+  'attended',
+  'cancelled_on_time',
+  'cancelled_late',
+  'no_show',
+  'cancelled_by_studio'
+);
+
+alter table public.reservations alter column status drop default;
+alter table public.reservations
+  alter column status type public.reservation_status_v2
+  using (
+    case status::text
+      when 'booked' then 'reserved'
+      when 'cancelled' then 'cancelled_on_time'
+      when 'attended' then 'attended'
+      when 'no_show' then 'no_show'
+      else 'cancelled_on_time'
+    end
+  )::public.reservation_status_v2;
+drop type public.reservation_status;
+alter type public.reservation_status_v2 rename to reservation_status;
+alter table public.reservations alter column status set default 'reserved';
+
+alter table public.reservations
+  add column if not exists acquisition_id uuid references public.product_acquisitions(id) on delete restrict,
+  add column if not exists cancelled_at timestamptz,
+  add column if not exists cancellation_reason text,
+  add column if not exists cancelled_by uuid references auth.users(id) on delete set null;
+
+alter table public.credit_ledger
+  add constraint credit_ledger_reservation_movement_unique
+  unique (reservation_id, movement_type);
+
+drop index if exists public.reservations_session_student_unique;
+alter table public.reservations drop constraint if exists reservations_session_id_student_user_id_key;
+
+create unique index reservations_active_session_student_unique
+  on public.reservations(session_id, student_id)
+  where student_id is not null and status in ('reserved','attended');
+create unique index reservations_active_session_user_unique
+  on public.reservations(session_id, student_user_id)
+  where student_user_id is not null and status in ('reserved','attended');
+create index reservations_session_status_idx on public.reservations(session_id, status);
+create index reservations_acquisition_idx on public.reservations(acquisition_id) where acquisition_id is not null;
+
+create or replace function public.booking_eligibility(target_session_id uuid, target_student_id uuid)
+returns jsonb
+language plpgsql
+stable
+security definer
+set search_path = ''
+as $$
+declare
+  v_session public.class_sessions%rowtype;
+  v_student public.students%rowtype;
+  v_discipline_id uuid;
+  v_class_date date;
+  v_timezone text;
+  v_booked_count integer;
+  v_has_active_acquisition boolean := false;
+  v_has_discipline_acquisition boolean := false;
+  v_acquisition record;
+  v_balance integer;
+  v_is_staff boolean;
+begin
+  select * into v_session from public.class_sessions where id = target_session_id;
+  if not found then return jsonb_build_object('eligible', false, 'reason_code', 'session_not_found'); end if;
+
+  select * into v_student
+  from public.students
+  where id = target_student_id and studio_id = v_session.studio_id;
+  if not found then return jsonb_build_object('eligible', false, 'reason_code', 'student_not_found'); end if;
+
+  v_is_staff := private.has_capability(v_session.studio_id, 'schedule.write');
+  if not v_is_staff and not (
+    v_student.user_id = (select auth.uid())
+    and private.has_capability(v_session.studio_id, 'student.booking.self')
+  ) then
+    raise exception 'forbidden';
+  end if;
+
+  if v_student.lifecycle_status <> 'active' or not v_student.active then
+    return jsonb_build_object('eligible', false, 'reason_code', 'student_not_operable');
+  end if;
+
+  if v_session.status <> 'scheduled' or v_session.starts_at <= now() then
+    return jsonb_build_object('eligible', false, 'reason_code', 'session_not_bookable');
+  end if;
+
+  if exists (
+    select 1 from public.reservations r
+    where r.session_id = target_session_id
+      and r.student_id = target_student_id
+      and r.status in ('reserved','attended')
+  ) then
+    return jsonb_build_object('eligible', false, 'reason_code', 'already_reserved');
+  end if;
+
+  select count(*) into v_booked_count
+  from public.reservations r
+  where r.session_id = target_session_id and r.status in ('reserved','attended');
+  if v_booked_count >= v_session.capacity then
+    return jsonb_build_object('eligible', false, 'reason_code', 'session_full');
+  end if;
+
+  select ct.discipline_id into v_discipline_id
+  from public.class_templates ct
+  where ct.id = v_session.template_id;
+
+  select timezone into v_timezone from public.studios where id = v_session.studio_id;
+  v_class_date := (v_session.starts_at at time zone coalesce(v_timezone, 'America/Mexico_City'))::date;
+
+  select exists (
+    select 1 from public.product_acquisitions pa
+    where pa.studio_id = v_session.studio_id
+      and pa.student_id = target_student_id
+      and pa.status = 'active'
+      and pa.starts_on <= v_class_date
+      and pa.expires_on >= v_class_date
+  ) into v_has_active_acquisition;
+
+  if not v_has_active_acquisition then
+    return jsonb_build_object('eligible', false, 'reason_code', 'no_active_product');
+  end if;
+
+  select exists (
+    select 1
+    from public.product_acquisitions pa
+    join public.product_template_disciplines ptd
+      on ptd.product_template_id = pa.product_template_id
+      and ptd.studio_id = pa.studio_id
+    where pa.studio_id = v_session.studio_id
+      and pa.student_id = target_student_id
+      and pa.status = 'active'
+      and pa.starts_on <= v_class_date
+      and pa.expires_on >= v_class_date
+      and ptd.discipline_id = v_discipline_id
+  ) into v_has_discipline_acquisition;
+
+  if not v_has_discipline_acquisition then
+    return jsonb_build_object('eligible', false, 'reason_code', 'outside_product');
+  end if;
+
+  for v_acquisition in
+    select pa.id, pa.unlimited, pa.expires_on
+    from public.product_acquisitions pa
+    join public.product_template_disciplines ptd
+      on ptd.product_template_id = pa.product_template_id
+      and ptd.studio_id = pa.studio_id
+    where pa.studio_id = v_session.studio_id
+      and pa.student_id = target_student_id
+      and pa.status = 'active'
+      and pa.starts_on <= v_class_date
+      and pa.expires_on >= v_class_date
+      and ptd.discipline_id = v_discipline_id
+    order by pa.unlimited desc, pa.expires_on asc, pa.created_at asc
+  loop
+    if v_acquisition.unlimited then
+      return jsonb_build_object(
+        'eligible', true,
+        'reason_code', null,
+        'acquisition_id', v_acquisition.id,
+        'unlimited', true,
+        'available_credits', null
+      );
+    end if;
+
+    select coalesce(sum(cl.quantity), 0)::integer into v_balance
+    from public.credit_ledger cl
+    where cl.acquisition_id = v_acquisition.id;
+
+    if v_balance > 0 then
+      return jsonb_build_object(
+        'eligible', true,
+        'reason_code', null,
+        'acquisition_id', v_acquisition.id,
+        'unlimited', false,
+        'available_credits', v_balance
+      );
+    end if;
+  end loop;
+
+  return jsonb_build_object('eligible', false, 'reason_code', 'no_credits');
+end;
+$$;
+
+create or replace function public.book_student(target_session_id uuid, target_student_id uuid)
+returns jsonb
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_session public.class_sessions%rowtype;
+  v_student public.students%rowtype;
+  v_eligibility jsonb;
+  v_acquisition_id uuid;
+  v_unlimited boolean;
+  v_reservation_id uuid;
+  v_booked_count integer;
+begin
+  select * into v_session from public.class_sessions where id = target_session_id for update;
+  if not found then raise exception 'session_not_found'; end if;
+
+  select * into v_student from public.students where id = target_student_id and studio_id = v_session.studio_id;
+  if not found then raise exception 'student_not_found'; end if;
+
+  if not private.has_capability(v_session.studio_id, 'schedule.write') and not (
+    v_student.user_id = (select auth.uid())
+    and private.has_capability(v_session.studio_id, 'student.booking.self')
+  ) then
+    raise exception 'forbidden';
+  end if;
+
+  v_eligibility := public.booking_eligibility(target_session_id, target_student_id);
+  if not coalesce((v_eligibility->>'eligible')::boolean, false) then
+    return v_eligibility;
+  end if;
+
+  v_acquisition_id := (v_eligibility->>'acquisition_id')::uuid;
+  v_unlimited := coalesce((v_eligibility->>'unlimited')::boolean, false);
+
+  perform 1 from public.product_acquisitions where id = v_acquisition_id for update;
+
+  select count(*) into v_booked_count
+  from public.reservations r
+  where r.session_id = target_session_id and r.status in ('reserved','attended');
+  if v_booked_count >= v_session.capacity then
+    return jsonb_build_object('eligible', false, 'reason_code', 'session_full');
+  end if;
+
+  if exists (
+    select 1 from public.reservations r
+    where r.session_id = target_session_id
+      and r.student_id = target_student_id
+      and r.status in ('reserved','attended')
+  ) then
+    return jsonb_build_object('eligible', false, 'reason_code', 'already_reserved');
+  end if;
+
+  if not v_unlimited and public.acquisition_credit_balance(v_acquisition_id) <= 0 then
+    return jsonb_build_object('eligible', false, 'reason_code', 'no_credits');
+  end if;
+
+  insert into public.reservations(
+    studio_id, session_id, student_id, student_user_id, acquisition_id, status
+  ) values (
+    v_session.studio_id, target_session_id, target_student_id, v_student.user_id, v_acquisition_id, 'reserved'
+  ) returning id into v_reservation_id;
+
+  if not v_unlimited then
+    insert into public.credit_ledger(
+      studio_id, acquisition_id, movement_type, quantity, reservation_id, note, created_by
+    ) values (
+      v_session.studio_id, v_acquisition_id, 'reserve', -1, v_reservation_id,
+      'Crédito reservado al confirmar la clase', (select auth.uid())
+    );
+  end if;
+
+  return jsonb_build_object(
+    'eligible', true,
+    'reason_code', null,
+    'reservation_id', v_reservation_id,
+    'acquisition_id', v_acquisition_id,
+    'unlimited', v_unlimited
+  );
+end;
+$$;
+
+create or replace function public.cancel_reservation(target_reservation_id uuid, target_reason text default null)
+returns jsonb
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_reservation public.reservations%rowtype;
+  v_session public.class_sessions%rowtype;
+  v_student public.students%rowtype;
+  v_acquisition public.product_acquisitions%rowtype;
+  v_cutoff timestamptz;
+  v_new_status public.reservation_status;
+  v_is_staff boolean;
+begin
+  select * into v_reservation from public.reservations where id = target_reservation_id for update;
+  if not found then raise exception 'reservation_not_found'; end if;
+
+  select * into v_session from public.class_sessions where id = v_reservation.session_id;
+  select * into v_student from public.students where id = v_reservation.student_id;
+
+  v_is_staff := private.has_capability(v_reservation.studio_id, 'schedule.write');
+  if not v_is_staff and not (
+    v_student.user_id = (select auth.uid())
+    and private.has_capability(v_reservation.studio_id, 'student.booking.self')
+  ) then
+    raise exception 'forbidden';
+  end if;
+
+  if v_reservation.status <> 'reserved' then
+    return jsonb_build_object('ok', false, 'reason_code', 'reservation_not_cancellable');
+  end if;
+
+  v_cutoff := v_session.starts_at - interval '8 hours';
+  v_new_status := case when now() <= v_cutoff then 'cancelled_on_time' else 'cancelled_late' end;
+
+  update public.reservations
+  set status = v_new_status,
+      cancelled_at = now(),
+      cancellation_reason = nullif(trim(target_reason), ''),
+      cancelled_by = (select auth.uid()),
+      updated_at = now()
+  where id = v_reservation.id;
+
+  if v_reservation.acquisition_id is not null then
+    select * into v_acquisition from public.product_acquisitions where id = v_reservation.acquisition_id for update;
+    if found and not v_acquisition.unlimited then
+      if v_new_status = 'cancelled_on_time' then
+        insert into public.credit_ledger(
+          studio_id, acquisition_id, movement_type, quantity, reservation_id, note, created_by
+        ) values (
+          v_reservation.studio_id, v_reservation.acquisition_id, 'release', 1,
+          v_reservation.id, 'Crédito devuelto por cancelación a tiempo', (select auth.uid())
+        ) on conflict (reservation_id, movement_type) do nothing;
+      else
+        insert into public.credit_ledger(
+          studio_id, acquisition_id, movement_type, quantity, reservation_id, note, created_by
+        ) values (
+          v_reservation.studio_id, v_reservation.acquisition_id, 'release', 1,
+          v_reservation.id, 'Cierre del hold por cancelación tardía', (select auth.uid())
+        ) on conflict (reservation_id, movement_type) do nothing;
+        insert into public.credit_ledger(
+          studio_id, acquisition_id, movement_type, quantity, reservation_id, note, created_by
+        ) values (
+          v_reservation.studio_id, v_reservation.acquisition_id, 'consume', -1,
+          v_reservation.id, 'Crédito consumido por cancelación tardía', (select auth.uid())
+        ) on conflict (reservation_id, movement_type) do nothing;
+      end if;
+    end if;
+  end if;
+
+  return jsonb_build_object('ok', true, 'status', v_new_status::text);
+end;
+$$;
+
+create or replace function public.cancel_session_reservations(target_session_id uuid, target_reason text default null)
+returns integer
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_session public.class_sessions%rowtype;
+  v_reservation record;
+  v_count integer := 0;
+begin
+  select * into v_session from public.class_sessions where id = target_session_id for update;
+  if not found then raise exception 'session_not_found'; end if;
+  if not private.has_capability(v_session.studio_id, 'schedule.write') then raise exception 'forbidden'; end if;
+
+  for v_reservation in
+    select r.id, r.acquisition_id, pa.unlimited
+    from public.reservations r
+    left join public.product_acquisitions pa on pa.id = r.acquisition_id
+    where r.session_id = target_session_id and r.status = 'reserved'
+    for update of r
+  loop
+    update public.reservations
+    set status = 'cancelled_by_studio',
+        cancelled_at = now(),
+        cancellation_reason = coalesce(nullif(trim(target_reason), ''), 'Clase cancelada por el estudio'),
+        cancelled_by = (select auth.uid()),
+        updated_at = now()
+    where id = v_reservation.id;
+
+    if v_reservation.acquisition_id is not null and not coalesce(v_reservation.unlimited, false) then
+      insert into public.credit_ledger(
+        studio_id, acquisition_id, movement_type, quantity, reservation_id, note, created_by
+      ) values (
+        v_session.studio_id, v_reservation.acquisition_id, 'release', 1,
+        v_reservation.id, 'Crédito devuelto por cancelación del estudio', (select auth.uid())
+      ) on conflict (reservation_id, movement_type) do nothing;
+    end if;
+    v_count := v_count + 1;
+  end loop;
+
+  return v_count;
+end;
+$$;
+
+drop function if exists public.admin_book_student(uuid, uuid);
+drop function if exists public.admin_cancel_reservation(uuid);
+
+revoke all on function public.booking_eligibility(uuid, uuid) from public, anon;
+revoke all on function public.book_student(uuid, uuid) from public, anon;
+revoke all on function public.cancel_reservation(uuid, text) from public, anon;
+revoke all on function public.cancel_session_reservations(uuid, text) from public, anon;
+grant execute on function public.booking_eligibility(uuid, uuid) to authenticated;
+grant execute on function public.book_student(uuid, uuid) to authenticated;
+grant execute on function public.cancel_reservation(uuid, text) to authenticated;
+grant execute on function public.cancel_session_reservations(uuid, text) to authenticated;
