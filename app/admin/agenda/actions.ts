@@ -2,29 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
-
-async function requireAdmin() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) redirect("/login/admin");
-
-  const { data: membership } = await supabase
-    .from("studio_memberships")
-    .select("studio_id, role")
-    .eq("user_id", user.id)
-    .eq("active", true)
-    .maybeSingle();
-
-  if (!membership || !["owner", "admin"].includes(membership.role)) {
-    redirect("/admin/agenda?error=access");
-  }
-
-  return { supabase, user, studioId: membership.studio_id };
-}
+import { CAPABILITIES } from "@/lib/auth/capabilities";
+import { getAdminContext } from "@/lib/auth/admin-context";
 
 function zonedDateTimeToUtc(localDateTime: string, timeZone: string) {
   const [datePart, timePart] = localDateTime.split("T");
@@ -66,8 +45,8 @@ export async function createDiscipline(formData: FormData) {
   const name = String(formData.get("name") ?? "").trim();
   if (!name) redirect("/admin/agenda?error=discipline");
 
-  const { supabase, studioId } = await requireAdmin();
-  const { error } = await supabase.from("disciplines").insert({ studio_id: studioId, name });
+  const { supabase, studio } = await getAdminContext(CAPABILITIES.SCHEDULE_WRITE);
+  const { error } = await supabase.from("disciplines").insert({ studio_id: studio.id, name });
 
   if (error) redirect("/admin/agenda?error=discipline");
   revalidatePath("/admin/agenda");
@@ -84,9 +63,9 @@ export async function createTemplate(formData: FormData) {
     redirect("/admin/agenda?error=template");
   }
 
-  const { supabase, studioId } = await requireAdmin();
+  const { supabase, studio } = await getAdminContext(CAPABILITIES.SCHEDULE_WRITE);
   const { error } = await supabase.from("class_templates").insert({
-    studio_id: studioId,
+    studio_id: studio.id,
     discipline_id: disciplineId,
     name,
     duration_minutes: durationMinutes,
@@ -106,25 +85,21 @@ export async function createSession(formData: FormData) {
 
   if (!templateId || !startsLocal) redirect("/admin/agenda?error=session");
 
-  const { supabase, studioId, user } = await requireAdmin();
+  const { supabase, studio, user } = await getAdminContext(CAPABILITIES.SCHEDULE_WRITE);
+  const { data: template } = await supabase
+    .from("class_templates")
+    .select("id, duration_minutes, capacity")
+    .eq("id", templateId)
+    .eq("studio_id", studio.id)
+    .single();
 
-  const [{ data: studio }, { data: template }] = await Promise.all([
-    supabase.from("studios").select("timezone").eq("id", studioId).single(),
-    supabase
-      .from("class_templates")
-      .select("id, duration_minutes, capacity")
-      .eq("id", templateId)
-      .eq("studio_id", studioId)
-      .single(),
-  ]);
-
-  if (!studio || !template) redirect("/admin/agenda?error=session");
+  if (!template) redirect("/admin/agenda?error=session");
 
   const startsAt = zonedDateTimeToUtc(startsLocal, studio.timezone);
   const endsAt = new Date(startsAt.getTime() + template.duration_minutes * 60_000);
 
   const { error } = await supabase.from("class_sessions").insert({
-    studio_id: studioId,
+    studio_id: studio.id,
     template_id: templateId,
     coach_user_id: user.id,
     location_id: locationId,
