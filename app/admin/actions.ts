@@ -37,7 +37,7 @@ export async function bookStudentFromToday(formData: FormData) {
     redirect(withQuery(returnUrl, "error", "booking"));
   }
 
-  const { supabase, studio } = await getAdminContext(CAPABILITIES.SCHEDULE_WRITE);
+  const { supabase, studio, can } = await getAdminContext();
   const { data: session } = await supabase
     .from("class_sessions")
     .select("id")
@@ -49,7 +49,55 @@ export async function bookStudentFromToday(formData: FormData) {
     redirect(returnUrl);
   }
 
-  const { error } = await supabase.rpc("admin_book_student", {
+  if (!can(CAPABILITIES.SCHEDULE_WRITE)) {
+    redirect(withQuery(sessionReturnUrl(returnDate, sessionId), "error", "forbidden"));
+  }
+
+  const { data: eligibility, error: eligibilityError } = await supabase.rpc(
+    "booking_eligibility",
+    {
+      target_session_id: sessionId,
+      target_student_id: studentId,
+    },
+  );
+
+  if (eligibilityError) {
+    redirect(
+      withQuery(sessionReturnUrl(returnDate, sessionId), "error", eligibilityError.message),
+    );
+  }
+
+  const result = (eligibility ?? {}) as {
+    eligible?: boolean;
+    reason_code?: string | null;
+  };
+
+  if (result.eligible === true) {
+    const { error } = await supabase.rpc("admin_book_student", {
+      target_session_id: sessionId,
+      target_student_id: studentId,
+    });
+
+    if (error) {
+      redirect(withQuery(sessionReturnUrl(returnDate, sessionId), "error", error.message));
+    }
+
+    refreshSession(sessionId);
+    redirect(withQuery(sessionReturnUrl(returnDate, sessionId), "created", "booking"));
+  }
+
+  const commercialPendingReasons = new Set(["no_active_product", "outside_product", "no_credits"]);
+  const reason = result.reason_code ?? "booking";
+
+  if (!commercialPendingReasons.has(reason)) {
+    redirect(withQuery(sessionReturnUrl(returnDate, sessionId), "error", reason));
+  }
+
+  if (!can(CAPABILITIES.ATTENDANCE_WRITE)) {
+    redirect(withQuery(sessionReturnUrl(returnDate, sessionId), "error", "forbidden"));
+  }
+
+  const { error } = await supabase.rpc("add_existing_walkin_student", {
     target_session_id: sessionId,
     target_student_id: studentId,
   });
@@ -59,7 +107,7 @@ export async function bookStudentFromToday(formData: FormData) {
   }
 
   refreshSession(sessionId);
-  redirect(withQuery(sessionReturnUrl(returnDate, sessionId), "created", "booking"));
+  redirect(withQuery(sessionReturnUrl(returnDate, sessionId), "created", "walkin-existing"));
 }
 
 export async function cancelReservationFromToday(formData: FormData) {
