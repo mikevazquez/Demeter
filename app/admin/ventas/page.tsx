@@ -8,7 +8,8 @@ function money(value: number, currency: string) {
 }
 
 function paymentState(total: number, paid: number, saleStatus: string) {
-  if (saleStatus === "voided") return { label: "Anulada", className: "bg-rose-500/15 text-rose-300" };
+  if (saleStatus === "voided")
+    return { label: "Anulada", className: "bg-rose-500/15 text-rose-300" };
   if (paid <= 0) return { label: "Pendiente", className: "bg-amber-500/15 text-amber-300" };
   if (paid < total) return { label: "Parcial", className: "bg-sky-500/15 text-sky-300" };
   return { label: "Pagada", className: "bg-emerald-500/15 text-emerald-300" };
@@ -35,10 +36,7 @@ export default async function SalesPage({
 
   const [{ data: payments }, { data: students }] = await Promise.all([
     saleIds.length
-      ? ctx.supabase
-          .from("payments")
-          .select("sale_id,kind,amount_minor")
-          .in("sale_id", saleIds)
+      ? ctx.supabase.from("payments").select("sale_id,kind,amount_minor").in("sale_id", saleIds)
       : Promise.resolve({ data: [] as { sale_id: string; kind: string; amount_minor: number }[] }),
     studentIds.length
       ? ctx.supabase.from("students").select("id,full_name").in("id", studentIds)
@@ -57,7 +55,9 @@ export default async function SalesPage({
 
   const visibleSales = (sales ?? []).filter((sale) => {
     const paid = paidMap.get(sale.id) ?? 0;
-    const state = paymentState(sale.total_minor, paid, sale.status).label.toLocaleLowerCase("es-MX");
+    const state = paymentState(sale.total_minor, paid, sale.status).label.toLocaleLowerCase(
+      "es-MX",
+    );
     const studentName = studentMap.get(sale.student_id) ?? "Alumna";
     const matchesQuery =
       !query ||
@@ -142,9 +142,13 @@ export default async function SalesPage({
                   <span className="text-sm text-zinc-300">
                     {studentMap.get(sale.student_id) ?? "Alumna"}
                   </span>
-                  <span className="text-sm text-zinc-300">{money(sale.total_minor, sale.currency)}</span>
+                  <span className="text-sm text-zinc-300">
+                    {money(sale.total_minor, sale.currency)}
+                  </span>
                   <span className="text-sm text-zinc-300">{money(paid, sale.currency)}</span>
-                  <span className="text-sm font-medium text-white">{money(balance, sale.currency)}</span>
+                  <span className="text-sm font-medium text-white">
+                    {money(balance, sale.currency)}
+                  </span>
                   <span className={`w-fit rounded-full px-2.5 py-1 text-xs ${state.className}`}>
                     {state.label}
                   </span>

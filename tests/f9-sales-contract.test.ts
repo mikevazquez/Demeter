@@ -22,12 +22,15 @@ describe("F9 sales contracts", () => {
     const migration = source("supabase/migrations/20260915220918_f9_sales_payments_core.sql");
 
     expect(migration).toContain("product_acquisitions_sale_line_unique");
-    expect(migration).toContain("on conflict (sale_line_id) where sale_line_id is not null do nothing");
+    expect(migration).toContain(
+      "on conflict (sale_line_id) where sale_line_id is not null do nothing",
+    );
   });
 
   it("registers later payments without creating another acquisition", () => {
     const migration = source("supabase/migrations/20260915220918_f9_sales_payments_core.sql");
-    const registerPayment = migration.split("create or replace function public.register_sale_payment")[1] ?? "";
+    const registerPayment =
+      migration.split("create or replace function public.register_sale_payment")[1] ?? "";
 
     expect(registerPayment).toContain("insert into public.payments");
     expect(registerPayment).not.toContain("insert into public.product_acquisitions");

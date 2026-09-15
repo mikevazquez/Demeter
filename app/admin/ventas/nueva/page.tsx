@@ -53,14 +53,16 @@ export default async function NewSalePage({
           <p className="mt-4 text-sm text-zinc-400">FL-12 · Venta manual</p>
           <h1 className="text-3xl font-semibold text-white">Nueva venta</h1>
           <p className="mt-1 text-sm text-zinc-400">
-            Confirma alumna, producto(s) y pago. La adquisición y sus créditos se crean una sola vez al confirmar.
+            Confirma alumna, producto(s) y pago. La adquisición y sus créditos se crean una sola vez
+            al confirmar.
           </p>
         </div>
       </header>
 
       {params.error ? (
         <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">
-          {errorCopy[params.error] ?? `No se pudo crear la venta: ${decodeURIComponent(params.error)}`}
+          {errorCopy[params.error] ??
+            `No se pudo crear la venta: ${decodeURIComponent(params.error)}`}
         </div>
       ) : null}
 
@@ -75,7 +77,9 @@ export default async function NewSalePage({
         <form action={createManualSaleAction} className="space-y-4">
           <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
             <div className="flex gap-3">
-              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-fuchsia-500/15 text-sm font-bold text-fuchsia-300">1</span>
+              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-fuchsia-500/15 text-sm font-bold text-fuchsia-300">
+                1
+              </span>
               <div className="w-full">
                 <h2 className="font-semibold text-white">Alumna</h2>
                 <p className="mt-1 text-sm text-zinc-400">Selecciona a quién pertenece la venta.</p>
@@ -85,10 +89,13 @@ export default async function NewSalePage({
                   defaultValue=""
                   className="mt-4 w-full rounded-xl border border-white/10 bg-zinc-950 px-3 py-3 text-sm text-white"
                 >
-                  <option value="" disabled>Selecciona una alumna</option>
+                  <option value="" disabled>
+                    Selecciona una alumna
+                  </option>
                   {students.map((student) => (
                     <option key={student.id} value={student.id}>
-                      {student.full_name}{student.phone ? ` · ${student.phone}` : ""}
+                      {student.full_name}
+                      {student.phone ? ` · ${student.phone}` : ""}
                     </option>
                   ))}
                 </select>
@@ -98,21 +105,33 @@ export default async function NewSalePage({
 
           <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
             <div className="flex gap-3">
-              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-fuchsia-500/15 text-sm font-bold text-fuchsia-300">2</span>
+              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-fuchsia-500/15 text-sm font-bold text-fuchsia-300">
+                2
+              </span>
               <div className="w-full">
                 <h2 className="font-semibold text-white">Productos</h2>
-                <p className="mt-1 text-sm text-zinc-400">Puedes incluir más de un producto distinto en la misma venta.</p>
+                <p className="mt-1 text-sm text-zinc-400">
+                  Puedes incluir más de un producto distinto en la misma venta.
+                </p>
                 <div className="mt-4 grid gap-3 md:grid-cols-2">
                   {products.map((product) => (
                     <label
                       key={product.id}
                       className="flex cursor-pointer items-start gap-3 rounded-xl border border-white/10 bg-black/20 p-4 has-[:checked]:border-fuchsia-500/60 has-[:checked]:bg-fuchsia-500/[0.08]"
                     >
-                      <input name="product_id" value={product.id} type="checkbox" className="mt-1" />
+                      <input
+                        name="product_id"
+                        value={product.id}
+                        type="checkbox"
+                        className="mt-1"
+                      />
                       <span className="min-w-0 flex-1">
                         <span className="block font-medium text-white">{product.name}</span>
                         <span className="mt-1 block text-sm text-zinc-400">
-                          {product.unlimited ? "Ilimitado" : `${product.credit_limit ?? 0} créditos`} · {product.validity_days} días
+                          {product.unlimited
+                            ? "Ilimitado"
+                            : `${product.credit_limit ?? 0} créditos`}{" "}
+                          · {product.validity_days} días
                         </span>
                         <strong className="mt-2 block text-sm text-fuchsia-200">
                           {money(product.price_minor, product.currency)}
@@ -127,11 +146,14 @@ export default async function NewSalePage({
 
           <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
             <div className="flex gap-3">
-              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-fuchsia-500/15 text-sm font-bold text-fuchsia-300">3</span>
+              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-fuchsia-500/15 text-sm font-bold text-fuchsia-300">
+                3
+              </span>
               <div className="w-full">
                 <h2 className="font-semibold text-white">Pago inicial</h2>
                 <p className="mt-1 text-sm text-zinc-400">
-                  Puede ser $0, parcial o total. Los pagos posteriores se agregan desde el detalle de la venta.
+                  Puede ser $0, parcial o total. Los pagos posteriores se agregan desde el detalle
+                  de la venta.
                 </p>
                 <div className="mt-4 grid gap-3 md:grid-cols-2">
                   <label className="grid gap-1.5 text-sm text-zinc-300">
@@ -145,7 +167,11 @@ export default async function NewSalePage({
                   </label>
                   <label className="grid gap-1.5 text-sm text-zinc-300">
                     Método
-                    <select name="payment_method" defaultValue="" className="rounded-xl border border-white/10 bg-zinc-950 px-3 py-3 text-white">
+                    <select
+                      name="payment_method"
+                      defaultValue=""
+                      className="rounded-xl border border-white/10 bg-zinc-950 px-3 py-3 text-white"
+                    >
                       <option value="">Sin pago inicial</option>
                       <option value="efectivo">Efectivo</option>
                       <option value="transferencia">Transferencia</option>
@@ -155,11 +181,19 @@ export default async function NewSalePage({
                   </label>
                   <label className="grid gap-1.5 text-sm text-zinc-300">
                     Referencia
-                    <input name="payment_reference" placeholder="Opcional" className="rounded-xl border border-white/10 bg-black/20 px-3 py-3 text-white" />
+                    <input
+                      name="payment_reference"
+                      placeholder="Opcional"
+                      className="rounded-xl border border-white/10 bg-black/20 px-3 py-3 text-white"
+                    />
                   </label>
                   <label className="grid gap-1.5 text-sm text-zinc-300">
                     Notas
-                    <input name="payment_notes" placeholder="Opcional" className="rounded-xl border border-white/10 bg-black/20 px-3 py-3 text-white" />
+                    <input
+                      name="payment_notes"
+                      placeholder="Opcional"
+                      className="rounded-xl border border-white/10 bg-black/20 px-3 py-3 text-white"
+                    />
                   </label>
                 </div>
               </div>
@@ -167,10 +201,16 @@ export default async function NewSalePage({
           </section>
 
           <div className="flex flex-wrap justify-end gap-3">
-            <Link href="/admin/ventas" className="rounded-xl border border-white/10 px-4 py-2.5 text-sm font-semibold text-zinc-300">
+            <Link
+              href="/admin/ventas"
+              className="rounded-xl border border-white/10 px-4 py-2.5 text-sm font-semibold text-zinc-300"
+            >
               Cancelar
             </Link>
-            <button type="submit" className="rounded-xl bg-fuchsia-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-fuchsia-500">
+            <button
+              type="submit"
+              className="rounded-xl bg-fuchsia-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-fuchsia-500"
+            >
               Confirmar venta
             </button>
           </div>
