@@ -159,9 +159,7 @@ export function SessionOperations({
               <div className="today-student-list">
                 {roster.map((item) => {
                   const canCorrect =
-                    isCompleted &&
-                    canAttendance &&
-                    ["attended", "no_show"].includes(item.status);
+                    isCompleted && canAttendance && ["attended", "no_show"].includes(item.status);
                   const correctionTarget = item.status === "attended" ? "no_show" : "attended";
 
                   return (
@@ -320,7 +318,8 @@ export function SessionOperations({
                 <div>
                   <strong>{isCompleted ? "Asistencia finalizada" : "Resumen"}</strong>
                   <span>
-                    {attendanceCount} asistieron · {noShowCount} no-show · {pendingCount} pendientes.
+                    {attendanceCount} asistieron · {noShowCount} no-show · {pendingCount}{" "}
+                    pendientes.
                     {isCompleted
                       ? " Cualquier cambio posterior es una Corrección y exige motivo."
                       : " Al finalizar, los pendientes se registran como no-show y se resuelven los créditos."}

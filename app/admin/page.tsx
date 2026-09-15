@@ -46,9 +46,7 @@ function localDateKey(value: Date, timeZone: string) {
 function parseDateKey(value: string) {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
   if (!match) return null;
-  const date = new Date(
-    Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3]), 12),
-  );
+  const date = new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3]), 12));
   return Number.isNaN(date.getTime()) ? null : date;
 }
 
@@ -197,9 +195,7 @@ export default async function AdminPage({
           unlimited: boolean;
         }[],
       };
-  const productIds = [
-    ...new Set((acquisitions ?? []).map((item) => item.product_template_id)),
-  ];
+  const productIds = [...new Set((acquisitions ?? []).map((item) => item.product_template_id))];
   const { data: products } = productIds.length
     ? await supabase.from("product_templates").select("id,name").in("id", productIds)
     : { data: [] as { id: string; name: string }[] };
@@ -268,9 +264,7 @@ export default async function AdminPage({
   if (canReadSchedule) {
     for (const session of sessions ?? []) {
       const sessionReservations = reservationsBySession.get(session.id) ?? [];
-      const bookedIds = new Set(
-        sessionReservations.map((item) => item.student_id).filter(Boolean),
-      );
+      const bookedIds = new Set(sessionReservations.map((item) => item.student_id).filter(Boolean));
       const candidates = (students ?? []).filter((student) => !bookedIds.has(student.id));
       const eligibilityEntries = canWriteSchedule
         ? await Promise.all(
@@ -362,7 +356,11 @@ export default async function AdminPage({
       ) : null}
 
       <nav className="week-picker" aria-label="Seleccionar día de operación">
-        <Link className="week-arrow" href={`/admin?date=${previousWeekKey}`} aria-label="Semana anterior">
+        <Link
+          className="week-arrow"
+          href={`/admin?date=${previousWeekKey}`}
+          aria-label="Semana anterior"
+        >
           ‹
         </Link>
         <div className="week-days">
@@ -380,7 +378,11 @@ export default async function AdminPage({
             );
           })}
         </div>
-        <Link className="week-arrow" href={`/admin?date=${nextWeekKey}`} aria-label="Semana siguiente">
+        <Link
+          className="week-arrow"
+          href={`/admin?date=${nextWeekKey}`}
+          aria-label="Semana siguiente"
+        >
           ›
         </Link>
         {!viewingToday ? (
@@ -395,7 +397,9 @@ export default async function AdminPage({
           <div className="panel-heading">
             <div>
               <p className="eyebrow">{viewingToday ? "PRÓXIMA CLASE" : "PRIMERA CLASE"}</p>
-              <h2>{nextSession ? (templateMap.get(nextSession.template_id) ?? "Clase") : "Sin clases"}</h2>
+              <h2>
+                {nextSession ? (templateMap.get(nextSession.template_id) ?? "Clase") : "Sin clases"}
+              </h2>
             </div>
             {nextSession ? (
               <span className="status-pill">
@@ -442,7 +446,9 @@ export default async function AdminPage({
               <Link href="/admin/alumnas">
                 <StudentsIcon />
                 <span>Alumnas</span>
-                <strong>{canWriteStudents ? "Buscar o dar de alta →" : "Consultar alumnas →"}</strong>
+                <strong>
+                  {canWriteStudents ? "Buscar o dar de alta →" : "Consultar alumnas →"}
+                </strong>
               </Link>
             ) : null}
           </div>
@@ -468,7 +474,9 @@ export default async function AdminPage({
         <article className="stat-card">
           <span>Ocupación</span>
           <strong>{occupancy === null ? "—" : `${occupancy}%`}</strong>
-          <small>{totalCapacity ? `${occupiedCount} de ${totalCapacity} lugares` : "Sin cupo programado"}</small>
+          <small>
+            {totalCapacity ? `${occupiedCount} de ${totalCapacity} lugares` : "Sin cupo programado"}
+          </small>
         </article>
       </section>
 

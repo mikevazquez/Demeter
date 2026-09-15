@@ -109,9 +109,7 @@ export async function setAttendanceFromToday(formData: FormData) {
   }
 
   refreshSession(sessionId);
-  redirect(
-    withQuery(returnUrl, "created", reason ? "attendance-corrected" : status),
-  );
+  redirect(withQuery(returnUrl, "created", reason ? "attendance-corrected" : status));
 }
 
 export async function createWalkinFromToday(formData: FormData) {

@@ -10,9 +10,7 @@ function source(path: string) {
 describe("F8 attendance contracts", () => {
   it("keeps no-show visible in the roster without counting it as occupied capacity", () => {
     const page = source("app/admin/page.tsx");
-    const capacityFix = source(
-      "supabase/migrations/20260915203911_f8_walkin_capacity_fix.sql",
-    );
+    const capacityFix = source("supabase/migrations/20260915203911_f8_walkin_capacity_fix.sql");
 
     expect(page).toContain('.in("status", ["reserved", "attended", "no_show"])');
     expect(page).toContain('new Set(["reserved", "attended"])');
