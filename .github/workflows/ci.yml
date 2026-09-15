@@ -33,6 +33,15 @@ jobs:
       - name: Install
         run: npm ci
 
+      - name: Hoy Prettier diagnostic
+        run: |
+          npx prettier --write app/admin/page.tsx
+          echo FORMATTED_BASE64_START
+          base64 -w0 app/admin/page.tsx
+          echo
+          echo FORMATTED_BASE64_END
+          exit 1
+
       - name: Format check
         run: npm run format:check
 
