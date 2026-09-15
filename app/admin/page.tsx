@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { CAPABILITIES } from "@/lib/auth/capabilities";
+import { getAdminContext } from "@/lib/auth/admin-context";
 
 function formatTime(value: string, timeZone: string) {
   return new Intl.DateTimeFormat("es-MX", {
@@ -20,29 +20,12 @@ function formatDay(value: Date, timeZone: string) {
 }
 
 export default async function AdminPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/login/admin");
-
-  const { data: membership } = await supabase
-    .from("studio_memberships")
-    .select("role, studio_id")
-    .eq("user_id", user.id)
-    .eq("active", true)
-    .maybeSingle();
-
-  if (!membership || !["owner", "admin", "coach"].includes(membership.role)) {
-    redirect("/login/admin?error=access");
-  }
-
-  const [{ data: studio }, { data: profile }] = await Promise.all([
-    supabase.from("studios").select("name, timezone").eq("id", membership.studio_id).single(),
+  const { supabase, user, membership, studio, can } = await getAdminContext();
+  const [{ data: profile }] = await Promise.all([
     supabase.from("profiles").select("full_name").eq("id", user.id).maybeSingle(),
   ]);
 
-  const timeZone = studio?.timezone ?? "America/Mexico_City";
+  const timeZone = studio.timezone ?? "America/Mexico_City";
   const now = new Date();
   const todayParts = new Intl.DateTimeFormat("en-CA", {
     timeZone,
@@ -68,14 +51,14 @@ export default async function AdminPage() {
     supabase
       .from("class_sessions")
       .select("id, starts_at, ends_at, capacity, status, template_id")
-      .eq("studio_id", membership.studio_id)
+      .eq("studio_id", studio.id)
       .gte("starts_at", start.toISOString())
       .lt("starts_at", end.toISOString())
       .order("starts_at", { ascending: true }),
     supabase
       .from("students")
       .select("*", { count: "exact", head: true })
-      .eq("studio_id", membership.studio_id)
+      .eq("studio_id", studio.id)
       .eq("active", true),
   ]);
 
@@ -110,12 +93,16 @@ export default async function AdminPage() {
     (session) => new Date(session.ends_at).getTime() >= now.getTime(),
   );
   const firstName = profile?.full_name?.trim().split(/\s+/)[0] || "Mike";
+  const canReadSchedule = can(CAPABILITIES.SCHEDULE_READ);
+  const canWriteSchedule = can(CAPABILITIES.SCHEDULE_WRITE);
+  const canReadStudents = can(CAPABILITIES.STUDENTS_READ);
+  const canWriteStudents = can(CAPABILITIES.STUDENTS_WRITE);
 
   return (
     <main className="dashboard-shell hoy-dashboard">
       <header className="hoy-header">
         <div>
-          <p className="eyebrow">HOY · {studio?.name ?? "ESTUDIO"}</p>
+          <p className="eyebrow">HOY · {studio.name}</p>
           <h1 className="dashboard-title">¡Hola, {firstName}!</h1>
           <p className="hoy-date">{formatDay(now, timeZone)}</p>
         </div>
@@ -123,130 +110,44 @@ export default async function AdminPage() {
       </header>
 
       <section className="stat-grid" aria-label="Indicadores operativos del día">
-        <article className="stat-card">
-          <span>Clases hoy</span>
-          <strong>{sessions?.length ?? 0}</strong>
-          <small>Sesiones programadas</small>
-        </article>
-        <article className="stat-card">
-          <span>Reservas hoy</span>
-          <strong>{reservationsCount}</strong>
-          <small>Lugares confirmados</small>
-        </article>
-        <article className="stat-card">
-          <span>Alumnas activas</span>
-          <strong>{activeStudents ?? 0}</strong>
-          <small>Expedientes activos</small>
-        </article>
-        <article className="stat-card">
-          <span>Ocupación del día</span>
-          <strong>{occupancy === null ? "—" : `${occupancy}%`}</strong>
-          <small>
-            {totalCapacity
-              ? `${reservationsCount} de ${totalCapacity} lugares`
-              : "Sin cupo programado"}
-          </small>
-        </article>
+        <article className="stat-card"><span>Clases hoy</span><strong>{sessions?.length ?? 0}</strong><small>Sesiones programadas</small></article>
+        <article className="stat-card"><span>Reservas hoy</span><strong>{reservationsCount}</strong><small>Lugares confirmados</small></article>
+        <article className="stat-card"><span>Alumnas activas</span><strong>{activeStudents ?? 0}</strong><small>Expedientes activos</small></article>
+        <article className="stat-card"><span>Ocupación del día</span><strong>{occupancy === null ? "—" : `${occupancy}%`}</strong><small>{totalCapacity ? `${reservationsCount} de ${totalCapacity} lugares` : "Sin cupo programado"}</small></article>
       </section>
 
       <section className="hoy-primary-grid">
         <article className="panel next-class-card">
           <div className="panel-heading">
-            <div>
-              <p className="eyebrow">PRÓXIMA CLASE</p>
-              <h2>
-                {nextSession
-                  ? (templateMap.get(nextSession.template_id) ?? "Clase")
-                  : "Sin próxima clase"}
-              </h2>
-            </div>
+            <div><p className="eyebrow">PRÓXIMA CLASE</p><h2>{nextSession ? (templateMap.get(nextSession.template_id) ?? "Clase") : "Sin próxima clase"}</h2></div>
             {nextSession ? <span className="status-pill">{nextSession.status}</span> : null}
           </div>
-
           {nextSession ? (
             <>
-              <div className="next-class-time">
-                <strong>{formatTime(nextSession.starts_at, timeZone)}</strong>
-                <span>— {formatTime(nextSession.ends_at, timeZone)}</span>
-              </div>
-              <div className="next-class-capacity">
-                <div>
-                  <strong>{reservationsBySession.get(nextSession.id) ?? 0}</strong>
-                  <span>reservadas</span>
-                </div>
-                <div>
-                  <strong>{nextSession.capacity}</strong>
-                  <span>capacidad</span>
-                </div>
-              </div>
-              <Link
-                className="primary-button next-class-action"
-                href={`/admin/agenda/${nextSession.id}`}
-              >
-                Abrir clase
-              </Link>
+              <div className="next-class-time"><strong>{formatTime(nextSession.starts_at, timeZone)}</strong><span>— {formatTime(nextSession.ends_at, timeZone)}</span></div>
+              <div className="next-class-capacity"><div><strong>{reservationsBySession.get(nextSession.id) ?? 0}</strong><span>reservadas</span></div><div><strong>{nextSession.capacity}</strong><span>capacidad</span></div></div>
+              {canReadSchedule ? <Link className="primary-button next-class-action" href={`/admin/agenda/${nextSession.id}`}>Abrir clase</Link> : null}
             </>
-          ) : (
-            <div className="empty-state compact-empty">No quedan clases programadas para hoy.</div>
-          )}
+          ) : <div className="empty-state compact-empty">No quedan clases programadas para hoy.</div>}
         </article>
 
         <article className="panel hoy-quick-card">
-          <p className="eyebrow">OPERACIÓN</p>
-          <h2>Acciones rápidas</h2>
+          <p className="eyebrow">OPERACIÓN</p><h2>Acciones rápidas</h2>
           <div className="quick-action-list">
-            <Link href="/admin/agenda">
-              <span>Agenda</span>
-              <strong>Ver y programar clases →</strong>
-            </Link>
-            <Link href="/admin/alumnas">
-              <span>Alumnas</span>
-              <strong>Buscar o dar de alta →</strong>
-            </Link>
+            {canReadSchedule ? <Link href="/admin/agenda"><span>Agenda</span><strong>{canWriteSchedule ? "Ver y programar clases →" : "Ver agenda →"}</strong></Link> : null}
+            {canReadStudents ? <Link href="/admin/alumnas"><span>Alumnas</span><strong>{canWriteStudents ? "Buscar o dar de alta →" : "Consultar alumnas →"}</strong></Link> : null}
           </div>
         </article>
       </section>
 
       <section className="panel hoy-schedule-panel">
-        <div className="panel-heading">
-          <div>
-            <p className="eyebrow">AGENDA DEL DÍA</p>
-            <h2>Clases de hoy</h2>
-          </div>
-          <Link className="secondary-button" href="/admin/agenda">
-            Ver agenda
-          </Link>
-        </div>
-
-        {(sessions?.length ?? 0) === 0 ? (
-          <div className="empty-state">Todavía no hay clases programadas para hoy.</div>
-        ) : (
-          <div className="session-list">
-            {sessions?.map((session) => {
-              const booked = reservationsBySession.get(session.id) ?? 0;
-              return (
-                <Link
-                  className="session-row session-link"
-                  href={`/admin/agenda/${session.id}`}
-                  key={session.id}
-                >
-                  <div className="session-time">
-                    <strong>{formatTime(session.starts_at, timeZone)}</strong>
-                    <span>hasta {formatTime(session.ends_at, timeZone)}</span>
-                  </div>
-                  <div className="session-copy">
-                    <strong>{templateMap.get(session.template_id) ?? "Clase"}</strong>
-                    <span>
-                      {booked} reservadas · {session.capacity} lugares
-                    </span>
-                  </div>
-                  <div className="session-meta">
-                    <span className="status-pill">{session.status}</span>
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
+        <div className="panel-heading"><div><p className="eyebrow">AGENDA DEL DÍA</p><h2>Clases de hoy</h2></div>{canReadSchedule ? <Link className="secondary-button" href="/admin/agenda">Ver agenda</Link> : null}</div>
+        {(sessions?.length ?? 0) === 0 ? <div className="empty-state">Todavía no hay clases programadas para hoy.</div> : (
+          <div className="session-list">{sessions?.map((session) => {
+            const booked = reservationsBySession.get(session.id) ?? 0;
+            const content = <><div className="session-time"><strong>{formatTime(session.starts_at, timeZone)}</strong><span>hasta {formatTime(session.ends_at, timeZone)}</span></div><div className="session-copy"><strong>{templateMap.get(session.template_id) ?? "Clase"}</strong><span>{booked} reservadas · {session.capacity} lugares</span></div><div className="session-meta"><span className="status-pill">{session.status}</span></div></>;
+            return canReadSchedule ? <Link className="session-row session-link" href={`/admin/agenda/${session.id}`} key={session.id}>{content}</Link> : <div className="session-row" key={session.id}>{content}</div>;
+          })}</div>
         )}
       </section>
     </main>
