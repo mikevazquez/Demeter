@@ -50,7 +50,9 @@ export function AdminNavigation({ items }: { items: AdminNavItem[] }) {
 export function AdminMobileNavigation({ items }: { items: AdminNavItem[] }) {
   const pathname = usePathname();
   const mobileItems = items.filter(
-    (item) => item.enabled && ["/admin", "/admin/agenda", "/admin/alumnas"].includes(item.href),
+    (item) =>
+      item.enabled &&
+      ["/admin", "/admin/agenda", "/admin/alumnas", "/admin/ventas"].includes(item.href),
   );
 
   return (
