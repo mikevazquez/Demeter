@@ -10,8 +10,14 @@ function money(value: number, currency: string) {
   return new Intl.NumberFormat("es-MX", { style: "currency", currency }).format(value / 100);
 }
 
-function paymentLabel(kind: string) {
-  return kind === "refund" ? "Reembolso" : "Pago";
+function statusLabel(status: string) {
+  const labels: Record<string, string> = {
+    active: "Activo",
+    expired: "Vencido",
+    cancelled: "Inactivo",
+    refunded: "Reembolsado",
+  };
+  return labels[status] ?? status;
 }
 
 const errorCopy: Record<string, string> = {
@@ -51,7 +57,6 @@ export default async function SaleDetailPage({
     .eq("id", saleId)
     .eq("studio_id", ctx.studio.id)
     .maybeSingle();
-
   if (!sale) notFound();
 
   const [{ data: student }, { data: lines }, { data: payments }] = await Promise.all([
@@ -62,7 +67,9 @@ export default async function SaleDetailPage({
       .maybeSingle(),
     ctx.supabase
       .from("sale_lines")
-      .select("id,product_template_id,product_name,quantity,unit_price_minor,line_total_minor")
+      .select(
+        "id,product_template_id,product_name,quantity,unit_price_minor,line_total_minor,refunded_at,refund_reason",
+      )
       .eq("sale_id", sale.id)
       .order("created_at"),
     ctx.supabase
@@ -73,28 +80,46 @@ export default async function SaleDetailPage({
   ]);
 
   const lineIds = (lines ?? []).map((line) => line.id);
-  const { data: acquisitions } = lineIds.length
-    ? await ctx.supabase
-        .from("product_acquisitions")
-        .select(
-          "id,sale_line_id,status,starts_on,expires_on,credit_limit,unlimited,refunded_at,refund_reason",
-        )
-        .in("sale_line_id", lineIds)
-    : {
-        data: [] as {
-          id: string;
-          sale_line_id: string | null;
-          status: string;
-          starts_on: string;
-          expires_on: string;
-          credit_limit: number | null;
-          unlimited: boolean;
-          refunded_at: string | null;
-          refund_reason: string | null;
-        }[],
-      };
+  const [{ data: acquisitions }, { data: enrollments }] = lineIds.length
+    ? await Promise.all([
+        ctx.supabase
+          .from("product_acquisitions")
+          .select("id,sale_line_id,status,starts_on,expires_on,credit_limit,unlimited")
+          .in("sale_line_id", lineIds),
+        ctx.supabase
+          .from("student_enrollments")
+          .select("id,source_sale_line_id,status,starts_on,expires_on,refunded_at,refund_reason")
+          .in("source_sale_line_id", lineIds),
+      ])
+    : [
+        {
+          data: [] as {
+            id: string;
+            sale_line_id: string | null;
+            status: string;
+            starts_on: string;
+            expires_on: string;
+            credit_limit: number | null;
+            unlimited: boolean;
+          }[],
+        },
+        {
+          data: [] as {
+            id: string;
+            source_sale_line_id: string | null;
+            status: string;
+            starts_on: string;
+            expires_on: string | null;
+            refunded_at: string | null;
+            refund_reason: string | null;
+          }[],
+        },
+      ];
 
   const acquisitionMap = new Map((acquisitions ?? []).map((item) => [item.sale_line_id, item]));
+  const enrollmentMap = new Map(
+    (enrollments ?? []).map((item) => [item.source_sale_line_id, item]),
+  );
   const lineNameMap = new Map((lines ?? []).map((line) => [line.id, line.product_name]));
   const lineRefundMap = new Map<string, number>();
   let grossPaid = 0;
@@ -115,10 +140,10 @@ export default async function SaleDetailPage({
   }
 
   const netCollected = grossPaid - refunded;
-  const collectibleTotal = (lines ?? []).reduce((sum, line) => {
-    const acquisition = acquisitionMap.get(line.id);
-    return sum + (acquisition?.refunded_at ? 0 : line.line_total_minor);
-  }, 0);
+  const collectibleTotal = (lines ?? []).reduce(
+    (sum, line) => sum + (line.refunded_at ? 0 : line.line_total_minor),
+    0,
+  );
   const balance = Math.max(collectibleTotal - netCollected, 0);
   const paymentState =
     sale.status === "voided"
@@ -135,9 +160,9 @@ export default async function SaleDetailPage({
   const canWrite = ctx.can(CAPABILITIES.SALES_WRITE);
 
   const successCopy: Record<string, string> = {
-    sale: "Venta confirmada y adquisición creada correctamente.",
+    sale: "Venta confirmada y derecho comercial creado correctamente.",
     payment: "Pago registrado correctamente.",
-    refund: "Reembolso registrado. La adquisición quedó inactiva y el historial se conservó.",
+    refund: "Reembolso registrado. El derecho asociado quedó inactivo y su historia se conservó.",
     void: "Venta anulada correctamente; su historia se conserva.",
   };
 
@@ -170,47 +195,36 @@ export default async function SaleDetailPage({
       ) : null}
 
       <section className="grid gap-3 md:grid-cols-5">
-        <article className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
-          <p className="text-xs uppercase tracking-wide text-zinc-500">Total vendido</p>
-          <strong className="mt-2 block text-2xl text-white">
-            {money(sale.total_minor, sale.currency)}
-          </strong>
-        </article>
-        <article className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
-          <p className="text-xs uppercase tracking-wide text-zinc-500">Cobrado</p>
-          <strong className="mt-2 block text-2xl text-white">
-            {money(grossPaid, sale.currency)}
-          </strong>
-        </article>
-        <article className="rounded-2xl border border-rose-500/20 bg-rose-500/[0.04] p-5">
-          <p className="text-xs uppercase tracking-wide text-rose-300/70">Reembolsado</p>
-          <strong className="mt-2 block text-2xl text-white">
-            {money(refunded, sale.currency)}
-          </strong>
-        </article>
-        <article className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
-          <p className="text-xs uppercase tracking-wide text-zinc-500">Neto cobrado</p>
-          <strong className="mt-2 block text-2xl text-white">
-            {money(netCollected, sale.currency)}
-          </strong>
-        </article>
-        <article className="rounded-2xl border border-fuchsia-500/20 bg-fuchsia-500/[0.06] p-5">
-          <p className="text-xs uppercase tracking-wide text-fuchsia-300/70">Saldo</p>
-          <strong className="mt-2 block text-2xl text-white">
-            {money(balance, sale.currency)}
-          </strong>
-        </article>
+        {[
+          ["Total vendido", sale.total_minor],
+          ["Cobrado", grossPaid],
+          ["Reembolsado", refunded],
+          ["Neto cobrado", netCollected],
+          ["Saldo", balance],
+        ].map(([label, value]) => (
+          <article key={String(label)} className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+            <p className="text-xs uppercase tracking-wide text-zinc-500">{label}</p>
+            <strong className="mt-2 block text-2xl text-white">
+              {money(Number(value), sale.currency)}
+            </strong>
+          </article>
+        ))}
       </section>
 
       <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
-        <h2 className="font-semibold text-white">Productos y adquisiciones</h2>
+        <h2 className="font-semibold text-white">Productos y derechos</h2>
+        <p className="mt-1 text-sm text-zinc-400">
+          Un producto puede generar una adquisición de clases o un estado de inscripción; nunca ambos.
+        </p>
         <div className="mt-4 divide-y divide-white/10">
           {(lines ?? []).map((line) => {
             const acquisition = acquisitionMap.get(line.id);
+            const enrollment = enrollmentMap.get(line.id);
             const lineRefunded = lineRefundMap.get(line.id) ?? 0;
             const lineRefundRemaining = Math.max(line.line_total_minor - lineRefunded, 0);
             const refundableNow = Math.min(lineRefundRemaining, Math.max(netCollected, 0));
-            const isRefunded = Boolean(acquisition?.refunded_at);
+            const isRefunded = Boolean(line.refunded_at);
+            const fulfillmentStatus = acquisition?.status ?? enrollment?.status;
 
             return (
               <div key={line.id} className="space-y-4 py-5">
@@ -218,20 +232,27 @@ export default async function SaleDetailPage({
                   <div>
                     <div className="flex flex-wrap items-center gap-2">
                       <strong className="text-white">{line.product_name}</strong>
-                      {isRefunded ? (
-                        <span className="rounded-full bg-rose-500/15 px-2.5 py-1 text-xs font-medium text-rose-300">
-                          Reembolsado · Inactivo
+                      {enrollment ? (
+                        <span className="rounded-full bg-violet-500/15 px-2.5 py-1 text-xs font-medium text-violet-300">
+                          Inscripción
                         </span>
                       ) : acquisition ? (
-                        <span className="rounded-full bg-emerald-500/15 px-2.5 py-1 text-xs font-medium text-emerald-300">
-                          {acquisition.status === "active" ? "Activo" : acquisition.status}
+                        <span className="rounded-full bg-sky-500/15 px-2.5 py-1 text-xs font-medium text-sky-300">
+                          Paquete / adquisición
                         </span>
                       ) : null}
+                      <span
+                        className={`rounded-full px-2.5 py-1 text-xs font-medium ${isRefunded ? "bg-rose-500/15 text-rose-300" : "bg-emerald-500/15 text-emerald-300"}`}
+                      >
+                        {isRefunded ? "Reembolsado · Inactivo" : statusLabel(fulfillmentStatus ?? "sin estado")}
+                      </span>
                     </div>
                     <p className="mt-1 text-sm text-zinc-400">
                       {acquisition
                         ? `${acquisition.unlimited ? "Ilimitado" : `${acquisition.credit_limit ?? 0} créditos`} · ${acquisition.starts_on} → ${acquisition.expires_on}`
-                        : "Adquisición no encontrada"}
+                        : enrollment
+                          ? `Inscripción · ${enrollment.starts_on} → ${enrollment.expires_on ?? "sin vencimiento"}`
+                          : "Derecho asociado no encontrado"}
                     </p>
                     {lineRefunded > 0 ? (
                       <p className="mt-1 text-xs text-rose-300">
@@ -244,15 +265,14 @@ export default async function SaleDetailPage({
                   </strong>
                 </div>
 
-                {canWrite && sale.status === "confirmed" && refundableNow > 0 ? (
+                {canWrite && sale.status === "confirmed" && !isRefunded && refundableNow > 0 ? (
                   <details className="rounded-xl border border-rose-500/20 bg-rose-500/[0.04] p-4">
                     <summary className="cursor-pointer text-sm font-semibold text-rose-200">
                       Reembolsar este producto
                     </summary>
                     <p className="mt-2 text-xs leading-5 text-zinc-400">
-                      El reembolso es manual en este MVP. Al confirmarlo, la adquisición queda
-                      inactiva. Si sostiene reservas futuras activas, Studio Flow bloqueará la
-                      operación hasta que se cancelen primero.
+                      El reembolso es manual en este MVP. Al confirmarlo, el paquete o inscripción
+                      asociado queda inactivo. Los consumos previos se conservan como historial.
                     </p>
                     <form action={refundSaleLineAction} className="mt-4 grid gap-3 md:grid-cols-2">
                       <input type="hidden" name="sale_id" value={sale.id} />
@@ -310,15 +330,9 @@ export default async function SaleDetailPage({
                         />
                       </label>
                       <label className="flex items-start gap-2 text-xs text-zinc-300 md:col-span-2">
-                        <input
-                          type="checkbox"
-                          name="confirm_refund"
-                          value="yes"
-                          required
-                          className="mt-0.5"
-                        />
-                        Confirmo que el dinero se devolverá manualmente y que esta adquisición
-                        dejará de poder utilizarse.
+                        <input type="checkbox" name="confirm_refund" value="yes" required className="mt-0.5" />
+                        Confirmo que el dinero se devolverá manualmente y que el derecho de esta
+                        línea dejará de poder utilizarse.
                       </label>
                       <div className="md:col-span-2 md:text-right">
                         <button
@@ -338,25 +352,15 @@ export default async function SaleDetailPage({
       </section>
 
       <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
-        <div>
-          <h2 className="font-semibold text-white">Historial comercial</h2>
-          <p className="mt-1 text-sm text-zinc-400">
-            Pagos y reembolsos permanecen como movimientos separados; nunca se borra la historia.
-          </p>
-        </div>
+        <h2 className="font-semibold text-white">Historial comercial</h2>
         {!payments?.length ? (
-          <p className="mt-4 rounded-xl border border-dashed border-white/10 p-4 text-sm text-zinc-500">
-            Aún no hay movimientos registrados.
-          </p>
+          <p className="mt-4 text-sm text-zinc-500">Aún no hay pagos ni reembolsos registrados.</p>
         ) : (
           <div className="mt-4 divide-y divide-white/10">
             {payments.map((payment) => (
-              <div
-                key={payment.id}
-                className="grid gap-2 py-3 md:grid-cols-[110px_1fr_auto] md:items-center"
-              >
+              <div key={payment.id} className="grid gap-2 py-3 md:grid-cols-[120px_1fr_auto] md:items-center">
                 <span className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-                  {paymentLabel(payment.kind)}
+                  {payment.kind === "refund" ? "Reembolso" : "Pago"}
                 </span>
                 <div>
                   <p className="text-sm text-zinc-300">
@@ -377,9 +381,7 @@ export default async function SaleDetailPage({
                     }).format(new Date(payment.created_at))}
                   </p>
                 </div>
-                <strong
-                  className={payment.kind === "refund" ? "text-rose-300" : "text-emerald-300"}
-                >
+                <strong className={payment.kind === "refund" ? "text-rose-300" : "text-emerald-300"}>
                   {payment.kind === "refund" ? "−" : "+"}
                   {money(payment.amount_minor, sale.currency)}
                 </strong>
@@ -416,9 +418,7 @@ export default async function SaleDetailPage({
                 defaultValue=""
                 className="rounded-xl border border-white/10 bg-zinc-950 px-3 py-3 text-white"
               >
-                <option value="" disabled>
-                  Selecciona método
-                </option>
+                <option value="" disabled>Selecciona método</option>
                 <option value="efectivo">Efectivo</option>
                 <option value="transferencia">Transferencia</option>
                 <option value="tarjeta">Tarjeta</option>
@@ -427,25 +427,14 @@ export default async function SaleDetailPage({
             </label>
             <label className="grid gap-1.5 text-sm text-zinc-300">
               Referencia
-              <input
-                name="payment_reference"
-                placeholder="Opcional"
-                className="rounded-xl border border-white/10 bg-black/20 px-3 py-3 text-white"
-              />
+              <input name="payment_reference" className="rounded-xl border border-white/10 bg-black/20 px-3 py-3 text-white" />
             </label>
             <label className="grid gap-1.5 text-sm text-zinc-300">
               Notas
-              <input
-                name="payment_notes"
-                placeholder="Opcional"
-                className="rounded-xl border border-white/10 bg-black/20 px-3 py-3 text-white"
-              />
+              <input name="payment_notes" className="rounded-xl border border-white/10 bg-black/20 px-3 py-3 text-white" />
             </label>
             <div className="md:col-span-2 md:text-right">
-              <button
-                type="submit"
-                className="rounded-xl bg-fuchsia-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-fuchsia-500"
-              >
+              <button className="rounded-xl bg-fuchsia-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-fuchsia-500">
                 Registrar pago
               </button>
             </div>
@@ -458,8 +447,8 @@ export default async function SaleDetailPage({
           <h2 className="font-semibold text-white">Anular venta</h2>
           {netCollected > 0 ? (
             <p className="mt-2 text-sm text-zinc-400">
-              Esta venta conserva {money(netCollected, sale.currency)} de dinero cobrado. Para
-              anularla, primero registra los reembolsos correspondientes.
+              Esta venta conserva {money(netCollected, sale.currency)} de dinero cobrado. Primero
+              registra los reembolsos correspondientes.
             </p>
           ) : (
             <form action={voidSaleAction} className="mt-4 grid gap-3">
@@ -469,26 +458,16 @@ export default async function SaleDetailPage({
                 <input
                   name="void_reason"
                   required
-                  placeholder="Motivo obligatorio"
                   className="rounded-xl border border-white/10 bg-black/20 px-3 py-3 text-white"
                 />
               </label>
               <label className="flex items-start gap-2 text-xs text-zinc-300">
-                <input
-                  type="checkbox"
-                  name="confirm_void"
-                  value="yes"
-                  required
-                  className="mt-0.5"
-                />
-                Confirmo que la venta se marcará como anulada. No se eliminarán pagos, productos,
-                créditos consumidos ni historial previo.
+                <input type="checkbox" name="confirm_void" value="yes" required className="mt-0.5" />
+                Confirmo que la venta se marcará como anulada y los derechos activos asociados se
+                inactivarán sin borrar su historia.
               </label>
               <div className="text-right">
-                <button
-                  type="submit"
-                  className="rounded-xl border border-rose-500/40 px-5 py-2.5 text-sm font-semibold text-rose-200 hover:bg-rose-500/10"
-                >
+                <button className="rounded-xl border border-rose-500/40 px-5 py-2.5 text-sm font-semibold text-rose-200 hover:bg-rose-500/10">
                   Anular venta
                 </button>
               </div>
