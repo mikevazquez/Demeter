@@ -3,6 +3,7 @@ import { getAdminContext } from "@/lib/auth/admin-context";
 import { AdminMobileNavigation, AdminNavigation } from "./admin-navigation";
 import "./hoy.css";
 import "./roster-uat.css";
+import "./mobile-nav-overrides.css";
 
 const navItems = [
   { href: "/admin", label: "Hoy", enabled: true },
