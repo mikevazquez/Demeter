@@ -10,6 +10,10 @@ const labels: Record<string, string> = {
   other: "Otro",
 };
 
+type ProductDiscipline = {
+  disciplines: { name: string } | null;
+};
+
 export default async function ProductDetailPage({
   params,
 }: {
@@ -70,7 +74,7 @@ export default async function ProductDetailPage({
         <h2 className="font-semibold text-white">Disciplinas incluidas</h2>
         <div className="mt-3 flex flex-wrap gap-2">
           {product.product_template_disciplines?.length ? (
-            product.product_template_disciplines.map((item: any, index: number) => (
+            (product.product_template_disciplines as ProductDiscipline[]).map((item, index) => (
               <span
                 key={index}
                 className="rounded-full bg-white/[0.06] px-3 py-1 text-sm text-zinc-300"
