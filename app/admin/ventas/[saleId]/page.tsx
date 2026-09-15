@@ -4,11 +4,7 @@ import { notFound } from "next/navigation";
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 
-import {
-  refundSaleLineAction,
-  registerSalePaymentAction,
-  voidSaleAction,
-} from "../actions";
+import { refundSaleLineAction, registerSalePaymentAction, voidSaleAction } from "../actions";
 
 function money(value: number, currency: string) {
   return new Intl.NumberFormat("es-MX", { style: "currency", currency }).format(value / 100);
@@ -478,7 +474,13 @@ export default async function SaleDetailPage({
                 />
               </label>
               <label className="flex items-start gap-2 text-xs text-zinc-300">
-                <input type="checkbox" name="confirm_void" value="yes" required className="mt-0.5" />
+                <input
+                  type="checkbox"
+                  name="confirm_void"
+                  value="yes"
+                  required
+                  className="mt-0.5"
+                />
                 Confirmo que la venta se marcará como anulada. No se eliminarán pagos, productos,
                 créditos consumidos ni historial previo.
               </label>

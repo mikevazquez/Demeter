@@ -21,8 +21,7 @@ function paymentState(
     return { label: "Con reembolso", className: "bg-orange-500/15 text-orange-300" };
 
   const netCollected = grossPaid - refunded;
-  if (netCollected <= 0)
-    return { label: "Pendiente", className: "bg-amber-500/15 text-amber-300" };
+  if (netCollected <= 0) return { label: "Pendiente", className: "bg-amber-500/15 text-amber-300" };
   if (netCollected < collectibleTotal)
     return { label: "Parcial", className: "bg-sky-500/15 text-sky-300" };
   return { label: "Pagada", className: "bg-emerald-500/15 text-emerald-300" };
@@ -182,12 +181,7 @@ export default async function SalesPage({
               const netCollected = grossPaid - refunded;
               const collectibleTotal = collectibleMap.get(sale.id) ?? sale.total_minor;
               const balance = Math.max(collectibleTotal - netCollected, 0);
-              const state = paymentState(
-                collectibleTotal,
-                grossPaid,
-                refunded,
-                sale.status,
-              );
+              const state = paymentState(collectibleTotal, grossPaid, refunded, sale.status);
               return (
                 <Link
                   key={sale.id}

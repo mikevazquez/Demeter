@@ -52,9 +52,9 @@ describe("F9 sales contracts", () => {
   it("refunds a specific sale line and keeps credit history intact", () => {
     const migration = source("supabase/migrations/20260915222558_f9_refunds_voids.sql");
     const refundFunction =
-      migration.split("create or replace function public.refund_sale_line")[1]?.split(
-        "create or replace function public.void_sale",
-      )[0] ?? "";
+      migration
+        .split("create or replace function public.refund_sale_line")[1]
+        ?.split("create or replace function public.void_sale")[0] ?? "";
 
     expect(refundFunction).toContain("sale_line_id");
     expect(refundFunction).toContain("kind='refund'");
