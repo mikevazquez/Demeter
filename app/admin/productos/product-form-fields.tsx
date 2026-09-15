@@ -21,7 +21,8 @@ type EnrollmentValidity = "30" | "90" | "180" | "365" | "lifetime" | "custom";
 
 function enrollmentValidityFromDays(days: number | null | undefined): EnrollmentValidity {
   if (days == null) return "lifetime";
-  if (days === 30 || days === 90 || days === 180 || days === 365) return String(days) as EnrollmentValidity;
+  if (days === 30 || days === 90 || days === 180 || days === 365)
+    return String(days) as EnrollmentValidity;
   return "custom";
 }
 
@@ -83,7 +84,9 @@ export function ProductFormFields({
               Vigencia
               <select
                 value={enrollmentValidity}
-                onChange={(event) => setEnrollmentValidity(event.target.value as EnrollmentValidity)}
+                onChange={(event) =>
+                  setEnrollmentValidity(event.target.value as EnrollmentValidity)
+                }
                 className="mt-2 w-full rounded-xl border border-white/10 bg-zinc-950 px-3 py-2.5 text-white"
               >
                 <option value="30">30 días</option>

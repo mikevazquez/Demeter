@@ -7,6 +7,7 @@ Decisión funcional aprobada durante UAT de F9.
 La inscripción es un derecho administrativo y puede tener una vigencia finita o ser vitalicia.
 
 Opciones comunes en UI:
+
 - 30 días
 - 3 meses (90 días)
 - 6 meses (180 días)

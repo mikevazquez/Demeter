@@ -38,7 +38,8 @@ export default async function ProductDetailPage({
 
   const productDisciplines: ProductDiscipline[] = product.product_template_disciplines ?? [];
   const isEnrollment = product.product_type === "enrollment";
-  const validityLabel = product.validity_days == null ? "Vitalicia" : `${product.validity_days} días`;
+  const validityLabel =
+    product.validity_days == null ? "Vitalicia" : `${product.validity_days} días`;
   const statusMessage =
     status === "activated"
       ? "Producto activado correctamente. Ya está disponible para su uso."
