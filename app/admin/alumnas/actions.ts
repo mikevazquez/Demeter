@@ -13,7 +13,9 @@ function errorRedirect(code: string): never {
 export async function createStudent(formData: FormData) {
   const firstName = String(formData.get("first_name") ?? "").trim();
   const lastName = String(formData.get("last_name") ?? "").trim();
-  const rawEmail = String(formData.get("email") ?? "").trim().toLowerCase();
+  const rawEmail = String(formData.get("email") ?? "")
+    .trim()
+    .toLowerCase();
   const email = rawEmail || null;
   const phone = normalizeMexicanPhone(String(formData.get("phone") ?? ""));
 
