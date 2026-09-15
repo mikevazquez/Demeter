@@ -14,7 +14,7 @@ export default async function ProductsPage() {
   const { data: products } = await ctx.supabase
     .from("product_templates")
     .select("id,name,product_type,price_minor,currency,credit_limit,validity_days,unlimited,active")
-    .eq("studio_id", ctx.studioId)
+    .eq("studio_id", ctx.studio.id)
     .order("active", { ascending: false })
     .order("name");
 
