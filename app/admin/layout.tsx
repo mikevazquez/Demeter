@@ -9,7 +9,7 @@ const navItems = [
   { href: "/admin/agenda", label: "Agenda", enabled: true },
   { href: "/admin/alumnas", label: "Alumnas", enabled: true },
   { href: "/admin/productos", label: "Productos", enabled: false },
-  { href: "/admin/ventas", label: "Ventas", enabled: false },
+  { href: "/admin/ventas", label: "Ventas", enabled: true },
   { href: "/admin/instructores", label: "Instructores", enabled: true },
   { href: "/admin/reportes", label: "Reportes", enabled: false },
   { href: "/admin/configuracion", label: "Configuración", enabled: false },
