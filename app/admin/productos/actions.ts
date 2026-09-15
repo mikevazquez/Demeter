@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 
 import { getAdminContext } from "@/lib/auth/admin-context";
 
-const TYPES = new Set(["package", "membership", "single_class", "other"]);
+const TYPES = new Set(["package", "membership", "single_class", "enrollment", "other"]);
 
 function parsePositiveInt(value: FormDataEntryValue | null, field: string) {
   const parsed = Number(value);
@@ -17,13 +17,18 @@ function parseProductForm(formData: FormData) {
   const name = String(formData.get("name") ?? "").trim();
   const description = String(formData.get("description") ?? "").trim() || null;
   const productType = String(formData.get("product_type") ?? "");
-  const unlimited = formData.get("unlimited") === "on";
+  const isEnrollment = productType === "enrollment";
+  const unlimited = isEnrollment ? false : formData.get("unlimited") === "on";
   const pricePesos = Number(formData.get("price") ?? 0);
   const validityDays = parsePositiveInt(formData.get("validity_days"), "validity_days");
-  const creditLimit = unlimited
+  const creditLimit = isEnrollment
     ? null
-    : parsePositiveInt(formData.get("credit_limit"), "credit_limit");
-  const disciplineIds = [...new Set(formData.getAll("discipline_ids").map(String).filter(Boolean))];
+    : unlimited
+      ? null
+      : parsePositiveInt(formData.get("credit_limit"), "credit_limit");
+  const disciplineIds = isEnrollment
+    ? []
+    : [...new Set(formData.getAll("discipline_ids").map(String).filter(Boolean))];
 
   if (!name) throw new Error("name_required");
   if (!TYPES.has(productType)) throw new Error("product_type_invalid");
