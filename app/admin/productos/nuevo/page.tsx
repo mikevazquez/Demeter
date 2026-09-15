@@ -6,7 +6,7 @@ export default async function NewProductPage() {
   const { data: disciplines } = await ctx.supabase
     .from("disciplines")
     .select("id,name")
-    .eq("studio_id", ctx.studioId)
+    .eq("studio_id", ctx.studio.id)
     .eq("active", true)
     .order("name");
 
