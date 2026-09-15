@@ -20,11 +20,19 @@ function formatDay(value: Date, timeZone: string) {
 }
 
 function CalendarIcon() {
-  return <span className="quick-icon" aria-hidden="true">⌑</span>;
+  return (
+    <span className="quick-icon" aria-hidden="true">
+      ⌑
+    </span>
+  );
 }
 
 function StudentsIcon() {
-  return <span className="quick-icon" aria-hidden="true">◎</span>;
+  return (
+    <span className="quick-icon" aria-hidden="true">
+      ◎
+    </span>
+  );
 }
 
 export default async function AdminPage() {
@@ -97,7 +105,8 @@ export default async function AdminPage() {
   const templateMap = new Map((templates ?? []).map((item) => [item.id, item.name]));
 
   const totalCapacity = (sessions ?? []).reduce((sum, session) => sum + session.capacity, 0);
-  const occupancy = totalCapacity > 0 ? Math.round((reservationsCount / totalCapacity) * 100) : null;
+  const occupancy =
+    totalCapacity > 0 ? Math.round((reservationsCount / totalCapacity) * 100) : null;
   const nextSession = (sessions ?? []).find(
     (session) => new Date(session.ends_at).getTime() >= now.getTime(),
   );
@@ -120,7 +129,11 @@ export default async function AdminPage() {
           <div className="panel-heading">
             <div>
               <p className="eyebrow">PRÓXIMA CLASE</p>
-              <h2>{nextSession ? (templateMap.get(nextSession.template_id) ?? "Clase") : "Tu día está libre"}</h2>
+              <h2>
+                {nextSession
+                  ? (templateMap.get(nextSession.template_id) ?? "Clase")
+                  : "Tu día está libre"}
+              </h2>
             </div>
             {nextSession ? <span className="status-pill">{nextSession.status}</span> : null}
           </div>
@@ -131,10 +144,23 @@ export default async function AdminPage() {
                 <span>— {formatTime(nextSession.ends_at, timeZone)}</span>
               </div>
               <div className="next-class-capacity">
-                <div><strong>{reservationsBySession.get(nextSession.id) ?? 0}</strong><span>reservadas</span></div>
-                <div><strong>{nextSession.capacity}</strong><span>capacidad</span></div>
+                <div>
+                  <strong>{reservationsBySession.get(nextSession.id) ?? 0}</strong>
+                  <span>reservadas</span>
+                </div>
+                <div>
+                  <strong>{nextSession.capacity}</strong>
+                  <span>capacidad</span>
+                </div>
               </div>
-              {canReadSchedule ? <Link className="primary-button next-class-action" href={`/admin/agenda/${nextSession.id}`}>Abrir clase</Link> : null}
+              {canReadSchedule ? (
+                <Link
+                  className="primary-button next-class-action"
+                  href={`/admin/agenda/${nextSession.id}`}
+                >
+                  Abrir clase
+                </Link>
+              ) : null}
             </>
           ) : (
             <div className="next-class-empty">
@@ -159,7 +185,9 @@ export default async function AdminPage() {
               <Link href="/admin/alumnas">
                 <StudentsIcon />
                 <span>Alumnas</span>
-                <strong>{canWriteStudents ? "Buscar o dar de alta →" : "Consultar alumnas →"}</strong>
+                <strong>
+                  {canWriteStudents ? "Buscar o dar de alta →" : "Consultar alumnas →"}
+                </strong>
               </Link>
             ) : null}
           </div>
@@ -167,16 +195,43 @@ export default async function AdminPage() {
       </section>
 
       <section className="stat-grid hoy-stat-grid" aria-label="Indicadores operativos del día">
-        <article className="stat-card"><span>Clases hoy</span><strong>{sessions?.length ?? 0}</strong><small>Sesiones programadas</small></article>
-        <article className="stat-card"><span>Reservas hoy</span><strong>{reservationsCount}</strong><small>Lugares confirmados</small></article>
-        <article className="stat-card"><span>Alumnas activas</span><strong>{activeStudents ?? 0}</strong><small>Expedientes activos</small></article>
-        <article className="stat-card"><span>Ocupación del día</span><strong>{occupancy === null ? "—" : `${occupancy}%`}</strong><small>{totalCapacity ? `${reservationsCount} de ${totalCapacity} lugares` : "Sin cupo programado"}</small></article>
+        <article className="stat-card">
+          <span>Clases hoy</span>
+          <strong>{sessions?.length ?? 0}</strong>
+          <small>Sesiones programadas</small>
+        </article>
+        <article className="stat-card">
+          <span>Reservas hoy</span>
+          <strong>{reservationsCount}</strong>
+          <small>Lugares confirmados</small>
+        </article>
+        <article className="stat-card">
+          <span>Alumnas activas</span>
+          <strong>{activeStudents ?? 0}</strong>
+          <small>Expedientes activos</small>
+        </article>
+        <article className="stat-card">
+          <span>Ocupación del día</span>
+          <strong>{occupancy === null ? "—" : `${occupancy}%`}</strong>
+          <small>
+            {totalCapacity
+              ? `${reservationsCount} de ${totalCapacity} lugares`
+              : "Sin cupo programado"}
+          </small>
+        </article>
       </section>
 
       <section className="panel hoy-schedule-panel">
         <div className="panel-heading">
-          <div><p className="eyebrow">AGENDA DEL DÍA</p><h2>Clases de hoy</h2></div>
-          {canReadSchedule ? <Link className="secondary-button" href="/admin/agenda">Ver agenda</Link> : null}
+          <div>
+            <p className="eyebrow">AGENDA DEL DÍA</p>
+            <h2>Clases de hoy</h2>
+          </div>
+          {canReadSchedule ? (
+            <Link className="secondary-button" href="/admin/agenda">
+              Ver agenda
+            </Link>
+          ) : null}
         </div>
         {(sessions?.length ?? 0) === 0 ? (
           <div className="empty-state">Todavía no hay clases programadas para hoy.</div>
@@ -184,13 +239,37 @@ export default async function AdminPage() {
           <div className="session-list hoy-timeline">
             {sessions?.map((session) => {
               const booked = reservationsBySession.get(session.id) ?? 0;
-              const content = <>
-                <div className="timeline-marker" aria-hidden="true" />
-                <div className="session-time"><strong>{formatTime(session.starts_at, timeZone)}</strong><span>hasta {formatTime(session.ends_at, timeZone)}</span></div>
-                <div className="session-copy"><strong>{templateMap.get(session.template_id) ?? "Clase"}</strong><span>{booked} reservadas · {session.capacity} lugares</span></div>
-                <div className="session-meta"><span className="status-pill">{session.status}</span></div>
-              </>;
-              return canReadSchedule ? <Link className="session-row session-link" href={`/admin/agenda/${session.id}`} key={session.id}>{content}</Link> : <div className="session-row" key={session.id}>{content}</div>;
+              const content = (
+                <>
+                  <div className="timeline-marker" aria-hidden="true" />
+                  <div className="session-time">
+                    <strong>{formatTime(session.starts_at, timeZone)}</strong>
+                    <span>hasta {formatTime(session.ends_at, timeZone)}</span>
+                  </div>
+                  <div className="session-copy">
+                    <strong>{templateMap.get(session.template_id) ?? "Clase"}</strong>
+                    <span>
+                      {booked} reservadas · {session.capacity} lugares
+                    </span>
+                  </div>
+                  <div className="session-meta">
+                    <span className="status-pill">{session.status}</span>
+                  </div>
+                </>
+              );
+              return canReadSchedule ? (
+                <Link
+                  className="session-row session-link"
+                  href={`/admin/agenda/${session.id}`}
+                  key={session.id}
+                >
+                  {content}
+                </Link>
+              ) : (
+                <div className="session-row" key={session.id}>
+                  {content}
+                </div>
+              );
             })}
           </div>
         )}

@@ -24,37 +24,33 @@ export default async function AgendaPage({
   const { supabase, studio, can } = await getAdminContext(CAPABILITIES.SCHEDULE_READ);
   const canEdit = can(CAPABILITIES.SCHEDULE_WRITE);
 
-  const [
-    { data: disciplines },
-    { data: templates },
-    { data: locations },
-    { data: sessions },
-  ] = await Promise.all([
-    supabase
-      .from("disciplines")
-      .select("id, name, active")
-      .eq("studio_id", studio.id)
-      .order("name"),
-    supabase
-      .from("class_templates")
-      .select("id, name, duration_minutes, capacity, discipline_id")
-      .eq("studio_id", studio.id)
-      .eq("active", true)
-      .order("name"),
-    supabase
-      .from("studio_locations")
-      .select("id, name, address")
-      .eq("studio_id", studio.id)
-      .eq("active", true)
-      .order("name"),
-    supabase
-      .from("class_sessions")
-      .select("id, starts_at, ends_at, capacity, status, notes, template_id, location_id")
-      .eq("studio_id", studio.id)
-      .gte("starts_at", agendaLookbackIso())
-      .order("starts_at", { ascending: true })
-      .limit(30),
-  ]);
+  const [{ data: disciplines }, { data: templates }, { data: locations }, { data: sessions }] =
+    await Promise.all([
+      supabase
+        .from("disciplines")
+        .select("id, name, active")
+        .eq("studio_id", studio.id)
+        .order("name"),
+      supabase
+        .from("class_templates")
+        .select("id, name, duration_minutes, capacity, discipline_id")
+        .eq("studio_id", studio.id)
+        .eq("active", true)
+        .order("name"),
+      supabase
+        .from("studio_locations")
+        .select("id, name, address")
+        .eq("studio_id", studio.id)
+        .eq("active", true)
+        .order("name"),
+      supabase
+        .from("class_sessions")
+        .select("id, starts_at, ends_at, capacity, status, notes, template_id, location_id")
+        .eq("studio_id", studio.id)
+        .gte("starts_at", agendaLookbackIso())
+        .order("starts_at", { ascending: true })
+        .limit(30),
+    ]);
 
   const disciplineMap = new Map((disciplines ?? []).map((item) => [item.id, item.name]));
   const templateMap = new Map((templates ?? []).map((item) => [item.id, item]));
