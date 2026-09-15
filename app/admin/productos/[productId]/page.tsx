@@ -17,10 +17,13 @@ type ProductDiscipline = {
 
 export default async function ProductDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ productId: string }>;
+  searchParams: Promise<{ status?: string }>;
 }) {
   const { productId } = await params;
+  const { status } = await searchParams;
   const ctx = await getAdminContext("products.read");
   const { data: product } = await ctx.supabase
     .from("product_templates")
@@ -33,9 +36,23 @@ export default async function ProductDetailPage({
   if (!product) notFound();
 
   const productDisciplines: ProductDiscipline[] = product.product_template_disciplines ?? [];
+  const statusMessage =
+    status === "activated"
+      ? "Producto activado correctamente. Ya está disponible para su uso."
+      : status === "deactivated"
+        ? "Producto desactivado correctamente. Ya no está disponible para nuevas operaciones."
+        : null;
 
   return (
     <main className="mx-auto max-w-4xl space-y-6">
+      {statusMessage ? (
+        <section
+          role="status"
+          className="rounded-2xl border border-emerald-500/25 bg-emerald-500/10 px-4 py-3 text-sm font-medium text-emerald-200"
+        >
+          ✓ {statusMessage}
+        </section>
+      ) : null}
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <p className="text-sm text-fuchsia-300">
