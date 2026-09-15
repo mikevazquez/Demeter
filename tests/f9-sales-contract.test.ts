@@ -146,13 +146,21 @@ describe("F9 sales contracts", () => {
     expect(operations).toContain("disabled={!candidate.eligible && !canFallbackToWalkin}");
   });
 
-  it("exposes enrollment product and policy UI", () => {
-    const products = source("app/admin/productos/nuevo/page.tsx");
+  it("exposes enrollment as an administrative product without class-access fields", () => {
+    const products = source("app/admin/productos/product-form-fields.tsx");
+    const newProduct = source("app/admin/productos/nuevo/page.tsx");
+    const editProduct = source("app/admin/productos/[productId]/editar/page.tsx");
     const productActions = source("app/admin/productos/actions.ts");
     const policy = source("app/admin/ventas/inscripcion/page.tsx");
     const saleWizard = source("app/admin/ventas/nueva/page.tsx");
     const detail = source("app/admin/ventas/[saleId]/page.tsx");
     expect(products).toContain('<option value="enrollment">Inscripción</option>');
+    expect(products).toContain('const isEnrollment = productType === "enrollment"');
+    expect(products).toContain("La inscripción no es un paquete");
+    expect(products).toContain("no otorga clases, créditos ni acceso a disciplinas");
+    expect(products).toContain("{!isEnrollment ? (");
+    expect(newProduct).toContain("ProductFormFields");
+    expect(editProduct).toContain("ProductFormFields");
     expect(productActions).toContain('productType === "enrollment"');
     expect(policy).toContain("Política por estudio");
     expect(policy).toContain("required_for_booking");
@@ -164,6 +172,7 @@ describe("F9 sales contracts", () => {
   it("exposes sales through the simplified Empresa navigation", () => {
     const layout = source("app/admin/layout.tsx");
     const company = source("app/admin/empresa/page.tsx");
+    const mobileSpacing = source("app/admin/mobile-nav-overrides.css");
     const list = source("app/admin/ventas/page.tsx");
     const wizard = source("app/admin/ventas/nueva/page.tsx");
     const detail = source("app/admin/ventas/[saleId]/page.tsx");
@@ -173,6 +182,8 @@ describe("F9 sales contracts", () => {
     expect(layout).toContain('label: "Empresa"');
     expect(layout).toContain('"/admin/ventas"');
     expect(layout).not.toContain('{ href: "/admin/ventas", label: "Ventas", enabled: true }');
+    expect(layout).toContain('import "./mobile-nav-overrides.css"');
+    expect(mobileSpacing).toContain("env(safe-area-inset-bottom)");
     expect(company).toContain("Ventas y pagos");
     expect(company).toContain('href: "/admin/ventas"');
     expect(company).toContain("Coaches");

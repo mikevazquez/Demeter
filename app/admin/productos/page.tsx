@@ -26,7 +26,7 @@ export default async function ProductsPage() {
           <p className="text-sm text-zinc-400">Catálogo comercial</p>
           <h1 className="text-3xl font-semibold text-white">Productos</h1>
           <p className="mt-1 text-sm text-zinc-400">
-            Paquetes, membresías, clases e inscripción disponibles para tu estudio.
+            Paquetes, membresías, clases e inscripciones disponibles para tu estudio.
           </p>
         </div>
         {ctx.can("products.write") ? (
@@ -81,7 +81,7 @@ export default async function ProductsPage() {
                 </div>
                 <p className="text-sm text-zinc-300">
                   {product.product_type === "enrollment"
-                    ? "Sin créditos"
+                    ? "Derecho administrativo"
                     : product.unlimited
                       ? "Ilimitado"
                       : `${product.credit_limit} créditos`}

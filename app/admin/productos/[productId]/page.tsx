@@ -71,6 +71,7 @@ export default async function ProductDetailPage({
           {product.active ? "Activo" : "Inactivo"}
         </span>
       </header>
+
       <section className="grid gap-3 sm:grid-cols-3">
         <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
           <p className="text-xs text-zinc-500">Precio</p>
@@ -81,12 +82,18 @@ export default async function ProductDetailPage({
             }).format(product.price_minor / 100)}
           </p>
         </div>
+
         <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
-          <p className="text-xs text-zinc-500">{isEnrollment ? "Derecho" : "Créditos"}</p>
+          <p className="text-xs text-zinc-500">{isEnrollment ? "Tipo de derecho" : "Créditos"}</p>
           <p className="mt-2 text-xl font-semibold text-white">
-            {isEnrollment ? "Inscripción" : product.unlimited ? "Ilimitados" : product.credit_limit}
+            {isEnrollment
+              ? "Administrativo"
+              : product.unlimited
+                ? "Ilimitados"
+                : product.credit_limit}
           </p>
         </div>
+
         <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
           <p className="text-xs text-zinc-500">Vigencia</p>
           <p className="mt-2 text-xl font-semibold text-white">{product.validity_days} días</p>
@@ -117,14 +124,14 @@ export default async function ProductDetailPage({
         <h2 className="font-semibold text-white">Reglas</h2>
         <p className="mt-2 text-sm text-zinc-400">
           {isEnrollment
-            ? `Al venderse genera un estado de inscripción vigente durante ${product.validity_days} días. No genera créditos ni ProductAcquisition.`
+            ? `Al venderse crea una inscripción vigente durante ${product.validity_days} días. No otorga clases, créditos ni acceso a disciplinas.`
             : product.unlimited
               ? `Acceso ilimitado durante ${product.validity_days} días.`
               : `${product.credit_limit} créditos disponibles durante ${product.validity_days} días desde el inicio de la adquisición.`}
         </p>
         <p className="mt-2 text-xs text-zinc-500">
           {isEnrollment
-            ? "La política del estudio decide si esta inscripción está habilitada y si participa en eligibility."
+            ? "La política del estudio decide cuándo la inscripción es obligatoria para reservar."
             : "Los movimientos de crédito se registran en ledger; reservas y asistencia conservan sus efectos históricos."}
         </p>
       </section>
