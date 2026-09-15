@@ -21,9 +21,11 @@ function formatDay(value: Date, timeZone: string) {
 
 export default async function AdminPage() {
   const { supabase, user, membership, studio, can } = await getAdminContext();
-  const [{ data: profile }] = await Promise.all([
-    supabase.from("profiles").select("full_name").eq("id", user.id).maybeSingle(),
-  ]);
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("full_name")
+    .eq("id", user.id)
+    .maybeSingle();
 
   const timeZone = studio.timezone ?? "America/Mexico_City";
   const now = new Date();
@@ -106,35 +108,8 @@ export default async function AdminPage() {
           <h1 className="dashboard-title">¡Hola, {firstName}!</h1>
           <p className="hoy-date">{formatDay(now, timeZone)}</p>
         </div>
-        <span className="role-pill">{membership.role}</span>
+        <span className="role-pill hoy-role-pill">{membership.role}</span>
       </header>
-
-      <section className="stat-grid" aria-label="Indicadores operativos del día">
-        <article className="stat-card">
-          <span>Clases hoy</span>
-          <strong>{sessions?.length ?? 0}</strong>
-          <small>Sesiones programadas</small>
-        </article>
-        <article className="stat-card">
-          <span>Reservas hoy</span>
-          <strong>{reservationsCount}</strong>
-          <small>Lugares confirmados</small>
-        </article>
-        <article className="stat-card">
-          <span>Alumnas activas</span>
-          <strong>{activeStudents ?? 0}</strong>
-          <small>Expedientes activos</small>
-        </article>
-        <article className="stat-card">
-          <span>Ocupación del día</span>
-          <strong>{occupancy === null ? "—" : `${occupancy}%`}</strong>
-          <small>
-            {totalCapacity
-              ? `${reservationsCount} de ${totalCapacity} lugares`
-              : "Sin cupo programado"}
-          </small>
-        </article>
-      </section>
 
       <section className="hoy-primary-grid">
         <article className="panel next-class-card">
@@ -198,6 +173,33 @@ export default async function AdminPage() {
               </Link>
             ) : null}
           </div>
+        </article>
+      </section>
+
+      <section className="stat-grid hoy-stat-grid" aria-label="Indicadores operativos del día">
+        <article className="stat-card">
+          <span>Clases hoy</span>
+          <strong>{sessions?.length ?? 0}</strong>
+          <small>Sesiones programadas</small>
+        </article>
+        <article className="stat-card">
+          <span>Reservas hoy</span>
+          <strong>{reservationsCount}</strong>
+          <small>Lugares confirmados</small>
+        </article>
+        <article className="stat-card">
+          <span>Alumnas activas</span>
+          <strong>{activeStudents ?? 0}</strong>
+          <small>Expedientes activos</small>
+        </article>
+        <article className="stat-card">
+          <span>Ocupación del día</span>
+          <strong>{occupancy === null ? "—" : `${occupancy}%`}</strong>
+          <small>
+            {totalCapacity
+              ? `${reservationsCount} de ${totalCapacity} lugares`
+              : "Sin cupo programado"}
+          </small>
         </article>
       </section>
 
