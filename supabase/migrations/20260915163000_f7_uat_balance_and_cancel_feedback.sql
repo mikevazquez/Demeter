@@ -1,4 +1,6 @@
-create or replace function public.acquisition_credit_balance(target_acquisition_id uuid)
+drop function if exists public.acquisition_credit_balance(uuid);
+
+create function public.acquisition_credit_balance(target_acquisition_id uuid)
 returns integer
 language sql
 stable
