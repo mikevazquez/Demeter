@@ -76,7 +76,8 @@ export default async function ProductsPage() {
                     }).format(product.price_minor / 100)}
                   </p>
                   <p className="mt-1 text-xs text-zinc-500">
-                    Vigencia {product.validity_days} días
+                    Vigencia{" "}
+                    {product.validity_days == null ? "Vitalicia" : `${product.validity_days} días`}
                   </p>
                 </div>
                 <p className="text-sm text-zinc-300">
