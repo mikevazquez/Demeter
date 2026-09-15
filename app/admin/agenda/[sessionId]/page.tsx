@@ -182,54 +182,120 @@ export default async function SessionDetailPage({
       ) : null}
 
       <section className="stat-grid">
-        <article className="stat-card"><span>Capacidad</span><strong>{session.capacity}</strong><small>Lugares totales</small></article>
-        <article className="stat-card"><span>Reservas</span><strong>{reservations?.length ?? 0}</strong><small>Activas</small></article>
-        <article className="stat-card"><span>Disponibles</span><strong>{available}</strong><small>Lugares libres</small></article>
-        <article className="stat-card"><span>Créditos</span><strong>{template?.credit_cost ?? 1}</strong><small>Por reserva</small></article>
+        <article className="stat-card">
+          <span>Capacidad</span>
+          <strong>{session.capacity}</strong>
+          <small>Lugares totales</small>
+        </article>
+        <article className="stat-card">
+          <span>Reservas</span>
+          <strong>{reservations?.length ?? 0}</strong>
+          <small>Activas</small>
+        </article>
+        <article className="stat-card">
+          <span>Disponibles</span>
+          <strong>{available}</strong>
+          <small>Lugares libres</small>
+        </article>
+        <article className="stat-card">
+          <span>Créditos</span>
+          <strong>{template?.credit_cost ?? 1}</strong>
+          <small>Por reserva</small>
+        </article>
       </section>
 
       {canEdit && session.status !== "cancelled" ? (
         <section className="panel">
-          <p className="eyebrow">EDITAR SESIÓN</p><h2>Horario y recursos</h2>
+          <p className="eyebrow">EDITAR SESIÓN</p>
+          <h2>Horario y recursos</h2>
           <form action={updateSession} className="compact-form">
             <input type="hidden" name="session_id" value={sessionId} />
             <input name="starts_at" type="datetime-local" defaultValue={localInput} required />
             <select name="instructor_id" defaultValue={session.instructor_id ?? ""}>
               <option value="">Sin instructor</option>
-              {instructors?.map((i) => <option key={i.id} value={i.id}>{instructorMap.get(i.id)}</option>)}
+              {instructors?.map((i) => (
+                <option key={i.id} value={i.id}>
+                  {instructorMap.get(i.id)}
+                </option>
+              ))}
             </select>
             <select name="space_id" defaultValue={session.space_id ?? ""}>
               <option value="">Sin espacio</option>
-              {spaces?.map((s) => <option key={s.id} value={s.id}>{s.name}{s.capacity ? ` · máx. ${s.capacity}` : ""}</option>)}
+              {spaces?.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name}
+                  {s.capacity ? ` · máx. ${s.capacity}` : ""}
+                </option>
+              ))}
             </select>
             <input name="capacity" type="number" min="1" defaultValue={session.capacity} required />
             <textarea name="notes" rows={3} defaultValue={session.notes ?? ""} />
             {session.recurring_schedule_id ? (
-              <fieldset className="rounded-xl border border-white/10 p-3"><legend>Aplicar cambios a</legend><label className="block"><input type="radio" name="scope" value="single" defaultChecked /> Solo esta sesión</label><label className="block mt-2"><input type="radio" name="scope" value="future" /> Esta y todas las siguientes</label></fieldset>
-            ) : <input type="hidden" name="scope" value="single" />}
-            <button className="primary-button" type="submit">Guardar cambios</button>
+              <fieldset className="rounded-xl border border-white/10 p-3">
+                <legend>Aplicar cambios a</legend>
+                <label className="block">
+                  <input type="radio" name="scope" value="single" defaultChecked /> Solo esta sesión
+                </label>
+                <label className="block mt-2">
+                  <input type="radio" name="scope" value="future" /> Esta y todas las siguientes
+                </label>
+              </fieldset>
+            ) : (
+              <input type="hidden" name="scope" value="single" />
+            )}
+            <button className="primary-button" type="submit">
+              Guardar cambios
+            </button>
           </form>
           <form action={cancelSession} className="compact-form mt-4">
             <input type="hidden" name="session_id" value={sessionId} />
-            {session.recurring_schedule_id ? <select name="scope" defaultValue="single"><option value="single">Cancelar solo esta sesión</option><option value="future">Cancelar esta y todas las siguientes</option></select> : <input type="hidden" name="scope" value="single" />}
+            {session.recurring_schedule_id ? (
+              <select name="scope" defaultValue="single">
+                <option value="single">Cancelar solo esta sesión</option>
+                <option value="future">Cancelar esta y todas las siguientes</option>
+              </select>
+            ) : (
+              <input type="hidden" name="scope" value="single" />
+            )}
             <small>Las reservas activas se cancelarán y sus créditos se liberarán.</small>
-            <button className="ghost-button" type="submit">Cancelar clase</button>
+            <button className="ghost-button" type="submit">
+              Cancelar clase
+            </button>
           </form>
         </section>
       ) : null}
 
       <section className="panel-grid">
         <article className="panel">
-          <div className="panel-heading"><div><p className="eyebrow">ASISTENTES</p><h2>Reservaciones</h2></div></div>
-          {!reservations?.length ? <div className="empty-state">Todavía no hay alumnas reservadas.</div> : (
+          <div className="panel-heading">
+            <div>
+              <p className="eyebrow">ASISTENTES</p>
+              <h2>Reservaciones</h2>
+            </div>
+          </div>
+          {!reservations?.length ? (
+            <div className="empty-state">Todavía no hay alumnas reservadas.</div>
+          ) : (
             <div className="student-list">
               {reservations.map((reservation) => (
                 <div className="student-row" key={reservation.id}>
-                  <div><strong>{reservation.student_id ? (studentMap.get(reservation.student_id) ?? "Alumna") : "Alumna"}</strong><span>{reservation.status === "reserved" ? "Reservada" : "Asistió"}</span></div>
-                  {canEdit && session.status !== "cancelled" && reservation.status === "reserved" ? (
+                  <div>
+                    <strong>
+                      {reservation.student_id
+                        ? (studentMap.get(reservation.student_id) ?? "Alumna")
+                        : "Alumna"}
+                    </strong>
+                    <span>{reservation.status === "reserved" ? "Reservada" : "Asistió"}</span>
+                  </div>
+                  {canEdit &&
+                  session.status !== "cancelled" &&
+                  reservation.status === "reserved" ? (
                     <form action={cancelReservation}>
-                      <input type="hidden" name="session_id" value={sessionId} /><input type="hidden" name="reservation_id" value={reservation.id} />
-                      <button className="ghost-button" type="submit">Cancelar reserva · regla de 8 h</button>
+                      <input type="hidden" name="session_id" value={sessionId} />
+                      <input type="hidden" name="reservation_id" value={reservation.id} />
+                      <button className="ghost-button" type="submit">
+                        Cancelar reserva · regla de 8 h
+                      </button>
                     </form>
                   ) : null}
                 </div>
@@ -239,23 +305,51 @@ export default async function SessionDetailPage({
         </article>
 
         <article className="panel">
-          <p className="eyebrow">NUEVA RESERVA</p><h2>Agregar alumna</h2>
-          {!canEdit || session.status === "cancelled" ? <p>La sesión no admite nuevas reservas.</p> : available === 0 ? (
-            <div className="empty-state">Clase llena. El sobrecupo automático está bloqueado; la lista de espera llegará en 1.1.</div>
+          <p className="eyebrow">NUEVA RESERVA</p>
+          <h2>Agregar alumna</h2>
+          {!canEdit || session.status === "cancelled" ? (
+            <p>La sesión no admite nuevas reservas.</p>
+          ) : available === 0 ? (
+            <div className="empty-state">
+              Clase llena. El sobrecupo automático está bloqueado; la lista de espera llegará en
+              1.1.
+            </div>
           ) : (
             <form action={bookStudent} className="compact-form reservation-form">
               <input type="hidden" name="session_id" value={sessionId} />
               <select name="student_id" required defaultValue="">
-                <option value="" disabled>Selecciona una alumna</option>
+                <option value="" disabled>
+                  Selecciona una alumna
+                </option>
                 {candidates.map((student) => {
                   const eligibility = eligibilityMap.get(student.id);
-                  const reason = eligibility?.reason_code ? (eligibilityCopy[eligibility.reason_code] ?? "no elegible") : null;
-                  return <option key={student.id} value={student.id} disabled={!eligibility?.eligible}>{student.full_name}{eligibility?.eligible ? eligibility.unlimited ? " · membresía ilimitada" : ` · ${eligibility.available_credits ?? 0} créditos` : ` · ${reason}`}</option>;
+                  const reason = eligibility?.reason_code
+                    ? (eligibilityCopy[eligibility.reason_code] ?? "no elegible")
+                    : null;
+                  return (
+                    <option key={student.id} value={student.id} disabled={!eligibility?.eligible}>
+                      {student.full_name}
+                      {eligibility?.eligible
+                        ? eligibility.unlimited
+                          ? " · membresía ilimitada"
+                          : ` · ${eligibility.available_credits ?? 0} créditos`
+                        : ` · ${reason}`}
+                    </option>
+                  );
                 })}
               </select>
-              {!candidates.length ? <small>No hay más alumnas disponibles para esta clase.</small> : null}
-              {candidates.length > 0 && !eligibleStudents.length ? <small>Ninguna alumna disponible cumple actualmente las reglas de paquete, disciplina y créditos.</small> : null}
-              <button className="primary-button" type="submit" disabled={!eligibleStudents.length}>Reservar lugar + crédito</button>
+              {!candidates.length ? (
+                <small>No hay más alumnas disponibles para esta clase.</small>
+              ) : null}
+              {candidates.length > 0 && !eligibleStudents.length ? (
+                <small>
+                  Ninguna alumna disponible cumple actualmente las reglas de paquete, disciplina y
+                  créditos.
+                </small>
+              ) : null}
+              <button className="primary-button" type="submit" disabled={!eligibleStudents.length}>
+                Reservar lugar + crédito
+              </button>
             </form>
           )}
         </article>
