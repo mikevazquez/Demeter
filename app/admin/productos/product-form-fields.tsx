@@ -1,0 +1,144 @@
+"use client";
+
+import { useState } from "react";
+
+type Discipline = {
+  id: string;
+  name: string;
+};
+
+type ProductFormFieldsProps = {
+  disciplines: Discipline[];
+  initialProductType?: string;
+  initialPrice?: number;
+  initialValidityDays?: number;
+  initialCreditLimit?: number | null;
+  initialUnlimited?: boolean;
+  selectedDisciplineIds?: string[];
+};
+
+export function ProductFormFields({
+  disciplines,
+  initialProductType = "package",
+  initialPrice,
+  initialValidityDays = 30,
+  initialCreditLimit = 8,
+  initialUnlimited = false,
+  selectedDisciplineIds = [],
+}: ProductFormFieldsProps) {
+  const [productType, setProductType] = useState(initialProductType);
+  const isEnrollment = productType === "enrollment";
+  const selected = new Set(selectedDisciplineIds);
+
+  return (
+    <div className="space-y-6">
+      <div className="grid gap-4 md:grid-cols-2">
+        <label className="text-sm text-zinc-300">
+          Tipo
+          <select
+            name="product_type"
+            required
+            value={productType}
+            onChange={(event) => setProductType(event.target.value)}
+            className="mt-2 w-full rounded-xl border border-white/10 bg-zinc-950 px-3 py-2.5 text-white"
+          >
+            <option value="package">Paquete</option>
+            <option value="membership">Membresía</option>
+            <option value="single_class">Clase suelta</option>
+            <option value="enrollment">Inscripción</option>
+            <option value="other">Otro</option>
+          </select>
+        </label>
+
+        <label className="text-sm text-zinc-300">
+          Precio MXN
+          <input
+            name="price"
+            type="number"
+            min="0"
+            step="0.01"
+            required
+            defaultValue={initialPrice}
+            className="mt-2 w-full rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 text-white"
+          />
+        </label>
+
+        <label className="text-sm text-zinc-300">
+          Vigencia (días)
+          <input
+            name="validity_days"
+            type="number"
+            min="1"
+            required
+            defaultValue={initialValidityDays}
+            className="mt-2 w-full rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 text-white"
+          />
+          {isEnrollment ? (
+            <span className="mt-1 block text-xs text-zinc-500">
+              Define cuántos días estará vigente la inscripción desde la venta.
+            </span>
+          ) : null}
+        </label>
+
+        {!isEnrollment ? (
+          <label className="text-sm text-zinc-300">
+            Créditos
+            <input
+              name="credit_limit"
+              type="number"
+              min="1"
+              defaultValue={initialCreditLimit ?? 1}
+              className="mt-2 w-full rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 text-white"
+            />
+          </label>
+        ) : null}
+
+        {isEnrollment ? (
+          <div className="md:col-span-2 rounded-xl border border-fuchsia-500/20 bg-fuchsia-500/[0.06] p-4">
+            <p className="text-sm font-semibold text-fuchsia-200">Inscripción administrativa</p>
+            <p className="mt-1 text-sm leading-6 text-zinc-400">
+              La inscripción no es un paquete: no otorga clases, créditos ni acceso a disciplinas.
+            </p>
+          </div>
+        ) : null}
+      </div>
+
+      {!isEnrollment ? (
+        <>
+          <label className="flex items-center gap-3 rounded-xl border border-white/10 p-4 text-sm text-zinc-300">
+            <input
+              name="unlimited"
+              type="checkbox"
+              defaultChecked={initialUnlimited}
+              className="h-4 w-4"
+            />
+            Membresía ilimitada (ignora el número de créditos)
+          </label>
+
+          <fieldset>
+            <legend className="text-sm font-medium text-white">Disciplinas incluidas</legend>
+            <p className="mt-1 text-xs text-zinc-500">
+              Define en qué disciplinas puede utilizarse este producto.
+            </p>
+            <div className="mt-3 grid gap-2 sm:grid-cols-2">
+              {disciplines.map((discipline) => (
+                <label
+                  key={discipline.id}
+                  className="flex items-center gap-3 rounded-xl border border-white/10 px-3 py-2.5 text-sm text-zinc-300"
+                >
+                  <input
+                    type="checkbox"
+                    name="discipline_ids"
+                    value={discipline.id}
+                    defaultChecked={selected.has(discipline.id)}
+                  />
+                  {discipline.name}
+                </label>
+              ))}
+            </div>
+          </fieldset>
+        </>
+      ) : null}
+    </div>
+  );
+}
