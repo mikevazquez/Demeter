@@ -120,6 +120,32 @@ describe("F9 sales contracts", () => {
     expect(enrollment).not.toContain("delete from public.student_enrollments");
   });
 
+  it("enforces required enrollment through the canonical booking eligibility", () => {
+    const eligibility = source(
+      "supabase/migrations/20260915225318_f9_enrollment_booking_eligibility.sql",
+    );
+    expect(eligibility).toContain("v_policy.enabled and v_policy.required_for_booking");
+    expect(eligibility).toContain("from public.student_enrollments se");
+    expect(eligibility).toContain("se.status='active'");
+    expect(eligibility).toContain("se.starts_on<=v_class_date");
+    expect(eligibility).toContain("se.expires_on is null or se.expires_on>=v_class_date");
+    expect(eligibility).toContain("'reason_code','enrollment_required'");
+  });
+
+  it("does not bypass required enrollment through the existing-student walk-in fallback", () => {
+    const adminActions = source("app/admin/actions.ts");
+    const operations = source("app/admin/hoy/SessionOperations.tsx");
+    expect(adminActions).toContain(
+      'new Set(["no_active_product", "outside_product", "no_credits"])',
+    );
+    expect(adminActions).not.toContain(
+      'new Set(["no_active_product", "outside_product", "no_credits", "enrollment_required"])',
+    );
+    expect(operations).toContain("walkinFallbackDetails");
+    expect(operations).toContain('error === "enrollment_required"');
+    expect(operations).toContain("disabled={!candidate.eligible && !canFallbackToWalkin}");
+  });
+
   it("exposes enrollment product and policy UI", () => {
     const products = source("app/admin/productos/nuevo/page.tsx");
     const productActions = source("app/admin/productos/actions.ts");
