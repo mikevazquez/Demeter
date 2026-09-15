@@ -8,6 +8,7 @@ const labels: Record<string, string> = {
   package: "Paquete",
   membership: "Membresía",
   single_class: "Clase suelta",
+  enrollment: "Inscripción",
   other: "Otro",
 };
 
@@ -36,6 +37,7 @@ export default async function ProductDetailPage({
   if (!product) notFound();
 
   const productDisciplines: ProductDiscipline[] = product.product_template_disciplines ?? [];
+  const isEnrollment = product.product_type === "enrollment";
   const statusMessage =
     status === "activated"
       ? "Producto activado correctamente. Ya está disponible para su uso."
@@ -80,9 +82,9 @@ export default async function ProductDetailPage({
           </p>
         </div>
         <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
-          <p className="text-xs text-zinc-500">Créditos</p>
+          <p className="text-xs text-zinc-500">{isEnrollment ? "Derecho" : "Créditos"}</p>
           <p className="mt-2 text-xl font-semibold text-white">
-            {product.unlimited ? "Ilimitados" : product.credit_limit}
+            {isEnrollment ? "Inscripción" : product.unlimited ? "Ilimitados" : product.credit_limit}
           </p>
         </div>
         <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
@@ -90,35 +92,43 @@ export default async function ProductDetailPage({
           <p className="mt-2 text-xl font-semibold text-white">{product.validity_days} días</p>
         </div>
       </section>
-      <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
-        <h2 className="font-semibold text-white">Disciplinas incluidas</h2>
-        <div className="mt-3 flex flex-wrap gap-2">
-          {productDisciplines.length ? (
-            productDisciplines.map((item, index) => (
-              <span
-                key={index}
-                className="rounded-full bg-white/[0.06] px-3 py-1 text-sm text-zinc-300"
-              >
-                {item.disciplines[0]?.name}
-              </span>
-            ))
-          ) : (
-            <p className="text-sm text-zinc-500">Sin disciplinas asignadas.</p>
-          )}
-        </div>
-      </section>
+
+      {!isEnrollment ? (
+        <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+          <h2 className="font-semibold text-white">Disciplinas incluidas</h2>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {productDisciplines.length ? (
+              productDisciplines.map((item, index) => (
+                <span
+                  key={index}
+                  className="rounded-full bg-white/[0.06] px-3 py-1 text-sm text-zinc-300"
+                >
+                  {item.disciplines[0]?.name}
+                </span>
+              ))
+            ) : (
+              <p className="text-sm text-zinc-500">Sin disciplinas asignadas.</p>
+            )}
+          </div>
+        </section>
+      ) : null}
+
       <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
         <h2 className="font-semibold text-white">Reglas</h2>
         <p className="mt-2 text-sm text-zinc-400">
-          {product.unlimited
-            ? `Acceso ilimitado durante ${product.validity_days} días.`
-            : `${product.credit_limit} créditos disponibles durante ${product.validity_days} días desde el inicio de la adquisición.`}
+          {isEnrollment
+            ? `Al venderse genera un estado de inscripción vigente durante ${product.validity_days} días. No genera créditos ni ProductAcquisition.`
+            : product.unlimited
+              ? `Acceso ilimitado durante ${product.validity_days} días.`
+              : `${product.credit_limit} créditos disponibles durante ${product.validity_days} días desde el inicio de la adquisición.`}
         </p>
         <p className="mt-2 text-xs text-zinc-500">
-          Los movimientos de crédito se registran en ledger; las reservas y asistencias aplicarán
-          sus efectos en F7 y F8.
+          {isEnrollment
+            ? "La política del estudio decide si esta inscripción está habilitada y si participa en eligibility."
+            : "Los movimientos de crédito se registran en ledger; reservas y asistencia conservan sus efectos históricos."}
         </p>
       </section>
+
       {ctx.can("products.write") ? (
         <section className="flex flex-wrap gap-3">
           <Link
