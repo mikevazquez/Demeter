@@ -2,16 +2,13 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getAdminContext } from "@/lib/auth/admin-context";
-import {
-  setStudentLifecycle,
-  updateDynamicProfileFields,
-  updateStudent,
-} from "./actions";
+import { setStudentLifecycle, updateDynamicProfileFields, updateStudent } from "./actions";
 
 const structuralFieldKeys = new Set(["first_name", "last_name", "phone", "email"]);
 
 function optionValues(options: unknown): string[] {
-  if (Array.isArray(options)) return options.filter((value): value is string => typeof value === "string");
+  if (Array.isArray(options))
+    return options.filter((value): value is string => typeof value === "string");
 
   if (options && typeof options === "object" && "choices" in options) {
     const choices = (options as { choices?: unknown }).choices;
