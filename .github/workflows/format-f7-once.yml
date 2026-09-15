@@ -1,0 +1,26 @@
+name: Format F7 once
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/format-f7-once.yml'
+permissions:
+  contents: write
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx prettier --write "app/admin/agenda/[sessionId]/page.tsx" "supabase/migrations/20260915143000_f7_booking_engine.sql" "supabase/migrations/20260915144500_f7_booking_compat_and_session_cancel.sql"
+      - name: Commit formatting
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/admin/agenda/[sessionId]/page.tsx supabase/migrations/20260915143000_f7_booking_engine.sql supabase/migrations/20260915144500_f7_booking_compat_and_session_cancel.sql
+          git diff --cached --quiet || git commit -m "Format F7 booking files"
+          git push
