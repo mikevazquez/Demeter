@@ -198,12 +198,15 @@ export async function setProductActive(formData: FormData) {
   const ctx = await getAdminContext("products.write");
   const productId = String(formData.get("product_id") ?? "");
   const active = String(formData.get("active")) === "true";
-  const { error } = await ctx.supabase
+  const { data: product, error } = await ctx.supabase
     .from("product_templates")
     .update({ active, updated_at: new Date().toISOString() })
     .eq("id", productId)
-    .eq("studio_id", ctx.studio.id);
-  if (error) throw new Error(error.message);
+    .eq("studio_id", ctx.studio.id)
+    .select("id")
+    .maybeSingle();
+  if (error || !product) throw new Error(error?.message ?? "product_status_failed");
   revalidatePath("/admin/productos");
   revalidatePath(`/admin/productos/${productId}`);
+  redirect(`/admin/productos/${productId}?status=${active ? "activated" : "deactivated"}`);
 }
