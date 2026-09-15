@@ -41,7 +41,7 @@ Se permiten dos tipos de reembolso: **total** y **parcial**.
 
 #### Reembolso total
 
-- Se registra el reembolso por el total reembolsable de la venta.
+- Se registra el reembolso por el total reembolsable de la línea/producto seleccionado.
 - La ProductAcquisition/paquete **no se elimina**.
 - La adquisición se marca como **reembolsada/inactiva** y deja de ser utilizable inmediatamente.
 - Los créditos futuros o todavía disponibles dejan de poder utilizarse.
@@ -50,19 +50,33 @@ Se permiten dos tipos de reembolso: **total** y **parcial**.
 
 #### Reembolso parcial
 
-- Se registra únicamente el monto elegido, siempre limitado por el monto reembolsable disponible.
+- Se registra únicamente el monto elegido, siempre limitado por el monto reembolsable disponible de la línea y por el dinero efectivamente cobrado.
 - La ProductAcquisition/paquete **tampoco se elimina**.
 - Aun siendo parcial, la adquisición se marca como **reembolsada/inactiva** y deja de ser utilizable inmediatamente.
 - Los créditos futuros o disponibles dejan de poder utilizarse.
 - Los créditos ya utilizados permanecen únicamente como histórico.
 - El monto no reembolsado permanece como parte del historial económico de la venta; el reembolso no modifica retrospectivamente los pagos originales.
 
+#### Reembolso por línea/producto
+
+- En ventas con varios productos, el reembolso se registra contra una **SaleLine concreta**.
+- Sólo la adquisición de esa línea queda reembolsada/inactiva.
+- Las demás adquisiciones de la misma venta permanecen operables si no han sido reembolsadas o canceladas.
+- Pueden existir varios reembolsos sobre una misma línea mientras la suma no exceda el valor de esa línea ni el dinero neto disponible para devolver.
+
 #### Reservas y crédito
 
 - Un paquete reembolsado no puede utilizarse para crear nuevas reservas.
 - El ledger es histórico: no se eliminan `grant`, `reserve`, `release` ni `consume` existentes.
-- La implementación debe invalidar el derecho futuro de uso de la adquisición sin borrar consumo histórico.
-- Antes de aplicar un reembolso, el sistema deberá resolver de forma explícita cualquier reserva futura todavía activa que esté sostenida por esa adquisición, para evitar que quede una reserva respaldada por un paquete inactivo. La mecánica concreta de esa resolución debe reutilizar las reglas de cancelación/liberación existentes y conservar historia.
+- La implementación invalida el derecho futuro de uso de la adquisición sin borrar consumo histórico.
+- Si una adquisición sostiene una reserva futura activa, el reembolso se **bloquea** hasta que esa reserva se cancele primero mediante el flujo normal de cancelación. El MVP no cancela reservas silenciosamente ni inventa un estado nuevo de reserva.
+
+#### Saldo después de un reembolso
+
+- Un reembolso no crea una deuda nueva.
+- La vista comercial separa: **Total vendido, Cobrado, Reembolsado, Neto cobrado y Saldo**.
+- Una línea reembolsada deja de formar parte del importe pendiente por cobrar.
+- `Saldo` se calcula contra las líneas todavía cobrables y el neto realmente retenido, no como `total original - neto` después de un reembolso.
 
 ### Método de reembolso — MVP y futuro
 
@@ -85,8 +99,11 @@ La anulación sigue siendo una corrección comercial distinta del reembolso:
 
 - requiere motivo obligatorio y confirmación;
 - conserva venta, líneas, pagos y adquisiciones como historia;
-- no borra registros;
-- cualquier efecto sobre una adquisición ya utilizada debe ser explícito y trazable, nunca un overwrite silencioso.
+- no borra registros ni movimientos del ledger;
+- **no mueve dinero** en el MVP;
+- si la venta conserva dinero cobrado no reembolsado, la anulación se bloquea y primero deben registrarse los reembolsos correspondientes;
+- si alguna adquisición de la venta sostiene una reserva futura activa, la anulación también se bloquea hasta resolver esa reserva mediante el flujo normal;
+- al anular una venta sin fondos pendientes por devolver, las adquisiciones activas no reembolsadas pasan a inactivas/canceladas; el uso histórico previo permanece intacto.
 
 ## SF-093 — inscripción configurable
 
@@ -119,4 +136,4 @@ La edición completa de estas políticas pertenece funcionalmente a Configuraci�
 
 F9 permanece **ABIERTA**.
 
-El bloque SF-083–SF-090 está implementado técnicamente. Las decisiones de negocio principales de SF-091, SF-092 y SF-093 ya están cerradas a nivel funcional. Falta implementar esos flujos, cubrir QA funcional/UAT comercial y realizar el cierre formal de la fase.
+El bloque SF-083–SF-090 está implementado técnicamente. SF-091 y SF-092 tienen reglas cerradas e implementación en curso. SF-093 tiene definición funcional cerrada y falta su base técnica configurable. Después faltan QA funcional/UAT comercial y el cierre formal de la fase.
