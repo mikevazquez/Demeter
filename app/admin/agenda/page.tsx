@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { CAPABILITIES } from "@/lib/auth/capabilities";
+import { getAdminContext } from "@/lib/auth/admin-context";
 import { agendaLookbackIso } from "@/lib/time";
 import { createDiscipline, createSession, createTemplate } from "./actions";
 
@@ -21,53 +21,36 @@ export default async function AgendaPage({
   searchParams: Promise<{ error?: string; created?: string }>;
 }) {
   const params = await searchParams;
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) redirect("/login/admin");
-
-  const { data: membership } = await supabase
-    .from("studio_memberships")
-    .select("studio_id, role")
-    .eq("user_id", user.id)
-    .eq("active", true)
-    .maybeSingle();
-
-  if (!membership || !["owner", "admin", "coach"].includes(membership.role)) {
-    redirect("/login/admin?error=access");
-  }
+  const { supabase, studio, can } = await getAdminContext(CAPABILITIES.SCHEDULE_READ);
+  const canEdit = can(CAPABILITIES.SCHEDULE_WRITE);
 
   const [
-    { data: studio },
     { data: disciplines },
     { data: templates },
     { data: locations },
     { data: sessions },
   ] = await Promise.all([
-    supabase.from("studios").select("name, timezone").eq("id", membership.studio_id).single(),
     supabase
       .from("disciplines")
       .select("id, name, active")
-      .eq("studio_id", membership.studio_id)
+      .eq("studio_id", studio.id)
       .order("name"),
     supabase
       .from("class_templates")
       .select("id, name, duration_minutes, capacity, discipline_id")
-      .eq("studio_id", membership.studio_id)
+      .eq("studio_id", studio.id)
       .eq("active", true)
       .order("name"),
     supabase
       .from("studio_locations")
       .select("id, name, address")
-      .eq("studio_id", membership.studio_id)
+      .eq("studio_id", studio.id)
       .eq("active", true)
       .order("name"),
     supabase
       .from("class_sessions")
       .select("id, starts_at, ends_at, capacity, status, notes, template_id, location_id")
-      .eq("studio_id", membership.studio_id)
+      .eq("studio_id", studio.id)
       .gte("starts_at", agendaLookbackIso())
       .order("starts_at", { ascending: true })
       .limit(30),
@@ -76,8 +59,7 @@ export default async function AgendaPage({
   const disciplineMap = new Map((disciplines ?? []).map((item) => [item.id, item.name]));
   const templateMap = new Map((templates ?? []).map((item) => [item.id, item]));
   const locationMap = new Map((locations ?? []).map((item) => [item.id, item.name]));
-  const canEdit = ["owner", "admin"].includes(membership.role);
-  const timeZone = studio?.timezone ?? "America/Mexico_City";
+  const timeZone = studio.timezone ?? "America/Mexico_City";
 
   return (
     <main className="dashboard-shell">
@@ -86,12 +68,9 @@ export default async function AgendaPage({
           <Link className="back-link compact" href="/admin">
             ← Hoy
           </Link>
-          <p className="eyebrow">AGENDA · {studio?.name ?? "ESTUDIO"}</p>
+          <p className="eyebrow">AGENDA · {studio.name}</p>
           <h1 className="dashboard-title">Calendario</h1>
           <p>Configura disciplinas y tipos de clase, y programa sesiones reales.</p>
-        </div>
-        <div className="toolbar-actions">
-          <span className="role-pill">{membership.role}</span>
         </div>
       </header>
 
@@ -155,7 +134,7 @@ export default async function AgendaPage({
         <aside className="agenda-sidebar">
           {!canEdit ? (
             <article className="panel">
-              <p>Tu rol puede consultar la agenda, pero solo owner y admin pueden modificarla.</p>
+              <p>Puedes consultar la agenda, pero no tienes permiso para modificarla.</p>
             </article>
           ) : (
             <>
