@@ -35,45 +35,88 @@ El Documento Maestro define:
 - Reembolsar requiere monto no mayor al reembolsable, método, motivo y conservación de historia.
 - La operación debe registrar el efecto comercial; no debe borrar historia.
 
-### Regla todavía no definida por la fuente de verdad
+### Decisión aprobada — efecto del reembolso
 
-No existe una regla aprobada que indique qué debe pasar automáticamente con una ProductAcquisition y su ledger cuando una venta se anula o reembolsa después de que sus créditos fueron reservados o consumidos.
+Se permiten dos tipos de reembolso: **total** y **parcial**.
 
-Por lo tanto, hasta definir esa política no se implementará de forma implícita ninguna de estas conductas:
+#### Reembolso total
 
-- borrar una adquisición;
-- eliminar movimientos históricos del ledger;
-- restaurar créditos consumidos;
-- cancelar reservas existentes;
-- cancelar automáticamente el paquete ante cualquier reembolso parcial o total.
+- Se registra el reembolso por el total reembolsable de la venta.
+- La ProductAcquisition/paquete **no se elimina**.
+- La adquisición se marca como **reembolsada/inactiva** y deja de ser utilizable inmediatamente.
+- Los créditos futuros o todavía disponibles dejan de poder utilizarse.
+- Los créditos ya utilizados, consumidos o con historia previa permanecen en el ledger exclusivamente como histórico.
+- No se borran movimientos anteriores del ledger ni se reescribe la historia de uso.
 
-SF-091/SF-092 pueden registrar historia comercial una vez que la política de efecto sobre Acquisition/créditos quede explícitamente cerrada.
+#### Reembolso parcial
+
+- Se registra únicamente el monto elegido, siempre limitado por el monto reembolsable disponible.
+- La ProductAcquisition/paquete **tampoco se elimina**.
+- Aun siendo parcial, la adquisición se marca como **reembolsada/inactiva** y deja de ser utilizable inmediatamente.
+- Los créditos futuros o disponibles dejan de poder utilizarse.
+- Los créditos ya utilizados permanecen únicamente como histórico.
+- El monto no reembolsado permanece como parte del historial económico de la venta; el reembolso no modifica retrospectivamente los pagos originales.
+
+#### Reservas y crédito
+
+- Un paquete reembolsado no puede utilizarse para crear nuevas reservas.
+- El ledger es histórico: no se eliminan `grant`, `reserve`, `release` ni `consume` existentes.
+- La implementación debe invalidar el derecho futuro de uso de la adquisición sin borrar consumo histórico.
+- Antes de aplicar un reembolso, el sistema deberá resolver de forma explícita cualquier reserva futura todavía activa que esté sostenida por esa adquisición, para evitar que quede una reserva respaldada por un paquete inactivo. La mecánica concreta de esa resolución debe reutilizar las reglas de cancelación/liberación existentes y conservar historia.
+
+### Método de reembolso — MVP y futuro
+
+**MVP:**
+
+- El reembolso es una operación **manual** registrada por administración.
+- No existe integración automática con procesadores de pago.
+- Se registra monto, método, motivo, fecha y usuario que realizó la operación.
+- Ejemplo válido: devolución en efectivo registrada manualmente.
+
+**Futuro:**
+
+- Cuando existan integraciones de pago, el sistema podrá ejecutar el reembolso directamente al método/origen compatible de la transacción original.
+- Ejemplo: una compra realizada con tarjeta podrá reembolsarse directamente a esa misma tarjeta cuando el proveedor de pagos lo permita.
+- La integración futura no cambia el modelo de dominio: Refund seguirá siendo una operación separada e histórica vinculada a la venta/pago original.
+
+### Anulación
+
+La anulación sigue siendo una corrección comercial distinta del reembolso:
+
+- requiere motivo obligatorio y confirmación;
+- conserva venta, líneas, pagos y adquisiciones como historia;
+- no borra registros;
+- cualquier efecto sobre una adquisición ya utilizada debe ser explícito y trazable, nunca un overwrite silencioso.
 
 ## SF-093 — inscripción configurable
 
-Las fuentes establecen que la inscripción:
+### Decisión aprobada
 
-- es configurable;
-- tiene estado/vigencia en el perfil de la alumna;
-- puede participar en eligibility y bloquear una reserva cuando sea requerida.
+La inscripción **no tendrá reglas globales fijas de Studio Flow**. Cada estudio define su propia política y el sistema debe permitir configurarla.
 
-El modelo de predesarrollo la ubica como `enrollment/configuración`, mientras que configuración de políticas/eligibility también aparece en F12.
+La inscripción se modelará como una política/configuración del estudio que puede participar tanto en el flujo comercial como en eligibility.
 
-### Regla todavía no definida por la fuente de verdad
+Debe poder determinar, mediante configuración del estudio:
 
-Aún no se especifica en F9:
+- si la inscripción está habilitada o no;
+- si es obligatoria para reservar;
+- qué compras/productos requieren inscripción;
+- si existen excepciones por tipo de producto o tipo de compra;
+- vigencia de la inscripción;
+- importe de inscripción cuando corresponda;
+- condiciones de primera compra/primera clase;
+- reglas de renovación;
+- comportamiento cuando la inscripción está vencida;
+- si una venta puede incluir el cobro de inscripción junto con otros productos.
 
-- si la inscripción es un producto vendible o una entidad comercial separada;
-- precio inicial y forma de cobro;
-- duración/vigencia configurable;
-- qué productos o tipos de compra la exigen;
-- cuándo una primera clase queda exenta;
-- reglas de renovación.
+El estado de inscripción pertenece a la alumna/persona y debe conservar al menos estado, fecha de inicio, fecha de vencimiento y origen comercial cuando exista.
 
-No se implementará SF-093 con valores o comportamientos inventados. Debe cerrarse esta definición antes de conectar inscripción con Ventas y posteriormente con eligibility/F12.
+Eligibility consultará la política del estudio y el estado vigente de la alumna; no debe contener reglas hardcodeadas específicas de Demeter ni de otro estudio.
+
+La edición completa de estas políticas pertenece funcionalmente a Configuración/F12, mientras que F9 implementará la capacidad comercial mínima necesaria para cobrar/registrar inscripción conforme a la configuración vigente.
 
 ## Estado de F9
 
 F9 permanece **ABIERTA**.
 
-El bloque SF-083–SF-090 está implementado técnicamente. Faltan SF-091, SF-092, SF-093, QA funcional/UAT de los flujos comerciales y el cierre formal de la fase.
+El bloque SF-083–SF-090 está implementado técnicamente. Las decisiones de negocio principales de SF-091, SF-092 y SF-093 ya están cerradas a nivel funcional. Falta implementar esos flujos, cubrir QA funcional/UAT comercial y realizar el cierre formal de la fase.
