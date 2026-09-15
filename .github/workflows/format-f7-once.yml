@@ -1,0 +1,33 @@
+name: Format F7 once
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/format-f7-once.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx prettier --write app/admin/hoy/SessionOperations.tsx app/admin/roster-uat.css
+      - name: Commit formatting
+        run: |
+          git config user.name "studio-flow-ci"
+          git config user.email "studio-flow-ci@users.noreply.github.com"
+          git add app/admin/hoy/SessionOperations.tsx app/admin/roster-uat.css
+          if git diff --cached --quiet; then
+            echo "No formatting changes needed"
+          else
+            git commit -m "Apply Prettier to F7 roster"
+            git push
+          fi
