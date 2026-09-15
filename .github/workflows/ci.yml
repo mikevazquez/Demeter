@@ -33,6 +33,12 @@ jobs:
       - name: Install
         run: npm ci
 
+      - name: Prettier diagnostic
+        run: |
+          npx prettier --write app/admin/alumnas/page.tsx
+          git diff -- app/admin/alumnas/page.tsx
+          git diff --quiet -- app/admin/alumnas/page.tsx
+
       - name: Format check
         run: npm run format:check
 
