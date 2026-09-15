@@ -6,7 +6,8 @@ import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { setEnrollmentPolicyAction } from "./actions";
 
 const errorCopy: Record<string, string> = {
-  enrollment_product_required: "Selecciona un producto de tipo Inscripción antes de habilitar la política.",
+  enrollment_product_required:
+    "Selecciona un producto de tipo Inscripción antes de habilitar la política.",
   enrollment_product_not_found: "El producto seleccionado ya no existe en este estudio.",
   enrollment_product_type_required: "El producto seleccionado debe ser de tipo Inscripción.",
 };
@@ -105,7 +106,12 @@ export default async function EnrollmentPolicyPage({
           className="space-y-5 rounded-2xl border border-white/10 bg-white/[0.03] p-5"
         >
           <label className="flex items-start gap-3 rounded-xl border border-white/10 p-4 text-sm text-zinc-300">
-            <input name="enabled" type="checkbox" defaultChecked={policy?.enabled ?? false} className="mt-0.5" />
+            <input
+              name="enabled"
+              type="checkbox"
+              defaultChecked={policy?.enabled ?? false}
+              className="mt-0.5"
+            />
             <span>
               <strong className="block text-white">Habilitar inscripción</strong>
               <span className="mt-1 block text-xs leading-5 text-zinc-500">
@@ -145,8 +151,8 @@ export default async function EnrollmentPolicyPage({
             <span>
               <strong className="block text-white">Marcar como requisito para reservar</strong>
               <span className="mt-1 block text-xs leading-5 text-zinc-500">
-                Guarda la regla del estudio. El bloqueo completo dentro del motor de elegibilidad se
-                conecta en F12 junto con documentos y demás políticas configurables.
+                Cuando está activa, el motor de elegibilidad exige una inscripción vigente en la
+                fecha de la clase antes de permitir la reserva.
               </span>
             </span>
           </label>
