@@ -16,7 +16,7 @@ export default async function NewProductPage() {
         <p className="text-sm text-zinc-400">Productos</p>
         <h1 className="text-3xl font-semibold text-white">Nuevo producto</h1>
         <p className="mt-1 text-sm text-zinc-400">
-          Define precio, créditos, vigencia y las disciplinas incluidas.
+          Define precio, vigencia y, cuando corresponda, créditos y disciplinas.
         </p>
       </header>
       <form
@@ -43,6 +43,7 @@ export default async function NewProductPage() {
               <option value="package">Paquete</option>
               <option value="membership">Membresía</option>
               <option value="single_class">Clase suelta</option>
+              <option value="enrollment">Inscripción</option>
               <option value="other">Otro</option>
             </select>
           </label>
@@ -66,6 +67,9 @@ export default async function NewProductPage() {
               defaultValue="8"
               className="mt-2 w-full rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 text-white"
             />
+            <span className="mt-1 block text-xs text-zinc-500">
+              Se ignora automáticamente cuando el tipo es Inscripción.
+            </span>
           </label>
           <label className="text-sm text-zinc-300">
             Vigencia (días)
@@ -77,11 +81,14 @@ export default async function NewProductPage() {
               required
               className="mt-2 w-full rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 text-white"
             />
+            <span className="mt-1 block text-xs text-zinc-500">
+              En una inscripción define cuántos días estará vigente desde la venta.
+            </span>
           </label>
         </div>
         <label className="flex items-center gap-3 rounded-xl border border-white/10 p-4 text-sm text-zinc-300">
           <input name="unlimited" type="checkbox" className="h-4 w-4" /> Membresía ilimitada (ignora
-          el número de créditos)
+          el número de créditos; no aplica a Inscripción)
         </label>
         <label className="block text-sm text-zinc-300">
           Descripción
@@ -94,7 +101,7 @@ export default async function NewProductPage() {
         <fieldset>
           <legend className="text-sm font-medium text-white">Disciplinas incluidas</legend>
           <p className="mt-1 text-xs text-zinc-500">
-            Selecciona las disciplinas a las que da acceso este producto.
+            Se usan en paquetes/clases. Si el tipo es Inscripción, estas selecciones se ignoran.
           </p>
           <div className="mt-3 grid gap-2 sm:grid-cols-2">
             {disciplines?.map((discipline) => (
