@@ -128,15 +128,13 @@ export async function updateProduct(formData: FormData) {
   if (deleteError) throw new Error(deleteError.message);
 
   if (values.disciplineIds.length) {
-    const { error: insertError } = await ctx.supabase
-      .from("product_template_disciplines")
-      .insert(
-        values.disciplineIds.map((disciplineId) => ({
-          studio_id: ctx.studio.id,
-          product_template_id: productId,
-          discipline_id: disciplineId,
-        })),
-      );
+    const { error: insertError } = await ctx.supabase.from("product_template_disciplines").insert(
+      values.disciplineIds.map((disciplineId) => ({
+        studio_id: ctx.studio.id,
+        product_template_id: productId,
+        discipline_id: disciplineId,
+      })),
+    );
     if (insertError) throw new Error(insertError.message);
   }
 
