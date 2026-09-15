@@ -6,13 +6,20 @@ import "./roster-uat.css";
 
 const navItems = [
   { href: "/admin", label: "Hoy", enabled: true },
-  { href: "/admin/agenda", label: "Agenda", enabled: true },
   { href: "/admin/alumnas", label: "Alumnas", enabled: true },
-  { href: "/admin/productos", label: "Productos", enabled: false },
-  { href: "/admin/ventas", label: "Ventas", enabled: true },
-  { href: "/admin/instructores", label: "Instructores", enabled: true },
-  { href: "/admin/reportes", label: "Reportes", enabled: false },
-  { href: "/admin/configuracion", label: "Configuración", enabled: false },
+  {
+    href: "/admin/empresa",
+    label: "Empresa",
+    enabled: true,
+    activeFor: [
+      "/admin/agenda",
+      "/admin/productos",
+      "/admin/ventas",
+      "/admin/instructores",
+      "/admin/reportes",
+      "/admin/configuracion",
+    ],
+  },
 ];
 
 export default async function AdminLayout({ children }: Readonly<{ children: React.ReactNode }>) {

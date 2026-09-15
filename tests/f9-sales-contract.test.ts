@@ -161,12 +161,22 @@ describe("F9 sales contracts", () => {
     expect(detail).toContain("Inscripción");
   });
 
-  it("exposes the canonical sales screens", () => {
+  it("exposes sales through the simplified Empresa navigation", () => {
     const layout = source("app/admin/layout.tsx");
+    const company = source("app/admin/empresa/page.tsx");
     const list = source("app/admin/ventas/page.tsx");
     const wizard = source("app/admin/ventas/nueva/page.tsx");
     const detail = source("app/admin/ventas/[saleId]/page.tsx");
-    expect(layout).toContain('{ href: "/admin/ventas", label: "Ventas", enabled: true }');
+    expect(layout).toContain('{ href: "/admin", label: "Hoy", enabled: true }');
+    expect(layout).toContain('{ href: "/admin/alumnas", label: "Alumnas", enabled: true }');
+    expect(layout).toContain('href: "/admin/empresa"');
+    expect(layout).toContain('label: "Empresa"');
+    expect(layout).toContain('"/admin/ventas"');
+    expect(layout).not.toContain('{ href: "/admin/ventas", label: "Ventas", enabled: true }');
+    expect(company).toContain("Ventas y pagos");
+    expect(company).toContain('href: "/admin/ventas"');
+    expect(company).toContain("Coaches");
+    expect(company).toContain("Productos y paquetes");
     expect(list).toContain("Nueva venta");
     expect(list).toContain("Inscripción");
     expect(wizard).toContain("Confirmar venta");
