@@ -1,6 +1,6 @@
-import Link from "next/link";
 import { signOut } from "@/app/auth/actions";
 import { getAdminContext } from "@/lib/auth/admin-context";
+import { AdminMobileNavigation, AdminNavigation } from "./admin-navigation";
 import "./hoy.css";
 
 const navItems = [
@@ -28,22 +28,7 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
           </div>
         </div>
 
-        <nav className="admin-nav">
-          {navItems.map((item) =>
-            item.enabled ? (
-              <Link key={item.label} href={item.href} className="admin-nav-item">
-                <span className="nav-dot" aria-hidden="true" />
-                <span>{item.label}</span>
-              </Link>
-            ) : (
-              <span key={item.label} className="admin-nav-item is-disabled" aria-disabled="true">
-                <span className="nav-dot" aria-hidden="true" />
-                <span>{item.label}</span>
-                <small>Próximamente</small>
-              </span>
-            ),
-          )}
-        </nav>
+        <AdminNavigation items={navItems} />
 
         <div className="sidebar-footer">
           <span className="sidebar-caption">{membership.role}</span>
@@ -57,11 +42,7 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
 
       <div className="admin-content">{children}</div>
 
-      <nav className="admin-mobile-nav" aria-label="Navegación móvil">
-        <Link href="/admin">Hoy</Link>
-        <Link href="/admin/agenda">Agenda</Link>
-        <Link href="/admin/alumnas">Alumnas</Link>
-      </nav>
+      <AdminMobileNavigation items={navItems} />
     </div>
   );
 }
