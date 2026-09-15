@@ -26,7 +26,12 @@ function formatTime(value: string, timeZone: string) {
   );
 }
 function localDateKey(value: Date, timeZone: string) {
-  const parts = new Intl.DateTimeFormat("en-CA", { timeZone, year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(value);
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(value);
   const part = (type: string) => parts.find((item) => item.type === type)?.value ?? "";
   return `${part("year")}-${part("month")}-${part("day")}`;
 }
@@ -45,26 +50,49 @@ function dateKey(value: Date) {
   return `${value.getUTCFullYear()}-${String(value.getUTCMonth() + 1).padStart(2, "0")}-${String(value.getUTCDate()).padStart(2, "0")}`;
 }
 function formatDay(value: Date) {
-  return new Intl.DateTimeFormat("es-MX", { timeZone: "UTC", weekday: "long", day: "numeric", month: "long" }).format(value);
+  return new Intl.DateTimeFormat("es-MX", {
+    timeZone: "UTC",
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  }).format(value);
 }
 function weekDay(value: Date) {
-  return new Intl.DateTimeFormat("es-MX", { timeZone: "UTC", weekday: "short" }).format(value).replace(".", "");
+  return new Intl.DateTimeFormat("es-MX", { timeZone: "UTC", weekday: "short" })
+    .format(value)
+    .replace(".", "");
 }
 function formatExpiry(value: string | null) {
   if (!value) return "Sin vencimiento";
   return `Vence ${new Intl.DateTimeFormat("es-MX", { day: "numeric", month: "short", timeZone: "UTC" }).format(new Date(`${value}T12:00:00Z`))}`;
 }
 function CalendarIcon() {
-  return <span className="quick-icon" aria-hidden="true">⌑</span>;
+  return (
+    <span className="quick-icon" aria-hidden="true">
+      ⌑
+    </span>
+  );
 }
 function StudentsIcon() {
-  return <span className="quick-icon" aria-hidden="true">◎</span>;
+  return (
+    <span className="quick-icon" aria-hidden="true">
+      ◎
+    </span>
+  );
 }
 
-export default async function AdminPage({ searchParams }: { searchParams: Promise<{ date?: string; error?: string; created?: string }> }) {
+export default async function AdminPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ date?: string; error?: string; created?: string }>;
+}) {
   const { supabase, user, studio, can } = await getAdminContext();
   const params = await searchParams;
-  const { data: profile } = await supabase.from("profiles").select("full_name").eq("id", user.id).maybeSingle();
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("full_name")
+    .eq("id", user.id)
+    .maybeSingle();
   const timeZone = studio.timezone ?? "America/Mexico_City";
   const now = new Date();
   const todayKey = localDateKey(now, timeZone);
@@ -76,33 +104,81 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
   const weekDays = Array.from({ length: 7 }, (_, index) => shiftDays(weekStart, index));
   const previousWeekKey = dateKey(shiftDays(selectedDate, -7));
   const nextWeekKey = dateKey(shiftDays(selectedDate, 7));
-  const offsetName = new Intl.DateTimeFormat("en-US", { timeZone, timeZoneName: "longOffset", hour: "2-digit" }).formatToParts(now).find((item) => item.type === "timeZoneName")?.value ?? "GMT-06:00";
+  const offsetName =
+    new Intl.DateTimeFormat("en-US", { timeZone, timeZoneName: "longOffset", hour: "2-digit" })
+      .formatToParts(now)
+      .find((item) => item.type === "timeZoneName")?.value ?? "GMT-06:00";
   const offset = offsetName.replace("GMT", "") || "+00:00";
   const start = new Date(`${selectedKey}T00:00:00${offset}`);
   const end = new Date(start.getTime() + 24 * 60 * 60 * 1000);
 
   const [{ data: sessions }, { count: activeStudents }, { data: students }] = await Promise.all([
-    supabase.from("class_sessions").select("id, starts_at, ends_at, capacity, status, template_id").eq("studio_id", studio.id).gte("starts_at", start.toISOString()).lt("starts_at", end.toISOString()).order("starts_at", { ascending: true }),
-    supabase.from("students").select("*", { count: "exact", head: true }).eq("studio_id", studio.id).eq("active", true),
-    supabase.from("students").select("id,full_name").eq("studio_id", studio.id).eq("active", true).eq("lifecycle_status", "active").order("full_name"),
+    supabase
+      .from("class_sessions")
+      .select("id, starts_at, ends_at, capacity, status, template_id")
+      .eq("studio_id", studio.id)
+      .gte("starts_at", start.toISOString())
+      .lt("starts_at", end.toISOString())
+      .order("starts_at", { ascending: true }),
+    supabase
+      .from("students")
+      .select("*", { count: "exact", head: true })
+      .eq("studio_id", studio.id)
+      .eq("active", true),
+    supabase
+      .from("students")
+      .select("id,full_name")
+      .eq("studio_id", studio.id)
+      .eq("active", true)
+      .eq("lifecycle_status", "active")
+      .order("full_name"),
   ]);
   const sessionIds = (sessions ?? []).map((session) => session.id);
   const { data: reservations } = sessionIds.length
-    ? await supabase.from("reservations").select("id,session_id,student_id,status,acquisition_id").in("session_id", sessionIds).in("status", ["reserved", "attended"]).order("booked_at")
-    : { data: [] as { id: string; session_id: string; student_id: string | null; status: string; acquisition_id: string | null }[] };
-  const acquisitionIds = [...new Set((reservations ?? []).map((item) => item.acquisition_id).filter(Boolean))] as string[];
+    ? await supabase
+        .from("reservations")
+        .select("id,session_id,student_id,status,acquisition_id")
+        .in("session_id", sessionIds)
+        .in("status", ["reserved", "attended"])
+        .order("booked_at")
+    : {
+        data: [] as {
+          id: string;
+          session_id: string;
+          student_id: string | null;
+          status: string;
+          acquisition_id: string | null;
+        }[],
+      };
+  const acquisitionIds = [
+    ...new Set((reservations ?? []).map((item) => item.acquisition_id).filter(Boolean)),
+  ] as string[];
   const { data: acquisitions } = acquisitionIds.length
-    ? await supabase.from("product_acquisitions").select("id,product_template_id,expires_on,unlimited").in("id", acquisitionIds)
-    : { data: [] as { id: string; product_template_id: string; expires_on: string | null; unlimited: boolean }[] };
+    ? await supabase
+        .from("product_acquisitions")
+        .select("id,product_template_id,expires_on,unlimited")
+        .in("id", acquisitionIds)
+    : {
+        data: [] as {
+          id: string;
+          product_template_id: string;
+          expires_on: string | null;
+          unlimited: boolean;
+        }[],
+      };
   const productIds = [...new Set((acquisitions ?? []).map((item) => item.product_template_id))];
   const { data: products } = productIds.length
     ? await supabase.from("product_templates").select("id,name").in("id", productIds)
     : { data: [] as { id: string; name: string }[] };
-  const balances = await Promise.all((acquisitions ?? []).map(async (acquisition) => {
-    if (acquisition.unlimited) return [acquisition.id, null] as const;
-    const { data } = await supabase.rpc("acquisition_credit_balance", { target_acquisition_id: acquisition.id });
-    return [acquisition.id, typeof data === "number" ? data : 0] as const;
-  }));
+  const balances = await Promise.all(
+    (acquisitions ?? []).map(async (acquisition) => {
+      if (acquisition.unlimited) return [acquisition.id, null] as const;
+      const { data } = await supabase.rpc("acquisition_credit_balance", {
+        target_acquisition_id: acquisition.id,
+      });
+      return [acquisition.id, typeof data === "number" ? data : 0] as const;
+    }),
+  );
   const balanceMap = new Map(balances);
   const acquisitionMap = new Map((acquisitions ?? []).map((item) => [item.id, item]));
   const productMap = new Map((products ?? []).map((item) => [item.id, item.name]));
@@ -115,52 +191,93 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
   }
   const reservationsCount = reservations?.length ?? 0;
   const templateIds = [...new Set((sessions ?? []).map((session) => session.template_id))];
-  const { data: templates } = templateIds.length ? await supabase.from("class_templates").select("id, name").in("id", templateIds) : { data: [] as { id: string; name: string }[] };
+  const { data: templates } = templateIds.length
+    ? await supabase.from("class_templates").select("id, name").in("id", templateIds)
+    : { data: [] as { id: string; name: string }[] };
   const templateMap = new Map((templates ?? []).map((item) => [item.id, item.name]));
   const totalCapacity = (sessions ?? []).reduce((sum, session) => sum + session.capacity, 0);
-  const occupancy = totalCapacity > 0 ? Math.round((reservationsCount / totalCapacity) * 100) : null;
+  const occupancy =
+    totalCapacity > 0 ? Math.round((reservationsCount / totalCapacity) * 100) : null;
   const viewingToday = selectedKey === todayKey;
-  const nextSession = viewingToday ? (sessions ?? []).find((session) => new Date(session.ends_at).getTime() >= now.getTime()) : sessions?.[0];
+  const nextSession = viewingToday
+    ? (sessions ?? []).find((session) => new Date(session.ends_at).getTime() >= now.getTime())
+    : sessions?.[0];
   const firstName = profile?.full_name?.trim().split(/\s+/)[0] || "Mike";
   const canReadSchedule = can(CAPABILITIES.SCHEDULE_READ);
   const canWriteSchedule = can(CAPABILITIES.SCHEDULE_WRITE);
   const canReadStudents = can(CAPABILITIES.STUDENTS_READ);
   const canWriteStudents = can(CAPABILITIES.STUDENTS_WRITE);
 
-  const operationsBySession = new Map<string, { roster: { id: string; studentName: string; status: string; packageLabel: string; creditsLabel: string; expiresLabel: string }[]; candidates: { id: string; fullName: string; eligible: boolean; detail: string }[] }>();
+  const operationsBySession = new Map<
+    string,
+    {
+      roster: {
+        id: string;
+        studentName: string;
+        status: string;
+        packageLabel: string;
+        creditsLabel: string;
+        expiresLabel: string;
+      }[];
+      candidates: { id: string; fullName: string; eligible: boolean; detail: string }[];
+    }
+  >();
   if (canReadSchedule) {
     for (const session of sessions ?? []) {
       const sessionReservations = reservationsBySession.get(session.id) ?? [];
       const bookedIds = new Set(sessionReservations.map((item) => item.student_id).filter(Boolean));
       const candidates = (students ?? []).filter((student) => !bookedIds.has(student.id));
       const eligibilityEntries = canWriteSchedule
-        ? await Promise.all(candidates.map(async (student) => {
-            const { data } = await supabase.rpc("booking_eligibility", { target_session_id: session.id, target_student_id: student.id });
-            return [student.id, (data ?? {}) as EligibilityResult] as const;
-          }))
+        ? await Promise.all(
+            candidates.map(async (student) => {
+              const { data } = await supabase.rpc("booking_eligibility", {
+                target_session_id: session.id,
+                target_student_id: student.id,
+              });
+              return [student.id, (data ?? {}) as EligibilityResult] as const;
+            }),
+          )
         : [];
       const eligibilityMap = new Map(eligibilityEntries);
       operationsBySession.set(session.id, {
         roster: sessionReservations.map((reservation) => {
-          const acquisition = reservation.acquisition_id ? acquisitionMap.get(reservation.acquisition_id) : null;
-          const balance = reservation.acquisition_id ? balanceMap.get(reservation.acquisition_id) : null;
+          const acquisition = reservation.acquisition_id
+            ? acquisitionMap.get(reservation.acquisition_id)
+            : null;
+          const balance = reservation.acquisition_id
+            ? balanceMap.get(reservation.acquisition_id)
+            : null;
           return {
             id: reservation.id,
-            studentName: reservation.student_id ? (studentMap.get(reservation.student_id) ?? "Alumna") : "Alumna",
+            studentName: reservation.student_id
+              ? (studentMap.get(reservation.student_id) ?? "Alumna")
+              : "Alumna",
             status: reservation.status,
-            packageLabel: acquisition ? (productMap.get(acquisition.product_template_id) ?? "Producto activo") : "Sin producto vinculado",
-            creditsLabel: acquisition?.unlimited ? "Ilimitado" : acquisition ? `${balance ?? 0} créditos disponibles` : "—",
+            packageLabel: acquisition
+              ? (productMap.get(acquisition.product_template_id) ?? "Producto activo")
+              : "Sin producto vinculado",
+            creditsLabel: acquisition?.unlimited
+              ? "Ilimitado"
+              : acquisition
+                ? `${balance ?? 0} créditos disponibles`
+                : "—",
             expiresLabel: formatExpiry(acquisition?.expires_on ?? null),
           };
         }),
         candidates: candidates.map((student) => {
           const eligibility = eligibilityMap.get(student.id);
-          const reason = eligibility?.reason_code ? (eligibilityCopy[eligibility.reason_code] ?? "no elegible") : "no elegible";
+          const reason = eligibility?.reason_code
+            ? (eligibilityCopy[eligibility.reason_code] ?? "no elegible")
+            : "no elegible";
           return {
             id: student.id,
             fullName: student.full_name,
             eligible: eligibility?.eligible === true,
-            detail: eligibility?.eligible ? (eligibility.unlimited ? "membresía ilimitada" : `${eligibility.available_credits ?? 0} créditos`) : reason,
+            detail: eligibility?.eligible
+              ? eligibility.unlimited
+                ? "membresía ilimitada"
+                : `${eligibility.available_credits ?? 0} créditos`
+              : reason,
           };
         }),
       });
@@ -169,13 +286,203 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
 
   return (
     <main className="dashboard-shell hoy-dashboard">
-      <header className="hoy-header"><p className="eyebrow">{viewingToday ? "HOY" : "OPERACIÓN"} · {studio.name}</p><h1 className="dashboard-title">¡Hola, {firstName}!</h1><p className="hoy-date">{formatDay(selectedDate)}</p></header>
-      {params.created ? <div className="notice success">{params.created === "cancel" ? "Reserva cancelada correctamente." : "Reserva creada correctamente."}</div> : null}
-      {params.error ? <div className="notice error">No se pudo completar la operación: {decodeURIComponent(params.error)}</div> : null}
-      <nav className="week-picker" aria-label="Seleccionar día de operación"><Link className="week-arrow" href={`/admin?date=${previousWeekKey}`} aria-label="Semana anterior">‹</Link><div className="week-days">{weekDays.map((day) => { const key = dateKey(day); return <Link key={key} href={`/admin?date=${key}`} className={`week-day${key === selectedKey ? " is-selected" : ""}${key === todayKey ? " is-today" : ""}`}><span>{weekDay(day)}</span><strong>{day.getUTCDate()}</strong></Link>; })}</div><Link className="week-arrow" href={`/admin?date=${nextWeekKey}`} aria-label="Semana siguiente">›</Link>{!viewingToday ? <Link className="today-shortcut" href="/admin">Hoy</Link> : null}</nav>
-      <section className="hoy-primary-grid"><article className={`panel next-class-card${nextSession ? "" : " is-empty"}`}><div className="panel-heading"><div><p className="eyebrow">{viewingToday ? "PRÓXIMA CLASE" : "PRIMERA CLASE"}</p><h2>{nextSession ? (templateMap.get(nextSession.template_id) ?? "Clase") : "Sin clases"}</h2></div>{nextSession ? <span className="status-pill">{nextSession.status === "scheduled" ? "Programada" : nextSession.status}</span> : null}</div>{nextSession ? <><div className="next-class-time"><strong>{formatTime(nextSession.starts_at, timeZone)}</strong><span>— {formatTime(nextSession.ends_at, timeZone)}</span></div><div className="next-class-capacity"><div><strong>{reservationsBySession.get(nextSession.id)?.length ?? 0}</strong><span>reservadas</span></div><div><strong>{nextSession.capacity}</strong><span>capacidad</span></div></div></> : <div className="next-class-empty"><span>No hay clases programadas para este día.</span></div>}</article><article className="panel hoy-quick-card"><p className="eyebrow">OPERACIÓN</p><h2>Acciones rápidas</h2><div className="quick-action-list">{canReadSchedule ? <Link href="/admin/agenda"><CalendarIcon /><span>Agenda</span><strong>{canWriteSchedule ? "Ver y programar →" : "Ver agenda →"}</strong></Link> : null}{canReadStudents ? <Link href="/admin/alumnas"><StudentsIcon /><span>Alumnas</span><strong>{canWriteStudents ? "Buscar o dar de alta →" : "Consultar alumnas →"}</strong></Link> : null}</div></article></section>
-      <section className="stat-grid hoy-stat-grid" aria-label="Indicadores operativos del día"><article className="stat-card"><span>Clases</span><strong>{sessions?.length ?? 0}</strong><small>Sesiones del día</small></article><article className="stat-card"><span>Reservas</span><strong>{reservationsCount}</strong><small>Lugares confirmados</small></article><article className="stat-card"><span>Alumnas activas</span><strong>{activeStudents ?? 0}</strong><small>Expedientes activos</small></article><article className="stat-card"><span>Ocupación</span><strong>{occupancy === null ? "—" : `${occupancy}%`}</strong><small>{totalCapacity ? `${reservationsCount} de ${totalCapacity} lugares` : "Sin cupo programado"}</small></article></section>
-      <section className="panel hoy-schedule-panel"><div className="panel-heading"><div><p className="eyebrow">AGENDA DEL DÍA</p><h2>{viewingToday ? "Clases de hoy" : `Clases del ${formatDay(selectedDate)}`}</h2></div>{canReadSchedule ? <Link className="secondary-button" href="/admin/agenda">Administrar agenda</Link> : null}</div>{(sessions?.length ?? 0) === 0 ? <div className="empty-state">No hay clases programadas para este día.</div> : <div className="session-list hoy-timeline">{sessions?.map((session) => { const operation = operationsBySession.get(session.id); const booked = reservationsBySession.get(session.id)?.length ?? 0; return <div className="today-session-block" key={session.id}><div className="session-row"><div className="timeline-marker" aria-hidden="true" /><div className="session-time"><strong>{formatTime(session.starts_at, timeZone)}</strong><span>hasta {formatTime(session.ends_at, timeZone)}</span></div><div className="session-copy"><strong>{templateMap.get(session.template_id) ?? "Clase"}</strong><span>{booked} reservadas · {session.capacity} lugares</span></div><div className="session-meta"><span className="status-pill">{session.status === "scheduled" ? "Programada" : session.status}</span></div></div>{operation ? <SessionOperations sessionId={session.id} returnDate={selectedKey} roster={operation.roster} candidates={operation.candidates} available={Math.max(session.capacity - booked, 0)} canEdit={canWriteSchedule && session.status === "scheduled"} /> : null}</div>; })}</div>}</section>
+      <header className="hoy-header">
+        <p className="eyebrow">
+          {viewingToday ? "HOY" : "OPERACIÓN"} · {studio.name}
+        </p>
+        <h1 className="dashboard-title">¡Hola, {firstName}!</h1>
+        <p className="hoy-date">{formatDay(selectedDate)}</p>
+      </header>
+      {params.created ? (
+        <div className="notice success">
+          {params.created === "cancel"
+            ? "Reserva cancelada correctamente."
+            : "Reserva creada correctamente."}
+        </div>
+      ) : null}
+      {params.error ? (
+        <div className="notice error">
+          No se pudo completar la operación: {decodeURIComponent(params.error)}
+        </div>
+      ) : null}
+      <nav className="week-picker" aria-label="Seleccionar día de operación">
+        <Link
+          className="week-arrow"
+          href={`/admin?date=${previousWeekKey}`}
+          aria-label="Semana anterior"
+        >
+          ‹
+        </Link>
+        <div className="week-days">
+          {weekDays.map((day) => {
+            const key = dateKey(day);
+            return (
+              <Link
+                key={key}
+                href={`/admin?date=${key}`}
+                className={`week-day${key === selectedKey ? " is-selected" : ""}${key === todayKey ? " is-today" : ""}`}
+              >
+                <span>{weekDay(day)}</span>
+                <strong>{day.getUTCDate()}</strong>
+              </Link>
+            );
+          })}
+        </div>
+        <Link
+          className="week-arrow"
+          href={`/admin?date=${nextWeekKey}`}
+          aria-label="Semana siguiente"
+        >
+          ›
+        </Link>
+        {!viewingToday ? (
+          <Link className="today-shortcut" href="/admin">
+            Hoy
+          </Link>
+        ) : null}
+      </nav>
+      <section className="hoy-primary-grid">
+        <article className={`panel next-class-card${nextSession ? "" : " is-empty"}`}>
+          <div className="panel-heading">
+            <div>
+              <p className="eyebrow">{viewingToday ? "PRÓXIMA CLASE" : "PRIMERA CLASE"}</p>
+              <h2>
+                {nextSession ? (templateMap.get(nextSession.template_id) ?? "Clase") : "Sin clases"}
+              </h2>
+            </div>
+            {nextSession ? (
+              <span className="status-pill">
+                {nextSession.status === "scheduled" ? "Programada" : nextSession.status}
+              </span>
+            ) : null}
+          </div>
+          {nextSession ? (
+            <>
+              <div className="next-class-time">
+                <strong>{formatTime(nextSession.starts_at, timeZone)}</strong>
+                <span>— {formatTime(nextSession.ends_at, timeZone)}</span>
+              </div>
+              <div className="next-class-capacity">
+                <div>
+                  <strong>{reservationsBySession.get(nextSession.id)?.length ?? 0}</strong>
+                  <span>reservadas</span>
+                </div>
+                <div>
+                  <strong>{nextSession.capacity}</strong>
+                  <span>capacidad</span>
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="next-class-empty">
+              <span>No hay clases programadas para este día.</span>
+            </div>
+          )}
+        </article>
+        <article className="panel hoy-quick-card">
+          <p className="eyebrow">OPERACIÓN</p>
+          <h2>Acciones rápidas</h2>
+          <div className="quick-action-list">
+            {canReadSchedule ? (
+              <Link href="/admin/agenda">
+                <CalendarIcon />
+                <span>Agenda</span>
+                <strong>{canWriteSchedule ? "Ver y programar →" : "Ver agenda →"}</strong>
+              </Link>
+            ) : null}
+            {canReadStudents ? (
+              <Link href="/admin/alumnas">
+                <StudentsIcon />
+                <span>Alumnas</span>
+                <strong>
+                  {canWriteStudents ? "Buscar o dar de alta →" : "Consultar alumnas →"}
+                </strong>
+              </Link>
+            ) : null}
+          </div>
+        </article>
+      </section>
+      <section className="stat-grid hoy-stat-grid" aria-label="Indicadores operativos del día">
+        <article className="stat-card">
+          <span>Clases</span>
+          <strong>{sessions?.length ?? 0}</strong>
+          <small>Sesiones del día</small>
+        </article>
+        <article className="stat-card">
+          <span>Reservas</span>
+          <strong>{reservationsCount}</strong>
+          <small>Lugares confirmados</small>
+        </article>
+        <article className="stat-card">
+          <span>Alumnas activas</span>
+          <strong>{activeStudents ?? 0}</strong>
+          <small>Expedientes activos</small>
+        </article>
+        <article className="stat-card">
+          <span>Ocupación</span>
+          <strong>{occupancy === null ? "—" : `${occupancy}%`}</strong>
+          <small>
+            {totalCapacity
+              ? `${reservationsCount} de ${totalCapacity} lugares`
+              : "Sin cupo programado"}
+          </small>
+        </article>
+      </section>
+      <section className="panel hoy-schedule-panel">
+        <div className="panel-heading">
+          <div>
+            <p className="eyebrow">AGENDA DEL DÍA</p>
+            <h2>{viewingToday ? "Clases de hoy" : `Clases del ${formatDay(selectedDate)}`}</h2>
+          </div>
+          {canReadSchedule ? (
+            <Link className="secondary-button" href="/admin/agenda">
+              Administrar agenda
+            </Link>
+          ) : null}
+        </div>
+        {(sessions?.length ?? 0) === 0 ? (
+          <div className="empty-state">No hay clases programadas para este día.</div>
+        ) : (
+          <div className="session-list hoy-timeline">
+            {sessions?.map((session) => {
+              const operation = operationsBySession.get(session.id);
+              const booked = reservationsBySession.get(session.id)?.length ?? 0;
+              return (
+                <div className="today-session-block" key={session.id}>
+                  <div className="session-row">
+                    <div className="timeline-marker" aria-hidden="true" />
+                    <div className="session-time">
+                      <strong>{formatTime(session.starts_at, timeZone)}</strong>
+                      <span>hasta {formatTime(session.ends_at, timeZone)}</span>
+                    </div>
+                    <div className="session-copy">
+                      <strong>{templateMap.get(session.template_id) ?? "Clase"}</strong>
+                      <span>
+                        {booked} reservadas · {session.capacity} lugares
+                      </span>
+                    </div>
+                    <div className="session-meta">
+                      <span className="status-pill">
+                        {session.status === "scheduled" ? "Programada" : session.status}
+                      </span>
+                    </div>
+                  </div>
+                  {operation ? (
+                    <SessionOperations
+                      sessionId={session.id}
+                      returnDate={selectedKey}
+                      roster={operation.roster}
+                      candidates={operation.candidates}
+                      available={Math.max(session.capacity - booked, 0)}
+                      canEdit={canWriteSchedule && session.status === "scheduled"}
+                    />
+                  ) : null}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </section>
     </main>
   );
 }
