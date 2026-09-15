@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { bookStudentFromToday, cancelReservationFromToday } from "../actions";
 
@@ -45,10 +45,37 @@ export function SessionOperations({
   canEdit: boolean;
 }) {
   const [open, setOpen] = useState(false);
+  const [feedback, setFeedback] = useState<{ kind: "success" | "error"; message: string } | null>(
+    null,
+  );
   const eligibleCount = candidates.filter((candidate) => candidate.eligible).length;
 
+  useEffect(() => {
+    if (window.location.hash !== `#session-${sessionId}`) return;
+
+    setOpen(true);
+    const params = new URLSearchParams(window.location.search);
+    const created = params.get("created");
+    const error = params.get("error");
+
+    if (created) {
+      setFeedback({
+        kind: "success",
+        message:
+          created === "cancel"
+            ? "Reserva cancelada correctamente."
+            : "Reserva creada correctamente.",
+      });
+    } else if (error) {
+      setFeedback({
+        kind: "error",
+        message: "No se pudo completar la operación.",
+      });
+    }
+  }, [sessionId]);
+
   return (
-    <div className="today-session-operations">
+    <div className="today-session-operations" id={`session-${sessionId}`}>
       <button
         className="today-session-toggle"
         type="button"
@@ -59,6 +86,11 @@ export function SessionOperations({
       </button>
       {open ? (
         <div className="today-session-drawer roster-first">
+          {feedback ? (
+            <div className={`notice ${feedback.kind}`} role="status">
+              {feedback.message}
+            </div>
+          ) : null}
           <section className="today-roster roster-priority">
             <div className="today-roster-header">
               <div>
