@@ -14,10 +14,16 @@ function withQuery(url: string, key: string, value: string) {
   return `${url}${url.includes("?") ? "&" : "?"}${key}=${encodeURIComponent(value)}`;
 }
 
+function sessionReturnUrl(returnDate: string, sessionId: string) {
+  const url = todayReturnUrl(returnDate);
+  return sessionId ? `${url}#session-${sessionId}` : url;
+}
+
 export async function bookStudentFromToday(formData: FormData) {
   const sessionId = String(formData.get("session_id") ?? "");
   const studentId = String(formData.get("student_id") ?? "");
-  const returnUrl = todayReturnUrl(String(formData.get("return_date") ?? ""));
+  const returnDate = String(formData.get("return_date") ?? "");
+  const returnUrl = todayReturnUrl(returnDate);
   if (!sessionId || !studentId) redirect(withQuery(returnUrl, "error", "booking"));
 
   const { supabase, studio } = await getAdminContext(CAPABILITIES.SCHEDULE_WRITE);
@@ -33,26 +39,27 @@ export async function bookStudentFromToday(formData: FormData) {
     target_session_id: sessionId,
     target_student_id: studentId,
   });
-  if (error) redirect(withQuery(returnUrl, "error", error.message));
+  if (error) redirect(withQuery(sessionReturnUrl(returnDate, sessionId), "error", error.message));
 
   revalidatePath("/admin");
   revalidatePath(`/admin/agenda/${sessionId}`);
-  redirect(withQuery(returnUrl, "created", "booking"));
+  redirect(withQuery(sessionReturnUrl(returnDate, sessionId), "created", "booking"));
 }
 
 export async function cancelReservationFromToday(formData: FormData) {
   const sessionId = String(formData.get("session_id") ?? "");
   const reservationId = String(formData.get("reservation_id") ?? "");
-  const returnUrl = todayReturnUrl(String(formData.get("return_date") ?? ""));
+  const returnDate = String(formData.get("return_date") ?? "");
+  const returnUrl = todayReturnUrl(returnDate);
   if (!sessionId || !reservationId) redirect(withQuery(returnUrl, "error", "cancel"));
 
   const { supabase } = await getAdminContext(CAPABILITIES.SCHEDULE_WRITE);
   const { error } = await supabase.rpc("admin_cancel_reservation", {
     target_reservation_id: reservationId,
   });
-  if (error) redirect(withQuery(returnUrl, "error", "cancel"));
+  if (error) redirect(withQuery(sessionReturnUrl(returnDate, sessionId), "error", "cancel"));
 
   revalidatePath("/admin");
   revalidatePath(`/admin/agenda/${sessionId}`);
-  redirect(withQuery(returnUrl, "created", "cancel"));
+  redirect(withQuery(sessionReturnUrl(returnDate, sessionId), "created", "cancel"));
 }
