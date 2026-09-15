@@ -14,7 +14,9 @@ export default async function StudentsPage({
     ? params.status!
     : "active";
 
-  const { supabase, studio, membership, can } = await getAdminContext(CAPABILITIES.STUDENTS_READ);
+  const { supabase, studio, membership, can } = await getAdminContext(
+    CAPABILITIES.STUDENTS_READ,
+  );
   const canEdit = can(CAPABILITIES.STUDENTS_WRITE);
 
   let studentsQuery = supabase
@@ -66,7 +68,9 @@ export default async function StudentsPage({
         </div>
       </header>
 
-      {params.created ? <div className="notice success">Alumna creada correctamente.</div> : null}
+      {params.created ? (
+        <div className="notice success">Alumna creada correctamente.</div>
+      ) : null}
       {errorMessage ? <div className="notice error">{errorMessage}</div> : null}
 
       <section className="agenda-layout">
@@ -109,7 +113,11 @@ export default async function StudentsPage({
             ) : (
               <div className="student-list">
                 {students?.map((student) => (
-                  <Link className="student-row" key={student.id} href={`/admin/alumnas/${student.id}`}>
+                  <Link
+                    className="student-row"
+                    key={student.id}
+                    href={`/admin/alumnas/${student.id}`}
+                  >
                     <div>
                       <strong>{student.full_name}</strong>
                       <span>
@@ -119,7 +127,9 @@ export default async function StudentsPage({
                     </div>
                     <div className="student-package-summary">
                       <strong>
-                        {student.profile_status === "complete" ? "Perfil completo" : "Perfil incompleto"}
+                        {student.profile_status === "complete"
+                          ? "Perfil completo"
+                          : "Perfil incompleto"}
                       </strong>
                       <span>{student.lifecycle_status}</span>
                     </div>
@@ -139,11 +149,23 @@ export default async function StudentsPage({
             <article className="panel compact-panel">
               <p className="eyebrow">ALTA RÁPIDA</p>
               <h2>Nueva alumna</h2>
-              <p>Nombre y teléfono bastan para crear el expediente. Apellido y correo son opcionales.</p>
+              <p>
+                Nombre y teléfono bastan para crear el expediente. Apellido y correo son
+                opcionales.
+              </p>
               <form action={createStudent} className="compact-form">
                 <div className="form-split">
-                  <input name="first_name" required placeholder="Nombre" autoComplete="given-name" />
-                  <input name="last_name" placeholder="Apellido opcional" autoComplete="family-name" />
+                  <input
+                    name="first_name"
+                    required
+                    placeholder="Nombre"
+                    autoComplete="given-name"
+                  />
+                  <input
+                    name="last_name"
+                    placeholder="Apellido opcional"
+                    autoComplete="family-name"
+                  />
                 </div>
                 <input
                   name="phone"
