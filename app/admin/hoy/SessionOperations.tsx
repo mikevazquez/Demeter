@@ -84,42 +84,46 @@ export function SessionOperations({
   useEffect(() => {
     if (window.location.hash !== `#session-${sessionId}`) return;
 
-    setOpen(true);
-    const params = new URLSearchParams(window.location.search);
-    const created = params.get("created");
-    const error = params.get("error");
+    const frame = window.requestAnimationFrame(() => {
+      setOpen(true);
+      const params = new URLSearchParams(window.location.search);
+      const created = params.get("created");
+      const error = params.get("error");
 
-    if (created) {
-      setFeedback({
-        kind: "success",
-        message:
-          created === "attendance-finalized"
-            ? "Asistencia finalizada correctamente."
-            : created === "attendance-corrected"
-              ? "Corrección registrada con motivo y trazabilidad."
-              : created === "attended"
-                ? "Asistencia registrada."
-                : created === "no_show"
-                  ? "No-show registrado."
-                  : created === "walkin"
-                    ? "Walk-in registrada y agregada a la clase."
-                    : created === "cancel"
-                      ? "Reserva cancelada correctamente."
-                      : "Reserva creada correctamente.",
-      });
-    } else if (error) {
-      setFeedback({
-        kind: "error",
-        message:
-          error === "correction_reason_required"
-            ? "La corrección requiere un motivo."
-            : error === "phone_exists"
-              ? "Ese teléfono ya pertenece a una alumna. Agrégala como alumna existente."
-              : error === "session_full"
-                ? "La clase ya está llena."
-                : "No se pudo completar la operación.",
-      });
-    }
+      if (created) {
+        setFeedback({
+          kind: "success",
+          message:
+            created === "attendance-finalized"
+              ? "Asistencia finalizada correctamente."
+              : created === "attendance-corrected"
+                ? "Corrección registrada con motivo y trazabilidad."
+                : created === "attended"
+                  ? "Asistencia registrada."
+                  : created === "no_show"
+                    ? "No-show registrado."
+                    : created === "walkin"
+                      ? "Walk-in registrada y agregada a la clase."
+                      : created === "cancel"
+                        ? "Reserva cancelada correctamente."
+                        : "Reserva creada correctamente.",
+        });
+      } else if (error) {
+        setFeedback({
+          kind: "error",
+          message:
+            error === "correction_reason_required"
+              ? "La corrección requiere un motivo."
+              : error === "phone_exists"
+                ? "Ese teléfono ya pertenece a una alumna. Agrégala como alumna existente."
+                : error === "session_full"
+                  ? "La clase ya está llena."
+                  : "No se pudo completar la operación.",
+        });
+      }
+    });
+
+    return () => window.cancelAnimationFrame(frame);
   }, [sessionId]);
 
   return (
