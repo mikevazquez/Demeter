@@ -2,59 +2,34 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { CAPABILITIES } from "@/lib/auth/capabilities";
+import { getAdminContext } from "@/lib/auth/admin-context";
 import { normalizeMexicanPhone } from "@/lib/phone";
-import { createClient } from "@/lib/supabase/server";
-
-async function requireAdmin() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/login/admin");
-
-  const { data: membership } = await supabase
-    .from("studio_memberships")
-    .select("studio_id, role")
-    .eq("user_id", user.id)
-    .eq("active", true)
-    .maybeSingle();
-
-  if (!membership || !["owner", "admin"].includes(membership.role)) {
-    redirect("/admin/alumnas?error=access");
-  }
-
-  return { supabase, studioId: membership.studio_id };
-}
 
 export async function createStudent(formData: FormData) {
-  const fullName = String(formData.get("full_name") ?? "").trim();
+  const firstName = String(formData.get("first_name") ?? "").trim();
+  const lastName = String(formData.get("last_name") ?? "").trim();
   const email =
     String(formData.get("email") ?? "")
       .trim()
       .toLowerCase() || null;
   const phone = normalizeMexicanPhone(String(formData.get("phone") ?? ""));
 
-  if (!fullName || !phone) redirect("/admin/alumnas?error=student_phone");
+  if (!firstName || !phone) redirect("/admin/alumnas?error=student_phone");
 
-  const { supabase, studioId } = await requireAdmin();
-
-  const { data: existing } = await supabase
-    .from("students")
-    .select("id")
-    .eq("studio_id", studioId)
-    .eq("phone", phone)
-    .maybeSingle();
-
-  if (existing) redirect("/admin/alumnas?error=phone_exists");
-
-  const { error } = await supabase.from("students").insert({
-    studio_id: studioId,
-    full_name: fullName,
-    email,
-    phone,
+  const { supabase } = await getAdminContext(CAPABILITIES.STUDENTS_WRITE);
+  const { error } = await supabase.rpc("admin_create_student", {
+    p_first_name: firstName,
+    p_last_name: lastName || null,
+    p_phone: phone,
+    p_email: email,
   });
 
-  if (error) redirect("/admin/alumnas?error=student");
+  if (error) {
+    const code = error.message.includes("phone_exists") ? "phone_exists" : "student";
+    redirect(`/admin/alumnas?error=${code}`);
+  }
+
   revalidatePath("/admin/alumnas");
   revalidatePath("/admin");
   redirect("/admin/alumnas?created=student");
@@ -78,9 +53,9 @@ export async function createPackage(formData: FormData) {
     redirect("/admin/alumnas?error=package");
   }
 
-  const { supabase, studioId } = await requireAdmin();
+  const { supabase, studio } = await getAdminContext(CAPABILITIES.PRODUCTS_WRITE);
   const { error } = await supabase.from("packages").insert({
-    studio_id: studioId,
+    studio_id: studio.id,
     name,
     class_credits: classCredits,
     validity_days: validityDays,
@@ -99,19 +74,19 @@ export async function assignPackage(formData: FormData) {
   if (!studentId || !packageId || !/^\d{4}-\d{2}-\d{2}$/.test(startsOn))
     redirect("/admin/alumnas?error=assignment");
 
-  const { supabase, studioId } = await requireAdmin();
+  const { supabase, studio } = await getAdminContext(CAPABILITIES.PRODUCTS_WRITE);
   const [{ data: student }, { data: packageRecord }] = await Promise.all([
     supabase
       .from("students")
       .select("id, user_id")
       .eq("id", studentId)
-      .eq("studio_id", studioId)
+      .eq("studio_id", studio.id)
       .single(),
     supabase
       .from("packages")
       .select("id, class_credits, validity_days")
       .eq("id", packageId)
-      .eq("studio_id", studioId)
+      .eq("studio_id", studio.id)
       .eq("active", true)
       .single(),
   ]);
@@ -124,7 +99,7 @@ export async function assignPackage(formData: FormData) {
   const expiresOn = expiry.toISOString().slice(0, 10);
 
   const { error } = await supabase.from("student_packages").insert({
-    studio_id: studioId,
+    studio_id: studio.id,
     student_id: studentId,
     student_user_id: student.user_id,
     package_id: packageId,
