@@ -1,6 +1,9 @@
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getAdminContext } from "@/lib/auth/admin-context";
-import { StudentAccessProvisioner } from "./StudentAccessProvisioner";
+import {
+  StudentAccessProvisioner,
+  StudentTemporaryPasswordResetter,
+} from "./StudentAccessProvisioner";
 
 export default async function StudentProfileLayout({
   children,
@@ -81,6 +84,9 @@ export default async function StudentProfileLayout({
                   </span>
                 </div>
               </div>
+              {account?.must_change_password ? (
+                <StudentTemporaryPasswordResetter studentId={student.id} phone={student.phone} />
+              ) : null}
             </div>
           ) : student.user_id ? (
             <div className="notice error">

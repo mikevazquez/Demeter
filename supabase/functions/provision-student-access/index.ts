@@ -2,6 +2,7 @@ import { withSupabase } from "npm:@supabase/server";
 
 type ProvisionRequest = {
   studentId?: unknown;
+  mode?: unknown;
 };
 
 function jsonResponse(body: Record<string, unknown>, status = 200) {
@@ -65,7 +66,8 @@ const handler = {
     }
 
     const studentId = typeof payload.studentId === "string" ? payload.studentId.trim() : "";
-    if (!studentId) return jsonResponse({ error: "invalid_request" }, 400);
+    const mode = payload.mode === "reset" ? "reset" : payload.mode === undefined ? "provision" : "";
+    if (!studentId || !mode) return jsonResponse({ error: "invalid_request" }, 400);
 
     const { data: student, error: studentError } = await userClient
       .from("students")
@@ -79,7 +81,6 @@ const handler = {
     if (!student.active || student.lifecycle_status !== "active") {
       return jsonResponse({ error: "student_not_active" }, 409);
     }
-    if (student.user_id) return jsonResponse({ error: "student_already_linked" }, 409);
 
     const { data: callerMembership, error: membershipError } = await userClient
       .from("studio_memberships")
@@ -103,6 +104,57 @@ const handler = {
     if (!permission) return jsonResponse({ error: "forbidden" }, 403);
 
     const temporaryPassword = generateTemporaryPassword();
+
+    if (mode === "reset") {
+      if (!student.user_id) return jsonResponse({ error: "student_access_missing" }, 409);
+
+      const [
+        { data: account, error: accountError },
+        { data: targetMembership, error: targetError },
+      ] = await Promise.all([
+        userClient
+          .from("user_accounts")
+          .select("status, must_change_password")
+          .eq("id", student.user_id)
+          .maybeSingle(),
+        userClient
+          .from("studio_memberships")
+          .select("role, active")
+          .eq("studio_id", student.studio_id)
+          .eq("user_id", student.user_id)
+          .maybeSingle(),
+      ]);
+
+      if (accountError || targetError) return jsonResponse({ error: "access_lookup_failed" }, 500);
+      if (
+        !account ||
+        account.status !== "active" ||
+        !targetMembership ||
+        targetMembership.role !== "student" ||
+        targetMembership.active !== true
+      ) {
+        return jsonResponse({ error: "student_access_inconsistent" }, 409);
+      }
+      if (account.must_change_password !== true) {
+        return jsonResponse({ error: "temporary_password_reset_closed" }, 409);
+      }
+
+      const { error: resetError } = await adminClient.auth.admin.updateUserById(student.user_id, {
+        password: temporaryPassword,
+      });
+
+      if (resetError) return jsonResponse({ error: "auth_password_reset_failed" }, 500);
+
+      return jsonResponse({
+        ok: true,
+        temporaryPassword,
+        phone: student.phone,
+        mustChangePassword: true,
+      });
+    }
+
+    if (student.user_id) return jsonResponse({ error: "student_already_linked" }, 409);
+
     const { data: createdUser, error: createError } = await adminClient.auth.admin.createUser({
       phone: student.phone,
       password: temporaryPassword,

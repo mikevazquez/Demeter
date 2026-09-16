@@ -29,8 +29,9 @@ async function readProvisioningFunctionError(error: unknown) {
   }
 }
 
-export async function provisionStudentAccess(
+async function invokeStudentAccess(
   studentId: string,
+  mode: "provision" | "reset",
 ): Promise<ProvisionStudentAccessResult> {
   if (!studentId) return { ok: false, error: "invalid_request" };
 
@@ -43,9 +44,29 @@ export async function provisionStudentAccess(
     .maybeSingle();
 
   if (studentError || !student) return { ok: false, error: "student_not_found" };
-  if (student.user_id) return { ok: false, error: "student_already_linked" };
   if (!student.active || student.lifecycle_status !== "active") {
     return { ok: false, error: "student_not_active" };
+  }
+
+  if (mode === "provision" && student.user_id) {
+    return { ok: false, error: "student_already_linked" };
+  }
+
+  if (mode === "reset") {
+    if (!student.user_id) return { ok: false, error: "student_access_missing" };
+
+    const { data: account, error: accountError } = await supabase
+      .from("user_accounts")
+      .select("status, must_change_password")
+      .eq("id", student.user_id)
+      .maybeSingle();
+
+    if (accountError || !account || account.status !== "active") {
+      return { ok: false, error: "student_access_inconsistent" };
+    }
+    if (account.must_change_password !== true) {
+      return { ok: false, error: "temporary_password_reset_closed" };
+    }
   }
 
   const {
@@ -57,7 +78,7 @@ export async function provisionStudentAccess(
   }
 
   const { data, error } = await supabase.functions.invoke("provision-student-access", {
-    body: { studentId },
+    body: mode === "reset" ? { studentId, mode: "reset" } : { studentId },
     headers: {
       Authorization: `Bearer ${session.access_token}`,
     },
@@ -73,14 +94,24 @@ export async function provisionStudentAccess(
     };
   }
 
-  revalidatePath(`/admin/alumnas/${studentId}`);
-
   return {
     ok: true,
     phone: String(data.phone),
     temporaryPassword: String(data.temporaryPassword),
     mustChangePassword: true,
   };
+}
+
+export async function provisionStudentAccess(
+  studentId: string,
+): Promise<ProvisionStudentAccessResult> {
+  return invokeStudentAccess(studentId, "provision");
+}
+
+export async function resetStudentTemporaryPassword(
+  studentId: string,
+): Promise<ProvisionStudentAccessResult> {
+  return invokeStudentAccess(studentId, "reset");
 }
 
 export async function updateStudent(formData: FormData) {
