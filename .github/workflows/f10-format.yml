@@ -1,0 +1,32 @@
+name: F10 exact format
+
+on:
+  push:
+    branches:
+      - f10-phone-login-without-sms
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: f10-phone-login-without-sms
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx prettier --write tests/f10-student-auth-errors-contract.test.ts
+      - name: Commit exact format and remove temporary workflow
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/f10-format.yml
+          git add tests/f10-student-auth-errors-contract.test.ts
+          git commit -m "style(f10): apply exact prettier [skip temp formatter]"
+          git push
