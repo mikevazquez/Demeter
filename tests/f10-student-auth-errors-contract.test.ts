@@ -37,11 +37,18 @@ describe("F10 student auth login contracts", () => {
   it("keeps bad credentials generic and surfaces Auth diagnostics safely", () => {
     const actions = source("app/auth/actions.ts");
     const card = source("app/login/login-card.tsx");
+    const diagnosticBlock =
+      actions.split("Supabase Auth rejected sign-in")[1]?.split("});")[0] ?? "";
 
     expect(actions).toContain("?error=invalid");
     expect(actions).toContain("?error=rate");
     expect(actions).toContain("?error=auth");
     expect(actions).toContain("Supabase Auth rejected sign-in");
+    expect(actions).toContain("passwordLength");
+    expect(actions).toContain("hasOuterWhitespace");
+    expect(actions).toContain("asciiOnly");
+    expect(actions).toContain("unicodeNormalizationChanged");
+    expect(diagnosticBlock).not.toContain("password,");
     expect(card).toContain('invalid: "El teléfono o la contraseña no son correctos."');
   });
 
@@ -55,5 +62,16 @@ describe("F10 student auth login contracts", () => {
     expect(card).toContain('"Ocultar contraseña"');
     expect(card).toContain("aria-pressed={passwordVisible}");
     expect(card).toContain("<EyeIcon visible={passwordVisible} />");
+  });
+
+  it("prevents mobile text assistance from mutating a revealed password", () => {
+    const card = source("app/login/login-card.tsx");
+    const actions = source("app/auth/actions.ts");
+
+    expect(card).toContain('autoCapitalize="none"');
+    expect(card).toContain('autoCorrect="off"');
+    expect(card).toContain("spellCheck={false}");
+    expect(actions).toContain("trimRetryAttempted");
+    expect(actions).toContain("const trimmedPassword = password.trim()");
   });
 });

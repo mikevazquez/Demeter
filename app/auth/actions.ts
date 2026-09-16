@@ -10,6 +10,15 @@ function loginPath(mode: "admin" | "student") {
   return mode === "admin" ? "/login/admin" : "/login/student";
 }
 
+function passwordIntegrity(password: string) {
+  return {
+    passwordLength: password.length,
+    hasOuterWhitespace: password !== password.trim(),
+    asciiOnly: /^[\x20-\x7e]*$/.test(password),
+    unicodeNormalizationChanged: password.normalize("NFKC") !== password,
+  };
+}
+
 export async function signIn(formData: FormData) {
   const password = String(formData.get("password") ?? "");
   const mode = formData.get("mode") === "student" ? "student" : "admin";
@@ -26,7 +35,23 @@ export async function signIn(formData: FormData) {
   const supabase = await createClient();
   const credentials =
     mode === "admin" ? { email, password } : { email: studentAuthEmail!, password };
-  const { data, error } = await supabase.auth.signInWithPassword(credentials);
+  let { data, error } = await supabase.auth.signInWithPassword(credentials);
+  let trimRetryAttempted = false;
+
+  if (mode === "student" && error?.code === "invalid_credentials") {
+    const trimmedPassword = password.trim();
+    if (trimmedPassword && trimmedPassword !== password) {
+      trimRetryAttempted = true;
+      const retry = await supabase.auth.signInWithPassword({
+        email: studentAuthEmail!,
+        password: trimmedPassword,
+      });
+      if (!retry.error && retry.data.user) {
+        data = retry.data;
+        error = null;
+      }
+    }
+  }
 
   if (error || !data.user) {
     if (error) {
@@ -36,6 +61,12 @@ export async function signIn(formData: FormData) {
         status: error.status,
         name: error.name,
         message: error.message.slice(0, 160),
+        ...(mode === "student"
+          ? {
+              ...passwordIntegrity(password),
+              trimRetryAttempted,
+            }
+          : {}),
       });
     }
 
