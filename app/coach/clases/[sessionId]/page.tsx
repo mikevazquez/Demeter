@@ -21,7 +21,9 @@ export default async function CoachClassDetailPage({
   params: Promise<{ sessionId: string }>;
 }) {
   const { sessionId } = await params;
-  const { supabase, studio } = await getCoachContext(CAPABILITIES.SCHEDULE_READ);
+  const { supabase, studio } = await getCoachContext(
+    CAPABILITIES.SCHEDULE_READ,
+  );
   const { data, error } = await supabase.rpc("coach_session_detail", {
     target_studio_id: studio.id,
     target_session_id: sessionId,
@@ -35,7 +37,10 @@ export default async function CoachClassDetailPage({
 
   return (
     <main className="space-y-6">
-      <Link href="/coach" className="inline-flex text-sm font-semibold text-zinc-400 hover:text-white">
+      <Link
+        href="/coach"
+        className="inline-flex text-sm font-semibold text-zinc-400 hover:text-white"
+      >
         ← Mis clases
       </Link>
 
@@ -82,7 +87,9 @@ export default async function CoachClassDetailPage({
           <div className="rounded-2xl bg-black/20 p-4">
             <p className="text-xs text-zinc-500">Disponibilidad</p>
             <p className="mt-1 font-semibold text-white">
-              {full ? "Clase llena" : `${detail.capacity - occupied} lugares disponibles`}
+              {full
+                ? "Clase llena"
+                : `${detail.capacity - occupied} lugares disponibles`}
             </p>
           </div>
         </div>
@@ -95,10 +102,12 @@ export default async function CoachClassDetailPage({
 
         <div className="border-t border-white/10 p-6 sm:p-8">
           <div className="rounded-2xl border border-fuchsia-500/20 bg-fuchsia-500/[0.07] p-4">
-            <p className="text-sm font-semibold text-white">Siguiente paso: roster y asistencia</p>
+            <p className="text-sm font-semibold text-white">
+              Siguiente paso: roster y asistencia
+            </p>
             <p className="mt-1 text-sm leading-6 text-zinc-400">
-              SF-111 conectará aquí únicamente a las alumnas inscritas en esta clase y reutilizará
-              el motor de asistencia aprobado en F8.
+              SF-111 conectará aquí únicamente a las alumnas inscritas en esta
+              clase y reutilizará el motor de asistencia aprobado en F8.
             </p>
           </div>
         </div>
