@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import {
   bookingReasonCopy,
   formatDateTime,
+  formatMoney,
   getStudentPortalContext,
   type StudentSession,
 } from "@/lib/student/portal";
@@ -16,6 +17,8 @@ const errorCopy: Record<string, string> = {
   forbidden: "Esta clase no pertenece a tu estudio o tu acceso no está habilitado.",
   session_not_found: "Esta clase ya no está disponible.",
 };
+
+const DROP_IN_REASONS = new Set(["no_active_product", "outside_product", "no_credits"]);
 
 export default async function StudentSessionDetailPage({
   params,
@@ -36,6 +39,10 @@ export default async function StudentSessionDetailPage({
   const eligible = Boolean(session.eligibility?.eligible);
   const alreadyReserved = Boolean(session.reservation_id);
   const reason = session.eligibility?.reason_code;
+  const showDropIn =
+    !eligible &&
+    Boolean(reason && DROP_IN_REASONS.has(reason)) &&
+    session.drop_in_price_minor != null;
 
   return (
     <main className="mx-auto max-w-3xl space-y-6">
@@ -84,6 +91,11 @@ export default async function StudentSessionDetailPage({
                 ? "Incluida en ilimitado"
                 : `${session.credit_cost} crédito${session.credit_cost === 1 ? "" : "s"}`}
             </p>
+            {session.drop_in_price_minor != null ? (
+              <p className="mt-1 text-xs text-zinc-500">
+                Clase suelta: {formatMoney(session.drop_in_price_minor)} MXN
+              </p>
+            ) : null}
           </div>
         </div>
 
@@ -137,6 +149,17 @@ export default async function StudentSessionDetailPage({
         ) : (
           <div className="mt-4 rounded-2xl border border-amber-500/20 bg-amber-500/[0.08] p-4">
             <p className="font-semibold text-amber-100">{bookingReasonCopy(reason)}</p>
+            {showDropIn ? (
+              <div className="mt-3 rounded-xl border border-fuchsia-500/20 bg-fuchsia-500/[0.08] p-3">
+                <p className="text-sm font-semibold text-fuchsia-100">
+                  Clase suelta: {formatMoney(session.drop_in_price_minor ?? 0)} MXN
+                </p>
+                <p className="mt-1 text-xs leading-5 text-zinc-400">
+                  Este es el precio configurado para esta actividad. La compra en línea todavía no
+                  está habilitada desde este portal.
+                </p>
+              </div>
+            ) : null}
             <p className="mt-2 text-sm text-zinc-400">
               Studio Flow usa las mismas reglas de elegibilidad que administración; no se crean
               excepciones desde el portal.
