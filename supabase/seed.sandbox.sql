@@ -56,12 +56,16 @@ begin
   on conflict (studio_id,name) do update set active = true
   returning id into v_exotic;
 
-  insert into public.class_templates(studio_id,discipline_id,name,duration_minutes,capacity,active,credit_cost)
-  values(v_studio,v_pole,'Sandbox · Pole Fitness',60,8,true,1)
+  insert into public.class_templates(
+    studio_id,discipline_id,name,duration_minutes,capacity,active,credit_cost,drop_in_price_minor
+  )
+  values(v_studio,v_pole,'Sandbox · Pole Fitness',60,8,true,1,18000)
   returning id into v_pole_template;
 
-  insert into public.class_templates(studio_id,discipline_id,name,duration_minutes,capacity,active,credit_cost)
-  values(v_studio,v_exotic,'Sandbox · Exotic Pole',60,8,true,1)
+  insert into public.class_templates(
+    studio_id,discipline_id,name,duration_minutes,capacity,active,credit_cost,drop_in_price_minor
+  )
+  values(v_studio,v_exotic,'Sandbox · Exotic Pole',60,8,true,1,20000)
   returning id into v_exotic_template;
 
   insert into public.persons(studio_id,first_name,last_name)
@@ -102,11 +106,11 @@ begin
   returning id into v_student_caro;
 
   insert into public.product_templates(
-    studio_id,name,description,product_type,price_minor,currency,credit_limit,validity_days,unlimited,active
+    studio_id,name,description,product_type,package_term,price_minor,currency,credit_limit,validity_days,unlimited,active
   ) values(
-    v_studio,'Sandbox · 8 clases','Producto ficticio para QA','package',60000,'MXN',8,30,false,true
+    v_studio,'Sandbox · 8 clases','Producto ficticio para QA','package','monthly',60000,'MXN',8,30,false,true
   )
-  on conflict (studio_id,name) do update set active = true
+  on conflict (studio_id,name) do update set active = true, package_term = 'monthly'
   returning id into v_product;
 
   insert into public.product_template_disciplines(studio_id,product_template_id,discipline_id)
