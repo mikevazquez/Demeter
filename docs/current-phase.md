@@ -8,7 +8,7 @@
 - F9 · Ventas/Pagos: **CERRADA / UAT APROBADA**. Ver `docs/f9-uat-closure.md` y `docs/f9-implementation-decisions.md`.
 - F10 · Portal alumna: **CERRADA / UAT APROBADA**. Ver `docs/f10-uat-closure.md`.
 - El alcance del MVP fue **REBASELINED** por decisión explícita de producto: F0–F10 + release F14.
-- F11 · Coach: **PAUSADA / POST-MVP**.
+- F11 · Coach: **PAUSADA / POST-MVP**, lista para iniciar después del merge aprobado de la infraestructura sandbox.
 - F12 · Documentos/configuración: **PAUSADA / POST-MVP**.
 - F13 · Reportes/hardening completo: **PAUSADA / POST-MVP**.
 - F14 · Release: **CERRADA / MVP EN PRODUCCIÓN**. Ver `docs/f14-release-closure.md`.
@@ -68,25 +68,20 @@ Rollback de aplicación: volver al baseline funcional conocido-bueno `517810d49c
 
 ## Sandbox / staging post-MVP
 
-Se inició el aislamiento obligatorio para continuar F11–F13. Ver `docs/sandbox-staging.md`.
+El aislamiento obligatorio para continuar F11–F13 está técnicamente listo. Ver `docs/sandbox-staging.md`.
 
-Estado del sandbox Supabase:
+Estado verificado:
 
-- Proyecto: `Studio Flow Sandbox` / ref `hedouonyhynuvwbckdlg`.
-- Región: `us-east-1`.
-- Costo verificado al crear el proyecto: `US$0/mes`.
+- Proyecto Supabase sandbox: `Studio Flow Sandbox` / ref `hedouonyhynuvwbckdlg`, `us-east-1`, costo `US$0/mes` al momento de creación.
 - Baseline F0–F10 reproducido sin copiar PII ni datos operativos de producción.
 - 33 tablas `public`, todas con RLS; 0 views `public`.
 - Seed ficticio versionado en `supabase/seed.sandbox.sql`.
+- Edge Function `provision-student-access` desplegada en sandbox, ACTIVE, `verify_jwt=true`.
+- Vercel Preview de `infra/sandbox-staging-f11` usa exclusivamente URL + publishable key del sandbox; el guard de `prebuild` lo verifica automáticamente.
+- Commit de validación `c17c622724ae4ea5c4e77f5c1db6dd90860d5227`: Vercel `success` y GitHub Actions CI completo en verde.
 - Se reconciliaron drifts de reproducibilidad detectados entre migraciones versionadas y el estado efectivo del release, sin cambiar producción ni reabrir fases cerradas.
 
-Gates todavía abiertos antes de F11:
-
-- desplegar y verificar `provision-student-access` en el proyecto sandbox;
-- auditar el Vercel Preview y asegurar que `NEXT_PUBLIC_SUPABASE_URL` y `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` de Preview apunten exclusivamente al sandbox;
-- cerrar PR de infraestructura con CI en verde.
-
-La rama de bootstrap actual es `infra/sandbox-staging-f11`. F11 no inicia hasta cerrar estos gates.
+La rama de bootstrap es `infra/sandbox-staging-f11` y el PR de infraestructura es #28. El único paso pendiente es su merge aprobado a `main`; no se ejecuta automáticamente porque entra al flujo productivo.
 
 ## Estrategia post-MVP
 
