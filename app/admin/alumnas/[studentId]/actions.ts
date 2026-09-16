@@ -1,5 +1,6 @@
 "use server";
 
+import { FunctionsHttpError } from "@supabase/supabase-js";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
@@ -16,6 +17,17 @@ export type ProvisionStudentAccessResult =
       mustChangePassword: true;
     }
   | { ok: false; error: string };
+
+async function readProvisioningFunctionError(error: unknown) {
+  if (!(error instanceof FunctionsHttpError)) return null;
+
+  try {
+    const payload = (await error.context.json()) as { error?: unknown };
+    return typeof payload.error === "string" ? payload.error : null;
+  } catch {
+    return null;
+  }
+}
 
 export async function provisionStudentAccess(
   studentId: string,
@@ -51,10 +63,14 @@ export async function provisionStudentAccess(
     },
   });
 
+  const functionError = error ? await readProvisioningFunctionError(error) : null;
+
   if (error || !data || data.ok !== true) {
     return {
       ok: false,
-      error: typeof data?.error === "string" ? data.error : "provision_unavailable",
+      error:
+        functionError ??
+        (typeof data?.error === "string" ? data.error : "provision_unavailable"),
     };
   }
 
