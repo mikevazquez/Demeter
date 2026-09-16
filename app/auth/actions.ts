@@ -136,6 +136,9 @@ export async function signIn(formData: FormData) {
   if (mode === "student" && account.must_change_password) {
     redirect("/login/student/activar");
   }
+  if (mode === "coach" && account.must_change_password) {
+    redirect("/login/coach/activar");
+  }
 
   if (mode === "student") redirect("/student");
   if (mode === "coach") redirect("/coach");
