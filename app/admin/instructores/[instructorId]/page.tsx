@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getAdminContext } from "@/lib/auth/admin-context";
+import { InstructorAccessProvisioner } from "./InstructorAccessProvisioner";
 import { setInstructorStatus } from "../actions";
 
 export default async function InstructorProfilePage({
@@ -15,6 +17,7 @@ export default async function InstructorProfilePage({
   const query = await searchParams;
   const { supabase, studio, can } = await getAdminContext(CAPABILITIES.INSTRUCTORS_READ);
   const canWrite = can(CAPABILITIES.INSTRUCTORS_WRITE);
+  const canManageAccess = can(CAPABILITIES.SETTINGS_WRITE);
   const { data: instructor } = await supabase
     .from("instructors")
     .select("id, person_id, status, bio, created_at")
@@ -22,6 +25,7 @@ export default async function InstructorProfilePage({
     .eq("studio_id", studio.id)
     .maybeSingle();
   if (!instructor) notFound();
+
   const [
     { data: person },
     { data: contacts },
@@ -29,6 +33,7 @@ export default async function InstructorProfilePage({
     { data: disciplines },
     { data: sessions },
     { data: templates },
+    { data: accessMembership },
   ] = await Promise.all([
     supabase
       .from("persons")
@@ -53,13 +58,44 @@ export default async function InstructorProfilePage({
       .order("starts_at")
       .limit(10),
     supabase.from("class_templates").select("id, name").eq("studio_id", studio.id),
+    canManageAccess
+      ? supabase
+          .from("studio_memberships")
+          .select("user_id, active")
+          .eq("studio_id", studio.id)
+          .eq("person_id", instructor.person_id)
+          .eq("role", "instructor")
+          .limit(1)
+          .maybeSingle()
+      : Promise.resolve({ data: null, error: null }),
   ]);
+
+  const { data: accessAccount } =
+    canManageAccess && accessMembership?.user_id
+      ? await supabase
+          .from("user_accounts")
+          .select("status, must_change_password")
+          .eq("id", accessMembership.user_id)
+          .maybeSingle()
+      : { data: null };
+
   const linkedIds = new Set((links ?? []).map((item) => item.discipline_id));
   const templateMap = new Map((templates ?? []).map((item) => [item.id, item.name]));
   const name = [person?.first_name, person?.last_name].filter(Boolean).join(" ") || "Instructor";
   const phone = contacts?.find((item) => item.kind === "phone")?.value;
-  const email = contacts?.find((item) => item.kind === "email")?.value;
+  const primaryEmail = contacts?.find(
+    (item) => item.kind === "email" && item.is_primary === true,
+  )?.value;
+  const email = primaryEmail ?? contacts?.find((item) => item.kind === "email")?.value;
   const timeZone = studio.timezone ?? "America/Mexico_City";
+  const accessState = !accessMembership
+    ? "not_linked"
+    : !accessMembership.active || !accessAccount || accessAccount.status !== "active"
+      ? "inconsistent"
+      : accessAccount.must_change_password
+        ? "pending_activation"
+        : "active";
+
   return (
     <main className="dashboard-shell">
       <header className="topbar">
@@ -78,6 +114,7 @@ export default async function InstructorProfilePage({
       ) : null}
       {query.saved ? <div className="notice success">Estado actualizado.</div> : null}
       {query.error ? <div className="notice error">No se pudo guardar el cambio.</div> : null}
+
       <section className="panel-grid">
         <article className="panel">
           <p className="eyebrow">CONTACTO</p>
@@ -100,15 +137,52 @@ export default async function InstructorProfilePage({
             ) : null}
           </div>
         </article>
+
         <article className="panel">
-          <p className="eyebrow">ACCESO</p>
+          <p className="eyebrow">ACCESO COACH</p>
           <h2>Cuenta separada</h2>
-          <div className="empty-state">
-            Este perfil no crea credenciales automáticamente. El acceso se vincula mediante
-            UserAccount + membership INSTRUCTOR.
-          </div>
+          {!canManageAccess ? (
+            <div className="empty-state">
+              Tu rol puede consultar el InstructorProfile, pero no administrar cuentas de acceso.
+            </div>
+          ) : instructor.status !== "active" ? (
+            <div className="notice error">Activa al instructor antes de habilitar el portal Coach.</div>
+          ) : accessState === "not_linked" && !email ? (
+            <div className="notice error">
+              Falta un correo válido. El Coach inicia sesión con correo y contraseña, por lo que el
+              acceso no puede crearse hasta completar ese dato.
+            </div>
+          ) : accessState === "not_linked" ? (
+            <InstructorAccessProvisioner
+              instructorId={instructor.id}
+              email={email ?? ""}
+              mode="provision"
+            />
+          ) : accessState === "pending_activation" ? (
+            <>
+              <div className="notice success">
+                Cuenta Coach vinculada. Está pendiente de que el instructor cambie su contraseña
+                temporal en el primer acceso.
+              </div>
+              <InstructorAccessProvisioner
+                instructorId={instructor.id}
+                email={email ?? ""}
+                mode="reset"
+              />
+            </>
+          ) : accessState === "active" ? (
+            <div className="notice success">
+              Acceso Coach activo y contraseña inicial ya reemplazada por el instructor.
+            </div>
+          ) : (
+            <div className="notice error">
+              La cuenta de acceso está incompleta o inactiva. No se harán reparaciones automáticas;
+              revisa UserAccount y membership antes de continuar.
+            </div>
+          )}
         </article>
       </section>
+
       <section className="panel">
         <div className="panel-heading">
           <div>
@@ -134,6 +208,7 @@ export default async function InstructorProfilePage({
           </div>
         )}
       </section>
+
       <section className="panel">
         <div className="panel-heading">
           <div>
@@ -167,6 +242,7 @@ export default async function InstructorProfilePage({
           </div>
         )}
       </section>
+
       {canWrite ? (
         <section className="panel">
           <p className="eyebrow">ADMINISTRACIÓN</p>
