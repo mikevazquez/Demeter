@@ -16,9 +16,6 @@ const adminMessages: Record<string, string> = {
 const studentMessages: Record<string, string> = {
   missing: "Escribe tu teléfono y contraseña.",
   invalid: "El teléfono o la contraseña no son correctos.",
-  phone_disabled:
-    "El acceso por teléfono está deshabilitado en Supabase Auth. Habilita Phone en Authentication → Providers para continuar.",
-  phone_unconfirmed: "El teléfono de esta cuenta todavía no está confirmado en Auth.",
   pending: "Tu cuenta existe, pero todavía no tiene acceso asignado al estudio.",
   access: "Esta cuenta no tiene acceso al portal de alumna.",
 };
