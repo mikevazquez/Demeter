@@ -20,13 +20,17 @@
   - `20260916012349_f10_student_access_provisioning`
   - `20260916012957_f10_harden_student_person_identity_rls`
   - `20260916013227_f10_revoke_trigger_rpc_execute`
+- La Edge Function `provision-student-access` está desplegada y ACTIVE en el proyecto oficial con `verify_jwt=true`. Usa Auth Admin únicamente dentro del runtime privilegiado; la clave `service_role` no se expone al cliente ni se guarda en Git.
 - La cuenta aprovisionada usa contraseña temporal aleatoria y queda obligada a establecer una contraseña propia antes de entrar a `/student`.
 - `persons/person_contacts` Student quedaron endurecidos al contexto activo `private.is_current_student(...)`.
 - Documentos sigue siendo sólo acceso futuro de F12; F10 no simula documentos ni aceptaciones.
 
-## Bloqueo actual antes de merge/producción
+## Pendiente antes de merge/producción
 
-La Edge Function `provision-student-access` está versionada en `supabase/functions/provision-student-access/index.ts`, pero su despliegue remoto no pudo ejecutarse desde la herramienta conectada porque fue bloqueado por controles de seguridad. No exponer ni commitear secretos como alternativa. No hacer merge de F10 hasta desplegar y validar ese backend privilegiado, terminar CI/preview y dejar la fase lista para UAT.
+- Completar CI verde sobre el head final del PR.
+- Validar el preview responsive y rutas críticas.
+- Ejecutar el primer aprovisionamiento real desde administración y comprobar login teléfono + contraseña temporal → cambio obligatorio → Portal Student.
+- Completar UAT explícito antes de cerrar F10.
 
 ## Regla para continuar
 
