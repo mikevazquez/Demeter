@@ -293,7 +293,11 @@ export default async function StudentHomePage({
                             action={cancelStudentReservationAction}
                             className="mt-3 rounded-xl border border-rose-500/20 bg-rose-500/[0.06] p-3"
                           >
-                            <input type="hidden" name="reservation_id" value={reservation.reservation_id} />
+                            <input
+                              type="hidden"
+                              name="reservation_id"
+                              value={reservation.reservation_id}
+                            />
                             <input type="hidden" name="return_to" value="/student" />
                             <p className="text-xs leading-5 text-zinc-400">
                               Se aplicará la política vigente de cancelación al confirmar.

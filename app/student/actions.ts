@@ -20,7 +20,9 @@ function errorCode(error: { message?: string } | null, fallback: string) {
 }
 
 function cancellationReturnPath(formData: FormData) {
-  return String(formData.get("return_to") ?? "") === "/student" ? "/student" : "/student/mis-clases";
+  return String(formData.get("return_to") ?? "") === "/student"
+    ? "/student"
+    : "/student/mis-clases";
 }
 
 export async function bookStudentSessionAction(formData: FormData) {
@@ -77,9 +79,7 @@ export async function cancelStudentReservationAction(formData: FormData) {
 
   const result = data as { ok?: boolean; reason_code?: string | null; status?: string } | null;
   if (!result?.ok) {
-    redirect(
-      `${returnPath}?error=${encodeURIComponent(result?.reason_code ?? "cancel_failed")}`,
-    );
+    redirect(`${returnPath}?error=${encodeURIComponent(result?.reason_code ?? "cancel_failed")}`);
   }
 
   revalidatePath("/student");
