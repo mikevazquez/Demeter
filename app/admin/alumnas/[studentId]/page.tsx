@@ -80,7 +80,11 @@ export default async function StudentProfilePage({
     acquisitionResult,
   ] = await Promise.all([
     student.person_id
-      ? supabase.from("persons").select("id, first_name, last_name").eq("id", student.person_id).maybeSingle()
+      ? supabase
+          .from("persons")
+          .select("id, first_name, last_name")
+          .eq("id", student.person_id)
+          .maybeSingle()
       : Promise.resolve({ data: null }),
     student.person_id
       ? supabase
@@ -149,7 +153,9 @@ export default async function StudentProfilePage({
   const lastName = person?.last_name ?? student.full_name.split(" ").slice(1).join(" ");
   const canEdit = can(CAPABILITIES.STUDENTS_WRITE);
   const canArchive = can(CAPABILITIES.STUDENTS_ARCHIVE);
-  const activeAcquisition = acquisitions.find((item) => item.status === "active" && !item.refunded_at);
+  const activeAcquisition = acquisitions.find(
+    (item) => item.status === "active" && !item.refunded_at,
+  );
   const dynamicDefinitions = (definitions ?? []).filter(
     (definition) => !structuralFieldKeys.has(definition.key),
   );
@@ -185,7 +191,9 @@ export default async function StudentProfilePage({
 
       {query.saved ? <div className="notice success">Cambios guardados correctamente.</div> : null}
       {query.error ? (
-        <div className="notice error">{errorCopy[query.error] ?? "No se pudo guardar el cambio."}</div>
+        <div className="notice error">
+          {errorCopy[query.error] ?? "No se pudo guardar el cambio."}
+        </div>
       ) : null}
 
       <section className="stat-grid">
