@@ -14,8 +14,12 @@ describe("F11 coach session scope", () => {
     );
 
     expect(migration).toContain("private.current_instructor_id");
-    expect(migration).toContain("private.is_current_instructor_assignment(studio_id, instructor_id)");
-    expect(migration).toContain("private.is_current_instructor_session(studio_id, session_id)");
+    expect(migration).toContain(
+      "private.is_current_instructor_assignment(studio_id, instructor_id)",
+    );
+    expect(migration).toContain(
+      "private.is_current_instructor_session(studio_id, session_id)",
+    );
     expect(migration).not.toContain(
       "array['owner'::public.studio_role, 'admin'::public.studio_role, 'instructor'::public.studio_role]",
     );
