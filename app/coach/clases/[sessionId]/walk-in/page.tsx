@@ -39,9 +39,7 @@ export default async function CoachWalkinPage({
       </Link>
 
       <section>
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-fuchsia-300">
-          Walk-in
-        </p>
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-fuchsia-300">Walk-in</p>
         <h1 className="mt-2 text-3xl font-semibold tracking-tight text-white">Agregar alumna</h1>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-400">
           Agrega una alumna existente mediante teléfono exacto o registra una identidad mínima para
@@ -62,7 +60,9 @@ export default async function CoachWalkinPage({
       {!open ? (
         <section className="rounded-3xl border border-amber-400/20 bg-amber-400/10 p-6 text-amber-100">
           <h2 className="font-semibold">
-            {detail.status !== "scheduled" ? "La clase ya no admite walk-ins" : "La clase está llena"}
+            {detail.status !== "scheduled"
+              ? "La clase ya no admite walk-ins"
+              : "La clase está llena"}
           </h2>
           <p className="mt-2 text-sm leading-6 text-amber-100/80">
             Regresa al roster para revisar el estado actual de la sesión.

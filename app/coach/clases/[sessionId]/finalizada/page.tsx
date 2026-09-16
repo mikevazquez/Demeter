@@ -89,7 +89,9 @@ export default async function CoachFinalizedPage({
       <section className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.03]">
         <div className="border-b border-white/10 p-5 sm:p-6">
           <h2 className="text-lg font-semibold text-white">Asistencia final</h2>
-          <p className="mt-1 text-sm text-zinc-500">Usa corrección sólo cuando exista un error real.</p>
+          <p className="mt-1 text-sm text-zinc-500">
+            Usa corrección sólo cuando exista un error real.
+          </p>
         </div>
         <div className="divide-y divide-white/10">
           {roster.map((item) => {
@@ -101,11 +103,16 @@ export default async function CoachFinalizedPage({
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                   <div>
                     <h3 className="font-semibold text-white">{item.student_name}</h3>
-                    <p className={`mt-1 text-sm ${attendedNow ? "text-emerald-200" : "text-rose-200"}`}>
+                    <p
+                      className={`mt-1 text-sm ${attendedNow ? "text-emerald-200" : "text-rose-200"}`}
+                    >
                       {attendedNow ? "Asistió" : "No asistió"}
                     </p>
                   </div>
-                  <form action={correctCoachAttendanceAction} className="flex w-full max-w-xl flex-col gap-2 sm:flex-row">
+                  <form
+                    action={correctCoachAttendanceAction}
+                    className="flex w-full max-w-xl flex-col gap-2 sm:flex-row"
+                  >
                     <input type="hidden" name="session_id" value={sessionId} />
                     <input type="hidden" name="reservation_id" value={item.reservation_id} />
                     <input type="hidden" name="status" value={targetStatus} />

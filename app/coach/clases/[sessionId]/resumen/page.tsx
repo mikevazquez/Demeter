@@ -55,8 +55,8 @@ export default async function CoachAttendanceSummaryPage({
         </p>
         <h1 className="mt-2 text-3xl font-semibold tracking-tight text-white">{detail.activity}</h1>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-400">
-          Revisa los conteos antes de finalizar. Una vez cerrada la clase, cualquier corrección exige
-          un motivo.
+          Revisa los conteos antes de finalizar. Una vez cerrada la clase, cualquier corrección
+          exige un motivo.
         </p>
       </section>
 
@@ -109,7 +109,9 @@ export default async function CoachAttendanceSummaryPage({
             </button>
           </form>
         ) : (
-          <p className="text-sm text-zinc-400">Esta sesión no se puede finalizar desde su estado actual.</p>
+          <p className="text-sm text-zinc-400">
+            Esta sesión no se puede finalizar desde su estado actual.
+          </p>
         )}
       </section>
     </main>

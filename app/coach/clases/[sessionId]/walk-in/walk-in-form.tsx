@@ -22,8 +22,8 @@ export function CoachWalkinForm({ sessionId }: { sessionId: string }) {
         </p>
         <h2 className="mt-2 text-xl font-semibold text-white">Buscar por teléfono exacto</h2>
         <p className="mt-2 text-sm leading-6 text-zinc-400">
-          Usa el teléfono en formato internacional. No se muestra ni permite navegar la base completa
-          de alumnas.
+          Usa el teléfono en formato internacional. No se muestra ni permite navegar la base
+          completa de alumnas.
         </p>
 
         <form action={lookupAction} className="mt-5 space-y-3">
@@ -56,7 +56,8 @@ export function CoachWalkinForm({ sessionId }: { sessionId: string }) {
         ) : null}
         {lookup.status === "not_found" ? (
           <p className="mt-4 rounded-xl border border-white/10 bg-black/20 p-3 text-sm text-zinc-300">
-            No encontramos una alumna activa con ese teléfono. Puedes usar el alta mínima de walk-in.
+            No encontramos una alumna activa con ese teléfono. Puedes usar el alta mínima de
+            walk-in.
           </p>
         ) : null}
         {lookup.status === "already_in_roster" ? (
