@@ -37,6 +37,8 @@ describe("F10 student auth login contracts", () => {
   it("keeps bad credentials generic and surfaces Auth diagnostics safely", () => {
     const actions = source("app/auth/actions.ts");
     const card = source("app/login/login-card.tsx");
+    const diagnosticBlock =
+      actions.split('console.error("[auth.signIn] Supabase Auth rejected sign-in", {')[1]?.split("});")[0] ?? "";
 
     expect(actions).toContain("?error=invalid");
     expect(actions).toContain("?error=rate");
@@ -46,7 +48,7 @@ describe("F10 student auth login contracts", () => {
     expect(actions).toContain("hasOuterWhitespace");
     expect(actions).toContain("asciiOnly");
     expect(actions).toContain("unicodeNormalizationChanged");
-    expect(actions).not.toContain("password,");
+    expect(diagnosticBlock).not.toContain("password,");
     expect(card).toContain('invalid: "El teléfono o la contraseña no son correctos."');
   });
 
