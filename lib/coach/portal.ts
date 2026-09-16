@@ -23,6 +23,15 @@ export type CoachSessionDetail = {
   reserved_count: number;
 };
 
+export type CoachRosterItem = {
+  reservation_id: string;
+  student_id: string;
+  student_name: string;
+  attendance_status: "reserved" | "attended" | "no_show";
+  package_name: string | null;
+  commercial_pending: boolean;
+};
+
 export function localDateKey(date: Date, timeZone: string) {
   return new Intl.DateTimeFormat("en-CA", {
     timeZone,
