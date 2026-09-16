@@ -18,9 +18,7 @@ function formatDateTime(value: string, timeZone: string) {
 }
 
 function formatMoney(minor: number) {
-  return new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(
-    minor / 100,
-  );
+  return new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(minor / 100);
 }
 
 export default async function AgendaPage({
