@@ -10,6 +10,7 @@ type Discipline = {
 type ProductFormFieldsProps = {
   disciplines: Discipline[];
   initialProductType?: string;
+  initialPackageTerm?: string | null;
   initialPrice?: number;
   initialValidityDays?: number | null;
   initialCreditLimit?: number | null;
@@ -18,6 +19,14 @@ type ProductFormFieldsProps = {
 };
 
 type EnrollmentValidity = "30" | "90" | "180" | "365" | "lifetime" | "custom";
+type PackageTerm = "monthly" | "quarterly" | "semiannual" | "annual" | "custom";
+
+const packageTermDays: Record<Exclude<PackageTerm, "custom">, number> = {
+  monthly: 30,
+  quarterly: 90,
+  semiannual: 180,
+  annual: 365,
+};
 
 function enrollmentValidityFromDays(days: number | null | undefined): EnrollmentValidity {
   if (days == null) return "lifetime";
@@ -26,9 +35,30 @@ function enrollmentValidityFromDays(days: number | null | undefined): Enrollment
   return "custom";
 }
 
+function packageTermFromValues(
+  term: string | null | undefined,
+  days: number | null | undefined,
+): PackageTerm {
+  if (
+    term === "monthly" ||
+    term === "quarterly" ||
+    term === "semiannual" ||
+    term === "annual" ||
+    term === "custom"
+  ) {
+    return term;
+  }
+  if (days === 30) return "monthly";
+  if (days === 90) return "quarterly";
+  if (days === 180) return "semiannual";
+  if (days === 365) return "annual";
+  return "custom";
+}
+
 export function ProductFormFields({
   disciplines,
   initialProductType = "package",
+  initialPackageTerm,
   initialPrice,
   initialValidityDays = 30,
   initialCreditLimit = 8,
@@ -39,10 +69,13 @@ export function ProductFormFields({
   const [enrollmentValidity, setEnrollmentValidity] = useState<EnrollmentValidity>(() =>
     enrollmentValidityFromDays(initialValidityDays),
   );
+  const initialTerm = packageTermFromValues(initialPackageTerm, initialValidityDays);
+  const [packageTerm, setPackageTerm] = useState<PackageTerm>(initialTerm);
   const [customValidityDays, setCustomValidityDays] = useState(() =>
-    enrollmentValidityFromDays(initialValidityDays) === "custom" ? (initialValidityDays ?? 30) : 30,
+    initialTerm === "custom" ? (initialValidityDays ?? 30) : 30,
   );
   const isEnrollment = productType === "enrollment";
+  const isPackageLike = productType === "package" || productType === "membership";
   const selected = new Set(selectedDisciplineIds);
 
   return (
@@ -119,6 +152,42 @@ export function ProductFormFields({
               />
             )}
           </>
+        ) : isPackageLike ? (
+          <>
+            <label className="text-sm text-zinc-300">
+              Periodo del paquete
+              <select
+                name="package_term"
+                required
+                value={packageTerm}
+                onChange={(event) => setPackageTerm(event.target.value as PackageTerm)}
+                className="mt-2 w-full rounded-xl border border-white/10 bg-zinc-950 px-3 py-2.5 text-white"
+              >
+                <option value="monthly">Mensual</option>
+                <option value="quarterly">Trimestral</option>
+                <option value="semiannual">Semestral</option>
+                <option value="annual">Anual</option>
+                <option value="custom">Otra vigencia</option>
+              </select>
+            </label>
+
+            {packageTerm === "custom" ? (
+              <label className="text-sm text-zinc-300">
+                Días de vigencia
+                <input
+                  name="validity_days"
+                  type="number"
+                  min="1"
+                  required
+                  value={customValidityDays}
+                  onChange={(event) => setCustomValidityDays(Number(event.target.value))}
+                  className="mt-2 w-full rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 text-white"
+                />
+              </label>
+            ) : (
+              <input type="hidden" name="validity_days" value={packageTermDays[packageTerm]} />
+            )}
+          </>
         ) : (
           <label className="text-sm text-zinc-300">
             Vigencia (días)
@@ -168,7 +237,7 @@ export function ProductFormFields({
               defaultChecked={initialUnlimited}
               className="h-4 w-4"
             />
-            Membresía ilimitada (ignora el número de créditos)
+            Producto ilimitado (ignora el número de créditos)
           </label>
 
           <fieldset>
