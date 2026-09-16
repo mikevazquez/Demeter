@@ -115,9 +115,9 @@ export default async function StudentClassesPage({
                     </summary>
                     <div className="mt-3 rounded-2xl border border-rose-500/20 bg-rose-500/[0.05] p-4">
                       <p className="text-sm text-zinc-300">
-                        Si cancelas con 8 horas o más de anticipación, el crédito reservado se libera.
-                        Si faltan menos de 8 horas, el motor de cancelación consume el crédito según la
-                        política vigente.
+                        Si cancelas con 8 horas o más de anticipación, el crédito reservado se
+                        libera. Si faltan menos de 8 horas, el motor de cancelación consume el
+                        crédito según la política vigente.
                       </p>
                       <form action={cancelStudentReservationAction} className="mt-3 space-y-3">
                         <input type="hidden" name="reservation_id" value={item.reservation_id} />
