@@ -18,6 +18,14 @@ function addDays(value: string, days: number) {
   return date.toISOString().slice(0, 10);
 }
 
+function startOfWeek(value: string) {
+  const date = new Date(`${value}T12:00:00Z`);
+  const weekday = date.getUTCDay();
+  const distanceToMonday = weekday === 0 ? -6 : 1 - weekday;
+  date.setUTCDate(date.getUTCDate() + distanceToMonday);
+  return date.toISOString().slice(0, 10);
+}
+
 function dateChip(value: string) {
   const date = new Date(`${value}T12:00:00Z`);
   return {
@@ -26,33 +34,47 @@ function dateChip(value: string) {
   };
 }
 
+function shortDate(value: string) {
+  return new Intl.DateTimeFormat("es-MX", {
+    day: "numeric",
+    month: "short",
+    timeZone: "UTC",
+  }).format(new Date(`${value}T12:00:00Z`));
+}
+
+function longDate(value: string) {
+  return new Intl.DateTimeFormat("es-MX", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    timeZone: "UTC",
+  }).format(new Date(`${value}T12:00:00Z`));
+}
+
 export default async function StudentReservePage({
   searchParams,
 }: {
-  searchParams: Promise<{ date?: string; discipline?: string; error?: string }>;
+  searchParams: Promise<{ date?: string; error?: string }>;
 }) {
   const query = await searchParams;
-  const { supabase, snapshot, studio, membership } = await getStudentPortalContext();
+  const { supabase, snapshot, studio } = await getStudentPortalContext();
   const today = localDateKey(new Date(), studio.timezone);
-  const selectedDate = safeDate(query.date, today);
-  const disciplineId = query.discipline?.trim() || null;
+  const requestedDate = safeDate(query.date, today);
+  const selectedDate = requestedDate < today ? today : requestedDate;
+  const weekStart = startOfWeek(selectedDate);
+  const currentWeekStart = startOfWeek(today);
+  const weekEnd = addDays(weekStart, 6);
+  const days = Array.from({ length: 7 }, (_, index) => addDays(weekStart, index));
+  const previousWeekDate = addDays(selectedDate, -7);
+  const nextWeekDate = addDays(selectedDate, 7);
 
-  const [{ data: sessions, error }, { data: disciplines }] = await Promise.all([
-    supabase.rpc("student_schedule_feed", {
-      target_start: selectedDate,
-      target_end: selectedDate,
-      target_discipline_id: disciplineId,
-    }),
-    supabase
-      .from("disciplines")
-      .select("id,name")
-      .eq("studio_id", membership.studio_id)
-      .eq("active", true)
-      .order("name"),
-  ]);
+  const { data: sessions, error } = await supabase.rpc("student_schedule_feed", {
+    target_start: selectedDate,
+    target_end: selectedDate,
+    target_discipline_id: null,
+  });
 
   const items = (sessions ?? []) as StudentSession[];
-  const days = Array.from({ length: 7 }, (_, index) => addDays(selectedDate, index));
   const activePackage = snapshot.acquisitions.find((item) => item.active_now) ?? null;
 
   return (
@@ -63,56 +85,73 @@ export default async function StudentReservePage({
           Elige tu próxima clase
         </h1>
         <p className="mt-2 text-sm text-zinc-400">
-          La disponibilidad y tus condiciones de reserva se validan en tiempo real.
+          Elige un día y revisa todas las clases disponibles. La reserva se valida en tiempo real.
         </p>
       </header>
 
       <section className="rounded-3xl border border-white/10 bg-white/[0.03] p-4 sm:p-5">
-        <div className="flex gap-2 overflow-x-auto pb-2">
+        <div className="mb-4 flex items-center justify-between gap-3">
+          {weekStart > currentWeekStart ? (
+            <Link
+              href={`/student/reservar?date=${previousWeekDate < today ? today : previousWeekDate}`}
+              aria-label="Semana anterior"
+              className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-black/20 text-xl text-white transition hover:bg-white/[0.06]"
+            >
+              ‹
+            </Link>
+          ) : (
+            <span
+              aria-hidden="true"
+              className="flex h-10 w-10 items-center justify-center rounded-full border border-white/5 text-xl text-zinc-700"
+            >
+              ‹
+            </span>
+          )}
+
+          <p className="text-center text-sm font-medium text-zinc-300">
+            {shortDate(weekStart)} – {shortDate(weekEnd)}
+          </p>
+
+          <Link
+            href={`/student/reservar?date=${nextWeekDate}`}
+            aria-label="Semana siguiente"
+            className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-black/20 text-xl text-white transition hover:bg-white/[0.06]"
+          >
+            ›
+          </Link>
+        </div>
+
+        <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
           {days.map((day) => {
             const chip = dateChip(day);
-            const href = `/student/reservar?date=${day}${disciplineId ? `&discipline=${encodeURIComponent(disciplineId)}` : ""}`;
-            return (
-              <Link
-                key={day}
-                href={href}
-                className={`min-w-16 rounded-2xl px-3 py-3 text-center transition ${
-                  day === selectedDate
-                    ? "bg-fuchsia-600 text-white"
-                    : "border border-white/10 bg-black/20 text-zinc-400 hover:text-white"
-                }`}
-              >
-                <span className="block text-xs capitalize">{chip.weekday}</span>
-                <strong className="mt-1 block text-lg">{chip.day}</strong>
+            const isPast = day < today;
+            const isSelected = day === selectedDate;
+            const className = `rounded-2xl px-1 py-3 text-center transition ${
+              isSelected
+                ? "bg-fuchsia-600 text-white"
+                : isPast
+                  ? "border border-white/5 bg-black/10 text-zinc-700"
+                  : "border border-white/10 bg-black/20 text-zinc-400 hover:text-white"
+            }`;
+
+            const content = (
+              <>
+                <span className="block text-[11px] capitalize sm:text-xs">{chip.weekday}</span>
+                <strong className="mt-1 block text-base sm:text-lg">{chip.day}</strong>
+              </>
+            );
+
+            return isPast ? (
+              <span key={day} className={className} aria-disabled="true">
+                {content}
+              </span>
+            ) : (
+              <Link key={day} href={`/student/reservar?date=${day}`} className={className}>
+                {content}
               </Link>
             );
           })}
         </div>
-
-        <form className="mt-4 grid gap-3 sm:grid-cols-[1fr_auto]" method="get">
-          <input type="hidden" name="date" value={selectedDate} />
-          <label className="text-sm text-zinc-300">
-            Disciplina
-            <select
-              name="discipline"
-              defaultValue={disciplineId ?? ""}
-              className="mt-2 w-full rounded-xl border border-white/10 bg-zinc-950 px-3 py-3 text-white"
-            >
-              <option value="">Todas las disciplinas</option>
-              {(disciplines ?? []).map((discipline) => (
-                <option key={discipline.id} value={discipline.id}>
-                  {discipline.name}
-                </option>
-              ))}
-            </select>
-          </label>
-          <button
-            type="submit"
-            className="self-end rounded-xl border border-white/10 px-5 py-3 text-sm font-semibold text-white hover:bg-white/[0.05]"
-          >
-            Aplicar filtro
-          </button>
-        </form>
       </section>
 
       {query.error || error ? (
@@ -129,6 +168,15 @@ export default async function StudentReservePage({
       ) : null}
 
       <section className="space-y-3">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-zinc-500">
+            Clases del día
+          </p>
+          <h2 className="mt-1 text-xl font-semibold capitalize text-white">
+            {longDate(selectedDate)}
+          </h2>
+        </div>
+
         {items.length ? (
           items.map((session) => {
             const eligible = Boolean(session.eligibility?.eligible);
@@ -144,7 +192,7 @@ export default async function StudentReservePage({
                     <p className="text-xs font-semibold uppercase tracking-[0.18em] text-fuchsia-300">
                       {session.discipline}
                     </p>
-                    <h2 className="mt-1 text-xl font-semibold text-white">{session.activity}</h2>
+                    <h3 className="mt-1 text-xl font-semibold text-white">{session.activity}</h3>
                     <p className="mt-2 text-sm text-zinc-400">
                       {formatDateTime(session.starts_at, studio.timezone)}
                     </p>
@@ -178,9 +226,9 @@ export default async function StudentReservePage({
           })
         ) : (
           <div className="rounded-3xl border border-dashed border-white/10 p-10 text-center">
-            <h2 className="font-semibold text-white">Sin clases disponibles</h2>
+            <h3 className="font-semibold text-white">Sin clases disponibles</h3>
             <p className="mt-2 text-sm text-zinc-400">
-              No encontramos sesiones para esta fecha y filtro. Prueba otro día o disciplina.
+              No encontramos sesiones para este día. Elige otro día de la semana.
             </p>
           </div>
         )}
