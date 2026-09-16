@@ -82,69 +82,66 @@ export default async function StudentClassesPage({
         <h2 className="text-xl font-semibold text-white">Próximas</h2>
         <div className="mt-4 space-y-3">
           {upcoming.length ? (
-            upcoming.map((item) => {
-              const late = new Date(item.starts_at).getTime() - Date.now() < 8 * 60 * 60 * 1000;
-              return (
-                <article
-                  key={item.reservation_id}
-                  className="rounded-2xl border border-white/10 bg-black/20 p-4"
-                >
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div>
-                      <p className="font-semibold text-white">{item.activity}</p>
-                      <p className="mt-1 text-sm text-zinc-400">
-                        {formatDateTime(item.starts_at, studio.timezone)}
-                      </p>
-                      <p className="mt-1 text-xs text-zinc-500">
-                        {[item.coach, item.space].filter(Boolean).join(" · ") || item.discipline}
-                      </p>
-                    </div>
-                    <span className="rounded-full bg-sky-500/15 px-2.5 py-1 text-xs font-medium text-sky-300">
-                      Reservada
-                    </span>
+            upcoming.map((item) => (
+              <article
+                key={item.reservation_id}
+                className="rounded-2xl border border-white/10 bg-black/20 p-4"
+              >
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <p className="font-semibold text-white">{item.activity}</p>
+                    <p className="mt-1 text-sm text-zinc-400">
+                      {formatDateTime(item.starts_at, studio.timezone)}
+                    </p>
+                    <p className="mt-1 text-xs text-zinc-500">
+                      {[item.coach, item.space].filter(Boolean).join(" · ") || item.discipline}
+                    </p>
                   </div>
+                  <span className="rounded-full bg-sky-500/15 px-2.5 py-1 text-xs font-medium text-sky-300">
+                    Reservada
+                  </span>
+                </div>
 
-                  <div className="mt-4 flex flex-wrap items-center gap-3">
-                    <Link
-                      href={`/student/reservar/${item.session_id}`}
-                      className="rounded-xl border border-white/10 px-3 py-2 text-xs font-semibold text-white"
-                    >
-                      Ver detalle
-                    </Link>
-                    <details className="min-w-0 flex-1">
-                      <summary className="cursor-pointer text-xs font-semibold text-rose-300">
-                        Cancelar reserva
-                      </summary>
-                      <div className="mt-3 rounded-2xl border border-rose-500/20 bg-rose-500/[0.05] p-4">
-                        <p className="text-sm text-zinc-300">
-                          {late
-                            ? "Estás dentro de las 8 horas previas. Si cancelas ahora, el crédito de esta clase se consumirá."
-                            : "Estás dentro de la ventana permitida. Si cancelas ahora, el crédito reservado se liberará."}
-                        </p>
-                        <form action={cancelStudentReservationAction} className="mt-3 space-y-3">
-                          <input type="hidden" name="reservation_id" value={item.reservation_id} />
-                          <label className="block text-xs text-zinc-400">
-                            Motivo (opcional)
-                            <input
-                              name="reason"
-                              maxLength={250}
-                              placeholder="Cuéntanos si quieres"
-                              className="mt-2 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-sm text-white"
-                            />
-                          </label>
-                          <button
-                            type="submit"
-                            className="rounded-xl bg-rose-600 px-4 py-2.5 text-xs font-semibold text-white hover:bg-rose-500"
-                          >
-                            Sí, cancelar reserva
-                          </button>
-                        </form>
-                      </div>
-                    </details>
-                  </div>
-                </article>
-              );
-            })
+                <div className="mt-4 flex flex-wrap items-center gap-3">
+                  <Link
+                    href={`/student/reservar/${item.session_id}`}
+                    className="rounded-xl border border-white/10 px-3 py-2 text-xs font-semibold text-white"
+                  >
+                    Ver detalle
+                  </Link>
+                  <details className="min-w-0 flex-1">
+                    <summary className="cursor-pointer text-xs font-semibold text-rose-300">
+                      Cancelar reserva
+                    </summary>
+                    <div className="mt-3 rounded-2xl border border-rose-500/20 bg-rose-500/[0.05] p-4">
+                      <p className="text-sm text-zinc-300">
+                        Si cancelas con 8 horas o más de anticipación, el crédito reservado se libera.
+                        Si faltan menos de 8 horas, el motor de cancelación consume el crédito según la
+                        política vigente.
+                      </p>
+                      <form action={cancelStudentReservationAction} className="mt-3 space-y-3">
+                        <input type="hidden" name="reservation_id" value={item.reservation_id} />
+                        <label className="block text-xs text-zinc-400">
+                          Motivo (opcional)
+                          <input
+                            name="reason"
+                            maxLength={250}
+                            placeholder="Cuéntanos si quieres"
+                            className="mt-2 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-sm text-white"
+                          />
+                        </label>
+                        <button
+                          type="submit"
+                          className="rounded-xl bg-rose-600 px-4 py-2.5 text-xs font-semibold text-white hover:bg-rose-500"
+                        >
+                          Sí, cancelar reserva
+                        </button>
+                      </form>
+                    </div>
+                  </details>
+                </div>
+              </article>
+            ))
           ) : (
             <div className="rounded-2xl border border-dashed border-white/10 p-7 text-center">
               <p className="text-sm text-zinc-400">No tienes reservas próximas.</p>
