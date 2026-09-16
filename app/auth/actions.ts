@@ -6,8 +6,12 @@ import { studentAuthEmailFromPhone } from "@/lib/auth/student-login-identifier";
 import { normalizeMexicanPhone } from "@/lib/phone";
 import { createClient } from "@/lib/supabase/server";
 
-function loginPath(mode: "admin" | "student") {
-  return mode === "admin" ? "/login/admin" : "/login/student";
+type LoginMode = "admin" | "coach" | "student";
+
+function loginPath(mode: LoginMode) {
+  if (mode === "student") return "/login/student";
+  if (mode === "coach") return "/login/coach";
+  return "/login/admin";
 }
 
 function passwordIntegrity(password: string) {
@@ -21,20 +25,22 @@ function passwordIntegrity(password: string) {
 
 export async function signIn(formData: FormData) {
   const password = String(formData.get("password") ?? "");
-  const mode = formData.get("mode") === "student" ? "student" : "admin";
+  const requestedMode = String(formData.get("mode") ?? "");
+  const mode: LoginMode =
+    requestedMode === "student" ? "student" : requestedMode === "coach" ? "coach" : "admin";
   const email = String(formData.get("email") ?? "")
     .trim()
     .toLowerCase();
   const phone = normalizeMexicanPhone(String(formData.get("phone") ?? ""));
   const studentAuthEmail = phone ? studentAuthEmailFromPhone(phone) : null;
 
-  if (!password || (mode === "admin" ? !email : !phone || !studentAuthEmail)) {
+  if (!password || (mode === "student" ? !phone || !studentAuthEmail : !email)) {
     redirect(`${loginPath(mode)}?error=missing`);
   }
 
   const supabase = await createClient();
   const credentials =
-    mode === "admin" ? { email, password } : { email: studentAuthEmail!, password };
+    mode === "student" ? { email: studentAuthEmail!, password } : { email, password };
   let { data, error } = await supabase.auth.signInWithPassword(credentials);
   let trimRetryAttempted = false;
 
@@ -107,7 +113,11 @@ export async function signIn(formData: FormData) {
   }
 
   const requiredCapability =
-    mode === "admin" ? CAPABILITIES.ADMIN_PORTAL : CAPABILITIES.STUDENT_PORTAL;
+    mode === "student"
+      ? CAPABILITIES.STUDENT_PORTAL
+      : mode === "coach"
+        ? CAPABILITIES.INSTRUCTOR_PORTAL
+        : CAPABILITIES.ADMIN_PORTAL;
   const [{ data: studio }, { data: roleCapability }] = await Promise.all([
     supabase.from("studios").select("status").eq("id", membership.studio_id).maybeSingle(),
     supabase
@@ -127,7 +137,9 @@ export async function signIn(formData: FormData) {
     redirect("/login/student/activar");
   }
 
-  redirect(mode === "admin" ? "/admin" : "/student");
+  if (mode === "student") redirect("/student");
+  if (mode === "coach") redirect("/coach");
+  redirect("/admin");
 }
 
 export async function createInitialOwnerAccount(formData: FormData) {
