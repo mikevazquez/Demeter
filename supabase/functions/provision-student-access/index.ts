@@ -19,36 +19,12 @@ function studentAuthEmailFromPhone(phone: string) {
   return `student.${digits}@auth.studioflow.invalid`;
 }
 
-function randomCharacter(characters: string) {
-  const bytes = new Uint32Array(1);
-  crypto.getRandomValues(bytes);
-  return characters[bytes[0] % characters.length];
-}
-
 function generateTemporaryPassword() {
-  const uppercase = "ABCDEFGHJKLMNPQRSTUVWXYZ";
-  const lowercase = "abcdefghijkmnopqrstuvwxyz";
-  const digits = "23456789";
-  const symbols = "!@#$%*-_";
-  const all = uppercase + lowercase + digits + symbols;
+  const randomValues = new Uint32Array(6);
+  crypto.getRandomValues(randomValues);
+  const suffix = Array.from(randomValues, (value) => String(value % 10)).join("");
 
-  const characters = [
-    randomCharacter(uppercase),
-    randomCharacter(lowercase),
-    randomCharacter(digits),
-    randomCharacter(symbols),
-  ];
-
-  while (characters.length < 20) characters.push(randomCharacter(all));
-
-  for (let index = characters.length - 1; index > 0; index -= 1) {
-    const bytes = new Uint32Array(1);
-    crypto.getRandomValues(bytes);
-    const swapIndex = bytes[0] % (index + 1);
-    [characters[index], characters[swapIndex]] = [characters[swapIndex], characters[index]];
-  }
-
-  return characters.join("");
+  return `Demeter${suffix}`;
 }
 
 const handler = {
