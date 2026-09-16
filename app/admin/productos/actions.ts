@@ -29,6 +29,7 @@ function parseProductForm(formData: FormData) {
   const unlimited = isEnrollment ? false : formData.get("unlimited") === "on";
   const pricePesos = Number(formData.get("price") ?? 0);
   const packageTermRaw = String(formData.get("package_term") ?? "").trim();
+  const validityRaw = String(formData.get("validity_days") ?? "").trim();
 
   if (!name) throw new Error("name_required");
   if (!TYPES.has(productType)) throw new Error("product_type_invalid");
@@ -38,17 +39,16 @@ function parseProductForm(formData: FormData) {
   let validityDays: number | null;
 
   if (isEnrollment) {
-    const validityRaw = String(formData.get("validity_days") ?? "").trim();
-    validityDays = validityRaw ? parsePositiveInt(validityRaw, "validity_days") : null;
+    validityDays = isEnrollment && !validityRaw ? null : parsePositiveInt(validityRaw, "validity_days");
   } else if (isPackageLike) {
     if (!PACKAGE_TERMS.has(packageTermRaw)) throw new Error("package_term_invalid");
     packageTerm = packageTermRaw;
     validityDays =
       packageTerm === "custom"
-        ? parsePositiveInt(formData.get("validity_days"), "validity_days")
+        ? parsePositiveInt(validityRaw, "validity_days")
         : PACKAGE_TERM_DAYS[packageTerm];
   } else {
-    validityDays = parsePositiveInt(formData.get("validity_days"), "validity_days");
+    validityDays = parsePositiveInt(validityRaw, "validity_days");
   }
 
   const creditLimit = isEnrollment
