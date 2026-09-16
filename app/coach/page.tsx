@@ -11,10 +11,12 @@ export default async function CoachHomePage({
         <p className="text-xs font-semibold uppercase tracking-[0.24em] text-fuchsia-300">
           Coach
         </p>
-        <h1 className="mt-2 text-3xl font-semibold tracking-tight text-white">Mis clases</h1>
+        <h1 className="mt-2 text-3xl font-semibold tracking-tight text-white">
+          Mis clases
+        </h1>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-400">
-          Consulta únicamente las clases que tienes asignadas y abre cada sesión para gestionar su
-          asistencia.
+          Consulta únicamente las clases que tienes asignadas y abre cada sesión
+          para gestionar su asistencia.
         </p>
       </section>
 
@@ -27,8 +29,8 @@ export default async function CoachHomePage({
       <section className="rounded-3xl border border-white/10 bg-white/[0.03] p-6 sm:p-8">
         <p className="text-sm font-semibold text-white">Portal Coach listo</p>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-400">
-          El listado de Hoy, Mañana y calendario se incorpora en SF-109. Este shell ya mantiene el
-          acceso separado de Administración y Alumna.
+          El listado de Hoy, Mañana y calendario se incorpora en SF-109. Este
+          shell ya mantiene el acceso separado de Administración y Alumna.
         </p>
       </section>
     </main>
