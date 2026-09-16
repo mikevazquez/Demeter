@@ -31,6 +31,15 @@ describe("F10 temporary password UX contracts", () => {
     expect(actions).toContain("account.must_change_password !== true");
   });
 
+  it("generates copy-safe temporary passwords as Demeter plus six digits", () => {
+    const edgeFunction = source("supabase/functions/provision-student-access/index.ts");
+
+    expect(edgeFunction).toContain("new Uint32Array(6)");
+    expect(edgeFunction).toContain('String(value % 10)');
+    expect(edgeFunction).toContain('return `Demeter${suffix}`');
+    expect(edgeFunction).not.toContain('const symbols =');
+  });
+
   it("keeps generated credentials visible until the admin acknowledges them", () => {
     const component = source("app/admin/alumnas/[studentId]/StudentAccessProvisioner.tsx");
     const layout = source("app/admin/alumnas/[studentId]/layout.tsx");
