@@ -69,8 +69,7 @@ export async function provisionStudentAccess(
     return {
       ok: false,
       error:
-        functionError ??
-        (typeof data?.error === "string" ? data.error : "provision_unavailable"),
+        functionError ?? (typeof data?.error === "string" ? data.error : "provision_unavailable"),
     };
   }
 
