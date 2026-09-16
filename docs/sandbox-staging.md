@@ -84,15 +84,21 @@ Smoke del seed:
 
 La función productiva `provision-student-access` está ACTIVE, versión 6 y `verify_jwt=true`.
 
-El intento de desplegar la misma fuente al sandbox mediante la herramienta conectada fue bloqueado por el control de seguridad de la herramienta. No se intentó evitar ese bloqueo.
+La misma fuente versionada en GitHub fue desplegada al proyecto sandbox mediante el conector oficial disponible:
 
-Gate pendiente antes de declarar el entorno completamente listo: desplegar `provision-student-access` al proyecto sandbox usando el mecanismo oficial permitido (Supabase Dashboard/CLI/connector con capacidad de deploy) y verificar `verify_jwt=true`.
+- sandbox slug: `provision-student-access`;
+- versión sandbox: `1`;
+- estado: `ACTIVE`;
+- `verify_jwt=true`;
+- hash del bundle: `f8f3096cadf9699ac1c5ec5d09e1ee8f157567f94ce02436ca9bbb4961c346f3`, coincidente con producción.
+
+Este gate queda cerrado sin haber creado usuarios reales ni copiado datos de producción.
 
 ## Vercel Preview / staging
 
 La integración GitHub → Vercel está operativa y creó el Preview de la rama `infra/sandbox-staging-f11`. GitHub identificó el proyecto Vercel `demeterbueno` (`prj_nE53dwTfcSsoLkx1XeAm6rsJ1AJ6`) y el Preview branch URL.
 
-El conector Vercel disponible en ChatGPT no tiene acceso al proyecto y no puede leer/modificar sus variables. Para impedir que un Preview use accidentalmente producción se agregó `scripts/verify-deployment-env.mjs`, ejecutado como `prebuild`.
+El conector Vercel disponible en ChatGPT no tiene acceso suficiente al proyecto y no puede leer/modificar sus variables. Para impedir que un Preview use accidentalmente producción se agregó `scripts/verify-deployment-env.mjs`, ejecutado como `prebuild`.
 
 El guard exige en `VERCEL_ENV=preview`:
 
@@ -101,9 +107,11 @@ El guard exige en `VERCEL_ENV=preview`:
 
 También impide que `VERCEL_ENV=production` use la URL del sandbox.
 
-Resultado real: el primer deployment con el guard **falló**, por lo que las variables actuales del Preview no coinciden todavía con las dos variables aprobadas del sandbox. El guard permanece activo; no se permite eliminarlo para hacer pasar el deployment.
+Resultado real inicial: el primer deployment con el guard **falló**, demostrando que el Preview no estaba aislado correctamente.
 
-Gate obligatorio: corregir el scope `Preview` de ambas variables en Vercel y redeployar hasta obtener `success` con el guard activo.
+El 2026-09-16 se configuraron manualmente en Vercel overrides de rama para `Preview` + `infra/sandbox-staging-f11` para ambas variables sandbox, sin modificar Production. Este commit dispara un nuevo Preview para verificar de forma automática que el guard pase con esos overrides.
+
+Gate obligatorio: obtener `success` en ese deployment con el guard activo. No se permite eliminar el guard para hacer pasar el deployment.
 
 ## Promoción sandbox → producción
 
@@ -129,7 +137,7 @@ F11 sigue **PAUSADA / POST-MVP** hasta cerrar estos gates de infraestructura:
 - [x] Seed ficticio.
 - [x] Smoke de esquema/seed.
 - [x] CI del PR #28 en verde antes del guard y nuevamente en verde con el guard incorporado.
-- [ ] Edge Function `provision-student-access` desplegada y verificada en sandbox.
+- [x] Edge Function `provision-student-access` desplegada y verificada en sandbox.
 - [ ] Vercel Preview con las dos variables Preview apuntando al sandbox y build `success` con el guard activo.
 
-Cuando los dos gates restantes estén cerrados, el siguiente trabajo funcional es F11 comenzando por SF-108, después de releer FL-10, FL-11 y M05.
+Cuando el gate de Vercel quede cerrado, el siguiente trabajo funcional es F11 comenzando por SF-108, después de releer FL-10, FL-11 y M05.
