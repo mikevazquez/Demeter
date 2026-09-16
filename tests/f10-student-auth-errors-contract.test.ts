@@ -44,4 +44,16 @@ describe("F10 student auth login contracts", () => {
     expect(actions).toContain("Supabase Auth rejected sign-in");
     expect(card).toContain('invalid: "El teléfono o la contraseña no son correctos."');
   });
+
+  it("lets users reveal and hide the password before submitting", () => {
+    const card = source("app/login/login-card.tsx");
+
+    expect(card).toContain('"use client"');
+    expect(card).toContain("useState(false)");
+    expect(card).toContain('type={passwordVisible ? "text" : "password"}');
+    expect(card).toContain('"Mostrar contraseña"');
+    expect(card).toContain('"Ocultar contraseña"');
+    expect(card).toContain("aria-pressed={passwordVisible}");
+    expect(card).toContain("<EyeIcon visible={passwordVisible} />");
+  });
 });
