@@ -88,6 +88,8 @@ describe("F10 student portal contracts", () => {
     expect(edgeFunction).toContain("phone_confirm: true");
     expect(edgeFunction).toContain('rpc("service_link_student_access"');
     expect(adminAction).toContain("CAPABILITIES.SETTINGS_WRITE");
+    expect(adminAction).toContain("supabase.auth.getSession()");
+    expect(adminAction).toContain("Authorization: `Bearer ${session.access_token}`");
     expect(accessLayout).toContain("CAPABILITIES.SETTINGS_WRITE");
     expect(adminAction).not.toContain("SUPABASE_SERVICE_ROLE_KEY");
     expect(adminAction).not.toContain("service_role");
