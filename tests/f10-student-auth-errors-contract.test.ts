@@ -17,7 +17,9 @@ describe("F10 student auth login contracts", () => {
     expect(actions).toContain("{ email: studentAuthEmail!, password }");
     expect(actions).not.toContain("{ phone: phone!, password }");
     expect(helper).toContain("@auth.studioflow.invalid");
-    expect(card).toContain("Accede con el teléfono registrado en el estudio y tu contraseña.");
+    expect(card).toContain(
+      "Accede con el teléfono registrado en el estudio y tu contraseña.",
+    );
     expect(card).not.toContain("Habilita Phone en Authentication → Providers");
   });
 
