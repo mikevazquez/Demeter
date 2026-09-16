@@ -77,6 +77,19 @@ Una inscripción no es un paquete:
 - no asigna disciplinas;
 - conserva `starts_on`, `expires_on`, estado y Sale/SaleLine de origen.
 
+### Vigencia de inscripción
+
+La vigencia administrativa puede configurarse con presets de uso frecuente o con días específicos:
+
+- 30 días;
+- 3 meses;
+- 6 meses;
+- 1 año;
+- vitalicia;
+- días específicos.
+
+`validity_days = NULL` representa una inscripción vitalicia y genera `expires_on = NULL`. Sólo los productos de tipo `enrollment` pueden usar vigencia nula; paquetes, membresías y clases continúan requiriendo una vigencia finita.
+
 ### Política mínima implementada en F9
 
 El estudio puede configurar:
@@ -111,7 +124,7 @@ Si `enrollment_policies.enabled=true` y `required_for_booking=true`, eligibility
 - del mismo estudio;
 - con estado `active`;
 - iniciada a más tardar en la fecha de la clase;
-- sin vencimiento anterior a la fecha de la clase.
+- sin vencimiento anterior a la fecha de la clase, o sin vencimiento cuando la inscripción es vitalicia.
 
 Si no existe, responde `enrollment_required` y la reserva no continúa.
 
@@ -129,12 +142,13 @@ Actualmente el portal de alumna todavía no expone un flujo activo de reservar d
 
 ## Estado de F9
 
-F9 permanece **ABIERTA por UAT**.
+F9 está **CERRADA Y APROBADA POR UAT** desde el 15/09/2026.
 
 - SF-083–SF-093 están integradas en `main`.
-- SF-093 se integró mediante PR #9 en el merge `b353eb38a5273b275ddd78fea9ba842ce78b5a7c`.
-- El PR pasó format, lint, typecheck, unit tests y build.
-- El preview de Vercel y el despliegue de producción del merge quedaron en estado `success`.
-- Las migraciones de inscripción están aplicadas en Supabase y las invariantes de datos revisadas no presentan inconsistencias.
-- Falta ejecutar UAT comercial en producción y obtener aprobación explícita del usuario.
-- F9 sólo podrá cerrarse formalmente después de esa aprobación; no se inicia F10 antes del cierre.
+- Los bloques de núcleo comercial, reembolsos/anulaciones, inscripción configurable y vigencia vitalicia/presets están desplegados en producción.
+- Las migraciones correspondientes están aplicadas en Supabase.
+- CI de los cambios de cierre pasó format, lint, typecheck, unit tests y build.
+- Vercel producción quedó en estado `success` para los merges validados.
+- El UAT funcional completo fue aprobado explícitamente, incluyendo navegación responsive, catálogo, venta con pago cero/parcial/total, pagos posteriores, anti-duplicación, reembolsos total/parcial, anulación, venta multi-producto, reservas futuras, inscripción obligatoria, inscripción vitalicia, interacción con walk-in, historial y prueba integrada de punta a punta.
+- F9 no se reabre salvo bug/regresión o cambio de alcance explícitamente aprobado.
+- El siguiente trabajo debe partir del cierre de F9; no se debe reinterpretar ni rehacer estas reglas durante la fase siguiente.
