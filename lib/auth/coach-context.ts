@@ -26,29 +26,39 @@ export async function getCoachContext(requiredCapability?: Capability) {
     redirect("/login/coach?error=access");
   }
 
-  const [{ data: studio }, { data: roleCapabilities }, { data: instructor }, { data: person }] =
-    await Promise.all([
-      supabase
-        .from("studios")
-        .select("id, name, timezone, locale, currency, primary_color, status")
-        .eq("id", membership.studio_id)
-        .single(),
-      supabase.from("role_capabilities").select("capability_key").eq("role", membership.role),
-      supabase
-        .from("instructors")
-        .select("id, studio_id, person_id, status")
-        .eq("studio_id", membership.studio_id)
-        .eq("person_id", membership.person_id)
-        .maybeSingle(),
-      supabase
-        .from("persons")
-        .select("id, first_name, last_name")
-        .eq("studio_id", membership.studio_id)
-        .eq("id", membership.person_id)
-        .maybeSingle(),
-    ]);
+  const [
+    { data: studio },
+    { data: roleCapabilities },
+    { data: instructor },
+    { data: person },
+  ] = await Promise.all([
+    supabase
+      .from("studios")
+      .select("id, name, timezone, locale, currency, primary_color, status")
+      .eq("id", membership.studio_id)
+      .single(),
+    supabase.from("role_capabilities").select("capability_key").eq("role", membership.role),
+    supabase
+      .from("instructors")
+      .select("id, studio_id, person_id, status")
+      .eq("studio_id", membership.studio_id)
+      .eq("person_id", membership.person_id)
+      .maybeSingle(),
+    supabase
+      .from("persons")
+      .select("id, first_name, last_name")
+      .eq("studio_id", membership.studio_id)
+      .eq("id", membership.person_id)
+      .maybeSingle(),
+  ]);
 
-  if (!studio || studio.status !== "active" || !instructor || instructor.status !== "active" || !person) {
+  if (
+    !studio ||
+    studio.status !== "active" ||
+    !instructor ||
+    instructor.status !== "active" ||
+    !person
+  ) {
     await supabase.auth.signOut();
     redirect("/login/coach?error=access");
   }
