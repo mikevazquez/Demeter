@@ -7,7 +7,39 @@
 - F8 · Asistencia: **CERRADA / UAT APROBADA**. Ver `docs/f8-uat-closure.md`.
 - F9 · Ventas/Pagos: **CERRADA / UAT APROBADA**. Ver `docs/f9-uat-closure.md` y `docs/f9-implementation-decisions.md`.
 - F10 · Portal alumna: **CERRADA / UAT APROBADA**. Ver `docs/f10-uat-closure.md`.
-- F11 queda **DESBLOQUEADA / NO INICIADA**. Antes de comenzar debe recuperarse su alcance exacto desde el Documento Maestro y backlog SF-*; no se debe inferir ni redefinir desde memoria.
+- El alcance del MVP fue **REBASELINED** por decisión explícita de producto: F0–F10 + release F14.
+- F11 · Coach: **PAUSADA / POST-MVP**.
+- F12 · Documentos/configuración: **PAUSADA / POST-MVP**.
+- F13 · Reportes/hardening completo: **PAUSADA / POST-MVP**; sólo sus release gates críticos se ejecutan dentro de F14.
+- F14 · Release: **SIGUIENTE FASE / AUTORIZADA PARA INICIAR**.
+- Decisión y alcance: `docs/mvp-scope-rebaseline-2026-09-15.md`.
+
+## Alcance del MVP rebaselined
+
+El MVP que se liberará para operación real de Demeter corresponde a las capacidades ya construidas y aprobadas hasta F10: administración, auth/permisos, alumnas, instructores administrativos, agenda, productos/créditos, reservas, asistencia, ventas/pagos y Portal Alumna.
+
+No forman parte del release inicial:
+
+- experiencia Coach dedicada;
+- documentos/versiones/aceptaciones y configuración avanzada;
+- reportes/KPIs completos;
+- hardening extendido/PWA/performance no bloqueante.
+
+Estas capacidades no se eliminan: continúan como backlog post-MVP y se desarrollarán en un sandbox/staging aislado después del lanzamiento.
+
+## Release gates obligatorios trasladados a F14
+
+Aunque F13 queda pausada, F14 debe ejecutar antes de liberar:
+
+- RLS/aislamiento crítico sobre los flujos que sí salen a producción;
+- secret scan y comprobación de que service_role/secretos no están expuestos;
+- smoke test Admin + Alumna;
+- sanity responsive móvil/tablet/desktop en flujos operativos;
+- verificación de error/unauthorized en rutas críticas;
+- migraciones reproducibles, backup/rollback;
+- observabilidad mínima de producción.
+
+Estos gates son obligatorios y no se consideran funcionalidad de F13 reabierta.
 
 ## F10 · contratos cerrados
 
@@ -19,7 +51,7 @@
 - Nombre, apellido y teléfono son sólo lectura para la alumna; correo editable. La restricción está protegida también en backend/RPC.
 - Inicio aprobado con resumen de paquete sin créditos duplicados, agenda prioritaria cuando existen reservas, carrusel semanal/clases del día y cancelación directa.
 - Reservar aprobado con navegación semanal lunes-domingo y sin filtro por disciplina.
-- Documentos sigue siendo acceso futuro de F12; F10 no simula documentos ni aceptaciones.
+- Documentos sigue fuera del release inicial; F10 no simula documentos ni aceptaciones.
 
 ### Migraciones F10 aplicadas y versionadas
 
@@ -41,13 +73,12 @@
 - Vercel producción: deployments de cierre exitosos.
 - UAT de producto: **APROBADA explícitamente**.
 
-## QA / observaciones no bloqueantes
+## Estrategia después del release
 
-- Supabase Security Advisor conserva advertencias globales/preexistentes de funciones `SECURITY DEFINER` y leaked-password protection deshabilitada; no fueron introducidas por el cierre UAT de F10.
-- Se detectó una cuenta de prueba legacy creada antes del esquema Auth definitivo; el flujo aprobado corresponde a cuentas nuevas creadas con el esquema actual.
+Después de F14 se debe crear un sandbox/staging separado de producción, con Supabase y Vercel aislados. F11, F12 y F13 se implementarán allí y sólo se promoverán a producción después de migraciones reproducibles, CI, QA/UAT y aprobación explícita.
 
 ## Regla para continuar
 
 No reabrir F8, F9 ni F10 salvo bug/regresión o cambio de alcance aprobado explícitamente.
 
-Antes de iniciar F11 se debe consultar `StudioFlow_Documento_Maestro_TOTAL_v3_con_mockups.docx` y el backlog SF-* para recuperar su alcance exacto, aceptación, UX y dependencias. No redefinir arquitectura ni reglas cerradas al comenzar la siguiente fase.
+La siguiente ejecución es F14 rebaselined. No iniciar F11–F13 antes del release. Para F14 se reutilizan los contratos cerrados y se ejecutan únicamente los release gates definidos en `docs/mvp-scope-rebaseline-2026-09-15.md`.
