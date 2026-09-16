@@ -46,7 +46,7 @@ describe("F10 student auth login contracts", () => {
     expect(actions).toContain("hasOuterWhitespace");
     expect(actions).toContain("asciiOnly");
     expect(actions).toContain("unicodeNormalizationChanged");
-    expect(actions).not.toContain("password,")
+    expect(actions).not.toContain("password,");
     expect(card).toContain('invalid: "El teléfono o la contraseña no son correctos."');
   });
 
