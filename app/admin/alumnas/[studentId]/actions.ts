@@ -36,8 +36,19 @@ export async function provisionStudentAccess(
     return { ok: false, error: "student_not_active" };
   }
 
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  if (!session?.access_token) {
+    return { ok: false, error: "provision_unavailable" };
+  }
+
   const { data, error } = await supabase.functions.invoke("provision-student-access", {
     body: { studentId },
+    headers: {
+      Authorization: `Bearer ${session.access_token}`,
+    },
   });
 
   if (error || !data || data.ok !== true) {
