@@ -23,6 +23,7 @@ export type StudentAcquisition = {
   product_id: string;
   name: string;
   product_type: string;
+  package_term: string | null;
   status: string;
   starts_on: string;
   expires_on: string;
@@ -104,6 +105,7 @@ export type StudentSession = {
   discipline_id: string;
   discipline: string;
   credit_cost: number;
+  drop_in_price_minor: number | null;
   space: string | null;
   location: string | null;
   coach: string | null;
