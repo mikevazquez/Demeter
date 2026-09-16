@@ -40,7 +40,9 @@ describe("F10 student auth login contracts", () => {
 
     expect(actions).toContain('details.code === "invalid_credentials"');
     expect(actions).toContain('details.code === "over_request_rate_limit"');
-    expect(actions).toContain('console.error("[auth.signIn] Supabase Auth rejected sign-in"');
+    expect(actions).toContain(
+      'console.error("[auth.signIn] Supabase Auth rejected sign-in"',
+    );
     expect(actions).toContain("authError.message.slice(0, 160)");
     expect(card).toContain('invalid: "El teléfono o la contraseña no son correctos."');
     expect(card).toContain(
