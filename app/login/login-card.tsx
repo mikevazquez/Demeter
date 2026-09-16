@@ -16,6 +16,23 @@ const adminMessages: Record<string, string> = {
 const studentMessages: Record<string, string> = {
   missing: "Escribe tu teléfono y contraseña.",
   invalid: "El teléfono o la contraseña no son correctos.",
+  auth_invalid_credentials:
+    "El teléfono o la contraseña no son correctos. Código UAT: invalid_credentials.",
+  auth_email_not_confirmed:
+    "Supabase rechazó el acceso porque la identidad interna no está confirmada. Código UAT: email_not_confirmed.",
+  auth_email_provider_disabled:
+    "Supabase tiene deshabilitado el acceso interno por email. Código UAT: email_provider_disabled.",
+  auth_user_banned: "Supabase bloqueó esta cuenta. Código UAT: user_banned.",
+  auth_over_request_rate_limit:
+    "Supabase limitó temporalmente los intentos de acceso. Código UAT: over_request_rate_limit.",
+  auth_over_email_send_rate_limit:
+    "Supabase aplicó un límite temporal de Auth. Código UAT: over_email_send_rate_limit.",
+  auth_rate_limited:
+    "Supabase limitó temporalmente los intentos de acceso. Código UAT: rate_limited.",
+  auth_server_error:
+    "Supabase tuvo un error interno al validar el acceso. Código UAT: server_error.",
+  auth_unknown:
+    "Supabase rechazó el acceso por una causa no clasificada. Código UAT: unknown.",
   pending: "Tu cuenta existe, pero todavía no tiene acceso asignado al estudio.",
   access: "Esta cuenta no tiene acceso al portal de alumna.",
 };
