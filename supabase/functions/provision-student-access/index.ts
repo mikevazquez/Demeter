@@ -1,4 +1,4 @@
-import { createClient } from "npm:@supabase/supabase-js@2.116.0";
+import { withSupabase } from "npm:@supabase/server@1.6.1";
 
 type ProvisionRequest = {
   studentId?: unknown;
@@ -43,113 +43,98 @@ function generateTemporaryPassword() {
   return characters.join("");
 }
 
-Deno.serve(async (request) => {
-  if (request.method !== "POST") return jsonResponse({ error: "method_not_allowed" }, 405);
+const handler = {
+  fetch: withSupabase({ auth: "user" }, async (request, context) => {
+    if (request.method !== "POST") return jsonResponse({ error: "method_not_allowed" }, 405);
 
-  const supabaseUrl = Deno.env.get("SUPABASE_URL");
-  const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
-  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  const authorization = request.headers.get("authorization");
+    const {
+      data: { user },
+      error: userError,
+    } = await context.supabase.auth.getUser();
 
-  if (!supabaseUrl || !anonKey || !serviceRoleKey) {
-    return jsonResponse({ error: "server_configuration_error" }, 500);
-  }
-  if (!authorization?.startsWith("Bearer ")) {
-    return jsonResponse({ error: "unauthenticated" }, 401);
-  }
+    if (userError || !user) return jsonResponse({ error: "unauthenticated" }, 401);
 
-  const userClient = createClient(supabaseUrl, anonKey, {
-    global: { headers: { Authorization: authorization } },
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
-  const adminClient = createClient(supabaseUrl, serviceRoleKey, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
+    let payload: ProvisionRequest;
+    try {
+      payload = (await request.json()) as ProvisionRequest;
+    } catch {
+      return jsonResponse({ error: "invalid_request" }, 400);
+    }
 
-  const {
-    data: { user },
-    error: userError,
-  } = await userClient.auth.getUser();
+    const studentId = typeof payload.studentId === "string" ? payload.studentId.trim() : "";
+    if (!studentId) return jsonResponse({ error: "invalid_request" }, 400);
 
-  if (userError || !user) return jsonResponse({ error: "unauthenticated" }, 401);
+    const { data: student, error: studentError } = await context.supabaseAdmin
+      .from("students")
+      .select("id, studio_id, person_id, user_id, full_name, phone, active, lifecycle_status")
+      .eq("id", studentId)
+      .maybeSingle();
 
-  let payload: ProvisionRequest;
-  try {
-    payload = (await request.json()) as ProvisionRequest;
-  } catch {
-    return jsonResponse({ error: "invalid_request" }, 400);
-  }
+    if (studentError) return jsonResponse({ error: "student_lookup_failed" }, 500);
+    if (!student) return jsonResponse({ error: "student_not_found" }, 404);
+    if (!student.person_id) return jsonResponse({ error: "student_person_missing" }, 409);
+    if (!student.active || student.lifecycle_status !== "active") {
+      return jsonResponse({ error: "student_not_active" }, 409);
+    }
+    if (student.user_id) return jsonResponse({ error: "student_already_linked" }, 409);
 
-  const studentId = typeof payload.studentId === "string" ? payload.studentId.trim() : "";
-  if (!studentId) return jsonResponse({ error: "invalid_request" }, 400);
+    const { data: callerMembership, error: membershipError } = await context.supabaseAdmin
+      .from("studio_memberships")
+      .select("role, active")
+      .eq("studio_id", student.studio_id)
+      .eq("user_id", user.id)
+      .eq("active", true)
+      .maybeSingle();
 
-  const { data: student, error: studentError } = await adminClient
-    .from("students")
-    .select("id, studio_id, person_id, user_id, full_name, phone, active, lifecycle_status")
-    .eq("id", studentId)
-    .maybeSingle();
+    if (membershipError) return jsonResponse({ error: "authorization_failed" }, 500);
+    if (!callerMembership) return jsonResponse({ error: "forbidden" }, 403);
 
-  if (studentError) return jsonResponse({ error: "student_lookup_failed" }, 500);
-  if (!student) return jsonResponse({ error: "student_not_found" }, 404);
-  if (!student.person_id) return jsonResponse({ error: "student_person_missing" }, 409);
-  if (!student.active || student.lifecycle_status !== "active") {
-    return jsonResponse({ error: "student_not_active" }, 409);
-  }
-  if (student.user_id) return jsonResponse({ error: "student_already_linked" }, 409);
+    const { data: permission, error: permissionError } = await context.supabaseAdmin
+      .from("role_capabilities")
+      .select("capability_key")
+      .eq("role", callerMembership.role)
+      .eq("capability_key", "settings.write")
+      .maybeSingle();
 
-  const { data: callerMembership, error: membershipError } = await adminClient
-    .from("studio_memberships")
-    .select("role, active")
-    .eq("studio_id", student.studio_id)
-    .eq("user_id", user.id)
-    .eq("active", true)
-    .maybeSingle();
+    if (permissionError) return jsonResponse({ error: "authorization_failed" }, 500);
+    if (!permission) return jsonResponse({ error: "forbidden" }, 403);
 
-  if (membershipError) return jsonResponse({ error: "authorization_failed" }, 500);
-  if (!callerMembership) return jsonResponse({ error: "forbidden" }, 403);
+    const temporaryPassword = generateTemporaryPassword();
+    const { data: createdUser, error: createError } =
+      await context.supabaseAdmin.auth.admin.createUser({
+        phone: student.phone,
+        password: temporaryPassword,
+        phone_confirm: true,
+        user_metadata: { full_name: student.full_name },
+      });
 
-  const { data: permission, error: permissionError } = await adminClient
-    .from("role_capabilities")
-    .select("capability_key")
-    .eq("role", callerMembership.role)
-    .eq("capability_key", "settings.write")
-    .maybeSingle();
+    if (createError || !createdUser.user) {
+      const message = createError?.message.toLowerCase() ?? "";
+      const duplicate =
+        message.includes("already") || message.includes("registered") || message.includes("exists");
+      return jsonResponse(
+        { error: duplicate ? "auth_phone_exists" : "auth_create_failed" },
+        duplicate ? 409 : 500,
+      );
+    }
 
-  if (permissionError) return jsonResponse({ error: "authorization_failed" }, 500);
-  if (!permission) return jsonResponse({ error: "forbidden" }, 403);
+    const { error: linkError } = await context.supabaseAdmin.rpc("service_link_student_access", {
+      target_student_id: student.id,
+      target_user_id: createdUser.user.id,
+    });
 
-  const temporaryPassword = generateTemporaryPassword();
-  const { data: createdUser, error: createError } = await adminClient.auth.admin.createUser({
-    phone: student.phone,
-    password: temporaryPassword,
-    phone_confirm: true,
-    user_metadata: { full_name: student.full_name },
-  });
+    if (linkError) {
+      await context.supabaseAdmin.auth.admin.deleteUser(createdUser.user.id);
+      return jsonResponse({ error: "link_failed" }, 500);
+    }
 
-  if (createError || !createdUser.user) {
-    const message = createError?.message.toLowerCase() ?? "";
-    const duplicate =
-      message.includes("already") || message.includes("registered") || message.includes("exists");
-    return jsonResponse(
-      { error: duplicate ? "auth_phone_exists" : "auth_create_failed" },
-      duplicate ? 409 : 500,
-    );
-  }
+    return jsonResponse({
+      ok: true,
+      temporaryPassword,
+      phone: student.phone,
+      mustChangePassword: true,
+    });
+  }),
+};
 
-  const { error: linkError } = await adminClient.rpc("service_link_student_access", {
-    target_student_id: student.id,
-    target_user_id: createdUser.user.id,
-  });
-
-  if (linkError) {
-    await adminClient.auth.admin.deleteUser(createdUser.user.id);
-    return jsonResponse({ error: "link_failed" }, 500);
-  }
-
-  return jsonResponse({
-    ok: true,
-    temporaryPassword,
-    phone: student.phone,
-    mustChangePassword: true,
-  });
-});
+export default handler;
