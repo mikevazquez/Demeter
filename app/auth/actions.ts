@@ -29,7 +29,25 @@ export async function signIn(formData: FormData) {
   const { data, error } = await supabase.auth.signInWithPassword(credentials);
 
   if (error || !data.user) {
-    redirect(`${loginPath(mode)}?error=invalid`);
+    if (error) {
+      console.error("[auth.signIn] Supabase Auth rejected sign-in", {
+        mode,
+        code: error.code,
+        status: error.status,
+        name: error.name,
+        message: error.message.slice(0, 160),
+      });
+    }
+
+    if (error?.code === "invalid_credentials") {
+      redirect(`${loginPath(mode)}?error=invalid`);
+    }
+
+    if (error?.status === 429) {
+      redirect(`${loginPath(mode)}?error=rate`);
+    }
+
+    redirect(`${loginPath(mode)}?error=auth`);
   }
 
   const [{ data: account }, { data: membership }] = await Promise.all([

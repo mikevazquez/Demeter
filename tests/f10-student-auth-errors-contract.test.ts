@@ -34,11 +34,14 @@ describe("F10 student auth login contracts", () => {
     expect(edgeFunction).toContain("adminClient.auth.admin.updateUserById(student.user_id");
   });
 
-  it("keeps normal bad credentials generic", () => {
+  it("keeps bad credentials generic and surfaces Auth diagnostics safely", () => {
     const actions = source("app/auth/actions.ts");
     const card = source("app/login/login-card.tsx");
 
-    expect(actions).toContain("redirect(`${loginPath(mode)}?error=invalid`)");
+    expect(actions).toContain("?error=invalid");
+    expect(actions).toContain("?error=rate");
+    expect(actions).toContain("?error=auth");
+    expect(actions).toContain("Supabase Auth rejected sign-in");
     expect(card).toContain('invalid: "El teléfono o la contraseña no son correctos."');
   });
 });
