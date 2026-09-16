@@ -6,6 +6,13 @@ import { redirect } from "next/navigation";
 import { getAdminContext } from "@/lib/auth/admin-context";
 
 const TYPES = new Set(["package", "membership", "single_class", "enrollment", "other"]);
+const PACKAGE_TERMS = new Set(["monthly", "quarterly", "semiannual", "annual", "custom"]);
+const PACKAGE_TERM_DAYS: Record<string, number> = {
+  monthly: 30,
+  quarterly: 90,
+  semiannual: 180,
+  annual: 365,
+};
 
 function parsePositiveInt(value: FormDataEntryValue | null, field: string) {
   const parsed = Number(value);
@@ -18,11 +25,32 @@ function parseProductForm(formData: FormData) {
   const description = String(formData.get("description") ?? "").trim() || null;
   const productType = String(formData.get("product_type") ?? "");
   const isEnrollment = productType === "enrollment";
+  const isPackageLike = productType === "package" || productType === "membership";
   const unlimited = isEnrollment ? false : formData.get("unlimited") === "on";
   const pricePesos = Number(formData.get("price") ?? 0);
-  const validityRaw = String(formData.get("validity_days") ?? "").trim();
-  const validityDays =
-    isEnrollment && !validityRaw ? null : parsePositiveInt(validityRaw, "validity_days");
+  const packageTermRaw = String(formData.get("package_term") ?? "").trim();
+
+  if (!name) throw new Error("name_required");
+  if (!TYPES.has(productType)) throw new Error("product_type_invalid");
+  if (!Number.isFinite(pricePesos) || pricePesos < 0) throw new Error("price_invalid");
+
+  let packageTerm: string | null = null;
+  let validityDays: number | null;
+
+  if (isEnrollment) {
+    const validityRaw = String(formData.get("validity_days") ?? "").trim();
+    validityDays = validityRaw ? parsePositiveInt(validityRaw, "validity_days") : null;
+  } else if (isPackageLike) {
+    if (!PACKAGE_TERMS.has(packageTermRaw)) throw new Error("package_term_invalid");
+    packageTerm = packageTermRaw;
+    validityDays =
+      packageTerm === "custom"
+        ? parsePositiveInt(formData.get("validity_days"), "validity_days")
+        : PACKAGE_TERM_DAYS[packageTerm];
+  } else {
+    validityDays = parsePositiveInt(formData.get("validity_days"), "validity_days");
+  }
+
   const creditLimit = isEnrollment
     ? null
     : unlimited
@@ -32,14 +60,11 @@ function parseProductForm(formData: FormData) {
     ? []
     : [...new Set(formData.getAll("discipline_ids").map(String).filter(Boolean))];
 
-  if (!name) throw new Error("name_required");
-  if (!TYPES.has(productType)) throw new Error("product_type_invalid");
-  if (!Number.isFinite(pricePesos) || pricePesos < 0) throw new Error("price_invalid");
-
   return {
     name,
     description,
     productType,
+    packageTerm,
     unlimited,
     priceMinor: Math.round(pricePesos * 100),
     validityDays,
@@ -74,6 +99,7 @@ export async function createProduct(formData: FormData) {
       name: values.name,
       description: values.description,
       product_type: values.productType,
+      package_term: values.packageTerm,
       price_minor: values.priceMinor,
       currency: "MXN",
       credit_limit: values.creditLimit,
@@ -115,6 +141,7 @@ export async function updateProduct(formData: FormData) {
       name: values.name,
       description: values.description,
       product_type: values.productType,
+      package_term: values.packageTerm,
       price_minor: values.priceMinor,
       credit_limit: values.creditLimit,
       validity_days: values.validityDays,
@@ -156,7 +183,7 @@ export async function duplicateProduct(formData: FormData) {
   const { data: source } = await ctx.supabase
     .from("product_templates")
     .select(
-      "name,description,product_type,price_minor,currency,credit_limit,validity_days,unlimited,product_template_disciplines(discipline_id)",
+      "name,description,product_type,package_term,price_minor,currency,credit_limit,validity_days,unlimited,product_template_disciplines(discipline_id)",
     )
     .eq("id", productId)
     .eq("studio_id", ctx.studio.id)
@@ -170,6 +197,7 @@ export async function duplicateProduct(formData: FormData) {
       name: `${source.name} · copia`,
       description: source.description,
       product_type: source.product_type,
+      package_term: source.package_term,
       price_minor: source.price_minor,
       currency: source.currency,
       credit_limit: source.credit_limit,
