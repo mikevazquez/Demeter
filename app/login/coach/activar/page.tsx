@@ -51,8 +51,8 @@ export default async function CoachActivationPage({
         <p className="eyebrow">DEMETER · STUDIO FLOW</p>
         <h1 className="auth-title">Crea tu contraseña</h1>
         <p className="auth-copy">
-          Entraste al portal Coach con una contraseña temporal. Reemplázala ahora por una que sólo tú
-          conozcas.
+          Entraste al portal Coach con una contraseña temporal. Reemplázala ahora por una que sólo
+          tú conozcas.
         </p>
 
         {error && messages[error] ? <div className="notice error">{messages[error]}</div> : null}

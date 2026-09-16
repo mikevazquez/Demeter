@@ -146,7 +146,9 @@ export default async function InstructorProfilePage({
               Tu rol puede consultar el InstructorProfile, pero no administrar cuentas de acceso.
             </div>
           ) : instructor.status !== "active" ? (
-            <div className="notice error">Activa al instructor antes de habilitar el portal Coach.</div>
+            <div className="notice error">
+              Activa al instructor antes de habilitar el portal Coach.
+            </div>
           ) : accessState === "not_linked" && !email ? (
             <div className="notice error">
               Falta un correo válido. El Coach inicia sesión con correo y contraseña, por lo que el

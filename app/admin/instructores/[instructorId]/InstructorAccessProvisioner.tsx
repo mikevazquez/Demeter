@@ -3,10 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
-import {
-  provisionInstructorAccess,
-  resetInstructorTemporaryPassword,
-} from "./access-actions";
+import { provisionInstructorAccess, resetInstructorTemporaryPassword } from "./access-actions";
 
 const errorCopy: Record<string, string> = {
   invalid_request: "No se pudo identificar al instructor.",
@@ -117,8 +114,8 @@ export function InstructorAccessProvisioner({
           </button>
         </div>
         <p className="text-sm text-zinc-400">
-          Entrégala por un canal privado. El Coach deberá cambiarla en su primer acceso y Studio Flow
-          no volverá a mostrar esta misma contraseña.
+          Entrégala por un canal privado. El Coach deberá cambiarla en su primer acceso y Studio
+          Flow no volverá a mostrar esta misma contraseña.
         </p>
       </div>
     );
@@ -129,8 +126,8 @@ export function InstructorAccessProvisioner({
       <p>
         {mode === "provision" ? (
           <>
-            Se creará una cuenta Auth separada del perfil operativo, vinculada con rol Instructor. El
-            acceso usará <strong>{email || "el correo registrado"}</strong>.
+            Se creará una cuenta Auth separada del perfil operativo, vinculada con rol Instructor.
+            El acceso usará <strong>{email || "el correo registrado"}</strong>.
           </>
         ) : (
           <>
