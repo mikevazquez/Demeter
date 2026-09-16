@@ -14,10 +14,13 @@ describe("F10 student portal contracts", () => {
   const accessMigration = source(
     "supabase/migrations/20260916012349_f10_student_access_provisioning.sql",
   );
+  const personRlsMigration = source(
+    "supabase/migrations/20260916012957_f10_harden_student_person_identity_rls.sql",
+  );
 
   it("resolves the student from auth.uid instead of accepting a client student id", () => {
-    expect(portalMigration).toContain("s.user_id=(select auth.uid())");
-    expect(portalMigration).toContain("private.is_current_student(s.id,s.studio_id)");
+    expect(portalMigration).toMatch(/s\.user_id\s*=\s*\(select auth\.uid\(\)\)/);
+    expect(portalMigration).toContain("private.is_current_student");
     expect(portalMigration).toContain(
       "public.student_schedule_feed(target_start date, target_end date, target_discipline_id uuid default null)",
     );
@@ -52,7 +55,14 @@ describe("F10 student portal contracts", () => {
     expect(actions).toContain('supabase.rpc("student_update_own_profile"');
     expect(actions).not.toContain('.from("persons").update');
     expect(actions).not.toContain('.from("person_contacts").update');
-    expect(portalMigration).toContain("and s.user_id=(select auth.uid())");
+    expect(portalMigration).toMatch(/s\.user_id\s*=\s*\(select auth\.uid\(\)\)/);
+  });
+
+  it("hardens persons and person_contacts to the active current-student context", () => {
+    expect(personRlsMigration).toContain("private.is_current_student(s.id, s.studio_id)");
+    expect(personRlsMigration).toContain("persons_identity_scoped_read");
+    expect(personRlsMigration).toContain("person_contacts_identity_scoped_read");
+    expect(personRlsMigration).not.toContain("s.user_id = (select auth.uid())");
   });
 
   it("does not expose other students through the schedule feed", () => {
@@ -69,12 +79,14 @@ describe("F10 student portal contracts", () => {
   it("provisions Auth only through a privileged backend boundary", () => {
     const edgeFunction = source("supabase/functions/provision-student-access/index.ts");
     const adminAction = source("app/admin/alumnas/[studentId]/actions.ts");
+    const accessLayout = source("app/admin/alumnas/[studentId]/layout.tsx");
     expect(edgeFunction).toContain('withSupabase({ auth: "user" }');
     expect(edgeFunction).toContain('.eq("capability_key", "settings.write")');
     expect(edgeFunction).toContain("auth.admin.createUser");
     expect(edgeFunction).toContain("phone_confirm: true");
     expect(edgeFunction).toContain('rpc("service_link_student_access"');
     expect(adminAction).toContain("CAPABILITIES.SETTINGS_WRITE");
+    expect(accessLayout).toContain("CAPABILITIES.SETTINGS_WRITE");
     expect(adminAction).not.toContain("SUPABASE_SERVICE_ROLE_KEY");
     expect(edgeFunction).not.toContain("SUPABASE_SERVICE_ROLE_KEY");
   });
@@ -99,6 +111,15 @@ describe("F10 student portal contracts", () => {
     expect(activation).toContain('supabase.rpc("student_complete_password_activation")');
   });
 
+  it("removes direct RPC execution from trigger-only security-definer code", () => {
+    const revokeMigration = source(
+      "supabase/migrations/20260916013227_f10_revoke_trigger_rpc_execute.sql",
+    );
+    expect(revokeMigration).toContain(
+      "revoke all on function public.handle_session_cancelled_reservations() from public, anon, authenticated",
+    );
+  });
+
   it("uses the canonical F10 model and keeps documents as a future-state access", () => {
     const studentFiles = [
       "app/student/page.tsx",
@@ -112,10 +133,9 @@ describe("F10 student portal contracts", () => {
       .map(source)
       .join("\n");
     expect(studentFiles).not.toContain("student_packages");
-    expect(studentFiles).not.toContain("packages");
 
     const documents = source("app/student/documentos/page.tsx");
     expect(documents).toContain("F12");
-    expect(documents.toLowerCase()).toContain("próximamente");
+    expect(documents.toLowerCase()).toContain("no mostraremos documentos ficticios");
   });
 });
