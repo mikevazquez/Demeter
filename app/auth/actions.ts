@@ -2,28 +2,12 @@
 
 import { redirect } from "next/navigation";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
+import { studentAuthEmailFromPhone } from "@/lib/auth/student-login-identifier";
 import { normalizeMexicanPhone } from "@/lib/phone";
 import { createClient } from "@/lib/supabase/server";
 
 function loginPath(mode: "admin" | "student") {
   return mode === "admin" ? "/login/admin" : "/login/student";
-}
-
-function loginAuthError(
-  mode: "admin" | "student",
-  error: { code?: string; message?: string } | null,
-) {
-  if (!error || mode !== "student") return "invalid";
-
-  const message = error.message?.toLowerCase() ?? "";
-  if (error.code === "phone_provider_disabled" || message.includes("phone logins are disabled")) {
-    return "phone_disabled";
-  }
-  if (error.code === "phone_not_confirmed" || message.includes("phone not confirmed")) {
-    return "phone_unconfirmed";
-  }
-
-  return "invalid";
 }
 
 export async function signIn(formData: FormData) {
@@ -33,17 +17,19 @@ export async function signIn(formData: FormData) {
     .trim()
     .toLowerCase();
   const phone = normalizeMexicanPhone(String(formData.get("phone") ?? ""));
+  const studentAuthEmail = phone ? studentAuthEmailFromPhone(phone) : null;
 
-  if (!password || (mode === "admin" ? !email : !phone)) {
+  if (!password || (mode === "admin" ? !email : !phone || !studentAuthEmail)) {
     redirect(`${loginPath(mode)}?error=missing`);
   }
 
   const supabase = await createClient();
-  const credentials = mode === "admin" ? { email, password } : { phone: phone!, password };
+  const credentials =
+    mode === "admin" ? { email, password } : { email: studentAuthEmail!, password };
   const { data, error } = await supabase.auth.signInWithPassword(credentials);
 
   if (error || !data.user) {
-    redirect(`${loginPath(mode)}?error=${loginAuthError(mode, error)}`);
+    redirect(`${loginPath(mode)}?error=invalid`);
   }
 
   const [{ data: account }, { data: membership }] = await Promise.all([
