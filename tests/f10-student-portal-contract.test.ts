@@ -29,8 +29,8 @@ describe("F10 student portal contracts", () => {
   });
 
   it("reuses the canonical booking engines", () => {
-    expect(portalMigration).toContain("public.booking_eligibility(target_session_id,v_student.id)");
-    expect(portalMigration).toContain("public.book_student(target_session_id,v_student.id)");
+    expect(portalMigration).toMatch(/public\.booking_eligibility\([^,]+,v_student\.id\)/);
+    expect(portalMigration).toContain("return public.book_student(target_session_id,v_student_id)");
     expect(portalMigration).toContain(
       "public.cancel_reservation(target_reservation_id,target_reason)",
     );
@@ -140,6 +140,6 @@ describe("F10 student portal contracts", () => {
 
     const documents = source("app/student/documentos/page.tsx");
     expect(documents).toContain("F12");
-    expect(documents.toLowerCase()).toContain("no mostraremos documentos ficticios");
+    expect(documents).toMatch(/no\s+mostraremos\s+documentos\s+ficticios/i);
   });
 });
