@@ -22,9 +22,7 @@ function studentAuthEmailFromPhone(phone: string) {
 function generateTemporaryPassword() {
   const randomValues = new Uint32Array(6);
   crypto.getRandomValues(randomValues);
-  const suffix = Array.from(randomValues, (value) => String(value % 10)).join(
-    "",
-  );
+  const suffix = Array.from(randomValues, (value) => String(value % 10)).join("");
 
   return `Demeter${suffix}`;
 }
