@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import { formatDate, getStudentPortalContext } from "@/lib/student/portal";
+import { formatDate, getStudentPortalContext, type StudentAcquisition } from "@/lib/student/portal";
 
 const statusCopy: Record<string, string> = {
   active: "Activo",
@@ -8,10 +8,36 @@ const statusCopy: Record<string, string> = {
   cancelled: "Inactivo",
 };
 
+const termCopy: Record<string, string> = {
+  monthly: "Mensual",
+  quarterly: "Trimestral",
+  semiannual: "Semestral",
+  annual: "Anual",
+  custom: "Otra vigencia",
+};
+
+const packageGroups: Array<{ key: string; title: string; description: string }> = [
+  { key: "monthly", title: "Mensuales", description: "Paquetes con ciclo mensual" },
+  { key: "quarterly", title: "Trimestrales", description: "Paquetes con ciclo de tres meses" },
+  { key: "semiannual", title: "Semestrales", description: "Paquetes con ciclo de seis meses" },
+  { key: "annual", title: "Anuales", description: "Paquetes con ciclo anual" },
+  { key: "other", title: "Otros", description: "Otras vigencias y productos" },
+];
+
+function groupKey(item: StudentAcquisition) {
+  return item.package_term && item.package_term !== "custom" ? item.package_term : "other";
+}
+
 export default async function StudentPackagePage() {
   const { snapshot, studio } = await getStudentPortalContext();
   const activePackage = snapshot.acquisitions.find((item) => item.active_now) ?? null;
   const others = snapshot.acquisitions.filter((item) => item.id !== activePackage?.id);
+  const grouped = new Map<string, StudentAcquisition[]>();
+
+  for (const item of others) {
+    const key = groupKey(item);
+    grouped.set(key, [...(grouped.get(key) ?? []), item]);
+  }
 
   return (
     <main className="space-y-6">
@@ -21,7 +47,8 @@ export default async function StudentPackagePage() {
           Tus clases y vigencia
         </h1>
         <p className="mt-2 text-sm text-zinc-400">
-          Consulta lo disponible, lo reservado y lo que ya utilizaste.
+          Consulta lo disponible, lo reservado y lo que ya utilizaste, organizado por tipo de
+          vigencia.
         </p>
       </header>
 
@@ -29,9 +56,16 @@ export default async function StudentPackagePage() {
         <section className="rounded-3xl border border-fuchsia-500/25 bg-gradient-to-br from-fuchsia-500/15 via-white/[0.04] to-transparent p-5 sm:p-7">
           <div className="flex flex-wrap items-start justify-between gap-5">
             <div>
-              <span className="rounded-full bg-emerald-500/15 px-2.5 py-1 text-xs font-medium text-emerald-300">
-                Activo
-              </span>
+              <div className="flex flex-wrap gap-2">
+                <span className="rounded-full bg-emerald-500/15 px-2.5 py-1 text-xs font-medium text-emerald-300">
+                  Activo
+                </span>
+                <span className="rounded-full bg-white/10 px-2.5 py-1 text-xs font-medium text-zinc-300">
+                  {activePackage.package_term
+                    ? (termCopy[activePackage.package_term] ?? "Otra vigencia")
+                    : "Otra vigencia"}
+                </span>
+              </div>
               <h2 className="mt-3 text-2xl font-semibold text-white">{activePackage.name}</h2>
               <p className="mt-2 text-sm text-zinc-400">
                 {formatDate(activePackage.starts_on, studio.timezone)} →{" "}
@@ -126,27 +160,62 @@ export default async function StudentPackagePage() {
       ) : null}
 
       {others.length ? (
-        <section className="rounded-3xl border border-white/10 bg-white/[0.03] p-5 sm:p-6">
-          <h2 className="text-xl font-semibold text-white">Historial de paquetes</h2>
-          <div className="mt-4 divide-y divide-white/10">
-            {others.map((item) => (
-              <article
-                key={item.id}
-                className="flex flex-wrap items-center justify-between gap-3 py-4 first:pt-0 last:pb-0"
-              >
-                <div>
-                  <p className="font-medium text-white">{item.name}</p>
-                  <p className="mt-1 text-xs text-zinc-500">
-                    {formatDate(item.starts_on, studio.timezone)} →{" "}
-                    {formatDate(item.expires_on, studio.timezone)}
-                  </p>
-                </div>
-                <span className="rounded-full bg-zinc-500/15 px-2.5 py-1 text-xs font-medium text-zinc-400">
-                  {statusCopy[item.status] ?? item.status}
-                </span>
-              </article>
-            ))}
+        <section className="space-y-4">
+          <div>
+            <h2 className="text-xl font-semibold text-white">Paquetes e historial</h2>
+            <p className="mt-1 text-sm text-zinc-400">
+              Se muestran por periodo para que puedas distinguir fácilmente cada vigencia.
+            </p>
           </div>
+
+          {packageGroups.map((group) => {
+            const items = grouped.get(group.key) ?? [];
+            if (!items.length) return null;
+
+            return (
+              <section
+                key={group.key}
+                className="rounded-3xl border border-white/10 bg-white/[0.03] p-5 sm:p-6"
+              >
+                <div className="flex items-end justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-fuchsia-300">
+                      {group.title}
+                    </p>
+                    <p className="mt-1 text-sm text-zinc-500">{group.description}</p>
+                  </div>
+                  <span className="rounded-full bg-white/10 px-2.5 py-1 text-xs text-zinc-300">
+                    {items.length}
+                  </span>
+                </div>
+
+                <div className="mt-4 divide-y divide-white/10">
+                  {items.map((item) => (
+                    <article
+                      key={item.id}
+                      className="flex flex-wrap items-center justify-between gap-3 py-4 first:pt-0 last:pb-0"
+                    >
+                      <div>
+                        <p className="font-medium text-white">{item.name}</p>
+                        <p className="mt-1 text-xs text-zinc-500">
+                          {formatDate(item.starts_on, studio.timezone)} →{" "}
+                          {formatDate(item.expires_on, studio.timezone)}
+                        </p>
+                        <p className="mt-1 text-xs text-zinc-500">
+                          {item.unlimited
+                            ? "Acceso ilimitado"
+                            : `${item.available_credits ?? 0} disponibles · ${item.reserved_credits} reservadas · ${item.used_credits} utilizadas`}
+                        </p>
+                      </div>
+                      <span className="rounded-full bg-zinc-500/15 px-2.5 py-1 text-xs font-medium text-zinc-400">
+                        {statusCopy[item.status] ?? item.status}
+                      </span>
+                    </article>
+                  ))}
+                </div>
+              </section>
+            );
+          })}
         </section>
       ) : null}
     </main>
