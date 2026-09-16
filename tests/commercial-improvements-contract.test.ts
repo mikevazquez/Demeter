@@ -26,7 +26,9 @@ describe("commercial improvements contracts", () => {
     const portalTypes = source("lib/student/portal.ts");
 
     expect(activityActions).toContain("drop_in_price_minor");
-    expect(activityActions).toContain("Math.round(dropInPricePesos * 100)");
+    expect(activityActions).toContain("optionalMoneyToMinor");
+    expect(activityActions).toContain("Number(whole) * 100");
+    expect(activityActions).toContain('decimals.padEnd(2, "0")');
     expect(portalTypes).toContain("drop_in_price_minor: number | null");
     expect(studentSession).toContain("Clase suelta:");
     expect(studentSession).toContain("drop_in_price_minor");
@@ -65,8 +67,8 @@ describe("commercial improvements contracts", () => {
   it("groups student packages by explicit commercial term", () => {
     const packagePage = source("app/student/paquete/page.tsx");
     const portalTypes = source("lib/student/portal.ts");
-    const migration = source(
-      "supabase/migrations/20260916170000_commercial_catalog_and_acquisition_controls.sql",
+    const portalMigration = source(
+      "supabase/migrations/20260916170200_student_portal_package_term.sql",
     );
 
     expect(portalTypes).toContain("package_term: string | null");
@@ -74,7 +76,7 @@ describe("commercial improvements contracts", () => {
       expect(packagePage).toContain(label);
     }
     expect(packagePage).toContain("item.package_term");
-    expect(migration).toContain("'package_term', pt.package_term");
+    expect(portalMigration).toContain("'package_term',pt.package_term");
   });
 
   it("keeps administrative acquisition mutations unavailable to anon", () => {
