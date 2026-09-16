@@ -23,9 +23,7 @@ describe("F11 coach roster and attendance scope", () => {
   });
 
   it("returns only the roster of an assigned session", () => {
-    const migration = source(
-      "supabase/migrations/20260916143800_f11_coach_session_roster.sql",
-    );
+    const migration = source("supabase/migrations/20260916143800_f11_coach_session_roster.sql");
     const page = source("app/coach/clases/[sessionId]/roster/page.tsx");
 
     expect(migration).toContain("cs.instructor_id = v_instructor_id");
@@ -41,6 +39,6 @@ describe("F11 coach roster and attendance scope", () => {
 
     expect(action).toContain('supabase.rpc("set_attendance_status"');
     expect(action).not.toContain('.from("reservations")');
-    expect(action).not.toContain('.update(');
+    expect(action).not.toContain(".update(");
   });
 });

@@ -3,11 +3,7 @@ import { notFound } from "next/navigation";
 
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getCoachContext } from "@/lib/auth/coach-context";
-import {
-  formatSessionDate,
-  formatTime,
-  type CoachSessionDetail,
-} from "@/lib/coach/portal";
+import { formatSessionDate, formatTime, type CoachSessionDetail } from "@/lib/coach/portal";
 
 function statusLabel(status: CoachSessionDetail["status"]) {
   if (status === "completed") return "Finalizada";
@@ -21,9 +17,7 @@ export default async function CoachClassDetailPage({
   params: Promise<{ sessionId: string }>;
 }) {
   const { sessionId } = await params;
-  const { supabase, studio } = await getCoachContext(
-    CAPABILITIES.SCHEDULE_READ,
-  );
+  const { supabase, studio } = await getCoachContext(CAPABILITIES.SCHEDULE_READ);
   const { data, error } = await supabase.rpc("coach_session_detail", {
     target_studio_id: studio.id,
     target_session_id: sessionId,
@@ -87,9 +81,7 @@ export default async function CoachClassDetailPage({
           <div className="rounded-2xl bg-black/20 p-4">
             <p className="text-xs text-zinc-500">Disponibilidad</p>
             <p className="mt-1 font-semibold text-white">
-              {full
-                ? "Clase llena"
-                : `${detail.capacity - occupied} lugares disponibles`}
+              {full ? "Clase llena" : `${detail.capacity - occupied} lugares disponibles`}
             </p>
           </div>
         </div>

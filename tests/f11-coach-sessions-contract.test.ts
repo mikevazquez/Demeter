@@ -17,18 +17,14 @@ describe("F11 coach session scope", () => {
     expect(migration).toContain(
       "private.is_current_instructor_assignment(studio_id, instructor_id)",
     );
-    expect(migration).toContain(
-      "private.is_current_instructor_session(studio_id, session_id)",
-    );
+    expect(migration).toContain("private.is_current_instructor_session(studio_id, session_id)");
     expect(migration).not.toContain(
       "array['owner'::public.studio_role, 'admin'::public.studio_role, 'instructor'::public.studio_role]",
     );
   });
 
   it("uses a coach feed that never accepts an arbitrary instructor id", () => {
-    const migration = source(
-      "supabase/migrations/20260916142100_f11_coach_feed_local_dates.sql",
-    );
+    const migration = source("supabase/migrations/20260916142100_f11_coach_feed_local_dates.sql");
     const page = source("app/coach/page.tsx");
 
     expect(migration).toContain("public.coach_my_sessions(");
@@ -40,9 +36,7 @@ describe("F11 coach session scope", () => {
   });
 
   it("protects class detail with the same authenticated assignment", () => {
-    const migration = source(
-      "supabase/migrations/20260916142600_f11_coach_session_detail.sql",
-    );
+    const migration = source("supabase/migrations/20260916142600_f11_coach_session_detail.sql");
     const page = source("app/coach/clases/[sessionId]/page.tsx");
 
     expect(migration).toContain("cs.instructor_id = v_instructor_id");
