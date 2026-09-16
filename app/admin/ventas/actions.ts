@@ -26,12 +26,18 @@ export async function createManualSaleAction(formData: FormData) {
     .getAll("product_id")
     .map((value) => String(value))
     .filter(Boolean);
+  const startsOn = String(formData.get("starts_on") ?? "").trim();
   const paymentMinor = moneyToMinor(String(formData.get("payment_amount") ?? ""));
   const paymentMethod = String(formData.get("payment_method") ?? "").trim();
   const paymentReference = String(formData.get("payment_reference") ?? "").trim();
   const paymentNotes = String(formData.get("payment_notes") ?? "").trim();
 
-  if (!studentId || productIds.length === 0 || paymentMinor === null) {
+  if (
+    !studentId ||
+    productIds.length === 0 ||
+    paymentMinor === null ||
+    !/^\d{4}-\d{2}-\d{2}$/.test(startsOn)
+  ) {
     redirect(errorUrl("/admin/ventas/nueva", "sale_invalid"));
   }
 
@@ -43,6 +49,7 @@ export async function createManualSaleAction(formData: FormData) {
     payment_method: paymentMinor > 0 ? paymentMethod || null : null,
     payment_reference: paymentReference || null,
     payment_notes: paymentNotes || null,
+    target_starts_on: startsOn,
   });
 
   if (error) {
@@ -56,6 +63,9 @@ export async function createManualSaleAction(formData: FormData) {
 
   revalidatePath("/admin/ventas");
   revalidatePath("/admin/alumnas");
+  revalidatePath(`/admin/alumnas/${studentId}`);
+  revalidatePath("/student");
+  revalidatePath("/student/paquete");
   redirect(`/admin/ventas/${result.sale_id}?created=sale`);
 }
 
