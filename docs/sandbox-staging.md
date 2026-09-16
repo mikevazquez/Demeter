@@ -90,14 +90,20 @@ Gate pendiente antes de declarar el entorno completamente listo: desplegar `prov
 
 ## Vercel Preview / staging
 
-La rama `infra/sandbox-staging-f11` dispara un deployment Preview de Vercel mediante la integración GitHub existente. Sin embargo, el conector de Vercel actual no puede resolver/listar el proyecto `demeterbueno`, por lo que todavía no se pudo auditar ni modificar desde ChatGPT el scope de variables Preview.
+La integración GitHub → Vercel está operativa y creó el Preview de la rama `infra/sandbox-staging-f11`. GitHub identificó el proyecto Vercel `demeterbueno` (`prj_nE53dwTfcSsoLkx1XeAm6rsJ1AJ6`) y el Preview branch URL.
 
-Variables requeridas por la aplicación:
+El conector Vercel disponible en ChatGPT no tiene acceso al proyecto y no puede leer/modificar sus variables. Para impedir que un Preview use accidentalmente producción se agregó `scripts/verify-deployment-env.mjs`, ejecutado como `prebuild`.
 
-- `NEXT_PUBLIC_SUPABASE_URL`
-- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
+El guard exige en `VERCEL_ENV=preview`:
 
-Gate obligatorio: en Preview/staging ambas variables deben apuntar exclusivamente a `Studio Flow Sandbox` (`hedouonyhynuvwbckdlg`). No iniciar F11 ni hacer UAT Coach si un Preview puede apuntar a producción.
+- `NEXT_PUBLIC_SUPABASE_URL` = `https://hedouonyhynuvwbckdlg.supabase.co`;
+- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` correspondiente al sandbox, validada por hash SHA-256 sin guardar la clave en el repositorio.
+
+También impide que `VERCEL_ENV=production` use la URL del sandbox.
+
+Resultado real: el primer deployment con el guard **falló**, por lo que las variables actuales del Preview no coinciden todavía con las dos variables aprobadas del sandbox. El guard permanece activo; no se permite eliminarlo para hacer pasar el deployment.
+
+Gate obligatorio: corregir el scope `Preview` de ambas variables en Vercel y redeployar hasta obtener `success` con el guard activo.
 
 ## Promoción sandbox → producción
 
@@ -122,8 +128,8 @@ F11 sigue **PAUSADA / POST-MVP** hasta cerrar estos gates de infraestructura:
 - [x] Drift de grants/reproducibilidad reconciliado.
 - [x] Seed ficticio.
 - [x] Smoke de esquema/seed.
+- [x] CI del PR #28 en verde antes del guard y nuevamente en verde con el guard incorporado.
 - [ ] Edge Function `provision-student-access` desplegada y verificada en sandbox.
-- [ ] Vercel Preview auditado y variables Preview apuntando al sandbox.
-- [ ] CI de este PR en verde.
+- [ ] Vercel Preview con las dos variables Preview apuntando al sandbox y build `success` con el guard activo.
 
-Cuando los tres gates restantes estén cerrados, el siguiente trabajo funcional es F11 comenzando por SF-108, después de releer FL-10, FL-11 y M05.
+Cuando los dos gates restantes estén cerrados, el siguiente trabajo funcional es F11 comenzando por SF-108, después de releer FL-10, FL-11 y M05.
