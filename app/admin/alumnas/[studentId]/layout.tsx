@@ -48,7 +48,7 @@ export default async function StudentProfileLayout({
     Boolean(student.user_id) &&
     account?.status === "active" &&
     membership?.role === "student" &&
-    membership.active;
+    membership?.active === true;
 
   return (
     <>
