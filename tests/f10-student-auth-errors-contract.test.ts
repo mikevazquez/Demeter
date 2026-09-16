@@ -38,7 +38,7 @@ describe("F10 student auth login contracts", () => {
     const actions = source("app/auth/actions.ts");
     const card = source("app/login/login-card.tsx");
     const diagnosticBlock =
-      actions.split('console.error("[auth.signIn] Supabase Auth rejected sign-in", {')[1]?.split("});")[0] ?? "";
+      actions.split("Supabase Auth rejected sign-in")[1]?.split("});")[0] ?? "";
 
     expect(actions).toContain("?error=invalid");
     expect(actions).toContain("?error=rate");
