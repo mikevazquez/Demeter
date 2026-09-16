@@ -119,7 +119,9 @@ describe("F10 student portal contracts", () => {
     expect(serviceLinkMigration).toContain(
       "grant execute on function public.service_link_student_access(uuid, uuid) to service_role",
     );
-    expect(serviceLinkMigration).not.toContain("grant execute on function public.service_link_student_access(uuid, uuid) to authenticated");
+    expect(serviceLinkMigration).not.toContain(
+      "grant execute on function public.service_link_student_access(uuid, uuid) to authenticated",
+    );
   });
 
   it("never writes auth.users from business SQL", () => {
