@@ -15,14 +15,15 @@ Aislar todo desarrollo post-MVP (F11, F12 y F13) de la producción operativa. Pr
 - Región: `us-east-1`
 - Web: `https://demeterbueno.vercel.app`
 - Git branch productiva: `main`
+- Estado durante F11: **congelado**. No se mergea ni despliega F11 antes de pruebas completas y UAT aprobado.
 
-### Sandbox
+### Sandbox / staging
 
 - Supabase: `Studio Flow Sandbox`
 - Project ref: `hedouonyhynuvwbckdlg`
 - Región: `us-east-1`
 - Costo verificado al crear el proyecto: `US$0/mes`
-- Git branch de bootstrap: `infra/sandbox-staging-f11`
+- Git branch de integración/staging: `infra/sandbox-staging-f11`
 - Datos: exclusivamente ficticios/sanitizados.
 
 ## Supabase sandbox
@@ -111,18 +112,32 @@ El primer deployment con el guard falló y permitió detectar una URL sandbox ma
 
 Validación final: commit `c17c622724ae4ea5c4e77f5c1db6dd90860d5227` obtuvo Vercel `success` con el guard completo activo. Esto verifica que URL y publishable key del Preview corresponden al Supabase Sandbox aprobado.
 
+## Desarrollo F11 sin tocar producción
+
+Decisión explícita aprobada el 2026-09-16: **no enviar nada a producción hasta que esté bien probado y aprobado**.
+
+Por lo tanto:
+
+1. `main` permanece en el baseline productivo F14.
+2. PR #28 permanece DRAFT y no se mergea durante el desarrollo de F11.
+3. `infra/sandbox-staging-f11` funciona como rama de integración/staging.
+4. F11 se implementa y prueba contra `Studio Flow Sandbox`.
+5. QA, smoke, seguridad y UAT se completan en staging.
+6. Sólo después de UAT aprobado se prepara una promoción separada a `main`.
+7. Ninguna migración de F11 se aplica a Supabase producción antes de esa promoción aprobada.
+
 ## Promoción sandbox → producción
 
-1. Desarrollar en branch de feature contra sandbox.
+1. Desarrollar F11 contra sandbox/staging.
 2. Aplicar migraciones nuevas primero en sandbox.
 3. Mantener seed sintético; nunca copiar PII de producción para QA.
 4. Ejecutar CI y smoke/integration tests.
-5. Crear Preview Vercel apuntando sólo al Supabase sandbox.
-6. Realizar QA/UAT en sandbox.
-7. Abrir/actualizar PR y documentar cualquier decisión de producto.
-8. Sólo con UAT/aprobación correspondiente: merge a `main`.
+5. Validar Vercel staging apuntando sólo al Supabase sandbox.
+6. Realizar QA/UAT completo en sandbox.
+7. Documentar resultados y cualquier decisión de producto.
+8. Solicitar aprobación explícita para promoción.
 9. Antes de cualquier cambio destructivo de producción, verificar backup/restorable point o dump lógico.
-10. Promover migraciones/Edge Functions a producción de forma explícita y auditable.
+10. Sólo con aprobación: promover código, migraciones y Edge Functions a producción de forma explícita y auditable.
 11. Ejecutar smoke productivo y verificar métricas/regresiones.
 
 ## Estado para F11
@@ -138,6 +153,4 @@ Gates de infraestructura cerrados:
 - [x] Vercel Preview con URL + publishable key del sandbox y build `success` con guard activo.
 - [x] CI del commit de validación final en verde.
 
-El sandbox/staging está técnicamente listo para F11. El PR #28 queda pendiente de aprobación para merge a `main`; ese merge entra al flujo productivo y no se ejecuta sin aprobación explícita.
-
-Después del merge, el siguiente trabajo funcional es F11 comenzando por SF-108, reutilizando FL-10, FL-11 y M05 del Documento Maestro.
+El sandbox/staging está listo. F11 puede iniciar por SF-108 sin mergear a `main`. La promoción productiva queda bloqueada hasta UAT explícitamente aprobado.
