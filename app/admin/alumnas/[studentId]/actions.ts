@@ -102,6 +102,18 @@ async function invokeStudentAccess(
   };
 }
 
+export async function provisionStudentAccess(
+  studentId: string,
+): Promise<ProvisionStudentAccessResult> {
+  return invokeStudentAccess(studentId, "provision");
+}
+
+export async function resetStudentTemporaryPassword(
+  studentId: string,
+): Promise<ProvisionStudentAccessResult> {
+  return invokeStudentAccess(studentId, "reset");
+}
+
 async function getAcquisitionEditContext(studentId: string, acquisitionId: string) {
   const ctx = await getAdminContext();
   if (!ctx.can(CAPABILITIES.SALES_WRITE) && !ctx.can(CAPABILITIES.PRODUCTS_WRITE)) {
@@ -125,18 +137,6 @@ function revalidateAcquisitionViews(studentId: string) {
   revalidatePath("/admin/alumnas");
   revalidatePath("/student");
   revalidatePath("/student/paquete");
-}
-
-export async function provisionStudentAccess(
-  studentId: string,
-): Promise<ProvisionStudentAccessResult> {
-  return invokeStudentAccess(studentId, "provision");
-}
-
-export async function resetStudentTemporaryPassword(
-  studentId: string,
-): Promise<ProvisionStudentAccessResult> {
-  return invokeStudentAccess(studentId, "reset");
 }
 
 export async function updateStudent(formData: FormData) {
