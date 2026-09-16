@@ -8,14 +8,17 @@ function source(path: string) {
 }
 
 describe("F11 coach shell contract", () => {
-  it("keeps Coach as a separate protected portal", () => {
+  it("keeps Coach as a separate protected portal without regressing the password hotfix", () => {
     const actions = source("app/auth/actions.ts");
     const loginCard = source("app/login/login-card.tsx");
     const context = source("lib/auth/coach-context.ts");
 
     expect(actions).toContain("CAPABILITIES.INSTRUCTOR_PORTAL");
     expect(actions).toContain('redirect("/coach")');
+    expect(actions).toContain("Supabase Auth rejected sign-in");
     expect(loginCard).toContain('mode: "admin" | "coach" | "student"');
+    expect(loginCard).toContain('type={passwordVisible ? "text" : "password"}');
+    expect(loginCard).toContain('title: "Coach"');
     expect(context).toContain('redirect("/login/coach")');
     expect(context).toContain("CAPABILITIES.INSTRUCTOR_PORTAL");
   });
@@ -29,12 +32,14 @@ describe("F11 coach shell contract", () => {
     expect(context).not.toContain("student_id");
   });
 
-  it("does not implement roster or arbitrary student access in SF-108", () => {
-    const coachHome = source("app/coach/page.tsx");
+  it("keeps student and reservation access out of the generic Coach context", () => {
     const context = source("lib/auth/coach-context.ts");
+    const coachHome = source("app/coach/page.tsx");
+    const detail = source("app/coach/clases/[sessionId]/page.tsx");
 
-    expect(coachHome).toContain("El listado de Hoy, Mañana y calendario se incorpora en SF-109");
     expect(context).not.toContain('.from("students")');
     expect(context).not.toContain('.from("reservations")');
+    expect(coachHome).toContain('supabase.rpc("coach_my_sessions"');
+    expect(detail).toContain('supabase.rpc("coach_session_detail"');
   });
 });
