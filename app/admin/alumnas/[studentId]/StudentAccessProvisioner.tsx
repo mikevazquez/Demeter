@@ -6,8 +6,13 @@ import { provisionStudentAccess } from "./actions";
 const errorCopy: Record<string, string> = {
   invalid_request: "No se pudo identificar a la alumna.",
   student_not_found: "No se encontró el expediente de la alumna.",
+  student_lookup_failed: "No se pudo consultar el expediente de la alumna.",
+  student_person_missing: "El expediente de la alumna no tiene una persona vinculada.",
   student_not_active: "Activa a la alumna antes de habilitar su acceso.",
   student_already_linked: "Esta alumna ya tiene una cuenta de acceso vinculada.",
+  unauthenticated: "Tu sesión administrativa expiró. Vuelve a iniciar sesión e inténtalo de nuevo.",
+  forbidden: "Tu cuenta no tiene permiso para habilitar accesos al portal.",
+  authorization_failed: "No se pudo validar tu permiso administrativo.",
   auth_phone_exists:
     "Ese teléfono ya existe en Auth pero no está vinculado a este expediente. No se enlazó automáticamente por seguridad.",
   auth_create_failed: "Supabase Auth no pudo crear la cuenta.",
