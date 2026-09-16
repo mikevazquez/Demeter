@@ -39,7 +39,8 @@ function parseProductForm(formData: FormData) {
   let validityDays: number | null;
 
   if (isEnrollment) {
-    validityDays = isEnrollment && !validityRaw ? null : parsePositiveInt(validityRaw, "validity_days");
+    validityDays =
+      isEnrollment && !validityRaw ? null : parsePositiveInt(validityRaw, "validity_days");
   } else if (isPackageLike) {
     if (!PACKAGE_TERMS.has(packageTermRaw)) throw new Error("package_term_invalid");
     packageTerm = packageTermRaw;
