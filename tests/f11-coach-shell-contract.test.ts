@@ -13,11 +13,11 @@ describe("F11 coach shell contract", () => {
     const loginCard = source("app/login/login-card.tsx");
     const context = source("lib/auth/coach-context.ts");
 
-    expect(actions).toContain('CAPABILITIES.INSTRUCTOR_PORTAL');
+    expect(actions).toContain("CAPABILITIES.INSTRUCTOR_PORTAL");
     expect(actions).toContain('redirect("/coach")');
     expect(loginCard).toContain('mode: "admin" | "coach" | "student"');
     expect(context).toContain('redirect("/login/coach")');
-    expect(context).toContain('CAPABILITIES.INSTRUCTOR_PORTAL');
+    expect(context).toContain("CAPABILITIES.INSTRUCTOR_PORTAL");
   });
 
   it("requires an active instructor linked through the current membership person", () => {
@@ -33,7 +33,9 @@ describe("F11 coach shell contract", () => {
     const coachHome = source("app/coach/page.tsx");
     const context = source("lib/auth/coach-context.ts");
 
-    expect(coachHome).toContain("El listado de Hoy, Mañana y calendario se incorpora en SF-109");
+    expect(coachHome).toContain(
+      "El listado de Hoy, Mañana y calendario se incorpora en SF-109",
+    );
     expect(context).not.toContain('.from("students")');
     expect(context).not.toContain('.from("reservations")');
   });
