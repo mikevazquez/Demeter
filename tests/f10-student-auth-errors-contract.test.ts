@@ -34,11 +34,20 @@ describe("F10 student auth login contracts", () => {
     expect(edgeFunction).toContain("adminClient.auth.admin.updateUserById(student.user_id");
   });
 
-  it("keeps normal bad credentials generic", () => {
+  it("keeps credential failures generic but separates unexpected Auth failures", () => {
     const actions = source("app/auth/actions.ts");
     const card = source("app/login/login-card.tsx");
 
-    expect(actions).toContain("redirect(`${loginPath(mode)}?error=invalid`)");
+    expect(actions).toContain('details.code === "invalid_credentials"');
+    expect(actions).toContain('details.code === "over_request_rate_limit"');
+    expect(actions).toContain('console.error("[auth.signIn] Supabase Auth rejected sign-in"');
+    expect(actions).toContain("authError.message.slice(0, 160)");
     expect(card).toContain('invalid: "El teléfono o la contraseña no son correctos."');
+    expect(card).toContain(
+      'auth: "No se pudo validar el acceso en este momento. Vuelve a intentarlo."',
+    );
+    expect(card).toContain(
+      'rate: "Hay demasiados intentos de acceso. Espera un momento y vuelve a intentar."',
+    );
   });
 });
