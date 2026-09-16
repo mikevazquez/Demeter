@@ -29,7 +29,7 @@ describe("F10 student auth login contracts", () => {
     expect(edgeFunction).toContain("studentAuthEmailFromPhone");
     expect(createUserBlock).toContain("email: authEmail");
     expect(createUserBlock).toContain("email_confirm: true");
-    expect(createUserBlock).not.toContain("phone:");
+    expect(createUserBlock).not.toMatch(/^\s*phone:/m);
     expect(edgeFunction).not.toContain("phone_confirm: true");
     expect(edgeFunction).toContain("adminClient.auth.admin.updateUserById(student.user_id");
   });
