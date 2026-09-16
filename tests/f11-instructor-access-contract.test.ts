@@ -56,7 +56,7 @@ describe("F11 instructor access provisioning", () => {
     );
 
     expect(edge).toContain("instructor_email_required");
-    expect(edge).toContain("auth_login_exists");
+    expect(edge).toContain("auth_create_failed");
     expect(edge).not.toContain("listUsers");
     expect(profile).toContain("InstructorAccessProvisioner");
     expect(component).toContain("Habilitar acceso Coach");
