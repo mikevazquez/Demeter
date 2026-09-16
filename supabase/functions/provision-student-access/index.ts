@@ -12,6 +12,13 @@ function jsonResponse(body: Record<string, unknown>, status = 200) {
   });
 }
 
+function studentAuthEmailFromPhone(phone: string) {
+  const digits = phone.replace(/\D/g, "");
+  if (!/^[1-9][0-9]{7,14}$/.test(digits)) return null;
+
+  return `student.${digits}@auth.studioflow.invalid`;
+}
+
 function randomCharacter(characters: string) {
   const bytes = new Uint32Array(1);
   crypto.getRandomValues(bytes);
@@ -82,6 +89,9 @@ const handler = {
       return jsonResponse({ error: "student_not_active" }, 409);
     }
 
+    const authEmail = studentAuthEmailFromPhone(student.phone);
+    if (!authEmail) return jsonResponse({ error: "student_phone_invalid" }, 409);
+
     const { data: callerMembership, error: membershipError } = await userClient
       .from("studio_memberships")
       .select("role, active")
@@ -140,6 +150,8 @@ const handler = {
       }
 
       const { error: resetError } = await adminClient.auth.admin.updateUserById(student.user_id, {
+        email: authEmail,
+        email_confirm: true,
         password: temporaryPassword,
       });
 
@@ -156,10 +168,10 @@ const handler = {
     if (student.user_id) return jsonResponse({ error: "student_already_linked" }, 409);
 
     const { data: createdUser, error: createError } = await adminClient.auth.admin.createUser({
-      phone: student.phone,
+      email: authEmail,
       password: temporaryPassword,
-      phone_confirm: true,
-      user_metadata: { full_name: student.full_name },
+      email_confirm: true,
+      user_metadata: { full_name: student.full_name, login_phone: student.phone },
     });
 
     if (createError || !createdUser.user) {
@@ -167,7 +179,7 @@ const handler = {
       const duplicate =
         message.includes("already") || message.includes("registered") || message.includes("exists");
       return jsonResponse(
-        { error: duplicate ? "auth_phone_exists" : "auth_create_failed" },
+        { error: duplicate ? "auth_login_exists" : "auth_create_failed" },
         duplicate ? 409 : 500,
       );
     }

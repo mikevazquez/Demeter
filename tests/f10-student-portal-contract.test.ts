@@ -92,7 +92,8 @@ describe("F10 student portal contracts", () => {
     expect(edgeFunction).not.toContain('await adminClient\n      .from("students")');
     expect(edgeFunction).toContain('.eq("capability_key", "settings.write")');
     expect(edgeFunction).toContain("auth.admin.createUser");
-    expect(edgeFunction).toContain("phone_confirm: true");
+    expect(edgeFunction).toContain("email_confirm: true");
+    expect(edgeFunction).not.toContain("phone_confirm: true");
     expect(edgeFunction).toContain('rpc("service_link_student_access"');
     expect(edgeFunction).not.toContain("SUPABASE_SERVICE_ROLE_KEY");
     expect(edgeFunction).not.toContain("SUPABASE_ANON_KEY");
