@@ -7,23 +7,36 @@ function source(path: string) {
   return readFileSync(join(process.cwd(), path), "utf8");
 }
 
-describe("F10 student auth diagnostics", () => {
-  it("distinguishes disabled phone auth from invalid credentials", () => {
+describe("F10 student auth login contracts", () => {
+  it("keeps phone as the visible login while Auth uses an internal email alias", () => {
     const actions = source("app/auth/actions.ts");
+    const helper = source("lib/auth/student-login-identifier.ts");
     const card = source("app/login/login-card.tsx");
 
-    expect(actions).toContain('error.code === "phone_provider_disabled"');
-    expect(actions).toContain('message.includes("phone logins are disabled")');
-    expect(actions).toContain('return "phone_disabled"');
-    expect(card).toContain("phone_disabled:");
-    expect(card).toContain("Habilita Phone en Authentication → Providers");
+    expect(actions).toContain("studentAuthEmailFromPhone");
+    expect(actions).toContain("{ email: studentAuthEmail!, password }");
+    expect(actions).not.toContain("{ phone: phone!, password }");
+    expect(helper).toContain("@auth.studioflow.invalid");
+    expect(card).toContain("Accede con el teléfono registrado en el estudio y tu contraseña.");
+    expect(card).not.toContain("Habilita Phone en Authentication → Providers");
+  });
+
+  it("provisions and migrates student Auth without Phone provider or SMS", () => {
+    const edgeFunction = source("supabase/functions/provision-student-access/index.ts");
+
+    expect(edgeFunction).toContain("studentAuthEmailFromPhone");
+    expect(edgeFunction).toContain("email: authEmail");
+    expect(edgeFunction).toContain("email_confirm: true");
+    expect(edgeFunction).not.toContain("phone_confirm: true");
+    expect(edgeFunction).not.toContain("phone: student.phone,");
+    expect(edgeFunction).toContain("adminClient.auth.admin.updateUserById(student.user_id");
   });
 
   it("keeps normal bad credentials generic", () => {
     const actions = source("app/auth/actions.ts");
     const card = source("app/login/login-card.tsx");
 
-    expect(actions).toContain('return "invalid"');
+    expect(actions).toContain('redirect(`${loginPath(mode)}?error=invalid`)');
     expect(card).toContain('invalid: "El teléfono o la contraseña no son correctos."');
   });
 });
