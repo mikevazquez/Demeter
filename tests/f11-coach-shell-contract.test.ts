@@ -33,9 +33,7 @@ describe("F11 coach shell contract", () => {
     const coachHome = source("app/coach/page.tsx");
     const context = source("lib/auth/coach-context.ts");
 
-    expect(coachHome).toContain(
-      "El listado de Hoy, Mañana y calendario se incorpora en SF-109",
-    );
+    expect(coachHome).toContain("El listado de Hoy, Mañana y calendario se incorpora en SF-109");
     expect(context).not.toContain('.from("students")');
     expect(context).not.toContain('.from("reservations")');
   });
