@@ -15,6 +15,9 @@ describe("F10 student portal contracts", () => {
   const personRlsMigration = source(
     "supabase/migrations/20260916012957_f10_harden_student_person_identity_rls.sql",
   );
+  const serviceLinkMigration = source(
+    "supabase/migrations/20260916023708_f10_service_link_security_definer.sql",
+  );
 
   it("resolves the student from auth.uid instead of accepting a client student id", () => {
     expect(portalMigration).toMatch(/s\.user_id\s*=\s*\(select auth\.uid\(\)\)/);
@@ -101,6 +104,22 @@ describe("F10 student portal contracts", () => {
     expect(accessLayout).toContain("CAPABILITIES.SETTINGS_WRITE");
     expect(adminAction).not.toContain("SUPABASE_SERVICE_ROLE_KEY");
     expect(adminAction).not.toContain("service_role");
+  });
+
+  it("keeps the privileged student linker service-role only", () => {
+    expect(serviceLinkMigration).toContain(
+      "alter function public.service_link_student_access(uuid, uuid) security definer",
+    );
+    expect(serviceLinkMigration).toContain(
+      "alter function public.service_link_student_access(uuid, uuid) set search_path = ''",
+    );
+    expect(serviceLinkMigration).toContain(
+      "revoke all on function public.service_link_student_access(uuid, uuid) from public, anon, authenticated",
+    );
+    expect(serviceLinkMigration).toContain(
+      "grant execute on function public.service_link_student_access(uuid, uuid) to service_role",
+    );
+    expect(serviceLinkMigration).not.toContain("grant execute on function public.service_link_student_access(uuid, uuid) to authenticated");
   });
 
   it("never writes auth.users from business SQL", () => {
