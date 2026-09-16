@@ -101,15 +101,12 @@ export default async function CoachClassDetailPage({
         ) : null}
 
         <div className="border-t border-white/10 p-6 sm:p-8">
-          <div className="rounded-2xl border border-fuchsia-500/20 bg-fuchsia-500/[0.07] p-4">
-            <p className="text-sm font-semibold text-white">
-              Siguiente paso: roster y asistencia
-            </p>
-            <p className="mt-1 text-sm leading-6 text-zinc-400">
-              SF-111 conectará aquí únicamente a las alumnas inscritas en esta
-              clase y reutilizará el motor de asistencia aprobado en F8.
-            </p>
-          </div>
+          <Link
+            href={`/coach/clases/${sessionId}/roster`}
+            className="block rounded-xl bg-fuchsia-600 px-4 py-3 text-center text-sm font-semibold text-white transition hover:bg-fuchsia-500"
+          >
+            Ver roster
+          </Link>
         </div>
       </section>
     </main>
