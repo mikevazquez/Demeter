@@ -84,8 +84,8 @@ export default async function StudentProfileLayout({
             </div>
           ) : student.user_id ? (
             <div className="notice error">
-              El expediente tiene un vínculo de usuario incompleto o inconsistente. No se creará otra
-              cuenta automáticamente; hay que corregir el enlace existente.
+              El expediente tiene un vínculo de usuario incompleto o inconsistente. No se creará
+              otra cuenta automáticamente; hay que corregir el enlace existente.
             </div>
           ) : student.active && student.lifecycle_status === "active" ? (
             <StudentAccessProvisioner studentId={student.id} phone={student.phone} />

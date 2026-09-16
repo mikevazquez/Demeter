@@ -8,9 +8,7 @@ function source(path: string) {
 }
 
 describe("F10 student portal contracts", () => {
-  const portalMigration = source(
-    "supabase/migrations/20260916003136_f10_student_portal_core.sql",
-  );
+  const portalMigration = source("supabase/migrations/20260916003136_f10_student_portal_core.sql");
   const accessMigration = source(
     "supabase/migrations/20260916012349_f10_student_access_provisioning.sql",
   );
@@ -33,7 +31,9 @@ describe("F10 student portal contracts", () => {
   it("reuses the canonical booking engines", () => {
     expect(portalMigration).toContain("public.booking_eligibility(target_session_id,v_student.id)");
     expect(portalMigration).toContain("public.book_student(target_session_id,v_student.id)");
-    expect(portalMigration).toContain("public.cancel_reservation(target_reservation_id,target_reason)");
+    expect(portalMigration).toContain(
+      "public.cancel_reservation(target_reservation_id,target_reason)",
+    );
   });
 
   it("keeps commercial data read-only for students", () => {
@@ -106,7 +106,9 @@ describe("F10 student portal contracts", () => {
     const activation = source("app/login/student/activar/actions.ts");
     const portal = source("lib/student/portal.ts");
     expect(login).toContain('redirect("/login/student/activar")');
-    expect(portal).toContain('if (account.must_change_password) redirect("/login/student/activar")');
+    expect(portal).toContain(
+      'if (account.must_change_password) redirect("/login/student/activar")',
+    );
     expect(activation).toContain("supabase.auth.updateUser({ password })");
     expect(activation).toContain('supabase.rpc("student_complete_password_activation")');
   });

@@ -18,7 +18,9 @@ export default async function StudentDocumentsPage() {
         </div>
         <h2 className="mt-4 text-xl font-semibold text-white">Se habilitará en F12</h2>
         <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-zinc-400">
-          El Documento Maestro asigna versiones, documentos pendientes y aceptación a la fase de Documentos/Configuración. F10 sólo deja preparado el acceso desde tu perfil; no mostraremos documentos ficticios ni estados simulados.
+          El Documento Maestro asigna versiones, documentos pendientes y aceptación a la fase de
+          Documentos/Configuración. F10 sólo deja preparado el acceso desde tu perfil; no
+          mostraremos documentos ficticios ni estados simulados.
         </p>
         <Link
           href="/student/perfil"

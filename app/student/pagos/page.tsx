@@ -7,7 +7,9 @@ export default async function StudentPaymentsPage() {
     <main className="space-y-6">
       <header>
         <p className="text-sm text-fuchsia-300">Pagos</p>
-        <h1 className="mt-1 text-3xl font-semibold text-white sm:text-4xl">Tu historial de pagos</h1>
+        <h1 className="mt-1 text-3xl font-semibold text-white sm:text-4xl">
+          Tu historial de pagos
+        </h1>
         <p className="mt-2 text-sm text-zinc-400">
           Consulta pagos y reembolsos registrados en tus ventas del estudio.
         </p>
@@ -62,7 +64,8 @@ export default async function StudentPaymentsPage() {
       </section>
 
       <p className="text-xs leading-5 text-zinc-500">
-        Este historial refleja los movimientos comerciales guardados en Studio Flow. La generación de comprobantes descargables no forma parte de F10 y no se simula en esta pantalla.
+        Este historial refleja los movimientos comerciales guardados en Studio Flow. La generación
+        de comprobantes descargables no forma parte de F10 y no se simula en esta pantalla.
       </p>
     </main>
   );

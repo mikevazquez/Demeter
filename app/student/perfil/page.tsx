@@ -48,7 +48,9 @@ export default async function StudentProfilePage({
         >
           <div>
             <h2 className="text-xl font-semibold text-white">Datos personales</h2>
-            <p className="mt-1 text-sm text-zinc-500">Puedes actualizar nombre y correo desde aquí.</p>
+            <p className="mt-1 text-sm text-zinc-500">
+              Puedes actualizar nombre y correo desde aquí.
+            </p>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
@@ -89,8 +91,8 @@ export default async function StudentProfilePage({
               className="mt-2 w-full cursor-not-allowed rounded-xl border border-white/10 bg-white/[0.03] px-3 py-3 text-zinc-500"
             />
             <span className="mt-2 block text-xs leading-5 text-zinc-500">
-              Tu teléfono se usa para iniciar sesión, pero no es el ID interno de tu cuenta. Para cambiarlo,
-              solicita el ajuste al estudio.
+              Tu teléfono se usa para iniciar sesión, pero no es el ID interno de tu cuenta. Para
+              cambiarlo, solicita el ajuste al estudio.
             </span>
           </label>
 
@@ -108,7 +110,9 @@ export default async function StudentProfilePage({
             className="block rounded-3xl border border-white/10 bg-white/[0.03] p-5 transition hover:border-fuchsia-500/30"
           >
             <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">Mi paquete</p>
-            <p className="mt-2 font-semibold text-white">{activePackage?.name ?? "Sin paquete activo"}</p>
+            <p className="mt-2 font-semibold text-white">
+              {activePackage?.name ?? "Sin paquete activo"}
+            </p>
             <p className="mt-1 text-sm text-zinc-400">
               {activePackage
                 ? activePackage.unlimited
@@ -133,7 +137,9 @@ export default async function StudentProfilePage({
           >
             <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">Pagos</p>
             <p className="mt-2 font-semibold text-white">Historial comercial</p>
-            <p className="mt-1 text-sm text-zinc-400">Pagos, reembolsos y referencias registradas.</p>
+            <p className="mt-1 text-sm text-zinc-400">
+              Pagos, reembolsos y referencias registradas.
+            </p>
           </Link>
 
           <Link
@@ -142,7 +148,9 @@ export default async function StudentProfilePage({
           >
             <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">Documentos</p>
             <p className="mt-2 font-semibold text-white">Próxima fase</p>
-            <p className="mt-1 text-sm text-zinc-400">Versiones, pendientes y aceptación se habilitarán en F12.</p>
+            <p className="mt-1 text-sm text-zinc-400">
+              Versiones, pendientes y aceptación se habilitarán en F12.
+            </p>
           </Link>
         </aside>
       </section>

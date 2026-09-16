@@ -11,7 +11,8 @@ import {
 import { bookStudentSessionAction } from "../../actions";
 
 const errorCopy: Record<string, string> = {
-  booking_failed: "No pudimos crear la reserva. Revisa las condiciones de la clase e intenta de nuevo.",
+  booking_failed:
+    "No pudimos crear la reserva. Revisa las condiciones de la clase e intenta de nuevo.",
   forbidden: "Esta clase no pertenece a tu estudio o tu acceso no está habilitado.",
   session_not_found: "Esta clase ya no está disponible.",
 };
@@ -79,7 +80,9 @@ export default async function StudentSessionDetailPage({
           <div className="rounded-2xl bg-black/20 p-4">
             <p className="text-xs text-zinc-500">Costo de la reserva</p>
             <p className="mt-1 font-semibold text-white">
-              {session.eligibility?.unlimited ? "Incluida en ilimitado" : `${session.credit_cost} crédito${session.credit_cost === 1 ? "" : "s"}`}
+              {session.eligibility?.unlimited
+                ? "Incluida en ilimitado"
+                : `${session.credit_cost} crédito${session.credit_cost === 1 ? "" : "s"}`}
             </p>
           </div>
         </div>
@@ -117,7 +120,8 @@ export default async function StudentSessionDetailPage({
                   : `Tienes ${session.eligibility?.available_credits ?? 0} crédito(s) disponibles. Al confirmar se reservará ${session.credit_cost}.`}
               </p>
               <p className="mt-2 text-xs leading-5 text-zinc-500">
-                Cancelaciones con al menos 8 horas de anticipación devuelven el crédito. Fuera de esa ventana, el crédito se consume según la política vigente.
+                Cancelaciones con al menos 8 horas de anticipación devuelven el crédito. Fuera de
+                esa ventana, el crédito se consume según la política vigente.
               </p>
             </div>
             <form action={bookStudentSessionAction} className="mt-4">
@@ -134,7 +138,8 @@ export default async function StudentSessionDetailPage({
           <div className="mt-4 rounded-2xl border border-amber-500/20 bg-amber-500/[0.08] p-4">
             <p className="font-semibold text-amber-100">{bookingReasonCopy(reason)}</p>
             <p className="mt-2 text-sm text-zinc-400">
-              Studio Flow usa las mismas reglas de elegibilidad que administración; no se crean excepciones desde el portal.
+              Studio Flow usa las mismas reglas de elegibilidad que administración; no se crean
+              excepciones desde el portal.
             </p>
             <Link
               href="/student/paquete"

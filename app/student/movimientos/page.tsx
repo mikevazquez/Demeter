@@ -15,7 +15,9 @@ export default async function StudentMovementsPage() {
     <main className="space-y-6">
       <header>
         <p className="text-sm text-fuchsia-300">Movimientos</p>
-        <h1 className="mt-1 text-3xl font-semibold text-white sm:text-4xl">Historial de tus créditos</h1>
+        <h1 className="mt-1 text-3xl font-semibold text-white sm:text-4xl">
+          Historial de tus créditos
+        </h1>
         <p className="mt-2 text-sm text-zinc-400">
           Reservas, liberaciones, consumos y ajustes se muestran desde el ledger real de tu paquete.
         </p>

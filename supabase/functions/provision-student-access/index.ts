@@ -100,12 +100,13 @@ export default {
     if (!permission) return jsonResponse({ error: "forbidden" }, 403);
 
     const temporaryPassword = generateTemporaryPassword();
-    const { data: createdUser, error: createError } = await context.supabaseAdmin.auth.admin.createUser({
-      phone: student.phone,
-      password: temporaryPassword,
-      phone_confirm: true,
-      user_metadata: { full_name: student.full_name },
-    });
+    const { data: createdUser, error: createError } =
+      await context.supabaseAdmin.auth.admin.createUser({
+        phone: student.phone,
+        password: temporaryPassword,
+        phone_confirm: true,
+        user_metadata: { full_name: student.full_name },
+      });
 
     if (createError || !createdUser.user) {
       const message = createError?.message.toLowerCase() ?? "";

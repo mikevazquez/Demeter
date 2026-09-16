@@ -226,5 +226,5 @@ export function bookingReasonCopy(reason?: string | null) {
     session_not_bookable: "Esta clase ya no admite reservas",
     student_not_operable: "Tu perfil no está habilitado para reservar",
   };
-  return reason ? messages[reason] ?? "No disponible" : "Disponible";
+  return reason ? (messages[reason] ?? "No disponible") : "Disponible";
 }

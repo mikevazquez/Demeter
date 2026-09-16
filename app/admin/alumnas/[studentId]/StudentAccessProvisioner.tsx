@@ -15,7 +15,13 @@ const errorCopy: Record<string, string> = {
   provision_unavailable: "El servicio seguro de aprovisionamiento no está disponible.",
 };
 
-export function StudentAccessProvisioner({ studentId, phone }: { studentId: string; phone: string }) {
+export function StudentAccessProvisioner({
+  studentId,
+  phone,
+}: {
+  studentId: string;
+  phone: string;
+}) {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [credentials, setCredentials] = useState<{

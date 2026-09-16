@@ -59,7 +59,9 @@ export default async function StudentReservePage({
     <main className="space-y-6">
       <header>
         <p className="text-sm text-fuchsia-300">Reservar</p>
-        <h1 className="mt-1 text-3xl font-semibold text-white sm:text-4xl">Elige tu próxima clase</h1>
+        <h1 className="mt-1 text-3xl font-semibold text-white sm:text-4xl">
+          Elige tu próxima clase
+        </h1>
         <p className="mt-2 text-sm text-zinc-400">
           La disponibilidad y tus condiciones de reserva se validan en tiempo real.
         </p>
@@ -121,7 +123,8 @@ export default async function StudentReservePage({
 
       {!activePackage ? (
         <div className="rounded-2xl border border-amber-500/20 bg-amber-500/[0.08] px-4 py-3 text-sm text-amber-100">
-          No tienes un paquete activo. Puedes explorar las clases, pero Studio Flow te indicará qué necesitas antes de reservar.
+          No tienes un paquete activo. Puedes explorar las clases, pero Studio Flow te indicará qué
+          necesitas antes de reservar.
         </div>
       ) : null}
 
@@ -146,7 +149,9 @@ export default async function StudentReservePage({
                       {formatDateTime(session.starts_at, studio.timezone)}
                     </p>
                     <p className="mt-1 text-xs text-zinc-500">
-                      {[session.coach, session.space || session.location].filter(Boolean).join(" · ") || "Detalles en la clase"}
+                      {[session.coach, session.space || session.location]
+                        .filter(Boolean)
+                        .join(" · ") || "Detalles en la clase"}
                     </p>
                   </div>
                   <div className="text-right">
@@ -162,7 +167,9 @@ export default async function StudentReservePage({
                             : "bg-zinc-500/15 text-zinc-400"
                       }`}
                     >
-                      {reserved ? "Ya reservada" : bookingReasonCopy(session.eligibility?.reason_code)}
+                      {reserved
+                        ? "Ya reservada"
+                        : bookingReasonCopy(session.eligibility?.reason_code)}
                     </span>
                   </div>
                 </div>
