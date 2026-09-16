@@ -154,178 +154,184 @@ export default async function StudentHomePage({
         </div>
       </section>
 
-      <section className="rounded-3xl border border-white/10 bg-white/[0.03] p-4 sm:p-5">
-        <div className="mb-4 flex items-center justify-between gap-3">
-          {weekStart > currentWeekStart ? (
+      <div className="flex flex-col gap-6">
+        <section
+          className={`${snapshot.upcoming.length ? "order-2" : "order-1"} rounded-3xl border border-white/10 bg-white/[0.03] p-4 sm:p-5`}
+        >
+          <div className="mb-4 flex items-center justify-between gap-3">
+            {weekStart > currentWeekStart ? (
+              <Link
+                href={`/student?date=${previousWeekDate < today ? today : previousWeekDate}`}
+                aria-label="Semana anterior"
+                className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-black/20 text-xl text-white transition hover:bg-white/[0.06]"
+              >
+                ‹
+              </Link>
+            ) : (
+              <span
+                aria-hidden="true"
+                className="flex h-10 w-10 items-center justify-center rounded-full border border-white/5 text-xl text-zinc-700"
+              >
+                ‹
+              </span>
+            )}
+
+            <div className="text-center">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-zinc-500">
+                Clases del día
+              </p>
+              <p className="mt-1 text-sm font-medium text-zinc-300">
+                {shortDate(weekStart)} – {shortDate(weekEnd)}
+              </p>
+            </div>
+
             <Link
-              href={`/student?date=${previousWeekDate < today ? today : previousWeekDate}`}
-              aria-label="Semana anterior"
+              href={`/student?date=${nextWeekDate}`}
+              aria-label="Semana siguiente"
               className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-black/20 text-xl text-white transition hover:bg-white/[0.06]"
             >
-              ‹
+              ›
             </Link>
-          ) : (
-            <span
-              aria-hidden="true"
-              className="flex h-10 w-10 items-center justify-center rounded-full border border-white/5 text-xl text-zinc-700"
-            >
-              ‹
-            </span>
-          )}
-
-          <div className="text-center">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-zinc-500">
-              Clases del día
-            </p>
-            <p className="mt-1 text-sm font-medium text-zinc-300">
-              {shortDate(weekStart)} – {shortDate(weekEnd)}
-            </p>
           </div>
 
-          <Link
-            href={`/student?date=${nextWeekDate}`}
-            aria-label="Semana siguiente"
-            className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-black/20 text-xl text-white transition hover:bg-white/[0.06]"
-          >
-            ›
-          </Link>
-        </div>
+          <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
+            {days.map((day) => {
+              const chip = dateChip(day);
+              const isPast = day < today;
+              const isSelected = day === selectedDate;
+              const className = `rounded-2xl px-1 py-3 text-center transition ${
+                isSelected
+                  ? "bg-fuchsia-600 text-white"
+                  : isPast
+                    ? "border border-white/5 bg-black/10 text-zinc-700"
+                    : "border border-white/10 bg-black/20 text-zinc-400 hover:text-white"
+              }`;
+              const content = (
+                <>
+                  <span className="block text-[11px] capitalize sm:text-xs">{chip.weekday}</span>
+                  <strong className="mt-1 block text-base sm:text-lg">{chip.day}</strong>
+                </>
+              );
 
-        <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
-          {days.map((day) => {
-            const chip = dateChip(day);
-            const isPast = day < today;
-            const isSelected = day === selectedDate;
-            const className = `rounded-2xl px-1 py-3 text-center transition ${
-              isSelected
-                ? "bg-fuchsia-600 text-white"
-                : isPast
-                  ? "border border-white/5 bg-black/10 text-zinc-700"
-                  : "border border-white/10 bg-black/20 text-zinc-400 hover:text-white"
-            }`;
-            const content = (
-              <>
-                <span className="block text-[11px] capitalize sm:text-xs">{chip.weekday}</span>
-                <strong className="mt-1 block text-base sm:text-lg">{chip.day}</strong>
-              </>
-            );
+              return isPast ? (
+                <span key={day} className={className} aria-disabled="true">
+                  {content}
+                </span>
+              ) : (
+                <Link key={day} href={`/student?date=${day}`} className={className}>
+                  {content}
+                </Link>
+              );
+            })}
+          </div>
 
-            return isPast ? (
-              <span key={day} className={className} aria-disabled="true">
-                {content}
-              </span>
-            ) : (
-              <Link key={day} href={`/student?date=${day}`} className={className}>
-                {content}
-              </Link>
-            );
-          })}
-        </div>
+          <div className="mt-5">
+            <h2 className="text-xl font-semibold capitalize text-white">
+              {longDate(selectedDate)}
+            </h2>
+            {scheduleError ? (
+              <p className="mt-3 text-sm text-rose-200">No pudimos cargar las clases del día.</p>
+            ) : null}
 
-        <div className="mt-5">
-          <h2 className="text-xl font-semibold capitalize text-white">{longDate(selectedDate)}</h2>
-          {scheduleError ? (
-            <p className="mt-3 text-sm text-rose-200">No pudimos cargar las clases del día.</p>
-          ) : null}
+            <div className="mt-4 space-y-3">
+              {daySessions.length ? (
+                daySessions.map((session) => {
+                  const reservation = snapshot.upcoming.find(
+                    (item) => item.session_id === session.session_id,
+                  );
+                  const reserved = Boolean(reservation);
+                  const eligible = Boolean(session.eligibility?.eligible);
 
-          <div className="mt-4 space-y-3">
-            {daySessions.length ? (
-              daySessions.map((session) => {
-                const reservation = snapshot.upcoming.find(
-                  (item) => item.session_id === session.session_id,
-                );
-                const reserved = Boolean(reservation);
-                const eligible = Boolean(session.eligibility?.eligible);
-
-                return (
-                  <article
-                    key={session.session_id}
-                    className="rounded-2xl border border-white/10 bg-black/20 p-4"
-                  >
-                    <div className="flex flex-wrap items-start justify-between gap-4">
-                      <div>
-                        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-fuchsia-300">
-                          {session.discipline}
-                        </p>
-                        <h3 className="mt-1 font-semibold text-white">{session.activity}</h3>
-                        <p className="mt-1 text-sm text-zinc-400">
-                          {formatDateTime(session.starts_at, studio.timezone)}
-                        </p>
-                        <p className="mt-1 text-xs text-zinc-500">
-                          {[session.coach, session.space || session.location]
-                            .filter(Boolean)
-                            .join(" · ") || "Detalles en la clase"}
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-sm font-semibold text-white">
-                          {session.spots_available}/{session.capacity} lugares
-                        </p>
-                        <span
-                          className={`mt-2 inline-block rounded-full px-2.5 py-1 text-xs font-medium ${
-                            reserved
-                              ? "bg-sky-500/15 text-sky-300"
-                              : eligible
-                                ? "bg-emerald-500/15 text-emerald-300"
-                                : "bg-zinc-500/15 text-zinc-400"
-                          }`}
-                        >
-                          {reserved
-                            ? "Reservada"
-                            : bookingReasonCopy(session.eligibility?.reason_code)}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="mt-4 flex flex-wrap items-center gap-3">
-                      <Link
-                        href={`/student/reservar/${session.session_id}`}
-                        className="text-sm font-semibold text-fuchsia-300"
-                      >
-                        Ver detalle
-                      </Link>
-                      {reservation ? (
-                        <details className="group">
-                          <summary className="cursor-pointer list-none text-sm font-semibold text-rose-300">
-                            Cancelar
-                          </summary>
-                          <form
-                            action={cancelStudentReservationAction}
-                            className="mt-3 rounded-xl border border-rose-500/20 bg-rose-500/[0.06] p-3"
+                  return (
+                    <article
+                      key={session.session_id}
+                      className="rounded-2xl border border-white/10 bg-black/20 p-4"
+                    >
+                      <div className="flex flex-wrap items-start justify-between gap-4">
+                        <div>
+                          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-fuchsia-300">
+                            {session.discipline}
+                          </p>
+                          <h3 className="mt-1 font-semibold text-white">{session.activity}</h3>
+                          <p className="mt-1 text-sm text-zinc-400">
+                            {formatDateTime(session.starts_at, studio.timezone)}
+                          </p>
+                          <p className="mt-1 text-xs text-zinc-500">
+                            {[session.coach, session.space || session.location]
+                              .filter(Boolean)
+                              .join(" · ") || "Detalles en la clase"}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm font-semibold text-white">
+                            {session.spots_available}/{session.capacity} lugares
+                          </p>
+                          <span
+                            className={`mt-2 inline-block rounded-full px-2.5 py-1 text-xs font-medium ${
+                              reserved
+                                ? "bg-sky-500/15 text-sky-300"
+                                : eligible
+                                  ? "bg-emerald-500/15 text-emerald-300"
+                                  : "bg-zinc-500/15 text-zinc-400"
+                            }`}
                           >
-                            <input
-                              type="hidden"
-                              name="reservation_id"
-                              value={reservation.reservation_id}
-                            />
-                            <input type="hidden" name="return_to" value="/student" />
-                            <p className="text-xs leading-5 text-zinc-400">
-                              Se aplicará la política vigente de cancelación al confirmar.
-                            </p>
-                            <button
-                              type="submit"
-                              className="mt-3 rounded-lg border border-rose-400/30 px-3 py-2 text-xs font-semibold text-rose-200"
-                            >
-                              Confirmar cancelación
-                            </button>
-                          </form>
-                        </details>
-                      ) : null}
-                    </div>
-                  </article>
-                );
-              })
-            ) : (
-              <div className="rounded-2xl border border-dashed border-white/10 p-6 text-center">
-                <p className="text-sm text-zinc-400">No hay clases disponibles para este día.</p>
-              </div>
-            )}
-          </div>
-        </div>
-      </section>
+                            {reserved
+                              ? "Reservada"
+                              : bookingReasonCopy(session.eligibility?.reason_code)}
+                          </span>
+                        </div>
+                      </div>
 
-      <section className="grid gap-4 xl:grid-cols-[1.4fr_0.8fr]">
-        <article className="rounded-3xl border border-white/10 bg-white/[0.03] p-5 sm:p-6">
+                      <div className="mt-4 flex flex-wrap items-center gap-3">
+                        <Link
+                          href={`/student/reservar/${session.session_id}`}
+                          className="text-sm font-semibold text-fuchsia-300"
+                        >
+                          Ver detalle
+                        </Link>
+                        {reservation ? (
+                          <details className="group">
+                            <summary className="cursor-pointer list-none text-sm font-semibold text-rose-300">
+                              Cancelar
+                            </summary>
+                            <form
+                              action={cancelStudentReservationAction}
+                              className="mt-3 rounded-xl border border-rose-500/20 bg-rose-500/[0.06] p-3"
+                            >
+                              <input
+                                type="hidden"
+                                name="reservation_id"
+                                value={reservation.reservation_id}
+                              />
+                              <input type="hidden" name="return_to" value="/student" />
+                              <p className="text-xs leading-5 text-zinc-400">
+                                Se aplicará la política vigente de cancelación al confirmar.
+                              </p>
+                              <button
+                                type="submit"
+                                className="mt-3 rounded-lg border border-rose-400/30 px-3 py-2 text-xs font-semibold text-rose-200"
+                              >
+                                Confirmar cancelación
+                              </button>
+                            </form>
+                          </details>
+                        ) : null}
+                      </div>
+                    </article>
+                  );
+                })
+              ) : (
+                <div className="rounded-2xl border border-dashed border-white/10 p-6 text-center">
+                  <p className="text-sm text-zinc-400">No hay clases disponibles para este día.</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </section>
+
+        <section
+          className={`${snapshot.upcoming.length ? "order-1" : "order-2"} rounded-3xl border border-white/10 bg-white/[0.03] p-5 sm:p-6`}
+        >
           <div className="flex items-center justify-between gap-4">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500">
@@ -402,9 +408,9 @@ export default async function StudentHomePage({
               </div>
             )}
           </div>
-        </article>
+        </section>
 
-        <article className="rounded-3xl border border-white/10 bg-white/[0.03] p-5 sm:p-6">
+        <section className="order-3 rounded-3xl border border-white/10 bg-white/[0.03] p-5 sm:p-6">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500">
             Tu actividad
           </p>
@@ -425,8 +431,8 @@ export default async function StudentHomePage({
               </strong>
             </div>
           </div>
-        </article>
-      </section>
+        </section>
+      </div>
     </main>
   );
 }
