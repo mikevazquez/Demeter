@@ -108,20 +108,22 @@ const handler = {
     if (mode === "reset") {
       if (!student.user_id) return jsonResponse({ error: "student_access_missing" }, 409);
 
-      const [{ data: account, error: accountError }, { data: targetMembership, error: targetError }] =
-        await Promise.all([
-          userClient
-            .from("user_accounts")
-            .select("status, must_change_password")
-            .eq("id", student.user_id)
-            .maybeSingle(),
-          userClient
-            .from("studio_memberships")
-            .select("role, active")
-            .eq("studio_id", student.studio_id)
-            .eq("user_id", student.user_id)
-            .maybeSingle(),
-        ]);
+      const [
+        { data: account, error: accountError },
+        { data: targetMembership, error: targetError },
+      ] = await Promise.all([
+        userClient
+          .from("user_accounts")
+          .select("status, must_change_password")
+          .eq("id", student.user_id)
+          .maybeSingle(),
+        userClient
+          .from("studio_memberships")
+          .select("role, active")
+          .eq("studio_id", student.studio_id)
+          .eq("user_id", student.user_id)
+          .maybeSingle(),
+      ]);
 
       if (accountError || targetError) return jsonResponse({ error: "access_lookup_failed" }, 500);
       if (

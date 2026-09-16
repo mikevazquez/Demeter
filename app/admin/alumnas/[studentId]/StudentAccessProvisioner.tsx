@@ -127,8 +127,8 @@ function StudentCredentialAction({
           </>
         ) : (
           <>
-            La cuenta ya existe y sigue pendiente de activación. Puedes generar una nueva
-            contraseña temporal para <strong>{phone}</strong>; la anterior dejará de funcionar.
+            La cuenta ya existe y sigue pendiente de activación. Puedes generar una nueva contraseña
+            temporal para <strong>{phone}</strong>; la anterior dejará de funcionar.
           </>
         )}
       </p>
