@@ -19,6 +19,10 @@ function errorCode(error: { message?: string } | null, fallback: string) {
   return known.find((item) => error.message?.includes(item)) ?? fallback;
 }
 
+function cancellationReturnPath(formData: FormData) {
+  return String(formData.get("return_to") ?? "") === "/student" ? "/student" : "/student/mis-clases";
+}
+
 export async function bookStudentSessionAction(formData: FormData) {
   const sessionId = String(formData.get("session_id") ?? "").trim();
   if (!sessionId) redirect("/student/reservar?error=session_required");
@@ -58,7 +62,8 @@ export async function bookStudentSessionAction(formData: FormData) {
 export async function cancelStudentReservationAction(formData: FormData) {
   const reservationId = String(formData.get("reservation_id") ?? "").trim();
   const reason = String(formData.get("reason") ?? "").trim() || null;
-  if (!reservationId) redirect("/student/mis-clases?error=reservation_required");
+  const returnPath = cancellationReturnPath(formData);
+  if (!reservationId) redirect(`${returnPath}?error=reservation_required`);
 
   const { supabase } = await getStudentPortalContext();
   const { data, error } = await supabase.rpc("student_cancel_own_reservation", {
@@ -67,13 +72,13 @@ export async function cancelStudentReservationAction(formData: FormData) {
   });
 
   if (error) {
-    redirect(`/student/mis-clases?error=${errorCode(error, "cancel_failed")}`);
+    redirect(`${returnPath}?error=${errorCode(error, "cancel_failed")}`);
   }
 
   const result = data as { ok?: boolean; reason_code?: string | null; status?: string } | null;
   if (!result?.ok) {
     redirect(
-      `/student/mis-clases?error=${encodeURIComponent(result?.reason_code ?? "cancel_failed")}`,
+      `${returnPath}?error=${encodeURIComponent(result?.reason_code ?? "cancel_failed")}`,
     );
   }
 
@@ -83,18 +88,16 @@ export async function cancelStudentReservationAction(formData: FormData) {
   revalidatePath("/student/paquete");
   revalidatePath("/student/movimientos");
 
-  redirect(`/student/mis-clases?cancelled=${encodeURIComponent(result.status ?? "cancelled")}`);
+  redirect(`${returnPath}?cancelled=${encodeURIComponent(result.status ?? "cancelled")}`);
 }
 
 export async function updateStudentProfileAction(formData: FormData) {
-  const firstName = String(formData.get("first_name") ?? "").trim();
-  const lastName = String(formData.get("last_name") ?? "").trim() || null;
   const email = String(formData.get("email") ?? "").trim() || null;
 
-  const { supabase } = await getStudentPortalContext();
+  const { supabase, snapshot } = await getStudentPortalContext();
   const { error } = await supabase.rpc("student_update_own_profile", {
-    target_first_name: firstName,
-    target_last_name: lastName,
+    target_first_name: snapshot.profile.first_name,
+    target_last_name: snapshot.profile.last_name,
     target_email: email,
   });
 
