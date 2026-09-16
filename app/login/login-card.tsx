@@ -122,6 +122,9 @@ export function LoginCard({ mode, error }: LoginCardProps) {
                 name="password"
                 type={passwordVisible ? "text" : "password"}
                 autoComplete="current-password"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
                 required
                 placeholder="••••••••"
                 style={{ paddingRight: 54 }}
