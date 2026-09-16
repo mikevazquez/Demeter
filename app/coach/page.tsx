@@ -23,7 +23,9 @@ export default async function CoachHomePage({
   searchParams: Promise<{ date?: string; error?: string }>;
 }) {
   const query = await searchParams;
-  const { supabase, studio } = await getCoachContext(CAPABILITIES.SCHEDULE_READ);
+  const { supabase, studio } = await getCoachContext(
+    CAPABILITIES.SCHEDULE_READ,
+  );
   const today = localDateKey(new Date(), studio.timezone);
   const tomorrow = addDays(today, 1);
   const selectedDate = isDateKey(query.date) ? query.date! : today;
@@ -37,11 +39,15 @@ export default async function CoachHomePage({
   return (
     <main className="space-y-6">
       <section>
-        <p className="text-xs font-semibold uppercase tracking-[0.24em] text-fuchsia-300">Coach</p>
-        <h1 className="mt-2 text-3xl font-semibold tracking-tight text-white">Mis clases</h1>
+        <p className="text-xs font-semibold uppercase tracking-[0.24em] text-fuchsia-300">
+          Coach
+        </p>
+        <h1 className="mt-2 text-3xl font-semibold tracking-tight text-white">
+          Mis clases
+        </h1>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-400">
-          Consulta únicamente las clases que tienes asignadas y abre cada sesión para gestionar su
-          asistencia.
+          Consulta únicamente las clases que tienes asignadas y abre cada sesión
+          para gestionar su asistencia.
         </p>
       </section>
 
@@ -110,8 +116,8 @@ export default async function CoachHomePage({
 
       {feedError ? (
         <section className="rounded-3xl border border-rose-500/20 bg-rose-500/[0.08] p-5 text-sm text-rose-100">
-          No pudimos cargar tus clases. Intenta de nuevo; si continúa, revisaremos el acceso del
-          instructor.
+          No pudimos cargar tus clases. Intenta de nuevo; si continúa,
+          revisaremos el acceso del instructor.
         </section>
       ) : sessions.length ? (
         <section className="grid gap-4 xl:grid-cols-2">
@@ -172,7 +178,9 @@ export default async function CoachHomePage({
         </section>
       ) : (
         <section className="rounded-3xl border border-white/10 bg-white/[0.03] p-8 text-center">
-          <p className="text-lg font-semibold text-white">No tienes clases asignadas este día</p>
+          <p className="text-lg font-semibold text-white">
+            No tienes clases asignadas este día
+          </p>
           <p className="mt-2 text-sm text-zinc-500">
             Elige otra fecha para revisar tu agenda.
           </p>
