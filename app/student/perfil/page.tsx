@@ -5,7 +5,6 @@ import { formatDate, getStudentPortalContext } from "@/lib/student/portal";
 import { updateStudentProfileAction } from "../actions";
 
 const errorCopy: Record<string, string> = {
-  first_name_required: "Escribe tu nombre.",
   email_invalid: "Revisa el formato de tu correo.",
   profile_update_failed: "No pudimos guardar los cambios. Intenta de nuevo.",
   forbidden: "Tu cuenta no tiene permiso para editar estos datos.",
@@ -49,7 +48,8 @@ export default async function StudentProfilePage({
           <div>
             <h2 className="text-xl font-semibold text-white">Datos personales</h2>
             <p className="mt-1 text-sm text-zinc-500">
-              Puedes actualizar nombre y correo desde aquí.
+              Nombre y teléfono forman parte de tu expediente y los administra el estudio. Puedes
+              actualizar tu correo desde aquí.
             </p>
           </div>
 
@@ -57,21 +57,29 @@ export default async function StudentProfilePage({
             <label className="text-sm text-zinc-300">
               Nombre
               <input
-                name="first_name"
-                required
-                defaultValue={snapshot.profile.first_name}
-                className="mt-2 w-full rounded-xl border border-white/10 bg-black/20 px-3 py-3 text-white"
+                value={snapshot.profile.first_name}
+                readOnly
+                className="mt-2 w-full cursor-not-allowed rounded-xl border border-white/10 bg-white/[0.03] px-3 py-3 text-zinc-500"
               />
             </label>
             <label className="text-sm text-zinc-300">
               Apellido
               <input
-                name="last_name"
-                defaultValue={snapshot.profile.last_name ?? ""}
-                className="mt-2 w-full rounded-xl border border-white/10 bg-black/20 px-3 py-3 text-white"
+                value={snapshot.profile.last_name ?? ""}
+                readOnly
+                className="mt-2 w-full cursor-not-allowed rounded-xl border border-white/10 bg-white/[0.03] px-3 py-3 text-zinc-500"
               />
             </label>
           </div>
+
+          <label className="block text-sm text-zinc-300">
+            Teléfono
+            <input
+              value={snapshot.profile.phone}
+              readOnly
+              className="mt-2 w-full cursor-not-allowed rounded-xl border border-white/10 bg-white/[0.03] px-3 py-3 text-zinc-500"
+            />
+          </label>
 
           <label className="block text-sm text-zinc-300">
             Correo
@@ -83,24 +91,11 @@ export default async function StudentProfilePage({
             />
           </label>
 
-          <label className="block text-sm text-zinc-300">
-            Teléfono
-            <input
-              value={snapshot.profile.phone}
-              readOnly
-              className="mt-2 w-full cursor-not-allowed rounded-xl border border-white/10 bg-white/[0.03] px-3 py-3 text-zinc-500"
-            />
-            <span className="mt-2 block text-xs leading-5 text-zinc-500">
-              Tu teléfono se usa para iniciar sesión, pero no es el ID interno de tu cuenta. Para
-              cambiarlo, solicita el ajuste al estudio.
-            </span>
-          </label>
-
           <button
             type="submit"
             className="rounded-xl bg-fuchsia-600 px-5 py-3 text-sm font-semibold text-white hover:bg-fuchsia-500"
           >
-            Guardar cambios
+            Guardar correo
           </button>
         </form>
 
