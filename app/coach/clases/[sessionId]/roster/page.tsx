@@ -29,7 +29,7 @@ export default async function CoachRosterPage({
   searchParams,
 }: {
   params: Promise<{ sessionId: string }>;
-  searchParams: Promise<{ updated?: string; error?: string }>;
+  searchParams: Promise<{ updated?: string; walkin?: string; error?: string }>;
 }) {
   const { sessionId } = await params;
   const query = await searchParams;
@@ -54,6 +54,7 @@ export default async function CoachRosterPage({
   const noShow = roster.filter((item) => item.attendance_status === "no_show").length;
   const pending = roster.filter((item) => item.attendance_status === "reserved").length;
   const editable = detail.status === "scheduled";
+  const full = roster.length >= detail.capacity;
 
   return (
     <main className="space-y-6">
@@ -99,11 +100,46 @@ export default async function CoachRosterPage({
             <p className="mt-1 text-lg font-semibold text-white">{pending}</p>
           </div>
         </div>
+
+        {editable ? (
+          <div className="mt-5 grid gap-2 sm:grid-cols-2">
+            {full ? (
+              <div className="rounded-xl border border-white/10 px-4 py-3 text-center text-sm font-semibold text-zinc-500">
+                Clase llena · sin walk-ins
+              </div>
+            ) : (
+              <Link
+                href={`/coach/clases/${sessionId}/walk-in`}
+                className="rounded-xl border border-fuchsia-400/30 bg-fuchsia-500/10 px-4 py-3 text-center text-sm font-semibold text-fuchsia-100 transition hover:bg-fuchsia-500/20"
+              >
+                + Agregar walk-in
+              </Link>
+            )}
+            <Link
+              href={`/coach/clases/${sessionId}/resumen`}
+              className="rounded-xl bg-fuchsia-600 px-4 py-3 text-center text-sm font-semibold text-white transition hover:bg-fuchsia-500"
+            >
+              Revisar resumen y finalizar
+            </Link>
+          </div>
+        ) : detail.status === "completed" ? (
+          <Link
+            href={`/coach/clases/${sessionId}/finalizada`}
+            className="mt-5 block rounded-xl border border-white/10 px-4 py-3 text-center text-sm font-semibold text-white transition hover:bg-white/[0.05]"
+          >
+            Ver asistencia final
+          </Link>
+        ) : null}
       </section>
 
       {query.updated ? (
         <div className="rounded-2xl border border-emerald-400/20 bg-emerald-400/10 px-4 py-3 text-sm text-emerald-100">
           Estado de asistencia actualizado.
+        </div>
+      ) : null}
+      {query.walkin ? (
+        <div className="rounded-2xl border border-emerald-400/20 bg-emerald-400/10 px-4 py-3 text-sm text-emerald-100">
+          Walk-in agregado al roster. No se creó ninguna compra automática.
         </div>
       ) : null}
       {query.error ? (
