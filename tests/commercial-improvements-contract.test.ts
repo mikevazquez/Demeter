@@ -41,7 +41,9 @@ describe("commercial improvements contracts", () => {
     expect(salePage).toContain('name="starts_on"');
     expect(saleAction).toContain("target_starts_on: startsOn");
     expect(migration).toContain("target_starts_on date");
-    expect(migration).toContain("v_acquisition_start_date := coalesce(target_starts_on, v_sale_date)");
+    expect(migration).toContain(
+      "v_acquisition_start_date := coalesce(target_starts_on, v_sale_date)",
+    );
   });
 
   it("adjusts available credits through an auditable ledger movement with a required reason", () => {
