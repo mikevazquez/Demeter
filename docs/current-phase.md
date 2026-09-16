@@ -6,22 +6,20 @@
 
 - F8 · Asistencia: **CERRADA / UAT APROBADA**. Ver `docs/f8-uat-closure.md`.
 - F9 · Ventas/Pagos: **CERRADA / UAT APROBADA**. Ver `docs/f9-uat-closure.md` y `docs/f9-implementation-decisions.md`.
-- F9 incluye como contratos cerrados: Sale/Payment separados, adquisición/créditos anti-duplicados, reembolsos/anulaciones con historia, inscripción configurable, inscripción obligatoria en eligibility, vigencia vitalicia y presets.
-- F10 · Portal alumna: **DESPLEGADA EN PRODUCCIÓN / UAT EN CURSO**.
-- PR de integración F10: `#13` (`f10-student-portal` → `main`), **MERGED** mediante merge normal.
-- Ajustes UAT ya mergeados: acceso/provisioning, login técnico por alias interno y navegación semanal de Reservar (`#14`–`#22`).
-- Ajuste UAT actual: `#23` (`f10-uat-home-profile` → `main`) para Inicio diario, cancelación directa, resumen de créditos y Perfil sólo lectura en identidad.
+- F10 · Portal alumna: **CERRADA / UAT APROBADA**. Ver `docs/f10-uat-closure.md`.
+- F11 queda **DESBLOQUEADA / NO INICIADA**. Antes de comenzar debe recuperarse su alcance exacto desde el Documento Maestro y backlog SF-*; no se debe inferir ni redefinir desde memoria.
 
-## F10 · checkpoint técnico
+## F10 · contratos cerrados
 
 - Portal Student implementado sobre el modelo canónico: `students/persons`, `product_acquisitions`, `credit_ledger`, `reservations`, `sales/payments` y `student_enrollments`.
 - Reservar/cancelar reutiliza `booking_eligibility`, `book_student` y `cancel_reservation`; los wrappers Student resuelven la alumna desde `auth.uid()`.
-- Login visible del MVP conserva teléfono + contraseña. Supabase Auth usa por detrás un alias técnico de email derivado del teléfono para evitar depender de Phone provider/Twilio; el teléfono no es PK ni ID interno.
-- El aprovisionamiento mantiene separado el expediente operativo de la cuenta Auth y obliga a cambiar la contraseña temporal antes de entrar al portal.
-- La Edge Function `provision-student-access` usa `@supabase/server`, está desplegada y ACTIVE en el proyecto oficial y mantiene Auth Admin sólo dentro del runtime privilegiado.
-- `persons/person_contacts` Student quedaron endurecidos al contexto activo `private.is_current_student(...)`.
-- Nombre, apellido y teléfono son datos de identidad del expediente y no son editables por la alumna; el correo sí puede actualizarse. Esta regla está protegida también en el RPC, no sólo en UI.
-- Documentos sigue siendo sólo acceso futuro de F12; F10 no simula documentos ni aceptaciones.
+- Login visible del MVP: teléfono + contraseña. Supabase Auth usa por detrás un alias técnico de email derivado del teléfono para evitar depender de Phone provider/Twilio; el teléfono no es PK ni ID interno.
+- El aprovisionamiento mantiene separado el expediente operativo de la cuenta Auth, usa contraseña temporal y obliga al cambio en el primer acceso.
+- `persons/person_contacts` Student exige contexto activo `private.is_current_student(...)`.
+- Nombre, apellido y teléfono son sólo lectura para la alumna; correo editable. La restricción está protegida también en backend/RPC.
+- Inicio aprobado con resumen de paquete sin créditos duplicados, agenda prioritaria cuando existen reservas, carrusel semanal/clases del día y cancelación directa.
+- Reservar aprobado con navegación semanal lunes-domingo y sin filtro por disciplina.
+- Documentos sigue siendo acceso futuro de F12; F10 no simula documentos ni aceptaciones.
 
 ### Migraciones F10 aplicadas y versionadas
 
@@ -32,32 +30,24 @@
 - `20260916023708_f10_service_link_security_definer`
 - `20260916040850_f10_profile_identity_readonly`
 
-## UAT validado hasta ahora
+## Validación final F10
 
-- Aprovisionamiento nuevo desde administración: **FUNCIONA**.
-- Contraseña temporal visible/persistente hasta confirmación: **FUNCIONA**.
-- Primer acceso → cambio obligatorio de contraseña → Portal Student: **FUNCIONA** en cuentas creadas con el esquema actual.
-- Se identificó una cuenta de prueba legacy creada antes del cambio de Auth; no representa el flujo nuevo.
-- Inicio Student carga correctamente estado sin paquete y navegación principal.
-- Reservar fue ajustado por UAT a semana fija lunes-domingo, sin filtro por disciplina; PR `#22` mergeado.
-- F10 permanece abierta hasta aprobación UAT explícita.
+- Aprovisionamiento nuevo desde administración: **APROBADO**.
+- Contraseña temporal persistente hasta confirmación: **APROBADO**.
+- Primer acceso → cambio obligatorio de contraseña → Portal Student: **APROBADO**.
+- Inicio, paquete, próximas clases, Reservar, detalle/confirmación, Mis clases, cancelar, movimientos/pagos, Perfil y estadísticas: **APROBADOS EN UAT**.
+- Ajustes UAT mergeados hasta PR `#24`.
+- CI de cierre: Format, Lint, Typecheck, Tests y Build en verde.
+- Vercel producción: deployments de cierre exitosos.
+- UAT de producto: **APROBADA explícitamente**.
 
-## QA técnico
+## QA / observaciones no bloqueantes
 
-- Los PR de ajustes UAT se mergean sólo con Format, Lint, Typecheck, Tests, Build y Vercel en verde.
-- Supabase Security Advisor sigue mostrando advertencias preexistentes de funciones `SECURITY DEFINER` expuestas a `authenticated`, incluidas operaciones Student intencionales que validan contexto/capabilities. No se amplió el acceso con el ajuste de Perfil.
-- Supabase mantiene además la advertencia global de leaked-password protection deshabilitada; no forma parte del alcance funcional de F10.
-
-## Pendiente para cerrar F10
-
-- Terminar UAT de Inicio: resumen de paquete sin duplicados, carrusel semanal/clases del día y cancelación directa.
-- Terminar UAT de Reservar, detalle/confirmación y estados de bloqueo.
-- Terminar UAT de Mi paquete, movimientos/pagos, Mis clases y Perfil.
-- Validar visualmente móvil/iPad/desktop durante UAT.
-- Obtener aprobación UAT explícita antes de marcar F10 como cerrada.
+- Supabase Security Advisor conserva advertencias globales/preexistentes de funciones `SECURITY DEFINER` y leaked-password protection deshabilitada; no fueron introducidas por el cierre UAT de F10.
+- Se detectó una cuenta de prueba legacy creada antes del esquema Auth definitivo; el flujo aprobado corresponde a cuentas nuevas creadas con el esquema actual.
 
 ## Regla para continuar
 
-No reabrir F8/F9 ni redefinir sus reglas salvo bug/regresión o cambio de alcance aprobado explícitamente. F10 no se cierra sin UAT explícito y F11 no inicia antes de ese cierre.
+No reabrir F8, F9 ni F10 salvo bug/regresión o cambio de alcance aprobado explícitamente.
 
-Antes de iniciar cualquier fase posterior se debe consultar el Documento Maestro y backlog SF-* para recuperar su alcance exacto. Este checkpoint prevalece sobre snapshots históricos de implementación que todavía puedan contener estados anteriores.
+Antes de iniciar F11 se debe consultar `StudioFlow_Documento_Maestro_TOTAL_v3_con_mockups.docx` y el backlog SF-* para recuperar su alcance exacto, aceptación, UX y dependencias. No redefinir arquitectura ni reglas cerradas al comenzar la siguiente fase.
