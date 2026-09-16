@@ -8,6 +8,55 @@ import { normalizeMexicanPhone } from "@/lib/phone";
 
 const structuralFieldKeys = new Set(["first_name", "last_name", "phone", "email"]);
 
+export type ProvisionStudentAccessResult =
+  | {
+      ok: true;
+      phone: string;
+      temporaryPassword: string;
+      mustChangePassword: true;
+    }
+  | { ok: false; error: string };
+
+export async function provisionStudentAccess(
+  studentId: string,
+): Promise<ProvisionStudentAccessResult> {
+  if (!studentId) return { ok: false, error: "invalid_request" };
+
+  const { supabase, studio } = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
+  const { data: student, error: studentError } = await supabase
+    .from("students")
+    .select("id, user_id, lifecycle_status, active")
+    .eq("id", studentId)
+    .eq("studio_id", studio.id)
+    .maybeSingle();
+
+  if (studentError || !student) return { ok: false, error: "student_not_found" };
+  if (student.user_id) return { ok: false, error: "student_already_linked" };
+  if (!student.active || student.lifecycle_status !== "active") {
+    return { ok: false, error: "student_not_active" };
+  }
+
+  const { data, error } = await supabase.functions.invoke("provision-student-access", {
+    body: { studentId },
+  });
+
+  if (error || !data || data.ok !== true) {
+    return {
+      ok: false,
+      error: typeof data?.error === "string" ? data.error : "provision_unavailable",
+    };
+  }
+
+  revalidatePath(`/admin/alumnas/${studentId}`);
+
+  return {
+    ok: true,
+    phone: String(data.phone),
+    temporaryPassword: String(data.temporaryPassword),
+    mustChangePassword: true,
+  };
+}
+
 export async function updateStudent(formData: FormData) {
   const studentId = String(formData.get("student_id") ?? "");
   const firstName = String(formData.get("first_name") ?? "").trim();
