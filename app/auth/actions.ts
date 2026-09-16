@@ -71,7 +71,9 @@ export async function signIn(formData: FormData) {
   if (error || !data.user) {
     const loginError = error ? classifyAuthFailure(error, mode) : "auth";
     if (!error) {
-      console.error("[auth.signIn] Supabase Auth returned no user without an error", { mode });
+      console.error("[auth.signIn] Supabase Auth returned no user without an error", {
+        mode,
+      });
     }
     redirect(`${loginPath(mode)}?error=${loginError}`);
   }
