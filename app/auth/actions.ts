@@ -10,6 +10,23 @@ function loginPath(mode: "admin" | "student") {
   return mode === "admin" ? "/login/admin" : "/login/student";
 }
 
+function studentAuthDiagnostic(error: { code?: string; status?: number } | null) {
+  const knownCodes = new Set([
+    "invalid_credentials",
+    "email_not_confirmed",
+    "email_provider_disabled",
+    "user_banned",
+    "over_request_rate_limit",
+    "over_email_send_rate_limit",
+  ]);
+  const code = error?.code?.trim().toLowerCase() ?? "";
+
+  if (knownCodes.has(code)) return `auth_${code}`;
+  if (error?.status === 429) return "auth_rate_limited";
+  if (error?.status && error.status >= 500) return "auth_server_error";
+  return "auth_unknown";
+}
+
 export async function signIn(formData: FormData) {
   const password = String(formData.get("password") ?? "");
   const mode = formData.get("mode") === "student" ? "student" : "admin";
@@ -29,7 +46,8 @@ export async function signIn(formData: FormData) {
   const { data, error } = await supabase.auth.signInWithPassword(credentials);
 
   if (error || !data.user) {
-    redirect(`${loginPath(mode)}?error=invalid`);
+    const reason = mode === "student" ? studentAuthDiagnostic(error) : "invalid";
+    redirect(`${loginPath(mode)}?error=${reason}`);
   }
 
   const [{ data: account }, { data: membership }] = await Promise.all([
