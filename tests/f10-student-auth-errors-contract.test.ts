@@ -34,11 +34,19 @@ describe("F10 student auth login contracts", () => {
     expect(edgeFunction).toContain("adminClient.auth.admin.updateUserById(student.user_id");
   });
 
-  it("keeps normal bad credentials generic", () => {
+  it("surfaces only allowlisted non-sensitive Auth diagnostics during UAT", () => {
     const actions = source("app/auth/actions.ts");
     const card = source("app/login/login-card.tsx");
 
-    expect(actions).toContain("redirect(`${loginPath(mode)}?error=invalid`)");
-    expect(card).toContain('invalid: "El teléfono o la contraseña no son correctos."');
+    expect(actions).toContain("function studentAuthDiagnostic");
+    expect(actions).toContain('"invalid_credentials"');
+    expect(actions).toContain('"email_not_confirmed"');
+    expect(actions).toContain('"email_provider_disabled"');
+    expect(actions).toContain("studentAuthDiagnostic(error)");
+    expect(actions).not.toContain("error.message");
+    expect(actions).not.toContain("console.log");
+    expect(actions).not.toContain("console.error");
+    expect(card).toContain("Código UAT: invalid_credentials");
+    expect(card).toContain("Código UAT: email_not_confirmed");
   });
 });
