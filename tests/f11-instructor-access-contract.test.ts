@@ -48,14 +48,17 @@ describe("F11 instructor access provisioning", () => {
     expect(adminAction).not.toContain("service_role");
   });
 
-  it("uses the instructor email and never auto-links an existing Auth identity", () => {
+  it("requires instructor email and refuses silent linking of an existing Auth identity", () => {
     const edge = source("supabase/functions/provision-instructor-access/index.ts");
     const profile = source("app/admin/instructores/[instructorId]/page.tsx");
+    const component = source(
+      "app/admin/instructores/[instructorId]/InstructorAccessProvisioner.tsx",
+    );
 
     expect(edge).toContain("instructor_email_required");
     expect(edge).toContain("auth_login_exists");
-    expect(edge).toContain("No se enlazó automáticamente").toBeFalsy();
-    expect(profile).toContain("Habilitar acceso Coach").toBeFalsy();
+    expect(edge).not.toContain("listUsers");
     expect(profile).toContain("InstructorAccessProvisioner");
+    expect(component).toContain("Habilitar acceso Coach");
   });
 });
