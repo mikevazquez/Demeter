@@ -143,16 +143,27 @@ export const getStudentPortalContext = cache(async () => {
 
   if (!user) redirect("/login/student");
 
-  const { data: membership } = await supabase
-    .from("studio_memberships")
-    .select("studio_id,role,active")
-    .eq("user_id", user.id)
-    .eq("role", "student")
-    .eq("active", true)
-    .limit(1)
-    .maybeSingle();
+  const [{ data: account }, { data: membership }] = await Promise.all([
+    supabase
+      .from("user_accounts")
+      .select("status, must_change_password")
+      .eq("id", user.id)
+      .maybeSingle(),
+    supabase
+      .from("studio_memberships")
+      .select("studio_id,role,active")
+      .eq("user_id", user.id)
+      .eq("role", "student")
+      .eq("active", true)
+      .limit(1)
+      .maybeSingle(),
+  ]);
 
-  if (!membership) redirect("/login/student?error=access");
+  if (!account || account.status !== "active" || !membership) {
+    redirect("/login/student?error=access");
+  }
+
+  if (account.must_change_password) redirect("/login/student/activar");
 
   const [{ data: snapshot, error }, { data: studio }] = await Promise.all([
     supabase.rpc("student_portal_snapshot"),
@@ -164,6 +175,7 @@ export const getStudentPortalContext = cache(async () => {
   return {
     supabase,
     user,
+    account,
     membership,
     studio,
     snapshot: snapshot as StudentSnapshot,
