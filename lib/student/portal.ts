@@ -1,0 +1,230 @@
+import "server-only";
+
+import { cache } from "react";
+import { redirect } from "next/navigation";
+
+import { createClient } from "@/lib/supabase/server";
+
+export type StudentProfile = {
+  student_id: string;
+  studio_id: string;
+  studio_name: string;
+  first_name: string;
+  last_name: string | null;
+  full_name: string;
+  phone: string;
+  email: string | null;
+  profile_status: string;
+  lifecycle_status: string;
+};
+
+export type StudentAcquisition = {
+  id: string;
+  product_id: string;
+  name: string;
+  product_type: string;
+  status: string;
+  starts_on: string;
+  expires_on: string;
+  unlimited: boolean;
+  credit_limit: number | null;
+  available_credits: number | null;
+  reserved_credits: number;
+  used_credits: number;
+  active_now: boolean;
+};
+
+export type StudentUpcomingClass = {
+  reservation_id: string;
+  session_id: string;
+  status: string;
+  starts_at: string;
+  ends_at: string;
+  activity: string;
+  discipline: string;
+  space: string | null;
+  coach: string | null;
+};
+
+export type StudentMovement = {
+  id: string;
+  movement_type: string;
+  quantity: number;
+  note: string | null;
+  created_at: string;
+  product: string;
+  reservation_id: string | null;
+  activity: string | null;
+  starts_at: string | null;
+};
+
+export type StudentPayment = {
+  id: string;
+  sale_id: string;
+  folio: string;
+  sale_status: string;
+  kind: string;
+  amount_minor: number;
+  method: string;
+  reference: string | null;
+  created_at: string;
+  currency: string;
+};
+
+export type StudentEnrollment = {
+  id: string;
+  status: string;
+  starts_on: string;
+  expires_on: string | null;
+  active_now: boolean;
+};
+
+export type StudentSnapshot = {
+  profile: StudentProfile;
+  acquisitions: StudentAcquisition[];
+  enrollment: StudentEnrollment | null;
+  upcoming: StudentUpcomingClass[];
+  stats: {
+    attended_total: number;
+    attended_this_month: number;
+    favorite_activity: string | null;
+    streak_days: number;
+  };
+  movements: StudentMovement[];
+  payments: StudentPayment[];
+};
+
+export type StudentSession = {
+  session_id: string;
+  starts_at: string;
+  ends_at: string;
+  capacity: number;
+  spots_available: number;
+  activity: string;
+  discipline_id: string;
+  discipline: string;
+  credit_cost: number;
+  space: string | null;
+  location: string | null;
+  coach: string | null;
+  description: string | null;
+  is_reserved?: boolean;
+  reservation_id?: string | null;
+  eligibility: {
+    eligible: boolean;
+    reason_code: string | null;
+    acquisition_id?: string;
+    unlimited?: boolean;
+    available_credits?: number | null;
+    credit_cost?: number;
+  };
+};
+
+export type StudentClassFeedItem = {
+  reservation_id: string;
+  session_id: string;
+  status: string;
+  starts_at: string;
+  ends_at: string;
+  activity: string;
+  discipline: string;
+  space: string | null;
+  coach: string | null;
+  credits_held: number;
+  cancelled_at?: string | null;
+  cancellation_reason?: string | null;
+};
+
+export const getStudentPortalContext = cache(async () => {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) redirect("/login/student");
+
+  const [{ data: account }, { data: membership }] = await Promise.all([
+    supabase
+      .from("user_accounts")
+      .select("status, must_change_password")
+      .eq("id", user.id)
+      .maybeSingle(),
+    supabase
+      .from("studio_memberships")
+      .select("studio_id,role,active")
+      .eq("user_id", user.id)
+      .eq("role", "student")
+      .eq("active", true)
+      .limit(1)
+      .maybeSingle(),
+  ]);
+
+  if (!account || account.status !== "active" || !membership) {
+    redirect("/login/student?error=access");
+  }
+
+  if (account.must_change_password) redirect("/login/student/activar");
+
+  const [{ data: snapshot, error }, { data: studio }] = await Promise.all([
+    supabase.rpc("student_portal_snapshot"),
+    supabase.from("studios").select("name,timezone").eq("id", membership.studio_id).maybeSingle(),
+  ]);
+
+  if (error || !snapshot || !studio) redirect("/login/student?error=access");
+
+  return {
+    supabase,
+    user,
+    account,
+    membership,
+    studio,
+    snapshot: snapshot as StudentSnapshot,
+  };
+});
+
+export function localDateKey(date: Date, timeZone: string) {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(date);
+}
+
+export function formatDateTime(value: string, timeZone: string) {
+  return new Intl.DateTimeFormat("es-MX", {
+    timeZone,
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(new Date(value));
+}
+
+export function formatDate(value: string, timeZone: string) {
+  return new Intl.DateTimeFormat("es-MX", {
+    timeZone,
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  }).format(new Date(`${value}T12:00:00Z`));
+}
+
+export function formatMoney(minor: number, currency = "MXN") {
+  return new Intl.NumberFormat("es-MX", { style: "currency", currency }).format(minor / 100);
+}
+
+export function bookingReasonCopy(reason?: string | null) {
+  const messages: Record<string, string> = {
+    session_full: "Clase llena",
+    already_reserved: "Ya reservaste esta clase",
+    no_active_product: "No tienes un paquete activo para esta fecha",
+    outside_product: "Esta clase no está incluida en tu paquete",
+    no_credits: "No tienes clases disponibles",
+    enrollment_required: "Necesitas una inscripción vigente para reservar",
+    session_not_bookable: "Esta clase ya no admite reservas",
+    student_not_operable: "Tu perfil no está habilitado para reservar",
+  };
+  return reason ? (messages[reason] ?? "No disponible") : "Disponible";
+}

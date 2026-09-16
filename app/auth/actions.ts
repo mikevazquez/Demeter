@@ -30,7 +30,11 @@ export async function signIn(formData: FormData) {
   }
 
   const [{ data: account }, { data: membership }] = await Promise.all([
-    supabase.from("user_accounts").select("status").eq("id", data.user.id).maybeSingle(),
+    supabase
+      .from("user_accounts")
+      .select("status, must_change_password")
+      .eq("id", data.user.id)
+      .maybeSingle(),
     supabase
       .from("studio_memberships")
       .select("studio_id, role, active")
@@ -65,6 +69,10 @@ export async function signIn(formData: FormData) {
   if (!studio || studio.status !== "active" || !roleCapability) {
     await supabase.auth.signOut();
     redirect(`${loginPath(mode)}?error=access`);
+  }
+
+  if (mode === "student" && account.must_change_password) {
+    redirect("/login/student/activar");
   }
 
   redirect(mode === "admin" ? "/admin" : "/student");
