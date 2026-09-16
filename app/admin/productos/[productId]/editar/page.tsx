@@ -15,7 +15,7 @@ export default async function EditProductPage({
     ctx.supabase
       .from("product_templates")
       .select(
-        "id,name,description,product_type,price_minor,credit_limit,validity_days,unlimited,active,product_template_disciplines(discipline_id)",
+        "id,name,description,product_type,package_term,price_minor,credit_limit,validity_days,unlimited,active,product_template_disciplines(discipline_id)",
       )
       .eq("studio_id", ctx.studio.id)
       .eq("id", productId)
@@ -62,6 +62,7 @@ export default async function EditProductPage({
         <ProductFormFields
           disciplines={disciplines ?? []}
           initialProductType={product.product_type}
+          initialPackageTerm={product.package_term}
           initialPrice={product.price_minor / 100}
           initialValidityDays={product.validity_days}
           initialCreditLimit={product.credit_limit}
