@@ -23,12 +23,14 @@ describe("F10 student auth login contracts", () => {
 
   it("provisions and migrates student Auth without Phone provider or SMS", () => {
     const edgeFunction = source("supabase/functions/provision-student-access/index.ts");
+    const createUserBlock =
+      edgeFunction.split("adminClient.auth.admin.createUser({")[1]?.split("});")[0] ?? "";
 
     expect(edgeFunction).toContain("studentAuthEmailFromPhone");
-    expect(edgeFunction).toContain("email: authEmail");
-    expect(edgeFunction).toContain("email_confirm: true");
+    expect(createUserBlock).toContain("email: authEmail");
+    expect(createUserBlock).toContain("email_confirm: true");
+    expect(createUserBlock).not.toContain("phone:");
     expect(edgeFunction).not.toContain("phone_confirm: true");
-    expect(edgeFunction).not.toContain("phone: student.phone,");
     expect(edgeFunction).toContain("adminClient.auth.admin.updateUserById(student.user_id");
   });
 
