@@ -2,9 +2,23 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getAdminContext } from "@/lib/auth/admin-context";
-import { setStudentLifecycle, updateDynamicProfileFields, updateStudent } from "./actions";
+import {
+  setAcquisitionAvailableCredits,
+  setAcquisitionStartDate,
+  setStudentLifecycle,
+  updateDynamicProfileFields,
+  updateStudent,
+} from "./actions";
 
 const structuralFieldKeys = new Set(["first_name", "last_name", "phone", "email"]);
+
+const termCopy: Record<string, string> = {
+  monthly: "Mensual",
+  quarterly: "Trimestral",
+  semiannual: "Semestral",
+  annual: "Anual",
+  custom: "Otra vigencia",
+};
 
 function optionValues(options: unknown): string[] {
   if (Array.isArray(options))
@@ -23,6 +37,14 @@ function optionValues(options: unknown): string[] {
 function scalarValue(value: unknown): string {
   if (typeof value === "string" || typeof value === "number") return String(value);
   return "";
+}
+
+function formatDate(value: string) {
+  return new Intl.DateTimeFormat("es-MX", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  }).format(new Date(`${value}T12:00:00Z`));
 }
 
 export default async function StudentProfilePage({
@@ -47,37 +69,79 @@ export default async function StudentProfilePage({
 
   if (!student) notFound();
 
-  const [{ data: person }, { data: contacts }, { data: definitions }, { data: fieldValues }] =
-    await Promise.all([
-      student.person_id
-        ? supabase
-            .from("persons")
-            .select("id, first_name, last_name")
-            .eq("id", student.person_id)
-            .maybeSingle()
-        : Promise.resolve({ data: null }),
-      student.person_id
-        ? supabase
-            .from("person_contacts")
-            .select("kind, value, is_primary")
-            .eq("person_id", student.person_id)
-            .order("kind")
-        : Promise.resolve({ data: [] }),
-      supabase
-        .from("profile_field_definitions")
-        .select("id, key, label, field_type, required, options, sort_order")
-        .eq("studio_id", studio.id)
-        .eq("entity_type", "student")
-        .eq("active", true)
-        .order("sort_order")
-        .order("label"),
-      student.person_id
-        ? supabase
-            .from("profile_field_values")
-            .select("definition_id, value")
-            .eq("person_id", student.person_id)
-        : Promise.resolve({ data: [] }),
-    ]);
+  const canReadProducts = can(CAPABILITIES.PRODUCTS_READ);
+  const canEditAcquisitions = can(CAPABILITIES.PRODUCTS_WRITE) || can(CAPABILITIES.SALES_WRITE);
+
+  const [
+    { data: person },
+    { data: contacts },
+    { data: definitions },
+    { data: fieldValues },
+    acquisitionResult,
+  ] = await Promise.all([
+    student.person_id
+      ? supabase.from("persons").select("id, first_name, last_name").eq("id", student.person_id).maybeSingle()
+      : Promise.resolve({ data: null }),
+    student.person_id
+      ? supabase
+          .from("person_contacts")
+          .select("kind, value, is_primary")
+          .eq("person_id", student.person_id)
+          .order("kind")
+      : Promise.resolve({ data: [] }),
+    supabase
+      .from("profile_field_definitions")
+      .select("id, key, label, field_type, required, options, sort_order")
+      .eq("studio_id", studio.id)
+      .eq("entity_type", "student")
+      .eq("active", true)
+      .order("sort_order")
+      .order("label"),
+    student.person_id
+      ? supabase
+          .from("profile_field_values")
+          .select("definition_id, value")
+          .eq("person_id", student.person_id)
+      : Promise.resolve({ data: [] }),
+    canReadProducts
+      ? supabase
+          .from("product_acquisitions")
+          .select(
+            "id,product_template_id,status,starts_on,expires_on,unlimited,credit_limit,refunded_at,created_at",
+          )
+          .eq("student_id", student.id)
+          .eq("studio_id", studio.id)
+          .order("created_at", { ascending: false })
+      : Promise.resolve({ data: [] }),
+  ]);
+
+  const acquisitions = acquisitionResult.data ?? [];
+  const acquisitionIds = acquisitions.map((item) => item.id);
+  const productIds = [...new Set(acquisitions.map((item) => item.product_template_id))];
+  const [{ data: acquisitionProducts }, { data: ledgerRows }] = canReadProducts
+    ? await Promise.all([
+        productIds.length
+          ? supabase
+              .from("product_templates")
+              .select("id,name,package_term")
+              .eq("studio_id", studio.id)
+              .in("id", productIds)
+          : Promise.resolve({ data: [] }),
+        acquisitionIds.length
+          ? supabase
+              .from("credit_ledger")
+              .select("acquisition_id,quantity")
+              .eq("studio_id", studio.id)
+              .in("acquisition_id", acquisitionIds)
+          : Promise.resolve({ data: [] }),
+      ])
+    : [{ data: [] }, { data: [] }];
+
+  const productMap = new Map((acquisitionProducts ?? []).map((item) => [item.id, item]));
+  const balanceMap = new Map<string, number>();
+  for (const row of ledgerRows ?? []) {
+    balanceMap.set(row.acquisition_id, (balanceMap.get(row.acquisition_id) ?? 0) + row.quantity);
+  }
 
   const phone = contacts?.find((item) => item.kind === "phone")?.value ?? student.phone;
   const email = contacts?.find((item) => item.kind === "email")?.value ?? student.email ?? "";
@@ -85,10 +149,23 @@ export default async function StudentProfilePage({
   const lastName = person?.last_name ?? student.full_name.split(" ").slice(1).join(" ");
   const canEdit = can(CAPABILITIES.STUDENTS_WRITE);
   const canArchive = can(CAPABILITIES.STUDENTS_ARCHIVE);
+  const activeAcquisition = acquisitions.find((item) => item.status === "active" && !item.refunded_at);
   const dynamicDefinitions = (definitions ?? []).filter(
     (definition) => !structuralFieldKeys.has(definition.key),
   );
   const valueMap = new Map((fieldValues ?? []).map((item) => [item.definition_id, item.value]));
+
+  const errorCopy: Record<string, string> = {
+    phone_exists: "Ese teléfono ya pertenece a otra alumna.",
+    profile_fields: "No se pudieron guardar los campos adicionales. Revisa sus valores.",
+    acquisition_forbidden: "Tu rol no puede modificar adquisiciones.",
+    acquisition_not_found: "La adquisición ya no está disponible.",
+    acquisition_date_invalid: "Selecciona una fecha de inicio válida.",
+    credits_invalid: "Indica créditos disponibles válidos y un motivo obligatorio.",
+    adjustment_reason_required: "El motivo del ajuste de créditos es obligatorio.",
+    unlimited_acquisition: "Una adquisición ilimitada no admite ajuste manual de créditos.",
+    acquisition_not_editable: "Esta adquisición ya no puede modificarse.",
+  };
 
   return (
     <main className="dashboard-shell">
@@ -108,13 +185,7 @@ export default async function StudentProfilePage({
 
       {query.saved ? <div className="notice success">Cambios guardados correctamente.</div> : null}
       {query.error ? (
-        <div className="notice error">
-          {query.error === "phone_exists"
-            ? "Ese teléfono ya pertenece a otra alumna."
-            : query.error === "profile_fields"
-              ? "No se pudieron guardar los campos adicionales. Revisa sus valores."
-              : "No se pudo guardar el cambio."}
-        </div>
+        <div className="notice error">{errorCopy[query.error] ?? "No se pudo guardar el cambio."}</div>
       ) : null}
 
       <section className="stat-grid">
@@ -179,13 +250,19 @@ export default async function StudentProfilePage({
             <div className="student-row">
               <div>
                 <strong>Paquete activo</strong>
-                <span>Se integrará desde F6 Productos/Créditos.</span>
+                <span>
+                  {!canReadProducts
+                    ? "Sin acceso comercial para este rol."
+                    : activeAcquisition
+                      ? `${productMap.get(activeAcquisition.product_template_id)?.name ?? "Producto"} · vence ${formatDate(activeAcquisition.expires_on)}`
+                      : "Sin paquete activo"}
+                </span>
               </div>
             </div>
             <div className="student-row">
               <div>
-                <strong>Próximas clases</strong>
-                <span>Se integrará desde F5 Agenda.</span>
+                <strong>Adquisiciones</strong>
+                <span>{canReadProducts ? acquisitions.length : "—"}</span>
               </div>
             </div>
             <div className="student-row">
@@ -197,6 +274,123 @@ export default async function StudentProfilePage({
           </div>
         </article>
       </section>
+
+      {canReadProducts ? (
+        <section className="panel">
+          <div className="panel-heading">
+            <div>
+              <p className="eyebrow">PAQUETES Y CRÉDITOS</p>
+              <h2>Adquisiciones de la alumna</h2>
+              <p>
+                La fecha puede corregirse sin recrear el paquete. Los créditos se ajustan mediante
+                movimientos auditables del ledger.
+              </p>
+            </div>
+            <span className="count-badge">{acquisitions.length}</span>
+          </div>
+
+          {!acquisitions.length ? (
+            <div className="empty-state">Esta alumna todavía no tiene adquisiciones.</div>
+          ) : (
+            <div className="grid gap-4 lg:grid-cols-2">
+              {acquisitions.map((acquisition) => {
+                const product = productMap.get(acquisition.product_template_id);
+                const availableCredits = acquisition.unlimited
+                  ? null
+                  : (balanceMap.get(acquisition.id) ?? 0);
+                const editable = canEditAcquisitions && !acquisition.refunded_at;
+
+                return (
+                  <article
+                    key={acquisition.id}
+                    className="rounded-2xl border border-white/10 bg-black/20 p-4"
+                  >
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-fuchsia-300">
+                          {product?.package_term
+                            ? (termCopy[product.package_term] ?? "Otra vigencia")
+                            : "Producto"}
+                        </p>
+                        <h3 className="mt-1 font-semibold text-white">
+                          {product?.name ?? "Producto"}
+                        </h3>
+                        <p className="mt-1 text-sm text-zinc-400">
+                          {formatDate(acquisition.starts_on)} → {formatDate(acquisition.expires_on)}
+                        </p>
+                      </div>
+                      <span className="status-pill">{acquisition.status}</span>
+                    </div>
+
+                    <div className="mt-4 rounded-xl border border-white/10 bg-white/[0.03] p-3">
+                      <p className="text-xs text-zinc-500">Créditos disponibles</p>
+                      <p className="mt-1 text-lg font-semibold text-white">
+                        {acquisition.unlimited ? "Ilimitado" : availableCredits}
+                      </p>
+                    </div>
+
+                    {editable ? (
+                      <div className="mt-4 grid gap-4">
+                        <form action={setAcquisitionStartDate} className="grid gap-2">
+                          <input type="hidden" name="student_id" value={student.id} />
+                          <input type="hidden" name="acquisition_id" value={acquisition.id} />
+                          <label className="grid gap-1 text-sm text-zinc-300">
+                            Fecha de inicio
+                            <input
+                              type="date"
+                              name="starts_on"
+                              required
+                              defaultValue={acquisition.starts_on}
+                              className="rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 text-white"
+                            />
+                          </label>
+                          <button className="ghost-button" type="submit">
+                            Actualizar fecha
+                          </button>
+                        </form>
+
+                        {!acquisition.unlimited ? (
+                          <form action={setAcquisitionAvailableCredits} className="grid gap-2">
+                            <input type="hidden" name="student_id" value={student.id} />
+                            <input type="hidden" name="acquisition_id" value={acquisition.id} />
+                            <label className="grid gap-1 text-sm text-zinc-300">
+                              Créditos disponibles
+                              <input
+                                type="number"
+                                name="available_credits"
+                                min="0"
+                                max="100000"
+                                step="1"
+                                required
+                                defaultValue={availableCredits ?? 0}
+                                className="rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 text-white"
+                              />
+                            </label>
+                            <label className="grid gap-1 text-sm text-zinc-300">
+                              Motivo del ajuste
+                              <input
+                                type="text"
+                                name="reason"
+                                required
+                                maxLength={500}
+                                placeholder="Ej. Corrección por captura"
+                                className="rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 text-white"
+                              />
+                            </label>
+                            <button className="ghost-button" type="submit">
+                              Ajustar créditos
+                            </button>
+                          </form>
+                        ) : null}
+                      </div>
+                    ) : null}
+                  </article>
+                );
+              })}
+            </div>
+          )}
+        </section>
+      ) : null}
 
       <section className="panel">
         <div className="panel-heading">
