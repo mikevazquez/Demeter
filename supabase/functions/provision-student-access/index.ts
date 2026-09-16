@@ -43,7 +43,7 @@ function generateTemporaryPassword() {
   return characters.join("");
 }
 
-export default {
+const handler = {
   fetch: withSupabase({ auth: "user" }, async (request, context) => {
     if (request.method !== "POST") return jsonResponse({ error: "method_not_allowed" }, 405);
 
@@ -136,3 +136,5 @@ export default {
     });
   }),
 };
+
+export default handler;
