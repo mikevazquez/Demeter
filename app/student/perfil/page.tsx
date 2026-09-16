@@ -89,7 +89,8 @@ export default async function StudentProfilePage({
               className="mt-2 w-full cursor-not-allowed rounded-xl border border-white/10 bg-white/[0.03] px-3 py-3 text-zinc-500"
             />
             <span className="mt-2 block text-xs leading-5 text-zinc-500">
-              Tu teléfono es también tu identificador de acceso. Para cambiarlo, solicita el ajuste al estudio.
+              Tu teléfono se usa para iniciar sesión, pero no es el ID interno de tu cuenta. Para cambiarlo,
+              solicita el ajuste al estudio.
             </span>
           </label>
 
