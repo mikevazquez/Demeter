@@ -83,6 +83,10 @@ describe("F10 student portal contracts", () => {
     expect(edgeFunction).toContain('withSupabase({ auth: "user" }');
     expect(edgeFunction).toContain("context.supabaseAdmin");
     expect(edgeFunction).toContain("userClient.auth.getUser()");
+    expect(edgeFunction).toContain('await userClient\n      .from("students")');
+    expect(edgeFunction).toContain('await userClient\n      .from("studio_memberships")');
+    expect(edgeFunction).toContain('await userClient\n      .from("role_capabilities")');
+    expect(edgeFunction).not.toContain('await adminClient\n      .from("students")');
     expect(edgeFunction).toContain('.eq("capability_key", "settings.write")');
     expect(edgeFunction).toContain("auth.admin.createUser");
     expect(edgeFunction).toContain("phone_confirm: true");

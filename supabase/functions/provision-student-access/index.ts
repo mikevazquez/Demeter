@@ -67,7 +67,7 @@ const handler = {
     const studentId = typeof payload.studentId === "string" ? payload.studentId.trim() : "";
     if (!studentId) return jsonResponse({ error: "invalid_request" }, 400);
 
-    const { data: student, error: studentError } = await adminClient
+    const { data: student, error: studentError } = await userClient
       .from("students")
       .select("id, studio_id, person_id, user_id, full_name, phone, active, lifecycle_status")
       .eq("id", studentId)
@@ -81,7 +81,7 @@ const handler = {
     }
     if (student.user_id) return jsonResponse({ error: "student_already_linked" }, 409);
 
-    const { data: callerMembership, error: membershipError } = await adminClient
+    const { data: callerMembership, error: membershipError } = await userClient
       .from("studio_memberships")
       .select("role, active")
       .eq("studio_id", student.studio_id)
@@ -92,7 +92,7 @@ const handler = {
     if (membershipError) return jsonResponse({ error: "authorization_failed" }, 500);
     if (!callerMembership) return jsonResponse({ error: "forbidden" }, 403);
 
-    const { data: permission, error: permissionError } = await adminClient
+    const { data: permission, error: permissionError } = await userClient
       .from("role_capabilities")
       .select("capability_key")
       .eq("role", callerMembership.role)
