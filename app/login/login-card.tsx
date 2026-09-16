@@ -9,6 +9,8 @@ type LoginCardProps = {
 const adminMessages: Record<string, string> = {
   missing: "Escribe tu correo y contraseña.",
   invalid: "El correo o la contraseña no son correctos.",
+  rate: "Hay demasiados intentos de acceso. Espera un momento y vuelve a intentar.",
+  auth: "No se pudo validar el acceso en este momento. Vuelve a intentarlo.",
   pending: "Tu cuenta existe, pero todavía no tiene acceso asignado al estudio.",
   access: "Esta cuenta no tiene acceso a administración.",
 };
@@ -16,6 +18,8 @@ const adminMessages: Record<string, string> = {
 const studentMessages: Record<string, string> = {
   missing: "Escribe tu teléfono y contraseña.",
   invalid: "El teléfono o la contraseña no son correctos.",
+  rate: "Hay demasiados intentos de acceso. Espera un momento y vuelve a intentar.",
+  auth: "No se pudo validar el acceso en este momento. Vuelve a intentarlo.",
   pending: "Tu cuenta existe, pero todavía no tiene acceso asignado al estudio.",
   access: "Esta cuenta no tiene acceso al portal de alumna.",
 };
