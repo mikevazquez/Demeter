@@ -145,7 +145,8 @@ export default async function NewSalePage({
               <div className="w-full">
                 <h2 className="font-semibold text-white">Inicio del paquete</h2>
                 <p className="mt-1 text-sm text-zinc-400">
-                  Por defecto inicia hoy, pero puedes elegir otra fecha antes de crear la adquisición.
+                  Por defecto inicia hoy, pero puedes elegir otra fecha antes de crear la
+                  adquisición.
                 </p>
                 <label className="mt-4 grid gap-1.5 text-sm text-zinc-300">
                   Fecha de inicio
