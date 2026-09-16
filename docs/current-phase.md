@@ -1,6 +1,6 @@
 # Studio Flow · Checkpoint de fase actual
 
-Última actualización: 2026-09-15
+Última actualización: 2026-09-16
 
 ## Estado vigente
 
@@ -18,10 +18,12 @@
 
 - Aplicación: `https://demeterbueno.vercel.app`
 - GitHub: `mikevazquez/Demeter`, branch `main`.
+- Commit de cierre de release en `main`: `4cf20911d43dc3a0f0645114a950115268f27540`.
 - Último baseline funcional aprobado: PR #24 / commit `517810d49c3999963f8b37e1783f165f459033a5`.
 - Supabase oficial: `Studio Flow` / ref `qfhojvgvhrbautvczffq`.
 - Región verificada del proyecto Supabase: `us-east-1`.
 - Edge Function `provision-student-access`: versión 6 ACTIVE con JWT obligatorio.
+- Producción contiene datos reales del estudio y no se usa para desarrollo post-MVP.
 
 ## Alcance del MVP liberado
 
@@ -64,9 +66,33 @@ Rollback de aplicación: volver al baseline funcional conocido-bueno `517810d49c
 - Inicio aprobado con agenda prioritaria si hay reservas, carrusel semanal/clases del día y cancelación directa.
 - Reservar aprobado con navegación lunes-domingo y sin filtro por disciplina.
 
+## Sandbox / staging post-MVP
+
+Se inició el aislamiento obligatorio para continuar F11–F13. Ver `docs/sandbox-staging.md`.
+
+Estado del sandbox Supabase:
+
+- Proyecto: `Studio Flow Sandbox` / ref `hedouonyhynuvwbckdlg`.
+- Región: `us-east-1`.
+- Costo verificado al crear el proyecto: `US$0/mes`.
+- Baseline F0–F10 reproducido sin copiar PII ni datos operativos de producción.
+- 33 tablas `public`, todas con RLS; 0 views `public`.
+- Seed ficticio versionado en `supabase/seed.sandbox.sql`.
+- Se reconciliaron drifts de reproducibilidad detectados entre migraciones versionadas y el estado efectivo del release, sin cambiar producción ni reabrir fases cerradas.
+
+Gates todavía abiertos antes de F11:
+
+- desplegar y verificar `provision-student-access` en el proyecto sandbox;
+- auditar el Vercel Preview y asegurar que `NEXT_PUBLIC_SUPABASE_URL` y `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` de Preview apunten exclusivamente al sandbox;
+- cerrar PR de infraestructura con CI en verde.
+
+La rama de bootstrap actual es `infra/sandbox-staging-f11`. F11 no inicia hasta cerrar estos gates.
+
 ## Estrategia post-MVP
 
-El siguiente paso de ingeniería es crear un sandbox/staging separado de producción, con Supabase y Vercel aislados. F11, F12 y F13 se implementarán allí y sólo se promoverán a producción después de migraciones reproducibles, CI, QA/UAT y aprobación explícita.
+Todo desarrollo nuevo de F11, F12 y F13 ocurre contra sandbox/staging aislado. Las migraciones se prueban primero en sandbox, el QA/UAT se ejecuta fuera de producción y la promoción a `main`/producción es explícita y auditable.
+
+Antes de implementar F11 se deben releer FL-10, FL-11 y M05 del Documento Maestro. La experiencia Coach sólo accede a clases/datos necesarios para sus clases autorizadas y reutiliza la lógica canónica de asistencia, walk-in y finalización construida en F8.
 
 ## Regla para continuar
 
