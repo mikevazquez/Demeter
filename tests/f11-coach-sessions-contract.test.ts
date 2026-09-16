@@ -44,4 +44,17 @@ describe("F11 coach session scope", () => {
     expect(page).toContain('supabase.rpc("coach_session_detail"');
     expect(page).toContain("notFound()");
   });
+
+  it("limits an Instructor account to its own instructor directory record", () => {
+    const migration = source(
+      "supabase/migrations/20260916155500_f11_instructor_self_read_hardening.sql",
+    );
+
+    expect(migration).toContain("sm.person_id = instructors.person_id");
+    expect(migration).toContain("sm.user_id = (select auth.uid())");
+    expect(migration).toContain("sm.role = 'instructor'::public.studio_role");
+    expect(migration).toContain(
+      "not private.has_studio_role(studio_id, array['instructor'::public.studio_role])",
+    );
+  });
 });
