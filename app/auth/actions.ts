@@ -10,46 +10,6 @@ function loginPath(mode: "admin" | "student") {
   return mode === "admin" ? "/login/admin" : "/login/student";
 }
 
-type AuthErrorDetails = {
-  code: string | null;
-  status: number | null;
-  name: string | null;
-  message: string | null;
-};
-
-function readAuthErrorDetails(error: unknown): AuthErrorDetails {
-  if (!error || typeof error !== "object") {
-    return { code: null, status: null, name: null, message: null };
-  }
-
-  const authError = error as Record<string, unknown>;
-  return {
-    code: typeof authError.code === "string" ? authError.code : null,
-    status: typeof authError.status === "number" ? authError.status : null,
-    name: typeof authError.name === "string" ? authError.name : null,
-    message:
-      typeof authError.message === "string" ? authError.message.slice(0, 160) : null,
-  };
-}
-
-function classifyAuthFailure(error: unknown, mode: "admin" | "student") {
-  const details = readAuthErrorDetails(error);
-
-  // Never log credentials, phone numbers, emails or passwords. These fields are enough
-  // to diagnose Auth failures from production logs without exposing login identifiers.
-  console.error("[auth.signIn] Supabase Auth rejected sign-in", {
-    mode,
-    code: details.code,
-    status: details.status,
-    name: details.name,
-    message: details.message,
-  });
-
-  if (details.code === "invalid_credentials") return "invalid";
-  if (details.code === "over_request_rate_limit" || details.status === 429) return "rate";
-  return "auth";
-}
-
 export async function signIn(formData: FormData) {
   const password = String(formData.get("password") ?? "");
   const mode = formData.get("mode") === "student" ? "student" : "admin";
@@ -69,13 +29,25 @@ export async function signIn(formData: FormData) {
   const { data, error } = await supabase.auth.signInWithPassword(credentials);
 
   if (error || !data.user) {
-    const loginError = error ? classifyAuthFailure(error, mode) : "auth";
-    if (!error) {
-      console.error("[auth.signIn] Supabase Auth returned no user without an error", {
+    if (error) {
+      console.error("[auth.signIn] Supabase Auth rejected sign-in", {
         mode,
+        code: error.code,
+        status: error.status,
+        name: error.name,
+        message: error.message.slice(0, 160),
       });
     }
-    redirect(`${loginPath(mode)}?error=${loginError}`);
+
+    if (error?.code === "invalid_credentials") {
+      redirect(`${loginPath(mode)}?error=invalid`);
+    }
+
+    if (error?.status === 429) {
+      redirect(`${loginPath(mode)}?error=rate`);
+    }
+
+    redirect(`${loginPath(mode)}?error=auth`);
   }
 
   const [{ data: account }, { data: membership }] = await Promise.all([
