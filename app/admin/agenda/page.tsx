@@ -17,6 +17,12 @@ function formatDateTime(value: string, timeZone: string) {
   }).format(new Date(value));
 }
 
+function formatMoney(minor: number) {
+  return new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(
+    minor / 100,
+  );
+}
+
 export default async function AgendaPage({
   searchParams,
 }: {
@@ -36,7 +42,7 @@ export default async function AgendaPage({
     supabase.from("disciplines").select("id,name,active").eq("studio_id", studio.id).order("name"),
     supabase
       .from("class_templates")
-      .select("id,name,duration_minutes,capacity,discipline_id,credit_cost")
+      .select("id,name,duration_minutes,capacity,discipline_id,credit_cost,drop_in_price_minor")
       .eq("studio_id", studio.id)
       .eq("active", true)
       .order("name"),
@@ -92,7 +98,7 @@ export default async function AgendaPage({
     space: "El espacio no admite ese cupo.",
     instructor: "Selecciona un instructor activo.",
     schedule: "No se pudo crear el horario recurrente.",
-    activity: "No se pudo crear la actividad.",
+    activity: "No se pudo crear la actividad. Revisa también el precio de clase suelta.",
   };
   return (
     <main className="dashboard-shell">
@@ -161,7 +167,9 @@ export default async function AgendaPage({
                             ? (instructorMap.get(session.instructor_id) ?? "Instructor")
                             : "Sin instructor"}
                         </span>
-                        {session.recurring_schedule_id ? (
+                        {template?.drop_in_price_minor != null ? (
+                          <small>Clase suelta · {formatMoney(template.drop_in_price_minor)}</small>
+                        ) : session.recurring_schedule_id ? (
                           <small>
                             {session.is_schedule_exception
                               ? "Excepción de horario"
@@ -267,10 +275,23 @@ export default async function AgendaPage({
                       <input name="credit_cost" type="number" min="1" defaultValue="1" required />
                     </label>
                   </div>
-                  <label>
-                    Cupo predeterminado
-                    <input name="capacity" type="number" min="1" defaultValue="8" required />
-                  </label>
+                  <div className="form-split">
+                    <label>
+                      Cupo predeterminado
+                      <input name="capacity" type="number" min="1" defaultValue="8" required />
+                    </label>
+                    <label>
+                      Precio clase suelta (MXN)
+                      <input
+                        name="drop_in_price"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        inputMode="decimal"
+                        placeholder="Opcional"
+                      />
+                    </label>
+                  </div>
                   <button className="primary-button" type="submit" disabled={!disciplines?.length}>
                     Crear actividad
                   </button>
@@ -292,6 +313,9 @@ export default async function AgendaPage({
                       <option key={item.id} value={item.id}>
                         {item.name} · {item.duration_minutes} min · {item.credit_cost} crédito
                         {item.credit_cost === 1 ? "" : "s"}
+                        {item.drop_in_price_minor != null
+                          ? ` · Suelta ${formatMoney(item.drop_in_price_minor)}`
+                          : ""}
                       </option>
                     ))}
                   </select>
