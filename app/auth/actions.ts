@@ -9,6 +9,23 @@ function loginPath(mode: "admin" | "student") {
   return mode === "admin" ? "/login/admin" : "/login/student";
 }
 
+function loginAuthError(
+  mode: "admin" | "student",
+  error: { code?: string; message?: string } | null,
+) {
+  if (!error || mode !== "student") return "invalid";
+
+  const message = error.message?.toLowerCase() ?? "";
+  if (error.code === "phone_provider_disabled" || message.includes("phone logins are disabled")) {
+    return "phone_disabled";
+  }
+  if (error.code === "phone_not_confirmed" || message.includes("phone not confirmed")) {
+    return "phone_unconfirmed";
+  }
+
+  return "invalid";
+}
+
 export async function signIn(formData: FormData) {
   const password = String(formData.get("password") ?? "");
   const mode = formData.get("mode") === "student" ? "student" : "admin";
@@ -26,7 +43,7 @@ export async function signIn(formData: FormData) {
   const { data, error } = await supabase.auth.signInWithPassword(credentials);
 
   if (error || !data.user) {
-    redirect(`${loginPath(mode)}?error=invalid`);
+    redirect(`${loginPath(mode)}?error=${loginAuthError(mode, error)}`);
   }
 
   const [{ data: account }, { data: membership }] = await Promise.all([
