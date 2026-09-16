@@ -7,8 +7,9 @@
 - F8 · Asistencia: **CERRADA / UAT APROBADA**. Ver `docs/f8-uat-closure.md`.
 - F9 · Ventas/Pagos: **CERRADA / UAT APROBADA**. Ver `docs/f9-uat-closure.md` y `docs/f9-implementation-decisions.md`.
 - F9 incluye como contratos cerrados: Sale/Payment separados, adquisición/créditos anti-duplicados, reembolsos/anulaciones con historia, inscripción configurable, inscripción obligatoria en eligibility, vigencia vitalicia y presets.
-- F10 · Portal alumna: **EN DESARROLLO / UAT PENDIENTE** en `f10-student-portal`.
-- PR de integración F10: `#13` (`f10-student-portal` → `main`), abierto como draft mientras termina QA técnico.
+- F10 · Portal alumna: **DESPLEGADA EN PRODUCCIÓN / UAT PENDIENTE**.
+- PR de integración F10: `#13` (`f10-student-portal` → `main`), **MERGED** mediante merge normal.
+- Merge F10 en `main`: `05212afe5174e8e9607f45ca4519cbe48f1c6360`.
 
 ## F10 · checkpoint técnico
 
@@ -24,13 +25,27 @@
 - La cuenta aprovisionada usa contraseña temporal aleatoria y queda obligada a establecer una contraseña propia antes de entrar a `/student`.
 - `persons/person_contacts` Student quedaron endurecidos al contexto activo `private.is_current_student(...)`.
 - Documentos sigue siendo sólo acceso futuro de F12; F10 no simula documentos ni aceptaciones.
+- El intento de migrar el runtime privilegiado al helper moderno `@supabase/server` fue bloqueado por los controles de la herramienta de despliegue; repo y Supabase permanecen alineados con la implementación estándar actualmente desplegada. No cambia reglas de negocio ni expone secretos al cliente.
 
-## Pendiente antes de merge/producción
+## QA técnico completado
 
-- Completar CI verde sobre el head final del PR.
-- Validar el preview responsive y rutas críticas.
-- Ejecutar el primer aprovisionamiento real desde administración y comprobar login teléfono + contraseña temporal → cambio obligatorio → Portal Student.
-- Completar UAT explícito antes de cerrar F10.
+- CI final de la rama F10: **GREEN**.
+- CI del merge en `main`: **GREEN**.
+- Format: success.
+- Lint: success.
+- Typecheck: success.
+- Tests: success, 38/38.
+- Build: success.
+- Vercel Preview de F10: **READY**.
+- Vercel producción para el merge `05212afe...`: **Deployment has completed / success**.
+
+## Pendiente para cerrar F10
+
+- Ejecutar el primer aprovisionamiento real desde administración.
+- Comprobar login de alumna: teléfono + contraseña temporal → cambio obligatorio de contraseña → Portal Student.
+- UAT funcional: Inicio, paquete, movimientos/pagos, reservar, detalle/confirmación, Mis clases, cancelar, Perfil y estados de bloqueo.
+- Validar visualmente móvil/iPad/desktop durante UAT.
+- Obtener aprobación UAT explícita antes de marcar F10 como cerrada.
 
 ## Regla para continuar
 
