@@ -80,7 +80,9 @@ describe("F10 student portal contracts", () => {
     const edgeFunction = source("supabase/functions/provision-student-access/index.ts");
     const adminAction = source("app/admin/alumnas/[studentId]/actions.ts");
     const accessLayout = source("app/admin/alumnas/[studentId]/layout.tsx");
-    expect(edgeFunction).toContain('withSupabase({ auth: "user" }');
+    expect(edgeFunction).toContain('Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")');
+    expect(edgeFunction).toContain('Deno.env.get("SUPABASE_ANON_KEY")');
+    expect(edgeFunction).toContain("auth.getUser()");
     expect(edgeFunction).toContain('.eq("capability_key", "settings.write")');
     expect(edgeFunction).toContain("auth.admin.createUser");
     expect(edgeFunction).toContain("phone_confirm: true");
@@ -88,7 +90,7 @@ describe("F10 student portal contracts", () => {
     expect(adminAction).toContain("CAPABILITIES.SETTINGS_WRITE");
     expect(accessLayout).toContain("CAPABILITIES.SETTINGS_WRITE");
     expect(adminAction).not.toContain("SUPABASE_SERVICE_ROLE_KEY");
-    expect(edgeFunction).not.toContain("SUPABASE_SERVICE_ROLE_KEY");
+    expect(adminAction).not.toContain("service_role");
   });
 
   it("never writes auth.users from business SQL", () => {
