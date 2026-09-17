@@ -10,6 +10,7 @@ import {
 } from "@/lib/student/portal";
 
 import { cancelStudentReservationAction } from "./actions";
+import { QuickBookButton } from "./reservar/quick-book-button";
 
 function safeDate(value: string | undefined, fallback: string) {
   return value && /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : fallback;
@@ -241,6 +242,7 @@ export default async function StudentHomePage({
                   );
                   const reserved = Boolean(reservation);
                   const eligible = Boolean(session.eligibility?.eligible);
+                  const timeLabel = formatDateTime(session.starts_at, studio.timezone);
 
                   return (
                     <article
@@ -253,9 +255,7 @@ export default async function StudentHomePage({
                             {session.discipline}
                           </p>
                           <h3 className="mt-1 font-semibold text-white">{session.activity}</h3>
-                          <p className="mt-1 text-sm text-zinc-400">
-                            {formatDateTime(session.starts_at, studio.timezone)}
-                          </p>
+                          <p className="mt-1 text-sm text-zinc-400">{timeLabel}</p>
                           <p className="mt-1 text-xs text-zinc-500">
                             {[session.coach, session.space || session.location]
                               .filter(Boolean)
@@ -282,14 +282,23 @@ export default async function StudentHomePage({
                         </div>
                       </div>
 
-                      <div className="mt-4 flex flex-wrap items-center gap-3">
+                      <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-white/10 pt-4">
                         <Link
                           href={`/student/reservar/${session.session_id}`}
-                          className="text-sm font-semibold text-fuchsia-300"
+                          className="min-h-11 rounded-2xl border border-white/10 px-4 py-2.5 text-sm font-semibold text-zinc-300 transition hover:bg-white/[0.05] hover:text-white"
                         >
-                          Ver detalle
+                          Ver detalles
                         </Link>
-                        {reservation ? (
+                        {!reservation ? (
+                          <QuickBookButton
+                            sessionId={session.session_id}
+                            activity={session.activity}
+                            discipline={session.discipline}
+                            timeLabel={timeLabel}
+                            eligible={eligible}
+                            reserved={false}
+                          />
+                        ) : (
                           <details className="group">
                             <summary className="cursor-pointer list-none text-sm font-semibold text-rose-300">
                               Cancelar
@@ -315,7 +324,7 @@ export default async function StudentHomePage({
                               </button>
                             </form>
                           </details>
-                        ) : null}
+                        )}
                       </div>
                     </article>
                   );
@@ -409,30 +418,36 @@ export default async function StudentHomePage({
             )}
           </div>
         </section>
-
-        <section className="order-3 rounded-3xl border border-white/10 bg-white/[0.03] p-5 sm:p-6">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500">
-            Tu actividad
-          </p>
-          <h2 className="mt-1 text-xl font-semibold text-white">Estadísticas</h2>
-          <div className="mt-4 grid grid-cols-2 gap-3">
-            <div className="rounded-2xl bg-black/20 p-4">
-              <strong className="text-2xl text-white">{snapshot.stats.attended_this_month}</strong>
-              <p className="mt-1 text-xs text-zinc-500">este mes</p>
-            </div>
-            <div className="rounded-2xl bg-black/20 p-4">
-              <strong className="text-2xl text-white">{snapshot.stats.streak_days}</strong>
-              <p className="mt-1 text-xs text-zinc-500">días de racha</p>
-            </div>
-            <div className="col-span-2 rounded-2xl bg-black/20 p-4">
-              <p className="text-xs text-zinc-500">Clase más asistida</p>
-              <strong className="mt-1 block text-lg text-white">
-                {snapshot.stats.favorite_activity ?? "Aún sin datos"}
-              </strong>
-            </div>
-          </div>
-        </section>
       </div>
+
+      <section className="rounded-3xl border border-white/10 bg-white/[0.03] p-5 sm:p-6">
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500">Tu progreso</p>
+        <h2 className="mt-1 text-xl font-semibold text-white">Estadísticas</h2>
+        <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div className="rounded-2xl bg-black/20 p-4">
+            <p className="text-xs text-zinc-500">Asistencias</p>
+            <p className="mt-1 text-xl font-semibold text-white">{snapshot.stats.attended_total}</p>
+          </div>
+          <div className="rounded-2xl bg-black/20 p-4">
+            <p className="text-xs text-zinc-500">Este mes</p>
+            <p className="mt-1 text-xl font-semibold text-white">
+              {snapshot.stats.attended_this_month}
+            </p>
+          </div>
+          <div className="rounded-2xl bg-black/20 p-4">
+            <p className="text-xs text-zinc-500">Favorita</p>
+            <p className="mt-1 text-sm font-semibold text-white">
+              {snapshot.stats.favorite_activity ?? "—"}
+            </p>
+          </div>
+          <div className="rounded-2xl bg-black/20 p-4">
+            <p className="text-xs text-zinc-500">Racha</p>
+            <p className="mt-1 text-xl font-semibold text-white">
+              {snapshot.stats.streak_days} día{snapshot.stats.streak_days === 1 ? "" : "s"}
+            </p>
+          </div>
+        </div>
+      </section>
     </main>
   );
 }
