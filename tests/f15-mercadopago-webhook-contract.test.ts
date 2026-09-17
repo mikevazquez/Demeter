@@ -136,5 +136,4 @@ describe("F15 Mercado Pago webhook and activation", () => {
       webhook.indexOf("https://api.mercadopago.com/v1/orders/"),
     );
   });
-
 });
