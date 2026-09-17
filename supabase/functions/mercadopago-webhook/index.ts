@@ -15,7 +15,7 @@ type MercadoPagoOrder = {
   status_detail?: unknown;
   total_amount?: unknown;
   total_paid_amount?: unknown;
-  currency_id?: unknown;
+  currency?: unknown;
   transactions?: {
     payments?: MercadoPagoPayment[];
   };
@@ -255,7 +255,7 @@ Deno.serve(async (request) => {
   const externalReference = safeText(order.external_reference);
   const providerStatus = safeText(order.status);
   const providerStatusDetail = safeText(order.status_detail);
-  const currency = safeText(order.currency_id)?.toUpperCase() ?? null;
+  const currency = safeText(order.currency)?.toUpperCase() ?? null;
   const totalAmountMinor = moneyToMinor(order.total_amount);
   const totalPaidAmountMinor = moneyToMinor(order.total_paid_amount);
 
