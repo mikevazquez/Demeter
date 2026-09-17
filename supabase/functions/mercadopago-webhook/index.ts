@@ -381,7 +381,9 @@ Deno.serve(async (request) => {
     const currency = safeText(order.currency)?.toUpperCase() ?? null;
     const totalAmountMinor = moneyToMinor(order.total_amount);
     const totalPaidAmountMinor = moneyToMinor(order.total_paid_amount);
-    const payments = Array.isArray(order.transactions?.payments) ? order.transactions?.payments : [];
+    const payments = Array.isArray(order.transactions?.payments)
+      ? order.transactions?.payments
+      : [];
 
     if (!orderId || orderId !== queryDataId || !externalReference) {
       await markEvent("error", "provider_order_identity_invalid");
@@ -459,7 +461,10 @@ Deno.serve(async (request) => {
           .eq("id", attempt.id)
           .is("processed_at", null);
         await markEvent("error", "provider_amount_or_currency_mismatch");
-        return jsonResponse({ ok: true, result: "provider_amount_or_currency_mismatch" });
+        return jsonResponse({
+          ok: true,
+          result: "provider_amount_or_currency_mismatch",
+        });
       }
 
       const { data: activation, error: activationError } = await supabase.rpc(
@@ -485,7 +490,11 @@ Deno.serve(async (request) => {
         "processed",
         activation?.reused === true ? "approved_reused" : "approved_activated",
       );
-      return jsonResponse({ ok: true, result: "approved", reused: activation?.reused === true });
+      return jsonResponse({
+        ok: true,
+        result: "approved",
+        reused: activation?.reused === true,
+      });
     }
 
     if (attempt.processed_at || attempt.sale_id) {
@@ -495,7 +504,9 @@ Deno.serve(async (request) => {
           provider_status: providerStatus,
           provider_status_detail: providerStatusDetail,
           last_webhook_at: new Date().toISOString(),
-          failure_code: `post_approval_${providerStatus ?? "unknown"}_${providerStatusDetail ?? "unknown"}`,
+          failure_code: `post_approval_${providerStatus ?? "unknown"}_${
+            providerStatusDetail ?? "unknown"
+          }`,
           updated_at: new Date().toISOString(),
         })
         .eq("id", attempt.id);
@@ -536,9 +547,15 @@ Deno.serve(async (request) => {
     let nonApprovedProviderStatusDetail = usePaymentState
       ? paymentStatusDetail
       : providerStatusDetail;
-    let mapped = mapAttemptStatus(nonApprovedProviderStatus, nonApprovedProviderStatusDetail);
+    let mapped = mapAttemptStatus(
+      nonApprovedProviderStatus,
+      nonApprovedProviderStatusDetail,
+    );
 
-    if (providerStatus?.toLowerCase() === "created" && mapped.status === "order_created") {
+    if (
+      providerStatus?.toLowerCase() === "created" &&
+      mapped.status === "order_created"
+    ) {
       const searchedPayment = await searchNonApprovedPayment(
         accessToken,
         externalReference,
