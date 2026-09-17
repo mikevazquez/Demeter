@@ -384,9 +384,7 @@ Deno.serve(async (request) => {
     const status = safeText(item.status)?.toLowerCase();
     return status === "processing" || status === "action_required";
   });
-  const failedPayment = payments?.find(
-    (item) => safeText(item.status)?.toLowerCase() === "failed",
-  );
+  const failedPayment = payments?.find((item) => safeText(item.status)?.toLowerCase() === "failed");
   const terminalPayment = payments?.find((item) => {
     const status = safeText(item.status)?.toLowerCase();
     return status === "canceled" || status === "cancelled" || status === "refunded";
