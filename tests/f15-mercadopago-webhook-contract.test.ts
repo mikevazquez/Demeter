@@ -29,6 +29,8 @@ describe("F15 Mercado Pago webhook and activation", () => {
     expect(webhook).toContain('providerStatus?.toLowerCase() === "processed"');
     expect(webhook).toContain('providerStatusDetail?.toLowerCase() === "accredited"');
     expect(webhook).toContain("totalAmountMinor !== attempt.amount_minor");
+    expect(webhook).toContain("safeText(order.currency)");
+    expect(webhook).not.toContain("order.currency_id");
     expect(webhook).toContain("currency !== attempt.currency.toUpperCase()");
   });
 
