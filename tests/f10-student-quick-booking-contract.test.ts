@@ -31,9 +31,9 @@ describe("F10 student quick booking UX", () => {
   it("still delegates eligibility and credit mutations to the canonical booking RPC", () => {
     const actions = source("app/student/actions.ts");
     const inlineBlock =
-      actions.split("export async function bookStudentSessionInlineAction")[1]?.split(
-        "export async function bookStudentSessionAction",
-      )[0] ?? "";
+      actions
+        .split("export async function bookStudentSessionInlineAction")[1]
+        ?.split("export async function bookStudentSessionAction")[0] ?? "";
 
     expect(inlineBlock).toContain('supabase.rpc("student_book_session"');
     expect(inlineBlock).not.toContain("credit_ledger");
