@@ -34,10 +34,7 @@ jobs:
         run: npm ci
 
       - name: Format check
-        run: |
-          npm run format
-          git diff -- supabase/functions/create-mercadopago-order/index.ts supabase/functions/mercadopago-webhook/index.ts tests/f15-mercadopago-webhook-contract.test.ts
-          exit 1
+        run: npm run format:check
 
       - name: Lint
         run: npm run lint
