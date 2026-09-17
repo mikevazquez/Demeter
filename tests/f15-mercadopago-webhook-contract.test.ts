@@ -45,7 +45,9 @@ describe("F15 Mercado Pago webhook and activation", () => {
     expect(webhook).not.toContain('.from("credit_ledger").insert');
 
     expect(migration).toContain("for update");
-    expect(migration).toContain("if v_attempt.processed_at is not null or v_attempt.sale_id is not null");
+    expect(migration).toContain(
+      "if v_attempt.processed_at is not null or v_attempt.sale_id is not null",
+    );
     expect(migration).toContain("insert into public.sales");
     expect(migration).toContain("insert into public.payments");
     expect(migration).toContain("insert into public.product_acquisitions");
