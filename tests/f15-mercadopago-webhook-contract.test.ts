@@ -87,23 +87,17 @@ describe("F15 Mercado Pago webhook and activation", () => {
     expect(webhook).toContain("if (attempt.processed_at || attempt.sale_id)");
   });
 
-  it("uses payment transaction state for rejected checkout", () => {
+  it("uses payment transaction state when a rejected checkout leaves the order created", () => {
     const webhook = source("supabase/functions/mercadopago-webhook/index.ts");
 
-    expect(webhook).toContain(
-      "const payments = Array.isArray(order.transactions?.payments)",
-    );
+    expect(webhook).toContain("const payments = Array.isArray(order.transactions?.payments)");
     expect(webhook).toContain("const failedPayment = payments?.find(");
+    expect(webhook).toContain('safeText(item.status)?.toLowerCase() === "failed"');
     expect(webhook).toContain(
-      'safeText(item.status)?.toLowerCase() === "failed"',
-    );
-    expect(webhook).toContain(
-      "const nonApprovedProviderStatus = usePaymentState",
+      "const nonApprovedProviderStatus = usePaymentState ? paymentStatus : providerStatus",
     );
     expect(webhook).toContain("provider_status: nonApprovedProviderStatus");
-    expect(webhook).toContain(
-      "provider_status_detail: nonApprovedProviderStatusDetail",
-    );
+    expect(webhook).toContain("provider_status_detail: nonApprovedProviderStatusDetail");
   });
 
   it("distinguishes reused approvals in webhook audit results", () => {
