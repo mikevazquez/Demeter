@@ -43,6 +43,12 @@ function safeText(value: unknown) {
   return typeof value === "string" && value.trim() ? value.trim() : null;
 }
 
+function validPayerEmail(value: unknown) {
+  const email = safeText(value)?.toLowerCase() ?? null;
+  if (!email || email.length > 254 || email.endsWith(".invalid")) return null;
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? email : null;
+}
+
 const handler = {
   fetch: withSupabase({ auth: "user" }, async (request, context) => {
     if (request.method !== "POST") return jsonResponse({ error: "method_not_allowed" }, 405);
@@ -149,6 +155,17 @@ const handler = {
       });
     }
 
+    const { data: student, error: studentError } = await adminClient
+      .from("students")
+      .select("id,email")
+      .eq("id", attemptRow.student_id)
+      .maybeSingle();
+
+    if (studentError || !student || student.id !== attemptRow.student_id) {
+      return jsonResponse({ error: "checkout_context_failed" }, 500);
+    }
+
+    const payerEmail = validPayerEmail(student.email);
     const totalAmount = moneyFromMinor(attemptRow.amount_minor);
     if (!totalAmount) return jsonResponse({ error: "online_price_invalid" }, 409);
 
@@ -161,6 +178,7 @@ const handler = {
       total_amount: totalAmount,
       external_reference: attemptRow.external_reference,
       description: product.name,
+      ...(payerEmail ? { payer: { email: payerEmail } } : {}),
       items: [
         {
           title: product.name,
