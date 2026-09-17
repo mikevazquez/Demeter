@@ -106,21 +106,23 @@ const handler = {
       });
     }
 
-    const [{ data: attemptRow, error: attemptLookupError }, { data: product, error: productError }] =
-      await Promise.all([
-        adminClient
-          .from("online_checkout_attempts")
-          .select(
-            "id,studio_id,student_id,product_template_id,client_request_key,external_reference,amount_minor,currency,status,provider_order_id,checkout_url",
-          )
-          .eq("id", attempt.id)
-          .maybeSingle(),
-        adminClient
-          .from("product_templates")
-          .select("id,studio_id,name,active,online_purchasable,product_type")
-          .eq("id", attempt.product_template_id)
-          .maybeSingle(),
-      ]);
+    const [
+      { data: attemptRow, error: attemptLookupError },
+      { data: product, error: productError },
+    ] = await Promise.all([
+      adminClient
+        .from("online_checkout_attempts")
+        .select(
+          "id,studio_id,student_id,product_template_id,client_request_key,external_reference,amount_minor,currency,status,provider_order_id,checkout_url",
+        )
+        .eq("id", attempt.id)
+        .maybeSingle(),
+      adminClient
+        .from("product_templates")
+        .select("id,studio_id,name,active,online_purchasable,product_type")
+        .eq("id", attempt.product_template_id)
+        .maybeSingle(),
+    ]);
 
     if (attemptLookupError || productError || !attemptRow || !product) {
       return jsonResponse({ error: "checkout_context_failed" }, 500);
