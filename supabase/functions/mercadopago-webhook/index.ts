@@ -258,6 +258,7 @@ Deno.serve(async (request) => {
   const currency = safeText(order.currency)?.toUpperCase() ?? null;
   const totalAmountMinor = moneyToMinor(order.total_amount);
   const totalPaidAmountMinor = moneyToMinor(order.total_paid_amount);
+  const payments = Array.isArray(order.transactions?.payments) ? order.transactions?.payments : [];
 
   if (!orderId || orderId !== queryDataId || !externalReference) {
     await markEvent("error", "provider_order_identity_invalid");
@@ -305,9 +306,6 @@ Deno.serve(async (request) => {
     providerStatusDetail?.toLowerCase() === "accredited";
 
   if (approved) {
-    const payments = Array.isArray(order.transactions?.payments)
-      ? order.transactions?.payments
-      : [];
     const payment =
       payments?.find(
         (item) =>
@@ -360,7 +358,7 @@ Deno.serve(async (request) => {
       return jsonResponse({ error: "activation_failed" }, 500);
     }
 
-    await markEvent("processed", "approved_activated");
+    await markEvent("processed", activation?.reused === true ? "approved_reused" : "approved_activated");
     return jsonResponse({ ok: true, result: "approved", reused: activation?.reused === true });
   }
 
@@ -379,13 +377,35 @@ Deno.serve(async (request) => {
     return jsonResponse({ ok: true, result: "post_approval_state_recorded" });
   }
 
-  const mapped = mapAttemptStatus(providerStatus, providerStatusDetail);
+  const pendingPayment = payments?.find((item) => {
+    const status = safeText(item.status)?.toLowerCase();
+    return status === "processing" || status === "action_required";
+  });
+  const failedPayment = payments?.find(
+    (item) => safeText(item.status)?.toLowerCase() === "failed",
+  );
+  const terminalPayment = payments?.find((item) => {
+    const status = safeText(item.status)?.toLowerCase();
+    return status === "canceled" || status === "cancelled" || status === "refunded";
+  });
+  const nonApprovedPayment = pendingPayment ?? failedPayment ?? terminalPayment ?? payments?.[0];
+  const paymentStatus = safeText(nonApprovedPayment?.status);
+  const paymentStatusDetail = safeText(nonApprovedPayment?.status_detail);
+  const usePaymentState =
+    providerStatus?.toLowerCase() === "created" &&
+    Boolean(paymentStatus && paymentStatus.toLowerCase() !== "created");
+  const nonApprovedProviderStatus = usePaymentState ? paymentStatus : providerStatus;
+  const nonApprovedProviderStatusDetail = usePaymentState
+    ? paymentStatusDetail
+    : providerStatusDetail;
+
+  const mapped = mapAttemptStatus(nonApprovedProviderStatus, nonApprovedProviderStatusDetail);
   const { error: statusUpdateError } = await supabase
     .from("online_checkout_attempts")
     .update({
       status: mapped.status,
-      provider_status: providerStatus,
-      provider_status_detail: providerStatusDetail,
+      provider_status: nonApprovedProviderStatus,
+      provider_status_detail: nonApprovedProviderStatusDetail,
       last_webhook_at: new Date().toISOString(),
       failure_code: mapped.failureCode,
       updated_at: new Date().toISOString(),
