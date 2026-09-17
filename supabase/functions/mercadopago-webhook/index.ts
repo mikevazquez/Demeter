@@ -547,15 +547,9 @@ Deno.serve(async (request) => {
     let nonApprovedProviderStatusDetail = usePaymentState
       ? paymentStatusDetail
       : providerStatusDetail;
-    let mapped = mapAttemptStatus(
-      nonApprovedProviderStatus,
-      nonApprovedProviderStatusDetail,
-    );
+    let mapped = mapAttemptStatus(nonApprovedProviderStatus, nonApprovedProviderStatusDetail);
 
-    if (
-      providerStatus?.toLowerCase() === "created" &&
-      mapped.status === "order_created"
-    ) {
+    if (providerStatus?.toLowerCase() === "created" && mapped.status === "order_created") {
       const searchedPayment = await searchNonApprovedPayment(
         accessToken,
         externalReference,
