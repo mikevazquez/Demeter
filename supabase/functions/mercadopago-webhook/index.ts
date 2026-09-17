@@ -21,6 +21,21 @@ type MercadoPagoOrder = {
   };
 };
 
+type MercadoPagoPaymentSearchItem = {
+  id?: unknown;
+  status?: unknown;
+  status_detail?: unknown;
+  transaction_amount?: unknown;
+  currency_id?: unknown;
+  external_reference?: unknown;
+  date_created?: unknown;
+  date_last_updated?: unknown;
+};
+
+type MercadoPagoPaymentSearchResponse = {
+  results?: MercadoPagoPaymentSearchItem[];
+};
+
 type WebhookBody = {
   id?: unknown;
   action?: unknown;
@@ -40,6 +55,11 @@ type CheckoutAttempt = {
   status: string;
   sale_id: string | null;
   processed_at: string | null;
+};
+
+type MappedAttemptStatus = {
+  status: string;
+  failureCode: string | null;
 };
 
 function jsonResponse(body: Record<string, unknown>, status = 200) {
@@ -120,25 +140,127 @@ function moneyToMinor(value: unknown) {
   return Number.isSafeInteger(minor) ? minor : null;
 }
 
-function mapAttemptStatus(providerStatus: string | null, providerStatusDetail: string | null) {
+function mapAttemptStatus(
+  providerStatus: string | null,
+  providerStatusDetail: string | null,
+): MappedAttemptStatus {
   const status = providerStatus?.toLowerCase() ?? "";
   const detail = providerStatusDetail?.toLowerCase() ?? "";
 
   if (status === "created") return { status: "order_created", failureCode: null };
-  if (status === "processing" || status === "action_required") {
+  if (
+    status === "processing" ||
+    status === "action_required" ||
+    status === "pending" ||
+    status === "in_process" ||
+    status === "authorized"
+  ) {
     return { status: "pending", failureCode: null };
   }
-  if (status === "failed") return { status: "rejected", failureCode: detail || "provider_failed" };
-  if (status === "canceled" || status === "cancelled") {
-    return { status: "cancelled", failureCode: detail || null };
+  if (status === "failed" || status === "rejected") {
+    return { status: "rejected", failureCode: detail || "provider_rejected" };
   }
-  if (status === "refunded") {
-    return { status: "cancelled", failureCode: "provider_refunded_before_activation" };
+  if (
+    status === "canceled" ||
+    status === "cancelled" ||
+    status === "refunded" ||
+    status === "charged_back"
+  ) {
+    return { status: "cancelled", failureCode: detail || null };
   }
   if (status === "processed") {
     return { status: "error", failureCode: `provider_processed_${detail || "unknown"}` };
   }
   return { status: "error", failureCode: `provider_status_${status || "unknown"}` };
+}
+
+function mapPaymentSearchStatus(
+  providerStatus: string | null,
+  providerStatusDetail: string | null,
+): MappedAttemptStatus | null {
+  const status = providerStatus?.toLowerCase() ?? "";
+  const detail = providerStatusDetail?.toLowerCase() ?? "";
+
+  if (status === "rejected") {
+    return { status: "rejected", failureCode: detail || "provider_rejected" };
+  }
+  if (status === "pending" || status === "in_process" || status === "authorized") {
+    return { status: "pending", failureCode: null };
+  }
+  if (
+    status === "cancelled" ||
+    status === "canceled" ||
+    status === "refunded" ||
+    status === "charged_back"
+  ) {
+    return { status: "cancelled", failureCode: detail || null };
+  }
+  return null;
+}
+
+function paymentSearchTimestamp(item: MercadoPagoPaymentSearchItem) {
+  const raw = safeText(item.date_last_updated) ?? safeText(item.date_created);
+  if (!raw) return 0;
+  const timestamp = Date.parse(raw);
+  return Number.isFinite(timestamp) ? timestamp : 0;
+}
+
+async function searchNonApprovedPayment(
+  accessToken: string,
+  externalReference: string,
+  expectedAmountMinor: number,
+  expectedCurrency: string,
+) {
+  const searchUrl = new URL("https://api.mercadopago.com/v1/payments/search");
+  searchUrl.searchParams.set("external_reference", externalReference);
+  searchUrl.searchParams.set("sort", "date_created");
+  searchUrl.searchParams.set("criteria", "desc");
+  searchUrl.searchParams.set("limit", "20");
+
+  let searchResponse: Response;
+  try {
+    searchResponse = await fetch(searchUrl, {
+      headers: {
+        accept: "application/json",
+        authorization: `Bearer ${accessToken}`,
+      },
+      signal: AbortSignal.timeout(10_000),
+    });
+  } catch {
+    return null;
+  }
+
+  if (!searchResponse.ok) return null;
+
+  let payload: MercadoPagoPaymentSearchResponse;
+  try {
+    payload = (await searchResponse.json()) as MercadoPagoPaymentSearchResponse;
+  } catch {
+    return null;
+  }
+
+  const matches = (Array.isArray(payload.results) ? payload.results : [])
+    .filter((item) => {
+      const itemReference = safeText(item.external_reference);
+      const itemCurrency = safeText(item.currency_id)?.toUpperCase() ?? null;
+      const itemAmountMinor = moneyToMinor(item.transaction_amount);
+      return (
+        itemReference === externalReference &&
+        itemCurrency === expectedCurrency.toUpperCase() &&
+        itemAmountMinor === expectedAmountMinor
+      );
+    })
+    .sort((left, right) => paymentSearchTimestamp(right) - paymentSearchTimestamp(left));
+
+  const latest = matches[0];
+  if (!latest) return null;
+
+  const providerStatus = safeText(latest.status);
+  const providerStatusDetail = safeText(latest.status_detail);
+  const mapped = mapPaymentSearchStatus(providerStatus, providerStatusDetail);
+  if (!mapped) return null;
+
+  return { providerStatus, providerStatusDetail, mapped };
 }
 
 Deno.serve(async (request) => {
@@ -382,25 +504,53 @@ Deno.serve(async (request) => {
 
   const pendingPayment = payments?.find((item) => {
     const status = safeText(item.status)?.toLowerCase();
-    return status === "processing" || status === "action_required";
+    return (
+      status === "processing" ||
+      status === "action_required" ||
+      status === "pending" ||
+      status === "in_process" ||
+      status === "authorized"
+    );
   });
-  const failedPayment = payments?.find((item) => safeText(item.status)?.toLowerCase() === "failed");
+  const failedPayment = payments?.find((item) => {
+    const status = safeText(item.status)?.toLowerCase();
+    return status === "failed" || status === "rejected";
+  });
   const terminalPayment = payments?.find((item) => {
     const status = safeText(item.status)?.toLowerCase();
-    return status === "canceled" || status === "cancelled" || status === "refunded";
+    return (
+      status === "canceled" ||
+      status === "cancelled" ||
+      status === "refunded" ||
+      status === "charged_back"
+    );
   });
-  const nonApprovedPayment = pendingPayment ?? failedPayment ?? terminalPayment ?? payments?.[0];
+  const nonApprovedPayment = pendingPayment ?? failedPayment ?? terminalPayment;
   const paymentStatus = safeText(nonApprovedPayment?.status);
   const paymentStatusDetail = safeText(nonApprovedPayment?.status_detail);
   const usePaymentState =
     providerStatus?.toLowerCase() === "created" &&
     Boolean(paymentStatus && paymentStatus.toLowerCase() !== "created");
-  const nonApprovedProviderStatus = usePaymentState ? paymentStatus : providerStatus;
-  const nonApprovedProviderStatusDetail = usePaymentState
+  let nonApprovedProviderStatus = usePaymentState ? paymentStatus : providerStatus;
+  let nonApprovedProviderStatusDetail = usePaymentState
     ? paymentStatusDetail
     : providerStatusDetail;
+  let mapped = mapAttemptStatus(nonApprovedProviderStatus, nonApprovedProviderStatusDetail);
 
-  const mapped = mapAttemptStatus(nonApprovedProviderStatus, nonApprovedProviderStatusDetail);
+  if (providerStatus?.toLowerCase() === "created" && mapped.status === "order_created") {
+    const searchedPayment = await searchNonApprovedPayment(
+      accessToken,
+      externalReference,
+      attempt.amount_minor,
+      attempt.currency,
+    );
+    if (searchedPayment) {
+      nonApprovedProviderStatus = searchedPayment.providerStatus;
+      nonApprovedProviderStatusDetail = searchedPayment.providerStatusDetail;
+      mapped = searchedPayment.mapped;
+    }
+  }
+
   const { error: statusUpdateError } = await supabase
     .from("online_checkout_attempts")
     .update({
