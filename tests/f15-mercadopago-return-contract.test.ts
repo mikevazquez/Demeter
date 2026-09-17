@@ -32,8 +32,8 @@ describe("F15 Mercado Pago return and reconciliation", () => {
     expect(page).toContain("Los parámetros de la");
     expect(page).not.toContain("service_confirm_online_checkout_approved");
     expect(reconcile).toContain("attemptId?: unknown");
-    expect(reconcile).not.toContain("outcome?: unknown");
-    expect(reconcile).not.toContain("status?: unknown");
+    expect(reconcile).not.toContain("payload.outcome");
+    expect(reconcile).not.toContain("payload.status");
   });
 
   it("reconciles only the authenticated student's attempt and re-fetches Mercado Pago", () => {
