@@ -20,6 +20,19 @@ describe("F15 Mercado Pago Orders API", () => {
     expect(config).toContain("verify_jwt = true");
   });
 
+  it("uses only supported Checkout Pro order properties", () => {
+    const edge = source("supabase/functions/create-mercadopago-order/index.ts");
+
+    expect(edge).toContain('type: "online"');
+    expect(edge).toContain('processing_mode: "manual"');
+    expect(edge).toContain("total_amount: totalAmount");
+    expect(edge).toContain("unit_price: totalAmount");
+    expect(edge).toContain("quantity: 1");
+    expect(edge).not.toContain("notification_url");
+    expect(edge).not.toContain("unit_measure");
+    expect((edge.match(/total_amount: totalAmount/g) ?? []).length).toBe(1);
+  });
+
   it("uses the frozen server amount and never accepts a client price or student id", () => {
     const edge = source("supabase/functions/create-mercadopago-order/index.ts");
     const actions = source("app/student/actions.ts");
