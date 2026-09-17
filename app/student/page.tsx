@@ -421,7 +421,9 @@ export default async function StudentHomePage({
       </div>
 
       <section className="rounded-3xl border border-white/10 bg-white/[0.03] p-5 sm:p-6">
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500">Tu progreso</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500">
+          Tu progreso
+        </p>
         <h2 className="mt-1 text-xl font-semibold text-white">Estadísticas</h2>
         <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
           <div className="rounded-2xl bg-black/20 p-4">
