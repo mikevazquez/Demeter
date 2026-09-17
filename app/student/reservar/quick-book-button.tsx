@@ -40,9 +40,7 @@ export function QuickBookButton({
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [modal, setModal] = useState<
-    | { type: "success" }
-    | { type: "error"; message: string }
-    | null
+    { type: "success" } | { type: "error"; message: string } | null
   >(null);
 
   function reserve() {
@@ -107,7 +105,10 @@ export function QuickBookButton({
                 <p className="mt-4 text-center text-xs font-semibold uppercase tracking-[0.18em] text-emerald-300">
                   Reserva confirmada
                 </p>
-                <h2 id="quick-booking-title" className="mt-2 text-center text-2xl font-semibold text-white">
+                <h2
+                  id="quick-booking-title"
+                  className="mt-2 text-center text-2xl font-semibold text-white"
+                >
                   ¡Tu lugar está listo!
                 </h2>
                 <div className="mt-5 rounded-2xl border border-white/10 bg-white/[0.03] p-4">
@@ -118,7 +119,8 @@ export function QuickBookButton({
                   <p className="mt-1 text-sm text-zinc-400">{timeLabel}</p>
                 </div>
                 <p className="mt-4 text-center text-sm leading-6 text-zinc-400">
-                  Puedes cerrar esta ventana y reservar otra clase del mismo día sin salir de la agenda.
+                  Puedes cerrar esta ventana y reservar otra clase del mismo día sin salir de la
+                  agenda.
                 </p>
               </>
             ) : (
@@ -126,10 +128,15 @@ export function QuickBookButton({
                 <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-rose-500/15 text-2xl text-rose-300">
                   !
                 </div>
-                <h2 id="quick-booking-title" className="mt-4 text-center text-xl font-semibold text-white">
+                <h2
+                  id="quick-booking-title"
+                  className="mt-4 text-center text-xl font-semibold text-white"
+                >
                   No se pudo reservar
                 </h2>
-                <p className="mt-3 text-center text-sm leading-6 text-zinc-400">{modal.message}</p>
+                <p className="mt-3 text-center text-sm leading-6 text-zinc-400">
+                  {modal.message}
+                </p>
               </>
             )}
 
