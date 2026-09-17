@@ -23,6 +23,15 @@ function passwordIntegrity(password: string) {
   };
 }
 
+function authErrorSummary(error: { code?: string; status?: number; message?: string } | null) {
+  if (!error) return null;
+  return {
+    code: error.code,
+    status: error.status,
+    message: error.message?.slice(0, 160),
+  };
+}
+
 export async function signIn(formData: FormData) {
   const password = String(formData.get("password") ?? "");
   const requestedMode = String(formData.get("mode") ?? "");
@@ -87,13 +96,16 @@ export async function signIn(formData: FormData) {
     redirect(`${loginPath(mode)}?error=auth`);
   }
 
-  const [{ data: account }, { data: membership }] = await Promise.all([
-    supabase
+  // Recreate the SSR client after sign-in so post-login RLS checks read the
+  // freshly persisted session cookies instead of the pre-auth request state.
+  const accessClient = await createClient();
+  const [accountResult, membershipResult] = await Promise.all([
+    accessClient
       .from("user_accounts")
       .select("status, must_change_password")
       .eq("id", data.user.id)
       .maybeSingle(),
-    supabase
+    accessClient
       .from("studio_memberships")
       .select("studio_id, role, active")
       .eq("user_id", data.user.id)
@@ -102,13 +114,26 @@ export async function signIn(formData: FormData) {
       .maybeSingle(),
   ]);
 
+  if (accountResult.error || membershipResult.error) {
+    console.error("[auth.signIn] Access context lookup failed", {
+      mode,
+      accountError: authErrorSummary(accountResult.error),
+      membershipError: authErrorSummary(membershipResult.error),
+    });
+    await accessClient.auth.signOut();
+    redirect(`${loginPath(mode)}?error=auth`);
+  }
+
+  const account = accountResult.data;
+  const membership = membershipResult.data;
+
   if (!account || account.status !== "active") {
-    await supabase.auth.signOut();
+    await accessClient.auth.signOut();
     redirect(`${loginPath(mode)}?error=access`);
   }
 
   if (!membership) {
-    await supabase.auth.signOut();
+    await accessClient.auth.signOut();
     redirect(`${loginPath(mode)}?error=pending`);
   }
 
@@ -118,9 +143,9 @@ export async function signIn(formData: FormData) {
       : mode === "coach"
         ? CAPABILITIES.INSTRUCTOR_PORTAL
         : CAPABILITIES.ADMIN_PORTAL;
-  const [{ data: studio }, { data: roleCapability }] = await Promise.all([
-    supabase.from("studios").select("status").eq("id", membership.studio_id).maybeSingle(),
-    supabase
+  const [studioResult, roleCapabilityResult] = await Promise.all([
+    accessClient.from("studios").select("status").eq("id", membership.studio_id).maybeSingle(),
+    accessClient
       .from("role_capabilities")
       .select("capability_key")
       .eq("role", membership.role)
@@ -128,8 +153,21 @@ export async function signIn(formData: FormData) {
       .maybeSingle(),
   ]);
 
+  if (studioResult.error || roleCapabilityResult.error) {
+    console.error("[auth.signIn] Portal capability lookup failed", {
+      mode,
+      studioError: authErrorSummary(studioResult.error),
+      capabilityError: authErrorSummary(roleCapabilityResult.error),
+    });
+    await accessClient.auth.signOut();
+    redirect(`${loginPath(mode)}?error=auth`);
+  }
+
+  const studio = studioResult.data;
+  const roleCapability = roleCapabilityResult.data;
+
   if (!studio || studio.status !== "active" || !roleCapability) {
-    await supabase.auth.signOut();
+    await accessClient.auth.signOut();
     redirect(`${loginPath(mode)}?error=access`);
   }
 
