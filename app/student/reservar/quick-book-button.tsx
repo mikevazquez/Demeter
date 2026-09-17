@@ -134,9 +134,7 @@ export function QuickBookButton({
                 >
                   No se pudo reservar
                 </h2>
-                <p className="mt-3 text-center text-sm leading-6 text-zinc-400">
-                  {modal.message}
-                </p>
+                <p className="mt-3 text-center text-sm leading-6 text-zinc-400">{modal.message}</p>
               </>
             )}
 
