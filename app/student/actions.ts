@@ -33,6 +33,15 @@ function revalidateStudentBookingSurfaces() {
   revalidatePath("/student/movimientos");
 }
 
+function mercadoPagoReturnBaseUrl() {
+  const host =
+    process.env.VERCEL_ENV === "production"
+      ? process.env.VERCEL_PROJECT_PRODUCTION_URL
+      : (process.env.VERCEL_BRANCH_URL ?? process.env.VERCEL_URL);
+
+  return host ? `https://${host}` : null;
+}
+
 type BookingRpcResult = {
   eligible?: boolean;
   reason_code?: string | null;
@@ -140,8 +149,9 @@ export async function createMercadoPagoOrderAction(
 ) {
   const normalizedProductId = productTemplateId.trim();
   const normalizedRequestKey = clientRequestKey.trim();
+  const returnBaseUrl = mercadoPagoReturnBaseUrl();
 
-  if (!normalizedProductId || !normalizedRequestKey) {
+  if (!normalizedProductId || !normalizedRequestKey || !returnBaseUrl) {
     return { ok: false as const, error: "invalid_request" };
   }
 
@@ -150,6 +160,7 @@ export async function createMercadoPagoOrderAction(
     body: {
       productTemplateId: normalizedProductId,
       clientRequestKey: normalizedRequestKey,
+      returnBaseUrl,
     },
   });
 
