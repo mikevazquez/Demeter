@@ -81,9 +81,9 @@ describe("F15 Mercado Pago webhook and activation", () => {
 
     expect(migration).toContain("create table if not exists public.online_checkout_webhook_events");
     expect(webhook).toContain('processing_status: "received"');
-    expect(webhook).toContain('status === "processing" || status === "action_required"');
-    expect(webhook).toContain('status === "failed"');
-    expect(webhook).toContain('status === "canceled" || status === "cancelled"');
+    expect(webhook).toContain('status === "processing" ||');
+    expect(webhook).toContain('status === "failed" || status === "rejected"');
+    expect(webhook).toContain('status === "canceled" ||');
     expect(webhook).toContain("if (attempt.processed_at || attempt.sale_id)");
   });
 
@@ -92,12 +92,28 @@ describe("F15 Mercado Pago webhook and activation", () => {
 
     expect(webhook).toContain("const payments = Array.isArray(order.transactions?.payments)");
     expect(webhook).toContain("const failedPayment = payments?.find(");
-    expect(webhook).toContain('safeText(item.status)?.toLowerCase() === "failed"');
+    expect(webhook).toContain('return status === "failed" || status === "rejected"');
     expect(webhook).toContain(
-      "const nonApprovedProviderStatus = usePaymentState ? paymentStatus : providerStatus",
+      "let nonApprovedProviderStatus = usePaymentState ? paymentStatus : providerStatus",
     );
     expect(webhook).toContain("provider_status: nonApprovedProviderStatus");
     expect(webhook).toContain("provider_status_detail: nonApprovedProviderStatusDetail");
+  });
+
+  it("reconciles non-approved Payments by external reference without allowing fallback approval", () => {
+    const webhook = source("supabase/functions/mercadopago-webhook/index.ts");
+
+    expect(webhook).toContain('new URL("https://api.mercadopago.com/v1/payments/search")');
+    expect(webhook).toContain('searchUrl.searchParams.set("external_reference", externalReference)');
+    expect(webhook).toContain("itemReference === externalReference");
+    expect(webhook).toContain("itemCurrency === expectedCurrency.toUpperCase()");
+    expect(webhook).toContain("itemAmountMinor === expectedAmountMinor");
+    expect(webhook).toContain('if (status === "rejected")');
+    expect(webhook).toContain("const searchedPayment = await searchNonApprovedPayment(");
+    expect(webhook).toContain(
+      'if (providerStatus?.toLowerCase() === "created" && mapped.status === "order_created")',
+    );
+    expect(webhook).not.toContain('if (status === "approved")');
   });
 
   it("distinguishes reused approvals in webhook audit results", () => {
