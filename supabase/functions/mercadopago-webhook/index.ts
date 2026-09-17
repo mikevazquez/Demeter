@@ -94,9 +94,7 @@ async function hmacSha256Hex(secret: string, message: string) {
     false,
     ["sign"],
   );
-  const signature = new Uint8Array(
-    await crypto.subtle.sign("HMAC", key, encoder.encode(message)),
-  );
+  const signature = new Uint8Array(await crypto.subtle.sign("HMAC", key, encoder.encode(message)));
   return Array.from(signature, (byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
@@ -307,7 +305,9 @@ Deno.serve(async (request) => {
     providerStatusDetail?.toLowerCase() === "accredited";
 
   if (approved) {
-    const payments = Array.isArray(order.transactions?.payments) ? order.transactions?.payments : [];
+    const payments = Array.isArray(order.transactions?.payments)
+      ? order.transactions?.payments
+      : [];
     const payment =
       payments?.find(
         (item) =>
