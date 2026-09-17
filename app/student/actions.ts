@@ -25,6 +25,51 @@ function cancellationReturnPath(formData: FormData) {
     : "/student/mis-clases";
 }
 
+function revalidateStudentBookingSurfaces() {
+  revalidatePath("/student");
+  revalidatePath("/student/reservar");
+  revalidatePath("/student/mis-clases");
+  revalidatePath("/student/paquete");
+  revalidatePath("/student/movimientos");
+}
+
+type BookingRpcResult = {
+  eligible?: boolean;
+  reason_code?: string | null;
+  reservation_id?: string;
+} | null;
+
+export async function bookStudentSessionInlineAction(sessionId: string) {
+  const normalizedSessionId = sessionId.trim();
+  if (!normalizedSessionId) {
+    return { ok: false as const, error: "session_required" };
+  }
+
+  const { supabase } = await getStudentPortalContext();
+  const { data, error } = await supabase.rpc("student_book_session", {
+    target_session_id: normalizedSessionId,
+  });
+
+  if (error) {
+    return { ok: false as const, error: errorCode(error, "booking_failed") };
+  }
+
+  const result = data as BookingRpcResult;
+  if (!result?.eligible || !result.reservation_id) {
+    return {
+      ok: false as const,
+      error: result?.reason_code ?? "booking_failed",
+    };
+  }
+
+  revalidateStudentBookingSurfaces();
+
+  return {
+    ok: true as const,
+    reservationId: result.reservation_id,
+  };
+}
+
 export async function bookStudentSessionAction(formData: FormData) {
   const sessionId = String(formData.get("session_id") ?? "").trim();
   if (!sessionId) redirect("/student/reservar?error=session_required");
@@ -38,11 +83,7 @@ export async function bookStudentSessionAction(formData: FormData) {
     redirect(`/student/reservar/${sessionId}?error=${errorCode(error, "booking_failed")}`);
   }
 
-  const result = data as {
-    eligible?: boolean;
-    reason_code?: string | null;
-    reservation_id?: string;
-  } | null;
+  const result = data as BookingRpcResult;
 
   if (!result?.eligible || !result.reservation_id) {
     redirect(
@@ -50,11 +91,7 @@ export async function bookStudentSessionAction(formData: FormData) {
     );
   }
 
-  revalidatePath("/student");
-  revalidatePath("/student/reservar");
-  revalidatePath("/student/mis-clases");
-  revalidatePath("/student/paquete");
-  revalidatePath("/student/movimientos");
+  revalidateStudentBookingSurfaces();
 
   redirect(
     `/student/reservar/confirmacion?session=${encodeURIComponent(sessionId)}&reservation=${encodeURIComponent(result.reservation_id)}`,
@@ -82,11 +119,7 @@ export async function cancelStudentReservationAction(formData: FormData) {
     redirect(`${returnPath}?error=${encodeURIComponent(result?.reason_code ?? "cancel_failed")}`);
   }
 
-  revalidatePath("/student");
-  revalidatePath("/student/reservar");
-  revalidatePath("/student/mis-clases");
-  revalidatePath("/student/paquete");
-  revalidatePath("/student/movimientos");
+  revalidateStudentBookingSurfaces();
 
   redirect(`${returnPath}?cancelled=${encodeURIComponent(result.status ?? "cancelled")}`);
 }
