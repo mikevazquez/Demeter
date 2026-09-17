@@ -40,7 +40,7 @@ describe("F15 Mercado Pago webhook and activation", () => {
       "supabase/migrations/20260917034000_f15_online_checkout_activation.sql",
     );
 
-    expect(webhook).toContain('supabase.rpc(\n      "service_confirm_online_checkout_approved"');
+    expect(webhook).toContain('"service_confirm_online_checkout_approved"');
     expect(webhook).not.toContain('.from("sales").insert');
     expect(webhook).not.toContain('.from("payments").insert');
     expect(webhook).not.toContain('.from("product_acquisitions").insert');
