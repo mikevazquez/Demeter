@@ -1,2 +1,5 @@
 [functions.provision-student-access]
 verify_jwt = true
+
+[functions.create-mercadopago-order]
+verify_jwt = true
