@@ -11,12 +11,19 @@ type ReconcileResult = {
 } | null;
 
 type Outcome = "success" | "failure" | "pending" | null;
+type Tone = "emerald" | "amber" | "rose";
+type Presentation = {
+  tone: Tone;
+  eyebrow: string;
+  title: string;
+  description: string;
+};
 
 function safeOutcome(value: string | undefined): Outcome {
   return value === "success" || value === "failure" || value === "pending" ? value : null;
 }
 
-function statePresentation(status: string, outcome: Outcome) {
+function statePresentation(status: string, outcome: Outcome): Presentation {
   if (status === "approved") {
     return {
       tone: "emerald",
