@@ -104,7 +104,9 @@ describe("F15 Mercado Pago webhook and activation", () => {
     const webhook = source("supabase/functions/mercadopago-webhook/index.ts");
 
     expect(webhook).toContain('new URL("https://api.mercadopago.com/v1/payments/search")');
-    expect(webhook).toContain('searchUrl.searchParams.set("external_reference", externalReference)');
+    expect(webhook).toContain(
+      'searchUrl.searchParams.set("external_reference", externalReference)',
+    );
     expect(webhook).toContain("itemReference === externalReference");
     expect(webhook).toContain("itemCurrency === expectedCurrency.toUpperCase()");
     expect(webhook).toContain("itemAmountMinor === expectedAmountMinor");
