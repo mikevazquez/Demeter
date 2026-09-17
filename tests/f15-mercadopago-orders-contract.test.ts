@@ -45,6 +45,19 @@ describe("F15 Mercado Pago Orders API", () => {
     expect(actions).not.toContain("studentId");
   });
 
+  it("resolves payer email from the server-side student record and never from the client", () => {
+    const edge = source("supabase/functions/create-mercadopago-order/index.ts");
+    const actions = source("app/student/actions.ts");
+
+    expect(edge).toContain('.from("students")');
+    expect(edge).toContain('.select("id,email")');
+    expect(edge).toContain("validPayerEmail(student.email)");
+    expect(edge).toContain("payer: { email: payerEmail }");
+    expect(edge).toContain('email.endsWith(".invalid")');
+    expect(actions).not.toContain("payerEmail");
+    expect(actions).not.toContain("payer_email");
+  });
+
   it("does not activate commercial entities when merely creating an order", () => {
     const edge = source("supabase/functions/create-mercadopago-order/index.ts");
 
