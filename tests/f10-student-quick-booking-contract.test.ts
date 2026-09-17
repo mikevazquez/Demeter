@@ -8,12 +8,15 @@ function source(path: string) {
 }
 
 describe("F10 student quick booking UX", () => {
-  it("lets the student reserve from the schedule card without opening detail", () => {
-    const page = source("app/student/reservar/page.tsx");
+  it("lets the student reserve from schedule and home cards without opening detail", () => {
+    const reservePage = source("app/student/reservar/page.tsx");
+    const homePage = source("app/student/page.tsx");
     const quickButton = source("app/student/reservar/quick-book-button.tsx");
 
-    expect(page).toContain("QuickBookButton");
-    expect(page).toContain("Ver detalles");
+    expect(reservePage).toContain("QuickBookButton");
+    expect(reservePage).toContain("Ver detalles");
+    expect(homePage).toContain("QuickBookButton");
+    expect(homePage).toContain("Ver detalles");
     expect(quickButton).toContain('"Reservar"');
     expect(quickButton).toContain("bookStudentSessionInlineAction");
   });
