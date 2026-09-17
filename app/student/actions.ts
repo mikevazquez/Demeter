@@ -33,10 +33,29 @@ function revalidateStudentBookingSurfaces() {
   revalidatePath("/student/movimientos");
 }
 
+function mercadoPagoReturnBaseUrl() {
+  const host =
+    process.env.VERCEL_ENV === "production"
+      ? process.env.VERCEL_PROJECT_PRODUCTION_URL
+      : (process.env.VERCEL_BRANCH_URL ?? process.env.VERCEL_URL);
+
+  return host ? `https://${host}` : null;
+}
+
 type BookingRpcResult = {
   eligible?: boolean;
   reason_code?: string | null;
   reservation_id?: string;
+} | null;
+
+type MercadoPagoOrderResult = {
+  ok?: boolean;
+  attemptId?: string;
+  orderId?: string;
+  checkoutUrl?: string;
+  status?: string;
+  reused?: boolean;
+  error?: string;
 } | null;
 
 export async function bookStudentSessionInlineAction(sessionId: string) {
@@ -122,6 +141,56 @@ export async function cancelStudentReservationAction(formData: FormData) {
   revalidateStudentBookingSurfaces();
 
   redirect(`${returnPath}?cancelled=${encodeURIComponent(result.status ?? "cancelled")}`);
+}
+
+export async function createMercadoPagoOrderAction(
+  productTemplateId: string,
+  clientRequestKey: string,
+) {
+  const normalizedProductId = productTemplateId.trim();
+  const normalizedRequestKey = clientRequestKey.trim();
+  const returnBaseUrl = mercadoPagoReturnBaseUrl();
+
+  if (!normalizedProductId || !normalizedRequestKey || !returnBaseUrl) {
+    return { ok: false as const, error: "invalid_request" };
+  }
+
+  const { supabase } = await getStudentPortalContext();
+  const { data, error } = await supabase.functions.invoke("create-mercadopago-order", {
+    body: {
+      productTemplateId: normalizedProductId,
+      clientRequestKey: normalizedRequestKey,
+      returnBaseUrl,
+    },
+  });
+
+  if (error) {
+    return { ok: false as const, error: "checkout_failed" };
+  }
+
+  const result = data as MercadoPagoOrderResult;
+  if (!result?.ok || !result.checkoutUrl || !result.orderId || !result.attemptId) {
+    return { ok: false as const, error: result?.error ?? "checkout_failed" };
+  }
+
+  let checkoutUrl: URL;
+  try {
+    checkoutUrl = new URL(result.checkoutUrl);
+  } catch {
+    return { ok: false as const, error: "checkout_failed" };
+  }
+
+  if (checkoutUrl.protocol !== "https:") {
+    return { ok: false as const, error: "checkout_failed" };
+  }
+
+  return {
+    ok: true as const,
+    checkoutUrl: checkoutUrl.toString(),
+    attemptId: result.attemptId,
+    orderId: result.orderId,
+    reused: result.reused === true,
+  };
 }
 
 export async function updateStudentProfileAction(formData: FormData) {
