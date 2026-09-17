@@ -42,6 +42,16 @@ type PurchasableProduct = {
   unlimited: boolean;
 };
 
+type ProductDisciplineLink = {
+  product_template_id: string;
+  discipline_id: string;
+};
+
+type DisciplineRow = {
+  id: string;
+  name: string;
+};
+
 function groupKey(item: StudentAcquisition | PurchasableProduct) {
   return item.package_term && item.package_term !== "custom" ? item.package_term : "other";
 }
@@ -75,6 +85,52 @@ export default async function StudentPackagePage() {
     .order("price_minor", { ascending: true });
 
   const purchasableProducts = (purchasableProductRows ?? []) as PurchasableProduct[];
+  const productDisciplineNames = new Map<string, string[]>();
+
+  if (purchasableProducts.length) {
+    const productIds = purchasableProducts.map((product) => product.id);
+    const { data: productDisciplineRows } = await supabase
+      .from("product_template_disciplines")
+      .select("product_template_id,discipline_id")
+      .eq("studio_id", membership.studio_id)
+      .in("product_template_id", productIds);
+
+    const links = (productDisciplineRows ?? []) as ProductDisciplineLink[];
+    const disciplineIds = [...new Set(links.map((link) => link.discipline_id))];
+
+    if (disciplineIds.length) {
+      const { data: disciplineRows } = await supabase
+        .from("disciplines")
+        .select("id,name")
+        .eq("studio_id", membership.studio_id)
+        .eq("active", true)
+        .in("id", disciplineIds);
+
+      const disciplineNameById = new Map(
+        ((disciplineRows ?? []) as DisciplineRow[]).map((discipline) => [
+          discipline.id,
+          discipline.name,
+        ]),
+      );
+
+      for (const link of links) {
+        const disciplineName = disciplineNameById.get(link.discipline_id);
+        if (!disciplineName) continue;
+        productDisciplineNames.set(link.product_template_id, [
+          ...(productDisciplineNames.get(link.product_template_id) ?? []),
+          disciplineName,
+        ]);
+      }
+
+      for (const [productId, disciplineNames] of productDisciplineNames) {
+        productDisciplineNames.set(
+          productId,
+          disciplineNames.sort((left, right) => left.localeCompare(right, "es")),
+        );
+      }
+    }
+  }
+
   const purchasableGroups = new Map<string, PurchasableProduct[]>();
 
   for (const product of purchasableProducts) {
@@ -220,6 +276,12 @@ export default async function StudentPackagePage() {
                               Vigencia: {product.validity_days} días desde la activación
                             </p>
                           ) : null}
+                          <p className="mt-2 text-xs leading-5 text-zinc-400">
+                            Disciplinas:{" "}
+                            {(productDisciplineNames.get(product.id) ?? []).length
+                              ? (productDisciplineNames.get(product.id) ?? []).join(" · ")
+                              : "Sin disciplinas habilitadas"}
+                          </p>
                         </div>
                         <strong className="text-lg text-white">
                           {formatMoney(product.price_minor, product.currency)}
