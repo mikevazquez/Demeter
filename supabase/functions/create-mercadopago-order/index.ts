@@ -155,11 +155,6 @@ const handler = {
     const accessToken = Deno.env.get("MERCADOPAGO_ACCESS_TOKEN")?.trim();
     if (!accessToken) return jsonResponse({ error: "mercadopago_not_configured" }, 503);
 
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")?.replace(/\/$/, "");
-    const notificationUrl = supabaseUrl
-      ? `${supabaseUrl}/functions/v1/mercadopago-webhook`
-      : undefined;
-
     const orderBody: Record<string, unknown> = {
       type: "online",
       processing_mode: "manual",
@@ -171,15 +166,9 @@ const handler = {
           title: product.name,
           unit_price: totalAmount,
           quantity: 1,
-          unit_measure: "unit",
-          total_amount: totalAmount,
         },
       ],
     };
-
-    if (notificationUrl) {
-      orderBody.config = { notification_url: notificationUrl };
-    }
 
     let mercadoPagoResponse: Response;
     try {
