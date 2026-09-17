@@ -274,7 +274,9 @@ const handler = {
     const currency = safeText(order.currency)?.toUpperCase() ?? null;
     const totalAmountMinor = moneyToMinor(order.total_amount);
     const totalPaidAmountMinor = moneyToMinor(order.total_paid_amount);
-    const payments = Array.isArray(order.transactions?.payments) ? order.transactions?.payments : [];
+    const payments = Array.isArray(order.transactions?.payments)
+      ? order.transactions?.payments
+      : [];
 
     if (
       !orderId ||
@@ -300,7 +302,11 @@ const handler = {
         })
         .eq("id", attempt.id)
         .is("processed_at", null);
-      return jsonResponse({ ok: true, status: "error", result: "provider_amount_or_currency_mismatch" });
+      return jsonResponse({
+        ok: true,
+        status: "error",
+        result: "provider_amount_or_currency_mismatch",
+      });
     }
 
     const approved =
@@ -330,7 +336,11 @@ const handler = {
           })
           .eq("id", attempt.id)
           .is("processed_at", null);
-        return jsonResponse({ ok: true, status: "error", result: "provider_amount_or_currency_mismatch" });
+        return jsonResponse({
+          ok: true,
+          status: "error",
+          result: "provider_amount_or_currency_mismatch",
+        });
       }
 
       const { data: activation, error: activationError } = await adminClient.rpc(
@@ -358,7 +368,12 @@ const handler = {
     }
 
     if (attempt.processed_at || attempt.sale_id) {
-      return jsonResponse({ ok: true, status: "approved", result: "approved_preserved", reused: true });
+      return jsonResponse({
+        ok: true,
+        status: "approved",
+        result: "approved_preserved",
+        reused: true,
+      });
     }
 
     const pendingPayment = payments.find((item) => {
