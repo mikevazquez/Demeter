@@ -9,11 +9,29 @@ function money(value: number, currency: string) {
   return new Intl.NumberFormat("es-MX", { style: "currency", currency }).format(value / 100);
 }
 
+function localDateKey(timeZone: string) {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+}
+
+const termCopy: Record<string, string> = {
+  monthly: "Mensual",
+  quarterly: "Trimestral",
+  semiannual: "Semestral",
+  annual: "Anual",
+  custom: "Otra vigencia",
+};
+
 const errorCopy: Record<string, string> = {
-  sale_invalid: "Selecciona alumna, al menos un producto y revisa el monto del pago.",
+  sale_invalid: "Selecciona alumna, al menos un producto, fecha de inicio y revisa el pago.",
   products_required: "Selecciona al menos un producto.",
   duplicate_product_line: "No se puede agregar dos veces el mismo producto en esta venta.",
   product_not_available: "Uno de los productos ya no está disponible.",
+  product_validity_missing: "Uno de los productos no tiene una vigencia válida.",
   payment_exceeds_balance: "El pago inicial no puede ser mayor al total de la venta.",
   payment_method_required: "Selecciona un método cuando registres un pago inicial.",
   student_not_operable: "La alumna no está activa para realizar la venta.",
@@ -28,6 +46,7 @@ export default async function NewSalePage({
 }) {
   const ctx = await getAdminContext(CAPABILITIES.SALES_WRITE);
   const params = await searchParams;
+  const defaultStartDate = localDateKey(ctx.studio.timezone ?? "America/Mexico_City");
 
   const [{ data: students }, { data: products }, { data: enrollmentPolicy }] = await Promise.all([
     ctx.supabase
@@ -39,7 +58,9 @@ export default async function NewSalePage({
       .order("full_name"),
     ctx.supabase
       .from("product_templates")
-      .select("id,name,product_type,price_minor,currency,credit_limit,validity_days,unlimited")
+      .select(
+        "id,name,product_type,package_term,price_minor,currency,credit_limit,validity_days,unlimited",
+      )
       .eq("studio_id", ctx.studio.id)
       .eq("active", true)
       .order("name"),
@@ -122,6 +143,31 @@ export default async function NewSalePage({
                 2
               </span>
               <div className="w-full">
+                <h2 className="font-semibold text-white">Inicio del paquete</h2>
+                <p className="mt-1 text-sm text-zinc-400">
+                  Por defecto inicia hoy, pero puedes elegir otra fecha antes de crear la
+                  adquisición.
+                </p>
+                <label className="mt-4 grid gap-1.5 text-sm text-zinc-300">
+                  Fecha de inicio
+                  <input
+                    name="starts_on"
+                    type="date"
+                    required
+                    defaultValue={defaultStartDate}
+                    className="rounded-xl border border-white/10 bg-black/20 px-3 py-3 text-white"
+                  />
+                </label>
+              </div>
+            </div>
+          </section>
+
+          <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+            <div className="flex gap-3">
+              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-fuchsia-500/15 text-sm font-bold text-fuchsia-300">
+                3
+              </span>
+              <div className="w-full">
                 <h2 className="font-semibold text-white">Productos</h2>
                 <p className="mt-1 text-sm text-zinc-400">
                   Puedes incluir más de un producto distinto. La inscripción sólo aparece cuando la
@@ -143,8 +189,8 @@ export default async function NewSalePage({
                         <span className="block font-medium text-white">{product.name}</span>
                         <span className="mt-1 block text-sm text-zinc-400">
                           {product.product_type === "enrollment"
-                            ? `Inscripción · ${product.validity_days} días`
-                            : `${product.unlimited ? "Ilimitado" : `${product.credit_limit ?? 0} créditos`} · ${product.validity_days} días`}
+                            ? `Inscripción · ${product.validity_days == null ? "Vitalicia" : `${product.validity_days} días`}`
+                            : `${product.package_term ? `${termCopy[product.package_term] ?? "Otra vigencia"} · ` : ""}${product.unlimited ? "Ilimitado" : `${product.credit_limit ?? 0} créditos`} · ${product.validity_days} días`}
                         </span>
                         <strong className="mt-2 block text-sm text-fuchsia-200">
                           {money(product.price_minor, product.currency)}
@@ -160,7 +206,7 @@ export default async function NewSalePage({
           <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
             <div className="flex gap-3">
               <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-fuchsia-500/15 text-sm font-bold text-fuchsia-300">
-                3
+                4
               </span>
               <div className="w-full">
                 <h2 className="font-semibold text-white">Pago inicial</h2>

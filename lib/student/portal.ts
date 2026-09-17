@@ -23,6 +23,7 @@ export type StudentAcquisition = {
   product_id: string;
   name: string;
   product_type: string;
+  package_term: string | null;
   status: string;
   starts_on: string;
   expires_on: string;
@@ -104,6 +105,7 @@ export type StudentSession = {
   discipline_id: string;
   discipline: string;
   credit_cost: number;
+  drop_in_price_minor: number | null;
   space: string | null;
   location: string | null;
   coach: string | null;
@@ -172,13 +174,31 @@ export const getStudentPortalContext = cache(async () => {
 
   if (error || !snapshot || !studio) redirect("/login/student?error=access");
 
+  const baseSnapshot = snapshot as StudentSnapshot;
+  const productIds = [...new Set(baseSnapshot.acquisitions.map((item) => item.product_id))];
+  const { data: productTerms } = productIds.length
+    ? await supabase
+        .from("product_templates")
+        .select("id,package_term")
+        .eq("studio_id", membership.studio_id)
+        .in("id", productIds)
+    : { data: [] };
+  const termMap = new Map((productTerms ?? []).map((item) => [item.id, item.package_term]));
+  const enrichedSnapshot: StudentSnapshot = {
+    ...baseSnapshot,
+    acquisitions: baseSnapshot.acquisitions.map((item) => ({
+      ...item,
+      package_term: termMap.get(item.product_id) ?? null,
+    })),
+  };
+
   return {
     supabase,
     user,
     account,
     membership,
     studio,
-    snapshot: snapshot as StudentSnapshot,
+    snapshot: enrichedSnapshot,
   };
 });
 

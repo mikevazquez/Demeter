@@ -10,6 +10,7 @@ import {
 } from "@/lib/student/portal";
 
 import { cancelStudentReservationAction } from "./actions";
+import { QuickBookButton } from "./reservar/quick-book-button";
 
 function safeDate(value: string | undefined, fallback: string) {
   return value && /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : fallback;
@@ -241,6 +242,7 @@ export default async function StudentHomePage({
                   );
                   const reserved = Boolean(reservation);
                   const eligible = Boolean(session.eligibility?.eligible);
+                  const timeLabel = formatDateTime(session.starts_at, studio.timezone);
 
                   return (
                     <article
@@ -253,9 +255,7 @@ export default async function StudentHomePage({
                             {session.discipline}
                           </p>
                           <h3 className="mt-1 font-semibold text-white">{session.activity}</h3>
-                          <p className="mt-1 text-sm text-zinc-400">
-                            {formatDateTime(session.starts_at, studio.timezone)}
-                          </p>
+                          <p className="mt-1 text-sm text-zinc-400">{timeLabel}</p>
                           <p className="mt-1 text-xs text-zinc-500">
                             {[session.coach, session.space || session.location]
                               .filter(Boolean)
@@ -282,14 +282,23 @@ export default async function StudentHomePage({
                         </div>
                       </div>
 
-                      <div className="mt-4 flex flex-wrap items-center gap-3">
+                      <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-white/10 pt-4">
                         <Link
                           href={`/student/reservar/${session.session_id}`}
-                          className="text-sm font-semibold text-fuchsia-300"
+                          className="min-h-11 rounded-2xl border border-white/10 px-4 py-2.5 text-sm font-semibold text-zinc-300 transition hover:bg-white/[0.05] hover:text-white"
                         >
-                          Ver detalle
+                          Ver detalles
                         </Link>
-                        {reservation ? (
+                        {!reservation ? (
+                          <QuickBookButton
+                            sessionId={session.session_id}
+                            activity={session.activity}
+                            discipline={session.discipline}
+                            timeLabel={timeLabel}
+                            eligible={eligible}
+                            reserved={false}
+                          />
+                        ) : (
                           <details className="group">
                             <summary className="cursor-pointer list-none text-sm font-semibold text-rose-300">
                               Cancelar
@@ -315,7 +324,7 @@ export default async function StudentHomePage({
                               </button>
                             </form>
                           </details>
-                        ) : null}
+                        )}
                       </div>
                     </article>
                   );

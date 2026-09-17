@@ -1,0 +1,61 @@
+-- Reproduce the effective public-table grants verified in the F14 production baseline.
+-- This migration is intentionally idempotent in effect: production already has this ACL state.
+
+revoke all privileges on all tables in schema public from anon, authenticated;
+
+grant REFERENCES, TRIGGER, TRUNCATE on table public.attendance_corrections to anon;
+grant REFERENCES, TRIGGER, TRUNCATE on table public.capabilities to anon;
+grant REFERENCES, TRIGGER, TRUNCATE on table public.credit_ledger to anon;
+grant REFERENCES, TRIGGER, TRUNCATE on table public.instructor_disciplines to anon;
+grant REFERENCES, TRIGGER, TRUNCATE on table public.instructors to anon;
+grant REFERENCES, TRIGGER, TRUNCATE on table public.payments to anon;
+grant REFERENCES, TRIGGER, TRUNCATE on table public.person_contacts to anon;
+grant REFERENCES, TRIGGER, TRUNCATE on table public.persons to anon;
+grant REFERENCES, TRIGGER, TRUNCATE on table public.product_acquisitions to anon;
+grant REFERENCES, TRIGGER, TRUNCATE on table public.product_template_disciplines to anon;
+grant REFERENCES, TRIGGER, TRUNCATE on table public.product_templates to anon;
+grant REFERENCES, TRIGGER, TRUNCATE on table public.profile_field_definitions to anon;
+grant REFERENCES, TRIGGER, TRUNCATE on table public.profile_field_values to anon;
+grant REFERENCES, TRIGGER, TRUNCATE on table public.recurring_schedules to anon;
+grant REFERENCES, TRIGGER, TRUNCATE on table public.role_capabilities to anon;
+grant REFERENCES, TRIGGER, TRUNCATE on table public.sale_lines to anon;
+grant REFERENCES, TRIGGER, TRUNCATE on table public.sales to anon;
+grant REFERENCES, TRIGGER, TRUNCATE on table public.sites to anon;
+grant REFERENCES, TRIGGER, TRUNCATE on table public.spaces to anon;
+grant REFERENCES, TRIGGER, TRUNCATE on table public.students to anon;
+grant REFERENCES, TRIGGER, TRUNCATE on table public.studio_locations to anon;
+grant REFERENCES, TRIGGER, TRUNCATE on table public.user_accounts to anon;
+
+grant REFERENCES, TRIGGER, TRUNCATE on table public.attendance_corrections to authenticated;
+grant REFERENCES, SELECT, TRIGGER, TRUNCATE on table public.capabilities to authenticated;
+grant DELETE, INSERT, SELECT, UPDATE on table public.class_sessions to authenticated;
+grant DELETE, INSERT, SELECT, UPDATE on table public.class_templates to authenticated;
+grant INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE on table public.credit_ledger to authenticated;
+grant DELETE, INSERT, SELECT, UPDATE on table public.disciplines to authenticated;
+grant SELECT on table public.enrollment_policies to authenticated;
+grant REFERENCES, TRIGGER, TRUNCATE on table public.instructor_disciplines to authenticated;
+grant REFERENCES, TRIGGER, TRUNCATE on table public.instructors to authenticated;
+grant DELETE, INSERT, SELECT, UPDATE on table public.packages to authenticated;
+grant REFERENCES, SELECT, TRIGGER, TRUNCATE on table public.payments to authenticated;
+grant INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on table public.person_contacts to authenticated;
+grant INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on table public.persons to authenticated;
+grant INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on table public.product_acquisitions to authenticated;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on table public.product_template_disciplines to authenticated;
+grant INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on table public.product_templates to authenticated;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on table public.profile_field_definitions to authenticated;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on table public.profile_field_values to authenticated;
+grant DELETE, INSERT, SELECT, UPDATE on table public.profiles to authenticated;
+grant INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on table public.recurring_schedules to authenticated;
+grant DELETE, INSERT, SELECT, UPDATE on table public.reservations to authenticated;
+grant REFERENCES, SELECT, TRIGGER, TRUNCATE on table public.role_capabilities to authenticated;
+grant REFERENCES, SELECT, TRIGGER, TRUNCATE on table public.sale_lines to authenticated;
+grant REFERENCES, SELECT, TRIGGER, TRUNCATE on table public.sales to authenticated;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on table public.sites to authenticated;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on table public.spaces to authenticated;
+grant SELECT on table public.student_enrollments to authenticated;
+grant DELETE, INSERT, SELECT, UPDATE on table public.student_packages to authenticated;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on table public.students to authenticated;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on table public.studio_locations to authenticated;
+grant DELETE, INSERT, SELECT, UPDATE on table public.studio_memberships to authenticated;
+grant DELETE, INSERT, SELECT, UPDATE on table public.studios to authenticated;
+grant REFERENCES, SELECT, TRIGGER, TRUNCATE on table public.user_accounts to authenticated;

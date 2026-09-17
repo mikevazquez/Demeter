@@ -74,4 +74,16 @@ describe("F10 student auth login contracts", () => {
     expect(actions).toContain("trimRetryAttempted");
     expect(actions).toContain("const trimmedPassword = password.trim()");
   });
+
+  it("refreshes the SSR auth client before post-login RLS checks", () => {
+    const actions = source("app/auth/actions.ts");
+
+    expect(actions).toContain("const accessClient = await createClient()");
+    expect(actions).toContain('accessClient\n      .from("user_accounts")');
+    expect(actions).toContain('accessClient\n      .from("studio_memberships")');
+    expect(actions).toContain("Access context lookup failed");
+    expect(actions).toContain("Portal capability lookup failed");
+    expect(actions).toContain("membershipResult.error");
+    expect(actions).toContain("roleCapabilityResult.error");
+  });
 });

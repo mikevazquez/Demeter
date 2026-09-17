@@ -6,8 +6,12 @@ import { studentAuthEmailFromPhone } from "@/lib/auth/student-login-identifier";
 import { normalizeMexicanPhone } from "@/lib/phone";
 import { createClient } from "@/lib/supabase/server";
 
-function loginPath(mode: "admin" | "student") {
-  return mode === "admin" ? "/login/admin" : "/login/student";
+type LoginMode = "admin" | "coach" | "student";
+
+function loginPath(mode: LoginMode) {
+  if (mode === "student") return "/login/student";
+  if (mode === "coach") return "/login/coach";
+  return "/login/admin";
 }
 
 function passwordIntegrity(password: string) {
@@ -19,22 +23,33 @@ function passwordIntegrity(password: string) {
   };
 }
 
+function authErrorSummary(error: { code?: string; status?: number; message?: string } | null) {
+  if (!error) return null;
+  return {
+    code: error.code,
+    status: error.status,
+    message: error.message?.slice(0, 160),
+  };
+}
+
 export async function signIn(formData: FormData) {
   const password = String(formData.get("password") ?? "");
-  const mode = formData.get("mode") === "student" ? "student" : "admin";
+  const requestedMode = String(formData.get("mode") ?? "");
+  const mode: LoginMode =
+    requestedMode === "student" ? "student" : requestedMode === "coach" ? "coach" : "admin";
   const email = String(formData.get("email") ?? "")
     .trim()
     .toLowerCase();
   const phone = normalizeMexicanPhone(String(formData.get("phone") ?? ""));
   const studentAuthEmail = phone ? studentAuthEmailFromPhone(phone) : null;
 
-  if (!password || (mode === "admin" ? !email : !phone || !studentAuthEmail)) {
+  if (!password || (mode === "student" ? !phone || !studentAuthEmail : !email)) {
     redirect(`${loginPath(mode)}?error=missing`);
   }
 
   const supabase = await createClient();
   const credentials =
-    mode === "admin" ? { email, password } : { email: studentAuthEmail!, password };
+    mode === "student" ? { email: studentAuthEmail!, password } : { email, password };
   let { data, error } = await supabase.auth.signInWithPassword(credentials);
   let trimRetryAttempted = false;
 
@@ -81,13 +96,16 @@ export async function signIn(formData: FormData) {
     redirect(`${loginPath(mode)}?error=auth`);
   }
 
-  const [{ data: account }, { data: membership }] = await Promise.all([
-    supabase
+  // Recreate the SSR client after sign-in so post-login RLS checks read the
+  // freshly persisted session cookies instead of the pre-auth request state.
+  const accessClient = await createClient();
+  const [accountResult, membershipResult] = await Promise.all([
+    accessClient
       .from("user_accounts")
       .select("status, must_change_password")
       .eq("id", data.user.id)
       .maybeSingle(),
-    supabase
+    accessClient
       .from("studio_memberships")
       .select("studio_id, role, active")
       .eq("user_id", data.user.id)
@@ -96,21 +114,38 @@ export async function signIn(formData: FormData) {
       .maybeSingle(),
   ]);
 
+  if (accountResult.error || membershipResult.error) {
+    console.error("[auth.signIn] Access context lookup failed", {
+      mode,
+      accountError: authErrorSummary(accountResult.error),
+      membershipError: authErrorSummary(membershipResult.error),
+    });
+    await accessClient.auth.signOut();
+    redirect(`${loginPath(mode)}?error=auth`);
+  }
+
+  const account = accountResult.data;
+  const membership = membershipResult.data;
+
   if (!account || account.status !== "active") {
-    await supabase.auth.signOut();
+    await accessClient.auth.signOut();
     redirect(`${loginPath(mode)}?error=access`);
   }
 
   if (!membership) {
-    await supabase.auth.signOut();
+    await accessClient.auth.signOut();
     redirect(`${loginPath(mode)}?error=pending`);
   }
 
   const requiredCapability =
-    mode === "admin" ? CAPABILITIES.ADMIN_PORTAL : CAPABILITIES.STUDENT_PORTAL;
-  const [{ data: studio }, { data: roleCapability }] = await Promise.all([
-    supabase.from("studios").select("status").eq("id", membership.studio_id).maybeSingle(),
-    supabase
+    mode === "student"
+      ? CAPABILITIES.STUDENT_PORTAL
+      : mode === "coach"
+        ? CAPABILITIES.INSTRUCTOR_PORTAL
+        : CAPABILITIES.ADMIN_PORTAL;
+  const [studioResult, roleCapabilityResult] = await Promise.all([
+    accessClient.from("studios").select("status").eq("id", membership.studio_id).maybeSingle(),
+    accessClient
       .from("role_capabilities")
       .select("capability_key")
       .eq("role", membership.role)
@@ -118,16 +153,34 @@ export async function signIn(formData: FormData) {
       .maybeSingle(),
   ]);
 
+  if (studioResult.error || roleCapabilityResult.error) {
+    console.error("[auth.signIn] Portal capability lookup failed", {
+      mode,
+      studioError: authErrorSummary(studioResult.error),
+      capabilityError: authErrorSummary(roleCapabilityResult.error),
+    });
+    await accessClient.auth.signOut();
+    redirect(`${loginPath(mode)}?error=auth`);
+  }
+
+  const studio = studioResult.data;
+  const roleCapability = roleCapabilityResult.data;
+
   if (!studio || studio.status !== "active" || !roleCapability) {
-    await supabase.auth.signOut();
+    await accessClient.auth.signOut();
     redirect(`${loginPath(mode)}?error=access`);
   }
 
   if (mode === "student" && account.must_change_password) {
     redirect("/login/student/activar");
   }
+  if (mode === "coach" && account.must_change_password) {
+    redirect("/login/coach/activar");
+  }
 
-  redirect(mode === "admin" ? "/admin" : "/student");
+  if (mode === "student") redirect("/student");
+  if (mode === "coach") redirect("/coach");
+  redirect("/admin");
 }
 
 export async function createInitialOwnerAccount(formData: FormData) {

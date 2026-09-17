@@ -114,6 +114,31 @@ export async function resetStudentTemporaryPassword(
   return invokeStudentAccess(studentId, "reset");
 }
 
+async function getAcquisitionEditContext(studentId: string, acquisitionId: string) {
+  const ctx = await getAdminContext();
+  if (!ctx.can(CAPABILITIES.SALES_WRITE) && !ctx.can(CAPABILITIES.PRODUCTS_WRITE)) {
+    redirect(`/admin/alumnas/${studentId}?error=acquisition_forbidden`);
+  }
+
+  const { data: acquisition } = await ctx.supabase
+    .from("product_acquisitions")
+    .select("id")
+    .eq("id", acquisitionId)
+    .eq("student_id", studentId)
+    .eq("studio_id", ctx.studio.id)
+    .maybeSingle();
+
+  if (!acquisition) redirect(`/admin/alumnas/${studentId}?error=acquisition_not_found`);
+  return ctx;
+}
+
+function revalidateAcquisitionViews(studentId: string) {
+  revalidatePath(`/admin/alumnas/${studentId}`);
+  revalidatePath("/admin/alumnas");
+  revalidatePath("/student");
+  revalidatePath("/student/paquete");
+}
+
 export async function updateStudent(formData: FormData) {
   const studentId = String(formData.get("student_id") ?? "");
   const firstName = String(formData.get("first_name") ?? "").trim();
@@ -230,4 +255,59 @@ export async function setStudentLifecycle(formData: FormData) {
   revalidatePath(`/admin/alumnas/${studentId}`);
   revalidatePath("/admin/alumnas");
   redirect(`/admin/alumnas/${studentId}?saved=1`);
+}
+
+export async function setAcquisitionStartDate(formData: FormData) {
+  const studentId = String(formData.get("student_id") ?? "");
+  const acquisitionId = String(formData.get("acquisition_id") ?? "");
+  const startsOn = String(formData.get("starts_on") ?? "").trim();
+
+  if (!studentId || !acquisitionId || !/^\d{4}-\d{2}-\d{2}$/.test(startsOn)) {
+    redirect(`/admin/alumnas/${studentId}?error=acquisition_date_invalid`);
+  }
+
+  const { supabase } = await getAcquisitionEditContext(studentId, acquisitionId);
+  const { error } = await supabase.rpc("admin_set_acquisition_start_date", {
+    target_acquisition_id: acquisitionId,
+    target_starts_on: startsOn,
+  });
+
+  if (error) {
+    redirect(`/admin/alumnas/${studentId}?error=${encodeURIComponent(error.message)}`);
+  }
+
+  revalidateAcquisitionViews(studentId);
+  redirect(`/admin/alumnas/${studentId}?saved=acquisition_date`);
+}
+
+export async function setAcquisitionAvailableCredits(formData: FormData) {
+  const studentId = String(formData.get("student_id") ?? "");
+  const acquisitionId = String(formData.get("acquisition_id") ?? "");
+  const availableCredits = Number(formData.get("available_credits"));
+  const reason = String(formData.get("reason") ?? "").trim();
+
+  if (
+    !studentId ||
+    !acquisitionId ||
+    !Number.isInteger(availableCredits) ||
+    availableCredits < 0 ||
+    availableCredits > 100000 ||
+    !reason
+  ) {
+    redirect(`/admin/alumnas/${studentId}?error=credits_invalid`);
+  }
+
+  const { supabase } = await getAcquisitionEditContext(studentId, acquisitionId);
+  const { error } = await supabase.rpc("admin_set_acquisition_available_credits", {
+    target_acquisition_id: acquisitionId,
+    target_available: availableCredits,
+    target_reason: reason,
+  });
+
+  if (error) {
+    redirect(`/admin/alumnas/${studentId}?error=${encodeURIComponent(error.message)}`);
+  }
+
+  revalidateAcquisitionViews(studentId);
+  redirect(`/admin/alumnas/${studentId}?saved=credits_adjusted`);
 }

@@ -14,6 +14,17 @@ type ScheduleRow = {
   capacity?: number;
 };
 
+function optionalMoneyToMinor(value: FormDataEntryValue | null) {
+  const normalized = String(value ?? "")
+    .trim()
+    .replace(",", ".");
+  if (!normalized) return null;
+  if (!/^\d+(?:\.\d{1,2})?$/.test(normalized)) return undefined;
+  const [whole, decimals = ""] = normalized.split(".");
+  const minor = Number(whole) * 100 + Number(decimals.padEnd(2, "0"));
+  return Number.isSafeInteger(minor) ? minor : undefined;
+}
+
 export async function createActivity(formData: FormData) {
   const { supabase, studio } = await getAdminContext(CAPABILITIES.SCHEDULE_WRITE);
   const name = String(formData.get("name") ?? "").trim();
@@ -21,6 +32,7 @@ export async function createActivity(formData: FormData) {
   const durationMinutes = Number(formData.get("duration_minutes"));
   const capacity = Number(formData.get("capacity"));
   const creditCost = Number(formData.get("credit_cost"));
+  const dropInPriceMinor = optionalMoneyToMinor(formData.get("drop_in_price"));
 
   if (
     !name ||
@@ -30,7 +42,8 @@ export async function createActivity(formData: FormData) {
     !Number.isInteger(capacity) ||
     capacity < 1 ||
     !Number.isInteger(creditCost) ||
-    creditCost < 1
+    creditCost < 1 ||
+    dropInPriceMinor === undefined
   ) {
     redirect("/admin/agenda?error=activity");
   }
@@ -42,11 +55,13 @@ export async function createActivity(formData: FormData) {
     duration_minutes: durationMinutes,
     capacity,
     credit_cost: creditCost,
+    drop_in_price_minor: dropInPriceMinor,
   });
 
   if (error) redirect("/admin/agenda?error=activity");
 
   revalidatePath("/admin/agenda");
+  revalidatePath("/student/reservar");
   redirect("/admin/agenda?created=activity");
 }
 

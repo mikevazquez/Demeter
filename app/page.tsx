@@ -19,6 +19,12 @@ export default function HomePage() {
             <p>Gestiona la operación diaria del estudio.</p>
             <span className="portal-arrow">→</span>
           </Link>
+          <Link className="portal-card" href="/login/coach">
+            <span className="portal-kicker">COACH</span>
+            <strong>Mis clases</strong>
+            <p>Consulta tus clases asignadas y gestiona asistencia.</p>
+            <span className="portal-arrow">→</span>
+          </Link>
           <Link className="portal-card" href="/login/student">
             <span className="portal-kicker">ALUMNAS</span>
             <strong>Mi cuenta</strong>
