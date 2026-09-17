@@ -9,6 +9,10 @@ const aclHardening = readFileSync(
   "supabase/migrations/20260917032000_f15_online_checkout_acl_hardening.sql",
   "utf8",
 );
+const ordersAlignment = readFileSync(
+  "supabase/migrations/20260917033000_f15_orders_api_alignment.sql",
+  "utf8",
+);
 
 describe("F15 online checkout model", () => {
   it("keeps checkout attempts separate from commercial activation", () => {
@@ -36,9 +40,21 @@ describe("F15 online checkout model", () => {
     expect(migration).toContain("request_key_reused_for_different_product");
   });
 
-  it("reserves unique provider identifiers for later webhook idempotency", () => {
+  it("aligns provider identifiers to the modern Orders API", () => {
+    expect(ordersAlignment).toContain("rename value 'preference_created' to 'order_created'");
+    expect(ordersAlignment).toContain("drop column if exists preference_id");
+    expect(ordersAlignment).toContain("drop column if exists init_point");
+    expect(ordersAlignment).toContain("drop column if exists sandbox_init_point");
+    expect(ordersAlignment).toContain("add column if not exists provider_order_id text");
+    expect(ordersAlignment).toContain("add column if not exists checkout_url text");
+    expect(ordersAlignment).toContain("online_checkout_attempts_order_unique");
+    expect(ordersAlignment).toContain("'provider_order_id', v_attempt.provider_order_id");
+    expect(ordersAlignment).toContain("'checkout_url', v_attempt.checkout_url");
+  });
+
+  it("reserves unique provider identifiers for webhook idempotency", () => {
     expect(migration).toContain("unique (external_reference)");
-    expect(migration).toContain("online_checkout_attempts_preference_unique");
+    expect(ordersAlignment).toContain("online_checkout_attempts_order_unique");
     expect(migration).toContain("online_checkout_attempts_payment_unique");
     expect(migration).toContain("'STFLOW-MP-' || v_attempt_id::text");
   });
