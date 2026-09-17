@@ -3,6 +3,7 @@ import { withSupabase } from "npm:@supabase/server";
 type CreateOrderRequest = {
   productTemplateId?: unknown;
   clientRequestKey?: unknown;
+  returnBaseUrl?: unknown;
 };
 
 type CheckoutAttempt = {
@@ -49,6 +50,27 @@ function validPayerEmail(value: unknown) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? email : null;
 }
 
+function validReturnBaseUrl(value: unknown) {
+  const raw = safeText(value);
+  if (!raw) return null;
+
+  let url: URL;
+  try {
+    url = new URL(raw);
+  } catch {
+    return null;
+  }
+
+  if (url.protocol !== "https:" || url.username || url.password) return null;
+
+  const hostname = url.hostname.toLowerCase();
+  const approvedHost =
+    hostname === "demeterbueno.vercel.app" ||
+    (hostname.startsWith("demeterbueno-") && hostname.endsWith("-demeter3.vercel.app"));
+
+  return approvedHost ? url.origin : null;
+}
+
 const handler = {
   fetch: withSupabase({ auth: "user" }, async (request, context) => {
     if (request.method !== "POST") return jsonResponse({ error: "method_not_allowed" }, 405);
@@ -72,9 +94,11 @@ const handler = {
 
     const productTemplateId = safeText(payload.productTemplateId);
     const clientRequestKey = safeText(payload.clientRequestKey);
+    const returnBaseUrl = validReturnBaseUrl(payload.returnBaseUrl);
     if (
       !productTemplateId ||
       !clientRequestKey ||
+      !returnBaseUrl ||
       !UUID_PATTERN.test(productTemplateId) ||
       !UUID_PATTERN.test(clientRequestKey)
     ) {
@@ -172,6 +196,16 @@ const handler = {
     const accessToken = Deno.env.get("MERCADOPAGO_ACCESS_TOKEN")?.trim();
     if (!accessToken) return jsonResponse({ error: "mercadopago_not_configured" }, 503);
 
+    const returnUrl = new URL("/student/paquete/checkout", returnBaseUrl);
+    returnUrl.searchParams.set("attempt", attemptRow.id);
+
+    const successUrl = new URL(returnUrl);
+    successUrl.searchParams.set("outcome", "success");
+    const failureUrl = new URL(returnUrl);
+    failureUrl.searchParams.set("outcome", "failure");
+    const pendingUrl = new URL(returnUrl);
+    pendingUrl.searchParams.set("outcome", "pending");
+
     const orderBody: Record<string, unknown> = {
       type: "online",
       processing_mode: "manual",
@@ -179,6 +213,14 @@ const handler = {
       external_reference: attemptRow.external_reference,
       description: product.name,
       ...(payerEmail ? { payer: { email: payerEmail } } : {}),
+      config: {
+        online: {
+          success_url: successUrl.toString(),
+          failure_url: failureUrl.toString(),
+          pending_url: pendingUrl.toString(),
+          auto_return: "all",
+        },
+      },
       items: [
         {
           title: product.name,
