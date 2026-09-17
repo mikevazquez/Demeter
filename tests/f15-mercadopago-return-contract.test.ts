@@ -54,7 +54,9 @@ describe("F15 Mercado Pago return and reconciliation", () => {
 
     expect(reconcile).toContain('providerStatus?.toLowerCase() === "processed"');
     expect(reconcile).toContain('providerStatusDetail?.toLowerCase() === "accredited"');
-    expect(reconcile).toContain('adminClient.rpc(\n        "service_confirm_online_checkout_approved"');
+    expect(reconcile).toContain(
+      'adminClient.rpc(\n        "service_confirm_online_checkout_approved"',
+    );
     expect(reconcile).toContain("totalAmountMinor !== attempt.amount_minor");
     expect(reconcile).toContain("currency !== attempt.currency.toUpperCase()");
     expect(reconcile).toContain("paidAmountMinor !== attempt.amount_minor");
@@ -64,7 +66,9 @@ describe("F15 Mercado Pago return and reconciliation", () => {
     const reconcile = source("supabase/functions/reconcile-mercadopago-order/index.ts");
 
     expect(reconcile).toContain('new URL("https://api.mercadopago.com/v1/payments/search")');
-    expect(reconcile).toContain('searchUrl.searchParams.set("external_reference", externalReference)');
+    expect(reconcile).toContain(
+      'searchUrl.searchParams.set("external_reference", externalReference)',
+    );
     expect(reconcile).toContain("itemReference === externalReference");
     expect(reconcile).toContain("itemCurrency === expectedCurrency.toUpperCase()");
     expect(reconcile).toContain("itemAmountMinor === expectedAmountMinor");
