@@ -125,4 +125,16 @@ describe("F15 Mercado Pago webhook and activation", () => {
       'activation?.reused === true ? "approved_reused" : "approved_activated"',
     );
   });
+
+  it("acknowledges valid webhooks before provider reconciliation", () => {
+    const webhook = source("supabase/functions/mercadopago-webhook/index.ts");
+
+    expect(webhook).toContain("const processingTask = (async () => {");
+    expect(webhook).toContain("EdgeRuntime.waitUntil(processingTask)");
+    expect(webhook).toContain("return jsonResponse({ ok: true, accepted: true });");
+    expect(webhook.indexOf("const processingTask = (async () => {")).toBeLessThan(
+      webhook.indexOf("https://api.mercadopago.com/v1/orders/"),
+    );
+  });
+
 });
