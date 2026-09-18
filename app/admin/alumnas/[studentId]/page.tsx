@@ -1,12 +1,13 @@
 import Link from "next/link";
 import PendingActionButton from "@/app/admin/components/PendingActionButton";
+import LifecycleNoticeDialog from "../LifecycleNoticeDialog";
+import StudentLifecycleControls from "./StudentLifecycleControls";
 import { notFound } from "next/navigation";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getAdminContext } from "@/lib/auth/admin-context";
 import {
   setAcquisitionAvailableCredits,
   setAcquisitionStartDate,
-  setStudentLifecycle,
   updateDynamicProfileFields,
   updateStudent,
 } from "./actions";
@@ -24,7 +25,7 @@ const termCopy: Record<string, string> = {
 const lifecycleCopy: Record<string, string> = {
   active: "Activa",
   inactive: "Inactiva",
-  archived: "Archivada",
+  archived: "Eliminada",
 };
 
 const acquisitionStatusCopy: Record<string, string> = {
@@ -65,7 +66,13 @@ export default async function StudentProfilePage({
   searchParams,
 }: {
   params: Promise<{ studentId: string }>;
-  searchParams: Promise<{ saved?: string; error?: string; alta?: string; sale?: string }>;
+  searchParams: Promise<{
+    saved?: string;
+    error?: string;
+    alta?: string;
+    sale?: string;
+    lifecycle?: string;
+  }>;
 }) {
   const { studentId } = await params;
   const query = await searchParams;
@@ -78,12 +85,14 @@ export default async function StudentProfilePage({
     )
     .eq("id", studentId)
     .eq("studio_id", studio.id)
+    .neq("lifecycle_status", "archived")
     .maybeSingle();
 
   if (!student) notFound();
 
   const canReadProducts = can(CAPABILITIES.PRODUCTS_READ);
   const canEditAcquisitions = can(CAPABILITIES.PRODUCTS_WRITE) || can(CAPABILITIES.SALES_WRITE);
+  const canArchive = can(CAPABILITIES.STUDENTS_ARCHIVE);
 
   const [
     { data: person },
@@ -165,7 +174,6 @@ export default async function StudentProfilePage({
   const firstName = person?.first_name ?? student.full_name.split(" ")[0] ?? "";
   const lastName = person?.last_name ?? student.full_name.split(" ").slice(1).join(" ");
   const canEdit = can(CAPABILITIES.STUDENTS_WRITE);
-  const canArchive = can(CAPABILITIES.STUDENTS_ARCHIVE);
   const currentAcquisition = acquisitions.find(
     (item) => item.status === "active" && !item.refunded_at,
   );
@@ -173,6 +181,16 @@ export default async function StudentProfilePage({
     (definition) => !structuralFieldKeys.has(definition.key),
   );
   const valueMap = new Map((fieldValues ?? []).map((item) => [item.definition_id, item.value]));
+
+  const { data: lifecycleEvents } = canArchive
+    ? await supabase
+        .from("student_lifecycle_events")
+        .select("id,from_status,to_status,reason,changed_by,created_at")
+        .eq("student_id", student.id)
+        .eq("studio_id", studio.id)
+        .order("created_at", { ascending: false })
+        .limit(10)
+    : { data: [] };
 
   const errorCopy: Record<string, string> = {
     phone_exists: "Ese teléfono ya pertenece a otra alumna.",
@@ -184,10 +202,13 @@ export default async function StudentProfilePage({
     adjustment_reason_required: "El motivo del ajuste de créditos es obligatorio.",
     unlimited_acquisition: "Una adquisición ilimitada no admite ajuste manual de créditos.",
     acquisition_not_editable: "Esta adquisición ya no puede modificarse.",
+    lifecycle: "No se pudo cambiar el estado de la alumna.",
+    delete_student: "No se pudo eliminar a la alumna.",
   };
 
   return (
     <main className="dashboard-shell">
+      <LifecycleNoticeDialog lifecycle={query.lifecycle} error={query.error} />
       <header className="topbar">
         <div>
           <Link className="back-link compact" href="/admin/alumnas">
@@ -205,7 +226,7 @@ export default async function StudentProfilePage({
       </header>
 
       {query.saved ? <div className="notice success">Cambios guardados correctamente.</div> : null}
-      {query.error ? (
+      {query.error && !["lifecycle", "delete_student"].includes(query.error) ? (
         <div className="notice error">
           {errorCopy[query.error] ?? "No se pudo guardar el cambio."}
         </div>
@@ -618,39 +639,53 @@ export default async function StudentProfilePage({
         )}
       </section>
 
+      {canArchive && (lifecycleEvents?.length ?? 0) > 0 ? (
+        <section className="panel">
+          <div className="panel-heading">
+            <div>
+              <p className="eyebrow">HISTORIAL DE ESTADO</p>
+              <h2>Inactivaciones y reactivaciones</h2>
+            </div>
+            <span className="count-badge">{lifecycleEvents?.length ?? 0}</span>
+          </div>
+          <div className="student-list">
+            {lifecycleEvents?.map((event) => (
+              <div className="student-row" key={event.id}>
+                <div>
+                  <strong>
+                    {lifecycleCopy[event.from_status] ?? event.from_status} →{" "}
+                    {lifecycleCopy[event.to_status] ?? event.to_status}
+                  </strong>
+                  <span>
+                    {new Intl.DateTimeFormat("es-MX", {
+                      dateStyle: "medium",
+                      timeStyle: "short",
+                      timeZone: "America/Mexico_City",
+                    }).format(new Date(event.created_at))}
+                  </span>
+                </div>
+                <div className="student-package-summary">
+                  <span>{event.reason || "Cambio de estado"}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
       {canArchive ? (
         <section className="panel" id="estado-alumna">
           <p className="eyebrow">ADMINISTRACIÓN</p>
           <h2>Estado de la alumna</h2>
-          <div className="toolbar-actions">
-            {student.lifecycle_status !== "active" ? (
-              <form action={setStudentLifecycle}>
-                <input type="hidden" name="student_id" value={student.id} />
-                <input type="hidden" name="status" value="active" />
-                <PendingActionButton className="primary-button" pendingLabel="Reactivando…">
-                  Reactivar
-                </PendingActionButton>
-              </form>
-            ) : null}
-            {student.lifecycle_status === "active" ? (
-              <form action={setStudentLifecycle}>
-                <input type="hidden" name="student_id" value={student.id} />
-                <input type="hidden" name="status" value="inactive" />
-                <PendingActionButton className="ghost-button" pendingLabel="Actualizando…">
-                  Marcar inactiva
-                </PendingActionButton>
-              </form>
-            ) : null}
-            {student.lifecycle_status !== "archived" ? (
-              <form action={setStudentLifecycle}>
-                <input type="hidden" name="student_id" value={student.id} />
-                <input type="hidden" name="status" value="archived" />
-                <PendingActionButton className="ghost-button" pendingLabel="Archivando…">
-                  Archivar
-                </PendingActionButton>
-              </form>
-            ) : null}
-          </div>
+          <p>
+            Inactivar conserva el expediente y permite reactivarlo. Eliminar es irreversible y
+            obliga a crear un expediente nuevo si la persona regresa.
+          </p>
+          <StudentLifecycleControls
+            studentId={student.id}
+            studentName={student.full_name}
+            lifecycleStatus={student.lifecycle_status}
+          />
         </section>
       ) : null}
     </main>
