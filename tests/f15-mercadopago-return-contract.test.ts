@@ -19,8 +19,10 @@ describe("F15 Mercado Pago return and reconciliation", () => {
     expect(edge).toContain("pending_url: pendingUrl.toString()");
     expect(edge).toContain('auto_return: "all"');
     expect(edge).toContain("validReturnBaseUrl(payload.returnBaseUrl)");
-    expect(actions).toContain("process.env.VERCEL_PROJECT_PRODUCTION_URL");
-    expect(actions).toContain("process.env.VERCEL_BRANCH_URL ?? process.env.VERCEL_URL");
+    expect(actions).toContain('requestHeaders.get("x-forwarded-host")');
+    expect(actions).toContain('requestHeaders.get("host")');
+    expect(actions).toContain('requestHeaders.get("x-forwarded-proto")');
+    expect(actions).not.toContain("VERCEL_PROJECT_PRODUCTION_URL");
     expect(actions).toContain("returnBaseUrl,");
   });
 
