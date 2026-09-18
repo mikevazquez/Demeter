@@ -203,6 +203,6 @@ export async function createStudentOnboardingSale(formData: FormData) {
   revalidatePath("/admin");
 
   redirect(
-    `/admin/alumnas/${studentId}?alta=finalizada&sale=${encodeURIComponent(result.sale_id)}`,
+    `/admin/alumnas/${studentId}/alta?completed=1&sale=${encodeURIComponent(result.sale_id)}#confirmar-alta`,
   );
 }
