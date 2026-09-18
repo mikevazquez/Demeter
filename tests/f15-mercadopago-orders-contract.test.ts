@@ -80,6 +80,20 @@ describe("F15 Mercado Pago Orders API", () => {
     expect(page).toContain("PurchasePackageButton");
   });
 
+  it("orders purchasable package groups by term length", () => {
+    const page = source("app/student/paquete/page.tsx");
+
+    const oneMonth = page.indexOf('key: "monthly", title: "1 mes"');
+    const threeMonths = page.indexOf('key: "quarterly", title: "3 meses"');
+    const sixMonths = page.indexOf('key: "semiannual", title: "6 meses"');
+    const twelveMonths = page.indexOf('key: "annual", title: "12 meses"');
+
+    expect(oneMonth).toBeGreaterThan(-1);
+    expect(threeMonths).toBeGreaterThan(oneMonth);
+    expect(sixMonths).toBeGreaterThan(threeMonths);
+    expect(twelveMonths).toBeGreaterThan(sixMonths);
+  });
+
   it("shows the disciplines explicitly enabled for each purchasable package", () => {
     const page = source("app/student/paquete/page.tsx");
 
