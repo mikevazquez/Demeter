@@ -86,6 +86,7 @@ export default async function StudentOnboardingPage({
     { data: policy },
     { data: existingAcquisitions },
     { data: activeEnrollments },
+    { data: enrollmentProducts },
   ] = await Promise.all([
     canSell
       ? supabase
@@ -119,24 +120,21 @@ export default async function StudentOnboardingPage({
           .eq("student_id", student.id)
           .eq("status", "active")
       : Promise.resolve({ data: [] }),
+    canSell
+      ? supabase
+          .from("product_templates")
+          .select("id,name,price_minor,currency,validity_days")
+          .eq("studio_id", studio.id)
+          .eq("product_type", "enrollment")
+          .eq("active", true)
+          .order("name")
+      : Promise.resolve({ data: [] }),
   ]);
 
   const enrollmentRequired = Boolean(policy?.enabled && policy.required_for_booking);
   const currentEnrollment = (activeEnrollments ?? []).some(
     (item) => item.starts_on <= today && (item.expires_on === null || item.expires_on >= today),
   );
-
-  const { data: enrollmentProduct } =
-    enrollmentRequired && !currentEnrollment && policy?.enrollment_product_template_id
-      ? await supabase
-          .from("product_templates")
-          .select("id,name,price_minor,currency,validity_days")
-          .eq("id", policy.enrollment_product_template_id)
-          .eq("studio_id", studio.id)
-          .eq("product_type", "enrollment")
-          .eq("active", true)
-          .maybeSingle()
-      : { data: null };
 
   const alreadyHasPackage = (existingAcquisitions ?? []).some((item) => !item.refunded_at);
 
@@ -222,17 +220,14 @@ export default async function StudentOnboardingPage({
           idempotencyKey={randomUUID()}
           enrollmentRequired={enrollmentRequired}
           currentEnrollment={currentEnrollment}
-          enrollmentProduct={
-            enrollmentProduct
-              ? {
-                  id: enrollmentProduct.id,
-                  name: enrollmentProduct.name,
-                  priceMinor: enrollmentProduct.price_minor,
-                  currency: enrollmentProduct.currency,
-                  validityDays: enrollmentProduct.validity_days,
-                }
-              : null
-          }
+          enrollmentProducts={(enrollmentProducts ?? []).map((item) => ({
+            id: item.id,
+            name: item.name,
+            priceMinor: item.price_minor,
+            currency: item.currency,
+            validityDays: item.validity_days,
+          }))}
+          defaultEnrollmentProductId={policy?.enrollment_product_template_id ?? null}
         />
       )}
     </main>
