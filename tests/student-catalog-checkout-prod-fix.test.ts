@@ -20,6 +20,9 @@ describe("student catalog checkout production fixes", () => {
     const edge = source("supabase/functions/create-mercadopago-order/index.ts");
     const actions = source("app/student/actions.ts");
 
+    expect(edge).toContain('createClient(supabaseUrl, serviceRoleKey');
+    expect(edge).toContain('Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")');
+    expect(edge).not.toContain("context.supabaseAdmin");
     expect(edge).toContain("markAttemptFailure");
     expect(edge).toContain('markAttemptFailure("mercadopago_not_configured")');
     expect(edge).toContain('markAttemptFailure("mercadopago_unreachable")');
