@@ -240,7 +240,7 @@ export async function updateDynamicProfileFields(formData: FormData) {
 export async function setStudentLifecycle(formData: FormData) {
   const studentId = String(formData.get("student_id") ?? "");
   const status = String(formData.get("status") ?? "");
-  if (!studentId || !["active", "inactive", "archived"].includes(status)) {
+  if (!studentId || !["active", "inactive"].includes(status)) {
     redirect(`/admin/alumnas/${studentId}?error=lifecycle`);
   }
 
@@ -254,7 +254,25 @@ export async function setStudentLifecycle(formData: FormData) {
 
   revalidatePath(`/admin/alumnas/${studentId}`);
   revalidatePath("/admin/alumnas");
-  redirect(`/admin/alumnas/${studentId}?saved=1`);
+  revalidatePath("/student");
+  redirect(`/admin/alumnas/${studentId}?lifecycle=${encodeURIComponent(status)}`);
+}
+
+export async function deleteStudent(formData: FormData) {
+  const studentId = String(formData.get("student_id") ?? "");
+  if (!studentId) redirect("/admin/alumnas?error=lifecycle");
+
+  const { supabase } = await getAdminContext(CAPABILITIES.STUDENTS_ARCHIVE);
+  const { error } = await supabase.rpc("admin_delete_student", {
+    p_student_id: studentId,
+  });
+
+  if (error) redirect(`/admin/alumnas/${studentId}?error=delete_student`);
+
+  revalidatePath("/admin/alumnas");
+  revalidatePath("/admin");
+  revalidatePath("/student");
+  redirect("/admin/alumnas?notice=deleted");
 }
 
 export async function setAcquisitionStartDate(formData: FormData) {
