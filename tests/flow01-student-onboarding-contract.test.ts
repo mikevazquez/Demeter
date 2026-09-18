@@ -26,6 +26,19 @@ describe("Flow 01 student onboarding", () => {
     expect(noticeDialog).toContain("backdrop-blur-sm");
   });
 
+  it("shows student creation validation errors as an in-context popup", () => {
+    const studentsPage = source("app/admin/alumnas/page.tsx");
+    const errorDialog = source("app/admin/alumnas/StudentFormErrorDialog.tsx");
+
+    expect(studentsPage).toContain("StudentFormErrorDialog");
+    expect(studentsPage).toContain("El teléfono no es válido");
+    expect(studentsPage).not.toContain('<div className="notice error">{errorMessage}</div>');
+    expect(errorDialog).toContain("NoticeDialog");
+    expect(errorDialog).toContain('tone="error"');
+    expect(errorDialog).toContain("#alta-rapida");
+    expect(errorDialog).toContain('url.searchParams.delete("error")');
+  });
+
   it("models the onboarding sale as one idempotent commercial operation", () => {
     const migration = source("supabase/migrations/20260918152000_flow01_student_onboarding.sql");
     expect(migration).toContain("sales_studio_idempotency_unique");
