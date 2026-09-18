@@ -11,8 +11,10 @@ function errorRedirect(code: string): never {
 }
 
 function existingStudentRedirect(studentId: string, lifecycleStatus: string): never {
-  const state = lifecycleStatus === "archived" ? "duplicada_archivada" : "duplicada";
-  redirect(`/admin/alumnas/${studentId}?alta=${state}`);
+  const duplicateState = lifecycleStatus === "archived" ? "archived" : "active";
+  redirect(
+    `/admin/alumnas?duplicate=${encodeURIComponent(studentId)}&duplicate_state=${duplicateState}#alta-rapida`,
+  );
 }
 
 export async function createStudent(formData: FormData) {
