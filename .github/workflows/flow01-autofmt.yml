@@ -1,0 +1,40 @@
+name: Flow 01 autofmt
+
+on:
+  push:
+    branches:
+      - feat/flow-01-alta-completa-alumna
+    paths:
+      - ".github/workflows/flow01-autofmt.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/flow-01-alta-completa-alumna
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Format Flow 01 files
+        run: |
+          npx prettier --write \
+            'app/admin/alumnas/[studentId]/alta/page.tsx' \
+            'app/admin/alumnas/[studentId]/alta/StudentOnboardingForm.tsx' \
+            'app/admin/alumnas/[studentId]/reservar/actions.ts' \
+            'app/admin/alumnas/[studentId]/reservar/page.tsx'
+          git rm .github/workflows/flow01-autofmt.yml
+      - name: Commit formatting
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet || git commit -m "style: format Flow 01"
+          git push origin HEAD:feat/flow-01-alta-completa-alumna
