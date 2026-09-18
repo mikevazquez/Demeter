@@ -19,8 +19,11 @@ describe("Flow 01 student onboarding", () => {
     expect(studentsPage).toContain('id="alta-rapida"');
     expect(studentsPage).toContain("DuplicateStudentDialog");
     expect(duplicateDialog).toContain("Ya encontramos este expediente");
-    expect(duplicateDialog).toContain("Aceptar");
-    expect(duplicateDialog).toContain('aria-modal="true"');
+    expect(duplicateDialog).toContain("NoticeDialog");
+    const noticeDialog = source("app/admin/components/NoticeDialog.tsx");
+    expect(noticeDialog).toContain('aria-modal="true"');
+    expect(noticeDialog).toContain('confirmLabel = "Aceptar"');
+    expect(noticeDialog).toContain("backdrop-blur-sm");
   });
 
   it("models the onboarding sale as one idempotent commercial operation", () => {
