@@ -5,6 +5,15 @@ import { useState } from "react";
 import PendingActionButton from "@/app/admin/components/PendingActionButton";
 import { deleteStudent, setStudentLifecycle } from "./actions";
 
+const modalBackdropClassName =
+  "fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-5 backdrop-blur-sm";
+const modalPanelClassName =
+  "w-full max-w-lg rounded-3xl border border-rose-300/25 bg-[#190d11] p-6 shadow-2xl";
+const warningIconClassName =
+  "mb-5 flex h-12 w-12 items-center justify-center rounded-2xl border border-rose-300/25 bg-rose-400/10 text-xl font-bold text-rose-200";
+const deleteButtonClassName =
+  "w-full rounded-xl bg-rose-500 px-4 py-3 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto";
+
 export default function StudentLifecycleActions({
   studentId,
   status,
@@ -42,27 +51,13 @@ export default function StudentLifecycleActions({
 
       {deleteOpen ? (
         <div
-          className={[
-            "fixed inset-0 z-[100] flex items-center justify-center",
-            "bg-black/80 p-5 backdrop-blur-sm",
-          ].join(" ")}
+          className={modalBackdropClassName}
           role="dialog"
           aria-modal="true"
           aria-labelledby="delete-student-title"
         >
-          <div
-            className={[
-              "w-full max-w-lg rounded-3xl border border-rose-300/25",
-              "bg-[#190d11] p-6 shadow-2xl",
-            ].join(" ")}
-          >
-            <div
-              className={[
-                "mb-5 flex h-12 w-12 items-center justify-center rounded-2xl",
-                "border border-rose-300/25 bg-rose-400/10 text-xl font-bold text-rose-200",
-              ].join(" ")}
-              aria-hidden="true"
-            >
+          <div className={modalPanelClassName}>
+            <div className={warningIconClassName} aria-hidden="true">
               !
             </div>
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-rose-200">
@@ -98,10 +93,7 @@ export default function StudentLifecycleActions({
               <form action={deleteStudent}>
                 <input type="hidden" name="student_id" value={studentId} />
                 <PendingActionButton
-                  className={[
-                    "w-full rounded-xl bg-rose-500 px-4 py-3 font-semibold text-white",
-                    "disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto",
-                  ].join(" ")}
+                  className={deleteButtonClassName}
                   pendingLabel="Eliminando…"
                 >
                   Eliminar alumna
