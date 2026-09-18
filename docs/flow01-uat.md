@@ -19,15 +19,16 @@ Entorno de validación: Vercel Preview conectado exclusivamente a Studio Flow Sa
 
 4. Compra inicial
    - Elegir un paquete activo.
-   - Probar inicio hoy, fecha específica y primera asistencia.
+   - Probar inicio hoy, fecha específica y primer uso.
    - Confirmar que precio, créditos y vigencia provienen del producto.
 
-5. Primera asistencia
-   - Comprar un paquete con inicio por primera asistencia.
+5. Primer uso / primer crédito
+   - Comprar un paquete con inicio por primer uso.
    - Reservar una clase.
-   - Confirmar que la reserva no inicia la vigencia.
-   - Registrar asistencia y finalizar la clase.
-   - Confirmar que inicio y vencimiento se calculan desde la fecha de asistencia.
+   - Confirmar que la reserva por sí sola no inicia la vigencia.
+   - Confirmar que una cancelación a tiempo libera el crédito y no activa el paquete.
+   - Confirmar que asistencia, no-show o cancelación tardía consumen el crédito y activan el paquete.
+   - Confirmar que inicio y vencimiento se calculan desde la fecha de la clase que generó el primer consumo.
 
 6. Pago total
    - Registrar el total.
