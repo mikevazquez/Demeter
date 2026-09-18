@@ -74,7 +74,6 @@ Entorno de validación: Vercel Preview conectado exclusivamente a Studio Flow Sa
 
 FLUJO 01 se aprueba sólo si todos los casos aplicables terminan sin duplicar alumnas, ventas, pagos, adquisiciones, inscripciones ni créditos, y toda la experiencia visible permanece en español de México.
 
-
 ## Estado de UAT
 
 - Inscripción anual: aprobada.
