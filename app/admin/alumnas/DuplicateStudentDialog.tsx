@@ -15,7 +15,7 @@ export default function DuplicateStudentDialog({
 
   useEffect(() => {
     document.getElementById("alta-rapida")?.scrollIntoView({
-      behavior: "instant",
+      behavior: "auto",
       block: "center",
     });
   }, []);
