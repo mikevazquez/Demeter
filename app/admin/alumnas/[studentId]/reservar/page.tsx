@@ -45,6 +45,7 @@ export default async function StudentFirstReservationPage({
     .select("id,full_name,active,lifecycle_status")
     .eq("id", studentId)
     .eq("studio_id", studio.id)
+    .neq("lifecycle_status", "archived")
     .maybeSingle();
 
   if (!student) notFound();
