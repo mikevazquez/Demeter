@@ -95,7 +95,7 @@ export async function createStudentOnboardingSale(formData: FormData) {
   if (!studentId || !productId || !idempotencyKey) {
     redirectError(studentId, "invalid_request");
   }
-  if (!["today", "specific", "first_attendance"].includes(startMode)) {
+  if (!["today", "specific", "first_usage"].includes(startMode)) {
     redirectError(studentId, "package_start_mode_invalid");
   }
   if (startMode === "specific" && !packageStartsOn) {
