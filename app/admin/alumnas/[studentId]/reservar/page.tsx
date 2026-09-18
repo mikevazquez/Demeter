@@ -1,4 +1,5 @@
 import Link from "next/link";
+import PendingActionButton from "@/app/admin/components/PendingActionButton";
 import { notFound } from "next/navigation";
 
 import { getAdminContext } from "@/lib/auth/admin-context";
@@ -171,9 +172,9 @@ export default async function StudentFirstReservationPage({
                     <form action={reserveStudentFromOnboarding}>
                       <input type="hidden" name="student_id" value={student.id} />
                       <input type="hidden" name="session_id" value={session.id} />
-                      <button className="primary-button" type="submit">
+                      <PendingActionButton className="primary-button" pendingLabel="Reservando…">
                         Reservar
-                      </button>
+                      </PendingActionButton>
                     </form>
                   ) : (
                     <span className="status-pill">No disponible</span>
