@@ -4,6 +4,7 @@ import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getAdminContext } from "@/lib/auth/admin-context";
 
 import { SessionOperations } from "./hoy/SessionOperations";
+import RequiredActionContextPanel from "./acciones/RequiredActionContextPanel";
 
 type EligibilityResult = {
   eligible?: boolean;
@@ -245,6 +246,18 @@ export default async function AdminPage({
   const canWriteStudents = can(CAPABILITIES.STUDENTS_WRITE);
   const canAttendance = can(CAPABILITIES.ATTENDANCE_WRITE);
   const canCreateWalkinStudent = canAttendance && canWriteStudents;
+  const canReadRequiredActions = can(CAPABILITIES.REQUIRED_ACTIONS_READ);
+
+  const requiredActionsResult = canReadRequiredActions
+    ? await supabase
+        .from("required_actions")
+        .select("id,priority,status,reason,created_at", { count: "exact" })
+        .eq("studio_id", studio.id)
+        .in("status", ["pending", "in_progress"])
+        .order("created_at", { ascending: false })
+        .limit(5)
+    : { data: [], count: 0 };
+  const requiredActions = requiredActionsResult.data ?? [];
 
   const operationsBySession = new Map<
     string,
@@ -479,6 +492,16 @@ export default async function AdminPage({
           </small>
         </article>
       </section>
+
+      {canReadRequiredActions ? (
+        <RequiredActionContextPanel
+          eyebrow="ATENCIÓN OPERATIVA"
+          title="Acciones requeridas"
+          actions={requiredActions}
+          totalCount={requiredActionsResult.count ?? 0}
+          emptyCopy="No hay incidencias abiertas que necesiten intervención."
+        />
+      ) : null}
 
       <section className="panel hoy-schedule-panel">
         <div className="panel-heading">
