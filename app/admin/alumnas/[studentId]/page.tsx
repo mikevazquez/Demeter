@@ -20,6 +20,18 @@ const termCopy: Record<string, string> = {
   custom: "Otra vigencia",
 };
 
+const lifecycleCopy: Record<string, string> = {
+  active: "Activa",
+  inactive: "Inactiva",
+  archived: "Archivada",
+};
+
+const acquisitionStatusCopy: Record<string, string> = {
+  active: "Activa",
+  expired: "Vencida",
+  cancelled: "Cancelada",
+};
+
 function optionValues(options: unknown): string[] {
   if (Array.isArray(options))
     return options.filter((value): value is string => typeof value === "string");
@@ -52,7 +64,7 @@ export default async function StudentProfilePage({
   searchParams,
 }: {
   params: Promise<{ studentId: string }>;
-  searchParams: Promise<{ saved?: string; error?: string }>;
+  searchParams: Promise<{ saved?: string; error?: string; alta?: string; sale?: string }>;
 }) {
   const { studentId } = await params;
   const query = await searchParams;
@@ -111,7 +123,7 @@ export default async function StudentProfilePage({
       ? supabase
           .from("product_acquisitions")
           .select(
-            "id,product_template_id,status,starts_on,expires_on,unlimited,credit_limit,refunded_at,created_at",
+            "id,product_template_id,status,starts_on,expires_on,unlimited,credit_limit,refunded_at,created_at,activation_mode,access_blocked,validity_days_snapshot",
           )
           .eq("student_id", student.id)
           .eq("studio_id", studio.id)
@@ -153,7 +165,7 @@ export default async function StudentProfilePage({
   const lastName = person?.last_name ?? student.full_name.split(" ").slice(1).join(" ");
   const canEdit = can(CAPABILITIES.STUDENTS_WRITE);
   const canArchive = can(CAPABILITIES.STUDENTS_ARCHIVE);
-  const activeAcquisition = acquisitions.find(
+  const currentAcquisition = acquisitions.find(
     (item) => item.status === "active" && !item.refunded_at,
   );
   const dynamicDefinitions = (definitions ?? []).filter(
@@ -185,7 +197,9 @@ export default async function StudentProfilePage({
           <p>Expediente operativo de la alumna.</p>
         </div>
         <div className="toolbar-actions">
-          <span className="role-pill">{student.lifecycle_status}</span>
+          <span className="role-pill">
+            {lifecycleCopy[student.lifecycle_status] ?? "Estado no disponible"}
+          </span>
         </div>
       </header>
 
@@ -193,6 +207,54 @@ export default async function StudentProfilePage({
       {query.error ? (
         <div className="notice error">
           {errorCopy[query.error] ?? "No se pudo guardar el cambio."}
+        </div>
+      ) : null}
+
+      {query.alta === "duplicada" ? (
+        <div className="notice">
+          Ya existía una alumna con este teléfono. Abrimos su Perfil 360 y no se creó un duplicado.
+        </div>
+      ) : null}
+
+      {query.alta === "duplicada_archivada" ? (
+        <div className="notice">
+          Encontramos un expediente archivado con este teléfono. No se creó otra alumna. Reactiva
+          este expediente sólo si corresponde.
+          <div className="toolbar-actions mt-3">
+            <a className="ghost-button" href="#estado-alumna">
+              Ir al estado de la alumna
+            </a>
+          </div>
+        </div>
+      ) : null}
+
+      {query.alta === "finalizada" || query.alta === "sin_paquete" ? (
+        <div className="notice success">
+          {query.alta === "finalizada"
+            ? "Alta registrada. La alumna, su compra y sus condiciones quedaron vinculadas al mismo expediente."
+            : "Alta registrada sin paquete. El expediente queda disponible para operar cuando corresponda."}
+          <div className="toolbar-actions mt-3">
+            <Link className="primary-button" href={`/admin/alumnas/${student.id}/reservar`}>
+              Reservar primera clase
+            </Link>
+            {can(CAPABILITIES.SETTINGS_WRITE) ? (
+              <a className="ghost-button" href="#acceso-portal">
+                Configurar acceso al portal
+              </a>
+            ) : null}
+            {query.sale ? (
+              <Link className="ghost-button" href={`/admin/ventas/${query.sale}`}>
+                Ver venta
+              </Link>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
+
+      {query.alta === "reserva_realizada" ? (
+        <div className="notice success">
+          Primera reserva registrada. Studio Flow mantuvo la misma alumna y aplicó las reglas reales
+          de paquete, inscripción, créditos y cupo.
         </div>
       ) : null}
 
@@ -206,7 +268,9 @@ export default async function StudentProfilePage({
         </article>
         <article className="stat-card">
           <span>Estado</span>
-          <strong className="stat-word">{student.lifecycle_status}</strong>
+          <strong className="stat-word">
+            {lifecycleCopy[student.lifecycle_status] ?? "Estado no disponible"}
+          </strong>
           <small>Ciclo operativo</small>
         </article>
         <article className="stat-card">
@@ -261,8 +325,12 @@ export default async function StudentProfilePage({
                 <span>
                   {!canReadProducts
                     ? "Sin acceso comercial para este rol."
-                    : activeAcquisition
-                      ? `${productMap.get(activeAcquisition.product_template_id)?.name ?? "Producto"} · vence ${formatDate(activeAcquisition.expires_on)}`
+                    : currentAcquisition
+                      ? currentAcquisition.access_blocked
+                        ? `${productMap.get(currentAcquisition.product_template_id)?.name ?? "Producto"} · bloqueado por pago pendiente`
+                        : currentAcquisition.starts_on && currentAcquisition.expires_on
+                          ? `${productMap.get(currentAcquisition.product_template_id)?.name ?? "Producto"} · vence ${formatDate(currentAcquisition.expires_on)}`
+                          : `${productMap.get(currentAcquisition.product_template_id)?.name ?? "Producto"} · inicia con la primera asistencia`
                       : "Sin paquete activo"}
                 </span>
               </div>
@@ -324,10 +392,19 @@ export default async function StudentProfilePage({
                           {product?.name ?? "Producto"}
                         </h3>
                         <p className="mt-1 text-sm text-zinc-400">
-                          {formatDate(acquisition.starts_on)} → {formatDate(acquisition.expires_on)}
+                          {acquisition.starts_on && acquisition.expires_on
+                            ? `${formatDate(acquisition.starts_on)} → ${formatDate(acquisition.expires_on)}`
+                            : "Inicia con la primera asistencia"}
                         </p>
                       </div>
-                      <span className="status-pill">{acquisition.status}</span>
+                      <span className="status-pill">
+                        {acquisition.access_blocked
+                          ? "Bloqueada por pago pendiente"
+                          : acquisition.activation_mode === "first_attendance" &&
+                              !acquisition.starts_on
+                            ? "Pendiente de primera asistencia"
+                            : (acquisitionStatusCopy[acquisition.status] ?? "Estado no disponible")}
+                      </span>
                     </div>
 
                     <div className="mt-4 rounded-xl border border-white/10 bg-white/[0.03] p-3">
@@ -348,7 +425,7 @@ export default async function StudentProfilePage({
                               type="date"
                               name="starts_on"
                               required
-                              defaultValue={acquisition.starts_on}
+                              defaultValue={acquisition.starts_on ?? ""}
                               className="rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 text-white"
                             />
                           </label>
@@ -546,7 +623,7 @@ export default async function StudentProfilePage({
       </section>
 
       {canArchive ? (
-        <section className="panel">
+        <section className="panel" id="estado-alumna">
           <p className="eyebrow">ADMINISTRACIÓN</p>
           <h2>Estado de la alumna</h2>
           <div className="toolbar-actions">
