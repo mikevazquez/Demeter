@@ -87,6 +87,21 @@ describe("Flow 01 student onboarding", () => {
     expect(actions).toContain("admin_book_student");
   });
 
+  it("shows successful onboarding in the submit context before the user chooses the next action", () => {
+    const actions = source("app/admin/alumnas/[studentId]/alta/actions.ts");
+    const page = source("app/admin/alumnas/[studentId]/alta/page.tsx");
+    const form = source("app/admin/alumnas/[studentId]/alta/StudentOnboardingForm.tsx");
+    const dialog = source("app/admin/alumnas/[studentId]/alta/OnboardingCompletedDialog.tsx");
+
+    expect(actions).toContain("#confirmar-alta");
+    expect(actions).toContain("completed=1");
+    expect(page).toContain("OnboardingCompletedDialog");
+    expect(form).toContain('id="confirmar-alta"');
+    expect(form).toContain("completedSaleId");
+    expect(dialog).toContain("NoticeDialog");
+    expect(dialog).toContain("La operación se guardó correctamente");
+  });
+
   it("finishes in Profile 360 with Spanish user-visible states", () => {
     const profile = source("app/admin/alumnas/[studentId]/page.tsx");
     expect(profile).toContain("lifecycleCopy");
