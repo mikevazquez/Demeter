@@ -75,6 +75,7 @@ export default async function StudentOnboardingPage({
     .select("id,full_name,lifecycle_status,active,profile_status")
     .eq("id", studentId)
     .eq("studio_id", studio.id)
+    .neq("lifecycle_status", "archived")
     .maybeSingle();
 
   if (!student) notFound();
