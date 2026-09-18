@@ -3,7 +3,7 @@ create or replace function public.admin_delete_student(
   p_student_id uuid
 ) returns jsonb
 language plpgsql
-security invoker
+security definer
 set search_path = ''
 as $$
 declare
