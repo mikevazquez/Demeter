@@ -147,7 +147,13 @@ export default function StudentOnboardingForm({
   }
 
   return (
-    <form action={createStudentOnboardingSale} className="grid gap-5">
+    <form
+      action={createStudentOnboardingSale}
+      className="grid gap-5"
+      onSubmit={(event) => {
+        if (completedSaleId) event.preventDefault();
+      }}
+    >
       <input type="hidden" name="student_id" value={studentId} />
       <input type="hidden" name="idempotency_key" value={idempotencyKey} />
       <input type="hidden" name="package_product_id" value={selectedPackage.id} />
