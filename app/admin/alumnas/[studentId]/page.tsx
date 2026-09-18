@@ -312,7 +312,14 @@ export default async function StudentProfilePage({
                         ? `${productMap.get(currentAcquisition.product_template_id)?.name ?? "Producto"} · bloqueado por pago pendiente`
                         : currentAcquisition.starts_on && currentAcquisition.expires_on
                           ? `${productMap.get(currentAcquisition.product_template_id)?.name ?? "Producto"} · vence ${formatDate(currentAcquisition.expires_on)}`
-                          : `${productMap.get(currentAcquisition.product_template_id)?.name ?? "Producto"} · ${currentAcquisition.unlimited ? "inicia con la primera clase contabilizada" : "inicia con el primer crédito consumido"}`
+                          : `${
+                              productMap.get(currentAcquisition.product_template_id)?.name ??
+                              "Producto"
+                            } · ${
+                              currentAcquisition.unlimited
+                                ? "inicia con la primera clase contabilizada"
+                                : "inicia con el primer crédito consumido"
+                            }`
                       : "Sin paquete activo"}
                 </span>
               </div>
