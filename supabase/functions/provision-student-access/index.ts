@@ -143,30 +143,87 @@ const handler = {
 
     if (student.user_id) return jsonResponse({ error: "student_already_linked" }, 409);
 
-    const { data: createdUser, error: createError } = await adminClient.auth.admin.createUser({
+    let { data: createdUser, error: createError } = await adminClient.auth.admin.createUser({
       email: authEmail,
       password: temporaryPassword,
       email_confirm: true,
       user_metadata: { full_name: student.full_name, login_phone: student.phone },
     });
+    let provisionedUser = createdUser.user;
 
-    if (createError || !createdUser.user) {
+    if (createError || !provisionedUser) {
       const message = createError?.message.toLowerCase() ?? "";
       const duplicate =
         message.includes("already") || message.includes("registered") || message.includes("exists");
-      return jsonResponse(
-        { error: duplicate ? "auth_login_exists" : "auth_create_failed" },
-        duplicate ? 409 : 500,
-      );
+
+      if (!duplicate) return jsonResponse({ error: "auth_create_failed" }, 500);
+
+      let staleUser = null;
+      for (let page = 1; page <= 50 && !staleUser; page += 1) {
+        const { data: usersPage, error: listError } = await adminClient.auth.admin.listUsers({
+          page,
+          perPage: 200,
+        });
+        if (listError) return jsonResponse({ error: "auth_lookup_failed" }, 500);
+
+        staleUser =
+          usersPage.users.find((candidate) => candidate.email?.toLowerCase() === authEmail) ?? null;
+
+        if (usersPage.users.length < 200) break;
+      }
+
+      if (!staleUser) return jsonResponse({ error: "auth_login_exists" }, 409);
+
+      const [
+        { data: activeMemberships, error: activeMembershipError },
+        { data: linkedStudents, error: linkedStudentsError },
+      ] = await Promise.all([
+        adminClient
+          .from("studio_memberships")
+          .select("studio_id")
+          .eq("user_id", staleUser.id)
+          .eq("active", true)
+          .limit(1),
+        adminClient
+          .from("students")
+          .select("id")
+          .eq("user_id", staleUser.id)
+          .neq("lifecycle_status", "archived")
+          .limit(1),
+      ]);
+
+      if (activeMembershipError || linkedStudentsError) {
+        return jsonResponse({ error: "auth_reuse_check_failed" }, 500);
+      }
+      if ((activeMemberships?.length ?? 0) > 0 || (linkedStudents?.length ?? 0) > 0) {
+        return jsonResponse({ error: "auth_login_exists" }, 409);
+      }
+
+      const { error: cleanupError } = await adminClient.auth.admin.deleteUser(staleUser.id);
+      if (cleanupError) return jsonResponse({ error: "stale_auth_cleanup_failed" }, 500);
+
+      const retry = await adminClient.auth.admin.createUser({
+        email: authEmail,
+        password: temporaryPassword,
+        email_confirm: true,
+        user_metadata: { full_name: student.full_name, login_phone: student.phone },
+      });
+      createdUser = retry.data;
+      createError = retry.error;
+      provisionedUser = retry.data.user;
+
+      if (createError || !provisionedUser) {
+        return jsonResponse({ error: "auth_create_failed" }, 500);
+      }
     }
 
     const { error: linkError } = await adminClient.rpc("service_link_student_access", {
       target_student_id: student.id,
-      target_user_id: createdUser.user.id,
+      target_user_id: provisionedUser.id,
     });
 
     if (linkError) {
-      await adminClient.auth.admin.deleteUser(createdUser.user.id);
+      await adminClient.auth.admin.deleteUser(provisionedUser.id);
       return jsonResponse({ error: "link_failed" }, 500);
     }
 
