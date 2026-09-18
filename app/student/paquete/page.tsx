@@ -23,10 +23,10 @@ const termCopy: Record<string, string> = {
 };
 
 const packageGroups: Array<{ key: string; title: string; description: string }> = [
-  { key: "monthly", title: "Mensuales", description: "Paquetes con ciclo mensual" },
-  { key: "quarterly", title: "Trimestrales", description: "Paquetes con ciclo de tres meses" },
-  { key: "semiannual", title: "Semestrales", description: "Paquetes con ciclo de seis meses" },
-  { key: "annual", title: "Anuales", description: "Paquetes con ciclo anual" },
+  { key: "monthly", title: "1 mes", description: "Paquetes con vigencia de 1 mes" },
+  { key: "quarterly", title: "3 meses", description: "Paquetes con vigencia de 3 meses" },
+  { key: "semiannual", title: "6 meses", description: "Paquetes con vigencia de 6 meses" },
+  { key: "annual", title: "12 meses", description: "Paquetes con vigencia de 12 meses" },
   { key: "other", title: "Otros", description: "Otras vigencias y productos" },
 ];
 
