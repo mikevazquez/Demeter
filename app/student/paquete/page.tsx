@@ -1,9 +1,6 @@
 import Link from "next/link";
 
-import {
-  PackageCatalog,
-  type PackageCatalogGroup,
-} from "@/app/student/paquete/package-catalog";
+import { PackageCatalog, type PackageCatalogGroup } from "@/app/student/paquete/package-catalog";
 import {
   formatDate,
   formatMoney,
@@ -244,36 +241,33 @@ export default async function StudentPackagePage() {
           </div>
 
           <PackageCatalog
-            groups={
-              packageGroups
-                .map((group) => {
-                  const products = purchasableGroups.get(group.key) ?? [];
+            groups={packageGroups
+              .map((group) => {
+                const products = purchasableGroups.get(group.key) ?? [];
 
-                  return {
-                    key: group.key,
-                    title: group.title,
-                    description: group.description,
-                    products: products.map((product) => {
-                      const disciplineNames =
-                        productDisciplineNames.get(product.id) ?? [];
+                return {
+                  key: group.key,
+                  title: group.title,
+                  description: group.description,
+                  products: products.map((product) => {
+                    const disciplineNames = productDisciplineNames.get(product.id) ?? [];
 
-                      return {
-                        id: product.id,
-                        name: product.name,
-                        benefit: productBenefit(product),
-                        validityLabel: product.validity_days
-                          ? `Vigencia: ${product.validity_days} días desde la activación`
-                          : null,
-                        disciplinesLabel: disciplineNames.length
-                          ? `Disciplinas: ${disciplineNames.join(" · ")}`
-                          : "Sin disciplinas habilitadas",
-                        priceLabel: formatMoney(product.price_minor, product.currency),
-                      };
-                    }),
-                  } satisfies PackageCatalogGroup;
-                })
-                .filter((group) => group.products.length)
-            }
+                    return {
+                      id: product.id,
+                      name: product.name,
+                      benefit: productBenefit(product),
+                      validityLabel: product.validity_days
+                        ? `Vigencia: ${product.validity_days} días desde la activación`
+                        : null,
+                      disciplinesLabel: disciplineNames.length
+                        ? `Disciplinas: ${disciplineNames.join(" · ")}`
+                        : "Sin disciplinas habilitadas",
+                      priceLabel: formatMoney(product.price_minor, product.currency),
+                    };
+                  }),
+                } satisfies PackageCatalogGroup;
+              })
+              .filter((group) => group.products.length)}
           />
         </section>
       ) : null}
@@ -297,7 +291,11 @@ export default async function StudentPackagePage() {
               </p>
             </div>
             <span
-              className={`rounded-full px-2.5 py-1 text-xs font-medium ${snapshot.enrollment.active_now ? "bg-emerald-500/15 text-emerald-300" : "bg-zinc-500/15 text-zinc-400"}`}
+              className={`rounded-full px-2.5 py-1 text-xs font-medium ${
+                snapshot.enrollment.active_now
+                  ? "bg-emerald-500/15 text-emerald-300"
+                  : "bg-zinc-500/15 text-zinc-400"
+              }`}
             >
               {snapshot.enrollment.status}
             </span>
