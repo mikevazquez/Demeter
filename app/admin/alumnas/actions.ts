@@ -10,11 +10,8 @@ function errorRedirect(code: string): never {
   redirect(`/admin/alumnas?error=${encodeURIComponent(code)}`);
 }
 
-function existingStudentRedirect(studentId: string, lifecycleStatus: string): never {
-  const duplicateState = lifecycleStatus === "archived" ? "archived" : "active";
-  redirect(
-    `/admin/alumnas?duplicate=${encodeURIComponent(studentId)}&duplicate_state=${duplicateState}#alta-rapida`,
-  );
+function existingStudentRedirect(studentId: string): never {
+  redirect(`/admin/alumnas?duplicate=${encodeURIComponent(studentId)}#alta-rapida`);
 }
 
 export async function createStudent(formData: FormData) {
@@ -39,7 +36,7 @@ export async function createStudent(formData: FormData) {
     .maybeSingle();
 
   if (existingStudent) {
-    existingStudentRedirect(existingStudent.id, existingStudent.lifecycle_status);
+    existingStudentRedirect(existingStudent.id);
   }
 
   const { data: studentId, error } = await supabase.rpc("admin_create_student", {
@@ -59,7 +56,7 @@ export async function createStudent(formData: FormData) {
         .maybeSingle();
 
       if (racedStudent) {
-        existingStudentRedirect(racedStudent.id, racedStudent.lifecycle_status);
+        existingStudentRedirect(racedStudent.id);
       }
 
       errorRedirect("phone_exists");
