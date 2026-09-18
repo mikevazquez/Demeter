@@ -15,6 +15,8 @@ export const CAPABILITIES = {
   REPORTS_READ: "reports.read",
   REQUIRED_ACTIONS_READ: "required_actions.read",
   REQUIRED_ACTIONS_MANAGE: "required_actions.manage",
+  AUTOMATIONS_READ: "automations.read",
+  AUTOMATIONS_MANAGE: "automations.manage",
   SETTINGS_WRITE: "settings.write",
   STUDENT_PORTAL: "student.portal",
   STUDENT_PROFILE_SELF: "student.profile.self",
