@@ -57,7 +57,7 @@ export default async function StudentProfileLayout({
     <>
       {children}
       <div className="dashboard-shell pt-0">
-        <section className="panel">
+        <section className="panel" id="acceso-portal">
           <div className="panel-heading">
             <div>
               <p className="eyebrow">PORTAL DE ALUMNA</p>
