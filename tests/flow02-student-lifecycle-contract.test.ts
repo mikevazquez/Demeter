@@ -69,9 +69,7 @@ describe("Flow 02 student lifecycle", () => {
 
   it("allows a future alta without resurrecting deleted student records", () => {
     const listActions = source("app/admin/alumnas/actions.ts");
-    const migration = source(
-      "supabase/migrations/20260918193000_flow02_student_lifecycle.sql",
-    );
+    const migration = source("supabase/migrations/20260918193000_flow02_student_lifecycle.sql");
 
     expect(listActions).toContain('.neq("lifecycle_status", "archived")');
     expect(migration).toContain("v_person_id is not null and exists");
