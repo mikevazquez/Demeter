@@ -45,13 +45,13 @@ alter table public.product_acquisitions
   alter column expires_on drop not null,
   drop constraint if exists flow01_acquisition_activation_mode,
   add constraint flow01_acquisition_activation_mode
-    check (activation_mode in ('fixed_date','first_attendance')),
+    check (activation_mode in ('fixed_date','first_usage')),
   drop constraint if exists flow01_acquisition_dates,
   add constraint flow01_acquisition_dates
     check (
       (activation_mode='fixed_date' and starts_on is not null and expires_on is not null)
       or
-      (activation_mode='first_attendance' and (
+      (activation_mode='first_usage' and (
         (starts_on is null and expires_on is null)
         or
         (starts_on is not null and expires_on is not null)
@@ -168,7 +168,7 @@ begin
   if not found then raise exception 'package_not_available'; end if;
   if v_package.validity_days is null then raise exception 'product_validity_missing'; end if;
 
-  if package_start_mode not in ('today','specific','first_attendance') then
+  if package_start_mode not in ('today','specific','first_usage') then
     raise exception 'package_start_mode_invalid';
   end if;
 
@@ -262,10 +262,10 @@ begin
   where id=v_package_line_id;
 
   update public.product_acquisitions
-  set activation_mode=case when package_start_mode='first_attendance' then 'first_attendance' else 'fixed_date' end,
+  set activation_mode=case when package_start_mode='first_usage' then 'first_usage' else 'fixed_date' end,
       validity_days_snapshot=v_package.validity_days,
-      starts_on=case when package_start_mode='first_attendance' then null else v_core_start end,
-      expires_on=case when package_start_mode='first_attendance' then null else v_core_start+v_package.validity_days end,
+      starts_on=case when package_start_mode='first_usage' then null else v_core_start end,
+      expires_on=case when package_start_mode='first_usage' then null else v_core_start+v_package.validity_days end,
       updated_at=now()
   where id=v_acquisition_id;
 
@@ -423,7 +423,7 @@ begin
   select exists(select 1 from public.product_acquisitions pa
     where pa.studio_id=v_session.studio_id and pa.student_id=target_student_id and pa.status='active'
       and not pa.access_blocked
-      and ((pa.activation_mode='first_attendance' and pa.starts_on is null)
+      and ((pa.activation_mode='first_usage' and pa.starts_on is null)
         or (pa.starts_on<=v_class_date and pa.expires_on>=v_class_date))
   ) into v_has_active_acquisition;
 
@@ -441,7 +441,7 @@ begin
       on ptd.product_template_id=pa.product_template_id and ptd.studio_id=pa.studio_id
     where pa.studio_id=v_session.studio_id and pa.student_id=target_student_id and pa.status='active'
       and not pa.access_blocked
-      and ((pa.activation_mode='first_attendance' and pa.starts_on is null)
+      and ((pa.activation_mode='first_usage' and pa.starts_on is null)
         or (pa.starts_on<=v_class_date and pa.expires_on>=v_class_date))
       and ptd.discipline_id=v_discipline_id
   ) into v_has_discipline_acquisition;
@@ -454,7 +454,7 @@ begin
       on ptd.product_template_id=pa.product_template_id and ptd.studio_id=pa.studio_id
     where pa.studio_id=v_session.studio_id and pa.student_id=target_student_id and pa.status='active'
       and not pa.access_blocked
-      and ((pa.activation_mode='first_attendance' and pa.starts_on is null)
+      and ((pa.activation_mode='first_usage' and pa.starts_on is null)
         or (pa.starts_on<=v_class_date and pa.expires_on>=v_class_date))
       and ptd.discipline_id=v_discipline_id
     order by pa.unlimited desc,coalesce(pa.expires_on,'infinity'::date) asc,pa.created_at asc
@@ -515,13 +515,13 @@ begin
     if v_reservation.status='attended' then
       v_attended := v_attended+1;
       if v_reservation.acquisition_id is not null
-         and v_reservation.activation_mode='first_attendance'
+         and v_reservation.activation_mode='first_usage'
          and v_reservation.starts_on is null
          and not coalesce(v_reservation.access_blocked,false) then
         if v_reservation.validity_days_snapshot is null then raise exception 'product_validity_missing'; end if;
         update public.product_acquisitions
         set starts_on=v_class_date,expires_on=v_class_date+v_reservation.validity_days_snapshot,updated_at=now()
-        where id=v_reservation.acquisition_id and activation_mode='first_attendance' and starts_on is null;
+        where id=v_reservation.acquisition_id and activation_mode='first_usage' and starts_on is null;
       end if;
     else
       v_no_show := v_no_show+1;
