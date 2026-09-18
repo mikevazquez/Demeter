@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
-import { getAdminContext } from "@/lib/auth/admin-context";\nimport DuplicateStudentDialog from "./DuplicateStudentDialog";
+import { getAdminContext } from "@/lib/auth/admin-context";
 import {
   setAcquisitionAvailableCredits,
   setAcquisitionStartDate,
@@ -208,14 +208,6 @@ export default async function StudentProfilePage({
         <div className="notice error">
           {errorCopy[query.error] ?? "No se pudo guardar el cambio."}
         </div>
-      ) : null}
-
-      {query.alta === "duplicada" ? (
-        <DuplicateStudentDialog studentName={student.full_name} mode="active" />
-      ) : null}
-
-      {query.alta === "duplicada_archivada" ? (
-        <DuplicateStudentDialog studentName={student.full_name} mode="archived" />
       ) : null}
 
       {query.alta === "finalizada" || query.alta === "sin_paquete" ? (
