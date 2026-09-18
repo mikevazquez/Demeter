@@ -33,12 +33,6 @@ jobs:
       - name: Install
         run: npm ci
 
-      - name: Show exact Prettier patch for FLUJO 02 dialog
-        run: |
-          npx prettier --write 'app/admin/alumnas/[studentId]/StudentLifecycleActions.tsx'
-          git diff -- 'app/admin/alumnas/[studentId]/StudentLifecycleActions.tsx'
-          exit 1
-
       - name: Format check
         run: npm run format:check
 

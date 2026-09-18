@@ -68,8 +68,8 @@ export default function StudentLifecycleActions({
             </h2>
             <div className="mt-3 space-y-2 text-sm leading-6 text-zinc-300">
               <p>
-                El expediente operativo dejará de existir y <strong className="text-white">no podrá
-                reactivarse</strong>.
+                El expediente operativo dejará de existir y{" "}
+                <strong className="text-white">no podrá reactivarse</strong>.
               </p>
               <p>
                 Se cancelarán sus reservas futuras sin penalización, se liberarán los créditos
@@ -83,19 +83,12 @@ export default function StudentLifecycleActions({
             </div>
 
             <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-              <button
-                type="button"
-                className="ghost-button"
-                onClick={() => setDeleteOpen(false)}
-              >
+              <button type="button" className="ghost-button" onClick={() => setDeleteOpen(false)}>
                 Cancelar
               </button>
               <form action={deleteStudent}>
                 <input type="hidden" name="student_id" value={studentId} />
-                <PendingActionButton
-                  className={deleteButtonClassName}
-                  pendingLabel="Eliminando…"
-                >
+                <PendingActionButton className={deleteButtonClassName} pendingLabel="Eliminando…">
                   Eliminar alumna
                 </PendingActionButton>
               </form>
