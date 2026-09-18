@@ -67,7 +67,7 @@ describe("Flow 01 student onboarding", () => {
     expect(migration).toContain("consumidos por asistencia");
     expect(migration).toContain("consumidos por no-show");
     expect(migration).toContain("v_new_status='cancelled_late'");
-    expect(migration).toContain("v_reservation.status in ('attended','no_show')");
+    expect(migration).toContain("r.status in ('attended','no_show')");
     expect(form).toContain("Primer crédito consumido");
     expect(form).toContain("cancelación tardía");
     expect(form).toContain("Una cancelación a");
