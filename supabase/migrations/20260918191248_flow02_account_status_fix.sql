@@ -1,11 +1,9 @@
--- FLUJO 02 · corrección de estado de cuenta
--- user_accounts sólo admite active/disabled. Sustituye el valor transitorio inactive.
-
+-- Sandbox corrective migration: align account status with existing user_accounts check constraint.
 create or replace function public.admin_delete_student(
   p_student_id uuid
-)
-returns jsonb
+) returns jsonb
 language plpgsql
+security invoker
 set search_path = ''
 as $$
 declare
@@ -24,11 +22,7 @@ begin
   end if;
 
   if v_student.lifecycle_status = 'archived' then
-    return jsonb_build_object(
-      'ok', true,
-      'already_deleted', true,
-      'cancelled_reservations', 0
-    );
+    return jsonb_build_object('ok', true, 'already_deleted', true, 'cancelled_reservations', 0);
   end if;
 
   v_person_id := v_student.person_id;
@@ -72,9 +66,7 @@ begin
   where id = p_student_id;
 
   if v_person_id is not null
-     and not exists (
-       select 1 from public.instructors i where i.person_id = v_person_id
-     )
+     and not exists (select 1 from public.instructors i where i.person_id = v_person_id)
      and not exists (
        select 1 from public.students s
        where s.person_id = v_person_id and s.id <> p_student_id
@@ -101,7 +93,3 @@ begin
   );
 end;
 $$;
-
-revoke all on function public.admin_delete_student(uuid) from public;
-revoke all on function public.admin_delete_student(uuid) from anon;
-grant execute on function public.admin_delete_student(uuid) to authenticated, service_role;
