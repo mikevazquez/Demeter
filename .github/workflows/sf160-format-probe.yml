@@ -1,0 +1,28 @@
+name: SF160 Format Probe
+
+on:
+  push:
+    branches:
+      - feat/sf-160-domain-events
+
+permissions:
+  contents: read
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Print formatted test
+        run: npx prettier tests/sf160-domain-events.test.ts
