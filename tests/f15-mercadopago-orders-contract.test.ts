@@ -88,7 +88,8 @@ describe("F15 Mercado Pago Orders API", () => {
     expect(page).toContain("Semestral");
     expect(page).toContain("Anual");
     expect(page).toContain("Otra vigencia");
-    expect(page).toContain("PurchasePackageButton");
+    const catalog = source("app/student/paquete/package-catalog.tsx");
+    expect(catalog).toContain("PurchasePackageButton");
   });
 
   it("keeps purchasable packages collapsed until one term is selected", () => {
