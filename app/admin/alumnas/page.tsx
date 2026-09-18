@@ -1,4 +1,5 @@
 import Link from "next/link";
+import PendingActionButton from "@/app/admin/components/PendingActionButton";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { createStudent } from "./actions";
@@ -215,9 +216,9 @@ export default async function StudentsPage({
                   placeholder="Correo opcional"
                   autoComplete="email"
                 />
-                <button className="primary-button" type="submit">
+                <PendingActionButton className="primary-button" pendingLabel="Creando alumna…">
                   Crear alumna
-                </button>
+                </PendingActionButton>
               </form>
             </article>
           )}
