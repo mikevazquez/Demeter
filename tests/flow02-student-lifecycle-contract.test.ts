@@ -9,7 +9,9 @@ function source(path: string) {
 
 describe("Flow 02 student lifecycle", () => {
   it("keeps inactive reversible and deleted irreversible", () => {
-    const migration = source("supabase/migrations/20260918193000_flow02_student_lifecycle.sql");
+    const migration = source(
+      "supabase/migrations/20260918193000_flow02_student_lifecycle.sql",
+    );
 
     expect(migration).toContain("student_lifecycle_events");
     expect(migration).toContain("p_status not in ('active','inactive')");
@@ -21,13 +23,17 @@ describe("Flow 02 student lifecycle", () => {
   });
 
   it("cancels future reservations as studio cancellations without consuming credit", () => {
-    const migration = source("supabase/migrations/20260918193000_flow02_student_lifecycle.sql");
+    const migration = source(
+      "supabase/migrations/20260918193000_flow02_student_lifecycle.sql",
+    );
 
     expect(migration).toContain("cancel_future_student_reservations");
     expect(migration).toContain("status = 'cancelled_by_studio'");
     expect(migration).toContain("'release'");
     expect(migration).toContain("cs.starts_at > now()");
-    expect(migration).not.toContain("movement_type, quantity, reservation_id, note, created_by\n      ) values (\n        v_reservation.studio_id,\n        v_reservation.acquisition_id,\n        'consume'");
+    expect(migration).not.toContain(
+      "movement_type, quantity, reservation_id, note, created_by\n      ) values (\n        v_reservation.studio_id,\n        v_reservation.acquisition_id,\n        'consume'",
+    );
   });
 
   it("removes deleted students from operational navigation", () => {
@@ -67,7 +73,9 @@ describe("Flow 02 student lifecycle", () => {
 
   it("allows a future alta without resurrecting deleted student records", () => {
     const listActions = source("app/admin/alumnas/actions.ts");
-    const migration = source("supabase/migrations/20260918193000_flow02_student_lifecycle.sql");
+    const migration = source(
+      "supabase/migrations/20260918193000_flow02_student_lifecycle.sql",
+    );
 
     expect(listActions).toContain('.neq("lifecycle_status", "archived")');
     expect(migration).toContain("v_person_id is not null and exists");
