@@ -30,7 +30,11 @@ export default function StudentLifecycleControls({
             </PendingActionButton>
           </form>
         ) : (
-          <button className="ghost-button" type="button" onClick={() => setConfirmMode("inactive")}>
+          <button
+            className="ghost-button"
+            type="button"
+            onClick={() => setConfirmMode("inactive")}
+          >
             Inactivar
           </button>
         )}
@@ -74,13 +78,17 @@ export default function StudentLifecycleControls({
             >
               {confirmMode === "delete" ? "Acción irreversible" : "Cambiar estado"}
             </p>
-            <h2 id="student-lifecycle-confirm-title" className="mt-2 text-2xl font-semibold text-white">
+            <h2
+              id="student-lifecycle-confirm-title"
+              className="mt-2 text-2xl font-semibold text-white"
+            >
               {confirmMode === "delete" ? "¿Eliminar a esta alumna?" : "¿Inactivar a esta alumna?"}
             </h2>
 
             <div className="mt-3 space-y-3 text-sm leading-6 text-zinc-300">
               <p>
-                Estás modificando el expediente de <strong className="text-white">{studentName}</strong>.
+                Estás modificando el expediente de{" "}
+                <strong className="text-white">{studentName}</strong>.
               </p>
               {confirmMode === "delete" ? (
                 <>
