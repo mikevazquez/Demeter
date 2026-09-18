@@ -240,8 +240,8 @@ export async function updateDynamicProfileFields(formData: FormData) {
 export async function setStudentLifecycle(formData: FormData) {
   const studentId = String(formData.get("student_id") ?? "");
   const status = String(formData.get("status") ?? "");
-  if (!studentId || !["active", "inactive", "archived"].includes(status)) {
-    redirect(`/admin/alumnas/${studentId}?error=lifecycle`);
+  if (!studentId || !["active", "inactive"].includes(status)) {
+    redirect(`/admin/alumnas/${studentId}?lifecycle_error=invalid`);
   }
 
   const { supabase } = await getAdminContext(CAPABILITIES.STUDENTS_ARCHIVE);
@@ -250,11 +250,46 @@ export async function setStudentLifecycle(formData: FormData) {
     p_status: status,
   });
 
-  if (error) redirect(`/admin/alumnas/${studentId}?error=lifecycle`);
+  if (error) {
+    redirect(`/admin/alumnas/${studentId}?lifecycle_error=change`);
+  }
 
   revalidatePath(`/admin/alumnas/${studentId}`);
   revalidatePath("/admin/alumnas");
-  redirect(`/admin/alumnas/${studentId}?saved=1`);
+  revalidatePath("/admin");
+  revalidatePath("/student");
+  redirect(`/admin/alumnas/${studentId}?lifecycle=${encodeURIComponent(status)}#estado-alumna`);
+}
+
+export async function deleteStudent(formData: FormData) {
+  const studentId = String(formData.get("student_id") ?? "");
+  if (!studentId) {
+    redirect("/admin/alumnas?error=lifecycle_invalid");
+  }
+
+  const { supabase } = await getAdminContext(CAPABILITIES.STUDENTS_ARCHIVE);
+  const { data, error } = await supabase.rpc("admin_delete_student", {
+    p_student_id: studentId,
+  });
+
+  if (error) {
+    redirect(`/admin/alumnas/${studentId}?lifecycle_error=delete#estado-alumna`);
+  }
+
+  const result = data as { cancelled_reservations?: number } | null;
+  const cancelledReservations = Number(result?.cancelled_reservations ?? 0);
+
+  revalidatePath(`/admin/alumnas/${studentId}`);
+  revalidatePath("/admin/alumnas");
+  revalidatePath("/admin");
+  revalidatePath("/student");
+  revalidatePath("/student/paquete");
+
+  redirect(
+    `/admin/alumnas?deleted=1&cancelled=${encodeURIComponent(
+      String(Number.isFinite(cancelledReservations) ? cancelledReservations : 0),
+    )}`,
+  );
 }
 
 export async function setAcquisitionStartDate(formData: FormData) {
