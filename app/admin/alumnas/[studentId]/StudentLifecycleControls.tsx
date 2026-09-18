@@ -30,11 +30,7 @@ export default function StudentLifecycleControls({
             </PendingActionButton>
           </form>
         ) : (
-          <button
-            className="ghost-button"
-            type="button"
-            onClick={() => setConfirmMode("inactive")}
-          >
+          <button className="ghost-button" type="button" onClick={() => setConfirmMode("inactive")}>
             Inactivar
           </button>
         )}
