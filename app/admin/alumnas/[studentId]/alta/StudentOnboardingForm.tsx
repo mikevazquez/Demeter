@@ -53,7 +53,8 @@ export default function StudentOnboardingForm({
   idempotencyKey,
   enrollmentRequired,
   currentEnrollment,
-  enrollmentProduct,
+  enrollmentProducts,
+  defaultEnrollmentProductId,
 }: {
   studentId: string;
   studentName: string;
@@ -62,7 +63,8 @@ export default function StudentOnboardingForm({
   idempotencyKey: string;
   enrollmentRequired: boolean;
   currentEnrollment: boolean;
-  enrollmentProduct: EnrollmentProduct | null;
+  enrollmentProducts: EnrollmentProduct[];
+  defaultEnrollmentProductId: string | null;
 }) {
   const [selectedId, setSelectedId] = useState(packages[0]?.id ?? "");
   const [startMode, setStartMode] = useState("today");
@@ -71,12 +73,26 @@ export default function StudentOnboardingForm({
   const [enrollmentResolution, setEnrollmentResolution] = useState(
     currentEnrollment ? "already_active" : enrollmentRequired ? "paid" : "not_required",
   );
+  const [selectedEnrollmentId, setSelectedEnrollmentId] = useState(
+    defaultEnrollmentProductId &&
+      enrollmentProducts.some((item) => item.id === defaultEnrollmentProductId)
+      ? defaultEnrollmentProductId
+      : (enrollmentProducts[0]?.id ?? ""),
+  );
   const [paymentAmount, setPaymentAmount] = useState("");
   const [priorCredits, setPriorCredits] = useState("0");
 
   const selectedPackage = useMemo(
     () => packages.find((item) => item.id === selectedId) ?? packages[0] ?? null,
     [packages, selectedId],
+  );
+
+  const selectedEnrollment = useMemo(
+    () =>
+      enrollmentProducts.find((item) => item.id === selectedEnrollmentId) ??
+      enrollmentProducts[0] ??
+      null,
+    [enrollmentProducts, selectedEnrollmentId],
   );
 
   const packageDiscountMinor = useMemo(() => {
@@ -97,8 +113,11 @@ export default function StudentOnboardingForm({
   }, [discountMode, discountValue, selectedPackage]);
 
   const enrollmentNetMinor =
-    enrollmentRequired && !currentEnrollment && enrollmentResolution === "paid" && enrollmentProduct
-      ? enrollmentProduct.priceMinor
+    enrollmentRequired &&
+    !currentEnrollment &&
+    enrollmentResolution === "paid" &&
+    selectedEnrollment
+      ? selectedEnrollment.priceMinor
       : 0;
 
   const packageNetMinor = selectedPackage
@@ -132,6 +151,11 @@ export default function StudentOnboardingForm({
       <input type="hidden" name="package_product_id" value={selectedPackage.id} />
       <input type="hidden" name="package_start_mode" value={startMode} />
       <input type="hidden" name="enrollment_resolution" value={enrollmentResolution} />
+      <input
+        type="hidden"
+        name="enrollment_product_id"
+        value={selectedEnrollment?.id ?? ""}
+      />
 
       <section className="panel">
         <div className="panel-heading">
@@ -285,8 +309,23 @@ export default function StudentOnboardingForm({
               <input type="hidden" name="enrollment_effective_on" value="" />
               <input type="hidden" name="enrollment_reason" value="" />
             </>
-          ) : enrollmentProduct ? (
+          ) : selectedEnrollment ? (
             <div className="compact-form">
+              <label>
+                <span>Vigencia de inscripción</span>
+                <select
+                  value={selectedEnrollment.id}
+                  onChange={(event) => setSelectedEnrollmentId(event.target.value)}
+                >
+                  {enrollmentProducts.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.name} ·{" "}
+                      {item.validityDays === null ? "Vitalicia" : `${item.validityDays} días`} ·{" "}
+                      {money(item.priceMinor, item.currency)}
+                    </option>
+                  ))}
+                </select>
+              </label>
               <label>
                 <span>Resolución</span>
                 <select
@@ -295,7 +334,7 @@ export default function StudentOnboardingForm({
                 >
                   <option value="paid">
                     Cobrar inscripción ·{" "}
-                    {money(enrollmentProduct.priceMinor, enrollmentProduct.currency)}
+                    {money(selectedEnrollment.priceMinor, selectedEnrollment.currency)}
                   </option>
                   <option value="promotion">Aplicar promoción</option>
                   <option value="exception">Aplicar excepción autorizada</option>
@@ -327,8 +366,8 @@ export default function StudentOnboardingForm({
             </div>
           ) : (
             <div className="notice error">
-              La política exige inscripción, pero no tiene un producto de inscripción válido
-              configurado. Corrige esa configuración antes de completar la venta.
+              La política exige inscripción, pero no hay productos de inscripción activos.
+              Configura al menos una vigencia antes de completar la venta.
             </div>
           )}
         </section>
@@ -538,7 +577,7 @@ export default function StudentOnboardingForm({
           <button
             className="primary-button"
             type="submit"
-            disabled={enrollmentRequired && !currentEnrollment && !enrollmentProduct}
+            disabled={enrollmentRequired && !currentEnrollment && enrollmentProducts.length === 0}
           >
             Completar alta
           </button>
