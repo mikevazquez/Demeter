@@ -243,7 +243,7 @@ begin
   v_balance := greatest(v_total-v_paid,0);
 
   if v_balance>0 and payment_due_on is null
-     and nullif(trim(coalesce(collection_note,'')),'') is null then
+     and nullif(trim(coalesce(create_student_onboarding_sale_v2.collection_note,'')),'') is null then
     raise exception 'payment_followup_required';
   end if;
 
@@ -258,8 +258,8 @@ begin
 
   update public.sales
   set total_minor=v_total,idempotency_key=target_idempotency_key,
-      payment_due_on=case when v_balance>0 then payment_due_on else null end,
-      collection_note=case when v_balance>0 then nullif(trim(coalesce(collection_note,'')),'') else null end,
+      payment_due_on=case when v_balance>0 then create_student_onboarding_sale_v2.payment_due_on else null end,
+      collection_note=case when v_balance>0 then nullif(trim(coalesce(create_student_onboarding_sale_v2.collection_note,'')),'') else null end,
       pending_access_exception=(v_total>0 and v_paid=0 and coalesce(allow_pending_access,false)),
       pending_access_exception_by=case when v_total>0 and v_paid=0 and coalesce(allow_pending_access,false) then (select auth.uid()) else null end,
       pending_access_exception_reason=case when v_total>0 and v_paid=0 and coalesce(allow_pending_access,false) then trim(pending_access_reason) else null end,
