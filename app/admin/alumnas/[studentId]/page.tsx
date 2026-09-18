@@ -392,8 +392,7 @@ export default async function StudentProfilePage({
                       <span className="status-pill">
                         {acquisition.access_blocked
                           ? "Bloqueada por pago pendiente"
-                          : acquisition.activation_mode === "first_usage" &&
-                              !acquisition.starts_on
+                          : acquisition.activation_mode === "first_usage" && !acquisition.starts_on
                             ? acquisition.unlimited
                               ? "Pendiente de primer uso"
                               : "Pendiente de primer crédito"
@@ -423,7 +422,10 @@ export default async function StudentProfilePage({
                               className="rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 text-white"
                             />
                           </label>
-                          <PendingActionButton className="ghost-button" pendingLabel="Actualizando…">
+                          <PendingActionButton
+                            className="ghost-button"
+                            pendingLabel="Actualizando…"
+                          >
                             Actualizar fecha
                           </PendingActionButton>
                         </form>

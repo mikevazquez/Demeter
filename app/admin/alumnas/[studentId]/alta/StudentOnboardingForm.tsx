@@ -585,10 +585,7 @@ export default function StudentOnboardingForm({
         </p>
         {completedSaleId ? (
           <div className="mt-4 grid gap-3 sm:grid-cols-3">
-            <Link
-              className="primary-button text-center"
-              href={`/admin/alumnas/${studentId}`}
-            >
+            <Link className="primary-button text-center" href={`/admin/alumnas/${studentId}`}>
               Ir a Perfil 360
             </Link>
             <Link
@@ -597,10 +594,7 @@ export default function StudentOnboardingForm({
             >
               Reservar primera clase
             </Link>
-            <Link
-              className="ghost-button text-center"
-              href={`/admin/ventas/${completedSaleId}`}
-            >
+            <Link className="ghost-button text-center" href={`/admin/ventas/${completedSaleId}`}>
               Ver venta
             </Link>
           </div>
@@ -609,9 +603,7 @@ export default function StudentOnboardingForm({
             <PendingActionButton
               className="primary-button"
               pendingLabel="Registrando alta…"
-              disabled={
-                enrollmentRequired && !currentEnrollment && enrollmentProducts.length === 0
-              }
+              disabled={enrollmentRequired && !currentEnrollment && enrollmentProducts.length === 0}
             >
               Completar alta
             </PendingActionButton>

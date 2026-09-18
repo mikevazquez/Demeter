@@ -72,8 +72,7 @@ export default async function StudentsPage({
       : params.error === "phone_invalid"
         ? {
             title: "El teléfono no es válido",
-            message:
-              "Ingresa 10 dígitos de México o un número internacional con código de país.",
+            message: "Ingresa 10 dígitos de México o un número internacional con código de país.",
           }
         : params.error === "phone_exists"
           ? {

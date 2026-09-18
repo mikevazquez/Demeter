@@ -31,12 +31,7 @@ export default function StudentFormErrorDialog({
   }
 
   return (
-    <NoticeDialog
-      eyebrow="Revisa los datos"
-      title={title}
-      tone="error"
-      onConfirm={closeDialog}
-    >
+    <NoticeDialog eyebrow="Revisa los datos" title={title} tone="error" onConfirm={closeDialog}>
       {message}
     </NoticeDialog>
   );
