@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import { PurchasePackageButton } from "@/app/student/paquete/purchase-package-button";
+import { PackageCatalog, type PackageCatalogGroup } from "@/app/student/paquete/package-catalog";
 import {
   formatDate,
   formatMoney,
@@ -240,69 +240,37 @@ export default async function StudentPackagePage() {
             </p>
           </div>
 
-          {packageGroups.map((group) => {
-            const products = purchasableGroups.get(group.key) ?? [];
-            if (!products.length) return null;
+          <PackageCatalog
+            groups={
+              packageGroups
+                .map((group) => {
+                  const products = purchasableGroups.get(group.key) ?? [];
 
-            return (
-              <section
-                key={`buy-${group.key}`}
-                className="rounded-3xl border border-white/10 bg-white/[0.03] p-5 sm:p-6"
-              >
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-fuchsia-300">
-                    {group.title}
-                  </p>
-                  <p className="mt-1 text-sm text-zinc-500">{group.description}</p>
-                </div>
+                  return {
+                    key: group.key,
+                    title: group.title,
+                    description: group.description,
+                    products: products.map((product) => {
+                      const disciplineNames = productDisciplineNames.get(product.id) ?? [];
 
-                <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                  {products.map((product) => (
-                    <article
-                      key={product.id}
-                      className="rounded-2xl border border-white/10 bg-black/20 p-4"
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <span className="rounded-full bg-white/10 px-2.5 py-1 text-xs text-zinc-300">
-                            {product.package_term
-                              ? (termCopy[product.package_term] ?? "Otra vigencia")
-                              : "Otra vigencia"}
-                          </span>
-                          <h3 className="mt-3 text-lg font-semibold text-white">{product.name}</h3>
-                          <p className="mt-1 text-sm text-zinc-400">{productBenefit(product)}</p>
-                          {product.validity_days ? (
-                            <p className="mt-1 text-xs text-zinc-500">
-                              Vigencia: {product.validity_days} días desde la activación
-                            </p>
-                          ) : null}
-                          <p className="mt-2 text-xs leading-5 text-zinc-400">
-                            Disciplinas:{" "}
-                            {(productDisciplineNames.get(product.id) ?? []).length
-                              ? (productDisciplineNames.get(product.id) ?? []).join(" · ")
-                              : "Sin disciplinas habilitadas"}
-                          </p>
-                        </div>
-                        <strong className="text-lg text-white">
-                          {formatMoney(product.price_minor, product.currency)}
-                        </strong>
-                      </div>
-
-                      <div className="mt-4 flex items-end justify-between gap-3 border-t border-white/10 pt-4">
-                        <p className="max-w-[15rem] text-xs leading-5 text-zinc-500">
-                          Serás enviado a Mercado Pago para completar el pago de forma segura.
-                        </p>
-                        <PurchasePackageButton
-                          productTemplateId={product.id}
-                          productName={product.name}
-                        />
-                      </div>
-                    </article>
-                  ))}
-                </div>
-              </section>
-            );
-          })}
+                      return {
+                        id: product.id,
+                        name: product.name,
+                        benefit: productBenefit(product),
+                        validityLabel: product.validity_days
+                          ? `Vigencia: ${product.validity_days} días desde la activación`
+                          : null,
+                        disciplinesLabel: disciplineNames.length
+                          ? `Disciplinas: ${disciplineNames.join(" · ")}`
+                          : "Sin disciplinas habilitadas",
+                        priceLabel: formatMoney(product.price_minor, product.currency),
+                      };
+                    }),
+                  } satisfies PackageCatalogGroup;
+                })
+                .filter((group) => group.products.length)
+            }
+          />
         </section>
       ) : null}
 
