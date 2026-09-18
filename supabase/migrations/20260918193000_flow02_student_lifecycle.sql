@@ -257,7 +257,7 @@ begin
        where sm.user_id = v_user_id and sm.active = true
      ) then
     update public.user_accounts
-    set status = 'inactive',
+    set status = 'disabled',
         updated_at = now()
     where id = v_user_id;
   end if;
