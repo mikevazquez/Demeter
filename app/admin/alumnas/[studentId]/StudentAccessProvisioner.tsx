@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
+import LoadingSpinner from "@/app/admin/components/LoadingSpinner";
 import { provisionStudentAccess, resetStudentTemporaryPassword } from "./actions";
 
 const errorCopy: Record<string, string> = {
@@ -136,14 +137,23 @@ function StudentCredentialAction({
         )}
       </p>
       {error ? <div className="notice error">{error}</div> : null}
-      <button className="primary-button" type="button" onClick={run} disabled={isPending}>
-        {isPending
-          ? mode === "provision"
-            ? "Habilitando acceso…"
-            : "Generando contraseña…"
-          : mode === "provision"
-            ? "Habilitar acceso al portal"
-            : "Generar nueva contraseña temporal"}
+      <button
+        className="primary-button"
+        type="button"
+        onClick={run}
+        disabled={isPending}
+        aria-busy={isPending}
+      >
+        {isPending ? (
+          <span className="inline-flex items-center justify-center gap-2">
+            <LoadingSpinner />
+            <span>{mode === "provision" ? "Habilitando acceso…" : "Generando contraseña…"}</span>
+          </span>
+        ) : mode === "provision" ? (
+          "Habilitar acceso al portal"
+        ) : (
+          "Generar nueva contraseña temporal"
+        )}
       </button>
     </div>
   );
