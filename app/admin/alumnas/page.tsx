@@ -5,17 +5,16 @@ import { getAdminContext } from "@/lib/auth/admin-context";
 import { createStudent } from "./actions";
 import DuplicateStudentDialog from "./DuplicateStudentDialog";
 import StudentFormErrorDialog from "./StudentFormErrorDialog";
+import LifecycleNoticeDialog from "./LifecycleNoticeDialog";
 
 const lifecycleLabels: Record<string, string> = {
   active: "Activa",
   inactive: "Inactiva",
-  archived: "Archivada",
 };
 
 const filterLabels: Record<string, string> = {
   active: "Activas",
   inactive: "Inactivas",
-  archived: "Archivadas",
 };
 
 export default async function StudentsPage({
@@ -27,11 +26,12 @@ export default async function StudentsPage({
     q?: string;
     status?: string;
     duplicate?: string;
+    notice?: string;
   }>;
 }) {
   const params = await searchParams;
   const query = String(params.q ?? "").trim();
-  const status = ["active", "inactive", "archived"].includes(params.status ?? "")
+  const status = ["active", "inactive"].includes(params.status ?? "")
     ? params.status!
     : "active";
 
@@ -88,10 +88,11 @@ export default async function StudentsPage({
 
   return (
     <main className="dashboard-shell">
+      <LifecycleNoticeDialog notice={params.notice} />
       {duplicateStudent ? (
         <DuplicateStudentDialog
           studentName={duplicateStudent.full_name}
-          archived={duplicateStudent.lifecycle_status === "archived"}
+          archived={false}
         />
       ) : null}
       {errorDialog ? (
@@ -138,7 +139,6 @@ export default async function StudentsPage({
                 <select name="status" defaultValue={status} aria-label="Estado de la alumna">
                   <option value="active">Activas</option>
                   <option value="inactive">Inactivas</option>
-                  <option value="archived">Archivadas</option>
                 </select>
               </div>
               <button className="ghost-button" type="submit">
