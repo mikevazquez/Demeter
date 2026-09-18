@@ -12,7 +12,7 @@
     "start": "next start",
     "lint": "eslint .",
     "format": "prettier --write .",
-    "format:check": "prettier --write app/student/paquete/package-catalog.tsx app/student/paquete/page.tsx && node scripts/print-format-debug.mjs && prettier --check .",
+    "format:check": "prettier --check .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "ci": "npm run format:check && npm run lint && npm run typecheck && npm test && npm run build"
