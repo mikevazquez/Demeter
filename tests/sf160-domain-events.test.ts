@@ -8,7 +8,7 @@ import {
   emitDomainEvent,
   type DomainEventRpcClient,
   type DomainEventRpcResult,
-} from "@/lib/automations/domain-events";
+} from "../lib/automations/domain-events";
 
 class FakeDomainEventRpcClient implements DomainEventRpcClient {
   readonly calls: Array<{
