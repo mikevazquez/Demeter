@@ -27,23 +27,21 @@ class FakeDomainEventRpcClient implements DomainEventRpcClient {
     this.calls.push({ functionName, args });
 
     if (functionName === "emit_domain_event") {
-      const identity = `${String(args.p_studio_id)}:${String(
-        args.p_deduplication_key,
-      )}`;
+      const identity = `${String(args.p_studio_id)}:${String(args.p_deduplication_key)}`;
       let eventId = this.eventIds.get(identity);
       if (!eventId) {
         this.sequence += 1;
         eventId = `event-${this.sequence}`;
         this.eventIds.set(identity, eventId);
       }
-      return { data: eventId as T, error: null };
+      return { data: eventId as unknown as T, error: null };
     }
 
     if (functionName === "claim_domain_event") {
       const claim = `${String(args.p_event_id)}:${String(args.p_consumer_key)}`;
       const isFirstClaim = !this.claims.has(claim);
       this.claims.add(claim);
-      return { data: isFirstClaim as T, error: null };
+      return { data: isFirstClaim as unknown as T, error: null };
     }
 
     return {
@@ -115,10 +113,7 @@ describe("SF-160 domain events", () => {
 
   it("locks the database contract to append-only, tenant-aware idempotency", () => {
     const migration = readFileSync(
-      join(
-        process.cwd(),
-        "supabase/migrations/20260918204721_sf160_domain_events.sql",
-      ),
+      join(process.cwd(), "supabase/migrations/20260918204721_sf160_domain_events.sql"),
       "utf8",
     );
     const hardening = readFileSync(
@@ -139,8 +134,6 @@ describe("SF-160 domain events", () => {
     expect(migration).toContain("grant execute on function public.emit_domain_event");
     expect(migration).toContain("to service_role");
     expect(migration).not.toMatch(/asistian|whatsapp|webhook/i);
-    expect(hardening).toContain(
-      "domain_event_consumptions_studio_event_idx",
-    );
+    expect(hardening).toContain("domain_event_consumptions_studio_event_idx");
   });
 });

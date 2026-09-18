@@ -11,10 +11,7 @@ export interface DomainEventRpcResult<T> {
 }
 
 export interface DomainEventRpcClient {
-  rpc<T>(
-    functionName: string,
-    args: Record<string, unknown>,
-  ): Promise<DomainEventRpcResult<T>>;
+  rpc<T>(functionName: string, args: Record<string, unknown>): Promise<DomainEventRpcResult<T>>;
 }
 
 export interface EmitDomainEventInput {
@@ -46,14 +43,8 @@ export async function emitDomainEvent(
   const args: Record<string, unknown> = {
     p_studio_id: requiredText(input.studioId, "domain_event_studio_required"),
     p_event_type: requiredText(input.eventType, "domain_event_type_required"),
-    p_source_entity_type: requiredText(
-      input.sourceEntityType,
-      "domain_event_source_required",
-    ),
-    p_source_entity_id: requiredText(
-      input.sourceEntityId,
-      "domain_event_source_required",
-    ),
+    p_source_entity_type: requiredText(input.sourceEntityType, "domain_event_source_required"),
+    p_source_entity_id: requiredText(input.sourceEntityId, "domain_event_source_required"),
     p_deduplication_key: requiredText(
       input.deduplicationKey,
       "domain_event_deduplication_key_required",
@@ -64,9 +55,7 @@ export async function emitDomainEvent(
   if (input.occurredAt) args.p_occurred_at = input.occurredAt;
   if (input.actorUserId !== undefined) args.p_actor_user_id = input.actorUserId;
   if (input.correlationId !== undefined) args.p_correlation_id = input.correlationId;
-  if (input.causationEventId !== undefined) {
-    args.p_causation_event_id = input.causationEventId;
-  }
+  if (input.causationEventId !== undefined) args.p_causation_event_id = input.causationEventId;
   if (input.eventId) args.p_event_id = input.eventId;
 
   const result = await client.rpc<string>("emit_domain_event", args);
@@ -88,10 +77,7 @@ export async function claimDomainEvent(
 ): Promise<boolean> {
   const result = await client.rpc<boolean>("claim_domain_event", {
     p_event_id: requiredText(eventId, "domain_event_id_required"),
-    p_consumer_key: requiredText(
-      consumerKey,
-      "domain_event_consumer_required",
-    ),
+    p_consumer_key: requiredText(consumerKey, "domain_event_consumer_required"),
   });
 
   if (result.error) {
