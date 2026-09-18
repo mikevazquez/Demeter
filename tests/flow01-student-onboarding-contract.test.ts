@@ -82,7 +82,10 @@ describe("Flow 01 student onboarding", () => {
     expect(profile).toContain("Pendiente de primera asistencia");
     expect(profile).toContain("Bloqueada por pago pendiente");
     expect(profile).toContain("Reservar primera clase");
-    expect(profile).toContain("Ya estaba registrada");
-    expect(profile).toContain("Sin duplicados");
+    expect(profile).toContain("DuplicateStudentDialog");
+    const duplicateDialog = source("app/admin/alumnas/[studentId]/DuplicateStudentDialog.tsx");
+    expect(duplicateDialog).toContain("Ya encontramos este expediente");
+    expect(duplicateDialog).toContain("Aceptar");
+    expect(duplicateDialog).toContain('aria-modal="true"');
   });
 });
