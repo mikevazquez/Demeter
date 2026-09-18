@@ -47,9 +47,7 @@ describe("Flow 01 student onboarding", () => {
   });
 
   it("supports multiple enrollment terms while keeping the configured default compatible", () => {
-    const migration = source(
-      "supabase/migrations/20260918161000_flow01_enrollment_multiterm.sql",
-    );
+    const migration = source("supabase/migrations/20260918161000_flow01_enrollment_multiterm.sql");
     const actions = source("app/admin/alumnas/[studentId]/alta/actions.ts");
     const form = source("app/admin/alumnas/[studentId]/alta/StudentOnboardingForm.tsx");
 
