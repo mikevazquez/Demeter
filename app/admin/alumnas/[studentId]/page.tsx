@@ -1,12 +1,13 @@
 import Link from "next/link";
 import PendingActionButton from "@/app/admin/components/PendingActionButton";
+import StudentLifecycleActions from "./StudentLifecycleActions";
+import StudentLifecycleNoticeDialog from "./StudentLifecycleNoticeDialog";
 import { notFound } from "next/navigation";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getAdminContext } from "@/lib/auth/admin-context";
 import {
   setAcquisitionAvailableCredits,
   setAcquisitionStartDate,
-  setStudentLifecycle,
   updateDynamicProfileFields,
   updateStudent,
 } from "./actions";
@@ -24,7 +25,6 @@ const termCopy: Record<string, string> = {
 const lifecycleCopy: Record<string, string> = {
   active: "Activa",
   inactive: "Inactiva",
-  archived: "Archivada",
 };
 
 const acquisitionStatusCopy: Record<string, string> = {
@@ -60,12 +60,27 @@ function formatDate(value: string) {
   }).format(new Date(`${value}T12:00:00Z`));
 }
 
+function formatDateTime(value: string) {
+  return new Intl.DateTimeFormat("es-MX", {
+    dateStyle: "medium",
+    timeStyle: "short",
+    timeZone: "America/Mexico_City",
+  }).format(new Date(value));
+}
+
 export default async function StudentProfilePage({
   params,
   searchParams,
 }: {
   params: Promise<{ studentId: string }>;
-  searchParams: Promise<{ saved?: string; error?: string; alta?: string; sale?: string }>;
+  searchParams: Promise<{
+    saved?: string;
+    error?: string;
+    alta?: string;
+    sale?: string;
+    lifecycle?: string;
+    lifecycle_error?: string;
+  }>;
 }) {
   const { studentId } = await params;
   const query = await searchParams;
@@ -80,7 +95,7 @@ export default async function StudentProfilePage({
     .eq("studio_id", studio.id)
     .maybeSingle();
 
-  if (!student) notFound();
+  if (!student || student.lifecycle_status === "archived") notFound();
 
   const canReadProducts = can(CAPABILITIES.PRODUCTS_READ);
   const canEditAcquisitions = can(CAPABILITIES.PRODUCTS_WRITE) || can(CAPABILITIES.SALES_WRITE);
@@ -166,6 +181,16 @@ export default async function StudentProfilePage({
   const lastName = person?.last_name ?? student.full_name.split(" ").slice(1).join(" ");
   const canEdit = can(CAPABILITIES.STUDENTS_WRITE);
   const canArchive = can(CAPABILITIES.STUDENTS_ARCHIVE);
+  const lifecycleEventsResult = canArchive
+    ? await supabase
+        .from("student_lifecycle_events")
+        .select("id, from_status, to_status, created_at")
+        .eq("student_id", student.id)
+        .eq("studio_id", studio.id)
+        .order("created_at", { ascending: false })
+        .limit(12)
+    : { data: [] };
+  const lifecycleEvents = lifecycleEventsResult.data ?? [];
   const currentAcquisition = acquisitions.find(
     (item) => item.status === "active" && !item.refunded_at,
   );
@@ -203,6 +228,15 @@ export default async function StudentProfilePage({
           </span>
         </div>
       </header>
+
+      <StudentLifecycleNoticeDialog
+        result={
+          query.lifecycle === "active" || query.lifecycle === "inactive"
+            ? query.lifecycle
+            : undefined
+        }
+        error={query.lifecycle_error}
+      />
 
       {query.saved ? <div className="notice success">Cambios guardados correctamente.</div> : null}
       {query.error ? (
@@ -622,34 +656,49 @@ export default async function StudentProfilePage({
         <section className="panel" id="estado-alumna">
           <p className="eyebrow">ADMINISTRACIÓN</p>
           <h2>Estado de la alumna</h2>
-          <div className="toolbar-actions">
-            {student.lifecycle_status !== "active" ? (
-              <form action={setStudentLifecycle}>
-                <input type="hidden" name="student_id" value={student.id} />
-                <input type="hidden" name="status" value="active" />
-                <PendingActionButton className="primary-button" pendingLabel="Reactivando…">
-                  Reactivar
-                </PendingActionButton>
-              </form>
-            ) : null}
-            {student.lifecycle_status === "active" ? (
-              <form action={setStudentLifecycle}>
-                <input type="hidden" name="student_id" value={student.id} />
-                <input type="hidden" name="status" value="inactive" />
-                <PendingActionButton className="ghost-button" pendingLabel="Actualizando…">
-                  Marcar inactiva
-                </PendingActionButton>
-              </form>
-            ) : null}
-            {student.lifecycle_status !== "archived" ? (
-              <form action={setStudentLifecycle}>
-                <input type="hidden" name="student_id" value={student.id} />
-                <input type="hidden" name="status" value="archived" />
-                <PendingActionButton className="ghost-button" pendingLabel="Archivando…">
-                  Archivar
-                </PendingActionButton>
-              </form>
-            ) : null}
+          <p className="mt-2 text-sm leading-6 text-zinc-400">
+            {student.lifecycle_status === "active"
+              ? "Inactivar conserva el expediente y las reservas futuras existentes, pero deshabilita el acceso y bloquea nuevas reservas."
+              : "Reactivar recupera el mismo expediente y vuelve a habilitar el acceso y las nuevas reservas."}
+          </p>
+
+          <StudentLifecycleActions
+            studentId={student.id}
+            status={student.lifecycle_status === "inactive" ? "inactive" : "active"}
+          />
+
+          <div className="mt-6 border-t border-white/10 pt-5">
+            <div className="panel-heading">
+              <div>
+                <p className="eyebrow">HISTORIAL</p>
+                <h3>Cambios de estado</h3>
+              </div>
+              <span className="count-badge">{lifecycleEvents.length}</span>
+            </div>
+
+            {lifecycleEvents.length === 0 ? (
+              <div className="empty-state">Todavía no hay cambios de estado registrados.</div>
+            ) : (
+              <div className="grid gap-2">
+                {lifecycleEvents.map((event) => (
+                  <div
+                    key={event.id}
+                    className={[
+                      "flex flex-wrap items-center justify-between gap-3 rounded-xl",
+                      "border border-white/10 bg-white/[0.03] px-4 py-3",
+                    ].join(" ")}
+                  >
+                    <strong className="text-sm text-white">
+                      {lifecycleCopy[event.from_status] ?? event.from_status} →{" "}
+                      {lifecycleCopy[event.to_status] ?? event.to_status}
+                    </strong>
+                    <span className="text-xs text-zinc-500">
+                      {formatDateTime(event.created_at)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </section>
       ) : null}

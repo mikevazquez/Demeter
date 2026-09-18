@@ -4,15 +4,7 @@ import { useEffect, useState } from "react";
 
 import NoticeDialog from "@/app/admin/components/NoticeDialog";
 
-type DuplicateStudentDialogProps = {
-  studentName: string;
-  archived: boolean;
-};
-
-export default function DuplicateStudentDialog({
-  studentName,
-  archived,
-}: DuplicateStudentDialogProps) {
+export default function DuplicateStudentDialog({ studentName }: { studentName: string }) {
   const [open, setOpen] = useState(true);
 
   useEffect(() => {
@@ -34,15 +26,13 @@ export default function DuplicateStudentDialog({
 
   return (
     <NoticeDialog
-      eyebrow={archived ? "Expediente archivado" : "Alumna existente"}
-      title={archived ? "Esta alumna ya estaba registrada" : "Ya encontramos este expediente"}
-      tone={archived ? "warning" : "success"}
+      eyebrow="Alumna existente"
+      title="Ya encontramos este expediente"
+      tone="success"
       onConfirm={closeDialog}
     >
-      El teléfono ya pertenece a <strong className="text-white">{studentName}</strong>.{" "}
-      {archived
-        ? "El expediente se conserva archivado y no se creó otra alumna."
-        : "No se creó una alumna nueva ni se modificó el expediente existente."}
+      El teléfono ya pertenece a <strong className="text-white">{studentName}</strong>. No se creó
+      una alumna nueva ni se modificó el expediente existente.
     </NoticeDialog>
   );
 }
