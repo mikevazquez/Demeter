@@ -49,9 +49,7 @@ export function PackageCatalog({ groups }: Props) {
                 <p className="text-sm font-semibold uppercase tracking-[0.18em] text-fuchsia-300">
                   {group.title}
                 </p>
-                <p className="mt-1 text-sm text-zinc-500">
-                  {group.description}
-                </p>
+                <p className="mt-1 text-sm text-zinc-500">{group.description}</p>
               </div>
               <div className="flex shrink-0 items-center gap-3">
                 <span className="rounded-full bg-white/10 px-2.5 py-1 text-xs text-zinc-300">
@@ -78,16 +76,10 @@ export function PackageCatalog({ groups }: Props) {
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div>
-                          <h3 className="text-lg font-semibold text-white">
-                            {product.name}
-                          </h3>
-                          <p className="mt-1 text-sm text-zinc-400">
-                            {product.benefit}
-                          </p>
+                          <h3 className="text-lg font-semibold text-white">{product.name}</h3>
+                          <p className="mt-1 text-sm text-zinc-400">{product.benefit}</p>
                           {product.validityLabel ? (
-                            <p className="mt-1 text-xs text-zinc-500">
-                              {product.validityLabel}
-                            </p>
+                            <p className="mt-1 text-xs text-zinc-500">{product.validityLabel}</p>
                           ) : null}
                           <p className="mt-2 text-xs leading-5 text-zinc-400">
                             {product.disciplinesLabel}
