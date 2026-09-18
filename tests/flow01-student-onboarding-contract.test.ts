@@ -42,15 +42,18 @@ describe("Flow 01 student onboarding", () => {
     expect(migration).toContain("discount_authorized_by");
   });
 
-  it("supports fixed start or activation on first attendance", () => {
-    const migration = source("supabase/migrations/20260918152000_flow01_student_onboarding.sql");
-    expect(migration).toContain("activation_mode");
-    expect(migration).toContain(
-      "activation_mode=case when package_start_mode='first_attendance' then 'first_attendance' else 'fixed_date' end",
-    );
-    expect(migration).toContain("'first_attendance'");
-    expect(migration).toContain("v_reservation.status='attended'");
-    expect(migration).toContain("starts_on=v_class_date");
+  it("activates deferred packages on the first chargeable usage, not on reservation", () => {
+    const migration = source("supabase/migrations/20260918180000_flow01_first_usage_activation.sql");
+    const form = source("app/admin/alumnas/[studentId]/alta/StudentOnboardingForm.tsx");
+
+    expect(migration).toContain("activate_acquisition_on_first_usage");
+    expect(migration).toContain("activation_mode='first_usage'");
+    expect(migration).toContain("movement_type,'consume'");
+    expect(migration).toContain("v_new_status='cancelled_late'");
+    expect(migration).toContain("v_reservation.status in ('attended','no_show')");
+    expect(form).toContain("Primer crédito consumido");
+    expect(form).toContain("cancelación tardía");
+    expect(form).toContain("Una cancelación a");
   });
 
   it("blocks booking when a no-payment acquisition has not been authorized", () => {
@@ -105,7 +108,7 @@ describe("Flow 01 student onboarding", () => {
   it("finishes in Profile 360 with Spanish user-visible states", () => {
     const profile = source("app/admin/alumnas/[studentId]/page.tsx");
     expect(profile).toContain("lifecycleCopy");
-    expect(profile).toContain("Pendiente de primera asistencia");
+    expect(profile).toContain("Pendiente de primer crédito");
     expect(profile).toContain("Bloqueada por pago pendiente");
     expect(profile).toContain("Reservar primera clase");
     expect(profile).not.toContain("DuplicateStudentDialog");
