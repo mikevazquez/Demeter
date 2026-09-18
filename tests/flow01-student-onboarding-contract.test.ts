@@ -16,9 +16,7 @@ describe("Flow 01 student onboarding", () => {
   });
 
   it("models the onboarding sale as one idempotent commercial operation", () => {
-    const migration = source(
-      "supabase/migrations/20260918152000_flow01_student_onboarding.sql",
-    );
+    const migration = source("supabase/migrations/20260918152000_flow01_student_onboarding.sql");
     expect(migration).toContain("sales_studio_idempotency_unique");
     expect(migration).toContain("create_student_onboarding_sale");
     expect(migration).toContain("'replayed',true");
@@ -26,9 +24,7 @@ describe("Flow 01 student onboarding", () => {
   });
 
   it("preserves list price while recording discounts and courtesy history", () => {
-    const migration = source(
-      "supabase/migrations/20260918152000_flow01_student_onboarding.sql",
-    );
+    const migration = source("supabase/migrations/20260918152000_flow01_student_onboarding.sql");
     expect(migration).toContain("discount_minor");
     expect(migration).toContain("discount_kind");
     expect(migration).toContain("discount_reason");
@@ -36,9 +32,7 @@ describe("Flow 01 student onboarding", () => {
   });
 
   it("supports fixed start or activation on first attendance", () => {
-    const migration = source(
-      "supabase/migrations/20260918152000_flow01_student_onboarding.sql",
-    );
+    const migration = source("supabase/migrations/20260918152000_flow01_student_onboarding.sql");
     expect(migration).toContain("activation_mode");
     expect(migration).toContain("'first_attendance'");
     expect(migration).toContain("v_reservation.status='attended'");
@@ -46,21 +40,15 @@ describe("Flow 01 student onboarding", () => {
   });
 
   it("blocks booking when a no-payment acquisition has not been authorized", () => {
-    const migration = source(
-      "supabase/migrations/20260918152000_flow01_student_onboarding.sql",
-    );
+    const migration = source("supabase/migrations/20260918152000_flow01_student_onboarding.sql");
     expect(migration).toContain("'reason_code','payment_pending'");
     expect(migration).toContain("pending_access_exception");
     expect(migration).toContain("pending_access_reason");
   });
 
   it("supports annual or lifetime enrollment without inventing a tenant setting", () => {
-    const migration = source(
-      "supabase/migrations/20260918152000_flow01_student_onboarding.sql",
-    );
-    expect(migration).toContain(
-      "when v_enrollment_product.validity_days is null then null",
-    );
+    const migration = source("supabase/migrations/20260918152000_flow01_student_onboarding.sql");
+    expect(migration).toContain("when v_enrollment_product.validity_days is null then null");
     expect(migration).toContain("resolution_type");
     expect(migration).toContain("resolution_reason");
   });

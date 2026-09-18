@@ -151,11 +151,7 @@ export default function StudentOnboardingForm({
       <input type="hidden" name="package_product_id" value={selectedPackage.id} />
       <input type="hidden" name="package_start_mode" value={startMode} />
       <input type="hidden" name="enrollment_resolution" value={enrollmentResolution} />
-      <input
-        type="hidden"
-        name="enrollment_product_id"
-        value={selectedEnrollment?.id ?? ""}
-      />
+      <input type="hidden" name="enrollment_product_id" value={selectedEnrollment?.id ?? ""} />
 
       <section className="panel">
         <div className="panel-heading">
@@ -366,8 +362,8 @@ export default function StudentOnboardingForm({
             </div>
           ) : (
             <div className="notice error">
-              La política exige inscripción, pero no hay productos de inscripción activos.
-              Configura al menos una vigencia antes de completar la venta.
+              La política exige inscripción, pero no hay productos de inscripción activos. Configura
+              al menos una vigencia antes de completar la venta.
             </div>
           )}
         </section>
