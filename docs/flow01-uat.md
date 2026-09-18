@@ -54,8 +54,9 @@ Entorno de validación: Vercel Preview conectado exclusivamente a Studio Flow Sa
 
 11. Inscripción
     - Cuando la política del estudio esté habilitada, confirmar que sólo se solicita si corresponde.
-    - Confirmar que puede seleccionarse entre los productos de inscripción activos.
-    - Validar una vigencia con días y una vitalicia.
+    - Confirmar que la UX sólo expone las dos vigencias aprobadas: 1 año y vitalicia.
+    - Validar la inscripción anual con vencimiento a 365 días.
+    - Validar la inscripción vitalicia sin fecha de vencimiento.
     - Confirmar que la venta conserva el producto de inscripción exacto utilizado.
 
 12. Primera reserva
