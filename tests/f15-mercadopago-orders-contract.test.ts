@@ -80,8 +80,10 @@ describe("F15 Mercado Pago Orders API", () => {
     expect(page).toContain("PurchasePackageButton");
   });
 
-  it("orders purchasable package groups by term length and keeps them collapsed by default", () => {
-    const page = source("app/student/paquete/page.tsx");
+  it(
+    "orders purchasable package groups by term length and keeps them collapsed by default",
+    () => {
+      const page = source("app/student/paquete/page.tsx");
 
     const oneMonth = page.indexOf('key: "monthly", title: "1 mes"');
     const threeMonths = page.indexOf('key: "quarterly", title: "3 meses"');
@@ -94,8 +96,9 @@ describe("F15 Mercado Pago Orders API", () => {
     expect(twelveMonths).toBeGreaterThan(sixMonths);
     expect(page).toContain('name="package-term-catalog"');
     expect(page).toContain("<details");
-    expect(page).not.toContain('<details open');
-  });
+      expect(page).not.toContain("<details open");
+    },
+  );
 
   it("shows the disciplines explicitly enabled for each purchasable package", () => {
     const page = source("app/student/paquete/page.tsx");
@@ -118,15 +121,18 @@ describe("F15 Mercado Pago Orders API", () => {
     expect(actions).toContain("context.clone().json()");
   });
 
-  it("reuses one client request key through retries and redirects only to the backend checkout URL", () => {
-    const button = source("app/student/paquete/purchase-package-button.tsx");
-    const actions = source("app/student/actions.ts");
+  it(
+    "reuses one client request key through retries and redirects only to the backend checkout URL",
+    () => {
+      const button = source("app/student/paquete/purchase-package-button.tsx");
+      const actions = source("app/student/actions.ts");
 
     expect(button).toContain("requestKeyRef");
     expect(button).toContain("crypto.randomUUID()");
     expect(button).toContain("createMercadoPagoOrderAction(productTemplateId, requestKey)");
     expect(button).toContain("window.location.assign(result.checkoutUrl)");
     expect(actions).toContain('supabase.functions.invoke("create-mercadopago-order"');
-    expect(actions).toContain('checkoutUrl.protocol !== "https:"');
-  });
+      expect(actions).toContain('checkoutUrl.protocol !== "https:"');
+    },
+  );
 });
