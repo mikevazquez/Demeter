@@ -92,6 +92,23 @@ describe("Flow 01 student onboarding", () => {
     expect(actions).toContain("admin_book_student");
   });
 
+  it("shows immediate pending feedback and blocks double submission on critical actions", () => {
+    const pendingButton = source("app/admin/components/PendingActionButton.tsx");
+    const studentsPage = source("app/admin/alumnas/page.tsx");
+    const onboarding = source("app/admin/alumnas/[studentId]/alta/StudentOnboardingForm.tsx");
+    const reservation = source("app/admin/alumnas/[studentId]/reservar/page.tsx");
+    const profile = source("app/admin/alumnas/[studentId]/page.tsx");
+
+    expect(pendingButton).toContain("useFormStatus");
+    expect(pendingButton).toContain("LoadingSpinner");
+    expect(pendingButton).toContain("disabled={isDisabled}");
+    expect(pendingButton).toContain("aria-busy={pending}");
+    expect(studentsPage).toContain('pendingLabel="Creando alumna…"');
+    expect(onboarding).toContain('pendingLabel="Registrando alta…"');
+    expect(reservation).toContain('pendingLabel="Reservando…"');
+    expect(profile).toContain("PendingActionButton");
+  });
+
   it("shows successful onboarding in the submit context before the user chooses the next action", () => {
     const actions = source("app/admin/alumnas/[studentId]/alta/actions.ts");
     const page = source("app/admin/alumnas/[studentId]/alta/page.tsx");
