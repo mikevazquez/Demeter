@@ -58,6 +58,17 @@ describe("F15 Mercado Pago Orders API", () => {
     expect(actions).not.toContain("payer_email");
   });
 
+  it("persists safe failure codes before an order reaches Mercado Pago", () => {
+    const edge = source("supabase/functions/create-mercadopago-order/index.ts");
+
+    expect(edge).toContain('failure_code: "checkout_context_failed"');
+    expect(edge).toContain('failure_code: "student_context_failed"');
+    expect(edge).toContain('failure_code: "online_price_invalid"');
+    expect(edge).toContain('failure_code: "mercadopago_not_configured"');
+    expect(edge).toContain('failure_code: "mercadopago_unreachable"');
+    expect(edge).toContain('failure_code: "mercadopago_reference_mismatch"');
+  });
+
   it("does not activate commercial entities when merely creating an order", () => {
     const edge = source("supabase/functions/create-mercadopago-order/index.ts");
 
@@ -78,6 +89,17 @@ describe("F15 Mercado Pago Orders API", () => {
     expect(page).toContain("Anual");
     expect(page).toContain("Otra vigencia");
     expect(page).toContain("PurchasePackageButton");
+  });
+
+  it("keeps purchasable packages collapsed until one term is selected", () => {
+    const page = source("app/student/paquete/page.tsx");
+    const catalog = source("app/student/paquete/package-catalog.tsx");
+
+    expect(page).toContain("<PackageCatalog");
+    expect(catalog).toContain("useState<string | null>(null)");
+    expect(catalog).toContain("openGroup === group.key");
+    expect(catalog).toContain("setOpenGroup(isOpen ? null : group.key)");
+    expect(catalog).toContain("aria-expanded={isOpen}");
   });
 
   it("orders purchasable package groups by term length", () => {
