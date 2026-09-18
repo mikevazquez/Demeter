@@ -106,7 +106,7 @@ create or replace function public.admin_set_student_lifecycle(
   p_status public.student_lifecycle_status
 ) returns void
 language plpgsql
-security invoker
+security definer
 set search_path = ''
 as $$
 declare
@@ -180,7 +180,7 @@ create or replace function public.admin_delete_student(
   p_student_id uuid
 ) returns jsonb
 language plpgsql
-security invoker
+security definer
 set search_path = ''
 as $$
 declare
