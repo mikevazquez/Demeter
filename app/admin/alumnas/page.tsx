@@ -2,6 +2,7 @@ import Link from "next/link";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { createStudent } from "./actions";
+import DuplicateStudentDialog from "./DuplicateStudentDialog";
 
 const lifecycleLabels: Record<string, string> = {
   active: "Activa",
@@ -18,7 +19,7 @@ const filterLabels: Record<string, string> = {
 export default async function StudentsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; created?: string; q?: string; status?: string }>;
+  searchParams: Promise<{ error?: string; created?: string; q?: string; status?: string; duplicate?: string; duplicate_state?: string }>;
 }) {
   const params = await searchParams;
   const query = String(params.q ?? "").trim();
@@ -47,6 +48,16 @@ export default async function StudentsPage({
 
   const { data: students } = await studentsQuery;
 
+  const duplicateId = String(params.duplicate ?? "").trim();
+  const { data: duplicateStudent } = duplicateId
+    ? await supabase
+        .from("students")
+        .select("id,full_name,lifecycle_status")
+        .eq("id", duplicateId)
+        .eq("studio_id", studio.id)
+        .maybeSingle()
+    : { data: null };
+
   const errorMessage =
     params.error === "first_name_required"
       ? "El nombre es obligatorio."
@@ -60,6 +71,12 @@ export default async function StudentsPage({
 
   return (
     <main className="dashboard-shell">
+      {duplicateStudent ? (
+        <DuplicateStudentDialog
+          studentName={duplicateStudent.full_name}
+          archived={duplicateStudent.lifecycle_status === "archived"}
+        />
+      ) : null}
       <header className="topbar">
         <div>
           <Link className="back-link compact" href="/admin">
@@ -154,7 +171,7 @@ export default async function StudentsPage({
               <p>Tu rol puede consultar alumnas, pero no crear ni editar expedientes.</p>
             </article>
           ) : (
-            <article className="panel compact-panel">
+            <article id="alta-rapida" className="panel compact-panel scroll-mt-6">
               <p className="eyebrow">ALTA RÁPIDA</p>
               <h2>Nueva alumna</h2>
               <p>
