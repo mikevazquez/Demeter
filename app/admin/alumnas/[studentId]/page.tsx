@@ -1,4 +1,5 @@
 import Link from "next/link";
+import PendingActionButton from "@/app/admin/components/PendingActionButton";
 import { notFound } from "next/navigation";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getAdminContext } from "@/lib/auth/admin-context";
@@ -280,9 +281,9 @@ export default async function StudentProfilePage({
               </div>
               <input name="phone" type="tel" required defaultValue={phone} placeholder="Teléfono" />
               <input name="email" type="email" defaultValue={email} placeholder="Correo" />
-              <button className="primary-button" type="submit">
+              <PendingActionButton className="primary-button" pendingLabel="Guardando…">
                 Guardar cambios
-              </button>
+              </PendingActionButton>
             </form>
           ) : (
             <div className="student-list">
@@ -422,9 +423,9 @@ export default async function StudentProfilePage({
                               className="rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 text-white"
                             />
                           </label>
-                          <button className="ghost-button" type="submit">
+                          <PendingActionButton className="ghost-button" pendingLabel="Actualizando…">
                             Actualizar fecha
-                          </button>
+                          </PendingActionButton>
                         </form>
 
                         {!acquisition.unlimited ? (
@@ -455,9 +456,9 @@ export default async function StudentProfilePage({
                                 className="rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 text-white"
                               />
                             </label>
-                            <button className="ghost-button" type="submit">
+                            <PendingActionButton className="ghost-button" pendingLabel="Ajustando…">
                               Ajustar créditos
-                            </button>
+                            </PendingActionButton>
                           </form>
                         ) : null}
                       </div>
@@ -586,9 +587,9 @@ export default async function StudentProfilePage({
                 </label>
               );
             })}
-            <button className="primary-button" type="submit">
+            <PendingActionButton className="primary-button" pendingLabel="Guardando…">
               Guardar campos adicionales
-            </button>
+            </PendingActionButton>
           </form>
         ) : (
           <div className="student-list">
@@ -624,27 +625,27 @@ export default async function StudentProfilePage({
               <form action={setStudentLifecycle}>
                 <input type="hidden" name="student_id" value={student.id} />
                 <input type="hidden" name="status" value="active" />
-                <button className="primary-button" type="submit">
+                <PendingActionButton className="primary-button" pendingLabel="Reactivando…">
                   Reactivar
-                </button>
+                </PendingActionButton>
               </form>
             ) : null}
             {student.lifecycle_status === "active" ? (
               <form action={setStudentLifecycle}>
                 <input type="hidden" name="student_id" value={student.id} />
                 <input type="hidden" name="status" value="inactive" />
-                <button className="ghost-button" type="submit">
+                <PendingActionButton className="ghost-button" pendingLabel="Actualizando…">
                   Marcar inactiva
-                </button>
+                </PendingActionButton>
               </form>
             ) : null}
             {student.lifecycle_status !== "archived" ? (
               <form action={setStudentLifecycle}>
                 <input type="hidden" name="student_id" value={student.id} />
                 <input type="hidden" name="status" value="archived" />
-                <button className="ghost-button" type="submit">
+                <PendingActionButton className="ghost-button" pendingLabel="Archivando…">
                   Archivar
-                </button>
+                </PendingActionButton>
               </form>
             ) : null}
           </div>
