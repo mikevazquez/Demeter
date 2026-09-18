@@ -8,11 +8,19 @@ function source(path: string) {
 }
 
 describe("Flow 01 student onboarding", () => {
-  it("keeps the student in context after creation and duplicate detection", () => {
+  it("keeps the creation flow in context and handles duplicates without leaving the form", () => {
     const actions = source("app/admin/alumnas/actions.ts");
+    const studentsPage = source("app/admin/alumnas/page.tsx");
+    const duplicateDialog = source("app/admin/alumnas/DuplicateStudentDialog.tsx");
+
     expect(actions).toContain("existingStudentRedirect");
-    expect(actions).toContain("duplicada_archivada");
-    expect(actions).toContain("/alta");
+    expect(actions).toContain("#alta-rapida");
+    expect(actions).toContain("redirect(\`/admin/alumnas/\${studentId}/alta\`)");
+    expect(studentsPage).toContain('id="alta-rapida"');
+    expect(studentsPage).toContain("DuplicateStudentDialog");
+    expect(duplicateDialog).toContain("Ya encontramos este expediente");
+    expect(duplicateDialog).toContain("Aceptar");
+    expect(duplicateDialog).toContain('aria-modal="true"');
   });
 
   it("models the onboarding sale as one idempotent commercial operation", () => {
@@ -82,10 +90,6 @@ describe("Flow 01 student onboarding", () => {
     expect(profile).toContain("Pendiente de primera asistencia");
     expect(profile).toContain("Bloqueada por pago pendiente");
     expect(profile).toContain("Reservar primera clase");
-    expect(profile).toContain("DuplicateStudentDialog");
-    const duplicateDialog = source("app/admin/alumnas/[studentId]/DuplicateStudentDialog.tsx");
-    expect(duplicateDialog).toContain("Ya encontramos este expediente");
-    expect(duplicateDialog).toContain("Aceptar");
-    expect(duplicateDialog).toContain('aria-modal="true"');
+    expect(profile).not.toContain("DuplicateStudentDialog");
   });
 });
