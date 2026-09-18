@@ -74,7 +74,7 @@ begin
   if not found then raise exception 'package_not_available'; end if;
   if v_package.validity_days is null then raise exception 'product_validity_missing'; end if;
 
-  if package_start_mode not in ('today','specific','first_attendance') then
+  if package_start_mode not in ('today','specific','first_usage') then
     raise exception 'package_start_mode_invalid';
   end if;
 
@@ -168,10 +168,10 @@ begin
   where id=v_package_line_id;
 
   update public.product_acquisitions
-  set activation_mode=case when package_start_mode='first_attendance' then 'first_attendance' else 'fixed_date' end,
+  set activation_mode=case when package_start_mode='first_usage' then 'first_usage' else 'fixed_date' end,
       validity_days_snapshot=v_package.validity_days,
-      starts_on=case when package_start_mode='first_attendance' then null else v_core_start end,
-      expires_on=case when package_start_mode='first_attendance' then null else v_core_start+v_package.validity_days end,
+      starts_on=case when package_start_mode='first_usage' then null else v_core_start end,
+      expires_on=case when package_start_mode='first_usage' then null else v_core_start+v_package.validity_days end,
       updated_at=now()
   where id=v_acquisition_id;
 
@@ -346,7 +346,7 @@ begin
   if not found then raise exception 'package_not_available'; end if;
   if v_package.validity_days is null then raise exception 'product_validity_missing'; end if;
 
-  if package_start_mode not in ('today','specific','first_attendance') then
+  if package_start_mode not in ('today','specific','first_usage') then
     raise exception 'package_start_mode_invalid';
   end if;
 
@@ -440,10 +440,10 @@ begin
   where id=v_package_line_id;
 
   update public.product_acquisitions
-  set activation_mode=case when package_start_mode='first_attendance' then 'first_attendance' else 'fixed_date' end,
+  set activation_mode=case when package_start_mode='first_usage' then 'first_usage' else 'fixed_date' end,
       validity_days_snapshot=v_package.validity_days,
-      starts_on=case when package_start_mode='first_attendance' then null else v_core_start end,
-      expires_on=case when package_start_mode='first_attendance' then null else v_core_start+v_package.validity_days end,
+      starts_on=case when package_start_mode='first_usage' then null else v_core_start end,
+      expires_on=case when package_start_mode='first_usage' then null else v_core_start+v_package.validity_days end,
       updated_at=now()
   where id=v_acquisition_id;
 
