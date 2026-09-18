@@ -80,7 +80,7 @@ describe("F15 Mercado Pago Orders API", () => {
     expect(page).toContain("PurchasePackageButton");
   });
 
-  it("orders purchasable package groups by term length", () => {
+  it("orders purchasable package groups by term length and keeps them collapsed by default", () => {
     const page = source("app/student/paquete/page.tsx");
 
     const oneMonth = page.indexOf('key: "monthly", title: "1 mes"');
@@ -92,6 +92,9 @@ describe("F15 Mercado Pago Orders API", () => {
     expect(threeMonths).toBeGreaterThan(oneMonth);
     expect(sixMonths).toBeGreaterThan(threeMonths);
     expect(twelveMonths).toBeGreaterThan(sixMonths);
+    expect(page).toContain('name="package-term-catalog"');
+    expect(page).toContain("<details");
+    expect(page).not.toContain('<details open');
   });
 
   it("shows the disciplines explicitly enabled for each purchasable package", () => {
@@ -101,6 +104,18 @@ describe("F15 Mercado Pago Orders API", () => {
     expect(page).toContain('.from("disciplines")');
     expect(page).toContain("Disciplinas:");
     expect(page).toContain("Sin disciplinas habilitadas");
+  });
+
+  it("persists the checkout failure stage without exposing credentials", () => {
+    const edge = source("supabase/functions/create-mercadopago-order/index.ts");
+    const actions = source("app/student/actions.ts");
+
+    expect(edge).toContain("markAttemptFailure");
+    expect(edge).toContain('markAttemptFailure("mercadopago_not_configured")');
+    expect(edge).toContain('markAttemptFailure("mercadopago_unreachable")');
+    expect(edge).toContain('markAttemptFailure("checkout_context_failed")');
+    expect(actions).toContain("edgeFunctionErrorCode");
+    expect(actions).toContain("context.clone().json()");
   });
 
   it("reuses one client request key through retries and redirects only to the backend checkout URL", () => {
