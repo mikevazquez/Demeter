@@ -85,33 +85,30 @@ describe("SF-160 domain events", () => {
     });
   });
 
-  it(
-    "keeps duplicate event identity stable inside a studio and isolated across studios",
-    async () => {
-      const client = new FakeDomainEventRpcClient();
+  it("keeps duplicate event identity stable inside a studio and isolated across studios", async () => {
+    const client = new FakeDomainEventRpcClient();
 
-      const first = await emitDomainEvent(client, baseEvent);
-      const duplicate = await emitDomainEvent(client, baseEvent);
-      const otherStudio = await emitDomainEvent(client, {
-        ...baseEvent,
-        studioId: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
-      });
+    const first = await emitDomainEvent(client, baseEvent);
+    const duplicate = await emitDomainEvent(client, baseEvent);
+    const otherStudio = await emitDomainEvent(client, {
+      ...baseEvent,
+      studioId: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+    });
 
-      expect(duplicate).toBe(first);
-      expect(otherStudio).not.toBe(first);
-    },
-  );
+    expect(duplicate).toBe(first);
+    expect(otherStudio).not.toBe(first);
+  });
 
   it("allows a consumer to claim a domain event only once", async () => {
     const client = new FakeDomainEventRpcClient();
     const eventId = await emitDomainEvent(client, baseEvent);
 
-    await expect(
-      claimDomainEvent(client, eventId, "automation.booking-confirmed"),
-    ).resolves.toBe(true);
-    await expect(
-      claimDomainEvent(client, eventId, "automation.booking-confirmed"),
-    ).resolves.toBe(false);
+    await expect(claimDomainEvent(client, eventId, "automation.booking-confirmed")).resolves.toBe(
+      true,
+    );
+    await expect(claimDomainEvent(client, eventId, "automation.booking-confirmed")).resolves.toBe(
+      false,
+    );
   });
 
   it("locks the database contract to append-only, tenant-aware idempotency", () => {
