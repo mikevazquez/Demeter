@@ -28,7 +28,9 @@ export default function StudentLifecycleNoticeDialog({
     return (
       <NoticeDialog
         eyebrow="No se guardó el cambio"
-        title={error === "delete" ? "No pudimos eliminar la alumna" : "No pudimos cambiar el estado"}
+        title={
+          error === "delete" ? "No pudimos eliminar la alumna" : "No pudimos cambiar el estado"
+        }
         tone="error"
         onConfirm={closeDialog}
       >
@@ -37,6 +39,11 @@ export default function StudentLifecycleNoticeDialog({
     );
   }
 
+  const resultMessage =
+    result === "inactive"
+      ? "Se conserva el mismo expediente y sus reservas futuras existentes. Mientras permanezca inactiva no podrá crear nuevas reservas ni usar el portal del estudio."
+      : "Se conserva el mismo expediente e historial. La alumna vuelve a tener acceso operativo y puede crear nuevas reservas.";
+
   return (
     <NoticeDialog
       eyebrow={result === "inactive" ? "Alumna inactiva" : "Alumna reactivada"}
@@ -44,9 +51,7 @@ export default function StudentLifecycleNoticeDialog({
       tone="success"
       onConfirm={closeDialog}
     >
-      {result === "inactive"
-        ? "Se conserva el mismo expediente y sus reservas futuras existentes. Mientras permanezca inactiva no podrá crear nuevas reservas ni usar el portal del estudio."
-        : "Se conserva el mismo expediente e historial. La alumna vuelve a tener acceso operativo y puede crear nuevas reservas."}
+      {resultMessage}
     </NoticeDialog>
   );
 }

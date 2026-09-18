@@ -32,9 +32,7 @@ export default async function StudentsPage({
 }) {
   const params = await searchParams;
   const query = String(params.q ?? "").trim();
-  const status = ["active", "inactive"].includes(params.status ?? "")
-    ? params.status!
-    : "active";
+  const status = ["active", "inactive"].includes(params.status ?? "") ? params.status! : "active";
 
   const { supabase, studio, membership, can } = await getAdminContext(CAPABILITIES.STUDENTS_READ);
   const canEdit = can(CAPABILITIES.STUDENTS_WRITE);

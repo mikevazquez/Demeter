@@ -8,7 +8,6 @@ import { getAdminContext } from "@/lib/auth/admin-context";
 import {
   setAcquisitionAvailableCredits,
   setAcquisitionStartDate,
-  setStudentLifecycle,
   updateDynamicProfileFields,
   updateStudent,
 } from "./actions";
@@ -182,17 +181,16 @@ export default async function StudentProfilePage({
   const lastName = person?.last_name ?? student.full_name.split(" ").slice(1).join(" ");
   const canEdit = can(CAPABILITIES.STUDENTS_WRITE);
   const canArchive = can(CAPABILITIES.STUDENTS_ARCHIVE);
-  const lifecycleEvents = canArchive
-    ? (
-        await supabase
-          .from("student_lifecycle_events")
-          .select("id, from_status, to_status, created_at")
-          .eq("student_id", student.id)
-          .eq("studio_id", studio.id)
-          .order("created_at", { ascending: false })
-          .limit(12)
-      ).data ?? []
-    : [];
+  const lifecycleEventsResult = canArchive
+    ? await supabase
+        .from("student_lifecycle_events")
+        .select("id, from_status, to_status, created_at")
+        .eq("student_id", student.id)
+        .eq("studio_id", studio.id)
+        .order("created_at", { ascending: false })
+        .limit(12)
+    : { data: [] };
+  const lifecycleEvents = lifecycleEventsResult.data ?? [];
   const currentAcquisition = acquisitions.find(
     (item) => item.status === "active" && !item.refunded_at,
   );
@@ -685,13 +683,18 @@ export default async function StudentProfilePage({
                 {lifecycleEvents.map((event) => (
                   <div
                     key={event.id}
-                    className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3"
+                    className={[
+                      "flex flex-wrap items-center justify-between gap-3 rounded-xl",
+                      "border border-white/10 bg-white/[0.03] px-4 py-3",
+                    ].join(" ")}
                   >
                     <strong className="text-sm text-white">
                       {lifecycleCopy[event.from_status] ?? event.from_status} →{" "}
                       {lifecycleCopy[event.to_status] ?? event.to_status}
                     </strong>
-                    <span className="text-xs text-zinc-500">{formatDateTime(event.created_at)}</span>
+                    <span className="text-xs text-zinc-500">
+                      {formatDateTime(event.created_at)}
+                    </span>
                   </div>
                 ))}
               </div>

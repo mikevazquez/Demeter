@@ -42,14 +42,25 @@ export default function StudentLifecycleActions({
 
       {deleteOpen ? (
         <div
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-5 backdrop-blur-sm"
+          className={[
+            "fixed inset-0 z-[100] flex items-center justify-center",
+            "bg-black/80 p-5 backdrop-blur-sm",
+          ].join(" ")}
           role="dialog"
           aria-modal="true"
           aria-labelledby="delete-student-title"
         >
-          <div className="w-full max-w-lg rounded-3xl border border-rose-300/25 bg-[#190d11] p-6 shadow-2xl">
+          <div
+            className={[
+              "w-full max-w-lg rounded-3xl border border-rose-300/25",
+              "bg-[#190d11] p-6 shadow-2xl",
+            ].join(" ")}
+          >
             <div
-              className="mb-5 flex h-12 w-12 items-center justify-center rounded-2xl border border-rose-300/25 bg-rose-400/10 text-xl font-bold text-rose-200"
+              className={[
+                "mb-5 flex h-12 w-12 items-center justify-center rounded-2xl",
+                "border border-rose-300/25 bg-rose-400/10 text-xl font-bold text-rose-200",
+              ].join(" ")}
               aria-hidden="true"
             >
               !
@@ -87,7 +98,10 @@ export default function StudentLifecycleActions({
               <form action={deleteStudent}>
                 <input type="hidden" name="student_id" value={studentId} />
                 <PendingActionButton
-                  className="w-full rounded-xl bg-rose-500 px-4 py-3 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+                  className={[
+                    "w-full rounded-xl bg-rose-500 px-4 py-3 font-semibold text-white",
+                    "disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto",
+                  ].join(" ")}
                   pendingLabel="Eliminando…"
                 >
                   Eliminar alumna
