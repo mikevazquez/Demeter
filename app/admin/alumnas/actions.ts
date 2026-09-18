@@ -33,6 +33,7 @@ export async function createStudent(formData: FormData) {
     .select("id,lifecycle_status")
     .eq("studio_id", studio.id)
     .eq("phone", phone)
+    .neq("lifecycle_status", "archived")
     .maybeSingle();
 
   if (existingStudent) {
@@ -53,6 +54,7 @@ export async function createStudent(formData: FormData) {
         .select("id,lifecycle_status")
         .eq("studio_id", studio.id)
         .eq("phone", phone)
+        .neq("lifecycle_status", "archived")
         .maybeSingle();
 
       if (racedStudent) {
@@ -78,7 +80,7 @@ export async function setStudentLifecycle(formData: FormData) {
   const studentId = String(formData.get("student_id") ?? "");
   const nextStatus = String(formData.get("status") ?? "");
 
-  if (!studentId || !["active", "inactive", "archived"].includes(nextStatus)) {
+  if (!studentId || !["active", "inactive"].includes(nextStatus)) {
     errorRedirect("lifecycle_invalid");
   }
 
