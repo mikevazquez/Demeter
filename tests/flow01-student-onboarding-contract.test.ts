@@ -34,6 +34,9 @@ describe("Flow 01 student onboarding", () => {
   it("supports fixed start or activation on first attendance", () => {
     const migration = source("supabase/migrations/20260918152000_flow01_student_onboarding.sql");
     expect(migration).toContain("activation_mode");
+    expect(migration).toContain(
+      "activation_mode=case when package_start_mode='first_attendance' then 'first_attendance' else 'fixed_date' end",
+    );
     expect(migration).toContain("'first_attendance'");
     expect(migration).toContain("v_reservation.status='attended'");
     expect(migration).toContain("starts_on=v_class_date");
@@ -44,6 +47,8 @@ describe("Flow 01 student onboarding", () => {
     expect(migration).toContain("'reason_code','payment_pending'");
     expect(migration).toContain("pending_access_exception");
     expect(migration).toContain("pending_access_reason");
+    expect(migration).toContain("create_student_onboarding_sale.payment_due_on");
+    expect(migration).toContain("create_student_onboarding_sale.collection_note");
   });
 
   it("supports multiple enrollment terms while keeping the configured default compatible", () => {
