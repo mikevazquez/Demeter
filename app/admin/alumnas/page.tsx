@@ -19,7 +19,7 @@ const filterLabels: Record<string, string> = {
 export default async function StudentsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; created?: string; q?: string; status?: string; duplicate?: string; duplicate_state?: string }>;
+  searchParams: Promise<{ error?: string; created?: string; q?: string; status?: string; duplicate?: string }>;
 }) {
   const params = await searchParams;
   const query = String(params.q ?? "").trim();
