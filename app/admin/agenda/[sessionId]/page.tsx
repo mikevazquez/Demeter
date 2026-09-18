@@ -18,6 +18,8 @@ const eligibilityCopy: Record<string, string> = {
   already_reserved: "ya reservada",
   session_full: "clase llena",
   no_active_product: "sin paquete activo",
+  enrollment_required: "inscripción no vigente",
+  payment_pending: "pago pendiente",
   outside_product: "fuera de paquete",
   no_credits: "sin créditos",
 };
@@ -137,6 +139,8 @@ export default async function SessionDetailPage({
     edit: "No se pudieron guardar los cambios.",
     booking: "No se pudo crear la reserva.",
     no_active_product: "La alumna no tiene un paquete o membresía vigente para esta clase.",
+    enrollment_required: "La alumna no tiene una inscripción vigente para la fecha de esta clase.",
+    payment_pending: "El paquete está bloqueado porque no se ha registrado pago.",
     outside_product: "El producto activo de la alumna no incluye esta disciplina.",
     no_credits: "La alumna ya no tiene créditos disponibles.",
     session_full: "La clase está llena. No se permiten sobrecupos automáticos.",

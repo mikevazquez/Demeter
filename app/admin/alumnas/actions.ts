@@ -10,6 +10,10 @@ function errorRedirect(code: string): never {
   redirect(`/admin/alumnas?error=${encodeURIComponent(code)}`);
 }
 
+function existingStudentRedirect(studentId: string): never {
+  redirect(`/admin/alumnas?duplicate=${encodeURIComponent(studentId)}#alta-rapida`);
+}
+
 export async function createStudent(formData: FormData) {
   const firstName = String(formData.get("first_name") ?? "").trim();
   const lastName = String(formData.get("last_name") ?? "").trim();
@@ -22,8 +26,20 @@ export async function createStudent(formData: FormData) {
   if (!firstName) errorRedirect("first_name_required");
   if (!phone) errorRedirect("phone_invalid");
 
-  const { supabase } = await getAdminContext(CAPABILITIES.STUDENTS_WRITE);
-  const { error } = await supabase.rpc("admin_create_student", {
+  const { supabase, studio } = await getAdminContext(CAPABILITIES.STUDENTS_WRITE);
+
+  const { data: existingStudent } = await supabase
+    .from("students")
+    .select("id,lifecycle_status")
+    .eq("studio_id", studio.id)
+    .eq("phone", phone)
+    .maybeSingle();
+
+  if (existingStudent) {
+    existingStudentRedirect(existingStudent.id);
+  }
+
+  const { data: studentId, error } = await supabase.rpc("admin_create_student", {
     p_first_name: firstName,
     p_last_name: lastName || null,
     p_phone: phone,
@@ -31,14 +47,31 @@ export async function createStudent(formData: FormData) {
   });
 
   if (error) {
-    if (error.message.includes("phone_exists")) errorRedirect("phone_exists");
+    if (error.message.includes("phone_exists")) {
+      const { data: racedStudent } = await supabase
+        .from("students")
+        .select("id,lifecycle_status")
+        .eq("studio_id", studio.id)
+        .eq("phone", phone)
+        .maybeSingle();
+
+      if (racedStudent) {
+        existingStudentRedirect(racedStudent.id);
+      }
+
+      errorRedirect("phone_exists");
+    }
     if (error.message.includes("phone_invalid")) errorRedirect("phone_invalid");
+    errorRedirect("student_create_failed");
+  }
+
+  if (typeof studentId !== "string" || !studentId) {
     errorRedirect("student_create_failed");
   }
 
   revalidatePath("/admin/alumnas");
   revalidatePath("/admin");
-  redirect("/admin/alumnas?created=student");
+  redirect(`/admin/alumnas/${studentId}/alta`);
 }
 
 export async function setStudentLifecycle(formData: FormData) {

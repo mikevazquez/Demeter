@@ -1,7 +1,10 @@
 import Link from "next/link";
+import PendingActionButton from "@/app/admin/components/PendingActionButton";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { createStudent } from "./actions";
+import DuplicateStudentDialog from "./DuplicateStudentDialog";
+import StudentFormErrorDialog from "./StudentFormErrorDialog";
 
 const lifecycleLabels: Record<string, string> = {
   active: "Activa",
@@ -18,7 +21,13 @@ const filterLabels: Record<string, string> = {
 export default async function StudentsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; created?: string; q?: string; status?: string }>;
+  searchParams: Promise<{
+    error?: string;
+    created?: string;
+    q?: string;
+    status?: string;
+    duplicate?: string;
+  }>;
 }) {
   const params = await searchParams;
   const query = String(params.q ?? "").trim();
@@ -47,19 +56,47 @@ export default async function StudentsPage({
 
   const { data: students } = await studentsQuery;
 
-  const errorMessage =
+  const duplicateId = String(params.duplicate ?? "").trim();
+  const { data: duplicateStudent } = duplicateId
+    ? await supabase
+        .from("students")
+        .select("id,full_name,lifecycle_status")
+        .eq("id", duplicateId)
+        .eq("studio_id", studio.id)
+        .maybeSingle()
+    : { data: null };
+
+  const errorDialog =
     params.error === "first_name_required"
-      ? "El nombre es obligatorio."
+      ? { title: "Falta el nombre", message: "Escribe el nombre de la alumna para continuar." }
       : params.error === "phone_invalid"
-        ? "Ingresa un teléfono válido: 10 dígitos de México o un número internacional con código de país."
+        ? {
+            title: "El teléfono no es válido",
+            message: "Ingresa 10 dígitos de México o un número internacional con código de país.",
+          }
         : params.error === "phone_exists"
-          ? "Ya existe una alumna con ese teléfono en este estudio."
+          ? {
+              title: "Este teléfono ya está registrado",
+              message: "Ya existe una alumna con este teléfono en el estudio.",
+            }
           : params.error
-            ? "No se pudo guardar. Revisa los datos e inténtalo de nuevo."
+            ? {
+                title: "No pudimos crear la alumna",
+                message: "Revisa los datos e inténtalo de nuevo.",
+              }
             : null;
 
   return (
     <main className="dashboard-shell">
+      {duplicateStudent ? (
+        <DuplicateStudentDialog
+          studentName={duplicateStudent.full_name}
+          archived={duplicateStudent.lifecycle_status === "archived"}
+        />
+      ) : null}
+      {errorDialog ? (
+        <StudentFormErrorDialog title={errorDialog.title} message={errorDialog.message} />
+      ) : null}
       <header className="topbar">
         <div>
           <Link className="back-link compact" href="/admin">
@@ -77,7 +114,6 @@ export default async function StudentsPage({
       {params.created === "student" ? (
         <div className="notice success">Alumna creada correctamente.</div>
       ) : null}
-      {errorMessage ? <div className="notice error">{errorMessage}</div> : null}
 
       <section className="agenda-layout">
         <div className="agenda-main">
@@ -154,7 +190,7 @@ export default async function StudentsPage({
               <p>Tu rol puede consultar alumnas, pero no crear ni editar expedientes.</p>
             </article>
           ) : (
-            <article className="panel compact-panel">
+            <article id="alta-rapida" className="panel compact-panel scroll-mt-6">
               <p className="eyebrow">ALTA RÁPIDA</p>
               <h2>Nueva alumna</h2>
               <p>
@@ -192,9 +228,9 @@ export default async function StudentsPage({
                   placeholder="Correo opcional"
                   autoComplete="email"
                 />
-                <button className="primary-button" type="submit">
+                <PendingActionButton className="primary-button" pendingLabel="Creando alumna…">
                   Crear alumna
-                </button>
+                </PendingActionButton>
               </form>
             </article>
           )}
