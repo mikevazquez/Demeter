@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import StudentOnboardingForm from "./StudentOnboardingForm";
+import OnboardingCompletedDialog from "./OnboardingCompletedDialog";
 
 function localDate(timeZone: string) {
   const parts = new Intl.DateTimeFormat("en-CA", {
@@ -63,7 +64,7 @@ export default async function StudentOnboardingPage({
   searchParams,
 }: {
   params: Promise<{ studentId: string }>;
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; completed?: string; sale?: string }>;
 }) {
   const { studentId } = await params;
   const query = await searchParams;
@@ -137,6 +138,7 @@ export default async function StudentOnboardingPage({
   );
 
   const alreadyHasPackage = (existingAcquisitions ?? []).some((item) => !item.refunded_at);
+  const completedHere = query.completed === "1" && Boolean(query.sale);
 
   return (
     <main className="dashboard-shell">
@@ -163,6 +165,8 @@ export default async function StudentOnboardingPage({
         </div>
       ) : null}
 
+      {completedHere ? <OnboardingCompletedDialog /> : null}
+
       {!student.active || student.lifecycle_status !== "active" ? (
         <section className="panel">
           <p className="eyebrow">ESTADO DE LA ALUMNA</p>
@@ -178,7 +182,7 @@ export default async function StudentOnboardingPage({
             Ir al estado de la alumna
           </Link>
         </section>
-      ) : alreadyHasPackage ? (
+      ) : alreadyHasPackage && !completedHere ? (
         <section className="panel">
           <p className="eyebrow">PAQUETE EXISTENTE</p>
           <h2>Esta alumna ya tiene una adquisición activa</h2>
@@ -228,6 +232,7 @@ export default async function StudentOnboardingPage({
             validityDays: item.validity_days,
           }))}
           defaultEnrollmentProductId={policy?.enrollment_product_template_id ?? null}
+          completedSaleId={completedHere ? (query.sale ?? null) : null}
         />
       )}
     </main>
