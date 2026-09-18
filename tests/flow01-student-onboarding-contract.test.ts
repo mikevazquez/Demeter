@@ -46,11 +46,23 @@ describe("Flow 01 student onboarding", () => {
     expect(migration).toContain("pending_access_reason");
   });
 
-  it("supports annual or lifetime enrollment without inventing a tenant setting", () => {
-    const migration = source("supabase/migrations/20260918152000_flow01_student_onboarding.sql");
-    expect(migration).toContain("when v_enrollment_product.validity_days is null then null");
-    expect(migration).toContain("resolution_type");
-    expect(migration).toContain("resolution_reason");
+  it("supports multiple enrollment terms while keeping the configured default compatible", () => {
+    const migration = source(
+      "supabase/migrations/20260918161000_flow01_enrollment_multiterm.sql",
+    );
+    const actions = source("app/admin/alumnas/[studentId]/alta/actions.ts");
+    const form = source("app/admin/alumnas/[studentId]/alta/StudentOnboardingForm.tsx");
+
+    expect(migration).toContain("create_student_onboarding_sale_v2");
+    expect(migration).toContain("target_enrollment_product_id uuid");
+    expect(migration).toContain(
+      "coalesce(target_enrollment_product_id,v_policy.enrollment_product_template_id)",
+    );
+    expect(actions).toContain('supabase.rpc("create_student_onboarding_sale_v2"');
+    expect(actions).toContain("target_enrollment_product_id");
+    expect(form).toContain("Vigencia de inscripción");
+    expect(form).toContain("enrollmentProducts");
+    expect(form).toContain('"Vitalicia"');
   });
 
   it("keeps the first reservation contextual to the same student", () => {
