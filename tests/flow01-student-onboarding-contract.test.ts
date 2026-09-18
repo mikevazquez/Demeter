@@ -82,5 +82,7 @@ describe("Flow 01 student onboarding", () => {
     expect(profile).toContain("Pendiente de primera asistencia");
     expect(profile).toContain("Bloqueada por pago pendiente");
     expect(profile).toContain("Reservar primera clase");
+    expect(profile).toContain("Ya estaba registrada");
+    expect(profile).toContain("Sin duplicados");
   });
 });
