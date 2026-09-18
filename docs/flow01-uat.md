@@ -63,6 +63,12 @@ Entorno de validación: Vercel Preview conectado exclusivamente a Studio Flow Sa
     - Confirmar que la alumna permanece en contexto.
     - Verificar validaciones reales de cupo, disciplina, inscripción, pago y créditos.
 
+13. Retroalimentación de acciones
+    - Al crear alumna, completar alta, reservar o guardar cambios, el botón debe cambiar inmediatamente a estado de carga.
+    - El estado de carga debe mostrar indicador visual y texto de proceso.
+    - Mientras la acción está pendiente, el botón debe quedar deshabilitado para evitar doble envío.
+    - Al terminar, debe aparecer la confirmación o el error correspondiente sin requerir un segundo toque.
+
 ## Criterio de aprobación
 
 FLUJO 01 se aprueba sólo si todos los casos aplicables terminan sin duplicar alumnas, ventas, pagos, adquisiciones, inscripciones ni créditos, y toda la experiencia visible permanece en español de México.
