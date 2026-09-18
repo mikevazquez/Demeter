@@ -10,6 +10,11 @@ const errorCopy: Record<string, string> = {
   mercadopago_not_configured: "Mercado Pago todavía no está configurado para este ambiente.",
   product_not_available_online: "Este paquete ya no está disponible para compra online.",
   request_key_reused_for_different_product: "No pudimos reutilizar este intento de compra.",
+  checkout_context_failed: "No pudimos preparar este pago. Intenta nuevamente.",
+  student_context_failed: "No pudimos validar tu perfil para el pago.",
+  online_price_invalid: "Este paquete no tiene un precio válido para compra online.",
+  mercadopago_unreachable: "No pudimos conectar con Mercado Pago. Intenta nuevamente.",
+  mercadopago_order_failed: "Mercado Pago rechazó el inicio del pago. Intenta nuevamente.",
 };
 
 type Props = {

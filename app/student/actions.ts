@@ -33,6 +33,19 @@ function revalidateStudentBookingSurfaces() {
   revalidatePath("/student/movimientos");
 }
 
+async function edgeFunctionErrorCode(error: unknown, fallback: string) {
+  const context = (error as { context?: unknown } | null)?.context;
+  if (context instanceof Response) {
+    try {
+      const body = (await context.clone().json()) as { error?: unknown };
+      if (typeof body.error === "string" && body.error.trim()) return body.error;
+    } catch {
+      // Keep the safe fallback when the Edge Function response is not JSON.
+    }
+  }
+  return fallback;
+}
+
 function mercadoPagoReturnBaseUrl() {
   const host =
     process.env.VERCEL_ENV === "production"
@@ -165,7 +178,7 @@ export async function createMercadoPagoOrderAction(
   });
 
   if (error) {
-    return { ok: false as const, error: "checkout_failed" };
+    return { ok: false as const, error: await edgeFunctionErrorCode(error, "checkout_failed") };
   }
 
   const result = data as MercadoPagoOrderResult;
