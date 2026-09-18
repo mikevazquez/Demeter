@@ -43,7 +43,9 @@ describe("Flow 01 student onboarding", () => {
   });
 
   it("activates deferred packages on the first chargeable usage, not on reservation", () => {
-    const migration = source("supabase/migrations/20260918180000_flow01_first_usage_activation.sql");
+    const migration = source(
+      "supabase/migrations/20260918180000_flow01_first_usage_activation.sql",
+    );
     const form = source("app/admin/alumnas/[studentId]/alta/StudentOnboardingForm.tsx");
 
     expect(migration).toContain("activate_acquisition_on_first_usage");
