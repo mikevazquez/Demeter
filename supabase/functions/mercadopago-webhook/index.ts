@@ -331,244 +331,260 @@ Deno.serve(async (request) => {
     return jsonResponse({ error: "webhook_audit_failed" }, 500);
   }
 
-  const markEvent = async (processingStatus: string, resultCode: string) => {
-    if (!eventRow?.id) return;
-    await supabase
-      .from("online_checkout_webhook_events")
-      .update({
-        processing_status: processingStatus,
-        result_code: resultCode,
-        processed_at: new Date().toISOString(),
-      })
-      .eq("id", eventRow.id);
-  };
+  const processingTask = (async () => {
+    const markEvent = async (processingStatus: string, resultCode: string) => {
+      if (!eventRow?.id) return;
+      await supabase
+        .from("online_checkout_webhook_events")
+        .update({
+          processing_status: processingStatus,
+          result_code: resultCode,
+          processed_at: new Date().toISOString(),
+        })
+        .eq("id", eventRow.id);
+    };
 
-  let providerResponse: Response;
-  try {
-    providerResponse = await fetch(
-      `https://api.mercadopago.com/v1/orders/${encodeURIComponent(queryDataId)}`,
-      {
-        headers: {
-          accept: "application/json",
-          authorization: `Bearer ${accessToken}`,
+    let providerResponse: Response;
+    try {
+      providerResponse = await fetch(
+        `https://api.mercadopago.com/v1/orders/${encodeURIComponent(queryDataId)}`,
+        {
+          headers: {
+            accept: "application/json",
+            authorization: `Bearer ${accessToken}`,
+          },
+          signal: AbortSignal.timeout(10_000),
         },
-        signal: AbortSignal.timeout(10_000),
-      },
-    );
-  } catch {
-    await markEvent("error", "provider_unreachable");
-    return jsonResponse({ error: "provider_unreachable" }, 502);
-  }
-
-  if (!providerResponse.ok) {
-    await markEvent("error", `provider_http_${providerResponse.status}`);
-    return jsonResponse({ error: "provider_lookup_failed" }, 502);
-  }
-
-  let order: MercadoPagoOrder;
-  try {
-    order = (await providerResponse.json()) as MercadoPagoOrder;
-  } catch {
-    await markEvent("error", "provider_response_invalid");
-    return jsonResponse({ error: "provider_response_invalid" }, 502);
-  }
-
-  const orderId = safeText(order.id);
-  const externalReference = safeText(order.external_reference);
-  const providerStatus = safeText(order.status);
-  const providerStatusDetail = safeText(order.status_detail);
-  const currency = safeText(order.currency)?.toUpperCase() ?? null;
-  const totalAmountMinor = moneyToMinor(order.total_amount);
-  const totalPaidAmountMinor = moneyToMinor(order.total_paid_amount);
-  const payments = Array.isArray(order.transactions?.payments) ? order.transactions?.payments : [];
-
-  if (!orderId || orderId !== queryDataId || !externalReference) {
-    await markEvent("error", "provider_order_identity_invalid");
-    return jsonResponse({ error: "provider_order_identity_invalid" }, 502);
-  }
-
-  const { data: attemptData, error: attemptError } = await supabase
-    .from("online_checkout_attempts")
-    .select(
-      "id,external_reference,provider_order_id,provider_payment_id,amount_minor,currency,status,sale_id,processed_at",
-    )
-    .eq("provider", "mercado_pago")
-    .eq("external_reference", externalReference)
-    .maybeSingle();
-
-  if (attemptError) {
-    await markEvent("error", "attempt_lookup_failed");
-    return jsonResponse({ error: "attempt_lookup_failed" }, 500);
-  }
-  if (!attemptData) {
-    await markEvent("ignored", "attempt_not_found");
-    return jsonResponse({ ok: true, ignored: "attempt_not_found" });
-  }
-
-  const attempt = attemptData as CheckoutAttempt;
-  if (attempt.provider_order_id && attempt.provider_order_id !== orderId) {
-    await markEvent("error", "provider_order_mismatch");
-    return jsonResponse({ error: "provider_order_mismatch" }, 409);
-  }
-
-  if (!attempt.provider_order_id) {
-    const { error: orderLinkError } = await supabase
-      .from("online_checkout_attempts")
-      .update({ provider_order_id: orderId, updated_at: new Date().toISOString() })
-      .eq("id", attempt.id)
-      .is("provider_order_id", null);
-    if (orderLinkError) {
-      await markEvent("error", "provider_order_link_failed");
-      return jsonResponse({ error: "provider_order_link_failed" }, 500);
+      );
+    } catch {
+      await markEvent("error", "provider_unreachable");
+      return jsonResponse({ error: "provider_unreachable" }, 502);
     }
-  }
 
-  const approved =
-    providerStatus?.toLowerCase() === "processed" &&
-    providerStatusDetail?.toLowerCase() === "accredited";
+    if (!providerResponse.ok) {
+      await markEvent("error", `provider_http_${providerResponse.status}`);
+      return jsonResponse({ error: "provider_lookup_failed" }, 502);
+    }
 
-  if (approved) {
-    const payment =
-      payments?.find(
-        (item) =>
-          safeText(item.status)?.toLowerCase() === "processed" &&
-          safeText(item.status_detail)?.toLowerCase() === "accredited",
-      ) ?? payments?.[0];
-    const providerPaymentId = safeText(payment?.id);
-    const paymentPaidMinor = moneyToMinor(payment?.paid_amount ?? payment?.amount);
-    const paidAmountMinor = totalPaidAmountMinor ?? paymentPaidMinor ?? totalAmountMinor;
+    let order: MercadoPagoOrder;
+    try {
+      order = (await providerResponse.json()) as MercadoPagoOrder;
+    } catch {
+      await markEvent("error", "provider_response_invalid");
+      return jsonResponse({ error: "provider_response_invalid" }, 502);
+    }
 
-    if (
-      !providerPaymentId ||
-      totalAmountMinor !== attempt.amount_minor ||
-      paidAmountMinor !== attempt.amount_minor ||
-      !currency ||
-      currency !== attempt.currency.toUpperCase()
-    ) {
+    const orderId = safeText(order.id);
+    const externalReference = safeText(order.external_reference);
+    const providerStatus = safeText(order.status);
+    const providerStatusDetail = safeText(order.status_detail);
+    const currency = safeText(order.currency)?.toUpperCase() ?? null;
+    const totalAmountMinor = moneyToMinor(order.total_amount);
+    const totalPaidAmountMinor = moneyToMinor(order.total_paid_amount);
+    const payments = Array.isArray(order.transactions?.payments)
+      ? order.transactions?.payments
+      : [];
+
+    if (!orderId || orderId !== queryDataId || !externalReference) {
+      await markEvent("error", "provider_order_identity_invalid");
+      return jsonResponse({ error: "provider_order_identity_invalid" }, 502);
+    }
+
+    const { data: attemptData, error: attemptError } = await supabase
+      .from("online_checkout_attempts")
+      .select(
+        "id,external_reference,provider_order_id,provider_payment_id,amount_minor,currency,status,sale_id,processed_at",
+      )
+      .eq("provider", "mercado_pago")
+      .eq("external_reference", externalReference)
+      .maybeSingle();
+
+    if (attemptError) {
+      await markEvent("error", "attempt_lookup_failed");
+      return jsonResponse({ error: "attempt_lookup_failed" }, 500);
+    }
+    if (!attemptData) {
+      await markEvent("ignored", "attempt_not_found");
+      return jsonResponse({ ok: true, ignored: "attempt_not_found" });
+    }
+
+    const attempt = attemptData as CheckoutAttempt;
+    if (attempt.provider_order_id && attempt.provider_order_id !== orderId) {
+      await markEvent("error", "provider_order_mismatch");
+      return jsonResponse({ error: "provider_order_mismatch" }, 409);
+    }
+
+    if (!attempt.provider_order_id) {
+      const { error: orderLinkError } = await supabase
+        .from("online_checkout_attempts")
+        .update({ provider_order_id: orderId, updated_at: new Date().toISOString() })
+        .eq("id", attempt.id)
+        .is("provider_order_id", null);
+      if (orderLinkError) {
+        await markEvent("error", "provider_order_link_failed");
+        return jsonResponse({ error: "provider_order_link_failed" }, 500);
+      }
+    }
+
+    const approved =
+      providerStatus?.toLowerCase() === "processed" &&
+      providerStatusDetail?.toLowerCase() === "accredited";
+
+    if (approved) {
+      const payment =
+        payments?.find(
+          (item) =>
+            safeText(item.status)?.toLowerCase() === "processed" &&
+            safeText(item.status_detail)?.toLowerCase() === "accredited",
+        ) ?? payments?.[0];
+      const providerPaymentId = safeText(payment?.id);
+      const paymentPaidMinor = moneyToMinor(payment?.paid_amount ?? payment?.amount);
+      const paidAmountMinor = totalPaidAmountMinor ?? paymentPaidMinor ?? totalAmountMinor;
+
+      if (
+        !providerPaymentId ||
+        totalAmountMinor !== attempt.amount_minor ||
+        paidAmountMinor !== attempt.amount_minor ||
+        !currency ||
+        currency !== attempt.currency.toUpperCase()
+      ) {
+        await supabase
+          .from("online_checkout_attempts")
+          .update({
+            provider_status: providerStatus,
+            provider_status_detail: providerStatusDetail,
+            last_webhook_at: new Date().toISOString(),
+            failure_code: "provider_amount_or_currency_mismatch",
+            status: "error",
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", attempt.id)
+          .is("processed_at", null);
+        await markEvent("error", "provider_amount_or_currency_mismatch");
+        return jsonResponse({
+          ok: true,
+          result: "provider_amount_or_currency_mismatch",
+        });
+      }
+
+      const { data: activation, error: activationError } = await supabase.rpc(
+        "service_confirm_online_checkout_approved",
+        {
+          target_attempt_id: attempt.id,
+          target_provider_order_id: orderId,
+          target_provider_payment_id: providerPaymentId,
+          target_external_reference: externalReference,
+          target_provider_status: providerStatus,
+          target_provider_status_detail: providerStatusDetail,
+          target_paid_amount_minor: paidAmountMinor,
+          target_currency: currency,
+        },
+      );
+
+      if (activationError) {
+        await markEvent("error", "activation_failed");
+        return jsonResponse({ error: "activation_failed" }, 500);
+      }
+
+      await markEvent(
+        "processed",
+        activation?.reused === true ? "approved_reused" : "approved_activated",
+      );
+      return jsonResponse({
+        ok: true,
+        result: "approved",
+        reused: activation?.reused === true,
+      });
+    }
+
+    if (attempt.processed_at || attempt.sale_id) {
       await supabase
         .from("online_checkout_attempts")
         .update({
           provider_status: providerStatus,
           provider_status_detail: providerStatusDetail,
           last_webhook_at: new Date().toISOString(),
-          failure_code: "provider_amount_or_currency_mismatch",
-          status: "error",
+          failure_code: `post_approval_${providerStatus ?? "unknown"}_${
+            providerStatusDetail ?? "unknown"
+          }`,
           updated_at: new Date().toISOString(),
         })
-        .eq("id", attempt.id)
-        .is("processed_at", null);
-      await markEvent("error", "provider_amount_or_currency_mismatch");
-      return jsonResponse({ ok: true, result: "provider_amount_or_currency_mismatch" });
+        .eq("id", attempt.id);
+      await markEvent("processed", "post_approval_state_recorded");
+      return jsonResponse({ ok: true, result: "post_approval_state_recorded" });
     }
 
-    const { data: activation, error: activationError } = await supabase.rpc(
-      "service_confirm_online_checkout_approved",
-      {
-        target_attempt_id: attempt.id,
-        target_provider_order_id: orderId,
-        target_provider_payment_id: providerPaymentId,
-        target_external_reference: externalReference,
-        target_provider_status: providerStatus,
-        target_provider_status_detail: providerStatusDetail,
-        target_paid_amount_minor: paidAmountMinor,
-        target_currency: currency,
-      },
-    );
+    const pendingPayment = payments?.find((item) => {
+      const status = safeText(item.status)?.toLowerCase();
+      return (
+        status === "processing" ||
+        status === "action_required" ||
+        status === "pending" ||
+        status === "in_process" ||
+        status === "authorized"
+      );
+    });
+    const failedPayment = payments?.find((item) => {
+      const status = safeText(item.status)?.toLowerCase();
+      return status === "failed" || status === "rejected";
+    });
+    const terminalPayment = payments?.find((item) => {
+      const status = safeText(item.status)?.toLowerCase();
+      return (
+        status === "canceled" ||
+        status === "cancelled" ||
+        status === "refunded" ||
+        status === "charged_back"
+      );
+    });
+    const nonApprovedPayment = pendingPayment ?? failedPayment ?? terminalPayment;
+    const paymentStatus = safeText(nonApprovedPayment?.status);
+    const paymentStatusDetail = safeText(nonApprovedPayment?.status_detail);
+    const usePaymentState =
+      providerStatus?.toLowerCase() === "created" &&
+      Boolean(paymentStatus && paymentStatus.toLowerCase() !== "created");
+    let nonApprovedProviderStatus = usePaymentState ? paymentStatus : providerStatus;
+    let nonApprovedProviderStatusDetail = usePaymentState
+      ? paymentStatusDetail
+      : providerStatusDetail;
+    let mapped = mapAttemptStatus(nonApprovedProviderStatus, nonApprovedProviderStatusDetail);
 
-    if (activationError) {
-      await markEvent("error", "activation_failed");
-      return jsonResponse({ error: "activation_failed" }, 500);
+    if (providerStatus?.toLowerCase() === "created" && mapped.status === "order_created") {
+      const searchedPayment = await searchNonApprovedPayment(
+        accessToken,
+        externalReference,
+        attempt.amount_minor,
+        attempt.currency,
+      );
+      if (searchedPayment) {
+        nonApprovedProviderStatus = searchedPayment.providerStatus;
+        nonApprovedProviderStatusDetail = searchedPayment.providerStatusDetail;
+        mapped = searchedPayment.mapped;
+      }
     }
 
-    await markEvent(
-      "processed",
-      activation?.reused === true ? "approved_reused" : "approved_activated",
-    );
-    return jsonResponse({ ok: true, result: "approved", reused: activation?.reused === true });
-  }
-
-  if (attempt.processed_at || attempt.sale_id) {
-    await supabase
+    const { error: statusUpdateError } = await supabase
       .from("online_checkout_attempts")
       .update({
-        provider_status: providerStatus,
-        provider_status_detail: providerStatusDetail,
+        status: mapped.status,
+        provider_status: nonApprovedProviderStatus,
+        provider_status_detail: nonApprovedProviderStatusDetail,
         last_webhook_at: new Date().toISOString(),
-        failure_code: `post_approval_${providerStatus ?? "unknown"}_${providerStatusDetail ?? "unknown"}`,
+        failure_code: mapped.failureCode,
         updated_at: new Date().toISOString(),
       })
-      .eq("id", attempt.id);
-    await markEvent("processed", "post_approval_state_recorded");
-    return jsonResponse({ ok: true, result: "post_approval_state_recorded" });
-  }
+      .eq("id", attempt.id)
+      .is("processed_at", null);
 
-  const pendingPayment = payments?.find((item) => {
-    const status = safeText(item.status)?.toLowerCase();
-    return (
-      status === "processing" ||
-      status === "action_required" ||
-      status === "pending" ||
-      status === "in_process" ||
-      status === "authorized"
-    );
-  });
-  const failedPayment = payments?.find((item) => {
-    const status = safeText(item.status)?.toLowerCase();
-    return status === "failed" || status === "rejected";
-  });
-  const terminalPayment = payments?.find((item) => {
-    const status = safeText(item.status)?.toLowerCase();
-    return (
-      status === "canceled" ||
-      status === "cancelled" ||
-      status === "refunded" ||
-      status === "charged_back"
-    );
-  });
-  const nonApprovedPayment = pendingPayment ?? failedPayment ?? terminalPayment;
-  const paymentStatus = safeText(nonApprovedPayment?.status);
-  const paymentStatusDetail = safeText(nonApprovedPayment?.status_detail);
-  const usePaymentState =
-    providerStatus?.toLowerCase() === "created" &&
-    Boolean(paymentStatus && paymentStatus.toLowerCase() !== "created");
-  let nonApprovedProviderStatus = usePaymentState ? paymentStatus : providerStatus;
-  let nonApprovedProviderStatusDetail = usePaymentState
-    ? paymentStatusDetail
-    : providerStatusDetail;
-  let mapped = mapAttemptStatus(nonApprovedProviderStatus, nonApprovedProviderStatusDetail);
-
-  if (providerStatus?.toLowerCase() === "created" && mapped.status === "order_created") {
-    const searchedPayment = await searchNonApprovedPayment(
-      accessToken,
-      externalReference,
-      attempt.amount_minor,
-      attempt.currency,
-    );
-    if (searchedPayment) {
-      nonApprovedProviderStatus = searchedPayment.providerStatus;
-      nonApprovedProviderStatusDetail = searchedPayment.providerStatusDetail;
-      mapped = searchedPayment.mapped;
+    if (statusUpdateError) {
+      await markEvent("error", "attempt_status_update_failed");
+      return jsonResponse({ error: "attempt_status_update_failed" }, 500);
     }
-  }
 
-  const { error: statusUpdateError } = await supabase
-    .from("online_checkout_attempts")
-    .update({
-      status: mapped.status,
-      provider_status: nonApprovedProviderStatus,
-      provider_status_detail: nonApprovedProviderStatusDetail,
-      last_webhook_at: new Date().toISOString(),
-      failure_code: mapped.failureCode,
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", attempt.id)
-    .is("processed_at", null);
+    await markEvent("processed", mapped.status);
+    return jsonResponse({ ok: true, result: mapped.status });
+  })();
 
-  if (statusUpdateError) {
-    await markEvent("error", "attempt_status_update_failed");
-    return jsonResponse({ error: "attempt_status_update_failed" }, 500);
-  }
-
-  await markEvent("processed", mapped.status);
-  return jsonResponse({ ok: true, result: mapped.status });
+  EdgeRuntime.waitUntil(processingTask);
+  return jsonResponse({ ok: true, accepted: true });
 });

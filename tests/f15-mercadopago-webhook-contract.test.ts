@@ -40,7 +40,7 @@ describe("F15 Mercado Pago webhook and activation", () => {
       "supabase/migrations/20260917034000_f15_online_checkout_activation.sql",
     );
 
-    expect(webhook).toContain('supabase.rpc(\n      "service_confirm_online_checkout_approved"');
+    expect(webhook).toContain('"service_confirm_online_checkout_approved"');
     expect(webhook).not.toContain('.from("sales").insert');
     expect(webhook).not.toContain('.from("payments").insert');
     expect(webhook).not.toContain('.from("product_acquisitions").insert');
@@ -123,6 +123,17 @@ describe("F15 Mercado Pago webhook and activation", () => {
 
     expect(webhook).toContain(
       'activation?.reused === true ? "approved_reused" : "approved_activated"',
+    );
+  });
+
+  it("acknowledges valid webhooks before provider reconciliation", () => {
+    const webhook = source("supabase/functions/mercadopago-webhook/index.ts");
+
+    expect(webhook).toContain("const processingTask = (async () => {");
+    expect(webhook).toContain("EdgeRuntime.waitUntil(processingTask)");
+    expect(webhook).toContain("return jsonResponse({ ok: true, accepted: true });");
+    expect(webhook.indexOf("const processingTask = (async () => {")).toBeLessThan(
+      webhook.indexOf("https://api.mercadopago.com/v1/orders/"),
     );
   });
 });
