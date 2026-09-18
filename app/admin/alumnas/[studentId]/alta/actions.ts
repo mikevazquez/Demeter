@@ -77,6 +77,7 @@ export async function createStudentOnboardingSale(formData: FormData) {
   const enrollmentResolution = String(
     formData.get("enrollment_resolution") ?? "not_required",
   ).trim();
+  const enrollmentProductId = String(formData.get("enrollment_product_id") ?? "").trim();
   const enrollmentEffectiveOn = dateOrNull(formData.get("enrollment_effective_on"));
   const enrollmentReason = String(formData.get("enrollment_reason") ?? "").trim();
   const paymentMinor = moneyToMinor(formData.get("payment_amount"));
@@ -161,9 +162,10 @@ export async function createStudentOnboardingSale(formData: FormData) {
     redirectError(studentId, "discount_reason_required");
   }
 
-  const { data, error } = await supabase.rpc("create_student_onboarding_sale", {
+  const { data, error } = await supabase.rpc("create_student_onboarding_sale_v2", {
     target_student_id: studentId,
     target_package_product_id: productId,
+    target_enrollment_product_id: enrollmentProductId || null,
     target_idempotency_key: idempotencyKey,
     package_start_mode: startMode,
     package_starts_on: startMode === "specific" ? packageStartsOn : null,
