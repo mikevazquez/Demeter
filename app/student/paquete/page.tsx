@@ -1,6 +1,9 @@
 import Link from "next/link";
 
-import { PackageCatalog, type PackageCatalogGroup } from "@/app/student/paquete/package-catalog";
+import {
+  PackageCatalog,
+  type PackageCatalogGroup,
+} from "@/app/student/paquete/package-catalog";
 import {
   formatDate,
   formatMoney,
@@ -251,7 +254,8 @@ export default async function StudentPackagePage() {
                     title: group.title,
                     description: group.description,
                     products: products.map((product) => {
-                      const disciplineNames = productDisciplineNames.get(product.id) ?? [];
+                      const disciplineNames =
+                        productDisciplineNames.get(product.id) ?? [];
 
                       return {
                         id: product.id,
