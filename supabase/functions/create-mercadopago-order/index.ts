@@ -1,3 +1,4 @@
+import { createClient } from "npm:@supabase/supabase-js@2";
 import { withSupabase } from "npm:@supabase/server";
 
 type CreateOrderRequest = {
@@ -76,7 +77,16 @@ const handler = {
     if (request.method !== "POST") return jsonResponse({ error: "method_not_allowed" }, 405);
 
     const userClient = context.supabase;
-    const adminClient = context.supabaseAdmin;
+
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")?.trim();
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")?.trim();
+    if (!supabaseUrl || !serviceRoleKey) {
+      return jsonResponse({ error: "checkout_not_configured" }, 503);
+    }
+
+    const adminClient = createClient(supabaseUrl, serviceRoleKey, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
 
     const {
       data: { user },
