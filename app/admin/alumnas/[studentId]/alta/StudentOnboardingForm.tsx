@@ -214,7 +214,9 @@ export default function StudentOnboardingForm({
             <select value={startMode} onChange={(event) => setStartMode(event.target.value)}>
               <option value="today">Hoy</option>
               <option value="specific">Fecha específica</option>
-              <option value="first_attendance">Primera asistencia</option>
+              <option value="first_usage">
+                {selectedPackage.unlimited ? "Primera clase contabilizada" : "Primer crédito consumido"}
+              </option>
             </select>
           </label>
 
@@ -227,10 +229,11 @@ export default function StudentOnboardingForm({
             <input type="hidden" name="package_starts_on" value="" />
           )}
 
-          {startMode === "first_attendance" ? (
+          {startMode === "first_usage" ? (
             <div className="notice">
-              Reservar una clase no iniciará la vigencia. El paquete comenzará cuando la alumna
-              registre su primera asistencia.
+              La reserva sola no inicia la vigencia. El paquete comienza cuando la primera clase
+              genera consumo real: asistencia, no-show o cancelación tardía. Una cancelación a
+              tiempo no lo activa.
             </div>
           ) : null}
         </div>
