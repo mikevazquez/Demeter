@@ -9,9 +9,7 @@ function source(path: string) {
 
 describe("Flow 02 student lifecycle", () => {
   it("keeps inactive reversible and deleted irreversible", () => {
-    const migration = source(
-      "supabase/migrations/20260918193000_flow02_student_lifecycle.sql",
-    );
+    const migration = source("supabase/migrations/20260918193000_flow02_student_lifecycle.sql");
 
     expect(migration).toContain("student_lifecycle_events");
     expect(migration).toContain("p_status not in ('active','inactive')");
@@ -23,9 +21,7 @@ describe("Flow 02 student lifecycle", () => {
   });
 
   it("cancels future reservations as studio cancellations without consuming credit", () => {
-    const migration = source(
-      "supabase/migrations/20260918193000_flow02_student_lifecycle.sql",
-    );
+    const migration = source("supabase/migrations/20260918193000_flow02_student_lifecycle.sql");
 
     expect(migration).toContain("cancel_future_student_reservations");
     expect(migration).toContain("status = 'cancelled_by_studio'");
