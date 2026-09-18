@@ -211,21 +211,57 @@ export default async function StudentProfilePage({
       ) : null}
 
       {query.alta === "duplicada" ? (
-        <div className="notice">
-          Ya existía una alumna con este teléfono. Abrimos su Perfil 360 y no se creó un duplicado.
-        </div>
+        <section className="rounded-3xl border border-emerald-400/25 bg-emerald-400/[0.06] p-5 shadow-[0_18px_50px_rgba(16,185,129,0.08)]">
+          <div className="flex items-start gap-4">
+            <div
+              aria-hidden="true"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-emerald-300/30 bg-emerald-300/10 text-xl font-bold text-emerald-200"
+            >
+              ✓
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-300">
+                Alumna existente
+              </p>
+              <h2 className="mt-1 text-xl font-semibold text-white">Ya estaba registrada</h2>
+              <p className="mt-2 text-sm leading-6 text-zinc-300">
+                Encontramos este teléfono en Studio Flow y abrimos su Perfil 360. No se creó una
+                alumna nueva.
+              </p>
+              <div className="mt-4 inline-flex rounded-full border border-emerald-300/20 bg-emerald-300/10 px-3 py-1.5 text-xs font-medium text-emerald-100">
+                ✓ Sin duplicados
+              </div>
+            </div>
+          </div>
+        </section>
       ) : null}
 
       {query.alta === "duplicada_archivada" ? (
-        <div className="notice">
-          Encontramos un expediente archivado con este teléfono. No se creó otra alumna. Reactiva
-          este expediente sólo si corresponde.
-          <div className="toolbar-actions mt-3">
-            <a className="ghost-button" href="#estado-alumna">
-              Ir al estado de la alumna
-            </a>
+        <section className="rounded-3xl border border-amber-400/25 bg-amber-400/[0.06] p-5 shadow-[0_18px_50px_rgba(251,191,36,0.08)]">
+          <div className="flex items-start gap-4">
+            <div
+              aria-hidden="true"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-amber-300/30 bg-amber-300/10 text-xl font-bold text-amber-200"
+            >
+              !
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-amber-300">
+                Expediente encontrado
+              </p>
+              <h2 className="mt-1 text-xl font-semibold text-white">Esta alumna ya estaba registrada</h2>
+              <p className="mt-2 text-sm leading-6 text-zinc-300">
+                El teléfono pertenece a un expediente archivado. No creamos otra alumna para evitar
+                duplicar su historial.
+              </p>
+              <div className="toolbar-actions mt-4">
+                <a className="ghost-button" href="#estado-alumna">
+                  Revisar y reactivar
+                </a>
+              </div>
+            </div>
           </div>
-        </div>
+        </section>
       ) : null}
 
       {query.alta === "finalizada" || query.alta === "sin_paquete" ? (
