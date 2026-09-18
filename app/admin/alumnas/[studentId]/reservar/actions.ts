@@ -39,13 +39,10 @@ export async function reserveStudentFromOnboarding(formData: FormData) {
   if (!student) redirect(reservationUrl(studentId, "student_not_operable"));
   if (!session) redirect(reservationUrl(studentId, "session_not_found"));
 
-  const { data: eligibility, error: eligibilityError } = await supabase.rpc(
-    "booking_eligibility",
-    {
-      target_session_id: sessionId,
-      target_student_id: studentId,
-    },
-  );
+  const { data: eligibility, error: eligibilityError } = await supabase.rpc("booking_eligibility", {
+    target_session_id: sessionId,
+    target_student_id: studentId,
+  });
 
   if (eligibilityError) {
     redirect(reservationUrl(studentId, "booking"));

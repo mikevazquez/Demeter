@@ -97,10 +97,7 @@ export default function StudentOnboardingForm({
   }, [discountMode, discountValue, selectedPackage]);
 
   const enrollmentNetMinor =
-    enrollmentRequired &&
-    !currentEnrollment &&
-    enrollmentResolution === "paid" &&
-    enrollmentProduct
+    enrollmentRequired && !currentEnrollment && enrollmentResolution === "paid" && enrollmentProduct
       ? enrollmentProduct.priceMinor
       : 0;
 
@@ -118,7 +115,10 @@ export default function StudentOnboardingForm({
         <p className="eyebrow">PAQUETE</p>
         <h2>No hay paquetes disponibles</h2>
         <p>El expediente ya fue creado. Puedes terminar el alta sin una compra.</p>
-        <Link className="primary-button inline-flex" href={`/admin/alumnas/${studentId}?alta=sin_paquete`}>
+        <Link
+          className="primary-button inline-flex"
+          href={`/admin/alumnas/${studentId}?alta=sin_paquete`}
+        >
           Terminar alta
         </Link>
       </section>
@@ -159,13 +159,13 @@ export default function StudentOnboardingForm({
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-[0.18em] text-fuchsia-300">
-                      {item.packageTerm ? (termCopy[item.packageTerm] ?? "Otra vigencia") : "Paquete"}
+                      {item.packageTerm
+                        ? (termCopy[item.packageTerm] ?? "Otra vigencia")
+                        : "Paquete"}
                     </p>
                     <strong className="mt-1 block text-white">{item.name}</strong>
                     <span className="mt-1 block text-sm text-zinc-400">
-                      {item.unlimited
-                        ? "Clases ilimitadas"
-                        : `${item.creditLimit ?? 0} créditos`}
+                      {item.unlimited ? "Clases ilimitadas" : `${item.creditLimit ?? 0} créditos`}
                       {item.validityDays ? ` · ${item.validityDays} días` : ""}
                     </span>
                   </div>
@@ -214,7 +214,11 @@ export default function StudentOnboardingForm({
         <div className="compact-form">
           <label>
             <span>Ajuste</span>
-            <select value={discountMode} name="discount_mode" onChange={(event) => setDiscountMode(event.target.value)}>
+            <select
+              value={discountMode}
+              name="discount_mode"
+              onChange={(event) => setDiscountMode(event.target.value)}
+            >
               <option value="none">Sin descuento</option>
               <option value="percentage">Descuento por porcentaje</option>
               <option value="amount">Descuento por monto</option>
@@ -289,14 +293,23 @@ export default function StudentOnboardingForm({
                   value={enrollmentResolution}
                   onChange={(event) => setEnrollmentResolution(event.target.value)}
                 >
-                  <option value="paid">Cobrar inscripción · {money(enrollmentProduct.priceMinor, enrollmentProduct.currency)}</option>
+                  <option value="paid">
+                    Cobrar inscripción ·{" "}
+                    {money(enrollmentProduct.priceMinor, enrollmentProduct.currency)}
+                  </option>
                   <option value="promotion">Aplicar promoción</option>
                   <option value="exception">Aplicar excepción autorizada</option>
                 </select>
               </label>
               <label>
                 <span>Fecha efectiva</span>
-                <input name="enrollment_effective_on" type="date" max={today} required defaultValue={today} />
+                <input
+                  name="enrollment_effective_on"
+                  type="date"
+                  max={today}
+                  required
+                  defaultValue={today}
+                />
               </label>
               {enrollmentResolution === "promotion" || enrollmentResolution === "exception" ? (
                 <label>
@@ -391,7 +404,9 @@ export default function StudentOnboardingForm({
                 <label>
                   <span>Método de pago</span>
                   <select name="payment_method" required defaultValue="">
-                    <option value="" disabled>Seleccionar</option>
+                    <option value="" disabled>
+                      Seleccionar
+                    </option>
                     <option value="Efectivo">Efectivo</option>
                     <option value="Transferencia">Transferencia</option>
                     <option value="Tarjeta">Tarjeta</option>
@@ -400,7 +415,13 @@ export default function StudentOnboardingForm({
                 </label>
                 <label>
                   <span>Fecha real del pago</span>
-                  <input name="payment_effective_on" type="date" max={today} required defaultValue={today} />
+                  <input
+                    name="payment_effective_on"
+                    type="date"
+                    max={today}
+                    required
+                    defaultValue={today}
+                  />
                 </label>
                 <label>
                   <span>Referencia opcional</span>
@@ -498,8 +519,8 @@ export default function StudentOnboardingForm({
             </div>
             {pendingWithoutPayment ? (
               <p className="mt-4 text-sm text-amber-200">
-                Sin pago, el paquete queda bloqueado para reservar salvo que autorices explícitamente
-                la excepción.
+                Sin pago, el paquete queda bloqueado para reservar salvo que autorices
+                explícitamente la excepción.
               </p>
             ) : null}
           </aside>
@@ -510,8 +531,8 @@ export default function StudentOnboardingForm({
         <p className="eyebrow">7 · CONFIRMAR</p>
         <h2>Completar alta</h2>
         <p>
-          Se registrará una sola venta y una sola adquisición. Una doble pulsación reutiliza la misma
-          operación.
+          Se registrará una sola venta y una sola adquisición. Una doble pulsación reutiliza la
+          misma operación.
         </p>
         <div className="toolbar-actions mt-4">
           <button

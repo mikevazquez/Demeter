@@ -90,9 +90,7 @@ export default async function StudentOnboardingPage({
     canSell
       ? supabase
           .from("product_templates")
-          .select(
-            "id,name,package_term,price_minor,currency,credit_limit,validity_days,unlimited",
-          )
+          .select("id,name,package_term,price_minor,currency,credit_limit,validity_days,unlimited")
           .eq("studio_id", studio.id)
           .eq("product_type", "package")
           .eq("active", true)
@@ -125,8 +123,7 @@ export default async function StudentOnboardingPage({
 
   const enrollmentRequired = Boolean(policy?.enabled && policy.required_for_booking);
   const currentEnrollment = (activeEnrollments ?? []).some(
-    (item) =>
-      item.starts_on <= today && (item.expires_on === null || item.expires_on >= today),
+    (item) => item.starts_on <= today && (item.expires_on === null || item.expires_on >= today),
   );
 
   const { data: enrollmentProduct } =
@@ -176,7 +173,10 @@ export default async function StudentOnboardingPage({
             No se crearán compras nuevas mientras la alumna esté inactiva o archivada. El expediente
             existente conserva toda su historia.
           </p>
-          <Link className="primary-button inline-flex" href={`/admin/alumnas/${student.id}#estado-alumna`}>
+          <Link
+            className="primary-button inline-flex"
+            href={`/admin/alumnas/${student.id}#estado-alumna`}
+          >
             Ir al estado de la alumna
           </Link>
         </section>
@@ -197,7 +197,10 @@ export default async function StudentOnboardingPage({
           <p className="eyebrow">VENTA OPCIONAL</p>
           <h2>Tu rol no registra ventas</h2>
           <p>El expediente ya fue creado correctamente. Puedes terminar el alta sin paquete.</p>
-          <Link className="primary-button inline-flex" href={`/admin/alumnas/${student.id}?alta=sin_paquete`}>
+          <Link
+            className="primary-button inline-flex"
+            href={`/admin/alumnas/${student.id}?alta=sin_paquete`}
+          >
             Terminar alta
           </Link>
         </section>

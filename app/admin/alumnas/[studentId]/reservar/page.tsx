@@ -109,7 +109,10 @@ export default async function StudentFirstReservationPage({
       {!student.active || student.lifecycle_status !== "active" ? (
         <section className="panel">
           <h2>La alumna no está habilitada para reservar</h2>
-          <Link className="primary-button inline-flex" href={`/admin/alumnas/${student.id}#estado-alumna`}>
+          <Link
+            className="primary-button inline-flex"
+            href={`/admin/alumnas/${student.id}#estado-alumna`}
+          >
             Resolver desde Perfil 360
           </Link>
         </section>
