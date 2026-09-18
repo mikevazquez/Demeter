@@ -312,7 +312,7 @@ export default async function StudentProfilePage({
                         ? `${productMap.get(currentAcquisition.product_template_id)?.name ?? "Producto"} · bloqueado por pago pendiente`
                         : currentAcquisition.starts_on && currentAcquisition.expires_on
                           ? `${productMap.get(currentAcquisition.product_template_id)?.name ?? "Producto"} · vence ${formatDate(currentAcquisition.expires_on)}`
-                          : `${productMap.get(currentAcquisition.product_template_id)?.name ?? "Producto"} · inicia con la primera asistencia`
+                          : `${productMap.get(currentAcquisition.product_template_id)?.name ?? "Producto"} · ${currentAcquisition.unlimited ? "inicia con la primera clase contabilizada" : "inicia con el primer crédito consumido"}`
                       : "Sin paquete activo"}
                 </span>
               </div>
@@ -376,15 +376,19 @@ export default async function StudentProfilePage({
                         <p className="mt-1 text-sm text-zinc-400">
                           {acquisition.starts_on && acquisition.expires_on
                             ? `${formatDate(acquisition.starts_on)} → ${formatDate(acquisition.expires_on)}`
-                            : "Inicia con la primera asistencia"}
+                            : acquisition.unlimited
+                              ? "Inicia con la primera clase contabilizada"
+                              : "Inicia con el primer crédito consumido"}
                         </p>
                       </div>
                       <span className="status-pill">
                         {acquisition.access_blocked
                           ? "Bloqueada por pago pendiente"
-                          : acquisition.activation_mode === "first_attendance" &&
+                          : acquisition.activation_mode === "first_usage" &&
                               !acquisition.starts_on
-                            ? "Pendiente de primera asistencia"
+                            ? acquisition.unlimited
+                              ? "Pendiente de primer uso"
+                              : "Pendiente de primer crédito"
                             : (acquisitionStatusCopy[acquisition.status] ?? "Estado no disponible")}
                       </span>
                     </div>
