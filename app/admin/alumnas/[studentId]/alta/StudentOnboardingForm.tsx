@@ -215,7 +215,9 @@ export default function StudentOnboardingForm({
               <option value="today">Hoy</option>
               <option value="specific">Fecha específica</option>
               <option value="first_usage">
-                {selectedPackage.unlimited ? "Primera clase contabilizada" : "Primer crédito consumido"}
+                {selectedPackage.unlimited
+                  ? "Primera clase contabilizada"
+                  : "Primer crédito consumido"}
               </option>
             </select>
           </label>
