@@ -55,6 +55,7 @@ export default function StudentOnboardingForm({
   currentEnrollment,
   enrollmentProducts,
   defaultEnrollmentProductId,
+  completedSaleId,
 }: {
   studentId: string;
   studentName: string;
@@ -65,6 +66,7 @@ export default function StudentOnboardingForm({
   currentEnrollment: boolean;
   enrollmentProducts: EnrollmentProduct[];
   defaultEnrollmentProductId: string | null;
+  completedSaleId: string | null;
 }) {
   const [selectedId, setSelectedId] = useState(packages[0]?.id ?? "");
   const [startMode, setStartMode] = useState("today");
@@ -562,25 +564,44 @@ export default function StudentOnboardingForm({
         </div>
       </section>
 
-      <section className="panel">
+      <section id="confirmar-alta" className="panel scroll-mt-6">
         <p className="eyebrow">7 · CONFIRMAR</p>
         <h2>Completar alta</h2>
         <p>
           Se registrará una sola venta y una sola adquisición. Una doble pulsación reutiliza la
           misma operación.
         </p>
-        <div className="toolbar-actions mt-4">
-          <button
-            className="primary-button"
-            type="submit"
-            disabled={enrollmentRequired && !currentEnrollment && enrollmentProducts.length === 0}
-          >
-            Completar alta
-          </button>
-          <Link className="ghost-button" href={`/admin/alumnas/${studentId}?alta=sin_paquete`}>
-            Terminar sin paquete
-          </Link>
-        </div>
+        {completedSaleId ? (
+          <div className="mt-4 grid gap-3 sm:grid-cols-3">
+            <Link className="primary-button text-center" href={`/admin/alumnas/${studentId}`}>
+              Ir a Perfil 360
+            </Link>
+            <Link
+              className="ghost-button text-center"
+              href={`/admin/alumnas/${studentId}/reservar`}
+            >
+              Reservar primera clase
+            </Link>
+            <Link className="ghost-button text-center" href={`/admin/ventas/${completedSaleId}`}>
+              Ver venta
+            </Link>
+          </div>
+        ) : (
+          <div className="toolbar-actions mt-4">
+            <button
+              className="primary-button"
+              type="submit"
+              disabled={
+                enrollmentRequired && !currentEnrollment && enrollmentProducts.length === 0
+              }
+            >
+              Completar alta
+            </button>
+            <Link className="ghost-button" href={`/admin/alumnas/${studentId}?alta=sin_paquete`}>
+              Terminar sin paquete
+            </Link>
+          </div>
+        )}
       </section>
     </form>
   );
