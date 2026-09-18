@@ -4,6 +4,7 @@ import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { createStudent } from "./actions";
 import DuplicateStudentDialog from "./DuplicateStudentDialog";
+import StudentFormErrorDialog from "./StudentFormErrorDialog";
 
 const lifecycleLabels: Record<string, string> = {
   active: "Activa",
@@ -65,15 +66,25 @@ export default async function StudentsPage({
         .maybeSingle()
     : { data: null };
 
-  const errorMessage =
+  const errorDialog =
     params.error === "first_name_required"
-      ? "El nombre es obligatorio."
+      ? { title: "Falta el nombre", message: "Escribe el nombre de la alumna para continuar." }
       : params.error === "phone_invalid"
-        ? "Ingresa un teléfono válido: 10 dígitos de México o un número internacional con código de país."
+        ? {
+            title: "El teléfono no es válido",
+            message:
+              "Ingresa 10 dígitos de México o un número internacional con código de país.",
+          }
         : params.error === "phone_exists"
-          ? "Ya existe una alumna con ese teléfono en este estudio."
+          ? {
+              title: "Este teléfono ya está registrado",
+              message: "Ya existe una alumna con este teléfono en el estudio.",
+            }
           : params.error
-            ? "No se pudo guardar. Revisa los datos e inténtalo de nuevo."
+            ? {
+                title: "No pudimos crear la alumna",
+                message: "Revisa los datos e inténtalo de nuevo.",
+              }
             : null;
 
   return (
@@ -83,6 +94,9 @@ export default async function StudentsPage({
           studentName={duplicateStudent.full_name}
           archived={duplicateStudent.lifecycle_status === "archived"}
         />
+      ) : null}
+      {errorDialog ? (
+        <StudentFormErrorDialog title={errorDialog.title} message={errorDialog.message} />
       ) : null}
       <header className="topbar">
         <div>
@@ -101,7 +115,6 @@ export default async function StudentsPage({
       {params.created === "student" ? (
         <div className="notice success">Alumna creada correctamente.</div>
       ) : null}
-      {errorMessage ? <div className="notice error">{errorMessage}</div> : null}
 
       <section className="agenda-layout">
         <div className="agenda-main">
