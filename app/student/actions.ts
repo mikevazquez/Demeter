@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { getStudentPortalContext } from "@/lib/student/portal";
@@ -46,13 +47,32 @@ async function edgeFunctionErrorCode(error: unknown, fallback: string) {
   return fallback;
 }
 
-function mercadoPagoReturnBaseUrl() {
-  const host =
-    process.env.VERCEL_ENV === "production"
-      ? process.env.VERCEL_PROJECT_PRODUCTION_URL
-      : (process.env.VERCEL_BRANCH_URL ?? process.env.VERCEL_URL);
+function approvedCheckoutOrigin(hostValue: string | null, protoValue: string | null) {
+  const host = hostValue?.split(",")[0]?.trim().toLowerCase() ?? "";
+  const proto = protoValue?.split(",")[0]?.trim().toLowerCase() || "https";
+  if (!host || proto !== "https") return null;
 
-  return host ? `https://${host}` : null;
+  let url: URL;
+  try {
+    url = new URL(`${proto}://${host}`);
+  } catch {
+    return null;
+  }
+
+  const hostname = url.hostname.toLowerCase();
+  const approvedHost =
+    hostname === "demeterbueno.vercel.app" ||
+    (hostname.startsWith("demeterbueno-") && hostname.endsWith("-demeter3.vercel.app"));
+
+  return approvedHost ? url.origin : null;
+}
+
+async function mercadoPagoReturnBaseUrl() {
+  const requestHeaders = await headers();
+  const host = requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host");
+  const proto = requestHeaders.get("x-forwarded-proto") ?? "https";
+
+  return approvedCheckoutOrigin(host, proto);
 }
 
 type BookingRpcResult = {
@@ -162,7 +182,7 @@ export async function createMercadoPagoOrderAction(
 ) {
   const normalizedProductId = productTemplateId.trim();
   const normalizedRequestKey = clientRequestKey.trim();
-  const returnBaseUrl = mercadoPagoReturnBaseUrl();
+  const returnBaseUrl = await mercadoPagoReturnBaseUrl();
 
   if (!normalizedProductId || !normalizedRequestKey || !returnBaseUrl) {
     return { ok: false as const, error: "invalid_request" };
