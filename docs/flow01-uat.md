@@ -76,6 +76,9 @@ FLUJO 01 se aprueba sólo si todos los casos aplicables terminan sin duplicar al
 
 ## Estado de UAT
 
+- UAT completo: aprobado por Mike el 18 de septiembre de 2026.
 - Inscripción anual: aprobada.
 - Inscripción vitalicia: aprobada.
-- Validación de teléfono como popup: pendiente de confirmación visual.
+- Validaciones contextuales mediante popup: aprobadas.
+- Estados de carga y bloqueo de doble envío: aprobados.
+- Producción pendiente de autorización explícita de promoción.
