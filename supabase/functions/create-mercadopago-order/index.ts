@@ -155,6 +155,16 @@ const handler = {
     ]);
 
     if (attemptLookupError || productError || !attemptRow || !product) {
+      await adminClient
+        .from("online_checkout_attempts")
+        .update({
+          status: "error",
+          failure_code: "checkout_context_failed",
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", attempt.id)
+        .eq("provider", "mercado_pago");
+
       return jsonResponse({ error: "checkout_context_failed" }, 500);
     }
 
@@ -165,6 +175,16 @@ const handler = {
       product.online_purchasable !== true ||
       !["package", "membership"].includes(String(product.product_type))
     ) {
+      await adminClient
+        .from("online_checkout_attempts")
+        .update({
+          status: "error",
+          failure_code: "product_not_available_online",
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", attemptRow.id)
+        .eq("provider", "mercado_pago");
+
       return jsonResponse({ error: "product_not_available_online" }, 409);
     }
 
@@ -186,15 +206,49 @@ const handler = {
       .maybeSingle();
 
     if (studentError || !student || student.id !== attemptRow.student_id) {
+      await adminClient
+        .from("online_checkout_attempts")
+        .update({
+          status: "error",
+          failure_code: "student_context_failed",
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", attemptRow.id)
+        .eq("provider", "mercado_pago");
+
       return jsonResponse({ error: "checkout_context_failed" }, 500);
     }
 
     const payerEmail = validPayerEmail(student.email);
     const totalAmount = moneyFromMinor(attemptRow.amount_minor);
-    if (!totalAmount) return jsonResponse({ error: "online_price_invalid" }, 409);
+    if (!totalAmount) {
+      await adminClient
+        .from("online_checkout_attempts")
+        .update({
+          status: "error",
+          failure_code: "online_price_invalid",
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", attemptRow.id)
+        .eq("provider", "mercado_pago");
+
+      return jsonResponse({ error: "online_price_invalid" }, 409);
+    }
 
     const accessToken = Deno.env.get("MERCADOPAGO_ACCESS_TOKEN")?.trim();
-    if (!accessToken) return jsonResponse({ error: "mercadopago_not_configured" }, 503);
+    if (!accessToken) {
+      await adminClient
+        .from("online_checkout_attempts")
+        .update({
+          status: "error",
+          failure_code: "mercadopago_not_configured",
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", attemptRow.id)
+        .eq("provider", "mercado_pago");
+
+      return jsonResponse({ error: "mercadopago_not_configured" }, 503);
+    }
 
     const returnUrl = new URL("/student/paquete/checkout", returnBaseUrl);
     returnUrl.searchParams.set("attempt", attemptRow.id);
@@ -243,6 +297,16 @@ const handler = {
         body: JSON.stringify(orderBody),
       });
     } catch {
+      await adminClient
+        .from("online_checkout_attempts")
+        .update({
+          status: "error",
+          failure_code: "mercadopago_unreachable",
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", attemptRow.id)
+        .eq("provider", "mercado_pago");
+
       return jsonResponse({ error: "mercadopago_unreachable" }, 502);
     }
 
@@ -279,6 +343,18 @@ const handler = {
     }
 
     if (providerExternalReference !== attemptRow.external_reference) {
+      await adminClient
+        .from("online_checkout_attempts")
+        .update({
+          status: "error",
+          provider_status: providerStatus,
+          provider_status_detail: providerStatusDetail,
+          failure_code: "mercadopago_reference_mismatch",
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", attemptRow.id)
+        .eq("provider", "mercado_pago");
+
       return jsonResponse({ error: "mercadopago_reference_mismatch" }, 502);
     }
 
