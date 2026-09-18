@@ -72,7 +72,7 @@ describe("commercial improvements contracts", () => {
     );
 
     expect(portalTypes).toContain("package_term: string | null");
-    for (const label of ["Mensuales", "Trimestrales", "Semestrales", "Anuales", "Otros"]) {
+    for (const label of ["1 mes", "3 meses", "6 meses", "12 meses", "Otros"]) {
       expect(packagePage).toContain(label);
     }
     expect(packagePage).toContain("item.package_term");
