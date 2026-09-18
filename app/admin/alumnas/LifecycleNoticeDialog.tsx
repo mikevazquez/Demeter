@@ -6,7 +6,12 @@ import NoticeDialog from "@/app/admin/components/NoticeDialog";
 
 const messages: Record<
   string,
-  { eyebrow: string; title: string; message: string; tone: "success" | "warning" | "info" | "error" }
+  {
+    eyebrow: string;
+    title: string;
+    message: string;
+    tone: "success" | "warning" | "info" | "error";
+  }
 > = {
   active: {
     eyebrow: "Alumna reactivada",
@@ -37,7 +42,8 @@ const messages: Record<
   delete_error: {
     eyebrow: "No se pudo eliminar",
     title: "El expediente sigue disponible",
-    message: "No se completó la eliminación. No se aplicó una eliminación parcial desde esta pantalla.",
+    message:
+      "No se completó la eliminación. No se aplicó una eliminación parcial desde esta pantalla.",
     tone: "error",
   },
 };
