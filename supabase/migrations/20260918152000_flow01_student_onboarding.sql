@@ -262,7 +262,7 @@ begin
   where id=v_package_line_id;
 
   update public.product_acquisitions
-  set activation_mode=package_start_mode,
+  set activation_mode=case when package_start_mode='first_attendance' then 'first_attendance' else 'fixed_date' end,
       validity_days_snapshot=v_package.validity_days,
       starts_on=case when package_start_mode='first_attendance' then null else v_core_start end,
       expires_on=case when package_start_mode='first_attendance' then null else v_core_start+v_package.validity_days end,
