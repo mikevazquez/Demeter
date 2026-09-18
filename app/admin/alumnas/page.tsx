@@ -31,9 +31,7 @@ export default async function StudentsPage({
 }) {
   const params = await searchParams;
   const query = String(params.q ?? "").trim();
-  const status = ["active", "inactive"].includes(params.status ?? "")
-    ? params.status!
-    : "active";
+  const status = ["active", "inactive"].includes(params.status ?? "") ? params.status! : "active";
 
   const { supabase, studio, membership, can } = await getAdminContext(CAPABILITIES.STUDENTS_READ);
   const canEdit = can(CAPABILITIES.STUDENTS_WRITE);
@@ -90,10 +88,7 @@ export default async function StudentsPage({
     <main className="dashboard-shell">
       <LifecycleNoticeDialog notice={params.notice} />
       {duplicateStudent ? (
-        <DuplicateStudentDialog
-          studentName={duplicateStudent.full_name}
-          archived={false}
-        />
+        <DuplicateStudentDialog studentName={duplicateStudent.full_name} archived={false} />
       ) : null}
       {errorDialog ? (
         <StudentFormErrorDialog title={errorDialog.title} message={errorDialog.message} />
