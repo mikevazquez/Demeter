@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import PendingActionButton from "@/app/admin/components/PendingActionButton";
 import { useMemo, useState } from "react";
 
 import { createStudentOnboardingSale } from "./actions";
@@ -605,15 +606,15 @@ export default function StudentOnboardingForm({
           </div>
         ) : (
           <div className="toolbar-actions mt-4">
-            <button
+            <PendingActionButton
               className="primary-button"
-              type="submit"
+              pendingLabel="Registrando alta…"
               disabled={
                 enrollmentRequired && !currentEnrollment && enrollmentProducts.length === 0
               }
             >
               Completar alta
-            </button>
+            </PendingActionButton>
             <Link className="ghost-button" href={`/admin/alumnas/${studentId}?alta=sin_paquete`}>
               Terminar sin paquete
             </Link>
