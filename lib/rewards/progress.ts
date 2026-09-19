@@ -40,10 +40,7 @@ export interface RewardProgressRpcResult<T> {
 }
 
 export interface RewardProgressRpcClient {
-  rpc<T>(
-    functionName: string,
-    args: Record<string, unknown>,
-  ): Promise<RewardProgressRpcResult<T>>;
+  rpc<T>(functionName: string, args: Record<string, unknown>): Promise<RewardProgressRpcResult<T>>;
 }
 
 export interface RelevantRewardRule {
@@ -109,9 +106,7 @@ function assertFactValue(value: unknown, code: string): asserts value is RewardF
   }
 }
 
-export function assertRewardConditionDefinition(
-  definition: RewardConditionDefinition,
-): void {
+export function assertRewardConditionDefinition(definition: RewardConditionDefinition): void {
   if (definition.operator !== "all" && definition.operator !== "any") {
     throw new Error("reward_condition_operator_invalid");
   }
