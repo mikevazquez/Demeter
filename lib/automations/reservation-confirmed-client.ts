@@ -41,8 +41,25 @@ export async function triggerReservationConfirmedAutomation(
       },
     );
 
-    return !error && data?.ok === true;
-  } catch {
+    if (error) {
+      console.error("[SF-175] process-booking-created invoke failed", {
+        message: error.message ?? "unknown_function_error",
+      });
+      return false;
+    }
+
+    if (data?.ok !== true) {
+      console.error("[SF-175] process-booking-created returned non-ok", {
+        hasData: Boolean(data),
+      });
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error("[SF-175] process-booking-created threw", {
+      message: error instanceof Error ? error.message : "unknown_invoke_exception",
+    });
     return false;
   }
 }
