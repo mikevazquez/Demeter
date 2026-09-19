@@ -1,11 +1,32 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
+import PendingActionButton from "@/app/admin/components/PendingActionButton";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getCoachContext } from "@/lib/auth/coach-context";
-import { type CoachRosterItem, type CoachSessionDetail } from "@/lib/coach/portal";
+import {
+  formatSessionDate,
+  formatTime,
+  type CoachRosterItem,
+  type CoachSessionDetail,
+} from "@/lib/coach/portal";
 
 import { correctCoachAttendanceAction } from "../../../actions";
+
+type AttendanceCorrectionHistoryItem = {
+  correction_id: string;
+  reservation_id: string;
+  student_id: string;
+  student_name: string;
+  from_status: "attended" | "no_show";
+  to_status: "attended" | "no_show";
+  reason: string;
+  corrected_at: string;
+};
+
+function attendanceText(status: "attended" | "no_show") {
+  return status === "attended" ? "Asistió" : "No asistió";
+}
 
 export default async function CoachFinalizedPage({
   params,
@@ -17,24 +38,31 @@ export default async function CoachFinalizedPage({
   const { sessionId } = await params;
   const query = await searchParams;
   const { supabase, studio } = await getCoachContext(CAPABILITIES.ATTENDANCE_WRITE);
-  const [{ data: detailData, error: detailError }, { data: rosterData, error: rosterError }] =
-    await Promise.all([
-      supabase.rpc("coach_session_detail", {
-        target_studio_id: studio.id,
-        target_session_id: sessionId,
-      }),
-      supabase.rpc("coach_session_roster", {
-        target_studio_id: studio.id,
-        target_session_id: sessionId,
-      }),
-    ]);
+  const [
+    { data: detailData, error: detailError },
+    { data: rosterData, error: rosterError },
+    { data: correctionData, error: correctionError },
+  ] = await Promise.all([
+    supabase.rpc("coach_session_detail", {
+      target_studio_id: studio.id,
+      target_session_id: sessionId,
+    }),
+    supabase.rpc("coach_session_roster", {
+      target_studio_id: studio.id,
+      target_session_id: sessionId,
+    }),
+    supabase.rpc("attendance_correction_history", {
+      target_session_id: sessionId,
+    }),
+  ]);
 
-  if (detailError || rosterError || !detailData) notFound();
+  if (detailError || rosterError || correctionError || !detailData) notFound();
 
   const detail = detailData as CoachSessionDetail;
   if (detail.status !== "completed") redirect(`/coach/clases/${sessionId}/resumen`);
 
   const roster = (rosterData ?? []) as CoachRosterItem[];
+  const corrections = (correctionData ?? []) as AttendanceCorrectionHistoryItem[];
   const attended = roster.filter((item) => item.attendance_status === "attended").length;
   const noShow = roster.filter((item) => item.attendance_status === "no_show").length;
 
@@ -122,12 +150,12 @@ export default async function CoachFinalizedPage({
                       placeholder="Motivo obligatorio de la corrección"
                       className="min-w-0 flex-1 rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 text-sm text-white outline-none placeholder:text-zinc-600 focus:border-fuchsia-400/50"
                     />
-                    <button
-                      type="submit"
+                    <PendingActionButton
+                      pendingLabel="Corrigiendo…"
                       className="rounded-xl border border-white/10 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-white/[0.05]"
                     >
                       Cambiar a {attendedNow ? "No asistió" : "Asistió"}
-                    </button>
+                    </PendingActionButton>
                   </form>
                 </div>
               </article>
@@ -135,6 +163,36 @@ export default async function CoachFinalizedPage({
           })}
         </div>
       </section>
+
+      {corrections.length ? (
+        <section className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.03]">
+          <div className="border-b border-white/10 p-5 sm:p-6">
+            <h2 className="text-lg font-semibold text-white">Historial de correcciones</h2>
+            <p className="mt-1 text-sm text-zinc-500">
+              Cada cambio posterior al cierre conserva estado anterior, estado nuevo, motivo y fecha.
+            </p>
+          </div>
+          <div className="divide-y divide-white/10">
+            {corrections.map((correction) => (
+              <article key={correction.correction_id} className="p-5 sm:p-6">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                  <div>
+                    <h3 className="font-semibold text-white">{correction.student_name}</h3>
+                    <p className="mt-1 text-sm text-zinc-400">
+                      {attendanceText(correction.from_status)} → {attendanceText(correction.to_status)}
+                    </p>
+                    <p className="mt-2 text-sm leading-6 text-zinc-300">{correction.reason}</p>
+                  </div>
+                  <p className="text-xs text-zinc-500">
+                    {formatSessionDate(correction.corrected_at, studio.timezone)} ·{" "}
+                    {formatTime(correction.corrected_at, studio.timezone)}
+                  </p>
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+      ) : null}
     </main>
   );
 }
