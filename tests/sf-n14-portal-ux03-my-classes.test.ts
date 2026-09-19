@@ -12,9 +12,7 @@ describe("SF-N14 PORTAL UX-03 Mis clases", () => {
   const detail = source("app/student/mis-clases/[reservationId]/page.tsx");
   const cancel = source("app/student/mis-clases/[reservationId]/cancelar/page.tsx");
   const actions = source("app/student/actions.ts");
-  const migration = source(
-    "supabase/migrations/20260919193000_n14_ux03_cancellation_preview.sql",
-  );
+  const migration = source("supabase/migrations/20260919193000_n14_ux03_cancellation_preview.sql");
 
   it("separates upcoming reservations from history", () => {
     expect(list).toContain('href="/student/mis-clases"');
@@ -40,13 +38,9 @@ describe("SF-N14 PORTAL UX-03 Mis clases", () => {
   });
 
   it("preserves reservation context after a temporary cancellation error", () => {
-    expect(actions).toContain(
-      "/student/mis-clases/${reservationId}/cancelar?error=",
-    );
+    expect(actions).toContain("/student/mis-clases/${reservationId}/cancelar?error=");
     expect(cancel).toContain("No se pudo procesar tu cancelación");
-    expect(cancel).toContain(
-      "Tu reserva no se modificó. Puedes intentarlo de nuevo.",
-    );
+    expect(cancel).toContain("Tu reserva no se modificó. Puedes intentarlo de nuevo.");
     expect(cancel).toContain("Intentar de nuevo");
   });
 
