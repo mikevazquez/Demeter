@@ -210,8 +210,8 @@ export default async function StudentHomePage({
 
           {activePackage.unlimited ? (
             <div className="mt-5 rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-zinc-300">
-              Tu paquete tiene acceso ilimitado. Las reservas continúan sujetas a disponibilidad y
-              a las reglas vigentes de cada clase.
+              Tu paquete tiene acceso ilimitado. Las reservas continúan sujetas a disponibilidad y a
+              las reglas vigentes de cada clase.
             </div>
           ) : (
             <div className="mt-5">
@@ -237,7 +237,9 @@ export default async function StudentHomePage({
         </section>
       ) : (
         <section className="rounded-3xl border border-dashed border-white/10 bg-white/[0.02] p-6 text-center">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500">Mi paquete</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500">
+            Mi paquete
+          </p>
           <h2 className="mt-3 text-xl font-semibold text-white">No tienes un paquete activo</h2>
           <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-zinc-400">
             Consulta los paquetes disponibles y elige el que corresponda a tu entrenamiento.
@@ -292,7 +294,9 @@ export default async function StudentHomePage({
         </p>
         <div className="mt-5 grid grid-cols-3 gap-3 border-t border-white/10 pt-5">
           <div>
-            <strong className="block text-xl text-white">{snapshot.stats.attended_this_month}</strong>
+            <strong className="block text-xl text-white">
+              {snapshot.stats.attended_this_month}
+            </strong>
             <span className="text-xs text-zinc-500">este mes</span>
           </div>
           <div>
