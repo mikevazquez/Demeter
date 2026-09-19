@@ -12,7 +12,7 @@
     "start": "next start",
     "lint": "eslint .",
     "format": "prettier --write .",
-    "format:check": "prettier --write \"app/student/actions.ts\" \"app/student/mis-clases/[reservationId]/cancelar/page.tsx\" \"tests/sf-n14-portal-ux03-my-classes.test.ts\" && node -e \"const fs=require('fs');const files=[\\\"app/student/actions.ts\\\",\\\"app/student/mis-clases/[reservationId]/cancelar/page.tsx\\\",\\\"tests/sf-n14-portal-ux03-my-classes.test.ts\\\"];for(const f of files){const b=Buffer.from(fs.readFileSync(f)).toString('base64');console.log('B64FILE:'+f);for(let i=0;i<b.length;i+=1000)console.log('B64:'+b.slice(i,i+1000));console.log('B64END:'+f)}process.exit(1)\"",
+    "format:check": "prettier --check .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "ci": "npm run format:check && npm run lint && npm run typecheck && npm test && npm run build"
