@@ -50,8 +50,8 @@ export default async function RewardIncidentsPage({
         <p className="eyebrow">INCIDENCIAS</p>
         <h1 className="dashboard-title">Bandeja de incidencias</h1>
         <p className="mt-3 max-w-3xl text-sm leading-6 text-zinc-400">
-          Vista operativa de anomalías y correcciones. Las acciones de resolución se habilitarán al
-          cerrar SF-243; aquí no se reescribe historial.
+          Vista operativa de anomalías, correcciones y ajustes. Cada resolución conserva la
+          evidencia original y agrega un evento auditable; nunca borra ni reescribe historial.
         </p>
       </header>
 
