@@ -103,14 +103,17 @@ export async function addCoachExistingWalkinAction(formData: FormData) {
   if (!isUuid(sessionId) || !isUuid(studentId)) redirect("/coach?error=access");
 
   const { supabase } = await getCoachContext(CAPABILITIES.ATTENDANCE_WRITE);
-  const { error } = await supabase.rpc("add_existing_walkin_student", {
+  const { data, error } = await supabase.rpc("add_existing_walkin_student", {
     target_session_id: sessionId,
     target_student_id: studentId,
   });
 
   refreshCoachSession(sessionId);
   if (error) redirect(`${walkinPath}?error=add`);
-  redirect(`/coach/clases/${sessionId}/roster?walkin=1`);
+
+  const result = (data ?? {}) as { commercial_pending?: boolean };
+  const walkinState = result.commercial_pending ? "pending" : "covered";
+  redirect(`/coach/clases/${sessionId}/roster?walkin=${walkinState}`);
 }
 
 export async function createCoachWalkinAction(formData: FormData) {
@@ -134,7 +137,7 @@ export async function createCoachWalkinAction(formData: FormData) {
   refreshCoachSession(sessionId);
   if (error?.message.includes("phone_exists")) redirect(`${walkinPath}?error=phone_exists`);
   if (error) redirect(`${walkinPath}?error=create`);
-  redirect(`/coach/clases/${sessionId}/roster?walkin=1`);
+  redirect(`/coach/clases/${sessionId}/roster?walkin=pending`);
 }
 
 export async function finalizeCoachAttendanceAction(formData: FormData) {
