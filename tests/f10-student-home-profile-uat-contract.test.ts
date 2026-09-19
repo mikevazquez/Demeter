@@ -32,8 +32,10 @@ describe("F10/N14 student home and profile UAT contracts", () => {
   });
 
   it("keeps the canonical cancellation engine available in the dedicated flow", () => {
-    const classesPage = source("app/student/mis-clases/page.tsx");
-    expect(classesPage).toContain("cancelStudentReservationAction");
+    const cancelPage = source(
+      "app/student/mis-clases/[reservationId]/cancelar/page.tsx",
+    );
+    expect(cancelPage).toContain("cancelStudentReservationAction");
     expect(actions).toContain('supabase.rpc("student_cancel_own_reservation"');
   });
 
