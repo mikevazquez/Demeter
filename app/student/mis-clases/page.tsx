@@ -34,13 +34,7 @@ function statusClass(status: string) {
   return "border-fuchsia-500/25 bg-fuchsia-500/10 text-fuchsia-200";
 }
 
-function ClassRow({
-  item,
-  timezone,
-}: {
-  item: StudentClassFeedItem;
-  timezone: string;
-}) {
+function ClassRow({ item, timezone }: { item: StudentClassFeedItem; timezone: string }) {
   return (
     <Link
       href={`/student/mis-clases/${item.reservation_id}`}
@@ -56,9 +50,7 @@ function ClassRow({
             {statusCopy[item.status] ?? item.status}
           </span>
         </div>
-        <p className="mt-1 text-xs text-zinc-300">
-          {formatDateTime(item.starts_at, timezone)}
-        </p>
+        <p className="mt-1 text-xs text-zinc-300">{formatDateTime(item.starts_at, timezone)}</p>
         <p className="mt-0.5 truncate text-[11px] text-zinc-500">
           {[item.coach, item.space].filter(Boolean).join(" · ") || item.discipline}
         </p>
@@ -165,9 +157,7 @@ export default async function StudentClassesPage({
 
       {error ? (
         <section className="rounded-3xl border border-rose-500/20 bg-rose-500/[0.07] p-5 text-center">
-          <h2 className="text-base font-semibold text-white">
-            No pudimos cargar tus clases
-          </h2>
+          <h2 className="text-base font-semibold text-white">No pudimos cargar tus clases</h2>
           <p className="mt-1.5 text-xs leading-5 text-zinc-400">
             Intenta nuevamente. Tus reservas no se han modificado.
           </p>
@@ -223,17 +213,11 @@ export default async function StudentClassesPage({
                     <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-500">
                       Después
                     </p>
-                    <span className="text-[10px] text-zinc-600">
-                      {followingClasses.length} más
-                    </span>
+                    <span className="text-[10px] text-zinc-600">{followingClasses.length} más</span>
                   </div>
                   <div className="space-y-2">
                     {followingClasses.map((item) => (
-                      <ClassRow
-                        key={item.reservation_id}
-                        item={item}
-                        timezone={studio.timezone}
-                      />
+                      <ClassRow key={item.reservation_id} item={item} timezone={studio.timezone} />
                     ))}
                   </div>
                 </div>
@@ -247,9 +231,7 @@ export default async function StudentClassesPage({
               >
                 ◫
               </div>
-              <h2 className="mt-3 text-base font-semibold text-white">
-                No tienes clases próximas
-              </h2>
+              <h2 className="mt-3 text-base font-semibold text-white">No tienes clases próximas</h2>
               <p className="mx-auto mt-1.5 max-w-md text-xs leading-5 text-zinc-400">
                 Cuando reserves una clase aparecerá aquí.
               </p>
@@ -270,21 +252,13 @@ export default async function StudentClassesPage({
           {history.length ? (
             <div className="space-y-2">
               {history.map((item) => (
-                <ClassRow
-                  key={item.reservation_id}
-                  item={item}
-                  timezone={studio.timezone}
-                />
+                <ClassRow key={item.reservation_id} item={item} timezone={studio.timezone} />
               ))}
             </div>
           ) : (
             <div className="rounded-3xl border border-dashed border-white/10 bg-white/[0.02] px-5 py-8 text-center">
-              <h2 className="text-base font-semibold text-white">
-                Todavía no tienes historial
-              </h2>
-              <p className="mt-1.5 text-xs text-zinc-400">
-                Tus clases anteriores aparecerán aquí.
-              </p>
+              <h2 className="text-base font-semibold text-white">Todavía no tienes historial</h2>
+              <p className="mt-1.5 text-xs text-zinc-400">Tus clases anteriores aparecerán aquí.</p>
             </div>
           )}
         </section>
