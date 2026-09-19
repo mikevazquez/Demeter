@@ -24,6 +24,7 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
         "/admin/productos",
         "/admin/ventas",
         "/admin/instructores",
+        "/admin/automatizaciones",
         "/admin/reportes",
         "/admin/configuracion",
       ],
