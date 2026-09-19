@@ -1,9 +1,9 @@
 name: Format debug
 
 on:
-  push:
+  pull_request:
     branches:
-      - feat/sf-n14-portal-ux02-home
+      - main
 
 permissions:
   contents: read
