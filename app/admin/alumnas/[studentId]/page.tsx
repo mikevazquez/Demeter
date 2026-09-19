@@ -458,7 +458,9 @@ export default async function StudentProfilePage({
               </p>
             </div>
             <span className="status-pill">
-              {communicationPreferences.whatsappBlocked ? "WhatsApp bloqueado" : "WhatsApp permitido"}
+              {communicationPreferences.whatsappBlocked
+                ? "WhatsApp bloqueado"
+                : "WhatsApp permitido"}
             </span>
           </div>
 
@@ -540,7 +542,10 @@ export default async function StudentProfilePage({
                 />
               </label>
 
-              <PendingActionButton className="primary-button" pendingLabel="Guardando preferencias…">
+              <PendingActionButton
+                className="primary-button"
+                pendingLabel="Guardando preferencias…"
+              >
                 Guardar preferencias
               </PendingActionButton>
             </form>
