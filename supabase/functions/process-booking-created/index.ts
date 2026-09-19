@@ -1,4 +1,5 @@
 import { withSupabase } from "npm:@supabase/server";
+import type { SupabaseClient } from "npm:@supabase/supabase-js@2";
 
 import {
   buildReservationConfirmedConditions,
@@ -62,7 +63,7 @@ function requestSnapshot(input: MessagingProviderInput) {
 }
 
 async function claimEvent(
-  adminClient: any,
+  adminClient: SupabaseClient,
   eventId: string,
 ): Promise<void> {
   await adminClient.rpc("claim_domain_event", {
@@ -72,7 +73,7 @@ async function claimEvent(
 }
 
 async function callerCanProcess(
-  userClient: any,
+  userClient: SupabaseClient,
   userId: string,
   studioId: string,
   reservationStudentUserId: string | null,
@@ -99,7 +100,7 @@ async function callerCanProcess(
   return !capabilityError && Boolean(capability);
 }
 
-async function loadContext(adminClient: any, reservationId: string) {
+async function loadContext(adminClient: SupabaseClient, reservationId: string) {
   const { data: reservation, error: reservationError } = await adminClient
     .from("reservations")
     .select(
@@ -254,7 +255,7 @@ async function loadContext(adminClient: any, reservationId: string) {
 }
 
 async function recordEligibility(
-  adminClient: any,
+  adminClient: SupabaseClient,
   input: {
     instanceId: string;
     versionNumber: number;
@@ -290,7 +291,7 @@ async function recordEligibility(
   };
 }
 
-async function existingExecution(adminClient: any, studioId: string, reservationId: string) {
+async function existingExecution(adminClient: SupabaseClient, studioId: string, reservationId: string) {
   const { data } = await adminClient
     .from("automation_executions")
     .select(
