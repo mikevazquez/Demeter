@@ -289,6 +289,38 @@ describe("SF-167 communication control", () => {
     });
   });
 
+  it("exposes global communication settings and AUT-05 audit in the approved admin surfaces", () => {
+    const listPage = readFileSync(
+      join(process.cwd(), "app/admin/automatizaciones/page.tsx"),
+      "utf8",
+    );
+    const detailPage = readFileSync(
+      join(process.cwd(), "app/admin/automatizaciones/[code]/page.tsx"),
+      "utf8",
+    );
+    const actions = readFileSync(
+      join(process.cwd(), "app/admin/automatizaciones/actions.ts"),
+      "utf8",
+    );
+    const hardening = readFileSync(
+      join(
+        process.cwd(),
+        "supabase/migrations/20260919052000_sf167_communication_control_hardening.sql",
+      ),
+      "utf8",
+    );
+
+    expect(listPage).toContain("Horario global de comunicaciones");
+    expect(listPage).toContain("automation_communication_settings");
+    expect(listPage).toContain("saveGlobalCommunicationWindowAction");
+    expect(detailPage).toContain("Control AUT-05 · SF-167");
+    expect(detailPage).toContain("Decisiones de comunicación");
+    expect(detailPage).toContain("automation_communication_controls");
+    expect(actions).toContain("CAPABILITIES.AUTOMATIONS_MANAGE");
+    expect(actions).toContain("automation_send_window_invalid");
+    expect(hardening).toContain("automation_communication_settings_nonempty_window_chk");
+  });
+
   it("locks the SQL contract for audited control, windows and deferred revalidation", () => {
     const sql = readFileSync(
       join(process.cwd(), "supabase/migrations/20260919050000_sf167_communication_control.sql"),
