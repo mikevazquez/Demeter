@@ -5,10 +5,7 @@ import { redirect } from "next/navigation";
 
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
-import {
-  getAutomationTemplate,
-  type AutomationCatalogCode,
-} from "@/lib/automations/catalog";
+import { getAutomationTemplate, type AutomationCatalogCode } from "@/lib/automations/catalog";
 
 const numericConfigurationKeys = new Set([
   "days_before_expiration",
@@ -163,11 +160,7 @@ async function transitionAutomation(
 }
 
 export async function activateAutomationAction(formData: FormData) {
-  return transitionAutomation(
-    formData,
-    "admin_activate_automation_instance",
-    "activated",
-  );
+  return transitionAutomation(formData, "admin_activate_automation_instance", "activated");
 }
 
 export async function pauseAutomationAction(formData: FormData) {
@@ -175,17 +168,9 @@ export async function pauseAutomationAction(formData: FormData) {
 }
 
 export async function archiveAutomationAction(formData: FormData) {
-  return transitionAutomation(
-    formData,
-    "admin_archive_automation_instance",
-    "archived",
-  );
+  return transitionAutomation(formData, "admin_archive_automation_instance", "archived");
 }
 
 export async function deleteAutomationDraftAction(formData: FormData) {
-  return transitionAutomation(
-    formData,
-    "admin_delete_automation_draft",
-    "deleted",
-  );
+  return transitionAutomation(formData, "admin_delete_automation_draft", "deleted");
 }
