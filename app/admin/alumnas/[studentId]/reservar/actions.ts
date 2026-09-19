@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { getAdminContext } from "@/lib/auth/admin-context";
+import { triggerReservationConfirmedAutomation } from "@/lib/automations/reservation-confirmed-client";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 
 function reservationUrl(studentId: string, error?: string) {
@@ -53,12 +54,16 @@ export async function reserveStudentFromOnboarding(formData: FormData) {
     redirect(reservationUrl(studentId, result.reason_code ?? "booking"));
   }
 
-  const { error } = await supabase.rpc("admin_book_student", {
+  const { data: reservationId, error } = await supabase.rpc("admin_book_student", {
     target_session_id: sessionId,
     target_student_id: studentId,
   });
 
   if (error) redirect(reservationUrl(studentId, error.message));
+
+  if (reservationId) {
+    await triggerReservationConfirmedAutomation(supabase, reservationId);
+  }
 
   revalidatePath("/admin");
   revalidatePath("/admin/agenda");
