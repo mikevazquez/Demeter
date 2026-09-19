@@ -37,6 +37,15 @@ describe("SF-N14 PORTAL UX-03 Mis clases", () => {
     expect(cancel).toContain("PendingActionButton");
   });
 
+  it("preserves reservation context after a temporary cancellation error", () => {
+    expect(actions).toContain(
+      "/student/mis-clases/${reservationId}/cancelar?error=",
+    );
+    expect(cancel).toContain("No se pudo procesar tu cancelación");
+    expect(cancel).toContain("Tu reserva no se modificó. Puedes intentarlo de nuevo.");
+    expect(cancel).toContain("Intentar de nuevo");
+  });
+
   it("warns about credit loss only when the canonical preview marks the cancellation late", () => {
     expect(cancel).toContain('supabase.rpc("student_cancellation_preview"');
     expect(cancel).toContain("Estás fuera del horario de cancelación");
