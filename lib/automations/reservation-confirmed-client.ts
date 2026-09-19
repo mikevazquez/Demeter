@@ -1,50 +1,29 @@
 export interface ReservationConfirmedFunctionClient {
-  auth: {
-    getSession(): Promise<{
-      data: { session: { access_token: string } | null };
-      error: { message?: string } | null;
-    }>;
-  };
   functions: {
     invoke<T>(
       functionName: string,
       options: {
         body: Record<string, unknown>;
-        headers?: Record<string, string>;
       },
     ): Promise<{
       data: T | null;
       error: { message?: string; context?: unknown } | null;
     }>;
   };
-  from?(table: string): {
-    insert(values: Record<string, unknown>): unknown;
-  };
 }
 
-async function recordInvokeDebug(
-  client: ReservationConfirmedFunctionClient,
-  reservationId: string,
-  values: {
-    stage: string;
-    http_status?: number | null;
-    error_code?: string | null;
-    message?: string | null;
-  },
-) {
-  if (!client.from) return;
+type InvokeErrorDetails = {
+  http_status: number | null;
+  error_code: string | null;
+  message: string;
+};
 
-  try {
-    await client.from("sf175_invoke_debug").insert({
-      reservation_id: reservationId,
-      ...values,
-    });
-  } catch {
-    // Sandbox-only diagnostic instrumentation must never affect booking.
-  }
-}
+const MAX_INVOKE_ATTEMPTS = 2;
 
-async function invokeErrorDetails(error: { message?: string; context?: unknown }) {
+async function invokeErrorDetails(error: {
+  message?: string;
+  context?: unknown;
+}): Promise<InvokeErrorDetails> {
   const context = error.context;
   if (!(context instanceof Response)) {
     return {
@@ -77,6 +56,15 @@ async function invokeErrorDetails(error: { message?: string; context?: unknown }
   };
 }
 
+function shouldRetryInvoke(details: InvokeErrorDetails) {
+  return (
+    details.http_status === null ||
+    details.http_status === 408 ||
+    details.http_status === 429 ||
+    details.http_status >= 500
+  );
+}
+
 export async function triggerReservationConfirmedAutomation(
   client: ReservationConfirmedFunctionClient,
   reservationId: string,
@@ -84,67 +72,51 @@ export async function triggerReservationConfirmedAutomation(
   const normalizedReservationId = reservationId.trim();
   if (!normalizedReservationId) return false;
 
-  try {
-    const {
-      data: { session },
-      error: sessionError,
-    } = await client.auth.getSession();
-
-    if (sessionError) {
-      await recordInvokeDebug(client, normalizedReservationId, {
-        stage: "session_error",
-        message: sessionError.message ?? "unknown_session_error",
-      });
-      return false;
-    }
-
-    if (!session?.access_token) {
-      await recordInvokeDebug(client, normalizedReservationId, {
-        stage: "session_missing",
-        message: "authenticated_server_action_has_no_access_token",
-      });
-      return false;
-    }
-
-    const { data, error } = await client.functions.invoke<{ ok?: boolean }>(
-      "process-booking-created",
-      {
+  for (let attempt = 1; attempt <= MAX_INVOKE_ATTEMPTS; attempt += 1) {
+    try {
+      const { data, error } = await client.functions.invoke<{
+        ok?: boolean;
+        outcome?: string;
+        executionId?: string;
+      }>("process-booking-created", {
         body: { reservationId: normalizedReservationId },
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
-      },
-    );
-
-    if (error) {
-      const details = await invokeErrorDetails(error);
-      await recordInvokeDebug(client, normalizedReservationId, {
-        stage: "invoke_error",
-        ...details,
       });
-      console.error("[SF-175] process-booking-created invoke failed", details);
+
+      if (error) {
+        const details = await invokeErrorDetails(error);
+        console.error("[SF-175] process-booking-created invoke failed", {
+          attempt,
+          ...details,
+        });
+
+        if (attempt < MAX_INVOKE_ATTEMPTS && shouldRetryInvoke(details)) {
+          continue;
+        }
+
+        return false;
+      }
+
+      if (data?.ok !== true) {
+        console.error("[SF-175] process-booking-created returned non-ok", {
+          attempt,
+          hasData: Boolean(data),
+          outcome: data?.outcome ?? null,
+        });
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "unknown_invoke_exception";
+      console.error("[SF-175] process-booking-created threw", {
+        attempt,
+        message,
+      });
+
+      if (attempt < MAX_INVOKE_ATTEMPTS) continue;
       return false;
     }
-
-    if (data?.ok !== true) {
-      await recordInvokeDebug(client, normalizedReservationId, {
-        stage: "non_ok_response",
-        message: "process_booking_created_returned_non_ok",
-      });
-      console.error("[SF-175] process-booking-created returned non-ok", {
-        hasData: Boolean(data),
-      });
-      return false;
-    }
-
-    return true;
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "unknown_invoke_exception";
-    await recordInvokeDebug(client, normalizedReservationId, {
-      stage: "exception",
-      message,
-    });
-    console.error("[SF-175] process-booking-created threw", { message });
-    return false;
   }
+
+  return false;
 }
