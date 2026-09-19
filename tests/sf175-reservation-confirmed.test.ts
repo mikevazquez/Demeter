@@ -93,10 +93,7 @@ describe("SF-175 reservation confirmed", () => {
 
     const client = {
       functions: {
-        async invoke<T>(
-          receivedFunctionName: string,
-          options: { body: Record<string, unknown> },
-        ) {
+        async invoke<T>(receivedFunctionName: string, options: { body: Record<string, unknown> }) {
           functionName = receivedFunctionName;
           body = options.body;
           return { data: { ok: true } as T, error: null };
@@ -216,9 +213,7 @@ describe("SF-175 reservation confirmed", () => {
 
   it("keeps authenticated Edge gateway verification enabled", () => {
     const config = readFileSync(join(process.cwd(), "supabase/config.toml"), "utf8");
-    expect(config).toContain(
-      "[functions.process-booking-created]\nverify_jwt = true",
-    );
+    expect(config).toContain("[functions.process-booking-created]\nverify_jwt = true");
   });
 
   it("hardens the Edge processor lifecycle and pins Supabase dependencies", () => {
@@ -227,8 +222,8 @@ describe("SF-175 reservation confirmed", () => {
       "utf8",
     );
 
-    expect(source).toContain('npm:@supabase/server@1.7.0');
-    expect(source).toContain('npm:@supabase/supabase-js@2.116.0');
+    expect(source).toContain("npm:@supabase/server@1.7.0");
+    expect(source).toContain("npm:@supabase/supabase-js@2.116.0");
     expect(source).toContain("context.userClaims?.id");
     expect(source).not.toContain(".auth.getUser()");
     expect(source).toContain("record_automation_eligibility_evaluation");
