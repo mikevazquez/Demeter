@@ -156,21 +156,31 @@ export default async function RewardRuleDetailPage({
 
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
         <MetricCard label="Participantes" value={participations.length} />
-        <MetricCard label="Cumplieron" value={cycles.filter((cycle) => cycle.status === "fulfilled").length} />
+        <MetricCard
+          label="Cumplieron"
+          value={cycles.filter((cycle) => cycle.status === "fulfilled").length}
+        />
         <MetricCard label="Disponibles" value={rewardStates.get("available") ?? 0} />
         <MetricCard label="Utilizadas" value={rewardStates.get("redeemed") ?? 0} />
-        <MetricCard label="Incidencias" value={incidents.filter((item) => item.status !== "closed").length} />
+        <MetricCard
+          label="Incidencias"
+          value={incidents.filter((item) => item.status !== "closed").length}
+        />
       </section>
 
       {canManage ? (
         <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-fuchsia-300">ACCIONES</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-fuchsia-300">
+            ACCIONES
+          </p>
           <div className="mt-4 flex flex-wrap gap-2">
             {rule.status === "draft" && rule.scheduled_start_at ? (
               <form action={transitionRewardRuleAction}>
                 <input type="hidden" name="rule_id" value={rule.id} />
                 <input type="hidden" name="action" value="schedule" />
-                <button className="rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2.5 text-sm font-semibold text-white">Programar</button>
+                <button className="rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2.5 text-sm font-semibold text-white">
+                  Programar
+                </button>
               </form>
             ) : null}
             {["draft", "scheduled", "paused"].includes(rule.status) ? (
@@ -186,26 +196,34 @@ export default async function RewardRuleDetailPage({
               <form action={transitionRewardRuleAction}>
                 <input type="hidden" name="rule_id" value={rule.id} />
                 <input type="hidden" name="action" value="pause" />
-                <button className="rounded-xl border border-amber-500/25 bg-amber-500/10 px-4 py-2.5 text-sm font-semibold text-amber-200">Pausar</button>
+                <button className="rounded-xl border border-amber-500/25 bg-amber-500/10 px-4 py-2.5 text-sm font-semibold text-amber-200">
+                  Pausar
+                </button>
               </form>
             ) : null}
             {["active", "paused", "scheduled"].includes(rule.status) ? (
               <form action={transitionRewardRuleAction}>
                 <input type="hidden" name="rule_id" value={rule.id} />
                 <input type="hidden" name="action" value="finish" />
-                <button className="rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2.5 text-sm font-semibold text-white">Finalizar</button>
+                <button className="rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2.5 text-sm font-semibold text-white">
+                  Finalizar
+                </button>
               </form>
             ) : null}
             {!["finished", "cancelled"].includes(rule.status) ? (
               <form action={transitionRewardRuleAction}>
                 <input type="hidden" name="rule_id" value={rule.id} />
                 <input type="hidden" name="action" value="cancel" />
-                <button className="rounded-xl border border-rose-500/25 bg-rose-500/10 px-4 py-2.5 text-sm font-semibold text-rose-200">Cancelar</button>
+                <button className="rounded-xl border border-rose-500/25 bg-rose-500/10 px-4 py-2.5 text-sm font-semibold text-rose-200">
+                  Cancelar
+                </button>
               </form>
             ) : null}
             <form action={duplicateRewardRuleAction}>
               <input type="hidden" name="rule_id" value={rule.id} />
-              <button className="rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2.5 text-sm font-semibold text-white">Duplicar</button>
+              <button className="rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2.5 text-sm font-semibold text-white">
+                Duplicar
+              </button>
             </form>
           </div>
         </section>
@@ -213,7 +231,9 @@ export default async function RewardRuleDetailPage({
 
       <section className="grid gap-4 xl:grid-cols-[1.25fr_.75fr]">
         <article className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-fuchsia-300">CONFIGURACIÓN</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-fuchsia-300">
+            CONFIGURACIÓN
+          </p>
           <h2 className="mt-1 text-xl font-semibold text-white">Cómo funciona</h2>
           <div className="mt-5 grid gap-3 md:grid-cols-2">
             {[
@@ -230,23 +250,33 @@ export default async function RewardRuleDetailPage({
               </div>
             ))}
           </div>
-          {version.description ? <p className="mt-5 text-sm leading-6 text-zinc-400">{version.description}</p> : null}
+          {version.description ? (
+            <p className="mt-5 text-sm leading-6 text-zinc-400">{version.description}</p>
+          ) : null}
         </article>
 
         <article className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-fuchsia-300">TIEMPOS</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-fuchsia-300">
+            TIEMPOS
+          </p>
           <div className="mt-4 grid gap-3 text-sm">
             <div className="flex justify-between gap-3 border-b border-white/10 pb-3">
               <span className="text-zinc-500">Inicio programado</span>
-              <strong className="text-right text-white">{formatDateTime(rule.scheduled_start_at)}</strong>
+              <strong className="text-right text-white">
+                {formatDateTime(rule.scheduled_start_at)}
+              </strong>
             </div>
             <div className="flex justify-between gap-3 border-b border-white/10 pb-3">
               <span className="text-zinc-500">Fin programado</span>
-              <strong className="text-right text-white">{formatDateTime(rule.scheduled_end_at)}</strong>
+              <strong className="text-right text-white">
+                {formatDateTime(rule.scheduled_end_at)}
+              </strong>
             </div>
             <div className="flex justify-between gap-3 border-b border-white/10 pb-3">
               <span className="text-zinc-500">Primera activación</span>
-              <strong className="text-right text-white">{formatDateTime(rule.first_activated_at)}</strong>
+              <strong className="text-right text-white">
+                {formatDateTime(rule.first_activated_at)}
+              </strong>
             </div>
             <div className="flex justify-between gap-3">
               <span className="text-zinc-500">Última actualización</span>
@@ -260,27 +290,47 @@ export default async function RewardRuleDetailPage({
         <article className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-fuchsia-300">FUNNEL</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-fuchsia-300">
+                FUNNEL
+              </p>
               <h2 className="mt-1 text-xl font-semibold text-white">Participación</h2>
             </div>
-            <Link href={`/admin/recompensas/reglas/${rule.id}/participantes`} className="text-sm font-semibold text-zinc-400 hover:text-white">Abrir →</Link>
+            <Link
+              href={`/admin/recompensas/reglas/${rule.id}/participantes`}
+              className="text-sm font-semibold text-zinc-400 hover:text-white"
+            >
+              Abrir →
+            </Link>
           </div>
           <div className="mt-5 grid grid-cols-2 gap-3">
-            <MetricCard label="Elegibles / en curso" value={participations.filter((item) => item.status !== "closed").length} />
-            <MetricCard label="Cumplidas" value={participations.filter((item) => item.status === "fulfilled").length} />
+            <MetricCard
+              label="Elegibles / en curso"
+              value={participations.filter((item) => item.status !== "closed").length}
+            />
+            <MetricCard
+              label="Cumplidas"
+              value={participations.filter((item) => item.status === "fulfilled").length}
+            />
           </div>
         </article>
 
         <article className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-fuchsia-300">RECOMPENSAS</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-fuchsia-300">
+            RECOMPENSAS
+          </p>
           <h2 className="mt-1 text-xl font-semibold text-white">Estados generados</h2>
           <div className="mt-5 grid gap-2">
             {!rewards.length ? (
               <EmptyState title="Todavía no se han generado recompensas" />
             ) : (
               [...rewardStates.entries()].map(([status, count]) => (
-                <div key={status} className="flex items-center justify-between rounded-xl border border-white/10 bg-black/15 px-4 py-3">
-                  <span className="text-sm text-zinc-300">{rewardStatusLabels[status] ?? status}</span>
+                <div
+                  key={status}
+                  className="flex items-center justify-between rounded-xl border border-white/10 bg-black/15 px-4 py-3"
+                >
+                  <span className="text-sm text-zinc-300">
+                    {rewardStatusLabels[status] ?? status}
+                  </span>
                   <strong className="text-white">{count}</strong>
                 </div>
               ))
@@ -291,11 +341,16 @@ export default async function RewardRuleDetailPage({
 
       <section className="grid gap-4 lg:grid-cols-2">
         <article className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-fuchsia-300">VERSIONES</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-fuchsia-300">
+            VERSIONES
+          </p>
           <h2 className="mt-1 text-xl font-semibold text-white">Historial de configuración</h2>
           <div className="mt-5 grid gap-2">
             {(versionsResult.data ?? []).map((item) => (
-              <div key={item.version_number} className="rounded-xl border border-white/10 bg-black/15 px-4 py-3">
+              <div
+                key={item.version_number}
+                className="rounded-xl border border-white/10 bg-black/15 px-4 py-3"
+              >
                 <div className="flex items-center justify-between gap-3">
                   <strong className="text-sm text-white">Versión {item.version_number}</strong>
                   <span className="text-xs text-zinc-500">{formatDateTime(item.created_at)}</span>
@@ -307,14 +362,19 @@ export default async function RewardRuleDetailPage({
         </article>
 
         <article className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-fuchsia-300">ACTIVIDAD</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-fuchsia-300">
+            ACTIVIDAD
+          </p>
           <h2 className="mt-1 text-xl font-semibold text-white">Cambios de estado</h2>
           <div className="mt-5 grid gap-2">
             {!(lifecycleResult.data ?? []).length ? (
               <EmptyState title="Sin cambios de estado" />
             ) : (
               (lifecycleResult.data ?? []).map((item) => (
-                <div key={item.id} className="rounded-xl border border-white/10 bg-black/15 px-4 py-3">
+                <div
+                  key={item.id}
+                  className="rounded-xl border border-white/10 bg-black/15 px-4 py-3"
+                >
                   <div className="flex items-center justify-between gap-3">
                     <strong className="text-sm text-white">{item.operation}</strong>
                     <span className="text-xs text-zinc-500">{formatDateTime(item.created_at)}</span>

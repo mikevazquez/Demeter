@@ -70,7 +70,9 @@ export function formatDateTime(value: string | null | undefined) {
 }
 
 export function statusTone(status: string) {
-  if (["active", "available", "fulfilled", "resolved_automatic", "resolved_manual"].includes(status)) {
+  if (
+    ["active", "available", "fulfilled", "resolved_automatic", "resolved_manual"].includes(status)
+  ) {
     return "bg-emerald-500/15 text-emerald-300";
   }
   if (["paused", "reserved", "scheduled", "in_review"].includes(status)) {
@@ -87,7 +89,9 @@ export function statusTone(status: string) {
 
 export function StatusBadge({ status, label }: { status: string; label?: string }) {
   return (
-    <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${statusTone(status)}`}>
+    <span
+      className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${statusTone(status)}`}
+    >
       {label ??
         ruleStatusLabels[status] ??
         rewardStatusLabels[status] ??
@@ -151,7 +155,9 @@ export function rewardBenefitLabel(kind: string, value: unknown) {
   if (kind === "badge") {
     return String(definition.title ?? definition.label ?? "Insignia");
   }
-  return String(definition.label ?? definition.description ?? rewardKindLabels[kind] ?? "Beneficio");
+  return String(
+    definition.label ?? definition.description ?? rewardKindLabels[kind] ?? "Beneficio",
+  );
 }
 
 export function primaryConditionSummary(value: unknown) {

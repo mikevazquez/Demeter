@@ -89,11 +89,13 @@ function parseRuleDefinition(formData: FormData) {
   };
 
   if (rewardKind === "percentage_discount") benefitDefinition.percent = rewardValue;
-  if (rewardKind === "fixed_discount") benefitDefinition.amount_minor = Math.round(rewardValue * 100);
+  if (rewardKind === "fixed_discount")
+    benefitDefinition.amount_minor = Math.round(rewardValue * 100);
   if (rewardKind === "credits") benefitDefinition.credits = Math.max(1, Math.round(rewardValue));
   if (rewardKind === "validity_extension")
     benefitDefinition.days = Math.max(1, Math.round(rewardValue));
-  if (rewardKind === "surcharge_waiver") benefitDefinition.waiver = textValue(formData, "reward_note") || "surcharge";
+  if (rewardKind === "surcharge_waiver")
+    benefitDefinition.waiver = textValue(formData, "reward_note") || "surcharge";
   if (rewardKind === "special_benefit" || rewardKind === "custom_manual")
     benefitDefinition.label = textValue(formData, "reward_note") || "Beneficio especial";
   if (rewardKind === "badge") benefitDefinition.title = textValue(formData, "reward_note") || name;
@@ -181,7 +183,9 @@ export async function createRewardRuleAction(formData: FormData) {
   });
 
   if (error || typeof data !== "string") {
-    redirect(`/admin/recompensas/reglas/nueva?error=${encodeURIComponent(error?.message ?? "reward_rule_create_failed")}`);
+    redirect(
+      `/admin/recompensas/reglas/nueva?error=${encodeURIComponent(error?.message ?? "reward_rule_create_failed")}`,
+    );
   }
 
   revalidateRewards();
@@ -197,7 +201,9 @@ export async function updateRewardRuleAction(formData: FormData) {
     parsed = parseRuleDefinition(formData);
   } catch (error) {
     const message = error instanceof Error ? error.message : "reward_rule_invalid";
-    redirect(`/admin/recompensas/reglas/${encodeURIComponent(ruleId)}/editar?error=${encodeURIComponent(message)}`);
+    redirect(
+      `/admin/recompensas/reglas/${encodeURIComponent(ruleId)}/editar?error=${encodeURIComponent(message)}`,
+    );
   }
 
   const { supabase } = await getAdminContext(CAPABILITIES.REWARDS_MANAGE);
@@ -262,7 +268,8 @@ export async function duplicateRewardRuleAction(formData: FormData) {
     p_rule_id: ruleId,
   });
 
-  if (error || typeof data !== "string") redirect(ruleUrl(ruleId, { error: error?.message ?? "duplicate_failed" }));
+  if (error || typeof data !== "string")
+    redirect(ruleUrl(ruleId, { error: error?.message ?? "duplicate_failed" }));
 
   revalidateRewards();
   redirect(ruleUrl(data, { saved: "duplicated" }));
@@ -276,7 +283,9 @@ export async function grantManualRewardAction(formData: FormData) {
   const validityDays = optionalInteger(formData, "validity_days");
 
   if (!studentId || !rewardKinds.has(kind) || !reason) {
-    redirect(`/admin/recompensas/alumnas/${encodeURIComponent(studentId)}?error=manual_reward_invalid`);
+    redirect(
+      `/admin/recompensas/alumnas/${encodeURIComponent(studentId)}?error=manual_reward_invalid`,
+    );
   }
 
   const benefit: Record<string, unknown> = {

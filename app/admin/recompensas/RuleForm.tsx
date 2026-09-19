@@ -322,7 +322,7 @@ export function RuleForm({
                 reward.percent ??
                   (typeof reward.amount_minor === "number"
                     ? Number(reward.amount_minor) / 100
-                    : reward.credits ?? reward.days ?? 1),
+                    : (reward.credits ?? reward.days ?? 1)),
               )}
               className="rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 text-white"
             />

@@ -5,7 +5,14 @@ import { getAdminContext } from "@/lib/auth/admin-context";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 
 import { grantManualRewardAction } from "../../actions";
-import { EmptyState, MetricCard, StatusBadge, formatDateTime, rewardBenefitLabel, rewardDefinitionLabel } from "../../ui";
+import {
+  EmptyState,
+  MetricCard,
+  StatusBadge,
+  formatDateTime,
+  rewardBenefitLabel,
+  rewardDefinitionLabel,
+} from "../../ui";
 
 export default async function StudentRewardsProfilePage({
   params,
@@ -79,9 +86,19 @@ export default async function StudentRewardsProfilePage({
         .from("reward_rule_versions")
         .select("rule_id,version_number,name,family,human_summary")
         .in("rule_id", ruleIds)
-    : { data: [] as Array<{ rule_id: string; version_number: number; name: string; family: string; human_summary: string }> };
+    : {
+        data: [] as Array<{
+          rule_id: string;
+          version_number: number;
+          name: string;
+          family: string;
+          human_summary: string;
+        }>,
+      };
 
-  const versionMap = new Map((versions ?? []).map((version) => [`${version.rule_id}:${version.version_number}`, version]));
+  const versionMap = new Map(
+    (versions ?? []).map((version) => [`${version.rule_id}:${version.version_number}`, version]),
+  );
   const ruleMap = new Map((rules ?? []).map((rule) => [rule.id, rule]));
   const available = rewards.filter((reward) => reward.status === "available");
   const openIncidents = incidents.filter((incident) => incident.status !== "closed");
@@ -94,45 +111,67 @@ export default async function StudentRewardsProfilePage({
   return (
     <main className="dashboard-shell space-y-6">
       <header>
-        <Link href={`/admin/alumnas/${student.id}`} className="mb-3 inline-flex text-sm font-semibold text-zinc-400 hover:text-white">
+        <Link
+          href={`/admin/alumnas/${student.id}`}
+          className="mb-3 inline-flex text-sm font-semibold text-zinc-400 hover:text-white"
+        >
           ← Perfil de alumna
         </Link>
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <p className="eyebrow">PERFIL REWARDS</p>
             <h1 className="dashboard-title">{student.full_name}</h1>
-            <p className="mt-2 text-sm text-zinc-400">{student.email ?? "Sin correo"} · {student.lifecycle_status}</p>
+            <p className="mt-2 text-sm text-zinc-400">
+              {student.email ?? "Sin correo"} · {student.lifecycle_status}
+            </p>
           </div>
           {canManage ? (
-            <a href="#recompensa-manual" className="rounded-xl bg-fuchsia-600 px-4 py-2.5 text-sm font-semibold text-white">
+            <a
+              href="#recompensa-manual"
+              className="rounded-xl bg-fuchsia-600 px-4 py-2.5 text-sm font-semibold text-white"
+            >
               + Otorgar recompensa
             </a>
           ) : null}
         </div>
       </header>
 
-      {query.saved ? <div className="notice success">Recompensa manual otorgada y auditada.</div> : null}
-      {query.error ? <div className="notice error">No se pudo completar la acción: {query.error}</div> : null}
+      {query.saved ? (
+        <div className="notice success">Recompensa manual otorgada y auditada.</div>
+      ) : null}
+      {query.error ? (
+        <div className="notice error">No se pudo completar la acción: {query.error}</div>
+      ) : null}
 
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <MetricCard label="Disponibles" value={available.length} />
-        <MetricCard label="Progresos activos" value={cycles.filter((cycle) => ["open", "frozen"].includes(cycle.status)).length} />
+        <MetricCard
+          label="Progresos activos"
+          value={cycles.filter((cycle) => ["open", "frozen"].includes(cycle.status)).length}
+        />
         <MetricCard label="Logros" value={achievements.length} />
         <MetricCard label="Incidencias abiertas" value={openIncidents.length} />
       </section>
 
       <section className="grid gap-4 xl:grid-cols-[1.2fr_.8fr]">
         <article className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-fuchsia-300">RECOMPENSAS DISPONIBLES</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-fuchsia-300">
+            RECOMPENSAS DISPONIBLES
+          </p>
           <h2 className="mt-1 text-xl font-semibold text-white">Listas para usar</h2>
           <div className="mt-5 grid gap-3">
             {!available.length ? (
               <EmptyState title="No tiene recompensas disponibles" />
             ) : (
               available.map((reward) => (
-                <div key={reward.id} className="rounded-xl border border-fuchsia-500/20 bg-fuchsia-500/[0.05] p-4">
+                <div
+                  key={reward.id}
+                  className="rounded-xl border border-fuchsia-500/20 bg-fuchsia-500/[0.05] p-4"
+                >
                   <div className="flex items-start justify-between gap-3">
-                    <strong className="text-base text-white">{rewardDefinitionLabel(reward.benefit_definition)}</strong>
+                    <strong className="text-base text-white">
+                      {rewardDefinitionLabel(reward.benefit_definition)}
+                    </strong>
                     <StatusBadge status={reward.status} />
                   </div>
                   <p className="mt-2 text-xs text-zinc-500">
@@ -146,7 +185,9 @@ export default async function StudentRewardsProfilePage({
         </article>
 
         <article className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-fuchsia-300">FIDELIDAD</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-fuchsia-300">
+            FIDELIDAD
+          </p>
           <h2 className="mt-1 text-xl font-semibold text-white">Continuidad</h2>
           {loyaltyParticipation ? (
             <div className="mt-5">
@@ -156,14 +197,18 @@ export default async function StudentRewardsProfilePage({
               </p>
             </div>
           ) : (
-            <div className="mt-5"><EmptyState title="Sin regla de fidelidad activa" /></div>
+            <div className="mt-5">
+              <EmptyState title="Sin regla de fidelidad activa" />
+            </div>
           )}
         </article>
       </section>
 
       <section className="grid gap-4 lg:grid-cols-2">
         <article className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-fuchsia-300">PROGRESO ACTIVO</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-fuchsia-300">
+            PROGRESO ACTIVO
+          </p>
           <h2 className="mt-1 text-xl font-semibold text-white">Reglas y retos</h2>
           <div className="mt-5 grid gap-2">
             {!participations.length ? (
@@ -171,9 +216,15 @@ export default async function StudentRewardsProfilePage({
             ) : (
               participations.slice(0, 8).map((participation) => {
                 const rule = ruleMap.get(participation.rule_id);
-                const version = rule ? versionMap.get(`${rule.id}:${rule.current_version_number}`) : null;
+                const version = rule
+                  ? versionMap.get(`${rule.id}:${rule.current_version_number}`)
+                  : null;
                 return (
-                  <Link key={participation.id} href={`/admin/recompensas/reglas/${participation.rule_id}/participantes/${student.id}`} className="rounded-xl border border-white/10 bg-black/15 p-4">
+                  <Link
+                    key={participation.id}
+                    href={`/admin/recompensas/reglas/${participation.rule_id}/participantes/${student.id}`}
+                    className="rounded-xl border border-white/10 bg-black/15 p-4"
+                  >
                     <div className="flex items-center justify-between gap-3">
                       <strong className="text-sm text-white">{version?.name ?? "Regla"}</strong>
                       <StatusBadge status={participation.status} />
@@ -187,14 +238,19 @@ export default async function StudentRewardsProfilePage({
         </article>
 
         <article className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-fuchsia-300">LOGROS</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-fuchsia-300">
+            LOGROS
+          </p>
           <h2 className="mt-1 text-xl font-semibold text-white">Trayectoria</h2>
           <div className="mt-5 grid gap-2">
             {!achievements.length ? (
               <EmptyState title="Todavía no ha desbloqueado logros" />
             ) : (
               achievements.slice(0, 8).map((achievement) => (
-                <div key={achievement.id} className="rounded-xl border border-white/10 bg-black/15 p-4">
+                <div
+                  key={achievement.id}
+                  className="rounded-xl border border-white/10 bg-black/15 p-4"
+                >
                   <strong className="text-sm text-white">{achievement.title_snapshot}</strong>
                   <p className="mt-1 text-xs text-zinc-500">
                     {achievement.level_key ? `Nivel ${achievement.level_key} · ` : ""}
@@ -209,7 +265,9 @@ export default async function StudentRewardsProfilePage({
 
       <section className="grid gap-4 lg:grid-cols-2">
         <article className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-fuchsia-300">HISTORIAL RECIENTE</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-fuchsia-300">
+            HISTORIAL RECIENTE
+          </p>
           <div className="mt-5 grid gap-2">
             {!rewards.length ? (
               <EmptyState title="Sin historial de recompensas" />
@@ -217,7 +275,9 @@ export default async function StudentRewardsProfilePage({
               rewards.slice(0, 10).map((reward) => (
                 <div key={reward.id} className="rounded-xl border border-white/10 bg-black/15 p-4">
                   <div className="flex items-center justify-between gap-3">
-                    <strong className="text-sm text-white">{rewardBenefitLabel(reward.kind, reward.benefit_definition)}</strong>
+                    <strong className="text-sm text-white">
+                      {rewardBenefitLabel(reward.kind, reward.benefit_definition)}
+                    </strong>
                     <StatusBadge status={reward.status} />
                   </div>
                   <p className="mt-1 text-xs text-zinc-500">{formatDateTime(reward.created_at)}</p>
@@ -228,13 +288,19 @@ export default async function StudentRewardsProfilePage({
         </article>
 
         <article className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-fuchsia-300">INCIDENCIAS</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-fuchsia-300">
+            INCIDENCIAS
+          </p>
           <div className="mt-5 grid gap-2">
             {!openIncidents.length ? (
               <EmptyState title="Sin incidencias abiertas" />
             ) : (
               openIncidents.slice(0, 8).map((incident) => (
-                <Link key={incident.id} href={`/admin/recompensas/incidencias/${incident.id}`} className="rounded-xl border border-white/10 bg-black/15 p-4">
+                <Link
+                  key={incident.id}
+                  href={`/admin/recompensas/incidencias/${incident.id}`}
+                  className="rounded-xl border border-white/10 bg-black/15 p-4"
+                >
                   <div className="flex items-center justify-between gap-3">
                     <strong className="text-sm text-white">{incident.summary}</strong>
                     <StatusBadge status={incident.status} />
@@ -248,17 +314,27 @@ export default async function StudentRewardsProfilePage({
       </section>
 
       {canManage ? (
-        <section id="recompensa-manual" className="rounded-2xl border border-fuchsia-500/20 bg-fuchsia-500/[0.04] p-5">
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-fuchsia-300">EXCEPCIÓN ADMINISTRATIVA</p>
+        <section
+          id="recompensa-manual"
+          className="rounded-2xl border border-fuchsia-500/20 bg-fuchsia-500/[0.04] p-5"
+        >
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-fuchsia-300">
+            EXCEPCIÓN ADMINISTRATIVA
+          </p>
           <h2 className="mt-1 text-xl font-semibold text-white">Otorgar recompensa manual</h2>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-400">
-            Requiere motivo y queda marcada como manual. No modifica el contador ni el progreso de ninguna regla.
+            Requiere motivo y queda marcada como manual. No modifica el contador ni el progreso de
+            ninguna regla.
           </p>
           <form action={grantManualRewardAction} className="mt-5 grid gap-3 md:grid-cols-2">
             <input type="hidden" name="student_id" value={student.id} />
             <label className="grid gap-2 text-sm text-zinc-300">
               Tipo
-              <select name="kind" defaultValue="credits" className="rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 text-white">
+              <select
+                name="kind"
+                defaultValue="credits"
+                className="rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 text-white"
+              >
                 <option value="percentage_discount">% de descuento</option>
                 <option value="fixed_discount">Descuento fijo</option>
                 <option value="credits">Créditos</option>
@@ -270,22 +346,48 @@ export default async function StudentRewardsProfilePage({
             </label>
             <label className="grid gap-2 text-sm text-zinc-300">
               Valor
-              <input name="value" type="number" min="0" step="1" defaultValue="1" className="rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 text-white" />
+              <input
+                name="value"
+                type="number"
+                min="0"
+                step="1"
+                defaultValue="1"
+                className="rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 text-white"
+              />
             </label>
             <label className="grid gap-2 text-sm text-zinc-300">
               Vigencia en días
-              <input name="validity_days" type="number" min="0" step="1" placeholder="Sin vencimiento" className="rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 text-white" />
+              <input
+                name="validity_days"
+                type="number"
+                min="0"
+                step="1"
+                placeholder="Sin vencimiento"
+                className="rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 text-white"
+              />
             </label>
             <label className="grid gap-2 text-sm text-zinc-300">
               Nombre / detalle
-              <input name="label" placeholder="Ej. 1 crédito de cortesía" className="rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 text-white" />
+              <input
+                name="label"
+                placeholder="Ej. 1 crédito de cortesía"
+                className="rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 text-white"
+              />
             </label>
             <label className="grid gap-2 text-sm text-zinc-300 md:col-span-2">
               Motivo obligatorio
-              <textarea name="reason" required rows={2} placeholder="Explica por qué se otorga esta excepción." className="rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 text-white" />
+              <textarea
+                name="reason"
+                required
+                rows={2}
+                placeholder="Explica por qué se otorga esta excepción."
+                className="rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 text-white"
+              />
             </label>
             <div className="md:col-span-2 flex justify-end">
-              <button className="rounded-xl bg-fuchsia-600 px-4 py-2.5 text-sm font-semibold text-white">Otorgar y auditar</button>
+              <button className="rounded-xl bg-fuchsia-600 px-4 py-2.5 text-sm font-semibold text-white">
+                Otorgar y auditar
+              </button>
             </div>
           </form>
         </section>

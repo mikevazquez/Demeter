@@ -4,7 +4,14 @@ import { notFound } from "next/navigation";
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 
-import { EmptyState, StatusBadge, formatDateTime, primaryConditionSummary, progressSummary, rewardDefinitionLabel } from "../../../../ui";
+import {
+  EmptyState,
+  StatusBadge,
+  formatDateTime,
+  primaryConditionSummary,
+  progressSummary,
+  rewardDefinitionLabel,
+} from "../../../../ui";
 
 export default async function RewardStudentProgressPage({
   params,
@@ -52,7 +59,9 @@ export default async function RewardStudentProgressPage({
         .order("created_at", { ascending: false }),
       ctx.supabase
         .from("reward_progress_evaluations")
-        .select("id,cycle_id,evaluation_kind,outcome,candidate_occurred_at,condition_results,progress,evidence,fulfilled,reason_code,evaluated_at")
+        .select(
+          "id,cycle_id,evaluation_kind,outcome,candidate_occurred_at,condition_results,progress,evidence,fulfilled,reason_code,evaluated_at",
+        )
         .eq("participation_id", participation.id)
         .order("evaluated_at", { ascending: false })
         .limit(50),
@@ -73,7 +82,16 @@ export default async function RewardStudentProgressPage({
         .select("id,cycle_id,progress,evidence_summary,source_through,calculated_at")
         .in("cycle_id", cycleIds)
         .order("calculated_at", { ascending: false })
-    : { data: [] as Array<{ id: string; cycle_id: string; progress: unknown; evidence_summary: unknown; source_through: string | null; calculated_at: string }> };
+    : {
+        data: [] as Array<{
+          id: string;
+          cycle_id: string;
+          progress: unknown;
+          evidence_summary: unknown;
+          source_through: string | null;
+          calculated_at: string;
+        }>,
+      };
 
   const latestCycle = cycles?.[0] ?? null;
   const latestSnapshot = latestCycle
@@ -87,7 +105,10 @@ export default async function RewardStudentProgressPage({
   return (
     <main className="dashboard-shell space-y-6">
       <header>
-        <Link href={`/admin/recompensas/reglas/${rule.id}/participantes`} className="mb-3 inline-flex text-sm font-semibold text-zinc-400 hover:text-white">
+        <Link
+          href={`/admin/recompensas/reglas/${rule.id}/participantes`}
+          className="mb-3 inline-flex text-sm font-semibold text-zinc-400 hover:text-white"
+        >
           ← Participantes
         </Link>
         <div className="flex flex-wrap items-start justify-between gap-4">
@@ -101,14 +122,20 @@ export default async function RewardStudentProgressPage({
       </header>
 
       <section className="rounded-2xl border border-fuchsia-500/20 bg-fuchsia-500/[0.05] p-5">
-        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-fuchsia-300">CONDICIÓN</p>
-        <h2 className="mt-2 text-lg font-semibold text-white">{primaryConditionSummary(version.condition_definition)}</h2>
+        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-fuchsia-300">
+          CONDICIÓN
+        </p>
+        <h2 className="mt-2 text-lg font-semibold text-white">
+          {primaryConditionSummary(version.condition_definition)}
+        </h2>
         <p className="mt-2 text-sm leading-6 text-zinc-400">{version.human_summary}</p>
       </section>
 
       <section className="grid gap-4 lg:grid-cols-[1.2fr_.8fr]">
         <article className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-fuchsia-300">PROGRESO ACTUAL</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-fuchsia-300">
+            PROGRESO ACTUAL
+          </p>
           <h2 className="mt-1 text-xl font-semibold text-white">
             {latestSnapshot ? progressSummary(latestSnapshot.progress) : "Sin progreso calculado"}
           </h2>
@@ -122,32 +149,60 @@ export default async function RewardStudentProgressPage({
         </article>
 
         <article className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-fuchsia-300">CICLO</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-fuchsia-300">
+            CICLO
+          </p>
           <div className="mt-4 grid gap-3 text-sm">
-            <div className="flex justify-between gap-3"><span className="text-zinc-500">Versión</span><strong className="text-white">V{latestCycle?.version_number ?? participation.joined_version_number}</strong></div>
-            <div className="flex justify-between gap-3"><span className="text-zinc-500">Inicio</span><strong className="text-white">{formatDateTime(latestCycle?.window_start_at)}</strong></div>
-            <div className="flex justify-between gap-3"><span className="text-zinc-500">Fin</span><strong className="text-white">{formatDateTime(latestCycle?.window_end_at)}</strong></div>
-            <div className="flex justify-between gap-3"><span className="text-zinc-500">Cumplido</span><strong className="text-white">{formatDateTime(latestCycle?.fulfilled_at)}</strong></div>
+            <div className="flex justify-between gap-3">
+              <span className="text-zinc-500">Versión</span>
+              <strong className="text-white">
+                V{latestCycle?.version_number ?? participation.joined_version_number}
+              </strong>
+            </div>
+            <div className="flex justify-between gap-3">
+              <span className="text-zinc-500">Inicio</span>
+              <strong className="text-white">{formatDateTime(latestCycle?.window_start_at)}</strong>
+            </div>
+            <div className="flex justify-between gap-3">
+              <span className="text-zinc-500">Fin</span>
+              <strong className="text-white">{formatDateTime(latestCycle?.window_end_at)}</strong>
+            </div>
+            <div className="flex justify-between gap-3">
+              <span className="text-zinc-500">Cumplido</span>
+              <strong className="text-white">{formatDateTime(latestCycle?.fulfilled_at)}</strong>
+            </div>
           </div>
         </article>
       </section>
 
       <section className="grid gap-4 lg:grid-cols-2">
         <article className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-fuchsia-300">DESGLOSE</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-fuchsia-300">
+            DESGLOSE
+          </p>
           <h2 className="mt-1 text-xl font-semibold text-white">Evaluaciones recientes</h2>
           <div className="mt-5 grid gap-2">
             {!(evaluations ?? []).length ? (
               <EmptyState title="Sin evaluaciones" />
             ) : (
               (evaluations ?? []).slice(0, 12).map((evaluation) => (
-                <div key={evaluation.id} className="rounded-xl border border-white/10 bg-black/15 p-4">
+                <div
+                  key={evaluation.id}
+                  className="rounded-xl border border-white/10 bg-black/15 p-4"
+                >
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <strong className="text-sm text-white">{evaluation.evaluation_kind}</strong>
-                    <StatusBadge status={evaluation.fulfilled ? "fulfilled" : evaluation.outcome} label={evaluation.fulfilled ? "Cumplida" : evaluation.outcome} />
+                    <StatusBadge
+                      status={evaluation.fulfilled ? "fulfilled" : evaluation.outcome}
+                      label={evaluation.fulfilled ? "Cumplida" : evaluation.outcome}
+                    />
                   </div>
-                  <p className="mt-2 text-xs text-zinc-500">{progressSummary(evaluation.progress)}</p>
-                  <p className="mt-1 text-xs text-zinc-600">{formatDateTime(evaluation.evaluated_at)}</p>
+                  <p className="mt-2 text-xs text-zinc-500">
+                    {progressSummary(evaluation.progress)}
+                  </p>
+                  <p className="mt-1 text-xs text-zinc-600">
+                    {formatDateTime(evaluation.evaluated_at)}
+                  </p>
                 </div>
               ))
             )}
@@ -155,19 +210,30 @@ export default async function RewardStudentProgressPage({
         </article>
 
         <article className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-fuchsia-300">NO CONTÓ / CORRECCIONES</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-fuchsia-300">
+            NO CONTÓ / CORRECCIONES
+          </p>
           <h2 className="mt-1 text-xl font-semibold text-white">Evidencia explicable</h2>
           <div className="mt-5 grid gap-2">
             {!ignored.length && !corrections.length ? (
               <EmptyState title="Sin excepciones ni correcciones" />
             ) : (
               [...ignored, ...corrections].slice(0, 12).map((evaluation) => (
-                <div key={evaluation.id} className="rounded-xl border border-white/10 bg-black/15 p-4">
+                <div
+                  key={evaluation.id}
+                  className="rounded-xl border border-white/10 bg-black/15 p-4"
+                >
                   <strong className="text-sm text-white">
-                    {evaluation.evaluation_kind === "recalculation" ? "Recálculo" : "Evento no contado"}
+                    {evaluation.evaluation_kind === "recalculation"
+                      ? "Recálculo"
+                      : "Evento no contado"}
                   </strong>
-                  <p className="mt-1 text-xs text-zinc-500">{evaluation.reason_code ?? "Sin motivo adicional"}</p>
-                  <p className="mt-1 text-xs text-zinc-600">{formatDateTime(evaluation.evaluated_at)}</p>
+                  <p className="mt-1 text-xs text-zinc-500">
+                    {evaluation.reason_code ?? "Sin motivo adicional"}
+                  </p>
+                  <p className="mt-1 text-xs text-zinc-600">
+                    {formatDateTime(evaluation.evaluated_at)}
+                  </p>
                 </div>
               ))
             )}
@@ -176,20 +242,35 @@ export default async function RewardStudentProgressPage({
       </section>
 
       <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
-        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-fuchsia-300">RECOMPENSA</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-fuchsia-300">
+          RECOMPENSA
+        </p>
         <h2 className="mt-1 text-xl font-semibold text-white">Resultado del cumplimiento</h2>
         <div className="mt-5 grid gap-3 md:grid-cols-2">
           {!(rewards ?? []).length ? (
-            <div className="md:col-span-2"><EmptyState title="Todavía no hay recompensa generada" /></div>
+            <div className="md:col-span-2">
+              <EmptyState title="Todavía no hay recompensa generada" />
+            </div>
           ) : (
             (rewards ?? []).map((reward) => (
-              <article key={reward.id} className="rounded-xl border border-white/10 bg-black/15 p-4">
+              <article
+                key={reward.id}
+                className="rounded-xl border border-white/10 bg-black/15 p-4"
+              >
                 <div className="flex items-start justify-between gap-3">
-                  <strong className="text-sm text-white">{rewardDefinitionLabel(reward.benefit_definition)}</strong>
+                  <strong className="text-sm text-white">
+                    {rewardDefinitionLabel(reward.benefit_definition)}
+                  </strong>
                   <StatusBadge status={reward.status} />
                 </div>
-                <p className="mt-2 text-xs text-zinc-500">Creada {formatDateTime(reward.created_at)}</p>
-                {reward.expires_at ? <p className="mt-1 text-xs text-zinc-500">Vence {formatDateTime(reward.expires_at)}</p> : null}
+                <p className="mt-2 text-xs text-zinc-500">
+                  Creada {formatDateTime(reward.created_at)}
+                </p>
+                {reward.expires_at ? (
+                  <p className="mt-1 text-xs text-zinc-500">
+                    Vence {formatDateTime(reward.expires_at)}
+                  </p>
+                ) : null}
               </article>
             ))
           )}

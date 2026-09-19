@@ -43,7 +43,9 @@ export default async function RewardParticipantsPage({
   const [{ data: students }, { data: cycles }, { data: incidents }] = await Promise.all([
     studentIds.length
       ? ctx.supabase.from("students").select("id,full_name,email").in("id", studentIds)
-      : Promise.resolve({ data: [] as Array<{ id: string; full_name: string; email: string | null }> }),
+      : Promise.resolve({
+          data: [] as Array<{ id: string; full_name: string; email: string | null }>,
+        }),
     studentIds.length
       ? ctx.supabase
           .from("reward_cycles")
@@ -51,7 +53,15 @@ export default async function RewardParticipantsPage({
           .eq("rule_id", rule.id)
           .in("student_id", studentIds)
           .order("updated_at", { ascending: false })
-      : Promise.resolve({ data: [] as Array<{ id: string; student_id: string; status: string; window_end_at: string | null; updated_at: string }> }),
+      : Promise.resolve({
+          data: [] as Array<{
+            id: string;
+            student_id: string;
+            status: string;
+            window_end_at: string | null;
+            updated_at: string;
+          }>,
+        }),
     studentIds.length
       ? ctx.supabase
           .from("reward_incidents")
@@ -59,7 +69,14 @@ export default async function RewardParticipantsPage({
           .eq("rule_id", rule.id)
           .in("student_id", studentIds)
           .not("status", "eq", "closed")
-      : Promise.resolve({ data: [] as Array<{ id: string; student_id: string | null; status: string; priority: string }> }),
+      : Promise.resolve({
+          data: [] as Array<{
+            id: string;
+            student_id: string | null;
+            status: string;
+            priority: string;
+          }>,
+        }),
   ]);
 
   const cycleIds = (cycles ?? []).map((cycle) => cycle.id);
@@ -74,11 +91,13 @@ export default async function RewardParticipantsPage({
   const studentMap = new Map((students ?? []).map((student) => [student.id, student]));
   const latestCycleByStudent = new Map<string, (typeof cycles)[number]>();
   for (const cycle of cycles ?? []) {
-    if (!latestCycleByStudent.has(cycle.student_id)) latestCycleByStudent.set(cycle.student_id, cycle);
+    if (!latestCycleByStudent.has(cycle.student_id))
+      latestCycleByStudent.set(cycle.student_id, cycle);
   }
   const latestSnapshotByCycle = new Map<string, (typeof snapshots)[number]>();
   for (const snapshot of snapshots ?? []) {
-    if (!latestSnapshotByCycle.has(snapshot.cycle_id)) latestSnapshotByCycle.set(snapshot.cycle_id, snapshot);
+    if (!latestSnapshotByCycle.has(snapshot.cycle_id))
+      latestSnapshotByCycle.set(snapshot.cycle_id, snapshot);
   }
   const incidentCountByStudent = new Map<string, number>();
   for (const incident of incidents ?? []) {
@@ -94,8 +113,12 @@ export default async function RewardParticipantsPage({
     const student = studentMap.get(participation.student_id);
     const matchesSearch =
       !q ||
-      String(student?.full_name ?? "").toLowerCase().includes(q) ||
-      String(student?.email ?? "").toLowerCase().includes(q);
+      String(student?.full_name ?? "")
+        .toLowerCase()
+        .includes(q) ||
+      String(student?.email ?? "")
+        .toLowerCase()
+        .includes(q);
     const matchesStatus = !query.status || participation.status === query.status;
     return matchesSearch && matchesStatus;
   });
@@ -110,7 +133,10 @@ export default async function RewardParticipantsPage({
   return (
     <main className="dashboard-shell space-y-6">
       <header>
-        <Link href={`/admin/recompensas/reglas/${rule.id}`} className="mb-3 inline-flex text-sm font-semibold text-zinc-400 hover:text-white">
+        <Link
+          href={`/admin/recompensas/reglas/${rule.id}`}
+          className="mb-3 inline-flex text-sm font-semibold text-zinc-400 hover:text-white"
+        >
           ← {version?.name ?? "Regla"}
         </Link>
         <p className="eyebrow">PARTICIPANTES</p>
@@ -121,15 +147,26 @@ export default async function RewardParticipantsPage({
       </header>
 
       <form className="grid gap-3 rounded-2xl border border-white/10 bg-white/[0.03] p-4 md:grid-cols-[1fr_auto_auto]">
-        <input name="q" defaultValue={query.q ?? ""} placeholder="Buscar alumna" className="rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 text-white" />
-        <select name="status" defaultValue={query.status ?? ""} className="rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 text-white">
+        <input
+          name="q"
+          defaultValue={query.q ?? ""}
+          placeholder="Buscar alumna"
+          className="rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 text-white"
+        />
+        <select
+          name="status"
+          defaultValue={query.status ?? ""}
+          className="rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 text-white"
+        >
           <option value="">Todos los estados</option>
           <option value="eligible">Elegible</option>
           <option value="in_progress">En progreso</option>
           <option value="fulfilled">Cumplida</option>
           <option value="closed">Cerrada</option>
         </select>
-        <button className="rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2.5 text-sm font-semibold text-white">Filtrar</button>
+        <button className="rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2.5 text-sm font-semibold text-white">
+          Filtrar
+        </button>
       </form>
 
       {!rows.length ? (
@@ -156,10 +193,15 @@ export default async function RewardParticipantsPage({
                 </div>
                 <div>
                   <p className="text-sm text-zinc-300">
-                    {snapshot ? progressSummary(snapshot.progress) : "Aún no hay snapshot de progreso."}
+                    {snapshot
+                      ? progressSummary(snapshot.progress)
+                      : "Aún no hay snapshot de progreso."}
                   </p>
                   <p className="mt-1 text-xs text-zinc-500">
-                    Último evento {cycle ? formatDateTime(cycle.updated_at) : formatDateTime(participation.updated_at)}
+                    Último evento{" "}
+                    {cycle
+                      ? formatDateTime(cycle.updated_at)
+                      : formatDateTime(participation.updated_at)}
                     {cycle?.window_end_at ? ` · cierra ${formatDateTime(cycle.window_end_at)}` : ""}
                   </p>
                 </div>
