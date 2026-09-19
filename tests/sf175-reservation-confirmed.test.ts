@@ -3,6 +3,7 @@ import { join } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
+import { triggerReservationConfirmedAutomation } from "../lib/automations/reservation-confirmed-client";
 import {
   buildReservationConfirmedConditions,
   buildReservationConfirmedVariables,
@@ -11,7 +12,6 @@ import {
   reservationConfirmedIdempotencyKey,
   RESERVATION_CONFIRMED_TEMPLATE,
 } from "../supabase/functions/process-booking-created/reservation-confirmed";
-import { triggerReservationConfirmedAutomation } from "../lib/automations/reservation-confirmed-client";
 
 describe("SF-175 reservation confirmed", () => {
   it("builds the approved reservation variables in the studio timezone", () => {
@@ -52,7 +52,6 @@ describe("SF-175 reservation confirmed", () => {
         reason_code: "whatsapp_contact_invalid",
       }),
     );
-
     expect(conditions.find((condition) => condition.key === "reservation.valid")?.passed).toBe(
       true,
     );
@@ -88,31 +87,49 @@ describe("SF-175 reservation confirmed", () => {
     expect(provider.deliveries).toHaveLength(1);
   });
 
-  it("forwards the authenticated access token to the Edge Function", async () => {
-    let authorization: string | undefined;
+  it("invokes the authenticated Supabase client directly", async () => {
+    let functionName = "";
+    let body: Record<string, unknown> | undefined;
 
     const client = {
-      auth: {
-        async getSession() {
-          return {
-            data: { session: { access_token: "uat-access-token" } },
-            error: null,
-          };
-        },
-      },
       functions: {
         async invoke<T>(
-          _functionName: string,
-          options: {
-            body: Record<string, unknown>;
-            headers?: Record<string, string>;
-          },
+          receivedFunctionName: string,
+          options: { body: Record<string, unknown> },
         ) {
-          authorization = options.headers?.Authorization;
-          return {
-            data: { ok: true } as T,
-            error: null,
-          };
+          functionName = receivedFunctionName;
+          body = options.body;
+          return { data: { ok: true } as T, error: null };
+        },
+      },
+    };
+
+    await expect(triggerReservationConfirmedAutomation(client, " reservation-123 ")).resolves.toBe(
+      true,
+    );
+    expect(functionName).toBe("process-booking-created");
+    expect(body).toEqual({ reservationId: "reservation-123" });
+  });
+
+  it("retries one transient Edge failure without duplicating the booking", async () => {
+    let calls = 0;
+    const client = {
+      functions: {
+        async invoke<T>() {
+          calls += 1;
+          if (calls === 1) {
+            return {
+              data: null as T | null,
+              error: {
+                message: "temporary edge failure",
+                context: new Response(JSON.stringify({ error: "temporary_edge_failure" }), {
+                  status: 500,
+                  headers: { "content-type": "application/json" },
+                }),
+              },
+            };
+          }
+          return { data: { ok: true } as T, error: null };
         },
       },
     };
@@ -120,22 +137,41 @@ describe("SF-175 reservation confirmed", () => {
     await expect(triggerReservationConfirmedAutomation(client, "reservation-123")).resolves.toBe(
       true,
     );
-
-    expect(authorization).toBe("Bearer uat-access-token");
+    expect(calls).toBe(2);
   });
 
-  it("keeps automation delivery non-blocking for a successful booking", async () => {
+  it("does not retry authorization failures", async () => {
+    let calls = 0;
     const client = {
-      auth: {
-        async getSession() {
+      functions: {
+        async invoke<T>() {
+          calls += 1;
           return {
-            data: { session: { access_token: "uat-access-token" } },
-            error: null,
+            data: null as T | null,
+            error: {
+              message: "forbidden",
+              context: new Response(JSON.stringify({ error: "forbidden" }), {
+                status: 403,
+                headers: { "content-type": "application/json" },
+              }),
+            },
           };
         },
       },
+    };
+
+    await expect(triggerReservationConfirmedAutomation(client, "reservation-123")).resolves.toBe(
+      false,
+    );
+    expect(calls).toBe(1);
+  });
+
+  it("keeps automation delivery non-blocking after repeated transport failure", async () => {
+    let calls = 0;
+    const client = {
       functions: {
         async invoke<T>() {
+          calls += 1;
           return {
             data: null as T | null,
             error: { message: "temporary automation failure" },
@@ -147,11 +183,12 @@ describe("SF-175 reservation confirmed", () => {
     await expect(triggerReservationConfirmedAutomation(client, "reservation-123")).resolves.toBe(
       false,
     );
+    expect(calls).toBe(2);
   });
 
   it("emits booking.created only after the reservation insert", () => {
     const migration = readFileSync(
-      join(process.cwd(), "supabase/migrations/20260919153000_sf175_reservation_confirmed.sql"),
+      join(process.cwd(), "supabase/migrations/20260919151340_sf175_reservation_confirmed.sql"),
       "utf8",
     );
 
@@ -177,21 +214,35 @@ describe("SF-175 reservation confirmed", () => {
     }
   });
 
-  it("keeps the processor on SF-165, SF-166 and the mock provider contract", () => {
+  it("keeps authenticated Edge gateway verification enabled", () => {
+    const config = readFileSync(join(process.cwd(), "supabase/config.toml"), "utf8");
+    expect(config).toContain(
+      "[functions.process-booking-created]\nverify_jwt = true",
+    );
+  });
+
+  it("hardens the Edge processor lifecycle and pins Supabase dependencies", () => {
     const source = readFileSync(
       join(process.cwd(), "supabase/functions/process-booking-created/index.ts"),
       "utf8",
     );
 
+    expect(source).toContain('npm:@supabase/server@1.7.0');
+    expect(source).toContain('npm:@supabase/supabase-js@2.116.0');
+    expect(source).toContain("context.userClaims?.id");
+    expect(source).not.toContain(".auth.getUser()");
     expect(source).toContain("record_automation_eligibility_evaluation");
     expect(source).toContain("system_create_automation_execution");
     expect(source).toContain("system_start_automation_execution_attempt");
     expect(source).toContain("system_mark_automation_execution_sent");
     expect(source).toContain("system_mark_automation_execution_accepted");
+    expect(source).toContain("domain_event_claim_failed");
+    expect(source).toContain("execution_sent_persist_failed");
+    expect(source).toContain("execution_accept_persist_failed");
+    expect(source).not.toContain("system_mark_automation_instance_executed");
     expect(source).toContain("MockMessagingProvider");
     expect(source).toContain("context.supabaseAdmin");
     expect(source).not.toContain("SUPABASE_SERVICE_ROLE_KEY");
-    expect(source).not.toContain("createClient(supabaseUrl, serviceRoleKey");
     expect(source).not.toContain("ASISTIAN_");
   });
 });
