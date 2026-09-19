@@ -40,7 +40,7 @@ export async function bookStudentFromToday(formData: FormData) {
   const { supabase, studio, can } = await getAdminContext();
   const { data: session } = await supabase
     .from("class_sessions")
-    .select("id")
+    .select("id, starts_at, status")
     .eq("id", sessionId)
     .eq("studio_id", studio.id)
     .single();
@@ -51,6 +51,34 @@ export async function bookStudentFromToday(formData: FormData) {
 
   if (!can(CAPABILITIES.SCHEDULE_WRITE)) {
     redirect(withQuery(sessionReturnUrl(returnDate, sessionId), "error", "forbidden"));
+  }
+
+  const classIsInOperation =
+    session.status === "scheduled" && new Date(session.starts_at).getTime() <= Date.now();
+
+  if (classIsInOperation) {
+    if (!can(CAPABILITIES.ATTENDANCE_WRITE)) {
+      redirect(withQuery(sessionReturnUrl(returnDate, sessionId), "error", "forbidden"));
+    }
+
+    const { data, error } = await supabase.rpc("add_existing_walkin_student", {
+      target_session_id: sessionId,
+      target_student_id: studentId,
+    });
+
+    if (error) {
+      redirect(withQuery(sessionReturnUrl(returnDate, sessionId), "error", error.message));
+    }
+
+    const result = (data ?? {}) as { commercial_pending?: boolean };
+    refreshSession(sessionId);
+    redirect(
+      withQuery(
+        sessionReturnUrl(returnDate, sessionId),
+        "created",
+        result.commercial_pending ? "walkin-existing" : "walkin-covered",
+      ),
+    );
   }
 
   const { data: eligibility, error: eligibilityError } = await supabase.rpc("booking_eligibility", {
@@ -92,7 +120,7 @@ export async function bookStudentFromToday(formData: FormData) {
     redirect(withQuery(sessionReturnUrl(returnDate, sessionId), "error", "forbidden"));
   }
 
-  const { error } = await supabase.rpc("add_existing_walkin_student", {
+  const { data: walkin, error } = await supabase.rpc("add_existing_walkin_student", {
     target_session_id: sessionId,
     target_student_id: studentId,
   });
@@ -101,8 +129,15 @@ export async function bookStudentFromToday(formData: FormData) {
     redirect(withQuery(sessionReturnUrl(returnDate, sessionId), "error", error.message));
   }
 
+  const walkinResult = (walkin ?? {}) as { commercial_pending?: boolean };
   refreshSession(sessionId);
-  redirect(withQuery(sessionReturnUrl(returnDate, sessionId), "created", "walkin-existing"));
+  redirect(
+    withQuery(
+      sessionReturnUrl(returnDate, sessionId),
+      "created",
+      walkinResult.commercial_pending ? "walkin-existing" : "walkin-covered",
+    ),
+  );
 }
 
 export async function cancelReservationFromToday(formData: FormData) {

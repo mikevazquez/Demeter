@@ -2,6 +2,8 @@
 
 import { useActionState } from "react";
 
+import PendingActionButton from "@/app/admin/components/PendingActionButton";
+
 import {
   addCoachExistingWalkinAction,
   createCoachWalkinAction,
@@ -76,15 +78,19 @@ export function CoachWalkinForm({ sessionId }: { sessionId: string }) {
               Alumna encontrada
             </p>
             <p className="mt-1 font-semibold text-white">{lookup.studentName}</p>
+            <p className="mt-2 text-sm leading-6 text-emerald-100/80">
+              Al agregarla, Studio Flow usará su cobertura vigente si aplica. Sólo las excepciones
+              comerciales ya aprobadas quedan pendientes y nunca se crea una compra automática.
+            </p>
             <form action={addCoachExistingWalkinAction} className="mt-4">
               <input type="hidden" name="session_id" value={sessionId} />
               <input type="hidden" name="student_id" value={lookup.studentId} />
-              <button
-                type="submit"
+              <PendingActionButton
+                pendingLabel="Agregando…"
                 className="w-full rounded-xl bg-emerald-500 px-4 py-3 text-sm font-semibold text-black transition hover:bg-emerald-400"
               >
                 Agregar a esta clase
-              </button>
+              </PendingActionButton>
             </form>
           </div>
         ) : null}
@@ -137,12 +143,12 @@ export function CoachWalkinForm({ sessionId }: { sessionId: string }) {
               className="mt-2 w-full rounded-xl border border-white/10 bg-black/20 px-3 py-3 text-white outline-none placeholder:text-zinc-600 focus:border-fuchsia-400/50"
             />
           </div>
-          <button
-            type="submit"
+          <PendingActionButton
+            pendingLabel="Creando…"
             className="w-full rounded-xl border border-fuchsia-400/30 bg-fuchsia-500/10 px-4 py-3 text-sm font-semibold text-fuchsia-100 transition hover:bg-fuchsia-500/20"
           >
             Crear y agregar a la clase
-          </button>
+          </PendingActionButton>
         </form>
       </section>
     </div>
