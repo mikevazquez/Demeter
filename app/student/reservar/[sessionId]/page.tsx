@@ -156,8 +156,7 @@ export default async function StudentSessionDetailPage({
           <p className="text-sm font-semibold text-amber-100">{bookingReasonCopy(reason)}</p>
           {showDropIn ? (
             <p className="mt-2 text-xs leading-5 text-zinc-400">
-              Esta actividad tiene una clase suelta configurada en{" "}
-              {formatMoney(session.drop_in_price_minor ?? 0)} MXN.
+              Clase suelta: {formatMoney(session.drop_in_price_minor ?? 0)} MXN.
             </p>
           ) : (
             <p className="mt-2 text-xs leading-5 text-zinc-400">
