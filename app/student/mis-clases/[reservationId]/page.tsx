@@ -73,9 +73,7 @@ export default async function StudentReservationDetailPage({
               <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-fuchsia-300">
                 {item.discipline}
               </p>
-              <h1 className="mt-1 text-2xl font-semibold text-white">
-                {item.activity}
-              </h1>
+              <h1 className="mt-1 text-2xl font-semibold text-white">{item.activity}</h1>
             </div>
             <span
               className={`rounded-full border px-2.5 py-1 text-[10px] font-semibold ${statusClass(item.status)}`}
@@ -91,20 +89,14 @@ export default async function StudentReservationDetailPage({
 
         <dl className="grid grid-cols-2 gap-px bg-white/10">
           <div className="bg-[#111218] px-4 py-3">
-            <dt className="text-[10px] uppercase tracking-[0.14em] text-zinc-500">
-              Coach
-            </dt>
+            <dt className="text-[10px] uppercase tracking-[0.14em] text-zinc-500">Coach</dt>
             <dd className="mt-1 text-xs font-semibold text-white">
               {item.coach ?? "Por confirmar"}
             </dd>
           </div>
           <div className="bg-[#111218] px-4 py-3">
-            <dt className="text-[10px] uppercase tracking-[0.14em] text-zinc-500">
-              Espacio
-            </dt>
-            <dd className="mt-1 text-xs font-semibold text-white">
-              {item.space ?? "Estudio"}
-            </dd>
+            <dt className="text-[10px] uppercase tracking-[0.14em] text-zinc-500">Espacio</dt>
+            <dd className="mt-1 text-xs font-semibold text-white">{item.space ?? "Estudio"}</dd>
           </div>
         </dl>
       </section>
@@ -115,8 +107,8 @@ export default async function StudentReservationDetailPage({
             Gestionar reserva
           </p>
           <p className="mt-2 text-xs leading-5 text-zinc-400">
-            Puedes cancelar esta reserva. El resultado se procesará con las
-            políticas vigentes del estudio.
+            Puedes cancelar esta reserva. El resultado se procesará con las políticas vigentes del
+            estudio.
           </p>
           <Link
             href={`/student/mis-clases/${item.reservation_id}/cancelar`}
@@ -127,12 +119,10 @@ export default async function StudentReservationDetailPage({
         </section>
       ) : (
         <section className="rounded-3xl border border-white/10 bg-white/[0.03] p-4">
-          <p className="text-sm font-semibold text-white">
-            Esta reserva ya no está activa
-          </p>
+          <p className="text-sm font-semibold text-white">Esta reserva ya no está activa</p>
           <p className="mt-1.5 text-xs leading-5 text-zinc-400">
-            Su estado actual es {statusCopy[item.status] ?? item.status}. No hay
-            acciones pendientes.
+            Su estado actual es {statusCopy[item.status] ?? item.status}. No hay acciones
+            pendientes.
           </p>
           <Link
             href="/student/mis-clases?view=history"
