@@ -91,39 +91,12 @@ type MercadoPagoOrderResult = {
   error?: string;
 } | null;
 
-export async function bookStudentSessionInlineAction(sessionId: string) {
-  const normalizedSessionId = sessionId.trim();
-  if (!normalizedSessionId) {
-    return { ok: false as const, error: "session_required" };
-  }
-
-  const { supabase } = await getStudentPortalContext();
-  const { data, error } = await supabase.rpc("student_book_session", {
-    target_session_id: normalizedSessionId,
-  });
-
-  if (error) {
-    return { ok: false as const, error: errorCode(error, "booking_failed") };
-  }
-
-  const result = data as BookingRpcResult;
-  if (!result?.eligible || !result.reservation_id) {
-    return {
-      ok: false as const,
-      error: result?.reason_code ?? "booking_failed",
-    };
-  }
-
-  revalidateStudentBookingSurfaces();
-
-  return {
-    ok: true as const,
-    reservationId: result.reservation_id,
-  };
-}
-
 export async function bookStudentSessionAction(formData: FormData) {
   const sessionId = String(formData.get("session_id") ?? "").trim();
+  const rawDate = String(formData.get("date") ?? "").trim();
+  const selectedDate = /^\d{4}-\d{2}-\d{2}$/.test(rawDate) ? rawDate : "";
+  const dateQuery = selectedDate ? `&date=${encodeURIComponent(selectedDate)}` : "";
+
   if (!sessionId) redirect("/student/reservar?error=session_required");
 
   const { supabase } = await getStudentPortalContext();
@@ -132,21 +105,30 @@ export async function bookStudentSessionAction(formData: FormData) {
   });
 
   if (error) {
-    redirect(`/student/reservar/${sessionId}?error=${errorCode(error, "booking_failed")}`);
+    redirect(
+      `/student/reservar/${sessionId}/confirmar?error=${errorCode(
+        error,
+        "booking_failed",
+      )}${dateQuery}`,
+    );
   }
 
   const result = data as BookingRpcResult;
 
   if (!result?.eligible || !result.reservation_id) {
     redirect(
-      `/student/reservar/${sessionId}?error=${encodeURIComponent(result?.reason_code ?? "booking_failed")}`,
+      `/student/reservar/${sessionId}/confirmar?error=${encodeURIComponent(
+        result?.reason_code ?? "booking_failed",
+      )}${dateQuery}`,
     );
   }
 
   revalidateStudentBookingSurfaces();
 
   redirect(
-    `/student/reservar/confirmacion?session=${encodeURIComponent(sessionId)}&reservation=${encodeURIComponent(result.reservation_id)}`,
+    `/student/reservar/confirmacion?session=${encodeURIComponent(
+      sessionId,
+    )}&reservation=${encodeURIComponent(result.reservation_id)}${dateQuery}`,
   );
 }
 
