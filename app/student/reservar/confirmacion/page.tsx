@@ -23,13 +23,9 @@ export default async function StudentReservationConfirmationPage({
     session = (data as StudentSession | null) ?? null;
   }
 
-  const sessionDate = session
-    ? localDateKey(new Date(session.starts_at), studio.timezone)
-    : null;
+  const sessionDate = session ? localDateKey(new Date(session.starts_at), studio.timezone) : null;
   const selectedDate =
-    query.date && /^\d{4}-\d{2}-\d{2}$/.test(query.date)
-      ? query.date
-      : sessionDate;
+    query.date && /^\d{4}-\d{2}-\d{2}$/.test(query.date) ? query.date : sessionDate;
 
   return (
     <main className="mx-auto max-w-md space-y-4 pb-4">
@@ -40,9 +36,7 @@ export default async function StudentReservationConfirmationPage({
         <p className="mt-4 text-[10px] font-semibold uppercase tracking-[0.2em] text-emerald-300">
           Reserva confirmada
         </p>
-        <h1 className="mt-1 text-2xl font-semibold text-white">
-          ¡Clase reservada!
-        </h1>
+        <h1 className="mt-1 text-2xl font-semibold text-white">¡Clase reservada!</h1>
         <p className="mt-1.5 text-xs leading-5 text-zinc-400">
           Tu lugar quedó asegurado y Studio Flow actualizó tu reserva.
         </p>
