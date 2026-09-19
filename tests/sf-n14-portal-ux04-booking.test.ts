@@ -33,11 +33,11 @@ describe("SF-N14 PORTAL UX-04 Reservar", () => {
     expect(reserve).toContain("session.capacity");
   });
 
-  it("shows canonical availability states without mutating from the list", () => {
+  it("shows canonical availability states and preserves quick booking", () => {
     expect(reserve).toContain("Ya reservada");
     expect(reserve).toContain("Disponible");
     expect(reserve).toContain('session.eligibility?.reason_code === "session_full"');
-    expect(reserve).not.toContain("bookStudentSessionAction");
+    expect(reserve).toContain("QuickBookButton");
   });
 
   it("keeps detail, confirmation, pending and success as separate steps", () => {
