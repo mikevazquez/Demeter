@@ -14,13 +14,13 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
     ...(can(CAPABILITIES.REQUIRED_ACTIONS_READ)
       ? [{ href: "/admin/acciones", label: "Acciones", enabled: true }]
       : []),
+    { href: "/admin/agenda", label: "Agenda", enabled: true },
     { href: "/admin/alumnas", label: "Alumnas", enabled: true },
     {
       href: "/admin/empresa",
       label: "Empresa",
       enabled: true,
       activeFor: [
-        "/admin/agenda",
         "/admin/productos",
         "/admin/ventas",
         "/admin/instructores",
