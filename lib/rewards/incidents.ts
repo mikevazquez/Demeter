@@ -56,10 +56,7 @@ export async function reconcileRewardCorrection(
 ): Promise<RewardCorrectionReconciliation> {
   const row = await unwrapRpc(
     client.rpc<RewardCorrectionReconciliationRow>("system_reconcile_reward_correction", {
-      p_new_evaluation_id: requiredText(
-        newEvaluationId,
-        "reward_correction_evaluation_required",
-      ),
+      p_new_evaluation_id: requiredText(newEvaluationId, "reward_correction_evaluation_required"),
     }),
     "reward_correction_reconciliation_missing_result",
   );
@@ -85,10 +82,7 @@ export async function requestRewardReview(
 ): Promise<string> {
   return unwrapRpc(
     client.rpc<string>("admin_request_reward_review", {
-      p_reward_instance_id: requiredText(
-        input.rewardInstanceId,
-        "reward_instance_id_required",
-      ),
+      p_reward_instance_id: requiredText(input.rewardInstanceId, "reward_instance_id_required"),
       p_reason: requiredText(input.reason, "reward_incident_reason_required"),
     }),
     "reward_incident_request_missing_result",
@@ -99,12 +93,7 @@ export async function resolveRewardIncident(
   client: RewardProgressRpcClient,
   input: {
     incidentId: string;
-    action:
-      | "mark_review"
-      | "revoke_reward"
-      | "keep_exception"
-      | "close_no_action"
-      | "close";
+    action: "mark_review" | "revoke_reward" | "keep_exception" | "close_no_action" | "close";
     reason: string;
     details?: Readonly<Record<string, unknown>>;
   },

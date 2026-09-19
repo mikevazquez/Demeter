@@ -115,7 +115,9 @@ export default async function RewardIncidentDetailPage({
       </header>
 
       {query.saved ? (
-        <div className="notice success">La incidencia se actualizó y quedó registrada en el timeline.</div>
+        <div className="notice success">
+          La incidencia se actualizó y quedó registrada en el timeline.
+        </div>
       ) : null}
       {query.error ? (
         <div className="notice error">No se pudo completar la acción: {query.error}</div>
@@ -167,9 +169,12 @@ export default async function RewardIncidentDetailPage({
                 ) : null}
                 <option value="keep_exception">Conservar por excepción administrativa</option>
                 <option value="close_no_action">Resolver sin acción</option>
-                {["resolved_automatic", "resolved_manual", "no_action_required", "in_review"].includes(
-                  incident.status,
-                ) ? (
+                {[
+                  "resolved_automatic",
+                  "resolved_manual",
+                  "no_action_required",
+                  "in_review",
+                ].includes(incident.status) ? (
                   <option value="close">Cerrar incidencia</option>
                 ) : null}
               </select>

@@ -323,7 +323,6 @@ export async function grantManualRewardAction(formData: FormData) {
   redirect(`/admin/recompensas/alumnas/${encodeURIComponent(studentId)}?saved=manual_reward`);
 }
 
-
 export async function requestRewardReviewAction(formData: FormData) {
   const rewardInstanceId = textValue(formData, "reward_instance_id");
   const reason = textValue(formData, "reason");
