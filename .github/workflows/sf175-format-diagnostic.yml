@@ -1,0 +1,34 @@
+name: SF175 Format Diagnostic
+
+on:
+  push:
+    branches:
+      - feat/sf-175-reservation-confirmed
+    paths:
+      - ".github/workflows/sf175-format-diagnostic.yml"
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Format SF-175 files
+        run: |
+          npx prettier --write             supabase/functions/process-booking-created/index.ts             supabase/functions/process-booking-created/reservation-confirmed.ts             tests/sf175-reservation-confirmed.test.ts
+      - name: Emit formatted files
+        run: |
+          echo "===INDEX_B64==="
+          base64 -w0 supabase/functions/process-booking-created/index.ts
+          echo
+          echo "===HELPER_B64==="
+          base64 -w0 supabase/functions/process-booking-created/reservation-confirmed.ts
+          echo
+          echo "===TEST_B64==="
+          base64 -w0 tests/sf175-reservation-confirmed.test.ts
+          echo
+          echo "===END==="
