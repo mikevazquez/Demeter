@@ -12,13 +12,14 @@ export interface PersonCommunicationPreferences {
   whatsappBlocked: boolean;
 }
 
-export const DEFAULT_PERSON_COMMUNICATION_PREFERENCES: PersonCommunicationPreferences =\n  {
-  operational: true,
-  reminders: true,
-  retention: true,
-  promotions: true,
-  whatsappBlocked: false,
-};
+export const DEFAULT_PERSON_COMMUNICATION_PREFERENCES: PersonCommunicationPreferences =
+  {
+    operational: true,
+    reminders: true,
+    retention: true,
+    promotions: true,
+    whatsappBlocked: false,
+  };
 
 export interface CommunicationPreferenceResolution {
   decision: "allow" | "suppress";
