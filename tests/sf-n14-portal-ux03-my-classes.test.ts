@@ -38,13 +38,9 @@ describe("SF-N14 PORTAL UX-03 Mis clases", () => {
   });
 
   it("keeps quick cancellation access from upcoming reservations", () => {
-    expect(list).toContain(
-      "/student/mis-clases/${nextClass.reservation_id}/cancelar",
-    );
+    expect(list).toContain("/student/mis-clases/${nextClass.reservation_id}/cancelar");
     expect(list).toContain("showQuickCancel");
-    expect(list).toContain(
-      "/student/mis-clases/${item.reservation_id}/cancelar",
-    );
+    expect(list).toContain("/student/mis-clases/${item.reservation_id}/cancelar");
     expect(cancel).toContain("¿Seguro que quieres cancelar esta clase?");
     expect(cancel).toContain("student_cancellation_preview");
   });
