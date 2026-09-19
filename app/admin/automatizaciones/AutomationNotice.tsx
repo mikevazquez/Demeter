@@ -44,8 +44,7 @@ export default function AutomationNotice({
       tone="success"
       onConfirm={close}
     >
-      La operación se aplicó correctamente.
-      {version ? ` Nueva versión: ${version}.` : ""}
+      La operación se aplicó correctamente. {version ? `Nueva versión: ${version}.` : ""}
     </NoticeDialog>
   );
 }
