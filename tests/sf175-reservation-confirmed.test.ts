@@ -103,7 +103,10 @@ describe("SF-175 reservation confirmed", () => {
       functions: {
         async invoke<T>(
           _functionName: string,
-          options: { body: Record<string, unknown>; headers?: Record<string, string> },
+          options: {
+            body: Record<string, unknown>;
+            headers?: Record<string, string>;
+          },
         ) {
           authorization = options.headers?.Authorization;
           return {
