@@ -102,6 +102,12 @@ export interface AutomationDominanceRule {
   reason: string;
 }
 
+export interface AutomationCombinationRule {
+  primary: AutomationCatalogCode;
+  secondary: AutomationCatalogCode;
+  reason: string;
+}
+
 export const AUTOMATION_CATALOG_VERSION = 1;
 
 export const AUTOMATION_CATALOG = [
@@ -627,6 +633,14 @@ export const AUTOMATION_SEQUENCES = [
     ],
   },
 ] as const satisfies readonly AutomationSequenceDefinition[];
+
+export const AUTOMATION_COMBINATION_RULES = [
+  {
+    primary: "AUT-CAT-05",
+    secondary: "AUT-CAT-06",
+    reason: "Pago confirmado y Paquete activado pueden resolverse como una sola comunicación relacionada.",
+  },
+] as const satisfies readonly AutomationCombinationRule[];
 
 export const AUTOMATION_DOMINANCE_RULES = [
   {
