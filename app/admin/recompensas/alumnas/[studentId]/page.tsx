@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 
-import { grantManualRewardAction } from "../../actions";
+import { grantManualRewardAction, requestRewardReviewAction } from "../../actions";
 import {
   EmptyState,
   MetricCard,
@@ -178,6 +178,23 @@ export default async function StudentRewardsProfilePage({
                     {reward.manually_granted ? "Otorgada manualmente" : "Generada por regla"}
                     {reward.expires_at ? ` · vence ${formatDateTime(reward.expires_at)}` : ""}
                   </p>
+                  {canManage ? (
+                    <form
+                      action={requestRewardReviewAction}
+                      className="mt-4 grid gap-2 border-t border-white/10 pt-4 sm:grid-cols-[1fr_auto]"
+                    >
+                      <input type="hidden" name="reward_instance_id" value={reward.id} />
+                      <input
+                        name="reason"
+                        required
+                        placeholder="Motivo para revisar o ajustar"
+                        className="rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm text-white"
+                      />
+                      <button className="rounded-xl border border-white/10 bg-white/[0.05] px-3 py-2 text-sm font-semibold text-white">
+                        Revisar / ajustar
+                      </button>
+                    </form>
+                  ) : null}
                 </div>
               ))
             )}
