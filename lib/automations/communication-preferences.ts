@@ -98,7 +98,9 @@ export interface WhatsAppContactValidation {
   normalizedRecipient: string | null;
 }
 
-export function validateWhatsAppContact(recipient: string | null | undefined): WhatsAppContactValidation {
+export function validateWhatsAppContact(
+  recipient: string | null | undefined,
+): WhatsAppContactValidation {
   const normalized = recipient?.trim() ?? "";
   const valid = /^\+[1-9][0-9]{7,14}$/.test(normalized);
 
