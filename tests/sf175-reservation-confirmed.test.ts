@@ -207,5 +207,4 @@ describe("SF-175 reservation confirmed", () => {
     );
     expect(edge).toContain('withSupabase({ auth: "user" }');
   });
-
 });
