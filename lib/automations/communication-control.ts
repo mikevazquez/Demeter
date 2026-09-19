@@ -6,6 +6,7 @@ import {
   type AutomationDominanceTarget,
   type AutomationPriority,
 } from "./catalog";
+import type { CommunicationPreferenceResolution } from "./communication-preferences";
 import type { AutomationInstanceRpcClient, AutomationInstanceRpcResult } from "./instances";
 
 export type AutomationCommunicationDecision =
@@ -32,6 +33,7 @@ export interface AutomationCommunicationCandidate {
   commercialLimitHit?: boolean;
   commercialNextAllowedAt?: string | null;
   window?: AutomationCommunicationWindowState;
+  preference?: CommunicationPreferenceResolution;
 }
 
 export interface AutomationCommunicationResolution {
@@ -184,6 +186,23 @@ export function resolveAutomationCommunication(
 
   if (!priority) {
     throw new Error("automation_communication_priority_required");
+  }
+
+  if (candidate.preference?.decision === "suppress") {
+    return resolution(candidate, relatedCandidates, {
+      decision: "suppress",
+      reasonCode: candidate.preference.reasonCode,
+      reason: candidate.preference.reason,
+      dominantKey: null,
+      deferredUntil: null,
+      details: {
+        communication_preference: {
+          category: candidate.preference.category,
+          person_restricted: candidate.preference.personRestricted,
+          global_restricted: candidate.preference.globalRestricted,
+        },
+      },
+    });
   }
 
   for (const rule of AUTOMATION_DOMINANCE_RULES) {
