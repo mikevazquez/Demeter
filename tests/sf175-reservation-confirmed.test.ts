@@ -117,9 +117,9 @@ describe("SF-175 reservation confirmed", () => {
       },
     };
 
-    await expect(
-      triggerReservationConfirmedAutomation(client, "reservation-123"),
-    ).resolves.toBe(true);
+    await expect(triggerReservationConfirmedAutomation(client, "reservation-123")).resolves.toBe(
+      true,
+    );
 
     expect(authorization).toBe("Bearer uat-access-token");
   });
