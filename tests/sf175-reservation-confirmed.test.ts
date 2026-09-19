@@ -145,7 +145,9 @@ describe("SF-175 reservation confirmed", () => {
     expect(source).toContain("system_mark_automation_execution_sent");
     expect(source).toContain("system_mark_automation_execution_accepted");
     expect(source).toContain("MockMessagingProvider");
-    expect(source).toContain("context.supabaseAdmin");
+    expect(source).toContain('Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")');
+    expect(source).toContain("createClient(supabaseUrl, serviceRoleKey");
+    expect(source).not.toContain("context.supabaseAdmin");
     expect(source).not.toContain("ASISTIAN_");
   });
 });
