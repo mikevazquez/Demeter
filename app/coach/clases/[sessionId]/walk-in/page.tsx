@@ -43,7 +43,9 @@ export default async function CoachWalkinPage({
         <h1 className="mt-2 text-3xl font-semibold tracking-tight text-white">Agregar alumna</h1>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-400">
           Agrega una alumna existente mediante teléfono exacto o registra una identidad mínima para
-          esta clase. Ninguna opción crea una compra automática.
+          esta clase. Si la alumna existente tiene cobertura válida, Studio Flow la usa de forma
+          canónica; si falta paquete, cobertura o créditos, la excepción comercial queda pendiente.
+          Ninguna opción crea una compra automática.
         </p>
       </section>
 
