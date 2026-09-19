@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { getAdminContext } from "@/lib/auth/admin-context";
+import { triggerReservationConfirmedAutomation } from "@/lib/automations/reservation-confirmed-client";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 
 type AdminSupabaseClient = Awaited<ReturnType<typeof getAdminContext>>["supabase"];
@@ -242,11 +243,16 @@ export async function bookStudent(formData: FormData) {
     .eq("studio_id", studio.id)
     .single();
   if (!session) redirect("/admin/agenda");
-  const { error } = await supabase.rpc("admin_book_student", {
+  const { data: reservationId, error } = await supabase.rpc("admin_book_student", {
     target_session_id: sessionId,
     target_student_id: studentId,
   });
   if (error) redirect(`/admin/agenda/${sessionId}?error=${encodeURIComponent(error.message)}`);
+
+  if (reservationId) {
+    await triggerReservationConfirmedAutomation(supabase, reservationId);
+  }
+
   revalidatePath(`/admin/agenda/${sessionId}`);
   revalidatePath("/admin");
   redirect(`/admin/agenda/${sessionId}?created=booking`);
