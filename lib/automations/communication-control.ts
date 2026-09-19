@@ -6,17 +6,10 @@ import {
   type AutomationDominanceTarget,
   type AutomationPriority,
 } from "./catalog";
-import type {
-  AutomationInstanceRpcClient,
-  AutomationInstanceRpcResult,
-} from "./instances";
+import type { AutomationInstanceRpcClient, AutomationInstanceRpcResult } from "./instances";
 
 export type AutomationCommunicationDecision =
-  | "send"
-  | "defer"
-  | "suppress"
-  | "substitute"
-  | "combine";
+  "send" | "defer" | "suppress" | "substitute" | "combine";
 
 export interface AutomationCommunicationWindowState {
   open: boolean;
@@ -70,9 +63,7 @@ const PRIORITY_RANK: Record<AutomationPriority, number> = {
   P3: 3,
 };
 
-function candidatePriority(
-  candidate: AutomationCommunicationCandidate,
-): AutomationPriority | null {
+function candidatePriority(candidate: AutomationCommunicationCandidate): AutomationPriority | null {
   if (candidate.catalogCode) {
     const template = getAutomationTemplate(candidate.catalogCode);
     if (template.priority.scope === "internal") return null;
@@ -95,19 +86,15 @@ function candidatePriority(
   return candidate.priority;
 }
 
-function candidateScope(
-  candidate: AutomationCommunicationCandidate,
-): "aut05" | "internal" {
+function candidateScope(candidate: AutomationCommunicationCandidate): "aut05" | "internal" {
   if (!candidate.catalogCode) return "aut05";
   return getAutomationTemplate(candidate.catalogCode).priority.scope;
 }
 
-function candidateTargetKeys(
-  candidate: AutomationCommunicationCandidate,
-): Set<string> {
+function candidateTargetKeys(candidate: AutomationCommunicationCandidate): Set<string> {
   return new Set(
-    [candidate.externalKey, ...(candidate.targetKeys ?? [])].filter(
-      (value): value is string => Boolean(value),
+    [candidate.externalKey, ...(candidate.targetKeys ?? [])].filter((value): value is string =>
+      Boolean(value),
     ),
   );
 }
@@ -135,16 +122,11 @@ function automationSourcePresent(
   return related.find((candidate) => candidate.catalogCode === code);
 }
 
-function contextSourcePresent(
-  key: string,
-  candidate: AutomationCommunicationCandidate,
-): boolean {
+function contextSourcePresent(key: string, candidate: AutomationCommunicationCandidate): boolean {
   return (candidate.contextKeys ?? []).includes(key);
 }
 
-function relatedPriorities(
-  related: readonly AutomationCommunicationCandidate[],
-): Array<{
+function relatedPriorities(related: readonly AutomationCommunicationCandidate[]): Array<{
   candidate: AutomationCommunicationCandidate;
   priority: AutomationPriority;
 }> {
@@ -260,8 +242,7 @@ export function resolveAutomationCommunication(
 
   const higherPriority = relatedPriorities(relatedCandidates)
     .filter(
-      ({ priority: relatedPriority }) =>
-        PRIORITY_RANK[relatedPriority] < PRIORITY_RANK[priority],
+      ({ priority: relatedPriority }) => PRIORITY_RANK[relatedPriority] < PRIORITY_RANK[priority],
     )
     .sort((a, b) => PRIORITY_RANK[a.priority] - PRIORITY_RANK[b.priority])[0];
 
@@ -333,8 +314,7 @@ export function resolveAutomationCommunication(
     deferredUntil: null,
     details: {
       priority,
-      commercial_limit_ignored:
-        priority !== "P3" && Boolean(candidate.commercialLimitHit),
+      commercial_limit_ignored: priority !== "P3" && Boolean(candidate.commercialLimitHit),
     },
   });
 }
