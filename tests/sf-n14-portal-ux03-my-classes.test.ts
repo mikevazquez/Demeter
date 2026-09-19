@@ -37,6 +37,18 @@ describe("SF-N14 PORTAL UX-03 Mis clases", () => {
     expect(cancel).toContain("PendingActionButton");
   });
 
+  it("keeps quick cancellation access from upcoming reservations", () => {
+    expect(list).toContain(
+      "/student/mis-clases/${nextClass.reservation_id}/cancelar",
+    );
+    expect(list).toContain("showQuickCancel");
+    expect(list).toContain(
+      "/student/mis-clases/${item.reservation_id}/cancelar",
+    );
+    expect(cancel).toContain("¿Seguro que quieres cancelar esta clase?");
+    expect(cancel).toContain("student_cancellation_preview");
+  });
+
   it("preserves reservation context after a temporary cancellation error", () => {
     expect(actions).toContain("/student/mis-clases/${reservationId}/cancelar?error=");
     expect(cancel).toContain("No se pudo procesar tu cancelación");
