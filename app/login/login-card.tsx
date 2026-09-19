@@ -122,8 +122,11 @@ function SwitchLinks({ mode }: { mode: LoginCardProps["mode"] }) {
   );
 }
 
-function mexicanPhoneInput(value: string) {
-  const digits = value.replace(/\D/g, "");
+function studentPhoneInput(value: string) {
+  const raw = value.trimStart();
+  const digits = raw.replace(/\D/g, "");
+
+  if (raw.startsWith("+")) return `+${digits.slice(0, 15)}`;
   if (digits.startsWith("52") && digits.length > 10) return digits.slice(2, 12);
   return digits.slice(0, 10);
 }
@@ -155,29 +158,31 @@ export function LoginCard({ mode, error }: LoginCardProps) {
             <label>
               Teléfono
               <div className="mt-2 flex overflow-hidden rounded-xl border border-white/10 bg-black/20 focus-within:border-fuchsia-500/60">
-                <span
-                  className="flex items-center border-r border-white/10 bg-white/[0.04] px-3 text-sm font-semibold text-zinc-300"
-                  aria-hidden="true"
-                >
-                  +52
-                </span>
+                {!studentPhone.startsWith("+") ? (
+                  <span
+                    className="flex items-center border-r border-white/10 bg-white/[0.04] px-3 text-sm font-semibold text-zinc-300"
+                    aria-hidden="true"
+                  >
+                    +52
+                  </span>
+                ) : null}
                 <input
                   name="phone"
                   type="tel"
-                  inputMode="numeric"
-                  autoComplete="tel-national"
+                  inputMode="tel"
+                  autoComplete="tel"
                   required
-                  pattern="[0-9]{10}"
-                  maxLength={10}
+                  pattern="(?:[0-9]{10}|\+[1-9][0-9]{7,14})"
+                  maxLength={16}
                   value={studentPhone}
-                  onChange={(event) => setStudentPhone(mexicanPhoneInput(event.target.value))}
+                  onChange={(event) => setStudentPhone(studentPhoneInput(event.target.value))}
                   placeholder="3312345678"
                   aria-describedby="student-phone-help"
                   className="min-w-0 flex-1 border-0 bg-transparent focus:outline-none"
                 />
               </div>
               <span id="student-phone-help" className="mt-1.5 block text-xs text-zinc-500">
-                Escribe tus 10 dígitos. Nosotros agregamos +52 automáticamente.
+                México: escribe tus 10 dígitos. Agregamos +52 automáticamente.
               </span>
             </label>
           ) : (
