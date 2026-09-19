@@ -3,6 +3,7 @@ import Link from "next/link";
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { AUTOMATION_CATALOG } from "@/lib/automations/catalog";
+import AutomationNotice from "./AutomationNotice";
 
 const categoryLabels = {
   operation: "Operación",
@@ -92,11 +93,7 @@ export default async function AutomationsPage({
         </div>
       </header>
 
-      {params.error ? (
-        <div className="rounded-2xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">
-          No se pudo completar la operación: {params.error}
-        </div>
-      ) : null}
+      <AutomationNotice error={params.error} />
 
       <section className="grid gap-3 sm:grid-cols-3">
         <article className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
