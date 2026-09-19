@@ -172,6 +172,35 @@ export async function updateStudent(formData: FormData) {
   redirect(`/admin/alumnas/${studentId}?saved=1`);
 }
 
+export async function updateCommunicationPreferences(formData: FormData) {
+  const studentId = String(formData.get("student_id") ?? "");
+  const reason =
+    String(formData.get("reason") ?? "")
+      .trim()
+      .slice(0, 1000) || null;
+
+  if (!studentId) redirect("/admin/alumnas?error=communication_preferences");
+
+  const { supabase } = await getAdminContext(CAPABILITIES.STUDENTS_WRITE);
+  const { error } = await supabase.rpc("admin_set_student_communication_preferences", {
+    p_student_id: studentId,
+    p_operational_enabled: formData.get("operational_enabled") === "true",
+    p_reminders_enabled: formData.get("reminders_enabled") === "true",
+    p_retention_enabled: formData.get("retention_enabled") === "true",
+    p_promotions_enabled: formData.get("promotions_enabled") === "true",
+    p_whatsapp_blocked: formData.get("whatsapp_blocked") === "true",
+    p_reason: reason,
+  });
+
+  if (error) {
+    redirect(`/admin/alumnas/${studentId}?error=communication_preferences#comunicacion`);
+  }
+
+  revalidatePath(`/admin/alumnas/${studentId}`);
+  revalidatePath("/admin/alumnas");
+  redirect(`/admin/alumnas/${studentId}?saved=communication_preferences#comunicacion`);
+}
+
 export async function updateDynamicProfileFields(formData: FormData) {
   const studentId = String(formData.get("student_id") ?? "");
   if (!studentId) redirect("/admin/alumnas?error=profile_fields");
