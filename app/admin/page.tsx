@@ -282,10 +282,7 @@ export default async function AdminPage({
       const eligibilityEntries = canWriteSchedule
         ? await Promise.all(
             candidates.map(async (student) => {
-              const classIsInOperation =
-                session.status === "scheduled" &&
-                new Date(session.starts_at).getTime() <= Date.now();
-              const { data } = classIsInOperation
+              const { data } = canAttendance
                 ? await supabase.rpc("attendance_walkin_eligibility", {
                     target_session_id: session.id,
                     target_student_id: student.id,
