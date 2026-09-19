@@ -214,6 +214,7 @@ describe("SF-173 messaging provider", () => {
     expect(source).not.toContain("ASISTIAN_");
     expect(source).not.toContain("process.env");
     expect(source).toContain("MockMessagingProvider");
-    expect(source).toContain("automation_execution");
+    expect(source).toContain("startAutomationExecutionAttempt");
+    expect(source).toContain("markAutomationExecutionSent");
   });
 });
