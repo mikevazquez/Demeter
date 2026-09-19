@@ -116,7 +116,9 @@ export default async function StudentReservePage({
         <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-fuchsia-300">
           Portal alumna
         </p>
-        <h1 className="mt-1 text-2xl font-semibold text-white sm:text-3xl">Reservar clase</h1>
+        <h1 className="mt-1 text-2xl font-semibold text-white sm:text-3xl">
+          Reservar clase
+        </h1>
         <p className="mt-1.5 text-xs leading-5 text-zinc-400">
           Elige una fecha para ver todas las clases disponibles de ese día.
         </p>
@@ -197,7 +199,9 @@ export default async function StudentReservePage({
 
       {query.error || error ? (
         <section className="rounded-3xl border border-rose-500/25 bg-rose-500/[0.08] p-5 text-center">
-          <h2 className="text-base font-semibold text-white">No pudimos cargar las clases</h2>
+          <h2 className="text-base font-semibold text-white">
+            No pudimos cargar las clases
+          </h2>
           <p className="mt-1.5 text-xs leading-5 text-zinc-400">
             Conservamos la fecha seleccionada. Intenta nuevamente.
           </p>
@@ -227,48 +231,73 @@ export default async function StudentReservePage({
           </div>
 
           {items.length ? (
-            items.map((session) => (
-              <Link
-                key={session.session_id}
-                href={`/student/reservar/${session.session_id}?date=${selectedDate}`}
-                data-density="compact"
-                className="grid grid-cols-[4.25rem_1fr_auto] items-center gap-3 rounded-2xl border border-white/10 bg-black/20 px-3.5 py-3 transition hover:border-fuchsia-500/30 hover:bg-white/[0.045]"
-              >
-                <div>
-                  <p className="text-sm font-semibold text-white">
-                    {timeOnly(session.starts_at, studio.timezone)}
-                  </p>
-                  <p className="mt-0.5 text-[10px] text-zinc-600">
-                    {session.spots_available}/{session.capacity} lugares
-                  </p>
-                </div>
+            items.map((session) => {
+              const timeLabel = timeOnly(session.starts_at, studio.timezone);
+              const eligible = Boolean(session.eligibility?.eligible);
+              const reserved = Boolean(session.is_reserved);
 
-                <div className="min-w-0 border-l border-white/10 pl-3">
-                  <p className="truncate text-sm font-semibold text-white">{session.activity}</p>
-                  <p className="mt-0.5 truncate text-[11px] text-fuchsia-300">
-                    {session.discipline}
-                  </p>
-                  <p className="mt-0.5 truncate text-[11px] text-zinc-500">
-                    {[session.coach, session.space || session.location]
-                      .filter(Boolean)
-                      .join(" · ") || "Ver detalle"}
-                  </p>
-                </div>
+              return (
+                <article
+                  key={session.session_id}
+                  data-density="compact"
+                  className="rounded-2xl border border-white/10 bg-black/20 p-3 transition hover:border-fuchsia-500/30 hover:bg-white/[0.045]"
+                >
+                  <div className="grid grid-cols-[4.25rem_1fr_auto] items-center gap-3">
+                    <div>
+                      <p className="text-sm font-semibold text-white">{timeLabel}</p>
+                      <p className="mt-0.5 text-[10px] text-zinc-600">
+                        {session.spots_available}/{session.capacity} lugares
+                      </p>
+                    </div>
 
-                <div className="flex items-center gap-2">
-                  <span
-                    className={`hidden rounded-full border px-2 py-1 text-[10px] font-semibold sm:inline-flex ${statusClass(
-                      session,
-                    )}`}
-                  >
-                    {statusCopy(session)}
-                  </span>
-                  <span aria-hidden="true" className="text-xl text-zinc-500">
-                    ›
-                  </span>
-                </div>
-              </Link>
-            ))
+                    <Link
+                      href={`/student/reservar/${session.session_id}?date=${selectedDate}`}
+                      className="min-w-0 border-l border-white/10 pl-3"
+                    >
+                      <p className="truncate text-sm font-semibold text-white">
+                        {session.activity}
+                      </p>
+                      <p className="mt-0.5 truncate text-[11px] text-fuchsia-300">
+                        {session.discipline}
+                      </p>
+                      <p className="mt-0.5 truncate text-[11px] text-zinc-500">
+                        {[session.coach, session.space || session.location]
+                          .filter(Boolean)
+                          .join(" · ") || "Ver detalle"}
+                      </p>
+                    </Link>
+
+                    <Link
+                      href={`/student/reservar/${session.session_id}?date=${selectedDate}`}
+                      aria-label={`Ver detalles de ${session.activity}`}
+                      className="flex items-center gap-2"
+                    >
+                      <span
+                        className={`hidden rounded-full border px-2 py-1 text-[10px] font-semibold sm:inline-flex ${statusClass(
+                          session,
+                        )}`}
+                      >
+                        {statusCopy(session)}
+                      </span>
+                      <span aria-hidden="true" className="text-xl text-zinc-500">
+                        ›
+                      </span>
+                    </Link>
+                  </div>
+
+                  <div className="mt-3 flex justify-end border-t border-white/10 pt-3">
+                    <QuickBookButton
+                      sessionId={session.session_id}
+                      activity={session.activity}
+                      discipline={session.discipline}
+                      timeLabel={timeLabel}
+                      eligible={eligible}
+                      reserved={reserved}
+                    />
+                  </div>
+                </article>
+              );
+            })
           ) : (
             <div className="rounded-3xl border border-dashed border-white/10 bg-white/[0.02] px-5 py-9 text-center">
               <div
