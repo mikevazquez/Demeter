@@ -88,8 +88,49 @@ describe("SF-175 reservation confirmed", () => {
     expect(provider.deliveries).toHaveLength(1);
   });
 
+  it("forwards the authenticated access token to the Edge Function", async () => {
+    let authorization: string | undefined;
+
+    const client = {
+      auth: {
+        async getSession() {
+          return {
+            data: { session: { access_token: "uat-access-token" } },
+            error: null,
+          };
+        },
+      },
+      functions: {
+        async invoke<T>(
+          _functionName: string,
+          options: { body: Record<string, unknown>; headers?: Record<string, string> },
+        ) {
+          authorization = options.headers?.Authorization;
+          return {
+            data: { ok: true } as T,
+            error: null,
+          };
+        },
+      },
+    };
+
+    await expect(
+      triggerReservationConfirmedAutomation(client, "reservation-123"),
+    ).resolves.toBe(true);
+
+    expect(authorization).toBe("Bearer uat-access-token");
+  });
+
   it("keeps automation delivery non-blocking for a successful booking", async () => {
     const client = {
+      auth: {
+        async getSession() {
+          return {
+            data: { session: { access_token: "uat-access-token" } },
+            error: null,
+          };
+        },
+      },
       functions: {
         async invoke<T>() {
           return {
