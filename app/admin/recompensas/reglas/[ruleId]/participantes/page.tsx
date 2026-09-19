@@ -6,6 +6,20 @@ import { CAPABILITIES } from "@/lib/auth/capabilities";
 
 import { EmptyState, StatusBadge, formatDateTime, progressSummary } from "../../../ui";
 
+type RewardParticipantCycleRow = {
+  id: string;
+  student_id: string;
+  status: string;
+  window_end_at: string | null;
+  updated_at: string;
+};
+
+type RewardParticipantSnapshotRow = {
+  cycle_id: string;
+  progress: unknown;
+  calculated_at: string;
+};
+
 export default async function RewardParticipantsPage({
   params,
   searchParams,
@@ -79,7 +93,8 @@ export default async function RewardParticipantsPage({
         }),
   ]);
 
-  const cycleIds = (cycles ?? []).map((cycle) => cycle.id);
+  const cycleRows = (cycles ?? []) as RewardParticipantCycleRow[];
+  const cycleIds = cycleRows.map((cycle) => cycle.id);
   const { data: snapshots } = cycleIds.length
     ? await ctx.supabase
         .from("reward_progress_snapshots")
@@ -88,14 +103,15 @@ export default async function RewardParticipantsPage({
         .order("calculated_at", { ascending: false })
     : { data: [] as Array<{ cycle_id: string; progress: unknown; calculated_at: string }> };
 
+  const snapshotRows = (snapshots ?? []) as RewardParticipantSnapshotRow[];
   const studentMap = new Map((students ?? []).map((student) => [student.id, student]));
-  const latestCycleByStudent = new Map<string, (typeof cycles)[number]>();
-  for (const cycle of cycles ?? []) {
+  const latestCycleByStudent = new Map<string, RewardParticipantCycleRow>();
+  for (const cycle of cycleRows) {
     if (!latestCycleByStudent.has(cycle.student_id))
       latestCycleByStudent.set(cycle.student_id, cycle);
   }
-  const latestSnapshotByCycle = new Map<string, (typeof snapshots)[number]>();
-  for (const snapshot of snapshots ?? []) {
+  const latestSnapshotByCycle = new Map<string, RewardParticipantSnapshotRow>();
+  for (const snapshot of snapshotRows) {
     if (!latestSnapshotByCycle.has(snapshot.cycle_id))
       latestSnapshotByCycle.set(snapshot.cycle_id, snapshot);
   }
