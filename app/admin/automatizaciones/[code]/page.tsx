@@ -41,6 +41,14 @@ const statusLabels: Record<string, string> = {
   cancelled: "Cancelada",
 };
 
+const communicationDecisionLabels: Record<string, string> = {
+  send: "Enviar",
+  defer: "Diferir",
+  suppress: "Suprimir",
+  substitute: "Sustituir",
+  combine: "Combinar",
+};
+
 function statusClass(status: string) {
   if (status === "active" || status === "accepted") return "bg-emerald-500/15 text-emerald-300";
   if (status === "error") return "bg-rose-500/15 text-rose-300";
@@ -151,23 +159,32 @@ export default async function AutomationDetailPage({
   const instanceRows = instances ?? [];
   const instanceIds = instanceRows.map((item) => item.id);
 
-  const [{ data: versions }, { data: executions }] = instanceIds.length
-    ? await Promise.all([
-        ctx.supabase
-          .from("automation_instance_versions")
-          .select("instance_id,version_number,configuration,effective_from,created_at")
-          .in("instance_id", instanceIds)
-          .order("version_number", { ascending: false }),
-        ctx.supabase
-          .from("automation_executions")
-          .select(
-            "id,instance_id,version_number,catalog_code,status,scheduled_for,attempt_count,last_error_code,last_error_message,last_error_retryable,created_at,completed_at,data_snapshot,template_snapshot,variables_snapshot",
-          )
-          .in("instance_id", instanceIds)
-          .order("created_at", { ascending: false })
-          .limit(50),
-      ])
-    : [{ data: [] }, { data: [] }];
+  const [{ data: versions }, { data: executions }, { data: communicationControls }] =
+    instanceIds.length
+      ? await Promise.all([
+          ctx.supabase
+            .from("automation_instance_versions")
+            .select("instance_id,version_number,configuration,effective_from,created_at")
+            .in("instance_id", instanceIds)
+            .order("version_number", { ascending: false }),
+          ctx.supabase
+            .from("automation_executions")
+            .select(
+              "id,instance_id,version_number,catalog_code,status,scheduled_for,attempt_count,last_error_code,last_error_message,last_error_retryable,created_at,completed_at,data_snapshot,template_snapshot,variables_snapshot",
+            )
+            .in("instance_id", instanceIds)
+            .order("created_at", { ascending: false })
+            .limit(50),
+          ctx.supabase
+            .from("automation_communication_controls")
+            .select(
+              "id,instance_id,version_number,priority,decision,reason_code,reason,group_key,dominant_key,deferred_until,related_candidate_keys,details,evaluated_at,parent_control_id",
+            )
+            .in("instance_id", instanceIds)
+            .order("evaluated_at", { ascending: false })
+            .limit(50),
+        ])
+      : [{ data: [] }, { data: [] }, { data: [] }];
 
   const executionRows = executions ?? [];
   const executionIds = executionRows.map((item) => item.id);
@@ -435,6 +452,66 @@ export default async function AutomationDetailPage({
               </article>
             );
           })
+        )}
+      </section>
+
+      <section className="space-y-4">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+            Control AUT-05 · SF-167
+          </p>
+          <h2 className="mt-1 text-xl font-semibold text-white">Decisiones de comunicación</h2>
+          <p className="mt-1 text-sm text-zinc-400">
+            Cada registro conserva la prioridad y el motivo por el que Studio Flow decidió enviar,
+            diferir, suprimir, sustituir o combinar una comunicación.
+          </p>
+        </div>
+
+        {communicationControls?.length ? (
+          <div className="space-y-3">
+            {communicationControls.map((control) => (
+              <article
+                key={control.id}
+                className="rounded-2xl border border-white/10 bg-white/[0.03] p-5"
+              >
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <p className="text-xs text-zinc-500">
+                      Control {control.id.slice(0, 8)} · versión {control.version_number}
+                    </p>
+                    <h3 className="mt-1 text-sm font-semibold text-white">{control.reason}</h3>
+                    <p className="mt-1 text-xs text-zinc-500">
+                      {formatDate(control.evaluated_at)} · {control.reason_code}
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <span className="rounded-full bg-fuchsia-500/15 px-2.5 py-1 text-xs text-fuchsia-200">
+                      {control.priority}
+                    </span>
+                    <span className="rounded-full bg-zinc-500/15 px-2.5 py-1 text-xs text-zinc-300">
+                      {communicationDecisionLabels[control.decision] ?? control.decision}
+                    </span>
+                  </div>
+                </div>
+                <div className="mt-4 grid gap-3 text-xs text-zinc-400 md:grid-cols-3">
+                  <p>
+                    Grupo: <span className="text-zinc-200">{control.group_key ?? "—"}</span>
+                  </p>
+                  <p>
+                    Dominante: <span className="text-zinc-200">{control.dominant_key ?? "—"}</span>
+                  </p>
+                  <p>
+                    Diferida hasta:{" "}
+                    <span className="text-zinc-200">{formatDate(control.deferred_until)}</span>
+                  </p>
+                </div>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-6 text-sm text-zinc-400">
+            Aún no hay decisiones AUT-05 registradas para esta automatización.
+          </div>
         )}
       </section>
 
