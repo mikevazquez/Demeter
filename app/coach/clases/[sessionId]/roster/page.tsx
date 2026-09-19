@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import PendingActionButton from "@/app/admin/components/PendingActionButton";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getCoachContext } from "@/lib/auth/coach-context";
 import {
@@ -139,7 +140,9 @@ export default async function CoachRosterPage({
       ) : null}
       {query.walkin ? (
         <div className="rounded-2xl border border-emerald-400/20 bg-emerald-400/10 px-4 py-3 text-sm text-emerald-100">
-          Walk-in agregado al roster. No se creó ninguna compra automática.
+          {query.walkin === "covered"
+            ? "Walk-in agregado con su cobertura vigente; Studio Flow reservó el crédito correspondiente cuando aplica."
+            : "Walk-in agregado. No se creó ninguna compra automática y la resolución comercial queda pendiente."}
         </div>
       ) : null}
       {query.error ? (
@@ -179,8 +182,8 @@ export default async function CoachRosterPage({
                       <input type="hidden" name="session_id" value={sessionId} />
                       <input type="hidden" name="reservation_id" value={item.reservation_id} />
                       <input type="hidden" name="status" value="attended" />
-                      <button
-                        type="submit"
+                      <PendingActionButton
+                        pendingLabel="Guardando…"
                         className={`w-full rounded-xl px-3 py-2 text-xs font-semibold transition ${
                           item.attendance_status === "attended"
                             ? "bg-emerald-500 text-white"
@@ -188,14 +191,14 @@ export default async function CoachRosterPage({
                         }`}
                       >
                         Asistió
-                      </button>
+                      </PendingActionButton>
                     </form>
                     <form action={setCoachAttendanceAction}>
                       <input type="hidden" name="session_id" value={sessionId} />
                       <input type="hidden" name="reservation_id" value={item.reservation_id} />
                       <input type="hidden" name="status" value="no_show" />
-                      <button
-                        type="submit"
+                      <PendingActionButton
+                        pendingLabel="Guardando…"
                         className={`w-full rounded-xl px-3 py-2 text-xs font-semibold transition ${
                           item.attendance_status === "no_show"
                             ? "bg-rose-500 text-white"
@@ -203,7 +206,7 @@ export default async function CoachRosterPage({
                         }`}
                       >
                         No asistió
-                      </button>
+                      </PendingActionButton>
                     </form>
                   </div>
                 ) : (

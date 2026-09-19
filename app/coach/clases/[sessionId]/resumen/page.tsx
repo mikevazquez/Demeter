@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
+import PendingActionButton from "@/app/admin/components/PendingActionButton";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getCoachContext } from "@/lib/auth/coach-context";
 import { type CoachRosterItem, type CoachSessionDetail } from "@/lib/coach/portal";
@@ -101,12 +102,12 @@ export default async function CoachAttendanceSummaryPage({
         {canFinalize ? (
           <form action={finalizeCoachAttendanceAction}>
             <input type="hidden" name="session_id" value={sessionId} />
-            <button
-              type="submit"
+            <PendingActionButton
+              pendingLabel="Finalizando…"
               className="w-full rounded-xl bg-fuchsia-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-fuchsia-500"
             >
               Confirmar y finalizar asistencia
-            </button>
+            </PendingActionButton>
           </form>
         ) : (
           <p className="text-sm text-zinc-400">
