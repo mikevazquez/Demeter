@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 
+import PendingActionButton from "../components/PendingActionButton";
+
 import {
   bookStudentFromToday,
   cancelReservationFromToday,
@@ -104,10 +106,12 @@ export function SessionOperations({
                   : created === "no_show"
                     ? "No-show registrado."
                     : created === "walkin"
-                      ? "Walk-in registrada y agregada a la clase."
-                      : created === "walkin-existing"
-                        ? "Alumna agregada como walk-in. La venta o paquete queda pendiente."
-                        : created === "cancel"
+                      ? "Walk-in registrada y agregada. La resolución comercial queda pendiente; no se creó una compra automática."
+                      : created === "walkin-covered"
+                        ? "Alumna agregada con su cobertura vigente; se reservó el crédito correspondiente cuando aplica."
+                        : created === "walkin-existing"
+                          ? "Alumna agregada como walk-in. La resolución comercial queda pendiente; no se creó una compra automática."
+                          : created === "cancel"
                           ? "Reserva cancelada correctamente."
                           : "Reserva creada correctamente.",
         });
@@ -194,30 +198,30 @@ export function SessionOperations({
                             <input type="hidden" name="reservation_id" value={item.id} />
                             <input type="hidden" name="return_date" value={returnDate} />
                             <input type="hidden" name="status" value="attended" />
-                            <button
+                            <PendingActionButton
+                              pendingLabel="Guardando…"
                               className={
                                 item.status === "attended" ? "is-selected is-attended" : ""
                               }
-                              type="submit"
                               disabled={item.status === "attended"}
                               aria-pressed={item.status === "attended"}
                             >
                               ✓ Asistió
-                            </button>
+                            </PendingActionButton>
                           </form>
                           <form action={setAttendanceFromToday}>
                             <input type="hidden" name="session_id" value={sessionId} />
                             <input type="hidden" name="reservation_id" value={item.id} />
                             <input type="hidden" name="return_date" value={returnDate} />
                             <input type="hidden" name="status" value="no_show" />
-                            <button
+                            <PendingActionButton
+                              pendingLabel="Guardando…"
                               className={item.status === "no_show" ? "is-selected is-no-show" : ""}
-                              type="submit"
                               disabled={item.status === "no_show"}
                               aria-pressed={item.status === "no_show"}
                             >
                               No show
-                            </button>
+                            </PendingActionButton>
                           </form>
                         </div>
                       ) : (
@@ -246,9 +250,12 @@ export function SessionOperations({
                               required
                               aria-label="Motivo de la corrección"
                             />
-                            <button className="secondary-button" type="submit">
+                            <PendingActionButton
+                              pendingLabel="Corrigiendo…"
+                              className="secondary-button"
+                            >
                               Corregir a {correctionTarget === "attended" ? "Asistió" : "No show"}
-                            </button>
+                            </PendingActionButton>
                           </form>
                         </div>
                       ) : null}
@@ -303,9 +310,9 @@ export function SessionOperations({
                     Se crea un expediente mínimo. La venta o producto se registra después en el
                     flujo de Ventas.
                   </small>
-                  <button className="primary-button" type="submit">
+                  <PendingActionButton pendingLabel="Agregando…" className="primary-button">
                     Registrar y agregar
-                  </button>
+                  </PendingActionButton>
                 </form>
               ) : canAddExisting ? (
                 <form action={bookStudentFromToday} className="today-walkin-form">
@@ -333,9 +340,13 @@ export function SessionOperations({
                       );
                     })}
                   </select>
-                  <button className="primary-button" type="submit" disabled={!candidates.length}>
+                  <PendingActionButton
+                    pendingLabel="Agregando…"
+                    className="primary-button"
+                    disabled={!candidates.length}
+                  >
                     Agregar a la clase
-                  </button>
+                  </PendingActionButton>
                   <small>
                     El fallback walk-in sólo aplica cuando falta paquete, cobertura o créditos. Si
                     existe otro requisito obligatorio, debe resolverse antes de reservar.
@@ -363,9 +374,9 @@ export function SessionOperations({
                 <form action={finalizeAttendanceFromToday}>
                   <input type="hidden" name="session_id" value={sessionId} />
                   <input type="hidden" name="return_date" value={returnDate} />
-                  <button className="primary-button" type="submit">
+                  <PendingActionButton pendingLabel="Finalizando…" className="primary-button">
                     Finalizar asistencia
-                  </button>
+                  </PendingActionButton>
                 </form>
               ) : null}
             </section>
