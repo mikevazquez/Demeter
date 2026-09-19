@@ -8,6 +8,7 @@ import {
   resolvePersonCommunicationPreference,
   validateWhatsAppContact,
 } from "../lib/automations/communication-preferences";
+import { resolveAutomationCommunication } from "../lib/automations/communication-control";
 
 describe("SF-168 communication preferences", () => {
   it("keeps operational messages enabled when promotions are opted out", () => {
@@ -68,6 +69,34 @@ describe("SF-168 communication preferences", () => {
         reasonCode: "person_whatsapp_blocked",
       });
     }
+  });
+
+
+  it("feeds an individual opt-out into AUT-05 as a suppression", () => {
+    const preference = resolvePersonCommunicationPreference({
+      category: "retention",
+      preferences: {
+        ...DEFAULT_PERSON_COMMUNICATION_PREFERENCES,
+        retention: false,
+      },
+    });
+
+    expect(
+      resolveAutomationCommunication({
+        key: "inactive:student-1",
+        catalogCode: "AUT-CAT-14",
+        preference,
+      }),
+    ).toMatchObject({
+      decision: "suppress",
+      reasonCode: "person_category_opt_out",
+      details: {
+        communication_preference: {
+          category: "retention",
+          person_restricted: true,
+        },
+      },
+    });
   });
 
   it("treats an invalid phone as a data error instead of an opt-out", () => {
