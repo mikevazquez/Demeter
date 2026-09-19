@@ -194,4 +194,18 @@ describe("SF-175 reservation confirmed", () => {
     expect(source).not.toContain("createClient(supabaseUrl, serviceRoleKey");
     expect(source).not.toContain("ASISTIAN_");
   });
+
+  it("lets @supabase/server validate the authenticated JWT inside the Edge Function", () => {
+    const config = readFileSync(join(process.cwd(), "supabase/config.toml"), "utf8");
+    const edge = readFileSync(
+      join(process.cwd(), "supabase/functions/process-booking-created/index.ts"),
+      "utf8",
+    );
+
+    expect(config).toMatch(
+      /\[functions\.process-booking-created\][\s\S]*?verify_jwt\s*=\s*false/,
+    );
+    expect(edge).toContain('withSupabase({ auth: "user" }');
+  });
+
 });
