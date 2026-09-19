@@ -41,13 +41,13 @@ export default async function AutomationsPage({
 
   const [{ data: instances }, { data: executions }, { data: communicationSettings }] =
     await Promise.all([
-    ctx.supabase
-      .from("automation_instances")
-      .select(
-        "id,catalog_code,status,current_version_number,eligible_from,error_code,error_message,first_executed_at,last_executed_at,created_at,updated_at",
-      )
-      .eq("studio_id", ctx.studio.id)
-      .order("updated_at", { ascending: false }),
+      ctx.supabase
+        .from("automation_instances")
+        .select(
+          "id,catalog_code,status,current_version_number,eligible_from,error_code,error_message,first_executed_at,last_executed_at,created_at,updated_at",
+        )
+        .eq("studio_id", ctx.studio.id)
+        .order("updated_at", { ascending: false }),
       ctx.supabase
         .from("automation_executions")
         .select("id,instance_id,status,created_at")
