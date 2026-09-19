@@ -63,8 +63,15 @@ describe("SF-168 communication preferences", () => {
       whatsappBlocked: true,
     };
 
-    for (const category of ["operational", "reminders", "retention", "promotions"] as const) {
-      expect(resolvePersonCommunicationPreference({ category, preferences })).toMatchObject({
+    for (const category of [
+      "operational",
+      "reminders",
+      "retention",
+      "promotions",
+    ] as const) {
+      expect(
+        resolvePersonCommunicationPreference({ category, preferences }),
+      ).toMatchObject({
         decision: "suppress",
         reasonCode: "person_whatsapp_blocked",
       });
@@ -119,7 +126,9 @@ describe("SF-168 communication preferences", () => {
       "utf8",
     );
 
-    expect(migration).toContain("person_communication_preference_events_immutable");
+    expect(migration).toContain(
+      "person_communication_preference_events_immutable",
+    );
     expect(migration).toContain("communication_preference_history_immutable");
     expect(migration).toContain(
       "grant execute on function public.system_set_person_communication_preferences",
