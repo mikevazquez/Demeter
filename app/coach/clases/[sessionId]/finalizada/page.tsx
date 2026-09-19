@@ -169,7 +169,8 @@ export default async function CoachFinalizedPage({
           <div className="border-b border-white/10 p-5 sm:p-6">
             <h2 className="text-lg font-semibold text-white">Historial de correcciones</h2>
             <p className="mt-1 text-sm text-zinc-500">
-              Cada cambio posterior al cierre conserva estado anterior, estado nuevo, motivo y fecha.
+              Cada cambio posterior al cierre conserva estado anterior, estado nuevo, motivo y
+              fecha.
             </p>
           </div>
           <div className="divide-y divide-white/10">
@@ -179,7 +180,8 @@ export default async function CoachFinalizedPage({
                   <div>
                     <h3 className="font-semibold text-white">{correction.student_name}</h3>
                     <p className="mt-1 text-sm text-zinc-400">
-                      {attendanceText(correction.from_status)} → {attendanceText(correction.to_status)}
+                      {attendanceText(correction.from_status)} →{" "}
+                      {attendanceText(correction.to_status)}
                     </p>
                     <p className="mt-2 text-sm leading-6 text-zinc-300">{correction.reason}</p>
                   </div>

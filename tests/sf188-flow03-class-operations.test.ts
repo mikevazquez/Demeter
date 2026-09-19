@@ -8,8 +8,7 @@ function source(path: string) {
 }
 
 describe("SF-188 FLUJO 03 class operations", () => {
-  const migrationPath =
-    "supabase/migrations/20260919003000_sf188_flow03_class_operations.sql";
+  const migrationPath = "supabase/migrations/20260919003000_sf188_flow03_class_operations.sql";
 
   it("shares commercial eligibility without relaxing normal future booking", () => {
     const migration = source(migrationPath);
@@ -79,9 +78,7 @@ describe("SF-188 FLUJO 03 class operations", () => {
   });
 
   it("keeps first_usage aligned with the approved first billable usage rule", () => {
-    const flow01 = source(
-      "supabase/migrations/20260918180000_flow01_first_usage_activation.sql",
-    );
+    const flow01 = source("supabase/migrations/20260918180000_flow01_first_usage_activation.sql");
 
     expect(flow01).toContain("private.activate_acquisition_on_first_usage");
     expect(flow01).toContain("if v_new_status='cancelled_late' then");

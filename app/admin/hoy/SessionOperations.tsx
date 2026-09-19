@@ -112,8 +112,8 @@ export function SessionOperations({
                         : created === "walkin-existing"
                           ? "Alumna agregada como walk-in. La resolución comercial queda pendiente; no se creó una compra automática."
                           : created === "cancel"
-                          ? "Reserva cancelada correctamente."
-                          : "Reserva creada correctamente.",
+                            ? "Reserva cancelada correctamente."
+                            : "Reserva creada correctamente.",
         });
       } else if (error) {
         setFeedback({
