@@ -18,7 +18,7 @@ export interface ReservationConfirmedFunctionClient {
     }>;
   };
   from?(table: string): {
-    insert(values: Record<string, unknown>): Promise<unknown>;
+    insert(values: Record<string, unknown>): unknown;
   };
 }
 
