@@ -171,12 +171,18 @@ export async function cancelStudentReservationAction(formData: FormData) {
   });
 
   if (error) {
-    redirect(`${returnPath}?error=${errorCode(error, "cancel_failed")}`);
+    redirect(
+      `/student/mis-clases/${reservationId}/cancelar?error=${errorCode(error, "cancel_failed")}`,
+    );
   }
 
   const result = data as { ok?: boolean; reason_code?: string | null; status?: string } | null;
   if (!result?.ok) {
-    redirect(`${returnPath}?error=${encodeURIComponent(result?.reason_code ?? "cancel_failed")}`);
+    redirect(
+      `/student/mis-clases/${reservationId}/cancelar?error=${encodeURIComponent(
+        result?.reason_code ?? "cancel_failed",
+      )}`,
+    );
   }
 
   revalidateStudentBookingSurfaces();
