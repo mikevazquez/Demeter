@@ -96,7 +96,9 @@ export type AutomationDominanceTarget =
   | { kind: "external"; key: string };
 
 export interface AutomationDominanceRule {
-  source: { kind: "automation"; code: AutomationCatalogCode } | { kind: "context"; key: string };
+  source:
+    | { kind: "automation"; code: AutomationCatalogCode }
+    | { kind: "context"; key: string };
   target: AutomationDominanceTarget;
   effect: "dominates" | "suppresses";
   reason: string;
@@ -638,7 +640,8 @@ export const AUTOMATION_COMBINATION_RULES = [
   {
     primary: "AUT-CAT-05",
     secondary: "AUT-CAT-06",
-    reason: "Pago confirmado y Paquete activado pueden resolverse como una sola comunicación relacionada.",
+    reason:
+      "Pago confirmado y Paquete activado pueden resolverse como una sola comunicación relacionada.",
   },
 ] as const satisfies readonly AutomationCombinationRule[];
 
