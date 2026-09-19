@@ -122,8 +122,15 @@ function SwitchLinks({ mode }: { mode: LoginCardProps["mode"] }) {
   );
 }
 
+function mexicanPhoneInput(value: string) {
+  const digits = value.replace(/\D/g, "");
+  if (digits.startsWith("52") && digits.length > 10) return digits.slice(2, 12);
+  return digits.slice(0, 10);
+}
+
 export function LoginCard({ mode, error }: LoginCardProps) {
   const [passwordVisible, setPasswordVisible] = useState(false);
+  const [studentPhone, setStudentPhone] = useState("");
   const isStudent = mode === "student";
   const messages =
     mode === "student" ? studentMessages : mode === "coach" ? coachMessages : adminMessages;
@@ -147,14 +154,31 @@ export function LoginCard({ mode, error }: LoginCardProps) {
           {isStudent ? (
             <label>
               Teléfono
-              <input
-                name="phone"
-                type="tel"
-                inputMode="tel"
-                autoComplete="tel"
-                required
-                placeholder="33 1234 5678"
-              />
+              <div className="mt-2 flex overflow-hidden rounded-xl border border-white/10 bg-black/20 focus-within:border-fuchsia-500/60">
+                <span
+                  className="flex items-center border-r border-white/10 bg-white/[0.04] px-3 text-sm font-semibold text-zinc-300"
+                  aria-hidden="true"
+                >
+                  +52
+                </span>
+                <input
+                  name="phone"
+                  type="tel"
+                  inputMode="numeric"
+                  autoComplete="tel-national"
+                  required
+                  pattern="[0-9]{10}"
+                  maxLength={10}
+                  value={studentPhone}
+                  onChange={(event) => setStudentPhone(mexicanPhoneInput(event.target.value))}
+                  placeholder="3312345678"
+                  aria-describedby="student-phone-help"
+                  className="min-w-0 flex-1 border-0 bg-transparent focus:outline-none"
+                />
+              </div>
+              <span id="student-phone-help" className="mt-1.5 block text-xs text-zinc-500">
+                Escribe tus 10 dígitos. Nosotros agregamos +52 automáticamente.
+              </span>
             </label>
           ) : (
             <label>
