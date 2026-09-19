@@ -32,11 +32,7 @@ export async function unlockRewardAchievement(
 ): Promise<RewardAchievementUnlockResult> {
   const badgeSnapshot = input.badgeSnapshot ?? {};
 
-  if (
-    typeof badgeSnapshot !== "object" ||
-    badgeSnapshot === null ||
-    Array.isArray(badgeSnapshot)
-  ) {
+  if (typeof badgeSnapshot !== "object" || badgeSnapshot === null || Array.isArray(badgeSnapshot)) {
     throw new Error("reward_achievement_badge_must_be_object");
   }
 
