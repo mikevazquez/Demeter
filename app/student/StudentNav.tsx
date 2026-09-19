@@ -4,10 +4,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const items = [
-  { href: "/student", label: "Inicio" },
-  { href: "/student/reservar", label: "Reservar" },
-  { href: "/student/mis-clases", label: "Mis clases" },
-  { href: "/student/perfil", label: "Perfil" },
+  { href: "/student", label: "Inicio", icon: "⌂" },
+  { href: "/student/reservar", label: "Reservar", icon: "◫" },
+  { href: "/student/mis-clases", label: "Mis clases", icon: "≡" },
+  { href: "/student/perfil", label: "Perfil", icon: "○" },
 ];
 
 function isActive(pathname: string, href: string) {
@@ -56,7 +56,13 @@ export function StudentNav() {
                 active ? "bg-fuchsia-600 text-white" : "text-zinc-400"
               }`}
             >
-              {item.label}
+              <span
+                aria-hidden="true"
+                className={`mx-auto mb-1 block text-lg leading-none ${active ? "text-fuchsia-200" : "text-zinc-500"}`}
+              >
+                {item.icon}
+              </span>
+              <span className="block">{item.label}</span>
             </Link>
           );
         })}
