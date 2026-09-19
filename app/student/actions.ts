@@ -160,12 +160,10 @@ export async function cancelStudentReservationAction(formData: FormData) {
   const { data: previewData } = await supabase.rpc("student_cancellation_preview", {
     target_reservation_id: reservationId,
   });
-  const preview = previewData as
-    | {
-        ok?: boolean;
-        uses_credits?: boolean;
-      }
-    | null;
+  const preview = previewData as {
+    ok?: boolean;
+    uses_credits?: boolean;
+  } | null;
 
   const { data, error } = await supabase.rpc("student_cancel_own_reservation", {
     target_reservation_id: reservationId,
