@@ -96,9 +96,7 @@ export type AutomationDominanceTarget =
   | { kind: "external"; key: string };
 
 export interface AutomationDominanceRule {
-  source:
-    | { kind: "automation"; code: AutomationCatalogCode }
-    | { kind: "context"; key: string };
+  source: { kind: "automation"; code: AutomationCatalogCode } | { kind: "context"; key: string };
   target: AutomationDominanceTarget;
   effect: "dominates" | "suppresses";
   reason: string;
