@@ -51,7 +51,8 @@ function statusClass(status: string) {
 }
 
 function configurationValue(configuration: unknown, key: string) {
-  if (!configuration || typeof configuration !== "object" || Array.isArray(configuration)) return "";
+  if (!configuration || typeof configuration !== "object" || Array.isArray(configuration))
+    return "";
   const value = (configuration as Record<string, unknown>)[key];
   if (value == null) return "";
   return typeof value === "object" ? JSON.stringify(value) : String(value);
@@ -65,7 +66,9 @@ function ConfigurationFields({
   configuration?: unknown;
 }) {
   if (!keys.length) {
-    return <p className="text-sm text-zinc-500">Esta automatización no requiere parámetros editables.</p>;
+    return (
+      <p className="text-sm text-zinc-500">Esta automatización no requiere parámetros editables.</p>
+    );
   }
 
   return (
@@ -262,7 +265,9 @@ export default async function AutomationDetailPage({
         <article className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
           <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Salida</p>
           <p className="mt-2 text-sm font-semibold text-white">{template.output.description}</p>
-          <p className="mt-2 text-xs text-zinc-500">Prioridad: {template.priority.communication ?? "Interna"}</p>
+          <p className="mt-2 text-xs text-zinc-500">
+            Prioridad: {template.priority.communication ?? "Interna"}
+          </p>
         </article>
         <article className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
           <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Frecuencia</p>
@@ -328,7 +333,9 @@ export default async function AutomationDetailPage({
 
       <section className="space-y-4">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Configuraciones</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+            Configuraciones
+          </p>
           <h2 className="mt-1 text-xl font-semibold text-white">
             {instanceRows.length ? `${instanceRows.length} instancia(s)` : "Sin instancias"}
           </h2>
@@ -357,7 +364,9 @@ export default async function AutomationDetailPage({
                       Elegible desde {formatDate(instance.eligible_from)}
                     </p>
                   </div>
-                  <span className={`rounded-full px-2.5 py-1 text-xs ${statusClass(instance.status)}`}>
+                  <span
+                    className={`rounded-full px-2.5 py-1 text-xs ${statusClass(instance.status)}`}
+                  >
                     {statusLabels[instance.status] ?? instance.status}
                   </span>
                 </div>
@@ -369,7 +378,8 @@ export default async function AutomationDetailPage({
                   </div>
                 ) : null}
 
-                {template.configurationMode !== "system_managed" && instance.status !== "archived" ? (
+                {template.configurationMode !== "system_managed" &&
+                instance.status !== "archived" ? (
                   <form
                     action={updateAutomationConfigurationAction}
                     className="mt-5 space-y-4 border-t border-white/10 pt-5"
@@ -444,8 +454,8 @@ export default async function AutomationDetailPage({
           </p>
           <h2 className="mt-1 text-xl font-semibold text-white">Ejecuciones auditables</h2>
           <p className="mt-1 text-sm text-zinc-400">
-            “Aceptada” significa que el ejecutor/proveedor aceptó la operación; no implica entrega ni
-            lectura.
+            “Aceptada” significa que el ejecutor/proveedor aceptó la operación; no implica entrega
+            ni lectura.
           </p>
         </div>
 
@@ -472,7 +482,9 @@ export default async function AutomationDetailPage({
                         {formatDate(execution.created_at)} · {execution.attempt_count} intento(s)
                       </p>
                     </div>
-                    <span className={`rounded-full px-2.5 py-1 text-xs ${statusClass(execution.status)}`}>
+                    <span
+                      className={`rounded-full px-2.5 py-1 text-xs ${statusClass(execution.status)}`}
+                    >
                       {statusLabels[execution.status] ?? execution.status}
                     </span>
                   </div>
@@ -497,8 +509,12 @@ export default async function AutomationDetailPage({
                             className="rounded-xl border border-white/10 bg-black/10 p-3 text-sm"
                           >
                             <div className="flex items-center justify-between gap-3">
-                              <strong className="text-white">Intento {attempt.attempt_number}</strong>
-                              <span className={`rounded-full px-2 py-0.5 text-xs ${statusClass(attempt.status)}`}>
+                              <strong className="text-white">
+                                Intento {attempt.attempt_number}
+                              </strong>
+                              <span
+                                className={`rounded-full px-2 py-0.5 text-xs ${statusClass(attempt.status)}`}
+                              >
                                 {statusLabels[attempt.status] ?? attempt.status}
                               </span>
                             </div>
