@@ -7,7 +7,7 @@ function source(path: string) {
   return readFileSync(join(process.cwd(), path), "utf8");
 }
 
-describe("F10 student home and profile UAT contracts", () => {
+describe("F10/N14 student home and profile UAT contracts", () => {
   const homePage = source("app/student/page.tsx");
   const profilePage = source("app/student/perfil/page.tsx");
   const actions = source("app/student/actions.ts");
@@ -15,28 +15,25 @@ describe("F10 student home and profile UAT contracts", () => {
     "supabase/migrations/20260916040850_f10_profile_identity_readonly.sql",
   );
 
-  it("shows one compact package credit summary instead of a duplicated large balance", () => {
-    expect(homePage).toContain("Disponibles");
-    expect(homePage).toContain("Reservadas");
-    expect(homePage).toContain("Utilizadas");
-    expect(homePage.match(/activePackage\.available_credits/g)?.length).toBe(1);
-    expect(homePage).not.toContain("clases disponibles</span>");
+  it("shows the compact active package as the primary home context", () => {
+    expect(homePage.indexOf('data-home-block="package"')).toBeLessThan(
+      homePage.indexOf('data-home-block="next-class"'),
+    );
+    expect(homePage).toContain('data-density="compact"');
+    expect(homePage).toContain("Vence");
+    expect(homePage).toContain("used_credits");
   });
 
-  it("shows a weekly day selector and the selected day's classes on home", () => {
-    expect(homePage).toContain("const weekStart = startOfWeek(selectedDate)");
-    expect(homePage).toContain('aria-label="Semana anterior"');
-    expect(homePage).toContain('aria-label="Semana siguiente"');
-    expect(homePage).toContain('supabase.rpc("student_schedule_feed"');
-    expect(homePage).toContain("target_start: selectedDate");
-    expect(homePage).toContain("target_end: selectedDate");
-    expect(homePage).toContain("target_discipline_id: null");
+  it("delegates class discovery to Reservar and class management to Mis clases", () => {
+    expect(homePage).toContain('href="/student/reservar"');
+    expect(homePage).toContain('href="/student/mis-clases"');
+    expect(homePage).not.toContain('supabase.rpc("student_schedule_feed"');
+    expect(homePage).not.toContain("cancelStudentReservationAction");
   });
 
-  it("allows an own reservation to be cancelled directly from home", () => {
-    expect(homePage).toContain("action={cancelStudentReservationAction}");
-    expect(homePage).toContain('name="return_to" value="/student"');
-    expect(actions).toContain('return String(formData.get("return_to") ?? "") === "/student"');
+  it("keeps the canonical cancellation engine available in the dedicated flow", () => {
+    const classesPage = source("app/student/mis-clases/page.tsx");
+    expect(classesPage).toContain("cancelStudentReservationAction");
     expect(actions).toContain('supabase.rpc("student_cancel_own_reservation"');
   });
 
