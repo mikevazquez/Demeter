@@ -8,7 +8,9 @@ import {
   resolvePersonCommunicationPreference,
   validateWhatsAppContact,
 } from "../lib/automations/communication-preferences";
-import { resolveAutomationCommunication } from "../lib/automations/communication-control";
+import {
+  resolveAutomationCommunication,
+} from "../lib/automations/communication-control";
 
 describe("SF-168 communication preferences", () => {
   it("keeps operational messages enabled when promotions are opted out", () => {
@@ -39,23 +41,26 @@ describe("SF-168 communication preferences", () => {
     });
   });
 
-  it("lets an individual restriction prevail over a globally allowed category", () => {
-    const result = resolvePersonCommunicationPreference({
-      category: "retention",
-      globalAllowed: true,
-      preferences: {
-        ...DEFAULT_PERSON_COMMUNICATION_PREFERENCES,
-        retention: false,
-      },
-    });
+  it(
+    "lets an individual restriction prevail over a globally allowed category",
+    () => {
+      const result = resolvePersonCommunicationPreference({
+        category: "retention",
+        globalAllowed: true,
+        preferences: {
+          ...DEFAULT_PERSON_COMMUNICATION_PREFERENCES,
+          retention: false,
+        },
+      });
 
-    expect(result).toMatchObject({
-      decision: "suppress",
-      reasonCode: "person_category_opt_out",
-      personRestricted: true,
-      globalRestricted: false,
-    });
-  });
+      expect(result).toMatchObject({
+        decision: "suppress",
+        reasonCode: "person_category_opt_out",
+        personRestricted: true,
+        globalRestricted: false,
+      });
+    },
+  );
 
   it("blocks every category when WhatsApp is blocked", () => {
     const preferences = {
