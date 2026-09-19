@@ -32,7 +32,7 @@ describe("SF-188 FLUJO 03 class operations", () => {
     expect(activeEligibility).toContain("private.can_manage_attendance_session");
     expect(activeEligibility).toContain("target_student_id,\n    true");
     expect(adminPage).toContain('"attendance_walkin_eligibility"');
-    expect(adminPage).toContain("classIsInOperation");
+    expect(adminPage).toContain("canAttendance");
   });
 
   it("uses canonical acquisition and credit hold for covered existing walk-ins", () => {
