@@ -8,9 +8,7 @@ import {
   resolvePersonCommunicationPreference,
   validateWhatsAppContact,
 } from "../lib/automations/communication-preferences";
-import {
-  resolveAutomationCommunication,
-} from "../lib/automations/communication-control";
+import { resolveAutomationCommunication } from "../lib/automations/communication-control";
 
 describe("SF-168 communication preferences", () => {
   it("keeps operational messages enabled when promotions are opted out", () => {
@@ -41,26 +39,23 @@ describe("SF-168 communication preferences", () => {
     });
   });
 
-  it(
-    "lets an individual restriction prevail over a globally allowed category",
-    () => {
-      const result = resolvePersonCommunicationPreference({
-        category: "retention",
-        globalAllowed: true,
-        preferences: {
-          ...DEFAULT_PERSON_COMMUNICATION_PREFERENCES,
-          retention: false,
-        },
-      });
+  it("lets an individual restriction prevail over a globally allowed category", () => {
+    const result = resolvePersonCommunicationPreference({
+      category: "retention",
+      globalAllowed: true,
+      preferences: {
+        ...DEFAULT_PERSON_COMMUNICATION_PREFERENCES,
+        retention: false,
+      },
+    });
 
-      expect(result).toMatchObject({
-        decision: "suppress",
-        reasonCode: "person_category_opt_out",
-        personRestricted: true,
-        globalRestricted: false,
-      });
-    },
-  );
+    expect(result).toMatchObject({
+      decision: "suppress",
+      reasonCode: "person_category_opt_out",
+      personRestricted: true,
+      globalRestricted: false,
+    });
+  });
 
   it("blocks every category when WhatsApp is blocked", () => {
     const preferences = {
@@ -68,15 +63,8 @@ describe("SF-168 communication preferences", () => {
       whatsappBlocked: true,
     };
 
-    for (const category of [
-      "operational",
-      "reminders",
-      "retention",
-      "promotions",
-    ] as const) {
-      expect(
-        resolvePersonCommunicationPreference({ category, preferences }),
-      ).toMatchObject({
+    for (const category of ["operational", "reminders", "retention", "promotions"] as const) {
+      expect(resolvePersonCommunicationPreference({ category, preferences })).toMatchObject({
         decision: "suppress",
         reasonCode: "person_whatsapp_blocked",
       });
@@ -124,16 +112,11 @@ describe("SF-168 communication preferences", () => {
 
   it("keeps the audit table append-only and system RPC service-only", () => {
     const migration = readFileSync(
-      join(
-        process.cwd(),
-        "supabase/migrations/20260919060127_sf168_communication_preferences.sql",
-      ),
+      join(process.cwd(), "supabase/migrations/20260919060127_sf168_communication_preferences.sql"),
       "utf8",
     );
 
-    expect(migration).toContain(
-      "person_communication_preference_events_immutable",
-    );
+    expect(migration).toContain("person_communication_preference_events_immutable");
     expect(migration).toContain("communication_preference_history_immutable");
     expect(migration).toContain(
       "grant execute on function public.system_set_person_communication_preferences",
