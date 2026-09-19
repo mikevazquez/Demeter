@@ -14,14 +14,7 @@ describe("SF-234 rewards domain", () => {
       expect(sql).toContain(`'${family}'`);
     }
 
-    for (const status of [
-      "blocked",
-      "available",
-      "reserved",
-      "redeemed",
-      "expired",
-      "revoked",
-    ]) {
+    for (const status of ["blocked", "available", "reserved", "redeemed", "expired", "revoked"]) {
       expect(sql).toContain(`'${status}'`);
     }
 
@@ -55,8 +48,6 @@ describe("SF-234 rewards domain", () => {
     expect(sql).toContain("evidence_summary jsonb");
     expect(sql).toContain("source_through timestamptz");
     expect(sql).not.toContain("alter table public.reservations add column reward_progress");
-    expect(sql).not.toContain(
-      "alter table public.product_acquisitions add column reward_progress",
-    );
+    expect(sql).not.toContain("alter table public.product_acquisitions add column reward_progress");
   });
 });
