@@ -84,7 +84,9 @@ export default async function StudentHomePage({
         </StudentNoticeDialog>
       ) : null}
 
-      <header className="relative overflow-hidden rounded-3xl border border-white/10 bg-[radial-gradient(circle_at_82%_18%,rgba(236,72,153,0.16),transparent_26%),linear-gradient(135deg,rgba(255,255,255,0.05),rgba(255,255,255,0.015))] px-4 py-4 sm:px-5 sm:py-5">
+      <header
+        className="relative overflow-hidden rounded-3xl border border-white/10 bg-[radial-gradient(circle_at_82%_18%,rgba(236,72,153,0.16),transparent_26%),linear-gradient(135deg,rgba(255,255,255,0.05),rgba(255,255,255,0.015))] px-4 py-4 sm:px-5 sm:py-5"
+      >
         <div
           aria-hidden="true"
           className="absolute bottom-0 right-[18%] top-0 w-px bg-gradient-to-b from-transparent via-fuchsia-500/60 to-transparent shadow-[0_0_22px_rgba(236,72,153,0.55)]"
@@ -146,7 +148,9 @@ export default async function StudentHomePage({
                   </span>
                 ) : null}
               </div>
-              <p className={`mt-0.5 text-sm font-semibold ${expiresSoon ? "text-amber-200" : "text-white"}`}>
+              <p
+                className={`mt-0.5 text-sm font-semibold ${expiresSoon ? "text-amber-200" : "text-white"}`}
+              >
                 {formatDate(activePackage.expires_on, studio.timezone)}
               </p>
             </div>
@@ -203,7 +207,9 @@ export default async function StudentHomePage({
           >
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
-                <h2 className="truncate text-base font-semibold text-white">{nextClass.activity}</h2>
+                <h2 className="truncate text-base font-semibold text-white">
+                  {nextClass.activity}
+                </h2>
                 <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold text-emerald-300">
                   Confirmada
                 </span>
@@ -321,7 +327,9 @@ export default async function StudentHomePage({
         </div>
         <div className="mt-3 grid grid-cols-3 gap-3 border-t border-white/10 pt-3">
           <div>
-            <strong className="block text-lg text-white">{snapshot.stats.attended_this_month}</strong>
+            <strong className="block text-lg text-white">
+              {snapshot.stats.attended_this_month}
+            </strong>
             <span className="text-[11px] text-zinc-500">este mes</span>
           </div>
           <div>
