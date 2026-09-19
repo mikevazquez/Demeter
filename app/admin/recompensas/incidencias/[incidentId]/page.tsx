@@ -4,6 +4,8 @@ import { notFound } from "next/navigation";
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 
+import { resolveRewardIncidentAction } from "../../actions";
+
 import {
   EmptyState,
   StatusBadge,
@@ -15,11 +17,15 @@ import {
 
 export default async function RewardIncidentDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ incidentId: string }>;
+  searchParams: Promise<{ error?: string; saved?: string }>;
 }) {
   const { incidentId } = await params;
+  const query = await searchParams;
   const ctx = await getAdminContext(CAPABILITIES.REWARDS_READ);
+  const canManage = ctx.can(CAPABILITIES.REWARDS_MANAGE);
 
   const { data: incident } = await ctx.supabase
     .from("reward_incidents")
@@ -108,13 +114,94 @@ export default async function RewardIncidentDetailPage({
         </div>
       </header>
 
-      <section className="rounded-2xl border border-amber-500/20 bg-amber-500/[0.05] p-5">
-        <strong className="text-sm text-amber-200">Resolución controlada por SF-243</strong>
-        <p className="mt-2 text-sm leading-6 text-zinc-400">
-          Esta pantalla ya expone el contexto y la evidencia. No habilitamos acciones manuales antes
-          de cerrar el motor de recálculo, revocación y auditoría.
-        </p>
-      </section>
+      {query.saved ? (
+        <div className="notice success">La incidencia se actualizó y quedó registrada en el timeline.</div>
+      ) : null}
+      {query.error ? (
+        <div className="notice error">No se pudo completar la acción: {query.error}</div>
+      ) : null}
+
+      {reward?.status === "redeemed" ? (
+        <section className="rounded-2xl border border-rose-500/20 bg-rose-500/[0.05] p-5">
+          <strong className="text-sm text-rose-200">Recompensa ya utilizada</strong>
+          <p className="mt-2 text-sm leading-6 text-zinc-400">
+            Una corrección nunca reabre ni descanjea esta recompensa. La resolución debe conservar
+            el historial y, si corresponde, registrar un ajuste compensatorio separado.
+          </p>
+        </section>
+      ) : reward?.status === "reserved" ? (
+        <section className="rounded-2xl border border-amber-500/20 bg-amber-500/[0.05] p-5">
+          <strong className="text-sm text-amber-200">Recompensa reservada en una operación</strong>
+          <p className="mt-2 text-sm leading-6 text-zinc-400">
+            No se puede revocar silenciosamente mientras está reservada. Debe revisarse la operación
+            antes de decidir cualquier ajuste.
+          </p>
+        </section>
+      ) : null}
+
+      {canManage && incident.status !== "closed" ? (
+        <section className="rounded-2xl border border-fuchsia-500/20 bg-fuchsia-500/[0.04] p-5">
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-fuchsia-300">
+            RESOLVER INCIDENCIA
+          </p>
+          <h2 className="mt-1 text-xl font-semibold text-white">Acción administrativa</h2>
+          <p className="mt-2 max-w-3xl text-sm leading-6 text-zinc-400">
+            El motivo es obligatorio y todas las acciones quedan auditadas. El progreso se corrige
+            desde el evento fuente; aquí solo se resuelve el efecto sobre la recompensa.
+          </p>
+
+          <form action={resolveRewardIncidentAction} className="mt-5 grid gap-3">
+            <input type="hidden" name="incident_id" value={incident.id} />
+            <label className="grid gap-2 text-sm text-zinc-300">
+              Acción
+              <select
+                name="incident_action"
+                required
+                className="rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 text-white"
+              >
+                {["detected", "in_review"].includes(incident.status) ? (
+                  <option value="mark_review">Mantener / pasar a revisión</option>
+                ) : null}
+                {reward && ["blocked", "available"].includes(reward.status) ? (
+                  <option value="revoke_reward">Revocar recompensa disponible</option>
+                ) : null}
+                <option value="keep_exception">Conservar por excepción administrativa</option>
+                <option value="close_no_action">Resolver sin acción</option>
+                {["resolved_automatic", "resolved_manual", "no_action_required", "in_review"].includes(
+                  incident.status,
+                ) ? (
+                  <option value="close">Cerrar incidencia</option>
+                ) : null}
+              </select>
+            </label>
+            <label className="grid gap-2 text-sm text-zinc-300">
+              Motivo obligatorio
+              <textarea
+                name="reason"
+                required
+                rows={3}
+                placeholder="Explica la decisión y la evidencia revisada."
+                className="rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 text-white"
+              />
+            </label>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              {student ? (
+                <Link
+                  href={`/admin/recompensas/alumnas/${student.id}#recompensa-manual`}
+                  className="text-sm font-semibold text-zinc-400 hover:text-white"
+                >
+                  Crear ajuste compensatorio separado →
+                </Link>
+              ) : (
+                <span />
+              )}
+              <button className="rounded-xl bg-fuchsia-600 px-4 py-2.5 text-sm font-semibold text-white">
+                Registrar resolución
+              </button>
+            </div>
+          </form>
+        </section>
+      ) : null}
 
       <section className="grid gap-4 lg:grid-cols-2">
         <article className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
