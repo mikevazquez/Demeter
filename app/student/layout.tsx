@@ -3,6 +3,7 @@ import Link from "next/link";
 import { signOut } from "@/app/auth/actions";
 import { getStudentPortalContext } from "@/lib/student/portal";
 
+import PendingActionButton from "./components/PendingActionButton";
 import { StudentNav } from "./StudentNav";
 
 export default async function StudentLayout({ children }: { children: React.ReactNode }) {
@@ -24,12 +25,12 @@ export default async function StudentLayout({ children }: { children: React.Reac
               <p className="text-xs text-zinc-500">Portal de alumna</p>
             </div>
             <form action={signOut}>
-              <button
-                type="submit"
-                className="rounded-xl border border-white/10 px-3 py-2 text-xs font-semibold text-zinc-300 hover:bg-white/[0.05] hover:text-white"
+              <PendingActionButton
+                pendingLabel="Saliendo…"
+                className="rounded-xl border border-white/10 px-3 py-2 text-xs font-semibold text-zinc-300 transition hover:bg-white/[0.05] hover:text-white disabled:cursor-wait disabled:opacity-60"
               >
                 Salir
-              </button>
+              </PendingActionButton>
             </form>
           </div>
         </div>
