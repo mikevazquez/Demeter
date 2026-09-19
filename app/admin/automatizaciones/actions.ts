@@ -28,6 +28,18 @@ function detailUrl(code: string, params: Record<string, string>) {
   return `/admin/automatizaciones/${encodeURIComponent(code)}?${search.toString()}`;
 }
 
+function parseSendWindow(value: FormDataEntryValue | null) {
+  const window = String(value ?? "").trim();
+  if (!window) return null;
+
+  const match = /^([01]\d|2[0-3]):[0-5]\d-([01]\d|2[0-3]):[0-5]\d$/.exec(window);
+  if (!match || match[1] === match[2]) {
+    throw new Error("automation_send_window_invalid");
+  }
+
+  return window;
+}
+
 function parseConfiguration(code: AutomationCatalogCode, formData: FormData) {
   const template = getAutomationTemplate(code);
   const configuration: Record<string, unknown> = {};
@@ -68,6 +80,35 @@ function revalidateAutomationPaths(code: string) {
   revalidatePath("/admin/empresa");
   revalidatePath("/admin/automatizaciones");
   revalidatePath(`/admin/automatizaciones/${code}`);
+}
+
+export async function saveGlobalCommunicationWindowAction(formData: FormData) {
+  let globalSendWindow: string | null;
+
+  try {
+    globalSendWindow = parseSendWindow(formData.get("global_send_window"));
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "automation_send_window_invalid";
+    redirect(`/admin/automatizaciones?error=${encodeURIComponent(message)}`);
+  }
+
+  const { supabase, studio, user } = await getAdminContext(CAPABILITIES.AUTOMATIONS_MANAGE);
+  const { error } = await supabase.from("automation_communication_settings").upsert(
+    {
+      studio_id: studio.id,
+      global_send_window: globalSendWindow,
+      updated_by_user_id: user.id,
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "studio_id" },
+  );
+
+  if (error) {
+    redirect(`/admin/automatizaciones?error=${encodeURIComponent(error.message)}`);
+  }
+
+  revalidatePath("/admin/automatizaciones");
+  redirect("/admin/automatizaciones?saved=communication_window");
 }
 
 export async function createAutomationAction(formData: FormData) {
