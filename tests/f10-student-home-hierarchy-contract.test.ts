@@ -10,16 +10,19 @@ function source(path: string) {
 describe("F10/N14 student home visual hierarchy", () => {
   const home = source("app/student/page.tsx");
 
-  it("prioritizes the next booked class on the home dashboard", () => {
-    expect(home).toContain("Tu próxima clase");
-    expect(home).toContain("Confirmada");
-    expect(home).toContain('href="/student/mis-clases"');
-  });
-
-  it("keeps the active package summary immediately available", () => {
+  it("prioritizes an active package before the next booked class", () => {
+    expect(home.indexOf('data-home-block="package"')).toBeLessThan(
+      home.indexOf('data-home-block="next-class"'),
+    );
     expect(home).toContain("Mi paquete");
     expect(home).toContain("Vence");
     expect(home).toContain('role="progressbar"');
+  });
+
+  it("keeps the next booked class immediately after package context", () => {
+    expect(home).toContain("Tu próxima clase");
+    expect(home).toContain("Confirmada");
+    expect(home).toContain('href="/student/mis-clases"');
   });
 
   it("uses useful empty states instead of the old date carousel", () => {
@@ -31,9 +34,9 @@ describe("F10/N14 student home visual hierarchy", () => {
 
   it("keeps quick actions and activity after the primary context", () => {
     expect(home).toContain("Acciones rápidas");
-    expect(home).toContain("Reservar clase");
-    expect(home).toContain("Ver mis clases");
-    expect(home).toContain("Ver mi paquete");
+    expect(home).toContain(">Reservar<");
+    expect(home).toContain(">Mis clases<");
+    expect(home).toContain(">Mi paquete<");
     expect(home).toContain("Disciplina también es amor propio");
   });
 });
