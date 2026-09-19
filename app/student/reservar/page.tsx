@@ -7,6 +7,8 @@ import {
   type StudentSession,
 } from "@/lib/student/portal";
 
+import { QuickBookButton } from "./quick-book-button";
+
 function safeDate(value: string | undefined, fallback: string) {
   return value && /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : fallback;
 }
