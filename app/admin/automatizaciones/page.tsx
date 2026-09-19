@@ -1,0 +1,184 @@
+import Link from "next/link";
+
+import { getAdminContext } from "@/lib/auth/admin-context";
+import { CAPABILITIES } from "@/lib/auth/capabilities";
+import { AUTOMATION_CATALOG } from "@/lib/automations/catalog";
+
+const categoryLabels = {
+  operation: "Operación",
+  team: "Equipo",
+  administration: "Administración",
+  conversion: "Conversión",
+  retention: "Retención",
+} as const;
+
+const statusLabels: Record<string, string> = {
+  draft: "Borrador",
+  active: "Activa",
+  paused: "Pausada",
+  error: "Error",
+  archived: "Archivada",
+};
+
+function statusClass(status: string) {
+  if (status === "active") return "bg-emerald-500/15 text-emerald-300";
+  if (status === "error") return "bg-rose-500/15 text-rose-300";
+  if (status === "paused") return "bg-amber-500/15 text-amber-300";
+  if (status === "archived") return "bg-zinc-500/15 text-zinc-400";
+  return "bg-sky-500/15 text-sky-300";
+}
+
+export default async function AutomationsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string }>;
+}) {
+  const params = await searchParams;
+  const ctx = await getAdminContext(CAPABILITIES.AUTOMATIONS_READ);
+
+  const [{ data: instances }, { data: executions }] = await Promise.all([
+    ctx.supabase
+      .from("automation_instances")
+      .select(
+        "id,catalog_code,status,current_version_number,eligible_from,error_code,error_message,first_executed_at,last_executed_at,created_at,updated_at",
+      )
+      .eq("studio_id", ctx.studio.id)
+      .order("updated_at", { ascending: false }),
+    ctx.supabase
+      .from("automation_executions")
+      .select("id,instance_id,status,created_at")
+      .eq("studio_id", ctx.studio.id)
+      .order("created_at", { ascending: false })
+      .limit(500),
+  ]);
+
+  const instanceRows = instances ?? [];
+  const executionRows = executions ?? [];
+  const byCode = new Map<string, typeof instanceRows>();
+
+  for (const instance of instanceRows) {
+    const rows = byCode.get(instance.catalog_code) ?? [];
+    rows.push(instance);
+    byCode.set(instance.catalog_code, rows);
+  }
+
+  const executionsByInstance = new Map<string, number>();
+  for (const execution of executionRows) {
+    executionsByInstance.set(
+      execution.instance_id,
+      (executionsByInstance.get(execution.instance_id) ?? 0) + 1,
+    );
+  }
+
+  const activeCount = instanceRows.filter((item) => item.status === "active").length;
+  const errorCount = instanceRows.filter((item) => item.status === "error").length;
+
+  return (
+    <main className="space-y-6">
+      <header className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <Link
+            href="/admin/empresa"
+            className="mb-3 inline-flex text-sm font-semibold text-zinc-400 transition hover:text-white"
+          >
+            ← Empresa
+          </Link>
+          <p className="text-sm text-zinc-400">Motor de automatizaciones · {ctx.studio.name}</p>
+          <h1 className="text-3xl font-semibold text-white">Automatizaciones</h1>
+          <p className="mt-1 max-w-3xl text-sm leading-6 text-zinc-400">
+            Configura, activa y audita las automatizaciones de Studio Flow. El historial de
+            ejecuciones conserva los intentos y resultados técnicos de SF-166.
+          </p>
+        </div>
+      </header>
+
+      {params.error ? (
+        <div className="rounded-2xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">
+          No se pudo completar la operación: {params.error}
+        </div>
+      ) : null}
+
+      <section className="grid gap-3 sm:grid-cols-3">
+        <article className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+          <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Catálogo</p>
+          <p className="mt-2 text-2xl font-semibold text-white">{AUTOMATION_CATALOG.length}</p>
+          <p className="mt-1 text-xs text-zinc-500">automatizaciones predefinidas</p>
+        </article>
+        <article className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+          <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Activas</p>
+          <p className="mt-2 text-2xl font-semibold text-white">{activeCount}</p>
+          <p className="mt-1 text-xs text-zinc-500">instancias actualmente ejecutables</p>
+        </article>
+        <article className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+          <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Con error</p>
+          <p className="mt-2 text-2xl font-semibold text-white">{errorCount}</p>
+          <p className="mt-1 text-xs text-zinc-500">requieren revisión técnica</p>
+        </article>
+      </section>
+
+      <section className="grid gap-4 lg:grid-cols-2">
+        {AUTOMATION_CATALOG.map((template) => {
+          const templateInstances = byCode.get(template.code) ?? [];
+          const visibleInstances = templateInstances.filter((item) => item.status !== "archived");
+          const activeInstances = visibleInstances.filter((item) => item.status === "active");
+          const executionCount = templateInstances.reduce(
+            (total, item) => total + (executionsByInstance.get(item.id) ?? 0),
+            0,
+          );
+          const primaryStatus =
+            activeInstances[0]?.status ??
+            visibleInstances[0]?.status ??
+            (template.configurationMode === "system_managed" ? "system" : "unconfigured");
+
+          return (
+            <Link
+              key={template.code}
+              href={`/admin/automatizaciones/${template.code}`}
+              className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 transition hover:border-fuchsia-500/40 hover:bg-white/[0.05]"
+            >
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.15em] text-fuchsia-300">
+                    {template.code} · {categoryLabels[template.category]}
+                  </p>
+                  <h2 className="mt-2 text-lg font-semibold text-white">{template.name}</h2>
+                  <p className="mt-2 text-sm leading-6 text-zinc-400">{template.description}</p>
+                </div>
+                {primaryStatus === "system" ? (
+                  <span className="shrink-0 rounded-full bg-violet-500/15 px-2.5 py-1 text-xs text-violet-300">
+                    Sistema
+                  </span>
+                ) : primaryStatus === "unconfigured" ? (
+                  <span className="shrink-0 rounded-full bg-zinc-500/15 px-2.5 py-1 text-xs text-zinc-400">
+                    Sin configurar
+                  </span>
+                ) : (
+                  <span
+                    className={`shrink-0 rounded-full px-2.5 py-1 text-xs ${statusClass(primaryStatus)}`}
+                  >
+                    {statusLabels[primaryStatus] ?? primaryStatus}
+                  </span>
+                )}
+              </div>
+
+              <div className="mt-5 grid grid-cols-3 gap-3 border-t border-white/10 pt-4 text-sm">
+                <div>
+                  <p className="text-zinc-500">Instancias</p>
+                  <strong className="mt-1 block text-white">{templateInstances.length}</strong>
+                </div>
+                <div>
+                  <p className="text-zinc-500">Activas</p>
+                  <strong className="mt-1 block text-white">{activeInstances.length}</strong>
+                </div>
+                <div>
+                  <p className="text-zinc-500">Ejecuciones</p>
+                  <strong className="mt-1 block text-white">{executionCount}</strong>
+                </div>
+              </div>
+            </Link>
+          );
+        })}
+      </section>
+    </main>
+  );
+}
