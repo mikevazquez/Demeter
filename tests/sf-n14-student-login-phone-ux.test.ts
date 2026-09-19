@@ -14,9 +14,9 @@ describe("SF-N14 student phone login UX", () => {
 
   it("lets students enter only their 10-digit Mexican number", () => {
     expect(login).toContain("+52");
-    expect(login).toContain('pattern="[0-9]{10}"');
-    expect(login).toContain("maxLength={10}");
-    expect(login).toContain("Escribe tus 10 dígitos. Nosotros agregamos +52 automáticamente.");
+    expect(login).toContain('pattern="(?:[0-9]{10}|\\+[1-9][0-9]{7,14})"');
+    expect(login).toContain("maxLength={16}");
+    expect(login).toContain("México: escribe tus 10 dígitos. Agregamos +52 automáticamente.");
   });
 
   it("normalizes the student phone on the server before authentication", () => {
@@ -24,8 +24,9 @@ describe("SF-N14 student phone login UX", () => {
     expect(phone).toContain('normalized = `+52${digits}`');
   });
 
-  it("accepts pasted country-code values in the UI without exposing E.164 complexity", () => {
-    expect(login).toContain('digits.startsWith("52")');
-    expect(login).toContain("digits.slice(2, 12)");
+  it("preserves full E.164 numbers for sandbox and international compatibility", () => {
+    expect(login).toContain('raw.startsWith("+")');
+    expect(login).toContain('!studentPhone.startsWith("+")');
+    expect(login).toContain("digits.slice(0, 15)");
   });
 });
