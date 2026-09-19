@@ -182,10 +182,7 @@ describe("SF-238 attendance, challenges and achievements", () => {
 
   it("locks database rules for attended-only progress and permanent achievements", () => {
     const sql = readFileSync(
-      join(
-        process.cwd(),
-        "supabase/migrations/20260919222000_sf238_rewards_achievements.sql",
-      ),
+      join(process.cwd(), "supabase/migrations/20260919222000_sf238_rewards_achievements.sql"),
       "utf8",
     );
 
