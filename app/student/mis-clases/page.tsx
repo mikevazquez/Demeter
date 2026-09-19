@@ -21,7 +21,7 @@ const errorCopy: Record<string, string> = {
   cancel_failed: "No pudimos cancelar la reserva. Intenta de nuevo.",
   reservation_not_found: "La reserva ya no existe.",
   forbidden: "No puedes modificar esta reserva.",
-  reservation_not_cancellable: "Esta clase ya no se puede cancelar.",
+  reservation_not_cancellable: "La reserva ya cambió de estado.",
   reservation_required: "No pudimos identificar la reserva.",
 };
 
@@ -69,6 +69,7 @@ export default async function StudentClassesPage({
     view?: string;
     error?: string;
     cancelled?: string;
+    credit?: string;
   }>;
 }) {
   const query = await searchParams;
@@ -93,16 +94,20 @@ export default async function StudentClassesPage({
           title="Tu reserva fue actualizada"
           dismissHref="/student/mis-clases"
         >
-          {query.cancelled === "cancelled_late"
-            ? "La cancelación se procesó y el crédito correspondiente se aplicó según la política vigente."
-            : "La cancelación se procesó correctamente y el crédito reservado quedó liberado según la política vigente."}
+          {query.cancelled === "cancelled_late" && query.credit === "lost"
+            ? "La reserva se canceló fuera del horario permitido. El crédito no fue devuelto."
+            : query.cancelled === "cancelled_late"
+              ? "La reserva se canceló fuera del horario permitido."
+              : query.credit === "returned"
+                ? "La reserva se canceló correctamente y el crédito fue devuelto."
+                : "La reserva se canceló correctamente."}
         </StudentNoticeDialog>
       ) : query.error ? (
         <StudentNoticeDialog
           eyebrow="No pudimos cancelar"
           title={
             query.error === "reservation_not_cancellable"
-              ? "Esta clase ya no se puede cancelar"
+              ? "La reserva ya cambió de estado"
               : "Revisa tu reserva"
           }
           dismissHref="/student/mis-clases"
