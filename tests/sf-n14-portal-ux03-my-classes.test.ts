@@ -10,9 +10,7 @@ function source(path: string) {
 describe("SF-N14 PORTAL UX-03 Mis clases", () => {
   const list = source("app/student/mis-clases/page.tsx");
   const detail = source("app/student/mis-clases/[reservationId]/page.tsx");
-  const cancel = source(
-    "app/student/mis-clases/[reservationId]/cancelar/page.tsx",
-  );
+  const cancel = source("app/student/mis-clases/[reservationId]/cancelar/page.tsx");
   const actions = source("app/student/actions.ts");
 
   it("separates upcoming reservations from history", () => {
@@ -26,9 +24,7 @@ describe("SF-N14 PORTAL UX-03 Mis clases", () => {
   it("uses a dedicated reservation detail instead of the booking detail", () => {
     expect(list).toContain("/student/mis-clases/${item.reservation_id}");
     expect(detail).toContain("Gestionar reserva");
-    expect(detail).toContain(
-      "/student/mis-clases/${item.reservation_id}/cancelar",
-    );
+    expect(detail).toContain("/student/mis-clases/${item.reservation_id}/cancelar");
     expect(detail).not.toContain("/student/reservar/${item.session_id}");
   });
 
@@ -56,9 +52,7 @@ describe("SF-N14 PORTAL UX-03 Mis clases", () => {
         ?.split("export async function createMercadoPagoOrderAction")[0] ?? "";
 
     expect(cancel).toContain("cancelStudentReservationAction");
-    expect(block).toContain(
-      'supabase.rpc("student_cancel_own_reservation"',
-    );
+    expect(block).toContain('supabase.rpc("student_cancel_own_reservation"');
     expect(block).not.toContain("credit_ledger");
     expect(block).not.toContain("product_acquisitions");
   });
