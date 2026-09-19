@@ -17,12 +17,12 @@ describe("SF-N14 PORTAL UX-02 home", () => {
     expect(home).toContain("Aún no tienes clases reservadas");
     expect(home).toContain("Tu paquete ya no tiene clases disponibles");
     expect(home).toContain("No tienes un paquete activo");
-    expect(home).toContain("Vence pronto");
+    expect(home).toContain("Pronto");
   });
 
   it("keeps unlimited packages semantically distinct from credits", () => {
     expect(home).toContain('activePackage.unlimited ? "Ilimitado"');
-    expect(home).toContain("Tu paquete tiene acceso ilimitado");
+    expect(home).toContain("Acceso durante tu vigencia");
   });
 
   it("keeps an active package above the next class and uses compact mobile density", () => {
