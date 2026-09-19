@@ -1,8 +1,5 @@
 export type CommunicationPreferenceCategory =
-  | "operational"
-  | "reminders"
-  | "retention"
-  | "promotions";
+  "operational" | "reminders" | "retention" | "promotions";
 
 export interface PersonCommunicationPreferences {
   operational: boolean;
@@ -13,12 +10,12 @@ export interface PersonCommunicationPreferences {
 }
 
 export const DEFAULT_PERSON_COMMUNICATION_PREFERENCES: PersonCommunicationPreferences = {
-    operational: true,
-    reminders: true,
-    retention: true,
-    promotions: true,
-    whatsappBlocked: false,
-  };
+  operational: true,
+  reminders: true,
+  retention: true,
+  promotions: true,
+  whatsappBlocked: false,
+};
 
 export interface CommunicationPreferenceResolution {
   decision: "allow" | "suppress";
