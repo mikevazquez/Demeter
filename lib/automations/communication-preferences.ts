@@ -12,8 +12,7 @@ export interface PersonCommunicationPreferences {
   whatsappBlocked: boolean;
 }
 
-export const DEFAULT_PERSON_COMMUNICATION_PREFERENCES: PersonCommunicationPreferences =
-  {
+export const DEFAULT_PERSON_COMMUNICATION_PREFERENCES: PersonCommunicationPreferences = {
     operational: true,
     reminders: true,
     retention: true,
