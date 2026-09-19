@@ -34,10 +34,7 @@ jobs:
         run: npm ci
 
       - name: Format check
-        run: |
-          npx prettier --write lib/automations/messaging-provider.ts
-          git diff -- lib/automations/messaging-provider.ts
-          git diff --exit-code -- lib/automations/messaging-provider.ts
+        run: npm run format:check
 
       - name: Lint
         run: npm run lint
