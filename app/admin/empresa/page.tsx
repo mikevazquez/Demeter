@@ -44,6 +44,14 @@ const sections: CompanySection[] = [
     secondaryHref: "/admin/ventas/inscripcion",
     secondaryLabel: "Política de inscripción",
   },
+  {
+    title: "Automatizaciones",
+    description:
+      "Configura reglas automáticas, activa o pausa instancias y revisa el historial auditable de ejecuciones.",
+    href: "/admin/automatizaciones",
+    capability: CAPABILITIES.AUTOMATIONS_READ,
+    eyebrow: "AUTOMATIZACIÓN",
+  },
 ];
 
 export default async function CompanyPage() {
