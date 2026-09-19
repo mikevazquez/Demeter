@@ -82,9 +82,7 @@ export default async function StudentBookingConfirmPage({
             role="alert"
             className="mt-4 rounded-2xl border border-rose-500/25 bg-rose-500/[0.08] p-4"
           >
-            <p className="text-sm font-semibold text-rose-100">
-              No se pudo realizar la reserva
-            </p>
+            <p className="text-sm font-semibold text-rose-100">No se pudo realizar la reserva</p>
             <p className="mt-1.5 text-xs leading-5 text-rose-100/75">
               {errorCopy[query.error] ?? bookingReasonCopy(query.error)}
             </p>
@@ -93,9 +91,7 @@ export default async function StudentBookingConfirmPage({
 
         {alreadyReserved ? (
           <div className="mt-4 rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.07] p-4">
-            <p className="text-sm font-semibold text-emerald-200">
-              Ya tienes esta clase reservada
-            </p>
+            <p className="text-sm font-semibold text-emerald-200">Ya tienes esta clase reservada</p>
             <Link
               href="/student/mis-clases"
               className="mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-2xl bg-fuchsia-600 px-4 py-2.5 text-sm font-semibold text-white"
@@ -136,8 +132,8 @@ export default async function StudentBookingConfirmPage({
               {bookingReasonCopy(session.eligibility?.reason_code)}
             </p>
             <p className="mt-1.5 text-xs leading-5 text-zinc-400">
-              La disponibilidad o tus condiciones cambiaron antes de confirmar. No se realizó ninguna
-              reserva.
+              La disponibilidad o tus condiciones cambiaron antes de confirmar. No se realizó
+              ninguna reserva.
             </p>
             <Link
               href={`/student/reservar?date=${returnDate}`}
