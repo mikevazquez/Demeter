@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { AUTOMATION_CATALOG } from "@/lib/automations/catalog";
+import AutomationNotice from "../AutomationNotice";
 import {
   activateAutomationAction,
   archiveAutomationAction,
@@ -244,17 +245,7 @@ export default async function AutomationDetailPage({
         <p className="mt-2 max-w-3xl text-sm leading-6 text-zinc-400">{template.description}</p>
       </header>
 
-      {query.error ? (
-        <div className="rounded-2xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">
-          No se pudo completar la operación: {query.error}
-        </div>
-      ) : null}
-      {query.saved ? (
-        <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200">
-          Cambio guardado correctamente.
-          {query.version ? ` Nueva versión: ${query.version}.` : ""}
-        </div>
-      ) : null}
+      <AutomationNotice error={query.error} saved={query.saved} version={query.version} />
 
       <section className="grid gap-4 lg:grid-cols-3">
         <article className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
