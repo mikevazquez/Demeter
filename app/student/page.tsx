@@ -1,447 +1,310 @@
 import Link from "next/link";
 
 import {
-  bookingReasonCopy,
   formatDate,
   formatDateTime,
   getStudentPortalContext,
   localDateKey,
-  type StudentSession,
+  type StudentAcquisition,
 } from "@/lib/student/portal";
 
-import { cancelStudentReservationAction } from "./actions";
-import { QuickBookButton } from "./reservar/quick-book-button";
+import StudentNoticeDialog from "./components/StudentNoticeDialog";
 
-function safeDate(value: string | undefined, fallback: string) {
-  return value && /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : fallback;
+function dateDistanceInDays(from: string, to: string) {
+  const start = Date.parse(`${from}T12:00:00Z`);
+  const end = Date.parse(`${to}T12:00:00Z`);
+  return Math.round((end - start) / 86_400_000);
 }
 
-function addDays(value: string, days: number) {
-  const date = new Date(`${value}T12:00:00Z`);
-  date.setUTCDate(date.getUTCDate() + days);
-  return date.toISOString().slice(0, 10);
+function availableCredits(activePackage: StudentAcquisition | null) {
+  if (!activePackage || activePackage.unlimited) return null;
+  return activePackage.available_credits ?? 0;
 }
 
-function startOfWeek(value: string) {
-  const date = new Date(`${value}T12:00:00Z`);
-  const weekday = date.getUTCDay();
-  const distanceToMonday = weekday === 0 ? -6 : 1 - weekday;
-  date.setUTCDate(date.getUTCDate() + distanceToMonday);
-  return date.toISOString().slice(0, 10);
-}
+function creditLimit(activePackage: StudentAcquisition) {
+  if (activePackage.credit_limit && activePackage.credit_limit > 0) {
+    return activePackage.credit_limit;
+  }
 
-function dateChip(value: string) {
-  const date = new Date(`${value}T12:00:00Z`);
-  return {
-    weekday: new Intl.DateTimeFormat("es-MX", { weekday: "short", timeZone: "UTC" }).format(date),
-    day: new Intl.DateTimeFormat("es-MX", { day: "numeric", timeZone: "UTC" }).format(date),
-  };
-}
-
-function shortDate(value: string) {
-  return new Intl.DateTimeFormat("es-MX", {
-    day: "numeric",
-    month: "short",
-    timeZone: "UTC",
-  }).format(new Date(`${value}T12:00:00Z`));
-}
-
-function longDate(value: string) {
-  return new Intl.DateTimeFormat("es-MX", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    timeZone: "UTC",
-  }).format(new Date(`${value}T12:00:00Z`));
+  return (
+    (activePackage.available_credits ?? 0) +
+    activePackage.reserved_credits +
+    activePackage.used_credits
+  );
 }
 
 export default async function StudentHomePage({
   searchParams,
 }: {
-  searchParams: Promise<{ date?: string; cancelled?: string; error?: string }>;
+  searchParams: Promise<{ cancelled?: string; error?: string }>;
 }) {
   const query = await searchParams;
-  const { supabase, snapshot, studio } = await getStudentPortalContext();
+  const { snapshot, studio } = await getStudentPortalContext();
   const activePackage = snapshot.acquisitions.find((item) => item.active_now) ?? null;
-  const today = localDateKey(new Date(), studio.timezone);
-  const requestedDate = safeDate(query.date, today);
-  const selectedDate = requestedDate < today ? today : requestedDate;
-  const weekStart = startOfWeek(selectedDate);
-  const currentWeekStart = startOfWeek(today);
-  const weekEnd = addDays(weekStart, 6);
-  const days = Array.from({ length: 7 }, (_, index) => addDays(weekStart, index));
-  const previousWeekDate = addDays(selectedDate, -7);
-  const nextWeekDate = addDays(selectedDate, 7);
+  const credits = availableCredits(activePackage);
+  const nextClass =
+    [...snapshot.upcoming].sort(
+      (left, right) => Date.parse(left.starts_at) - Date.parse(right.starts_at),
+    )[0] ?? null;
 
-  const { data: sessions, error: scheduleError } = await supabase.rpc("student_schedule_feed", {
-    target_start: selectedDate,
-    target_end: selectedDate,
-    target_discipline_id: null,
-  });
-  const daySessions = (sessions ?? []) as StudentSession[];
+  const today = localDateKey(new Date(), studio.timezone);
+  const daysUntilExpiration = activePackage
+    ? dateDistanceInDays(today, activePackage.expires_on)
+    : null;
+  const expiresSoon =
+    daysUntilExpiration !== null && daysUntilExpiration >= 0 && daysUntilExpiration <= 7;
+
+  const packageLimit = activePackage ? creditLimit(activePackage) : 0;
+  const usedProgress =
+    activePackage && !activePackage.unlimited && packageLimit > 0
+      ? Math.min(100, Math.round((activePackage.used_credits / packageLimit) * 100))
+      : 0;
+
+  const noCredits = Boolean(activePackage && !activePackage.unlimited && credits === 0);
+  const canReserve = Boolean(activePackage && (activePackage.unlimited || (credits ?? 0) > 0));
 
   return (
-    <main className="space-y-6">
-      <header>
-        <p className="text-sm text-fuchsia-300">Hola, {snapshot.profile.first_name}</p>
-        <h1 className="mt-1 text-3xl font-semibold text-white sm:text-4xl">
-          Tu estudio, en un solo lugar
-        </h1>
-        <p className="mt-2 text-sm text-zinc-400">
-          Revisa tu paquete, las clases del día y tu actividad.
-        </p>
+    <main className="space-y-5 pb-4 sm:space-y-6">
+      {query.cancelled ? (
+        <StudentNoticeDialog
+          eyebrow="Reserva actualizada"
+          title="Tu reserva fue cancelada"
+          dismissHref="/student"
+        >
+          La clase ya no aparece entre tus próximas reservas.
+        </StudentNoticeDialog>
+      ) : query.error ? (
+        <StudentNoticeDialog
+          eyebrow="No pudimos completar la acción"
+          title="Revisa tu reserva"
+          dismissHref="/student"
+          tone="error"
+        >
+          No pudimos completar la cancelación. Revisa la clase e intenta nuevamente.
+        </StudentNoticeDialog>
+      ) : null}
+
+      <header className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-[radial-gradient(circle_at_78%_20%,rgba(236,72,153,0.18),transparent_28%),linear-gradient(135deg,rgba(255,255,255,0.055),rgba(255,255,255,0.015))] px-5 py-7 sm:px-7 sm:py-9">
+        <div
+          aria-hidden="true"
+          className="absolute bottom-0 right-[22%] top-0 w-px bg-gradient-to-b from-transparent via-fuchsia-500/70 to-transparent shadow-[0_0_28px_rgba(236,72,153,0.7)]"
+        />
+        <div className="relative max-w-xl">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.32em] text-zinc-500">
+            Demeter Fitness Studio
+          </p>
+          <h1 className="mt-5 text-3xl font-semibold tracking-tight text-white sm:text-4xl">
+            Hola, {snapshot.profile.first_name} <span aria-hidden="true">♥</span>
+          </h1>
+          <p className="mt-2 text-sm text-zinc-400">Movimiento que transforma</p>
+        </div>
       </header>
 
-      {query.cancelled ? (
-        <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.08] px-4 py-3 text-sm text-emerald-200">
-          ✓ Tu reserva se canceló correctamente.
-        </div>
-      ) : null}
-      {query.error ? (
-        <div className="rounded-2xl border border-rose-500/25 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">
-          No pudimos completar la cancelación. Revisa la clase e intenta de nuevo.
-        </div>
-      ) : null}
-
-      <section className="overflow-hidden rounded-3xl border border-fuchsia-500/25 bg-gradient-to-br from-fuchsia-500/15 via-white/[0.04] to-transparent p-5 sm:p-7">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-fuchsia-300">
-            Tu paquete activo
+      <section className="rounded-3xl border border-white/10 bg-white/[0.03] p-5 sm:p-6">
+        <div className="flex items-center justify-between gap-4">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-400">
+            Tu próxima clase
           </p>
-          <h2 className="mt-2 text-2xl font-semibold text-white">
-            {activePackage?.name ?? "Sin paquete activo"}
-          </h2>
-          <p className="mt-2 text-sm text-zinc-400">
-            {activePackage
-              ? `Vigente hasta ${formatDate(activePackage.expires_on, studio.timezone)}`
-              : "Cuando tengas un paquete vigente aparecerá aquí."}
-          </p>
+          {nextClass ? (
+            <Link href="/student/mis-clases" className="text-sm font-semibold text-fuchsia-300">
+              Ver todas
+            </Link>
+          ) : null}
         </div>
 
-        {activePackage ? (
-          <div className="mt-5 grid grid-cols-3 gap-2">
-            <div className="rounded-2xl bg-black/20 p-3">
-              <p className="text-xs text-zinc-500">Disponibles</p>
-              <p className="mt-1 text-lg font-semibold text-white">
-                {activePackage.unlimited ? "∞" : activePackage.available_credits}
+        {nextClass ? (
+          <Link
+            href="/student/mis-clases"
+            className="mt-4 block rounded-2xl border border-white/10 bg-black/20 p-4 transition hover:bg-white/[0.04]"
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <span className="inline-flex rounded-full bg-emerald-500/15 px-2.5 py-1 text-xs font-semibold text-emerald-300">
+                  Confirmada
+                </span>
+                <h2 className="mt-3 text-xl font-semibold text-white">{nextClass.activity}</h2>
+                <p className="mt-1 text-sm font-medium text-fuchsia-300">{nextClass.discipline}</p>
+                <p className="mt-3 text-sm text-zinc-300">
+                  {formatDateTime(nextClass.starts_at, studio.timezone)}
+                </p>
+                <p className="mt-1 text-xs text-zinc-500">
+                  {[nextClass.space, nextClass.coach].filter(Boolean).join(" · ") ||
+                    "Consulta los detalles de tu clase"}
+                </p>
+              </div>
+              <span aria-hidden="true" className="mt-8 text-2xl text-zinc-500">
+                ›
+              </span>
+            </div>
+          </Link>
+        ) : (
+          <div className="mt-4 rounded-2xl border border-dashed border-white/10 bg-black/15 p-6 text-center">
+            <div
+              aria-hidden="true"
+              className="mx-auto flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 text-xl text-zinc-400"
+            >
+              ◫
+            </div>
+            <h2 className="mt-4 text-lg font-semibold text-white">
+              {noCredits
+                ? "No tienes clases reservadas"
+                : activePackage
+                  ? "Aún no tienes clases reservadas"
+                  : "No tienes clases reservadas"}
+            </h2>
+            <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-zinc-400">
+              {noCredits
+                ? "Tu paquete ya no tiene clases disponibles. Puedes consultar las opciones para seguir entrenando."
+                : activePackage
+                  ? "Cuando reserves una clase, aparecerá aquí para que tengas tu siguiente entrenamiento siempre a la vista."
+                  : "Adquiere un paquete para comenzar a reservar tus clases."}
+            </p>
+            <Link
+              href={canReserve ? "/student/reservar" : "/student/paquete"}
+              className="mt-5 inline-flex min-h-11 items-center justify-center rounded-xl bg-fuchsia-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-fuchsia-500"
+            >
+              {canReserve ? "Reservar clase" : "Ver paquetes"}
+            </Link>
+          </div>
+        )}
+      </section>
+
+      {activePackage ? (
+        <section className="rounded-3xl border border-white/10 bg-white/[0.03] p-5 sm:p-6">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-400">
+                Mi paquete
+              </p>
+              <h2 className="mt-2 text-2xl font-semibold text-white">{activePackage.name}</h2>
+            </div>
+            <Link href="/student/paquete" className="text-sm font-semibold text-fuchsia-300">
+              Ver detalles
+            </Link>
+          </div>
+
+          <div className="mt-5 grid gap-4 sm:grid-cols-[1fr_auto] sm:items-end">
+            <div>
+              <strong className="text-3xl font-semibold text-white">
+                {activePackage.unlimited ? "Ilimitado" : `${credits} clases`}
+              </strong>
+              <p className="mt-1 text-sm text-zinc-400">
+                {activePackage.unlimited ? "Acceso disponible durante tu vigencia" : "disponibles"}
               </p>
             </div>
-            <div className="rounded-2xl bg-black/20 p-3">
-              <p className="text-xs text-zinc-500">Reservadas</p>
-              <p className="mt-1 text-lg font-semibold text-white">
-                {activePackage.reserved_credits}
+
+            <div className="sm:text-right">
+              <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+                <p className="text-xs uppercase tracking-[0.16em] text-zinc-500">Vence</p>
+                {expiresSoon ? (
+                  <span className="rounded-full border border-amber-400/25 bg-amber-400/10 px-2.5 py-1 text-[11px] font-semibold text-amber-300">
+                    Vence pronto
+                  </span>
+                ) : null}
+              </div>
+              <p className={`mt-1 font-semibold ${expiresSoon ? "text-amber-200" : "text-white"}`}>
+                {formatDate(activePackage.expires_on, studio.timezone)}
               </p>
-            </div>
-            <div className="rounded-2xl bg-black/20 p-3">
-              <p className="text-xs text-zinc-500">Utilizadas</p>
-              <p className="mt-1 text-lg font-semibold text-white">{activePackage.used_credits}</p>
             </div>
           </div>
-        ) : null}
 
-        <div className="mt-5 flex flex-wrap gap-3">
+          {activePackage.unlimited ? (
+            <div className="mt-5 rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-zinc-300">
+              Tu paquete tiene acceso ilimitado. Las reservas continúan sujetas a disponibilidad y
+              a las reglas vigentes de cada clase.
+            </div>
+          ) : (
+            <div className="mt-5">
+              <div
+                className="h-2 overflow-hidden rounded-full bg-white/10"
+                role="progressbar"
+                aria-label="Clases utilizadas"
+                aria-valuemin={0}
+                aria-valuemax={packageLimit}
+                aria-valuenow={activePackage.used_credits}
+              >
+                <div
+                  className="h-full rounded-full bg-fuchsia-500"
+                  style={{ width: `${usedProgress}%` }}
+                />
+              </div>
+              <div className="mt-2 flex items-center justify-between gap-3 text-xs text-zinc-500">
+                <span>{activePackage.used_credits} utilizadas</span>
+                <span>{packageLimit} en total</span>
+              </div>
+            </div>
+          )}
+        </section>
+      ) : (
+        <section className="rounded-3xl border border-dashed border-white/10 bg-white/[0.02] p-6 text-center">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500">Mi paquete</p>
+          <h2 className="mt-3 text-xl font-semibold text-white">No tienes un paquete activo</h2>
+          <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-zinc-400">
+            Consulta los paquetes disponibles y elige el que corresponda a tu entrenamiento.
+          </p>
+          <Link
+            href="/student/paquete"
+            className="mt-5 inline-flex min-h-11 items-center justify-center rounded-xl bg-fuchsia-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-fuchsia-500"
+          >
+            Ver paquetes
+          </Link>
+        </section>
+      )}
+
+      <section>
+        <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500">
+          Acciones rápidas
+        </p>
+        <div className="grid grid-cols-3 gap-2 sm:gap-3">
           <Link
             href="/student/reservar"
-            className="rounded-xl bg-fuchsia-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-fuchsia-500"
+            className="flex min-h-24 flex-col items-center justify-center rounded-2xl border border-fuchsia-500/20 bg-fuchsia-500/[0.07] p-3 text-center transition hover:bg-fuchsia-500/[0.12]"
           >
-            Reservar clase
+            <span aria-hidden="true" className="text-xl text-fuchsia-300">
+              ◫
+            </span>
+            <span className="mt-2 text-xs font-semibold text-white sm:text-sm">Reservar clase</span>
+          </Link>
+          <Link
+            href="/student/mis-clases"
+            className="flex min-h-24 flex-col items-center justify-center rounded-2xl border border-fuchsia-500/20 bg-fuchsia-500/[0.07] p-3 text-center transition hover:bg-fuchsia-500/[0.12]"
+          >
+            <span aria-hidden="true" className="text-xl text-fuchsia-300">
+              ≡
+            </span>
+            <span className="mt-2 text-xs font-semibold text-white sm:text-sm">Ver mis clases</span>
           </Link>
           <Link
             href="/student/paquete"
-            className="rounded-xl border border-white/10 px-4 py-2.5 text-sm font-semibold text-white hover:bg-white/[0.05]"
+            className="flex min-h-24 flex-col items-center justify-center rounded-2xl border border-fuchsia-500/20 bg-fuchsia-500/[0.07] p-3 text-center transition hover:bg-fuchsia-500/[0.12]"
           >
-            Ver mi paquete
+            <span aria-hidden="true" className="text-xl text-fuchsia-300">
+              ▭
+            </span>
+            <span className="mt-2 text-xs font-semibold text-white sm:text-sm">Ver mi paquete</span>
           </Link>
         </div>
       </section>
 
-      <div className="flex flex-col gap-6">
-        <section
-          className={`${snapshot.upcoming.length ? "order-2" : "order-1"} rounded-3xl border border-white/10 bg-white/[0.03] p-4 sm:p-5`}
-        >
-          <div className="mb-4 flex items-center justify-between gap-3">
-            {weekStart > currentWeekStart ? (
-              <Link
-                href={`/student?date=${previousWeekDate < today ? today : previousWeekDate}`}
-                aria-label="Semana anterior"
-                className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-black/20 text-xl text-white transition hover:bg-white/[0.06]"
-              >
-                ‹
-              </Link>
-            ) : (
-              <span
-                aria-hidden="true"
-                className="flex h-10 w-10 items-center justify-center rounded-full border border-white/5 text-xl text-zinc-700"
-              >
-                ‹
-              </span>
-            )}
-
-            <div className="text-center">
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-zinc-500">
-                Clases del día
-              </p>
-              <p className="mt-1 text-sm font-medium text-zinc-300">
-                {shortDate(weekStart)} – {shortDate(weekEnd)}
-              </p>
-            </div>
-
-            <Link
-              href={`/student?date=${nextWeekDate}`}
-              aria-label="Semana siguiente"
-              className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-black/20 text-xl text-white transition hover:bg-white/[0.06]"
-            >
-              ›
-            </Link>
+      <section className="overflow-hidden rounded-3xl border border-white/10 bg-[radial-gradient(circle_at_85%_20%,rgba(236,72,153,0.14),transparent_30%),linear-gradient(135deg,rgba(255,255,255,0.05),rgba(255,255,255,0.015))] p-6 sm:p-7">
+        <p className="text-xs font-semibold uppercase tracking-[0.28em] text-zinc-400">
+          Disciplina también es amor propio
+        </p>
+        <div className="mt-5 grid grid-cols-3 gap-3 border-t border-white/10 pt-5">
+          <div>
+            <strong className="block text-xl text-white">{snapshot.stats.attended_this_month}</strong>
+            <span className="text-xs text-zinc-500">este mes</span>
           </div>
-
-          <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
-            {days.map((day) => {
-              const chip = dateChip(day);
-              const isPast = day < today;
-              const isSelected = day === selectedDate;
-              const className = `rounded-2xl px-1 py-3 text-center transition ${
-                isSelected
-                  ? "bg-fuchsia-600 text-white"
-                  : isPast
-                    ? "border border-white/5 bg-black/10 text-zinc-700"
-                    : "border border-white/10 bg-black/20 text-zinc-400 hover:text-white"
-              }`;
-              const content = (
-                <>
-                  <span className="block text-[11px] capitalize sm:text-xs">{chip.weekday}</span>
-                  <strong className="mt-1 block text-base sm:text-lg">{chip.day}</strong>
-                </>
-              );
-
-              return isPast ? (
-                <span key={day} className={className} aria-disabled="true">
-                  {content}
-                </span>
-              ) : (
-                <Link key={day} href={`/student?date=${day}`} className={className}>
-                  {content}
-                </Link>
-              );
-            })}
+          <div>
+            <strong className="block text-xl text-white">{snapshot.stats.attended_total}</strong>
+            <span className="text-xs text-zinc-500">asistencias</span>
           </div>
-
-          <div className="mt-5">
-            <h2 className="text-xl font-semibold capitalize text-white">
-              {longDate(selectedDate)}
-            </h2>
-            {scheduleError ? (
-              <p className="mt-3 text-sm text-rose-200">No pudimos cargar las clases del día.</p>
-            ) : null}
-
-            <div className="mt-4 space-y-3">
-              {daySessions.length ? (
-                daySessions.map((session) => {
-                  const reservation = snapshot.upcoming.find(
-                    (item) => item.session_id === session.session_id,
-                  );
-                  const reserved = Boolean(reservation);
-                  const eligible = Boolean(session.eligibility?.eligible);
-                  const timeLabel = formatDateTime(session.starts_at, studio.timezone);
-
-                  return (
-                    <article
-                      key={session.session_id}
-                      className="rounded-2xl border border-white/10 bg-black/20 p-4"
-                    >
-                      <div className="flex flex-wrap items-start justify-between gap-4">
-                        <div>
-                          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-fuchsia-300">
-                            {session.discipline}
-                          </p>
-                          <h3 className="mt-1 font-semibold text-white">{session.activity}</h3>
-                          <p className="mt-1 text-sm text-zinc-400">{timeLabel}</p>
-                          <p className="mt-1 text-xs text-zinc-500">
-                            {[session.coach, session.space || session.location]
-                              .filter(Boolean)
-                              .join(" · ") || "Detalles en la clase"}
-                          </p>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-sm font-semibold text-white">
-                            {session.spots_available}/{session.capacity} lugares
-                          </p>
-                          <span
-                            className={`mt-2 inline-block rounded-full px-2.5 py-1 text-xs font-medium ${
-                              reserved
-                                ? "bg-sky-500/15 text-sky-300"
-                                : eligible
-                                  ? "bg-emerald-500/15 text-emerald-300"
-                                  : "bg-zinc-500/15 text-zinc-400"
-                            }`}
-                          >
-                            {reserved
-                              ? "Reservada"
-                              : bookingReasonCopy(session.eligibility?.reason_code)}
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-white/10 pt-4">
-                        <Link
-                          href={`/student/reservar/${session.session_id}`}
-                          className="min-h-11 rounded-2xl border border-white/10 px-4 py-2.5 text-sm font-semibold text-zinc-300 transition hover:bg-white/[0.05] hover:text-white"
-                        >
-                          Ver detalles
-                        </Link>
-                        {!reservation ? (
-                          <QuickBookButton
-                            sessionId={session.session_id}
-                            activity={session.activity}
-                            discipline={session.discipline}
-                            timeLabel={timeLabel}
-                            eligible={eligible}
-                            reserved={false}
-                          />
-                        ) : (
-                          <details className="group">
-                            <summary className="cursor-pointer list-none text-sm font-semibold text-rose-300">
-                              Cancelar
-                            </summary>
-                            <form
-                              action={cancelStudentReservationAction}
-                              className="mt-3 rounded-xl border border-rose-500/20 bg-rose-500/[0.06] p-3"
-                            >
-                              <input
-                                type="hidden"
-                                name="reservation_id"
-                                value={reservation.reservation_id}
-                              />
-                              <input type="hidden" name="return_to" value="/student" />
-                              <p className="text-xs leading-5 text-zinc-400">
-                                Se aplicará la política vigente de cancelación al confirmar.
-                              </p>
-                              <button
-                                type="submit"
-                                className="mt-3 rounded-lg border border-rose-400/30 px-3 py-2 text-xs font-semibold text-rose-200"
-                              >
-                                Confirmar cancelación
-                              </button>
-                            </form>
-                          </details>
-                        )}
-                      </div>
-                    </article>
-                  );
-                })
-              ) : (
-                <div className="rounded-2xl border border-dashed border-white/10 p-6 text-center">
-                  <p className="text-sm text-zinc-400">No hay clases disponibles para este día.</p>
-                </div>
-              )}
-            </div>
+          <div>
+            <strong className="block text-xl text-white">{snapshot.stats.streak_days}</strong>
+            <span className="text-xs text-zinc-500">días de racha</span>
           </div>
-        </section>
-
-        <section
-          className={`${snapshot.upcoming.length ? "order-1" : "order-2"} rounded-3xl border border-white/10 bg-white/[0.03] p-5 sm:p-6`}
-        >
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500">
-                Próximas clases
-              </p>
-              <h2 className="mt-1 text-xl font-semibold text-white">Tu agenda</h2>
-            </div>
-            <Link href="/student/mis-clases" className="text-sm font-semibold text-fuchsia-300">
-              Ver todas
-            </Link>
-          </div>
-
-          <div className="mt-4 space-y-3">
-            {snapshot.upcoming.length ? (
-              snapshot.upcoming.map((item) => (
-                <article
-                  key={item.reservation_id}
-                  className="rounded-2xl border border-white/10 bg-black/20 p-4"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="font-semibold text-white">{item.activity}</p>
-                      <p className="mt-1 text-sm text-zinc-400">
-                        {formatDateTime(item.starts_at, studio.timezone)}
-                      </p>
-                      <p className="mt-1 text-xs text-zinc-500">
-                        {[item.coach, item.space].filter(Boolean).join(" · ") || item.discipline}
-                      </p>
-                    </div>
-                    <span className="rounded-full bg-emerald-500/15 px-2.5 py-1 text-xs font-medium text-emerald-300">
-                      Reservada
-                    </span>
-                  </div>
-                  <div className="mt-3 flex flex-wrap items-center gap-3">
-                    <Link
-                      href={`/student/reservar/${item.session_id}`}
-                      className="text-sm font-semibold text-fuchsia-300"
-                    >
-                      Ver clase
-                    </Link>
-                    <details>
-                      <summary className="cursor-pointer list-none text-sm font-semibold text-rose-300">
-                        Cancelar
-                      </summary>
-                      <form
-                        action={cancelStudentReservationAction}
-                        className="mt-3 rounded-xl border border-rose-500/20 bg-rose-500/[0.06] p-3"
-                      >
-                        <input type="hidden" name="reservation_id" value={item.reservation_id} />
-                        <input type="hidden" name="return_to" value="/student" />
-                        <p className="text-xs leading-5 text-zinc-400">
-                          Se aplicará la política vigente de cancelación al confirmar.
-                        </p>
-                        <button
-                          type="submit"
-                          className="mt-3 rounded-lg border border-rose-400/30 px-3 py-2 text-xs font-semibold text-rose-200"
-                        >
-                          Confirmar cancelación
-                        </button>
-                      </form>
-                    </details>
-                  </div>
-                </article>
-              ))
-            ) : (
-              <div className="rounded-2xl border border-dashed border-white/10 p-6 text-center">
-                <p className="text-sm text-zinc-400">No tienes clases reservadas todavía.</p>
-                <Link
-                  href="/student/reservar"
-                  className="mt-3 inline-block text-sm font-semibold text-fuchsia-300"
-                >
-                  Buscar una clase
-                </Link>
-              </div>
-            )}
-          </div>
-        </section>
-
-        <section className="order-3 rounded-3xl border border-white/10 bg-white/[0.03] p-5 sm:p-6">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500">
-            Tu actividad
-          </p>
-          <h2 className="mt-1 text-xl font-semibold text-white">Estadísticas</h2>
-          <div className="mt-4 grid grid-cols-2 gap-3">
-            <div className="rounded-2xl bg-black/20 p-4">
-              <strong className="text-2xl text-white">{snapshot.stats.attended_this_month}</strong>
-              <p className="mt-1 text-xs text-zinc-500">este mes</p>
-            </div>
-            <div className="rounded-2xl bg-black/20 p-4">
-              <strong className="text-2xl text-white">{snapshot.stats.streak_days}</strong>
-              <p className="mt-1 text-xs text-zinc-500">días de racha</p>
-            </div>
-            <div className="col-span-2 rounded-2xl bg-black/20 p-4">
-              <p className="text-xs text-zinc-500">Clase más asistida</p>
-              <strong className="mt-1 block text-lg text-white">
-                {snapshot.stats.favorite_activity ?? "Aún sin datos"}
-              </strong>
-            </div>
-          </div>
-        </section>
-      </div>
+        </div>
+      </section>
     </main>
   );
 }
