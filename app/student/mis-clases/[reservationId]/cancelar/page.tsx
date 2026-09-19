@@ -17,7 +17,12 @@ export default async function StudentCancelReservationPage({
 }) {
   const { reservationId } = await params;
   const { supabase, studio } = await getStudentPortalContext();
-  const { data, error } = await supabase.rpc("student_classes_feed");
+  const [{ data, error }, { data: previewData }] = await Promise.all([
+    supabase.rpc("student_classes_feed"),
+    supabase.rpc("student_cancellation_preview", {
+      target_reservation_id: reservationId,
+    }),
+  ]);
 
   if (error || !data) {
     throw new Error("student_classes_feed_failed");
@@ -32,6 +37,20 @@ export default async function StudentCancelReservationPage({
     (feed.history ?? []).find((entry) => entry.reservation_id === reservationId);
 
   if (!item) notFound();
+
+  const preview = previewData as
+    | {
+        ok?: boolean;
+        late?: boolean;
+        uses_credits?: boolean;
+        unlimited?: boolean;
+        credit_will_return?: boolean | null;
+      }
+    | null;
+  const willLoseCredit = Boolean(preview?.ok && preview.late && preview.uses_credits);
+  const willReturnCredit = Boolean(
+    preview?.ok && !preview.late && preview.credit_will_return === true,
+  );
 
   if (item.status !== "reserved") {
     return (
@@ -52,10 +71,10 @@ export default async function StudentCancelReservationPage({
             ⌑
           </div>
           <h1 className="mt-4 text-xl font-semibold text-white">
-            Esta clase ya no se puede cancelar
+            Esta reserva ya cambió de estado
           </h1>
           <p className="mt-2 text-sm leading-6 text-zinc-400">
-            La reserva cambió de estado. No se realizó ninguna modificación.
+            Ya no está activa, así que no hay ninguna cancelación pendiente.
           </p>
           <Link
             href="/student/mis-clases"
@@ -103,10 +122,26 @@ export default async function StudentCancelReservationPage({
           </p>
         </div>
 
-        <p className="mt-4 text-xs leading-5 text-zinc-400">
-          Studio Flow aplicará automáticamente la política vigente de cancelación y el tratamiento
-          correspondiente de tus créditos.
-        </p>
+        {willLoseCredit ? (
+          <div className="mt-4 rounded-2xl border border-amber-400/25 bg-amber-400/[0.08] p-4">
+            <p className="text-sm font-semibold text-amber-100">
+              Estás fuera del horario de cancelación
+            </p>
+            <p className="mt-1.5 text-xs leading-5 text-amber-100/80">
+              Si cancelas ahora, el crédito utilizado para esta clase no será devuelto.
+            </p>
+          </div>
+        ) : willReturnCredit ? (
+          <div className="mt-4 rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.07] p-4">
+            <p className="text-xs leading-5 text-emerald-100">
+              Si cancelas ahora, el crédito reservado para esta clase será devuelto.
+            </p>
+          </div>
+        ) : (
+          <p className="mt-4 text-xs leading-5 text-zinc-400">
+            Studio Flow aplicará automáticamente la política vigente de cancelación.
+          </p>
+        )}
 
         <form action={cancelStudentReservationAction} className="mt-5 space-y-3">
           <input type="hidden" name="reservation_id" value={item.reservation_id} />
