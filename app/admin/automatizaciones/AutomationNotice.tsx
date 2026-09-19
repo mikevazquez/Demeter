@@ -10,11 +10,7 @@ type AutomationNoticeProps = {
   version?: string;
 };
 
-export default function AutomationNotice({
-  error,
-  saved,
-  version,
-}: AutomationNoticeProps) {
+export default function AutomationNotice({ error, saved, version }: AutomationNoticeProps) {
   const [open, setOpen] = useState(Boolean(error || saved));
 
   if (!open || (!error && !saved)) return null;
