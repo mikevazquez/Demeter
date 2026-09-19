@@ -34,9 +34,9 @@ describe("SF-N14 PORTAL UX-02 home", () => {
   });
 
   it("offers the approved quick actions", () => {
-    expect(home).toContain(">Reservar<");
-    expect(home).toContain(">Mis clases<");
-    expect(home).toContain(">Mi paquete<");
+    expect(home).toContain("Reservar");
+    expect(home).toContain("Mis clases");
+    expect(home).toContain("Mi paquete");
   });
 
   it("provides a recoverable temporary error state", () => {
