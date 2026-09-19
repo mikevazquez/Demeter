@@ -33,11 +33,6 @@ jobs:
       - name: Install
         run: npm ci
 
-      - name: SF-168 format diagnostic
-        run: |
-          npx prettier --write lib/automations/communication-preferences.ts tests/sf168-communication-preferences.test.ts
-          git diff -- lib/automations/communication-preferences.ts tests/sf168-communication-preferences.test.ts
-
       - name: Format check
         run: npm run format:check
 
