@@ -1,10 +1,5 @@
 export type RewardInstanceStatus =
-  | "blocked"
-  | "available"
-  | "reserved"
-  | "redeemed"
-  | "expired"
-  | "revoked";
+  "blocked" | "available" | "reserved" | "redeemed" | "expired" | "revoked";
 
 export interface RewardLifecycleRpcError {
   message: string;
@@ -16,10 +11,7 @@ export interface RewardLifecycleRpcResult<T> {
 }
 
 export interface RewardLifecycleRpcClient {
-  rpc<T>(
-    functionName: string,
-    args: Record<string, unknown>,
-  ): Promise<RewardLifecycleRpcResult<T>>;
+  rpc<T>(functionName: string, args: Record<string, unknown>): Promise<RewardLifecycleRpcResult<T>>;
 }
 
 export interface GenerateRewardInstanceInput {
@@ -45,10 +37,7 @@ function requiredText(value: string, code: string): string {
   return normalized;
 }
 
-function assertObject(
-  value: Readonly<Record<string, unknown>>,
-  code: string,
-): void {
+function assertObject(value: Readonly<Record<string, unknown>>, code: string): void {
   if (typeof value !== "object" || value === null || Array.isArray(value)) {
     throw new Error(code);
   }
@@ -91,10 +80,7 @@ export async function generateRewardInstance(
         "reward_source_evaluation_required",
       ),
       p_reward_key: requiredText(input.rewardKey, "reward_key_required"),
-      p_idempotency_key: requiredText(
-        input.idempotencyKey,
-        "reward_idempotency_key_required",
-      ),
+      p_idempotency_key: requiredText(input.idempotencyKey, "reward_idempotency_key_required"),
       p_origin_snapshot: originSnapshot,
       p_available_from: input.availableFrom ?? null,
       p_expires_at: input.expiresAt ?? null,
@@ -115,10 +101,7 @@ export async function makeRewardAvailable(
 ): Promise<RewardInstanceStatus> {
   return unwrapRpc(
     client.rpc<RewardInstanceStatus>("system_make_reward_available", {
-      p_reward_instance_id: requiredText(
-        rewardInstanceId,
-        "reward_instance_id_required",
-      ),
+      p_reward_instance_id: requiredText(rewardInstanceId, "reward_instance_id_required"),
     }),
     "reward_make_available_missing_result",
   );
@@ -138,18 +121,9 @@ export async function reserveReward(
 
   return unwrapRpc(
     client.rpc<RewardInstanceStatus>("system_reserve_reward", {
-      p_reward_instance_id: requiredText(
-        input.rewardInstanceId,
-        "reward_instance_id_required",
-      ),
-      p_reservation_key: requiredText(
-        input.reservationKey,
-        "reward_reservation_key_required",
-      ),
-      p_reserved_until: requiredText(
-        input.reservedUntil,
-        "reward_reservation_until_required",
-      ),
+      p_reward_instance_id: requiredText(input.rewardInstanceId, "reward_instance_id_required"),
+      p_reservation_key: requiredText(input.reservationKey, "reward_reservation_key_required"),
+      p_reserved_until: requiredText(input.reservedUntil, "reward_reservation_until_required"),
       p_context: context,
     }),
     "reward_reservation_missing_result",
@@ -165,10 +139,7 @@ export async function releaseRewardReservation(
 ): Promise<RewardInstanceStatus> {
   return unwrapRpc(
     client.rpc<RewardInstanceStatus>("system_release_reward_reservation", {
-      p_reward_instance_id: requiredText(
-        input.rewardInstanceId,
-        "reward_instance_id_required",
-      ),
+      p_reward_instance_id: requiredText(input.rewardInstanceId, "reward_instance_id_required"),
       p_reason: requiredText(input.reason, "reward_release_reason_required"),
     }),
     "reward_release_missing_result",
@@ -191,10 +162,7 @@ export async function redeemReward(
 
   return unwrapRpc(
     client.rpc<RewardInstanceStatus>("system_redeem_reward", {
-      p_reward_instance_id: requiredText(
-        input.rewardInstanceId,
-        "reward_instance_id_required",
-      ),
+      p_reward_instance_id: requiredText(input.rewardInstanceId, "reward_instance_id_required"),
       p_redemption_context: input.context,
       p_allow_unreserved: input.allowUnreserved ?? false,
     }),
@@ -213,10 +181,7 @@ export async function markRewardAutoApplied(
 
   return unwrapRpc(
     client.rpc<RewardInstanceStatus>("system_mark_reward_auto_applied", {
-      p_reward_instance_id: requiredText(
-        input.rewardInstanceId,
-        "reward_instance_id_required",
-      ),
+      p_reward_instance_id: requiredText(input.rewardInstanceId, "reward_instance_id_required"),
       p_application_context: input.context,
     }),
     "reward_auto_apply_missing_result",
@@ -229,10 +194,7 @@ export async function expireReward(
 ): Promise<RewardInstanceStatus> {
   return unwrapRpc(
     client.rpc<RewardInstanceStatus>("system_expire_reward", {
-      p_reward_instance_id: requiredText(
-        rewardInstanceId,
-        "reward_instance_id_required",
-      ),
+      p_reward_instance_id: requiredText(rewardInstanceId, "reward_instance_id_required"),
     }),
     "reward_expiration_missing_result",
   );
