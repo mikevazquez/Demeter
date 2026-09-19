@@ -40,7 +40,8 @@ export default async function StudentHomePage({
 }) {
   const query = await searchParams;
   const { snapshot, studio } = await getStudentPortalContext();
-  const activePackage = snapshot.acquisitions.find((item) => item.active_now) ?? null;
+  const activePackage =
+    snapshot.acquisitions.find((item) => item.active_now) ?? null;
   const credits = availableCredits(activePackage);
   const nextClass =
     [...snapshot.upcoming].sort(
@@ -52,16 +53,25 @@ export default async function StudentHomePage({
     ? dateDistanceInDays(today, activePackage.expires_on)
     : null;
   const expiresSoon =
-    daysUntilExpiration !== null && daysUntilExpiration >= 0 && daysUntilExpiration <= 7;
+    daysUntilExpiration !== null &&
+    daysUntilExpiration >= 0 &&
+    daysUntilExpiration <= 7;
 
   const packageLimit = activePackage ? creditLimit(activePackage) : 0;
   const usedProgress =
     activePackage && !activePackage.unlimited && packageLimit > 0
-      ? Math.min(100, Math.round((activePackage.used_credits / packageLimit) * 100))
+      ? Math.min(
+          100,
+          Math.round((activePackage.used_credits / packageLimit) * 100),
+        )
       : 0;
 
-  const noCredits = Boolean(activePackage && !activePackage.unlimited && credits === 0);
-  const canReserve = Boolean(activePackage && (activePackage.unlimited || (credits ?? 0) > 0));
+  const noCredits = Boolean(
+    activePackage && !activePackage.unlimited && credits === 0,
+  );
+  const canReserve = Boolean(
+    activePackage && (activePackage.unlimited || (credits ?? 0) > 0),
+  );
 
   return (
     <main className="space-y-3 pb-4 sm:space-y-4">
@@ -80,7 +90,8 @@ export default async function StudentHomePage({
           dismissHref="/student"
           tone="error"
         >
-          No pudimos completar la cancelación. Revisa la clase e intenta nuevamente.
+          No pudimos completar la cancelación. Revisa la clase e intenta
+          nuevamente.
         </StudentNoticeDialog>
       ) : null}
 
@@ -92,15 +103,22 @@ export default async function StudentHomePage({
           className="absolute bottom-0 right-[18%] top-0 w-px bg-gradient-to-b from-transparent via-fuchsia-500/60 to-transparent shadow-[0_0_22px_rgba(236,72,153,0.55)]"
         />
         <div className="relative">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-zinc-500">
+          <p
+            className="text-[10px] font-semibold uppercase tracking-[0.28em] text-zinc-500"
+          >
             Demeter Fitness Studio
           </p>
           <div className="mt-2 flex items-end justify-between gap-3">
             <div>
-              <h1 className="text-2xl font-semibold tracking-tight text-white sm:text-3xl">
-                Hola, {snapshot.profile.first_name} <span aria-hidden="true">♥</span>
+              <h1
+                className="text-2xl font-semibold tracking-tight text-white sm:text-3xl"
+              >
+                Hola, {snapshot.profile.first_name}{" "}
+                <span aria-hidden="true">♥</span>
               </h1>
-              <p className="mt-0.5 text-xs text-zinc-400">Movimiento que transforma</p>
+              <p className="mt-0.5 text-xs text-zinc-400">
+                Movimiento que transforma
+              </p>
             </div>
           </div>
         </div>
@@ -114,7 +132,9 @@ export default async function StudentHomePage({
         >
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-fuchsia-300">
+              <p
+                className="text-[10px] font-semibold uppercase tracking-[0.2em] text-fuchsia-300"
+              >
                 Mi paquete
               </p>
               <h2 className="mt-1 truncate text-base font-semibold text-white">
@@ -135,15 +155,21 @@ export default async function StudentHomePage({
                 {activePackage.unlimited ? "Ilimitado" : `${credits} clases`}
               </strong>
               <p className="mt-0.5 text-xs text-zinc-400">
-                {activePackage.unlimited ? "Acceso durante tu vigencia" : "disponibles"}
+                {activePackage.unlimited
+                  ? "Acceso durante tu vigencia"
+                  : "disponibles"}
               </p>
             </div>
 
             <div className="text-right">
               <div className="flex items-center justify-end gap-1.5">
-                <span className="text-[10px] uppercase tracking-[0.14em] text-zinc-500">Vence</span>
+                <span className="text-[10px] uppercase tracking-[0.14em] text-zinc-500">
+                  Vence
+                </span>
                 {expiresSoon ? (
-                  <span className="rounded-full border border-amber-400/25 bg-amber-400/10 px-2 py-0.5 text-[10px] font-semibold text-amber-300">
+                  <span
+                    className="rounded-full border border-amber-400/25 bg-amber-400/10 px-2 py-0.5 text-[10px] font-semibold text-amber-300"
+                  >
                     Pronto
                   </span>
                 ) : null}
@@ -157,7 +183,9 @@ export default async function StudentHomePage({
           </div>
 
           {activePackage.unlimited ? (
-            <p className="mt-3 border-t border-white/10 pt-2.5 text-xs text-zinc-400">
+            <p
+              className="mt-3 border-t border-white/10 pt-2.5 text-xs text-zinc-400"
+            >
               Reservas sujetas a disponibilidad y reglas vigentes.
             </p>
           ) : (
@@ -175,7 +203,9 @@ export default async function StudentHomePage({
                   style={{ width: `${usedProgress}%` }}
                 />
               </div>
-              <div className="mt-1.5 flex items-center justify-between text-[11px] text-zinc-500">
+              <div
+                className="mt-1.5 flex items-center justify-between text-[11px] text-zinc-500"
+              >
                 <span>{activePackage.used_credits} utilizadas</span>
                 <span>{packageLimit} total</span>
               </div>
@@ -190,11 +220,16 @@ export default async function StudentHomePage({
         className="rounded-3xl border border-white/10 bg-white/[0.03] p-4"
       >
         <div className="flex items-center justify-between gap-3">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-400">
+          <p
+            className="text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-400"
+          >
             Tu próxima clase
           </p>
           {nextClass ? (
-            <Link href="/student/mis-clases" className="text-xs font-semibold text-fuchsia-300">
+            <Link
+              href="/student/mis-clases"
+              className="text-xs font-semibold text-fuchsia-300"
+            >
               Ver todas
             </Link>
           ) : null}
@@ -210,11 +245,15 @@ export default async function StudentHomePage({
                 <h2 className="truncate text-base font-semibold text-white">
                   {nextClass.activity}
                 </h2>
-                <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold text-emerald-300">
+                <span
+                  className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold text-emerald-300"
+                >
                   Confirmada
                 </span>
               </div>
-              <p className="mt-0.5 text-xs font-medium text-fuchsia-300">{nextClass.discipline}</p>
+              <p className="mt-0.5 text-xs font-medium text-fuchsia-300">
+                {nextClass.discipline}
+              </p>
               <p className="mt-1.5 text-xs text-zinc-300">
                 {formatDateTime(nextClass.starts_at, studio.timezone)}
               </p>
@@ -228,7 +267,9 @@ export default async function StudentHomePage({
             </span>
           </Link>
         ) : (
-          <div className="mt-3 rounded-2xl border border-dashed border-white/10 bg-black/15 px-4 py-4 text-center">
+          <div
+            className="mt-3 rounded-2xl border border-dashed border-white/10 bg-black/15 px-4 py-4 text-center"
+          >
             <h2 className="text-sm font-semibold text-white">
               {noCredits
                 ? "No tienes clases reservadas"
@@ -236,7 +277,9 @@ export default async function StudentHomePage({
                   ? "Aún no tienes clases reservadas"
                   : "No tienes clases reservadas"}
             </h2>
-            <p className="mx-auto mt-1.5 max-w-md text-xs leading-5 text-zinc-400">
+            <p
+              className="mx-auto mt-1.5 max-w-md text-xs leading-5 text-zinc-400"
+            >
               {noCredits
                 ? "Tu paquete ya no tiene clases disponibles."
                 : activePackage
@@ -259,10 +302,14 @@ export default async function StudentHomePage({
           data-density="compact"
           className="rounded-3xl border border-dashed border-white/10 bg-white/[0.02] p-4 text-center"
         >
-          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-500">
+          <p
+            className="text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-500"
+          >
             Mi paquete
           </p>
-          <h2 className="mt-2 text-base font-semibold text-white">No tienes un paquete activo</h2>
+          <h2 className="mt-2 text-base font-semibold text-white">
+            No tienes un paquete activo
+          </h2>
           <p className="mx-auto mt-1 max-w-md text-xs leading-5 text-zinc-400">
             Consulta los paquetes disponibles para seguir entrenando.
           </p>
@@ -276,7 +323,9 @@ export default async function StudentHomePage({
       ) : null}
 
       <section data-home-block="quick-actions">
-        <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-500">
+        <p
+          className="mb-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-500"
+        >
           Acciones rápidas
         </p>
         <div className="grid grid-cols-3 gap-2">
@@ -287,7 +336,9 @@ export default async function StudentHomePage({
             <span aria-hidden="true" className="text-base text-fuchsia-300">
               ◫
             </span>
-            <span className="text-[11px] font-semibold leading-tight text-white sm:text-xs">
+            <span
+              className="text-[11px] font-semibold leading-tight text-white sm:text-xs"
+            >
               Reservar
             </span>
           </Link>
@@ -321,11 +372,15 @@ export default async function StudentHomePage({
         className="rounded-3xl border border-white/10 bg-[radial-gradient(circle_at_85%_20%,rgba(236,72,153,0.12),transparent_28%),linear-gradient(135deg,rgba(255,255,255,0.045),rgba(255,255,255,0.015))] p-4"
       >
         <div className="flex items-center justify-between gap-3">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-zinc-400">
+          <p
+            className="text-[10px] font-semibold uppercase tracking-[0.22em] text-zinc-400"
+          >
             Disciplina también es amor propio
           </p>
         </div>
-        <div className="mt-3 grid grid-cols-3 gap-3 border-t border-white/10 pt-3">
+        <div
+          className="mt-3 grid grid-cols-3 gap-3 border-t border-white/10 pt-3"
+        >
           <div>
             <strong className="block text-lg text-white">
               {snapshot.stats.attended_this_month}
@@ -333,11 +388,15 @@ export default async function StudentHomePage({
             <span className="text-[11px] text-zinc-500">este mes</span>
           </div>
           <div>
-            <strong className="block text-lg text-white">{snapshot.stats.attended_total}</strong>
+            <strong className="block text-lg text-white">
+              {snapshot.stats.attended_total}
+            </strong>
             <span className="text-[11px] text-zinc-500">asistencias</span>
           </div>
           <div>
-            <strong className="block text-lg text-white">{snapshot.stats.streak_days}</strong>
+            <strong className="block text-lg text-white">
+              {snapshot.stats.streak_days}
+            </strong>
             <span className="text-[11px] text-zinc-500">racha</span>
           </div>
         </div>
