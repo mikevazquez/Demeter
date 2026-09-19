@@ -23,6 +23,19 @@ describe("SF-188 FLUJO 03 class operations", () => {
     );
   });
 
+  it("keeps active-class walk-in eligibility capability-scoped", () => {
+    const activeEligibility = source(
+      "supabase/migrations/20260919010500_sf188_flow03_admin_walkin_eligibility.sql",
+    );
+    const adminPage = source("app/admin/page.tsx");
+
+    expect(activeEligibility).toContain("public.attendance_walkin_eligibility");
+    expect(activeEligibility).toContain("private.can_manage_attendance_session");
+    expect(activeEligibility).toContain("target_student_id,\n    true");
+    expect(adminPage).toContain('"attendance_walkin_eligibility"');
+    expect(adminPage).toContain("classIsInOperation");
+  });
+
   it("uses canonical acquisition and credit hold for covered existing walk-ins", () => {
     const migration = source(migrationPath);
 
@@ -83,11 +96,19 @@ describe("SF-188 FLUJO 03 class operations", () => {
     const summary = source("app/coach/clases/[sessionId]/resumen/page.tsx");
     const finalized = source("app/coach/clases/[sessionId]/finalizada/page.tsx");
     const actions = source("app/coach/actions.ts");
+    const adminOperations = source("app/admin/hoy/SessionOperations.tsx");
+    const adminActions = source("app/admin/actions.ts");
 
     expect(roster).toContain("PendingActionButton");
     expect(walkin).toContain("PendingActionButton");
     expect(summary).toContain('pendingLabel="Finalizando…"');
     expect(finalized).toContain('pendingLabel="Corrigiendo…"');
-    expect(actions).toContain('const walkinState = result.commercial_pending ? "pending" : "covered"');
+    expect(actions).toContain(
+      'const walkinState = result.commercial_pending ? "pending" : "covered"',
+    );
+    expect(adminOperations).toContain("PendingActionButton");
+    expect(adminOperations).toContain('created === "walkin-covered"');
+    expect(adminActions).toContain("classIsInOperation");
+    expect(adminActions).toContain('supabase.rpc("add_existing_walkin_student"');
   });
 });
