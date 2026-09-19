@@ -157,23 +157,46 @@ export async function cancelStudentReservationAction(formData: FormData) {
   if (!reservationId) redirect(`${returnPath}?error=reservation_required`);
 
   const { supabase } = await getStudentPortalContext();
+  const { data: previewData } = await supabase.rpc("student_cancellation_preview", {
+    target_reservation_id: reservationId,
+  });
+  const preview = previewData as {
+    ok?: boolean;
+    uses_credits?: boolean;
+  } | null;
+
   const { data, error } = await supabase.rpc("student_cancel_own_reservation", {
     target_reservation_id: reservationId,
     target_reason: reason,
   });
 
   if (error) {
-    redirect(`${returnPath}?error=${errorCode(error, "cancel_failed")}`);
+    redirect(
+      `/student/mis-clases/${reservationId}/cancelar?error=${errorCode(error, "cancel_failed")}`,
+    );
   }
 
   const result = data as { ok?: boolean; reason_code?: string | null; status?: string } | null;
   if (!result?.ok) {
-    redirect(`${returnPath}?error=${encodeURIComponent(result?.reason_code ?? "cancel_failed")}`);
+    redirect(
+      `/student/mis-clases/${reservationId}/cancelar?error=${encodeURIComponent(
+        result?.reason_code ?? "cancel_failed",
+      )}`,
+    );
   }
 
   revalidateStudentBookingSurfaces();
 
-  redirect(`${returnPath}?cancelled=${encodeURIComponent(result.status ?? "cancelled")}`);
+  const creditResult =
+    preview?.ok && preview.uses_credits
+      ? result.status === "cancelled_late"
+        ? "lost"
+        : "returned"
+      : "na";
+
+  redirect(
+    `${returnPath}?cancelled=${encodeURIComponent(result.status ?? "cancelled")}&credit=${creditResult}`,
+  );
 }
 
 export async function createMercadoPagoOrderAction(

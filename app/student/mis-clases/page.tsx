@@ -6,14 +6,14 @@ import {
   type StudentClassFeedItem,
 } from "@/lib/student/portal";
 
-import { cancelStudentReservationAction } from "../actions";
+import StudentNoticeDialog from "../components/StudentNoticeDialog";
 
 const statusCopy: Record<string, string> = {
   reserved: "Reservada",
   attended: "Asististe",
   no_show: "No asististe",
-  cancelled_on_time: "Cancelada a tiempo",
-  cancelled_late: "Cancelada tarde",
+  cancelled_on_time: "Cancelada",
+  cancelled_late: "Cancelada",
   cancelled_by_studio: "Cancelada por el estudio",
 };
 
@@ -21,172 +21,253 @@ const errorCopy: Record<string, string> = {
   cancel_failed: "No pudimos cancelar la reserva. Intenta de nuevo.",
   reservation_not_found: "La reserva ya no existe.",
   forbidden: "No puedes modificar esta reserva.",
-  reservation_not_cancellable: "Esta reserva ya no puede cancelarse.",
+  reservation_not_cancellable: "La reserva ya cambió de estado.",
+  reservation_required: "No pudimos identificar la reserva.",
 };
 
 function statusClass(status: string) {
-  if (status === "attended") return "bg-emerald-500/15 text-emerald-300";
-  if (status === "no_show" || status === "cancelled_late") return "bg-rose-500/15 text-rose-300";
-  if (status.startsWith("cancelled")) return "bg-zinc-500/15 text-zinc-400";
-  return "bg-sky-500/15 text-sky-300";
+  if (status === "attended") return "border-emerald-500/25 bg-emerald-500/10 text-emerald-300";
+  if (status === "no_show") return "border-rose-500/25 bg-rose-500/10 text-rose-300";
+  if (status.startsWith("cancelled")) {
+    return "border-zinc-500/25 bg-zinc-500/10 text-zinc-400";
+  }
+  return "border-fuchsia-500/25 bg-fuchsia-500/10 text-fuchsia-200";
+}
+
+function ClassRow({ item, timezone }: { item: StudentClassFeedItem; timezone: string }) {
+  return (
+    <Link
+      href={`/student/mis-clases/${item.reservation_id}`}
+      data-density="compact"
+      className="grid grid-cols-[1fr_auto] items-center gap-3 rounded-2xl border border-white/10 bg-black/20 px-4 py-3 transition hover:bg-white/[0.05]"
+    >
+      <div className="min-w-0">
+        <div className="flex min-w-0 items-center gap-2">
+          <p className="truncate text-sm font-semibold text-white">{item.activity}</p>
+          <span
+            className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${statusClass(item.status)}`}
+          >
+            {statusCopy[item.status] ?? item.status}
+          </span>
+        </div>
+        <p className="mt-1 text-xs text-zinc-300">{formatDateTime(item.starts_at, timezone)}</p>
+        <p className="mt-0.5 truncate text-[11px] text-zinc-500">
+          {[item.coach, item.space].filter(Boolean).join(" · ") || item.discipline}
+        </p>
+      </div>
+      <span aria-hidden="true" className="text-xl text-zinc-500">
+        ›
+      </span>
+    </Link>
+  );
 }
 
 export default async function StudentClassesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; cancelled?: string }>;
+  searchParams: Promise<{
+    view?: string;
+    error?: string;
+    cancelled?: string;
+    credit?: string;
+  }>;
 }) {
   const query = await searchParams;
+  const activeView = query.view === "history" ? "history" : "upcoming";
   const { supabase, studio } = await getStudentPortalContext();
   const { data, error } = await supabase.rpc("student_classes_feed");
   const feed =
-    (data as { upcoming?: StudentClassFeedItem[]; history?: StudentClassFeedItem[] } | null) ?? {};
+    (data as {
+      upcoming?: StudentClassFeedItem[];
+      history?: StudentClassFeedItem[];
+    } | null) ?? {};
   const upcoming = feed.upcoming ?? [];
   const history = feed.history ?? [];
+  const nextClass = upcoming[0] ?? null;
+  const followingClasses = upcoming.slice(1);
 
   return (
-    <main className="space-y-6">
-      <header className="flex flex-wrap items-end justify-between gap-4">
+    <main className="space-y-4 pb-4">
+      {query.cancelled ? (
+        <StudentNoticeDialog
+          eyebrow="Reserva cancelada"
+          title="Tu reserva fue actualizada"
+          dismissHref="/student/mis-clases"
+        >
+          {query.cancelled === "cancelled_late" && query.credit === "lost"
+            ? "La reserva se canceló fuera del horario permitido. El crédito no fue devuelto."
+            : query.cancelled === "cancelled_late"
+              ? "La reserva se canceló fuera del horario permitido."
+              : query.credit === "returned"
+                ? "La reserva se canceló correctamente y el crédito fue devuelto."
+                : "La reserva se canceló correctamente."}
+        </StudentNoticeDialog>
+      ) : query.error ? (
+        <StudentNoticeDialog
+          eyebrow="No pudimos cancelar"
+          title={
+            query.error === "reservation_not_cancellable"
+              ? "La reserva ya cambió de estado"
+              : "Revisa tu reserva"
+          }
+          dismissHref="/student/mis-clases"
+          tone="error"
+        >
+          {errorCopy[query.error] ?? errorCopy.cancel_failed}
+        </StudentNoticeDialog>
+      ) : null}
+
+      <header className="flex items-end justify-between gap-4">
         <div>
-          <p className="text-sm text-fuchsia-300">Mis clases</p>
-          <h1 className="mt-1 text-3xl font-semibold text-white sm:text-4xl">
-            Tu agenda e historial
-          </h1>
-          <p className="mt-2 text-sm text-zinc-400">
-            Consulta tus próximas reservas y lo que ya ocurrió.
+          <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-fuchsia-300">
+            Portal alumna
           </p>
+          <h1 className="mt-1 text-2xl font-semibold text-white sm:text-3xl">Mis clases</h1>
         </div>
         <Link
           href="/student/reservar"
-          className="rounded-xl bg-fuchsia-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-fuchsia-500"
+          className="rounded-xl bg-fuchsia-600 px-3.5 py-2.5 text-xs font-semibold text-white transition hover:bg-fuchsia-500"
         >
-          Reservar clase
+          Reservar
         </Link>
       </header>
 
-      {query.cancelled ? (
-        <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.08] px-4 py-3 text-sm text-emerald-200">
-          ✓ Reserva cancelada correctamente.{" "}
-          {query.cancelled === "cancelled_late"
-            ? "La cancelación fue fuera de ventana y el crédito se consumió."
-            : "El crédito fue liberado según la política."}
-        </div>
-      ) : null}
-      {query.error || error ? (
-        <div className="rounded-2xl border border-rose-500/25 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">
-          {errorCopy[query.error ?? ""] ?? "No pudimos cargar o modificar tus clases."}
-        </div>
-      ) : null}
+      <nav
+        aria-label="Vista de mis clases"
+        className="grid grid-cols-2 rounded-2xl border border-white/10 bg-white/[0.03] p-1"
+      >
+        <Link
+          href="/student/mis-clases"
+          aria-current={activeView === "upcoming" ? "page" : undefined}
+          className={`rounded-xl px-4 py-2.5 text-center text-xs font-semibold transition ${
+            activeView === "upcoming"
+              ? "bg-fuchsia-600 text-white"
+              : "text-zinc-400 hover:text-white"
+          }`}
+        >
+          Próximas{upcoming.length ? ` (${upcoming.length})` : ""}
+        </Link>
+        <Link
+          href="/student/mis-clases?view=history"
+          aria-current={activeView === "history" ? "page" : undefined}
+          className={`rounded-xl px-4 py-2.5 text-center text-xs font-semibold transition ${
+            activeView === "history"
+              ? "bg-fuchsia-600 text-white"
+              : "text-zinc-400 hover:text-white"
+          }`}
+        >
+          Historial
+        </Link>
+      </nav>
 
-      <section className="rounded-3xl border border-white/10 bg-white/[0.03] p-5 sm:p-6">
-        <h2 className="text-xl font-semibold text-white">Próximas</h2>
-        <div className="mt-4 space-y-3">
-          {upcoming.length ? (
-            upcoming.map((item) => (
-              <article
-                key={item.reservation_id}
-                className="rounded-2xl border border-white/10 bg-black/20 p-4"
-              >
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div>
-                    <p className="font-semibold text-white">{item.activity}</p>
-                    <p className="mt-1 text-sm text-zinc-400">
-                      {formatDateTime(item.starts_at, studio.timezone)}
+      {error ? (
+        <section className="rounded-3xl border border-rose-500/20 bg-rose-500/[0.07] p-5 text-center">
+          <h2 className="text-base font-semibold text-white">No pudimos cargar tus clases</h2>
+          <p className="mt-1.5 text-xs leading-5 text-zinc-400">
+            Intenta nuevamente. Tus reservas no se han modificado.
+          </p>
+          <Link
+            href="/student/mis-clases"
+            className="mt-4 inline-flex min-h-10 items-center justify-center rounded-xl bg-fuchsia-600 px-4 py-2 text-xs font-semibold text-white"
+          >
+            Reintentar
+          </Link>
+        </section>
+      ) : activeView === "upcoming" ? (
+        <section className="space-y-3">
+          {nextClass ? (
+            <>
+              <div>
+                <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-500">
+                  Tu próxima clase
+                </p>
+                <Link
+                  href={`/student/mis-clases/${nextClass.reservation_id}`}
+                  data-density="compact"
+                  className="grid grid-cols-[1fr_auto] items-center gap-3 rounded-3xl border border-fuchsia-500/20 bg-gradient-to-br from-fuchsia-500/[0.1] via-white/[0.035] to-transparent px-4 py-4"
+                >
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h2 className="truncate text-base font-semibold text-white">
+                        {nextClass.activity}
+                      </h2>
+                      <span className="rounded-full border border-emerald-500/25 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-300">
+                        Confirmada
+                      </span>
+                    </div>
+                    <p className="mt-1 text-xs font-medium text-fuchsia-300">
+                      {nextClass.discipline}
                     </p>
-                    <p className="mt-1 text-xs text-zinc-500">
-                      {[item.coach, item.space].filter(Boolean).join(" · ") || item.discipline}
+                    <p className="mt-1.5 text-xs text-zinc-300">
+                      {formatDateTime(nextClass.starts_at, studio.timezone)}
+                    </p>
+                    <p className="mt-0.5 truncate text-[11px] text-zinc-500">
+                      {[nextClass.coach, nextClass.space].filter(Boolean).join(" · ") ||
+                        "Ver detalles de la clase"}
                     </p>
                   </div>
-                  <span className="rounded-full bg-sky-500/15 px-2.5 py-1 text-xs font-medium text-sky-300">
-                    Reservada
+                  <span aria-hidden="true" className="text-xl text-zinc-500">
+                    ›
                   </span>
-                </div>
+                </Link>
+              </div>
 
-                <div className="mt-4 flex flex-wrap items-center gap-3">
-                  <Link
-                    href={`/student/reservar/${item.session_id}`}
-                    className="rounded-xl border border-white/10 px-3 py-2 text-xs font-semibold text-white"
-                  >
-                    Ver detalle
-                  </Link>
-                  <details className="min-w-0 flex-1">
-                    <summary className="cursor-pointer text-xs font-semibold text-rose-300">
-                      Cancelar reserva
-                    </summary>
-                    <div className="mt-3 rounded-2xl border border-rose-500/20 bg-rose-500/[0.05] p-4">
-                      <p className="text-sm text-zinc-300">
-                        Si cancelas con 8 horas o más de anticipación, el crédito reservado se
-                        libera. Si faltan menos de 8 horas, el motor de cancelación consume el
-                        crédito según la política vigente.
-                      </p>
-                      <form action={cancelStudentReservationAction} className="mt-3 space-y-3">
-                        <input type="hidden" name="reservation_id" value={item.reservation_id} />
-                        <label className="block text-xs text-zinc-400">
-                          Motivo (opcional)
-                          <input
-                            name="reason"
-                            maxLength={250}
-                            placeholder="Cuéntanos si quieres"
-                            className="mt-2 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-sm text-white"
-                          />
-                        </label>
-                        <button
-                          type="submit"
-                          className="rounded-xl bg-rose-600 px-4 py-2.5 text-xs font-semibold text-white hover:bg-rose-500"
-                        >
-                          Sí, cancelar reserva
-                        </button>
-                      </form>
-                    </div>
-                  </details>
+              {followingClasses.length ? (
+                <div>
+                  <div className="mb-2 flex items-center justify-between gap-3">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-500">
+                      Después
+                    </p>
+                    <span className="text-[10px] text-zinc-600">{followingClasses.length} más</span>
+                  </div>
+                  <div className="space-y-2">
+                    {followingClasses.map((item) => (
+                      <ClassRow key={item.reservation_id} item={item} timezone={studio.timezone} />
+                    ))}
+                  </div>
                 </div>
-              </article>
-            ))
+              ) : null}
+            </>
           ) : (
-            <div className="rounded-2xl border border-dashed border-white/10 p-7 text-center">
-              <p className="text-sm text-zinc-400">No tienes reservas próximas.</p>
+            <div className="rounded-3xl border border-dashed border-white/10 bg-white/[0.02] px-5 py-8 text-center">
+              <div
+                aria-hidden="true"
+                className="mx-auto flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 text-lg text-zinc-500"
+              >
+                ◫
+              </div>
+              <h2 className="mt-3 text-base font-semibold text-white">No tienes clases próximas</h2>
+              <p className="mx-auto mt-1.5 max-w-md text-xs leading-5 text-zinc-400">
+                Cuando reserves una clase aparecerá aquí.
+              </p>
               <Link
                 href="/student/reservar"
-                className="mt-3 inline-block text-sm font-semibold text-fuchsia-300"
+                className="mt-4 inline-flex min-h-10 items-center justify-center rounded-xl bg-fuchsia-600 px-4 py-2 text-xs font-semibold text-white"
               >
-                Buscar una clase
+                Reservar clase
               </Link>
             </div>
           )}
-        </div>
-      </section>
-
-      <section className="rounded-3xl border border-white/10 bg-white/[0.03] p-5 sm:p-6">
-        <h2 className="text-xl font-semibold text-white">Historial</h2>
-        <div className="mt-4 divide-y divide-white/10">
+        </section>
+      ) : (
+        <section>
+          <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-500">
+            Clases anteriores
+          </p>
           {history.length ? (
-            history.map((item) => (
-              <article key={item.reservation_id} className="py-4 first:pt-0 last:pb-0">
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div>
-                    <p className="font-medium text-white">{item.activity}</p>
-                    <p className="mt-1 text-sm text-zinc-400">
-                      {formatDateTime(item.starts_at, studio.timezone)}
-                    </p>
-                    {item.cancellation_reason ? (
-                      <p className="mt-1 text-xs text-zinc-500">
-                        Motivo: {item.cancellation_reason}
-                      </p>
-                    ) : null}
-                  </div>
-                  <span
-                    className={`rounded-full px-2.5 py-1 text-xs font-medium ${statusClass(item.status)}`}
-                  >
-                    {statusCopy[item.status] ?? item.status}
-                  </span>
-                </div>
-              </article>
-            ))
+            <div className="space-y-2">
+              {history.map((item) => (
+                <ClassRow key={item.reservation_id} item={item} timezone={studio.timezone} />
+              ))}
+            </div>
           ) : (
-            <p className="text-sm text-zinc-500">Todavía no tienes historial de clases.</p>
+            <div className="rounded-3xl border border-dashed border-white/10 bg-white/[0.02] px-5 py-8 text-center">
+              <h2 className="text-base font-semibold text-white">Todavía no tienes historial</h2>
+              <p className="mt-1.5 text-xs text-zinc-400">Tus clases anteriores aparecerán aquí.</p>
+            </div>
           )}
-        </div>
-      </section>
+        </section>
+      )}
     </main>
   );
 }
