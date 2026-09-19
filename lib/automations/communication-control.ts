@@ -250,7 +250,8 @@ export function resolveAutomationCommunication(
     return resolution(candidate, relatedCandidates, {
       decision: "defer",
       reasonCode: "higher_priority_communication_active",
-      reason:\n        `Existe una comunicación ${higherPriority.priority} más prioritaria en el mismo contexto.`,
+      reason:
+        `Existe una comunicación ${higherPriority.priority} más prioritaria en el mismo contexto.`,
       dominantKey: higherPriority.candidate.key,
       deferredUntil: null,
       details: {
