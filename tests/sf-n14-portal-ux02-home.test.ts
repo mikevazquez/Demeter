@@ -25,10 +25,18 @@ describe("SF-N14 PORTAL UX-02 home", () => {
     expect(home).toContain("Tu paquete tiene acceso ilimitado");
   });
 
+  it("keeps an active package above the next class and uses compact mobile density", () => {
+    expect(home.indexOf('data-home-block="package"')).toBeLessThan(
+      home.indexOf('data-home-block="next-class"'),
+    );
+    expect(home).toContain('data-density="compact"');
+    expect(home).toContain("min-h-16");
+  });
+
   it("offers the approved quick actions", () => {
-    expect(home).toContain("Reservar clase");
-    expect(home).toContain("Ver mis clases");
-    expect(home).toContain("Ver mi paquete");
+    expect(home).toContain(">Reservar<");
+    expect(home).toContain(">Mis clases<");
+    expect(home).toContain(">Mi paquete<");
   });
 
   it("provides a recoverable temporary error state", () => {
