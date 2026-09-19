@@ -40,7 +40,9 @@ export default async function StudentSessionDetailPage({
     Boolean(reason && DROP_IN_REASONS.has(reason)) &&
     session.drop_in_price_minor != null;
   const durationMinutes = Math.max(
-    Math.round((new Date(session.ends_at).getTime() - new Date(session.starts_at).getTime()) / 60000),
+    Math.round(
+      (new Date(session.ends_at).getTime() - new Date(session.starts_at).getTime()) / 60000,
+    ),
     0,
   );
 
@@ -59,9 +61,7 @@ export default async function StudentSessionDetailPage({
           <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-fuchsia-300">
             {session.discipline}
           </p>
-          <h1 className="mt-1 text-2xl font-semibold text-white sm:text-3xl">
-            {session.activity}
-          </h1>
+          <h1 className="mt-1 text-2xl font-semibold text-white sm:text-3xl">{session.activity}</h1>
           <p className="mt-2 text-sm text-zinc-300">
             {formatDateTime(session.starts_at, studio.timezone)}
             {durationMinutes ? ` · ${durationMinutes} min` : ""}
@@ -70,17 +70,13 @@ export default async function StudentSessionDetailPage({
 
         <dl className="grid grid-cols-2 gap-px bg-white/10">
           <div className="bg-[#111218] px-4 py-3">
-            <dt className="text-[10px] uppercase tracking-[0.14em] text-zinc-500">
-              Coach
-            </dt>
+            <dt className="text-[10px] uppercase tracking-[0.14em] text-zinc-500">Coach</dt>
             <dd className="mt-1 text-xs font-semibold text-white">
               {session.coach ?? "Por confirmar"}
             </dd>
           </div>
           <div className="bg-[#111218] px-4 py-3">
-            <dt className="text-[10px] uppercase tracking-[0.14em] text-zinc-500">
-              Espacio
-            </dt>
+            <dt className="text-[10px] uppercase tracking-[0.14em] text-zinc-500">Espacio</dt>
             <dd className="mt-1 text-xs font-semibold text-white">
               {[session.location, session.space].filter(Boolean).join(" · ") || "Estudio"}
             </dd>
@@ -94,9 +90,7 @@ export default async function StudentSessionDetailPage({
             </dd>
           </div>
           <div className="bg-[#111218] px-4 py-3">
-            <dt className="text-[10px] uppercase tracking-[0.14em] text-zinc-500">
-              Reserva
-            </dt>
+            <dt className="text-[10px] uppercase tracking-[0.14em] text-zinc-500">Reserva</dt>
             <dd className="mt-1 text-xs font-semibold text-white">
               {session.eligibility?.unlimited
                 ? "Incluida en ilimitado"
@@ -119,9 +113,7 @@ export default async function StudentSessionDetailPage({
 
       {alreadyReserved ? (
         <section className="rounded-3xl border border-emerald-500/20 bg-emerald-500/[0.07] p-5">
-          <p className="text-sm font-semibold text-emerald-200">
-            ✓ Ya tienes esta clase reservada
-          </p>
+          <p className="text-sm font-semibold text-emerald-200">✓ Ya tienes esta clase reservada</p>
           <p className="mt-1.5 text-xs leading-5 text-zinc-400">
             Tu lugar está confirmado. Puedes consultar o gestionar esta reserva desde Mis clases.
           </p>
@@ -161,9 +153,7 @@ export default async function StudentSessionDetailPage({
         </section>
       ) : (
         <section className="rounded-3xl border border-amber-400/20 bg-amber-400/[0.06] p-5">
-          <p className="text-sm font-semibold text-amber-100">
-            {bookingReasonCopy(reason)}
-          </p>
+          <p className="text-sm font-semibold text-amber-100">{bookingReasonCopy(reason)}</p>
           {showDropIn ? (
             <p className="mt-2 text-xs leading-5 text-zinc-400">
               Esta actividad tiene una clase suelta configurada en{" "}
