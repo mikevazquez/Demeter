@@ -1,1 +1,16 @@
 @import "tailwindcss";
+
+@theme {
+  /* Studio Flow brand accent. Keep Tailwind fuchsia utilities aligned with Demeter. */
+  --color-fuchsia-50: #fff0f7;
+  --color-fuchsia-100: #ffe0ef;
+  --color-fuchsia-200: #ffb8d9;
+  --color-fuchsia-300: #ff86c5;
+  --color-fuchsia-400: #ff56ad;
+  --color-fuchsia-500: #ff2999;
+  --color-fuchsia-600: #ff0a8a;
+  --color-fuchsia-700: #d90073;
+  --color-fuchsia-800: #ad005c;
+  --color-fuchsia-900: #7d0042;
+  --color-fuchsia-950: #4d0029;
+}
