@@ -91,7 +91,10 @@ export async function generateRewardInstance(
         "reward_source_evaluation_required",
       ),
       p_reward_key: requiredText(input.rewardKey, "reward_key_required"),
-      p_idempotency_key: requiredText(input.idempotencyKey, "reward_idempotency_key_required"),
+      p_idempotency_key: requiredText(
+        input.idempotencyKey,
+        "reward_idempotency_key_required",
+      ),
       p_origin_snapshot: originSnapshot,
       p_available_from: input.availableFrom ?? null,
       p_expires_at: input.expiresAt ?? null,
@@ -112,7 +115,10 @@ export async function makeRewardAvailable(
 ): Promise<RewardInstanceStatus> {
   return unwrapRpc(
     client.rpc<RewardInstanceStatus>("system_make_reward_available", {
-      p_reward_instance_id: requiredText(rewardInstanceId, "reward_instance_id_required"),
+      p_reward_instance_id: requiredText(
+        rewardInstanceId,
+        "reward_instance_id_required",
+      ),
     }),
     "reward_make_available_missing_result",
   );
@@ -136,8 +142,14 @@ export async function reserveReward(
         input.rewardInstanceId,
         "reward_instance_id_required",
       ),
-      p_reservation_key: requiredText(input.reservationKey, "reward_reservation_key_required"),
-      p_reserved_until: requiredText(input.reservedUntil, "reward_reservation_until_required"),
+      p_reservation_key: requiredText(
+        input.reservationKey,
+        "reward_reservation_key_required",
+      ),
+      p_reserved_until: requiredText(
+        input.reservedUntil,
+        "reward_reservation_until_required",
+      ),
       p_context: context,
     }),
     "reward_reservation_missing_result",
@@ -217,7 +229,10 @@ export async function expireReward(
 ): Promise<RewardInstanceStatus> {
   return unwrapRpc(
     client.rpc<RewardInstanceStatus>("system_expire_reward", {
-      p_reward_instance_id: requiredText(rewardInstanceId, "reward_instance_id_required"),
+      p_reward_instance_id: requiredText(
+        rewardInstanceId,
+        "reward_instance_id_required",
+      ),
     }),
     "reward_expiration_missing_result",
   );
