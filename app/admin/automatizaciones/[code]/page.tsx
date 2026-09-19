@@ -162,11 +162,11 @@ export default async function AutomationDetailPage({
   const [{ data: versions }, { data: executions }, { data: communicationControls }] =
     instanceIds.length
       ? await Promise.all([
-        ctx.supabase
-          .from("automation_instance_versions")
-          .select("instance_id,version_number,configuration,effective_from,created_at")
-          .in("instance_id", instanceIds)
-          .order("version_number", { ascending: false }),
+          ctx.supabase
+            .from("automation_instance_versions")
+            .select("instance_id,version_number,configuration,effective_from,created_at")
+            .in("instance_id", instanceIds)
+            .order("version_number", { ascending: false }),
           ctx.supabase
             .from("automation_executions")
             .select(
