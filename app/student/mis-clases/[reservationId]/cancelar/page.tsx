@@ -28,12 +28,8 @@ export default async function StudentCancelReservationPage({
     history?: StudentClassFeedItem[];
   };
   const item =
-    (feed.upcoming ?? []).find(
-      (entry) => entry.reservation_id === reservationId,
-    ) ??
-    (feed.history ?? []).find(
-      (entry) => entry.reservation_id === reservationId,
-    );
+    (feed.upcoming ?? []).find((entry) => entry.reservation_id === reservationId) ??
+    (feed.history ?? []).find((entry) => entry.reservation_id === reservationId);
 
   if (!item) notFound();
 
@@ -98,9 +94,7 @@ export default async function StudentCancelReservationPage({
 
         <div className="mt-4 rounded-2xl border border-white/10 bg-black/20 p-4">
           <p className="text-sm font-semibold text-white">{item.activity}</p>
-          <p className="mt-1 text-xs font-medium text-fuchsia-300">
-            {item.discipline}
-          </p>
+          <p className="mt-1 text-xs font-medium text-fuchsia-300">{item.discipline}</p>
           <p className="mt-2 text-xs text-zinc-300">
             {formatDateTime(item.starts_at, studio.timezone)}
           </p>
@@ -110,21 +104,13 @@ export default async function StudentCancelReservationPage({
         </div>
 
         <p className="mt-4 text-xs leading-5 text-zinc-400">
-          Studio Flow aplicará automáticamente la política vigente de
-          cancelación y el tratamiento correspondiente de tus créditos.
+          Studio Flow aplicará automáticamente la política vigente de cancelación y el tratamiento
+          correspondiente de tus créditos.
         </p>
 
         <form action={cancelStudentReservationAction} className="mt-5 space-y-3">
-          <input
-            type="hidden"
-            name="reservation_id"
-            value={item.reservation_id}
-          />
-          <input
-            type="hidden"
-            name="return_to"
-            value="/student/mis-clases"
-          />
+          <input type="hidden" name="reservation_id" value={item.reservation_id} />
+          <input type="hidden" name="return_to" value="/student/mis-clases" />
           <label className="block text-xs text-zinc-400">
             Motivo
             <span className="ml-1 text-zinc-600">(opcional)</span>
