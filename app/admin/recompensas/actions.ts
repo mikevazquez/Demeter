@@ -322,3 +322,66 @@ export async function grantManualRewardAction(formData: FormData) {
   revalidatePath("/admin/recompensas");
   redirect(`/admin/recompensas/alumnas/${encodeURIComponent(studentId)}?saved=manual_reward`);
 }
+
+
+export async function requestRewardReviewAction(formData: FormData) {
+  const rewardInstanceId = textValue(formData, "reward_instance_id");
+  const reason = textValue(formData, "reason");
+
+  if (!rewardInstanceId || !reason) {
+    redirect("/admin/recompensas?error=reward_review_reason_required");
+  }
+
+  const { supabase } = await getAdminContext(CAPABILITIES.REWARDS_MANAGE);
+  const { data, error } = await supabase.rpc("admin_request_reward_review", {
+    p_reward_instance_id: rewardInstanceId,
+    p_reason: reason,
+  });
+
+  if (error || typeof data !== "string") {
+    redirect(
+      `/admin/recompensas?error=${encodeURIComponent(error?.message ?? "reward_review_failed")}`,
+    );
+  }
+
+  revalidatePath("/admin/recompensas");
+  revalidatePath("/admin/recompensas/incidencias");
+  redirect(`/admin/recompensas/incidencias/${encodeURIComponent(data)}?saved=review_requested`);
+}
+
+export async function resolveRewardIncidentAction(formData: FormData) {
+  const incidentId = textValue(formData, "incident_id");
+  const action = textValue(formData, "incident_action");
+  const reason = textValue(formData, "reason");
+
+  if (
+    !incidentId ||
+    !reason ||
+    !["mark_review", "revoke_reward", "keep_exception", "close_no_action", "close"].includes(action)
+  ) {
+    redirect("/admin/recompensas/incidencias?error=reward_incident_action_invalid");
+  }
+
+  const { supabase } = await getAdminContext(CAPABILITIES.REWARDS_MANAGE);
+  const { error } = await supabase.rpc("admin_resolve_reward_incident", {
+    p_incident_id: incidentId,
+    p_action: action,
+    p_reason: reason,
+    p_resolution_details: {
+      source: "admin_rewards_incident_ui",
+    },
+  });
+
+  if (error) {
+    redirect(
+      `/admin/recompensas/incidencias/${encodeURIComponent(incidentId)}?error=${encodeURIComponent(error.message)}`,
+    );
+  }
+
+  revalidatePath("/admin/recompensas");
+  revalidatePath("/admin/recompensas/incidencias");
+  revalidatePath(`/admin/recompensas/incidencias/${incidentId}`);
+  redirect(
+    `/admin/recompensas/incidencias/${encodeURIComponent(incidentId)}?saved=${encodeURIComponent(action)}`,
+  );
+}
