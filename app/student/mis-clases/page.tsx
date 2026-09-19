@@ -34,31 +34,56 @@ function statusClass(status: string) {
   return "border-fuchsia-500/25 bg-fuchsia-500/10 text-fuchsia-200";
 }
 
-function ClassRow({ item, timezone }: { item: StudentClassFeedItem; timezone: string }) {
+function ClassRow({
+  item,
+  timezone,
+  showQuickCancel = false,
+}: {
+  item: StudentClassFeedItem;
+  timezone: string;
+  showQuickCancel?: boolean;
+}) {
   return (
-    <Link
-      href={`/student/mis-clases/${item.reservation_id}`}
+    <article
       data-density="compact"
-      className="grid grid-cols-[1fr_auto] items-center gap-3 rounded-2xl border border-white/10 bg-black/20 px-4 py-3 transition hover:bg-white/[0.05]"
+      className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3 transition hover:bg-white/[0.05]"
     >
-      <div className="min-w-0">
-        <div className="flex min-w-0 items-center gap-2">
-          <p className="truncate text-sm font-semibold text-white">{item.activity}</p>
-          <span
-            className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${statusClass(item.status)}`}
-          >
-            {statusCopy[item.status] ?? item.status}
-          </span>
-        </div>
-        <p className="mt-1 text-xs text-zinc-300">{formatDateTime(item.starts_at, timezone)}</p>
-        <p className="mt-0.5 truncate text-[11px] text-zinc-500">
-          {[item.coach, item.space].filter(Boolean).join(" · ") || item.discipline}
-        </p>
+      <div className="grid grid-cols-[1fr_auto] items-center gap-3">
+        <Link href={`/student/mis-clases/${item.reservation_id}`} className="min-w-0">
+          <div className="flex min-w-0 items-center gap-2">
+            <p className="truncate text-sm font-semibold text-white">{item.activity}</p>
+            <span
+              className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${statusClass(item.status)}`}
+            >
+              {statusCopy[item.status] ?? item.status}
+            </span>
+          </div>
+          <p className="mt-1 text-xs text-zinc-300">{formatDateTime(item.starts_at, timezone)}</p>
+          <p className="mt-0.5 truncate text-[11px] text-zinc-500">
+            {[item.coach, item.space].filter(Boolean).join(" · ") || item.discipline}
+          </p>
+        </Link>
+
+        <Link
+          href={`/student/mis-clases/${item.reservation_id}`}
+          aria-label={`Ver detalles de ${item.activity}`}
+          className="text-xl text-zinc-500"
+        >
+          ›
+        </Link>
       </div>
-      <span aria-hidden="true" className="text-xl text-zinc-500">
-        ›
-      </span>
-    </Link>
+
+      {showQuickCancel && item.status === "reserved" ? (
+        <div className="mt-3 flex justify-end border-t border-white/10 pt-3">
+          <Link
+            href={`/student/mis-clases/${item.reservation_id}/cancelar`}
+            className="inline-flex min-h-9 items-center justify-center rounded-xl border border-rose-500/30 bg-rose-500/[0.06] px-3 py-2 text-xs font-semibold text-rose-200 transition hover:bg-rose-500/[0.12]"
+          >
+            Cancelar
+          </Link>
+        </div>
+      ) : null}
+    </article>
   );
 }
 
@@ -181,35 +206,52 @@ export default async function StudentClassesPage({
                 <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-500">
                   Tu próxima clase
                 </p>
-                <Link
-                  href={`/student/mis-clases/${nextClass.reservation_id}`}
+                <article
                   data-density="compact"
-                  className="grid grid-cols-[1fr_auto] items-center gap-3 rounded-3xl border border-fuchsia-500/20 bg-gradient-to-br from-fuchsia-500/[0.1] via-white/[0.035] to-transparent px-4 py-4"
+                  className="rounded-3xl border border-fuchsia-500/20 bg-gradient-to-br from-fuchsia-500/[0.1] via-white/[0.035] to-transparent px-4 py-4"
                 >
-                  <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <h2 className="truncate text-base font-semibold text-white">
-                        {nextClass.activity}
-                      </h2>
-                      <span className="rounded-full border border-emerald-500/25 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-300">
-                        Confirmada
-                      </span>
-                    </div>
-                    <p className="mt-1 text-xs font-medium text-fuchsia-300">
-                      {nextClass.discipline}
-                    </p>
-                    <p className="mt-1.5 text-xs text-zinc-300">
-                      {formatDateTime(nextClass.starts_at, studio.timezone)}
-                    </p>
-                    <p className="mt-0.5 truncate text-[11px] text-zinc-500">
-                      {[nextClass.coach, nextClass.space].filter(Boolean).join(" · ") ||
-                        "Ver detalles de la clase"}
-                    </p>
+                  <div className="grid grid-cols-[1fr_auto] items-center gap-3">
+                    <Link
+                      href={`/student/mis-clases/${nextClass.reservation_id}`}
+                      className="min-w-0"
+                    >
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h2 className="truncate text-base font-semibold text-white">
+                          {nextClass.activity}
+                        </h2>
+                        <span className="rounded-full border border-emerald-500/25 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-300">
+                          Confirmada
+                        </span>
+                      </div>
+                      <p className="mt-1 text-xs font-medium text-fuchsia-300">
+                        {nextClass.discipline}
+                      </p>
+                      <p className="mt-1.5 text-xs text-zinc-300">
+                        {formatDateTime(nextClass.starts_at, studio.timezone)}
+                      </p>
+                      <p className="mt-0.5 truncate text-[11px] text-zinc-500">
+                        {[nextClass.coach, nextClass.space].filter(Boolean).join(" · ") ||
+                          "Ver detalles de la clase"}
+                      </p>
+                    </Link>
+                    <Link
+                      href={`/student/mis-clases/${nextClass.reservation_id}`}
+                      aria-label={`Ver detalles de ${nextClass.activity}`}
+                      className="text-xl text-zinc-500"
+                    >
+                      ›
+                    </Link>
                   </div>
-                  <span aria-hidden="true" className="text-xl text-zinc-500">
-                    ›
-                  </span>
-                </Link>
+
+                  <div className="mt-3 flex justify-end border-t border-white/10 pt-3">
+                    <Link
+                      href={`/student/mis-clases/${nextClass.reservation_id}/cancelar`}
+                      className="inline-flex min-h-9 items-center justify-center rounded-xl border border-rose-500/30 bg-rose-500/[0.06] px-3 py-2 text-xs font-semibold text-rose-200 transition hover:bg-rose-500/[0.12]"
+                    >
+                      Cancelar
+                    </Link>
+                  </div>
+                </article>
               </div>
 
               {followingClasses.length ? (
@@ -222,7 +264,12 @@ export default async function StudentClassesPage({
                   </div>
                   <div className="space-y-2">
                     {followingClasses.map((item) => (
-                      <ClassRow key={item.reservation_id} item={item} timezone={studio.timezone} />
+                      <ClassRow
+                        key={item.reservation_id}
+                        item={item}
+                        timezone={studio.timezone}
+                        showQuickCancel
+                      />
                     ))}
                   </div>
                 </div>
