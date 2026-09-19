@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
+import { triggerReservationConfirmedAutomation } from "@/lib/automations/reservation-confirmed-client";
 import { getStudentPortalContext } from "@/lib/student/portal";
 
 function errorCode(error: { message?: string } | null, fallback: string) {
@@ -114,6 +115,8 @@ export async function bookStudentSessionInlineAction(sessionId: string) {
     };
   }
 
+  await triggerReservationConfirmedAutomation(supabase, result.reservation_id);
+
   revalidateStudentBookingSurfaces();
 
   return {
@@ -142,6 +145,8 @@ export async function bookStudentSessionAction(formData: FormData) {
       `/student/reservar/${sessionId}?error=${encodeURIComponent(result?.reason_code ?? "booking_failed")}`,
     );
   }
+
+  await triggerReservationConfirmedAutomation(supabase, result.reservation_id);
 
   revalidateStudentBookingSurfaces();
 
