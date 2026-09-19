@@ -2,7 +2,6 @@ import Link from "next/link";
 
 import {
   bookingReasonCopy,
-  formatDateTime,
   getStudentPortalContext,
   localDateKey,
   type StudentSession,
@@ -31,8 +30,14 @@ function startOfWeek(value: string) {
 function dateChip(value: string) {
   const date = new Date(`${value}T12:00:00Z`);
   return {
-    weekday: new Intl.DateTimeFormat("es-MX", { weekday: "short", timeZone: "UTC" }).format(date),
-    day: new Intl.DateTimeFormat("es-MX", { day: "numeric", timeZone: "UTC" }).format(date),
+    weekday: new Intl.DateTimeFormat("es-MX", {
+      weekday: "short",
+      timeZone: "UTC",
+    }).format(date),
+    day: new Intl.DateTimeFormat("es-MX", {
+      day: "numeric",
+      timeZone: "UTC",
+    }).format(date),
   };
 }
 
@@ -53,13 +58,40 @@ function longDate(value: string) {
   }).format(new Date(`${value}T12:00:00Z`));
 }
 
+function timeOnly(value: string, timeZone: string) {
+  return new Intl.DateTimeFormat("es-MX", {
+    timeZone,
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(new Date(value));
+}
+
+function statusClass(session: StudentSession) {
+  if (session.is_reserved) {
+    return "border-emerald-500/25 bg-emerald-500/10 text-emerald-300";
+  }
+  if (session.eligibility?.eligible) {
+    return "border-fuchsia-500/25 bg-fuchsia-500/10 text-fuchsia-200";
+  }
+  if (session.eligibility?.reason_code === "session_full") {
+    return "border-rose-500/25 bg-rose-500/10 text-rose-300";
+  }
+  return "border-amber-400/25 bg-amber-400/[0.08] text-amber-200";
+}
+
+function statusCopy(session: StudentSession) {
+  if (session.is_reserved) return "Ya reservada";
+  if (session.eligibility?.eligible) return "Disponible";
+  return bookingReasonCopy(session.eligibility?.reason_code);
+}
+
 export default async function StudentReservePage({
   searchParams,
 }: {
   searchParams: Promise<{ date?: string; error?: string }>;
 }) {
   const query = await searchParams;
-  const { supabase, snapshot, studio } = await getStudentPortalContext();
+  const { supabase, studio } = await getStudentPortalContext();
   const today = localDateKey(new Date(), studio.timezone);
   const requestedDate = safeDate(query.date, today);
   const selectedDate = requestedDate < today ? today : requestedDate;
@@ -77,80 +109,86 @@ export default async function StudentReservePage({
   });
 
   const items = (sessions ?? []) as StudentSession[];
-  const activePackage = snapshot.acquisitions.find((item) => item.active_now) ?? null;
 
   return (
-    <main className="space-y-6">
+    <main className="space-y-4 pb-4">
       <header>
-        <p className="text-sm text-fuchsia-300">Reservar</p>
-        <h1 className="mt-1 text-3xl font-semibold text-white sm:text-4xl">
-          Elige tu próxima clase
-        </h1>
-        <p className="mt-2 text-sm text-zinc-400">
-          Elige un día y reserva directamente desde la clase. La disponibilidad y tu paquete se
-          validan en tiempo real.
+        <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-fuchsia-300">
+          Portal alumna
+        </p>
+        <h1 className="mt-1 text-2xl font-semibold text-white sm:text-3xl">Reservar clase</h1>
+        <p className="mt-1.5 text-xs leading-5 text-zinc-400">
+          Elige una fecha para ver todas las clases disponibles de ese día.
         </p>
       </header>
 
-      <section className="rounded-3xl border border-white/10 bg-white/[0.03] p-4 sm:p-5">
-        <div className="mb-4 flex items-center justify-between gap-3">
+      <section
+        aria-label="Seleccionar fecha"
+        className="rounded-3xl border border-white/10 bg-white/[0.03] p-3 sm:p-4"
+      >
+        <div className="mb-3 flex items-center justify-between gap-3">
           {weekStart > currentWeekStart ? (
             <Link
               href={`/student/reservar?date=${previousWeekDate < today ? today : previousWeekDate}`}
               aria-label="Semana anterior"
-              className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-black/20 text-xl text-white transition hover:bg-white/[0.06]"
+              className="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-black/20 text-lg text-white transition hover:bg-white/[0.06]"
             >
               ‹
             </Link>
           ) : (
             <span
               aria-hidden="true"
-              className="flex h-10 w-10 items-center justify-center rounded-full border border-white/5 text-xl text-zinc-700"
+              className="flex h-9 w-9 items-center justify-center rounded-full border border-white/5 text-lg text-zinc-700"
             >
               ‹
             </span>
           )}
 
-          <p className="text-center text-sm font-medium text-zinc-300">
+          <p className="text-center text-xs font-medium capitalize text-zinc-300">
             {shortDate(weekStart)} – {shortDate(weekEnd)}
           </p>
 
           <Link
             href={`/student/reservar?date=${nextWeekDate}`}
             aria-label="Semana siguiente"
-            className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-black/20 text-xl text-white transition hover:bg-white/[0.06]"
+            className="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-black/20 text-lg text-white transition hover:bg-white/[0.06]"
           >
             ›
           </Link>
         </div>
 
-        <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
+        <div className="grid grid-cols-7 gap-1.5">
           {days.map((day) => {
             const chip = dateChip(day);
             const isPast = day < today;
             const isSelected = day === selectedDate;
-            const className = `rounded-2xl px-1 py-3 text-center transition ${
+            const className = `rounded-2xl px-1 py-2.5 text-center transition ${
               isSelected
-                ? "bg-fuchsia-600 text-white"
+                ? "bg-fuchsia-600 text-white shadow-[0_0_24px_rgba(255,10,138,0.18)]"
                 : isPast
                   ? "border border-white/5 bg-black/10 text-zinc-700"
-                  : "border border-white/10 bg-black/20 text-zinc-400 hover:text-white"
+                  : "border border-white/10 bg-black/20 text-zinc-400 hover:border-fuchsia-500/25 hover:text-white"
             }`;
 
-            const content = (
+            const dateContent = (
               <>
-                <span className="block text-[11px] capitalize sm:text-xs">{chip.weekday}</span>
-                <strong className="mt-1 block text-base sm:text-lg">{chip.day}</strong>
+                <span className="block text-[10px] capitalize">{chip.weekday}</span>
+                <strong className="mt-0.5 block text-sm">{chip.day}</strong>
               </>
             );
 
             return isPast ? (
               <span key={day} className={className} aria-disabled="true">
-                {content}
+                {dateContent}
               </span>
             ) : (
-              <Link key={day} href={`/student/reservar?date=${day}`} className={className}>
-                {content}
+              <Link
+                key={day}
+                href={`/student/reservar?date=${day}`}
+                aria-current={isSelected ? "date" : undefined}
+                className={className}
+              >
+                {dateContent}
               </Link>
             );
           })}
@@ -158,101 +196,122 @@ export default async function StudentReservePage({
       </section>
 
       {query.error || error ? (
-        <div className="rounded-2xl border border-rose-500/25 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">
-          No pudimos cargar la agenda. Intenta de nuevo.
-        </div>
-      ) : null}
-
-      {!activePackage ? (
-        <div className="rounded-2xl border border-amber-500/20 bg-amber-500/[0.08] px-4 py-3 text-sm text-amber-100">
-          No tienes un paquete activo. Puedes explorar las clases, pero Studio Flow te indicará qué
-          necesitas antes de reservar.
-        </div>
-      ) : null}
-
-      <section className="space-y-3">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-zinc-500">
-            Clases del día
+        <section className="rounded-3xl border border-rose-500/25 bg-rose-500/[0.08] p-5 text-center">
+          <h2 className="text-base font-semibold text-white">No pudimos cargar las clases</h2>
+          <p className="mt-1.5 text-xs leading-5 text-zinc-400">
+            Conservamos la fecha seleccionada. Intenta nuevamente.
           </p>
-          <h2 className="mt-1 text-xl font-semibold capitalize text-white">
-            {longDate(selectedDate)}
-          </h2>
-        </div>
-
-        {items.length ? (
-          items.map((session) => {
-            const eligible = Boolean(session.eligibility?.eligible);
-            const reserved = Boolean(session.is_reserved);
-            const timeLabel = formatDateTime(session.starts_at, studio.timezone);
-
-            return (
-              <article
-                key={session.session_id}
-                className="rounded-3xl border border-white/10 bg-white/[0.03] p-5 transition hover:border-fuchsia-500/30 hover:bg-white/[0.05]"
-              >
-                <div className="flex flex-wrap items-start justify-between gap-4">
-                  <div className="min-w-0 flex-1">
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-fuchsia-300">
-                      {session.discipline}
-                    </p>
-                    <h3 className="mt-1 text-xl font-semibold text-white">{session.activity}</h3>
-                    <p className="mt-2 text-sm text-zinc-400">{timeLabel}</p>
-                    <p className="mt-1 text-xs text-zinc-500">
-                      {[session.coach, session.space || session.location]
-                        .filter(Boolean)
-                        .join(" · ") || "Detalles en la clase"}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm font-semibold text-white">
-                      {session.spots_available}/{session.capacity} lugares
-                    </p>
-                    <span
-                      className={`mt-2 inline-block rounded-full px-2.5 py-1 text-xs font-medium ${
-                        reserved
-                          ? "bg-sky-500/15 text-sky-300"
-                          : eligible
-                            ? "bg-emerald-500/15 text-emerald-300"
-                            : "bg-zinc-500/15 text-zinc-400"
-                      }`}
-                    >
-                      {reserved
-                        ? "Ya reservada"
-                        : bookingReasonCopy(session.eligibility?.reason_code)}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-white/10 pt-4">
-                  <Link
-                    href={`/student/reservar/${session.session_id}`}
-                    className="min-h-11 rounded-2xl border border-white/10 px-4 py-2.5 text-sm font-semibold text-zinc-300 transition hover:bg-white/[0.05] hover:text-white"
-                  >
-                    Ver detalles
-                  </Link>
-
-                  <QuickBookButton
-                    sessionId={session.session_id}
-                    activity={session.activity}
-                    discipline={session.discipline}
-                    timeLabel={timeLabel}
-                    eligible={eligible}
-                    reserved={reserved}
-                  />
-                </div>
-              </article>
-            );
-          })
-        ) : (
-          <div className="rounded-3xl border border-dashed border-white/10 p-10 text-center">
-            <h3 className="font-semibold text-white">Sin clases disponibles</h3>
-            <p className="mt-2 text-sm text-zinc-400">
-              No encontramos sesiones para este día. Elige otro día de la semana.
-            </p>
+          <Link
+            href={`/student/reservar?date=${selectedDate}`}
+            className="mt-4 inline-flex min-h-10 items-center justify-center rounded-xl bg-fuchsia-600 px-4 py-2 text-xs font-semibold text-white"
+          >
+            Intentar de nuevo
+          </Link>
+        </section>
+      ) : (
+        <section className="space-y-2.5">
+          <div className="flex items-end justify-between gap-3">
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-500">
+                Clases del día
+              </p>
+              <h2 className="mt-0.5 text-base font-semibold capitalize text-white">
+                {longDate(selectedDate)}
+              </h2>
+            </div>
+            {items.length ? (
+              <span className="text-[10px] text-zinc-600">
+                {items.length} {items.length === 1 ? "clase" : "clases"}
+              </span>
+            ) : null}
           </div>
-        )}
-      </section>
+
+          {items.length ? (
+            items.map((session) => {
+              const timeLabel = timeOnly(session.starts_at, studio.timezone);
+              const eligible = Boolean(session.eligibility?.eligible);
+              const reserved = Boolean(session.is_reserved);
+
+              return (
+                <article
+                  key={session.session_id}
+                  data-density="compact"
+                  className="rounded-2xl border border-white/10 bg-black/20 p-3 transition hover:border-fuchsia-500/30 hover:bg-white/[0.045]"
+                >
+                  <div className="grid grid-cols-[4.25rem_1fr_auto] items-center gap-3">
+                    <div>
+                      <p className="text-sm font-semibold text-white">{timeLabel}</p>
+                      <p className="mt-0.5 text-[10px] text-zinc-600">
+                        {session.spots_available}/{session.capacity} lugares
+                      </p>
+                    </div>
+
+                    <Link
+                      href={`/student/reservar/${session.session_id}?date=${selectedDate}`}
+                      className="min-w-0 border-l border-white/10 pl-3"
+                    >
+                      <p className="truncate text-sm font-semibold text-white">
+                        {session.activity}
+                      </p>
+                      <p className="mt-0.5 truncate text-[11px] text-fuchsia-300">
+                        {session.discipline}
+                      </p>
+                      <p className="mt-0.5 truncate text-[11px] text-zinc-500">
+                        {[session.coach, session.space || session.location]
+                          .filter(Boolean)
+                          .join(" · ") || "Ver detalle"}
+                      </p>
+                    </Link>
+
+                    <Link
+                      href={`/student/reservar/${session.session_id}?date=${selectedDate}`}
+                      aria-label={`Ver detalles de ${session.activity}`}
+                      className="flex items-center gap-2"
+                    >
+                      <span
+                        className={`hidden rounded-full border px-2 py-1 text-[10px] font-semibold sm:inline-flex ${statusClass(
+                          session,
+                        )}`}
+                      >
+                        {statusCopy(session)}
+                      </span>
+                      <span aria-hidden="true" className="text-xl text-zinc-500">
+                        ›
+                      </span>
+                    </Link>
+                  </div>
+
+                  <div className="mt-3 flex justify-end border-t border-white/10 pt-3">
+                    <QuickBookButton
+                      sessionId={session.session_id}
+                      activity={session.activity}
+                      discipline={session.discipline}
+                      timeLabel={timeLabel}
+                      eligible={eligible}
+                      reserved={reserved}
+                    />
+                  </div>
+                </article>
+              );
+            })
+          ) : (
+            <div className="rounded-3xl border border-dashed border-white/10 bg-white/[0.02] px-5 py-9 text-center">
+              <div
+                aria-hidden="true"
+                className="mx-auto flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 text-xl text-zinc-500"
+              >
+                ◫
+              </div>
+              <h3 className="mt-3 text-base font-semibold text-white">
+                No hay clases disponibles para esta fecha
+              </h3>
+              <p className="mx-auto mt-1.5 max-w-sm text-xs leading-5 text-zinc-400">
+                Elige otro día en el calendario para consultar la agenda.
+              </p>
+            </div>
+          )}
+        </section>
+      )}
     </main>
   );
 }
