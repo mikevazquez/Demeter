@@ -49,10 +49,7 @@ function ClassRow({
       className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3 transition hover:bg-white/[0.05]"
     >
       <div className="grid grid-cols-[1fr_auto] items-center gap-3">
-        <Link
-          href={`/student/mis-clases/${item.reservation_id}`}
-          className="min-w-0"
-        >
+        <Link href={`/student/mis-clases/${item.reservation_id}`} className="min-w-0">
           <div className="flex min-w-0 items-center gap-2">
             <p className="truncate text-sm font-semibold text-white">{item.activity}</p>
             <span
@@ -61,9 +58,7 @@ function ClassRow({
               {statusCopy[item.status] ?? item.status}
             </span>
           </div>
-          <p className="mt-1 text-xs text-zinc-300">
-            {formatDateTime(item.starts_at, timezone)}
-          </p>
+          <p className="mt-1 text-xs text-zinc-300">{formatDateTime(item.starts_at, timezone)}</p>
           <p className="mt-0.5 truncate text-[11px] text-zinc-500">
             {[item.coach, item.space].filter(Boolean).join(" · ") || item.discipline}
           </p>
