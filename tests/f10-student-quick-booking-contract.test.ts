@@ -7,16 +7,17 @@ function source(path: string) {
   return readFileSync(join(process.cwd(), path), "utf8");
 }
 
-describe("F10 student quick booking UX", () => {
-  it("lets the student reserve from schedule and home cards without opening detail", () => {
+describe("F10/N14 student quick booking UX", () => {
+  it("keeps quick booking in Reservar while Inicio stays a dashboard", () => {
     const reservePage = source("app/student/reservar/page.tsx");
     const homePage = source("app/student/page.tsx");
     const quickButton = source("app/student/reservar/quick-book-button.tsx");
 
     expect(reservePage).toContain("QuickBookButton");
     expect(reservePage).toContain("Ver detalles");
-    expect(homePage).toContain("QuickBookButton");
-    expect(homePage).toContain("Ver detalles");
+    expect(homePage).not.toContain("QuickBookButton");
+    expect(homePage).toContain('href="/student/reservar"');
+    expect(homePage).toContain('href="/student/mis-clases"');
     expect(quickButton).toContain('"Reservar"');
     expect(quickButton).toContain("bookStudentSessionInlineAction");
   });
