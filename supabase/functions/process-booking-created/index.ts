@@ -658,14 +658,11 @@ const handler = {
     }
 
     if (providerResult.status === "accepted") {
-      const { error: sentError } = await adminClient.rpc(
-        "system_mark_automation_execution_sent",
-        {
-          p_attempt_id: attempt.attempt_id,
-          p_provider_key: provider.key,
-          p_request_snapshot: requestSnapshot(providerInput),
-        },
-      );
+      const { error: sentError } = await adminClient.rpc("system_mark_automation_execution_sent", {
+        p_attempt_id: attempt.attempt_id,
+        p_provider_key: provider.key,
+        p_request_snapshot: requestSnapshot(providerInput),
+      });
 
       if (sentError) {
         const refreshed = await existingExecution(
