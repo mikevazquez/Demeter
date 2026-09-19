@@ -38,15 +38,13 @@ export default async function StudentCancelReservationPage({
 
   if (!item) notFound();
 
-  const preview = previewData as
-    | {
-        ok?: boolean;
-        late?: boolean;
-        uses_credits?: boolean;
-        unlimited?: boolean;
-        credit_will_return?: boolean | null;
-      }
-    | null;
+  const preview = previewData as {
+    ok?: boolean;
+    late?: boolean;
+    uses_credits?: boolean;
+    unlimited?: boolean;
+    credit_will_return?: boolean | null;
+  } | null;
   const willLoseCredit = Boolean(preview?.ok && preview.late && preview.uses_credits);
   const willReturnCredit = Boolean(
     preview?.ok && !preview.late && preview.credit_will_return === true,
