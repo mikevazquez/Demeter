@@ -116,9 +116,7 @@ export default async function StudentReservePage({
         <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-fuchsia-300">
           Portal alumna
         </p>
-        <h1 className="mt-1 text-2xl font-semibold text-white sm:text-3xl">
-          Reservar clase
-        </h1>
+        <h1 className="mt-1 text-2xl font-semibold text-white sm:text-3xl">Reservar clase</h1>
         <p className="mt-1.5 text-xs leading-5 text-zinc-400">
           Elige una fecha para ver todas las clases disponibles de ese día.
         </p>
@@ -199,9 +197,7 @@ export default async function StudentReservePage({
 
       {query.error || error ? (
         <section className="rounded-3xl border border-rose-500/25 bg-rose-500/[0.08] p-5 text-center">
-          <h2 className="text-base font-semibold text-white">
-            No pudimos cargar las clases
-          </h2>
+          <h2 className="text-base font-semibold text-white">No pudimos cargar las clases</h2>
           <p className="mt-1.5 text-xs leading-5 text-zinc-400">
             Conservamos la fecha seleccionada. Intenta nuevamente.
           </p>
