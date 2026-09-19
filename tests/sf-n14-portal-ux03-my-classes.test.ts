@@ -12,9 +12,7 @@ describe("SF-N14 PORTAL UX-03 Mis clases", () => {
   const detail = source("app/student/mis-clases/[reservationId]/page.tsx");
   const cancel = source("app/student/mis-clases/[reservationId]/cancelar/page.tsx");
   const actions = source("app/student/actions.ts");
-  const migration = source(
-    "supabase/migrations/20260919193000_n14_ux03_cancellation_preview.sql",
-  );
+  const migration = source("supabase/migrations/20260919193000_n14_ux03_cancellation_preview.sql");
 
   it("separates upcoming reservations from history", () => {
     expect(list).toContain('href="/student/mis-clases"');
@@ -75,7 +73,9 @@ describe("SF-N14 PORTAL UX-03 Mis clases", () => {
 
   it("shares one backend cancellation outcome rule between preview and mutation", () => {
     expect(migration).toContain("private.reservation_cancellation_outcome");
-    expect(migration.match(/private\.reservation_cancellation_outcome/g)?.length).toBeGreaterThanOrEqual(3);
+    expect(
+      migration.match(/private\.reservation_cancellation_outcome/g)?.length,
+    ).toBeGreaterThanOrEqual(3);
     expect(migration).toContain("student_cancellation_preview");
   });
 
