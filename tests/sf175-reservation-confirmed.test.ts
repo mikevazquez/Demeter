@@ -53,14 +53,16 @@ describe("SF-175 reservation confirmed", () => {
       }),
     );
 
-    expect(conditions.find((condition) => condition.key === "reservation.valid")?.passed).toBe(true);
-    expect(conditions.find((condition) => condition.key === "student.identified")?.passed).toBe(true);
+    expect(conditions.find((condition) => condition.key === "reservation.valid")?.passed).toBe(
+      true,
+    );
+    expect(conditions.find((condition) => condition.key === "student.identified")?.passed).toBe(
+      true,
+    );
   });
 
   it("uses stable reservation-scoped candidate and idempotency keys", () => {
-    expect(reservationConfirmedCandidateKey("reservation-123")).toBe(
-      "reservation:reservation-123",
-    );
+    expect(reservationConfirmedCandidateKey("reservation-123")).toBe("reservation:reservation-123");
     expect(reservationConfirmedIdempotencyKey("reservation-123")).toBe(
       "sf175:reservation:reservation-123",
     );
@@ -98,17 +100,14 @@ describe("SF-175 reservation confirmed", () => {
       },
     };
 
-    await expect(
-      triggerReservationConfirmedAutomation(client, "reservation-123"),
-    ).resolves.toBe(false);
+    await expect(triggerReservationConfirmedAutomation(client, "reservation-123")).resolves.toBe(
+      false,
+    );
   });
 
   it("emits booking.created only after the reservation insert", () => {
     const migration = readFileSync(
-      join(
-        process.cwd(),
-        "supabase/migrations/20260919153000_sf175_reservation_confirmed.sql",
-      ),
+      join(process.cwd(), "supabase/migrations/20260919153000_sf175_reservation_confirmed.sql"),
       "utf8",
     );
 

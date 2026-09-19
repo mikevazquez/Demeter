@@ -55,8 +55,7 @@ export interface MessagingProviderErrorResult {
 }
 
 export type MessagingProviderResult =
-  | MessagingProviderAcceptedResult
-  | MessagingProviderErrorResult;
+  MessagingProviderAcceptedResult | MessagingProviderErrorResult;
 
 export interface MessagingProvider {
   readonly key: string;
@@ -113,9 +112,7 @@ export function buildReservationConfirmedConditions(input: {
       kind: "protected",
       applies: true,
       passed: reservationValid,
-      reason_code: reservationValid
-        ? "reservation_confirmed"
-        : "reservation_not_confirmable",
+      reason_code: reservationValid ? "reservation_confirmed" : "reservation_not_confirmable",
       reason: reservationValid
         ? "La reserva está confirmada y conserva contexto válido."
         : "La reserva ya no está confirmada o su contexto está incompleto.",
