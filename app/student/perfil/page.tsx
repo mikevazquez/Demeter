@@ -3,6 +3,8 @@ import Link from "next/link";
 import { formatDate, getStudentPortalContext } from "@/lib/student/portal";
 
 import { updateStudentProfileAction } from "../actions";
+import PendingActionButton from "../components/PendingActionButton";
+import StudentNoticeDialog from "../components/StudentNoticeDialog";
 
 const errorCopy: Record<string, string> = {
   email_invalid: "Revisa el formato de tu correo.",
@@ -30,14 +32,22 @@ export default async function StudentProfilePage({
       </header>
 
       {query.updated ? (
-        <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.08] px-4 py-3 text-sm text-emerald-200">
-          ✓ Tus datos se actualizaron correctamente.
-        </div>
-      ) : null}
-      {query.error ? (
-        <div className="rounded-2xl border border-rose-500/25 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">
+        <StudentNoticeDialog
+          eyebrow="Cambios guardados"
+          title="Tu correo está actualizado"
+          dismissHref="/student/perfil"
+        >
+          Tus datos se actualizaron correctamente.
+        </StudentNoticeDialog>
+      ) : query.error ? (
+        <StudentNoticeDialog
+          eyebrow="No pudimos guardar"
+          title="Revisa tus datos"
+          dismissHref="/student/perfil"
+          tone="error"
+        >
           {errorCopy[query.error] ?? errorCopy.profile_update_failed}
-        </div>
+        </StudentNoticeDialog>
       ) : null}
 
       <section className="grid gap-4 xl:grid-cols-[1fr_0.8fr]">
@@ -91,12 +101,12 @@ export default async function StudentProfilePage({
             />
           </label>
 
-          <button
-            type="submit"
-            className="rounded-xl bg-fuchsia-600 px-5 py-3 text-sm font-semibold text-white hover:bg-fuchsia-500"
+          <PendingActionButton
+            pendingLabel="Guardando…"
+            className="rounded-xl bg-fuchsia-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-fuchsia-500 disabled:cursor-wait disabled:opacity-60"
           >
             Guardar correo
-          </button>
+          </PendingActionButton>
         </form>
 
         <aside className="space-y-3">
