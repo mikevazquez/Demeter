@@ -12,10 +12,13 @@ import PendingActionButton from "../../../components/PendingActionButton";
 
 export default async function StudentCancelReservationPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ reservationId: string }>;
+  searchParams: Promise<{ error?: string }>;
 }) {
   const { reservationId } = await params;
+  const query = await searchParams;
   const { supabase, studio } = await getStudentPortalContext();
   const [{ data, error }, { data: previewData }] = await Promise.all([
     supabase.rpc("student_classes_feed"),
@@ -141,6 +144,20 @@ export default async function StudentCancelReservationPage({
           </p>
         )}
 
+        {query.error ? (
+          <div
+            role="alert"
+            className="mt-4 rounded-2xl border border-rose-500/25 bg-rose-500/[0.08] p-4"
+          >
+            <p className="text-sm font-semibold text-rose-100">
+              No se pudo procesar tu cancelación
+            </p>
+            <p className="mt-1.5 text-xs leading-5 text-rose-100/75">
+              Tu reserva no se modificó. Puedes intentarlo de nuevo.
+            </p>
+          </div>
+        ) : null}
+
         <form action={cancelStudentReservationAction} className="mt-5 space-y-3">
           <input type="hidden" name="reservation_id" value={item.reservation_id} />
           <input type="hidden" name="return_to" value="/student/mis-clases" />
@@ -159,7 +176,7 @@ export default async function StudentCancelReservationPage({
             pendingLabel="Cancelando…"
             className="min-h-11 w-full rounded-2xl bg-fuchsia-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-fuchsia-500 disabled:cursor-wait disabled:opacity-70"
           >
-            Sí, cancelar
+            {query.error ? "Intentar de nuevo" : "Sí, cancelar"}
           </PendingActionButton>
 
           <Link
