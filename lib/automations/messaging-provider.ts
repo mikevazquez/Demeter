@@ -28,7 +28,8 @@ export interface MessagingProviderErrorResult {
   responseSnapshot?: Record<string, unknown>;
 }
 
-export type MessagingProviderResult = MessagingProviderAcceptedResult | MessagingProviderErrorResult;
+export type MessagingProviderResult =
+  MessagingProviderAcceptedResult | MessagingProviderErrorResult;
 
 export interface MessagingProvider {
   readonly key: string;
