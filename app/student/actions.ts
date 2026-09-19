@@ -91,6 +91,37 @@ type MercadoPagoOrderResult = {
   error?: string;
 } | null;
 
+export async function bookStudentSessionInlineAction(sessionId: string) {
+  const normalizedSessionId = sessionId.trim();
+  if (!normalizedSessionId) {
+    return { ok: false as const, error: "session_required" };
+  }
+
+  const { supabase } = await getStudentPortalContext();
+  const { data, error } = await supabase.rpc("student_book_session", {
+    target_session_id: normalizedSessionId,
+  });
+
+  if (error) {
+    return { ok: false as const, error: errorCode(error, "booking_failed") };
+  }
+
+  const result = data as BookingRpcResult;
+  if (!result?.eligible || !result.reservation_id) {
+    return {
+      ok: false as const,
+      error: result?.reason_code ?? "booking_failed",
+    };
+  }
+
+  revalidateStudentBookingSurfaces();
+
+  return {
+    ok: true as const,
+    reservationId: result.reservation_id,
+  };
+}
+
 export async function bookStudentSessionAction(formData: FormData) {
   const sessionId = String(formData.get("session_id") ?? "").trim();
   const rawDate = String(formData.get("date") ?? "").trim();
