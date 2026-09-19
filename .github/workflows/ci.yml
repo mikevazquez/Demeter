@@ -33,12 +33,6 @@ jobs:
       - name: Install
         run: npm ci
 
-      - name: SF-175 Prettier diagnostic
-        run: |
-          npx prettier --write supabase/functions/process-booking-created/index.ts tests/sf175-reservation-confirmed.test.ts
-          git diff -- supabase/functions/process-booking-created/index.ts tests/sf175-reservation-confirmed.test.ts
-          exit 1
-
       - name: Format check
         run: npm run format:check
 
