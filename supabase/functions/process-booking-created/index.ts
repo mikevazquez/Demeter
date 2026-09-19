@@ -1,5 +1,5 @@
-import { withSupabase } from "npm:@supabase/server";
-import type { SupabaseClient } from "npm:@supabase/supabase-js@2";
+import { withSupabase } from "npm:@supabase/server@1.7.0";
+import type { SupabaseClient } from "npm:@supabase/supabase-js@2.116.0";
 
 import {
   buildReservationConfirmedConditions,
@@ -61,11 +61,12 @@ function requestSnapshot(input: MessagingProviderInput) {
   };
 }
 
-async function claimEvent(adminClient: SupabaseClient, eventId: string): Promise<void> {
-  await adminClient.rpc("claim_domain_event", {
+async function claimEvent(adminClient: SupabaseClient, eventId: string): Promise<boolean> {
+  const { error } = await adminClient.rpc("claim_domain_event", {
     p_event_id: eventId,
     p_consumer_key: RESERVATION_CONFIRMED_CONSUMER_KEY,
   });
+  return !error;
 }
 
 async function callerCanProcess(
@@ -310,13 +311,9 @@ const handler = {
 
     const userClient = context.supabase;
     const adminClient = context.supabaseAdmin;
+    const userId = safeText(context.userClaims?.id);
 
-    const {
-      data: { user },
-      error: userError,
-    } = await userClient.auth.getUser();
-
-    if (userError || !user) return jsonResponse({ error: "unauthenticated" }, 401);
+    if (!userId) return jsonResponse({ error: "unauthenticated" }, 401);
 
     let payload: ProcessBookingCreatedRequest;
     try {
@@ -340,7 +337,7 @@ const handler = {
 
     const authorized = await callerCanProcess(
       userClient,
-      user.id,
+      userId,
       contextData.reservation.studio_id,
       contextData.reservation.student_user_id,
     );
@@ -386,7 +383,9 @@ const handler = {
       if (!instance) return jsonResponse({ error: "automation_instance_not_found" }, 409);
 
       if (execution.status === "accepted") {
-        await claimEvent(adminClient, contextData.event.event_id);
+        if (!(await claimEvent(adminClient, contextData.event.event_id))) {
+          return jsonResponse({ error: "domain_event_claim_failed" }, 500);
+        }
         return jsonResponse({
           ok: true,
           outcome: "accepted",
@@ -396,7 +395,9 @@ const handler = {
       }
 
       if (execution.status === "suppressed" || execution.status === "cancelled") {
-        await claimEvent(adminClient, contextData.event.event_id);
+        if (!(await claimEvent(adminClient, contextData.event.event_id))) {
+          return jsonResponse({ error: "domain_event_claim_failed" }, 500);
+        }
         return jsonResponse({
           ok: true,
           outcome: execution.status,
@@ -416,7 +417,9 @@ const handler = {
 
       if (execution.status === "error") {
         if (execution.last_error_retryable !== true) {
-          await claimEvent(adminClient, contextData.event.event_id);
+          if (!(await claimEvent(adminClient, contextData.event.event_id))) {
+            return jsonResponse({ error: "domain_event_claim_failed" }, 500);
+          }
           return jsonResponse({
             ok: true,
             outcome: "error",
@@ -449,7 +452,9 @@ const handler = {
 
           if (cancelError) return jsonResponse({ error: "execution_cancel_failed" }, 500);
 
-          await claimEvent(adminClient, contextData.event.event_id);
+          if (!(await claimEvent(adminClient, contextData.event.event_id))) {
+            return jsonResponse({ error: "domain_event_claim_failed" }, 500);
+          }
           return jsonResponse({
             ok: true,
             outcome: "cancelled",
@@ -475,7 +480,9 @@ const handler = {
       if (instanceError) return jsonResponse({ error: "automation_instance_lookup_failed" }, 500);
 
       if (!activeInstances?.length) {
-        await claimEvent(adminClient, contextData.event.event_id);
+        if (!(await claimEvent(adminClient, contextData.event.event_id))) {
+          return jsonResponse({ error: "domain_event_claim_failed" }, 500);
+        }
         return jsonResponse({
           ok: true,
           outcome: "inactive",
@@ -502,7 +509,9 @@ const handler = {
       if (!initial) return jsonResponse({ error: "eligibility_failed" }, 500);
 
       if (!initial.eligible || initial.outcome !== "proceed") {
-        await claimEvent(adminClient, contextData.event.event_id);
+        if (!(await claimEvent(adminClient, contextData.event.event_id))) {
+          return jsonResponse({ error: "domain_event_claim_failed" }, 500);
+        }
         return jsonResponse({
           ok: true,
           outcome: "skipped",
@@ -581,7 +590,9 @@ const handler = {
       );
 
       if (concurrent?.status === "accepted") {
-        await claimEvent(adminClient, contextData.event.event_id);
+        if (!(await claimEvent(adminClient, contextData.event.event_id))) {
+          return jsonResponse({ error: "domain_event_claim_failed" }, 500);
+        }
         return jsonResponse({
           ok: true,
           outcome: "accepted",
@@ -624,40 +635,94 @@ const handler = {
     try {
       providerResult = await provider.send(providerInput);
     } catch {
-      providerResult = {
-        status: "error" as const,
-        errorCode: "provider_exception",
-        errorMessage: "El proveedor simulado lanzó una excepción.",
-        retryable: true,
-      };
-    }
-
-    const { error: sentError } = await adminClient.rpc("system_mark_automation_execution_sent", {
-      p_attempt_id: attempt.attempt_id,
-      p_provider_key: provider.key,
-      p_request_snapshot: requestSnapshot(providerInput),
-    });
-
-    if (sentError) return jsonResponse({ error: "execution_sent_failed" }, 500);
-
-    if (providerResult.status === "accepted") {
-      const { error: acceptedError } = await adminClient.rpc(
-        "system_mark_automation_execution_accepted",
+      const { error: markExceptionError } = await adminClient.rpc(
+        "system_mark_automation_execution_error",
         {
           p_attempt_id: attempt.attempt_id,
-          p_provider_reference: providerResult.providerReference ?? null,
-          p_response_snapshot: providerResult.responseSnapshot ?? {},
+          p_error_code: "provider_exception",
+          p_error_message: "El proveedor simulado lanzó una excepción.",
+          p_retryable: true,
         },
       );
 
-      if (acceptedError) return jsonResponse({ error: "execution_accept_failed" }, 500);
+      if (markExceptionError) {
+        return jsonResponse({ error: "execution_error_persist_failed" }, 500);
+      }
 
-      await adminClient.rpc("system_mark_automation_instance_executed", {
-        p_instance_id: execution.instance_id,
-        p_version_number: execution.version_number,
+      return jsonResponse({
+        ok: true,
+        outcome: "error",
+        executionId: execution.id,
+        retryable: true,
       });
+    }
 
-      await claimEvent(adminClient, contextData.event.event_id);
+    if (providerResult.status === "accepted") {
+      const { error: sentError } = await adminClient.rpc(
+        "system_mark_automation_execution_sent",
+        {
+          p_attempt_id: attempt.attempt_id,
+          p_provider_key: provider.key,
+          p_request_snapshot: requestSnapshot(providerInput),
+        },
+      );
+
+      if (sentError) {
+        const refreshed = await existingExecution(
+          adminClient,
+          contextData.reservation.studio_id,
+          reservationId,
+        );
+
+        if (refreshed?.status !== "sent" && refreshed?.status !== "accepted") {
+          await adminClient.rpc("system_mark_automation_execution_error", {
+            p_attempt_id: attempt.attempt_id,
+            p_error_code: "execution_sent_persist_failed",
+            p_error_message: "No se pudo persistir el estado sent del intento.",
+            p_retryable: true,
+          });
+          return jsonResponse({ error: "execution_sent_failed" }, 500);
+        }
+      }
+
+      const beforeAccept = await existingExecution(
+        adminClient,
+        contextData.reservation.studio_id,
+        reservationId,
+      );
+
+      if (beforeAccept?.status !== "accepted") {
+        const { error: acceptedError } = await adminClient.rpc(
+          "system_mark_automation_execution_accepted",
+          {
+            p_attempt_id: attempt.attempt_id,
+            p_provider_reference: providerResult.providerReference ?? null,
+            p_response_snapshot: providerResult.responseSnapshot ?? {},
+          },
+        );
+
+        if (acceptedError) {
+          const refreshed = await existingExecution(
+            adminClient,
+            contextData.reservation.studio_id,
+            reservationId,
+          );
+
+          if (refreshed?.status !== "accepted") {
+            await adminClient.rpc("system_mark_automation_execution_error", {
+              p_attempt_id: attempt.attempt_id,
+              p_error_code: "execution_accept_persist_failed",
+              p_error_message: "No se pudo persistir la aceptación del proveedor.",
+              p_retryable: true,
+            });
+            return jsonResponse({ error: "execution_accept_failed" }, 500);
+          }
+        }
+      }
+
+      if (!(await claimEvent(adminClient, contextData.event.event_id))) {
+        return jsonResponse({ error: "domain_event_claim_failed" }, 500);
+      }
 
       return jsonResponse({
         ok: true,
@@ -676,6 +741,12 @@ const handler = {
     });
 
     if (markError) return jsonResponse({ error: "execution_error_persist_failed" }, 500);
+
+    if (!providerResult.retryable) {
+      if (!(await claimEvent(adminClient, contextData.event.event_id))) {
+        return jsonResponse({ error: "domain_event_claim_failed" }, 500);
+      }
+    }
 
     return jsonResponse({
       ok: true,
