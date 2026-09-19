@@ -71,7 +71,6 @@ describe("SF-168 communication preferences", () => {
     }
   });
 
-
   it("feeds an individual opt-out into AUT-05 as a suppression", () => {
     const preference = resolvePersonCommunicationPreference({
       category: "retention",
