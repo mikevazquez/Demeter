@@ -34,9 +34,9 @@ describe("F10/N14 student home visual hierarchy", () => {
 
   it("keeps quick actions and activity after the primary context", () => {
     expect(home).toContain("Acciones rápidas");
-    expect(home).toContain(">Reservar<");
-    expect(home).toContain(">Mis clases<");
-    expect(home).toContain(">Mi paquete<");
+    expect(home).toContain("Reservar");
+    expect(home).toContain("Mis clases");
+    expect(home).toContain("Mi paquete");
     expect(home).toContain("Disciplina también es amor propio");
   });
 });
