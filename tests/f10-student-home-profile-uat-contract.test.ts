@@ -15,8 +15,11 @@ describe("F10/N14 student home and profile UAT contracts", () => {
     "supabase/migrations/20260916040850_f10_profile_identity_readonly.sql",
   );
 
-  it("shows one compact package summary without duplicating commercial state", () => {
-    expect(homePage).toContain("Mi paquete");
+  it("shows the compact active package as the primary home context", () => {
+    expect(homePage.indexOf('data-home-block="package"')).toBeLessThan(
+      homePage.indexOf('data-home-block="next-class"'),
+    );
+    expect(homePage).toContain('data-density="compact"');
     expect(homePage).toContain("Vence");
     expect(homePage).toContain("used_credits");
   });
