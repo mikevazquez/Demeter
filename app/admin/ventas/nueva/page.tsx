@@ -110,9 +110,7 @@ export default async function NewSalePage({
         <form action={createManualSaleAction} className="sale-compact-form">
           <section className="sale-step-card">
             <div className="sale-step-layout">
-              <span className="sale-step-number">
-                1
-              </span>
+              <span className="sale-step-number">1</span>
               <div className="sale-step-content">
                 <h2 className="font-semibold text-white">Alumna</h2>
                 <p className="mt-1 text-sm text-zinc-400">Selecciona a quién pertenece la venta.</p>
@@ -138,9 +136,7 @@ export default async function NewSalePage({
 
           <section className="sale-step-card">
             <div className="sale-step-layout">
-              <span className="sale-step-number">
-                2
-              </span>
+              <span className="sale-step-number">2</span>
               <div className="sale-step-content">
                 <h2 className="font-semibold text-white">Inicio del paquete</h2>
                 <p className="mt-1 text-sm text-zinc-400">
@@ -163,9 +159,7 @@ export default async function NewSalePage({
 
           <section className="sale-step-card">
             <div className="sale-step-layout">
-              <span className="sale-step-number">
-                3
-              </span>
+              <span className="sale-step-number">3</span>
               <div className="sale-step-content">
                 <h2 className="font-semibold text-white">Productos</h2>
                 <p className="mt-1 text-sm text-zinc-400">
@@ -204,9 +198,7 @@ export default async function NewSalePage({
 
           <section className="sale-step-card">
             <div className="sale-step-layout">
-              <span className="sale-step-number">
-                4
-              </span>
+              <span className="sale-step-number">4</span>
               <div className="sale-step-content">
                 <h2 className="font-semibold text-white">Pago inicial</h2>
                 <p className="mt-1 text-sm text-zinc-400">
