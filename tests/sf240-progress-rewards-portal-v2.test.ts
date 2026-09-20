@@ -93,8 +93,7 @@ describe("SF-240 Progress & Rewards Portal Alumna v2", () => {
     expect(page).toContain("Aplicación automática");
     expect(page).toContain("En uso");
     expect(detail).toContain("no se utiliza parcialmente");
-    expect(detail).toContain("el sobrante");
-    expect(detail).toContain("no se guarda como saldo");
+    expect(detail).toContain("sobrante no se guarda como saldo");
   });
 
   it("implements S06 chronological journey with approved filters", () => {
