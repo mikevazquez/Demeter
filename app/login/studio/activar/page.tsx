@@ -54,6 +54,11 @@ export default async function StudioActivationPage({
     redirect("/login/studio?error=access");
   }
 
+  if (!roles.includes("instructor")) {
+    await supabase.auth.signOut();
+    redirect("/login/studio?error=activation");
+  }
+
   if (!account.must_change_password) redirect("/login/studio/seleccionar");
 
   return (
