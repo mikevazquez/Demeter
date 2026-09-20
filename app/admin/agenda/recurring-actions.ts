@@ -15,7 +15,9 @@ type ScheduleRow = {
 };
 
 function normalizeColorHex(value: FormDataEntryValue | null) {
-  const color = String(value ?? "").trim().toUpperCase();
+  const color = String(value ?? "")
+    .trim()
+    .toUpperCase();
   return /^#[0-9A-F]{6}$/.test(color) ? color : null;
 }
 
