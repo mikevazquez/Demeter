@@ -90,30 +90,28 @@ export default async function StudentHomePage({
           aria-hidden="true"
           className="absolute bottom-0 right-[18%] top-0 w-px bg-gradient-to-b from-transparent via-fuchsia-500/60 to-transparent shadow-[0_0_22px_rgba(236,72,153,0.55)]"
         />
-        <div className="relative">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-zinc-500">
-            Demeter Fitness Studio
-          </p>
-          <div className="mt-2 flex items-center justify-between gap-4">
-            <div className="min-w-0">
-              <h1 className="text-2xl font-semibold tracking-tight text-white sm:text-3xl">
-                Hola, {snapshot.profile.first_name} <span aria-hidden="true">♥</span>
-              </h1>
-              <p className="mt-0.5 text-xs text-zinc-400">Movimiento que transforma</p>
+        <div className="relative flex items-center gap-4 sm:gap-5">
+          <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-full border border-fuchsia-400/40 bg-fuchsia-500/10 shadow-[0_0_28px_rgba(236,72,153,0.2)] sm:h-24 sm:w-24">
+            <div className="absolute inset-0 flex items-center justify-center text-xl font-semibold text-fuchsia-200 sm:text-2xl">
+              {snapshot.profile.first_name.trim().charAt(0).toUpperCase()}
             </div>
+            <Image
+              src="/student/perfil/avatar"
+              alt="Foto de perfil"
+              fill
+              unoptimized
+              className="object-cover"
+            />
+          </div>
 
-            <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-full border border-fuchsia-400/40 bg-fuchsia-500/10 shadow-[0_0_24px_rgba(236,72,153,0.18)] sm:h-16 sm:w-16">
-              <div className="absolute inset-0 flex items-center justify-center text-lg font-semibold text-fuchsia-200">
-                {snapshot.profile.first_name.trim().charAt(0).toUpperCase()}
-              </div>
-              <Image
-                src="/student/perfil/avatar"
-                alt="Foto de perfil"
-                fill
-                unoptimized
-                className="object-cover"
-              />
-            </div>
+          <div className="min-w-0">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-zinc-500">
+              Demeter Fitness Studio
+            </p>
+            <h1 className="mt-2 text-2xl font-semibold tracking-tight text-white sm:text-3xl">
+              Hola, {snapshot.profile.first_name} <span aria-hidden="true">♥</span>
+            </h1>
+            <p className="mt-0.5 text-xs text-zinc-400">Movimiento que transforma</p>
           </div>
         </div>
       </header>
