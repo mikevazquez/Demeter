@@ -1,10 +1,10 @@
-import { LoginCard } from "../login-card";
+import { redirect } from "next/navigation";
 
-export default async function CoachLoginPage({
+export default async function LegacyCoachLoginPage({
   searchParams,
 }: {
   searchParams: Promise<{ error?: string }>;
 }) {
   const { error } = await searchParams;
-  return <LoginCard mode="coach" error={error} />;
+  redirect(error ? `/login/studio?error=${encodeURIComponent(error)}` : "/login/studio");
 }
