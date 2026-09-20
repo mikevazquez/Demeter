@@ -5,6 +5,7 @@ import { formatDate, getStudentPortalContext } from "@/lib/student/portal";
 import { updateStudentProfileAction } from "../actions";
 import PendingActionButton from "../components/PendingActionButton";
 import StudentNoticeDialog from "../components/StudentNoticeDialog";
+import ProfileAvatarUploader from "./ProfileAvatarUploader";
 
 const errorCopy: Record<string, string> = {
   email_invalid: "Revisa el formato de tu correo.",
@@ -72,9 +73,7 @@ export default async function StudentProfilePage({
       >
         <div className="border-b border-white/10 p-5 sm:p-6">
           <div className="flex items-center gap-4">
-            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full border border-fuchsia-400/50 bg-gradient-to-br from-fuchsia-500/70 to-fuchsia-950 text-xl font-semibold text-white shadow-[0_0_28px_rgba(236,72,153,0.22)] sm:h-20 sm:w-20 sm:text-2xl">
-              {initials}
-            </div>
+            <ProfileAvatarUploader initials={initials} />
             <div className="min-w-0">
               <h2 className="truncate text-xl font-semibold text-white sm:text-2xl">{fullName}</h2>
               <p className="mt-1 text-sm text-zinc-400">Alumna · {studio.name}</p>
