@@ -176,9 +176,7 @@ describe("F9 sales contracts", () => {
     const mobileSpacing = source("app/admin/mobile-nav-overrides.css");
     const list = source("app/admin/ventas/page.tsx");
     const wizard = source("app/admin/ventas/nueva/page.tsx");
-    const sharedSaleForm = source(
-      "app/admin/alumnas/[studentId]/alta/StudentOnboardingForm.tsx",
-    );
+    const sharedSaleForm = source("app/admin/alumnas/[studentId]/alta/StudentOnboardingForm.tsx");
     const detail = source("app/admin/ventas/[saleId]/page.tsx");
     expect(layout).toContain('{ href: "/admin", label: "Hoy", enabled: true }');
     expect(layout).toContain('{ href: "/admin/alumnas", label: "Alumnas", enabled: true }');
