@@ -19,7 +19,7 @@ returns uuid
 language plpgsql
 security definer
 set search_path = ''
-as $
+as $reward_emit$
 begin
   begin
     return public.emit_domain_event(
@@ -39,7 +39,7 @@ begin
     return null;
   end;
 end;
-$;
+$reward_emit$;
 
 revoke all on function private.reward_try_emit_domain_event(
   uuid,text,text,uuid,text,timestamptz,uuid,jsonb,uuid,uuid,uuid
