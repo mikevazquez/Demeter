@@ -1,6 +1,8 @@
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { CAPABILITIES, type Capability } from "@/lib/auth/capabilities";
+import { STUDIO_CONTEXT_COOKIE } from "@/lib/auth/studio-context-cookie";
 import { createClient } from "@/lib/supabase/server";
 
 export async function getCoachContext(requiredCapability?: Capability) {
@@ -9,21 +11,33 @@ export async function getCoachContext(requiredCapability?: Capability) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) redirect("/login/coach");
+  if (!user) redirect("/login/studio");
 
-  const [{ data: account }, { data: membership }] = await Promise.all([
+  const [{ data: account }, { data: memberships }] = await Promise.all([
     supabase.from("user_accounts").select("status").eq("id", user.id).maybeSingle(),
     supabase
       .from("studio_memberships")
       .select("studio_id, role, active, person_id")
       .eq("user_id", user.id)
-      .eq("active", true)
-      .maybeSingle(),
+      .eq("role", "instructor")
+      .eq("active", true),
   ]);
 
-  if (!account || account.status !== "active" || !membership || !membership.person_id) {
+  if (!account || account.status !== "active" || !memberships?.length) {
     await supabase.auth.signOut();
-    redirect("/login/coach?error=access");
+    redirect("/login/studio?error=access");
+  }
+
+  const cookieStore = await cookies();
+  const selectedStudioId = cookieStore.get(STUDIO_CONTEXT_COOKIE)?.value;
+  const membership = selectedStudioId
+    ? memberships.find((item) => item.studio_id === selectedStudioId)
+    : memberships.length === 1
+      ? memberships[0]
+      : null;
+
+  if (!membership?.person_id) {
+    redirect("/login/studio/seleccionar");
   }
 
   const [{ data: studio }, { data: roleCapabilities }, { data: instructor }, { data: person }] =
@@ -56,7 +70,7 @@ export async function getCoachContext(requiredCapability?: Capability) {
     !person
   ) {
     await supabase.auth.signOut();
-    redirect("/login/coach?error=access");
+    redirect("/login/studio?error=access");
   }
 
   const capabilities = new Set(
@@ -65,11 +79,11 @@ export async function getCoachContext(requiredCapability?: Capability) {
 
   if (!capabilities.has(CAPABILITIES.INSTRUCTOR_PORTAL)) {
     await supabase.auth.signOut();
-    redirect("/login/coach?error=access");
+    redirect("/login/studio?error=access");
   }
 
   if (requiredCapability && !capabilities.has(requiredCapability)) {
-    redirect("/coach?error=access");
+    redirect("/admin/mis-clases?error=access");
   }
 
   return {
