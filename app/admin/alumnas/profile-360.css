@@ -1221,3 +1221,347 @@
     padding: 15px;
   }
 }
+
+
+/* SF-N02 · Vistas secundarias jerarquizadas */
+.profile360-packages-view,
+.profile360-rewards-section {
+  display: grid;
+  gap: 14px;
+}
+
+.profile360-view-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.profile360-view-heading h2 {
+  margin: 3px 0 0;
+  color: var(--text);
+  font-size: 18px;
+}
+
+.profile360-view-heading p:last-child {
+  margin: 6px 0 0;
+  max-width: 62ch;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.profile360-package-group {
+  display: grid;
+  gap: 10px;
+}
+
+.profile360-package-group-heading,
+.profile360-package-subheading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.profile360-package-group-heading strong,
+.profile360-package-subheading strong {
+  color: var(--text);
+  font-size: 12px;
+}
+
+.profile360-package-group-heading span,
+.profile360-package-subheading span {
+  display: inline-grid;
+  place-items: center;
+  min-width: 26px;
+  height: 26px;
+  padding: 0 8px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.profile360-package-card {
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--surface);
+}
+
+.profile360-package-card.is-current {
+  border-color: rgba(255,10,138,.28);
+}
+
+.profile360-package-card > summary {
+  list-style: none;
+  display: grid;
+  grid-template-columns: minmax(0,1fr) auto;
+  gap: 10px;
+  align-items: center;
+  padding: 14px;
+  cursor: pointer;
+}
+
+.profile360-package-card > summary::-webkit-details-marker {
+  display: none;
+}
+
+.profile360-package-card-summary {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+}
+
+.profile360-package-card-summary > div:first-child {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.profile360-package-card-summary h3 {
+  margin: 0;
+  color: var(--text);
+  font-size: 15px;
+}
+
+.profile360-package-card-summary > div:first-child > span {
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.profile360-package-card-side {
+  display: grid;
+  justify-items: end;
+  gap: 7px;
+  flex: 0 0 auto;
+}
+
+.profile360-package-card-side > strong {
+  color: var(--text);
+  font-size: 11px;
+}
+
+.profile360-package-chevron {
+  color: #ff79ba;
+  font-size: 20px;
+  transition: transform .2s ease;
+}
+
+.profile360-package-card[open] .profile360-package-chevron {
+  transform: rotate(90deg);
+}
+
+.profile360-package-card-body {
+  display: grid;
+  gap: 14px;
+  padding: 14px;
+  border-top: 1px solid rgba(255,255,255,.06);
+}
+
+.profile360-package-facts {
+  display: grid;
+  grid-template-columns: repeat(2,minmax(0,1fr));
+  gap: 8px;
+}
+
+.profile360-package-facts > div {
+  display: grid;
+  gap: 3px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(255,255,255,.02);
+}
+
+.profile360-package-facts span {
+  color: var(--muted);
+  font-size: 9px;
+}
+
+.profile360-package-facts strong {
+  color: var(--text);
+  font-size: 12px;
+}
+
+.profile360-package-edit {
+  overflow: hidden;
+  border: 1px solid rgba(255,10,138,.18);
+  border-radius: 13px;
+  background: rgba(255,10,138,.035);
+}
+
+.profile360-package-edit > summary {
+  list-style: none;
+  padding: 11px 12px;
+  color: #ff79ba;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 850;
+}
+
+.profile360-package-edit > summary::-webkit-details-marker {
+  display: none;
+}
+
+.profile360-package-edit-body {
+  display: grid;
+  gap: 12px;
+  padding: 12px;
+  border-top: 1px solid rgba(255,10,138,.12);
+}
+
+.profile360-package-classes {
+  display: grid;
+  gap: 9px;
+}
+
+.profile360-package-class-list {
+  display: grid;
+  gap: 6px;
+}
+
+.profile360-package-class-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 0;
+  border-top: 1px solid rgba(255,255,255,.055);
+}
+
+.profile360-package-class-row:first-child {
+  border-top: 0;
+}
+
+.profile360-package-class-row > div {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.profile360-package-class-row > div:last-child {
+  justify-items: end;
+  text-align: right;
+}
+
+.profile360-package-class-row strong {
+  color: var(--text);
+  font-size: 11px;
+}
+
+.profile360-package-class-row span {
+  color: var(--muted);
+  font-size: 9px;
+}
+
+.profile360-reward-list {
+  display: grid;
+  gap: 7px;
+}
+
+.profile360-reward-list article {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 12px;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  background: rgba(255,255,255,.02);
+}
+
+.profile360-reward-list article > div {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.profile360-reward-list strong {
+  color: var(--text);
+  font-size: 11px;
+}
+
+.profile360-reward-list span {
+  color: var(--muted);
+  font-size: 9px;
+}
+
+.profile360-history-list {
+  display: grid;
+  gap: 0;
+}
+
+.profile360-history-list article {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0,1fr);
+  gap: 10px;
+  padding: 11px 0;
+  border-top: 1px solid rgba(255,255,255,.055);
+}
+
+.profile360-history-list article:first-child {
+  border-top: 0;
+}
+
+.profile360-history-list article > div:last-child {
+  display: grid;
+  gap: 3px;
+}
+
+.profile360-history-list strong {
+  color: var(--text);
+  font-size: 11px;
+}
+
+.profile360-history-list span,
+.profile360-history-list small {
+  color: var(--muted);
+  font-size: 9px;
+}
+
+.profile360-history-dot {
+  width: 9px;
+  height: 9px;
+  margin-top: 4px;
+  border-radius: 999px;
+  background: #ff79ba;
+  box-shadow: 0 0 0 4px rgba(255,121,186,.08);
+}
+
+.profile360-history-dot.is-class {
+  background: #8da4ff;
+}
+
+.profile360-history-dot.is-package {
+  background: #ff79ba;
+}
+
+.profile360-history-dot.is-reward,
+.profile360-history-dot.is-level {
+  background: #e8c16a;
+}
+
+.profile360-history-dot.is-status {
+  background: #7fd5a8;
+}
+
+@media (max-width: 640px) {
+  .profile360-package-card-summary {
+    gap: 9px;
+  }
+
+  .profile360-package-card-side {
+    max-width: 112px;
+  }
+
+  .profile360-package-card-side .status-pill {
+    max-width: 112px;
+    text-align: center;
+  }
+}
