@@ -10,6 +10,8 @@ import {
   type StudentSession,
 } from "@/lib/student/portal";
 
+import PurchaseSingleClassButton from "../PurchaseSingleClassButton";
+
 const DROP_IN_REASONS = new Set(["no_active_product", "outside_product", "no_credits"]);
 
 export default async function StudentSessionDetailPage({
@@ -163,12 +165,27 @@ export default async function StudentSessionDetailPage({
               Studio Flow está aplicando las condiciones vigentes de tu cuenta y paquete.
             </p>
           )}
-          <Link
-            href="/student/paquete"
-            className="mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-2xl border border-white/10 px-4 py-2.5 text-sm font-semibold text-white"
-          >
-            Ver mi paquete
-          </Link>
+          {showDropIn ? (
+            <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+              <PurchaseSingleClassButton
+                sessionId={session.session_id}
+                priceLabel={formatMoney(session.drop_in_price_minor ?? 0).replace(".00", "")}
+              />
+              <Link
+                href="/student/paquete"
+                className="inline-flex min-h-11 flex-1 items-center justify-center rounded-2xl border border-white/10 px-4 py-2.5 text-sm font-semibold text-white"
+              >
+                Ver paquetes
+              </Link>
+            </div>
+          ) : (
+            <Link
+              href="/student/paquete"
+              className="mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-2xl border border-white/10 px-4 py-2.5 text-sm font-semibold text-white"
+            >
+              Ver mi paquete
+            </Link>
+          )}
         </section>
       )}
     </main>
