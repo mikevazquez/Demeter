@@ -415,23 +415,32 @@ export default async function StudentPackagePage() {
             if (!products.length) return null;
 
             return (
-              <section
+              <details
                 key={group.key}
-                className="rounded-3xl border border-white/10 bg-white/[0.03] p-5 sm:p-6"
+                name="package-term-catalog"
+                className="group rounded-3xl border border-white/10 bg-white/[0.03] p-5 sm:p-6"
               >
-                <div className="flex flex-wrap items-end justify-between gap-3">
+                <summary className="flex cursor-pointer list-none flex-wrap items-end justify-between gap-3">
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-[0.18em] text-fuchsia-300">
                       {group.title}
                     </p>
                     <p className="mt-1 text-xs text-zinc-500">{group.description}</p>
                   </div>
-                  <span className="rounded-full bg-white/[0.07] px-2.5 py-1 text-xs text-zinc-400">
-                    {products.length}
-                  </span>
-                </div>
+                  <div className="flex items-center gap-3">
+                    <span className="rounded-full bg-white/[0.07] px-2.5 py-1 text-xs text-zinc-400">
+                      {products.length}
+                    </span>
+                    <span
+                      aria-hidden="true"
+                      className="text-lg text-zinc-500 transition group-open:rotate-180 group-open:text-fuchsia-300"
+                    >
+                      ⌄
+                    </span>
+                  </div>
+                </summary>
 
-                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                <div className="mt-4 grid gap-3 border-t border-white/10 pt-4 sm:grid-cols-2">
                   {products.map((product) => (
                     <article
                       key={product.id}
@@ -478,7 +487,7 @@ export default async function StudentPackagePage() {
                     </article>
                   ))}
                 </div>
-              </section>
+              </details>
             );
           })}
         </section>
