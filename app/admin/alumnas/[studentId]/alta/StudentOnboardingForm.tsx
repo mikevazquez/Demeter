@@ -57,6 +57,7 @@ export default function StudentOnboardingForm({
   enrollmentProducts,
   defaultEnrollmentProductId,
   completedSaleId,
+  flowContext = "onboarding",
 }: {
   studentId: string;
   studentName: string;
@@ -68,6 +69,7 @@ export default function StudentOnboardingForm({
   enrollmentProducts: EnrollmentProduct[];
   defaultEnrollmentProductId: string | null;
   completedSaleId: string | null;
+  flowContext?: "onboarding" | "sale";
 }) {
   const [selectedId, setSelectedId] = useState(packages[0]?.id ?? "");
   const [startMode, setStartMode] = useState("today");
@@ -136,13 +138,23 @@ export default function StudentOnboardingForm({
       <section className="panel">
         <p className="eyebrow">PAQUETE</p>
         <h2>No hay paquetes disponibles</h2>
-        <p>El expediente ya fue creado. Puedes terminar el alta sin una compra.</p>
-        <Link
-          className="primary-button inline-flex"
-          href={`/admin/alumnas/${studentId}?alta=sin_paquete`}
-        >
-          Terminar alta
-        </Link>
+        <p>
+          {flowContext === "sale"
+            ? "No hay paquetes activos disponibles para registrar una venta."
+            : "El expediente ya fue creado. Puedes terminar el alta sin una compra."}
+        </p>
+        {flowContext === "onboarding" ? (
+          <Link
+            className="primary-button inline-flex"
+            href={`/admin/alumnas/${studentId}?alta=sin_paquete`}
+          >
+            Terminar alta
+          </Link>
+        ) : (
+          <Link className="ghost-button inline-flex" href={`/admin/alumnas/${studentId}`}>
+            Volver a Perfil 360
+          </Link>
+        )}
       </section>
     );
   }
@@ -156,6 +168,7 @@ export default function StudentOnboardingForm({
       }}
     >
       <input type="hidden" name="student_id" value={studentId} />
+      <input type="hidden" name="flow_context" value={flowContext} />
       <input type="hidden" name="idempotency_key" value={idempotencyKey} />
       <input type="hidden" name="package_product_id" value={selectedPackage.id} />
       <input type="hidden" name="package_start_mode" value={startMode} />
@@ -578,7 +591,7 @@ export default function StudentOnboardingForm({
 
       <section id="confirmar-alta" className="panel scroll-mt-6">
         <p className="eyebrow">7 · CONFIRMAR</p>
-        <h2>Completar alta</h2>
+        <h2>{flowContext === "sale" ? "Confirmar venta" : "Completar alta"}</h2>
         <p>
           Se registrará una sola venta y una sola adquisición. Una doble pulsación reutiliza la
           misma operación.
@@ -602,14 +615,20 @@ export default function StudentOnboardingForm({
           <div className="toolbar-actions mt-4">
             <PendingActionButton
               className="primary-button"
-              pendingLabel="Registrando alta…"
+              pendingLabel={flowContext === "sale" ? "Registrando venta…" : "Registrando alta…"}
               disabled={enrollmentRequired && !currentEnrollment && enrollmentProducts.length === 0}
             >
-              Completar alta
+              {flowContext === "sale" ? "Registrar venta" : "Completar alta"}
             </PendingActionButton>
-            <Link className="ghost-button" href={`/admin/alumnas/${studentId}?alta=sin_paquete`}>
-              Terminar sin paquete
-            </Link>
+            {flowContext === "onboarding" ? (
+              <Link className="ghost-button" href={`/admin/alumnas/${studentId}?alta=sin_paquete`}>
+                Terminar sin paquete
+              </Link>
+            ) : (
+              <Link className="ghost-button" href={`/admin/alumnas/${studentId}`}>
+                Cancelar
+              </Link>
+            )}
           </div>
         )}
       </section>
