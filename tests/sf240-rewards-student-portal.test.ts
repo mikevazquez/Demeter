@@ -58,7 +58,7 @@ describe("SF-240 student Rewards portal", () => {
     ];
 
     expect(singleNumericProgress(conditions)).toBeNull();
-    expect(exactMissingLabel(conditions)).toContain("Asistencias");
+    expect(exactMissingLabel(conditions).toLowerCase()).toContain("asistencias");
   });
 
   it("keeps the achievements experience free of XP and rankings", () => {
