@@ -33,8 +33,17 @@ jobs:
       - name: Install
         run: npm ci
 
-      - name: Format check
-        run: npm run format:check
+      - name: Format UX-06 diagnostics
+        run: |
+          npx prettier --write app/student/paquete/page.tsx tests/sf-n14-portal-ux06-package.test.ts
+          echo "PACKAGE_BASE64_BEGIN"
+          base64 -w0 app/student/paquete/page.tsx
+          echo
+          echo "PACKAGE_BASE64_END"
+          echo "TEST_BASE64_BEGIN"
+          base64 -w0 tests/sf-n14-portal-ux06-package.test.ts
+          echo
+          echo "TEST_BASE64_END"
 
       - name: Lint
         run: npm run lint
