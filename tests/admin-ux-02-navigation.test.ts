@@ -15,6 +15,8 @@ describe("ADMIN-UX-02 navigation architecture", () => {
   const attention = source("app/admin/acciones/page.tsx");
   const automations = source("app/admin/automatizaciones/page.tsx");
   const styles = source("app/globals.css");
+  const today = source("app/admin/page.tsx");
+  const agenda = source("app/admin/agenda/page.tsx");
 
   it("uses durable entities as the desktop navigation architecture", () => {
     for (const label of ["Hoy", "Agenda", "Alumnas", "Productos", "Equipo", "Automatizaciones"]) {
@@ -65,6 +67,20 @@ describe("ADMIN-UX-02 navigation architecture", () => {
     expect(automations).not.toContain("SF-166");
     expect(automations).not.toContain("{template.code} ·");
     expect(automations).toContain("Comunicaciones");
+  });
+
+  it("keeps quick actions contextual instead of turning them into modules", () => {
+    expect(today).toContain("Nueva alumna →");
+    expect(today).toContain("Registrar venta →");
+    expect(today).toContain("Crear reserva →");
+    expect(today).toContain("Crear clase →");
+    expect(today).toContain('href="/admin/alumnas#alta-rapida"');
+    expect(today).toContain('href="/admin/ventas/nueva"');
+    expect(today).toContain('href="/admin/agenda#clases-programadas"');
+    expect(today).toContain('href="/admin/agenda#programar-clase"');
+    expect(agenda).toContain('id="clases-programadas"');
+    expect(agenda).toContain('id="programar-clase"');
+    expect(layout).not.toContain('label: "Ventas"');
   });
 
   it("preserves capability-driven navigation and instructor-only Studio access", () => {
