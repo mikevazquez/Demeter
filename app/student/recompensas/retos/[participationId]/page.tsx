@@ -56,7 +56,12 @@ export default async function StudentChallengeDetailPage({
     `${participation.rule_id}:${participation.joined_version_number}`,
   );
 
-  if (!rule || !version || ctx.programRuleIds.has(participation.rule_id) || !isChallengeVersion(version)) {
+  if (
+    !rule ||
+    !version ||
+    ctx.programRuleIds.has(participation.rule_id) ||
+    !isChallengeVersion(version)
+  ) {
     notFound();
   }
 
@@ -270,9 +275,7 @@ export default async function StudentChallengeDetailPage({
         {rewardVisibility === "surprise" && !completed ? (
           <>
             <h2 className="mt-2 text-lg font-semibold text-white">Recompensa sorpresa</h2>
-            <p className="mt-1 text-sm text-zinc-400">
-              Se revelará cuando completes el reto.
-            </p>
+            <p className="mt-1 text-sm text-zinc-400">Se revelará cuando completes el reto.</p>
           </>
         ) : reward ? (
           <>
