@@ -64,8 +64,8 @@ export default async function StudioActivationPage({
   return (
     <main className="auth-shell">
       <section className="auth-card">
-        <p className="eyebrow">DEMETER · STUDIO FLOW</p>
-        <h1 className="auth-title">Activa tu acceso a Studio Flow</h1>
+        <p className="eyebrow">DEMETER</p>
+        <h1 className="auth-title">Activa tu acceso a Demeter</h1>
         <p className="auth-copy">
           Es tu primer ingreso. Crea una contraseña personal para continuar.
         </p>
