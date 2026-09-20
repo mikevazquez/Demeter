@@ -23,7 +23,13 @@ function profileInitials(firstName: string, lastName: string | null) {
 export default async function StudentProfilePage({
   searchParams,
 }: {
-  searchParams: Promise<{ updated?: string; error?: string; edit?: string; avatar?: string; avatar_error?: string }>;
+  searchParams: Promise<{
+    updated?: string;
+    error?: string;
+    edit?: string;
+    avatar?: string;
+    avatar_error?: string;
+  }>;
 }) {
   const query = await searchParams;
   const { snapshot, studio } = await getStudentPortalContext();
