@@ -175,10 +175,7 @@ export default async function StudentProgressPage() {
         </p>
       </header>
 
-      <section
-        aria-label="Resumen de progreso"
-        className="grid grid-cols-2 gap-2 sm:grid-cols-4"
-      >
+      <section aria-label="Resumen de progreso" className="grid grid-cols-2 gap-2 sm:grid-cols-4">
         <SummaryTile
           value={activePrograms.length}
           label={plural(activePrograms.length, "programa activo", "programas activos")}
@@ -411,9 +408,7 @@ export default async function StudentProgressPage() {
                   <strong className="block truncate text-sm text-white">
                     {achievement.title_snapshot}
                   </strong>
-                  <span className="mt-0.5 block text-[11px] text-zinc-500">
-                    Conseguido
-                  </span>
+                  <span className="mt-0.5 block text-[11px] text-zinc-500">Conseguido</span>
                 </span>
                 <span className="text-lg text-zinc-600 group-hover:text-fuchsia-300">›</span>
               </Link>
