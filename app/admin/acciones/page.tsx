@@ -138,7 +138,9 @@ export default async function RequiredActionsPage({
         <div>
           <p className="eyebrow">ATENCIÓN · {studio.name}</p>
           <h1 className="dashboard-title">Atención</h1>
-          <p>Incidencias que requieren intervención humana, ordenadas por prioridad y responsable.</p>
+          <p>
+            Incidencias que requieren intervención humana, ordenadas por prioridad y responsable.
+          </p>
         </div>
       </header>
 
