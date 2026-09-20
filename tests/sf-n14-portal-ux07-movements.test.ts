@@ -28,11 +28,11 @@ describe("SF-N14 PORTAL UX-07 Movimientos", () => {
   });
 
   it("supports all canonical ledger movement types without adding filters or editing controls", () => {
-    expect(page).toContain('grant: {');
-    expect(page).toContain('reserve: {');
-    expect(page).toContain('release: {');
-    expect(page).toContain('consume: {');
-    expect(page).toContain('adjustment: {');
+    expect(page).toContain("grant: {");
+    expect(page).toContain("reserve: {");
+    expect(page).toContain("release: {");
+    expect(page).toContain("consume: {");
+    expect(page).toContain("adjustment: {");
     expect(page).not.toContain("Filtrar");
     expect(page).not.toContain("<select");
   });
