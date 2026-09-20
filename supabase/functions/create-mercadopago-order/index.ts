@@ -3,6 +3,7 @@ import { withSupabase } from "npm:@supabase/server";
 
 type CreateOrderRequest = {
   productTemplateId?: unknown;
+  sessionId?: unknown;
   clientRequestKey?: unknown;
   returnBaseUrl?: unknown;
 };
@@ -11,6 +12,7 @@ type CheckoutAttempt = {
   id: string;
   external_reference: string;
   product_template_id: string;
+  session_id: string | null;
   amount_minor: number;
   currency: string;
   status: string;
@@ -103,32 +105,53 @@ const handler = {
     }
 
     const productTemplateId = safeText(payload.productTemplateId);
+    const sessionId = safeText(payload.sessionId);
     const clientRequestKey = safeText(payload.clientRequestKey);
     const returnBaseUrl = validReturnBaseUrl(payload.returnBaseUrl);
+    const buyingSingleClass = Boolean(sessionId);
+
     if (
-      !productTemplateId ||
       !clientRequestKey ||
       !returnBaseUrl ||
-      !UUID_PATTERN.test(productTemplateId) ||
-      !UUID_PATTERN.test(clientRequestKey)
+      !UUID_PATTERN.test(clientRequestKey) ||
+      (buyingSingleClass && (!sessionId || !UUID_PATTERN.test(sessionId))) ||
+      (!buyingSingleClass && (!productTemplateId || !UUID_PATTERN.test(productTemplateId))) ||
+      (buyingSingleClass && Boolean(productTemplateId))
     ) {
       return jsonResponse({ error: "invalid_request" }, 400);
     }
 
-    const { data: attemptData, error: attemptError } = await userClient.rpc(
-      "student_create_online_checkout_attempt",
-      {
-        target_product_template_id: productTemplateId,
-        target_client_request_key: clientRequestKey,
-      },
-    );
+    const { data: attemptData, error: attemptError } = buyingSingleClass
+      ? await userClient.rpc("student_create_single_class_checkout_attempt", {
+          target_session_id: sessionId,
+          target_client_request_key: clientRequestKey,
+        })
+      : await userClient.rpc("student_create_online_checkout_attempt", {
+          target_product_template_id: productTemplateId,
+          target_client_request_key: clientRequestKey,
+        });
 
     if (attemptError || !attemptData) {
       const message = attemptError?.message ?? "checkout_attempt_failed";
       if (message.includes("product_not_available_online")) {
         return jsonResponse({ error: "product_not_available_online" }, 409);
       }
-      if (message.includes("request_key_reused_for_different_product")) {
+      if (message.includes("single_class_product_not_available")) {
+        return jsonResponse({ error: "single_class_product_not_available" }, 409);
+      }
+      if (message.includes("single_class_price_missing")) {
+        return jsonResponse({ error: "single_class_price_missing" }, 409);
+      }
+      if (message.includes("session_full")) {
+        return jsonResponse({ error: "session_full" }, 409);
+      }
+      if (message.includes("session_not_bookable")) {
+        return jsonResponse({ error: "session_not_bookable" }, 409);
+      }
+      if (
+        message.includes("request_key_reused_for_different_product") ||
+        message.includes("request_key_reused_for_different_purchase")
+      ) {
         return jsonResponse({ error: "request_key_reused_for_different_product" }, 409);
       }
       return jsonResponse({ error: "checkout_attempt_failed" }, 500);
@@ -172,7 +195,7 @@ const handler = {
       adminClient
         .from("online_checkout_attempts")
         .select(
-          "id,studio_id,student_id,product_template_id,client_request_key,external_reference,amount_minor,currency,status,provider_order_id,checkout_url",
+          "id,studio_id,student_id,product_template_id,session_id,client_request_key,external_reference,amount_minor,currency,status,provider_order_id,checkout_url",
         )
         .eq("id", attempt.id)
         .maybeSingle(),
@@ -193,7 +216,7 @@ const handler = {
       attemptRow.studio_id !== product.studio_id ||
       product.active !== true ||
       product.online_purchasable !== true ||
-      !["package", "membership"].includes(String(product.product_type))
+      !["package", "membership", "single_class"].includes(String(product.product_type))
     ) {
       await markAttemptFailure("product_not_available_online");
       return jsonResponse({ error: "product_not_available_online" }, 409);
@@ -234,7 +257,10 @@ const handler = {
       return jsonResponse({ error: "mercadopago_not_configured" }, 503);
     }
 
-    const returnUrl = new URL("/student/paquete/checkout", returnBaseUrl);
+    const returnPath = attemptRow.session_id
+      ? "/student/reservar/checkout"
+      : "/student/paquete/checkout";
+    const returnUrl = new URL(returnPath, returnBaseUrl);
     returnUrl.searchParams.set("attempt", attemptRow.id);
 
     const successUrl = new URL(returnUrl);

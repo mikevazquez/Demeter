@@ -10,6 +10,8 @@ import {
   type StudentSession,
 } from "@/lib/student/portal";
 
+import PurchaseSingleClassButton from "../PurchaseSingleClassButton";
+
 const DROP_IN_REASONS = new Set(["no_active_product", "outside_product", "no_credits"]);
 
 export default async function StudentSessionDetailPage({
@@ -21,7 +23,7 @@ export default async function StudentSessionDetailPage({
 }) {
   const { sessionId } = await params;
   const query = await searchParams;
-  const { supabase, studio } = await getStudentPortalContext();
+  const { supabase, studio, membership } = await getStudentPortalContext();
   const { data, error } = await supabase.rpc("student_session_detail", {
     target_session_id: sessionId,
   });
@@ -29,6 +31,15 @@ export default async function StudentSessionDetailPage({
   if (error || !data) notFound();
 
   const session = data as StudentSession;
+  const { data: activityStyle } = await supabase
+    .from("class_templates")
+    .select("color_hex")
+    .eq("studio_id", membership.studio_id)
+    .eq("discipline_id", session.discipline_id)
+    .eq("name", session.activity)
+    .limit(1)
+    .maybeSingle();
+  const activityColor = activityStyle?.color_hex ?? "#FF0A8A";
   const eligible = Boolean(session.eligibility?.eligible);
   const alreadyReserved = Boolean(session.reservation_id);
   const reason = session.eligibility?.reason_code;
@@ -56,9 +67,20 @@ export default async function StudentSessionDetailPage({
         Volver a clases
       </Link>
 
-      <section className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.03]">
-        <div className="bg-gradient-to-br from-fuchsia-500/[0.16] via-white/[0.035] to-transparent p-5 sm:p-6">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-fuchsia-300">
+      <section
+        className="overflow-hidden rounded-3xl border bg-white/[0.03]"
+        style={{ borderColor: `${activityColor}55` }}
+      >
+        <div
+          className="p-5 sm:p-6"
+          style={{
+            background: `linear-gradient(135deg, ${activityColor}29 0%, rgba(255,255,255,0.035) 48%, transparent 100%)`,
+          }}
+        >
+          <p
+            className="text-[10px] font-semibold uppercase tracking-[0.22em]"
+            style={{ color: activityColor }}
+          >
             {session.discipline}
           </p>
           <h1 className="mt-1 text-2xl font-semibold text-white sm:text-3xl">{session.activity}</h1>
@@ -163,12 +185,27 @@ export default async function StudentSessionDetailPage({
               Studio Flow está aplicando las condiciones vigentes de tu cuenta y paquete.
             </p>
           )}
-          <Link
-            href="/student/paquete"
-            className="mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-2xl border border-white/10 px-4 py-2.5 text-sm font-semibold text-white"
-          >
-            Ver mi paquete
-          </Link>
+          {showDropIn ? (
+            <div className="mt-4 flex flex-wrap items-center justify-end gap-2">
+              <Link
+                href="/student/paquete"
+                className="inline-flex min-h-11 items-center justify-center rounded-2xl border border-white/10 px-4 py-2.5 text-sm font-semibold text-white"
+              >
+                Ver paquetes
+              </Link>
+              <PurchaseSingleClassButton
+                sessionId={session.session_id}
+                priceLabel={formatMoney(session.drop_in_price_minor ?? 0).replace(".00", "")}
+              />
+            </div>
+          ) : (
+            <Link
+              href="/student/paquete"
+              className="mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-2xl border border-white/10 px-4 py-2.5 text-sm font-semibold text-white"
+            >
+              Ver mi paquete
+            </Link>
+          )}
         </section>
       )}
     </main>

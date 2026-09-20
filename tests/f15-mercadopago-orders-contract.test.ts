@@ -15,7 +15,8 @@ describe("F15 Mercado Pago Orders API", () => {
     expect(edge).toContain('Deno.env.get("MERCADOPAGO_ACCESS_TOKEN")');
     expect(edge).toContain('fetch("https://api.mercadopago.com/v1/orders"');
     expect(edge).toContain('"x-idempotency-key": attemptRow.client_request_key');
-    expect(edge).toContain('userClient.rpc(\n      "student_create_online_checkout_attempt"');
+    expect(edge).toContain('"student_create_online_checkout_attempt"');
+    expect(edge).toContain('"student_create_single_class_checkout_attempt"');
     expect(config).toContain("[functions.create-mercadopago-order]");
     expect(config).toContain("verify_jwt = true");
   });

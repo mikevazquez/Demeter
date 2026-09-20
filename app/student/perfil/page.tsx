@@ -1,8 +1,9 @@
+import Image from "next/image";
 import Link from "next/link";
 
 import { formatDate, getStudentPortalContext } from "@/lib/student/portal";
 
-import { updateStudentProfileAction } from "../actions";
+import { updateStudentAvatarAction, updateStudentProfileAction } from "../actions";
 import PendingActionButton from "../components/PendingActionButton";
 import StudentNoticeDialog from "../components/StudentNoticeDialog";
 
@@ -22,7 +23,13 @@ function profileInitials(firstName: string, lastName: string | null) {
 export default async function StudentProfilePage({
   searchParams,
 }: {
-  searchParams: Promise<{ updated?: string; error?: string; edit?: string }>;
+  searchParams: Promise<{
+    updated?: string;
+    error?: string;
+    edit?: string;
+    avatar?: string;
+    avatar_error?: string;
+  }>;
 }) {
   const query = await searchParams;
   const { snapshot, studio } = await getStudentPortalContext();
@@ -47,7 +54,28 @@ export default async function StudentProfilePage({
         </p>
       </header>
 
-      {query.updated ? (
+      {query.avatar === "updated" ? (
+        <StudentNoticeDialog
+          eyebrow="Foto actualizada"
+          title="Tu foto de perfil está lista"
+          dismissHref="/student/perfil"
+        >
+          La nueva imagen ya está asociada a tu cuenta.
+        </StudentNoticeDialog>
+      ) : query.avatar_error ? (
+        <StudentNoticeDialog
+          eyebrow="No pudimos guardar la foto"
+          title="Revisa la imagen"
+          dismissHref="/student/perfil"
+          tone="error"
+        >
+          {query.avatar_error === "type"
+            ? "Usa una imagen JPG, PNG o WebP."
+            : query.avatar_error === "size"
+              ? "La imagen debe pesar máximo 5 MB."
+              : "No pudimos guardar la foto. Intenta nuevamente."}
+        </StudentNoticeDialog>
+      ) : query.updated ? (
         <StudentNoticeDialog
           eyebrow="Cambios guardados"
           title="Tu correo está actualizado"
@@ -72,8 +100,32 @@ export default async function StudentProfilePage({
       >
         <div className="border-b border-white/10 p-5 sm:p-6">
           <div className="flex items-center gap-4">
-            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full border border-fuchsia-400/50 bg-gradient-to-br from-fuchsia-500/70 to-fuchsia-950 text-xl font-semibold text-white shadow-[0_0_28px_rgba(236,72,153,0.22)] sm:h-20 sm:w-20 sm:text-2xl">
-              {initials}
+            <div className="shrink-0">
+              <div className="relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-full border border-fuchsia-400/50 bg-gradient-to-br from-fuchsia-500/70 to-fuchsia-950 text-xl font-semibold text-white shadow-[0_0_28px_rgba(236,72,153,0.22)] sm:h-20 sm:w-20 sm:text-2xl">
+                {initials}
+                <Image
+                  src="/student/perfil/avatar"
+                  alt=""
+                  fill
+                  unoptimized
+                  className="object-cover"
+                />
+              </div>
+              <form action={updateStudentAvatarAction} className="mt-2 space-y-1.5">
+                <input
+                  name="avatar"
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  required
+                  className="block w-24 text-[9px] text-zinc-500 file:mr-1 file:rounded-md file:border-0 file:bg-white/10 file:px-2 file:py-1 file:text-[9px] file:font-semibold file:text-zinc-200"
+                />
+                <PendingActionButton
+                  pendingLabel="Guardando…"
+                  className="min-h-8 w-full rounded-lg border border-white/10 px-2 py-1 text-[10px] font-semibold text-zinc-300 transition hover:border-fuchsia-500/35 hover:text-white disabled:cursor-wait disabled:opacity-60"
+                >
+                  Guardar foto
+                </PendingActionButton>
+              </form>
             </div>
             <div className="min-w-0">
               <h2 className="truncate text-xl font-semibold text-white sm:text-2xl">{fullName}</h2>

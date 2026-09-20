@@ -14,6 +14,13 @@ type ScheduleRow = {
   capacity?: number;
 };
 
+function normalizeColorHex(value: FormDataEntryValue | null) {
+  const color = String(value ?? "")
+    .trim()
+    .toUpperCase();
+  return /^#[0-9A-F]{6}$/.test(color) ? color : null;
+}
+
 function optionalMoneyToMinor(value: FormDataEntryValue | null) {
   const normalized = String(value ?? "")
     .trim()
@@ -33,6 +40,7 @@ export async function createActivity(formData: FormData) {
   const capacity = Number(formData.get("capacity"));
   const creditCost = Number(formData.get("credit_cost"));
   const dropInPriceMinor = optionalMoneyToMinor(formData.get("drop_in_price"));
+  const colorHex = normalizeColorHex(formData.get("color_hex"));
 
   if (
     !name ||
@@ -43,7 +51,8 @@ export async function createActivity(formData: FormData) {
     capacity < 1 ||
     !Number.isInteger(creditCost) ||
     creditCost < 1 ||
-    dropInPriceMinor === undefined
+    dropInPriceMinor === undefined ||
+    !colorHex
   ) {
     redirect("/admin/agenda?error=activity");
   }
@@ -56,6 +65,7 @@ export async function createActivity(formData: FormData) {
     capacity,
     credit_cost: creditCost,
     drop_in_price_minor: dropInPriceMinor,
+    color_hex: colorHex,
   });
 
   if (error) redirect("/admin/agenda?error=activity");
@@ -63,6 +73,30 @@ export async function createActivity(formData: FormData) {
   revalidatePath("/admin/agenda");
   revalidatePath("/student/reservar");
   redirect("/admin/agenda?created=activity");
+}
+
+export async function updateActivityColor(formData: FormData) {
+  const { supabase, studio } = await getAdminContext(CAPABILITIES.SCHEDULE_WRITE);
+  const activityId = String(formData.get("activity_id") ?? "");
+  const colorHex = normalizeColorHex(formData.get("color_hex"));
+
+  if (!activityId || !colorHex) {
+    redirect("/admin/agenda?error=color");
+  }
+
+  const { data, error } = await supabase
+    .from("class_templates")
+    .update({ color_hex: colorHex })
+    .eq("id", activityId)
+    .eq("studio_id", studio.id)
+    .select("id")
+    .maybeSingle();
+
+  if (error || !data) redirect("/admin/agenda?error=color");
+
+  revalidatePath("/admin/agenda");
+  revalidatePath("/student/reservar");
+  redirect("/admin/agenda?created=color");
 }
 
 export async function createRecurringSchedules(formData: FormData) {
