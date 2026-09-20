@@ -8,8 +8,7 @@ const runtimePath = join(
   "supabase/migrations/20260920132429_sf252_rewards_runtime_auto.sql",
 );
 
-const runtime = readFileSync(runtimePath, "utf8");
-
+const cleanupPath = join(\n  process.cwd(),\n  "supabase/migrations/20260920165431_sf254_remove_rewards_incidents.sql",\n);\n\nconst runtime = readFileSync(runtimePath, "utf8");\nconst cleanup = readFileSync(cleanupPath, "utf8");\n
 describe("SF-252 automatic Rewards runtime", () => {
   it("materializes eligible participations", () => {
     expect(runtime).toContain("system_materialize_reward_runtime_for_student");
@@ -38,8 +37,10 @@ describe("SF-252 automatic Rewards runtime", () => {
     expect(runtime).toContain("system_record_reward_program_level_completion");
   });
 
-  it("keeps runtime failures downstream", () => {
-    expect(runtime).toContain("runtime_processing_error");
-    expect(runtime).toContain("system_open_reward_incident");
+  it("keeps runtime failures downstream without incidents", () => {
+    expect(cleanup).toContain("private.reward_try_process_domain_event");
+    expect(cleanup).toContain("system_process_reward_domain_event");
+    expect(cleanup).not.toContain("runtime_processing_error");
+    expect(cleanup).not.toContain("system_open_reward_incident(");
   });
 });
