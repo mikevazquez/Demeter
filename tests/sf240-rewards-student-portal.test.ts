@@ -75,11 +75,15 @@ describe("SF-240 student Rewards portal", () => {
     const openExpiredCycle = { status: "open", window_end_at: "2026-09-19T23:59:59.999Z" };
     const now = new Date("2026-09-20T06:30:00.000Z");
 
-    expect(isStudentRewardProgressActive(participation, activeRule, openFutureCycle, now)).toBe(true);
+    expect(
+      isStudentRewardProgressActive(participation, activeRule, openFutureCycle, now),
+    ).toBe(true);
     expect(
       isStudentRewardProgressActive(participation, cancelledRule, openFutureCycle, now),
     ).toBe(false);
-    expect(isStudentRewardProgressActive(participation, activeRule, openExpiredCycle, now)).toBe(false);
+    expect(
+      isStudentRewardProgressActive(participation, activeRule, openExpiredCycle, now),
+    ).toBe(false);
     expect(
       isStudentRewardProgressFinalized(participation, cancelledRule, openFutureCycle, now),
     ).toBe(true);
