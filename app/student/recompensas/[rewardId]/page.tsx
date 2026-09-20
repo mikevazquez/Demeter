@@ -38,9 +38,7 @@ export default async function StudentRewardDetailPage({
     version && participation
       ? conditionProgress(
           version,
-          reward.cycle_id
-            ? (ctx.latestSnapshotByCycle.get(reward.cycle_id) ?? null)
-            : null,
+          reward.cycle_id ? (ctx.latestSnapshotByCycle.get(reward.cycle_id) ?? null) : null,
         )
       : [];
   const actualSavings = actualRewardSavingsMinor(reward);
@@ -48,8 +46,7 @@ export default async function StudentRewardDetailPage({
   const canUse = reward.status === "available" && !autoApplied;
   const reserved = reward.status === "reserved";
   const fixedDiscount = reward.kind === "fixed_discount";
-  const availableInFuture =
-    reward.available_from && Date.parse(reward.available_from) > Date.now();
+  const availableInFuture = reward.available_from && Date.parse(reward.available_from) > Date.now();
 
   return (
     <main className="space-y-5 pb-4">
@@ -101,9 +98,7 @@ export default async function StudentRewardDetailPage({
             <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-zinc-500">
               APLICA EN
             </p>
-            <strong className="mt-1 block text-sm text-white">
-              {rewardAppliesTo(definition)}
-            </strong>
+            <strong className="mt-1 block text-sm text-white">{rewardAppliesTo(definition)}</strong>
           </div>
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-zinc-500">
@@ -141,12 +136,14 @@ export default async function StudentRewardDetailPage({
           POR QUÉ LA GANASTE
         </p>
         <h2 className="mt-2 text-lg font-semibold text-white">
-          {reward.manually_granted ? "Beneficio otorgado por el estudio" : version?.name ?? "Rewards"}
+          {reward.manually_granted
+            ? "Beneficio otorgado por el estudio"
+            : (version?.name ?? "Rewards")}
         </h2>
         <p className="mt-2 text-sm leading-6 text-zinc-400">
           {reward.manually_granted
             ? "Se agregó directamente a tu cuenta como una recompensa especial."
-            : version?.human_summary ?? "Cumpliste la condición asociada a esta recompensa."}
+            : (version?.human_summary ?? "Cumpliste la condición asociada a esta recompensa.")}
         </p>
         {participation && !reward.manually_granted ? (
           <Link

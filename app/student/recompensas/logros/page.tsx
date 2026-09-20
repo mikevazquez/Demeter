@@ -102,9 +102,7 @@ export default async function StudentAchievementsPage() {
                   {achievement.title_snapshot}
                 </h3>
                 {achievement.level_key ? (
-                  <p className="mt-1 text-xs text-fuchsia-300">
-                    Etapa {achievement.level_key}
-                  </p>
+                  <p className="mt-1 text-xs text-fuchsia-300">Etapa {achievement.level_key}</p>
                 ) : null}
                 <p className="mt-3 text-xs text-zinc-500">
                   {formatDateTime(achievement.unlocked_at, ctx.studio.timezone)}

@@ -147,7 +147,9 @@ export function familyLabel(family: string) {
   return labels[family] ?? "Rewards";
 }
 
-export function rewardBenefitLabel(reward: Pick<StudentRewardInstance, "kind" | "benefit_definition">) {
+export function rewardBenefitLabel(
+  reward: Pick<StudentRewardInstance, "kind" | "benefit_definition">,
+) {
   const definition = rewardObject(reward.benefit_definition);
 
   if (reward.kind === "percentage_discount") {
@@ -174,9 +176,7 @@ export function rewardBenefitLabel(reward: Pick<StudentRewardInstance, "kind" | 
   if (reward.kind === "badge") {
     return String(definition.title ?? definition.label ?? "Insignia");
   }
-  return String(
-    definition.label ?? definition.description ?? "Beneficio especial",
-  );
+  return String(definition.label ?? definition.description ?? "Beneficio especial");
 }
 
 export function rewardDefinitionLabel(value: unknown) {
@@ -322,16 +322,15 @@ export function rewardAppliesTo(definitionValue: unknown) {
 
 export function rewardStackability(definitionValue: unknown) {
   const definition = rewardObject(definitionValue);
-  return definition.stackable === true ? "Puede combinarse con beneficios compatibles" : "Se usa de forma individual";
+  return definition.stackable === true
+    ? "Puede combinarse con beneficios compatibles"
+    : "Se usa de forma individual";
 }
 
 export function actualRewardSavingsMinor(reward: StudentRewardInstance) {
   const context = rewardObject(reward.redemption_context);
   const value =
-    context.actual_savings_minor ??
-    context.actual_benefit_minor ??
-    context.discount_minor ??
-    null;
+    context.actual_savings_minor ?? context.actual_benefit_minor ?? context.discount_minor ?? null;
   return typeof value === "number" && Number.isFinite(value) ? value : null;
 }
 
@@ -340,8 +339,8 @@ export const getStudentRewardsContext = cache(async () => {
   const studentId = portal.snapshot.profile.student_id;
   const studioId = portal.membership.studio_id;
 
-  const [rewardsResult, participationsResult, cyclesResult, achievementsResult] =
-    await Promise.all([
+  const [rewardsResult, participationsResult, cyclesResult, achievementsResult] = await Promise.all(
+    [
       portal.supabase
         .from("reward_instances")
         .select(
@@ -374,7 +373,8 @@ export const getStudentRewardsContext = cache(async () => {
         .eq("studio_id", studioId)
         .eq("student_id", studentId)
         .order("unlocked_at", { ascending: false }),
-    ]);
+    ],
+  );
 
   if (
     rewardsResult.error ||
@@ -413,7 +413,10 @@ export const getStudentRewardsContext = cache(async () => {
           )
           .in("rule_id", ruleIds),
       ])
-    : [{ data: [], error: null }, { data: [], error: null }];
+    : [
+        { data: [], error: null },
+        { data: [], error: null },
+      ];
 
   if (rulesResult.error || versionsResult.error) {
     throw new Error("student_reward_rules_load_failed");

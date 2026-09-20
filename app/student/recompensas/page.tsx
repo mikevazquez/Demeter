@@ -21,7 +21,9 @@ export default async function StudentRewardsPage() {
     .filter((reward) => reward.status === "available")
     .sort((left, right) => {
       const leftExpiry = left.expires_at ? Date.parse(left.expires_at) : Number.POSITIVE_INFINITY;
-      const rightExpiry = right.expires_at ? Date.parse(right.expires_at) : Number.POSITIVE_INFINITY;
+      const rightExpiry = right.expires_at
+        ? Date.parse(right.expires_at)
+        : Number.POSITIVE_INFINITY;
       return leftExpiry - rightExpiry;
     });
 
@@ -86,10 +88,7 @@ export default async function StudentRewardsPage() {
   ).length;
 
   const hasAnyContent =
-    availableRewards.length ||
-    progressItems.length ||
-    recentAchievements.length ||
-    historicalCount;
+    availableRewards.length || progressItems.length || recentAchievements.length || historicalCount;
 
   return (
     <main className="space-y-5 pb-4">
@@ -135,11 +134,7 @@ export default async function StudentRewardsPage() {
           </div>
           <div className="grid gap-3 md:grid-cols-2">
             {availableRewards.map((reward) => (
-              <RewardCard
-                key={reward.id}
-                reward={reward}
-                timezone={ctx.studio.timezone}
-              />
+              <RewardCard key={reward.id} reward={reward} timezone={ctx.studio.timezone} />
             ))}
           </div>
         </section>

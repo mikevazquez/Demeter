@@ -66,8 +66,7 @@ export default async function StudentRewardProgressPage({
   const evaluation = rewardObject(version.evaluation_definition);
   const copy = guidance(version.family, evaluation);
   const frozen = cycle?.status === "frozen";
-  const fulfilled =
-    participation.status === "fulfilled" || cycle?.status === "fulfilled";
+  const fulfilled = participation.status === "fulfilled" || cycle?.status === "fulfilled";
 
   return (
     <main className="space-y-5 pb-4">
@@ -84,9 +83,7 @@ export default async function StudentRewardProgressPage({
         <h1 className="mt-1 text-3xl font-semibold tracking-tight text-white sm:text-4xl">
           {version.name}
         </h1>
-        <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-400">
-          {version.human_summary}
-        </p>
+        <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-400">{version.human_summary}</p>
       </header>
 
       <section
