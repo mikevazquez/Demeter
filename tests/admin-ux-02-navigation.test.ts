@@ -48,7 +48,7 @@ describe("ADMIN-UX-02 navigation architecture", () => {
     expect(more).not.toContain('title: "Empresa"');
     expect(more).not.toContain('title: "Reportes"');
     expect(more).toContain('title: "Configuración"');
-    expect(more).toContain('ownerOnly: true');
+    expect(more).toContain("ownerOnly: true");
   });
 
   it("keeps the old Empresa route only as a compatibility redirect", () => {
