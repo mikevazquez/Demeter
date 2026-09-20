@@ -163,9 +163,7 @@ export default async function AdminPage({
   ]);
 
   const sessionIds = (selectedSessions ?? []).map((session) => session.id);
-  const templateIds = [
-    ...new Set((selectedSessions ?? []).map((session) => session.template_id)),
-  ];
+  const templateIds = [...new Set((selectedSessions ?? []).map((session) => session.template_id))];
   const [{ data: reservations }, { data: templates }] = await Promise.all([
     sessionIds.length
       ? supabase
