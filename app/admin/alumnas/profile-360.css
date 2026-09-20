@@ -1,0 +1,453 @@
+.student-directory-page,
+.profile360-page {
+  display: grid;
+  gap: 14px;
+}
+
+.student-directory-header,
+.profile360-identity {
+  display: grid;
+  gap: 14px;
+}
+
+.student-directory-header h1,
+.profile360-identity h1 {
+  margin: 0;
+  color: var(--text);
+  letter-spacing: -0.04em;
+}
+
+.student-directory-search {
+  display: grid;
+  gap: 10px;
+}
+
+.student-directory-search input {
+  width: 100%;
+  min-height: 48px;
+  padding: 0 16px;
+  border: 1px solid var(--line);
+  border-radius: 15px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+}
+
+.student-directory-filters,
+.profile360-tabs {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+  scrollbar-width: none;
+}
+
+.student-directory-filters::-webkit-scrollbar,
+.profile360-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.student-filter-chip,
+.profile360-tab {
+  flex: 0 0 auto;
+  min-height: 36px;
+  padding: 8px 13px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(255,255,255,.025);
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.student-filter-chip.is-active,
+.profile360-tab.is-active {
+  border-color: rgba(255,10,138,.55);
+  background: var(--accent-soft);
+  color: #ff91ca;
+}
+
+.student-filter-chip.is-future {
+  opacity: .52;
+}
+
+.student-directory-list {
+  display: grid;
+  gap: 8px;
+}
+
+.student-directory-card {
+  display: grid;
+  grid-template-columns: auto minmax(0,1fr) auto;
+  gap: 12px;
+  align-items: center;
+  min-height: 74px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 17px;
+  background: var(--surface);
+  color: inherit;
+  text-decoration: none;
+}
+
+.student-directory-card:hover {
+  border-color: rgba(255,10,138,.38);
+  background: rgba(255,255,255,.035);
+}
+
+.student-avatar,
+.profile360-avatar {
+  position: relative;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  border: 1px solid rgba(255,10,138,.55);
+  background: linear-gradient(145deg, rgba(255,10,138,.28), rgba(40,18,36,.65));
+  color: white;
+  font-weight: 850;
+}
+
+.student-avatar {
+  width: 46px;
+  height: 46px;
+  font-size: 13px;
+}
+
+.profile360-avatar {
+  width: 86px;
+  height: 86px;
+  font-size: 24px;
+}
+
+.student-avatar img,
+.profile360-avatar img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.student-directory-main {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.student-directory-main strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.student-directory-meta {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.student-state-pill,
+.profile360-state-pill,
+.profile360-level-pill {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  gap: 6px;
+  padding: 6px 9px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 850;
+}
+
+.student-state-pill.is-active,
+.profile360-state-pill.is-active {
+  border: 1px solid rgba(56,211,137,.28);
+  background: rgba(56,211,137,.1);
+  color: #7cf0ae;
+}
+
+.student-state-pill.is-inactive,
+.profile360-state-pill.is-inactive {
+  border: 1px solid rgba(255,95,126,.25);
+  background: rgba(255,95,126,.08);
+  color: #ff8ea5;
+}
+
+.student-directory-arrow {
+  color: #ff79ba;
+  font-size: 20px;
+}
+
+.profile360-identity {
+  padding: 2px 0 4px;
+}
+
+.profile360-back {
+  width: fit-content;
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.profile360-person {
+  display: grid;
+  grid-template-columns: auto minmax(0,1fr);
+  gap: 16px;
+  align-items: center;
+}
+
+.profile360-person-copy {
+  min-width: 0;
+  display: grid;
+  gap: 7px;
+}
+
+.profile360-person-copy h1 {
+  font-size: clamp(27px, 7vw, 42px);
+}
+
+.profile360-contact {
+  display: grid;
+  gap: 5px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.profile360-contact a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.profile360-level-pill {
+  border: 1px solid rgba(255,190,70,.36);
+  background: linear-gradient(135deg, rgba(255,184,55,.16), rgba(255,10,138,.07));
+  color: #ffd982;
+}
+
+.profile360-actions {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0,1fr));
+  gap: 8px;
+}
+
+.profile360-action {
+  min-width: 0;
+  min-height: 64px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 5px;
+  padding: 8px 4px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--surface);
+  color: var(--text);
+  text-decoration: none;
+  font-size: 10px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.profile360-action strong {
+  color: #ff76bb;
+  font-size: 19px;
+  line-height: 1;
+}
+
+.profile360-section {
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--surface);
+}
+
+.profile360-section-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.profile360-section-heading h2 {
+  margin: 0;
+  font-size: 17px;
+}
+
+.profile360-package-main {
+  display: grid;
+  gap: 13px;
+}
+
+.profile360-package-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.profile360-package-title strong {
+  font-size: 17px;
+}
+
+.profile360-progress {
+  display: grid;
+  gap: 7px;
+}
+
+.profile360-progress-track {
+  overflow: hidden;
+  height: 7px;
+  border-radius: 99px;
+  background: rgba(255,255,255,.1);
+}
+
+.profile360-progress-track span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #ff0a8a, #ff7ac0);
+}
+
+.profile360-package-meta,
+.profile360-next-class {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.profile360-next-class {
+  display: grid;
+  gap: 5px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: rgba(255,255,255,.025);
+}
+
+.profile360-next-class strong {
+  color: var(--text);
+}
+
+.profile360-metrics {
+  display: grid;
+  grid-template-columns: repeat(2,minmax(0,1fr));
+  gap: 8px;
+}
+
+.profile360-metric {
+  min-height: 98px;
+  display: grid;
+  align-content: center;
+  gap: 5px;
+  padding: 13px;
+  border: 1px solid var(--line);
+  border-radius: 15px;
+  background: var(--surface);
+}
+
+.profile360-metric span {
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.profile360-metric strong {
+  font-size: 17px;
+}
+
+.profile360-alerts {
+  display: grid;
+  gap: 8px;
+  padding: 14px;
+  border: 1px solid rgba(255,78,135,.28);
+  border-radius: 18px;
+  background: linear-gradient(135deg, rgba(255,37,100,.11), rgba(255,10,138,.045));
+}
+
+.profile360-alert {
+  display: grid;
+  gap: 3px;
+  padding: 11px 12px;
+  border: 1px solid rgba(255,108,153,.18);
+  border-radius: 13px;
+  background: rgba(0,0,0,.14);
+}
+
+.profile360-alert strong {
+  color: #ff90bb;
+  font-size: 12px;
+}
+
+.profile360-alert span {
+  color: #d7a0b7;
+  font-size: 11px;
+}
+
+.profile360-recent {
+  display: grid;
+  gap: 0;
+}
+
+.profile360-recent-row {
+  display: grid;
+  grid-template-columns: 70px minmax(0,1fr);
+  gap: 10px;
+  padding: 10px 0;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.profile360-recent-row:first-child {
+  border-top: 0;
+}
+
+.profile360-recent-row strong {
+  color: var(--text);
+  font-weight: 700;
+}
+
+@media (min-width: 768px) {
+  .student-directory-page,
+  .profile360-page {
+    gap: 18px;
+  }
+
+  .student-directory-header {
+    grid-template-columns: minmax(0,1fr) auto;
+    align-items: end;
+  }
+
+  .student-directory-search {
+    grid-column: 1 / -1;
+  }
+
+  .profile360-person {
+    grid-template-columns: auto minmax(0,1fr) auto;
+  }
+
+  .profile360-actions {
+    width: min(100%, 540px);
+    grid-template-columns: repeat(4,minmax(100px,1fr));
+  }
+
+  .profile360-metrics {
+    grid-template-columns: repeat(4,minmax(0,1fr));
+  }
+}
+
+@media (min-width: 1100px) {
+  .student-directory-page,
+  .profile360-page {
+    max-width: 1120px;
+    margin: 0 auto;
+  }
+
+  .profile360-overview-grid {
+    display: grid;
+    grid-template-columns: minmax(0,1.3fr) minmax(320px,.7fr);
+    gap: 14px;
+    align-items: start;
+  }
+}
