@@ -35,11 +35,11 @@ describe("Registrar venta reuses the approved commercial flow", () => {
   it("keeps the approved RPC and only changes the return context", () => {
     expect(actions).toContain('supabase.rpc("create_student_onboarding_sale_v2"');
     expect(actions).toContain('flowContext === "sale"');
-    expect(actions).toContain('/admin/ventas/${result.sale_id}?created=sale');
+    expect(actions).toContain("/admin/ventas/${result.sale_id}?created=sale");
   });
 
   it("exposes the same sale flow contextually from Perfil 360", () => {
-    expect(profile).toContain('/admin/ventas/nueva?student_id=${student.id}');
+    expect(profile).toContain("/admin/ventas/nueva?student_id=${student.id}");
     expect(profile).toContain("Registrar venta");
   });
 });
