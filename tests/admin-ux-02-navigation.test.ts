@@ -23,6 +23,7 @@ describe("ADMIN-UX-02 navigation architecture", () => {
       expect(layout).toContain('label: "' + label + '"');
     }
     expect(layout).toContain('label: "Atención"');
+    expect(layout).toContain('label: "Configuración"');
     expect(layout).not.toContain('label: "Empresa"');
     expect(layout).not.toContain('label: "Ventas"');
   });
@@ -46,7 +47,8 @@ describe("ADMIN-UX-02 navigation architecture", () => {
     expect(more).not.toContain('title: "Ventas"');
     expect(more).not.toContain('title: "Empresa"');
     expect(more).not.toContain('title: "Reportes"');
-    expect(more).not.toContain('title: "Configuración"');
+    expect(more).toContain('title: "Configuración"');
+    expect(more).toContain('ownerOnly: true');
   });
 
   it("keeps the old Empresa route only as a compatibility redirect", () => {
