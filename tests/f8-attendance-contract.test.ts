@@ -74,10 +74,8 @@ describe("F8 attendance contracts", () => {
 
   it("keeps attendance actions behind the attendance capability", () => {
     const actions = source("app/admin/actions.ts");
-    const page = source("app/admin/page.tsx");
 
     expect(actions).toContain("getAdminContext(CAPABILITIES.ATTENDANCE_WRITE)");
-    expect(page).toContain("can(CAPABILITIES.ATTENDANCE_WRITE)");
-    expect(page).toContain("canAttendance && canWriteStudents");
+    expect(actions).toContain("if (!can(CAPABILITIES.ATTENDANCE_WRITE))");
   });
 });

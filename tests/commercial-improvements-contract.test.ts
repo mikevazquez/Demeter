@@ -35,17 +35,21 @@ describe("commercial improvements contracts", () => {
     expect(studentSession).not.toContain("checkout");
   });
 
-  it("passes an explicit acquisition start date through the manual sale flow", () => {
-    const saleAction = source("app/admin/ventas/actions.ts");
+  it("passes an explicit acquisition start date through the approved contextual sale flow", () => {
     const salePage = source("app/admin/ventas/nueva/page.tsx");
-    const migration = source("supabase/migrations/20260916170100_manual_sale_start_date.sql");
-
-    expect(salePage).toContain('name="starts_on"');
-    expect(saleAction).toContain("target_starts_on: startsOn");
-    expect(migration).toContain("target_starts_on date");
-    expect(migration).toContain(
-      "v_acquisition_start_date := coalesce(target_starts_on, v_sale_date)",
+    const saleForm = source("app/admin/alumnas/[studentId]/alta/StudentOnboardingForm.tsx");
+    const saleAction = source("app/admin/alumnas/[studentId]/alta/actions.ts");
+    const onboardingMigration = source(
+      "supabase/migrations/20260918152000_flow01_student_onboarding.sql",
     );
+
+    expect(salePage).toContain("StudentOnboardingForm");
+    expect(salePage).toContain('flowContext="sale"');
+    expect(saleForm).toContain('name="package_starts_on"');
+    expect(saleForm).toContain('value="specific"');
+    expect(saleAction).toContain("package_starts_on:");
+    expect(saleAction).toContain("create_student_onboarding_sale_v2");
+    expect(onboardingMigration).toContain("package_starts_on date");
   });
 
   it("adjusts available credits through an auditable ledger movement with a required reason", () => {

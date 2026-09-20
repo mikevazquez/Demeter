@@ -58,8 +58,8 @@ describe("ADMIN-UX-02 navigation architecture", () => {
   });
 
   it("presents required actions to users as Atención", () => {
-    expect(attention).toContain("ATENCIÓN · {studio.name}");
-    expect(attention).toContain(">Atención<");
+    expect(attention).toContain('className="dashboard-shell admin-module-page attention-page"');
+    expect(attention).toContain("<h1>Atención</h1>");
     expect(attention).not.toContain("ACCIONES REQUERIDAS");
     expect(attention).toContain("Revisar");
   });
@@ -72,10 +72,10 @@ describe("ADMIN-UX-02 navigation architecture", () => {
   });
 
   it("keeps quick actions contextual instead of turning them into modules", () => {
-    expect(today).toContain("Nueva alumna →");
-    expect(today).toContain("Registrar venta →");
-    expect(today).toContain("Crear reserva →");
-    expect(today).toContain("Crear clase →");
+    expect(today).toContain(">Nueva alumna<");
+    expect(today).toContain(">Registrar venta<");
+    expect(today).toContain(">Crear reserva<");
+    expect(today).toContain(">Crear clase<");
     expect(today).toContain('href="/admin/alumnas#alta-rapida"');
     expect(today).toContain('href="/admin/ventas/nueva"');
     expect(today).toContain('href="/admin/agenda#clases-programadas"');

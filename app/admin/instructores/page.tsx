@@ -57,106 +57,89 @@ export default async function InstructorsPage({
       : params.error === "phone_invalid"
         ? "Ingresa un teléfono válido."
         : params.error
-          ? "No se pudo crear el instructor."
+          ? "No se pudo crear el integrante."
           : null;
 
   return (
-    <main className="dashboard-shell">
-      <header className="topbar">
+    <main className="dashboard-shell admin-module-page">
+      <header className="module-header">
         <div>
-          <Link className="back-link compact" href="/admin">
-            ← Hoy
-          </Link>
-          <p className="eyebrow">INSTRUCTORES · {studio.name}</p>
-          <h1 className="dashboard-title">Instructores</h1>
-          <p>Perfiles operativos, disciplinas y estado. El acceso se administra por separado.</p>
+          <h1>Equipo</h1>
+          <p>Miembros del estudio.</p>
         </div>
-      </header>
-      {errorMessage ? <div className="notice error">{errorMessage}</div> : null}
-      <section className="agenda-layout">
-        <div className="agenda-main">
-          <article className="panel">
-            <div className="panel-heading">
-              <div>
-                <p className="eyebrow">EQUIPO</p>
-                <h2>{status === "active" ? "Activos" : "Inactivos"}</h2>
-              </div>
-              <span className="count-badge">{rows.length}</span>
-            </div>
-            <form className="compact-form" method="get">
-              <div className="form-split">
-                <input
-                  name="q"
-                  type="search"
-                  defaultValue={query}
-                  placeholder="Buscar por nombre, teléfono o correo"
-                />
-                <select name="status" defaultValue={status}>
-                  <option value="active">Activos</option>
-                  <option value="inactive">Inactivos</option>
-                </select>
-              </div>
-              <button className="ghost-button" type="submit">
-                Buscar
+        {canWrite ? (
+          <details className="module-create-details">
+            <summary className="module-primary-action">＋ Nueva</summary>
+            <form action={createInstructor} className="module-create-panel">
+              <input name="first_name" required placeholder="Nombre" />
+              <input name="last_name" placeholder="Apellido" />
+              <input name="phone" type="tel" placeholder="Teléfono opcional" />
+              <input name="email" type="email" placeholder="Correo opcional" />
+              <textarea name="bio" placeholder="Bio / especialidad opcional" />
+              <button className="primary-button" type="submit">
+                Crear integrante
               </button>
             </form>
-            {rows.length === 0 ? (
-              <div className="empty-state">
-                {query
-                  ? "No encontramos instructores con esa búsqueda."
-                  : "Todavía no hay instructores en este estado."}
-              </div>
-            ) : (
-              <div className="student-list">
-                {rows.map((item) => (
-                  <Link
-                    className="student-row"
-                    key={item.id}
-                    href={`/admin/instructores/${item.id}`}
-                  >
-                    <div>
-                      <strong>{item.name}</strong>
-                      <span>
-                        {[item.phone, item.email].filter(Boolean).join(" · ") ||
-                          "Sin contacto registrado"}
-                      </span>
-                    </div>
-                    <div className="student-package-summary">
-                      <strong>{item.status === "active" ? "Activo" : "Inactivo"}</strong>
-                      <span>Perfil operativo</span>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            )}
-          </article>
-        </div>
-        <aside className="agenda-sidebar">
-          <article className="panel compact-panel">
-            <p className="eyebrow">ALTA</p>
-            <h2>Nuevo instructor</h2>
-            <p>Crear el perfil no crea credenciales ni acceso al portal.</p>
-            {canWrite ? (
-              <form action={createInstructor} className="compact-form">
-                <div className="form-split">
-                  <input name="first_name" required placeholder="Nombre" />
-                  <input name="last_name" placeholder="Apellido" />
-                </div>
-                <input name="phone" type="tel" placeholder="Teléfono opcional" />
-                <input name="email" type="email" placeholder="Correo opcional" />
-                <textarea name="bio" placeholder="Bio / especialidad opcional" />
-                <button className="primary-button" type="submit">
-                  Crear instructor
-                </button>
-              </form>
-            ) : (
-              <div className="empty-state">
-                Puedes consultar instructores, pero no modificarlos.
-              </div>
-            )}
-          </article>
-        </aside>
-      </section>
+          </details>
+        ) : null}
+      </header>
+
+      {errorMessage ? <div className="notice error">{errorMessage}</div> : null}
+
+      <div className="module-toolbar">
+        <nav className="module-tabs" aria-label="Estado del equipo">
+          <Link className={status === "active" ? "is-active" : ""} href="/admin/instructores">
+            Activos
+          </Link>
+          <Link
+            className={status === "inactive" ? "is-active" : ""}
+            href="/admin/instructores?status=inactive"
+          >
+            Inactivos
+          </Link>
+        </nav>
+        <form method="get" className="module-search">
+          <input type="hidden" name="status" value={status} />
+          <input name="q" type="search" defaultValue={query} placeholder="Buscar en el equipo" />
+        </form>
+      </div>
+
+      {rows.length === 0 ? (
+        <section className="module-empty">
+          {query
+            ? "No encontramos integrantes con esa búsqueda."
+            : "No hay integrantes en este estado."}
+        </section>
+      ) : (
+        <section className="module-list">
+          {rows.map((item) => {
+            const initials = item.name
+              .split(/\s+/)
+              .slice(0, 2)
+              .map((part) => part.slice(0, 1).toUpperCase())
+              .join("");
+            return (
+              <Link
+                className="module-list-row team-list-row"
+                key={item.id}
+                href={`/admin/instructores/${item.id}`}
+              >
+                <span className="team-avatar">{initials || "E"}</span>
+                <span className="module-row-copy">
+                  <strong>{item.name}</strong>
+                  <small>{item.bio?.trim() || "Miembro del equipo"}</small>
+                </span>
+                <span className="status-chip is-active">
+                  {item.status === "active" ? "Activo" : "Inactivo"}
+                </span>
+                <span className="module-chevron" aria-hidden="true">
+                  ›
+                </span>
+              </Link>
+            );
+          })}
+        </section>
+      )}
     </main>
   );
 }

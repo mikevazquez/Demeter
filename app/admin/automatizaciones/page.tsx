@@ -83,27 +83,17 @@ export default async function AutomationsPage({
   const errorCount = instanceRows.filter((item) => item.status === "error").length;
 
   return (
-    <main className="space-y-6">
-      <header className="flex flex-wrap items-end justify-between gap-4">
+    <main className="dashboard-shell admin-module-page automation-page">
+      <header className="module-header">
         <div>
-          <Link
-            href="/admin/mas"
-            className="mb-3 inline-flex text-sm font-semibold text-zinc-400 transition hover:text-white"
-          >
-            ← Más
-          </Link>
-          <p className="text-sm text-zinc-400">Motor de automatizaciones · {ctx.studio.name}</p>
-          <h1 className="text-3xl font-semibold text-white">Automatizaciones</h1>
-          <p className="mt-1 max-w-3xl text-sm leading-6 text-zinc-400">
-            Configura, activa y revisa las automatizaciones de Studio Flow. El historial conserva
-            cada ejecución y su resultado.
-          </p>
+          <h1>Automatizaciones</h1>
+          <p>Flujos, mensajes, recordatorios y configuraciones del estudio.</p>
         </div>
       </header>
 
       <AutomationNotice error={params.error} saved={params.saved} />
 
-      <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+      <section className="panel automation-settings-panel">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <p className="text-xs font-semibold uppercase tracking-wide text-fuchsia-300">
@@ -150,25 +140,25 @@ export default async function AutomationsPage({
         </form>
       </section>
 
-      <section className="grid gap-3 sm:grid-cols-3">
-        <article className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+      <section className="automation-summary-grid">
+        <article className="automation-summary-card">
           <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Catálogo</p>
           <p className="mt-2 text-2xl font-semibold text-white">{AUTOMATION_CATALOG.length}</p>
           <p className="mt-1 text-xs text-zinc-500">automatizaciones predefinidas</p>
         </article>
-        <article className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+        <article className="automation-summary-card">
           <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Activas</p>
           <p className="mt-2 text-2xl font-semibold text-white">{activeCount}</p>
           <p className="mt-1 text-xs text-zinc-500">instancias actualmente ejecutables</p>
         </article>
-        <article className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+        <article className="automation-summary-card">
           <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Con error</p>
           <p className="mt-2 text-2xl font-semibold text-white">{errorCount}</p>
           <p className="mt-1 text-xs text-zinc-500">requieren revisión técnica</p>
         </article>
       </section>
 
-      <section className="grid gap-4 lg:grid-cols-2">
+      <section className="automation-list">
         {AUTOMATION_CATALOG.map((template) => {
           const templateInstances = byCode.get(template.code) ?? [];
           const visibleInstances = templateInstances.filter((item) => item.status !== "archived");
@@ -186,7 +176,7 @@ export default async function AutomationsPage({
             <Link
               key={template.code}
               href={`/admin/automatizaciones/${template.code}`}
-              className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 transition hover:border-fuchsia-500/40 hover:bg-white/[0.05]"
+              className="automation-list-row"
             >
               <div className="flex items-start justify-between gap-4">
                 <div>

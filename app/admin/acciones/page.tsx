@@ -133,18 +133,17 @@ export default async function RequiredActionsPage({
   const inProgressActions = openActions.filter((action) => action.status === "in_progress");
 
   return (
-    <main className="dashboard-shell">
-      <header className="topbar">
+    <main className="dashboard-shell admin-module-page attention-page">
+      <header className="module-header">
         <div>
-          <p className="eyebrow">ATENCIÓN · {studio.name}</p>
-          <h1 className="dashboard-title">Atención</h1>
+          <h1>Atención</h1>
           <p>
             Incidencias que requieren intervención humana, ordenadas por prioridad y responsable.
           </p>
         </div>
       </header>
 
-      <section className="stat-grid">
+      <section className="attention-summary-grid">
         <article className="stat-card">
           <span>Abiertas</span>
           <strong>{openActions.length}</strong>
@@ -162,7 +161,7 @@ export default async function RequiredActionsPage({
         </article>
       </section>
 
-      <section className="panel">
+      <section className="panel attention-filter-panel">
         <div className="panel-heading">
           <div>
             <p className="eyebrow">FILTROS</p>
@@ -207,7 +206,7 @@ export default async function RequiredActionsPage({
         </form>
       </section>
 
-      <section className="grid gap-4">
+      <section className="attention-list">
         {filteredActions.length === 0 ? (
           <div className="empty-state">No hay incidencias que coincidan con estos filtros.</div>
         ) : (
@@ -216,7 +215,7 @@ export default async function RequiredActionsPage({
               ? sessionMap.get(action.class_session_id)
               : null;
             return (
-              <article className="panel" key={action.id}>
+              <article className={`attention-item is-${action.priority}`} key={action.id}>
                 <div className="panel-heading">
                   <div>
                     <p className="eyebrow">
