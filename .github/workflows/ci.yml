@@ -34,10 +34,7 @@ jobs:
         run: npm ci
 
       - name: Format check
-        run: |
-          npm run format
-          git diff -- app/admin/alumnas/[studentId]/page.tsx app/admin/ventas/nueva/page.tsx app/globals.css tests/admin-sales-approved-flow.test.ts tests/f9-sales-contract.test.ts
-          git diff --exit-code
+        run: npm run format:check
 
       - name: Lint
         run: npm run lint
