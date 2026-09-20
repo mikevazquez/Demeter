@@ -6,13 +6,20 @@ import { redirect } from "next/navigation";
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 
-function onboardingUrl(studentId: string, error?: string) {
-  const base = `/admin/alumnas/${studentId}/alta`;
-  return error ? `${base}?error=${encodeURIComponent(error)}` : base;
+type SaleFlowContext = "onboarding" | "sale";
+
+function flowUrl(studentId: string, flowContext: SaleFlowContext, error?: string) {
+  const base =
+    flowContext === "sale"
+      ? `/admin/ventas/nueva?student_id=${encodeURIComponent(studentId)}`
+      : `/admin/alumnas/${studentId}/alta`;
+  return error
+    ? `${base}${base.includes("?") ? "&" : "?"}error=${encodeURIComponent(error)}`
+    : base;
 }
 
-function redirectError(studentId: string, code: string): never {
-  redirect(onboardingUrl(studentId, code));
+function redirectError(studentId: string, flowContext: SaleFlowContext, code: string): never {
+  redirect(flowUrl(studentId, flowContext, code));
 }
 
 function dateOrNull(value: FormDataEntryValue | null) {
@@ -67,6 +74,8 @@ function rpcErrorCode(message: string) {
 
 export async function createStudentOnboardingSale(formData: FormData) {
   const studentId = String(formData.get("student_id") ?? "").trim();
+  const flowContext: SaleFlowContext =
+    String(formData.get("flow_context") ?? "onboarding") === "sale" ? "sale" : "onboarding";
   const productId = String(formData.get("package_product_id") ?? "").trim();
   const idempotencyKey = String(formData.get("idempotency_key") ?? "").trim();
   const startMode = String(formData.get("package_start_mode") ?? "").trim();
@@ -93,17 +102,17 @@ export async function createStudentOnboardingSale(formData: FormData) {
   const priorCreditsReason = String(formData.get("prior_credits_reason") ?? "").trim();
 
   if (!studentId || !productId || !idempotencyKey) {
-    redirectError(studentId, "invalid_request");
+    redirectError(studentId, flowContext, "invalid_request");
   }
   if (!["today", "specific", "first_usage"].includes(startMode)) {
-    redirectError(studentId, "package_start_mode_invalid");
+    redirectError(studentId, flowContext, "package_start_mode_invalid");
   }
   if (startMode === "specific" && !packageStartsOn) {
-    redirectError(studentId, "package_start_date_required");
+    redirectError(studentId, flowContext, "package_start_date_required");
   }
-  if (paymentMinor === null) redirectError(studentId, "payment_invalid");
+  if (paymentMinor === null) redirectError(studentId, flowContext, "payment_invalid");
   if (!Number.isInteger(priorCreditsUsed) || priorCreditsUsed < 0 || priorCreditsUsed > 100000) {
-    redirectError(studentId, "prior_credits_invalid");
+    redirectError(studentId, flowContext, "prior_credits_invalid");
   }
 
   const { supabase, studio } = await getAdminContext(CAPABILITIES.SALES_WRITE);
@@ -127,8 +136,8 @@ export async function createStudentOnboardingSale(formData: FormData) {
       .maybeSingle(),
   ]);
 
-  if (!student) redirectError(studentId, "student_not_operable");
-  if (!product) redirectError(studentId, "package_not_available");
+  if (!student) redirectError(studentId, flowContext, "student_not_operable");
+  if (!product) redirectError(studentId, flowContext, "package_not_available");
 
   let packageDiscountMinor = 0;
   let packageDiscountKind: string | null = null;
@@ -137,7 +146,7 @@ export async function createStudentOnboardingSale(formData: FormData) {
   if (discountMode === "percentage") {
     const percentage = Number(discountValue);
     if (!Number.isFinite(percentage) || percentage <= 0 || percentage > 100) {
-      redirectError(studentId, "discount_invalid");
+      redirectError(studentId, flowContext, "discount_invalid");
     }
     packageDiscountMinor = Math.round((product.price_minor * percentage) / 100);
     packageDiscountKind = "percentage";
@@ -145,7 +154,7 @@ export async function createStudentOnboardingSale(formData: FormData) {
   } else if (discountMode === "amount") {
     const amountMinor = moneyToMinor(discountValue);
     if (amountMinor === null || amountMinor <= 0 || amountMinor > product.price_minor) {
-      redirectError(studentId, "discount_invalid");
+      redirectError(studentId, flowContext, "discount_invalid");
     }
     packageDiscountMinor = amountMinor;
     packageDiscountKind = "amount";
@@ -155,11 +164,11 @@ export async function createStudentOnboardingSale(formData: FormData) {
     packageDiscountKind = "courtesy";
     packageDiscountInput = "100%";
   } else if (discountMode !== "none") {
-    redirectError(studentId, "discount_invalid");
+    redirectError(studentId, flowContext, "discount_invalid");
   }
 
   if (packageDiscountMinor > 0 && !discountReason) {
-    redirectError(studentId, "discount_reason_required");
+    redirectError(studentId, flowContext, "discount_reason_required");
   }
 
   const { data, error } = await supabase.rpc("create_student_onboarding_sale_v2", {
@@ -190,17 +199,21 @@ export async function createStudentOnboardingSale(formData: FormData) {
   });
 
   if (error) {
-    redirectError(studentId, rpcErrorCode(error.message));
+    redirectError(studentId, flowContext, rpcErrorCode(error.message));
   }
 
   const result = (data ?? {}) as { sale_id?: string };
-  if (!result.sale_id) redirectError(studentId, "onboarding_sale_failed");
+  if (!result.sale_id) redirectError(studentId, flowContext, "onboarding_sale_failed");
 
   revalidatePath("/admin/alumnas");
   revalidatePath(`/admin/alumnas/${studentId}`);
   revalidatePath("/admin/ventas");
   revalidatePath(`/admin/ventas/${result.sale_id}`);
   revalidatePath("/admin");
+
+  if (flowContext === "sale") {
+    redirect(`/admin/ventas/${result.sale_id}?created=sale`);
+  }
 
   redirect(
     `/admin/alumnas/${studentId}/alta?completed=1&sale=${encodeURIComponent(result.sale_id)}#confirmar-alta`,

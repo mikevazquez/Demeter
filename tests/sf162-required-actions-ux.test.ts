@@ -57,7 +57,8 @@ describe("SF-162 required actions UX", () => {
     const student = source("app/admin/alumnas/[studentId]/page.tsx");
 
     expect(context).toContain("href={`/admin/acciones/${action.id}`}");
-    expect(today).toContain("RequiredActionContextPanel");
+    expect(today).toContain("href={`/admin/acciones/${action.id}`}");
+    expect(today).toContain("Atención");
     expect(session).toContain("RequiredActionContextPanel");
     expect(student).toContain("RequiredActionContextPanel");
     expect(session).toContain('.eq("class_session_id", sessionId)');
