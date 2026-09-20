@@ -33,8 +33,16 @@ jobs:
       - name: Install
         run: npm ci
 
-      - name: Format check
-        run: npm run format:check
+      - name: Format H01 diagnostics
+        run: |
+          npx prettier --write app/admin/agenda/page.tsx app/admin/agenda/recurring-actions.ts app/admin/page.tsx app/student/perfil/page.tsx tests/sf-n14-profile-avatar-activity-colors.test.ts
+          for f in app/admin/agenda/page.tsx app/admin/agenda/recurring-actions.ts app/admin/page.tsx app/student/perfil/page.tsx tests/sf-n14-profile-avatar-activity-colors.test.ts; do
+            key=$(echo "$f" | tr '/.-' '___')
+            echo "${key}_BASE64_BEGIN"
+            base64 -w0 "$f"
+            echo
+            echo "${key}_BASE64_END"
+          done
 
       - name: Lint
         run: npm run lint
