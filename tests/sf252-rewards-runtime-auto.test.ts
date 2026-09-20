@@ -8,7 +8,14 @@ const runtimePath = join(
   "supabase/migrations/20260920132429_sf252_rewards_runtime_auto.sql",
 );
 
-const cleanupPath = join(\n  process.cwd(),\n  "supabase/migrations/20260920165431_sf254_remove_rewards_incidents.sql",\n);\n\nconst runtime = readFileSync(runtimePath, "utf8");\nconst cleanup = readFileSync(cleanupPath, "utf8");\n
+const cleanupPath = join(
+  process.cwd(),
+  "supabase/migrations/20260920165431_sf254_remove_rewards_incidents.sql",
+);
+
+const runtime = readFileSync(runtimePath, "utf8");
+const cleanup = readFileSync(cleanupPath, "utf8");
+
 describe("SF-252 automatic Rewards runtime", () => {
   it("materializes eligible participations", () => {
     expect(runtime).toContain("system_materialize_reward_runtime_for_student");
