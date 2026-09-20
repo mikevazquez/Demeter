@@ -1,0 +1,22 @@
+name: SF-253 temporary quality gate
+
+on:
+  pull_request:
+    branches:
+      - feat/sf-252-rewards-runtime-auto
+  push:
+    branches:
+      - feat/sf-253-rewards-admin-control-center
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run ci
