@@ -48,6 +48,6 @@ describe("SF-252 automatic Rewards runtime", () => {
     expect(cleanup).toContain("private.reward_try_process_domain_event");
     expect(cleanup).toContain("system_process_reward_domain_event");
     expect(cleanup).not.toContain("runtime_processing_error");
-    expect(cleanup).not.toContain("system_open_reward_incident(");
+    expect(cleanup).not.toContain("perform public.system_open_reward_incident(");
   });
 });
