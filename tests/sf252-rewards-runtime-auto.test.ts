@@ -1,16 +1,14 @@
-// SF-252 contract coverage for the automatic Rewards runtime.
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
-const runtime = readFileSync(
-  join(
-    process.cwd(),
-    "supabase/migrations/20260920132429_sf252_rewards_runtime_auto.sql",
-  ),
-  "utf8",
+const runtimePath = join(
+  process.cwd(),
+  "supabase/migrations/20260920132429_sf252_rewards_runtime_auto.sql",
 );
+
+const runtime = readFileSync(runtimePath, "utf8");
 
 describe("SF-252 automatic Rewards runtime", () => {
   it("materializes eligible participations", () => {
@@ -25,9 +23,7 @@ describe("SF-252 automatic Rewards runtime", () => {
     expect(runtime).toContain("'all_students'");
     expect(runtime).toContain("'all_active_students'");
     expect(runtime).toContain("'lock_on_join'");
-    expect(runtime).not.toContain(
-      "return jsonb_build_object('processed', 0, 'reason', 'student_not_active')",
-    );
+    expect(runtime).not.toContain("'student_not_active'");
   });
 
   it("gates sequential program metrics", () => {
