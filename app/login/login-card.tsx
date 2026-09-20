@@ -262,10 +262,7 @@ export function LoginCard({ mode, error }: LoginCardProps) {
           <span />
         </div>
 
-        <Link
-          className="auth-switch-button"
-          href={isStudent ? "/login/studio" : "/login/student"}
-        >
+        <Link className="auth-switch-button" href={isStudent ? "/login/studio" : "/login/student"}>
           {isStudent ? "Acceso al estudio" : "Soy alumna"}
         </Link>
       </section>
