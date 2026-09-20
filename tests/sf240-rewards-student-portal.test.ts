@@ -12,12 +12,16 @@ import {
 const read = (path: string) => readFileSync(join(process.cwd(), path), "utf8");
 
 describe("SF-240 student Rewards portal", () => {
-  it("adds Rewards to the established student navigation", () => {
+  it("keeps Rewards contextual without changing established student navigation", () => {
     const nav = read("app/student/StudentNav.tsx");
 
-    expect(nav).toContain('href: "/student/recompensas"');
-    expect(nav).toContain('label: "Recompensas"');
-    expect(nav).toContain("grid-cols-5");
+    expect(nav).toContain('href: "/student"');
+    expect(nav).toContain('href: "/student/reservar"');
+    expect(nav).toContain('href: "/student/mis-clases"');
+    expect(nav).toContain('href: "/student/perfil"');
+    expect(nav).not.toContain('href: "/student/recompensas"');
+    expect(nav).toContain("grid-cols-4");
+    expect(nav).not.toContain("grid-cols-5");
     expect(nav).not.toContain("admin-shell");
   });
 
