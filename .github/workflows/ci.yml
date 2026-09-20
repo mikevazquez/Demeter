@@ -34,10 +34,7 @@ jobs:
         run: npm ci
 
       - name: Format check
-        run: |
-          npx prettier --write lib/rewards/communications.ts tests/sf244-rewards-communications.test.ts
-          git diff -- lib/rewards/communications.ts tests/sf244-rewards-communications.test.ts
-          exit 1
+        run: npm run format:check
 
       - name: Lint
         run: npm run lint
