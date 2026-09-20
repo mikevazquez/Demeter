@@ -1,3 +1,4 @@
+// SF-252 contract coverage for the automatic Rewards runtime.
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
