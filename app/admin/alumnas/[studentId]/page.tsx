@@ -247,7 +247,6 @@ export default async function StudentProfilePage({
   };
   const communicationPreferenceEvents = communicationPreferenceEventsResult.data ?? [];
   const canEdit = can(CAPABILITIES.STUDENTS_WRITE);
-  const canSell = can(CAPABILITIES.SALES_WRITE);
   const canReadSchedule = can(CAPABILITIES.SCHEDULE_READ);
   const canReadSales = can(CAPABILITIES.SALES_READ);
   const canReadRewards = can(CAPABILITIES.REWARDS_READ);
