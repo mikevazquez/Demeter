@@ -19,7 +19,11 @@ function safeReturnTo(rawValue: string, mode: LoginMode) {
   if (!value.startsWith("/") || value.startsWith("//") || value.includes("\\")) return null;
 
   const portalRoot = mode === "student" ? "/student" : mode === "coach" ? "/coach" : "/admin";
-  if (value === portalRoot || value.startsWith(`${portalRoot}/`) || value.startsWith(`${portalRoot}?`)) {
+  if (
+    value === portalRoot ||
+    value.startsWith(`${portalRoot}/`) ||
+    value.startsWith(`${portalRoot}?`)
+  ) {
     return value;
   }
 
