@@ -20,10 +20,12 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
 
   const navItems = instructorOnly
     ? [
-        { href: "/admin/mis-clases", label: "Mis clases", enabled: true },
-        ...(can(CAPABILITIES.SCHEDULE_READ)
-          ? [{ href: "/admin/agenda", label: "Agenda", enabled: true }]
-          : []),
+        {
+          href: "/admin/mis-clases",
+          label: "Mis clases",
+          enabled: true,
+          activeFor: ["/coach"],
+        },
       ]
     : [
         { href: "/admin", label: "Hoy", enabled: true },
