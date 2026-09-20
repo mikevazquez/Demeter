@@ -102,10 +102,7 @@ export default async function AdminPage({
       ? supabase
           .from("class_templates")
           .select("id,name")
-          .in(
-            "id",
-            [...new Set(sessions.map((session) => session.template_id))],
-          )
+          .in("id", [...new Set(sessions.map((session) => session.template_id))])
       : Promise.resolve({ data: [] as { id: string; name: string }[] }),
   ]);
 
