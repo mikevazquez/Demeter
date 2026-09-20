@@ -92,7 +92,7 @@ export default async function StudentReservePage({
   searchParams: Promise<{ date?: string; error?: string }>;
 }) {
   const query = await searchParams;
-  const { supabase, studio } = await getStudentPortalContext();
+  const { supabase, studio, membership } = await getStudentPortalContext();
   const today = localDateKey(new Date(), studio.timezone);
   const requestedDate = safeDate(query.date, today);
   const selectedDate = requestedDate < today ? today : requestedDate;
@@ -115,7 +115,7 @@ export default async function StudentReservePage({
     ? await supabase
         .from("class_templates")
         .select("name,color_hex,drop_in_price_minor")
-        .eq("studio_id", studio.id)
+        .eq("studio_id", membership.studio_id)
         .in("name", activityNames)
     : {
         data: [] as {
@@ -289,10 +289,7 @@ export default async function StudentReservePage({
                       <p className="truncate text-sm font-semibold text-white">
                         {session.activity}
                       </p>
-                      <p
-                        className="mt-0.5 truncate text-[11px]"
-                        style={{ color: activityColor }}
-                      >
+                      <p className="mt-0.5 truncate text-[11px]" style={{ color: activityColor }}>
                         {session.discipline}
                       </p>
                       <p className="mt-0.5 truncate text-[11px] text-zinc-500">
