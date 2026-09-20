@@ -8,15 +8,18 @@ create or replace function private.reward_try_emit_domain_event(
   p_source_entity_type text,
   p_source_entity_id uuid,
   p_deduplication_key text,
-  p_occurred_at timestamptz,
-  p_actor_user_id uuid,
-  p_payload jsonb
+  p_occurred_at timestamptz default now(),
+  p_actor_user_id uuid default null,
+  p_payload jsonb default '{}'::jsonb,
+  p_correlation_id uuid default null,
+  p_causation_event_id uuid default null,
+  p_event_id uuid default null
 )
 returns uuid
 language plpgsql
 security definer
 set search_path = ''
-as $$
+as $
 begin
   begin
     return public.emit_domain_event(
@@ -28,18 +31,18 @@ begin
       p_occurred_at,
       p_actor_user_id,
       p_payload,
-      null,
-      null,
-      null
+      p_correlation_id,
+      p_causation_event_id,
+      p_event_id
     );
   exception when others then
     return null;
   end;
 end;
-$$;
+$;
 
 revoke all on function private.reward_try_emit_domain_event(
-  uuid,text,text,uuid,text,timestamptz,uuid,jsonb
+  uuid,text,text,uuid,text,timestamptz,uuid,jsonb,uuid,uuid,uuid
 ) from public, anon, authenticated, service_role;
 
 create or replace function private.reward_sync_rule_event_bindings(p_rule_id uuid)
