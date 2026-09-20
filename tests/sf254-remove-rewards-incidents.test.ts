@@ -10,29 +10,16 @@ const migration = readFileSync(
   ),
   "utf8",
 );
-const actions = readFileSync(
-  join(process.cwd(), "app/admin/recompensas/actions.ts"),
-  "utf8",
-);
+const actions = readFileSync(join(process.cwd(), "app/admin/recompensas/actions.ts"), "utf8");
 
 describe("SF-254 Rewards incident removal", () => {
   it("removes the Rewards incident schema and RPCs", () => {
-    expect(migration).toContain(
-      "drop table if exists public.reward_incident_events",
-    );
+    expect(migration).toContain("drop table if exists public.reward_incident_events");
     expect(migration).toContain("drop table if exists public.reward_incidents");
-    expect(migration).toContain(
-      "drop type if exists public.reward_incident_status",
-    );
-    expect(migration).toContain(
-      "drop type if exists public.reward_incident_priority",
-    );
-    expect(migration).toContain(
-      "drop function if exists public.system_open_reward_incident",
-    );
-    expect(migration).toContain(
-      "drop function if exists public.admin_resolve_reward_incident",
-    );
+    expect(migration).toContain("drop type if exists public.reward_incident_status");
+    expect(migration).toContain("drop type if exists public.reward_incident_priority");
+    expect(migration).toContain("drop function if exists public.system_open_reward_incident");
+    expect(migration).toContain("drop function if exists public.admin_resolve_reward_incident");
   });
 
   it("removes incident_definition from the live rule contract", () => {
@@ -50,9 +37,7 @@ describe("SF-254 Rewards incident removal", () => {
   });
 
   it("keeps exceptional admin adjustment without incident mediation", () => {
-    expect(migration).toContain(
-      "private.admin_adjust_reward_instance_internal",
-    );
+    expect(migration).toContain("private.admin_adjust_reward_instance_internal");
     expect(migration).toContain("reward_adjustment_reason_required");
     expect(migration).toContain("private.revoke_reward_available_internal");
     expect(migration).not.toContain("manual_reward_review");
