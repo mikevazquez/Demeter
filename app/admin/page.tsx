@@ -111,7 +111,6 @@ export default async function AdminPage({
   const selectedStart = new Date(`${selectedKey}T00:00:00${offset}`);
   const selectedEnd = new Date(selectedStart.getTime() + 86400000);
 
-  const canReadSchedule = can(CAPABILITIES.SCHEDULE_READ);
   const canWriteSchedule = can(CAPABILITIES.SCHEDULE_WRITE);
   const canWriteStudents = can(CAPABILITIES.STUDENTS_WRITE);
   const canWriteSales = can(CAPABILITIES.SALES_WRITE);
