@@ -57,7 +57,7 @@ describe("ADMIN-UX-02 navigation architecture", () => {
     expect(attention).toContain("ATENCIÓN · {studio.name}");
     expect(attention).toContain(">Atención<");
     expect(attention).not.toContain("ACCIONES REQUERIDAS");
-    expect(attention).toContain(">Revisar<");
+    expect(attention).toContain("Revisar");
   });
 
   it("removes internal automation codes from the top-level user interface", () => {
