@@ -595,6 +595,48 @@ a.admin-nav-item:hover .nav-dot {
   grid-template-columns: 1fr 1fr;
   gap: 10px;
 }
+.activity-color-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 16px;
+}
+.activity-color-row {
+  display: grid;
+  grid-template-columns: 12px minmax(0, 1fr) 44px auto;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--bg-soft);
+}
+.activity-color-row strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+}
+.activity-color-row input[type="color"] {
+  width: 40px;
+  height: 34px;
+  padding: 2px;
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
+  background: var(--surface);
+}
+.activity-color-row .ghost-button {
+  min-height: 34px;
+  padding: 7px 10px;
+  font-size: 11px;
+}
+.activity-color-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  box-shadow: 0 0 16px currentColor;
+}
+
 .count-badge {
   min-width: 36px;
   height: 36px;
@@ -825,6 +867,13 @@ a.admin-nav-item:hover .nav-dot {
   }
   .toolbar-actions > * {
     flex: 1;
+  }
+  .activity-color-row {
+    grid-template-columns: 12px minmax(0, 1fr) 40px;
+  }
+  .activity-color-row .ghost-button {
+    grid-column: 2 / -1;
+    width: 100%;
   }
   .form-split,
   .package-grid {
