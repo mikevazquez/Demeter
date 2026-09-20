@@ -136,7 +136,9 @@ export function AdminNavigation({ items }: { items: AdminNavItem[] }) {
               className={`admin-nav-item${active ? " is-active" : ""}${item.secondary ? " is-secondary" : ""}`}
               aria-current={active ? "page" : undefined}
             >
-              <span className="nav-icon"><NavIcon label={item.label} /></span>
+              <span className="nav-icon">
+                <NavIcon label={item.label} />
+              </span>
               <span>{item.label}</span>
               {item.badge ? <span className="nav-badge">{item.badge}</span> : null}
             </Link>
@@ -162,7 +164,9 @@ export function AdminMobileNavigation({ items }: { items: AdminNavItem[] }) {
             className={active ? "is-active" : undefined}
             aria-current={active ? "page" : undefined}
           >
-            <span className="mobile-nav-icon"><NavIcon label={item.label} /></span>
+            <span className="mobile-nav-icon">
+              <NavIcon label={item.label} />
+            </span>
             <span>{item.label}</span>
           </Link>
         );
