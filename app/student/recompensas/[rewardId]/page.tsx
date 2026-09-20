@@ -46,7 +46,7 @@ export default async function StudentRewardDetailPage({
   const canUse = reward.status === "available" && !autoApplied;
   const reserved = reward.status === "reserved";
   const fixedDiscount = reward.kind === "fixed_discount";
-  const availableInFuture = reward.available_from && Date.parse(reward.available_from) > Date.now();
+  const availableInFuture = reward.status === "blocked" && Boolean(reward.available_from);
 
   return (
     <main className="space-y-5 pb-4">
