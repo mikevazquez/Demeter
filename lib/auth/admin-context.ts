@@ -55,8 +55,7 @@ export async function getAdminContext(requiredCapability?: Capability) {
     (roleCapabilities ?? []).map((item) => item.capability_key as Capability),
   );
   const canUseStudioPortal =
-    capabilities.has(CAPABILITIES.ADMIN_PORTAL) ||
-    capabilities.has(CAPABILITIES.INSTRUCTOR_PORTAL);
+    capabilities.has(CAPABILITIES.ADMIN_PORTAL) || capabilities.has(CAPABILITIES.INSTRUCTOR_PORTAL);
 
   if (!canUseStudioPortal) {
     await supabase.auth.signOut();
