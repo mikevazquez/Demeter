@@ -4,6 +4,7 @@ import StudentLifecycleActions from "./StudentLifecycleActions";
 import StudentLifecycleNoticeDialog from "./StudentLifecycleNoticeDialog";
 import Profile360Overview from "./Profile360Overview";
 import StudentPackageCard from "./StudentPackageCard";
+import StudentPortalAccessSection from "./StudentPortalAccessSection";
 import { notFound } from "next/navigation";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getAdminContext } from "@/lib/auth/admin-context";
@@ -1420,6 +1421,8 @@ export default async function StudentProfilePage({
 
         </>
       ) : null}
+
+      {view === "profile" ? <StudentPortalAccessSection studentId={student.id} /> : null}
 
       {view === "profile" && canArchive ? (
         <details id="estado-alumna" className="profile360-detail scroll-mt-6">
