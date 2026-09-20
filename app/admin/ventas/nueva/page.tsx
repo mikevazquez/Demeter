@@ -78,14 +78,13 @@ export default async function NewSalePage({
   );
 
   return (
-    <main className="space-y-6">
-      <header className="flex flex-wrap items-start justify-between gap-4">
+    <main className="dashboard-shell admin-module-page sale-page">
+      <header className="module-header">
         <div>
-          <Link href="/admin/ventas" className="text-sm text-fuchsia-300 hover:text-fuchsia-200">
-            ← Ventas
+          <Link href="/admin/alumnas" className="back-link compact">
+            ← Alumnas
           </Link>
-          <p className="mt-4 text-sm text-zinc-400">FL-12 · Venta manual</p>
-          <h1 className="text-3xl font-semibold text-white">Nueva venta</h1>
+          <h1>Registrar venta</h1>
           <p className="mt-1 text-sm text-zinc-400">
             Al confirmar se crea una sola vez la adquisición o inscripción correspondiente. Los
             pagos posteriores no duplican derechos ni créditos.
@@ -108,13 +107,13 @@ export default async function NewSalePage({
           </p>
         </section>
       ) : (
-        <form action={createManualSaleAction} className="space-y-4">
-          <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
-            <div className="flex gap-3">
-              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-fuchsia-500/15 text-sm font-bold text-fuchsia-300">
+        <form action={createManualSaleAction} className="sale-compact-form">
+          <section className="sale-step-card">
+            <div className="sale-step-layout">
+              <span className="sale-step-number">
                 1
               </span>
-              <div className="w-full">
+              <div className="sale-step-content">
                 <h2 className="font-semibold text-white">Alumna</h2>
                 <p className="mt-1 text-sm text-zinc-400">Selecciona a quién pertenece la venta.</p>
                 <select
@@ -137,12 +136,12 @@ export default async function NewSalePage({
             </div>
           </section>
 
-          <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
-            <div className="flex gap-3">
-              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-fuchsia-500/15 text-sm font-bold text-fuchsia-300">
+          <section className="sale-step-card">
+            <div className="sale-step-layout">
+              <span className="sale-step-number">
                 2
               </span>
-              <div className="w-full">
+              <div className="sale-step-content">
                 <h2 className="font-semibold text-white">Inicio del paquete</h2>
                 <p className="mt-1 text-sm text-zinc-400">
                   Por defecto inicia hoy, pero puedes elegir otra fecha antes de crear la
@@ -162,12 +161,12 @@ export default async function NewSalePage({
             </div>
           </section>
 
-          <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
-            <div className="flex gap-3">
-              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-fuchsia-500/15 text-sm font-bold text-fuchsia-300">
+          <section className="sale-step-card">
+            <div className="sale-step-layout">
+              <span className="sale-step-number">
                 3
               </span>
-              <div className="w-full">
+              <div className="sale-step-content">
                 <h2 className="font-semibold text-white">Productos</h2>
                 <p className="mt-1 text-sm text-zinc-400">
                   Puedes incluir más de un producto distinto. La inscripción sólo aparece cuando la
@@ -203,12 +202,12 @@ export default async function NewSalePage({
             </div>
           </section>
 
-          <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
-            <div className="flex gap-3">
-              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-fuchsia-500/15 text-sm font-bold text-fuchsia-300">
+          <section className="sale-step-card">
+            <div className="sale-step-layout">
+              <span className="sale-step-number">
                 4
               </span>
-              <div className="w-full">
+              <div className="sale-step-content">
                 <h2 className="font-semibold text-white">Pago inicial</h2>
                 <p className="mt-1 text-sm text-zinc-400">
                   Puede ser $0, parcial o total. Los pagos posteriores se agregan desde el detalle
@@ -259,7 +258,7 @@ export default async function NewSalePage({
             </div>
           </section>
 
-          <div className="flex flex-wrap justify-end gap-3">
+          <div className="sale-actions">
             <Link
               href="/admin/ventas"
               className="rounded-xl border border-white/10 px-4 py-2.5 text-sm font-semibold text-zinc-300"
