@@ -43,7 +43,9 @@ export default async function SingleClassCheckoutReturnPage({
         .maybeSingle()
     : { data: null };
 
-  const status = reconciliation?.ok ? (reconciliation.status ?? attempt?.status ?? "unknown") : (attempt?.status ?? "unknown");
+  const status = reconciliation?.ok
+    ? (reconciliation.status ?? attempt?.status ?? "unknown")
+    : (attempt?.status ?? "unknown");
   const sessionHref = attempt?.session_id
     ? `/student/reservar/${encodeURIComponent(attempt.session_id)}`
     : "/student/reservar";
