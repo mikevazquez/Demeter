@@ -199,7 +199,7 @@ export default async function AdminPage({
   const productIds = [...new Set((acquisitions ?? []).map((item) => item.product_template_id))];
   const { data: products } = productIds.length
     ? await supabase.from("product_templates").select("id,name").in("id", productIds)
-    : { data: [] as { id: string; name: string; color_hex: string | null }[] };
+    : { data: [] as { id: string; name: string }[] };
   const balances = await Promise.all(
     (acquisitions ?? []).map(async (acquisition) => {
       if (acquisition.unlimited) return [acquisition.id, null] as const;
@@ -230,7 +230,7 @@ export default async function AdminPage({
   const templateIds = [...new Set((sessions ?? []).map((session) => session.template_id))];
   const { data: templates } = templateIds.length
     ? await supabase.from("class_templates").select("id, name, color_hex").in("id", templateIds)
-    : { data: [] as { id: string; name: string }[] };
+    : { data: [] as { id: string; name: string; color_hex: string | null }[] };
   const templateMap = new Map((templates ?? []).map((item) => [item.id, item]));
   const totalCapacity = (sessions ?? []).reduce((sum, session) => sum + session.capacity, 0);
   const occupancy = totalCapacity > 0 ? Math.round((occupiedCount / totalCapacity) * 100) : null;
