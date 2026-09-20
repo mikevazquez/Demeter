@@ -220,7 +220,11 @@ a.admin-nav-item:hover .nav-dot {
   place-items: center;
   padding: 30px 20px;
   background:
-    radial-gradient(circle at 50% 22%, color-mix(in srgb, var(--studio-accent) 24%, transparent), transparent 32%),
+    radial-gradient(
+      circle at 50% 22%,
+      color-mix(in srgb, var(--studio-accent) 24%, transparent),
+      transparent 32%
+    ),
     linear-gradient(180deg, #090b10 0%, #05070a 100%);
 }
 
@@ -232,8 +236,7 @@ a.admin-nav-item:hover .nav-dot {
   border: 1px solid #26303c;
   border-radius: 34px;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent),
-    rgba(8, 10, 14, 0.94);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent), rgba(8, 10, 14, 0.94);
   box-shadow: 0 28px 90px rgba(0, 0, 0, 0.45);
 }
 
@@ -307,7 +310,11 @@ a.admin-nav-item:hover .nav-dot {
   color: white;
   text-decoration: none;
   background:
-    linear-gradient(90deg, color-mix(in srgb, var(--studio-accent) 8%, transparent), transparent 46%),
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--studio-accent) 8%, transparent),
+      transparent 46%
+    ),
     rgba(12, 14, 19, 0.8);
   transition:
     transform 0.18s ease,
@@ -319,7 +326,11 @@ a.admin-nav-item:hover .nav-dot {
   transform: translateY(-2px);
   border-color: var(--studio-accent);
   background:
-    linear-gradient(90deg, color-mix(in srgb, var(--studio-accent) 14%, transparent), transparent 58%),
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--studio-accent) 14%, transparent),
+      transparent 58%
+    ),
     rgba(16, 18, 24, 0.94);
 }
 
@@ -500,7 +511,11 @@ a.admin-nav-item:hover .nav-dot {
   border: 1px solid #2d3542;
   border-radius: 28px;
   background:
-    radial-gradient(circle at 50% 20%, color-mix(in srgb, var(--preview-accent) 20%, transparent), transparent 34%),
+    radial-gradient(
+      circle at 50% 20%,
+      color-mix(in srgb, var(--preview-accent) 20%, transparent),
+      transparent 34%
+    ),
     #080a0e;
   text-align: center;
 }
