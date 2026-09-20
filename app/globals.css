@@ -2797,3 +2797,97 @@ a.admin-nav-item:hover .nav-dot {
     min-width: 0;
   }
 }
+
+
+/* UX Ventas · contexto compartido del flujo comercial aprobado */
+.sale-context-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 12px 14px;
+  border: 1px solid #242d37;
+  border-radius: 9px;
+  background: #0f141a;
+}
+.sale-context-card div {
+  min-width: 0;
+}
+.sale-context-card span,
+.sale-context-card strong,
+.sale-context-card small {
+  display: block;
+}
+.sale-context-card span {
+  color: #8e98a6;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.sale-context-card strong {
+  margin-top: 3px;
+  overflow: hidden;
+  color: #f4f6f9;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sale-context-card small {
+  margin-top: 2px;
+  color: #8f98a6;
+  font-size: 9px;
+}
+.sale-context-card a {
+  color: #ff64b3;
+  font-size: 9px;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.sale-page > form {
+  display: grid;
+  gap: 10px;
+}
+.sale-page > form > .panel {
+  padding: 14px;
+  border-radius: 9px;
+}
+.sale-page > form > .panel .eyebrow {
+  font-size: 8px;
+}
+.sale-page > form > .panel h2 {
+  font-size: 15px;
+}
+.sale-page > form > .panel p {
+  font-size: 10px;
+  line-height: 1.5;
+}
+.sale-page > form .compact-form {
+  gap: 9px;
+}
+.sale-page > form .compact-form label > span {
+  font-size: 9px;
+}
+.sale-page > form .compact-form input,
+.sale-page > form .compact-form select,
+.sale-page > form .compact-form textarea {
+  min-height: 36px;
+  border-radius: 7px;
+  font-size: 10px;
+}
+.sale-page > form .primary-button,
+.sale-page > form .ghost-button {
+  min-height: 34px;
+  border-radius: 7px;
+  font-size: 10px;
+}
+
+@media (max-width: 760px) {
+  .sale-context-card {
+    padding: 11px 12px;
+  }
+  .sale-page > form > .panel {
+    padding: 12px;
+  }
+}
