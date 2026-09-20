@@ -49,8 +49,7 @@ function authErrorSummary(error: { code?: string; status?: number; message?: str
 
 function portalDestination(membership: StudioMembership, capabilities: PortalCapability[]) {
   const hasAdminPortal = capabilities.some(
-    (item) =>
-      item.role === membership.role && item.capability_key === CAPABILITIES.ADMIN_PORTAL,
+    (item) => item.role === membership.role && item.capability_key === CAPABILITIES.ADMIN_PORTAL,
   );
   return hasAdminPortal ? "/admin" : "/admin/mis-clases";
 }
