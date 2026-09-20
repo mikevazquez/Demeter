@@ -156,7 +156,7 @@ export default async function StudentProfilePage({
       <section data-profile-block="accesses">
         <div className="mb-2">
           <h2 className="text-lg font-semibold text-white">Accesos rápidos</h2>
-          <p className="mt-0.5 text-xs text-zinc-500">Todo lo relacionado con tu cuenta, en un solo lugar.</p>
+          <p className="mt-0.5 text-xs text-zinc-500">\n            Todo lo relacionado con tu cuenta, en un solo lugar.\n          </p>
         </div>
 
         <div className="grid gap-2 sm:grid-cols-2">
