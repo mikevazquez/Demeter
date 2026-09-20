@@ -156,7 +156,9 @@ export default async function StudentProfilePage({
       <section data-profile-block="accesses">
         <div className="mb-2">
           <h2 className="text-lg font-semibold text-white">Accesos rápidos</h2>
-          <p className="mt-0.5 text-xs text-zinc-500">\n            Todo lo relacionado con tu cuenta, en un solo lugar.\n          </p>
+          <p className="mt-0.5 text-xs text-zinc-500">
+            Todo lo relacionado con tu cuenta, en un solo lugar.
+          </p>
         </div>
 
         <div className="grid gap-2 sm:grid-cols-2">
@@ -180,7 +182,10 @@ export default async function StudentProfilePage({
                   : "Sin paquete activo"}
               </span>
             </span>
-            <span aria-hidden="true" className="text-xl text-zinc-600 transition group-hover:text-fuchsia-300">
+            <span
+              aria-hidden="true"
+              className="text-xl text-zinc-600 transition group-hover:text-fuchsia-300"
+            >
               ›
             </span>
           </Link>
@@ -201,7 +206,10 @@ export default async function StudentProfilePage({
                 {snapshot.upcoming.length} próximas
               </span>
             </span>
-            <span aria-hidden="true" className="text-xl text-zinc-600 transition group-hover:text-fuchsia-300">
+            <span
+              aria-hidden="true"
+              className="text-xl text-zinc-600 transition group-hover:text-fuchsia-300"
+            >
               ›
             </span>
           </Link>
@@ -220,7 +228,10 @@ export default async function StudentProfilePage({
               <strong className="block text-sm font-semibold text-white">Movimientos</strong>
               <span className="mt-0.5 block text-xs text-zinc-500">Historial de créditos</span>
             </span>
-            <span aria-hidden="true" className="text-xl text-zinc-600 transition group-hover:text-fuchsia-300">
+            <span
+              aria-hidden="true"
+              className="text-xl text-zinc-600 transition group-hover:text-fuchsia-300"
+            >
               ›
             </span>
           </Link>
@@ -239,7 +250,10 @@ export default async function StudentProfilePage({
               <strong className="block text-sm font-semibold text-white">Pagos</strong>
               <span className="mt-0.5 block text-xs text-zinc-500">Historial comercial</span>
             </span>
-            <span aria-hidden="true" className="text-xl text-zinc-600 transition group-hover:text-fuchsia-300">
+            <span
+              aria-hidden="true"
+              className="text-xl text-zinc-600 transition group-hover:text-fuchsia-300"
+            >
               ›
             </span>
           </Link>
@@ -260,7 +274,10 @@ export default async function StudentProfilePage({
                 Versiones y aceptación · próxima fase
               </span>
             </span>
-            <span aria-hidden="true" className="text-xl text-zinc-600 transition group-hover:text-fuchsia-300">
+            <span
+              aria-hidden="true"
+              className="text-xl text-zinc-600 transition group-hover:text-fuchsia-300"
+            >
               ›
             </span>
           </Link>
