@@ -557,7 +557,15 @@ export default async function StudentProfilePage({
         </div>
       ) : null}
 
-      <section id="datos-personales" className="panel scroll-mt-6">
+      <details id="datos-personales" className="profile360-detail scroll-mt-6">
+        <summary>
+          <span>
+            <strong>Datos y contacto</strong>
+            <small>Ver o editar información personal</small>
+          </span>
+          <span aria-hidden="true">›</span>
+        </summary>
+        <section className="panel">
         <div className="panel-heading">
           <div>
             <p className="eyebrow">EXPEDIENTE</p>
@@ -592,10 +600,19 @@ export default async function StudentProfilePage({
             </div>
           </div>
         )}
-      </section>
+        </section>
+      </details>
 
       {student.person_id ? (
-        <section id="comunicacion" className="panel scroll-mt-6">
+        <details id="comunicacion" className="profile360-detail scroll-mt-6">
+          <summary>
+            <span>
+              <strong>Preferencias de comunicación</strong>
+              <small>WhatsApp, recordatorios y promociones</small>
+            </span>
+            <span aria-hidden="true">›</span>
+          </summary>
+          <section className="panel">
           <div className="panel-heading">
             <div>
               <p className="eyebrow">COMUNICACIÓN · AUT-05</p>
@@ -754,11 +771,20 @@ export default async function StudentProfilePage({
               </div>
             )}
           </div>
-        </section>
+          </section>
+        </details>
       ) : null}
 
       {canReadProducts ? (
-        <section id="paquetes-y-creditos" className="panel scroll-mt-6">
+        <details id="paquetes-y-creditos" className="profile360-detail scroll-mt-6">
+          <summary>
+            <span>
+              <strong>Paquetes e historial</strong>
+              <small>Créditos, vigencias y ajustes</small>
+            </span>
+            <span aria-hidden="true">›</span>
+          </summary>
+          <section className="panel">
           <div className="panel-heading">
             <div>
               <p className="eyebrow">PAQUETES Y CRÉDITOS</p>
@@ -886,13 +912,22 @@ export default async function StudentProfilePage({
               })}
             </div>
           )}
-        </section>
+          </section>
+        </details>
       ) : null}
 
-      <section className="panel">
-        <div className="panel-heading">
-          <div>
-            <p className="eyebrow">CAMPOS ADICIONALES</p>
+      <details id="campos-adicionales" className="profile360-detail scroll-mt-6">
+        <summary>
+          <span>
+            <strong>Información adicional</strong>
+            <small>Campos configurables del expediente</small>
+          </span>
+          <span aria-hidden="true">›</span>
+        </summary>
+        <section className="panel">
+          <div className="panel-heading">
+            <div>
+              <p className="eyebrow">CAMPOS ADICIONALES</p>
             <h2>Información configurable</h2>
           </div>
           <span className="count-badge">{dynamicDefinitions.length}</span>
@@ -1032,10 +1067,19 @@ export default async function StudentProfilePage({
             })}
           </div>
         )}
-      </section>
+        </section>
+      </details>
 
       {canArchive ? (
-        <section className="panel" id="estado-alumna">
+        <details id="estado-alumna" className="profile360-detail scroll-mt-6">
+          <summary>
+            <span>
+              <strong>Estado e historial</strong>
+              <small>Administración del ciclo de la alumna</small>
+            </span>
+            <span aria-hidden="true">›</span>
+          </summary>
+          <section className="panel">
           <p className="eyebrow">ADMINISTRACIÓN</p>
           <h2>Estado de la alumna</h2>
           <p className="mt-2 text-sm leading-6 text-zinc-400">
@@ -1082,7 +1126,8 @@ export default async function StudentProfilePage({
               </div>
             )}
           </div>
-        </section>
+          </section>
+        </details>
       ) : null}
     </main>
   );
