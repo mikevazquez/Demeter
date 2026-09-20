@@ -68,8 +68,7 @@ export default async function StudentRewardProgressPage({
   const copy = guidance(version.family, evaluation);
   const rule = ctx.ruleMap.get(participation.rule_id) ?? null;
   const fulfilled = participation.status === "fulfilled" || cycle?.status === "fulfilled";
-  const finalized =
-    !fulfilled && isStudentRewardProgressFinalized(participation, rule, cycle);
+  const finalized = !fulfilled && isStudentRewardProgressFinalized(participation, rule, cycle);
   const frozen = !finalized && cycle?.status === "frozen";
 
   return (
