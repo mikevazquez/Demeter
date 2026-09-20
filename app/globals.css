@@ -2663,3 +2663,138 @@ a.admin-nav-item:hover .nav-dot {
     grid-template-columns: 1fr;
   }
 }
+
+
+/* ADMIN-UX-02 · Weekly calendar inside Hoy */
+.mock-calendar-heading {
+  align-items: center;
+}
+.mock-week-nav {
+  display: inline-grid;
+  grid-template-columns: 28px auto 28px;
+  align-items: center;
+  gap: 5px;
+}
+.mock-week-nav a {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #2a3340;
+  border-radius: 6px;
+  background: #0c1117;
+  color: #dce2ea;
+  text-decoration: none;
+  font-size: 17px;
+  line-height: 1;
+}
+.mock-week-nav a:hover {
+  border-color: rgba(255, 10, 138, 0.45);
+  color: white;
+}
+.mock-week-nav span {
+  min-width: 102px;
+  color: #9aa3b1;
+  font-size: 9px;
+  font-weight: 650;
+  text-align: center;
+  white-space: nowrap;
+}
+.mock-week-calendar {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 5px;
+  padding: 9px 10px;
+  border-bottom: 1px solid #222a34;
+  background: #0b1016;
+}
+.mock-week-day {
+  min-width: 0;
+  min-height: 48px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 4px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  color: #8f98a6;
+  text-decoration: none;
+  transition:
+    background 0.16s ease,
+    border-color 0.16s ease,
+    color 0.16s ease;
+}
+.mock-week-day span {
+  font-size: 8px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+.mock-week-day strong {
+  color: #dfe4ea;
+  font-size: 13px;
+  line-height: 1;
+}
+.mock-week-day.is-today:not(.is-selected) {
+  border-color: rgba(255, 10, 138, 0.3);
+}
+.mock-week-day.is-selected {
+  border-color: rgba(255, 10, 138, 0.5);
+  background: rgba(255, 10, 138, 0.14);
+  color: #ff6eb6;
+}
+.mock-week-day.is-selected strong {
+  color: white;
+}
+.mock-week-day:hover {
+  background: #121820;
+  color: #d9dfe7;
+}
+
+@media (max-width: 760px) {
+  .mock-calendar-heading {
+    min-height: auto;
+    align-items: flex-start;
+    gap: 8px;
+    padding-top: 10px;
+    padding-bottom: 8px;
+  }
+  .mock-calendar-heading h2 {
+    padding-top: 6px;
+  }
+  .mock-week-nav {
+    grid-template-columns: 30px auto 30px;
+  }
+  .mock-week-nav a {
+    width: 30px;
+    height: 30px;
+  }
+  .mock-week-calendar {
+    gap: 3px;
+    padding: 8px;
+    overflow: hidden;
+  }
+  .mock-week-day {
+    min-height: 46px;
+    border-radius: 6px;
+  }
+  .mock-week-day span {
+    font-size: 7px;
+  }
+  .mock-week-day strong {
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 420px) {
+  .mock-calendar-heading {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .mock-week-nav {
+    width: 100%;
+    grid-template-columns: 32px minmax(0, 1fr) 32px;
+  }
+  .mock-week-nav span {
+    min-width: 0;
+  }
+}
