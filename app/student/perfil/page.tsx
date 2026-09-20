@@ -12,22 +12,38 @@ const errorCopy: Record<string, string> = {
   forbidden: "Tu cuenta no tiene permiso para editar estos datos.",
 };
 
+function profileInitials(firstName: string, lastName: string | null) {
+  const words = [firstName, lastName].filter(Boolean) as string[];
+  const initials = words.map((word) => word.trim().charAt(0)).join("");
+
+  return (initials || firstName.slice(0, 2)).slice(0, 2).toUpperCase();
+}
+
 export default async function StudentProfilePage({
   searchParams,
 }: {
-  searchParams: Promise<{ updated?: string; error?: string }>;
+  searchParams: Promise<{ updated?: string; error?: string; edit?: string }>;
 }) {
   const query = await searchParams;
   const { snapshot, studio } = await getStudentPortalContext();
   const activePackage = snapshot.acquisitions.find((item) => item.active_now) ?? null;
+  const fullName = [snapshot.profile.first_name, snapshot.profile.last_name]
+    .filter(Boolean)
+    .join(" ");
+  const initials = profileInitials(snapshot.profile.first_name, snapshot.profile.last_name);
+  const editingEmail = query.edit === "1" || Boolean(query.error);
 
   return (
-    <main className="space-y-6">
+    <main className="space-y-4 pb-4 sm:space-y-5">
       <header>
-        <p className="text-sm text-fuchsia-300">Perfil</p>
-        <h1 className="mt-1 text-3xl font-semibold text-white sm:text-4xl">Tu cuenta</h1>
-        <p className="mt-2 text-sm text-zinc-400">
-          Revisa tus datos y accede a la información asociada a tu cuenta.
+        <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-fuchsia-300">
+          Perfil
+        </p>
+        <h1 className="mt-1 text-3xl font-semibold tracking-tight text-white sm:text-4xl">
+          Mi cuenta
+        </h1>
+        <p className="mt-1.5 text-sm text-zinc-400">
+          Consulta tu información y accede a los datos asociados a tu cuenta.
         </p>
       </header>
 
@@ -50,114 +66,222 @@ export default async function StudentProfilePage({
         </StudentNoticeDialog>
       ) : null}
 
-      <section className="grid gap-4 xl:grid-cols-[1fr_0.8fr]">
-        <form
-          action={updateStudentProfileAction}
-          className="space-y-4 rounded-3xl border border-white/10 bg-white/[0.03] p-5 sm:p-6"
-        >
-          <div>
-            <h2 className="text-xl font-semibold text-white">Datos personales</h2>
-            <p className="mt-1 text-sm text-zinc-500">
-              Nombre y teléfono forman parte de tu expediente y los administra el estudio. Puedes
-              actualizar tu correo desde aquí.
+      <section
+        data-profile-block="identity"
+        className="overflow-hidden rounded-3xl border border-fuchsia-500/15 bg-[radial-gradient(circle_at_18%_0%,rgba(236,72,153,0.15),transparent_28%),linear-gradient(135deg,rgba(255,255,255,0.05),rgba(255,255,255,0.015))]"
+      >
+        <div className="border-b border-white/10 p-5 sm:p-6">
+          <div className="flex items-center gap-4">
+            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full border border-fuchsia-400/50 bg-gradient-to-br from-fuchsia-500/70 to-fuchsia-950 text-xl font-semibold text-white shadow-[0_0_28px_rgba(236,72,153,0.22)] sm:h-20 sm:w-20 sm:text-2xl">
+              {initials}
+            </div>
+            <div className="min-w-0">
+              <h2 className="truncate text-xl font-semibold text-white sm:text-2xl">{fullName}</h2>
+              <p className="mt-1 text-sm text-zinc-400">Alumna · {studio.name}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="divide-y divide-white/10 px-5 sm:px-6">
+          <div className="grid gap-1 py-3.5 sm:grid-cols-[120px_1fr_auto] sm:items-center sm:gap-4">
+            <p className="text-xs font-medium text-zinc-500">Nombre</p>
+            <p className="text-sm text-white">{snapshot.profile.first_name}</p>
+            <span className="text-[11px] text-zinc-600">Solo lectura</span>
+          </div>
+          <div className="grid gap-1 py-3.5 sm:grid-cols-[120px_1fr_auto] sm:items-center sm:gap-4">
+            <p className="text-xs font-medium text-zinc-500">Apellidos</p>
+            <p className="text-sm text-white">{snapshot.profile.last_name || "—"}</p>
+            <span className="text-[11px] text-zinc-600">Solo lectura</span>
+          </div>
+          <div className="grid gap-1 py-3.5 sm:grid-cols-[120px_1fr_auto] sm:items-center sm:gap-4">
+            <p className="text-xs font-medium text-zinc-500">Teléfono</p>
+            <p className="text-sm text-white">{snapshot.profile.phone}</p>
+            <span className="text-[11px] text-zinc-600">Solo lectura</span>
+          </div>
+          <div className="grid gap-2 py-3.5 sm:grid-cols-[120px_1fr_auto] sm:items-center sm:gap-4">
+            <p className="text-xs font-medium text-zinc-500">Correo electrónico</p>
+            <p className="min-w-0 break-all text-sm text-white">
+              {snapshot.profile.email || "Sin correo registrado"}
             </p>
+            {!editingEmail ? (
+              <Link
+                href="/student/perfil?edit=1"
+                className="inline-flex min-h-9 w-fit items-center justify-center rounded-xl border border-fuchsia-500/40 bg-fuchsia-500/[0.08] px-3 py-2 text-xs font-semibold text-fuchsia-200 transition hover:bg-fuchsia-500/[0.14]"
+              >
+                Editar correo
+              </Link>
+            ) : null}
           </div>
+        </div>
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <label className="text-sm text-zinc-300">
-              Nombre
-              <input
-                value={snapshot.profile.first_name}
-                readOnly
-                className="mt-2 w-full cursor-not-allowed rounded-xl border border-white/10 bg-white/[0.03] px-3 py-3 text-zinc-500"
-              />
-            </label>
-            <label className="text-sm text-zinc-300">
-              Apellido
-              <input
-                value={snapshot.profile.last_name ?? ""}
-                readOnly
-                className="mt-2 w-full cursor-not-allowed rounded-xl border border-white/10 bg-white/[0.03] px-3 py-3 text-zinc-500"
-              />
-            </label>
-          </div>
-
-          <label className="block text-sm text-zinc-300">
-            Teléfono
-            <input
-              value={snapshot.profile.phone}
-              readOnly
-              className="mt-2 w-full cursor-not-allowed rounded-xl border border-white/10 bg-white/[0.03] px-3 py-3 text-zinc-500"
-            />
-          </label>
-
-          <label className="block text-sm text-zinc-300">
-            Correo
-            <input
-              name="email"
-              type="email"
-              defaultValue={snapshot.profile.email ?? ""}
-              className="mt-2 w-full rounded-xl border border-white/10 bg-black/20 px-3 py-3 text-white"
-            />
-          </label>
-
-          <PendingActionButton
-            pendingLabel="Guardando…"
-            className="rounded-xl bg-fuchsia-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-fuchsia-500 disabled:cursor-wait disabled:opacity-60"
+        {editingEmail ? (
+          <form
+            action={updateStudentProfileAction}
+            className="border-t border-fuchsia-500/15 bg-black/20 p-5 sm:p-6"
           >
-            Guardar correo
-          </PendingActionButton>
-        </form>
+            <div className="sm:flex sm:items-end sm:gap-3">
+              <label className="block min-w-0 flex-1 text-sm text-zinc-300">
+                Correo electrónico
+                <input
+                  name="email"
+                  type="email"
+                  defaultValue={snapshot.profile.email ?? ""}
+                  autoComplete="email"
+                  className="mt-2 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-3 text-white outline-none transition placeholder:text-zinc-600 focus:border-fuchsia-500/60 focus:ring-2 focus:ring-fuchsia-500/15"
+                  placeholder="tu@correo.com"
+                />
+              </label>
+              <div className="mt-3 flex gap-2 sm:mt-0">
+                <PendingActionButton
+                  pendingLabel="Guardando…"
+                  className="min-h-11 rounded-xl bg-fuchsia-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-fuchsia-500 disabled:cursor-wait disabled:opacity-60"
+                >
+                  Guardar cambios
+                </PendingActionButton>
+                <Link
+                  href="/student/perfil"
+                  className="inline-flex min-h-11 items-center justify-center rounded-xl border border-white/10 px-4 py-2.5 text-sm font-semibold text-zinc-300 transition hover:bg-white/[0.05] hover:text-white"
+                >
+                  Cancelar
+                </Link>
+              </div>
+            </div>
+            <p className="mt-2 text-xs text-zinc-500">
+              Tu nombre y teléfono forman parte de tu expediente y los administra el estudio.
+            </p>
+          </form>
+        ) : null}
+      </section>
 
-        <aside className="space-y-3">
+      <section data-profile-block="accesses">
+        <div className="mb-2">
+          <h2 className="text-lg font-semibold text-white">Accesos rápidos</h2>
+          <p className="mt-0.5 text-xs text-zinc-500">
+            Todo lo relacionado con tu cuenta, en un solo lugar.
+          </p>
+        </div>
+
+        <div className="grid gap-2 sm:grid-cols-2">
           <Link
             href="/student/paquete"
-            className="block rounded-3xl border border-white/10 bg-white/[0.03] p-5 transition hover:border-fuchsia-500/30"
+            className="group grid min-h-24 grid-cols-[auto_1fr_auto] items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 transition hover:border-fuchsia-500/25 hover:bg-white/[0.05]"
           >
-            <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">Mi paquete</p>
-            <p className="mt-2 font-semibold text-white">
-              {activePackage?.name ?? "Sin paquete activo"}
-            </p>
-            <p className="mt-1 text-sm text-zinc-400">
-              {activePackage
-                ? activePackage.unlimited
-                  ? `Ilimitado · vence ${formatDate(activePackage.expires_on, studio.timezone)}`
-                  : `${activePackage.available_credits} clases disponibles`
-                : "Consulta tu historial de paquetes"}
-            </p>
+            <span
+              aria-hidden="true"
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-fuchsia-500/10 text-lg text-fuchsia-300"
+            >
+              ◇
+            </span>
+            <span className="min-w-0">
+              <strong className="block text-sm font-semibold text-white">Mi paquete</strong>
+              <span className="mt-0.5 block truncate text-xs text-zinc-500">
+                {activePackage
+                  ? activePackage.unlimited
+                    ? `Ilimitado · vence ${formatDate(activePackage.expires_on, studio.timezone)}`
+                    : `${activePackage.available_credits} clases disponibles`
+                  : "Sin paquete activo"}
+              </span>
+            </span>
+            <span
+              aria-hidden="true"
+              className="text-xl text-zinc-600 transition group-hover:text-fuchsia-300"
+            >
+              ›
+            </span>
           </Link>
 
           <Link
             href="/student/mis-clases"
-            className="block rounded-3xl border border-white/10 bg-white/[0.03] p-5 transition hover:border-fuchsia-500/30"
+            className="group grid min-h-24 grid-cols-[auto_1fr_auto] items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 transition hover:border-fuchsia-500/25 hover:bg-white/[0.05]"
           >
-            <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">Mis clases</p>
-            <p className="mt-2 font-semibold text-white">{snapshot.upcoming.length} próximas</p>
-            <p className="mt-1 text-sm text-zinc-400">Agenda, historial y cancelaciones.</p>
+            <span
+              aria-hidden="true"
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-fuchsia-500/10 text-lg text-fuchsia-300"
+            >
+              ≡
+            </span>
+            <span>
+              <strong className="block text-sm font-semibold text-white">Mis clases</strong>
+              <span className="mt-0.5 block text-xs text-zinc-500">
+                {snapshot.upcoming.length} próximas
+              </span>
+            </span>
+            <span
+              aria-hidden="true"
+              className="text-xl text-zinc-600 transition group-hover:text-fuchsia-300"
+            >
+              ›
+            </span>
+          </Link>
+
+          <Link
+            href="/student/movimientos"
+            className="group grid min-h-24 grid-cols-[auto_1fr_auto] items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 transition hover:border-fuchsia-500/25 hover:bg-white/[0.05]"
+          >
+            <span
+              aria-hidden="true"
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-fuchsia-500/10 text-lg text-fuchsia-300"
+            >
+              ↔
+            </span>
+            <span>
+              <strong className="block text-sm font-semibold text-white">Movimientos</strong>
+              <span className="mt-0.5 block text-xs text-zinc-500">Historial de créditos</span>
+            </span>
+            <span
+              aria-hidden="true"
+              className="text-xl text-zinc-600 transition group-hover:text-fuchsia-300"
+            >
+              ›
+            </span>
           </Link>
 
           <Link
             href="/student/pagos"
-            className="block rounded-3xl border border-white/10 bg-white/[0.03] p-5 transition hover:border-fuchsia-500/30"
+            className="group grid min-h-24 grid-cols-[auto_1fr_auto] items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 transition hover:border-fuchsia-500/25 hover:bg-white/[0.05]"
           >
-            <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">Pagos</p>
-            <p className="mt-2 font-semibold text-white">Historial comercial</p>
-            <p className="mt-1 text-sm text-zinc-400">
-              Pagos, reembolsos y referencias registradas.
-            </p>
+            <span
+              aria-hidden="true"
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-fuchsia-500/10 text-lg text-fuchsia-300"
+            >
+              $
+            </span>
+            <span>
+              <strong className="block text-sm font-semibold text-white">Pagos</strong>
+              <span className="mt-0.5 block text-xs text-zinc-500">Historial comercial</span>
+            </span>
+            <span
+              aria-hidden="true"
+              className="text-xl text-zinc-600 transition group-hover:text-fuchsia-300"
+            >
+              ›
+            </span>
           </Link>
 
           <Link
             href="/student/documentos"
-            className="block rounded-3xl border border-white/10 bg-white/[0.03] p-5 transition hover:border-fuchsia-500/30"
+            className="group grid min-h-24 grid-cols-[auto_1fr_auto] items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 transition hover:border-fuchsia-500/25 hover:bg-white/[0.05] sm:col-span-2"
           >
-            <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">Documentos</p>
-            <p className="mt-2 font-semibold text-white">Próxima fase</p>
-            <p className="mt-1 text-sm text-zinc-400">
-              Versiones, pendientes y aceptación se habilitarán en F12.
-            </p>
+            <span
+              aria-hidden="true"
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-fuchsia-500/10 text-lg text-fuchsia-300"
+            >
+              □
+            </span>
+            <span>
+              <strong className="block text-sm font-semibold text-white">Documentos</strong>
+              <span className="mt-0.5 block text-xs text-zinc-500">
+                Versiones y aceptación · próxima fase
+              </span>
+            </span>
+            <span
+              aria-hidden="true"
+              className="text-xl text-zinc-600 transition group-hover:text-fuchsia-300"
+            >
+              ›
+            </span>
           </Link>
-        </aside>
+        </div>
       </section>
     </main>
   );
