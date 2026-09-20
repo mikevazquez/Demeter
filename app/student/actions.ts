@@ -212,6 +212,56 @@ export async function cancelStudentReservationAction(formData: FormData) {
   );
 }
 
+export async function createSingleClassMercadoPagoOrderAction(
+  sessionId: string,
+  clientRequestKey: string,
+) {
+  const normalizedSessionId = sessionId.trim();
+  const normalizedRequestKey = clientRequestKey.trim();
+  const returnBaseUrl = await mercadoPagoReturnBaseUrl();
+
+  if (!normalizedSessionId || !normalizedRequestKey || !returnBaseUrl) {
+    return { ok: false as const, error: "invalid_request" };
+  }
+
+  const { supabase } = await getStudentPortalContext();
+  const { data, error } = await supabase.functions.invoke("create-mercadopago-order", {
+    body: {
+      sessionId: normalizedSessionId,
+      clientRequestKey: normalizedRequestKey,
+      returnBaseUrl,
+    },
+  });
+
+  if (error) {
+    return { ok: false as const, error: await edgeFunctionErrorCode(error, "checkout_failed") };
+  }
+
+  const result = data as MercadoPagoOrderResult;
+  if (!result?.ok || !result.checkoutUrl || !result.orderId || !result.attemptId) {
+    return { ok: false as const, error: result?.error ?? "checkout_failed" };
+  }
+
+  let checkoutUrl: URL;
+  try {
+    checkoutUrl = new URL(result.checkoutUrl);
+  } catch {
+    return { ok: false as const, error: "checkout_failed" };
+  }
+
+  if (checkoutUrl.protocol !== "https:") {
+    return { ok: false as const, error: "checkout_failed" };
+  }
+
+  return {
+    ok: true as const,
+    checkoutUrl: checkoutUrl.toString(),
+    attemptId: result.attemptId,
+    orderId: result.orderId,
+    reused: result.reused === true,
+  };
+}
+
 export async function createMercadoPagoOrderAction(
   productTemplateId: string,
   clientRequestKey: string,
