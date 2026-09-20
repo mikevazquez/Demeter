@@ -138,22 +138,27 @@ export function prepareRewardCommunication(input: {
     priority: "P2",
     promotional: false,
     groupKey: groupKey(input.fact),
-    preference: enabled
-      ? preference
-      : {
-          ...preference,
-          decision: "suppress",
-          reasonCode: "person_category_opt_out",
-          reason: "La regla de Rewards no habilita este aviso.",
-          personRestricted: false,
-          globalRestricted: false,
-        },
+    preference,
   };
 
-  const resolution = resolveAutomationCommunication(
-    candidate,
-    input.relatedCandidates ?? [],
-  );
+  const resolution: AutomationCommunicationResolution = enabled
+    ? resolveAutomationCommunication(candidate, input.relatedCandidates ?? [])
+    : {
+        scope: "aut05",
+        priority: "P2",
+        decision: "suppress",
+        reasonCode: "reward_notice_disabled",
+        reason: "La regla de Rewards no habilita este aviso.",
+        groupKey: candidate.groupKey ?? null,
+        dominantKey: null,
+        deferredUntil: null,
+        relatedCandidateKeys: (input.relatedCandidates ?? []).map((item) => item.key),
+        requiresRevalidation: false,
+        details: {
+          reward_notice_enabled: false,
+          reward_communication_kind: input.fact.kind,
+        },
+      };
 
   return {
     fact: input.fact,
