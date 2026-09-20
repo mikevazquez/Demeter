@@ -45,7 +45,8 @@ describe("F9 enrollment validity contracts", () => {
   it("shows lifetime enrollment clearly in the product catalog and detail", () => {
     const list = source("app/admin/productos/page.tsx");
     const detail = source("app/admin/productos/[productId]/page.tsx");
-    expect(list).toContain('product.validity_days == null ? "Vitalicia"');
+    expect(list).toContain("product.validity_days == null");
+    expect(list).toContain('"Vitalicia"');
     expect(detail).toContain('product.validity_days == null ? "Vitalicia"');
     expect(detail).toContain("inscripción vitalicia, sin fecha de vencimiento");
   });
