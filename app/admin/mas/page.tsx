@@ -72,9 +72,7 @@ export default async function MorePage() {
           ))}
         </section>
       ) : (
-        <section className="empty-state">
-          No tienes herramientas adicionales disponibles.
-        </section>
+        <section className="empty-state">No tienes herramientas adicionales disponibles.</section>
       )}
     </main>
   );
