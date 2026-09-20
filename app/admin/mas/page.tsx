@@ -52,32 +52,28 @@ export default async function MorePage() {
   });
 
   return (
-    <main className="dashboard-shell">
-      <header className="topbar">
+    <main className="dashboard-shell admin-module-page more-page">
+      <header className="module-header">
         <div>
-          <p className="eyebrow">NAVEGACIÓN · {ctx.studio.name}</p>
-          <h1 className="dashboard-title">Más</h1>
+          <h1>Más</h1>
           <p>Herramientas y áreas de gestión disponibles para tu rol.</p>
         </div>
       </header>
 
       {visibleItems.length ? (
-        <section className="grid gap-3 md:grid-cols-2">
+        <section className="more-list">
           {visibleItems.map((item) => (
             <Link
               key={item.href}
               href={item.href}
-              className="group rounded-2xl border border-white/10 bg-white/[0.03] p-5 transition hover:border-fuchsia-500/40 hover:bg-white/[0.05]"
+              className="more-row"
             >
-              <div className="flex items-center justify-between gap-4">
-                <div>
-                  <h2 className="text-lg font-semibold text-white">{item.title}</h2>
-                  <p className="mt-2 text-sm leading-6 text-zinc-400">{item.description}</p>
-                </div>
-                <span className="text-xl text-fuchsia-300 transition group-hover:translate-x-1">
-                  →
-                </span>
-              </div>
+              <span className="more-row-icon" aria-hidden="true">◇</span>
+              <span className="more-row-copy">
+                <strong>{item.title}</strong>
+                <small>{item.description}</small>
+              </span>
+              <span className="module-chevron" aria-hidden="true">›</span>
             </Link>
           ))}
         </section>
