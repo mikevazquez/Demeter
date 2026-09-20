@@ -23,9 +23,9 @@ describe("F11 coach session scope", () => {
     );
   });
 
-  it("uses a coach feed that never accepts an arbitrary instructor id", () => {
+  it("uses the same scoped coach feed inside the unified Studio portal", () => {
     const migration = source("supabase/migrations/20260916142100_f11_coach_feed_local_dates.sql");
-    const page = source("app/coach/page.tsx");
+    const page = source("app/admin/mis-clases/page.tsx");
 
     expect(migration).toContain("public.coach_my_sessions(");
     expect(migration).toContain("target_studio_id uuid");
