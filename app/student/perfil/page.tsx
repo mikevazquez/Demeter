@@ -23,7 +23,7 @@ function profileInitials(firstName: string, lastName: string | null) {
 export default async function StudentProfilePage({
   searchParams,
 }: {
-  searchParams: Promise<{ updated?: string; error?: string; edit?: string; avatar?: string }>;
+  searchParams: Promise<{ updated?: string; error?: string; edit?: string }>;
 }) {
   const query = await searchParams;
   const { snapshot, studio, supabase, user } = await getStudentPortalContext();
@@ -59,15 +59,7 @@ export default async function StudentProfilePage({
         </p>
       </header>
 
-      {query.avatar === "updated" ? (
-        <StudentNoticeDialog
-          eyebrow="Foto actualizada"
-          title="Tu foto de perfil está lista"
-          dismissHref="/student/perfil"
-        >
-          La nueva imagen ya está asociada a tu cuenta.
-        </StudentNoticeDialog>
-      ) : query.updated ? (
+      {query.updated ? (
         <StudentNoticeDialog
           eyebrow="Cambios guardados"
           title="Tu correo está actualizado"
@@ -92,7 +84,7 @@ export default async function StudentProfilePage({
       >
         <div className="border-b border-white/10 p-5 sm:p-6">
           <div className="flex items-center gap-4">
-            <ProfileAvatarUploader initials={initials} currentAvatarUrl={avatarUrl} />
+            <ProfileAvatarUploader initials={initials} />
             <div className="min-w-0">
               <h2 className="truncate text-xl font-semibold text-white sm:text-2xl">{fullName}</h2>
               <p className="mt-1 text-sm text-zinc-400">Alumna · {studio.name}</p>
