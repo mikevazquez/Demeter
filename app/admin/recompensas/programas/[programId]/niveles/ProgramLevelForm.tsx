@@ -1,9 +1,9 @@
 import PendingActionButton from "@/app/admin/components/PendingActionButton";
 
-import { ConditionsBuilder, type ConditionInput } from "../../ConditionsBuilder";
-import { OutcomeFields } from "../../OutcomeFields";
-import { saveProgramLevelAction } from "../../actions";
-import { asObject, conditionRows, rewardItems } from "../../ui";
+import { ConditionsBuilder, type ConditionInput } from "../../../ConditionsBuilder";
+import { OutcomeFields } from "../../../OutcomeFields";
+import { saveProgramLevelAction } from "../../../actions";
+import { asObject, conditionRows, rewardItems } from "../../../ui";
 
 type LevelValue = {
   level_key: string;
