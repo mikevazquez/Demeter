@@ -133,58 +133,25 @@ export default function Profile360Overview({
               <a href={"tel:" + student.phone}>{student.phone}</a>
               {student.email ? <span>{student.email}</span> : null}
             </div>
+
+            <div className="profile360-inline-actions">
+              <a
+                href={whatsappNumber ? "https://wa.me/" + whatsappNumber : "#"}
+                target={whatsappNumber ? "_blank" : undefined}
+                rel={whatsappNumber ? "noreferrer" : undefined}
+              >
+                WhatsApp
+              </a>
+              <a href="#datos-personales">Editar datos</a>
+            </div>
           </div>
-        </div>
-
-        <div className="profile360-actions" aria-label="Acciones rápidas">
-          <a
-            className="profile360-action"
-            href={whatsappNumber ? "https://wa.me/" + whatsappNumber : "#"}
-            target={whatsappNumber ? "_blank" : undefined}
-            rel={whatsappNumber ? "noreferrer" : undefined}
-          >
-            <strong>◉</strong>
-            WhatsApp
-          </a>
-
-          {canBook && student.lifecycleStatus === "active" ? (
-            <Link className="profile360-action" href={"/admin/alumnas/" + student.id + "/reservar"}>
-              <strong>＋</strong>
-              Reservar
-            </Link>
-          ) : (
-            <span className="profile360-action" aria-disabled="true">
-              <strong>＋</strong>
-              Reservar
-            </span>
-          )}
-
-          {canSell && student.lifecycleStatus === "active" ? (
-            <Link
-              className="profile360-action"
-              href={"/admin/ventas/nueva?student_id=" + student.id}
-            >
-              <strong>◇</strong>
-              Renovar
-            </Link>
-          ) : (
-            <span className="profile360-action" aria-disabled="true">
-              <strong>◇</strong>
-              Renovar
-            </span>
-          )}
-
-          <a className="profile360-action" href="#mas-informacion">
-            <strong>•••</strong>
-            Más
-          </a>
         </div>
       </section>
 
       <section className="profile360-current-card" aria-label="Estado actual">
         <div className="profile360-current-heading">
           <div>
-            <p className="eyebrow">AHORA</p>
+            <p className="eyebrow">PAQUETE ACTUAL</p>
             <h2>{currentPackage ? currentPackage.name : "Sin paquete activo"}</h2>
           </div>
           {currentPackage ? <span className="status-pill">Activo</span> : null}
@@ -225,6 +192,27 @@ export default function Profile360Overview({
             No hay un paquete vigente para esta alumna.
           </p>
         )}
+
+        {student.lifecycleStatus === "active" && (canBook || canSell) ? (
+          <div className="profile360-context-actions">
+            {canBook ? (
+              <Link
+                className="profile360-context-primary"
+                href={"/admin/alumnas/" + student.id + "/reservar"}
+              >
+                Reservar clase
+              </Link>
+            ) : null}
+            {canSell ? (
+              <Link
+                className="profile360-context-secondary"
+                href={"/admin/ventas/nueva?student_id=" + student.id}
+              >
+                Renovar paquete
+              </Link>
+            ) : null}
+          </div>
+        ) : null}
       </section>
 
       {alerts.length ? (
@@ -250,65 +238,44 @@ export default function Profile360Overview({
         </details>
       ) : null}
 
-      <details id="mas-informacion" className="profile360-more">
+      <details className="profile360-summary-detail">
         <summary>
           <span>
-            <strong>Más información</strong>
-            <small>Datos, historial y configuración</small>
+            <strong>Información general</strong>
+            <small>Nacimiento, inscripción, valor y Rewards</small>
           </span>
           <span aria-hidden="true">›</span>
         </summary>
 
-        <div className="profile360-more-body">
-          <div className="profile360-mini-summary">
-            <div>
-              <span>Nacimiento</span>
-              <strong>{formatDate(birthDate)}</strong>
-            </div>
-            <div>
-              <span>Inscripción</span>
-              <strong>
-                {enrollment?.status === "active"
-                  ? enrollment.expiresOn
-                    ? "Vigente"
-                    : "Vitalicia"
-                  : enrollment
-                    ? "No vigente"
-                    : "Sin registro"}
-              </strong>
-            </div>
-            <div>
-              <span>Valor histórico</span>
-              <strong>{formatMoney(historicalValueMinor)}</strong>
-            </div>
-            <div>
-              <span>Rewards</span>
-              <strong>
-                {rewardsAvailable === null
-                  ? "Sin acceso"
-                  : String(rewardsAvailable) + " disponibles"}
-              </strong>
-            </div>
+        <div className="profile360-mini-summary">
+          <div>
+            <span>Nacimiento</span>
+            <strong>{formatDate(birthDate)}</strong>
           </div>
-
-          <nav className="profile360-more-links" aria-label="Más información del perfil">
-            <a href="#datos-personales">
-              <span>Datos y contacto</span>
-              <b>›</b>
-            </a>
-            <a href="#paquetes-y-creditos">
-              <span>Paquetes e historial</span>
-              <b>›</b>
-            </a>
-            <a href="#comunicacion">
-              <span>Preferencias de comunicación</span>
-              <b>›</b>
-            </a>
-            <a href="#estado-alumna">
-              <span>Estado e historial</span>
-              <b>›</b>
-            </a>
-          </nav>
+          <div>
+            <span>Inscripción</span>
+            <strong>
+              {enrollment?.status === "active"
+                ? enrollment.expiresOn
+                  ? "Vigente"
+                  : "Vitalicia"
+                : enrollment
+                  ? "No vigente"
+                  : "Sin registro"}
+            </strong>
+          </div>
+          <div>
+            <span>Valor histórico</span>
+            <strong>{formatMoney(historicalValueMinor)}</strong>
+          </div>
+          <div>
+            <span>Rewards</span>
+            <strong>
+              {rewardsAvailable === null
+                ? "Sin acceso"
+                : String(rewardsAvailable) + " disponibles"}
+            </strong>
+          </div>
         </div>
       </details>
     </>
