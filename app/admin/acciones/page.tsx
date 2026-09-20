@@ -136,9 +136,9 @@ export default async function RequiredActionsPage({
     <main className="dashboard-shell">
       <header className="topbar">
         <div>
-          <p className="eyebrow">ACCIONES REQUERIDAS · {studio.name}</p>
-          <h1 className="dashboard-title">Intervenciones pendientes</h1>
-          <p>Una sola bandeja para incidencias que realmente necesitan intervención humana.</p>
+          <p className="eyebrow">ATENCIÓN · {studio.name}</p>
+          <h1 className="dashboard-title">Atención</h1>
+          <p>Incidencias que requieren intervención humana, ordenadas por prioridad y responsable.</p>
         </div>
       </header>
 
@@ -207,7 +207,7 @@ export default async function RequiredActionsPage({
 
       <section className="grid gap-4">
         {filteredActions.length === 0 ? (
-          <div className="empty-state">No hay acciones que coincidan con estos filtros.</div>
+          <div className="empty-state">No hay incidencias que coincidan con estos filtros.</div>
         ) : (
           filteredActions.map((action) => {
             const session = action.class_session_id
