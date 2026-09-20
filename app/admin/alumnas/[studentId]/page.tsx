@@ -286,10 +286,7 @@ export default async function StudentProfilePage({
         </div>
         <div className="toolbar-actions">
           {canSell && student.lifecycle_status === "active" ? (
-            <Link
-              className="primary-button"
-              href={`/admin/ventas/nueva?student_id=${student.id}`}
-            >
+            <Link className="primary-button" href={`/admin/ventas/nueva?student_id=${student.id}`}>
               Registrar venta
             </Link>
           ) : null}
