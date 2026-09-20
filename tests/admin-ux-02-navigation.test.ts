@@ -72,10 +72,10 @@ describe("ADMIN-UX-02 navigation architecture", () => {
   });
 
   it("keeps quick actions contextual instead of turning them into modules", () => {
-    expect(today).toContain("Nueva alumna →");
-    expect(today).toContain("Registrar venta →");
-    expect(today).toContain("Crear reserva →");
-    expect(today).toContain("Crear clase →");
+    expect(today).toContain(">Nueva alumna<");
+    expect(today).toContain(">Registrar venta<");
+    expect(today).toContain(">Crear reserva<");
+    expect(today).toContain(">Crear clase<");
     expect(today).toContain('href="/admin/alumnas#alta-rapida"');
     expect(today).toContain('href="/admin/ventas/nueva"');
     expect(today).toContain('href="/admin/agenda#clases-programadas"');
