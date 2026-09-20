@@ -65,8 +65,17 @@ export default async function StudentRewardProgressPage({
   const numeric = singleNumericProgress(conditions);
   const evaluation = rewardObject(version.evaluation_definition);
   const copy = guidance(version.family, evaluation);
-  const frozen = cycle?.status === "frozen";
+  const rule = ctx.ruleMap.get(participation.rule_id) ?? null;
+  const deadlinePassed =
+    Boolean(cycle?.window_end_at) && Date.parse(cycle?.window_end_at ?? "") < Date.now();
   const fulfilled = participation.status === "fulfilled" || cycle?.status === "fulfilled";
+  const finalized =
+    !fulfilled &&
+    (participation.status === "closed" ||
+      ["finished", "cancelled"].includes(rule?.status ?? "") ||
+      ["closed_incomplete", "cancelled"].includes(cycle?.status ?? "") ||
+      deadlinePassed);
+  const frozen = !finalized && cycle?.status === "frozen";
 
   return (
     <main className="space-y-5 pb-4">
@@ -92,14 +101,26 @@ export default async function StudentRewardProgressPage({
             ? "rounded-3xl border border-emerald-500/20 bg-emerald-500/[0.06] p-5"
             : frozen
               ? "rounded-3xl border border-amber-500/20 bg-amber-500/[0.06] p-5"
-              : "rounded-3xl border border-fuchsia-500/20 bg-fuchsia-500/[0.06] p-5"
+              : finalized
+                ? "rounded-3xl border border-white/10 bg-white/[0.03] p-5"
+                : "rounded-3xl border border-fuchsia-500/20 bg-fuchsia-500/[0.06] p-5"
         }
       >
         <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-zinc-400">
-          {fulfilled ? "COMPLETADO" : frozen ? "PROGRESO EN PAUSA" : "TU PROGRESO"}
+          {fulfilled
+            ? "COMPLETADO"
+            : frozen
+              ? "PROGRESO EN PAUSA"
+              : finalized
+                ? "FINALIZADO"
+                : "TU PROGRESO"}
         </p>
         <h2 className="mt-2 text-xl font-semibold text-white">
-          {fulfilled ? "Meta completada" : exactMissingLabel(conditions)}
+          {fulfilled
+            ? "Meta completada"
+            : finalized
+              ? "Este reto ya terminó"
+              : exactMissingLabel(conditions)}
         </h2>
 
         {numeric ? (
@@ -163,7 +184,7 @@ export default async function StudentRewardProgressPage({
                       : "rounded-full bg-fuchsia-500/15 px-2.5 py-1 text-[10px] font-semibold text-fuchsia-200"
                   }
                 >
-                  {condition.completed ? "Completa" : "Pendiente"}
+                  {condition.completed ? "Completa" : finalized ? "No completada" : "Pendiente"}
                 </span>
               </article>
             ))
@@ -198,7 +219,9 @@ export default async function StudentRewardProgressPage({
           {rewardDefinitionLabel(version.reward_definition)}
         </h2>
         <p className="mt-2 text-sm text-zinc-400">
-          Se genera cuando Studio Flow confirma que cumpliste todas las condiciones aplicables.
+          {finalized && !fulfilled
+            ? "Este ciclo cerró sin completar la meta, por lo que no generó una recompensa."
+            : "Se genera cuando Studio Flow confirma que cumpliste todas las condiciones aplicables."}
         </p>
       </section>
 
@@ -214,7 +237,7 @@ export default async function StudentRewardProgressPage({
                 ? "Cumplido"
                 : frozen
                   ? "Pausado"
-                  : participation.status === "closed"
+                  : finalized
                     ? "Finalizado"
                     : "En progreso"}
             </strong>

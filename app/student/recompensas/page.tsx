@@ -7,6 +7,7 @@ import {
   familyLabel,
   getStudentRewardsContext,
   isNearComplete,
+  isStudentRewardProgressActive,
   rewardObject,
   singleNumericProgress,
 } from "@/lib/student/rewards";
@@ -25,18 +26,18 @@ export default async function StudentRewardsPage() {
       return leftExpiry - rightExpiry;
     });
 
-  const progressItems = ctx.participations
-    .filter((participation) => !["closed", "fulfilled"].includes(participation.status))
-    .map((participation) => {
+  const progressItems = ctx.participations.map((participation) => {
       const version = ctx.versionMap.get(
         `${participation.rule_id}:${participation.joined_version_number}`,
       );
       const cycle = ctx.latestCycleByParticipation.get(participation.id) ?? null;
       const snapshot = cycle ? (ctx.latestSnapshotByCycle.get(cycle.id) ?? null) : null;
+      const rule = ctx.ruleMap.get(participation.rule_id) ?? null;
       const presentation = rewardObject(version?.presentation_definition);
 
       return {
         participation,
+        rule,
         version,
         cycle,
         snapshot,
@@ -47,7 +48,12 @@ export default async function StudentRewardsPage() {
         conditions: version ? conditionProgress(version, snapshot) : [],
       };
     })
-    .filter((item) => item.version && item.visible);
+    .filter(
+      (item) =>
+        item.version &&
+        item.visible &&
+        isStudentRewardProgressActive(item.participation, item.rule, item.cycle),
+    );
 
   const nearComplete = progressItems.filter((item) => isNearComplete(item.conditions));
   const nearCompleteIds = new Set(nearComplete.map((item) => item.participation.id));

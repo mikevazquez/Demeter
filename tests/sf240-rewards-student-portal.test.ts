@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   exactMissingLabel,
+  isStudentRewardProgressActive,
   singleNumericProgress,
   type StudentConditionProgress,
 } from "../lib/student/reward-progress-ui";
@@ -63,6 +64,35 @@ describe("SF-240 student Rewards portal", () => {
 
     expect(singleNumericProgress(conditions)).toBeNull();
     expect(exactMissingLabel(conditions).toLowerCase()).toContain("asistencias");
+  });
+
+  it("does not present cancelled or expired reward progress as active", () => {
+    const participation = { status: "in_progress" };
+    const activeRule = { status: "active" };
+    const cancelledRule = { status: "cancelled" };
+    const openFutureCycle = { status: "open", window_end_at: "2026-09-27T06:00:00.000Z" };
+    const openExpiredCycle = { status: "open", window_end_at: "2026-09-19T23:59:59.999Z" };
+    const now = new Date("2026-09-20T06:30:00.000Z");
+
+    expect(
+      isStudentRewardProgressActive(participation, activeRule, openFutureCycle, now),
+    ).toBe(true);
+    expect(
+      isStudentRewardProgressActive(participation, cancelledRule, openFutureCycle, now),
+    ).toBe(false);
+    expect(
+      isStudentRewardProgressActive(participation, activeRule, openExpiredCycle, now),
+    ).toBe(false);
+  });
+
+  it("marks stale progress detail as finalized instead of in progress", () => {
+    const detail = read("app/student/recompensas/progreso/[participationId]/page.tsx");
+
+    expect(detail).toContain('"finished", "cancelled"');
+    expect(detail).toContain('"closed_incomplete", "cancelled"');
+    expect(detail).toContain("deadlinePassed");
+    expect(detail).toContain("Este reto ya terminó");
+    expect(detail).toContain("No completada");
   });
 
   it("keeps the achievements experience free of XP and rankings", () => {

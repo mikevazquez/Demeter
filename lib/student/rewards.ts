@@ -130,6 +130,24 @@ export function rewardStatusLabel(status: string) {
   return labels[status] ?? status;
 }
 
+export function isStudentRewardProgressActive(
+  participation: Pick<StudentRewardParticipation, "status">,
+  rule: Pick<StudentRewardRule, "status"> | null | undefined,
+  cycle: Pick<StudentRewardCycle, "status" | "window_end_at"> | null | undefined,
+  now = new Date(),
+) {
+  if (["closed", "fulfilled"].includes(participation.status)) return false;
+  if (!rule || !["active", "paused"].includes(rule.status)) return false;
+  if (cycle && !["open", "frozen"].includes(cycle.status)) return false;
+
+  if (cycle?.window_end_at) {
+    const deadline = Date.parse(cycle.window_end_at);
+    if (Number.isFinite(deadline) && deadline < now.getTime()) return false;
+  }
+
+  return true;
+}
+
 export function rewardStatusClass(status: string) {
   if (status === "available") return "border-emerald-500/25 bg-emerald-500/10 text-emerald-300";
   if (status === "reserved") return "border-amber-500/25 bg-amber-500/10 text-amber-300";
