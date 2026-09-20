@@ -14,8 +14,11 @@ const roleLabels: Record<string, string> = {
 };
 
 export default async function AdminLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  const { studio, membership, can } = await getAdminContext();
+  const { supabase, studio, membership, can } = await getAdminContext();
   const instructorOnly = can(CAPABILITIES.INSTRUCTOR_PORTAL) && !can(CAPABILITIES.ADMIN_PORTAL);
+  const brandLogoUrl = studio.logo_path
+    ? supabase.storage.from("studio-branding").getPublicUrl(studio.logo_path).data.publicUrl
+    : null;
 
   const desktopNavItems = instructorOnly
     ? [
@@ -46,13 +49,17 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
         ...(can(CAPABILITIES.REQUIRED_ACTIONS_READ)
           ? [{ href: "/admin/acciones", label: "Atención", enabled: true, secondary: true }]
           : []),
+        ...(membership.role === "owner"
+          ? [{ href: "/admin/configuracion", label: "Configuración", enabled: true, secondary: true }]
+          : []),
       ];
 
   const hasMoreDestinations =
     can(CAPABILITIES.PRODUCTS_READ) ||
     can(CAPABILITIES.INSTRUCTORS_READ) ||
     can(CAPABILITIES.AUTOMATIONS_READ) ||
-    can(CAPABILITIES.REQUIRED_ACTIONS_READ);
+    can(CAPABILITIES.REQUIRED_ACTIONS_READ) ||
+    membership.role === "owner";
 
   const mobileNavItems = instructorOnly
     ? desktopNavItems
@@ -75,6 +82,7 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
                   "/admin/instructores",
                   "/admin/automatizaciones",
                   "/admin/acciones",
+                  "/admin/configuracion",
                 ],
               },
             ]
@@ -85,10 +93,19 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
     <div className="admin-shell">
       <aside className="admin-sidebar" aria-label="Navegación principal">
         <div className="brand-lockup">
-          <span className="brand-mark">SF</span>
+          {brandLogoUrl ? (
+            <span
+              className="brand-mark brand-mark-logo"
+              role="img"
+              aria-label={`Logo de ${studio.name}`}
+              style={{ backgroundImage: `url("${brandLogoUrl}")` }}
+            />
+          ) : (
+            <span className="brand-mark">{studio.name.slice(0, 1).toUpperCase()}</span>
+          )}
           <div>
-            <strong>Studio Flow</strong>
-            <small>{studio.name}</small>
+            <strong>{studio.name}</strong>
+            <small>Panel del estudio</small>
           </div>
         </div>
 
