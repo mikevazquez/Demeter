@@ -126,11 +126,10 @@ function LockIcon() {
   );
 }
 
-function StudioFlowLogo() {
+function DemeterBrand() {
   return (
-    <div className="auth-brand" aria-label="Studio Flow">
-      <span>STUDIO</span>
-      <strong>FLOW</strong>
+    <div className="auth-brand" aria-label="Demeter">
+      <strong>DEMETER</strong>
     </div>
   );
 }
@@ -178,7 +177,7 @@ export function LoginCard({ mode, error }: LoginCardProps) {
           <Link className="auth-back-button" href="/" aria-label="Volver al inicio">
             ←
           </Link>
-          <StudioFlowLogo />
+          <DemeterBrand />
         </div>
 
         <div className="auth-login-intro">
