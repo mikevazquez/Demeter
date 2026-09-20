@@ -67,12 +67,12 @@ describe("SF-239 rewards admin UI", () => {
     expect(hardening).toContain("to authenticated");
   });
 
-  it("keeps incident resolution read-only until SF-243", () => {
-    const list = read("app/admin/recompensas/incidencias/page.tsx");
+  it("keeps incident resolution on the audited SF-243 action path", () => {
     const detail = read("app/admin/recompensas/incidencias/[incidentId]/page.tsx");
+    const actions = read("app/admin/recompensas/actions.ts");
 
-    expect(list).toContain("SF-243");
-    expect(detail).toContain("Resolución controlada por SF-243");
-    expect(detail).not.toContain("admin_resolve_reward_incident");
+    expect(detail).toContain("resolveRewardIncidentAction");
+    expect(actions).toContain("admin_resolve_reward_incident");
+    expect(detail).not.toContain("update public.reward_instances");
   });
 });
