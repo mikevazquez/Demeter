@@ -15,8 +15,7 @@ const roleLabels: Record<string, string> = {
 
 export default async function AdminLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const { studio, membership, can } = await getAdminContext();
-  const instructorOnly =
-    can(CAPABILITIES.INSTRUCTOR_PORTAL) && !can(CAPABILITIES.ADMIN_PORTAL);
+  const instructorOnly = can(CAPABILITIES.INSTRUCTOR_PORTAL) && !can(CAPABILITIES.ADMIN_PORTAL);
 
   const navItems = instructorOnly
     ? [
