@@ -14,6 +14,10 @@ const challenges = read("app/admin/recompensas/retos/page.tsx");
 const tracking = read("app/admin/recompensas/seguimiento/page.tsx");
 const studentProgress = read("app/admin/recompensas/seguimiento/[studentId]/page.tsx");
 const rewardDetail = read("app/admin/recompensas/generadas/[rewardId]/page.tsx");
+const programDetail = read("app/admin/recompensas/programas/[programId]/page.tsx");
+const programSavedNotice = read(
+  "app/admin/recompensas/programas/[programId]/ProgramSavedNotice.tsx",
+);
 const runtimeHardening = read(
   "supabase/migrations/20260920135932_sf253_rewards_admin_runtime_hardening.sql",
 );
@@ -58,6 +62,13 @@ describe("SF-253 Rewards admin control center", () => {
     expect(runtimeHardening).toContain("system_sync_reward_rule_schedules");
     expect(runtimeHardening).toContain("v_condition_family");
     expect(loyaltySupport).toContain("condition_family");
+  });
+
+  it("uses the approved dialog pattern for program success feedback", () => {
+    expect(programDetail).toContain("ProgramSavedNotice");
+    expect(programDetail).not.toContain("notice success");
+    expect(programSavedNotice).toContain("NoticeDialog");
+    expect(programSavedNotice).toContain("Cambio guardado correctamente");
   });
 
   it("keeps active copy edits outside structural versions", () => {
