@@ -14,11 +14,29 @@ const roleLabels: Record<string, string> = {
 };
 
 export default async function AdminLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  const { supabase, studio, membership, can } = await getAdminContext();
+  const { supabase, studio, membership, can, user } = await getAdminContext();
   const instructorOnly = can(CAPABILITIES.INSTRUCTOR_PORTAL) && !can(CAPABILITIES.ADMIN_PORTAL);
   const brandLogoUrl = studio.logo_path
     ? supabase.storage.from("studio-branding").getPublicUrl(studio.logo_path).data.publicUrl
     : null;
+
+  const [{ data: profile }, attentionResult] = await Promise.all([
+    supabase.from("profiles").select("full_name").eq("id", user.id).maybeSingle(),
+    can(CAPABILITIES.REQUIRED_ACTIONS_READ)
+      ? supabase
+          .from("required_actions")
+          .select("id", { count: "exact", head: true })
+          .eq("studio_id", studio.id)
+          .in("status", ["pending", "in_progress"])
+      : Promise.resolve({ count: 0 }),
+  ]);
+  const userName = profile?.full_name?.trim() || user.email?.split("@")[0] || "Usuario";
+  const userInitials = userName
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part.slice(0, 1).toUpperCase())
+    .join("");
+  const attentionCount = attentionResult.count ?? 0;
 
   const desktopNavItems = instructorOnly
     ? [
@@ -47,7 +65,15 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
           ? [{ href: "/admin/automatizaciones", label: "Automatizaciones", enabled: true }]
           : []),
         ...(can(CAPABILITIES.REQUIRED_ACTIONS_READ)
-          ? [{ href: "/admin/acciones", label: "Atención", enabled: true, secondary: true }]
+          ? [
+              {
+                href: "/admin/acciones",
+                label: "Atención",
+                enabled: true,
+                secondary: true,
+                badge: attentionCount,
+              },
+            ]
           : []),
         ...(membership.role === "owner"
           ? [
@@ -119,7 +145,13 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
         <AdminNavigation items={desktopNavItems} />
 
         <div className="sidebar-footer">
-          <span className="sidebar-caption">{roleLabels[membership.role] ?? "Equipo"}</span>
+          <div className="sidebar-user">
+            <span className="sidebar-avatar">{userInitials || "U"}</span>
+            <span className="sidebar-user-copy">
+              <strong>{userName}</strong>
+              <small>{roleLabels[membership.role] ?? "Equipo"}</small>
+            </span>
+          </div>
           <form action={signOut}>
             <button type="submit" className="sidebar-signout">
               Cerrar sesión
@@ -128,7 +160,52 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
         </div>
       </aside>
 
-      <div className="admin-content">{children}</div>
+      <div className="admin-content">
+        {!instructorOnly ? (
+          <>
+            <header className="admin-utility-bar">
+              <form action="/admin/alumnas" method="get" className="admin-global-search">
+                <span aria-hidden="true">⌕</span>
+                <input name="q" type="search" placeholder="Buscar alumna…" aria-label="Buscar alumna" />
+                <kbd>⌘K</kbd>
+              </form>
+              <div className="admin-utility-actions">
+                {can(CAPABILITIES.REQUIRED_ACTIONS_READ) ? (
+                  <a className="admin-icon-button" href="/admin/acciones" aria-label="Atención">
+                    <span aria-hidden="true">♧</span>
+                    {attentionCount ? <b>{attentionCount}</b> : null}
+                  </a>
+                ) : null}
+                <span className="admin-user-button" aria-label={userName}>
+                  {userInitials || "U"}
+                </span>
+              </div>
+            </header>
+            <header className="admin-mobile-header">
+              <div className="admin-mobile-brand">
+                {brandLogoUrl ? (
+                  <span
+                    className="brand-mark brand-mark-logo"
+                    role="img"
+                    aria-label={`Logo de ${studio.name}`}
+                    style={{ backgroundImage: `url("${brandLogoUrl}")` }}
+                  />
+                ) : (
+                  <span className="brand-mark">{studio.name.slice(0, 1).toUpperCase()}</span>
+                )}
+                <strong>{studio.name}</strong>
+              </div>
+              {can(CAPABILITIES.REQUIRED_ACTIONS_READ) ? (
+                <a className="admin-icon-button" href="/admin/acciones" aria-label="Atención">
+                  <span aria-hidden="true">♧</span>
+                  {attentionCount ? <b>{attentionCount}</b> : null}
+                </a>
+              ) : null}
+            </header>
+          </>
+        ) : null}
+        {children}
+      </div>
 
       <AdminMobileNavigation items={mobileNavItems} />
     </div>
