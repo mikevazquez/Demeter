@@ -1,12 +1,6 @@
 import Link from "next/link";
 
-export function ProgressBar({
-  percent,
-  label = "Progreso",
-}: {
-  percent: number;
-  label?: string;
-}) {
+export function ProgressBar({ percent, label = "Progreso" }: { percent: number; label?: string }) {
   const safePercent = Math.max(0, Math.min(100, percent));
 
   return (
