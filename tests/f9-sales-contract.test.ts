@@ -176,6 +176,7 @@ describe("F9 sales contracts", () => {
     const mobileSpacing = source("app/admin/mobile-nav-overrides.css");
     const list = source("app/admin/ventas/page.tsx");
     const wizard = source("app/admin/ventas/nueva/page.tsx");
+    const sharedSaleForm = source("app/admin/alumnas/[studentId]/alta/StudentOnboardingForm.tsx");
     const detail = source("app/admin/ventas/[saleId]/page.tsx");
     expect(layout).toContain('{ href: "/admin", label: "Hoy", enabled: true }');
     expect(layout).toContain('{ href: "/admin/alumnas", label: "Alumnas", enabled: true }');
@@ -191,7 +192,13 @@ describe("F9 sales contracts", () => {
     expect(more).not.toContain('title: "Ventas"');
     expect(list).toContain("Nueva venta");
     expect(list).toContain("Inscripción");
-    expect(wizard).toContain("Confirmar venta");
+    expect(wizard).toContain("StudentOnboardingForm");
+    expect(wizard).toContain('flowContext="sale"');
+    expect(sharedSaleForm).toContain("Confirmar venta");
+    expect(sharedSaleForm).toContain("Descuento o cortesía");
+    expect(sharedSaleForm).toContain("Inicio del paquete");
+    expect(sharedSaleForm).toContain("Monto recibido");
+    expect(sharedSaleForm).toContain("Saldo pendiente");
     expect(detail).toContain("Registrar pago");
     expect(detail).toContain("Registrar reembolso");
     expect(detail).toContain("Anular venta");
