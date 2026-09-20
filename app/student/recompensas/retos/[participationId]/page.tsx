@@ -21,11 +21,23 @@ function rewardLabel(value: unknown) {
   return rewardDefinitionLabel(value);
 }
 
+function currentTimeMs() {
+  return Date.now();
+}
+
 function daysRemaining(date: string | null) {
   if (!date) return null;
-  const distance = Date.parse(date) - Date.now();
+  const distance = Date.parse(date) - currentTimeMs();
   if (!Number.isFinite(distance)) return null;
   return Math.max(0, Math.ceil(distance / 86_400_000));
+}
+
+function isFutureDate(date: string | null) {
+  return Boolean(date && Date.parse(date) > currentTimeMs());
+}
+
+function isPastDate(date: string | null) {
+  return Boolean(date && Date.parse(date) < currentTimeMs());
 }
 
 export default async function StudentChallengeDetailPage({
@@ -60,8 +72,8 @@ export default async function StudentChallengeDetailPage({
 
   const startAt = rule.scheduled_start_at ?? cycle?.window_start_at ?? null;
   const endAt = rule.scheduled_end_at ?? cycle?.window_end_at ?? null;
-  const startsLater = startAt ? Date.parse(startAt) > Date.now() : false;
-  const endedByDate = endAt ? Date.parse(endAt) < Date.now() : false;
+  const startsLater = isFutureDate(startAt);
+  const endedByDate = isPastDate(endAt);
   const completed = participation.status === "fulfilled" || cycle?.status === "fulfilled";
   const periodFailed = cycle?.status === "closed_incomplete" && !completed;
   const finalized =
