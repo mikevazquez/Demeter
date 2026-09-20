@@ -1599,3 +1599,53 @@
     margin-bottom: 14px;
   }
 }
+
+
+/* SF-N02 · UAT 8.1 · compactar nivel/estado en la cabecera */
+.profile360-approved-meta {
+  display: grid;
+  justify-items: end;
+  align-content: start;
+  gap: 6px;
+  min-width: 96px;
+}
+
+.profile360-approved-meta .profile360-level-pill,
+.profile360-approved-meta .profile360-state-pill {
+  padding: 5px 8px;
+  font-size: 9px;
+  opacity: .86;
+  white-space: nowrap;
+}
+
+.profile360-approved-meta .profile360-edit-link {
+  min-height: 30px;
+  padding: 0 9px;
+  font-size: 10px;
+}
+
+@media (max-width: 640px) {
+  .profile360-approved-person {
+    grid-template-columns: auto minmax(0,1fr) auto;
+    gap: 10px;
+    align-items: start;
+  }
+
+  .profile360-approved-meta {
+    grid-column: auto;
+    min-width: 88px;
+  }
+
+  .profile360-edit-link {
+    grid-column: auto;
+  }
+
+  .profile360-approved-meta .profile360-level-pill,
+  .profile360-approved-meta .profile360-state-pill {
+    max-width: 112px;
+  }
+
+  .profile360-approved-title h1 {
+    font-size: clamp(24px, 6.5vw, 32px);
+  }
+}
