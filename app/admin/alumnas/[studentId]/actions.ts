@@ -122,13 +122,35 @@ async function getAcquisitionEditContext(studentId: string, acquisitionId: strin
 
   const { data: acquisition } = await ctx.supabase
     .from("product_acquisitions")
-    .select("id")
+    .select("id,status,refunded_at,starts_on,expires_on")
     .eq("id", acquisitionId)
     .eq("student_id", studentId)
     .eq("studio_id", ctx.studio.id)
     .maybeSingle();
 
   if (!acquisition) redirect(`/admin/alumnas/${studentId}?error=acquisition_not_found`);
+
+  const timeZone = ctx.studio.timezone ?? "America/Mexico_City";
+  const dateParts = Object.fromEntries(
+    new Intl.DateTimeFormat("en-US", {
+      timeZone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    })
+      .formatToParts(new Date())
+      .map((part) => [part.type, part.value]),
+  );
+  const today = `${dateParts.year}-${dateParts.month}-${dateParts.day}`;
+  const isCurrent =
+    acquisition.status === "active" &&
+    !acquisition.refunded_at &&
+    (!acquisition.starts_on || acquisition.starts_on <= today) &&
+    (!acquisition.expires_on || acquisition.expires_on >= today);
+
+  if (!isCurrent) {
+    redirect(`/admin/alumnas/${studentId}?error=acquisition_not_editable`);
+  }
   return ctx;
 }
 
