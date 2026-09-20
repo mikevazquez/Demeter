@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
+import { formatRewardMoneyMinor, summarizeRewardMetrics } from "@/lib/rewards/metrics";
 
 import { duplicateRewardRuleAction, transitionRewardRuleAction } from "../../actions";
 import {
@@ -68,7 +69,7 @@ export default async function RewardRuleDetailPage({
       .eq("rule_id", rule.id),
     ctx.supabase
       .from("reward_instances")
-      .select("id,status,kind,benefit_definition,redeemed_at")
+      .select("id,status,kind,benefit_definition,redemption_context,redeemed_at")
       .eq("rule_id", rule.id),
     ctx.supabase
       .from("reward_incidents")
@@ -95,6 +96,7 @@ export default async function RewardRuleDetailPage({
   for (const reward of rewards) {
     rewardStates.set(reward.status, (rewardStates.get(reward.status) ?? 0) + 1);
   }
+  const rewardMetrics = summarizeRewardMetrics(rewards);
 
   const audience = asObject(version.audience_definition);
   const evaluation = asObject(version.evaluation_definition);
@@ -165,6 +167,26 @@ export default async function RewardRuleDetailPage({
         <MetricCard
           label="Incidencias"
           value={incidents.filter((item) => item.status !== "closed").length}
+        />
+      </section>
+
+      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+        <MetricCard label="Vencidas" value={rewardMetrics.expired} />
+        <MetricCard label="Revocadas" value={rewardMetrics.revoked} />
+        <MetricCard
+          label="Valor potencial"
+          value={formatRewardMoneyMinor(rewardMetrics.potentialValueMinor)}
+          detail="solo beneficios con valor fijo conocido"
+        />
+        <MetricCard
+          label="Valor utilizado"
+          value={formatRewardMoneyMinor(rewardMetrics.realizedValueMinor)}
+          detail="no cuenta desbloqueos sin uso"
+        />
+        <MetricCard
+          label="Créditos"
+          value={rewardMetrics.creditsGranted}
+          detail={`${rewardMetrics.creditsUsed} utilizados`}
         />
       </section>
 
