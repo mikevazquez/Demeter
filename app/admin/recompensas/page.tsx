@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
+import { formatRewardMoneyMinor, summarizeRewardMetrics } from "@/lib/rewards/metrics";
 
 import {
   EmptyState,
@@ -37,7 +38,9 @@ export default async function RewardsHomePage() {
       .in("status", ["eligible", "in_progress", "fulfilled"]),
     ctx.supabase
       .from("reward_instances")
-      .select("id,status,kind,expires_at,benefit_definition,student_id,created_at")
+      .select(
+        "id,rule_id,status,kind,expires_at,benefit_definition,redemption_context,student_id,created_at",
+      )
       .eq("studio_id", ctx.studio.id)
       .order("created_at", { ascending: false })
       .limit(200),
@@ -89,6 +92,7 @@ export default async function RewardsHomePage() {
   const availableRewards = (rewardsResult.data ?? []).filter(
     (reward) => reward.status === "available",
   );
+  const rewardMetrics = summarizeRewardMetrics(rewardsResult.data ?? []);
   const openIncidents = incidentsResult.data ?? [];
   const expiringRewards = availableRewards
     .filter((reward) => reward.expires_at)
@@ -167,6 +171,34 @@ export default async function RewardsHomePage() {
               : "sin bloqueos operativos"
           }
         />
+      </section>
+
+      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+        <MetricCard
+          label="Otorgadas"
+          value={rewardMetrics.granted}
+          detail={`${rewardMetrics.redeemed} utilizadas · ${rewardMetrics.expired} vencidas`}
+        />
+        <MetricCard
+          label="Valor potencial"
+          value={formatRewardMoneyMinor(rewardMetrics.potentialValueMinor)}
+          detail={
+            rewardMetrics.unvaluedPotentialCount
+              ? `${rewardMetrics.unvaluedPotentialCount} beneficio(s) sin valor fijo no estimados`
+              : "valor fijo conocido"
+          }
+        />
+        <MetricCard
+          label="Valor utilizado"
+          value={formatRewardMoneyMinor(rewardMetrics.realizedValueMinor)}
+          detail="solo ahorro real registrado al utilizar"
+        />
+        <MetricCard
+          label="Créditos otorgados"
+          value={rewardMetrics.creditsGranted}
+          detail={`${rewardMetrics.creditsUsed} utilizados`}
+        />
+        <MetricCard label="Revocadas" value={rewardMetrics.revoked} detail="ajustes auditados" />
       </section>
 
       {openIncidents.length ? (
