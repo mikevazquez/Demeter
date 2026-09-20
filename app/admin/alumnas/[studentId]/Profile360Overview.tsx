@@ -4,6 +4,7 @@ import Link from "next/link";
 type Alert = { title: string; detail: string };
 
 type Props = {
+  activeView: "summary" | "packages" | "rewards" | "followup" | "profile";
   student: {
     id: string;
     userId: string | null;
@@ -32,8 +33,6 @@ type Props = {
     expiresOn: string | null;
   } | null;
   alerts: Alert[];
-  canBook: boolean;
-  canSell: boolean;
   timeZone: string;
 };
 
@@ -58,7 +57,6 @@ function formatDate(value: string | null) {
 function formatDateTime(value: string, timeZone: string) {
   return new Intl.DateTimeFormat("es-MX", {
     timeZone,
-    weekday: "short",
     day: "numeric",
     month: "short",
     hour: "2-digit",
@@ -67,7 +65,7 @@ function formatDateTime(value: string, timeZone: string) {
 }
 
 function formatMoney(minor: number | null) {
-  if (minor === null) return "Sin acceso";
+  if (minor === null) return "—";
   return new Intl.NumberFormat("es-MX", {
     style: "currency",
     currency: "MXN",
@@ -76,6 +74,7 @@ function formatMoney(minor: number | null) {
 }
 
 export default function Profile360Overview({
+  activeView,
   student,
   birthDate,
   levelTitle,
@@ -85,199 +84,201 @@ export default function Profile360Overview({
   historicalValueMinor,
   enrollment,
   alerts,
-  canBook,
-  canSell,
   timeZone,
 }: Props) {
-  const whatsappNumber = student.phone.replace(/\D/g, "");
+  const href = (view: string) => "/admin/alumnas/" + student.id + "?view=" + view;
+  const usedCredits =
+    currentPackage && !currentPackage.unlimited && currentPackage.creditLimit !== null
+      ? Math.max(0, currentPackage.creditLimit - (currentPackage.availableCredits ?? 0))
+      : null;
+  const progress =
+    currentPackage &&
+    !currentPackage.unlimited &&
+    currentPackage.creditLimit &&
+    currentPackage.creditLimit > 0 &&
+    usedCredits !== null
+      ? Math.min(100, Math.max(0, Math.round((usedCredits / currentPackage.creditLimit) * 100)))
+      : 0;
 
   return (
     <>
-      <section id="resumen" className="profile360-hero">
-        <Link className="profile360-back" href="/admin/alumnas">
-          ← Alumnas
-        </Link>
+      <section className="profile360-approved-header">
+        <Link className="profile360-back" href="/admin/alumnas">← Alumnas</Link>
 
-        <div className="profile360-person">
+        <div className="profile360-approved-person">
           <span className="profile360-avatar" aria-hidden="true">
             {initials(student.fullName)}
             {student.userId ? (
               <Image
                 src={"/admin/alumnas/" + student.id + "/avatar"}
                 alt=""
-                width={78}
-                height={78}
+                width={82}
+                height={82}
                 unoptimized
               />
             ) : null}
           </span>
 
-          <div className="profile360-person-copy">
-            <div className="profile360-badges">
-              <span
-                className={
-                  "profile360-state-pill is-" +
-                  (student.lifecycleStatus === "inactive" ? "inactive" : "active")
-                }
-              >
-                {student.lifecycleStatus === "inactive" ? "Inactiva" : "Activa"}
-              </span>
+          <div className="profile360-approved-copy">
+            <div className="profile360-approved-title">
+              <h1>{student.fullName}</h1>
               <span className="profile360-level-pill">
                 {levelTitle ? "Nivel " + levelTitle : "Sin nivel general"}
               </span>
             </div>
 
-            <h1>{student.fullName}</h1>
-
-            <div className="profile360-contact-primary">
-              <a href={"tel:" + student.phone}>{student.phone}</a>
-              {student.email ? <span>{student.email}</span> : null}
-            </div>
-
-            <div className="profile360-inline-actions">
-              <a
-                href={whatsappNumber ? "https://wa.me/" + whatsappNumber : "#"}
-                target={whatsappNumber ? "_blank" : undefined}
-                rel={whatsappNumber ? "noreferrer" : undefined}
-              >
-                WhatsApp
-              </a>
-              <a href="#datos-personales">Editar datos</a>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="profile360-current-card" aria-label="Estado actual">
-        <div className="profile360-current-heading">
-          <div>
-            <p className="eyebrow">PAQUETE ACTUAL</p>
-            <h2>{currentPackage ? currentPackage.name : "Sin paquete activo"}</h2>
-          </div>
-          {currentPackage ? <span className="status-pill">Activo</span> : null}
-        </div>
-
-        {currentPackage ? (
-          <>
-            <div className="profile360-current-facts">
-              <div>
-                <strong>
-                  {currentPackage.unlimited
-                    ? "Ilimitado"
-                    : String(currentPackage.availableCredits ?? 0) + " créditos"}
-                </strong>
-                <span>disponibles</span>
-              </div>
-              <div>
-                <strong>
-                  {currentPackage.expiresOn ? formatDate(currentPackage.expiresOn) : "Sin fecha"}
-                </strong>
-                <span>vencimiento</span>
-              </div>
-            </div>
-
-            <div className="profile360-next-compact">
-              <span>Próxima clase</span>
-              {nextClass ? (
-                <strong>
-                  {nextClass.name} · {formatDateTime(nextClass.startsAt, timeZone)}
-                </strong>
-              ) : (
-                <strong>Sin próxima clase</strong>
-              )}
-            </div>
-          </>
-        ) : (
-          <p className="profile360-current-empty">
-            No hay un paquete vigente para esta alumna.
-          </p>
-        )}
-
-        {student.lifecycleStatus === "active" && (canBook || canSell) ? (
-          <div className="profile360-context-actions">
-            {canBook ? (
-              <Link
-                className="profile360-context-primary"
-                href={"/admin/alumnas/" + student.id + "/reservar"}
-              >
-                Reservar clase
-              </Link>
-            ) : null}
-            {canSell ? (
-              <Link
-                className="profile360-context-secondary"
-                href={"/admin/ventas/nueva?student_id=" + student.id}
-              >
-                Renovar paquete
-              </Link>
-            ) : null}
-          </div>
-        ) : null}
-      </section>
-
-      {alerts.length ? (
-        <details id="seguimiento" className="profile360-attention">
-          <summary>
-            <span>
-              <strong>Necesita atención</strong>
-              <small>
-                {alerts[0]?.title}
-                {alerts.length > 1 ? " · +" + String(alerts.length - 1) + " más" : ""}
-              </small>
+            <span
+              className={
+                "profile360-state-pill is-" +
+                (student.lifecycleStatus === "inactive" ? "inactive" : "active")
+              }
+            >
+              {student.lifecycleStatus === "inactive" ? "Alumna inactiva" : "Alumna activa"}
             </span>
-            <span aria-hidden="true">›</span>
-          </summary>
-          <div className="profile360-attention-body">
-            {alerts.map((alert) => (
-              <div className="profile360-alert" key={alert.title + ":" + alert.detail}>
-                <strong>{alert.title}</strong>
-                <span>{alert.detail}</span>
-              </div>
-            ))}
-          </div>
-        </details>
-      ) : null}
 
-      <details className="profile360-summary-detail">
-        <summary>
-          <span>
-            <strong>Información general</strong>
-            <small>Nacimiento, inscripción, valor y Rewards</small>
-          </span>
-          <span aria-hidden="true">›</span>
-        </summary>
+            <div className="profile360-approved-contact">
+              <span>{student.phone}</span>
+              {student.email ? <span>{student.email}</span> : null}
+              <span>
+                {birthDate ? formatDate(birthDate) + " · " : ""}
+                En el estudio desde{" "}
+                {new Intl.DateTimeFormat("es-MX", {
+                  month: "short",
+                  year: "numeric",
+                }).format(new Date(student.createdAt))}
+              </span>
+            </div>
+          </div>
 
-        <div className="profile360-mini-summary">
-          <div>
-            <span>Nacimiento</span>
-            <strong>{formatDate(birthDate)}</strong>
-          </div>
-          <div>
-            <span>Inscripción</span>
-            <strong>
-              {enrollment?.status === "active"
-                ? enrollment.expiresOn
-                  ? "Vigente"
-                  : "Vitalicia"
-                : enrollment
-                  ? "No vigente"
-                  : "Sin registro"}
-            </strong>
-          </div>
-          <div>
-            <span>Valor histórico</span>
-            <strong>{formatMoney(historicalValueMinor)}</strong>
-          </div>
-          <div>
-            <span>Rewards</span>
-            <strong>
-              {rewardsAvailable === null
-                ? "Sin acceso"
-                : String(rewardsAvailable) + " disponibles"}
-            </strong>
-          </div>
+          <Link className="profile360-edit-link" href={href("profile")}>
+            Editar
+          </Link>
         </div>
-      </details>
+      </section>
+
+      <nav className="profile360-approved-tabs" aria-label="Perfil 360">
+        <Link className={activeView === "summary" ? "is-active" : ""} href={href("summary")}>
+          Resumen
+        </Link>
+        <Link className={activeView === "packages" ? "is-active" : ""} href={href("packages")}>
+          Paquetes
+        </Link>
+        <Link className={activeView === "rewards" ? "is-active" : ""} href={href("rewards")}>
+          Rewards
+        </Link>
+        <Link className={activeView === "followup" ? "is-active" : ""} href={href("followup")}>
+          Seguimiento
+        </Link>
+      </nav>
+
+      {activeView === "summary" ? (
+        <div className="profile360-approved-summary">
+          <section className="profile360-approved-package">
+            <div className="profile360-approved-card-heading">
+              <div>
+                <p className="eyebrow">PAQUETE ACTUAL</p>
+                <h2>{currentPackage ? currentPackage.name : "Sin paquete activo"}</h2>
+              </div>
+              {currentPackage ? <span className="status-pill">Activo</span> : null}
+            </div>
+
+            {currentPackage ? (
+              <>
+                <div className="profile360-approved-package-row">
+                  <div className="profile360-approved-package-balance">
+                    <strong>
+                      {currentPackage.unlimited
+                        ? "Ilimitado"
+                        : String(currentPackage.availableCredits ?? 0) +
+                          " de " +
+                          String(currentPackage.creditLimit ?? 0)}
+                    </strong>
+                    <span>{currentPackage.unlimited ? "acceso" : "créditos disponibles"}</span>
+                  </div>
+                  <div className="profile360-approved-package-expiry">
+                    <strong>
+                      {currentPackage.expiresOn ? formatDate(currentPackage.expiresOn) : "Sin fecha"}
+                    </strong>
+                    <span>vence</span>
+                  </div>
+                </div>
+
+                {!currentPackage.unlimited && currentPackage.creditLimit ? (
+                  <div className="profile360-approved-progress" aria-hidden="true">
+                    <span style={{ width: String(progress) + "%" }} />
+                  </div>
+                ) : null}
+
+                <div className="profile360-approved-next">
+                  <span>Próxima clase</span>
+                  <strong>
+                    {nextClass
+                      ? nextClass.name + " · " + formatDateTime(nextClass.startsAt, timeZone)
+                      : "Sin próxima clase"}
+                  </strong>
+                </div>
+              </>
+            ) : (
+              <p className="profile360-approved-empty">
+                Esta alumna no tiene un paquete vigente.
+              </p>
+            )}
+          </section>
+
+          <section className="profile360-approved-indicators" aria-label="Indicadores rápidos">
+            <article>
+              <span>Valor histórico</span>
+              <strong>{formatMoney(historicalValueMinor)}</strong>
+            </article>
+            <article>
+              <span>Recompensas</span>
+              <strong>{rewardsAvailable === null ? "—" : rewardsAvailable}</strong>
+            </article>
+            <article>
+              <span>Inscripción</span>
+              <strong>
+                {enrollment?.status === "active"
+                  ? enrollment.expiresOn
+                    ? "Vigente"
+                    : "Vitalicia"
+                  : enrollment
+                    ? "No vigente"
+                    : "Sin registro"}
+              </strong>
+            </article>
+            <article>
+              <span>Antigüedad</span>
+              <strong>
+                {new Intl.DateTimeFormat("es-MX", {
+                  month: "short",
+                  year: "numeric",
+                }).format(new Date(student.createdAt))}
+              </strong>
+            </article>
+          </section>
+
+          {alerts.length ? (
+            <section className="profile360-approved-alerts">
+              <div className="profile360-approved-card-heading">
+                <div>
+                  <p className="eyebrow">SEGUIMIENTO Y ALERTAS</p>
+                  <h2>Requiere atención</h2>
+                </div>
+                <span className="count-badge">{alerts.length}</span>
+              </div>
+              <div className="profile360-approved-alert-list">
+                {alerts.slice(0, 3).map((alert) => (
+                  <div key={alert.title + alert.detail}>
+                    <strong>{alert.title}</strong>
+                    <span>{alert.detail}</span>
+                  </div>
+                ))}
+              </div>
+              <Link href={href("followup")}>Ver seguimiento →</Link>
+            </section>
+          ) : null}
+        </div>
+      ) : null}
     </>
   );
 }
