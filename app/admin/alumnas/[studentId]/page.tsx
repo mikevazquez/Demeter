@@ -299,7 +299,6 @@ export default async function StudentProfilePage({
         </div>
       ) : null}
 
-
       {query.alta === "finalizada" || query.alta === "sin_paquete" ? (
         <div className="notice success">
           {query.alta === "finalizada"
