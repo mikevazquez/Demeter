@@ -758,7 +758,7 @@ export default async function StudentProfilePage({
       ) : null}
 
       {canReadProducts ? (
-        <section className="panel">
+        <section id="paquetes-y-creditos" className="panel scroll-mt-6">
           <div className="panel-heading">
             <div>
               <p className="eyebrow">PAQUETES Y CRÉDITOS</p>
