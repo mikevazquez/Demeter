@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { signOut } from "@/app/auth/actions";
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
