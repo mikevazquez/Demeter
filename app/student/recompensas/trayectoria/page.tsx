@@ -42,6 +42,10 @@ function capitalize(value: string) {
   return value.charAt(0).toUpperCase() + value.slice(1);
 }
 
+function isPastDate(value: string) {
+  return Date.parse(value) < Date.now();
+}
+
 export default async function StudentJourneyPage({
   searchParams,
 }: {
@@ -136,7 +140,7 @@ export default async function StudentJourneyPage({
       endedAt &&
       (participation.status === "closed" ||
         ["finished", "cancelled"].includes(rule?.status ?? "") ||
-        Date.parse(endedAt) < Date.now())
+        isPastDate(endedAt))
     ) {
       events.push({
         id: `challenge-ended-${participation.id}`,
