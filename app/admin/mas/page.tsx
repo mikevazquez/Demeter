@@ -57,20 +57,24 @@ export default async function MorePage() {
             <Link
               key={item.href}
               href={item.href}
-              className="group rounded-2xl border border-white/10 bg-white/[0.03] p-5 text-decoration-none transition hover:border-fuchsia-500/40 hover:bg-white/[0.05]"
+              className="group rounded-2xl border border-white/10 bg-white/[0.03] p-5 transition hover:border-fuchsia-500/40 hover:bg-white/[0.05]"
             >
               <div className="flex items-center justify-between gap-4">
                 <div>
                   <h2 className="text-lg font-semibold text-white">{item.title}</h2>
                   <p className="mt-2 text-sm leading-6 text-zinc-400">{item.description}</p>
                 </div>
-                <span className="text-xl text-fuchsia-300 transition group-hover:translate-x-1">→</span>
+                <span className="text-xl text-fuchsia-300 transition group-hover:translate-x-1">
+                  →
+                </span>
               </div>
             </Link>
           ))}
         </section>
       ) : (
-        <section className="empty-state">No tienes herramientas adicionales disponibles.</section>
+        <section className="empty-state">
+          No tienes herramientas adicionales disponibles.
+        </section>
       )}
     </main>
   );
