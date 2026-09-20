@@ -56,7 +56,6 @@ describe("ADMIN-UX-02 navigation architecture", () => {
     expect(company).not.toContain("Agenda y actividades");
   });
 
-
   it("removes internal automation codes from the top-level user interface", () => {
     expect(automations).not.toContain("Control AUT-05");
     expect(automations).not.toContain("SF-166");
