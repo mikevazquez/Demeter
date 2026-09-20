@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { signOut } from "@/app/auth/actions";
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
@@ -176,10 +177,10 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
               </form>
               <div className="admin-utility-actions">
                 {can(CAPABILITIES.REQUIRED_ACTIONS_READ) ? (
-                  <a className="admin-icon-button" href="/admin/acciones" aria-label="Atención">
+                  <Link className="admin-icon-button" href="/admin/acciones" aria-label="Atención">
                     <span aria-hidden="true">♧</span>
                     {attentionCount ? <b>{attentionCount}</b> : null}
-                  </a>
+                  </Link>
                 ) : null}
                 <span className="admin-user-button" aria-label={userName}>
                   {userInitials || "U"}
@@ -201,10 +202,10 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
                 <strong>{studio.name}</strong>
               </div>
               {can(CAPABILITIES.REQUIRED_ACTIONS_READ) ? (
-                <a className="admin-icon-button" href="/admin/acciones" aria-label="Atención">
+                <Link className="admin-icon-button" href="/admin/acciones" aria-label="Atención">
                   <span aria-hidden="true">♧</span>
                   {attentionCount ? <b>{attentionCount}</b> : null}
-                </a>
+                </Link>
               ) : null}
             </header>
           </>
