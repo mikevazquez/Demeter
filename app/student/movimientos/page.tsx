@@ -50,12 +50,7 @@ function movementVisual(type: string, quantity: number) {
 
   return {
     ...base,
-    accent:
-      quantity > 0
-        ? "text-emerald-300"
-        : quantity < 0
-          ? "text-rose-300"
-          : "text-zinc-300",
+    accent: quantity > 0 ? "text-emerald-300" : quantity < 0 ? "text-rose-300" : "text-zinc-300",
   };
 }
 
