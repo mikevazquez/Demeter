@@ -80,7 +80,6 @@ describe("SF-164 automation instances", () => {
     ).toThrow("automation_configuration_key_not_allowed:protected_priority");
   });
 
-
   it("creates a new immutable version when configuration changes", async () => {
     const client = new FakeAutomationInstanceRpcClient();
 
