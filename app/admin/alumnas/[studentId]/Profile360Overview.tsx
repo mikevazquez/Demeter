@@ -4,7 +4,7 @@ import Link from "next/link";
 type Alert = { title: string; detail: string };
 
 type Props = {
-  activeView: "summary" | "packages" | "rewards" | "followup" | "profile";
+  activeView: "summary" | "packages" | "rewards" | "followup" | "history" | "profile";
   student: {
     id: string;
     userId: string | null;
@@ -168,6 +168,9 @@ export default function Profile360Overview({
         </Link>
         <Link className={activeView === "followup" ? "is-active" : ""} href={href("followup")}>
           Seguimiento
+        </Link>
+        <Link className={activeView === "history" ? "is-active" : ""} href={href("history")}>
+          Historial
         </Link>
       </nav>
 
