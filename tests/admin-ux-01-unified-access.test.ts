@@ -80,7 +80,7 @@ describe("ADMIN-UX-01 unified Studio access", () => {
 
   it("does not expose admin entity navigation to instructor-only access", () => {
     const instructorNav =
-      adminLayout.split("const navItems = instructorOnly")[1]?.split(": [")[0] ?? "";
+      adminLayout.split("const desktopNavItems = instructorOnly")[1]?.split(": [")[0] ?? "";
     expect(instructorNav).toContain('label: "Mis clases"');
     expect(instructorNav).not.toContain('label: "Alumnas"');
     expect(instructorNav).not.toContain('label: "Empresa"');
