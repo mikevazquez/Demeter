@@ -2,6 +2,7 @@ import Link from "next/link";
 import PendingActionButton from "@/app/admin/components/PendingActionButton";
 import StudentLifecycleActions from "./StudentLifecycleActions";
 import StudentLifecycleNoticeDialog from "./StudentLifecycleNoticeDialog";
+import Profile360Overview from "./Profile360Overview";
 import { notFound } from "next/navigation";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getAdminContext } from "@/lib/auth/admin-context";
@@ -84,6 +85,19 @@ function formatDateTime(value: string) {
   }).format(new Date(value));
 }
 
+function localDateKey(timeZone: string) {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(new Date());
+  const year = parts.find((part) => part.type === "year")?.value ?? "0000";
+  const month = parts.find((part) => part.type === "month")?.value ?? "00";
+  const day = parts.find((part) => part.type === "day")?.value ?? "00";
+  return year + "-" + month + "-" + day;
+}
+
 export default async function StudentProfilePage({
   params,
   searchParams,
@@ -105,7 +119,7 @@ export default async function StudentProfilePage({
   const { data: student } = await supabase
     .from("students")
     .select(
-      "id, person_id, full_name, email, phone, lifecycle_status, profile_status, created_at, archived_at",
+      "id, person_id, user_id, full_name, email, phone, lifecycle_status, profile_status, created_at, archived_at",
     )
     .eq("id", studentId)
     .eq("studio_id", studio.id)
@@ -157,7 +171,7 @@ export default async function StudentProfilePage({
       ? supabase
           .from("product_acquisitions")
           .select(
-            "id,product_template_id,status,starts_on,expires_on,unlimited,credit_limit,refunded_at,created_at,activation_mode,access_blocked,validity_days_snapshot",
+            "id,product_template_id,status,starts_on,expires_on,unlimited,credit_limit,refunded_at,created_at,activation_mode,access_blocked,validity_days_snapshot,sale_line_id",
           )
           .eq("student_id", student.id)
           .eq("studio_id", studio.id)
@@ -227,6 +241,10 @@ export default async function StudentProfilePage({
   const communicationPreferenceEvents = communicationPreferenceEventsResult.data ?? [];
   const canEdit = can(CAPABILITIES.STUDENTS_WRITE);
   const canSell = can(CAPABILITIES.SALES_WRITE);
+  const canBook = can(CAPABILITIES.SCHEDULE_WRITE);
+  const canReadSchedule = can(CAPABILITIES.SCHEDULE_READ);
+  const canReadSales = can(CAPABILITIES.SALES_READ);
+  const canReadRewards = can(CAPABILITIES.REWARDS_READ);
   const canArchive = can(CAPABILITIES.STUDENTS_ARCHIVE);
   const lifecycleEventsResult = canArchive
     ? await supabase
@@ -238,13 +256,213 @@ export default async function StudentProfilePage({
         .limit(12)
     : { data: [] };
   const lifecycleEvents = lifecycleEventsResult.data ?? [];
-  const currentAcquisition = acquisitions.find(
+  const timeZone = studio.timezone ?? "America/Mexico_City";
+  const today = localDateKey(timeZone);
+  const liveAcquisitions = acquisitions.filter(
     (item) => item.status === "active" && !item.refunded_at,
   );
+  const currentAcquisition =
+    liveAcquisitions
+      .filter(
+        (item) =>
+          (!item.starts_on || item.starts_on <= today) &&
+          (!item.expires_on || item.expires_on >= today),
+      )
+      .sort((a, b) =>
+        String(b.starts_on ?? b.created_at).localeCompare(String(a.starts_on ?? a.created_at)),
+      )[0] ?? null;
+  const scheduledAcquisition =
+    liveAcquisitions
+      .filter((item) => Boolean(item.starts_on && item.starts_on > today))
+      .sort((a, b) => String(a.starts_on).localeCompare(String(b.starts_on)))[0] ?? null;
+
   const dynamicDefinitions = (definitions ?? []).filter(
     (definition) => !structuralFieldKeys.has(definition.key),
   );
   const valueMap = new Map((fieldValues ?? []).map((item) => [item.definition_id, item.value]));
+  const birthDateDefinition = (definitions ?? []).find((definition) => definition.key === "birth_date");
+  const birthDateValue = birthDateDefinition ? valueMap.get(birthDateDefinition.id) : null;
+  const birthDate = typeof birthDateValue === "string" ? birthDateValue : null;
+
+  let nextClass: { name: string; startsAt: string } | null = null;
+  if (canReadSchedule) {
+    let reservationQuery = supabase
+      .from("reservations")
+      .select("id,session_id,acquisition_id,status")
+      .eq("studio_id", studio.id)
+      .eq("student_id", student.id)
+      .eq("status", "reserved");
+    if (currentAcquisition) {
+      reservationQuery = reservationQuery.eq("acquisition_id", currentAcquisition.id);
+    }
+    const { data: futureReservations } = await reservationQuery;
+    const sessionIds = [...new Set((futureReservations ?? []).map((item) => item.session_id))];
+    if (sessionIds.length) {
+      const { data: futureSessions } = await supabase
+        .from("class_sessions")
+        .select("id,template_id,starts_at")
+        .eq("studio_id", studio.id)
+        .in("id", sessionIds)
+        .gt("starts_at", new Date().toISOString())
+        .order("starts_at")
+        .limit(1);
+      const firstSession = futureSessions?.[0];
+      if (firstSession) {
+        const { data: template } = await supabase
+          .from("class_templates")
+          .select("name")
+          .eq("id", firstSession.template_id)
+          .eq("studio_id", studio.id)
+          .maybeSingle();
+        nextClass = {
+          name: template?.name ?? "Clase",
+          startsAt: firstSession.starts_at,
+        };
+      }
+    }
+  }
+
+  let historicalValueMinor: number | null = null;
+  let pendingBalanceMinor = 0;
+  if (canReadSales) {
+    const { data: confirmedSales } = await supabase
+      .from("sales")
+      .select("id,total_minor,status")
+      .eq("studio_id", studio.id)
+      .eq("student_id", student.id)
+      .eq("status", "confirmed");
+    const saleIds = (confirmedSales ?? []).map((sale) => sale.id);
+    const { data: payments } = saleIds.length
+      ? await supabase
+          .from("payments")
+          .select("sale_id,kind,amount_minor")
+          .eq("studio_id", studio.id)
+          .in("sale_id", saleIds)
+      : { data: [] };
+    const paidBySale = new Map<string, number>();
+    for (const payment of payments ?? []) {
+      const signedAmount = payment.kind === "refund" ? -payment.amount_minor : payment.amount_minor;
+      paidBySale.set(payment.sale_id, (paidBySale.get(payment.sale_id) ?? 0) + signedAmount);
+    }
+    historicalValueMinor = [...paidBySale.values()].reduce((sum, amount) => sum + amount, 0);
+    pendingBalanceMinor = (confirmedSales ?? []).reduce(
+      (sum, sale) => sum + Math.max(0, sale.total_minor - (paidBySale.get(sale.id) ?? 0)),
+      0,
+    );
+  }
+
+  const { data: enrollmentRows } = await supabase
+    .from("student_enrollments")
+    .select("id,status,starts_on,expires_on,created_at")
+    .eq("studio_id", studio.id)
+    .eq("student_id", student.id)
+    .order("created_at", { ascending: false });
+  const enrollment =
+    (enrollmentRows ?? []).find(
+      (item) =>
+        item.status === "active" &&
+        (!item.starts_on || item.starts_on <= today) &&
+        (!item.expires_on || item.expires_on >= today),
+    ) ??
+    (enrollmentRows ?? [])[0] ??
+    null;
+
+  let levelTitle: string | null = null;
+  let rewardsAvailable: number | null = null;
+  if (canReadRewards) {
+    const { data: activePrograms } = await supabase
+      .from("reward_programs")
+      .select("id,published_version_number")
+      .eq("studio_id", studio.id)
+      .eq("status", "active");
+    const activeProgramIds = (activePrograms ?? []).map((program) => program.id);
+    const { data: participations } = activeProgramIds.length
+      ? await supabase
+          .from("reward_program_participations")
+          .select("id,program_id,program_version_number,current_level_order,status,joined_at")
+          .eq("studio_id", studio.id)
+          .eq("student_id", student.id)
+          .eq("status", "active")
+          .in("program_id", activeProgramIds)
+          .order("joined_at", { ascending: false })
+      : { data: [] };
+    const profileParticipation = participations?.length === 1 ? participations[0] : null;
+    if (profileParticipation?.current_level_order) {
+      const { data: level } = await supabase
+        .from("reward_program_levels")
+        .select("title")
+        .eq("studio_id", studio.id)
+        .eq("program_id", profileParticipation.program_id)
+        .eq("program_version_number", profileParticipation.program_version_number)
+        .eq("level_order", profileParticipation.current_level_order)
+        .maybeSingle();
+      levelTitle = level?.title ?? null;
+    }
+    const rewardCountResult = await supabase
+      .from("reward_instances")
+      .select("id", { count: "exact", head: true })
+      .eq("studio_id", studio.id)
+      .eq("student_id", student.id)
+      .eq("status", "available");
+    rewardsAvailable = rewardCountResult.count ?? 0;
+  }
+
+  const currentPackageView = currentAcquisition
+    ? {
+        name: productMap.get(currentAcquisition.product_template_id)?.name ?? "Paquete",
+        unlimited: currentAcquisition.unlimited,
+        availableCredits: currentAcquisition.unlimited
+          ? null
+          : (balanceMap.get(currentAcquisition.id) ?? 0),
+        creditLimit: currentAcquisition.credit_limit,
+        startsOn: currentAcquisition.starts_on,
+        expiresOn: currentAcquisition.expires_on,
+      }
+    : null;
+
+  const alerts: Array<{ title: string; detail: string }> = [];
+  if (student.lifecycle_status === "active" && !currentAcquisition && !scheduledAcquisition) {
+    const latestRelevant = acquisitions.find((item) => !item.refunded_at && item.expires_on);
+    alerts.push({
+      title: latestRelevant?.expires_on ? "Paquete vencido" : "Sin paquete activo",
+      detail: latestRelevant?.expires_on
+        ? "El último paquete venció " + formatDate(latestRelevant.expires_on) + "."
+        : "No hay un paquete vigente o programado.",
+    });
+  }
+  if (
+    currentAcquisition &&
+    !currentAcquisition.unlimited &&
+    (balanceMap.get(currentAcquisition.id) ?? 0) <= 0
+  ) {
+    alerts.push({
+      title: "Sin créditos disponibles",
+      detail: "El paquete continúa registrado, pero ya no tiene créditos disponibles.",
+    });
+  }
+  if (currentAcquisition && !nextClass) {
+    alerts.push({
+      title: "Sin próxima clase",
+      detail: "No hay una reserva futura asociada al paquete actual.",
+    });
+  }
+  if (currentAcquisition?.access_blocked || pendingBalanceMinor > 0) {
+    alerts.push({
+      title: "Saldo pendiente",
+      detail:
+        pendingBalanceMinor > 0
+          ? "Quedan $" + (pendingBalanceMinor / 100).toLocaleString("es-MX") + " MXN por cobrar."
+          : "El paquete está bloqueado por una condición de pago pendiente.",
+    });
+  }
+  if (enrollment && enrollment.status !== "active") {
+    alerts.push({
+      title: "Inscripción no vigente",
+      detail: enrollment.expires_on
+        ? "La última inscripción terminó " + formatDate(enrollment.expires_on) + "."
+        : "Revisa el estado de inscripción de la alumna.",
+    });
+  }
 
   const errorCopy: Record<string, string> = {
     phone_exists: "Ese teléfono ya pertenece a otra alumna.",
@@ -262,26 +480,36 @@ export default async function StudentProfilePage({
 
   return (
     <main className="dashboard-shell">
-      <header className="topbar">
-        <div>
-          <Link className="back-link compact" href="/admin/alumnas">
-            ← Alumnas
-          </Link>
-          <p className="eyebrow">PERFIL 360 · {studio.name}</p>
-          <h1 className="dashboard-title">{student.full_name}</h1>
-          <p>Expediente operativo de la alumna.</p>
-        </div>
-        <div className="toolbar-actions">
-          {canSell && student.lifecycle_status === "active" ? (
-            <Link className="primary-button" href={`/admin/ventas/nueva?student_id=${student.id}`}>
-              Registrar venta
-            </Link>
-          ) : null}
-          <span className="role-pill">
-            {lifecycleCopy[student.lifecycle_status] ?? "Estado no disponible"}
-          </span>
-        </div>
-      </header>
+      <Profile360Overview
+        student={{
+          id: student.id,
+          userId: student.user_id,
+          fullName: student.full_name,
+          lifecycleStatus: student.lifecycle_status,
+          phone,
+          email: email || null,
+          createdAt: student.created_at,
+        }}
+        birthDate={birthDate}
+        levelTitle={levelTitle}
+        rewardsAvailable={rewardsAvailable}
+        currentPackage={currentPackageView}
+        nextClass={nextClass}
+        historicalValueMinor={historicalValueMinor}
+        enrollment={
+          enrollment
+            ? {
+                status: enrollment.status,
+                startsOn: enrollment.starts_on,
+                expiresOn: enrollment.expires_on,
+              }
+            : null
+        }
+        alerts={alerts}
+        canBook={canBook}
+        canSell={canSell}
+        timeZone={timeZone}
+      />
 
       <StudentLifecycleNoticeDialog
         result={
@@ -329,104 +557,41 @@ export default async function StudentProfilePage({
         </div>
       ) : null}
 
-      <section className="stat-grid">
-        <article className="stat-card">
-          <span>Expediente</span>
-          <strong className="stat-word">
-            {student.profile_status === "complete" ? "Completo" : "Incompleto"}
-          </strong>
-          <small>Según los campos requeridos configurados</small>
-        </article>
-        <article className="stat-card">
-          <span>Estado</span>
-          <strong className="stat-word">
-            {lifecycleCopy[student.lifecycle_status] ?? "Estado no disponible"}
-          </strong>
-          <small>Ciclo operativo</small>
-        </article>
-        <article className="stat-card">
-          <span>Teléfono</span>
-          <strong className="stat-word">{phone}</strong>
-          <small>Formato E.164</small>
-        </article>
-      </section>
-
-      <section className="panel-grid">
-        <article className="panel">
-          <div className="panel-heading">
-            <div>
-              <p className="eyebrow">DATOS PERSONALES</p>
-              <h2>Información de contacto</h2>
-            </div>
+      <section id="datos-personales" className="panel scroll-mt-6">
+        <div className="panel-heading">
+          <div>
+            <p className="eyebrow">EXPEDIENTE</p>
+            <h2>Datos generales</h2>
           </div>
+          <span className="count-badge">
+            {student.profile_status === "complete" ? "Completo" : "Incompleto"}
+          </span>
+        </div>
 
-          {canEdit ? (
-            <form action={updateStudent} className="compact-form">
-              <input type="hidden" name="student_id" value={student.id} />
-              <div className="form-split">
-                <input name="first_name" required defaultValue={firstName} placeholder="Nombre" />
-                <input name="last_name" defaultValue={lastName ?? ""} placeholder="Apellido" />
-              </div>
-              <input name="phone" type="tel" required defaultValue={phone} placeholder="Teléfono" />
-              <input name="email" type="email" defaultValue={email} placeholder="Correo" />
-              <PendingActionButton className="primary-button" pendingLabel="Guardando…">
-                Guardar cambios
-              </PendingActionButton>
-            </form>
-          ) : (
-            <div className="student-list">
-              <div className="student-row">
-                <div>
-                  <strong>{student.full_name}</strong>
-                  <span>{phone}</span>
-                  {email ? <span>{email}</span> : null}
-                </div>
-              </div>
+        {canEdit ? (
+          <form action={updateStudent} className="compact-form">
+            <input type="hidden" name="student_id" value={student.id} />
+            <div className="form-split">
+              <input name="first_name" required defaultValue={firstName} placeholder="Nombre" />
+              <input name="last_name" defaultValue={lastName ?? ""} placeholder="Apellido" />
             </div>
-          )}
-        </article>
-
-        <article className="panel">
-          <p className="eyebrow">RESUMEN OPERATIVO</p>
-          <h2>Perfil 360</h2>
+            <input name="phone" type="tel" required defaultValue={phone} placeholder="Teléfono" />
+            <input name="email" type="email" defaultValue={email} placeholder="Correo" />
+            <PendingActionButton className="primary-button" pendingLabel="Guardando…">
+              Guardar cambios
+            </PendingActionButton>
+          </form>
+        ) : (
           <div className="student-list">
             <div className="student-row">
               <div>
-                <strong>Paquete activo</strong>
-                <span>
-                  {!canReadProducts
-                    ? "Sin acceso comercial para este rol."
-                    : currentAcquisition
-                      ? currentAcquisition.access_blocked
-                        ? `${productMap.get(currentAcquisition.product_template_id)?.name ?? "Producto"} · bloqueado por pago pendiente`
-                        : currentAcquisition.starts_on && currentAcquisition.expires_on
-                          ? `${productMap.get(currentAcquisition.product_template_id)?.name ?? "Producto"} · vence ${formatDate(currentAcquisition.expires_on)}`
-                          : `${
-                              productMap.get(currentAcquisition.product_template_id)?.name ??
-                              "Producto"
-                            } · ${
-                              currentAcquisition.unlimited
-                                ? "inicia con la primera clase contabilizada"
-                                : "inicia con el primer crédito consumido"
-                            }`
-                      : "Sin paquete activo"}
-                </span>
-              </div>
-            </div>
-            <div className="student-row">
-              <div>
-                <strong>Adquisiciones</strong>
-                <span>{canReadProducts ? acquisitions.length : "—"}</span>
-              </div>
-            </div>
-            <div className="student-row">
-              <div>
-                <strong>Documentos y notas</strong>
-                <span>Se integrarán en sus fases correspondientes sin duplicar datos.</span>
+                <strong>{student.full_name}</strong>
+                <span>{phone}</span>
+                {email ? <span>{email}</span> : null}
               </div>
             </div>
           </div>
-        </article>
+        )}
       </section>
 
       {student.person_id ? (
@@ -884,7 +1049,7 @@ export default async function StudentProfilePage({
             status={student.lifecycle_status === "inactive" ? "inactive" : "active"}
           />
 
-          <div className="mt-6 border-t border-white/10 pt-5">
+          <div id="historial" className="mt-6 scroll-mt-6 border-t border-white/10 pt-5">
             <div className="panel-heading">
               <div>
                 <p className="eyebrow">HISTORIAL</p>
