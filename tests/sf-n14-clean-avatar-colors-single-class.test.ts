@@ -9,7 +9,8 @@ function source(path: string) {
 
 describe("SF-N14 clean avatar, activity colors and single-class purchase", () => {
   const profile = source("app/student/perfil/page.tsx");
-  const avatar = source("app/student/perfil/ProfileAvatarUploader.tsx");
+  const studentActions = source("app/student/actions.ts");
+  const avatarRoute = source("app/student/perfil/avatar/route.ts");
   const agenda = source("app/admin/agenda/page.tsx");
   const agendaActions = source("app/admin/agenda/recurring-actions.ts");
   const reserve = source("app/student/reservar/page.tsx");
@@ -17,21 +18,28 @@ describe("SF-N14 clean avatar, activity colors and single-class purchase", () =>
   const colorMigration = source(
     "supabase/migrations/20260920054000_n14_profile_avatar_activity_colors.sql",
   );
+  const avatarInsertMigration = source(
+    "supabase/migrations/20260920064000_n14_profile_avatar_insert_policy.sql",
+  );
   const singleMigration = source(
     "supabase/migrations/20260920061000_n14_single_class_checkout.sql",
   );
   const checkoutEdge = source("supabase/functions/create-mercadopago-order/index.ts");
 
-  it("keeps the approved profile server render independent from avatar storage", () => {
-    expect(profile).toContain("ProfileAvatarUploader");
+  it("keeps Perfil independent from avatar reads and uploads during page render", () => {
+    expect(profile).not.toContain("ProfileAvatarUploader");
     expect(profile).not.toContain("createSignedUrl");
     expect(profile).not.toContain('select("avatar_url")');
-    expect(avatar).toContain("createSignedUrl");
-    expect(avatar).toContain(".upload(avatarPath, file");
-    expect(avatar).toContain("Perfil debe seguir funcionando aunque Storage falle");
+    expect(profile).toContain("updateStudentAvatarAction");
+    expect(profile).toContain('src="/student/perfil/avatar"');
+    expect(studentActions).toContain("updateStudentAvatarAction");
+    expect(studentActions).toContain('.from("profile-avatars")');
+    expect(studentActions).toContain(".upsert(");
+    expect(avatarRoute).toContain("createSignedUrl");
+    expect(avatarRoute).toContain("transparentAvatar");
   });
 
-  it("stores avatars privately and restricts each user to their own folder", () => {
+  it("stores avatars privately and lets a student create their own profile row", () => {
     expect(colorMigration).toContain("'profile-avatars'");
     expect(colorMigration).toContain("5242880");
     expect(colorMigration).toContain("image/jpeg");
@@ -39,6 +47,8 @@ describe("SF-N14 clean avatar, activity colors and single-class purchase", () =>
     expect(colorMigration).toContain("image/webp");
     expect(colorMigration).toContain("(storage.foldername(name))[1]");
     expect(colorMigration).toContain("(select auth.uid())::text");
+    expect(avatarInsertMigration).toContain('create policy "profiles_insert_self"');
+    expect(avatarInsertMigration).toContain("(select auth.uid()) = id");
   });
 
   it("persists a configurable color per activity and shows it only on schedule surfaces", () => {
@@ -48,6 +58,9 @@ describe("SF-N14 clean avatar, activity colors and single-class purchase", () =>
     expect(agenda).toContain('type="color"');
     expect(agenda).toContain("borderLeftColor: template?.color_hex");
     expect(reserve).toContain("borderLeftColor: activityColor");
+    expect(detail).toContain('select("color_hex")');
+    expect(detail).toContain("activityColor");
+    expect(detail).toContain("linear-gradient(135deg");
   });
 
   it("seeds the requested reference colors", () => {
@@ -66,8 +79,10 @@ describe("SF-N14 clean avatar, activity colors and single-class purchase", () =>
     expect(singleMigration).toContain("'single_class'::public.product_type");
     expect(reserve).toContain("Esta clase no está incluida en tu paquete");
     expect(reserve).toContain("PurchaseSingleClassButton");
+    expect(reserve).toContain("justify-end");
     expect(reserve).toContain("Ver paquetes");
     expect(detail).toContain("PurchaseSingleClassButton");
+    expect(detail).toContain("justify-end");
   });
 
   it("keeps single-class checkout server-priced and routed through Mercado Pago", () => {
@@ -79,6 +94,6 @@ describe("SF-N14 clean avatar, activity colors and single-class purchase", () =>
 
   it("does not touch the global stylesheet or student home layout for these changes", () => {
     expect(source("app/globals.css")).not.toContain("activity-color-list");
-    expect(source("app/student/page.tsx")).not.toContain("ProfileAvatarUploader");
+    expect(source("app/student/page.tsx")).not.toContain("updateStudentAvatarAction");
   });
 });
