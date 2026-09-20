@@ -2,6 +2,7 @@ import Link from "next/link";
 import PendingActionButton from "@/app/admin/components/PendingActionButton";
 import StudentLifecycleActions from "./StudentLifecycleActions";
 import StudentLifecycleNoticeDialog from "./StudentLifecycleNoticeDialog";
+import StudentRewardsSummary from "./StudentRewardsSummary";
 import RequiredActionContextPanel from "../../acciones/RequiredActionContextPanel";
 import { notFound } from "next/navigation";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
@@ -116,6 +117,7 @@ export default async function StudentProfilePage({
 
   const canReadProducts = can(CAPABILITIES.PRODUCTS_READ);
   const canReadRequiredActions = can(CAPABILITIES.REQUIRED_ACTIONS_READ);
+  const canReadRewards = can(CAPABILITIES.REWARDS_READ);
   const canEditAcquisitions = can(CAPABILITIES.PRODUCTS_WRITE) || can(CAPABILITIES.SALES_WRITE);
 
   const [
@@ -367,7 +369,7 @@ export default async function StudentProfilePage({
         </article>
       </section>
 
-      <section className="panel-grid">
+      {canReadRewards ? <StudentRewardsSummary studentId={student.id} /> : null}\n\n      <section className="panel-grid">
         <article className="panel">
           <div className="panel-heading">
             <div>
