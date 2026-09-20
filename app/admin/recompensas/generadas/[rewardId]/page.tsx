@@ -7,6 +7,7 @@ import { CAPABILITIES } from "@/lib/auth/capabilities";
 
 import { adjustRewardAction } from "../../actions";
 import { RewardsShell } from "../../RewardsNav";
+import RewardAdjustedNotice from "../RewardAdjustedNotice";
 import {
   StatusBadge,
   asArray,
@@ -136,9 +137,7 @@ export default async function GeneratedRewardDetailPage({
         <StatusBadge status={reward.status} />
       </header>
 
-      {query.saved === "adjusted" ? (
-        <div className="notice success">La recompensa quedó ajustada y auditada.</div>
-      ) : null}
+      <RewardAdjustedNotice saved={query.saved} />
       {query.error ? <div className="notice error">{query.error}</div> : null}
 
       <section className="grid gap-4 lg:grid-cols-2">
