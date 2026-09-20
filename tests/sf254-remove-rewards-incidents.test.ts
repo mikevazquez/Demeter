@@ -4,10 +4,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 const migration = readFileSync(
-  join(
-    process.cwd(),
-    "supabase/migrations/20260920165431_sf254_remove_rewards_incidents.sql",
-  ),
+  join(process.cwd(), "supabase/migrations/20260920165431_sf254_remove_rewards_incidents.sql"),
   "utf8",
 );
 const actions = readFileSync(join(process.cwd(), "app/admin/recompensas/actions.ts"), "utf8");
