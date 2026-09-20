@@ -71,7 +71,7 @@ export default async function AchievementsPage() {
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#FF0A8A]">
-                      presentation.hidden_until_unlocked ? "SECRETO" : "VISIBLE"
+                      {presentation.hidden_until_unlocked ? "SECRETO" : "VISIBLE"}
                     </p>
                     <h2 className="mt-2 text-lg font-semibold text-white">
                       {version?.name ?? "Logro"}

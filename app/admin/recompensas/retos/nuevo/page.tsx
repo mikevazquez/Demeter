@@ -7,7 +7,7 @@ import { RewardsShell } from "../../RewardsNav";
 import { RuleEditorForm } from "../../RuleEditorForm";
 
 export default async function NewChallengePage() {
-  const ctx = await getAdminContext(CAPABILITIES.REWARDS_MANAGE);
+  await getAdminContext(CAPABILITIES.REWARDS_MANAGE);
   return (
     <RewardsShell>
       <header>
