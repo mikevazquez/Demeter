@@ -31,9 +31,17 @@ function safeReturnTo(rawValue: string, mode: LoginMode) {
 }
 
 function loginErrorPath(mode: LoginMode, error: string, returnTo: string | null) {
-  const params = new URLSearchParams({ error });
-  if (returnTo) params.set("next", returnTo);
-  return `${loginPath(mode)}?${params.toString()}`;
+  const errorQueries: Record<string, string> = {
+    missing: "?error=missing",
+    invalid: "?error=invalid",
+    rate: "?error=rate",
+    auth: "?error=auth",
+    pending: "?error=pending",
+    access: "?error=access",
+  };
+  const query = errorQueries[error] ?? "?error=auth";
+  const base = `${loginPath(mode)}${query}`;
+  return returnTo ? `${base}&next=${encodeURIComponent(returnTo)}` : base;
 }
 
 function passwordIntegrity(password: string) {
@@ -195,10 +203,10 @@ export async function signIn(formData: FormData) {
   }
 
   if (mode === "student" && account.must_change_password) {
-    const activationPath = returnTo
-      ? `/login/student/activar?next=${encodeURIComponent(returnTo)}`
-      : "/login/student/activar";
-    redirect(activationPath);
+    if (returnTo) {
+      redirect(`/login/student/activar?next=${encodeURIComponent(returnTo)}`);
+    }
+    redirect("/login/student/activar");
   }
   if (mode === "coach" && account.must_change_password) {
     redirect("/login/coach/activar");
