@@ -99,10 +99,7 @@ export default async function StudioSelectorPage({
           {options.map((option) => (
             <form action={selectStudio} key={option.studio_id}>
               <input type="hidden" name="studio_id" value={option.studio_id} />
-              <PendingSubmitButton
-                className="portal-card"
-                pendingLabel="Abriendo estudio…"
-              >
+              <PendingSubmitButton className="portal-card" pendingLabel="Abriendo estudio…">
                 <span className="portal-kicker">{roleLabels[option.role] ?? "Equipo"}</span>
                 <strong>{option.studio!.name}</strong>
                 <span className="portal-arrow">→</span>
