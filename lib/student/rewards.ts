@@ -12,6 +12,8 @@ export type StudentRewardRule = {
   current_version_number: number;
   scheduled_start_at: string | null;
   scheduled_end_at: string | null;
+  finished_at: string | null;
+  cancelled_at: string | null;
 };
 
 export type StudentRewardVersion = {
@@ -479,7 +481,9 @@ export const getStudentRewardsContext = cache(async () => {
     ? await Promise.all([
         portal.supabase
           .from("reward_rules")
-          .select("id,status,current_version_number,scheduled_start_at,scheduled_end_at")
+          .select(
+            "id,status,current_version_number,scheduled_start_at,scheduled_end_at,finished_at,cancelled_at",
+          )
           .in("id", ruleIds),
         portal.supabase
           .from("reward_rule_versions")
