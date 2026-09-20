@@ -6,6 +6,7 @@ import { CAPABILITIES } from "@/lib/auth/capabilities";
 
 import { RewardsShell } from "../../RewardsNav";
 import { RuleEditorForm } from "../../RuleEditorForm";
+import ChallengeSavedNotice from "../ChallengeSavedNotice";
 
 export default async function ChallengeDetailPage({
   params,
@@ -59,7 +60,7 @@ export default async function ChallengeDetailPage({
         <h1 className="dashboard-title">{copyOverride?.title ?? version.name}</h1>
       </header>
 
-      {query.saved ? <div className="notice success">Cambios guardados correctamente.</div> : null}
+      <ChallengeSavedNotice saved={query.saved} />
       {query.error ? <div className="notice error">{query.error}</div> : null}
 
       <RuleEditorForm
