@@ -26,7 +26,8 @@ export default async function StudentRewardsPage() {
       return leftExpiry - rightExpiry;
     });
 
-  const progressItems = ctx.participations.map((participation) => {
+  const progressItems = ctx.participations
+    .map((participation) => {
       const version = ctx.versionMap.get(
         `${participation.rule_id}:${participation.joined_version_number}`,
       );
