@@ -140,7 +140,8 @@ export default async function AdminPage({
   const start = new Date(`${selectedKey}T00:00:00${offset}`);
   const end = new Date(start.getTime() + 86400000);
 
-  const [{ data: sessions }, { count: activeStudents }, { data: students }] = await Promise.all([
+  const [{ data: sessions }, { count: activeStudents }, { data: students }, { data: salesToday }] =
+    await Promise.all([
     supabase
       .from("class_sessions")
       .select("id, starts_at, ends_at, capacity, status, template_id")
@@ -160,6 +161,12 @@ export default async function AdminPage({
       .eq("active", true)
       .eq("lifecycle_status", "active")
       .order("full_name"),
+    supabase
+      .from("sales")
+      .select("total_minor,status")
+      .eq("studio_id", studio.id)
+      .gte("created_at", start.toISOString())
+      .lt("created_at", end.toISOString()),
   ]);
 
   const sessionIds = (sessions ?? []).map((session) => session.id);
@@ -259,6 +266,13 @@ export default async function AdminPage({
         .limit(5)
     : { data: [], count: 0 };
   const requiredActions = requiredActionsResult.data ?? [];
+  const visibleSales = (salesToday ?? []).filter((sale) => sale.status !== "voided");
+  const salesTotalMinor = visibleSales.reduce((sum, sale) => sum + (sale.total_minor ?? 0), 0);
+  const salesTotal = new Intl.NumberFormat("es-MX", {
+    style: "currency",
+    currency: studio.currency ?? "MXN",
+    maximumFractionDigits: 0,
+  }).format(salesTotalMinor / 100);
 
   const operationsBySession = new Map<
     string,
@@ -348,12 +362,26 @@ export default async function AdminPage({
 
   return (
     <main className="dashboard-shell hoy-dashboard">
-      <header className="hoy-header">
-        <p className="eyebrow">
-          {viewingToday ? "HOY" : "OPERACIÓN"} · {studio.name}
-        </p>
-        <h1 className="dashboard-title">¡Hola, {firstName}!</h1>
-        <p className="hoy-date">{formatDay(selectedDate)}</p>
+      <header className="hoy-overview-header">
+        <div>
+          <h1>Hola, {firstName}</h1>
+          <p>Aquí tienes un resumen de hoy.</p>
+        </div>
+        <details className="admin-quick-menu">
+          <summary>
+            <span aria-hidden="true">＋</span>
+            Acción rápida
+            <span aria-hidden="true">⌄</span>
+          </summary>
+          <div className="admin-quick-popover">
+            {canWriteStudents ? <Link href="/admin/alumnas#alta-rapida">Nueva alumna</Link> : null}
+            {canWriteSales ? <Link href="/admin/ventas/nueva">Registrar venta</Link> : null}
+            {canWriteSchedule ? (
+              <Link href="/admin/agenda#clases-programadas">Crear reserva</Link>
+            ) : null}
+            {canWriteSchedule ? <Link href="/admin/agenda#programar-clase">Crear clase</Link> : null}
+          </div>
+        </details>
       </header>
 
       {params.created ? (
@@ -368,6 +396,98 @@ export default async function AdminPage({
           No se pudo completar la operación: {decodeURIComponent(params.error)}
         </div>
       ) : null}
+
+      <section className="mock-kpi-grid" aria-label="Resumen del estudio">
+        <article className="mock-kpi-card">
+          <div>
+            <span>Clases hoy</span>
+            <strong>{sessions?.length ?? 0}</strong>
+            <small>{(sessions ?? []).filter((session) => session.status === "scheduled").length} programadas</small>
+          </div>
+          <b aria-hidden="true">▣</b>
+        </article>
+        <article className="mock-kpi-card">
+          <div>
+            <span>Alumnas activas</span>
+            <strong>{activeStudents ?? 0}</strong>
+            <small>Expedientes activos</small>
+          </div>
+          <b aria-hidden="true">◎</b>
+        </article>
+        <article className="mock-kpi-card">
+          <div>
+            <span>Ventas hoy</span>
+            <strong>{salesTotal}</strong>
+            <small>{visibleSales.length} ventas</small>
+          </div>
+          <b aria-hidden="true">▤</b>
+        </article>
+        <article className="mock-kpi-card">
+          <div>
+            <span>Incidencias</span>
+            <strong>{requiredActionsResult.count ?? 0}</strong>
+            <small>{requiredActions.filter((action) => action.priority === "high").length} urgentes</small>
+          </div>
+          <b aria-hidden="true">△</b>
+        </article>
+      </section>
+
+      <section className="mock-overview-grid">
+        <article className="mock-overview-card">
+          <div className="mock-card-heading">
+            <h2>Clases de hoy</h2>
+            {canReadSchedule ? <Link href="/admin/agenda">Ver agenda →</Link> : null}
+          </div>
+          <div className="mock-list">
+            {(sessions ?? []).slice(0, 5).map((session) => {
+              const occupied = (reservationsBySession.get(session.id) ?? []).filter((reservation) =>
+                occupyingReservationStatuses.has(reservation.status),
+              ).length;
+              return (
+                <div className="mock-list-row" key={session.id}>
+                  <span className="mock-time">{formatTime(session.starts_at, timeZone)}</span>
+                  <span className="mock-dot" aria-hidden="true" />
+                  <strong>{templateMap.get(session.template_id) ?? "Clase"}</strong>
+                  <small>{occupied}/{session.capacity}</small>
+                </div>
+              );
+            })}
+            {(sessions?.length ?? 0) === 0 ? (
+              <div className="mock-empty">No hay clases programadas hoy.</div>
+            ) : null}
+          </div>
+        </article>
+
+        {canReadRequiredActions ? (
+          <article className="mock-overview-card">
+            <div className="mock-card-heading">
+              <h2>Atención <span>(pendientes)</span></h2>
+              <Link href="/admin/acciones">Ver todas →</Link>
+            </div>
+            <div className="mock-list">
+              {requiredActions.slice(0, 5).map((action) => (
+                <Link className="mock-list-row attention-row" href={`/admin/acciones/${action.id}`} key={action.id}>
+                  <span className={`mock-priority-dot is-${action.priority}`} aria-hidden="true" />
+                  <strong>{action.reason}</strong>
+                  <small>
+                    {action.priority === "high" ? "Urgente" : action.status === "in_progress" ? "En proceso" : "Pendiente"}
+                  </small>
+                </Link>
+              ))}
+              {requiredActions.length === 0 ? (
+                <div className="mock-empty">No hay incidencias abiertas.</div>
+              ) : null}
+            </div>
+          </article>
+        ) : null}
+      </section>
+
+      <section className="mock-detail-divider">
+        <div>
+          <span>Operación detallada</span>
+          <small>Consulta y opera las clases sin perder las herramientas existentes.</small>
+        </div>
+      </section>
 
       <nav className="week-picker" aria-label="Seleccionar día de operación">
         <Link
