@@ -122,6 +122,8 @@ export default async function StudentJourneyPage({
     const endedAt =
       participation.closed_at ??
       cycle?.closed_at ??
+      (rule?.status === "cancelled" ? rule.cancelled_at : null) ??
+      (rule?.status === "finished" ? rule.finished_at : null) ??
       rule?.scheduled_end_at ??
       cycle?.window_end_at ??
       null;
