@@ -123,13 +123,14 @@ export default async function NewSalePage({
     <main className="dashboard-shell admin-module-page sale-page">
       <header className="module-header">
         <div>
-          <Link className="back-link compact" href={selectedStudent ? `/admin/alumnas/${selectedStudent.id}` : "/admin"}>
+          <Link
+            className="back-link compact"
+            href={selectedStudent ? `/admin/alumnas/${selectedStudent.id}` : "/admin"}
+          >
             {selectedStudent ? "← Perfil 360" : "← Hoy"}
           </Link>
           <h1>Registrar venta</h1>
-          <p>
-            Mismo flujo comercial aprobado: alumna, paquete, condiciones, pago y confirmación.
-          </p>
+          <p>Mismo flujo comercial aprobado: alumna, paquete, condiciones, pago y confirmación.</p>
         </div>
       </header>
 
