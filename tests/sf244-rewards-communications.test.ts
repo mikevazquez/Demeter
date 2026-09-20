@@ -100,7 +100,9 @@ describe("SF-244 Rewards communications", () => {
     const batches = groupRewardCommunications([a, b, c]);
 
     expect(batches).toHaveLength(2);
-    expect(batches.find((batch) => batch.frequencyKey === "daily:2026-09-20")?.items).toHaveLength(2);
+    expect(batches.find((batch) => batch.frequencyKey === "daily:2026-09-20")?.items).toHaveLength(
+      2,
+    );
   });
 
   it("builds an SF-173 compatible input without delivering or consuming the reward", () => {
