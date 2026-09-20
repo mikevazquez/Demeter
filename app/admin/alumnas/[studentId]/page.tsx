@@ -228,6 +228,7 @@ export default async function StudentProfilePage({
   };
   const communicationPreferenceEvents = communicationPreferenceEventsResult.data ?? [];
   const canEdit = can(CAPABILITIES.STUDENTS_WRITE);
+  const canSell = can(CAPABILITIES.SALES_WRITE);
   const canArchive = can(CAPABILITIES.STUDENTS_ARCHIVE);
   const lifecycleEventsResult = canArchive
     ? await supabase
@@ -284,6 +285,14 @@ export default async function StudentProfilePage({
           <p>Expediente operativo de la alumna.</p>
         </div>
         <div className="toolbar-actions">
+          {canSell && student.lifecycle_status === "active" ? (
+            <Link
+              className="primary-button"
+              href={`/admin/ventas/nueva?student_id=${student.id}`}
+            >
+              Registrar venta
+            </Link>
+          ) : null}
           <span className="role-pill">
             {lifecycleCopy[student.lifecycle_status] ?? "Estado no disponible"}
           </span>
