@@ -10,24 +10,36 @@ import {
 } from "../lib/automations/catalog";
 
 describe("SF-163 automation catalog", () => {
-  it("locks the official MVP catalog to 16 stable predefined templates", () => {
+  it("locks the active catalog after retiring incident automations", () => {
     expect(AUTOMATION_CATALOG_VERSION).toBe(1);
-    expect(AUTOMATION_CATALOG).toHaveLength(16);
+    expect(AUTOMATION_CATALOG).toHaveLength(13);
 
     const codes = AUTOMATION_CATALOG.map((entry) => entry.code);
     const keys = AUTOMATION_CATALOG.map((entry) => entry.key);
 
-    expect(new Set(codes).size).toBe(16);
-    expect(new Set(keys).size).toBe(16);
-    expect(codes).toEqual(
-      Array.from({ length: 16 }, (_, index) => `AUT-CAT-${String(index + 1).padStart(2, "0")}`),
-    );
+    expect(new Set(codes).size).toBe(13);
+    expect(new Set(keys).size).toBe(13);
+    expect(codes).toEqual([
+      "AUT-CAT-01",
+      "AUT-CAT-02",
+      "AUT-CAT-03",
+      "AUT-CAT-04",
+      "AUT-CAT-05",
+      "AUT-CAT-06",
+      "AUT-CAT-07",
+      "AUT-CAT-11",
+      "AUT-CAT-12",
+      "AUT-CAT-13",
+      "AUT-CAT-14",
+      "AUT-CAT-15",
+      "AUT-CAT-16",
+    ]);
   });
 
-  it("preserves the approved category split", () => {
+  it("preserves the active category split", () => {
     expect(getAutomationTemplatesByCategory("operation")).toHaveLength(6);
     expect(getAutomationTemplatesByCategory("team")).toHaveLength(1);
-    expect(getAutomationTemplatesByCategory("administration")).toHaveLength(3);
+    expect(getAutomationTemplatesByCategory("administration")).toHaveLength(0);
     expect(getAutomationTemplatesByCategory("conversion")).toHaveLength(2);
     expect(getAutomationTemplatesByCategory("retention")).toHaveLength(4);
   });
@@ -48,26 +60,10 @@ describe("SF-163 automation catalog", () => {
     const packageActivated = getAutomationTemplate("AUT-CAT-06");
     expect(packageActivated.priority.communication).toBe("P1");
     expect(packageActivated.variables).toContain("fecha_vencimiento");
-  });
 
-  it("keeps internal/admin priorities separate from AUT-05 student communication priorities", () => {
     const coachSummary = getAutomationTemplate("AUT-CAT-07");
-    const closeIncidents = getAutomationTemplate("AUT-CAT-08");
-    const walkin = getAutomationTemplate("AUT-CAT-09");
-    const attendanceWithoutReservation = getAutomationTemplate("AUT-CAT-10");
-
     expect(coachSummary.priority.communication).toBeNull();
     expect(coachSummary.priority.scope).toBe("internal");
-
-    expect(closeIncidents.priority.communication).toBeNull();
-    expect(closeIncidents.priority.requiredAction).toBe("dynamic");
-
-    expect(walkin.priority.communication).toBeNull();
-    expect(walkin.priority.requiredAction).toBe("high");
-    expect(walkin.output.kind).toBe("required_action_and_internal_notification");
-
-    expect(attendanceWithoutReservation.priority.communication).toBeNull();
-    expect(attendanceWithoutReservation.priority.requiredAction).toBe("medium");
   });
 
   it("preserves conversion and retention priority policies", () => {
@@ -98,11 +94,15 @@ describe("SF-163 automation catalog", () => {
     ]);
 
     expect(AUTOMATION_SEQUENCES[0].memberCodes).toEqual(["AUT-CAT-11", "AUT-CAT-12"]);
-    expect(AUTOMATION_SEQUENCES[1].memberCodes).toEqual(["AUT-CAT-13", "AUT-CAT-15", "AUT-CAT-16"]);
+    expect(AUTOMATION_SEQUENCES[1].memberCodes).toEqual([
+      "AUT-CAT-13",
+      "AUT-CAT-15",
+      "AUT-CAT-16",
+    ]);
     expect(AUTOMATION_SEQUENCES[2].memberCodes).toEqual(["AUT-CAT-14"]);
   });
 
-  it("preserves the approved dominance and suppression rules", () => {
+  it("preserves the active dominance and suppression rules", () => {
     expect(AUTOMATION_DOMINANCE_RULES).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
