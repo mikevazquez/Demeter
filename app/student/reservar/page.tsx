@@ -91,7 +91,7 @@ export default async function StudentReservePage({
   searchParams: Promise<{ date?: string; error?: string }>;
 }) {
   const query = await searchParams;
-  const { supabase, studio } = await getStudentPortalContext();
+  const { supabase, studio, membership } = await getStudentPortalContext();
   const today = localDateKey(new Date(), studio.timezone);
   const requestedDate = safeDate(query.date, today);
   const selectedDate = requestedDate < today ? today : requestedDate;
@@ -109,6 +109,17 @@ export default async function StudentReservePage({
   });
 
   const items = (sessions ?? []) as StudentSession[];
+  const activityNames = [...new Set(items.map((item) => item.activity))];
+  const { data: activityColors } = activityNames.length
+    ? await supabase
+        .from("class_templates")
+        .select("name,color_hex")
+        .eq("studio_id", membership.studio_id)
+        .in("name", activityNames)
+    : { data: [] as { name: string; color_hex: string | null }[] };
+  const activityColorMap = new Map(
+    (activityColors ?? []).map((item) => [item.name, item.color_hex ?? "#FF0A8A"]),
+  );
 
   return (
     <main className="space-y-4 pb-4">
@@ -231,12 +242,17 @@ export default async function StudentReservePage({
               const timeLabel = timeOnly(session.starts_at, studio.timezone);
               const eligible = Boolean(session.eligibility?.eligible);
               const reserved = Boolean(session.is_reserved);
+              const activityColor = activityColorMap.get(session.activity) ?? "#FF0A8A";
 
               return (
                 <article
                   key={session.session_id}
                   data-density="compact"
-                  className="rounded-2xl border border-white/10 bg-black/20 p-3 transition hover:border-fuchsia-500/30 hover:bg-white/[0.045]"
+                  className="rounded-2xl border border-white/10 bg-black/20 p-3 transition hover:bg-white/[0.045]"
+                  style={{
+                    borderLeftColor: activityColor,
+                    borderLeftWidth: 3,
+                  }}
                 >
                   <div className="grid grid-cols-[4.25rem_1fr_auto] items-center gap-3">
                     <div>
@@ -253,7 +269,10 @@ export default async function StudentReservePage({
                       <p className="truncate text-sm font-semibold text-white">
                         {session.activity}
                       </p>
-                      <p className="mt-0.5 truncate text-[11px] text-fuchsia-300">
+                      <p
+                        className="mt-0.5 truncate text-[11px] font-medium"
+                        style={{ color: activityColor }}
+                      >
                         {session.discipline}
                       </p>
                       <p className="mt-0.5 truncate text-[11px] text-zinc-500">
