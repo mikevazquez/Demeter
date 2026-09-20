@@ -197,7 +197,9 @@ export function rewardStatusLabel(status: string) {
   return labels[status] ?? status;
 }
 
-export function rewardBenefitLabel(reward: Pick<StudentRewardInstance, "kind" | "benefit_definition">) {
+export function rewardBenefitLabel(
+  reward: Pick<StudentRewardInstance, "kind" | "benefit_definition">,
+) {
   const definition = rewardObject(reward.benefit_definition);
 
   if (reward.kind === "fixed_discount") {
@@ -491,7 +493,8 @@ export const getStudentRewardsContext = cache(async () => {
         { data: [], error: null },
       ];
 
-  if (rulesResult.error || versionsResult.error) throw new Error("student_reward_rules_load_failed");
+  if (rulesResult.error || versionsResult.error)
+    throw new Error("student_reward_rules_load_failed");
 
   const cycleIds = cycles.map((cycle) => cycle.id);
   const rewardIds = rewards.map((reward) => reward.id);
@@ -507,9 +510,7 @@ export const getStudentRewardsContext = cache(async () => {
     rewardIds.length
       ? portal.supabase
           .from("reward_instance_events")
-          .select(
-            "id,reward_instance_id,event_type,from_status,to_status,details,occurred_at",
-          )
+          .select("id,reward_instance_id,event_type,from_status,to_status,details,occurred_at")
           .in("reward_instance_id", rewardIds)
           .order("occurred_at", { ascending: false })
       : Promise.resolve({ data: [], error: null }),
@@ -530,10 +531,7 @@ export const getStudentRewardsContext = cache(async () => {
   );
   const programMap = new Map(programs.map((program) => [program.id, program]));
   const programVersionMap = new Map(
-    programVersions.map((version) => [
-      `${version.program_id}:${version.version_number}`,
-      version,
-    ]),
+    programVersions.map((version) => [`${version.program_id}:${version.version_number}`, version]),
   );
 
   const levelsByProgramVersion = new Map<string, StudentRewardProgramLevel[]>();
