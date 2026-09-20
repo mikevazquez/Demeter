@@ -37,6 +37,9 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
         ...(can(CAPABILITIES.STUDENTS_READ)
           ? [{ href: "/admin/alumnas", label: "Alumnas", enabled: true }]
           : []),
+        ...(can(CAPABILITIES.REWARDS_READ)
+          ? [{ href: "/admin/recompensas", label: "Progreso", enabled: true }]
+          : []),
         ...(can(CAPABILITIES.PRODUCTS_READ)
           ? [{ href: "/admin/productos", label: "Productos", enabled: true }]
           : []),
@@ -62,6 +65,7 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
       ];
 
   const hasMoreDestinations =
+    can(CAPABILITIES.REWARDS_READ) ||
     can(CAPABILITIES.PRODUCTS_READ) ||
     can(CAPABILITIES.INSTRUCTORS_READ) ||
     can(CAPABILITIES.AUTOMATIONS_READ) ||
@@ -85,6 +89,7 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
                 label: "Más",
                 enabled: true,
                 activeFor: [
+                  "/admin/recompensas",
                   "/admin/productos",
                   "/admin/instructores",
                   "/admin/automatizaciones",
