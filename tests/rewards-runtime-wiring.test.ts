@@ -7,9 +7,7 @@ const read = (path: string) => readFileSync(join(process.cwd(), path), "utf8");
 
 describe("REWARDS runtime wiring", () => {
   it("derives bindings from reward metrics without coupling to frontend code", () => {
-    const migration = read(
-      "supabase/migrations/20260920033000_rewards_runtime_wiring.sql",
-    );
+    const migration = read("supabase/migrations/20260920033000_rewards_runtime_wiring.sql");
 
     expect(migration).toContain("reward_sync_rule_event_bindings");
     expect(migration).toContain("attendance.finalized");
@@ -19,9 +17,7 @@ describe("REWARDS runtime wiring", () => {
   });
 
   it("keeps source operations independent from Rewards failures", () => {
-    const migration = read(
-      "supabase/migrations/20260920033000_rewards_runtime_wiring.sql",
-    );
+    const migration = read("supabase/migrations/20260920033000_rewards_runtime_wiring.sql");
 
     expect(migration).toContain("reward_try_process_domain_event");
     expect(migration).toContain("exception when others");
@@ -29,9 +25,7 @@ describe("REWARDS runtime wiring", () => {
   });
 
   it("uses the canonical progress and lifecycle RPCs", () => {
-    const migration = read(
-      "supabase/migrations/20260920033000_rewards_runtime_wiring.sql",
-    );
+    const migration = read("supabase/migrations/20260920033000_rewards_runtime_wiring.sql");
 
     expect(migration).toContain("system_record_reward_progress_evaluation");
     expect(migration).toContain("system_generate_reward_instance");
@@ -41,9 +35,7 @@ describe("REWARDS runtime wiring", () => {
   });
 
   it("emits finalized attendance and recalculates after the reservation changes", () => {
-    const runtime = read(
-      "supabase/migrations/20260920033000_rewards_runtime_wiring.sql",
-    );
+    const runtime = read("supabase/migrations/20260920033000_rewards_runtime_wiring.sql");
     const correction = read(
       "supabase/migrations/20260920034000_rewards_attendance_correction_order_fix.sql",
     );
@@ -55,9 +47,7 @@ describe("REWARDS runtime wiring", () => {
   });
 
   it("keeps loyalty driven by acquisition and payment facts", () => {
-    const migration = read(
-      "supabase/migrations/20260920033000_rewards_runtime_wiring.sql",
-    );
+    const migration = read("supabase/migrations/20260920033000_rewards_runtime_wiring.sql");
 
     expect(migration).toContain("reward_emit_loyalty_acquisition_changed");
     expect(migration).toContain("reward_emit_loyalty_payment_changed");
@@ -66,9 +56,7 @@ describe("REWARDS runtime wiring", () => {
   });
 
   it("fixes the canonical participation enum instead of adding a parallel writer", () => {
-    const patch = read(
-      "supabase/migrations/20260920033500_rewards_progress_enum_fix.sql",
-    );
+    const patch = read("supabase/migrations/20260920033500_rewards_progress_enum_fix.sql");
 
     expect(patch).toContain("'fulfilled'::public.reward_participation_status");
     expect(patch).toContain("'in_progress'::public.reward_participation_status");
