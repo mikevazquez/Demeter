@@ -14,9 +14,7 @@ const session = read("app/admin/agenda/[sessionId]/page.tsx");
 const student = read("app/admin/alumnas/[studentId]/page.tsx");
 const capabilities = read("lib/auth/capabilities.ts");
 const catalog = read("lib/automations/catalog.ts");
-const migration = read(
-  "supabase/migrations/20260920172001_sf254_remove_required_actions.sql",
-);
+const migration = read("supabase/migrations/20260920172001_sf254_remove_required_actions.sql");
 
 describe("SF-254 required-actions removal", () => {
   it("removes Incidencias and Atención from the admin surface", () => {
