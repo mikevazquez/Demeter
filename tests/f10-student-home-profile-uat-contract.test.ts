@@ -37,13 +37,15 @@ describe("F10/N14 student home and profile UAT contracts", () => {
     expect(actions).toContain('supabase.rpc("student_cancel_own_reservation"');
   });
 
-  it("keeps name, surname and phone read-only while email remains editable", () => {
-    expect(profilePage.match(/readOnly/g)?.length).toBeGreaterThanOrEqual(3);
+  it("keeps identity display-only while email remains the only editable profile field", () => {
+    expect(profilePage.match(/Solo lectura/g)?.length).toBeGreaterThanOrEqual(3);
     expect(profilePage).not.toContain('name="first_name"');
     expect(profilePage).not.toContain('name="last_name"');
+    expect(profilePage).not.toContain('name="phone"');
     expect(profilePage).toContain('name="email"');
     expect(actions).not.toContain('formData.get("first_name")');
     expect(actions).not.toContain('formData.get("last_name")');
+    expect(actions).not.toContain('formData.get("phone")');
   });
 
   it("enforces identity immutability in the database contract too", () => {
