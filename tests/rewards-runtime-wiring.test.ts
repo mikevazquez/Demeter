@@ -55,6 +55,17 @@ describe("REWARDS runtime wiring", () => {
     expect(migration).toContain("public.payments");
   });
 
+  it("blocks new progress for inactive students before evaluating bound rules", () => {
+    const guard = read(
+      "supabase/migrations/20260920035000_rewards_active_student_guard.sql",
+    );
+
+    expect(guard).toContain("s.active = true");
+    expect(guard).toContain("s.lifecycle_status = 'active'");
+    expect(guard).toContain("'student_not_active'");
+    expect(guard).toContain("claim_domain_event");
+  });
+
   it("fixes the canonical participation enum instead of adding a parallel writer", () => {
     const patch = read("supabase/migrations/20260920033500_rewards_progress_enum_fix.sql");
 
