@@ -17,7 +17,14 @@ describe("ADMIN-UX-02 navigation architecture", () => {
   const styles = source("app/globals.css");
 
   it("uses durable entities as the desktop navigation architecture", () => {
-    for (const label of ["Hoy", "Agenda", "Alumnas", "Productos", "Equipo", "Automatizaciones"]) {
+    for (const label of [
+      "Hoy",
+      "Agenda",
+      "Alumnas",
+      "Productos",
+      "Equipo",
+      "Automatizaciones",
+    ]) {
       expect(layout).toContain('label: "' + label + '"');
     }
     expect(layout).toContain('label: "Atención"');
