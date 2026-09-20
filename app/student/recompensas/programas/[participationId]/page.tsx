@@ -64,7 +64,7 @@ export default async function StudentProgramProgressPage({
 
   const reward = ruleVersion ? rewardLabel(ruleVersion.reward_definition) : null;
   const currentReward = currentLevel
-    ? ctx.rewards.find((item) => item.rule_id === currentLevel.rule_id) ?? null
+    ? (ctx.rewards.find((item) => item.rule_id === currentLevel.rule_id) ?? null)
     : null;
 
   const snapshotProgress = rewardObject(snapshot?.progress);
@@ -226,9 +226,7 @@ export default async function StudentProgramProgressPage({
           {currentLevel.reward_visibility === "surprise" && !unlocked.has(currentLevel.id) ? (
             <>
               <h2 className="mt-2 text-lg font-semibold text-white">Recompensa sorpresa</h2>
-              <p className="mt-1 text-sm text-zinc-400">
-                Se revelará cuando completes este nivel.
-              </p>
+              <p className="mt-1 text-sm text-zinc-400">Se revelará cuando completes este nivel.</p>
             </>
           ) : reward ? (
             <>
@@ -256,7 +254,9 @@ export default async function StudentProgramProgressPage({
       <section>
         <div className="mb-2.5">
           <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-500">
-            {version.progression_mode === "sequential" ? "Programa secuencial" : "Programa acumulativo"}
+            {version.progression_mode === "sequential"
+              ? "Programa secuencial"
+              : "Programa acumulativo"}
           </p>
           <h2 className="mt-0.5 text-lg font-semibold text-white">Tu camino en el programa</h2>
         </div>
@@ -264,7 +264,8 @@ export default async function StudentProgramProgressPage({
         <div className="space-y-2">
           {levels.map((level) => {
             const levelUnlock = unlocked.get(level.id);
-            const isCurrent = level.level_order === currentOrder && participation.status === "active";
+            const isCurrent =
+              level.level_order === currentOrder && participation.status === "active";
             const isSecret = level.level_visibility === "hidden" && !levelUnlock && !isCurrent;
             const blocked = !levelUnlock && !isCurrent;
 
@@ -279,7 +280,7 @@ export default async function StudentProgramProgressPage({
                       Nivel {level.level_order}
                     </p>
                     <strong className="mt-1 block truncate text-sm text-white">
-                      {isSecret ? "Nivel secreto" : levelUnlock?.title_snapshot ?? level.title}
+                      {isSecret ? "Nivel secreto" : (levelUnlock?.title_snapshot ?? level.title)}
                     </strong>
                     {isSecret ? (
                       <span className="mt-1 block text-[11px] text-zinc-500">
