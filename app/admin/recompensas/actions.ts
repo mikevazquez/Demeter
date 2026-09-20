@@ -32,7 +32,10 @@ function integerValue(formData: FormData, key: string, fallback: number) {
 function optionalDateTime(formData: FormData, key: string) {
   const raw = textValue(formData, key);
   if (!raw) return null;
-  const date = new Date(raw);
+  const normalized = /(?:Z|[+-]\d{2}:\d{2})$/.test(raw)
+    ? raw
+    : `${raw.length === 16 ? `${raw}:00` : raw}-06:00`;
+  const date = new Date(normalized);
   if (Number.isNaN(date.getTime())) throw new Error(`invalid_date:${key}`);
   return date.toISOString();
 }
@@ -483,11 +486,23 @@ export async function deleteProgramLevelAction(formData: FormData) {
     });
     if (error) throw new Error(error.message);
     if (removed?.rule_id) {
-      await supabase.rpc("admin_transition_reward_rule", {
-        p_rule_id: removed.rule_id,
-        p_action: "cancel",
-        p_note: "draft_level_removed",
-      });
+      const { data: publishedUse } = program.published_version_number
+        ? await supabase
+            .from("reward_program_levels")
+            .select("id")
+            .eq("program_id", programId)
+            .eq("program_version_number", program.published_version_number)
+            .eq("rule_id", removed.rule_id)
+            .maybeSingle()
+        : { data: null };
+
+      if (!publishedUse) {
+        await supabase.rpc("admin_transition_reward_rule", {
+          p_rule_id: removed.rule_id,
+          p_action: "cancel",
+          p_note: "draft_level_removed",
+        });
+      }
     }
     revalidateRewards();
     revalidatePath(path);
@@ -540,6 +555,8 @@ async function saveStandaloneRule(
       familyOverride === "achievement" && boolValue(formData, "secret_achievement"),
     reward_visibility: outcome.visibility,
     condition_family: family,
+    challenge_mode: challengeMode,
+    cover_url: textValue(formData, "cover_url") || null,
   };
   const evaluation = {
     allow_historical: false,
@@ -652,6 +669,29 @@ export async function transitionStandaloneRuleAction(formData: FormData) {
     revalidateRewards();
     revalidatePath(path);
     redirect(`${path}?saved=${action}`);
+  } catch (error) {
+    redirect(rewardErrorUrl(path, error));
+  }
+}
+
+export async function updateStandaloneCopyAction(formData: FormData) {
+  const ruleId = textValue(formData, "rule_id");
+  const kind = textValue(formData, "kind") === "achievement" ? "logros" : "retos";
+  const path = `/admin/recompensas/${kind}/${ruleId}`;
+  try {
+    const title = textValue(formData, "name");
+    if (!ruleId || !title) throw new Error("reward_rule_title_required");
+    const { supabase } = await getAdminContext(CAPABILITIES.REWARDS_MANAGE);
+    const { error } = await supabase.rpc("admin_update_reward_rule_copy", {
+      p_rule_id: ruleId,
+      p_title: title,
+      p_description: textValue(formData, "description") || null,
+      p_cover_url: textValue(formData, "cover_url") || null,
+    });
+    if (error) throw new Error(error.message);
+    revalidateRewards();
+    revalidatePath(path);
+    redirect(`${path}?saved=copy`);
   } catch (error) {
     redirect(rewardErrorUrl(path, error));
   }
