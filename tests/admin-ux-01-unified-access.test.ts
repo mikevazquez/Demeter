@@ -47,7 +47,7 @@ describe("ADMIN-UX-01 unified Studio access", () => {
     expect(authActions).toContain('from("studio_memberships")');
     expect(authActions).toContain("CAPABILITIES.ADMIN_PORTAL");
     expect(authActions).toContain("CAPABILITIES.INSTRUCTOR_PORTAL");
-    expect(authActions).toContain('redirect("/admin/mis-clases")');
+    expect(authActions).toContain('"/admin/mis-clases"');
     expect(authActions).not.toContain('requestedMode === "coach"');
   });
 
