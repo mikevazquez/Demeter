@@ -13,6 +13,7 @@ import {
   updateProgramDraftAction,
 } from "../../actions";
 import { RewardsShell } from "../../RewardsNav";
+import ProgramSavedNotice from "./ProgramSavedNotice";
 import { StatusBadge, asObject, conditionsLabel, rewardDefinitionLabel } from "../../ui";
 
 export default async function ProgramDetailPage({
@@ -110,7 +111,7 @@ export default async function ProgramDetailPage({
         <StatusBadge status={program.status} />
       </header>
 
-      {query.saved ? <div className="notice success">Cambios guardados correctamente.</div> : null}
+      <ProgramSavedNotice saved={query.saved} />
       {query.error ? <div className="notice error">{query.error}</div> : null}
 
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
