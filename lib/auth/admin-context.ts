@@ -1,5 +1,7 @@
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { CAPABILITIES, type Capability } from "@/lib/auth/capabilities";
+import { STUDIO_CONTEXT_COOKIE } from "@/lib/auth/studio-context-cookie";
 import { createClient } from "@/lib/supabase/server";
 
 export async function getAdminContext(requiredCapability?: Capability) {
@@ -8,21 +10,31 @@ export async function getAdminContext(requiredCapability?: Capability) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) redirect("/login/admin");
+  if (!user) redirect("/login/studio");
 
-  const [{ data: account }, { data: membership }] = await Promise.all([
+  const [{ data: account }, { data: memberships }] = await Promise.all([
     supabase.from("user_accounts").select("status").eq("id", user.id).maybeSingle(),
     supabase
       .from("studio_memberships")
       .select("studio_id, role, active, person_id")
       .eq("user_id", user.id)
-      .eq("active", true)
-      .maybeSingle(),
+      .eq("active", true),
   ]);
 
-  if (!account || account.status !== "active" || !membership) {
+  if (!account || account.status !== "active" || !memberships?.length) {
     await supabase.auth.signOut();
-    redirect("/login/admin?error=access");
+    redirect("/login/studio?error=access");
+  }
+
+  const cookieStore = await cookies();
+  const selectedStudioId = cookieStore.get(STUDIO_CONTEXT_COOKIE)?.value;
+  const selectedMembership = selectedStudioId
+    ? memberships.find((item) => item.studio_id === selectedStudioId)
+    : null;
+  const membership = selectedMembership ?? (memberships.length === 1 ? memberships[0] : null);
+
+  if (!membership) {
+    redirect("/login/studio/seleccionar");
   }
 
   const [{ data: studio }, { data: roleCapabilities }] = await Promise.all([
@@ -36,19 +48,26 @@ export async function getAdminContext(requiredCapability?: Capability) {
 
   if (!studio || studio.status !== "active") {
     await supabase.auth.signOut();
-    redirect("/login/admin?error=access");
+    redirect("/login/studio?error=access");
   }
 
   const capabilities = new Set(
     (roleCapabilities ?? []).map((item) => item.capability_key as Capability),
   );
+  const canUseStudioPortal =
+    capabilities.has(CAPABILITIES.ADMIN_PORTAL) || capabilities.has(CAPABILITIES.INSTRUCTOR_PORTAL);
 
-  if (!capabilities.has(CAPABILITIES.ADMIN_PORTAL)) {
-    redirect("/login/admin?error=access");
+  if (!canUseStudioPortal) {
+    await supabase.auth.signOut();
+    redirect("/login/studio?error=access");
   }
 
   if (requiredCapability && !capabilities.has(requiredCapability)) {
-    redirect("/admin?error=access");
+    redirect(
+      capabilities.has(CAPABILITIES.ADMIN_PORTAL)
+        ? "/admin?error=access"
+        : "/admin/mis-clases?error=access",
+    );
   }
 
   return {

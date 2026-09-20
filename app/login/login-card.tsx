@@ -1,30 +1,23 @@
 "use client";
 
 import { useState } from "react";
+import { useFormStatus } from "react-dom";
 import Link from "next/link";
 import { signIn } from "@/app/auth/actions";
 
 type LoginCardProps = {
-  mode: "admin" | "coach" | "student";
+  mode: "studio" | "student";
   error?: string;
 };
 
-const adminMessages: Record<string, string> = {
+const studioMessages: Record<string, string> = {
   missing: "Escribe tu correo y contraseña.",
   invalid: "El correo o la contraseña no son correctos.",
   rate: "Hay demasiados intentos de acceso. Espera un momento y vuelve a intentar.",
   auth: "No se pudo validar el acceso en este momento. Vuelve a intentarlo.",
   pending: "Tu cuenta existe, pero todavía no tiene acceso asignado al estudio.",
-  access: "Esta cuenta no tiene acceso a administración.",
-};
-
-const coachMessages: Record<string, string> = {
-  missing: "Escribe tu correo y contraseña.",
-  invalid: "El correo o la contraseña no son correctos.",
-  rate: "Hay demasiados intentos de acceso. Espera un momento y vuelve a intentar.",
-  auth: "No se pudo validar el acceso en este momento. Vuelve a intentarlo.",
-  pending: "Tu cuenta existe, pero todavía no tiene acceso asignado al estudio.",
-  access: "Esta cuenta no tiene acceso al portal Coach.",
+  access: "Esta cuenta no tiene acceso activo al estudio.",
+  activation: "Tu acceso inicial necesita ser habilitado por el administrador del estudio.",
 };
 
 const studentMessages: Record<string, string> = {
@@ -76,6 +69,16 @@ function EyeIcon({ visible }: { visible: boolean }) {
   );
 }
 
+function AuthSubmitButton() {
+  const { pending } = useFormStatus();
+
+  return (
+    <button className="primary-button" type="submit" disabled={pending} aria-busy={pending}>
+      {pending ? "Entrando…" : "Entrar"}
+    </button>
+  );
+}
+
 function portalCopy(mode: LoginCardProps["mode"]) {
   if (mode === "student") {
     return {
@@ -83,41 +86,25 @@ function portalCopy(mode: LoginCardProps["mode"]) {
       copy: "Accede con el teléfono registrado en el estudio y tu contraseña.",
     };
   }
-  if (mode === "coach") {
-    return {
-      title: "Coach",
-      copy: "Accede para consultar tus clases asignadas y gestionar asistencia.",
-    };
-  }
+
   return {
-    title: "Administración",
-    copy: "Accede para gestionar la operación del estudio.",
+    title: "Acceso al estudio",
+    copy: "Entra con la cuenta que usas para trabajar en el estudio. Studio Flow detectará tus permisos automáticamente.",
   };
 }
 
 function SwitchLinks({ mode }: { mode: LoginCardProps["mode"] }) {
-  if (mode === "admin") {
+  if (mode === "student") {
     return (
       <>
-        ¿Otro portal? <Link href="/login/coach">Coach</Link> ·{" "}
-        <Link href="/login/student">Alumna</Link>
-      </>
-    );
-  }
-
-  if (mode === "coach") {
-    return (
-      <>
-        ¿Otro portal? <Link href="/login/admin">Administración</Link> ·{" "}
-        <Link href="/login/student">Alumna</Link>
+        ¿Trabajas en el estudio? <Link href="/login/studio">Acceso al estudio</Link>
       </>
     );
   }
 
   return (
     <>
-      ¿Eres parte del equipo? <Link href="/login/admin">Administración</Link> ·{" "}
-      <Link href="/login/coach">Coach</Link>
+      ¿Eres alumna? <Link href="/login/student">Entrar al portal de alumna</Link>
     </>
   );
 }
@@ -125,8 +112,7 @@ function SwitchLinks({ mode }: { mode: LoginCardProps["mode"] }) {
 export function LoginCard({ mode, error }: LoginCardProps) {
   const [passwordVisible, setPasswordVisible] = useState(false);
   const isStudent = mode === "student";
-  const messages =
-    mode === "student" ? studentMessages : mode === "coach" ? coachMessages : adminMessages;
+  const messages = isStudent ? studentMessages : studioMessages;
   const copy = portalCopy(mode);
   const passwordToggleLabel = passwordVisible ? "Ocultar contraseña" : "Mostrar contraseña";
 
@@ -208,9 +194,7 @@ export function LoginCard({ mode, error }: LoginCardProps) {
               </button>
             </div>
           </label>
-          <button className="primary-button" type="submit">
-            Entrar
-          </button>
+          <AuthSubmitButton />
         </form>
 
         <p className="switch-copy">

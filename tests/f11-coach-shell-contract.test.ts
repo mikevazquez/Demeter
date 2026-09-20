@@ -8,19 +8,21 @@ function source(path: string) {
 }
 
 describe("F11 coach shell contract", () => {
-  it("keeps Coach as a separate protected portal without regressing the password hotfix", () => {
+  it("integrates Coach into the protected Studio portal without regressing password handling", () => {
     const actions = source("app/auth/actions.ts");
     const loginCard = source("app/login/login-card.tsx");
     const context = source("lib/auth/coach-context.ts");
+    const coachLayout = source("app/coach/layout.tsx");
 
     expect(actions).toContain("CAPABILITIES.INSTRUCTOR_PORTAL");
-    expect(actions).toContain('redirect("/coach")');
+    expect(actions).toContain('"/admin/mis-clases"');
     expect(actions).toContain("Supabase Auth rejected sign-in");
-    expect(loginCard).toContain('mode: "admin" | "coach" | "student"');
+    expect(loginCard).toContain('mode: "studio" | "student"');
     expect(loginCard).toContain('type={passwordVisible ? "text" : "password"}');
-    expect(loginCard).toContain('title: "Coach"');
-    expect(context).toContain('redirect("/login/coach")');
+    expect(loginCard).toContain('title: "Acceso al estudio"');
+    expect(context).toContain('redirect("/login/studio")');
     expect(context).toContain("CAPABILITIES.INSTRUCTOR_PORTAL");
+    expect(coachLayout).toContain("<AdminLayout>{children}</AdminLayout>");
   });
 
   it("requires an active instructor linked through the current membership person", () => {
@@ -34,7 +36,7 @@ describe("F11 coach shell contract", () => {
 
   it("keeps student and reservation access out of the generic Coach context", () => {
     const context = source("lib/auth/coach-context.ts");
-    const coachHome = source("app/coach/page.tsx");
+    const coachHome = source("app/admin/mis-clases/page.tsx");
     const detail = source("app/coach/clases/[sessionId]/page.tsx");
 
     expect(context).not.toContain('.from("students")');

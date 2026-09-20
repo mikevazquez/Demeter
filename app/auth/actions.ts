@@ -1,17 +1,32 @@
 "use server";
 
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
+import {
+  STUDIO_CONTEXT_COOKIE,
+  studioContextCookieOptions,
+} from "@/lib/auth/studio-context-cookie";
 import { studentAuthEmailFromPhone } from "@/lib/auth/student-login-identifier";
 import { normalizeMexicanPhone } from "@/lib/phone";
 import { createClient } from "@/lib/supabase/server";
 
-type LoginMode = "admin" | "coach" | "student";
+type LoginMode = "studio" | "student";
+
+type StudioMembership = {
+  studio_id: string;
+  role: string;
+  active: boolean;
+  person_id: string | null;
+};
+
+type PortalCapability = {
+  role: string;
+  capability_key: string;
+};
 
 function loginPath(mode: LoginMode) {
-  if (mode === "student") return "/login/student";
-  if (mode === "coach") return "/login/coach";
-  return "/login/admin";
+  return mode === "student" ? "/login/student" : "/login/studio";
 }
 
 function passwordIntegrity(password: string) {
@@ -32,11 +47,96 @@ function authErrorSummary(error: { code?: string; status?: number; message?: str
   };
 }
 
+function portalDestination(membership: StudioMembership, capabilities: PortalCapability[]) {
+  const hasAdminPortal = capabilities.some(
+    (item) => item.role === membership.role && item.capability_key === CAPABILITIES.ADMIN_PORTAL,
+  );
+  return hasAdminPortal ? "/admin" : "/admin/mis-clases";
+}
+
+async function setSelectedStudio(studioId: string) {
+  const cookieStore = await cookies();
+  cookieStore.set(STUDIO_CONTEXT_COOKIE, studioId, studioContextCookieOptions());
+}
+
+async function clearSelectedStudio() {
+  const cookieStore = await cookies();
+  cookieStore.delete(STUDIO_CONTEXT_COOKIE);
+}
+
+async function getEligibleStudioAccess(
+  accessClient: Awaited<ReturnType<typeof createClient>>,
+  userId: string,
+) {
+  const membershipResult = await accessClient
+    .from("studio_memberships")
+    .select("studio_id, role, active, person_id")
+    .eq("user_id", userId)
+    .eq("active", true);
+
+  if (membershipResult.error) {
+    return {
+      error: membershipResult.error,
+      memberships: [] as StudioMembership[],
+      capabilities: [] as PortalCapability[],
+    };
+  }
+
+  const memberships = (membershipResult.data ?? []) as StudioMembership[];
+  if (!memberships.length) {
+    return { error: null, memberships: [], capabilities: [] as PortalCapability[] };
+  }
+
+  const roles = [...new Set(memberships.map((item) => item.role))];
+  const capabilityResult = await accessClient
+    .from("role_capabilities")
+    .select("role, capability_key")
+    .in("role", roles)
+    .in("capability_key", [CAPABILITIES.ADMIN_PORTAL, CAPABILITIES.INSTRUCTOR_PORTAL]);
+
+  if (capabilityResult.error) {
+    return {
+      error: capabilityResult.error,
+      memberships: [] as StudioMembership[],
+      capabilities: [] as PortalCapability[],
+    };
+  }
+
+  const capabilities = (capabilityResult.data ?? []) as PortalCapability[];
+  const eligibleRoles = new Set(capabilities.map((item) => item.role));
+  const portalMemberships = memberships.filter((item) => eligibleRoles.has(item.role));
+
+  if (!portalMemberships.length) {
+    return { error: null, memberships: [], capabilities };
+  }
+
+  const studioIds = [...new Set(portalMemberships.map((item) => item.studio_id))];
+  const studiosResult = await accessClient
+    .from("studios")
+    .select("id, status")
+    .in("id", studioIds)
+    .eq("status", "active");
+
+  if (studiosResult.error) {
+    return {
+      error: studiosResult.error,
+      memberships: [] as StudioMembership[],
+      capabilities,
+    };
+  }
+
+  const activeStudioIds = new Set((studiosResult.data ?? []).map((item) => item.id));
+  return {
+    error: null,
+    memberships: portalMemberships.filter((item) => activeStudioIds.has(item.studio_id)),
+    capabilities,
+  };
+}
+
 export async function signIn(formData: FormData) {
   const password = String(formData.get("password") ?? "");
   const requestedMode = String(formData.get("mode") ?? "");
-  const mode: LoginMode =
-    requestedMode === "student" ? "student" : requestedMode === "coach" ? "coach" : "admin";
+  const mode: LoginMode = requestedMode === "student" ? "student" : "studio";
   const email = String(formData.get("email") ?? "")
     .trim()
     .toLowerCase();
@@ -96,91 +196,215 @@ export async function signIn(formData: FormData) {
     redirect(`${loginPath(mode)}?error=auth`);
   }
 
-  // Recreate the SSR client after sign-in so post-login RLS checks read the
-  // freshly persisted session cookies instead of the pre-auth request state.
   const accessClient = await createClient();
-  const [accountResult, membershipResult] = await Promise.all([
-    accessClient
-      .from("user_accounts")
-      .select("status, must_change_password")
-      .eq("id", data.user.id)
-      .maybeSingle(),
-    accessClient
-      .from("studio_memberships")
-      .select("studio_id, role, active")
-      .eq("user_id", data.user.id)
-      .eq("active", true)
-      .limit(1)
-      .maybeSingle(),
-  ]);
+  const accountResult = await accessClient
+    .from("user_accounts")
+    .select("status, must_change_password")
+    .eq("id", data.user.id)
+    .maybeSingle();
 
-  if (accountResult.error || membershipResult.error) {
-    console.error("[auth.signIn] Access context lookup failed", {
+  if (accountResult.error) {
+    console.error("[auth.signIn] Account lookup failed", {
       mode,
       accountError: authErrorSummary(accountResult.error),
-      membershipError: authErrorSummary(membershipResult.error),
     });
     await accessClient.auth.signOut();
     redirect(`${loginPath(mode)}?error=auth`);
   }
 
   const account = accountResult.data;
-  const membership = membershipResult.data;
-
   if (!account || account.status !== "active") {
     await accessClient.auth.signOut();
     redirect(`${loginPath(mode)}?error=access`);
   }
 
-  if (!membership) {
-    await accessClient.auth.signOut();
-    redirect(`${loginPath(mode)}?error=pending`);
+  if (mode === "student") {
+    const membershipResult = await accessClient
+      .from("studio_memberships")
+      .select("studio_id, role, active")
+      .eq("user_id", data.user.id)
+      .eq("role", "student")
+      .eq("active", true)
+      .limit(1)
+      .maybeSingle();
+
+    if (membershipResult.error) {
+      console.error("[auth.signIn] Student membership lookup failed", {
+        membershipError: authErrorSummary(membershipResult.error),
+      });
+      await accessClient.auth.signOut();
+      redirect("/login/student?error=auth");
+    }
+
+    const membership = membershipResult.data;
+    if (!membership) {
+      await accessClient.auth.signOut();
+      redirect("/login/student?error=pending");
+    }
+
+    const [studioResult, capabilityResult] = await Promise.all([
+      accessClient.from("studios").select("status").eq("id", membership.studio_id).maybeSingle(),
+      accessClient
+        .from("role_capabilities")
+        .select("capability_key")
+        .eq("role", membership.role)
+        .eq("capability_key", CAPABILITIES.STUDENT_PORTAL)
+        .maybeSingle(),
+    ]);
+
+    if (studioResult.error || capabilityResult.error) {
+      console.error("[auth.signIn] Student portal capability lookup failed", {
+        studioError: authErrorSummary(studioResult.error),
+        capabilityError: authErrorSummary(capabilityResult.error),
+      });
+      await accessClient.auth.signOut();
+      redirect("/login/student?error=auth");
+    }
+
+    if (!studioResult.data || studioResult.data.status !== "active" || !capabilityResult.data) {
+      await accessClient.auth.signOut();
+      redirect("/login/student?error=access");
+    }
+
+    if (account.must_change_password) {
+      redirect("/login/student/activar");
+    }
+
+    redirect("/student");
   }
 
-  const requiredCapability =
-    mode === "student"
-      ? CAPABILITIES.STUDENT_PORTAL
-      : mode === "coach"
-        ? CAPABILITIES.INSTRUCTOR_PORTAL
-        : CAPABILITIES.ADMIN_PORTAL;
-  const [studioResult, roleCapabilityResult] = await Promise.all([
-    accessClient.from("studios").select("status").eq("id", membership.studio_id).maybeSingle(),
-    accessClient
-      .from("role_capabilities")
-      .select("capability_key")
-      .eq("role", membership.role)
-      .eq("capability_key", requiredCapability)
-      .maybeSingle(),
-  ]);
+  const studioAccess = await getEligibleStudioAccess(accessClient, data.user.id);
 
-  if (studioResult.error || roleCapabilityResult.error) {
-    console.error("[auth.signIn] Portal capability lookup failed", {
-      mode,
-      studioError: authErrorSummary(studioResult.error),
-      capabilityError: authErrorSummary(roleCapabilityResult.error),
+  if (studioAccess.error) {
+    console.error("[auth.signIn] Studio access lookup failed", {
+      error: authErrorSummary(studioAccess.error),
     });
     await accessClient.auth.signOut();
-    redirect(`${loginPath(mode)}?error=auth`);
+    redirect("/login/studio?error=auth");
   }
 
-  const studio = studioResult.data;
-  const roleCapability = roleCapabilityResult.data;
-
-  if (!studio || studio.status !== "active" || !roleCapability) {
+  if (!studioAccess.memberships.length) {
     await accessClient.auth.signOut();
-    redirect(`${loginPath(mode)}?error=access`);
+    redirect("/login/studio?error=pending");
   }
 
-  if (mode === "student" && account.must_change_password) {
-    redirect("/login/student/activar");
-  }
-  if (mode === "coach" && account.must_change_password) {
-    redirect("/login/coach/activar");
+  if (account.must_change_password) {
+    const supportsActivation = studioAccess.memberships.some(
+      (membership) => membership.role === "instructor",
+    );
+    if (!supportsActivation) {
+      await accessClient.auth.signOut();
+      redirect("/login/studio?error=activation");
+    }
+    await clearSelectedStudio();
+    redirect("/login/studio/activar");
   }
 
-  if (mode === "student") redirect("/student");
-  if (mode === "coach") redirect("/coach");
-  redirect("/admin");
+  if (studioAccess.memberships.length > 1) {
+    await clearSelectedStudio();
+    redirect("/login/studio/seleccionar");
+  }
+
+  const membership = studioAccess.memberships[0];
+  await setSelectedStudio(membership.studio_id);
+  redirect(portalDestination(membership, studioAccess.capabilities));
+}
+
+export async function selectStudio(formData: FormData) {
+  const studioId = String(formData.get("studio_id") ?? "").trim();
+  if (!studioId) redirect("/login/studio/seleccionar?error=missing");
+
+  const accessClient = await createClient();
+  const {
+    data: { user },
+  } = await accessClient.auth.getUser();
+
+  if (!user) redirect("/login/studio");
+
+  const accountResult = await accessClient
+    .from("user_accounts")
+    .select("status, must_change_password")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (!accountResult.data || accountResult.data.status !== "active") {
+    await accessClient.auth.signOut();
+    redirect("/login/studio?error=access");
+  }
+
+  if (accountResult.data.must_change_password) {
+    redirect("/login/studio/activar");
+  }
+
+  const studioAccess = await getEligibleStudioAccess(accessClient, user.id);
+  const membership = studioAccess.memberships.find((item) => item.studio_id === studioId);
+
+  if (studioAccess.error || !membership) {
+    redirect("/login/studio/seleccionar?error=access");
+  }
+
+  await setSelectedStudio(studioId);
+  redirect(portalDestination(membership, studioAccess.capabilities));
+}
+
+export async function completeStudioPasswordActivation(formData: FormData) {
+  const password = String(formData.get("password") ?? "");
+  const confirmation = String(formData.get("password_confirmation") ?? "");
+
+  if (password.length < 8 || password !== confirmation) {
+    redirect("/login/studio/activar?error=invalid");
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) redirect("/login/studio");
+
+  const accountResult = await supabase
+    .from("user_accounts")
+    .select("status, must_change_password")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (!accountResult.data || accountResult.data.status !== "active") {
+    await supabase.auth.signOut();
+    redirect("/login/studio?error=access");
+  }
+
+  const studioAccess = await getEligibleStudioAccess(supabase, user.id);
+  if (studioAccess.error || !studioAccess.memberships.length) {
+    await supabase.auth.signOut();
+    redirect("/login/studio?error=access");
+  }
+
+  if (!accountResult.data.must_change_password) {
+    if (studioAccess.memberships.length > 1) redirect("/login/studio/seleccionar");
+    const membership = studioAccess.memberships[0];
+    await setSelectedStudio(membership.studio_id);
+    redirect(portalDestination(membership, studioAccess.capabilities));
+  }
+
+  const hasInstructorMembership = studioAccess.memberships.some(
+    (membership) => membership.role === "instructor",
+  );
+  if (!hasInstructorMembership) redirect("/login/studio?error=activation");
+
+  const { error: passwordError } = await supabase.auth.updateUser({ password });
+  if (passwordError) redirect("/login/studio/activar?error=password");
+
+  const { error: activationError } = await supabase.rpc("instructor_complete_password_activation");
+  if (activationError) redirect("/login/studio/activar?error=save");
+
+  if (studioAccess.memberships.length > 1) {
+    await clearSelectedStudio();
+    redirect("/login/studio/seleccionar");
+  }
+
+  const membership = studioAccess.memberships[0];
+  await setSelectedStudio(membership.studio_id);
+  redirect(portalDestination(membership, studioAccess.capabilities));
 }
 
 export async function createInitialOwnerAccount(formData: FormData) {
@@ -210,5 +434,6 @@ export async function createInitialOwnerAccount(formData: FormData) {
 export async function signOut() {
   const supabase = await createClient();
   await supabase.auth.signOut();
+  await clearSelectedStudio();
   redirect("/");
 }

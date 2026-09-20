@@ -22,18 +22,17 @@ describe("F11 instructor access provisioning", () => {
     expect(migration).toContain("person_id = excluded.person_id");
   });
 
-  it("forces the Coach to replace the temporary password", () => {
+  it("forces the Coach to replace the temporary password through the unified Studio access", () => {
     const migration = source(
       "supabase/migrations/20260916164000_f11_instructor_access_provisioning.sql",
     );
     const auth = source("app/auth/actions.ts");
-    const activation = source("app/login/coach/activar/actions.ts");
 
     expect(migration).toContain("must_change_password = true");
     expect(migration).toContain("public.instructor_complete_password_activation()");
-    expect(auth).toContain('redirect("/login/coach/activar")');
-    expect(activation).toContain('supabase.rpc("instructor_complete_password_activation")');
-    expect(activation).toContain("supabase.auth.updateUser({ password })");
+    expect(auth).toContain('redirect("/login/studio/activar")');
+    expect(auth).toContain('supabase.rpc("instructor_complete_password_activation")');
+    expect(auth).toContain("supabase.auth.updateUser({ password })");
   });
 
   it("provisions Auth only inside the protected Edge Function", () => {

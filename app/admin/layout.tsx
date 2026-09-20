@@ -6,30 +6,55 @@ import "./hoy.css";
 import "./roster-uat.css";
 import "./mobile-nav-overrides.css";
 
+const roleLabels: Record<string, string> = {
+  owner: "Owner",
+  admin: "Administración",
+  reception: "Recepción",
+  instructor: "Coach",
+};
+
 export default async function AdminLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const { studio, membership, can } = await getAdminContext();
+  const instructorOnly = can(CAPABILITIES.INSTRUCTOR_PORTAL) && !can(CAPABILITIES.ADMIN_PORTAL);
 
-  const navItems = [
-    { href: "/admin", label: "Hoy", enabled: true },
-    ...(can(CAPABILITIES.REQUIRED_ACTIONS_READ)
-      ? [{ href: "/admin/acciones", label: "Acciones", enabled: true }]
-      : []),
-    { href: "/admin/agenda", label: "Agenda", enabled: true },
-    { href: "/admin/alumnas", label: "Alumnas", enabled: true },
-    {
-      href: "/admin/empresa",
-      label: "Empresa",
-      enabled: true,
-      activeFor: [
-        "/admin/productos",
-        "/admin/ventas",
-        "/admin/instructores",
-        "/admin/automatizaciones",
-        "/admin/reportes",
-        "/admin/configuracion",
-      ],
-    },
-  ];
+  const navItems = instructorOnly
+    ? [
+        {
+          href: "/admin/mis-clases",
+          label: "Mis clases",
+          enabled: true,
+          activeFor: ["/coach"],
+        },
+      ]
+    : [
+        { href: "/admin", label: "Hoy", enabled: true },
+        ...(can(CAPABILITIES.REQUIRED_ACTIONS_READ)
+          ? [{ href: "/admin/acciones", label: "Acciones", enabled: true }]
+          : []),
+        ...(can(CAPABILITIES.SCHEDULE_READ)
+          ? [{ href: "/admin/agenda", label: "Agenda", enabled: true }]
+          : []),
+        ...(can(CAPABILITIES.STUDENTS_READ)
+          ? [{ href: "/admin/alumnas", label: "Alumnas", enabled: true }]
+          : []),
+        ...(can(CAPABILITIES.ADMIN_PORTAL)
+          ? [
+              {
+                href: "/admin/empresa",
+                label: "Empresa",
+                enabled: true,
+                activeFor: [
+                  "/admin/productos",
+                  "/admin/ventas",
+                  "/admin/instructores",
+                  "/admin/automatizaciones",
+                  "/admin/reportes",
+                  "/admin/configuracion",
+                ],
+              },
+            ]
+          : []),
+      ];
 
   return (
     <div className="admin-shell">
@@ -45,7 +70,7 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
         <AdminNavigation items={navItems} />
 
         <div className="sidebar-footer">
-          <span className="sidebar-caption">{membership.role}</span>
+          <span className="sidebar-caption">{roleLabels[membership.role] ?? "Equipo"}</span>
           <form action={signOut}>
             <button type="submit" className="sidebar-signout">
               Cerrar sesión
