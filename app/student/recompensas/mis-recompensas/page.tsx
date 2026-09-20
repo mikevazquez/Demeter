@@ -19,11 +19,16 @@ const historyFilters = [
   { key: "adjusted", label: "Ajustadas" },
 ] as const;
 
-function rewardOriginLabel(ctx: Awaited<ReturnType<typeof getStudentRewardsContext>>, ruleId: string | null) {
+function rewardOriginLabel(
+  ctx: Awaited<ReturnType<typeof getStudentRewardsContext>>,
+  ruleId: string | null,
+) {
   if (!ruleId) return "Recompensa especial";
   const participation = ctx.participations.find((item) => item.rule_id === ruleId);
   if (!participation) return "Recompensa";
-  const version = ctx.versionMap.get(`${participation.rule_id}:${participation.joined_version_number}`);
+  const version = ctx.versionMap.get(
+    `${participation.rule_id}:${participation.joined_version_number}`,
+  );
   if (!version) return "Recompensa";
   if (ctx.programRuleIds.has(ruleId)) return "Programa";
   const presentation = rewardObject(version.presentation_definition);
@@ -83,9 +88,7 @@ export default async function StudentRewardsPage({
             <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-500">
               Utilizables ahora
             </p>
-            <h2 className="mt-0.5 text-lg font-semibold text-white">
-              Recompensas disponibles
-            </h2>
+            <h2 className="mt-0.5 text-lg font-semibold text-white">Recompensas disponibles</h2>
           </div>
 
           <div className="space-y-2">
@@ -141,14 +144,15 @@ export default async function StudentRewardsPage({
                     <div className="mt-3 rounded-2xl border border-emerald-400/15 bg-emerald-400/[0.06] px-3 py-2.5">
                       <strong className="text-xs text-emerald-200">Aplicación automática</strong>
                       <p className="mt-1 text-[11px] text-zinc-400">
-                        Studio Flow la aplica cuando corresponde; no necesitas seleccionarla.
+                        Se aplica automáticamente cuando corresponde; no necesitas seleccionarla.
                       </p>
                     </div>
                   ) : reserved ? (
                     <div className="mt-3 rounded-2xl border border-amber-400/15 bg-amber-400/[0.06] px-3 py-2.5">
                       <strong className="text-xs text-amber-200">En uso</strong>
                       <p className="mt-1 text-[11px] text-zinc-400">
-                        Está reservada en una compra en curso. Si la compra se cancela, vuelve a Disponible.
+                        Está reservada en una compra en curso. Si la compra se cancela, vuelve a
+                        Disponible.
                       </p>
                     </div>
                   ) : null}
@@ -208,13 +212,14 @@ export default async function StudentRewardsPage({
         {history.length ? (
           <div className="space-y-2">
             {history.map((reward) => {
-              const autoApplied = reward.delivery_mode === "auto_apply" && reward.status === "redeemed";
+              const autoApplied =
+                reward.delivery_mode === "auto_apply" && reward.status === "redeemed";
               const occurredAt =
                 reward.status === "redeemed"
                   ? reward.redeemed_at
                   : reward.status === "revoked"
                     ? reward.revoked_at
-                    : reward.expires_at ?? reward.created_at;
+                    : (reward.expires_at ?? reward.created_at);
 
               return (
                 <Link
@@ -227,10 +232,10 @@ export default async function StudentRewardsPage({
                       {rewardBenefitLabel(reward)}
                     </strong>
                     <span className="mt-1 block text-[11px] text-zinc-500">
-                      {autoApplied ? "Aplicada automáticamente" : rewardOriginLabel(ctx, reward.rule_id)}
-                      {occurredAt
-                        ? ` · ${formatDateTime(occurredAt, ctx.studio.timezone)}`
-                        : ""}
+                      {autoApplied
+                        ? "Aplicada automáticamente"
+                        : rewardOriginLabel(ctx, reward.rule_id)}
+                      {occurredAt ? ` · ${formatDateTime(occurredAt, ctx.studio.timezone)}` : ""}
                     </span>
                   </div>
                   <StateChip
