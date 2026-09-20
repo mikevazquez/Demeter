@@ -17,6 +17,7 @@ describe("ADMIN-UX-02 approved visual parity", () => {
   const team = source("app/admin/instructores/page.tsx");
   const automations = source("app/admin/automatizaciones/page.tsx");
   const sale = source("app/admin/ventas/nueva/page.tsx");
+  const saleForm = source("app/admin/alumnas/[studentId]/alta/StudentOnboardingForm.tsx");
   const styles = source("app/globals.css");
 
   it("uses the approved shell with icon navigation, user footer and utility bar", () => {
@@ -67,8 +68,11 @@ describe("ADMIN-UX-02 approved visual parity", () => {
     expect(team).toContain(">Equipo<");
     expect(team).toContain("team-list-row");
     expect(automations).toContain("automation-list");
-    expect(sale).toContain("sale-compact-form");
-    expect(sale).toContain(">Registrar venta<");
+    expect(sale).toContain("StudentOnboardingForm");
+    expect(sale).toContain('flowContext="sale"');
+    expect(saleForm).toContain("Descuento o cortesía");
+    expect(saleForm).toContain("Registrar lo que ocurrió");
+    expect(saleForm).toContain("Saldo pendiente");
   });
 
   it("keeps the configured studio identity rather than hardcoded Studio Flow branding", () => {
