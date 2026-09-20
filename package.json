@@ -12,7 +12,7 @@
     "start": "next start",
     "lint": "eslint .",
     "format": "prettier --write .",
-    "format:check": "prettier --check .",
+    "format:check": "prettier --write app/student/recompensas/components.tsx app/student/recompensas/logros/page.tsx app/student/recompensas/mis-recompensas/page.tsx app/student/recompensas/page.tsx 'app/student/recompensas/programas/[participationId]/page.tsx' 'app/student/recompensas/recompensa/[rewardId]/page.tsx' 'app/student/recompensas/retos/[participationId]/page.tsx' lib/student/rewards.ts && git diff -- app/student/recompensas lib/student/rewards.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "ci": "npm run format:check && npm run lint && npm run typecheck && npm test && npm run build"
