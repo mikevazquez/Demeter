@@ -63,17 +63,17 @@ export default async function MorePage() {
       {visibleItems.length ? (
         <section className="more-list">
           {visibleItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="more-row"
-            >
-              <span className="more-row-icon" aria-hidden="true">◇</span>
+            <Link key={item.href} href={item.href} className="more-row">
+              <span className="more-row-icon" aria-hidden="true">
+                ◇
+              </span>
               <span className="more-row-copy">
                 <strong>{item.title}</strong>
                 <small>{item.description}</small>
               </span>
-              <span className="module-chevron" aria-hidden="true">›</span>
+              <span className="module-chevron" aria-hidden="true">
+                ›
+              </span>
             </Link>
           ))}
         </section>
