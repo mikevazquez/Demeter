@@ -8,8 +8,6 @@ import { notFound } from "next/navigation";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getAdminContext } from "@/lib/auth/admin-context";
 import {
-  setAcquisitionAvailableCredits,
-  setAcquisitionStartDate,
   updateCommunicationPreferences,
   updateDynamicProfileFields,
   updateStudent,
@@ -17,13 +15,6 @@ import {
 
 const structuralFieldKeys = new Set(["first_name", "last_name", "phone", "email"]);
 
-const termCopy: Record<string, string> = {
-  monthly: "Mensual",
-  quarterly: "Trimestral",
-  semiannual: "Semestral",
-  annual: "Anual",
-  custom: "Otra vigencia",
-};
 
 const lifecycleCopy: Record<string, string> = {
   active: "Activa",
@@ -521,7 +512,7 @@ export default async function StudentProfilePage({
       await Promise.all([
         supabase
           .from("reward_achievement_unlocks")
-          .select("id,title_snapshot,level_key,unlocked_at")
+          .select("id,title_snapshot,achievement_key,level_key,unlocked_at")
           .eq("studio_id", studio.id)
           .eq("student_id", student.id)
           .order("unlocked_at", { ascending: false })
