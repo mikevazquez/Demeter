@@ -6,6 +6,15 @@ import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { RewardsShell } from "../RewardsNav";
 import { EmptyState, StatusBadge, asArray, asObject, metricLabels } from "../ui";
 
+type EvaluationRow = {
+  id: string;
+  rule_id: string;
+  student_id: string;
+  condition_results: unknown;
+  fulfilled: boolean;
+  evaluated_at: string;
+};
+
 function progressSummary(value: unknown) {
   const rows = asArray(value).map(asObject);
   if (!rows.length) return { score: 0, label: "Aún sin actividad contabilizada." };
@@ -94,13 +103,10 @@ export default async function RewardsTrackingPage({
       ])
     : [{ data: [] }, { data: [] }, { data: [] }];
 
-  const latestEval = new Map<
-    string,
-    typeof evaluationsResult.data extends Array<infer U> ? U : never
-  >();
-  for (const evaluation of evaluationsResult.data ?? []) {
+  const latestEval = new Map<string, EvaluationRow>();
+  for (const evaluation of (evaluationsResult.data ?? []) as EvaluationRow[]) {
     const key = `${evaluation.student_id}:${evaluation.rule_id}`;
-    if (!latestEval.has(key)) latestEval.set(key, evaluation as never);
+    if (!latestEval.has(key)) latestEval.set(key, evaluation);
   }
 
   const programIds = [...new Set((programResult.data ?? []).map((row) => row.program_id))];
