@@ -8,6 +8,7 @@ function source(path: string) {
 }
 
 describe("SF-N14 clean avatar, activity colors and single-class purchase", () => {
+  const home = source("app/student/page.tsx");
   const profile = source("app/student/perfil/page.tsx");
   const studentActions = source("app/student/actions.ts");
   const avatarRoute = source("app/student/perfil/avatar/route.ts");
@@ -92,8 +93,13 @@ describe("SF-N14 clean avatar, activity colors and single-class purchase", () =>
     expect(checkoutEdge).toContain("moneyFromMinor(attemptRow.amount_minor)");
   });
 
-  it("does not touch the global stylesheet or student home layout for these changes", () => {
+  it("shows the same profile photo in the home greeting without coupling Home to avatar writes", () => {
+    expect(home).toContain('src="/student/perfil/avatar"');
+    expect(home).toContain('alt="Foto de perfil"');
+    expect(home).not.toContain("updateStudentAvatarAction");
+  });
+
+  it("does not touch the global stylesheet for these changes", () => {
     expect(source("app/globals.css")).not.toContain("activity-color-list");
-    expect(source("app/student/page.tsx")).not.toContain("updateStudentAvatarAction");
   });
 });
