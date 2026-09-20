@@ -79,11 +79,12 @@ describe("F10 student auth login contracts", () => {
     const actions = source("app/auth/actions.ts");
 
     expect(actions).toContain("const accessClient = await createClient()");
-    expect(actions).toContain('accessClient\n      .from("user_accounts")');
-    expect(actions).toContain('accessClient\n      .from("studio_memberships")');
-    expect(actions).toContain("Access context lookup failed");
-    expect(actions).toContain("Portal capability lookup failed");
+    expect(actions).toContain('.from("user_accounts")');
+    expect(actions).toContain('.from("studio_memberships")');
+    expect(actions).toContain("Account lookup failed");
+    expect(actions).toContain("Student membership lookup failed");
+    expect(actions).toContain("Student portal capability lookup failed");
     expect(actions).toContain("membershipResult.error");
-    expect(actions).toContain("roleCapabilityResult.error");
+    expect(actions).toContain("capabilityResult.error");
   });
 });
