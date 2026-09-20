@@ -13,14 +13,14 @@ const runtime = readFileSync(
 );
 
 describe("SF-252 automatic Rewards runtime", () => {
-  it("materializes eligible rule and program participations", () => {
+  it("materializes eligible participations", () => {
     expect(runtime).toContain("system_materialize_reward_runtime_for_student");
     expect(runtime).toContain("reward_materialize_student_runtime");
     expect(runtime).toContain("reward_materialize_rule_runtime");
     expect(runtime).toContain("reward_materialize_program_runtime");
   });
 
-  it("supports configured eligibility instead of a global active-student guard", () => {
+  it("uses configured eligibility", () => {
     expect(runtime).toContain("reward_rule_student_eligible");
     expect(runtime).toContain("'all_students'");
     expect(runtime).toContain("'all_active_students'");
@@ -30,19 +30,19 @@ describe("SF-252 automatic Rewards runtime", () => {
     );
   });
 
-  it("gates sequential programs and scopes their metric window", () => {
+  it("gates sequential program metrics", () => {
     expect(runtime).toContain("reward_rule_runtime_allowed");
     expect(runtime).toContain("pp.current_level_order = l.level_order");
     expect(runtime).toContain("reward_rule_program_window_start_at");
     expect(runtime).toContain("reward_trim_loyalty_state_from");
   });
 
-  it("turns fulfilled evaluations into permanent program progress", () => {
+  it("applies fulfilled progress to programs", () => {
     expect(runtime).toContain("reward_progress_program_completion");
     expect(runtime).toContain("system_record_reward_program_level_completion");
   });
 
-  it("keeps Rewards downstream and auditable on failures", () => {
+  it("keeps runtime failures downstream", () => {
     expect(runtime).toContain("runtime_processing_error");
     expect(runtime).toContain("system_open_reward_incident");
   });
