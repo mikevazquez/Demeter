@@ -85,7 +85,6 @@ export default async function SessionDetailPage({
       .order("booked_at"),
   ]);
 
-
   const timeZone = studio.timezone ?? "America/Mexico_City";
   const personMap = new Map(
     (persons ?? []).map((p) => [p.id, [p.first_name, p.last_name].filter(Boolean).join(" ")]),
@@ -208,7 +207,6 @@ export default async function SessionDetailPage({
           <small>Por reserva</small>
         </article>
       </section>
-
 
       {canEdit && session.status !== "cancelled" ? (
         <section className="panel">
