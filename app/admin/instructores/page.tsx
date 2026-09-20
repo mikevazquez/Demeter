@@ -76,7 +76,9 @@ export default async function InstructorsPage({
               <input name="phone" type="tel" placeholder="Teléfono opcional" />
               <input name="email" type="email" placeholder="Correo opcional" />
               <textarea name="bio" placeholder="Bio / especialidad opcional" />
-              <button className="primary-button" type="submit">Crear integrante</button>
+              <button className="primary-button" type="submit">
+                Crear integrante
+              </button>
             </form>
           </details>
         ) : null}
@@ -104,7 +106,9 @@ export default async function InstructorsPage({
 
       {rows.length === 0 ? (
         <section className="module-empty">
-          {query ? "No encontramos integrantes con esa búsqueda." : "No hay integrantes en este estado."}
+          {query
+            ? "No encontramos integrantes con esa búsqueda."
+            : "No hay integrantes en este estado."}
         </section>
       ) : (
         <section className="module-list">
@@ -125,8 +129,12 @@ export default async function InstructorsPage({
                   <strong>{item.name}</strong>
                   <small>{item.bio?.trim() || "Miembro del equipo"}</small>
                 </span>
-                <span className="status-chip is-active">{item.status === "active" ? "Activo" : "Inactivo"}</span>
-                <span className="module-chevron" aria-hidden="true">›</span>
+                <span className="status-chip is-active">
+                  {item.status === "active" ? "Activo" : "Inactivo"}
+                </span>
+                <span className="module-chevron" aria-hidden="true">
+                  ›
+                </span>
               </Link>
             );
           })}
