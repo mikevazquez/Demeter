@@ -61,9 +61,7 @@ export default async function MyClassesPage({
       </section>
 
       {query.error === "access" ? (
-        <div className="notice error">
-          No tienes permiso para realizar esa acción.
-        </div>
+        <div className="notice error">No tienes permiso para realizar esa acción.</div>
       ) : null}
 
       <section className="rounded-3xl border border-white/10 bg-white/[0.03] p-4 sm:p-5">
