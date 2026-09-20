@@ -34,7 +34,10 @@ jobs:
         run: npm ci
 
       - name: Format check
-        run: npm run format:check
+        run: |
+          npm run format
+          git diff -- app/globals.css app/login/login-card.tsx tests/admin-ux-01-login-visual-contract.test.ts
+          git diff --exit-code
 
       - name: Lint
         run: npm run lint
