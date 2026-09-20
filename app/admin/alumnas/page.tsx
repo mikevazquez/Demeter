@@ -48,9 +48,7 @@ export default async function StudentsPage({
   const params = await searchParams;
   const query = String(params.q ?? "").trim();
   const requestedStatus = String(params.status ?? "all");
-  const status = ["all", "active", "inactive"].includes(requestedStatus)
-    ? requestedStatus
-    : "all";
+  const status = ["all", "active", "inactive"].includes(requestedStatus) ? requestedStatus : "all";
 
   const { supabase, studio, membership, can } = await getAdminContext(CAPABILITIES.STUDENTS_READ);
   const canEdit = can(CAPABILITIES.STUDENTS_WRITE);
@@ -118,7 +116,9 @@ export default async function StudentsPage({
 
   return (
     <main className="dashboard-shell student-directory-page">
-      {duplicateStudent ? <DuplicateStudentDialog studentName={duplicateStudent.full_name} /> : null}
+      {duplicateStudent ? (
+        <DuplicateStudentDialog studentName={duplicateStudent.full_name} />
+      ) : null}
       {errorDialog ? (
         <StudentFormErrorDialog title={errorDialog.title} message={errorDialog.message} />
       ) : null}
@@ -187,13 +187,7 @@ export default async function StudentsPage({
         <div className="panel-heading">
           <div>
             <p className="eyebrow">DIRECTORIO</p>
-            <h2>
-              {status === "all"
-                ? "Todas"
-                : status === "active"
-                  ? "Activas"
-                  : "Inactivas"}
-            </h2>
+            <h2>{status === "all" ? "Todas" : status === "active" ? "Activas" : "Inactivas"}</h2>
           </div>
           <span className="count-badge">{students?.length ?? 0}</span>
         </div>
@@ -249,12 +243,7 @@ export default async function StudentsPage({
             <p>Nombre y teléfono bastan para crear el expediente.</p>
             <form action={createStudent} className="compact-form mt-4">
               <div className="form-split">
-                <input
-                  name="first_name"
-                  required
-                  placeholder="Nombre"
-                  autoComplete="given-name"
-                />
+                <input name="first_name" required placeholder="Nombre" autoComplete="given-name" />
                 <input
                   name="last_name"
                   placeholder="Apellido opcional"
@@ -269,12 +258,7 @@ export default async function StudentsPage({
                 placeholder="Teléfono · 10 dígitos"
                 autoComplete="tel"
               />
-              <input
-                name="email"
-                type="email"
-                placeholder="Correo opcional"
-                autoComplete="email"
-              />
+              <input name="email" type="email" placeholder="Correo opcional" autoComplete="email" />
               <PendingActionButton className="primary-button" pendingLabel="Creando alumna…">
                 Crear alumna
               </PendingActionButton>

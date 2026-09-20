@@ -60,7 +60,7 @@
   padding: 0 14px;
   border: 1px solid var(--line);
   border-radius: 14px;
-  background: rgba(255,255,255,.025);
+  background: rgba(255, 255, 255, 0.025);
   color: var(--muted);
   text-decoration: none;
   white-space: nowrap;
@@ -71,13 +71,13 @@
 
 .student-filter-chip.is-active,
 .profile360-tab.is-active {
-  border-color: rgba(255,10,138,.55);
+  border-color: rgba(255, 10, 138, 0.55);
   background: var(--accent-soft);
   color: #ff91ca;
 }
 
 .student-filter-chip.is-future {
-  opacity: .52;
+  opacity: 0.52;
 }
 
 .student-directory-list {
@@ -87,7 +87,7 @@
 
 .student-directory-card {
   display: grid;
-  grid-template-columns: auto minmax(0,1fr) auto;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   gap: 12px;
   align-items: center;
   min-height: 74px;
@@ -100,8 +100,8 @@
 }
 
 .student-directory-card:hover {
-  border-color: rgba(255,10,138,.38);
-  background: rgba(255,255,255,.035);
+  border-color: rgba(255, 10, 138, 0.38);
+  background: rgba(255, 255, 255, 0.035);
 }
 
 .student-avatar,
@@ -111,8 +111,8 @@
   display: grid;
   place-items: center;
   border-radius: 999px;
-  border: 1px solid rgba(255,10,138,.55);
-  background: linear-gradient(145deg, rgba(255,10,138,.28), rgba(40,18,36,.65));
+  border: 1px solid rgba(255, 10, 138, 0.55);
+  background: linear-gradient(145deg, rgba(255, 10, 138, 0.28), rgba(40, 18, 36, 0.65));
   color: white;
   font-weight: 850;
 }
@@ -170,15 +170,15 @@
 
 .student-state-pill.is-active,
 .profile360-state-pill.is-active {
-  border: 1px solid rgba(56,211,137,.28);
-  background: rgba(56,211,137,.1);
+  border: 1px solid rgba(56, 211, 137, 0.28);
+  background: rgba(56, 211, 137, 0.1);
   color: #7cf0ae;
 }
 
 .student-state-pill.is-inactive,
 .profile360-state-pill.is-inactive {
-  border: 1px solid rgba(255,95,126,.25);
-  background: rgba(255,95,126,.08);
+  border: 1px solid rgba(255, 95, 126, 0.25);
+  background: rgba(255, 95, 126, 0.08);
   color: #ff8ea5;
 }
 
@@ -201,7 +201,7 @@
 
 .profile360-person {
   display: grid;
-  grid-template-columns: auto minmax(0,1fr);
+  grid-template-columns: auto minmax(0, 1fr);
   gap: 16px;
   align-items: center;
 }
@@ -229,14 +229,14 @@
 }
 
 .profile360-level-pill {
-  border: 1px solid rgba(255,190,70,.36);
-  background: linear-gradient(135deg, rgba(255,184,55,.16), rgba(255,10,138,.07));
+  border: 1px solid rgba(255, 190, 70, 0.36);
+  background: linear-gradient(135deg, rgba(255, 184, 55, 0.16), rgba(255, 10, 138, 0.07));
   color: #ffd982;
 }
 
 .profile360-actions {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0,1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 8px;
 }
 
@@ -309,7 +309,7 @@
   overflow: hidden;
   height: 7px;
   border-radius: 99px;
-  background: rgba(255,255,255,.1);
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .profile360-progress-track span {
@@ -331,7 +331,7 @@
   padding: 12px;
   border: 1px solid var(--line);
   border-radius: 14px;
-  background: rgba(255,255,255,.025);
+  background: rgba(255, 255, 255, 0.025);
 }
 
 .profile360-next-class strong {
@@ -340,7 +340,7 @@
 
 .profile360-metrics {
   display: grid;
-  grid-template-columns: repeat(2,minmax(0,1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
 }
 
@@ -368,18 +368,18 @@
   display: grid;
   gap: 8px;
   padding: 14px;
-  border: 1px solid rgba(255,78,135,.28);
+  border: 1px solid rgba(255, 78, 135, 0.28);
   border-radius: 18px;
-  background: linear-gradient(135deg, rgba(255,37,100,.11), rgba(255,10,138,.045));
+  background: linear-gradient(135deg, rgba(255, 37, 100, 0.11), rgba(255, 10, 138, 0.045));
 }
 
 .profile360-alert {
   display: grid;
   gap: 3px;
   padding: 11px 12px;
-  border: 1px solid rgba(255,108,153,.18);
+  border: 1px solid rgba(255, 108, 153, 0.18);
   border-radius: 13px;
-  background: rgba(0,0,0,.14);
+  background: rgba(0, 0, 0, 0.14);
 }
 
 .profile360-alert strong {
@@ -399,7 +399,7 @@
 
 .profile360-recent-row {
   display: grid;
-  grid-template-columns: 70px minmax(0,1fr);
+  grid-template-columns: 70px minmax(0, 1fr);
   gap: 10px;
   padding: 10px 0;
   border-top: 1px solid var(--line);
@@ -423,7 +423,7 @@
   }
 
   .student-directory-header {
-    grid-template-columns: minmax(0,1fr) auto;
+    grid-template-columns: minmax(0, 1fr) auto;
     align-items: end;
   }
 
@@ -432,16 +432,16 @@
   }
 
   .profile360-person {
-    grid-template-columns: auto minmax(0,1fr) auto;
+    grid-template-columns: auto minmax(0, 1fr) auto;
   }
 
   .profile360-actions {
     width: min(100%, 540px);
-    grid-template-columns: repeat(4,minmax(100px,1fr));
+    grid-template-columns: repeat(4, minmax(100px, 1fr));
   }
 
   .profile360-metrics {
-    grid-template-columns: repeat(4,minmax(0,1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
 
@@ -454,17 +454,16 @@
 
   .profile360-overview-grid {
     display: grid;
-    grid-template-columns: minmax(0,1.3fr) minmax(320px,.7fr);
+    grid-template-columns: minmax(0, 1.3fr) minmax(320px, 0.7fr);
     gap: 14px;
     align-items: start;
   }
 }
 
 .profile360-action[aria-disabled="true"] {
-  opacity: .45;
+  opacity: 0.45;
   cursor: not-allowed;
 }
-
 
 /* SF-N02 · Perfil 360 mobile-first simplificado */
 .profile360-hero {
@@ -531,7 +530,7 @@
   padding: 12px;
   border: 1px solid var(--line);
   border-radius: 13px;
-  background: rgba(255,255,255,.025);
+  background: rgba(255, 255, 255, 0.025);
 }
 
 .profile360-current-facts strong {
@@ -568,8 +567,8 @@
 }
 
 .profile360-attention {
-  border-color: rgba(255, 80, 142, .28);
-  background: linear-gradient(135deg, rgba(255, 10, 138, .08), rgba(255,255,255,.02));
+  border-color: rgba(255, 80, 142, 0.28);
+  background: linear-gradient(135deg, rgba(255, 10, 138, 0.08), rgba(255, 255, 255, 0.02));
 }
 
 .profile360-attention > summary,
@@ -618,7 +617,7 @@
   color: #ff72b7;
   font-size: 22px;
   line-height: 1;
-  transition: transform .2s ease;
+  transition: transform 0.2s ease;
 }
 
 .profile360-attention[open] > summary > span:last-child,
@@ -632,7 +631,7 @@
   display: grid;
   gap: 10px;
   padding: 0 14px 14px;
-  border-top: 1px solid rgba(255,255,255,.05);
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .profile360-attention-body {
@@ -641,7 +640,7 @@
 
 .profile360-mini-summary {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0,1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
   padding-top: 12px;
 }
@@ -653,7 +652,7 @@
   padding: 10px;
   border: 1px solid var(--line);
   border-radius: 12px;
-  background: rgba(255,255,255,.025);
+  background: rgba(255, 255, 255, 0.025);
 }
 
 .profile360-mini-summary span {
@@ -681,7 +680,7 @@
   gap: 12px;
   min-height: 46px;
   padding: 0 4px;
-  border-top: 1px solid rgba(255,255,255,.06);
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
   color: var(--text);
   text-decoration: none;
   font-size: 12px;
@@ -702,7 +701,7 @@
   border: 0;
   border-top: 1px solid var(--line);
   border-radius: 0;
-  background: rgba(0,0,0,.08);
+  background: rgba(0, 0, 0, 0.08);
 }
 
 @media (max-width: 640px) {
@@ -740,7 +739,6 @@
     font-size: 18px;
   }
 }
-
 
 /* SF-N02 · Ajuste visual Caso 2 */
 .profile360-hero {
@@ -825,8 +823,8 @@
 }
 
 .profile360-context-secondary {
-  border: 1px solid rgba(255,255,255,.12);
-  background: rgba(255,255,255,.025);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.025);
   color: var(--text);
 }
 
@@ -835,7 +833,7 @@
   margin-top: 14px;
   border: 1px solid var(--line);
   border-radius: 16px;
-  background: rgba(255,255,255,.018);
+  background: rgba(255, 255, 255, 0.018);
 }
 
 .profile360-summary-detail > summary {
@@ -872,7 +870,7 @@
   color: #ff72b7;
   font-size: 22px;
   line-height: 1;
-  transition: transform .2s ease;
+  transition: transform 0.2s ease;
 }
 
 .profile360-summary-detail[open] > summary > span:last-child {
@@ -881,7 +879,7 @@
 
 .profile360-summary-detail .profile360-mini-summary {
   padding: 12px 14px 14px;
-  border-top: 1px solid rgba(255,255,255,.05);
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .profile360-detail {
@@ -906,7 +904,6 @@
   }
 }
 
-
 /* SF-N02 · Perfil 360 · baseline mockup aprobado */
 .profile360-approved-header {
   display: grid;
@@ -916,7 +913,7 @@
 
 .profile360-approved-person {
   display: grid;
-  grid-template-columns: auto minmax(0,1fr) auto;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   gap: 14px;
   align-items: start;
 }
@@ -959,7 +956,7 @@
   align-items: center;
   min-height: 34px;
   padding: 0 10px;
-  border: 1px solid rgba(255,10,138,.28);
+  border: 1px solid rgba(255, 10, 138, 0.28);
   border-radius: 10px;
   color: #ff79ba;
   text-decoration: none;
@@ -1044,7 +1041,7 @@
 
 .profile360-approved-package-row {
   display: grid;
-  grid-template-columns: minmax(0,1fr) minmax(0,1fr);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 10px;
 }
 
@@ -1075,7 +1072,7 @@
   overflow: hidden;
   height: 6px;
   border-radius: 99px;
-  background: rgba(255,255,255,.09);
+  background: rgba(255, 255, 255, 0.09);
 }
 
 .profile360-approved-progress span {
@@ -1089,7 +1086,7 @@
   display: grid;
   gap: 4px;
   padding-top: 12px;
-  border-top: 1px solid rgba(255,255,255,.07);
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
 }
 
 .profile360-approved-next strong {
@@ -1106,7 +1103,7 @@
 
 .profile360-approved-indicators {
   display: grid;
-  grid-template-columns: repeat(2,minmax(0,1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
 }
 
@@ -1119,7 +1116,7 @@
   padding: 12px;
   border: 1px solid var(--line);
   border-radius: 14px;
-  background: rgba(255,255,255,.022);
+  background: rgba(255, 255, 255, 0.022);
 }
 
 .profile360-approved-indicators span {
@@ -1138,10 +1135,9 @@
 .profile360-approved-alerts {
   display: grid;
   gap: 12px;
-  border-color: rgba(255,10,138,.22);
+  border-color: rgba(255, 10, 138, 0.22);
   background:
-    linear-gradient(135deg, rgba(255,10,138,.075), rgba(255,255,255,.02)),
-    var(--surface);
+    linear-gradient(135deg, rgba(255, 10, 138, 0.075), rgba(255, 255, 255, 0.02)), var(--surface);
 }
 
 .profile360-approved-alert-list {
@@ -1153,9 +1149,9 @@
   display: grid;
   gap: 3px;
   padding: 10px 11px;
-  border: 1px solid rgba(255,255,255,.07);
+  border: 1px solid rgba(255, 255, 255, 0.07);
   border-radius: 12px;
-  background: rgba(0,0,0,.13);
+  background: rgba(0, 0, 0, 0.13);
 }
 
 .profile360-approved-alert-list strong {
@@ -1192,7 +1188,7 @@
 
 @media (max-width: 640px) {
   .profile360-approved-person {
-    grid-template-columns: auto minmax(0,1fr);
+    grid-template-columns: auto minmax(0, 1fr);
   }
 
   .profile360-edit-link {
@@ -1221,7 +1217,6 @@
     padding: 15px;
   }
 }
-
 
 /* SF-N02 · Vistas secundarias jerarquizadas */
 .profile360-packages-view,
@@ -1292,13 +1287,13 @@
 }
 
 .profile360-package-card.is-current {
-  border-color: rgba(255,10,138,.28);
+  border-color: rgba(255, 10, 138, 0.28);
 }
 
 .profile360-package-card > summary {
   list-style: none;
   display: grid;
-  grid-template-columns: minmax(0,1fr) auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   gap: 10px;
   align-items: center;
   padding: 14px;
@@ -1349,7 +1344,7 @@
 .profile360-package-chevron {
   color: #ff79ba;
   font-size: 20px;
-  transition: transform .2s ease;
+  transition: transform 0.2s ease;
 }
 
 .profile360-package-card[open] .profile360-package-chevron {
@@ -1360,12 +1355,12 @@
   display: grid;
   gap: 14px;
   padding: 14px;
-  border-top: 1px solid rgba(255,255,255,.06);
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .profile360-package-facts {
   display: grid;
-  grid-template-columns: repeat(2,minmax(0,1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
 }
 
@@ -1375,7 +1370,7 @@
   padding: 10px;
   border: 1px solid var(--line);
   border-radius: 12px;
-  background: rgba(255,255,255,.02);
+  background: rgba(255, 255, 255, 0.02);
 }
 
 .profile360-package-facts span {
@@ -1390,9 +1385,9 @@
 
 .profile360-package-edit {
   overflow: hidden;
-  border: 1px solid rgba(255,10,138,.18);
+  border: 1px solid rgba(255, 10, 138, 0.18);
   border-radius: 13px;
-  background: rgba(255,10,138,.035);
+  background: rgba(255, 10, 138, 0.035);
 }
 
 .profile360-package-edit > summary {
@@ -1412,7 +1407,7 @@
   display: grid;
   gap: 12px;
   padding: 12px;
-  border-top: 1px solid rgba(255,10,138,.12);
+  border-top: 1px solid rgba(255, 10, 138, 0.12);
 }
 
 .profile360-package-classes {
@@ -1431,7 +1426,7 @@
   justify-content: space-between;
   gap: 12px;
   padding: 10px 0;
-  border-top: 1px solid rgba(255,255,255,.055);
+  border-top: 1px solid rgba(255, 255, 255, 0.055);
 }
 
 .profile360-package-class-row:first-child {
@@ -1472,7 +1467,7 @@
   padding: 11px 12px;
   border: 1px solid var(--line);
   border-radius: 13px;
-  background: rgba(255,255,255,.02);
+  background: rgba(255, 255, 255, 0.02);
 }
 
 .profile360-reward-list article > div {
@@ -1499,10 +1494,10 @@
 .profile360-history-list article {
   position: relative;
   display: grid;
-  grid-template-columns: auto minmax(0,1fr);
+  grid-template-columns: auto minmax(0, 1fr);
   gap: 10px;
   padding: 11px 0;
-  border-top: 1px solid rgba(255,255,255,.055);
+  border-top: 1px solid rgba(255, 255, 255, 0.055);
 }
 
 .profile360-history-list article:first-child {
@@ -1531,7 +1526,7 @@
   margin-top: 4px;
   border-radius: 999px;
   background: #ff79ba;
-  box-shadow: 0 0 0 4px rgba(255,121,186,.08);
+  box-shadow: 0 0 0 4px rgba(255, 121, 186, 0.08);
 }
 
 .profile360-history-dot.is-class {
@@ -1566,7 +1561,6 @@
   }
 }
 
-
 /* SF-N02 · UAT Caso 2 · separación visual entre tabs y contenido */
 .profile360-approved-tabs {
   margin-bottom: 16px;
@@ -1581,13 +1575,12 @@
 .profile360-approved-summary > .profile360-approved-package,
 .profile360-view-panel,
 .profile360-package-card.is-current {
-  border-color: rgba(255, 10, 138, .24);
+  border-color: rgba(255, 10, 138, 0.24);
   background:
-    linear-gradient(145deg, rgba(255, 10, 138, .045), rgba(255,255,255,.015)),
-    var(--surface);
+    linear-gradient(145deg, rgba(255, 10, 138, 0.045), rgba(255, 255, 255, 0.015)), var(--surface);
   box-shadow:
-    0 10px 28px rgba(0, 0, 0, .18),
-    0 0 0 1px rgba(255, 10, 138, .025);
+    0 10px 28px rgba(0, 0, 0, 0.18),
+    0 0 0 1px rgba(255, 10, 138, 0.025);
 }
 
 .profile360-packages-view > .profile360-view-heading {
@@ -1599,7 +1592,6 @@
     margin-bottom: 14px;
   }
 }
-
 
 /* SF-N02 · UAT 8.1 · compactar nivel/estado en la cabecera */
 .profile360-approved-meta {
@@ -1614,7 +1606,7 @@
 .profile360-approved-meta .profile360-state-pill {
   padding: 5px 8px;
   font-size: 9px;
-  opacity: .86;
+  opacity: 0.86;
   white-space: nowrap;
 }
 
@@ -1626,7 +1618,7 @@
 
 @media (max-width: 640px) {
   .profile360-approved-person {
-    grid-template-columns: auto minmax(0,1fr) auto;
+    grid-template-columns: auto minmax(0, 1fr) auto;
     gap: 10px;
     align-items: start;
   }

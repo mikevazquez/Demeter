@@ -103,7 +103,9 @@ export default function Profile360Overview({
   return (
     <>
       <section className="profile360-approved-header">
-        <Link className="profile360-back" href="/admin/alumnas">← Alumnas</Link>
+        <Link className="profile360-back" href="/admin/alumnas">
+          ← Alumnas
+        </Link>
 
         <div className="profile360-approved-person">
           <span className="profile360-avatar" aria-hidden="true">
@@ -201,7 +203,9 @@ export default function Profile360Overview({
                   </div>
                   <div className="profile360-approved-package-expiry">
                     <strong>
-                      {currentPackage.expiresOn ? formatDate(currentPackage.expiresOn) : "Sin fecha"}
+                      {currentPackage.expiresOn
+                        ? formatDate(currentPackage.expiresOn)
+                        : "Sin fecha"}
                     </strong>
                     <span>vence</span>
                   </div>
@@ -223,9 +227,7 @@ export default function Profile360Overview({
                 </div>
               </>
             ) : (
-              <p className="profile360-approved-empty">
-                Esta alumna no tiene un paquete vigente.
-              </p>
+              <p className="profile360-approved-empty">Esta alumna no tiene un paquete vigente.</p>
             )}
           </section>
 

@@ -6,11 +6,7 @@ import {
   StudentTemporaryPasswordResetter,
 } from "./StudentAccessProvisioner";
 
-export default async function StudentPortalAccessSection({
-  studentId,
-}: {
-  studentId: string;
-}) {
+export default async function StudentPortalAccessSection({ studentId }: { studentId: string }) {
   const { supabase, studio, can } = await getAdminContext(CAPABILITIES.STUDENTS_READ);
 
   if (!can(CAPABILITIES.SETTINGS_WRITE)) return null;

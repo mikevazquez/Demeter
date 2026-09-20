@@ -1,9 +1,6 @@
 import PendingActionButton from "@/app/admin/components/PendingActionButton";
 
-import {
-  setAcquisitionAvailableCredits,
-  setAcquisitionStartDate,
-} from "./actions";
+import { setAcquisitionAvailableCredits, setAcquisitionStartDate } from "./actions";
 
 type ClassEvent = {
   id: string;
@@ -87,10 +84,7 @@ export default function StudentPackageCard({
         : "PAQUETE HISTÓRICO";
 
   return (
-    <details
-      className={"profile360-package-card is-" + kind}
-      open={kind === "current"}
-    >
+    <details className={"profile360-package-card is-" + kind} open={kind === "current"}>
       <summary>
         <div className="profile360-package-card-summary">
           <div>
@@ -117,7 +111,9 @@ export default function StudentPackageCard({
             </strong>
           </div>
         </div>
-        <span className="profile360-package-chevron" aria-hidden="true">›</span>
+        <span className="profile360-package-chevron" aria-hidden="true">
+          ›
+        </span>
       </summary>
 
       <div className="profile360-package-card-body">
@@ -133,7 +129,7 @@ export default function StudentPackageCard({
           <div>
             <span>Créditos</span>
             <strong>
-              {acquisition.unlimited ? "Ilimitado" : acquisition.availableCredits ?? 0}
+              {acquisition.unlimited ? "Ilimitado" : (acquisition.availableCredits ?? 0)}
             </strong>
           </div>
           <div>
