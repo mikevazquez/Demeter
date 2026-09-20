@@ -40,7 +40,9 @@ export default async function AgendaPage({
     supabase.from("disciplines").select("id,name,active").eq("studio_id", studio.id).order("name"),
     supabase
       .from("class_templates")
-      .select("id,name,duration_minutes,capacity,discipline_id,credit_cost,drop_in_price_minor,color_hex")
+      .select(
+        "id,name,duration_minutes,capacity,discipline_id,credit_cost,drop_in_price_minor,color_hex",
+      )
       .eq("studio_id", studio.id)
       .eq("active", true)
       .order("name"),
@@ -321,8 +323,8 @@ export default async function AgendaPage({
                 <p className="eyebrow">COLORES</p>
                 <h2>Color por actividad</h2>
                 <p>
-                  Este color identifica la actividad en la agenda administrativa y en el horario
-                  que ve la alumna.
+                  Este color identifica la actividad en la agenda administrativa y en el horario que
+                  ve la alumna.
                 </p>
                 <div className="activity-color-list">
                   {templates?.map((item) => (
