@@ -30,10 +30,10 @@ export default async function StudentRewardDetailPage({
       ? ctx.versionMap.get(`${reward.rule_id}:${reward.version_number}`)
       : undefined;
   const participation = reward.rule_id
-    ? ctx.participations.find((item) => item.rule_id === reward.rule_id) ?? null
+    ? (ctx.participations.find((item) => item.rule_id === reward.rule_id) ?? null)
     : null;
   const cycle = reward.cycle_id
-    ? ctx.cycles.find((item) => item.id === reward.cycle_id) ?? null
+    ? (ctx.cycles.find((item) => item.id === reward.cycle_id) ?? null)
     : null;
   const snapshot = cycle ? (ctx.latestSnapshotByCycle.get(cycle.id) ?? null) : null;
   const conditions = version ? conditionProgress(version, snapshot) : [];
@@ -43,7 +43,7 @@ export default async function StudentRewardDetailPage({
 
   const originLabel = reward.manually_granted
     ? "Recompensa especial"
-    : version?.name ?? "Progress & Rewards";
+    : (version?.name ?? "Progreso y recompensas");
 
   const statusTone =
     reward.status === "available"
@@ -98,9 +98,7 @@ export default async function StudentRewardDetailPage({
       <section className="grid gap-2 sm:grid-cols-2">
         <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
           <p className="text-[10px] uppercase tracking-[0.16em] text-zinc-500">Aplicable a</p>
-          <strong className="mt-1 block text-sm text-white">
-            {rewardAppliesTo(definition)}
-          </strong>
+          <strong className="mt-1 block text-sm text-white">{rewardAppliesTo(definition)}</strong>
         </div>
         <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
           <p className="text-[10px] uppercase tracking-[0.16em] text-zinc-500">Compatibilidad</p>
@@ -127,14 +125,12 @@ export default async function StudentRewardDetailPage({
       </section>
 
       <section className="rounded-3xl border border-fuchsia-500/20 bg-fuchsia-500/[0.055] p-4">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-500">
-          Origen
-        </p>
+        <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-500">Origen</p>
         <h2 className="mt-2 text-lg font-semibold text-white">{originLabel}</h2>
         <p className="mt-1 text-sm leading-6 text-zinc-400">
           {reward.manually_granted
             ? "Se agregó directamente a tu cuenta como un beneficio especial."
-            : version?.human_summary ?? "Cumpliste la condición asociada a esta recompensa."}
+            : (version?.human_summary ?? "Cumpliste la condición asociada a esta recompensa.")}
         </p>
 
         {participation && !reward.manually_granted ? (
@@ -195,8 +191,8 @@ export default async function StudentRewardDetailPage({
         <section className="rounded-2xl border border-white/10 bg-white/[0.025] p-4">
           <strong className="text-sm text-white">Beneficio de uso único</strong>
           <p className="mt-1 text-xs leading-5 text-zinc-400">
-            Esta recompensa no se utiliza parcialmente. Si el beneficio supera el total elegible,
-            el sobrante no se guarda como saldo.
+            Esta recompensa no se utiliza parcialmente. Si el beneficio supera el total elegible, el
+            sobrante no se guarda como saldo.
           </p>
         </section>
       ) : null}
