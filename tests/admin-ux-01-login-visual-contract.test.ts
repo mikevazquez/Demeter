@@ -11,11 +11,11 @@ describe("ADMIN-UX-01 approved login visual contract", () => {
   const card = source("app/login/login-card.tsx");
   const styles = source("app/globals.css");
 
-  it("uses the approved Studio Flow branded login composition", () => {
-    expect(card).toContain("StudioFlowLogo");
+  it("uses the approved Demeter branded login composition", () => {
+    expect(card).toContain("DemeterBrand");
     expect(card).toContain('className="auth-brand"');
     expect(card).toContain('className="auth-back-button"');
-    expect(card).not.toContain("DEMETER · STUDIO FLOW");
+    expect(card).not.toContain("Studio Flow");
     expect(styles).toContain(".auth-login-card");
     expect(styles).toContain("background: transparent");
     expect(styles).toContain("border: 0");
