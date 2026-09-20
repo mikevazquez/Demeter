@@ -148,7 +148,7 @@ export default async function AdminPage({
       .select("total_minor,status")
       .eq("studio_id", studio.id)
       .gte("created_at", todayStart.toISOString())
-      .lt("created_at", todayEnd.toISOString())
+      .lt("created_at", todayEnd.toISOString()),
   ]);
 
   const sessionIds = (selectedSessions ?? []).map((session) => session.id);
@@ -310,7 +310,6 @@ export default async function AdminPage({
             ) : null}
           </div>
         </article>
-
       </section>
     </main>
   );
