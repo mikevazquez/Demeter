@@ -39,7 +39,10 @@ describe("ADMIN-UX-02 approved visual parity", () => {
     expect(today).toContain("Clases de hoy");
     expect(today).toContain("Atención");
     expect(today).toContain("admin-quick-menu");
-    expect(today).toContain("Operación detallada");
+    expect(today).not.toContain("Operación detallada");
+    expect(today).not.toContain("week-picker");
+    expect(today).not.toContain("hoy-primary-grid");
+    expect(today).not.toContain("hoy-schedule-panel");
   });
 
   it("matches the approved mobile architecture", () => {
