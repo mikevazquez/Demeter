@@ -3,18 +3,13 @@ import "server-only";
 import { cache } from "react";
 
 import { getStudentPortalContext } from "./portal";
-import {
-  exactMissingLabel,
-  isNearComplete,
-  isStudentRewardProgressActive,
-  singleNumericProgress,
-  type StudentConditionProgress,
-} from "./reward-progress-ui";
+import type { StudentConditionProgress } from "./reward-progress-ui";
 
 export {
   exactMissingLabel,
   isNearComplete,
   isStudentRewardProgressActive,
+  isStudentRewardProgressFinalized,
   singleNumericProgress,
   type StudentConditionProgress,
 } from "./reward-progress-ui";

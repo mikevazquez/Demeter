@@ -6,6 +6,7 @@ import { describe, expect, it } from "vitest";
 import {
   exactMissingLabel,
   isStudentRewardProgressActive,
+  isStudentRewardProgressFinalized,
   singleNumericProgress,
   type StudentConditionProgress,
 } from "../lib/student/reward-progress-ui";
@@ -83,14 +84,19 @@ describe("SF-240 student Rewards portal", () => {
     expect(isStudentRewardProgressActive(participation, activeRule, openExpiredCycle, now)).toBe(
       false,
     );
+    expect(
+      isStudentRewardProgressFinalized(participation, cancelledRule, openFutureCycle, now),
+    ).toBe(true);
+    expect(
+      isStudentRewardProgressFinalized(participation, activeRule, openExpiredCycle, now),
+    ).toBe(true);
   });
 
   it("marks stale progress detail as finalized instead of in progress", () => {
     const detail = read("app/student/recompensas/progreso/[participationId]/page.tsx");
 
-    expect(detail).toContain('"finished", "cancelled"');
-    expect(detail).toContain('"closed_incomplete", "cancelled"');
-    expect(detail).toContain("deadlinePassed");
+    expect(detail).toContain("isStudentRewardProgressFinalized");
+    expect(detail).not.toContain("Date.now()");
     expect(detail).toContain("Este reto ya terminó");
     expect(detail).toContain("No completada");
   });

@@ -7,6 +7,7 @@ import {
   exactMissingLabel,
   familyLabel,
   getStudentRewardsContext,
+  isStudentRewardProgressFinalized,
   rewardDefinitionLabel,
   rewardObject,
   singleNumericProgress,
@@ -66,15 +67,9 @@ export default async function StudentRewardProgressPage({
   const evaluation = rewardObject(version.evaluation_definition);
   const copy = guidance(version.family, evaluation);
   const rule = ctx.ruleMap.get(participation.rule_id) ?? null;
-  const deadlinePassed =
-    Boolean(cycle?.window_end_at) && Date.parse(cycle?.window_end_at ?? "") < Date.now();
   const fulfilled = participation.status === "fulfilled" || cycle?.status === "fulfilled";
   const finalized =
-    !fulfilled &&
-    (participation.status === "closed" ||
-      ["finished", "cancelled"].includes(rule?.status ?? "") ||
-      ["closed_incomplete", "cancelled"].includes(cycle?.status ?? "") ||
-      deadlinePassed);
+    !fulfilled && isStudentRewardProgressFinalized(participation, rule, cycle);
   const frozen = !finalized && cycle?.status === "frozen";
 
   return (

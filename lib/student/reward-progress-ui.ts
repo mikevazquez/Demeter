@@ -8,6 +8,24 @@ export type StudentConditionProgress = {
   completed: boolean;
 };
 
+export function isStudentRewardProgressFinalized(
+  participation: { status: string },
+  rule: { status: string } | null | undefined,
+  cycle: { status: string; window_end_at: string | null } | null | undefined,
+  now = new Date(),
+) {
+  if (participation.status === "closed") return true;
+  if (["finished", "cancelled"].includes(rule?.status ?? "")) return true;
+  if (["closed_incomplete", "cancelled"].includes(cycle?.status ?? "")) return true;
+
+  if (cycle?.window_end_at) {
+    const deadline = Date.parse(cycle.window_end_at);
+    if (Number.isFinite(deadline) && deadline < now.getTime()) return true;
+  }
+
+  return false;
+}
+
 export function isStudentRewardProgressActive(
   participation: { status: string },
   rule: { status: string } | null | undefined,
