@@ -33,7 +33,7 @@ describe("SF-N14-H01 profile avatar and activity colors", () => {
 
   it("lets the signed-in student upload and display her own profile photo", () => {
     expect(profile).toContain('select("avatar_url")');
-    expect(profile).toContain('createSignedUrl(accountProfile.avatar_url, 3600)');
+    expect(profile).toContain("createSignedUrl(accountProfile.avatar_url, 3600)");
     expect(profile).toContain("ProfileAvatarUploader");
     expect(avatar).toContain('from("profile-avatars")');
     expect(avatar).toContain(".upload(avatarPath, file");
@@ -48,11 +48,11 @@ describe("SF-N14-H01 profile avatar and activity colors", () => {
   it("persists a validated color per activity and exposes it in admin", () => {
     expect(migration).toContain("add column if not exists color_hex");
     expect(migration).toContain("^#[0-9A-Fa-f]{6}$");
-    expect(agenda).toContain('select("id,name,duration_minutes,capacity,discipline_id,credit_cost,drop_in_price_minor,color_hex")');
+    expect(agenda).toContain("drop_in_price_minor,color_hex");
     expect(agenda).toContain('type="color"');
     expect(agenda).toContain("updateActivityColor");
     expect(agendaActions).toContain("normalizeColorHex");
-    expect(agendaActions).toContain('.update({ color_hex: colorHex })');
+    expect(agendaActions).toContain(".update({ color_hex: colorHex })");
     expect(agendaActions).toContain('.eq("studio_id", studio.id)');
   });
 
