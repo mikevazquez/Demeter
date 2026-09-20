@@ -43,6 +43,12 @@ describe("ADMIN-UX-02 approved visual parity", () => {
     expect(today).not.toContain("week-picker");
     expect(today).not.toContain("hoy-primary-grid");
     expect(today).not.toContain("hoy-schedule-panel");
+    expect(today).toContain("mock-week-calendar");
+    expect(today).toContain("mock-week-nav");
+    expect(today).toContain("Semana anterior");
+    expect(today).toContain("Semana siguiente");
+    expect(today).toContain("selectedDayLabel");
+    expect(today).not.toContain("Ver agenda →");
   });
 
   it("matches the approved mobile architecture", () => {
