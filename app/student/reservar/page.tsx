@@ -7,6 +7,7 @@ import {
   type StudentSession,
 } from "@/lib/student/portal";
 
+import PurchaseSingleClassButton from "./PurchaseSingleClassButton";
 import { QuickBookButton } from "./quick-book-button";
 
 function safeDate(value: string | undefined, fallback: string) {
@@ -109,6 +110,29 @@ export default async function StudentReservePage({
   });
 
   const items = (sessions ?? []) as StudentSession[];
+  const activityNames = [...new Set(items.map((item) => item.activity))];
+  const { data: activityStyles } = activityNames.length
+    ? await supabase
+        .from("class_templates")
+        .select("name,color_hex,drop_in_price_minor")
+        .eq("studio_id", studio.id)
+        .in("name", activityNames)
+    : {
+        data: [] as {
+          name: string;
+          color_hex: string | null;
+          drop_in_price_minor: number | null;
+        }[],
+      };
+  const activityStyleMap = new Map(
+    (activityStyles ?? []).map((item) => [
+      item.name,
+      {
+        color: item.color_hex ?? "#FF0A8A",
+        dropInPriceMinor: item.drop_in_price_minor,
+      },
+    ]),
+  );
 
   return (
     <main className="space-y-4 pb-4">
@@ -231,12 +255,24 @@ export default async function StudentReservePage({
               const timeLabel = timeOnly(session.starts_at, studio.timezone);
               const eligible = Boolean(session.eligibility?.eligible);
               const reserved = Boolean(session.is_reserved);
+              const style = activityStyleMap.get(session.activity);
+              const activityColor = style?.color ?? "#FF0A8A";
+              const dropInPriceMinor = style?.dropInPriceMinor ?? null;
+              const canBuySingleClass =
+                !reserved &&
+                !eligible &&
+                session.spots_available > 0 &&
+                dropInPriceMinor != null &&
+                ["no_active_product", "outside_product", "no_credits"].includes(
+                  session.eligibility?.reason_code ?? "",
+                );
 
               return (
                 <article
                   key={session.session_id}
                   data-density="compact"
-                  className="rounded-2xl border border-white/10 bg-black/20 p-3 transition hover:border-fuchsia-500/30 hover:bg-white/[0.045]"
+                  className="rounded-2xl border border-white/10 bg-black/20 p-3 transition hover:bg-white/[0.045]"
+                  style={{ borderLeftColor: activityColor, borderLeftWidth: 3 }}
                 >
                   <div className="grid grid-cols-[4.25rem_1fr_auto] items-center gap-3">
                     <div>
@@ -253,7 +289,10 @@ export default async function StudentReservePage({
                       <p className="truncate text-sm font-semibold text-white">
                         {session.activity}
                       </p>
-                      <p className="mt-0.5 truncate text-[11px] text-fuchsia-300">
+                      <p
+                        className="mt-0.5 truncate text-[11px]"
+                        style={{ color: activityColor }}
+                      >
                         {session.discipline}
                       </p>
                       <p className="mt-0.5 truncate text-[11px] text-zinc-500">
@@ -281,15 +320,51 @@ export default async function StudentReservePage({
                     </Link>
                   </div>
 
-                  <div className="mt-3 flex justify-end border-t border-white/10 pt-3">
-                    <QuickBookButton
-                      sessionId={session.session_id}
-                      activity={session.activity}
-                      discipline={session.discipline}
-                      timeLabel={timeLabel}
-                      eligible={eligible}
-                      reserved={reserved}
-                    />
+                  <div className="mt-3 border-t border-white/10 pt-3">
+                    {canBuySingleClass ? (
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div>
+                          <p className="text-[11px] font-semibold text-amber-100">
+                            Esta clase no está incluida en tu paquete
+                          </p>
+                          <p className="mt-0.5 text-[10px] text-zinc-500">
+                            Clase suelta ·{" "}
+                            {new Intl.NumberFormat("es-MX", {
+                              style: "currency",
+                              currency: "MXN",
+                              maximumFractionDigits: 0,
+                            }).format((dropInPriceMinor ?? 0) / 100)}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Link
+                            href="/student/paquete"
+                            className="inline-flex min-h-10 items-center justify-center rounded-xl border border-white/10 px-3 py-2 text-xs font-semibold text-white"
+                          >
+                            Ver paquetes
+                          </Link>
+                          <PurchaseSingleClassButton
+                            sessionId={session.session_id}
+                            priceLabel={new Intl.NumberFormat("es-MX", {
+                              style: "currency",
+                              currency: "MXN",
+                              maximumFractionDigits: 0,
+                            }).format((dropInPriceMinor ?? 0) / 100)}
+                          />
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex justify-end">
+                        <QuickBookButton
+                          sessionId={session.session_id}
+                          activity={session.activity}
+                          discipline={session.discipline}
+                          timeLabel={timeLabel}
+                          eligible={eligible}
+                          reserved={reserved}
+                        />
+                      </div>
+                    )}
                   </div>
                 </article>
               );
