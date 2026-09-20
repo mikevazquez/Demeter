@@ -1563,7 +1563,6 @@ a.admin-nav-item:hover .nav-dot {
   }
 }
 
-
 /* ADMIN-UX-02 · Visual parity with approved mockups */
 .admin-shell {
   grid-template-columns: 208px minmax(0, 1fr);
@@ -1707,8 +1706,7 @@ a.admin-nav-item:hover .nav-dot {
 .admin-content {
   min-height: 100vh;
   background:
-    radial-gradient(circle at 70% 0%, rgba(255, 10, 138, 0.025), transparent 24%),
-    #080b10;
+    radial-gradient(circle at 70% 0%, rgba(255, 10, 138, 0.025), transparent 24%), #080b10;
 }
 .admin-utility-bar {
   position: sticky;
@@ -2204,7 +2202,6 @@ a.admin-nav-item:hover .nav-dot {
     grid-template-columns: 8px minmax(0, 1fr) auto;
   }
 }
-
 
 /* ADMIN-UX-02 · Module visual parity */
 .admin-module-page {
