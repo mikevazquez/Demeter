@@ -142,32 +142,32 @@ export default async function AdminPage({
 
   const [{ data: sessions }, { count: activeStudents }, { data: students }, { data: salesToday }] =
     await Promise.all([
-    supabase
-      .from("class_sessions")
-      .select("id, starts_at, ends_at, capacity, status, template_id")
-      .eq("studio_id", studio.id)
-      .gte("starts_at", start.toISOString())
-      .lt("starts_at", end.toISOString())
-      .order("starts_at", { ascending: true }),
-    supabase
-      .from("students")
-      .select("*", { count: "exact", head: true })
-      .eq("studio_id", studio.id)
-      .eq("active", true),
-    supabase
-      .from("students")
-      .select("id,full_name")
-      .eq("studio_id", studio.id)
-      .eq("active", true)
-      .eq("lifecycle_status", "active")
-      .order("full_name"),
-    supabase
-      .from("sales")
-      .select("total_minor,status")
-      .eq("studio_id", studio.id)
-      .gte("created_at", start.toISOString())
-      .lt("created_at", end.toISOString()),
-  ]);
+      supabase
+        .from("class_sessions")
+        .select("id, starts_at, ends_at, capacity, status, template_id")
+        .eq("studio_id", studio.id)
+        .gte("starts_at", start.toISOString())
+        .lt("starts_at", end.toISOString())
+        .order("starts_at", { ascending: true }),
+      supabase
+        .from("students")
+        .select("*", { count: "exact", head: true })
+        .eq("studio_id", studio.id)
+        .eq("active", true),
+      supabase
+        .from("students")
+        .select("id,full_name")
+        .eq("studio_id", studio.id)
+        .eq("active", true)
+        .eq("lifecycle_status", "active")
+        .order("full_name"),
+      supabase
+        .from("sales")
+        .select("total_minor,status")
+        .eq("studio_id", studio.id)
+        .gte("created_at", start.toISOString())
+        .lt("created_at", end.toISOString()),
+    ]);
 
   const sessionIds = (sessions ?? []).map((session) => session.id);
   const { data: reservations } = sessionIds.length
@@ -379,7 +379,9 @@ export default async function AdminPage({
             {canWriteSchedule ? (
               <Link href="/admin/agenda#clases-programadas">Crear reserva</Link>
             ) : null}
-            {canWriteSchedule ? <Link href="/admin/agenda#programar-clase">Crear clase</Link> : null}
+            {canWriteSchedule ? (
+              <Link href="/admin/agenda#programar-clase">Crear clase</Link>
+            ) : null}
           </div>
         </details>
       </header>
@@ -402,7 +404,10 @@ export default async function AdminPage({
           <div>
             <span>Clases hoy</span>
             <strong>{sessions?.length ?? 0}</strong>
-            <small>{(sessions ?? []).filter((session) => session.status === "scheduled").length} programadas</small>
+            <small>
+              {(sessions ?? []).filter((session) => session.status === "scheduled").length}{" "}
+              programadas
+            </small>
           </div>
           <b aria-hidden="true">▣</b>
         </article>
@@ -426,7 +431,9 @@ export default async function AdminPage({
           <div>
             <span>Incidencias</span>
             <strong>{requiredActionsResult.count ?? 0}</strong>
-            <small>{requiredActions.filter((action) => action.priority === "high").length} urgentes</small>
+            <small>
+              {requiredActions.filter((action) => action.priority === "high").length} urgentes
+            </small>
           </div>
           <b aria-hidden="true">△</b>
         </article>
@@ -448,7 +455,9 @@ export default async function AdminPage({
                   <span className="mock-time">{formatTime(session.starts_at, timeZone)}</span>
                   <span className="mock-dot" aria-hidden="true" />
                   <strong>{templateMap.get(session.template_id) ?? "Clase"}</strong>
-                  <small>{occupied}/{session.capacity}</small>
+                  <small>
+                    {occupied}/{session.capacity}
+                  </small>
                 </div>
               );
             })}
@@ -461,16 +470,26 @@ export default async function AdminPage({
         {canReadRequiredActions ? (
           <article className="mock-overview-card">
             <div className="mock-card-heading">
-              <h2>Atención <span>(pendientes)</span></h2>
+              <h2>
+                Atención <span>(pendientes)</span>
+              </h2>
               <Link href="/admin/acciones">Ver todas →</Link>
             </div>
             <div className="mock-list">
               {requiredActions.slice(0, 5).map((action) => (
-                <Link className="mock-list-row attention-row" href={`/admin/acciones/${action.id}`} key={action.id}>
+                <Link
+                  className="mock-list-row attention-row"
+                  href={`/admin/acciones/${action.id}`}
+                  key={action.id}
+                >
                   <span className={`mock-priority-dot is-${action.priority}`} aria-hidden="true" />
                   <strong>{action.reason}</strong>
                   <small>
-                    {action.priority === "high" ? "Urgente" : action.status === "in_progress" ? "En proceso" : "Pendiente"}
+                    {action.priority === "high"
+                      ? "Urgente"
+                      : action.status === "in_progress"
+                        ? "En proceso"
+                        : "Pendiente"}
                   </small>
                 </Link>
               ))}
