@@ -58,8 +58,8 @@ describe("ADMIN-UX-02 navigation architecture", () => {
   });
 
   it("presents required actions to users as Atención", () => {
-    expect(attention).toContain("ATENCIÓN · {studio.name}");
-    expect(attention).toContain(">Atención<");
+    expect(attention).toContain('className="dashboard-shell admin-module-page attention-page"');
+    expect(attention).toContain("<h1>Atención</h1>");
     expect(attention).not.toContain("ACCIONES REQUERIDAS");
     expect(attention).toContain("Revisar");
   });
