@@ -285,6 +285,33 @@ export default async function StudentHomePage({
         </section>
       ) : null}
 
+      <Link
+        href="/student/recompensas"
+        data-home-block="progress"
+        className="group flex min-h-20 items-center justify-between gap-4 rounded-3xl border border-fuchsia-500/20 bg-[radial-gradient(circle_at_88%_15%,rgba(236,72,153,0.14),transparent_34%),rgba(255,255,255,0.03)] px-4 py-3.5 transition hover:border-fuchsia-400/35 hover:bg-fuchsia-500/[0.06]"
+      >
+        <div className="flex min-w-0 items-center gap-3">
+          <span
+            aria-hidden="true"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-fuchsia-500/10 text-lg text-fuchsia-300"
+          >
+            ✦
+          </span>
+          <span className="min-w-0">
+            <strong className="block text-sm font-semibold text-white">Mi progreso</strong>
+            <span className="mt-0.5 block text-xs text-zinc-500">
+              Metas, rachas, logros y recompensas
+            </span>
+          </span>
+        </div>
+        <span
+          aria-hidden="true"
+          className="text-xl text-zinc-600 transition group-hover:text-fuchsia-300"
+        >
+          ›
+        </span>
+      </Link>
+
       <section data-home-block="quick-actions">
         <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-500">
           Acciones rápidas
