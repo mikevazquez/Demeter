@@ -319,7 +319,7 @@ export default async function StudentReservePage({
 
                   <div className="mt-3 border-t border-white/10 pt-3">
                     {canBuySingleClass ? (
-                      <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div>
                         <div>
                           <p className="text-[11px] font-semibold text-amber-100">
                             Esta clase no está incluida en tu paquete
@@ -333,7 +333,7 @@ export default async function StudentReservePage({
                             }).format((dropInPriceMinor ?? 0) / 100)}
                           </p>
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="mt-3 flex flex-wrap items-center justify-end gap-2">
                           <Link
                             href="/student/paquete"
                             className="inline-flex min-h-10 items-center justify-center rounded-xl border border-white/10 px-3 py-2 text-xs font-semibold text-white"
