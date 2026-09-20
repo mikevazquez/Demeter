@@ -8,6 +8,7 @@ export type AdminNavItem = {
   label: string;
   enabled: boolean;
   activeFor?: string[];
+  secondary?: boolean;
 };
 
 function matchesPath(pathname: string, href: string) {
@@ -25,10 +26,16 @@ export function AdminNavigation({ items }: { items: AdminNavItem[] }) {
 
   return (
     <nav className="admin-nav" aria-label="Secciones de administración">
-      {items.map((item) => {
+      {items.map((item, index) => {
+        const showDivider = item.secondary && index > 0 && !items[index - 1]?.secondary;
+
         if (!item.enabled) {
           return (
-            <span key={item.label} className="admin-nav-item is-disabled" aria-disabled="true">
+            <span
+              key={item.label}
+              className={`admin-nav-item is-disabled${item.secondary ? " is-secondary" : ""}`}
+              aria-disabled="true"
+            >
               <span className="nav-dot" aria-hidden="true" />
               <span>{item.label}</span>
               <small>Próximamente</small>
@@ -38,15 +45,17 @@ export function AdminNavigation({ items }: { items: AdminNavItem[] }) {
 
         const active = isActivePath(pathname, item);
         return (
-          <Link
-            key={item.label}
-            href={item.href}
-            className={`admin-nav-item${active ? " is-active" : ""}`}
-            aria-current={active ? "page" : undefined}
-          >
-            <span className="nav-dot" aria-hidden="true" />
-            <span>{item.label}</span>
-          </Link>
+          <div key={item.label}>
+            {showDivider ? <div className="admin-nav-divider" aria-hidden="true" /> : null}
+            <Link
+              href={item.href}
+              className={`admin-nav-item${active ? " is-active" : ""}${item.secondary ? " is-secondary" : ""}`}
+              aria-current={active ? "page" : undefined}
+            >
+              <span className="nav-dot" aria-hidden="true" />
+              <span>{item.label}</span>
+            </Link>
+          </div>
         );
       })}
     </nav>

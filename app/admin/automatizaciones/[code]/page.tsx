@@ -256,7 +256,7 @@ export default async function AutomationDetailPage({
           ← Automatizaciones
         </Link>
         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-fuchsia-300">
-          {template.code} · {template.category}
+          {template.category}
         </p>
         <h1 className="mt-2 text-3xl font-semibold text-white">{template.name}</h1>
         <p className="mt-2 max-w-3xl text-sm leading-6 text-zinc-400">{template.description}</p>
@@ -458,7 +458,7 @@ export default async function AutomationDetailPage({
       <section className="space-y-4">
         <div>
           <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-            Control AUT-05 · SF-167
+            Control de comunicaciones
           </p>
           <h2 className="mt-1 text-xl font-semibold text-white">Decisiones de comunicación</h2>
           <p className="mt-1 text-sm text-zinc-400">
@@ -510,7 +510,7 @@ export default async function AutomationDetailPage({
           </div>
         ) : (
           <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-6 text-sm text-zinc-400">
-            Aún no hay decisiones AUT-05 registradas para esta automatización.
+            Aún no hay decisiones de comunicación registradas para esta automatización.
           </div>
         )}
       </section>
@@ -518,7 +518,7 @@ export default async function AutomationDetailPage({
       <section className="space-y-4">
         <div>
           <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-            Historial SF-166
+            Historial de ejecuciones
           </p>
           <h2 className="mt-1 text-xl font-semibold text-white">Ejecuciones auditables</h2>
           <p className="mt-1 text-sm text-zinc-400">

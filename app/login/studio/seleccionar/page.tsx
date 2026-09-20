@@ -83,7 +83,7 @@ export default async function StudioSelectorPage({
   return (
     <main className="auth-shell">
       <section className="auth-card">
-        <p className="eyebrow">DEMETER · STUDIO FLOW</p>
+        <p className="eyebrow">DEMETER</p>
         <h1 className="auth-title">Selecciona un estudio</h1>
         <p className="auth-copy">
           Tienes acceso a más de un estudio. Elige con cuál quieres trabajar.

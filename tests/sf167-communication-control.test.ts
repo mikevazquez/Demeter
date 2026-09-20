@@ -313,7 +313,7 @@ describe("SF-167 communication control", () => {
     expect(listPage).toContain("Horario global de comunicaciones");
     expect(listPage).toContain("automation_communication_settings");
     expect(listPage).toContain("saveGlobalCommunicationWindowAction");
-    expect(detailPage).toContain("Control AUT-05 · SF-167");
+    expect(detailPage).toContain("Control de comunicaciones");
     expect(detailPage).toContain("Decisiones de comunicación");
     expect(detailPage).toContain("automation_communication_controls");
     expect(actions).toContain("CAPABILITIES.AUTOMATIONS_MANAGE");

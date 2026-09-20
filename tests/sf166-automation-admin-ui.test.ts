@@ -8,14 +8,15 @@ function source(path: string) {
 }
 
 describe("SF-166 automation admin UI", () => {
-  it("exposes Automations from Empresa and keeps it grouped under Empresa navigation", () => {
-    const company = source("app/admin/empresa/page.tsx");
+  it("exposes Automations as a durable module and in mobile Más", () => {
+    const more = source("app/admin/mas/page.tsx");
     const layout = source("app/admin/layout.tsx");
 
-    expect(company).toContain('title: "Automatizaciones"');
-    expect(company).toContain('href: "/admin/automatizaciones"');
-    expect(company).toContain("CAPABILITIES.AUTOMATIONS_READ");
-    expect(layout).toContain('"/admin/automatizaciones"');
+    expect(more).toContain('title: "Automatizaciones"');
+    expect(more).toContain('href: "/admin/automatizaciones"');
+    expect(more).toContain("CAPABILITIES.AUTOMATIONS_READ");
+    expect(layout).toContain('href: "/admin/automatizaciones"');
+    expect(layout).toContain('label: "Automatizaciones"');
   });
 
   it("renders the approved catalog and execution audit surfaces", () => {
@@ -26,7 +27,7 @@ describe("SF-166 automation admin UI", () => {
     expect(list).toContain("automation_instances");
     expect(list).toContain("automation_executions");
 
-    expect(detail).toContain("Historial SF-166");
+    expect(detail).toContain("Historial de ejecuciones");
     expect(detail).toContain("automation_execution_attempts");
     expect(detail).toContain("automation_execution_events");
     expect(detail).toContain("data_snapshot");

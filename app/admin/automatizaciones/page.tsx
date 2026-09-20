@@ -87,16 +87,16 @@ export default async function AutomationsPage({
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <Link
-            href="/admin/empresa"
+            href="/admin/mas"
             className="mb-3 inline-flex text-sm font-semibold text-zinc-400 transition hover:text-white"
           >
-            ← Empresa
+            ← Más
           </Link>
           <p className="text-sm text-zinc-400">Motor de automatizaciones · {ctx.studio.name}</p>
           <h1 className="text-3xl font-semibold text-white">Automatizaciones</h1>
           <p className="mt-1 max-w-3xl text-sm leading-6 text-zinc-400">
-            Configura, activa y audita las automatizaciones de Studio Flow. El historial de
-            ejecuciones conserva los intentos y resultados técnicos de SF-166.
+            Configura, activa y revisa las automatizaciones de Studio Flow. El historial conserva
+            cada ejecución y su resultado.
           </p>
         </div>
       </header>
@@ -107,7 +107,7 @@ export default async function AutomationsPage({
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <p className="text-xs font-semibold uppercase tracking-wide text-fuchsia-300">
-              Control AUT-05
+              Comunicaciones
             </p>
             <h2 className="mt-1 text-lg font-semibold text-white">
               Horario global de comunicaciones
@@ -191,7 +191,7 @@ export default async function AutomationsPage({
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-[0.15em] text-fuchsia-300">
-                    {template.code} · {categoryLabels[template.category]}
+                    {categoryLabels[template.category]}
                   </p>
                   <h2 className="mt-2 text-lg font-semibold text-white">{template.name}</h2>
                   <p className="mt-2 text-sm leading-6 text-zinc-400">{template.description}</p>

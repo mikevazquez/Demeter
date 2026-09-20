@@ -129,7 +129,7 @@ export default async function AgendaPage({
       ) : null}
       <section className="agenda-layout">
         <div className="agenda-main">
-          <article className="panel">
+          <article id="clases-programadas" className="panel scroll-mt-6">
             <div className="panel-heading">
               <div>
                 <p className="eyebrow">PRÓXIMAS SESIONES</p>
@@ -338,7 +338,7 @@ export default async function AgendaPage({
                   ))}
                 </div>
               </article>
-              <article className="panel compact-panel">
+              <article id="programar-clase" className="panel compact-panel scroll-mt-6">
                 <p className="eyebrow">3 · HORARIO RECURRENTE</p>
                 <h2>Programar actividad</h2>
                 <p>

@@ -4,7 +4,7 @@ import "./globals.css";
 import "./ui-primitives.css";
 
 export const metadata: Metadata = {
-  title: "Studio Flow",
+  title: "Demeter",
   description: "Administración de estudios boutique",
 };
 

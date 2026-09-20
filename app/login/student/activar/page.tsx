@@ -47,7 +47,7 @@ export default async function StudentActivationPage({
   return (
     <main className="auth-shell">
       <section className="auth-card">
-        <p className="eyebrow">DEMETER · STUDIO FLOW</p>
+        <p className="eyebrow">DEMETER</p>
         <h1 className="auth-title">Crea tu contraseña</h1>
         <p className="auth-copy">
           Entraste con una contraseña temporal. Reemplázala ahora por una que sólo tú conozcas.
