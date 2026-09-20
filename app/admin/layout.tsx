@@ -5,6 +5,7 @@ import { AdminMobileNavigation, AdminNavigation } from "./admin-navigation";
 import "./hoy.css";
 import "./roster-uat.css";
 import "./mobile-nav-overrides.css";
+import "./alumnas/profile-360.css";
 
 const roleLabels: Record<string, string> = {
   owner: "Owner",
