@@ -1,4 +1,3 @@
-
 import Image from "next/image";
 import Link from "next/link";
 
@@ -68,7 +67,7 @@ function formatDateTime(value: string, timeZone: string) {
 }
 
 function formatMoney(minor: number | null) {
-  if (minor === null) return "—";
+  if (minor === null) return "Sin acceso";
   return new Intl.NumberFormat("es-MX", {
     style: "currency",
     currency: "MXN",
@@ -76,39 +75,25 @@ function formatMoney(minor: number | null) {
   }).format(minor / 100);
 }
 
-export default function Profile360Overview(props: Props) {
-  const {
-    student,
-    birthDate,
-    levelTitle,
-    rewardsAvailable,
-    currentPackage,
-    nextClass,
-    historicalValueMinor,
-    enrollment,
-    alerts,
-    canBook,
-    canSell,
-    timeZone,
-  } = props;
-
+export default function Profile360Overview({
+  student,
+  birthDate,
+  levelTitle,
+  rewardsAvailable,
+  currentPackage,
+  nextClass,
+  historicalValueMinor,
+  enrollment,
+  alerts,
+  canBook,
+  canSell,
+  timeZone,
+}: Props) {
   const whatsappNumber = student.phone.replace(/\D/g, "");
-  const usedCredits =
-    currentPackage && !currentPackage.unlimited && currentPackage.creditLimit !== null
-      ? Math.max(0, currentPackage.creditLimit - (currentPackage.availableCredits ?? 0))
-      : null;
-  const progress =
-    currentPackage &&
-    !currentPackage.unlimited &&
-    currentPackage.creditLimit &&
-    currentPackage.creditLimit > 0 &&
-    usedCredits !== null
-      ? Math.min(100, Math.max(0, Math.round((usedCredits / currentPackage.creditLimit) * 100)))
-      : 0;
 
   return (
     <>
-      <section id="resumen" className="profile360-identity">
+      <section id="resumen" className="profile360-hero">
         <Link className="profile360-back" href="/admin/alumnas">
           ← Alumnas
         </Link>
@@ -120,15 +105,15 @@ export default function Profile360Overview(props: Props) {
               <Image
                 src={"/admin/alumnas/" + student.id + "/avatar"}
                 alt=""
-                width={86}
-                height={86}
+                width={78}
+                height={78}
                 unoptimized
               />
             ) : null}
           </span>
 
           <div className="profile360-person-copy">
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="profile360-badges">
               <span
                 className={
                   "profile360-state-pill is-" +
@@ -138,20 +123,15 @@ export default function Profile360Overview(props: Props) {
                 {student.lifecycleStatus === "inactive" ? "Inactiva" : "Activa"}
               </span>
               <span className="profile360-level-pill">
-                Nivel general · {levelTitle ?? "Sin nivel actual"}
+                {levelTitle ? "Nivel " + levelTitle : "Sin nivel general"}
               </span>
             </div>
+
             <h1>{student.fullName}</h1>
-            <div className="profile360-contact">
+
+            <div className="profile360-contact-primary">
               <a href={"tel:" + student.phone}>{student.phone}</a>
-              <span>{student.email || "Sin correo registrado"}</span>
-              <span>
-                Nacimiento: {formatDate(birthDate)} · Desde:{" "}
-                {new Intl.DateTimeFormat("es-MX", {
-                  month: "short",
-                  year: "numeric",
-                }).format(new Date(student.createdAt))}
-              </span>
+              {student.email ? <span>{student.email}</span> : null}
             </div>
           </div>
         </div>
@@ -166,6 +146,7 @@ export default function Profile360Overview(props: Props) {
             <strong>◉</strong>
             WhatsApp
           </a>
+
           {canBook && student.lifecycleStatus === "active" ? (
             <Link className="profile360-action" href={"/admin/alumnas/" + student.id + "/reservar"}>
               <strong>＋</strong>
@@ -177,6 +158,7 @@ export default function Profile360Overview(props: Props) {
               Reservar
             </span>
           )}
+
           {canSell && student.lifecycleStatus === "active" ? (
             <Link
               className="profile360-action"
@@ -191,154 +173,144 @@ export default function Profile360Overview(props: Props) {
               Renovar
             </span>
           )}
-          <a className="profile360-action" href="#datos-personales">
-            <strong>✎</strong>
-            Editar
+
+          <a className="profile360-action" href="#mas-informacion">
+            <strong>•••</strong>
+            Más
           </a>
         </div>
       </section>
 
-      <nav className="profile360-tabs" aria-label="Secciones del Perfil 360">
-        <a className="profile360-tab is-active" href="#resumen">Resumen</a>
-        <a className="profile360-tab" href="#paquetes-y-creditos">Paquetes</a>
-        <a className="profile360-tab" href="#rewards">Rewards</a>
-        <a className="profile360-tab" href="#seguimiento">Seguimiento</a>
-        <a className="profile360-tab" href="#historial">Historial</a>
-      </nav>
-
-      <div className="profile360-overview-grid">
-        <section className="profile360-section">
-          <div className="profile360-section-heading">
-            <div>
-              <p className="eyebrow">PAQUETE ACTUAL</p>
-              <h2>Estado operativo</h2>
-            </div>
+      <section className="profile360-current-card" aria-label="Estado actual">
+        <div className="profile360-current-heading">
+          <div>
+            <p className="eyebrow">AHORA</p>
+            <h2>{currentPackage ? currentPackage.name : "Sin paquete activo"}</h2>
           </div>
+          {currentPackage ? <span className="status-pill">Activo</span> : null}
+        </div>
 
-          {currentPackage ? (
-            <div className="profile360-package-main">
-              <div className="profile360-package-title">
-                <strong>{currentPackage.name}</strong>
-                <span className="status-pill">Activo</span>
+        {currentPackage ? (
+          <>
+            <div className="profile360-current-facts">
+              <div>
+                <strong>
+                  {currentPackage.unlimited
+                    ? "Ilimitado"
+                    : String(currentPackage.availableCredits ?? 0) + " créditos"}
+                </strong>
+                <span>disponibles</span>
               </div>
+              <div>
+                <strong>
+                  {currentPackage.expiresOn ? formatDate(currentPackage.expiresOn) : "Sin fecha"}
+                </strong>
+                <span>vencimiento</span>
+              </div>
+            </div>
 
-              {!currentPackage.unlimited && currentPackage.creditLimit !== null ? (
-                <div className="profile360-progress">
-                  <div className="flex items-center justify-between gap-3 text-xs text-zinc-400">
-                    <span>
-                      {currentPackage.availableCredits ?? 0} de {currentPackage.creditLimit} créditos
-                      disponibles
-                    </span>
-                    <strong className="text-white">{progress}% usado</strong>
-                  </div>
-                  <div className="profile360-progress-track" aria-hidden="true">
-                    <span style={{ width: String(progress) + "%" }} />
-                  </div>
-                </div>
+            <div className="profile360-next-compact">
+              <span>Próxima clase</span>
+              {nextClass ? (
+                <strong>
+                  {nextClass.name} · {formatDateTime(nextClass.startsAt, timeZone)}
+                </strong>
               ) : (
-                <p className="profile360-package-meta">Créditos ilimitados</p>
+                <strong>Sin próxima clase</strong>
               )}
-
-              <p className="profile360-package-meta">
-                {currentPackage.startsOn
-                  ? "Inició " + formatDate(currentPackage.startsOn)
-                  : "Inicio pendiente"}
-                {" · "}
-                {currentPackage.expiresOn
-                  ? "Vence " + formatDate(currentPackage.expiresOn)
-                  : "Sin vencimiento calculado"}
-              </p>
-
-              <div className="profile360-next-class">
-                <span>Próxima clase</span>
-                {nextClass ? (
-                  <>
-                    <strong>{nextClass.name}</strong>
-                    <span>{formatDateTime(nextClass.startsAt, timeZone)}</span>
-                  </>
-                ) : (
-                  <strong>Sin próxima clase</strong>
-                )}
-              </div>
             </div>
-          ) : (
-            <div className="empty-state">Sin paquete activo.</div>
-          )}
-        </section>
+          </>
+        ) : (
+          <p className="profile360-current-empty">
+            No hay un paquete vigente para esta alumna.
+          </p>
+        )}
+      </section>
 
-        {alerts.length ? (
-          <section id="seguimiento" className="profile360-alerts">
-            <div>
-              <p className="eyebrow">SEGUIMIENTO</p>
-              <h2 className="m-0 text-base text-white">Necesita atención</h2>
-            </div>
+      {alerts.length ? (
+        <details id="seguimiento" className="profile360-attention">
+          <summary>
+            <span>
+              <strong>Necesita atención</strong>
+              <small>
+                {alerts[0]?.title}
+                {alerts.length > 1 ? " · +" + String(alerts.length - 1) + " más" : ""}
+              </small>
+            </span>
+            <span aria-hidden="true">›</span>
+          </summary>
+          <div className="profile360-attention-body">
             {alerts.map((alert) => (
               <div className="profile360-alert" key={alert.title + ":" + alert.detail}>
                 <strong>{alert.title}</strong>
                 <span>{alert.detail}</span>
               </div>
             ))}
-          </section>
-        ) : (
-          <section id="seguimiento" className="profile360-section">
-            <p className="eyebrow">SEGUIMIENTO</p>
-            <h2 className="m-0 text-base text-white">Sin seguimiento pendiente</h2>
-            <p className="mt-2 text-sm text-zinc-500">
-              No hay situaciones operativas detectadas en este momento.
-            </p>
-          </section>
-        )}
-      </div>
+          </div>
+        </details>
+      ) : null}
 
-      <section className="profile360-metrics" aria-label="Indicadores principales">
-        <article className="profile360-metric">
-          <span>Valor histórico</span>
-          <strong>{formatMoney(historicalValueMinor)}</strong>
-          <small className="text-zinc-500">Pagos netos confirmados</small>
-        </article>
-        <article id="rewards" className="profile360-metric">
-          <span>Nivel general</span>
-          <strong>{levelTitle ?? "Sin nivel"}</strong>
-          <small className="text-zinc-500">
-            {rewardsAvailable === null
-              ? "Rewards no disponible para este rol"
-              : String(rewardsAvailable) +
-                " recompensa" +
-                (rewardsAvailable === 1 ? "" : "s") +
-                " disponible" +
-                (rewardsAvailable === 1 ? "" : "s")}
-          </small>
-        </article>
-        <article className="profile360-metric">
-          <span>Inscripción</span>
-          <strong>
-            {enrollment?.status === "active"
-              ? enrollment.expiresOn
-                ? "Vigente"
-                : "Vitalicia"
-              : enrollment
-                ? "No vigente"
-                : "Sin registro"}
-          </strong>
-          <small className="text-zinc-500">
-            {enrollment?.expiresOn
-              ? "Hasta " + formatDate(enrollment.expiresOn)
-              : enrollment?.startsOn
-                ? "Desde " + formatDate(enrollment.startsOn)
-                : "—"}
-          </small>
-        </article>
-        <article className="profile360-metric">
-          <span>Antigüedad</span>
-          <strong>
-            {new Intl.DateTimeFormat("es-MX", {
-              month: "short",
-              year: "numeric",
-            }).format(new Date(student.createdAt))}
-          </strong>
-          <small className="text-zinc-500">Alta en el estudio</small>
-        </article>
-      </section>
+      <details id="mas-informacion" className="profile360-more">
+        <summary>
+          <span>
+            <strong>Más información</strong>
+            <small>Datos, historial y configuración</small>
+          </span>
+          <span aria-hidden="true">›</span>
+        </summary>
+
+        <div className="profile360-more-body">
+          <div className="profile360-mini-summary">
+            <div>
+              <span>Nacimiento</span>
+              <strong>{formatDate(birthDate)}</strong>
+            </div>
+            <div>
+              <span>Inscripción</span>
+              <strong>
+                {enrollment?.status === "active"
+                  ? enrollment.expiresOn
+                    ? "Vigente"
+                    : "Vitalicia"
+                  : enrollment
+                    ? "No vigente"
+                    : "Sin registro"}
+              </strong>
+            </div>
+            <div>
+              <span>Valor histórico</span>
+              <strong>{formatMoney(historicalValueMinor)}</strong>
+            </div>
+            <div>
+              <span>Rewards</span>
+              <strong>
+                {rewardsAvailable === null
+                  ? "Sin acceso"
+                  : String(rewardsAvailable) + " disponibles"}
+              </strong>
+            </div>
+          </div>
+
+          <nav className="profile360-more-links" aria-label="Más información del perfil">
+            <a href="#datos-personales">
+              <span>Datos y contacto</span>
+              <b>›</b>
+            </a>
+            <a href="#paquetes-y-creditos">
+              <span>Paquetes e historial</span>
+              <b>›</b>
+            </a>
+            <a href="#comunicacion">
+              <span>Preferencias de comunicación</span>
+              <b>›</b>
+            </a>
+            <a href="#estado-alumna">
+              <span>Estado e historial</span>
+              <b>›</b>
+            </a>
+          </nav>
+        </div>
+      </details>
     </>
   );
 }
