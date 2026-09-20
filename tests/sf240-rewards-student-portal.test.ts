@@ -7,7 +7,7 @@ import {
   exactMissingLabel,
   singleNumericProgress,
   type StudentConditionProgress,
-} from "../lib/student/rewards";
+} from "../lib/student/reward-progress-ui";
 
 const read = (path: string) => readFileSync(join(process.cwd(), path), "utf8");
 
