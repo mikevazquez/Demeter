@@ -302,7 +302,6 @@ export default async function AutomationDetailPage({
         </div>
       </section>
 
-
       {canCreate ? (
         <section className="rounded-2xl border border-fuchsia-500/20 bg-fuchsia-500/[0.05] p-5">
           <h2 className="text-lg font-semibold text-white">
