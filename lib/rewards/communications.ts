@@ -9,11 +9,7 @@ import {
 } from "../automations/communication-preferences";
 import type { DeliverAutomationMessageInput } from "../automations/messaging-provider";
 
-export type RewardCommunicationKind =
-  | "unlocked"
-  | "near_progress"
-  | "expiring"
-  | "streak_reset";
+export type RewardCommunicationKind = "unlocked" | "near_progress" | "expiring" | "streak_reset";
 
 export interface RewardCommunicationDefinition {
   unlock_notice?: boolean;
