@@ -247,6 +247,7 @@ export default async function AdminPage({
   const canAttendance = can(CAPABILITIES.ATTENDANCE_WRITE);
   const canCreateWalkinStudent = canAttendance && canWriteStudents;
   const canReadRequiredActions = can(CAPABILITIES.REQUIRED_ACTIONS_READ);
+  const canWriteSales = can(CAPABILITIES.SALES_WRITE);
 
   const requiredActionsResult = canReadRequiredActions
     ? await supabase
@@ -448,21 +449,40 @@ export default async function AdminPage({
           <p className="eyebrow">OPERACIÓN</p>
           <h2>Acciones rápidas</h2>
           <div className="quick-action-list">
-            {canReadSchedule ? (
-              <Link href="/admin/agenda">
-                <CalendarIcon />
-                <span>Agenda</span>
-                <strong>{canWriteSchedule ? "Ver y programar →" : "Ver agenda →"}</strong>
-              </Link>
-            ) : null}
-            {canReadStudents ? (
-              <Link href="/admin/alumnas">
+            {canWriteStudents ? (
+              <Link href="/admin/alumnas#alta-rapida">
                 <StudentsIcon />
                 <span>Alumnas</span>
-                <strong>
-                  {canWriteStudents ? "Buscar o dar de alta →" : "Consultar alumnas →"}
-                </strong>
+                <strong>Nueva alumna →</strong>
               </Link>
+            ) : null}
+            {canWriteSales ? (
+              <Link href="/admin/ventas/nueva">
+                <span className="quick-icon" aria-hidden="true">
+                  $
+                </span>
+                <span>Comercial</span>
+                <strong>Registrar venta →</strong>
+              </Link>
+            ) : null}
+            {canWriteSchedule ? (
+              <Link href="/admin/agenda#clases-programadas">
+                <CalendarIcon />
+                <span>Agenda</span>
+                <strong>Crear reserva →</strong>
+              </Link>
+            ) : null}
+            {canWriteSchedule ? (
+              <Link href="/admin/agenda#programar-clase">
+                <span className="quick-icon" aria-hidden="true">
+                  +
+                </span>
+                <span>Agenda</span>
+                <strong>Crear clase →</strong>
+              </Link>
+            ) : null}
+            {!canWriteStudents && !canWriteSales && !canWriteSchedule ? (
+              <p className="quick-action-empty">No tienes acciones rápidas disponibles.</p>
             ) : null}
           </div>
         </article>

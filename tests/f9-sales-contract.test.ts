@@ -169,25 +169,26 @@ describe("F9 sales contracts", () => {
     expect(detail).toContain("Inscripción");
   });
 
-  it("exposes sales through the simplified Empresa navigation", () => {
+  it("keeps sales as a contextual workflow outside the permanent navigation", () => {
     const layout = source("app/admin/layout.tsx");
     const company = source("app/admin/empresa/page.tsx");
+    const more = source("app/admin/mas/page.tsx");
     const mobileSpacing = source("app/admin/mobile-nav-overrides.css");
     const list = source("app/admin/ventas/page.tsx");
     const wizard = source("app/admin/ventas/nueva/page.tsx");
     const detail = source("app/admin/ventas/[saleId]/page.tsx");
     expect(layout).toContain('{ href: "/admin", label: "Hoy", enabled: true }');
     expect(layout).toContain('{ href: "/admin/alumnas", label: "Alumnas", enabled: true }');
-    expect(layout).toContain('href: "/admin/empresa"');
-    expect(layout).toContain('label: "Empresa"');
-    expect(layout).toContain('"/admin/ventas"');
-    expect(layout).not.toContain('{ href: "/admin/ventas", label: "Ventas", enabled: true }');
+    expect(layout).not.toContain('label: "Empresa"');
+    expect(layout).not.toContain('label: "Ventas"');
+    expect(layout).not.toContain('"/admin/ventas"');
+    expect(layout).toContain('href: "/admin/mas"');
     expect(layout).toContain('import "./mobile-nav-overrides.css"');
     expect(mobileSpacing).toContain("env(safe-area-inset-bottom)");
-    expect(company).toContain("Ventas y pagos");
-    expect(company).toContain('href: "/admin/ventas"');
-    expect(company).toContain("Coaches");
-    expect(company).toContain("Productos y paquetes");
+    expect(company).toContain('redirect("/admin/mas")');
+    expect(more).toContain('title: "Productos"');
+    expect(more).toContain('title: "Equipo"');
+    expect(more).not.toContain('title: "Ventas"');
     expect(list).toContain("Nueva venta");
     expect(list).toContain("Inscripción");
     expect(wizard).toContain("Confirmar venta");

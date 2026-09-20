@@ -1,8 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { useFormStatus } from "react-dom";
-import Link from "next/link";
+
 import { signIn } from "@/app/auth/actions";
 
 type LoginCardProps = {
@@ -69,11 +70,80 @@ function EyeIcon({ visible }: { visible: boolean }) {
   );
 }
 
+function MailIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 24 24"
+      width="20"
+      height="20"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <rect x="3" y="5" width="18" height="14" rx="2" />
+      <path d="m4 7 8 6 8-6" />
+    </svg>
+  );
+}
+
+function PhoneIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 24 24"
+      width="20"
+      height="20"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M7.2 3.7 5.6 4.5c-1.1.6-1.7 1.8-1.4 3 1.3 5.5 5.7 9.9 11.2 11.2 1.2.3 2.4-.3 3-1.4l.8-1.6a1.5 1.5 0 0 0-.5-1.9l-3-2a1.5 1.5 0 0 0-1.9.2l-1 1.1a11.2 11.2 0 0 1-2-1.5 11.2 11.2 0 0 1-1.5-2l1.1-1a1.5 1.5 0 0 0 .2-1.9l-2-3a1.5 1.5 0 0 0-1.4-.7Z" />
+    </svg>
+  );
+}
+
+function LockIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 24 24"
+      width="20"
+      height="20"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <rect x="5" y="10" width="14" height="11" rx="2" />
+      <path d="M8 10V7a4 4 0 0 1 8 0v3" />
+    </svg>
+  );
+}
+
+function DemeterBrand() {
+  return (
+    <div className="auth-brand" aria-label="Demeter">
+      <strong>DEMETER</strong>
+    </div>
+  );
+}
+
 function AuthSubmitButton() {
   const { pending } = useFormStatus();
 
   return (
-    <button className="primary-button" type="submit" disabled={pending} aria-busy={pending}>
+    <button
+      className="primary-button auth-submit"
+      type="submit"
+      disabled={pending}
+      aria-busy={pending}
+    >
       {pending ? "Entrando…" : "Entrar"}
     </button>
   );
@@ -83,30 +153,14 @@ function portalCopy(mode: LoginCardProps["mode"]) {
   if (mode === "student") {
     return {
       title: "Portal de alumna",
-      copy: "Accede con el teléfono registrado en el estudio y tu contraseña.",
+      copy: "Entra con tu número de teléfono y contraseña.",
     };
   }
 
   return {
     title: "Acceso al estudio",
-    copy: "Entra con la cuenta que usas para trabajar en el estudio. Studio Flow detectará tus permisos automáticamente.",
+    copy: "Entra con la cuenta que usas para trabajar en el estudio.",
   };
-}
-
-function SwitchLinks({ mode }: { mode: LoginCardProps["mode"] }) {
-  if (mode === "student") {
-    return (
-      <>
-        ¿Trabajas en el estudio? <Link href="/login/studio">Acceso al estudio</Link>
-      </>
-    );
-  }
-
-  return (
-    <>
-      ¿Eres alumna? <Link href="/login/student">Entrar al portal de alumna</Link>
-    </>
-  );
 }
 
 export function LoginCard({ mode, error }: LoginCardProps) {
@@ -117,46 +171,56 @@ export function LoginCard({ mode, error }: LoginCardProps) {
   const passwordToggleLabel = passwordVisible ? "Ocultar contraseña" : "Mostrar contraseña";
 
   return (
-    <main className="auth-shell">
-      <section className="auth-card">
-        <Link className="back-link" href="/">
-          ← Inicio
-        </Link>
-        <p className="eyebrow">DEMETER · STUDIO FLOW</p>
-        <h1 className="auth-title">{copy.title}</h1>
-        <p className="auth-copy">{copy.copy}</p>
+    <main className="auth-shell auth-login-shell">
+      <section className="auth-card auth-login-card">
+        <div className="auth-login-header">
+          <Link className="auth-back-button" href="/" aria-label="Volver al inicio">
+            ←
+          </Link>
+          <DemeterBrand />
+        </div>
+
+        <div className="auth-login-intro">
+          <h1 className="auth-title">{copy.title}</h1>
+          <p className="auth-copy">{copy.copy}</p>
+        </div>
 
         {error && messages[error] ? <div className="notice error">{messages[error]}</div> : null}
 
-        <form action={signIn} className="auth-form">
+        <form action={signIn} className="auth-form auth-login-form">
           <input type="hidden" name="mode" value={mode} />
-          {isStudent ? (
-            <label>
-              Teléfono
-              <input
-                name="phone"
-                type="tel"
-                inputMode="tel"
-                autoComplete="tel"
-                required
-                placeholder="33 1234 5678"
-              />
-            </label>
-          ) : (
-            <label>
-              Correo
-              <input
-                name="email"
-                type="email"
-                autoComplete="email"
-                required
-                placeholder="tu@correo.com"
-              />
-            </label>
-          )}
-          <label>
-            Contraseña
-            <div style={{ position: "relative" }}>
+
+          <label className="auth-field">
+            <span className="auth-field-icon">{isStudent ? <PhoneIcon /> : <MailIcon />}</span>
+            <span className="auth-field-body">
+              <span className="auth-field-label">{isStudent ? "Teléfono" : "Correo"}</span>
+              {isStudent ? (
+                <input
+                  name="phone"
+                  type="tel"
+                  inputMode="tel"
+                  autoComplete="tel"
+                  required
+                  placeholder="33 1234 5678"
+                />
+              ) : (
+                <input
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  required
+                  placeholder="tu@demeter.com"
+                />
+              )}
+            </span>
+          </label>
+
+          <label className="auth-field auth-password-field">
+            <span className="auth-field-icon">
+              <LockIcon />
+            </span>
+            <span className="auth-field-body">
+              <span className="auth-field-label">Contraseña</span>
               <input
                 name="password"
                 type={passwordVisible ? "text" : "password"}
@@ -166,40 +230,40 @@ export function LoginCard({ mode, error }: LoginCardProps) {
                 spellCheck={false}
                 required
                 placeholder="••••••••"
-                style={{ paddingRight: 54 }}
               />
-              <button
-                type="button"
-                aria-label={passwordToggleLabel}
-                aria-pressed={passwordVisible}
-                title={passwordToggleLabel}
-                onClick={() => setPasswordVisible((visible) => !visible)}
-                style={{
-                  position: "absolute",
-                  top: "50%",
-                  right: 10,
-                  transform: "translateY(-50%)",
-                  width: 36,
-                  height: 36,
-                  display: "grid",
-                  placeItems: "center",
-                  padding: 0,
-                  border: 0,
-                  borderRadius: 10,
-                  background: "transparent",
-                  color: "var(--muted)",
-                }}
-              >
-                <EyeIcon visible={passwordVisible} />
-              </button>
-            </div>
+            </span>
+            <button
+              type="button"
+              className="auth-password-toggle"
+              aria-label={passwordToggleLabel}
+              aria-pressed={passwordVisible}
+              title={passwordToggleLabel}
+              onClick={() => setPasswordVisible((visible) => !visible)}
+            >
+              <EyeIcon visible={passwordVisible} />
+            </button>
           </label>
+
+          <div className="auth-options">
+            <label className="auth-remember">
+              <input name="remember" type="checkbox" />
+              <span>Recordarme</span>
+            </label>
+            <span className="auth-recovery-link">¿Olvidaste tu contraseña?</span>
+          </div>
+
           <AuthSubmitButton />
         </form>
 
-        <p className="switch-copy">
-          <SwitchLinks mode={mode} />
-        </p>
+        <div className="auth-divider" aria-hidden="true">
+          <span />
+          <small>o</small>
+          <span />
+        </div>
+
+        <Link className="auth-switch-button" href={isStudent ? "/login/studio" : "/login/student"}>
+          {isStudent ? "Acceso al estudio" : "Soy alumna"}
+        </Link>
       </section>
     </main>
   );
