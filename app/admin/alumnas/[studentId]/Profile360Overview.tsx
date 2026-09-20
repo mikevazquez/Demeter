@@ -122,19 +122,7 @@ export default function Profile360Overview({
           <div className="profile360-approved-copy">
             <div className="profile360-approved-title">
               <h1>{student.fullName}</h1>
-              <span className="profile360-level-pill">
-                {levelTitle ? "Nivel " + levelTitle : "Sin nivel general"}
-              </span>
             </div>
-
-            <span
-              className={
-                "profile360-state-pill is-" +
-                (student.lifecycleStatus === "inactive" ? "inactive" : "active")
-              }
-            >
-              {student.lifecycleStatus === "inactive" ? "Alumna inactiva" : "Alumna activa"}
-            </span>
 
             <div className="profile360-approved-contact">
               <span>{student.phone}</span>
@@ -150,9 +138,22 @@ export default function Profile360Overview({
             </div>
           </div>
 
-          <Link className="profile360-edit-link" href={href("profile")}>
-            Editar
-          </Link>
+          <div className="profile360-approved-meta">
+            <span className="profile360-level-pill">
+              {levelTitle ? "Nivel " + levelTitle : "Sin nivel general"}
+            </span>
+            <span
+              className={
+                "profile360-state-pill is-" +
+                (student.lifecycleStatus === "inactive" ? "inactive" : "active")
+              }
+            >
+              {student.lifecycleStatus === "inactive" ? "Inactiva" : "Activa"}
+            </span>
+            <Link className="profile360-edit-link" href={href("profile")}>
+              Editar
+            </Link>
+          </div>
         </div>
       </section>
 
