@@ -17,14 +17,24 @@ export default async function ChallengeDetailPage({
   const { ruleId } = await params;
   const query = await searchParams;
   const ctx = await getAdminContext(CAPABILITIES.REWARDS_READ);
-  const { data: rule } = await ctx.supabase
-    .from("reward_rules")
-    .select(
-      "id,status,current_version_number,scheduled_start_at,scheduled_end_at,updated_at",
-    )
-    .eq("id", ruleId)
-    .eq("studio_id", ctx.studio.id)
-    .maybeSingle();
+
+  const [{ data: rule }, { data: copyOverride }] = await Promise.all([
+    ctx.supabase
+      .from("reward_rules")
+      .select(
+        "id,status,current_version_number,scheduled_start_at,scheduled_end_at,updated_at",
+      )
+      .eq("id", ruleId)
+      .eq("studio_id", ctx.studio.id)
+      .maybeSingle(),
+    ctx.supabase
+      .from("reward_rule_copy_overrides")
+      .select("title,description,cover_url")
+      .eq("rule_id", ruleId)
+      .eq("studio_id", ctx.studio.id)
+      .maybeSingle(),
+  ]);
+
   if (!rule) notFound();
 
   const { data: version } = await ctx.supabase
@@ -35,6 +45,7 @@ export default async function ChallengeDetailPage({
     .eq("rule_id", rule.id)
     .eq("version_number", rule.current_version_number)
     .maybeSingle();
+
   if (!version || version.family !== "challenge") notFound();
 
   return (
@@ -47,7 +58,7 @@ export default async function ChallengeDetailPage({
           ← Retos
         </Link>
         <p className="mt-4 eyebrow">CONSTRUCTOR DE RETO</p>
-        <h1 className="dashboard-title">{version.name}</h1>
+        <h1 className="dashboard-title">{copyOverride?.title ?? version.name}</h1>
       </header>
 
       {query.saved ? <div className="notice success">Cambios guardados correctamente.</div> : null}
@@ -57,6 +68,7 @@ export default async function ChallengeDetailPage({
         mode="challenge"
         rule={rule}
         version={version}
+        copyOverride={copyOverride}
         canManage={ctx.can(CAPABILITIES.REWARDS_MANAGE)}
       />
     </RewardsShell>

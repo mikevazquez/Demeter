@@ -37,6 +37,16 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
         ...(can(CAPABILITIES.STUDENTS_READ)
           ? [{ href: "/admin/alumnas", label: "Alumnas", enabled: true }]
           : []),
+        ...(can(CAPABILITIES.REWARDS_READ)
+          ? [
+              {
+                href: "/admin/recompensas",
+                label: "Progreso",
+                enabled: true,
+                activeFor: ["/admin/recompensas"],
+              },
+            ]
+          : []),
         ...(can(CAPABILITIES.ADMIN_PORTAL)
           ? [
               {

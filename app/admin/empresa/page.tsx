@@ -52,6 +52,14 @@ const sections: CompanySection[] = [
     capability: CAPABILITIES.AUTOMATIONS_READ,
     eyebrow: "AUTOMATIZACIÓN",
   },
+  {
+    title: "Progreso y recompensas",
+    description:
+      "Configura programas, logros y retos, y revisa el progreso real y las recompensas generadas.",
+    href: "/admin/recompensas",
+    capability: CAPABILITIES.REWARDS_READ,
+    eyebrow: "FIDELIZACIÓN",
+  },
 ];
 
 export default async function CompanyPage() {
