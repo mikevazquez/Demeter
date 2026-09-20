@@ -79,7 +79,9 @@ export function RuleEditorForm({
   copyOverride?: CopyOverrideValue | null;
 }) {
   const isAchievement = mode === "achievement";
-  const locked = Boolean(rule && ["active", "paused", "finished", "cancelled"].includes(rule.status));
+  const locked = Boolean(
+    rule && ["active", "paused", "finished", "cancelled"].includes(rule.status),
+  );
   const audience = asObject(version?.audience_definition);
   const presentation = asObject(version?.presentation_definition);
   const cycle = asObject(version?.cycle_definition);
@@ -116,9 +118,7 @@ export function RuleEditorForm({
               <p className="text-xs font-semibold uppercase tracking-[0.15em] text-[#FF0A8A]">
                 CONFIGURACIÓN VIGENTE
               </p>
-              <h2 className="mt-1 text-xl font-semibold text-white">
-                {displayName}
-              </h2>
+              <h2 className="mt-1 text-xl font-semibold text-white">{displayName}</h2>
             </div>
             <span className="rounded-full border border-white/10 px-3 py-1 text-xs font-semibold text-zinc-300">
               {ruleStatusLabels[rule?.status ?? ""] ?? rule?.status}
@@ -153,9 +153,7 @@ export function RuleEditorForm({
             <p className="text-xs font-semibold uppercase tracking-[0.15em] text-[#FF0A8A]">
               PRESENTACIÓN
             </p>
-            <h3 className="mt-1 text-lg font-semibold text-white">
-              Editar texto o portada
-            </h3>
+            <h3 className="mt-1 text-lg font-semibold text-white">Editar texto o portada</h3>
             <p className="mt-2 text-sm text-zinc-400">
               Estos cambios no alteran condiciones, fechas, audiencia, progreso ni recompensas.
             </p>
@@ -358,7 +356,9 @@ export function RuleEditorForm({
               ¿Qué debe conseguir la alumna?
             </h2>
             <div className="mt-4">
-              <ConditionsBuilder initial={initialConditions.length ? initialConditions : undefined} />
+              <ConditionsBuilder
+                initial={initialConditions.length ? initialConditions : undefined}
+              />
             </div>
           </section>
 

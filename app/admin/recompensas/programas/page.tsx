@@ -73,9 +73,7 @@ export default async function ProgramsPage() {
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#FF0A8A]">
-                      {version?.progression_mode === "sequential"
-                        ? "SECUENCIAL"
-                        : "ACUMULATIVO"}
+                      {version?.progression_mode === "sequential" ? "SECUENCIAL" : "ACUMULATIVO"}
                     </p>
                     <h2 className="mt-2 text-lg font-semibold text-white">
                       {version?.name ?? "Programa"}

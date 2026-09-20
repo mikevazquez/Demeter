@@ -43,21 +43,14 @@ const comparators = [
   ["lte", "Como máximo"],
 ];
 
-export function ConditionsBuilder({
-  initial,
-}: {
-  initial?: ConditionInput[];
-}) {
+export function ConditionsBuilder({ initial }: { initial?: ConditionInput[] }) {
   const [conditions, setConditions] = useState<ConditionInput[]>(
     initial?.length
       ? initial
       : [{ key: "condition_1", metric: "attendance.count", comparator: "gte", target: 1 }],
   );
 
-  const payload = useMemo(
-    () => JSON.stringify({ operator: "all", conditions }),
-    [conditions],
-  );
+  const payload = useMemo(() => JSON.stringify({ operator: "all", conditions }), [conditions]);
 
   function update(index: number, patch: Partial<ConditionInput>) {
     setConditions((current) =>
@@ -142,9 +135,7 @@ export function ConditionsBuilder({
               min="0"
               step="1"
               value={condition.target}
-              onChange={(event) =>
-                update(index, { target: Number(event.target.value) })
-              }
+              onChange={(event) => update(index, { target: Number(event.target.value) })}
               className="rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 text-white"
             />
           </label>

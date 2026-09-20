@@ -12,12 +12,8 @@ const nav = read("app/admin/recompensas/RewardsNav.tsx");
 const actions = read("app/admin/recompensas/actions.ts");
 const challenges = read("app/admin/recompensas/retos/page.tsx");
 const tracking = read("app/admin/recompensas/seguimiento/page.tsx");
-const studentProgress = read(
-  "app/admin/recompensas/seguimiento/[studentId]/page.tsx",
-);
-const rewardDetail = read(
-  "app/admin/recompensas/generadas/[rewardId]/page.tsx",
-);
+const studentProgress = read("app/admin/recompensas/seguimiento/[studentId]/page.tsx");
+const rewardDetail = read("app/admin/recompensas/generadas/[rewardId]/page.tsx");
 const runtimeHardening = read(
   "supabase/migrations/20260920135932_sf253_rewards_admin_runtime_hardening.sql",
 );
@@ -30,14 +26,7 @@ const loyaltySupport = read(
 
 describe("SF-253 Rewards admin control center", () => {
   it("exposes the approved product navigation", () => {
-    for (const label of [
-      "Inicio",
-      "Programas",
-      "Logros",
-      "Retos",
-      "Seguimiento",
-      "Recompensas",
-    ]) {
+    for (const label of ["Inicio", "Programas", "Logros", "Retos", "Seguimiento", "Recompensas"]) {
       expect(nav).toContain(label);
     }
     expect(nav).not.toContain("Incidencias");

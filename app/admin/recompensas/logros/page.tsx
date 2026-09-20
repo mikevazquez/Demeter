@@ -4,13 +4,7 @@ import { getAdminContext } from "@/lib/auth/admin-context";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 
 import { RewardsShell } from "../RewardsNav";
-import {
-  EmptyState,
-  StatusBadge,
-  asObject,
-  conditionsLabel,
-  rewardDefinitionLabel,
-} from "../ui";
+import { EmptyState, StatusBadge, asObject, conditionsLabel, rewardDefinitionLabel } from "../ui";
 
 export default async function AchievementsPage() {
   const ctx = await getAdminContext(CAPABILITIES.REWARDS_READ);
@@ -27,9 +21,7 @@ export default async function AchievementsPage() {
   const rulesResult = ruleIds.length
     ? await ctx.supabase
         .from("reward_rules")
-        .select(
-          "id,status,current_version_number,scheduled_start_at,scheduled_end_at,updated_at",
-        )
+        .select("id,status,current_version_number,scheduled_start_at,scheduled_end_at,updated_at")
         .in("id", ruleIds)
         .order("updated_at", { ascending: false })
     : { data: [] };

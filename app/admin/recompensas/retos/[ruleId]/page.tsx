@@ -21,9 +21,7 @@ export default async function ChallengeDetailPage({
   const [{ data: rule }, { data: copyOverride }] = await Promise.all([
     ctx.supabase
       .from("reward_rules")
-      .select(
-        "id,status,current_version_number,scheduled_start_at,scheduled_end_at,updated_at",
-      )
+      .select("id,status,current_version_number,scheduled_start_at,scheduled_end_at,updated_at")
       .eq("id", ruleId)
       .eq("studio_id", ctx.studio.id)
       .maybeSingle(),

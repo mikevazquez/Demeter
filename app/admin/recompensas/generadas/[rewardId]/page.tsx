@@ -115,8 +115,7 @@ export default async function GeneratedRewardDetailPage({
   }
 
   const canAdjust =
-    ctx.can(CAPABILITIES.REWARDS_MANAGE) &&
-    ["blocked", "available"].includes(reward.status);
+    ctx.can(CAPABILITIES.REWARDS_MANAGE) && ["blocked", "available"].includes(reward.status);
 
   return (
     <RewardsShell>
@@ -169,9 +168,7 @@ export default async function GeneratedRewardDetailPage({
         </article>
 
         <article className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
-          <p className="text-xs font-semibold uppercase tracking-[0.15em] text-[#FF0A8A]">
-            ORIGEN
-          </p>
+          <p className="text-xs font-semibold uppercase tracking-[0.15em] text-[#FF0A8A]">ORIGEN</p>
           <h2 className="mt-2 text-xl font-semibold text-white">{originLabel}</h2>
           <p className="mt-4 text-sm leading-6 text-zinc-400">
             {whyGenerated(evaluation?.condition_results)}
@@ -229,7 +226,13 @@ export default async function GeneratedRewardDetailPage({
         </section>
       ) : reward.status !== "revoked" ? (
         <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-sm text-zinc-400">
-          Esta recompensa ya está {reward.status === "reserved" ? "en uso" : reward.status === "redeemed" ? "utilizada" : "cerrada"} y no admite el ajuste directo disponible para recompensas abiertas.
+          Esta recompensa ya está{" "}
+          {reward.status === "reserved"
+            ? "en uso"
+            : reward.status === "redeemed"
+              ? "utilizada"
+              : "cerrada"}{" "}
+          y no admite el ajuste directo disponible para recompensas abiertas.
         </section>
       ) : null}
 

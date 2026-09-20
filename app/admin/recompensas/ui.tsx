@@ -92,13 +92,7 @@ export function statusTone(status: string) {
   return "border-white/10 bg-white/[0.04] text-zinc-300";
 }
 
-export function StatusBadge({
-  status,
-  label,
-}: {
-  status: string;
-  label?: string;
-}) {
+export function StatusBadge({ status, label }: { status: string; label?: string }) {
   return (
     <span
       className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${statusTone(status)}`}
@@ -123,28 +117,18 @@ export function MetricCard({
 }) {
   return (
     <article className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-      <p className="text-xs font-semibold uppercase tracking-[0.15em] text-zinc-500">
-        {label}
-      </p>
+      <p className="text-xs font-semibold uppercase tracking-[0.15em] text-zinc-500">{label}</p>
       <div className="mt-2 text-2xl font-semibold text-white">{value}</div>
       {detail ? <div className="mt-1 text-xs text-zinc-500">{detail}</div> : null}
     </article>
   );
 }
 
-export function EmptyState({
-  title,
-  children,
-}: {
-  title: string;
-  children?: ReactNode;
-}) {
+export function EmptyState({ title, children }: { title: string; children?: ReactNode }) {
   return (
     <div className="rounded-2xl border border-dashed border-white/10 bg-black/15 p-7 text-center">
       <strong className="text-sm text-white">{title}</strong>
-      {children ? (
-        <div className="mt-2 text-sm leading-6 text-zinc-500">{children}</div>
-      ) : null}
+      {children ? <div className="mt-2 text-sm leading-6 text-zinc-500">{children}</div> : null}
     </div>
   );
 }

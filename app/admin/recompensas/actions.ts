@@ -111,9 +111,7 @@ function buildRewardDefinition(
 
   if (badgeEnabled) {
     const title =
-      textValue(formData, "badge_title") ||
-      options?.defaultBadgeTitle ||
-      "Logro desbloqueado";
+      textValue(formData, "badge_title") || options?.defaultBadgeTitle || "Logro desbloqueado";
     rewards.push({
       key: "achievement",
       kind: "badge",
@@ -315,8 +313,7 @@ export async function saveProgramLevelAction(formData: FormData) {
   try {
     const { family, definition } = parseConditions(formData);
     const levelKey =
-      textValue(formData, "level_key") ||
-      `nivel_${integerValue(formData, "level_order", 1)}`;
+      textValue(formData, "level_key") || `nivel_${integerValue(formData, "level_order", 1)}`;
     const title = textValue(formData, "title");
     const levelOrder = integerValue(formData, "level_order", 1);
     if (!programId || !title || levelOrder < 1) throw new Error("reward_program_level_invalid");
@@ -327,7 +324,8 @@ export async function saveProgramLevelAction(formData: FormData) {
       .select("studio_id,latest_version_number,published_version_number,status")
       .eq("id", programId)
       .single();
-    if (programError || !program) throw new Error(programError?.message ?? "reward_program_not_found");
+    if (programError || !program)
+      throw new Error(programError?.message ?? "reward_program_not_found");
     if (program.latest_version_number === program.published_version_number) {
       throw new Error("reward_program_no_editable_draft");
     }
@@ -404,8 +402,7 @@ export async function saveProgramLevelAction(formData: FormData) {
       description: textValue(formData, "description") || null,
       rule_id: ruleId,
       rule_version_number: 1,
-      level_visibility:
-        textValue(formData, "level_visibility") === "hidden" ? "hidden" : "visible",
+      level_visibility: textValue(formData, "level_visibility") === "hidden" ? "hidden" : "visible",
       reward_visibility: outcome.visibility,
       presentation_definition: {},
     });
@@ -512,10 +509,7 @@ export async function deleteProgramLevelAction(formData: FormData) {
   }
 }
 
-async function saveStandaloneRule(
-  formData: FormData,
-  familyOverride: "achievement" | "challenge",
-) {
+async function saveStandaloneRule(formData: FormData, familyOverride: "achievement" | "challenge") {
   const { family, definition } = parseConditions(formData);
   const name = textValue(formData, "name");
   const description = textValue(formData, "description");
@@ -533,9 +527,7 @@ async function saveStandaloneRule(
         ? "all_students"
         : "all_active_students",
     eligibility_mode:
-      textValue(formData, "eligibility_mode") === "lock_on_join"
-        ? "lock_on_join"
-        : "continuous",
+      textValue(formData, "eligibility_mode") === "lock_on_join" ? "lock_on_join" : "continuous",
   };
   const challengeMode =
     familyOverride === "challenge" && textValue(formData, "challenge_mode") === "periods"
@@ -624,9 +616,7 @@ async function saveStandaloneRule(
 
 export async function saveAchievementAction(formData: FormData) {
   const ruleId = textValue(formData, "rule_id");
-  const base = ruleId
-    ? `/admin/recompensas/logros/${ruleId}`
-    : "/admin/recompensas/logros/nuevo";
+  const base = ruleId ? `/admin/recompensas/logros/${ruleId}` : "/admin/recompensas/logros/nuevo";
   try {
     const id = await saveStandaloneRule(formData, "achievement");
     revalidateRewards();
@@ -638,9 +628,7 @@ export async function saveAchievementAction(formData: FormData) {
 
 export async function saveChallengeAction(formData: FormData) {
   const ruleId = textValue(formData, "rule_id");
-  const base = ruleId
-    ? `/admin/recompensas/retos/${ruleId}`
-    : "/admin/recompensas/retos/nuevo";
+  const base = ruleId ? `/admin/recompensas/retos/${ruleId}` : "/admin/recompensas/retos/nuevo";
   try {
     const id = await saveStandaloneRule(formData, "challenge");
     revalidateRewards();

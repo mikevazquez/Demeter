@@ -19,9 +19,7 @@ export default async function AchievementDetailPage({
   const ctx = await getAdminContext(CAPABILITIES.REWARDS_READ);
   const { data: rule } = await ctx.supabase
     .from("reward_rules")
-    .select(
-      "id,status,current_version_number,scheduled_start_at,scheduled_end_at,updated_at",
-    )
+    .select("id,status,current_version_number,scheduled_start_at,scheduled_end_at,updated_at")
     .eq("id", ruleId)
     .eq("studio_id", ctx.studio.id)
     .maybeSingle();

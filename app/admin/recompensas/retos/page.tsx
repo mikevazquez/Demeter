@@ -4,13 +4,7 @@ import { getAdminContext } from "@/lib/auth/admin-context";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 
 import { RewardsShell } from "../RewardsNav";
-import {
-  EmptyState,
-  StatusBadge,
-  asObject,
-  conditionsLabel,
-  rewardDefinitionLabel,
-} from "../ui";
+import { EmptyState, StatusBadge, asObject, conditionsLabel, rewardDefinitionLabel } from "../ui";
 
 const filterLabels: Record<string, string> = {
   all: "Todos",
@@ -27,7 +21,9 @@ export default async function ChallengesPage({
 }) {
   const query = await searchParams;
   const ctx = await getAdminContext(CAPABILITIES.REWARDS_READ);
-  const search = String(query.q ?? "").trim().toLocaleLowerCase("es-MX");
+  const search = String(query.q ?? "")
+    .trim()
+    .toLocaleLowerCase("es-MX");
   const status = ["active", "scheduled", "draft", "finished"].includes(String(query.status))
     ? String(query.status)
     : "all";
@@ -46,9 +42,7 @@ export default async function ChallengesPage({
     ? await Promise.all([
         ctx.supabase
           .from("reward_rules")
-          .select(
-            "id,status,current_version_number,scheduled_start_at,scheduled_end_at,updated_at",
-          )
+          .select("id,status,current_version_number,scheduled_start_at,scheduled_end_at,updated_at")
           .in("id", ruleIds)
           .neq("status", "cancelled")
           .order("updated_at", { ascending: false }),
@@ -76,8 +70,10 @@ export default async function ChallengesPage({
     .filter(({ rule }) => status === "all" || rule.status === status)
     .filter(({ version, override }) => {
       if (!search) return true;
-      const haystack = `${override?.title ?? version?.name ?? ""} ${override?.description ?? version?.description ?? ""}`
-        .toLocaleLowerCase("es-MX");
+      const haystack =
+        `${override?.title ?? version?.name ?? ""} ${override?.description ?? version?.description ?? ""}`.toLocaleLowerCase(
+          "es-MX",
+        );
       return haystack.includes(search);
     });
 

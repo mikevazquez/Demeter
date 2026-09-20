@@ -13,12 +13,7 @@ import {
   updateProgramDraftAction,
 } from "../../actions";
 import { RewardsShell } from "../../RewardsNav";
-import {
-  StatusBadge,
-  asObject,
-  conditionsLabel,
-  rewardDefinitionLabel,
-} from "../../ui";
+import { StatusBadge, asObject, conditionsLabel, rewardDefinitionLabel } from "../../ui";
 
 export default async function ProgramDetailPage({
   params,
@@ -217,9 +212,7 @@ export default async function ProgramDetailPage({
             <p className="text-xs font-semibold uppercase tracking-[0.15em] text-[#FF0A8A]">
               NIVELES
             </p>
-            <h2 className="mt-1 text-xl font-semibold text-white">
-              Ruta del programa
-            </h2>
+            <h2 className="mt-1 text-xl font-semibold text-white">Ruta del programa</h2>
           </div>
           {canManage && hasDraft ? (
             <Link

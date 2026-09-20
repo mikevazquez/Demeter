@@ -4,12 +4,7 @@ import { getAdminContext } from "@/lib/auth/admin-context";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 
 import { RewardsShell } from "../RewardsNav";
-import {
-  EmptyState,
-  StatusBadge,
-  formatDateTime,
-  rewardDefinitionLabel,
-} from "../ui";
+import { EmptyState, StatusBadge, formatDateTime, rewardDefinitionLabel } from "../ui";
 
 export default async function GeneratedRewardsPage({
   searchParams,
@@ -86,9 +81,8 @@ export default async function GeneratedRewardsPage({
   );
 
   const decorated = rewardsBase.map((reward) => {
-    const key = reward.rule_id && reward.version_number
-      ? `${reward.rule_id}:${reward.version_number}`
-      : "";
+    const key =
+      reward.rule_id && reward.version_number ? `${reward.rule_id}:${reward.version_number}` : "";
     const ruleVersion = key ? ruleVersionMap.get(key) : undefined;
     const programLevel = key ? programLevelMap.get(key) : undefined;
 

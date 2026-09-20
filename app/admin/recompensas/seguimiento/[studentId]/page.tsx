@@ -87,9 +87,7 @@ export default async function StudentRewardsProgressPage({
       .order("updated_at", { ascending: false }),
     ctx.supabase
       .from("reward_progress_evaluations")
-      .select(
-        "id,rule_id,version_number,condition_results,progress,fulfilled,evaluated_at",
-      )
+      .select("id,rule_id,version_number,condition_results,progress,fulfilled,evaluated_at")
       .eq("studio_id", ctx.studio.id)
       .eq("student_id", student.id)
       .order("evaluated_at", { ascending: false })
@@ -112,9 +110,7 @@ export default async function StudentRewardsProgressPage({
       .order("created_at", { ascending: false }),
     ctx.supabase
       .from("reward_program_events")
-      .select(
-        "id,program_id,program_version_number,level_id,event_type,details,occurred_at",
-      )
+      .select("id,program_id,program_version_number,level_id,event_type,details,occurred_at")
       .eq("studio_id", ctx.studio.id)
       .eq("student_id", student.id)
       .order("occurred_at", { ascending: false })
@@ -145,7 +141,9 @@ export default async function StudentRewardsProgressPage({
   const programLevelsResult = programIds.length
     ? await ctx.supabase
         .from("reward_program_levels")
-        .select("id,program_id,program_version_number,level_order,title,rule_id,rule_version_number")
+        .select(
+          "id,program_id,program_version_number,level_order,title,rule_id,rule_version_number",
+        )
         .in("program_id", programIds)
     : { data: [] };
   const programLevels = programLevelsResult.data ?? [];
@@ -175,10 +173,7 @@ export default async function StudentRewardsProgressPage({
         .in("rule_id", ruleIds)
     : { data: [] };
   const ruleVersionMap = new Map(
-    (ruleVersionsResult.data ?? []).map((item) => [
-      `${item.rule_id}:${item.version_number}`,
-      item,
-    ]),
+    (ruleVersionsResult.data ?? []).map((item) => [`${item.rule_id}:${item.version_number}`, item]),
   );
 
   const latestEvaluationByRule = new Map<string, (typeof evaluations)[number]>();
@@ -292,9 +287,7 @@ export default async function StudentRewardsProgressPage({
             key={value}
             href={`/admin/recompensas/seguimiento/${student.id}?tab=${value}`}
             className={`rounded-xl px-3 py-2 text-sm font-semibold ${
-              tab === value
-                ? "bg-[#FF0A8A] text-white"
-                : "border border-white/10 text-zinc-400"
+              tab === value ? "bg-[#FF0A8A] text-white" : "border border-white/10 text-zinc-400"
             }`}
           >
             {label}
@@ -307,7 +300,9 @@ export default async function StudentRewardsProgressPage({
           <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
               <p className="text-xs uppercase tracking-[0.14em] text-zinc-500">Programas</p>
-              <strong className="mt-2 block text-2xl text-white">{programParticipations.length}</strong>
+              <strong className="mt-2 block text-2xl text-white">
+                {programParticipations.length}
+              </strong>
             </div>
             <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
               <p className="text-xs uppercase tracking-[0.14em] text-zinc-500">Logros</p>
@@ -343,9 +338,7 @@ export default async function StudentRewardsProgressPage({
                       item.program_version_number === participation.program_version_number &&
                       item.level_order === participation.current_level_order,
                   );
-                  const evaluation = level
-                    ? latestEvaluationByRule.get(level.rule_id)
-                    : undefined;
+                  const evaluation = level ? latestEvaluationByRule.get(level.rule_id) : undefined;
                   return (
                     <article
                       key={participation.id}

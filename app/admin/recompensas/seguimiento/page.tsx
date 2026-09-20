@@ -4,13 +4,7 @@ import { getAdminContext } from "@/lib/auth/admin-context";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 
 import { RewardsShell } from "../RewardsNav";
-import {
-  EmptyState,
-  StatusBadge,
-  asArray,
-  asObject,
-  metricLabels,
-} from "../ui";
+import { EmptyState, StatusBadge, asArray, asObject, metricLabels } from "../ui";
 
 function progressSummary(value: unknown) {
   const rows = asArray(value).map(asObject);
@@ -78,7 +72,9 @@ export default async function RewardsTrackingPage({
     ? await Promise.all([
         ctx.supabase
           .from("reward_program_participations")
-          .select("id,program_id,student_id,status,current_level_order,program_version_number,updated_at")
+          .select(
+            "id,program_id,student_id,status,current_level_order,program_version_number,updated_at",
+          )
           .eq("studio_id", ctx.studio.id)
           .in("student_id", studentIds)
           .order("updated_at", { ascending: false }),
@@ -98,7 +94,10 @@ export default async function RewardsTrackingPage({
       ])
     : [{ data: [] }, { data: [] }, { data: [] }];
 
-  const latestEval = new Map<string, (typeof evaluationsResult.data extends Array<infer U> ? U : never)>();
+  const latestEval = new Map<
+    string,
+    typeof evaluationsResult.data extends Array<infer U> ? U : never
+  >();
   for (const evaluation of evaluationsResult.data ?? []) {
     const key = `${evaluation.student_id}:${evaluation.rule_id}`;
     if (!latestEval.has(key)) latestEval.set(key, evaluation as never);
@@ -138,10 +137,7 @@ export default async function RewardsTrackingPage({
 
   const ruleStateMap = new Map((rulesResult.data ?? []).map((row) => [row.id, row]));
   const ruleVersionMap = new Map(
-    (ruleVersionsResult.data ?? []).map((row) => [
-      `${row.rule_id}:${row.version_number}`,
-      row,
-    ]),
+    (ruleVersionsResult.data ?? []).map((row) => [`${row.rule_id}:${row.version_number}`, row]),
   );
 
   const programRows = (programResult.data ?? []).map((row) => {
@@ -182,9 +178,7 @@ export default async function RewardsTrackingPage({
       return { row, version, progress };
     })
     .filter(({ version }) =>
-      type === "challenges"
-        ? version?.family === "challenge"
-        : version?.family === "achievement",
+      type === "challenges" ? version?.family === "challenge" : version?.family === "achievement",
     )
     .map(({ row, version, progress }) => ({
       id: row.id,
@@ -196,9 +190,7 @@ export default async function RewardsTrackingPage({
       missing: row.status === "fulfilled" ? "Objetivo completado." : progress.label,
     }));
 
-  const rows = (type === "programs" ? programRows : ruleRows).sort(
-    (a, b) => b.score - a.score,
-  );
+  const rows = (type === "programs" ? programRows : ruleRows).sort((a, b) => b.score - a.score);
   const closestPendingScore = rows.find((row) => row.score < 1)?.score ?? 0;
 
   return (
@@ -238,8 +230,7 @@ export default async function RewardsTrackingPage({
         <section className="grid gap-2">
           {rows.map((row) => {
             const student = studentMap.get(row.studentId);
-            const closest =
-              row.score > 0 && row.score < 1 && row.score === closestPendingScore;
+            const closest = row.score > 0 && row.score < 1 && row.score === closestPendingScore;
             return (
               <Link
                 key={row.id}
