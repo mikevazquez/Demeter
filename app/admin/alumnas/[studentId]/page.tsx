@@ -86,6 +86,46 @@ function formatDateTime(value: string) {
   }).format(new Date(value));
 }
 
+function rewardStatusLabel(status: string) {
+  const labels: Record<string, string> = {
+    blocked: "Bloqueada",
+    available: "Disponible",
+    reserved: "Reservada",
+    redeemed: "Usada",
+    expired: "Vencida",
+    revoked: "Revocada",
+  };
+  return labels[status] ?? status;
+}
+
+function rewardBenefitLabel(kind: string, benefit: unknown) {
+  const data =
+    benefit && typeof benefit === "object" ? (benefit as Record<string, unknown>) : {};
+  if (kind === "credits" && typeof data.credits === "number") {
+    return String(data.credits) + (data.credits === 1 ? " crédito" : " créditos");
+  }
+  if (kind === "percentage_discount" && typeof data.percentage === "number") {
+    return String(data.percentage) + "% de descuento";
+  }
+  if (kind === "fixed_discount" && typeof data.amount_minor === "number") {
+    return new Intl.NumberFormat("es-MX", {
+      style: "currency",
+      currency: "MXN",
+      maximumFractionDigits: 0,
+    }).format(data.amount_minor / 100) + " de descuento";
+  }
+  if (kind === "validity_extension" && typeof data.days === "number") {
+    return String(data.days) + (data.days === 1 ? " día extra" : " días extra");
+  }
+  const labels: Record<string, string> = {
+    surcharge_waiver: "Recargo bonificado",
+    special_benefit: "Beneficio especial",
+    badge: "Insignia",
+    custom_manual: "Beneficio manual",
+  };
+  return labels[kind] ?? "Recompensa";
+}
+
 function localDateKey(timeZone: string) {
   const parts = new Intl.DateTimeFormat("en-US", {
     timeZone,
@@ -438,6 +478,7 @@ export default async function StudentProfilePage({
     expiresAt: string | null;
     redeemedAt: string | null;
     createdAt: string;
+    benefitDefinition: unknown;
   }> = [];
   if (canReadRewards) {
     const { data: activePrograms } = await supabase
@@ -494,7 +535,7 @@ export default async function StudentProfilePage({
           .limit(20),
         supabase
           .from("reward_instances")
-          .select("id,reward_key,status,kind,expires_at,redeemed_at,created_at")
+          .select("id,reward_key,status,kind,benefit_definition,expires_at,redeemed_at,created_at")
           .eq("studio_id", studio.id)
           .eq("student_id", student.id)
           .order("created_at", { ascending: false })
@@ -521,6 +562,7 @@ export default async function StudentProfilePage({
       expiresAt: item.expires_at,
       redeemedAt: item.redeemed_at,
       createdAt: item.created_at,
+      benefitDefinition: item.benefit_definition,
     }));
   }
 
