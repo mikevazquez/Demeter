@@ -17,6 +17,7 @@ const studioMessages: Record<string, string> = {
   auth: "No se pudo validar el acceso en este momento. Vuelve a intentarlo.",
   pending: "Tu cuenta existe, pero todavía no tiene acceso asignado al estudio.",
   access: "Esta cuenta no tiene acceso activo al estudio.",
+  activation: "Tu acceso inicial necesita ser habilitado por el administrador del estudio.",
 };
 
 const studentMessages: Record<string, string> = {
