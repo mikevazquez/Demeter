@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { type CSSProperties, useState } from "react";
 import { useFormStatus } from "react-dom";
 
 import { saveStudioPortalIdentityAction } from "./actions";
@@ -105,7 +105,7 @@ export function PortalIdentityForm({
 
         <div
           className="branding-preview-card"
-          style={{ "--preview-accent": primaryColor } as React.CSSProperties}
+          style={{ "--preview-accent": primaryColor } as CSSProperties}
         >
           {previewLogo ? (
             <div
