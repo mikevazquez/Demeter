@@ -15,6 +15,8 @@ const tracking = read("app/admin/recompensas/seguimiento/page.tsx");
 const studentProgress = read("app/admin/recompensas/seguimiento/[studentId]/page.tsx");
 const rewardDetail = read("app/admin/recompensas/generadas/[rewardId]/page.tsx");
 const programDetail = read("app/admin/recompensas/programas/[programId]/page.tsx");
+const achievementDetail = read("app/admin/recompensas/logros/[ruleId]/page.tsx");
+const achievementSavedNotice = read("app/admin/recompensas/logros/AchievementSavedNotice.tsx");
 const programSavedNotice = read(
   "app/admin/recompensas/programas/[programId]/ProgramSavedNotice.tsx",
 );
@@ -69,6 +71,13 @@ describe("SF-253 Rewards admin control center", () => {
     expect(programDetail).not.toContain("notice success");
     expect(programSavedNotice).toContain("NoticeDialog");
     expect(programSavedNotice).toContain("Cambio guardado correctamente");
+  });
+
+  it("uses the approved dialog pattern for achievement success feedback", () => {
+    expect(achievementDetail).toContain("AchievementSavedNotice");
+    expect(achievementDetail).not.toContain("notice success");
+    expect(achievementSavedNotice).toContain("NoticeDialog");
+    expect(achievementSavedNotice).toContain("Cambio guardado correctamente");
   });
 
   it("keeps active copy edits outside structural versions", () => {
