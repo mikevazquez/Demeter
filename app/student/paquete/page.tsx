@@ -248,7 +248,9 @@ export default async function StudentPackagePage() {
                   <span className="mt-1 block text-[11px] text-zinc-500">Reservadas</span>
                 </div>
                 <div className="p-4 text-center">
-                  <strong className="block text-2xl text-white">{activePackage.used_credits}</strong>
+                  <strong className="block text-2xl text-white">
+                    {activePackage.used_credits}
+                  </strong>
                   <span className="mt-1 block text-[11px] text-zinc-500">Utilizadas</span>
                 </div>
               </div>
@@ -401,9 +403,7 @@ export default async function StudentPackagePage() {
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-fuchsia-300">
               Compra online
             </p>
-            <h2 className="mt-1 text-xl font-semibold text-white">
-              Adquirir o renovar paquete
-            </h2>
+            <h2 className="mt-1 text-xl font-semibold text-white">Adquirir o renovar paquete</h2>
             <p className="mt-1 text-sm text-zinc-400">
               Elige entre los productos habilitados por el estudio. El pago se completa de forma
               segura en Mercado Pago.
@@ -444,7 +444,9 @@ export default async function StudentPackagePage() {
                               ? (termCopy[product.package_term] ?? "Otra vigencia")
                               : "Otra vigencia"}
                           </span>
-                          <h3 className="mt-3 text-base font-semibold text-white">{product.name}</h3>
+                          <h3 className="mt-3 text-base font-semibold text-white">
+                            {product.name}
+                          </h3>
                           <p className="mt-1 text-sm text-zinc-400">{productBenefit(product)}</p>
                         </div>
                         <strong className="shrink-0 text-base text-white">
