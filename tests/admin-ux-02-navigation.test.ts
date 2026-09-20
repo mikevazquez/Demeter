@@ -55,7 +55,7 @@ describe("ADMIN-UX-02 navigation architecture", () => {
 
   it("presents required actions to users as Atención", () => {
     expect(attention).toContain("ATENCIÓN · {studio.name}");
-    expect(attention).toContain('>Atención<');
+    expect(attention).toContain(">Atención<");
     expect(attention).not.toContain("ACCIONES REQUERIDAS");
     expect(attention).toContain(">Revisar<");
   });
