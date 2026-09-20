@@ -23,9 +23,7 @@ describe("ADMIN-UX-01 approved login visual contract", () => {
 
   it("keeps the approved compact copy for Studio and Student", () => {
     expect(card).toContain('title: "Acceso al estudio"');
-    expect(card).toContain(
-      'copy: "Entra con la cuenta que usas para trabajar en el estudio."',
-    );
+    expect(card).toContain('copy: "Entra con la cuenta que usas para trabajar en el estudio."');
     expect(card).toContain('title: "Portal de alumna"');
     expect(card).toContain('copy: "Entra con tu número de teléfono y contraseña."');
     expect(card).toContain('placeholder="tu@demeter.com"');
