@@ -15,8 +15,6 @@ import { RewardCard, RewardsEmpty } from "./components";
 
 export default async function StudentRewardsPage() {
   const ctx = await getStudentRewardsContext();
-  const now = Date.now();
-
   const availableRewards = ctx.rewards
     .filter((reward) => reward.status === "available")
     .sort((left, right) => {
