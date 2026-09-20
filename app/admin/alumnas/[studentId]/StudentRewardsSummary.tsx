@@ -37,11 +37,7 @@ function benefitLabel(kind: string, value: unknown) {
   return String(definition.label ?? definition.description ?? "Beneficio especial");
 }
 
-export default async function StudentRewardsSummary({
-  studentId,
-}: {
-  studentId: string;
-}) {
+export default async function StudentRewardsSummary({ studentId }: { studentId: string }) {
   const { supabase, studio } = await getAdminContext(CAPABILITIES.REWARDS_READ);
 
   const [rewardsResult, participationsResult, cyclesResult, achievementsResult, incidentsResult] =
@@ -92,20 +88,19 @@ export default async function StudentRewardsSummary({
         .from("reward_rule_versions")
         .select("rule_id,version_number,name,family,human_summary")
         .in("rule_id", ruleIds)
-    : { data: [] as Array<{
-        rule_id: string;
-        version_number: number;
-        name: string;
-        family: string;
-        human_summary: string;
-      }> };
+    : {
+        data: [] as Array<{
+          rule_id: string;
+          version_number: number;
+          name: string;
+          family: string;
+          human_summary: string;
+        }>,
+      };
 
   const versions = versionsResult.data ?? [];
   const versionMap = new Map(
-    versions.map((version) => [
-      `${version.rule_id}:${version.version_number}`,
-      version,
-    ]),
+    versions.map((version) => [`${version.rule_id}:${version.version_number}`, version]),
   );
 
   const available = rewards.filter((reward) => reward.status === "available");
@@ -119,8 +114,8 @@ export default async function StudentRewardsSummary({
   });
 
   const loyaltyCycle = loyaltyParticipation
-    ? activeCycles.find((cycle) => cycle.participation_id === loyaltyParticipation.id) ??
-      cycles.find((cycle) => cycle.participation_id === loyaltyParticipation.id)
+    ? (activeCycles.find((cycle) => cycle.participation_id === loyaltyParticipation.id) ??
+      cycles.find((cycle) => cycle.participation_id === loyaltyParticipation.id))
     : null;
 
   const loyaltySnapshotResult = loyaltyCycle
@@ -150,13 +145,9 @@ export default async function StudentRewardsSummary({
       .filter((cycle) => !loyaltyCycle || cycle.id !== loyaltyCycle.id)
       .slice(0, Math.max(0, 3 - Math.min(available.length, 2)))
       .map((cycle) => {
-        const participation = participations.find(
-          (item) => item.id === cycle.participation_id,
-        );
+        const participation = participations.find((item) => item.id === cycle.participation_id);
         const version = participation
-          ? versionMap.get(
-              `${participation.rule_id}:${participation.joined_version_number}`,
-            )
+          ? versionMap.get(`${participation.rule_id}:${participation.joined_version_number}`)
           : null;
 
         return {
@@ -179,10 +170,7 @@ export default async function StudentRewardsSummary({
           <h2>Fidelidad y recompensas</h2>
           <p>Resumen contextual. Las acciones sensibles se gestionan desde el perfil Rewards.</p>
         </div>
-        <Link
-          href={`/admin/recompensas/alumnas/${studentId}`}
-          className="ghost-button"
-        >
+        <Link href={`/admin/recompensas/alumnas/${studentId}`} className="ghost-button">
           Ver perfil Rewards
         </Link>
       </div>

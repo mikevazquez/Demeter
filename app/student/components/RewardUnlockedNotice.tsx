@@ -4,11 +4,7 @@ import type { StudentRewardNotice } from "@/lib/student/reward-notices";
 
 import { acknowledgeRewardNoticesAction } from "../recompensas/notice-actions";
 
-export default function RewardUnlockedNotice({
-  notices,
-}: {
-  notices: StudentRewardNotice[];
-}) {
+export default function RewardUnlockedNotice({ notices }: { notices: StudentRewardNotice[] }) {
   if (!notices.length) return null;
 
   const prominent = notices.some((notice) => notice.visibility === "high");

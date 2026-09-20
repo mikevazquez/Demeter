@@ -291,7 +291,6 @@ export default async function StudentProfilePage({
           </span>
         </div>
       </header>
-
       <StudentLifecycleNoticeDialog
         result={
           query.lifecycle === "active" || query.lifecycle === "inactive"
@@ -300,14 +299,12 @@ export default async function StudentProfilePage({
         }
         error={query.lifecycle_error}
       />
-
       {query.saved ? <div className="notice success">Cambios guardados correctamente.</div> : null}
       {query.error ? (
         <div className="notice error">
           {errorCopy[query.error] ?? "No se pudo guardar el cambio."}
         </div>
       ) : null}
-
       {canReadRequiredActions ? (
         <RequiredActionContextPanel
           eyebrow="ACCIONES REQUERIDAS"
@@ -316,7 +313,6 @@ export default async function StudentProfilePage({
           emptyCopy="Esta alumna no tiene acciones requeridas abiertas."
         />
       ) : null}
-
       {query.alta === "finalizada" || query.alta === "sin_paquete" ? (
         <div className="notice success">
           {query.alta === "finalizada"
@@ -339,14 +335,12 @@ export default async function StudentProfilePage({
           </div>
         </div>
       ) : null}
-
       {query.alta === "reserva_realizada" ? (
         <div className="notice success">
           Primera reserva registrada. Studio Flow mantuvo la misma alumna y aplicó las reglas reales
           de paquete, inscripción, créditos y cupo.
         </div>
       ) : null}
-
       <section className="stat-grid">
         <article className="stat-card">
           <span>Expediente</span>
@@ -368,8 +362,8 @@ export default async function StudentProfilePage({
           <small>Formato E.164</small>
         </article>
       </section>
-
-      {canReadRewards ? <StudentRewardsSummary studentId={student.id} /> : null}\n\n      <section className="panel-grid">
+      {canReadRewards ? <StudentRewardsSummary studentId={student.id} /> : null}\n\n{" "}
+      <section className="panel-grid">
         <article className="panel">
           <div className="panel-heading">
             <div>
@@ -446,7 +440,6 @@ export default async function StudentProfilePage({
           </div>
         </article>
       </section>
-
       {student.person_id ? (
         <section id="comunicacion" className="panel scroll-mt-6">
           <div className="panel-heading">
@@ -609,7 +602,6 @@ export default async function StudentProfilePage({
           </div>
         </section>
       ) : null}
-
       {canReadProducts ? (
         <section className="panel">
           <div className="panel-heading">
@@ -741,7 +733,6 @@ export default async function StudentProfilePage({
           )}
         </section>
       ) : null}
-
       <section className="panel">
         <div className="panel-heading">
           <div>
@@ -886,7 +877,6 @@ export default async function StudentProfilePage({
           </div>
         )}
       </section>
-
       {canArchive ? (
         <section className="panel" id="estado-alumna">
           <p className="eyebrow">ADMINISTRACIÓN</p>

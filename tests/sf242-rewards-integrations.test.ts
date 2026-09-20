@@ -7,9 +7,7 @@ const read = (path: string) => readFileSync(join(process.cwd(), path), "utf8");
 
 describe("SF-242 Rewards integrations I03-I04", () => {
   it("keeps reward confirmation decoupled from reward generation", () => {
-    const migration = read(
-      "supabase/migrations/20260920021000_sf242_reward_notices.sql",
-    );
+    const migration = read("supabase/migrations/20260920021000_sf242_reward_notices.sql");
     const notices = read("lib/student/reward-notices.ts");
 
     expect(migration).toContain("presentation-only acknowledgement state");
@@ -49,9 +47,7 @@ describe("SF-242 Rewards integrations I03-I04", () => {
   });
 
   it("acknowledges notices through an invoker wrapper and self context", () => {
-    const migration = read(
-      "supabase/migrations/20260920021000_sf242_reward_notices.sql",
-    );
+    const migration = read("supabase/migrations/20260920021000_sf242_reward_notices.sql");
 
     expect(migration).toContain("private.student_ack_reward_notices_internal");
     expect(migration).toContain("security invoker");

@@ -85,9 +85,7 @@ export const getPendingStudentRewardNotices = cache(async (): Promise<StudentRew
       .limit(40),
     portal.supabase
       .from("reward_achievement_unlocks")
-      .select(
-        "id,rule_id,version_number,title_snapshot,badge_snapshot,unlocked_at",
-      )
+      .select("id,rule_id,version_number,title_snapshot,badge_snapshot,unlocked_at")
       .eq("studio_id", studioId)
       .eq("student_id", studentId)
       .order("unlocked_at", { ascending: false })
@@ -124,21 +122,21 @@ export const getPendingStudentRewardNotices = cache(async (): Promise<StudentRew
   const rewardMap = new Map(rewards.map((reward) => [reward.id, reward]));
 
   const ruleVersionKeys = [
-    ...new Set(
-      [
-        ...rewards
-          .filter((reward) => reward.rule_id && reward.version_number)
-          .map((reward) => `${reward.rule_id}:${reward.version_number}`),
-        ...(achievementsResult.data ?? []).map(
-          (achievement) => `${achievement.rule_id}:${achievement.version_number}`,
-        ),
-      ],
-    ),
+    ...new Set([
+      ...rewards
+        .filter((reward) => reward.rule_id && reward.version_number)
+        .map((reward) => `${reward.rule_id}:${reward.version_number}`),
+      ...(achievementsResult.data ?? []).map(
+        (achievement) => `${achievement.rule_id}:${achievement.version_number}`,
+      ),
+    ]),
   ];
 
   const ruleIds = [
     ...new Set(
-      ruleVersionKeys.map((key) => key.split(":")[0]).filter((value): value is string => Boolean(value)),
+      ruleVersionKeys
+        .map((key) => key.split(":")[0])
+        .filter((value): value is string => Boolean(value)),
     ),
   ];
 
@@ -171,11 +169,7 @@ export const getPendingStudentRewardNotices = cache(async (): Promise<StudentRew
       continue;
     }
 
-    if (
-      event.event_type === "created" &&
-      !reward.manually_granted &&
-      reward.status !== "blocked"
-    ) {
+    if (event.event_type === "created" && !reward.manually_granted && reward.status !== "blocked") {
       continue;
     }
 
@@ -215,10 +209,7 @@ export const getPendingStudentRewardNotices = cache(async (): Promise<StudentRew
       continue;
     }
 
-    const visibility = noticeVisibility(
-      version?.communication_definition,
-      defaultVisibility,
-    );
+    const visibility = noticeVisibility(version?.communication_definition, defaultVisibility);
     handledRewards.add(reward.id);
 
     if (visibility === "silent") continue;
@@ -238,9 +229,7 @@ export const getPendingStudentRewardNotices = cache(async (): Promise<StudentRew
     const sourceKey = `achievement:${achievement.id}`;
     if (seen.has(sourceKey)) continue;
 
-    const version = versionMap.get(
-      `${achievement.rule_id}:${achievement.version_number}`,
-    );
+    const version = versionMap.get(`${achievement.rule_id}:${achievement.version_number}`);
     const visibility = noticeVisibility(version?.communication_definition, "light");
 
     if (visibility === "silent") continue;
