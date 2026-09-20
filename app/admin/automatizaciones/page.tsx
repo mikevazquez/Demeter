@@ -95,8 +95,8 @@ export default async function AutomationsPage({
           <p className="text-sm text-zinc-400">Motor de automatizaciones · {ctx.studio.name}</p>
           <h1 className="text-3xl font-semibold text-white">Automatizaciones</h1>
           <p className="mt-1 max-w-3xl text-sm leading-6 text-zinc-400">
-            Configura, activa y audita las automatizaciones de Studio Flow. El historial de
-            ejecuciones conserva los intentos y resultados técnicos de SF-166.
+            Configura, activa y revisa las automatizaciones de Studio Flow. El historial conserva
+            cada ejecución y su resultado.
           </p>
         </div>
       </header>
