@@ -1,3 +1,4 @@
+// SF-253 contract coverage for the approved Admin P01–P11 experience.
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
