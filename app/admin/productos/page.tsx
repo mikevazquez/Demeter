@@ -64,12 +64,16 @@ export default async function ProductsPage({
               href={`/admin/productos/${product.id}`}
               className="module-list-row product-list-row"
             >
-              <span className="module-row-icon" aria-hidden="true">▣</span>
+              <span className="module-row-icon" aria-hidden="true">
+                ▣
+              </span>
               <span className="module-row-copy">
                 <strong>{product.name}</strong>
                 <small>
                   {labels[product.product_type] ?? product.product_type} ·{" "}
-                  {product.validity_days == null ? "Vitalicia" : `Vigencia ${product.validity_days} días`}
+                  {product.validity_days == null
+                    ? "Vitalicia"
+                    : `Vigencia ${product.validity_days} días`}
                 </small>
               </span>
               <span className="module-row-meta">
@@ -87,7 +91,9 @@ export default async function ProductsPage({
                       : `${product.credit_limit} créditos`}
                 </small>
               </span>
-              <span className="module-chevron" aria-hidden="true">›</span>
+              <span className="module-chevron" aria-hidden="true">
+                ›
+              </span>
             </Link>
           ))}
         </section>
