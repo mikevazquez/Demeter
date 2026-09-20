@@ -312,6 +312,54 @@ export async function createMercadoPagoOrderAction(
   };
 }
 
+export async function updateStudentAvatarAction(formData: FormData) {
+  const file = formData.get("avatar");
+  if (!(file instanceof File) || file.size <= 0) {
+    redirect("/student/perfil?avatar_error=missing");
+  }
+
+  if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+    redirect("/student/perfil?avatar_error=type");
+  }
+
+  if (file.size > 5 * 1024 * 1024) {
+    redirect("/student/perfil?avatar_error=size");
+  }
+
+  const { supabase, user, snapshot } = await getStudentPortalContext();
+  const avatarPath = `${user.id}/avatar`;
+
+  const { error: uploadError } = await supabase.storage
+    .from("profile-avatars")
+    .upload(avatarPath, file, {
+      cacheControl: "3600",
+      contentType: file.type,
+      upsert: true,
+    });
+
+  if (uploadError) {
+    redirect("/student/perfil?avatar_error=upload");
+  }
+
+  const { error: profileError } = await supabase.from("profiles").upsert(
+    {
+      id: user.id,
+      full_name: snapshot.profile.full_name,
+      phone: snapshot.profile.phone,
+      avatar_url: avatarPath,
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "id" },
+  );
+
+  if (profileError) {
+    redirect("/student/perfil?avatar_error=profile");
+  }
+
+  revalidatePath("/student/perfil");
+  redirect("/student/perfil?avatar=updated");
+}
+
 export async function updateStudentProfileAction(formData: FormData) {
   const email = String(formData.get("email") ?? "").trim() || null;
 
