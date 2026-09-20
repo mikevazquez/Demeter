@@ -50,7 +50,14 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
           ? [{ href: "/admin/acciones", label: "Atención", enabled: true, secondary: true }]
           : []),
         ...(membership.role === "owner"
-          ? [{ href: "/admin/configuracion", label: "Configuración", enabled: true, secondary: true }]
+          ? [
+              {
+                href: "/admin/configuracion",
+                label: "Configuración",
+                enabled: true,
+                secondary: true,
+              },
+            ]
           : []),
       ];
 
