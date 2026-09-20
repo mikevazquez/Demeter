@@ -33,7 +33,9 @@ export default async function StudentProfilePage({
     .eq("id", user.id)
     .maybeSingle();
   const { data: signedAvatar } = accountProfile?.avatar_url
-    ? await supabase.storage.from("profile-avatars").createSignedUrl(accountProfile.avatar_url, 3600)
+    ? await supabase.storage
+        .from("profile-avatars")
+        .createSignedUrl(accountProfile.avatar_url, 3600)
     : { data: null };
   const avatarUrl = signedAvatar?.signedUrl ?? null;
   const activePackage = snapshot.acquisitions.find((item) => item.active_now) ?? null;
