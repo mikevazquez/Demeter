@@ -12,7 +12,6 @@ describe("ADMIN-UX-02 navigation architecture", () => {
   const navigation = source("app/admin/admin-navigation.tsx");
   const more = source("app/admin/mas/page.tsx");
   const company = source("app/admin/empresa/page.tsx");
-  const attention = source("app/admin/acciones/page.tsx");
   const automations = source("app/admin/automatizaciones/page.tsx");
   const styles = source("app/globals.css");
   const today = source("app/admin/page.tsx");
@@ -22,7 +21,7 @@ describe("ADMIN-UX-02 navigation architecture", () => {
     for (const label of ["Hoy", "Agenda", "Alumnas", "Productos", "Equipo", "Automatizaciones"]) {
       expect(layout).toContain('label: "' + label + '"');
     }
-    expect(layout).toContain('label: "Atención"');
+    expect(layout).not.toContain('label: "Atención"');
     expect(layout).toContain('label: "Configuración"');
     expect(layout).not.toContain('label: "Empresa"');
     expect(layout).not.toContain('label: "Ventas"');
@@ -34,7 +33,7 @@ describe("ADMIN-UX-02 navigation architecture", () => {
     expect(layout).toContain('"/admin/productos"');
     expect(layout).toContain('"/admin/instructores"');
     expect(layout).toContain('"/admin/automatizaciones"');
-    expect(layout).toContain('"/admin/acciones"');
+    expect(layout).not.toContain('"/admin/acciones"');
     expect(navigation).toContain("activeFor");
     expect(styles).toContain("grid-auto-flow: column");
   });
@@ -43,7 +42,7 @@ describe("ADMIN-UX-02 navigation architecture", () => {
     expect(more).toContain('title: "Productos"');
     expect(more).toContain('title: "Equipo"');
     expect(more).toContain('title: "Automatizaciones"');
-    expect(more).toContain('title: "Atención"');
+    expect(more).not.toContain('title: "Atención"');
     expect(more).not.toContain('title: "Ventas"');
     expect(more).not.toContain('title: "Empresa"');
     expect(more).not.toContain('title: "Reportes"');
@@ -57,12 +56,6 @@ describe("ADMIN-UX-02 navigation architecture", () => {
     expect(company).not.toContain("Agenda y actividades");
   });
 
-  it("presents required actions to users as Atención", () => {
-    expect(attention).toContain('className="dashboard-shell admin-module-page attention-page"');
-    expect(attention).toContain("<h1>Atención</h1>");
-    expect(attention).not.toContain("ACCIONES REQUERIDAS");
-    expect(attention).toContain("Revisar");
-  });
 
   it("removes internal automation codes from the top-level user interface", () => {
     expect(automations).not.toContain("Control AUT-05");
@@ -89,7 +82,7 @@ describe("ADMIN-UX-02 navigation architecture", () => {
     expect(layout).toContain("CAPABILITIES.PRODUCTS_READ");
     expect(layout).toContain("CAPABILITIES.INSTRUCTORS_READ");
     expect(layout).toContain("CAPABILITIES.AUTOMATIONS_READ");
-    expect(layout).toContain("CAPABILITIES.REQUIRED_ACTIONS_READ");
+    expect(layout).not.toContain("CAPABILITIES.REQUIRED_ACTIONS_READ");
     expect(layout).toContain('label: "Mis clases"');
   });
 });
