@@ -1,14 +1,23 @@
 import Link from "next/link";
 
-export default function HomePage() {
+import { StudioPortalLanding } from "@/app/components/studio-portal-landing";
+import { getPublicStudioPortal } from "@/lib/studio-public-portal";
+
+export default async function HomePage() {
+  const portal = await getPublicStudioPortal();
+
+  if (portal) {
+    return <StudioPortalLanding portal={portal} />;
+  }
+
   return (
     <main className="landing-shell">
       <section className="landing-card">
         <div>
-          <p className="eyebrow">DEMETER · STUDIO FLOW</p>
+          <p className="eyebrow">DEMETER</p>
           <h1>Tu estudio, en un solo lugar.</h1>
           <p className="landing-copy">
-            Operación del estudio y experiencia de alumnas, cada una en su contexto.
+            Accede desde el enlace de tu estudio o inicia sesión en el portal correspondiente.
           </p>
         </div>
 
