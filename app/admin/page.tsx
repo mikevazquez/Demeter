@@ -24,16 +24,78 @@ function localDateKey(value: Date, timeZone: string) {
   return `${part("year")}-${part("month")}-${part("day")}`;
 }
 
+function parseDateKey(value: string | undefined) {
+  if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
+  const parsed = new Date(`${value}T12:00:00Z`);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+function utcDateKey(value: Date) {
+  return [
+    value.getUTCFullYear(),
+    String(value.getUTCMonth() + 1).padStart(2, "0"),
+    String(value.getUTCDate()).padStart(2, "0"),
+  ].join("-");
+}
+
+function shiftUtcDays(value: Date, days: number) {
+  const next = new Date(value);
+  next.setUTCDate(next.getUTCDate() + days);
+  return next;
+}
+
+function weekStartMonday(value: Date) {
+  const weekday = value.getUTCDay();
+  return shiftUtcDays(value, weekday === 0 ? -6 : 1 - weekday);
+}
+
+function shortWeekday(value: Date) {
+  return new Intl.DateTimeFormat("es-MX", {
+    timeZone: "UTC",
+    weekday: "short",
+  })
+    .format(value)
+    .replace(".", "")
+    .slice(0, 3);
+}
+
+function shortMonth(value: Date) {
+  return new Intl.DateTimeFormat("es-MX", {
+    timeZone: "UTC",
+    month: "short",
+  })
+    .format(value)
+    .replace(".", "");
+}
+
+function selectedDayLabel(value: Date, isToday: boolean) {
+  if (isToday) return "Clases de hoy";
+  return `Clases del ${new Intl.DateTimeFormat("es-MX", {
+    timeZone: "UTC",
+    weekday: "long",
+    day: "numeric",
+    month: "short",
+  }).format(value)}`;
+}
+
 export default async function AdminPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; created?: string }>;
+  searchParams: Promise<{ error?: string; created?: string; date?: string }>;
 }) {
   const { supabase, user, studio, can } = await getAdminContext();
   const params = await searchParams;
   const timeZone = studio.timezone ?? "America/Mexico_City";
   const now = new Date();
   const todayKey = localDateKey(now, timeZone);
+  const selectedDate = parseDateKey(params.date) ?? parseDateKey(todayKey)!;
+  const selectedKey = utcDateKey(selectedDate);
+  const weekStart = weekStartMonday(selectedDate);
+  const weekDays = Array.from({ length: 7 }, (_, index) => shiftUtcDays(weekStart, index));
+  const previousWeekKey = utcDateKey(shiftUtcDays(selectedDate, -7));
+  const nextWeekKey = utcDateKey(shiftUtcDays(selectedDate, 7));
+  const weekEnd = shiftUtcDays(weekStart, 6);
+
   const offsetName =
     new Intl.DateTimeFormat("en-US", {
       timeZone,
@@ -43,8 +105,11 @@ export default async function AdminPage({
       .formatToParts(now)
       .find((item) => item.type === "timeZoneName")?.value ?? "GMT-06:00";
   const offset = offsetName.replace("GMT", "") || "+00:00";
-  const start = new Date(`${todayKey}T00:00:00${offset}`);
-  const end = new Date(start.getTime() + 86400000);
+
+  const todayStart = new Date(`${todayKey}T00:00:00${offset}`);
+  const todayEnd = new Date(todayStart.getTime() + 86400000);
+  const selectedStart = new Date(`${selectedKey}T00:00:00${offset}`);
+  const selectedEnd = new Date(selectedStart.getTime() + 86400000);
 
   const canReadSchedule = can(CAPABILITIES.SCHEDULE_READ);
   const canWriteSchedule = can(CAPABILITIES.SCHEDULE_WRITE);
@@ -54,7 +119,8 @@ export default async function AdminPage({
 
   const [
     { data: profile },
-    { data: sessions },
+    { data: todaySessions },
+    { data: selectedSessions },
     { count: activeStudents },
     { data: salesToday },
     requiredActionsResult,
@@ -62,10 +128,17 @@ export default async function AdminPage({
     supabase.from("profiles").select("full_name").eq("id", user.id).maybeSingle(),
     supabase
       .from("class_sessions")
-      .select("id, starts_at, capacity, status, template_id")
+      .select("id,starts_at,capacity,status,template_id")
       .eq("studio_id", studio.id)
-      .gte("starts_at", start.toISOString())
-      .lt("starts_at", end.toISOString())
+      .gte("starts_at", todayStart.toISOString())
+      .lt("starts_at", todayEnd.toISOString())
+      .order("starts_at", { ascending: true }),
+    supabase
+      .from("class_sessions")
+      .select("id,starts_at,capacity,status,template_id")
+      .eq("studio_id", studio.id)
+      .gte("starts_at", selectedStart.toISOString())
+      .lt("starts_at", selectedEnd.toISOString())
       .order("starts_at", { ascending: true }),
     supabase
       .from("students")
@@ -76,8 +149,8 @@ export default async function AdminPage({
       .from("sales")
       .select("total_minor,status")
       .eq("studio_id", studio.id)
-      .gte("created_at", start.toISOString())
-      .lt("created_at", end.toISOString()),
+      .gte("created_at", todayStart.toISOString())
+      .lt("created_at", todayEnd.toISOString()),
     canReadRequiredActions
       ? supabase
           .from("required_actions")
@@ -89,7 +162,10 @@ export default async function AdminPage({
       : Promise.resolve({ data: [], count: 0 }),
   ]);
 
-  const sessionIds = (sessions ?? []).map((session) => session.id);
+  const sessionIds = (selectedSessions ?? []).map((session) => session.id);
+  const templateIds = [
+    ...new Set((selectedSessions ?? []).map((session) => session.template_id)),
+  ];
   const [{ data: reservations }, { data: templates }] = await Promise.all([
     sessionIds.length
       ? supabase
@@ -98,11 +174,8 @@ export default async function AdminPage({
           .in("session_id", sessionIds)
           .in("status", ["reserved", "attended", "no_show"])
       : Promise.resolve({ data: [] as { session_id: string; status: string }[] }),
-    sessions?.length
-      ? supabase
-          .from("class_templates")
-          .select("id,name")
-          .in("id", [...new Set(sessions.map((session) => session.template_id))])
+    templateIds.length
+      ? supabase.from("class_templates").select("id,name").in("id", templateIds)
       : Promise.resolve({ data: [] as { id: string; name: string }[] }),
   ]);
 
@@ -167,9 +240,9 @@ export default async function AdminPage({
         <article className="mock-kpi-card">
           <div>
             <span>Clases hoy</span>
-            <strong>{sessions?.length ?? 0}</strong>
+            <strong>{todaySessions?.length ?? 0}</strong>
             <small>
-              {(sessions ?? []).filter((session) => session.status === "scheduled").length}{" "}
+              {(todaySessions ?? []).filter((session) => session.status === "scheduled").length}{" "}
               programadas
             </small>
           </div>
@@ -205,12 +278,43 @@ export default async function AdminPage({
 
       <section className="mock-overview-grid">
         <article className="mock-overview-card">
-          <div className="mock-card-heading">
-            <h2>Clases de hoy</h2>
-            {canReadSchedule ? <Link href="/admin/agenda">Ver agenda →</Link> : null}
+          <div className="mock-card-heading mock-calendar-heading">
+            <h2>{selectedDayLabel(selectedDate, selectedKey === todayKey)}</h2>
+            <div className="mock-week-nav" aria-label="Cambiar semana">
+              <Link href={`/admin?date=${previousWeekKey}`} aria-label="Semana anterior">
+                ‹
+              </Link>
+              <span>
+                {weekStart.getUTCDate()} {shortMonth(weekStart)} — {weekEnd.getUTCDate()}{" "}
+                {shortMonth(weekEnd)}
+              </span>
+              <Link href={`/admin?date=${nextWeekKey}`} aria-label="Semana siguiente">
+                ›
+              </Link>
+            </div>
           </div>
+
+          <nav className="mock-week-calendar" aria-label="Calendario semanal">
+            {weekDays.map((day) => {
+              const key = utcDateKey(day);
+              const isSelected = key === selectedKey;
+              const isToday = key === todayKey;
+              return (
+                <Link
+                  key={key}
+                  href={`/admin?date=${key}`}
+                  className={`mock-week-day${isSelected ? " is-selected" : ""}${isToday ? " is-today" : ""}`}
+                  aria-current={isSelected ? "date" : undefined}
+                >
+                  <span>{shortWeekday(day)}</span>
+                  <strong>{day.getUTCDate()}</strong>
+                </Link>
+              );
+            })}
+          </nav>
+
           <div className="mock-list">
-            {(sessions ?? []).slice(0, 5).map((session) => {
+            {(selectedSessions ?? []).map((session) => {
               const occupied = (reservationsBySession.get(session.id) ?? []).filter((reservation) =>
                 occupyingReservationStatuses.has(reservation.status),
               ).length;
@@ -225,8 +329,8 @@ export default async function AdminPage({
                 </div>
               );
             })}
-            {(sessions?.length ?? 0) === 0 ? (
-              <div className="mock-empty">No hay clases programadas hoy.</div>
+            {(selectedSessions?.length ?? 0) === 0 ? (
+              <div className="mock-empty">No hay clases programadas para este día.</div>
             ) : null}
           </div>
         </article>
