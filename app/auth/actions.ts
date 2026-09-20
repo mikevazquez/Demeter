@@ -289,6 +289,13 @@ export async function signIn(formData: FormData) {
   }
 
   if (account.must_change_password) {
+    const supportsActivation = studioAccess.memberships.some(
+      (membership) => membership.role === "instructor",
+    );
+    if (!supportsActivation) {
+      await accessClient.auth.signOut();
+      redirect("/login/studio?error=activation");
+    }
     await clearSelectedStudio();
     redirect("/login/studio/activar");
   }
@@ -379,16 +386,13 @@ export async function completeStudioPasswordActivation(formData: FormData) {
     redirect(portalDestination(membership, studioAccess.capabilities));
   }
 
-  const { error: passwordError } = await supabase.auth.updateUser({ password });
-  if (passwordError) redirect("/login/studio/activar?error=password");
-
   const hasInstructorMembership = studioAccess.memberships.some(
     (membership) => membership.role === "instructor",
   );
+  if (!hasInstructorMembership) redirect("/login/studio?error=activation");
 
-  if (!hasInstructorMembership) {
-    redirect("/login/studio/activar?error=save");
-  }
+  const { error: passwordError } = await supabase.auth.updateUser({ password });
+  if (passwordError) redirect("/login/studio/activar?error=password");
 
   const { error: activationError } = await supabase.rpc("instructor_complete_password_activation");
   if (activationError) redirect("/login/studio/activar?error=save");
