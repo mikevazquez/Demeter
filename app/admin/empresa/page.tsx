@@ -45,6 +45,14 @@ const sections: CompanySection[] = [
     secondaryLabel: "Política de inscripción",
   },
   {
+    title: "Recompensas",
+    description:
+      "Configura fidelidad, rachas, retos y beneficios; revisa progreso, recompensas e incidencias.",
+    href: "/admin/recompensas",
+    capability: CAPABILITIES.REWARDS_READ,
+    eyebrow: "FIDELIDAD",
+  },
+  {
     title: "Automatizaciones",
     description:
       "Configura reglas automáticas, activa o pausa instancias y revisa el historial auditable de ejecuciones.",
