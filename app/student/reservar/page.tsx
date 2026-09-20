@@ -8,6 +8,7 @@ import {
 } from "@/lib/student/portal";
 
 import { QuickBookButton } from "./quick-book-button";
+import PurchaseSingleClassButton from "./PurchaseSingleClassButton";
 
 function safeDate(value: string | undefined, fallback: string) {
   return value && /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : fallback;
@@ -113,12 +114,24 @@ export default async function StudentReservePage({
   const { data: activityColors } = activityNames.length
     ? await supabase
         .from("class_templates")
-        .select("name,color_hex")
+        .select("name,color_hex,drop_in_price_minor")
         .eq("studio_id", membership.studio_id)
         .in("name", activityNames)
-    : { data: [] as { name: string; color_hex: string | null }[] };
-  const activityColorMap = new Map(
-    (activityColors ?? []).map((item) => [item.name, item.color_hex ?? "#FF0A8A"]),
+    : {
+        data: [] as {
+          name: string;
+          color_hex: string | null;
+          drop_in_price_minor: number | null;
+        }[],
+      };
+  const activityStyleMap = new Map(
+    (activityColors ?? []).map((item) => [
+      item.name,
+      {
+        color: item.color_hex ?? "#FF0A8A",
+        dropInPriceMinor: item.drop_in_price_minor,
+      },
+    ]),
   );
 
   return (
@@ -242,7 +255,17 @@ export default async function StudentReservePage({
               const timeLabel = timeOnly(session.starts_at, studio.timezone);
               const eligible = Boolean(session.eligibility?.eligible);
               const reserved = Boolean(session.is_reserved);
-              const activityColor = activityColorMap.get(session.activity) ?? "#FF0A8A";
+              const activityStyle = activityStyleMap.get(session.activity);
+              const activityColor = activityStyle?.color ?? "#FF0A8A";
+              const dropInPriceMinor = activityStyle?.dropInPriceMinor ?? null;
+              const canBuySingleClass =
+                !reserved &&
+                !eligible &&
+                session.spots_available > 0 &&
+                dropInPriceMinor != null &&
+                ["no_active_product", "outside_product", "no_credits"].includes(
+                  session.eligibility?.reason_code ?? "",
+                );
 
               return (
                 <article
@@ -300,16 +323,50 @@ export default async function StudentReservePage({
                     </Link>
                   </div>
 
-                  <div className="mt-3 flex justify-end border-t border-white/10 pt-3">
-                    <QuickBookButton
-                      sessionId={session.session_id}
-                      activity={session.activity}
-                      discipline={session.discipline}
-                      timeLabel={timeLabel}
-                      eligible={eligible}
-                      reserved={reserved}
-                    />
-                  </div>
+                  {canBuySingleClass ? (
+                    <div className="mt-3 border-t border-white/10 pt-3">
+                      <div className="rounded-2xl border border-amber-400/20 bg-amber-400/[0.06] p-3">
+                        <p className="text-xs font-semibold text-amber-100">
+                          Esta clase no está incluida en tu paquete
+                        </p>
+                        <p className="mt-1 text-[11px] leading-5 text-zinc-400">
+                          Puedes comprar esta clase suelta por{" "}
+                          {new Intl.NumberFormat("es-MX", {
+                            style: "currency",
+                            currency: "MXN",
+                          }).format((dropInPriceMinor ?? 0) / 100)}
+                          {" "}o elegir un paquete que incluya esta actividad.
+                        </p>
+                        <div className="mt-3 flex flex-wrap items-center gap-2">
+                          <PurchaseSingleClassButton
+                            sessionId={session.session_id}
+                            priceLabel={new Intl.NumberFormat("es-MX", {
+                              style: "currency",
+                              currency: "MXN",
+                              maximumFractionDigits: 0,
+                            }).format((dropInPriceMinor ?? 0) / 100)}
+                          />
+                          <Link
+                            href="/student/paquete"
+                            className="inline-flex min-h-11 items-center justify-center rounded-2xl border border-white/10 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-white/[0.05]"
+                          >
+                            Ver paquetes
+                          </Link>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="mt-3 flex justify-end border-t border-white/10 pt-3">
+                      <QuickBookButton
+                        sessionId={session.session_id}
+                        activity={session.activity}
+                        discipline={session.discipline}
+                        timeLabel={timeLabel}
+                        eligible={eligible}
+                        reserved={reserved}
+                      />
+                    </div>
+                  )}
                 </article>
               );
             })
