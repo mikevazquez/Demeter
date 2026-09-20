@@ -6,6 +6,7 @@ import {
   saveAchievementAction,
   saveChallengeAction,
   transitionStandaloneRuleAction,
+  updateStandaloneCopyAction,
 } from "./actions";
 import {
   asObject,
@@ -23,6 +24,12 @@ type RuleValue = {
   scheduled_end_at: string | null;
 };
 
+type CopyOverrideValue = {
+  title: string | null;
+  description: string | null;
+  cover_url: string | null;
+};
+
 type RuleVersionValue = {
   name: string;
   description: string | null;
@@ -38,7 +45,17 @@ function datetimeLocal(value: string | null | undefined) {
   if (!value) return "";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "";
-  return date.toISOString().slice(0, 16);
+  return new Intl.DateTimeFormat("sv-SE", {
+    timeZone: "America/Mexico_City",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  })
+    .format(date)
+    .replace(" ", "T");
 }
 
 function rewardValue(kind: string, definition: Record<string, unknown>) {
@@ -53,11 +70,13 @@ export function RuleEditorForm({
   rule,
   version,
   canManage,
+  copyOverride,
 }: {
   mode: "achievement" | "challenge";
   rule?: RuleValue | null;
   version?: RuleVersionValue | null;
   canManage: boolean;
+  copyOverride?: CopyOverrideValue | null;
 }) {
   const isAchievement = mode === "achievement";
   const locked = Boolean(rule && ["active", "paused", "finished", "cancelled"].includes(rule.status));
@@ -84,6 +103,9 @@ export function RuleEditorForm({
   const periodCadence = ["day", "week", "month"].includes(String(cycle.cadence))
     ? String(cycle.cadence)
     : "week";
+  const displayName = copyOverride?.title ?? version?.name ?? (isAchievement ? "Logro" : "Reto");
+  const displayDescription = copyOverride?.description ?? version?.description ?? "";
+  const coverUrl = copyOverride?.cover_url ?? String(presentation.cover_url ?? "");
 
   if (locked) {
     return (
@@ -95,7 +117,7 @@ export function RuleEditorForm({
                 CONFIGURACIÓN VIGENTE
               </p>
               <h2 className="mt-1 text-xl font-semibold text-white">
-                {version?.name ?? (isAchievement ? "Logro" : "Reto")}
+                {displayName}
               </h2>
             </div>
             <span className="rounded-full border border-white/10 px-3 py-1 text-xs font-semibold text-zinc-300">
@@ -103,7 +125,7 @@ export function RuleEditorForm({
             </span>
           </div>
           <p className="mt-4 text-sm leading-6 text-zinc-400">
-            {version?.description || "Sin descripción."}
+            {displayDescription || "Sin descripción."}
           </p>
           <div className="mt-5 grid gap-3 md:grid-cols-2">
             <div className="rounded-xl border border-white/10 bg-black/20 p-4">
@@ -125,6 +147,60 @@ export function RuleEditorForm({
             </p>
           ) : null}
         </section>
+
+        {canManage && rule && rule.status === "active" && !isAchievement ? (
+          <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+            <p className="text-xs font-semibold uppercase tracking-[0.15em] text-[#FF0A8A]">
+              PRESENTACIÓN
+            </p>
+            <h3 className="mt-1 text-lg font-semibold text-white">
+              Editar texto o portada
+            </h3>
+            <p className="mt-2 text-sm text-zinc-400">
+              Estos cambios no alteran condiciones, fechas, audiencia, progreso ni recompensas.
+            </p>
+            <form action={updateStandaloneCopyAction} className="mt-4 grid gap-3">
+              <input type="hidden" name="rule_id" value={rule.id} />
+              <input type="hidden" name="kind" value={mode} />
+              <label className="grid gap-1 text-sm text-zinc-300">
+                Nombre visible
+                <input
+                  name="name"
+                  required
+                  defaultValue={displayName}
+                  className="rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 text-white"
+                />
+              </label>
+              <label className="grid gap-1 text-sm text-zinc-300">
+                Descripción visible
+                <textarea
+                  name="description"
+                  rows={3}
+                  defaultValue={displayDescription}
+                  className="rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 text-white"
+                />
+              </label>
+              <label className="grid gap-1 text-sm text-zinc-300">
+                Portada (URL opcional)
+                <input
+                  name="cover_url"
+                  type="url"
+                  defaultValue={coverUrl}
+                  placeholder="https://…"
+                  className="rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 text-white"
+                />
+              </label>
+              <div>
+                <PendingActionButton
+                  className="rounded-xl border border-[#FF0A8A]/30 bg-[#FF0A8A]/10 px-4 py-2.5 text-sm font-semibold text-[#ff64b6]"
+                  pendingLabel="Guardando…"
+                >
+                  Guardar presentación
+                </PendingActionButton>
+              </div>
+            </form>
+          </section>
+        ) : null}
 
         {canManage && rule && rule.status === "active" ? (
           <section className="rounded-2xl border border-amber-500/20 bg-amber-500/[0.05] p-5">
@@ -239,6 +315,16 @@ export function RuleEditorForm({
                     <option value="week">Semanal</option>
                     <option value="month">Mensual</option>
                   </select>
+                </label>
+                <label className="grid gap-1 text-sm text-zinc-300 md:col-span-2">
+                  Portada (URL opcional)
+                  <input
+                    name="cover_url"
+                    type="url"
+                    defaultValue={coverUrl}
+                    placeholder="https://…"
+                    className="rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 text-white"
+                  />
                 </label>
                 <label className="grid gap-1 text-sm text-zinc-300">
                   Inicia
