@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 
 import {
@@ -93,12 +94,25 @@ export default async function StudentHomePage({
           <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-zinc-500">
             Demeter Fitness Studio
           </p>
-          <div className="mt-2 flex items-end justify-between gap-3">
-            <div>
+          <div className="mt-2 flex items-center justify-between gap-4">
+            <div className="min-w-0">
               <h1 className="text-2xl font-semibold tracking-tight text-white sm:text-3xl">
                 Hola, {snapshot.profile.first_name} <span aria-hidden="true">♥</span>
               </h1>
               <p className="mt-0.5 text-xs text-zinc-400">Movimiento que transforma</p>
+            </div>
+
+            <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-full border border-fuchsia-400/40 bg-fuchsia-500/10 shadow-[0_0_24px_rgba(236,72,153,0.18)] sm:h-16 sm:w-16">
+              <div className="absolute inset-0 flex items-center justify-center text-lg font-semibold text-fuchsia-200">
+                {snapshot.profile.first_name.trim().charAt(0).toUpperCase()}
+              </div>
+              <Image
+                src="/student/perfil/avatar"
+                alt="Foto de perfil"
+                fill
+                unoptimized
+                className="object-cover"
+              />
             </div>
           </div>
         </div>
