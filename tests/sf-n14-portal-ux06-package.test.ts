@@ -27,7 +27,7 @@ describe("SF-N14 PORTAL UX-06 Mi paquete", () => {
     expect(page).toContain("progressPercent(activePackage)");
     expect(page).toContain("Acceso ilimitado");
     expect(page).toContain('role="progressbar"');
-    expect(page).toContain('aria-valuenow={activeProgress}');
+    expect(page).toContain("aria-valuenow={activeProgress}");
     expect(page).toContain('className="text-3xl text-fuchsia-300">∞');
   });
 
