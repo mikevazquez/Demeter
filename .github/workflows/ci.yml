@@ -34,10 +34,7 @@ jobs:
         run: npm ci
 
       - name: Format check
-        run: |
-          npm run format
-          git diff -- app/admin/page.tsx app/globals.css
-          git diff --exit-code app/admin/page.tsx app/globals.css
+        run: npm run format:check
 
       - name: Lint
         run: npm run lint
