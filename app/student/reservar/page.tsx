@@ -334,8 +334,8 @@ export default async function StudentReservePage({
                           {new Intl.NumberFormat("es-MX", {
                             style: "currency",
                             currency: "MXN",
-                          }).format((dropInPriceMinor ?? 0) / 100)}
-                          {" "}o elegir un paquete que incluya esta actividad.
+                          }).format((dropInPriceMinor ?? 0) / 100)}{" "}
+                          o elegir un paquete que incluya esta actividad.
                         </p>
                         <div className="mt-3 flex flex-wrap items-center gap-2">
                           <PurchaseSingleClassButton
