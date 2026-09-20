@@ -249,7 +249,6 @@ export default async function AdminPage({
 
   const canReadSchedule = can(CAPABILITIES.SCHEDULE_READ);
   const canWriteSchedule = can(CAPABILITIES.SCHEDULE_WRITE);
-  const canReadStudents = can(CAPABILITIES.STUDENTS_READ);
   const canWriteStudents = can(CAPABILITIES.STUDENTS_WRITE);
   const canAttendance = can(CAPABILITIES.ATTENDANCE_WRITE);
   const canCreateWalkinStudent = canAttendance && canWriteStudents;
