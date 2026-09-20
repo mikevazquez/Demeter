@@ -199,7 +199,7 @@ export default async function AdminPage({
   const productIds = [...new Set((acquisitions ?? []).map((item) => item.product_template_id))];
   const { data: products } = productIds.length
     ? await supabase.from("product_templates").select("id,name").in("id", productIds)
-    : { data: [] as { id: string; name: string }[] };
+    : { data: [] as { id: string; name: string; color_hex: string | null }[] };
   const balances = await Promise.all(
     (acquisitions ?? []).map(async (acquisition) => {
       if (acquisition.unlimited) return [acquisition.id, null] as const;
@@ -229,9 +229,9 @@ export default async function AdminPage({
   ).length;
   const templateIds = [...new Set((sessions ?? []).map((session) => session.template_id))];
   const { data: templates } = templateIds.length
-    ? await supabase.from("class_templates").select("id, name").in("id", templateIds)
+    ? await supabase.from("class_templates").select("id, name, color_hex").in("id", templateIds)
     : { data: [] as { id: string; name: string }[] };
-  const templateMap = new Map((templates ?? []).map((item) => [item.id, item.name]));
+  const templateMap = new Map((templates ?? []).map((item) => [item.id, item]));
   const totalCapacity = (sessions ?? []).reduce((sum, session) => sum + session.capacity, 0);
   const occupancy = totalCapacity > 0 ? Math.round((occupiedCount / totalCapacity) * 100) : null;
   const viewingToday = selectedKey === todayKey;
@@ -406,12 +406,22 @@ export default async function AdminPage({
       </nav>
 
       <section className="hoy-primary-grid">
-        <article className={`panel next-class-card${nextSession ? "" : " is-empty"}`}>
+        <article
+          className={`panel next-class-card${nextSession ? "" : " is-empty"}`}
+          style={
+            nextSession
+              ? {
+                  borderTopColor: templateMap.get(nextSession.template_id)?.color_hex ?? "#FF0A8A",
+                  borderTopWidth: 3,
+                }
+              : undefined
+          }
+        >
           <div className="panel-heading">
             <div>
               <p className="eyebrow">{viewingToday ? "PRÓXIMA CLASE" : "PRIMERA CLASE"}</p>
               <h2>
-                {nextSession ? (templateMap.get(nextSession.template_id) ?? "Clase") : "Sin clases"}
+                {nextSession ? (templateMap.get(nextSession.template_id)?.name ?? "Clase") : "Sin clases"}
               </h2>
             </div>
             {nextSession ? (
@@ -528,14 +538,28 @@ export default async function AdminPage({
 
               return (
                 <div className="today-session-block" key={session.id}>
-                  <div className="session-row">
-                    <div className="timeline-marker" aria-hidden="true" />
+                  <div
+                    className="session-row"
+                    style={{
+                      borderLeftColor:
+                        templateMap.get(session.template_id)?.color_hex ?? "#FF0A8A",
+                      borderLeftWidth: 3,
+                    }}
+                  >
+                    <div
+                      className="timeline-marker"
+                      aria-hidden="true"
+                      style={{
+                        backgroundColor:
+                          templateMap.get(session.template_id)?.color_hex ?? "#FF0A8A",
+                      }}
+                    />
                     <div className="session-time">
                       <strong>{formatTime(session.starts_at, timeZone)}</strong>
                       <span>hasta {formatTime(session.ends_at, timeZone)}</span>
                     </div>
                     <div className="session-copy">
-                      <strong>{templateMap.get(session.template_id) ?? "Clase"}</strong>
+                      <strong>{templateMap.get(session.template_id)?.name ?? "Clase"}</strong>
                       <span>
                         {occupied} ocupados · {session.capacity} lugares
                       </span>
