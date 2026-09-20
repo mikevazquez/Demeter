@@ -3,6 +3,7 @@ import PendingActionButton from "@/app/admin/components/PendingActionButton";
 import StudentLifecycleActions from "./StudentLifecycleActions";
 import StudentLifecycleNoticeDialog from "./StudentLifecycleNoticeDialog";
 import Profile360Overview from "./Profile360Overview";
+import StudentPackageCard from "./StudentPackageCard";
 import { notFound } from "next/navigation";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getAdminContext } from "@/lib/auth/admin-context";
@@ -280,6 +281,12 @@ export default async function StudentProfilePage({
     .filter((item) => Boolean(item.starts_on && item.starts_on > today))
     .sort((a, b) => String(a.starts_on).localeCompare(String(b.starts_on)));
   const scheduledAcquisition = scheduledAcquisitions[0] ?? null;
+  const scheduledAcquisitionIds = new Set(scheduledAcquisitions.map((item) => item.id));
+  const historicalAcquisitions = acquisitions.filter(
+    (item) =>
+      item.id !== currentAcquisition?.id &&
+      !scheduledAcquisitionIds.has(item.id),
+  );
 
   const dynamicDefinitions = (definitions ?? []).filter(
     (definition) => !structuralFieldKeys.has(definition.key),
@@ -814,149 +821,119 @@ export default async function StudentProfilePage({
       ) : null}
 
       {view === "packages" && canReadProducts ? (
-        <details id="paquetes-y-creditos" className="profile360-detail scroll-mt-6" open>
-          <summary>
-            <span>
-              <strong>Paquetes e historial</strong>
-              <small>Créditos, vigencias y ajustes</small>
-            </span>
-            <span aria-hidden="true">›</span>
-          </summary>
-          <section className="panel">
-          <div className="panel-heading">
+        <section id="paquetes-y-creditos" className="profile360-packages-view">
+          <div className="profile360-view-heading">
             <div>
-              <p className="eyebrow">PAQUETES Y CRÉDITOS</p>
-              <h2>Adquisiciones de la alumna</h2>
+              <p className="eyebrow">PAQUETES</p>
+              <h2>Paquetes de la alumna</h2>
               <p>
-                La fecha puede corregirse sin recrear el paquete. Los créditos se ajustan mediante
-                movimientos auditables del ledger.
+                El paquete actual puede ajustarse. Los paquetes vencidos conservan su historia y
+                permanecen en sólo lectura.
               </p>
             </div>
-            <span className="count-badge">{acquisitions.length}</span>
           </div>
 
-          {!acquisitions.length ? (
-            <div className="empty-state">Esta alumna todavía no tiene adquisiciones.</div>
-          ) : (
-            <div className="grid gap-4 lg:grid-cols-2">
-              {acquisitions.map((acquisition) => {
-                const product = productMap.get(acquisition.product_template_id);
-                const availableCredits = acquisition.unlimited
+          {currentAcquisition ? (
+            <StudentPackageCard
+              studentId={student.id}
+              kind="current"
+              acquisition={{
+                id: currentAcquisition.id,
+                name: productMap.get(currentAcquisition.product_template_id)?.name ?? "Paquete",
+                statusLabel: "Activo",
+                startsOn: currentAcquisition.starts_on,
+                expiresOn: currentAcquisition.expires_on,
+                unlimited: currentAcquisition.unlimited,
+                availableCredits: currentAcquisition.unlimited
                   ? null
-                  : (balanceMap.get(acquisition.id) ?? 0);
-                const editable =
-                  canEditAcquisitions &&
-                  !acquisition.refunded_at &&
-                  acquisition.id === currentAcquisition?.id;
-
-                return (
-                  <article
-                    key={acquisition.id}
-                    className="rounded-2xl border border-white/10 bg-black/20 p-4"
-                  >
-                    <div className="flex flex-wrap items-start justify-between gap-3">
-                      <div>
-                        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-fuchsia-300">
-                          {product?.package_term
-                            ? (termCopy[product.package_term] ?? "Otra vigencia")
-                            : "Producto"}
-                        </p>
-                        <h3 className="mt-1 font-semibold text-white">
-                          {product?.name ?? "Producto"}
-                        </h3>
-                        <p className="mt-1 text-sm text-zinc-400">
-                          {acquisition.starts_on && acquisition.expires_on
-                            ? `${formatDate(acquisition.starts_on)} → ${formatDate(acquisition.expires_on)}`
-                            : acquisition.unlimited
-                              ? "Inicia con la primera clase contabilizada"
-                              : "Inicia con el primer crédito consumido"}
-                        </p>
-                      </div>
-                      <span className="status-pill">
-                        {acquisition.access_blocked
-                          ? "Bloqueada por pago pendiente"
-                          : acquisition.activation_mode === "first_usage" && !acquisition.starts_on
-                            ? acquisition.unlimited
-                              ? "Pendiente de primer uso"
-                              : "Pendiente de primer crédito"
-                            : (acquisitionStatusCopy[acquisition.status] ?? "Estado no disponible")}
-                      </span>
-                    </div>
-
-                    <div className="mt-4 rounded-xl border border-white/10 bg-white/[0.03] p-3">
-                      <p className="text-xs text-zinc-500">Créditos disponibles</p>
-                      <p className="mt-1 text-lg font-semibold text-white">
-                        {acquisition.unlimited ? "Ilimitado" : availableCredits}
-                      </p>
-                    </div>
-
-                    {editable ? (
-                      <div className="mt-4 grid gap-4">
-                        <form action={setAcquisitionStartDate} className="grid gap-2">
-                          <input type="hidden" name="student_id" value={student.id} />
-                          <input type="hidden" name="acquisition_id" value={acquisition.id} />
-                          <label className="grid gap-1 text-sm text-zinc-300">
-                            Fecha de inicio
-                            <input
-                              type="date"
-                              name="starts_on"
-                              required
-                              defaultValue={acquisition.starts_on ?? ""}
-                              className="rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 text-white"
-                            />
-                          </label>
-                          <PendingActionButton
-                            className="ghost-button"
-                            pendingLabel="Actualizando…"
-                          >
-                            Actualizar fecha
-                          </PendingActionButton>
-                        </form>
-
-                        {!acquisition.unlimited ? (
-                          <form action={setAcquisitionAvailableCredits} className="grid gap-2">
-                            <input type="hidden" name="student_id" value={student.id} />
-                            <input type="hidden" name="acquisition_id" value={acquisition.id} />
-                            <label className="grid gap-1 text-sm text-zinc-300">
-                              Créditos disponibles
-                              <input
-                                type="number"
-                                name="available_credits"
-                                min="0"
-                                max="100000"
-                                step="1"
-                                required
-                                defaultValue={availableCredits ?? 0}
-                                className="rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 text-white"
-                              />
-                            </label>
-                            <label className="grid gap-1 text-sm text-zinc-300">
-                              Motivo del ajuste
-                              <input
-                                type="text"
-                                name="reason"
-                                required
-                                maxLength={500}
-                                placeholder="Ej. Corrección por captura"
-                                className="rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 text-white"
-                              />
-                            </label>
-                            <PendingActionButton className="ghost-button" pendingLabel="Ajustando…">
-                              Ajustar créditos
-                            </PendingActionButton>
-                          </form>
-                        ) : null}
-                      </div>
-                    ) : null}
-                  </article>
-                );
-              })}
-            </div>
+                  : (balanceMap.get(currentAcquisition.id) ?? 0),
+                accessBlocked: currentAcquisition.access_blocked,
+                activationMode: currentAcquisition.activation_mode,
+              }}
+              classes={packageClassEvents.get(currentAcquisition.id) ?? []}
+              editable={canEditAcquisitions && !currentAcquisition.refunded_at}
+              timeZone={timeZone}
+            />
+          ) : (
+            <div className="empty-state">No hay paquete actual.</div>
           )}
-          </section>
-        </details>
-      ) : null}
 
+          {scheduledAcquisitions.length ? (
+            <div className="profile360-package-group">
+              <div className="profile360-package-group-heading">
+                <strong>Próximos paquetes</strong>
+                <span>{scheduledAcquisitions.length}</span>
+              </div>
+              {scheduledAcquisitions.map((acquisition) => (
+                <StudentPackageCard
+                  key={acquisition.id}
+                  studentId={student.id}
+                  kind="scheduled"
+                  acquisition={{
+                    id: acquisition.id,
+                    name: productMap.get(acquisition.product_template_id)?.name ?? "Paquete",
+                    statusLabel: "Programado",
+                    startsOn: acquisition.starts_on,
+                    expiresOn: acquisition.expires_on,
+                    unlimited: acquisition.unlimited,
+                    availableCredits: acquisition.unlimited
+                      ? null
+                      : (balanceMap.get(acquisition.id) ?? 0),
+                    accessBlocked: acquisition.access_blocked,
+                    activationMode: acquisition.activation_mode,
+                  }}
+                  classes={packageClassEvents.get(acquisition.id) ?? []}
+                  editable={false}
+                  timeZone={timeZone}
+                />
+              ))}
+            </div>
+          ) : null}
+
+          <div className="profile360-package-group">
+            <div className="profile360-package-group-heading">
+              <strong>Historial de paquetes</strong>
+              <span>{historicalAcquisitions.length}</span>
+            </div>
+            {historicalAcquisitions.length ? (
+              historicalAcquisitions.map((acquisition) => {
+                const isExpiredByDate =
+                  Boolean(acquisition.expires_on) && String(acquisition.expires_on) < today;
+                const statusLabel = acquisition.refunded_at
+                  ? "Reembolsado"
+                  : isExpiredByDate
+                    ? "Vencido"
+                    : (acquisitionStatusCopy[acquisition.status] ?? "Histórico");
+                return (
+                  <StudentPackageCard
+                    key={acquisition.id}
+                    studentId={student.id}
+                    kind="historical"
+                    acquisition={{
+                      id: acquisition.id,
+                      name: productMap.get(acquisition.product_template_id)?.name ?? "Paquete",
+                      statusLabel,
+                      startsOn: acquisition.starts_on,
+                      expiresOn: acquisition.expires_on,
+                      unlimited: acquisition.unlimited,
+                      availableCredits: acquisition.unlimited
+                        ? null
+                        : (balanceMap.get(acquisition.id) ?? 0),
+                      accessBlocked: acquisition.access_blocked,
+                      activationMode: acquisition.activation_mode,
+                    }}
+                    classes={packageClassEvents.get(acquisition.id) ?? []}
+                    editable={false}
+                    timeZone={timeZone}
+                  />
+                );
+              })
+            ) : (
+              <div className="empty-state">Todavía no hay paquetes anteriores.</div>
+            )}
+          </div>
+        </section>
+      ) : null}
 
       {view === "rewards" ? (
         <section className="profile360-view-panel">
