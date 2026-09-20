@@ -114,7 +114,6 @@ export default async function AdminPage({
   const canReadSchedule = can(CAPABILITIES.SCHEDULE_READ);
   const canWriteSchedule = can(CAPABILITIES.SCHEDULE_WRITE);
   const canWriteStudents = can(CAPABILITIES.STUDENTS_WRITE);
-  const canReadRequiredActions = can(CAPABILITIES.REQUIRED_ACTIONS_READ);
   const canWriteSales = can(CAPABILITIES.SALES_WRITE);
 
   const [
@@ -123,7 +122,6 @@ export default async function AdminPage({
     { data: selectedSessions },
     { count: activeStudents },
     { data: salesToday },
-    requiredActionsResult,
   ] = await Promise.all([
     supabase.from("profiles").select("full_name").eq("id", user.id).maybeSingle(),
     supabase
@@ -150,16 +148,7 @@ export default async function AdminPage({
       .select("total_minor,status")
       .eq("studio_id", studio.id)
       .gte("created_at", todayStart.toISOString())
-      .lt("created_at", todayEnd.toISOString()),
-    canReadRequiredActions
-      ? supabase
-          .from("required_actions")
-          .select("id,priority,status,reason,created_at", { count: "exact" })
-          .eq("studio_id", studio.id)
-          .in("status", ["pending", "in_progress"])
-          .order("created_at", { ascending: false })
-          .limit(5)
-      : Promise.resolve({ data: [], count: 0 }),
+      .lt("created_at", todayEnd.toISOString())
   ]);
 
   const sessionIds = (selectedSessions ?? []).map((session) => session.id);
@@ -186,7 +175,6 @@ export default async function AdminPage({
   }
 
   const firstName = profile?.full_name?.trim().split(/\s+/)[0] || "Mike";
-  const requiredActions = requiredActionsResult.data ?? [];
   const visibleSales = (salesToday ?? []).filter((sale) => sale.status !== "voided");
   const salesTotalMinor = visibleSales.reduce((sum, sale) => sum + (sale.total_minor ?? 0), 0);
   const salesTotal = new Intl.NumberFormat("es-MX", {
@@ -262,16 +250,6 @@ export default async function AdminPage({
           </div>
           <b aria-hidden="true">▤</b>
         </article>
-        <article className="mock-kpi-card">
-          <div>
-            <span>Incidencias</span>
-            <strong>{requiredActionsResult.count ?? 0}</strong>
-            <small>
-              {requiredActions.filter((action) => action.priority === "high").length} urgentes
-            </small>
-          </div>
-          <b aria-hidden="true">△</b>
-        </article>
       </section>
 
       <section className="mock-overview-grid">
@@ -333,38 +311,6 @@ export default async function AdminPage({
           </div>
         </article>
 
-        {canReadRequiredActions ? (
-          <article className="mock-overview-card">
-            <div className="mock-card-heading">
-              <h2>
-                Atención <span>(pendientes)</span>
-              </h2>
-              <Link href="/admin/acciones">Ver todas →</Link>
-            </div>
-            <div className="mock-list">
-              {requiredActions.slice(0, 5).map((action) => (
-                <Link
-                  className="mock-list-row attention-row"
-                  href={`/admin/acciones/${action.id}`}
-                  key={action.id}
-                >
-                  <span className={`mock-priority-dot is-${action.priority}`} aria-hidden="true" />
-                  <strong>{action.reason}</strong>
-                  <small>
-                    {action.priority === "high"
-                      ? "Urgente"
-                      : action.status === "in_progress"
-                        ? "En proceso"
-                        : "Pendiente"}
-                  </small>
-                </Link>
-              ))}
-              {requiredActions.length === 0 ? (
-                <div className="mock-empty">No hay incidencias abiertas.</div>
-              ) : null}
-            </div>
-          </article>
-        ) : null}
       </section>
     </main>
   );
