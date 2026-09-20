@@ -3,7 +3,7 @@ import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { agendaLookbackIso } from "@/lib/time";
 import { createDiscipline } from "./actions";
-import { createActivity, createRecurringSchedules } from "./recurring-actions";
+import { createActivity, createRecurringSchedules, updateActivityColor } from "./recurring-actions";
 import { ScheduleBuilder } from "./schedule-builder";
 
 function formatDateTime(value: string, timeZone: string) {
@@ -40,7 +40,7 @@ export default async function AgendaPage({
     supabase.from("disciplines").select("id,name,active").eq("studio_id", studio.id).order("name"),
     supabase
       .from("class_templates")
-      .select("id,name,duration_minutes,capacity,discipline_id,credit_cost,drop_in_price_minor")
+      .select("id,name,duration_minutes,capacity,discipline_id,credit_cost,drop_in_price_minor,color_hex")
       .eq("studio_id", studio.id)
       .eq("active", true)
       .order("name"),
@@ -97,6 +97,7 @@ export default async function AgendaPage({
     instructor: "Selecciona un instructor activo.",
     schedule: "No se pudo crear el horario recurrente.",
     activity: "No se pudo crear la actividad. Revisa también el precio de clase suelta.",
+    color: "No se pudo guardar el color de la actividad.",
   };
   return (
     <main className="dashboard-shell">
@@ -145,6 +146,10 @@ export default async function AgendaPage({
                       className="session-row"
                       href={`/admin/agenda/${session.id}`}
                       key={session.id}
+                      style={{
+                        borderLeftColor: template?.color_hex ?? "#FF0A8A",
+                        borderLeftWidth: 3,
+                      }}
                     >
                       <div className="session-time">
                         <strong>{formatDateTime(session.starts_at, timeZone)}</strong>
@@ -200,7 +205,15 @@ export default async function AgendaPage({
             ) : (
               <div className="student-list">
                 {schedules.map((schedule) => (
-                  <div className="student-row" key={schedule.id}>
+                  <div
+                    className="student-row"
+                    key={schedule.id}
+                    style={{
+                      borderLeftColor:
+                        templateMap.get(schedule.template_id)?.color_hex ?? "#FF0A8A",
+                      borderLeftWidth: 3,
+                    }}
+                  >
                     <div>
                       <strong>{templateMap.get(schedule.template_id)?.name ?? "Actividad"}</strong>
                       <span>
@@ -290,10 +303,49 @@ export default async function AgendaPage({
                       />
                     </label>
                   </div>
+                  <label>
+                    Color en el horario
+                    <input
+                      name="color_hex"
+                      type="color"
+                      defaultValue="#FF0A8A"
+                      aria-label="Color de la actividad"
+                    />
+                  </label>
                   <button className="primary-button" type="submit" disabled={!disciplines?.length}>
                     Crear actividad
                   </button>
                 </form>
+              </article>
+              <article className="panel compact-panel" id="activity-colors">
+                <p className="eyebrow">COLORES</p>
+                <h2>Color por actividad</h2>
+                <p>
+                  Este color identifica la actividad en la agenda administrativa y en el horario
+                  que ve la alumna.
+                </p>
+                <div className="activity-color-list">
+                  {templates?.map((item) => (
+                    <form action={updateActivityColor} className="activity-color-row" key={item.id}>
+                      <input type="hidden" name="activity_id" value={item.id} />
+                      <span
+                        className="activity-color-dot"
+                        style={{ backgroundColor: item.color_hex ?? "#FF0A8A" }}
+                        aria-hidden="true"
+                      />
+                      <strong>{item.name}</strong>
+                      <input
+                        name="color_hex"
+                        type="color"
+                        defaultValue={item.color_hex ?? "#FF0A8A"}
+                        aria-label={`Color de ${item.name}`}
+                      />
+                      <button className="ghost-button" type="submit">
+                        Guardar
+                      </button>
+                    </form>
+                  ))}
+                </div>
               </article>
               <article className="panel compact-panel">
                 <p className="eyebrow">3 · HORARIO RECURRENTE</p>
