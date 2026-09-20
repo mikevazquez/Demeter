@@ -119,7 +119,8 @@ describe("Flow 01 student onboarding", () => {
     expect(pendingButton).toContain("disabled={isDisabled}");
     expect(pendingButton).toContain("aria-busy={pending}");
     expect(studentsPage).toContain('pendingLabel="Creando alumna…"');
-    expect(onboarding).toContain('pendingLabel="Registrando alta…"');
+    expect(onboarding).toContain("Registrando alta…");
+    expect(onboarding).toContain("PendingActionButton");
     expect(reservation).toContain('pendingLabel="Reservando…"');
     expect(profile).toContain("PendingActionButton");
   });
