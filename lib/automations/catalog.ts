@@ -13,9 +13,7 @@ export type AutomationFrequencyMode =
   "once_per_source" | "per_configuration_per_source" | "sequence_controlled";
 
 export type AutomationOutputKind =
-  | "whatsapp_student"
-  | "internal_summary"
-  | "sequence_communication";
+  "whatsapp_student" | "internal_summary" | "sequence_communication";
 
 export type AutomationCatalogCode =
   | "AUT-CAT-01"
