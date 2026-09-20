@@ -31,8 +31,7 @@ export async function getAdminContext(requiredCapability?: Capability) {
   const selectedMembership = selectedStudioId
     ? memberships.find((item) => item.studio_id === selectedStudioId)
     : null;
-  const membership =
-    selectedMembership ?? (memberships.length === 1 ? memberships[0] : null);
+  const membership = selectedMembership ?? (memberships.length === 1 ? memberships[0] : null);
 
   if (!membership) {
     redirect("/login/studio/seleccionar");
