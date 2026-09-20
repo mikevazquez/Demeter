@@ -182,6 +182,14 @@
 .quick-action-list strong {
   font-size: 14px;
 }
+.quick-action-empty {
+  margin: 0;
+  padding: 14px;
+  border: 1px dashed var(--line);
+  border-radius: 14px;
+  color: var(--muted);
+  font-size: 13px;
+}
 .hoy-schedule-panel {
   margin-top: 0;
 }
