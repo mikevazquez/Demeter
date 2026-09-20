@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
+import { formatRewardMoneyMinor, summarizeRewardMetrics } from "@/lib/rewards/metrics";
 
 import { grantManualRewardAction, requestRewardReviewAction } from "../../actions";
 import {
@@ -102,6 +103,7 @@ export default async function StudentRewardsProfilePage({
   const ruleMap = new Map((rules ?? []).map((rule) => [rule.id, rule]));
   const available = rewards.filter((reward) => reward.status === "available");
   const openIncidents = incidents.filter((incident) => incident.status !== "closed");
+  const rewardMetrics = summarizeRewardMetrics(rewards);
   const loyaltyParticipation = participations.find((participation) => {
     const rule = ruleMap.get(participation.rule_id);
     const version = rule ? versionMap.get(`${rule.id}:${rule.current_version_number}`) : null;
@@ -151,6 +153,26 @@ export default async function StudentRewardsProfilePage({
         />
         <MetricCard label="Logros" value={achievements.length} />
         <MetricCard label="Incidencias abiertas" value={openIncidents.length} />
+      </section>
+
+      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+        <MetricCard label="Utilizadas" value={rewardMetrics.redeemed} />
+        <MetricCard label="Vencidas" value={rewardMetrics.expired} />
+        <MetricCard
+          label="Valor potencial"
+          value={formatRewardMoneyMinor(rewardMetrics.potentialValueMinor)}
+          detail="sin estimar porcentajes"
+        />
+        <MetricCard
+          label="Valor utilizado"
+          value={formatRewardMoneyMinor(rewardMetrics.realizedValueMinor)}
+          detail="ahorro real registrado"
+        />
+        <MetricCard
+          label="Créditos"
+          value={rewardMetrics.creditsGranted}
+          detail={`${rewardMetrics.creditsUsed} utilizados`}
+        />
       </section>
 
       <section className="grid gap-4 xl:grid-cols-[1.2fr_.8fr]">
