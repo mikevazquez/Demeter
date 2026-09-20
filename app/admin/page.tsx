@@ -421,7 +421,9 @@ export default async function AdminPage({
             <div>
               <p className="eyebrow">{viewingToday ? "PRÓXIMA CLASE" : "PRIMERA CLASE"}</p>
               <h2>
-                {nextSession ? (templateMap.get(nextSession.template_id)?.name ?? "Clase") : "Sin clases"}
+                {nextSession
+                  ? (templateMap.get(nextSession.template_id)?.name ?? "Clase")
+                  : "Sin clases"}
               </h2>
             </div>
             {nextSession ? (
@@ -541,8 +543,7 @@ export default async function AdminPage({
                   <div
                     className="session-row"
                     style={{
-                      borderLeftColor:
-                        templateMap.get(session.template_id)?.color_hex ?? "#FF0A8A",
+                      borderLeftColor: templateMap.get(session.template_id)?.color_hex ?? "#FF0A8A",
                       borderLeftWidth: 3,
                     }}
                   >
