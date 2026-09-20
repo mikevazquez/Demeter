@@ -272,7 +272,7 @@ export default async function RequiredActionsPage({
 
                 <div className="toolbar-actions mt-4">
                   <Link className="primary-button" href={`/admin/acciones/${action.id}`}>
-                    Abrir acción
+                    Revisar
                   </Link>
                 </div>
               </article>
