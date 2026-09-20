@@ -1109,26 +1109,105 @@ export default async function StudentProfilePage({
 
       {view === "rewards" ? (
         <section className="profile360-view-panel">
-          <div className="panel-heading">
+          <div className="profile360-view-heading">
             <div>
               <p className="eyebrow">REWARDS</p>
-              <h2>Progreso y recompensas</h2>
+              <h2>Progreso, logros y recompensas</h2>
+              <p>
+                El nivel general forma parte del perfil de la alumna. Aquí se conserva el detalle
+                de su trayectoria Rewards.
+              </p>
             </div>
           </div>
+
           <div className="profile360-approved-indicators">
             <article>
-              <span>Nivel general</span>
+              <span>Nivel general actual</span>
               <strong>{levelTitle ?? "Sin nivel"}</strong>
             </article>
             <article>
               <span>Recompensas disponibles</span>
               <strong>{rewardsAvailable ?? 0}</strong>
             </article>
+            <article>
+              <span>Logros obtenidos</span>
+              <strong>{rewardAchievements.length}</strong>
+            </article>
+            <article>
+              <span>Niveles alcanzados</span>
+              <strong>{rewardLevelHistory.length}</strong>
+            </article>
           </div>
-          <p className="profile360-view-note">
-            El nivel general se muestra también en la cabecera del perfil. Los logros y
-            recompensas se mantienen en su fuente canónica de Rewards.
-          </p>
+
+          <div className="profile360-rewards-section">
+            <div className="profile360-package-group-heading">
+              <strong>Recompensas</strong>
+              <span>{rewardInstancesDetail.length}</span>
+            </div>
+            {rewardInstancesDetail.length ? (
+              <div className="profile360-reward-list">
+                {rewardInstancesDetail.map((reward) => (
+                  <article key={reward.id}>
+                    <div>
+                      <strong>{rewardBenefitLabel(reward.kind, reward.benefitDefinition)}</strong>
+                      <span>
+                        {reward.expiresAt
+                          ? "Vence " + formatDateTime(reward.expiresAt)
+                          : "Sin vencimiento registrado"}
+                      </span>
+                    </div>
+                    <span className="status-pill">{rewardStatusLabel(reward.status)}</span>
+                  </article>
+                ))}
+              </div>
+            ) : (
+              <div className="empty-state">No hay recompensas registradas.</div>
+            )}
+          </div>
+
+          <div className="profile360-rewards-section">
+            <div className="profile360-package-group-heading">
+              <strong>Logros</strong>
+              <span>{rewardAchievements.length}</span>
+            </div>
+            {rewardAchievements.length ? (
+              <div className="profile360-history-list">
+                {rewardAchievements.map((achievement) => (
+                  <article key={achievement.id}>
+                    <div className="profile360-history-dot is-reward" aria-hidden="true" />
+                    <div>
+                      <strong>{achievement.title}</strong>
+                      <span>{formatDateTime(achievement.unlockedAt)}</span>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            ) : (
+              <div className="empty-state">Todavía no hay logros desbloqueados.</div>
+            )}
+          </div>
+
+          {rewardLevelHistory.length ? (
+            <div className="profile360-rewards-section">
+              <div className="profile360-package-group-heading">
+                <strong>Trayectoria de nivel</strong>
+                <span>{rewardLevelHistory.length}</span>
+              </div>
+              <div className="profile360-history-list">
+                {rewardLevelHistory.map((level) => (
+                  <article key={level.id}>
+                    <div className="profile360-history-dot is-level" aria-hidden="true" />
+                    <div>
+                      <strong>{level.title}</strong>
+                      <span>
+                        Nivel {level.levelOrder} · {formatDateTime(level.unlockedAt)}
+                      </span>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </div>
+          ) : null}
         </section>
       ) : null}
 
@@ -1155,6 +1234,42 @@ export default async function StudentProfilePage({
           )}
         </section>
       ) : null}
+      {view === "history" ? (
+        <section className="profile360-view-panel">
+          <div className="profile360-view-heading">
+            <div>
+              <p className="eyebrow">HISTORIAL</p>
+              <h2>Actividad de la alumna</h2>
+              <p>
+                Cronología derivada de clases, paquetes, Rewards y cambios de estado. Cada fuente
+                conserva su propio detalle.
+              </p>
+            </div>
+            <span className="count-badge">{profileHistoryEvents.length}</span>
+          </div>
+
+          {profileHistoryEvents.length ? (
+            <div className="profile360-history-list">
+              {profileHistoryEvents.slice(0, 60).map((event) => (
+                <article key={event.id}>
+                  <div
+                    className={"profile360-history-dot is-" + event.kind}
+                    aria-hidden="true"
+                  />
+                  <div>
+                    <strong>{event.title}</strong>
+                    <span>{event.detail}</span>
+                    <small>{formatDateTime(event.at)}</small>
+                  </div>
+                </article>
+              ))}
+            </div>
+          ) : (
+            <div className="empty-state">Todavía no hay actividad histórica para mostrar.</div>
+          )}
+        </section>
+      ) : null}
+
 
       {view === "profile" ? (
         <>
