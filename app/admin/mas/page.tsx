@@ -7,7 +7,8 @@ type MoreItem = {
   title: string;
   description: string;
   href: string;
-  capability: Capability;
+  capability?: Capability;
+  ownerOnly?: boolean;
 };
 
 const items: MoreItem[] = [
@@ -35,11 +36,20 @@ const items: MoreItem[] = [
     href: "/admin/acciones",
     capability: CAPABILITIES.REQUIRED_ACTIONS_READ,
   },
+  {
+    title: "Configuración",
+    description: "Identidad pública y preferencias del estudio.",
+    href: "/admin/configuracion",
+    ownerOnly: true,
+  },
 ];
 
 export default async function MorePage() {
   const ctx = await getAdminContext();
-  const visibleItems = items.filter((item) => ctx.can(item.capability));
+  const visibleItems = items.filter((item) => {
+    if (item.ownerOnly) return ctx.membership.role === "owner";
+    return item.capability ? ctx.can(item.capability) : false;
+  });
 
   return (
     <main className="dashboard-shell">
