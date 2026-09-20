@@ -57,9 +57,7 @@ export default async function StudentAchievementsPage({
   const activeOrigin = origins.some((item) => item.key === query.origin) ? query.origin! : "all";
 
   const unlocked = ctx.achievements.map((achievement) => {
-    const version = ctx.versionMap.get(
-      `${achievement.rule_id}:${achievement.version_number}`,
-    );
+    const version = ctx.versionMap.get(`${achievement.rule_id}:${achievement.version_number}`);
     const origin = originForRule(
       achievement.rule_id,
       version?.presentation_definition,
@@ -81,7 +79,11 @@ export default async function StudentAchievementsPage({
       const version = ctx.versionMap.get(
         `${participation.rule_id}:${participation.joined_version_number}`,
       );
-      if (!version || version.family !== "achievement" || unlockedRuleIds.has(participation.rule_id)) {
+      if (
+        !version ||
+        version.family !== "achievement" ||
+        unlockedRuleIds.has(participation.rule_id)
+      ) {
         return null;
       }
 
@@ -107,14 +109,14 @@ export default async function StudentAchievementsPage({
       };
     })
     .filter(Boolean) as Array<{
-      participation: (typeof ctx.participations)[number];
-      version: (typeof ctx.versions)[number];
-      conditions: ReturnType<typeof conditionProgress>;
-      hidden: boolean;
-      origin: string;
-      percent: number;
-      reward: string | null;
-    }>;
+    participation: (typeof ctx.participations)[number];
+    version: (typeof ctx.versions)[number];
+    conditions: ReturnType<typeof conditionProgress>;
+    hidden: boolean;
+    origin: string;
+    percent: number;
+    reward: string | null;
+  }>;
 
   const visibleProgress = progressItems.filter((item) => !item.hidden);
   const secretCount = progressItems.filter((item) => item.hidden).length;
@@ -152,9 +154,7 @@ export default async function StudentAchievementsPage({
         <h1 className="mt-1 text-3xl font-semibold tracking-tight text-white sm:text-4xl">
           Mis logros
         </h1>
-        <p className="mt-1.5 text-sm text-zinc-400">
-          Cada clase cuenta. Aquí está tu trayectoria.
-        </p>
+        <p className="mt-1.5 text-sm text-zinc-400">Cada clase cuenta. Aquí está tu trayectoria.</p>
       </header>
 
       <section className="grid grid-cols-3 gap-2">
@@ -255,9 +255,7 @@ export default async function StudentAchievementsPage({
                       </p>
                     ) : null}
                     {item.reward ? (
-                      <p className="mt-2 text-xs font-medium text-fuchsia-300">
-                        {item.reward}
-                      </p>
+                      <p className="mt-2 text-xs font-medium text-fuchsia-300">{item.reward}</p>
                     ) : null}
                   </div>
                 </div>
