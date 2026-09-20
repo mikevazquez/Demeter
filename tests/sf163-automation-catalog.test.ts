@@ -94,11 +94,7 @@ describe("SF-163 automation catalog", () => {
     ]);
 
     expect(AUTOMATION_SEQUENCES[0].memberCodes).toEqual(["AUT-CAT-11", "AUT-CAT-12"]);
-    expect(AUTOMATION_SEQUENCES[1].memberCodes).toEqual([
-      "AUT-CAT-13",
-      "AUT-CAT-15",
-      "AUT-CAT-16",
-    ]);
+    expect(AUTOMATION_SEQUENCES[1].memberCodes).toEqual(["AUT-CAT-13", "AUT-CAT-15", "AUT-CAT-16"]);
     expect(AUTOMATION_SEQUENCES[2].memberCodes).toEqual(["AUT-CAT-14"]);
   });
 
