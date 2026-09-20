@@ -418,6 +418,27 @@ export default async function StudentProfilePage({
 
   let levelTitle: string | null = null;
   let rewardsAvailable: number | null = null;
+  let rewardAchievements: Array<{
+    id: string;
+    title: string;
+    levelKey: string | null;
+    unlockedAt: string;
+  }> = [];
+  let rewardLevelHistory: Array<{
+    id: string;
+    title: string;
+    levelOrder: number;
+    unlockedAt: string;
+  }> = [];
+  let rewardInstancesDetail: Array<{
+    id: string;
+    rewardKey: string | null;
+    status: string;
+    kind: string;
+    expiresAt: string | null;
+    redeemedAt: string | null;
+    createdAt: string;
+  }> = [];
   if (canReadRewards) {
     const { data: activePrograms } = await supabase
       .from("reward_programs")
@@ -454,7 +475,116 @@ export default async function StudentProfilePage({
       .eq("student_id", student.id)
       .eq("status", "available");
     rewardsAvailable = rewardCountResult.count ?? 0;
+
+    const [{ data: achievementRows }, { data: levelUnlockRows }, { data: rewardRows }] =
+      await Promise.all([
+        supabase
+          .from("reward_achievement_unlocks")
+          .select("id,title_snapshot,level_key,unlocked_at")
+          .eq("studio_id", studio.id)
+          .eq("student_id", student.id)
+          .order("unlocked_at", { ascending: false })
+          .limit(20),
+        supabase
+          .from("reward_program_level_unlocks")
+          .select("id,title_snapshot,level_order_snapshot,unlocked_at")
+          .eq("studio_id", studio.id)
+          .eq("student_id", student.id)
+          .order("unlocked_at", { ascending: false })
+          .limit(20),
+        supabase
+          .from("reward_instances")
+          .select("id,reward_key,status,kind,expires_at,redeemed_at,created_at")
+          .eq("studio_id", studio.id)
+          .eq("student_id", student.id)
+          .order("created_at", { ascending: false })
+          .limit(30),
+      ]);
+
+    rewardAchievements = (achievementRows ?? []).map((item) => ({
+      id: item.id,
+      title: item.title_snapshot || item.achievement_key || "Logro",
+      levelKey: item.level_key,
+      unlockedAt: item.unlocked_at,
+    }));
+    rewardLevelHistory = (levelUnlockRows ?? []).map((item) => ({
+      id: item.id,
+      title: item.title_snapshot || "Nivel",
+      levelOrder: item.level_order_snapshot,
+      unlockedAt: item.unlocked_at,
+    }));
+    rewardInstancesDetail = (rewardRows ?? []).map((item) => ({
+      id: item.id,
+      rewardKey: item.reward_key,
+      status: item.status,
+      kind: item.kind,
+      expiresAt: item.expires_at,
+      redeemedAt: item.redeemed_at,
+      createdAt: item.created_at,
+    }));
   }
+
+  type ProfileHistoryEvent = {
+    id: string;
+    at: string;
+    kind: "class" | "package" | "reward" | "status";
+    title: string;
+    detail: string;
+  };
+  const profileHistoryEvents: ProfileHistoryEvent[] = [];
+
+  for (const event of generalClassEvents) {
+    const classTitleMap: Record<string, string> = {
+      reserved: "Clase reservada",
+      attended: "Asistió a clase",
+      cancelled_on_time: "Canceló clase a tiempo",
+      cancelled_late: "Cancelación tardía",
+      no_show: "No show",
+      cancelled_by_studio: "Clase cancelada por el estudio",
+    };
+    profileHistoryEvents.push({
+      id: "class:" + event.id,
+      at: event.startsAt,
+      kind: "class",
+      title: classTitleMap[event.status] ?? "Actividad de clase",
+      detail: event.className,
+    });
+  }
+
+  for (const acquisition of acquisitions) {
+    profileHistoryEvents.push({
+      id: "package:" + acquisition.id,
+      at: acquisition.created_at,
+      kind: "package",
+      title: acquisition.id === currentAcquisition?.id ? "Paquete actual" : "Paquete registrado",
+      detail: productMap.get(acquisition.product_template_id)?.name ?? "Paquete",
+    });
+  }
+
+  for (const achievement of rewardAchievements) {
+    profileHistoryEvents.push({
+      id: "reward:" + achievement.id,
+      at: achievement.unlockedAt,
+      kind: "reward",
+      title: "Logro desbloqueado",
+      detail: achievement.title,
+    });
+  }
+
+  for (const event of lifecycleEvents) {
+    profileHistoryEvents.push({
+      id: "status:" + event.id,
+      at: event.created_at,
+      kind: "status",
+      title: "Cambio de estado",
+      detail:
+        (lifecycleCopy[event.from_status] ?? event.from_status) +
+        " → " +
+        (lifecycleCopy[event.to_status] ?? event.to_status),
+    });
+  }
+
+  profileHistoryEvents.sort((a, b) => b.at.localeCompare(a.at));
 
   const currentPackageView = currentAcquisition
     ? {
