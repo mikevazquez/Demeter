@@ -1,13 +1,18 @@
 import Link from "next/link";
 
 import { signOut } from "@/app/auth/actions";
+import { getPendingStudentRewardNotices } from "@/lib/student/reward-notices";
 import { getStudentPortalContext } from "@/lib/student/portal";
 
 import PendingActionButton from "./components/PendingActionButton";
+import RewardUnlockedNotice from "./components/RewardUnlockedNotice";
 import { StudentNav } from "./StudentNav";
 
 export default async function StudentLayout({ children }: { children: React.ReactNode }) {
-  const { snapshot, studio } = await getStudentPortalContext();
+  const [{ snapshot, studio }, rewardNotices] = await Promise.all([
+    getStudentPortalContext(),
+    getPendingStudentRewardNotices(),
+  ]);
 
   return (
     <div className="min-h-screen bg-[#090a0f] text-white">
@@ -38,7 +43,10 @@ export default async function StudentLayout({ children }: { children: React.Reac
 
       <div className="mx-auto flex max-w-7xl gap-6 px-4 pb-32 pt-6 sm:px-6 lg:px-8 lg:pb-10">
         <StudentNav />
-        <div className="min-w-0 flex-1">{children}</div>
+        <div className="min-w-0 flex-1">
+          <RewardUnlockedNotice notices={rewardNotices} />
+          {children}
+        </div>
       </div>
     </div>
   );
