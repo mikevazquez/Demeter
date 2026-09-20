@@ -7,6 +7,7 @@ import { signIn } from "@/app/auth/actions";
 type LoginCardProps = {
   mode: "admin" | "coach" | "student";
   error?: string;
+  returnTo?: string;
 };
 
 const adminMessages: Record<string, string> = {
@@ -122,7 +123,7 @@ function SwitchLinks({ mode }: { mode: LoginCardProps["mode"] }) {
   );
 }
 
-export function LoginCard({ mode, error }: LoginCardProps) {
+export function LoginCard({ mode, error, returnTo }: LoginCardProps) {
   const [passwordVisible, setPasswordVisible] = useState(false);
   const isStudent = mode === "student";
   const messages =
@@ -144,6 +145,7 @@ export function LoginCard({ mode, error }: LoginCardProps) {
 
         <form action={signIn} className="auth-form">
           <input type="hidden" name="mode" value={mode} />
+          <input type="hidden" name="return_to" value={returnTo ?? ""} />
           {isStudent ? (
             <label>
               Teléfono

@@ -14,6 +14,24 @@ function loginPath(mode: LoginMode) {
   return "/login/admin";
 }
 
+function safeReturnTo(rawValue: string, mode: LoginMode) {
+  const value = rawValue.trim();
+  if (!value.startsWith("/") || value.startsWith("//") || value.includes("\\")) return null;
+
+  const portalRoot = mode === "student" ? "/student" : mode === "coach" ? "/coach" : "/admin";
+  if (value === portalRoot || value.startsWith(`${portalRoot}/`) || value.startsWith(`${portalRoot}?`)) {
+    return value;
+  }
+
+  return null;
+}
+
+function loginErrorPath(mode: LoginMode, error: string, returnTo: string | null) {
+  const params = new URLSearchParams({ error });
+  if (returnTo) params.set("next", returnTo);
+  return `${loginPath(mode)}?${params.toString()}`;
+}
+
 function passwordIntegrity(password: string) {
   return {
     passwordLength: password.length,
@@ -42,9 +60,10 @@ export async function signIn(formData: FormData) {
     .toLowerCase();
   const phone = normalizeMexicanPhone(String(formData.get("phone") ?? ""));
   const studentAuthEmail = phone ? studentAuthEmailFromPhone(phone) : null;
+  const returnTo = safeReturnTo(String(formData.get("return_to") ?? ""), mode);
 
   if (!password || (mode === "student" ? !phone || !studentAuthEmail : !email)) {
-    redirect(`${loginPath(mode)}?error=missing`);
+    redirect(loginErrorPath(mode, "missing", returnTo));
   }
 
   const supabase = await createClient();
@@ -86,14 +105,14 @@ export async function signIn(formData: FormData) {
     }
 
     if (error?.code === "invalid_credentials") {
-      redirect(`${loginPath(mode)}?error=invalid`);
+      redirect(loginErrorPath(mode, "invalid", returnTo));
     }
 
     if (error?.status === 429) {
-      redirect(`${loginPath(mode)}?error=rate`);
+      redirect(loginErrorPath(mode, "rate", returnTo));
     }
 
-    redirect(`${loginPath(mode)}?error=auth`);
+    redirect(loginErrorPath(mode, "auth", returnTo));
   }
 
   // Recreate the SSR client after sign-in so post-login RLS checks read the
@@ -121,7 +140,7 @@ export async function signIn(formData: FormData) {
       membershipError: authErrorSummary(membershipResult.error),
     });
     await accessClient.auth.signOut();
-    redirect(`${loginPath(mode)}?error=auth`);
+    redirect(loginErrorPath(mode, "auth", returnTo));
   }
 
   const account = accountResult.data;
@@ -129,12 +148,12 @@ export async function signIn(formData: FormData) {
 
   if (!account || account.status !== "active") {
     await accessClient.auth.signOut();
-    redirect(`${loginPath(mode)}?error=access`);
+    redirect(loginErrorPath(mode, "access", returnTo));
   }
 
   if (!membership) {
     await accessClient.auth.signOut();
-    redirect(`${loginPath(mode)}?error=pending`);
+    redirect(loginErrorPath(mode, "pending", returnTo));
   }
 
   const requiredCapability =
@@ -160,7 +179,7 @@ export async function signIn(formData: FormData) {
       capabilityError: authErrorSummary(roleCapabilityResult.error),
     });
     await accessClient.auth.signOut();
-    redirect(`${loginPath(mode)}?error=auth`);
+    redirect(loginErrorPath(mode, "auth", returnTo));
   }
 
   const studio = studioResult.data;
@@ -168,17 +187,20 @@ export async function signIn(formData: FormData) {
 
   if (!studio || studio.status !== "active" || !roleCapability) {
     await accessClient.auth.signOut();
-    redirect(`${loginPath(mode)}?error=access`);
+    redirect(loginErrorPath(mode, "access", returnTo));
   }
 
   if (mode === "student" && account.must_change_password) {
-    redirect("/login/student/activar");
+    const activationPath = returnTo
+      ? `/login/student/activar?next=${encodeURIComponent(returnTo)}`
+      : "/login/student/activar";
+    redirect(activationPath);
   }
   if (mode === "coach" && account.must_change_password) {
     redirect("/login/coach/activar");
   }
 
-  if (mode === "student") redirect("/student");
+  if (mode === "student") redirect(returnTo ?? "/student");
   if (mode === "coach") redirect("/coach");
   redirect("/admin");
 }

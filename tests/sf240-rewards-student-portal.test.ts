@@ -101,6 +101,20 @@ describe("SF-240 student Rewards portal", () => {
     expect(history).not.toContain("Total ahorrado");
   });
 
+  it("returns a signed-out student to Rewards after login", () => {
+    const proxy = read("lib/supabase/proxy.ts");
+    const loginPage = read("app/login/student/page.tsx");
+    const loginCard = read("app/login/login-card.tsx");
+    const authActions = read("app/auth/actions.ts");
+
+    expect(proxy).toContain('request.nextUrl.pathname === "/student/recompensas"');
+    expect(proxy).toContain('loginUrl.searchParams.set("next", destination)');
+    expect(loginPage).toContain("next?: string");
+    expect(loginCard).toContain('name="return_to"');
+    expect(authActions).toContain("safeReturnTo");
+    expect(authActions).toContain('redirect(returnTo ?? "/student")');
+  });
+
   it("restricts student rule reads to linked reward context", () => {
     const sql = read("supabase/migrations/20260920014500_sf240_rewards_student_read.sql");
 
