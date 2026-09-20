@@ -4,7 +4,7 @@ import { formatDate, getStudentPortalContext } from "@/lib/student/portal";
 
 import { updateStudentProfileAction } from "../actions";
 import PendingActionButton from "../components/PendingActionButton";
-import StudentNoticeDialog from "../components/StudentNoticeDialog";
+import StudentNoticeDialog from "../components/StudentNoticeDialog";\nimport ProfileAvatarUploader from "./ProfileAvatarUploader";
 
 const errorCopy: Record<string, string> = {
   email_invalid: "Revisa el formato de tu correo.",
@@ -22,10 +22,19 @@ function profileInitials(firstName: string, lastName: string | null) {
 export default async function StudentProfilePage({
   searchParams,
 }: {
-  searchParams: Promise<{ updated?: string; error?: string; edit?: string }>;
+  searchParams: Promise<{ updated?: string; error?: string; edit?: string; avatar?: string }>;
 }) {
   const query = await searchParams;
-  const { snapshot, studio } = await getStudentPortalContext();
+  const { snapshot, studio, supabase, user } = await getStudentPortalContext();
+  const { data: accountProfile } = await supabase
+    .from("profiles")
+    .select("avatar_url")
+    .eq("id", user.id)
+    .maybeSingle();
+  const { data: signedAvatar } = accountProfile?.avatar_url
+    ? await supabase.storage.from("profile-avatars").createSignedUrl(accountProfile.avatar_url, 3600)
+    : { data: null };
+  const avatarUrl = signedAvatar?.signedUrl ?? null;
   const activePackage = snapshot.acquisitions.find((item) => item.active_now) ?? null;
   const fullName = [snapshot.profile.first_name, snapshot.profile.last_name]
     .filter(Boolean)
@@ -47,7 +56,15 @@ export default async function StudentProfilePage({
         </p>
       </header>
 
-      {query.updated ? (
+      {query.avatar === "updated" ? (
+        <StudentNoticeDialog
+          eyebrow="Foto actualizada"
+          title="Tu foto de perfil está lista"
+          dismissHref="/student/perfil"
+        >
+          La nueva imagen ya está asociada a tu cuenta.
+        </StudentNoticeDialog>
+      ) : query.updated ? (
         <StudentNoticeDialog
           eyebrow="Cambios guardados"
           title="Tu correo está actualizado"
@@ -72,9 +89,7 @@ export default async function StudentProfilePage({
       >
         <div className="border-b border-white/10 p-5 sm:p-6">
           <div className="flex items-center gap-4">
-            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full border border-fuchsia-400/50 bg-gradient-to-br from-fuchsia-500/70 to-fuchsia-950 text-xl font-semibold text-white shadow-[0_0_28px_rgba(236,72,153,0.22)] sm:h-20 sm:w-20 sm:text-2xl">
-              {initials}
-            </div>
+            <ProfileAvatarUploader initials={initials} currentAvatarUrl={avatarUrl} />
             <div className="min-w-0">
               <h2 className="truncate text-xl font-semibold text-white sm:text-2xl">{fullName}</h2>
               <p className="mt-1 text-sm text-zinc-400">Alumna · {studio.name}</p>
