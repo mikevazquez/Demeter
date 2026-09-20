@@ -110,10 +110,17 @@ export default async function StudentProfilePage({
     sale?: string;
     lifecycle?: string;
     lifecycle_error?: string;
+    view?: string;
   }>;
 }) {
   const { studentId } = await params;
   const query = await searchParams;
+  const requestedView = String(query.view ?? "summary");
+  const view = (
+    ["summary", "packages", "rewards", "followup", "profile"].includes(requestedView)
+      ? requestedView
+      : "summary"
+  ) as "summary" | "packages" | "rewards" | "followup" | "profile";
   const { supabase, studio, can } = await getAdminContext(CAPABILITIES.STUDENTS_READ);
 
   const { data: student } = await supabase
@@ -241,7 +248,6 @@ export default async function StudentProfilePage({
   const communicationPreferenceEvents = communicationPreferenceEventsResult.data ?? [];
   const canEdit = can(CAPABILITIES.STUDENTS_WRITE);
   const canSell = can(CAPABILITIES.SALES_WRITE);
-  const canBook = can(CAPABILITIES.SCHEDULE_WRITE);
   const canReadSchedule = can(CAPABILITIES.SCHEDULE_READ);
   const canReadSales = can(CAPABILITIES.SALES_READ);
   const canReadRewards = can(CAPABILITIES.REWARDS_READ);
@@ -481,6 +487,7 @@ export default async function StudentProfilePage({
   return (
     <main className="dashboard-shell">
       <Profile360Overview
+        activeView={view}
         student={{
           id: student.id,
           userId: student.user_id,
@@ -506,8 +513,6 @@ export default async function StudentProfilePage({
             : null
         }
         alerts={alerts}
-        canBook={canBook}
-        canSell={canSell}
         timeZone={timeZone}
       />
 
@@ -532,21 +537,13 @@ export default async function StudentProfilePage({
           {query.alta === "finalizada"
             ? "Alta registrada. La alumna, su compra y sus condiciones quedaron vinculadas al mismo expediente."
             : "Alta registrada sin paquete. El expediente queda disponible para operar cuando corresponda."}
-          <div className="toolbar-actions mt-3">
-            <Link className="primary-button" href={`/admin/alumnas/${student.id}/reservar`}>
-              Reservar primera clase
-            </Link>
-            {can(CAPABILITIES.SETTINGS_WRITE) ? (
-              <a className="ghost-button" href="#acceso-portal">
-                Configurar acceso al portal
-              </a>
-            ) : null}
-            {query.sale ? (
+          {query.sale ? (
+            <div className="toolbar-actions mt-3">
               <Link className="ghost-button" href={`/admin/ventas/${query.sale}`}>
                 Ver venta
               </Link>
-            ) : null}
-          </div>
+            </div>
+          ) : null}
         </div>
       ) : null}
 
@@ -557,6 +554,8 @@ export default async function StudentProfilePage({
         </div>
       ) : null}
 
+      {view === "profile" ? (
+        <>
       <details id="datos-personales" className="profile360-detail scroll-mt-6">
         <summary>
           <span>
@@ -775,8 +774,11 @@ export default async function StudentProfilePage({
         </details>
       ) : null}
 
-      {canReadProducts ? (
-        <details id="paquetes-y-creditos" className="profile360-detail scroll-mt-6">
+        </>
+      ) : null}
+
+      {view === "packages" && canReadProducts ? (
+        <details id="paquetes-y-creditos" className="profile360-detail scroll-mt-6" open>
           <summary>
             <span>
               <strong>Paquetes e historial</strong>
@@ -806,7 +808,10 @@ export default async function StudentProfilePage({
                 const availableCredits = acquisition.unlimited
                   ? null
                   : (balanceMap.get(acquisition.id) ?? 0);
-                const editable = canEditAcquisitions && !acquisition.refunded_at;
+                const editable =
+                  canEditAcquisitions &&
+                  !acquisition.refunded_at &&
+                  acquisition.id === currentAcquisition?.id;
 
                 return (
                   <article
@@ -916,6 +921,58 @@ export default async function StudentProfilePage({
         </details>
       ) : null}
 
+
+      {view === "rewards" ? (
+        <section className="profile360-view-panel">
+          <div className="panel-heading">
+            <div>
+              <p className="eyebrow">REWARDS</p>
+              <h2>Progreso y recompensas</h2>
+            </div>
+          </div>
+          <div className="profile360-approved-indicators">
+            <article>
+              <span>Nivel general</span>
+              <strong>{levelTitle ?? "Sin nivel"}</strong>
+            </article>
+            <article>
+              <span>Recompensas disponibles</span>
+              <strong>{rewardsAvailable ?? 0}</strong>
+            </article>
+          </div>
+          <p className="profile360-view-note">
+            El nivel general se muestra también en la cabecera del perfil. Los logros y
+            recompensas se mantienen en su fuente canónica de Rewards.
+          </p>
+        </section>
+      ) : null}
+
+      {view === "followup" ? (
+        <section className="profile360-view-panel">
+          <div className="panel-heading">
+            <div>
+              <p className="eyebrow">SEGUIMIENTO</p>
+              <h2>Situaciones actuales</h2>
+            </div>
+            <span className="count-badge">{alerts.length}</span>
+          </div>
+          {alerts.length ? (
+            <div className="profile360-approved-alert-list">
+              {alerts.map((alert) => (
+                <div key={alert.title + alert.detail}>
+                  <strong>{alert.title}</strong>
+                  <span>{alert.detail}</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="empty-state">Sin seguimiento pendiente.</div>
+          )}
+        </section>
+      ) : null}
+
+      {view === "profile" ? (
+        <>
       <details id="campos-adicionales" className="profile360-detail scroll-mt-6">
         <summary>
           <span>
@@ -1070,7 +1127,10 @@ export default async function StudentProfilePage({
         </section>
       </details>
 
-      {canArchive ? (
+        </>
+      ) : null}
+
+      {view === "profile" && canArchive ? (
         <details id="estado-alumna" className="profile360-detail scroll-mt-6">
           <summary>
             <span>
