@@ -140,12 +140,14 @@ describe("Flow 01 student onboarding", () => {
     expect(dialog).toContain("La operación se guardó correctamente");
   });
 
-  it("finishes in Profile 360 with Spanish user-visible states", () => {
+  it("finishes in Profile 360 with Spanish read-model states and no reservation action", () => {
     const profile = source("app/admin/alumnas/[studentId]/page.tsx");
+    const overview = source("app/admin/alumnas/[studentId]/Profile360Overview.tsx");
     expect(profile).toContain("lifecycleCopy");
-    expect(profile).toContain("Pendiente de primer crédito");
-    expect(profile).toContain("Bloqueada por pago pendiente");
-    expect(profile).toContain("Reservar primera clase");
+    expect(profile).toContain("Sin créditos disponibles");
+    expect(profile).toContain("Saldo pendiente");
+    expect(overview).toContain("Sin próxima clase");
+    expect(profile).not.toContain("Reservar primera clase");
     expect(profile).not.toContain("DuplicateStudentDialog");
   });
 });
