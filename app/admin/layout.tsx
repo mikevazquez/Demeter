@@ -35,7 +35,7 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
   const userInitials = userName
     .split(/\s+/)
     .slice(0, 2)
-    .map((part) => part.slice(0, 1).toUpperCase())
+    .map((part: string) => part.slice(0, 1).toUpperCase())
     .join("");
   const attentionCount = attentionResult.count ?? 0;
 
