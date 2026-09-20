@@ -87,14 +87,6 @@ function NavIcon({ label }: { label: string }) {
       </svg>
     );
   }
-  if (label === "Atención") {
-    return (
-      <svg {...common}>
-        <path d="M21 15a4 4 0 0 1-4 4H9l-5 3v-7a7 7 0 1 1 17 0Z" />
-        <path d="M8.5 12h.01M12 12h.01M15.5 12h.01" />
-      </svg>
-    );
-  }
   if (label === "Configuración") {
     return (
       <svg {...common}>

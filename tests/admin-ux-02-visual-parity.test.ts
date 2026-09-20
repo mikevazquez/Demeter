@@ -12,7 +12,6 @@ describe("ADMIN-UX-02 approved visual parity", () => {
   const navigation = source("app/admin/admin-navigation.tsx");
   const today = source("app/admin/page.tsx");
   const more = source("app/admin/mas/page.tsx");
-  const attention = source("app/admin/acciones/page.tsx");
   const products = source("app/admin/productos/page.tsx");
   const team = source("app/admin/instructores/page.tsx");
   const automations = source("app/admin/automatizaciones/page.tsx");
@@ -27,7 +26,7 @@ describe("ADMIN-UX-02 approved visual parity", () => {
     expect(layout).toContain("admin-utility-bar");
     expect(layout).toContain("admin-mobile-header");
     expect(layout).toContain("sidebar-user");
-    expect(layout).toContain("attentionCount");
+    expect(layout).not.toContain("attentionCount");
     expect(styles).toContain("grid-template-columns: 208px minmax(0, 1fr)");
   });
 
@@ -35,10 +34,10 @@ describe("ADMIN-UX-02 approved visual parity", () => {
     expect(today).toContain("Hola, {firstName}");
     expect(today).toContain("mock-kpi-grid");
     expect(today).toContain("Ventas hoy");
-    expect(today).toContain("Incidencias");
+    expect(today).not.toContain("Incidencias");
     expect(today).toContain("mock-overview-grid");
     expect(today).toContain("Clases de hoy");
-    expect(today).toContain("Atención");
+    expect(today).not.toContain("Atención");
     expect(today).toContain("admin-quick-menu");
     expect(today).not.toContain("Operación detallada");
     expect(today).not.toContain("week-picker");
@@ -61,8 +60,6 @@ describe("ADMIN-UX-02 approved visual parity", () => {
   });
 
   it("uses the approved compact module language", () => {
-    expect(attention).toContain("attention-page");
-    expect(attention).toContain("attention-list");
     expect(products).toContain("module-list");
     expect(products).toContain("module-tabs");
     expect(team).toContain(">Equipo<");

@@ -242,9 +242,7 @@ export default async function AutomationDetailPage({
 
   const nonArchived = instanceRows.filter((item) => item.status !== "archived");
   const canCreate =
-    canManage &&
-    template.configurationMode !== "system_managed" &&
-    (template.configurationMode === "multiple" || nonArchived.length === 0);
+    canManage && (template.configurationMode === "multiple" || nonArchived.length === 0);
 
   return (
     <main className="space-y-6">
@@ -283,9 +281,7 @@ export default async function AutomationDetailPage({
           <p className="mt-2 text-xs text-zinc-500">
             {template.configurationMode === "multiple"
               ? "Permite varias configuraciones"
-              : template.configurationMode === "system_managed"
-                ? "Gestionada por Studio Flow"
-                : "Una configuración activa"}
+              : "Una configuración activa"}
           </p>
         </article>
       </section>
@@ -305,16 +301,6 @@ export default async function AutomationDetailPage({
           ))}
         </div>
       </section>
-
-      {template.configurationMode === "system_managed" ? (
-        <section className="rounded-2xl border border-violet-500/20 bg-violet-500/[0.07] p-5">
-          <h2 className="font-semibold text-white">Gestionada por el sistema</h2>
-          <p className="mt-2 text-sm text-zinc-300">
-            Esta automatización no se crea ni configura manualmente. Studio Flow administra su
-            instancia según las reglas aprobadas.
-          </p>
-        </section>
-      ) : null}
 
       {canCreate ? (
         <section className="rounded-2xl border border-fuchsia-500/20 bg-fuchsia-500/[0.05] p-5">
@@ -386,8 +372,7 @@ export default async function AutomationDetailPage({
                   </div>
                 ) : null}
 
-                {template.configurationMode !== "system_managed" &&
-                instance.status !== "archived" ? (
+                {instance.status !== "archived" ? (
                   <form
                     action={updateAutomationConfigurationAction}
                     className="mt-5 space-y-4 border-t border-white/10 pt-5"
@@ -409,7 +394,7 @@ export default async function AutomationDetailPage({
                   </form>
                 ) : null}
 
-                {canManage && template.configurationMode !== "system_managed" ? (
+                {canManage ? (
                   <div className="mt-5 flex flex-wrap gap-2 border-t border-white/10 pt-5">
                     {["draft", "paused", "error"].includes(instance.status) ? (
                       <form action={activateAutomationAction}>

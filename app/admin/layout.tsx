@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { signOut } from "@/app/auth/actions";
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
@@ -21,23 +20,17 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
     ? supabase.storage.from("studio-branding").getPublicUrl(studio.logo_path).data.publicUrl
     : null;
 
-  const [{ data: profile }, attentionResult] = await Promise.all([
-    supabase.from("profiles").select("full_name").eq("id", user.id).maybeSingle(),
-    can(CAPABILITIES.REQUIRED_ACTIONS_READ)
-      ? supabase
-          .from("required_actions")
-          .select("id", { count: "exact", head: true })
-          .eq("studio_id", studio.id)
-          .in("status", ["pending", "in_progress"])
-      : Promise.resolve({ count: 0 }),
-  ]);
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("full_name")
+    .eq("id", user.id)
+    .maybeSingle();
   const userName = profile?.full_name?.trim() || user.email?.split("@")[0] || "Usuario";
   const userInitials = userName
     .split(/\s+/)
     .slice(0, 2)
     .map((part: string) => part.slice(0, 1).toUpperCase())
     .join("");
-  const attentionCount = attentionResult.count ?? 0;
 
   const desktopNavItems = instructorOnly
     ? [
@@ -68,17 +61,6 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
         ...(can(CAPABILITIES.AUTOMATIONS_READ)
           ? [{ href: "/admin/automatizaciones", label: "Automatizaciones", enabled: true }]
           : []),
-        ...(can(CAPABILITIES.REQUIRED_ACTIONS_READ)
-          ? [
-              {
-                href: "/admin/acciones",
-                label: "Atención",
-                enabled: true,
-                secondary: true,
-                badge: attentionCount,
-              },
-            ]
-          : []),
         ...(membership.role === "owner"
           ? [
               {
@@ -96,7 +78,6 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
     can(CAPABILITIES.PRODUCTS_READ) ||
     can(CAPABILITIES.INSTRUCTORS_READ) ||
     can(CAPABILITIES.AUTOMATIONS_READ) ||
-    can(CAPABILITIES.REQUIRED_ACTIONS_READ) ||
     membership.role === "owner";
 
   const mobileNavItems = instructorOnly
@@ -120,7 +101,6 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
                   "/admin/productos",
                   "/admin/instructores",
                   "/admin/automatizaciones",
-                  "/admin/acciones",
                   "/admin/configuracion",
                 ],
               },
@@ -181,12 +161,6 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
                 <kbd>⌘K</kbd>
               </form>
               <div className="admin-utility-actions">
-                {can(CAPABILITIES.REQUIRED_ACTIONS_READ) ? (
-                  <Link className="admin-icon-button" href="/admin/acciones" aria-label="Atención">
-                    <span aria-hidden="true">♧</span>
-                    {attentionCount ? <b>{attentionCount}</b> : null}
-                  </Link>
-                ) : null}
                 <span className="admin-user-button" aria-label={userName}>
                   {userInitials || "U"}
                 </span>
@@ -206,12 +180,6 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
                 )}
                 <strong>{studio.name}</strong>
               </div>
-              {can(CAPABILITIES.REQUIRED_ACTIONS_READ) ? (
-                <Link className="admin-icon-button" href="/admin/acciones" aria-label="Atención">
-                  <span aria-hidden="true">♧</span>
-                  {attentionCount ? <b>{attentionCount}</b> : null}
-                </Link>
-              ) : null}
             </header>
           </>
         ) : null}

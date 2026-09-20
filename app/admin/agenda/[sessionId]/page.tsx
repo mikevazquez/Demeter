@@ -4,7 +4,6 @@ import { redirect } from "next/navigation";
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { bookStudent, cancelReservation, cancelSession, updateSession } from "./actions";
-import RequiredActionContextPanel from "../../acciones/RequiredActionContextPanel";
 
 type EligibilityResult = {
   eligible?: boolean;
@@ -46,7 +45,6 @@ export default async function SessionDetailPage({
   if (!session) redirect("/admin/agenda");
 
   const canEdit = can(CAPABILITIES.SCHEDULE_WRITE);
-  const canReadRequiredActions = can(CAPABILITIES.REQUIRED_ACTIONS_READ);
   const [
     { data: template },
     { data: spaces },
@@ -86,18 +84,6 @@ export default async function SessionDetailPage({
       .in("status", ["reserved", "attended"])
       .order("booked_at"),
   ]);
-
-  const requiredActionsResult = canReadRequiredActions
-    ? await supabase
-        .from("required_actions")
-        .select("id,priority,status,reason,created_at")
-        .eq("studio_id", studio.id)
-        .eq("class_session_id", sessionId)
-        .in("status", ["pending", "in_progress"])
-        .order("created_at", { ascending: false })
-        .limit(6)
-    : { data: [] };
-  const requiredActions = requiredActionsResult.data ?? [];
 
   const timeZone = studio.timezone ?? "America/Mexico_City";
   const personMap = new Map(
@@ -221,15 +207,6 @@ export default async function SessionDetailPage({
           <small>Por reserva</small>
         </article>
       </section>
-
-      {canReadRequiredActions ? (
-        <RequiredActionContextPanel
-          eyebrow="ACCIONES REQUERIDAS"
-          title="Incidencias de esta clase"
-          actions={requiredActions}
-          emptyCopy="Esta clase no tiene acciones requeridas abiertas."
-        />
-      ) : null}
 
       {canEdit && session.status !== "cancelled" ? (
         <section className="panel">

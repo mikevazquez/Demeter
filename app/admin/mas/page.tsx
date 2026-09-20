@@ -37,12 +37,6 @@ const items: MoreItem[] = [
     capability: CAPABILITIES.REWARDS_READ,
   },
   {
-    title: "Atención",
-    description: "Incidencias y casos pendientes que requieren intervención.",
-    href: "/admin/acciones",
-    capability: CAPABILITIES.REQUIRED_ACTIONS_READ,
-  },
-  {
     title: "Configuración",
     description: "Identidad pública y preferencias del estudio.",
     href: "/admin/configuracion",

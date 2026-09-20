@@ -168,9 +168,7 @@ export default async function AutomationsPage({
             0,
           );
           const primaryStatus =
-            activeInstances[0]?.status ??
-            visibleInstances[0]?.status ??
-            (template.configurationMode === "system_managed" ? "system" : "unconfigured");
+            activeInstances[0]?.status ?? visibleInstances[0]?.status ?? "unconfigured";
 
           return (
             <Link
@@ -186,11 +184,7 @@ export default async function AutomationsPage({
                   <h2 className="mt-2 text-lg font-semibold text-white">{template.name}</h2>
                   <p className="mt-2 text-sm leading-6 text-zinc-400">{template.description}</p>
                 </div>
-                {primaryStatus === "system" ? (
-                  <span className="shrink-0 rounded-full bg-violet-500/15 px-2.5 py-1 text-xs text-violet-300">
-                    Sistema
-                  </span>
-                ) : primaryStatus === "unconfigured" ? (
+                {primaryStatus === "unconfigured" ? (
                   <span className="shrink-0 rounded-full bg-zinc-500/15 px-2.5 py-1 text-xs text-zinc-400">
                     Sin configurar
                   </span>

@@ -2,7 +2,6 @@ import Link from "next/link";
 import PendingActionButton from "@/app/admin/components/PendingActionButton";
 import StudentLifecycleActions from "./StudentLifecycleActions";
 import StudentLifecycleNoticeDialog from "./StudentLifecycleNoticeDialog";
-import RequiredActionContextPanel from "../../acciones/RequiredActionContextPanel";
 import { notFound } from "next/navigation";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getAdminContext } from "@/lib/auth/admin-context";
@@ -115,7 +114,6 @@ export default async function StudentProfilePage({
   if (!student || student.lifecycle_status === "archived") notFound();
 
   const canReadProducts = can(CAPABILITIES.PRODUCTS_READ);
-  const canReadRequiredActions = can(CAPABILITIES.REQUIRED_ACTIONS_READ);
   const canEditAcquisitions = can(CAPABILITIES.PRODUCTS_WRITE) || can(CAPABILITIES.SALES_WRITE);
 
   const [
@@ -240,17 +238,6 @@ export default async function StudentProfilePage({
         .limit(12)
     : { data: [] };
   const lifecycleEvents = lifecycleEventsResult.data ?? [];
-  const requiredActionsResult = canReadRequiredActions
-    ? await supabase
-        .from("required_actions")
-        .select("id,priority,status,reason,created_at")
-        .eq("studio_id", studio.id)
-        .eq("student_id", student.id)
-        .in("status", ["pending", "in_progress"])
-        .order("created_at", { ascending: false })
-        .limit(6)
-    : { data: [] };
-  const requiredActions = requiredActionsResult.data ?? [];
   const currentAcquisition = acquisitions.find(
     (item) => item.status === "active" && !item.refunded_at,
   );
@@ -310,15 +297,6 @@ export default async function StudentProfilePage({
         <div className="notice error">
           {errorCopy[query.error] ?? "No se pudo guardar el cambio."}
         </div>
-      ) : null}
-
-      {canReadRequiredActions ? (
-        <RequiredActionContextPanel
-          eyebrow="ACCIONES REQUERIDAS"
-          title="Incidencias de esta alumna"
-          actions={requiredActions}
-          emptyCopy="Esta alumna no tiene acciones requeridas abiertas."
-        />
       ) : null}
 
       {query.alta === "finalizada" || query.alta === "sin_paquete" ? (

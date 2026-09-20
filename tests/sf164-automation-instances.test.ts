@@ -12,7 +12,6 @@ import {
   markAutomationInstanceExecuted,
   pauseAutomationInstance,
   setAutomationInstanceError,
-  systemCreateAutomationInstance,
   updateAutomationInstanceConfiguration,
   type AutomationInstanceRpcClient,
   type AutomationInstanceRpcResult,
@@ -79,26 +78,6 @@ describe("SF-164 automation instances", () => {
         protected_priority: "P0",
       }),
     ).toThrow("automation_configuration_key_not_allowed:protected_priority");
-  });
-
-  it("keeps system-managed templates out of admin configuration", async () => {
-    const client = new FakeAutomationInstanceRpcClient();
-
-    await expect(
-      createAutomationInstance(client, {
-        studioId: "11111111-1111-1111-1111-111111111111",
-        catalogCode: "AUT-CAT-09",
-      }),
-    ).rejects.toThrow("automation_instance_system_managed");
-
-    expect(client.calls).toHaveLength(0);
-
-    await expect(
-      systemCreateAutomationInstance(client, {
-        studioId: "11111111-1111-1111-1111-111111111111",
-        catalogCode: "AUT-CAT-09",
-      }),
-    ).resolves.toBe("instance-1");
   });
 
   it("creates a new immutable version when configuration changes", async () => {

@@ -2,8 +2,6 @@ export type AutomationCategory =
   "operation" | "team" | "administration" | "conversion" | "retention";
 
 export type AutomationPriority = "P0" | "P1" | "P2" | "P3";
-export type RequiredActionCatalogPriority = "high" | "medium" | "dynamic";
-
 export type AutomationRecipient =
   "student" | "student_or_prospect" | "former_student" | "coach" | "administration" | "reception";
 
@@ -12,14 +10,10 @@ export type AutomationTriggerKind = "event" | "scheduled" | "condition" | "seque
 export type AutomationConfigurationMode = "single" | "multiple" | "system_managed";
 
 export type AutomationFrequencyMode =
-  "once_per_source" | "per_configuration_per_source" | "incident_deduped" | "sequence_controlled";
+  "once_per_source" | "per_configuration_per_source" | "sequence_controlled";
 
 export type AutomationOutputKind =
-  | "whatsapp_student"
-  | "internal_summary"
-  | "required_action"
-  | "required_action_and_internal_notification"
-  | "sequence_communication";
+  "whatsapp_student" | "internal_summary" | "sequence_communication";
 
 export type AutomationCatalogCode =
   | "AUT-CAT-01"
@@ -29,9 +23,6 @@ export type AutomationCatalogCode =
   | "AUT-CAT-05"
   | "AUT-CAT-06"
   | "AUT-CAT-07"
-  | "AUT-CAT-08"
-  | "AUT-CAT-09"
-  | "AUT-CAT-10"
   | "AUT-CAT-11"
   | "AUT-CAT-12"
   | "AUT-CAT-13"
@@ -44,12 +35,10 @@ export type AutomationSequenceCode = "SEC-01" | "SEC-02" | "SEC-03";
 export interface AutomationPriorityPolicy {
   /**
    * AUT-05 applies to communications to students/prospects.
-   * Internal team/admin automations intentionally keep this null because
-   * internal communications and Required Action severity are separate policies.
+   * Internal team automations intentionally keep this null.
    */
   communication: AutomationPriority | null;
   promotionalOverride?: AutomationPriority;
-  requiredAction?: RequiredActionCatalogPriority;
   scope: "aut05" | "internal";
 }
 
@@ -309,86 +298,6 @@ export const AUTOMATION_CATALOG = [
     output: {
       kind: "internal_summary",
       description: "Resumen interno para el coach; no usa preferencias comerciales de alumnas.",
-    },
-    sequenceIds: [],
-    requirements: [],
-  },
-  {
-    code: "AUT-CAT-08",
-    key: "class_close_incidents",
-    name: "Incidencias al cerrar clase",
-    category: "administration",
-    description: "Analiza el cierre de asistencia y genera intervención sólo si existe incidencia.",
-    priority: { communication: null, requiredAction: "dynamic", scope: "internal" },
-    recipients: ["administration"],
-    trigger: { kind: "event", description: "Finalización de la asistencia de una clase." },
-    protectedConditions: [
-      "Analizar reservas, asistencias, no-shows, walk-ins y contexto de pago.",
-      "Si todo está correcto, no crear acción.",
-      "Si existe pendiente, deduplicar la incidencia abierta.",
-    ],
-    configurableParameters: [],
-    variables: [],
-    frequency: {
-      mode: "incident_deduped",
-      description: "Una acción abierta por incidencia; no repetir mientras siga sin cambios.",
-    },
-    configurationMode: "system_managed",
-    output: {
-      kind: "required_action_and_internal_notification",
-      description: "Acción requerida y aviso interno a administración cuando corresponda.",
-    },
-    sequenceIds: [],
-    requirements: [],
-  },
-  {
-    code: "AUT-CAT-09",
-    key: "walkin_unpaid",
-    name: "Walk-in sin pago",
-    category: "administration",
-    description: "Escala un walk-in sin cobertura financiera aplicable.",
-    priority: { communication: null, requiredAction: "high", scope: "internal" },
-    recipients: ["administration", "reception"],
-    trigger: { kind: "event", description: "Walk-in registrado." },
-    protectedConditions: ["Sin paquete, crédito o pago aplicable para cubrir la asistencia."],
-    configurableParameters: [],
-    variables: [],
-    frequency: {
-      mode: "incident_deduped",
-      description: "Una incidencia abierta por walk-in; deduplicada hasta su resolución.",
-    },
-    configurationMode: "system_managed",
-    output: {
-      kind: "required_action_and_internal_notification",
-      description:
-        "Acción requerida de prioridad alta; se cierra al registrar pago, paquete, cortesía o resolución documentada.",
-    },
-    sequenceIds: [],
-    requirements: [],
-  },
-  {
-    code: "AUT-CAT-10",
-    key: "attendance_without_reservation",
-    name: "Asistencia sin reserva",
-    category: "administration",
-    description: "Detecta una asistencia registrada sin una reserva previa.",
-    priority: { communication: null, requiredAction: "medium", scope: "internal" },
-    recipients: ["administration"],
-    trigger: { kind: "event", description: "Asistencia registrada sin reserva existente." },
-    protectedConditions: [
-      "Studio Flow intenta resolver primero el caso con su lógica operativa.",
-      "Sólo crear Acción requerida si queda una intervención humana pendiente.",
-    ],
-    configurableParameters: [],
-    variables: [],
-    frequency: {
-      mode: "incident_deduped",
-      description: "No repetir la misma incidencia mientras permanezca abierta.",
-    },
-    configurationMode: "system_managed",
-    output: {
-      kind: "required_action",
-      description: "Acción requerida sólo cuando el caso no puede resolverse automáticamente.",
     },
     sequenceIds: [],
     requirements: [],
@@ -667,12 +576,6 @@ export const AUTOMATION_DOMINANCE_RULES = [
     target: { kind: "priority", priorities: ["P2", "P3"] },
     effect: "dominates",
     reason: "La confirmación operativa de pago prevalece sobre comunicaciones P2/P3.",
-  },
-  {
-    source: { kind: "context", key: "open_payment_incident" },
-    target: { kind: "external", key: "promotion.related" },
-    effect: "dominates",
-    reason: "Primero debe resolverse la situación operativa de pago.",
   },
   {
     source: { kind: "context", key: "future_reservation" },
