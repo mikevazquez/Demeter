@@ -33,16 +33,8 @@ jobs:
       - name: Install
         run: npm ci
 
-      - name: Format clean rebuild
-        run: |
-          npx prettier --write app/admin/agenda/page.tsx app/admin/agenda/recurring-actions.ts app/student/reservar/page.tsx
-          for f in app/admin/agenda/page.tsx app/admin/agenda/recurring-actions.ts app/student/reservar/page.tsx; do
-            key=$(echo "$f" | tr '/.-' '___')
-            echo "${key}_BASE64_BEGIN"
-            base64 -w0 "$f"
-            echo
-            echo "${key}_BASE64_END"
-          done
+      - name: Format check
+        run: npm run format:check
 
       - name: Lint
         run: npm run lint
