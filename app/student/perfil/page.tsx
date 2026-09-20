@@ -26,18 +26,7 @@ export default async function StudentProfilePage({
   searchParams: Promise<{ updated?: string; error?: string; edit?: string }>;
 }) {
   const query = await searchParams;
-  const { snapshot, studio, supabase, user } = await getStudentPortalContext();
-  const { data: accountProfile } = await supabase
-    .from("profiles")
-    .select("avatar_url")
-    .eq("id", user.id)
-    .maybeSingle();
-  const { data: signedAvatar } = accountProfile?.avatar_url
-    ? await supabase.storage
-        .from("profile-avatars")
-        .createSignedUrl(accountProfile.avatar_url, 3600)
-    : { data: null };
-  const avatarUrl = signedAvatar?.signedUrl ?? null;
+  const { snapshot, studio } = await getStudentPortalContext();
   const activePackage = snapshot.acquisitions.find((item) => item.active_now) ?? null;
   const fullName = [snapshot.profile.first_name, snapshot.profile.last_name]
     .filter(Boolean)
