@@ -166,7 +166,12 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
             <header className="admin-utility-bar">
               <form action="/admin/alumnas" method="get" className="admin-global-search">
                 <span aria-hidden="true">⌕</span>
-                <input name="q" type="search" placeholder="Buscar alumna…" aria-label="Buscar alumna" />
+                <input
+                  name="q"
+                  type="search"
+                  placeholder="Buscar alumna…"
+                  aria-label="Buscar alumna"
+                />
                 <kbd>⌘K</kbd>
               </form>
               <div className="admin-utility-actions">
