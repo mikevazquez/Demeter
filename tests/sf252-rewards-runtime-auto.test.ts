@@ -25,7 +25,9 @@ describe("SF-252 automatic Rewards runtime", () => {
     expect(runtime).toContain("'all_students'");
     expect(runtime).toContain("'all_active_students'");
     expect(runtime).toContain("'lock_on_join'");
-    expect(runtime).not.toContain("return jsonb_build_object('processed', 0, 'reason', 'student_not_active')");
+    expect(runtime).not.toContain(
+      "return jsonb_build_object('processed', 0, 'reason', 'student_not_active')",
+    );
   });
 
   it("gates sequential programs and scopes their metric window", () => {
