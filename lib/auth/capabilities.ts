@@ -13,8 +13,6 @@ export const CAPABILITIES = {
   SALES_READ: "sales.read",
   SALES_WRITE: "sales.write",
   REPORTS_READ: "reports.read",
-  REQUIRED_ACTIONS_READ: "required_actions.read",
-  REQUIRED_ACTIONS_MANAGE: "required_actions.manage",
   AUTOMATIONS_READ: "automations.read",
   AUTOMATIONS_MANAGE: "automations.manage",
   REWARDS_READ: "rewards.read",
