@@ -117,10 +117,10 @@ export default async function StudentProfilePage({
   const query = await searchParams;
   const requestedView = String(query.view ?? "summary");
   const view = (
-    ["summary", "packages", "rewards", "followup", "profile"].includes(requestedView)
+    ["summary", "packages", "rewards", "followup", "history", "profile"].includes(requestedView)
       ? requestedView
       : "summary"
-  ) as "summary" | "packages" | "rewards" | "followup" | "profile";
+  ) as "summary" | "packages" | "rewards" | "followup" | "history" | "profile";
   const { supabase, studio, can } = await getAdminContext(CAPABILITIES.STUDENTS_READ);
 
   const { data: student } = await supabase
@@ -276,10 +276,10 @@ export default async function StudentProfilePage({
       .sort((a, b) =>
         String(b.starts_on ?? b.created_at).localeCompare(String(a.starts_on ?? a.created_at)),
       )[0] ?? null;
-  const scheduledAcquisition =
-    liveAcquisitions
-      .filter((item) => Boolean(item.starts_on && item.starts_on > today))
-      .sort((a, b) => String(a.starts_on).localeCompare(String(b.starts_on)))[0] ?? null;
+  const scheduledAcquisitions = liveAcquisitions
+    .filter((item) => Boolean(item.starts_on && item.starts_on > today))
+    .sort((a, b) => String(a.starts_on).localeCompare(String(b.starts_on)));
+  const scheduledAcquisition = scheduledAcquisitions[0] ?? null;
 
   const dynamicDefinitions = (definitions ?? []).filter(
     (definition) => !structuralFieldKeys.has(definition.key),
@@ -289,40 +289,77 @@ export default async function StudentProfilePage({
   const birthDateValue = birthDateDefinition ? valueMap.get(birthDateDefinition.id) : null;
   const birthDate = typeof birthDateValue === "string" ? birthDateValue : null;
 
+  type PackageClassEvent = {
+    id: string;
+    acquisitionId: string | null;
+    status: string;
+    className: string;
+    startsAt: string;
+    creditsHeld: number;
+  };
+  const packageClassEvents = new Map<string, PackageClassEvent[]>();
+  const generalClassEvents: PackageClassEvent[] = [];
+
   let nextClass: { name: string; startsAt: string } | null = null;
   if (canReadSchedule) {
-    let reservationQuery = supabase
+    const { data: reservationRows } = await supabase
       .from("reservations")
-      .select("id,session_id,acquisition_id,status")
+      .select("id,session_id,acquisition_id,status,credits_held")
       .eq("studio_id", studio.id)
       .eq("student_id", student.id)
-      .eq("status", "reserved");
-    if (currentAcquisition) {
-      reservationQuery = reservationQuery.eq("acquisition_id", currentAcquisition.id);
-    }
-    const { data: futureReservations } = await reservationQuery;
-    const sessionIds = [...new Set((futureReservations ?? []).map((item) => item.session_id))];
-    if (sessionIds.length) {
-      const { data: futureSessions } = await supabase
-        .from("class_sessions")
-        .select("id,template_id,starts_at")
-        .eq("studio_id", studio.id)
-        .in("id", sessionIds)
-        .gt("starts_at", new Date().toISOString())
-        .order("starts_at")
-        .limit(1);
-      const firstSession = futureSessions?.[0];
-      if (firstSession) {
-        const { data: template } = await supabase
-          .from("class_templates")
-          .select("name")
-          .eq("id", firstSession.template_id)
+      .order("booked_at", { ascending: false });
+
+    const allSessionIds = [...new Set((reservationRows ?? []).map((item) => item.session_id))];
+    const { data: sessionRows } = allSessionIds.length
+      ? await supabase
+          .from("class_sessions")
+          .select("id,template_id,starts_at")
           .eq("studio_id", studio.id)
-          .maybeSingle();
-        nextClass = {
-          name: template?.name ?? "Clase",
-          startsAt: firstSession.starts_at,
-        };
+          .in("id", allSessionIds)
+      : { data: [] };
+
+    const templateIds = [...new Set((sessionRows ?? []).map((item) => item.template_id))];
+    const { data: templateRows } = templateIds.length
+      ? await supabase
+          .from("class_templates")
+          .select("id,name")
+          .eq("studio_id", studio.id)
+          .in("id", templateIds)
+      : { data: [] };
+
+    const sessionMap = new Map((sessionRows ?? []).map((item) => [item.id, item]));
+    const templateNameMap = new Map((templateRows ?? []).map((item) => [item.id, item.name]));
+
+    for (const reservation of reservationRows ?? []) {
+      const session = sessionMap.get(reservation.session_id);
+      if (!session) continue;
+      const event: PackageClassEvent = {
+        id: reservation.id,
+        acquisitionId: reservation.acquisition_id,
+        status: reservation.status,
+        className: templateNameMap.get(session.template_id) ?? "Clase",
+        startsAt: session.starts_at,
+        creditsHeld: reservation.credits_held ?? 0,
+      };
+      generalClassEvents.push(event);
+      if (reservation.acquisition_id) {
+        const list = packageClassEvents.get(reservation.acquisition_id) ?? [];
+        list.push(event);
+        packageClassEvents.set(reservation.acquisition_id, list);
+      }
+    }
+
+    for (const events of packageClassEvents.values()) {
+      events.sort((a, b) => b.startsAt.localeCompare(a.startsAt));
+    }
+    generalClassEvents.sort((a, b) => b.startsAt.localeCompare(a.startsAt));
+
+    if (currentAcquisition) {
+      const upcoming = (packageClassEvents.get(currentAcquisition.id) ?? [])
+        .filter((event) => event.status === "reserved" && new Date(event.startsAt) > new Date())
+        .sort((a, b) => a.startsAt.localeCompare(b.startsAt))[0];
+      if (upcoming) {
+        nextClass = { name: upcoming.className, startsAt: upcoming.startsAt };
       }
     }
   }
