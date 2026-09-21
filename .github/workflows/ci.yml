@@ -34,10 +34,7 @@ jobs:
         run: npm ci
 
       - name: Format check
-        run: |
-          npx prettier --write app/admin/evaluaciones
-          git diff -- app/admin/evaluaciones
-          exit 1
+        run: npm run format:check
 
       - name: Lint
         run: npm run lint
