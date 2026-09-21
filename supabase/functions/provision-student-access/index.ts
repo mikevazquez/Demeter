@@ -26,9 +26,8 @@ function generateInternalPassword() {
   return `Sf!${crypto.randomUUID()}A9`;
 }
 
-function buildStudentActivationLink(baseUrl: string, tokenHash: string, entryKey: string) {
+function buildStudentActivationLink(baseUrl: string, tokenHash: string) {
   const activationLink = new URL(baseUrl);
-  activationLink.searchParams.set("entry", entryKey);
   activationLink.searchParams.set("token_hash", tokenHash);
   activationLink.searchParams.set("type", "recovery");
   return activationLink.toString();
@@ -80,9 +79,7 @@ const handler = {
 
     const { data: student, error: studentError } = await userClient
       .from("students")
-      .select(
-        "id, studio_id, person_id, user_id, full_name, phone, active, lifecycle_status, portal_entry_key",
-      )
+      .select("id, studio_id, person_id, user_id, full_name, phone, active, lifecycle_status")
       .eq("id", studentId)
       .maybeSingle();
 
@@ -116,39 +113,6 @@ const handler = {
 
     if (permissionError) return jsonResponse({ error: "authorization_failed" }, 500);
     if (!permission) return jsonResponse({ error: "forbidden" }, 403);
-
-    let portalEntryKey =
-      typeof student.portal_entry_key === "string" && student.portal_entry_key
-        ? student.portal_entry_key
-        : null;
-
-    if (!portalEntryKey) {
-      const proposedEntryKey = crypto.randomUUID();
-      const { error: entryUpdateError } = await adminClient
-        .from("students")
-        .update({
-          portal_entry_key: proposedEntryKey,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", student.id)
-        .is("portal_entry_key", null);
-
-      if (entryUpdateError) {
-        return jsonResponse({ error: "portal_entry_key_failed" }, 500);
-      }
-
-      const { data: entryStudent, error: entryLookupError } = await adminClient
-        .from("students")
-        .select("portal_entry_key")
-        .eq("id", student.id)
-        .maybeSingle();
-
-      if (entryLookupError || !entryStudent?.portal_entry_key) {
-        return jsonResponse({ error: "portal_entry_key_failed" }, 500);
-      }
-
-      portalEntryKey = String(entryStudent.portal_entry_key);
-    }
 
     if (mode === "resend") {
       if (!student.user_id) return jsonResponse({ error: "student_access_missing" }, 409);
@@ -207,7 +171,7 @@ const handler = {
       const tokenHash = generatedActionLink.searchParams.get("token");
       if (!tokenHash) return jsonResponse({ error: "activation_link_failed" }, 500);
 
-      const activationLink = buildStudentActivationLink(activationUrl, tokenHash, portalEntryKey);
+      const activationLink = buildStudentActivationLink(activationUrl, tokenHash);
       const welcomeEventId = `student_welcome:${student.id}:${student.user_id}:${crypto.randomUUID()}`;
       const welcomeDelivery = await sendAsistianWebhook({
         adminClient,
@@ -362,7 +326,7 @@ const handler = {
       });
     }
 
-    const activationLink = buildStudentActivationLink(activationUrl, tokenHash, portalEntryKey);
+    const activationLink = buildStudentActivationLink(activationUrl, tokenHash);
     const welcomeEventId = `student_welcome:${student.id}:${provisionedUser.id}:${crypto.randomUUID()}`;
     const welcomeDelivery = await sendAsistianWebhook({
       adminClient,
