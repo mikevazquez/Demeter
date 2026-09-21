@@ -347,14 +347,22 @@ export default async function TechnicalEvaluationDetailPage({
       {step === "resumen" ? (
         <div className="eval-form-actions">
           <Link className="eval-secondary-button" href={`/admin/evaluaciones/${evaluation.id}`}>
-            Editar evaluación
+            {evaluation.automatic_outcome === "incomplete"
+              ? "Completar evaluación"
+              : "Editar evaluación"}
           </Link>
-          <form action={openEvaluationFeedbackAction}>
-            <input type="hidden" name="evaluation_id" value={evaluation.id} />
-            <button className="eval-primary-button" type="submit">
-              Finalizar evaluación →
-            </button>
-          </form>
+          {evaluation.automatic_outcome !== "incomplete" ? (
+            <form action={openEvaluationFeedbackAction}>
+              <input type="hidden" name="evaluation_id" value={evaluation.id} />
+              <button className="eval-primary-button" type="submit">
+                Continuar con feedback →
+              </button>
+            </form>
+          ) : (
+            <span className="eval-notice">
+              Faltan datos obligatorios. Completa la evaluación antes de finalizarla.
+            </span>
+          )}
         </div>
       ) : null}
 
@@ -402,25 +410,6 @@ export default async function TechnicalEvaluationDetailPage({
                 placeholder="Trabajar fuerza en invert y preparar los combos del siguiente nivel."
               />
             </div>
-
-            <details className="eval-notice">
-              <summary>Override del resultado · sólo si realmente es necesario</summary>
-              <div className="eval-field-grid" style={{ marginTop: 10 }}>
-                <div className="eval-field">
-                  <label htmlFor="final-outcome">Resultado final manual</label>
-                  <select id="final-outcome" name="final_outcome" defaultValue="">
-                    <option value="">Usar resultado automático</option>
-                    <option value="approved">Aprobada</option>
-                    <option value="stays">Permanece</option>
-                    <option value="incomplete">Incompleta</option>
-                  </select>
-                </div>
-                <div className="eval-field">
-                  <label htmlFor="override-reason">Justificación</label>
-                  <input id="override-reason" name="override_reason" placeholder="Motivo técnico" />
-                </div>
-              </div>
-            </details>
 
             <div className="eval-form-actions">
               <Link
