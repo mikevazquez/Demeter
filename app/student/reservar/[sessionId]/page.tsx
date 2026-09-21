@@ -11,8 +11,18 @@ import {
 } from "@/lib/student/portal";
 
 import PurchaseSingleClassButton from "../PurchaseSingleClassButton";
+import WaitlistControl from "../WaitlistControl";
 
 const DROP_IN_REASONS = new Set(["no_active_product", "outside_product", "no_credits"]);
+
+type StudentWaitlistItem = {
+  session_id: string;
+  status: string;
+};
+
+type RewardStatusSnapshot = {
+  level_title?: string | null;
+};
 
 export default async function StudentSessionDetailPage({
   params,
@@ -40,6 +50,14 @@ export default async function StudentSessionDetailPage({
     .limit(1)
     .maybeSingle();
   const activityColor = activityStyle?.color_hex ?? "#FF0A8A";
+  const [{ data: waitlistData }, { data: rewardStatusData }] = await Promise.all([
+    supabase.rpc("student_waitlist_feed"),
+    supabase.rpc("student_reward_status_snapshot"),
+  ]);
+  const waitlisted = ((waitlistData ?? []) as StudentWaitlistItem[]).some(
+    (item) => item.session_id === session.session_id && item.status === "active",
+  );
+  const levelTitle = (rewardStatusData as RewardStatusSnapshot | null)?.level_title ?? null;
   const eligible = Boolean(session.eligibility?.eligible);
   const alreadyReserved = Boolean(session.reservation_id);
   const reason = session.eligibility?.reason_code;
@@ -147,17 +165,19 @@ export default async function StudentSessionDetailPage({
           </Link>
         </section>
       ) : reason === "session_full" ? (
-        <section className="rounded-3xl border border-rose-500/20 bg-rose-500/[0.07] p-5">
-          <p className="text-sm font-semibold text-rose-200">Esta clase ya está llena</p>
+        <section className="rounded-3xl border border-amber-400/25 bg-amber-400/[0.06] p-5">
+          <p className="text-sm font-semibold text-amber-100">Esta clase está llena</p>
           <p className="mt-1.5 text-xs leading-5 text-zinc-400">
-            No hay lugares disponibles. Elige otra clase de la agenda.
+            Puedes entrar a la lista de espera. La prioridad se aplica automáticamente según tu
+            nivel vigente.
           </p>
-          <Link
-            href={`/student/reservar?date=${returnDate}`}
-            className="mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-2xl border border-fuchsia-500/40 px-4 py-2.5 text-sm font-semibold text-fuchsia-200"
-          >
-            Ver otras clases
-          </Link>
+          <div className="mt-4">
+            <WaitlistControl
+              sessionId={session.session_id}
+              initialWaitlisted={waitlisted}
+              levelTitle={levelTitle}
+            />
+          </div>
         </section>
       ) : eligible ? (
         <section className="rounded-3xl border border-white/10 bg-white/[0.03] p-4">
