@@ -34,10 +34,7 @@ jobs:
         run: npm ci
 
       - name: Format check
-        run: |
-          npx prettier --write supabase/functions/provision-student-access/index.ts
-          git diff -- supabase/functions/provision-student-access/index.ts
-          git diff --exit-code
+        run: npm run format:check
 
       - name: Lint
         run: npm run lint
