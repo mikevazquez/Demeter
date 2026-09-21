@@ -80,11 +80,13 @@ export default async function StudentPortalAccessSection({ studentId }: { studen
                 <span>
                   {account?.must_change_password
                     ? "Pendiente de reemplazar la contraseña temporal en el primer inicio de sesión."
-                    : "Activación completada. Si pierde el acceso, puedes emitir una nueva contraseña temporal."}
+                    : "Activación completada por la alumna."}
                 </span>
               </div>
             </div>
-            <StudentTemporaryPasswordResetter studentId={student.id} phone={student.phone} />
+            {account?.must_change_password ? (
+              <StudentTemporaryPasswordResetter studentId={student.id} phone={student.phone} />
+            ) : null}
           </div>
         ) : student.user_id ? (
           <div className="notice error">
