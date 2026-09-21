@@ -271,7 +271,7 @@ export default async function TechnicalEvaluationDetailPage({
           <form action={recalculateTechnicalEvaluationAction} className="eval-form-actions">
             <input type="hidden" name="evaluation_id" value={evaluation.id} />
             <button className="eval-primary-button" type="submit">
-              Revisar resumen técnico →
+              Finalizar parte técnica →
             </button>
           </form>
         </>
@@ -313,7 +313,7 @@ export default async function TechnicalEvaluationDetailPage({
 
           <section className="eval-feedback-grid">
             <article className="eval-panel eval-feedback-card">
-              <h3>Figuras obligatorias</h3>
+              <h3>Requisitos de progresión · Figuras</h3>
               <p className="eval-row-copy">
                 <small>
                   {
@@ -322,12 +322,12 @@ export default async function TechnicalEvaluationDetailPage({
                         item.mandatory && elementResultMap.get(item.id)?.result_status === "meets",
                     ).length
                   }{" "}
-                  / {templateElements.filter((item) => item.mandatory).length} completas
+                  / {templateElements.filter((item) => item.mandatory).length} cumplen
                 </small>
               </p>
             </article>
             <article className="eval-panel eval-feedback-card">
-              <h3>Combos obligatorios</h3>
+              <h3>Requisitos de progresión · Combos</h3>
               <p className="eval-row-copy">
                 <small>
                   {
@@ -336,14 +336,15 @@ export default async function TechnicalEvaluationDetailPage({
                         item.mandatory && comboResultMap.get(item.id)?.result_status === "meets",
                     ).length
                   }{" "}
-                  / {templateCombos.filter((item) => item.mandatory).length} completos
+                  / {templateCombos.filter((item) => item.mandatory).length} cumplen
                 </small>
               </p>
             </article>
           </section>
           <p className="eval-summary-hint">
-            Cumplir los obligatorios no significa aprobar la evaluación. El resultado global también
-            depende del puntaje total y de los mínimos configurados.
+            Los requisitos de progresión son una condición para subir de nivel, pero todos los
+            elementos de la evaluación deben tener resultado. El resultado global también depende
+            del puntaje total y de los mínimos configurados.
           </p>
         </>
       ) : null}
@@ -364,7 +365,8 @@ export default async function TechnicalEvaluationDetailPage({
             </form>
           ) : (
             <span className="eval-notice">
-              Faltan datos obligatorios. Completa la evaluación antes de finalizarla.
+              Faltan datos por evaluar. Todos los elementos deben tener resultado antes de finalizar
+              la parte técnica.
             </span>
           )}
         </div>
