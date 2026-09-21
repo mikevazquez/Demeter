@@ -174,7 +174,6 @@ export function StudentActivationLinkResender({
   return <StudentActivationAction studentId={studentId} phone={phone} mode="resend" />;
 }
 
-
 export function StudentPasswordRegenerator({ studentId }: { studentId: string }) {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -182,7 +181,11 @@ export function StudentPasswordRegenerator({ studentId }: { studentId: string })
   const [copied, setCopied] = useState(false);
 
   function run() {
-    if (!window.confirm("Se reemplazará la contraseña actual de la alumna. La contraseña anterior dejará de funcionar. ¿Continuar?")) {
+    if (
+      !window.confirm(
+        "Se reemplazará la contraseña actual de la alumna. La contraseña anterior dejará de funcionar. ¿Continuar?",
+      )
+    ) {
       return;
     }
     setError(null);
@@ -223,7 +226,8 @@ export function StudentPasswordRegenerator({ studentId }: { studentId: string })
           {copied ? "Copiada" : "Copiar contraseña"}
         </button>
         <p className="text-sm text-zinc-400">
-          Esta contraseña sólo se muestra en este momento. Studio Flow no la guarda para volver a mostrarla.
+          Esta contraseña sólo se muestra en este momento. Studio Flow no la guarda para volver a
+          mostrarla.
         </p>
       </div>
     );
