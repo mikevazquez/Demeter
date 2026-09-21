@@ -73,7 +73,9 @@ describe("F10 student self-password activation contracts", () => {
     expect(migration).toContain("student_portal_entry_route");
     expect(migration).toContain("return 'profile'");
     expect(migration).toContain("return 'login'");
-    expect(migration).toContain("grant execute on function public.student_portal_entry_route(text) to anon, authenticated");
+    expect(migration).toContain(
+      "grant execute on function public.student_portal_entry_route(text) to anon, authenticated",
+    );
   });
 
   it("builds the activation URL from the active environment host", () => {
