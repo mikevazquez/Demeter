@@ -52,8 +52,7 @@
   border: 1px solid #2a3441;
   border-radius: 13px;
   background:
-    radial-gradient(circle at 50% 0%, rgba(255, 10, 138, 0.055), transparent 65%),
-    #0d1219;
+    radial-gradient(circle at 50% 0%, rgba(255, 10, 138, 0.055), transparent 65%), #0d1219;
   color: #dce3ec;
   text-decoration: none;
   box-shadow: 0 9px 26px rgba(0, 0, 0, 0.13);
@@ -98,9 +97,7 @@
   overflow: hidden;
   border: 1px solid #27313d;
   border-radius: 19px;
-  background:
-    radial-gradient(circle at 24% 0%, rgba(255, 10, 138, 0.06), transparent 36%),
-    #0c1118;
+  background: radial-gradient(circle at 24% 0%, rgba(255, 10, 138, 0.06), transparent 36%), #0c1118;
   box-shadow: 0 12px 36px rgba(0, 0, 0, 0.14);
 }
 
@@ -706,8 +703,7 @@
   border: 1px solid #29333f;
   border-radius: 16px;
   background:
-    radial-gradient(circle at 100% 0%, rgba(255, 10, 138, 0.05), transparent 34%),
-    #0f151d;
+    radial-gradient(circle at 100% 0%, rgba(255, 10, 138, 0.05), transparent 34%), #0f151d;
 }
 
 .agenda-config-card h2 {

@@ -20,10 +20,7 @@ function withQuery(url: string, key: string, value: string) {
 }
 
 function sessionManagementReturn(formData: FormData, sessionId: string) {
-  return safeAdminReturn(
-    String(formData.get("return_to") ?? ""),
-    `/admin/agenda/${sessionId}`,
-  );
+  return safeAdminReturn(String(formData.get("return_to") ?? ""), `/admin/agenda/${sessionId}`);
 }
 
 function zonedDateTimeToUtc(localDateTime: string, timeZone: string) {

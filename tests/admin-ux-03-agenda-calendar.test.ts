@@ -29,8 +29,8 @@ describe("ADMIN-UX-03 Agenda calendario operativo", () => {
 
   it("edits a selected session directly from Agenda", () => {
     expect(agenda).toContain("agenda-session-editor");
-    expect(agenda).toContain('action={updateSession}');
-    expect(agenda).toContain('action={cancelSession}');
+    expect(agenda).toContain("action={updateSession}");
+    expect(agenda).toContain("action={cancelSession}");
     expect(agenda).toContain('name="return_to"');
     expect(agenda).toContain("Solo esta sesión");
     expect(agenda).toContain("Esta y siguientes");
@@ -58,6 +58,6 @@ describe("ADMIN-UX-03 Agenda calendario operativo", () => {
     expect(agenda).toContain('id="configuracion-agenda"');
     expect(agenda).toContain("Actividades y horarios recurrentes");
     expect(agenda).toContain("<ScheduleBuilder");
-    expect(agenda).toContain('action={createRecurringSchedules}');
+    expect(agenda).toContain("action={createRecurringSchedules}");
   });
 });

@@ -299,9 +299,7 @@ export default async function AgendaPage({
     ? Math.min(...calendarSessions.map((session) => session.startMinute))
     : 7 * 60;
   const latestMinute = calendarSessions.length
-    ? Math.max(
-        ...calendarSessions.map((session) => session.startMinute + session.durationMinutes),
-      )
+    ? Math.max(...calendarSessions.map((session) => session.startMinute + session.durationMinutes))
     : 22 * 60;
   const calendarStartHour = Math.max(0, Math.min(7, Math.floor(earliestMinute / 60)));
   const calendarEndHour = Math.min(24, Math.max(22, Math.ceil(latestMinute / 60)));
@@ -312,10 +310,10 @@ export default async function AgendaPage({
   );
 
   const selectedSession = params.session
-    ? calendarSessions.find((session) => session.id === params.session) ?? null
+    ? (calendarSessions.find((session) => session.id === params.session) ?? null)
     : null;
   const selectedTemplate = selectedSession
-    ? templateMap.get(selectedSession.template_id) ?? null
+    ? (templateMap.get(selectedSession.template_id) ?? null)
     : null;
   const selectedLocalInput = selectedSession
     ? new Intl.DateTimeFormat("sv-SE", {
@@ -365,13 +363,22 @@ export default async function AgendaPage({
           <p>Organiza, visualiza y haz que todo fluya.</p>
         </div>
         <div className="agenda-header-actions">
-          <Link className="agenda-icon-button" href={`/admin/agenda?date=${previousWeekKey}`} aria-label="Semana anterior">
+          <Link
+            className="agenda-icon-button"
+            href={`/admin/agenda?date=${previousWeekKey}`}
+            aria-label="Semana anterior"
+          >
             ‹
           </Link>
           <strong className="agenda-week-range">
-            {weekStart.getUTCDate()} {shortMonth(weekStart)} — {weekEnd.getUTCDate()} {shortMonth(weekEnd)}
+            {weekStart.getUTCDate()} {shortMonth(weekStart)} — {weekEnd.getUTCDate()}{" "}
+            {shortMonth(weekEnd)}
           </strong>
-          <Link className="agenda-icon-button" href={`/admin/agenda?date=${nextWeekKey}`} aria-label="Semana siguiente">
+          <Link
+            className="agenda-icon-button"
+            href={`/admin/agenda?date=${nextWeekKey}`}
+            aria-label="Semana siguiente"
+          >
             ›
           </Link>
           <Link className="agenda-today-button" href={`/admin/agenda?date=${todayKey}`}>
@@ -476,7 +483,8 @@ export default async function AgendaPage({
                           }
                         >
                           <span className="agenda-session-time">
-                            {formatTime(session.starts_at, timeZone)} – {formatTime(session.ends_at, timeZone)}
+                            {formatTime(session.starts_at, timeZone)} –{" "}
+                            {formatTime(session.ends_at, timeZone)}
                           </span>
                           <strong>{session.name}</strong>
                           <small>
@@ -515,7 +523,11 @@ export default async function AgendaPage({
                 </strong>
                 <small>cupos</small>
               </div>
-              <Link className="agenda-editor-close" href={`/admin/agenda?date=${selectedKey}`} aria-label="Cerrar edición">
+              <Link
+                className="agenda-editor-close"
+                href={`/admin/agenda?date=${selectedKey}`}
+                aria-label="Cerrar edición"
+              >
                 ×
               </Link>
             </div>
@@ -536,7 +548,12 @@ export default async function AgendaPage({
 
                   <label className="agenda-editor-field">
                     <span>Horario</span>
-                    <input name="starts_at" type="datetime-local" defaultValue={selectedLocalInput} required />
+                    <input
+                      name="starts_at"
+                      type="datetime-local"
+                      defaultValue={selectedLocalInput}
+                      required
+                    />
                   </label>
 
                   <label className="agenda-editor-field">
@@ -720,7 +737,14 @@ export default async function AgendaPage({
                   <div className="form-split">
                     <label>
                       Duración (min)
-                      <input name="duration_minutes" type="number" min="15" max="360" defaultValue="60" required />
+                      <input
+                        name="duration_minutes"
+                        type="number"
+                        min="15"
+                        max="360"
+                        defaultValue="60"
+                        required
+                      />
                     </label>
                     <label>
                       Créditos
@@ -734,7 +758,14 @@ export default async function AgendaPage({
                     </label>
                     <label>
                       Precio clase suelta (MXN)
-                      <input name="drop_in_price" type="number" min="0" step="0.01" inputMode="decimal" placeholder="Opcional" />
+                      <input
+                        name="drop_in_price"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        inputMode="decimal"
+                        placeholder="Opcional"
+                      />
                     </label>
                   </div>
                   <label>
