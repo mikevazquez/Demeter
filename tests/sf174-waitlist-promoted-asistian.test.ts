@@ -21,8 +21,8 @@ describe("SF-174 waitlist_promoted Asistian routing", () => {
   );
 
   it("uses a dedicated AUT-CAT-17 processor and Asistian transport", () => {
-    expect(processor).toContain('WAITLIST_PROMOTED_CATALOG_CODE');
-    expect(processor).toContain('template: WAITLIST_PROMOTED_TEMPLATE');
+    expect(processor).toContain("WAITLIST_PROMOTED_CATALOG_CODE");
+    expect(processor).toContain("template: WAITLIST_PROMOTED_TEMPLATE");
     expect(processor).toContain('p_provider_key: "asistian"');
     expect(processor).toContain("await sendAsistianWebhook({");
     expect(processor).not.toContain("MockMessagingProvider");

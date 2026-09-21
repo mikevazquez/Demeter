@@ -338,8 +338,7 @@ export const AUTOMATION_CATALOG = [
     configurationMode: "single",
     output: {
       kind: "whatsapp_student",
-      description:
-        "Comunica que se liberó un lugar y que la alumna ya quedó dentro de la clase.",
+      description: "Comunica que se liberó un lugar y que la alumna ya quedó dentro de la clase.",
     },
     sequenceIds: [],
     requirements: [],

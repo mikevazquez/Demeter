@@ -346,11 +346,7 @@ const handler = {
 
     const waitlistEntryId = safeText(eventPayload.waitlist_entry_id);
 
-    if (
-      eventSource !== "waitlist" ||
-      !waitlistEntryId ||
-      !UUID_PATTERN.test(waitlistEntryId)
-    ) {
+    if (eventSource !== "waitlist" || !waitlistEntryId || !UUID_PATTERN.test(waitlistEntryId)) {
       return jsonResponse({ error: "waitlist_event_invalid" }, 409);
     }
 
