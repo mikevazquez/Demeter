@@ -173,9 +173,17 @@ export default async function InstructorProfilePage({
               />
             </>
           ) : accessState === "active" ? (
-            <div className="notice success">
-              Acceso Coach activo y contraseña inicial ya reemplazada por el instructor.
-            </div>
+            <>
+              <div className="notice success">
+                Acceso Coach activo y contraseña inicial ya reemplazada por el instructor. Si pierde
+                el acceso, puedes emitir una nueva contraseña temporal.
+              </div>
+              <InstructorAccessProvisioner
+                instructorId={instructor.id}
+                email={email ?? ""}
+                mode="reset"
+              />
+            </>
           ) : (
             <div className="notice error">
               La cuenta de acceso está incompleta o inactiva. No se harán reparaciones automáticas;
