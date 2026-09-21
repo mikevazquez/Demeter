@@ -123,12 +123,6 @@ export default async function StudentReservationDetailPage({
         Mis clases
       </Link>
 
-      {query.invited ? (
-        <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.08] px-4 py-3 text-sm text-emerald-100">
-          Invitación confirmada. Tu invitado ya ocupa un lugar real en esta clase.
-        </div>
-      ) : null}
-
       {query.guest_cancelled ? (
         <div className="rounded-2xl border border-amber-400/20 bg-amber-400/[0.07] px-4 py-3 text-sm text-amber-100">
           {query.guest_cancelled === "returned"
