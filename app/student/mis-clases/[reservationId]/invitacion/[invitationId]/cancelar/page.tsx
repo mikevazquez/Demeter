@@ -29,16 +29,19 @@ export default async function StudentCancelGuestInvitationPage({
   const { reservationId, invitationId } = await params;
   const { supabase, studio } = await getStudentPortalContext();
 
-  const [{ data: classesData, error: classesError }, { data: invitationContextData }, { data: previewData }] =
-    await Promise.all([
-      supabase.rpc("student_classes_feed"),
-      supabase.rpc("student_reward_invitation_context", {
-        target_host_reservation_id: reservationId,
-      }),
-      supabase.rpc("student_cancellation_preview", {
-        target_reservation_id: reservationId,
-      }),
-    ]);
+  const [
+    { data: classesData, error: classesError },
+    { data: invitationContextData },
+    { data: previewData },
+  ] = await Promise.all([
+    supabase.rpc("student_classes_feed"),
+    supabase.rpc("student_reward_invitation_context", {
+      target_host_reservation_id: reservationId,
+    }),
+    supabase.rpc("student_cancellation_preview", {
+      target_reservation_id: reservationId,
+    }),
+  ]);
 
   if (classesError || !classesData) {
     throw new Error("student_classes_feed_failed");
