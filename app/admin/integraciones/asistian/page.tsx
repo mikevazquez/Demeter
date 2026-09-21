@@ -3,20 +3,27 @@ import Link from "next/link";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getAdminContext } from "@/lib/auth/admin-context";
 
-import { sendAsistianHandshake } from "./actions";
+import { saveAsistianSigningSecret, sendAsistianHandshake } from "./actions";
 
 const errorCopy: Record<string, string> = {
   invalid_url: "La URL no es válida. Debe ser la URL HTTPS del Webhook entrante de Asistian.",
   network:
     "No se pudo conectar con Asistian. Verifica que siga en modo escucha e inténtalo de nuevo.",
   http: "Asistian rechazó el webhook de prueba.",
-  save: "No se pudo guardar el webhook de Asistian en el Vault de Sandbox.",
+  save: "No se pudo guardar el webhook de Asistian en el Vault del entorno actual.",
+  invalid_secret: "El Signing Secret no parece válido.",
+  secret_save: "No se pudo guardar el Signing Secret en Supabase Vault.",
 };
 
 export default async function AsistianIntegrationTestPage({
   searchParams,
 }: {
-  searchParams: Promise<{ sent?: string; error?: string; status?: string }>;
+  searchParams: Promise<{
+    sent?: string;
+    error?: string;
+    status?: string;
+    secret_saved?: string;
+  }>;
 }) {
   await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
   const query = await searchParams;
@@ -31,8 +38,8 @@ export default async function AsistianIntegrationTestPage({
           <p className="eyebrow">INTEGRACIONES · ASISTIAN</p>
           <h1 className="dashboard-title">Prueba de conexión</h1>
           <p>
-            Usa esta pantalla únicamente mientras Asistian esté en modo escucha. La URL se guarda
-            cifrada en el Vault de Sandbox y no se expone en el repositorio ni en la auditoría.
+            La URL y el Signing Secret se guardan cifrados en Supabase Vault y no se exponen en el
+            repositorio ni en la auditoría.
           </p>
         </div>
       </header>
@@ -41,6 +48,12 @@ export default async function AsistianIntegrationTestPage({
         <div className="notice success">
           Webhook enviado correctamente a Asistian
           {query.status ? ` · HTTP ${query.status}` : ""}. Revisa la captura de campos en Asistian.
+        </div>
+      ) : null}
+
+      {query.secret_saved === "1" ? (
+        <div className="notice success">
+          Signing Secret guardado de forma segura en Supabase Vault.
         </div>
       ) : null}
 
@@ -77,7 +90,38 @@ export default async function AsistianIntegrationTestPage({
           </p>
 
           <button className="primary-button" type="submit">
-            Guardar en Sandbox y enviar prueba
+            Guardar webhook y enviar prueba
+          </button>
+        </form>
+      </section>
+
+      <section className="panel">
+        <div className="panel-heading">
+          <div>
+            <p className="eyebrow">SEGURIDAD · WEBHOOK ENTRANTE</p>
+            <h2>Signing Secret de Asistian</h2>
+          </div>
+        </div>
+
+        <form action={saveAsistianSigningSecret} className="compact-form">
+          <label>
+            Signing Secret
+            <input
+              type="password"
+              name="signing_secret"
+              placeholder="Pega aquí el secreto"
+              autoComplete="off"
+              required
+            />
+          </label>
+
+          <p className="text-sm text-zinc-400">
+            El valor se envía directamente al servidor y se guarda cifrado en Supabase Vault. No se
+            vuelve a mostrar en esta pantalla.
+          </p>
+
+          <button className="primary-button" type="submit">
+            Guardar Signing Secret
           </button>
         </form>
       </section>
