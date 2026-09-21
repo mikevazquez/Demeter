@@ -2,6 +2,7 @@
 
 import { FunctionsHttpError } from "@supabase/supabase-js";
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getAdminContext } from "@/lib/auth/admin-context";
@@ -15,6 +16,10 @@ export type ProvisionStudentAccessResult =
       phone: string;
       temporaryPassword: string;
       mustChangePassword: true;
+      welcomeDelivery: {
+        status: "accepted" | "skipped" | "error";
+        errorCode: string | null;
+      } | null;
     }
   | { ok: false; error: string };
 
@@ -77,8 +82,24 @@ async function invokeStudentAccess(
     return { ok: false, error: "provision_unavailable" };
   }
 
+  let body: { studentId: string; mode?: "reset"; loginUrl?: string };
+
+  if (mode === "reset") {
+    body = { studentId, mode: "reset" };
+  } else {
+    const requestHeaders = await headers();
+    const forwardedHost = requestHeaders.get("x-forwarded-host")?.split(",")[0]?.trim();
+    const host = forwardedHost || requestHeaders.get("host")?.trim();
+    if (!host) return { ok: false, error: "provision_unavailable" };
+
+    body = {
+      studentId,
+      loginUrl: new URL("/login/student", `https://${host}`).toString(),
+    };
+  }
+
   const { data, error } = await supabase.functions.invoke("provision-student-access", {
-    body: mode === "reset" ? { studentId, mode: "reset" } : { studentId },
+    body,
     headers: {
       Authorization: `Bearer ${session.access_token}`,
     },
@@ -99,6 +120,21 @@ async function invokeStudentAccess(
     phone: String(data.phone),
     temporaryPassword: String(data.temporaryPassword),
     mustChangePassword: true,
+    welcomeDelivery:
+      mode === "provision" && data.welcomeDelivery && typeof data.welcomeDelivery === "object"
+        ? {
+            status:
+              data.welcomeDelivery.status === "accepted"
+                ? "accepted"
+                : data.welcomeDelivery.status === "skipped"
+                  ? "skipped"
+                  : "error",
+            errorCode:
+              typeof data.welcomeDelivery.errorCode === "string"
+                ? data.welcomeDelivery.errorCode
+                : null,
+          }
+        : null,
   };
 }
 
