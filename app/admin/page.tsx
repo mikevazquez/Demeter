@@ -163,7 +163,7 @@ export default async function AdminPage({
     headerName
       .split(/\s+/)
       .slice(0, 2)
-      .map((part) => part.slice(0, 1).toUpperCase())
+      .map((part: string) => part.slice(0, 1).toUpperCase())
       .join("") || "U";
   const timeZone = studio.timezone ?? "America/Mexico_City";
   const now = new Date();
