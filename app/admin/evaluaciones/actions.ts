@@ -764,8 +764,6 @@ function lines(value: string) {
 export async function publishTechnicalEvaluationAction(formData: FormData) {
   const ctx = await getAdminContext(CAPABILITIES.EVALUATIONS_WRITE);
   const evaluationId = text(formData, "evaluation_id");
-  const finalOutcome = text(formData, "final_outcome") || null;
-  const overrideReason = text(formData, "override_reason") || null;
   const strengths = lines(text(formData, "strengths"));
   const improvementAreas = lines(text(formData, "improvement_areas"));
   const coachMessage = text(formData, "coach_message");
@@ -773,8 +771,8 @@ export async function publishTechnicalEvaluationAction(formData: FormData) {
 
   const { error } = await ctx.supabase.rpc("admin_publish_technical_evaluation", {
     p_evaluation_id: evaluationId,
-    p_final_outcome: finalOutcome,
-    p_override_reason: overrideReason,
+    p_final_outcome: null,
+    p_override_reason: null,
     p_strengths: strengths,
     p_improvement_areas: improvementAreas,
     p_coach_message: coachMessage || null,
