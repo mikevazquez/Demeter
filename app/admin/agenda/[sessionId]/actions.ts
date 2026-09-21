@@ -8,6 +8,24 @@ import { CAPABILITIES } from "@/lib/auth/capabilities";
 
 type AdminSupabaseClient = Awaited<ReturnType<typeof getAdminContext>>["supabase"];
 
+function safeAdminReturn(value: string, fallback: string) {
+  if (!value.startsWith("/admin") || value.startsWith("//")) return fallback;
+  return value;
+}
+
+function withQuery(url: string, key: string, value: string) {
+  const [base, hash] = url.split("#", 2);
+  const next = `${base}${base.includes("?") ? "&" : "?"}${key}=${encodeURIComponent(value)}`;
+  return hash ? `${next}#${hash}` : next;
+}
+
+function sessionManagementReturn(formData: FormData, sessionId: string) {
+  return safeAdminReturn(
+    String(formData.get("return_to") ?? ""),
+    `/admin/agenda/${sessionId}`,
+  );
+}
+
 function zonedDateTimeToUtc(localDateTime: string, timeZone: string) {
   const [datePart, timePart] = localDateTime.split("T");
   if (!datePart || !timePart) throw new Error("Invalid datetime");
@@ -70,6 +88,7 @@ async function validateResources(
 
 export async function updateSession(formData: FormData) {
   const sessionId = String(formData.get("session_id") ?? "");
+  const returnUrl = sessionManagementReturn(formData, sessionId);
   const startsLocal = String(formData.get("starts_at") ?? "");
   const instructorId = String(formData.get("instructor_id") ?? "") || null;
   const spaceId = String(formData.get("space_id") ?? "") || null;
@@ -77,7 +96,7 @@ export async function updateSession(formData: FormData) {
   const notes = String(formData.get("notes") ?? "").trim() || null;
   const scope = String(formData.get("scope") ?? "single");
   if (!sessionId || !startsLocal || !Number.isFinite(capacity) || capacity < 1)
-    redirect(`/admin/agenda/${sessionId}?error=edit`);
+    redirect(withQuery(returnUrl, "error", "edit"));
   const { supabase, studio } = await getAdminContext(CAPABILITIES.SCHEDULE_WRITE);
   const { data: session } = await supabase
     .from("class_sessions")
@@ -85,14 +104,14 @@ export async function updateSession(formData: FormData) {
     .eq("id", sessionId)
     .eq("studio_id", studio.id)
     .single();
-  if (!session || session.status !== "scheduled") redirect("/admin/agenda");
+  if (!session || session.status !== "scheduled") redirect(returnUrl);
   const { data: template } = await supabase
     .from("class_templates")
     .select("duration_minutes")
     .eq("id", session.template_id)
     .eq("studio_id", studio.id)
     .single();
-  if (!template) redirect(`/admin/agenda/${sessionId}?error=edit`);
+  if (!template) redirect(withQuery(returnUrl, "error", "edit"));
   const resourceError = await validateResources(
     supabase,
     studio.id,
@@ -100,7 +119,7 @@ export async function updateSession(formData: FormData) {
     spaceId,
     capacity,
   );
-  if (resourceError) redirect(`/admin/agenda/${sessionId}?error=${resourceError}`);
+  if (resourceError) redirect(withQuery(returnUrl, "error", resourceError));
   const startsAt = zonedDateTimeToUtc(startsLocal, studio.timezone);
   const durationMs = template.duration_minutes * 60_000;
   const endsAt = new Date(startsAt.getTime() + durationMs);
@@ -125,7 +144,7 @@ export async function updateSession(formData: FormData) {
         p_space_id: spaceId,
         p_exclude_session_id: item.id,
       });
-      if (conflict) redirect(`/admin/agenda/${sessionId}?error=conflict`);
+      if (conflict) redirect(withQuery(returnUrl, "error", "conflict"));
     }
     for (const item of future ?? []) {
       const nextStart = new Date(new Date(item.starts_at).getTime() + delta);
@@ -168,7 +187,7 @@ export async function updateSession(formData: FormData) {
       p_space_id: spaceId,
       p_exclude_session_id: sessionId,
     });
-    if (conflict) redirect(`/admin/agenda/${sessionId}?error=conflict`);
+    if (conflict) redirect(withQuery(returnUrl, "error", "conflict"));
     const { error } = await supabase
       .from("class_sessions")
       .update({
@@ -182,16 +201,17 @@ export async function updateSession(formData: FormData) {
       })
       .eq("id", sessionId)
       .eq("studio_id", studio.id);
-    if (error) redirect(`/admin/agenda/${sessionId}?error=edit`);
+    if (error) redirect(withQuery(returnUrl, "error", "edit"));
   }
   revalidatePath(`/admin/agenda/${sessionId}`);
   revalidatePath("/admin/agenda");
   revalidatePath("/admin");
-  redirect(`/admin/agenda/${sessionId}?created=edit`);
+  redirect(withQuery(returnUrl, "created", "edit"));
 }
 
 export async function cancelSession(formData: FormData) {
   const sessionId = String(formData.get("session_id") ?? "");
+  const returnUrl = sessionManagementReturn(formData, sessionId);
   const scope = String(formData.get("scope") ?? "single");
   if (!sessionId) redirect("/admin/agenda");
   const { supabase, studio } = await getAdminContext(CAPABILITIES.SCHEDULE_WRITE);
@@ -201,7 +221,7 @@ export async function cancelSession(formData: FormData) {
     .eq("id", sessionId)
     .eq("studio_id", studio.id)
     .single();
-  if (!session) redirect("/admin/agenda");
+  if (!session) redirect(returnUrl);
   if (scope === "future" && session.recurring_schedule_id) {
     await supabase
       .from("class_sessions")
@@ -227,7 +247,7 @@ export async function cancelSession(formData: FormData) {
   revalidatePath(`/admin/agenda/${sessionId}`);
   revalidatePath("/admin/agenda");
   revalidatePath("/admin");
-  redirect(`/admin/agenda/${sessionId}?created=cancel-session`);
+  redirect(withQuery(returnUrl, "created", "cancel-session"));
 }
 
 export async function bookStudent(formData: FormData) {
