@@ -680,6 +680,27 @@ export async function createTechnicalEvaluationAction(formData: FormData) {
   redirect(`/admin/evaluaciones/${evaluationId}`);
 }
 
+export async function saveTechnicalCriterionResultAction(formData: FormData) {
+  const ctx = await getAdminContext(CAPABILITIES.EVALUATIONS_WRITE);
+  const evaluationId = text(formData, "evaluation_id");
+  const templateCriterionId = text(formData, "template_criterion_id");
+  const rawScore = text(formData, "score_percent");
+  const notes = text(formData, "notes");
+
+  if (!rawScore) return { ok: false, message: "Captura una puntuación." };
+
+  const { error } = await ctx.supabase.rpc("admin_save_technical_criterion_result", {
+    p_evaluation_id: evaluationId,
+    p_template_criterion_id: templateCriterionId,
+    p_score_percent: Number(rawScore),
+    p_notes: notes || null,
+  });
+
+  if (error) return { ok: false, message: error.message };
+  revalidatePath(`/admin/evaluaciones/${evaluationId}`);
+  return { ok: true };
+}
+
 export async function saveTechnicalElementResultAction(formData: FormData) {
   const ctx = await getAdminContext(CAPABILITIES.EVALUATIONS_WRITE);
   const evaluationId = text(formData, "evaluation_id");
