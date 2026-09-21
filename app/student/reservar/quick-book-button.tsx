@@ -5,6 +5,8 @@ import { useState, useTransition } from "react";
 
 import { bookStudentSessionInlineAction } from "@/app/student/actions";
 
+import WaitlistControl from "./WaitlistControl";
+
 const errorCopy: Record<string, string> = {
   booking_failed: "No pudimos crear la reserva. Revisa la clase e intenta de nuevo.",
   forbidden: "Tu cuenta no puede reservar esta clase.",
@@ -27,6 +29,9 @@ type Props = {
   timeLabel: string;
   eligible: boolean;
   reserved: boolean;
+  full?: boolean;
+  waitlisted?: boolean;
+  levelTitle?: string | null;
 };
 
 export function QuickBookButton({
@@ -36,6 +41,9 @@ export function QuickBookButton({
   timeLabel,
   eligible,
   reserved,
+  full = false,
+  waitlisted = false,
+  levelTitle = null,
 }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -81,6 +89,13 @@ export function QuickBookButton({
         >
           {isPending ? "Reservando…" : "Reservar"}
         </button>
+      ) : full ? (
+        <WaitlistControl
+          sessionId={sessionId}
+          initialWaitlisted={waitlisted}
+          levelTitle={levelTitle}
+          compact
+        />
       ) : null}
 
       {modal ? (
