@@ -158,9 +158,7 @@ describe("SF-255A monthly level and waitlist contracts", () => {
     expect(reservationDetail).toContain("minLength={10}");
     expect(reservationDetail).toContain("maxLength={10}");
     expect(reservationDetail).toContain('placeholder="3312345678"');
-    expect(reservationDetail).toContain(
-      "Agregamos el código de país automáticamente.",
-    );
+    expect(reservationDetail).toContain("Agregamos el código de país automáticamente.");
     expect(phoneNormalizationMigration).toContain(
       "right(regexp_replace(pc.value,'[^0-9]','','g'),10)",
     );
