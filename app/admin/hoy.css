@@ -1140,7 +1140,6 @@
   }
 }
 
-
 /* ADMIN Hoy · screenshot parity correction
    Prevent the dashboard grid from stretching compact rows to viewport height
    and keep the approved mobile composition dense. */
@@ -1410,7 +1409,6 @@
     min-height: 68px;
   }
 }
-
 
 .hoy-product-header {
   display: none;
