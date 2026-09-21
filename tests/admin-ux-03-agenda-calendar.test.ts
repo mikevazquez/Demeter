@@ -11,6 +11,7 @@ function source(path: string) {
 describe("ADMIN-UX-03 Agenda calendario operativo", () => {
   const agenda = source("app/admin/agenda/page.tsx");
   const actions = source("app/admin/agenda/[sessionId]/actions.ts");
+  const configuration = source("app/admin/agenda/configuracion/page.tsx");
   const styles = source("app/admin/agenda/agenda-calendar.css");
 
   it("replaces the old session list with the approved calendar architecture", () => {
@@ -55,10 +56,18 @@ describe("ADMIN-UX-03 Agenda calendario operativo", () => {
     expect(styles).toContain("#ff0a8a");
   });
 
-  it("keeps recurring configuration available without competing with daily operation", () => {
-    expect(agenda).toContain('id="configuracion-agenda"');
-    expect(agenda).toContain("Actividades y horarios recurrentes");
-    expect(agenda).toContain("<ScheduleBuilder");
-    expect(agenda).toContain("action={createRecurringSchedules}");
+  it("keeps recurring configuration available without cluttering the calendar", () => {
+    expect(agenda).not.toContain('id="configuracion-agenda"');
+    expect(agenda).toContain('href="/admin/agenda/configuracion"');
+    expect(configuration).toContain("<ScheduleBuilder");
+    expect(configuration).toContain("action={createRecurringSchedules}");
+    expect(configuration).toContain('id="programar-clase"');
+  });
+
+  it("keeps class names visible in compact mobile blocks", () => {
+    expect(agenda).toContain("<strong>{session.name}</strong>");
+    expect(styles).toContain(".agenda-session-block strong");
+    expect(styles).toContain("font-size: 13px");
+    expect(styles).toContain("padding: 6px 52px 6px 14px");
   });
 });
