@@ -1,10 +1,13 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
+import { PurchasePackageButton } from "@/app/student/paquete/purchase-package-button";
+import PurchaseSingleClassButton from "@/app/student/reservar/PurchaseSingleClassButton";
 import {
   bookingReasonCopy,
   formatDate,
   formatDateTime,
+  formatMoney,
   getStudentPortalContext,
   type StudentSession,
 } from "@/lib/student/portal";
@@ -23,6 +26,23 @@ type InvitationDetail = {
   reservation_id: string | null;
 };
 
+type RewardPricePreview = {
+  regular_amount_minor?: number;
+  final_amount_minor?: number;
+  discount_pct?: number;
+  level_title?: string | null;
+};
+
+type PurchasableProduct = {
+  id: string;
+  name: string;
+  price_minor: number;
+  currency: string;
+  credit_limit: number | null;
+  unlimited: boolean;
+  validity_days: number | null;
+};
+
 const purchaseReasons = new Set(["no_active_product", "outside_product", "no_credits"]);
 
 function errorCopy(value?: string) {
@@ -37,6 +57,12 @@ function errorCopy(value?: string) {
   return value ? (copy[value] ?? bookingReasonCopy(value)) : null;
 }
 
+function productBenefit(product: PurchasableProduct) {
+  if (product.unlimited) return "Acceso ilimitado";
+  if (product.credit_limit) return `${product.credit_limit} clases`;
+  return "Paquete de clases";
+}
+
 export default async function ScheduleEvaluationPage({
   params,
   searchParams,
@@ -46,7 +72,7 @@ export default async function ScheduleEvaluationPage({
 }) {
   const { invitationId } = await params;
   const qs = await searchParams;
-  const { supabase, studio } = await getStudentPortalContext();
+  const { supabase, studio, membership } = await getStudentPortalContext();
 
   const { data: invitationData, error: invitationError } = await supabase.rpc(
     "student_evaluation_invitation_detail",
@@ -83,6 +109,46 @@ export default async function ScheduleEvaluationPage({
     : null;
   const needsPurchase = Boolean(qs.error && purchaseReasons.has(qs.error));
   const errorMessage = errorCopy(qs.error);
+
+  let rewardPrice: RewardPricePreview | null = null;
+  let eligiblePackages: PurchasableProduct[] = [];
+
+  if (needsPurchase && selectedSession) {
+    if (selectedSession.drop_in_price_minor != null) {
+      const { data: rewardPriceData } = await supabase.rpc("student_reward_single_class_price", {
+        target_session_id: selectedSession.session_id,
+      });
+      rewardPrice = (rewardPriceData as RewardPricePreview | null) ?? null;
+    }
+
+    const { data: disciplineProductRows } = await supabase
+      .from("product_template_disciplines")
+      .select("product_template_id")
+      .eq("studio_id", membership.studio_id)
+      .eq("discipline_id", invitation.discipline_id);
+
+    const eligibleProductIds = [
+      ...new Set((disciplineProductRows ?? []).map((row) => row.product_template_id)),
+    ];
+
+    if (eligibleProductIds.length) {
+      const { data: productRows } = await supabase
+        .from("product_templates")
+        .select("id,name,price_minor,currency,credit_limit,unlimited,validity_days")
+        .eq("studio_id", membership.studio_id)
+        .eq("active", true)
+        .eq("online_purchasable", true)
+        .in("product_type", ["package", "membership"])
+        .in("id", eligibleProductIds)
+        .order("price_minor", { ascending: true });
+
+      eligiblePackages = (productRows ?? []) as PurchasableProduct[];
+    }
+  }
+
+  const regularDropInMinor =
+    rewardPrice?.regular_amount_minor ?? selectedSession?.drop_in_price_minor ?? 0;
+  const finalDropInMinor = rewardPrice?.final_amount_minor ?? regularDropInMinor;
 
   return (
     <main className="space-y-5 pb-4">
@@ -125,30 +191,94 @@ export default async function ScheduleEvaluationPage({
           }
         >
           <h2 className="text-lg font-semibold text-white">
-            {needsPurchase ? "Necesitas créditos" : "No pudimos programarla"}
+            {needsPurchase ? "Elige cómo quieres acceder a esta clase" : "No pudimos programarla"}
           </h2>
-          <p className="mt-1 text-xs leading-5 text-zinc-400">{errorMessage}</p>
+          <p className="mt-1 text-xs leading-5 text-zinc-400">
+            {needsPurchase
+              ? "No tienes un paquete o crédito vigente para esta reserva. Puedes pagar sólo esta clase o comprar un paquete sin salir del flujo de tu evaluación."
+              : errorMessage}
+          </p>
 
           {needsPurchase && selectedSession ? (
-            <div className="mt-4 grid gap-2 sm:grid-cols-2">
-              <Link
-                href={"/student/reservar/" + selectedSession.session_id}
-                className="flex min-h-20 flex-col justify-center rounded-2xl border border-fuchsia-500/25 bg-fuchsia-500/[0.06] px-4 transition hover:bg-fuchsia-500/[0.1]"
-              >
-                <strong className="text-sm text-white">Comprar una clase</strong>
-                <span className="mt-1 text-xs text-zinc-500">
-                  Reserva esta misma clase usando la opción de clase suelta.
-                </span>
-              </Link>
-              <Link
-                href="/student/paquete#catalogo-paquetes"
-                className="flex min-h-20 flex-col justify-center rounded-2xl border border-white/10 bg-white/[0.025] px-4 transition hover:border-fuchsia-500/25"
-              >
-                <strong className="text-sm text-white">Comprar un paquete</strong>
-                <span className="mt-1 text-xs text-zinc-500">
-                  Continúa tu entrenamiento y vuelve después a programar.
-                </span>
-              </Link>
+            <div className="mt-5 space-y-4">
+              {selectedSession.drop_in_price_minor != null ? (
+                <div className="rounded-2xl border border-fuchsia-500/25 bg-black/15 p-4">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-fuchsia-300">
+                        Opción 1
+                      </p>
+                      <h3 className="mt-1 text-base font-semibold text-white">Pagar esta clase</h3>
+                      <p className="mt-1 text-xs text-zinc-500">
+                        Compra únicamente el acceso para la clase que elegiste.
+                      </p>
+                    </div>
+                    <strong className="text-base text-white">
+                      {formatMoney(finalDropInMinor)} MXN
+                    </strong>
+                  </div>
+                  <div className="mt-4">
+                    <PurchaseSingleClassButton
+                      sessionId={selectedSession.session_id}
+                      priceLabel={formatMoney(finalDropInMinor).replace(".00", "")}
+                      regularPriceLabel={formatMoney(regularDropInMinor).replace(".00", "")}
+                      discountPct={rewardPrice?.discount_pct ?? 0}
+                      levelTitle={rewardPrice?.level_title ?? null}
+                      evaluationInvitationId={invitation.id}
+                      evaluationSessionId={selectedSession.session_id}
+                    />
+                  </div>
+                </div>
+              ) : null}
+
+              <div className="rounded-2xl border border-white/10 bg-black/15 p-4">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-violet-300">
+                  {selectedSession.drop_in_price_minor != null ? "Opción 2" : "Comprar acceso"}
+                </p>
+                <h3 className="mt-1 text-base font-semibold text-white">Comprar un paquete</h3>
+                <p className="mt-1 text-xs text-zinc-500">
+                  Elige un paquete válido para {invitation.discipline_name}. Al confirmar el pago,
+                  Studio Flow intentará programar esta misma evaluación automáticamente.
+                </p>
+
+                {eligiblePackages.length ? (
+                  <div className="mt-4 grid gap-2">
+                    {eligiblePackages.map((product) => (
+                      <article
+                        key={product.id}
+                        className="grid gap-3 rounded-2xl border border-white/10 bg-white/[0.025] p-4 sm:grid-cols-[1fr_auto] sm:items-center"
+                      >
+                        <div>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <strong className="text-sm text-white">{product.name}</strong>
+                            <span className="rounded-full bg-white/[0.06] px-2 py-0.5 text-[10px] text-zinc-500">
+                              {productBenefit(product)}
+                            </span>
+                          </div>
+                          <p className="mt-1 text-xs text-zinc-500">
+                            {product.validity_days
+                              ? `Vigencia: ${product.validity_days} días`
+                              : "Vigencia según configuración del producto"}
+                          </p>
+                          <strong className="mt-2 block text-sm text-white">
+                            {formatMoney(product.price_minor, product.currency)}
+                          </strong>
+                        </div>
+                        <PurchasePackageButton
+                          productTemplateId={product.id}
+                          productName={product.name}
+                          evaluationInvitationId={invitation.id}
+                          evaluationSessionId={selectedSession.session_id}
+                        />
+                      </article>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="mt-4 rounded-2xl border border-white/10 px-4 py-3 text-xs text-zinc-500">
+                    No hay paquetes online habilitados para esta disciplina en este momento.
+                  </p>
+                )}
+              </div>
             </div>
           ) : null}
         </section>
