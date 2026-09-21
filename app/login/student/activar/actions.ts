@@ -17,8 +17,7 @@ function activationErrorUrl(tokenHash: string | null, type: string | null, error
 export async function completeStudentPasswordActivation(formData: FormData) {
   const password = String(formData.get("password") ?? "");
   const confirmation = String(formData.get("password_confirmation") ?? "");
-  const tokenHash =
-    String(formData.get("token_hash") ?? "").trim() || null;
+  const tokenHash = String(formData.get("token_hash") ?? "").trim() || null;
   const type = String(formData.get("type") ?? "").trim() || null;
 
   if (password.length < 8 || password !== confirmation) {
