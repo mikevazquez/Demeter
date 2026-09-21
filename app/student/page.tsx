@@ -187,7 +187,9 @@ export default async function StudentHomePage({
   const noCredits = Boolean(activePackage && !activePackage.unlimited && credits === 0);
   const canReserve = Boolean(activePackage && (activePackage.unlimited || (credits ?? 0) > 0));
   const compactPackageHeadline = activePackage
-    ? activePackage.unlimited ? "Ilimitado" : `${credits} clases disponibles`
+    ? activePackage.unlimited
+      ? "Ilimitado"
+      : `${credits} clases disponibles`
     : "";
 
   return (
