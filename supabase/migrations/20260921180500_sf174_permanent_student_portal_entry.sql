@@ -23,41 +23,8 @@ declare
   v_must_change_password boolean;
 begin
   if target_entry_key is null
-     or target_entry_key !~* '^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}
-    into v_student_user_id, v_must_change_password
-  from public.students s
-  join public.user_accounts ua
-    on ua.id = s.user_id
-   and ua.status = 'active'
-  join public.studio_memberships sm
-    on sm.studio_id = s.studio_id
-   and sm.user_id = s.user_id
-   and sm.role = 'student'
-   and sm.active = true
-  where s.portal_entry_key = target_entry_key::uuid
-    and s.active = true
-    and s.lifecycle_status = 'active'
-  limit 1;
-
-  if not found or v_student_user_id is null then
-    return 'invalid';
-  end if;
-
-  if v_must_change_password then
-    return 'activate';
-  end if;
-
-  if (select auth.uid()) = v_student_user_id then
-    return 'profile';
-  end if;
-
-  return 'login';
-end;
-$$;
-
-revoke all on function public.student_portal_entry_route(text) from public;
-grant execute on function public.student_portal_entry_route(text) to anon, authenticated;
- then
+     or target_entry_key !~* '^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'
+  then
     return 'invalid';
   end if;
 
@@ -72,7 +39,7 @@ grant execute on function public.student_portal_entry_route(text) to anon, authe
    and sm.user_id = s.user_id
    and sm.role = 'student'
    and sm.active = true
-  where s.portal_entry_key = target_entry_key
+  where s.portal_entry_key = target_entry_key::uuid
     and s.active = true
     and s.lifecycle_status = 'active'
   limit 1;
