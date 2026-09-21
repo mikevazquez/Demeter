@@ -20,9 +20,16 @@ const errorCopy: Record<string, string> = {
 type Props = {
   productTemplateId: string;
   productName: string;
+  evaluationInvitationId?: string;
+  evaluationSessionId?: string;
 };
 
-export function PurchasePackageButton({ productTemplateId, productName }: Props) {
+export function PurchasePackageButton({
+  productTemplateId,
+  productName,
+  evaluationInvitationId,
+  evaluationSessionId,
+}: Props) {
   const [isPending, startTransition] = useTransition();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const requestKeyRef = useRef<string | null>(null);
@@ -38,7 +45,13 @@ export function PurchasePackageButton({ productTemplateId, productName }: Props)
     setErrorMessage(null);
 
     startTransition(async () => {
-      const result = await createMercadoPagoOrderAction(productTemplateId, requestKey);
+      const result = await createMercadoPagoOrderAction(
+        productTemplateId,
+        requestKey,
+        evaluationInvitationId && evaluationSessionId
+          ? { invitationId: evaluationInvitationId, sessionId: evaluationSessionId }
+          : undefined,
+      );
 
       if (!result.ok) {
         setErrorMessage(errorCopy[result.error] ?? errorCopy.checkout_failed);
