@@ -172,6 +172,12 @@ describe("EVALUACIONES-01 operational cycle", () => {
     expect(adminSessionOperations).toContain("startScheduledEvaluationAction");
   });
 
+  it("distinguishes incomplete evidence from a low passing score", () => {
+    expect(evaluationDetail).toContain("Faltan datos obligatorios");
+    expect(evaluationDetail).toContain("Cumplir los obligatorios no significa aprobar la evaluación");
+    expect(evaluationDetail).toContain("puntaje total");
+  });
+
   it("renders both final student result states", () => {
     expect(studentResult).toContain("¡Subiste de nivel!");
     expect(studentResult).toContain("Te mantienes en tu nivel");
