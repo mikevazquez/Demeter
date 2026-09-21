@@ -11,11 +11,12 @@ function text(formData: FormData, key: string) {
 }
 
 function number(formData: FormData, key: string, fallback = 0) {
-  const raw = String(formData.get(key) ?? "").trim().replace(",", ".");
+  const raw = String(formData.get(key) ?? "")
+    .trim()
+    .replace(",", ".");
   const value = Number(raw);
   return Number.isFinite(value) ? value : fallback;
 }
-
 
 export async function prepareEvaluationDisciplineAction(formData: FormData) {
   const ctx = await getAdminContext(CAPABILITIES.EVALUATIONS_CONFIGURE);

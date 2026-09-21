@@ -3,10 +3,7 @@ import { join } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
-const evaluations = readFileSync(
-  join(process.cwd(), "app/admin/evaluaciones/page.tsx"),
-  "utf8",
-);
+const evaluations = readFileSync(join(process.cwd(), "app/admin/evaluaciones/page.tsx"), "utf8");
 
 const discipline = readFileSync(
   join(process.cwd(), "app/admin/evaluaciones/disciplina/[disciplineId]/page.tsx"),

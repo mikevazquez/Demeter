@@ -4,7 +4,8 @@ import Link from "next/link";
 type Alert = { title: string; detail: string };
 
 type Props = {
-  activeView: "summary" | "packages" | "rewards" | "evaluations" | "followup" | "history" | "profile";
+  activeView:
+    "summary" | "packages" | "rewards" | "evaluations" | "followup" | "history" | "profile";
   student: {
     id: string;
     userId: string | null;

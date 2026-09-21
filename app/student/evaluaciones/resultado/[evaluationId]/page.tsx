@@ -114,17 +114,13 @@ export default async function StudentEvaluationResultPage({
               </strong>
             </div>
             <div className="rounded-2xl border border-white/10 bg-black/15 p-4">
-              <p className="text-[9px] uppercase tracking-[0.14em] text-zinc-500">
-                Nivel evaluado
-              </p>
+              <p className="text-[9px] uppercase tracking-[0.14em] text-zinc-500">Nivel evaluado</p>
               <strong className="mt-1 block text-sm text-white">
                 {result.evaluated_level_title}
               </strong>
             </div>
             <div className="rounded-2xl border border-white/10 bg-black/15 p-4">
-              <p className="text-[9px] uppercase tracking-[0.14em] text-zinc-500">
-                Nivel actual
-              </p>
+              <p className="text-[9px] uppercase tracking-[0.14em] text-zinc-500">Nivel actual</p>
               <strong
                 className={
                   "mt-1 block text-sm " + (approved ? "text-emerald-300" : "text-amber-300")
@@ -172,7 +168,8 @@ export default async function StudentEvaluationResultPage({
                         (criterion.passed ? "bg-fuchsia-500" : "bg-amber-400")
                       }
                       style={{
-                        width: Math.max(0, Math.min(100, Number(criterion.score_percent ?? 0))) + "%",
+                        width:
+                          Math.max(0, Math.min(100, Number(criterion.score_percent ?? 0))) + "%",
                       }}
                     />
                   </div>
@@ -181,9 +178,7 @@ export default async function StudentEvaluationResultPage({
                   </p>
                 </div>
                 <div className="text-right">
-                  <strong className="text-lg text-white">
-                    {percent(criterion.score_percent)}
-                  </strong>
+                  <strong className="text-lg text-white">{percent(criterion.score_percent)}</strong>
                   <span
                     className={
                       "mt-1 block text-[10px] font-semibold " +

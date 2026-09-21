@@ -145,7 +145,6 @@ export default async function EvaluationTemplateEditorPage({
           <h1>Editar {levelTitle}</h1>
           <p>{discipline?.name ?? "Disciplina"} · configuración técnica del nivel</p>
         </div>
-
       </header>
 
       {qs.error ? (
@@ -565,7 +564,9 @@ export default async function EvaluationTemplateEditorPage({
             <div>
               <small className="eval-step-label">Paso 5 de 5</small>
               <h2>Revisar y guardar</h2>
-              <p>Confirma la configuración. Al guardar regresarás a los niveles de la disciplina.</p>
+              <p>
+                Confirma la configuración. Al guardar regresarás a los niveles de la disciplina.
+              </p>
             </div>
           </header>
 

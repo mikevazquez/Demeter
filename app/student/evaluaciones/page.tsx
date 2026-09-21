@@ -187,9 +187,7 @@ export default async function StudentEvaluationsPage() {
                     </strong>
                   </div>
                   {item.cadence_months ? (
-                    <span className="text-xs text-zinc-500">
-                      Cada {item.cadence_months} meses
-                    </span>
+                    <span className="text-xs text-zinc-500">Cada {item.cadence_months} meses</span>
                   ) : null}
                 </div>
               ) : (

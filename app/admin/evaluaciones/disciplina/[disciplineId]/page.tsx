@@ -53,7 +53,9 @@ export default async function EvaluationDisciplinePage({
 
   const links = linksResult.data ?? [];
   const definitions = definitionsResult.data ?? [];
-  const templates = (templatesResult.data ?? []).filter((template) => template.archived_at === null);
+  const templates = (templatesResult.data ?? []).filter(
+    (template) => template.archived_at === null,
+  );
   const definitionById = new Map(definitions.map((level) => [level.id, level]));
 
   const templateIds = templates.map((template) => template.id);
@@ -192,7 +194,9 @@ export default async function EvaluationDisciplinePage({
             })}
           </div>
         ) : (
-          <div className="eval-empty">No hay niveles técnicos disponibles para esta disciplina.</div>
+          <div className="eval-empty">
+            No hay niveles técnicos disponibles para esta disciplina.
+          </div>
         )}
       </section>
     </main>

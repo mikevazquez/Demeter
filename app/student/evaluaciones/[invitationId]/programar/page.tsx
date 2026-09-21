@@ -79,7 +79,7 @@ export default async function ScheduleEvaluationPage({
 
   const sessions = (Array.isArray(scheduleData) ? scheduleData : []) as StudentSession[];
   const selectedSession = qs.session
-    ? sessions.find((session) => session.session_id === qs.session) ?? null
+    ? (sessions.find((session) => session.session_id === qs.session) ?? null)
     : null;
   const needsPurchase = Boolean(qs.error && purchaseReasons.has(qs.error));
   const errorMessage = errorCopy(qs.error);

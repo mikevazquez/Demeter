@@ -423,7 +423,6 @@
   }
 }
 
-
 /* EVALUACIONES-01 · Perfil 360 evaluation operations */
 .admin-ux04-profile360 .profile360-evaluations-view {
   display: grid;
@@ -443,8 +442,7 @@
   border: 1px solid #293440;
   border-radius: 18px;
   background:
-    radial-gradient(circle at 100% 0%, rgba(255, 10, 138, 0.07), transparent 34%),
-    #0d141c;
+    radial-gradient(circle at 100% 0%, rgba(255, 10, 138, 0.07), transparent 34%), #0d141c;
 }
 
 .admin-ux04-profile360 .profile360-evaluation-accent {

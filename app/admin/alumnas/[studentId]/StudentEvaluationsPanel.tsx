@@ -161,10 +161,7 @@ export default async function StudentEvaluationsPanel({ studentId, timeZone, err
   const definitionTitle = new Map(definitions.map((item) => [item.id, item.title]));
   const linkById = new Map(links.map((item) => [item.id, item]));
   const levelTitle = new Map(
-    links.map((item) => [
-      item.id,
-      definitionTitle.get(item.technical_level_id) ?? "Nivel técnico",
-    ]),
+    links.map((item) => [item.id, definitionTitle.get(item.technical_level_id) ?? "Nivel técnico"]),
   );
 
   const templateIds = templates.map((item) => item.id);
@@ -205,12 +202,11 @@ export default async function StudentEvaluationsPanel({ studentId, timeZone, err
     ...new Set((sessionsResult.data ?? []).map((item) => item.template_id)),
   ];
   const classTemplatesResult = classTemplateIds.length
-    ? await ctx.supabase
-        .from("class_templates")
-        .select("id,name")
-        .in("id", classTemplateIds)
+    ? await ctx.supabase.from("class_templates").select("id,name").in("id", classTemplateIds)
     : { data: [] };
-  const classNameMap = new Map((classTemplatesResult.data ?? []).map((item) => [item.id, item.name]));
+  const classNameMap = new Map(
+    (classTemplatesResult.data ?? []).map((item) => [item.id, item.name]),
+  );
 
   const today = localDate(timeZone);
   const defaultEnd = addDays(today, 7);
@@ -248,14 +244,16 @@ export default async function StudentEvaluationsPanel({ studentId, timeZone, err
         discipline,
         disciplineLinks,
         resolvedLevelId,
-        currentLevelTitle: resolvedLevelId ? levelTitle.get(resolvedLevelId) ?? "Principiante" : null,
+        currentLevelTitle: resolvedLevelId
+          ? (levelTitle.get(resolvedLevelId) ?? "Principiante")
+          : null,
         cycle,
         openInvitation,
         draftEvaluation,
         latestPublished,
         scheduledSession,
         scheduledClassName: scheduledSession
-          ? classNameMap.get(scheduledSession.template_id) ?? discipline.name
+          ? (classNameMap.get(scheduledSession.template_id) ?? discipline.name)
           : null,
         configured: resolvedLevelId ? configuredLevelIds.has(resolvedLevelId) : false,
       };
@@ -282,9 +280,7 @@ export default async function StudentEvaluationsPanel({ studentId, timeZone, err
         <div>
           <p className="eyebrow">EVALUACIONES</p>
           <h2>Ciclo técnico de {studentResult.data.full_name}</h2>
-          <p>
-            Consulta evaluaciones en curso, próximas acciones y resultados por disciplina.
-          </p>
+          <p>Consulta evaluaciones en curso, próximas acciones y resultados por disciplina.</p>
         </div>
       </div>
 
@@ -397,9 +393,7 @@ export default async function StudentEvaluationsPanel({ studentId, timeZone, err
                             {item.latestPublished.total_score ?? "—"}%
                           </span>
                           {item.cycle?.next_due_on ? (
-                            <small>
-                              Próxima disponible: {formatDate(item.cycle.next_due_on)}
-                            </small>
+                            <small>Próxima disponible: {formatDate(item.cycle.next_due_on)}</small>
                           ) : null}
                         </>
                       ) : (
@@ -423,18 +417,19 @@ export default async function StudentEvaluationsPanel({ studentId, timeZone, err
                         </summary>
                         <form action={inviteStudentToEvaluationAction}>
                           <input type="hidden" name="student_id" value={studentId} />
-                          <input
-                            type="hidden"
-                            name="discipline_id"
-                            value={item.discipline.id}
-                          />
+                          <input type="hidden" name="discipline_id" value={item.discipline.id} />
                           <label>
                             <span>Disponible desde</span>
                             <input name="window_start" type="date" defaultValue={today} required />
                           </label>
                           <label>
                             <span>Hasta</span>
-                            <input name="window_end" type="date" defaultValue={defaultEnd} required />
+                            <input
+                              name="window_end"
+                              type="date"
+                              defaultValue={defaultEnd}
+                              required
+                            />
                           </label>
                           <label>
                             <span>Periodicidad posterior</span>
@@ -475,9 +470,7 @@ export default async function StudentEvaluationsPanel({ studentId, timeZone, err
         {history.length ? (
           <div className="profile360-evaluation-history-list">
             {history.map((evaluation) => {
-              const discipline = disciplines.find(
-                (item) => item.id === evaluation.discipline_id,
-              );
+              const discipline = disciplines.find((item) => item.id === evaluation.discipline_id);
               return (
                 <Link
                   href={`/admin/evaluaciones/${evaluation.id}`}

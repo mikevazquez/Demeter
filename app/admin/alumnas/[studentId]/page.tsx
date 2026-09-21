@@ -152,17 +152,12 @@ export default async function StudentProfilePage({
   const query = await searchParams;
   const requestedView = String(query.view ?? "summary");
   const view = (
-    ["summary", "packages", "rewards", "evaluations", "followup", "history", "profile"].includes(requestedView)
+    ["summary", "packages", "rewards", "evaluations", "followup", "history", "profile"].includes(
+      requestedView,
+    )
       ? requestedView
       : "summary"
-  ) as
-    | "summary"
-    | "packages"
-    | "rewards"
-    | "evaluations"
-    | "followup"
-    | "history"
-    | "profile";
+  ) as "summary" | "packages" | "rewards" | "evaluations" | "followup" | "history" | "profile";
   const { supabase, studio, can } = await getAdminContext(CAPABILITIES.STUDENTS_READ);
 
   const { data: student } = await supabase

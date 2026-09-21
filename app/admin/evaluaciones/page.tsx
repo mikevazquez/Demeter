@@ -27,9 +27,7 @@ export default async function EvaluationsDashboardPage({
   ]);
 
   const disciplines = disciplinesResult.data ?? [];
-  const configuredDisciplines = new Set(
-    (linksResult.data ?? []).map((link) => link.discipline_id),
-  );
+  const configuredDisciplines = new Set((linksResult.data ?? []).map((link) => link.discipline_id));
 
   return (
     <main className="evaluations-page">

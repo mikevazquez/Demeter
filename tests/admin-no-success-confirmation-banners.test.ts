@@ -13,9 +13,7 @@ function filesRecursively(dir: string): string[] {
 describe("Studio Flow admin success feedback rule", () => {
   it("does not use persistent top confirmation banners for successful actions", () => {
     const adminDir = join(process.cwd(), "app/admin");
-    const files = filesRecursively(adminDir).filter((path) =>
-      /\.(ts|tsx)$/.test(path),
-    );
+    const files = filesRecursively(adminDir).filter((path) => /\.(ts|tsx)$/.test(path));
 
     const forbidden = [
       "?saved=",

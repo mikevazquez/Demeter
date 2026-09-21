@@ -957,7 +957,6 @@
   }
 }
 
-
 .eval-discipline-actions {
   display: flex;
   align-items: center;
@@ -971,7 +970,6 @@
     justify-content: flex-start;
   }
 }
-
 
 .eval-discipline-grid {
   display: grid;
@@ -989,8 +987,7 @@
   border: 1px solid #2c3643;
   border-radius: 16px;
   background:
-    radial-gradient(circle at 100% 0%, rgba(255, 10, 138, 0.06), transparent 36%),
-    #101720;
+    radial-gradient(circle at 100% 0%, rgba(255, 10, 138, 0.06), transparent 36%), #101720;
   color: inherit;
   text-decoration: none;
 }
@@ -1024,7 +1021,6 @@
     display: none;
   }
 }
-
 
 .eval-step-label {
   display: inline-block;
@@ -1099,7 +1095,6 @@
     flex: 1;
   }
 }
-
 
 .eval-discipline-card-button {
   width: 100%;
