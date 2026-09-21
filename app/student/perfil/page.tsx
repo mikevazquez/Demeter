@@ -87,7 +87,8 @@ export default async function StudentProfilePage({
   const fallbackLevelRow =
     levelDefinitions.find((level) => level.level_key === fallbackLevelKey) ?? null;
   const fallbackNextRow = fallbackLevelRow
-    ? levelDefinitions.find((level) => level.level_order === fallbackLevelRow.level_order + 1) ?? null
+    ? (levelDefinitions.find((level) => level.level_order === fallbackLevelRow.level_order + 1) ??
+      null)
     : null;
   const toLevelView = (row: RewardLevelDefinitionRow | null): RewardLevelView | null =>
     row
@@ -106,8 +107,7 @@ export default async function StudentProfilePage({
       : null;
   const currentLevel = rewardStatus?.current_level ?? toLevelView(fallbackLevelRow);
   const nextLevel = rewardStatus?.next_level ?? toLevelView(fallbackNextRow);
-  const attendanceCount =
-    rewardStatus?.attendance_count ?? snapshot.stats.attended_this_month ?? 0;
+  const attendanceCount = rewardStatus?.attendance_count ?? snapshot.stats.attended_this_month ?? 0;
   const maintenanceTarget = currentLevel?.maintenance_attendance ?? 0;
   const promotionTarget = nextLevel?.promotion_attendance ?? 0;
   const maintenanceProgress = maintenanceTarget
