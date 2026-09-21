@@ -16,6 +16,54 @@ function number(formData: FormData, key: string, fallback = 0) {
   return Number.isFinite(value) ? value : fallback;
 }
 
+
+export async function prepareEvaluationDisciplineAction(formData: FormData) {
+  const ctx = await getAdminContext(CAPABILITIES.EVALUATIONS_CONFIGURE);
+  const disciplineId = text(formData, "discipline_id");
+
+  const [{ data: discipline }, { data: levels }] = await Promise.all([
+    ctx.supabase
+      .from("disciplines")
+      .select("id")
+      .eq("id", disciplineId)
+      .eq("studio_id", ctx.studio.id)
+      .eq("active", true)
+      .maybeSingle(),
+    ctx.supabase
+      .from("technical_level_definitions")
+      .select("id,level_order")
+      .eq("studio_id", ctx.studio.id)
+      .eq("active", true)
+      .order("level_order"),
+  ]);
+
+  if (!discipline || !levels?.length) {
+    redirect("/admin/evaluaciones?error=discipline");
+  }
+
+  const { error } = await ctx.supabase.from("discipline_technical_levels").upsert(
+    levels.map((level) => ({
+      studio_id: ctx.studio.id,
+      discipline_id: disciplineId,
+      technical_level_id: level.id,
+      discipline_order: level.level_order,
+      active: false,
+    })),
+    {
+      onConflict: "studio_id,discipline_id,technical_level_id",
+      ignoreDuplicates: true,
+    },
+  );
+
+  if (error) {
+    redirect("/admin/evaluaciones?error=discipline");
+  }
+
+  revalidatePath("/admin/evaluaciones");
+  revalidatePath(`/admin/evaluaciones/disciplina/${disciplineId}`);
+  redirect(`/admin/evaluaciones/disciplina/${disciplineId}`);
+}
+
 export async function enableEvaluationDiscipline(formData: FormData) {
   const ctx = await getAdminContext(CAPABILITIES.EVALUATIONS_CONFIGURE);
   const disciplineId = text(formData, "discipline_id");
@@ -415,6 +463,7 @@ export async function activateEvaluationTemplateVersion(formData: FormData) {
   const ctx = await getAdminContext(CAPABILITIES.EVALUATIONS_CONFIGURE);
   const templateId = text(formData, "template_id");
   const versionId = text(formData, "version_id");
+  const disciplineId = text(formData, "discipline_id");
 
   const [{ data: criteria }, { count: elementCount }] = await Promise.all([
     ctx.supabase
@@ -434,20 +483,38 @@ export async function activateEvaluationTemplateVersion(formData: FormData) {
     redirect(`/admin/evaluaciones/plantillas/${templateId}?step=resumen&error=activate`);
   }
 
-  const { error } = await ctx.supabase
+  const { data: version } = await ctx.supabase
     .from("evaluation_template_versions")
-    .update({ status: "active", activated_at: new Date().toISOString() })
+    .select("status")
     .eq("id", versionId)
     .eq("studio_id", ctx.studio.id)
-    .eq("status", "draft");
+    .maybeSingle();
 
-  if (error) {
+  if (!version) {
     redirect(`/admin/evaluaciones/plantillas/${templateId}?step=resumen&error=activate`);
+  }
+
+  if (version.status === "draft") {
+    const { error } = await ctx.supabase
+      .from("evaluation_template_versions")
+      .update({ status: "active", activated_at: new Date().toISOString() })
+      .eq("id", versionId)
+      .eq("studio_id", ctx.studio.id)
+      .eq("status", "draft");
+
+    if (error) {
+      redirect(`/admin/evaluaciones/plantillas/${templateId}?step=resumen&error=activate`);
+    }
   }
 
   revalidatePath("/admin/evaluaciones");
   revalidatePath(`/admin/evaluaciones/plantillas/${templateId}`);
-  redirect(`/admin/evaluaciones/plantillas/${templateId}?step=resumen`);
+  if (disciplineId) {
+    revalidatePath(`/admin/evaluaciones/disciplina/${disciplineId}`);
+    redirect(`/admin/evaluaciones/disciplina/${disciplineId}`);
+  }
+
+  redirect("/admin/evaluaciones");
 }
 
 export async function createNextEvaluationTemplateVersion(formData: FormData) {
