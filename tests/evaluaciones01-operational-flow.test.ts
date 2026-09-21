@@ -34,6 +34,7 @@ const evaluationActions = readFileSync(
   join(process.cwd(), "app/admin/evaluaciones/actions.ts"),
   "utf8",
 );
+const studentHome = readFileSync(join(process.cwd(), "app/student/page.tsx"), "utf8");
 const studentOverview = readFileSync(
   join(process.cwd(), "app/student/evaluaciones/page.tsx"),
   "utf8",
@@ -94,6 +95,15 @@ describe("EVALUACIONES-01 operational cycle", () => {
     expect(studentOverview).toContain('supabase.rpc("student_evaluations_snapshot")');
     expect(studentInvitation).toContain('"student_evaluation_invitation_detail"');
     expect(studentResult).toContain('"student_evaluation_result_detail"');
+  });
+
+  it("surfaces an actionable invitation on the student landing screen only when present", () => {
+    expect(studentHome).toContain('supabase.rpc("student_evaluations_snapshot")');
+    expect(studentHome).toContain('data-home-block="evaluation-invitation"');
+    expect(studentHome).toContain('"Evaluación disponible"');
+    expect(studentHome).toContain('"Ver invitación"');
+    expect(studentHome).toContain('"Programar evaluación"');
+    expect(studentHome).toContain("activeEvaluationInvitation?.invitation_id");
   });
 
   it("reuses the normal class feed for evaluation scheduling", () => {
