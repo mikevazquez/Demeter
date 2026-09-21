@@ -22,19 +22,26 @@ describe("SF-174 student welcome integration", () => {
     expect(provision).toContain('source: "student_access_provisioning"');
   });
 
-  it("uses activation links instead of temporary passwords", () => {
+  it("uses activation links for initial onboarding", () => {
     expect(provision).toContain("adminClient.auth.admin.generateLink");
     expect(provision).toContain('type: "recovery"');
     expect(provision).toContain("activation_url: activationLink");
     expect(provision).toContain('activationLink.searchParams.set("token_hash", tokenHash)');
     expect(provision).not.toContain("portal_entry_key");
-    expect(provision).not.toContain("temporary_password");
-    expect(provision).not.toContain("temporaryPassword");
+  });
+
+  it("keeps temporary passwords isolated to explicit admin recovery", () => {
+    expect(provision).toContain('payload.mode === "temporary_password"');
+    expect(provision).toContain('if (mode === "temporary_password")');
+    expect(provision).toContain("temporaryPassword");
+    expect(provision).toContain("auth_password_reset_failed");
   });
 
   it("can intentionally resend student_welcome while activation is pending", () => {
     const resendBlock =
-      provision.split('if (mode === "resend")')[1]?.split("if (student.user_id)")[0] ?? "";
+      provision
+        .split('if (mode === "resend" || mode === "temporary_password")')[1]
+        ?.split("if (student.user_id)")[0] ?? "";
 
     expect(resendBlock).toContain("sendAsistianWebhook");
     expect(resendBlock).toContain('source: "student_access_activation_resend"');
