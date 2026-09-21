@@ -20,6 +20,11 @@ type RewardLevelView = {
   monthly_guest_invites?: number;
 };
 
+type RewardLevelDefinitionRow = RewardLevelView & {
+  level_key: string;
+  level_order: number;
+};
+
 type RewardStatusSnapshot = {
   level_title?: string | null;
   attendance_count?: number;
@@ -58,12 +63,51 @@ export default async function StudentProfilePage({
   }>;
 }) {
   const query = await searchParams;
-  const { snapshot, studio, supabase } = await getStudentPortalContext();
-  const { data: rewardStatusData } = await supabase.rpc("student_reward_status_snapshot");
-  const rewardStatus = (rewardStatusData as RewardStatusSnapshot | null) ?? null;
-  const currentLevel = rewardStatus?.current_level ?? null;
-  const nextLevel = rewardStatus?.next_level ?? null;
-  const attendanceCount = rewardStatus?.attendance_count ?? 0;
+  const { snapshot, studio, supabase, membership } = await getStudentPortalContext();
+  const [rewardStatusResult, rewardMembershipResult, rewardLevelsResult] = await Promise.all([
+    supabase.rpc("student_reward_status_snapshot"),
+    supabase
+      .from("reward_status_memberships")
+      .select("current_level_key")
+      .eq("studio_id", membership.studio_id)
+      .eq("student_id", snapshot.profile.student_id)
+      .maybeSingle(),
+    supabase
+      .from("reward_status_level_definitions")
+      .select(
+        "level_key,level_order,title,maintenance_attendance,promotion_attendance,min_active_months,max_uncovered_days,waitlist_priority,private_discount_pct,event_discount_pct,monthly_guest_invites",
+      )
+      .eq("studio_id", membership.studio_id)
+      .order("level_order"),
+  ]);
+
+  const rewardStatus = (rewardStatusResult.data as RewardStatusSnapshot | null) ?? null;
+  const levelDefinitions = (rewardLevelsResult.data ?? []) as RewardLevelDefinitionRow[];
+  const fallbackLevelKey = rewardMembershipResult.data?.current_level_key ?? null;
+  const fallbackLevelRow =
+    levelDefinitions.find((level) => level.level_key === fallbackLevelKey) ?? null;
+  const fallbackNextRow = fallbackLevelRow
+    ? levelDefinitions.find((level) => level.level_order === fallbackLevelRow.level_order + 1) ?? null
+    : null;
+  const toLevelView = (row: RewardLevelDefinitionRow | null): RewardLevelView | null =>
+    row
+      ? {
+          key: row.level_key,
+          title: row.title,
+          maintenance_attendance: row.maintenance_attendance,
+          promotion_attendance: row.promotion_attendance,
+          min_active_months: row.min_active_months,
+          max_uncovered_days: row.max_uncovered_days,
+          waitlist_priority: row.waitlist_priority,
+          private_discount_pct: row.private_discount_pct,
+          event_discount_pct: row.event_discount_pct,
+          monthly_guest_invites: row.monthly_guest_invites,
+        }
+      : null;
+  const currentLevel = rewardStatus?.current_level ?? toLevelView(fallbackLevelRow);
+  const nextLevel = rewardStatus?.next_level ?? toLevelView(fallbackNextRow);
+  const attendanceCount =
+    rewardStatus?.attendance_count ?? snapshot.stats.attended_this_month ?? 0;
   const maintenanceTarget = currentLevel?.maintenance_attendance ?? 0;
   const promotionTarget = nextLevel?.promotion_attendance ?? 0;
   const maintenanceProgress = maintenanceTarget
