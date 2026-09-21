@@ -239,7 +239,9 @@ const handler = {
       attemptRow.studio_id !== product.studio_id ||
       product.active !== true ||
       product.online_purchasable !== true ||
-      !["package", "membership", "single_class"].includes(String(product.product_type))
+      !["package", "membership", "single_class", "enrollment"].includes(
+        String(product.product_type),
+      )
     ) {
       await markAttemptFailure("product_not_available_online");
       return jsonResponse({ error: "product_not_available_online" }, 409);
