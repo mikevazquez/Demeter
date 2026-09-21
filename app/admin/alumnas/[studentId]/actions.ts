@@ -90,9 +90,7 @@ async function invokeStudentAccess(
 
   const activationUrl = new URL("/login/student/activar", `https://${host}`).toString();
   const body =
-    mode === "provision"
-      ? { studentId, activationUrl }
-      : { studentId, mode, activationUrl };
+    mode === "provision" ? { studentId, activationUrl } : { studentId, mode, activationUrl };
 
   const { data, error } = await supabase.functions.invoke("provision-student-access", {
     body,
