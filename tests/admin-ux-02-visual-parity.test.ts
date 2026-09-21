@@ -13,6 +13,9 @@ describe("ADMIN-UX-02 approved visual parity", () => {
   const today = source("app/admin/page.tsx");
   const classDetail = source("app/admin/agenda/[sessionId]/page.tsx");
   const classOperations = source("app/admin/hoy/SessionOperations.tsx");
+  const todayClasses = source("app/admin/hoy/TodayClasses.tsx");
+  const hoyStyles = source("app/admin/hoy.css");
+  const rosterStyles = source("app/admin/roster-uat.css");
   const more = source("app/admin/mas/page.tsx");
   const products = source("app/admin/productos/page.tsx");
   const team = source("app/admin/instructores/page.tsx");
@@ -32,41 +35,48 @@ describe("ADMIN-UX-02 approved visual parity", () => {
     expect(styles).toContain("grid-template-columns: 208px minmax(0, 1fr)");
   });
 
-  it("renders the approved Hoy overview before detailed operations", () => {
-    expect(today).toContain("Hola, {firstName}");
-    expect(today).toContain("mock-kpi-grid");
-    expect(today).toContain("Ventas hoy");
-    expect(today).not.toContain("Incidencias");
-    expect(today).toContain("mock-overview-grid");
+  it("renders the approved Hoy mockup hierarchy", () => {
     expect(today).toContain("Clases de hoy");
-    expect(today).not.toContain("Atención");
-    expect(today).toContain("admin-quick-menu");
-    expect(today).not.toContain("Operación detallada");
-    expect(today).not.toContain("week-picker");
-    expect(today).not.toContain("hoy-primary-grid");
-    expect(today).not.toContain("hoy-schedule-panel");
-    expect(today).toContain("mock-week-calendar");
-    expect(today).toContain("mock-week-nav");
-    expect(today).toContain("Semana anterior");
-    expect(today).toContain("Semana siguiente");
-    expect(today).toContain("selectedDayLabel");
-    expect(today).not.toContain("Ver agenda →");
+    expect(today).toContain("Administra, conecta, haz fluir.");
+    expect(today).toContain("hoy-week-card");
     expect(today).toContain("hoy-kpi-grid");
-    expect(today).toContain("hoy-overview-grid");
-    expect(today).toContain("hoy-class-row");
-    expect(today).toContain("/admin/agenda/");
-    expect(today).not.toContain("<SessionOperations");
+    expect(today).toContain("Ventas hoy");
+    expect(today).toContain("<TodayClasses");
+    expect(today).not.toContain("admin-quick-menu");
+    expect(today).not.toContain("mock-overview-grid");
+    expect(today).not.toContain("hoy-schedule-panel");
+    expect(hoyStyles).toContain("border-radius: 20px");
+    expect(hoyStyles).toContain("today-class-card");
+    expect(hoyStyles).toContain("--class-accent");
   });
 
-  it("keeps Today clean while class detail owns roster and attendance operations", () => {
+  it("always moves week arrows to Monday of the target week", () => {
+    expect(today).toContain("const weekStart = weekStartMonday(selectedDate)");
+    expect(today).toContain("shiftUtcDays(weekStart, -7)");
+    expect(today).toContain("shiftUtcDays(weekStart, 7)");
+    expect(today).toContain("Array.from({ length: 7 }");
+  });
+
+  it("expands only one class inline and keeps attendance as the primary action", () => {
+    expect(todayClasses).toContain("openSessionId");
+    expect(todayClasses).toContain("setOpenSessionId");
+    expect(todayClasses).toContain("<SessionOperations");
+    expect(todayClasses).toContain("showToggle={false}");
+    expect(classOperations).toContain("Asistió");
+    expect(classOperations).toContain("No asistió");
+    expect(classOperations).not.toContain(">No show<");
+    expect(classOperations).toContain("today-add-student-button");
+    expect(classOperations).toContain("Finalizar asistencia");
+    expect(rosterStyles).toContain("today-student-card.compact");
+    expect(rosterStyles).toContain("today-student-more");
+  });
+
+  it("keeps the dedicated class detail operational for agenda entry points", () => {
     expect(classDetail).toContain("OPERACIÓN DE CLASE");
     expect(classDetail).toContain("<SessionOperations");
     expect(classDetail).toContain("initiallyOpen");
     expect(classDetail).toContain("showToggle={false}");
     expect(classOperations).toContain("returnTo");
-    expect(classOperations).toContain("No show");
-    expect(classOperations).toContain("Finalizar asistencia");
-    expect(classOperations).toContain("Walk-in");
   });
 
   it("matches the approved mobile architecture", () => {
