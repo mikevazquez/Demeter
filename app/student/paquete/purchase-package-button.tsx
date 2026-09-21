@@ -22,6 +22,7 @@ type Props = {
   productName: string;
   evaluationInvitationId?: string;
   evaluationSessionId?: string;
+  buttonLabel?: string;
 };
 
 export function PurchasePackageButton({
@@ -29,6 +30,7 @@ export function PurchasePackageButton({
   productName,
   evaluationInvitationId,
   evaluationSessionId,
+  buttonLabel = "Comprar",
 }: Props) {
   const [isPending, startTransition] = useTransition();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -68,10 +70,10 @@ export function PurchasePackageButton({
         type="button"
         onClick={buy}
         disabled={isPending}
-        aria-label={`Comprar ${productName}`}
+        aria-label={`${buttonLabel} ${productName}`}
         className="min-h-11 rounded-2xl bg-fuchsia-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-fuchsia-500 disabled:cursor-wait disabled:opacity-60"
       >
-        {isPending ? "Abriendo Mercado Pago…" : "Comprar"}
+        {isPending ? "Abriendo Mercado Pago…" : buttonLabel}
       </button>
       {errorMessage ? <p className="mt-2 max-w-xs text-xs text-rose-300">{errorMessage}</p> : null}
     </div>
