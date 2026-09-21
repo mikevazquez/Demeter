@@ -107,8 +107,11 @@ export default async function EvaluationTemplateEditorPage({
     <main className="evaluations-page">
       <header className="eval-header">
         <div className="eval-header-copy">
-          <Link className="back-link compact" href="/admin/evaluaciones/configuracion#plantillas">
-            ← Plantillas
+          <Link
+            className="back-link compact"
+            href={`/admin/evaluaciones/configuracion/${template.discipline_id}?view=plantillas`}
+          >
+            ← {discipline?.name ?? "Disciplina"}
           </Link>
           <h1>Editar plantilla</h1>
           <p>Personaliza criterios, figuras y reglas sin alterar el historial.</p>
