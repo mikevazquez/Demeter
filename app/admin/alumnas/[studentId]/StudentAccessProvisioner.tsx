@@ -91,7 +91,7 @@ function StudentCredentialAction({
         <div className="notice success">
           {mode === "provision"
             ? "Cuenta creada y vinculada. La contraseña permanecerá visible hasta que pulses ‘Ya la guardé’."
-            : "Nueva contraseña temporal generada. La anterior ya no funciona y esta permanecerá visible hasta que pulses ‘Ya la guardé’."}
+            : "Nueva contraseña temporal generada. La anterior ya no funciona; la alumna deberá reemplazar esta al iniciar sesión. Permanecerá visible hasta que pulses ‘Ya la guardé’."}
         </div>
         <div className="student-row">
           <div>
@@ -131,8 +131,9 @@ function StudentCredentialAction({
           </>
         ) : (
           <>
-            La cuenta ya existe y sigue pendiente de activación. Puedes generar una nueva contraseña
-            temporal para <strong>{phone}</strong>; la anterior dejará de funcionar.
+            La cuenta ya existe. Puedes generar una nueva contraseña temporal para{" "}
+            <strong>{phone}</strong>; la anterior dejará de funcionar y la alumna deberá reemplazarla
+            al iniciar sesión.
           </>
         )}
       </p>
