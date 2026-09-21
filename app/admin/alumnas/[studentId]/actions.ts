@@ -50,10 +50,7 @@ async function invokeStudentAccess(
     .maybeSingle();
 
   if (studentError || !student) return { ok: false, error: "student_not_found" };
-  if (
-    mode !== "temporary_password" &&
-    (!student.active || student.lifecycle_status !== "active")
-  ) {
+  if (mode !== "temporary_password" && (!student.active || student.lifecycle_status !== "active")) {
     return { ok: false, error: "student_not_active" };
   }
 
