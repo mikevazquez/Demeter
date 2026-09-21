@@ -11,7 +11,9 @@ describe("SF-174 reservation_confirmed Asistian routing", () => {
   const processor = source("supabase/functions/process-booking-created/index.ts");
 
   it("uses the shared Asistian transport instead of the mock provider", () => {
-    expect(processor).toContain('import { sendAsistianWebhook } from "../_shared/asistian-messaging.ts"');
+    expect(processor).toContain(
+      'import { sendAsistianWebhook } from "../_shared/asistian-messaging.ts"',
+    );
     expect(processor).toContain("await sendAsistianWebhook({");
     expect(processor).toContain('p_provider_key: "asistian"');
     expect(processor).toContain('provider: "asistian"');
@@ -36,7 +38,9 @@ describe("SF-174 reservation_confirmed Asistian routing", () => {
   });
 
   it("keeps missing webhook configuration retryable instead of losing the event", () => {
-    expect(processor).toContain('providerResult.status === "skipped" ? true : providerResult.retryable');
+    expect(processor).toContain(
+      'providerResult.status === "skipped" ? true : providerResult.retryable',
+    );
     expect(processor).toContain("if (!retryable)");
   });
 });

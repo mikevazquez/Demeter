@@ -754,8 +754,7 @@ const handler = {
       });
     }
 
-    const retryable =
-      providerResult.status === "skipped" ? true : providerResult.retryable;
+    const retryable = providerResult.status === "skipped" ? true : providerResult.retryable;
     const errorMessage =
       providerResult.status === "skipped"
         ? "El webhook de Asistian no está configurado para reservation_confirmed."
