@@ -17,6 +17,23 @@ const statusCopy: Record<string, string> = {
   cancelled_by_studio: "Cancelada por el estudio",
 };
 
+type StudentWaitlistItem = {
+  waitlist_entry_id: string;
+  session_id: string;
+  status: string;
+  joined_at: string;
+  starts_at: string;
+  ends_at: string;
+  activity: string;
+  discipline: string;
+  space: string | null;
+  coach: string | null;
+};
+
+type RewardStatusSnapshot = {
+  level_title?: string | null;
+};
+
 const errorCopy: Record<string, string> = {
   cancel_failed: "No pudimos cancelar la reserva. Intenta de nuevo.",
   reservation_not_found: "La reserva ya no existe.",
@@ -87,6 +104,47 @@ function ClassRow({
   );
 }
 
+function WaitlistRow({
+  item,
+  timezone,
+  levelTitle,
+}: {
+  item: StudentWaitlistItem;
+  timezone: string;
+  levelTitle: string | null;
+}) {
+  const priorityLabel =
+    levelTitle === "Oro" || levelTitle === "Diamante" ? `Prioridad ${levelTitle} aplicada` : null;
+
+  return (
+    <article className="rounded-2xl border border-amber-400/25 bg-amber-400/[0.055] px-4 py-3">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="truncate text-sm font-semibold text-white">{item.activity}</p>
+            <span className="shrink-0 rounded-full border border-amber-400/30 bg-amber-400/[0.09] px-2 py-0.5 text-[10px] font-semibold text-amber-200">
+              En lista de espera
+            </span>
+          </div>
+          <p className="mt-1 text-xs text-zinc-300">{formatDateTime(item.starts_at, timezone)}</p>
+          <p className="mt-0.5 truncate text-[11px] text-zinc-500">
+            {[item.coach, item.space].filter(Boolean).join(" · ") || item.discipline}
+          </p>
+        </div>
+      </div>
+      <div className="mt-3 border-t border-white/10 pt-3">
+        {priorityLabel ? (
+          <p className="text-[11px] font-semibold text-amber-100">{priorityLabel}</p>
+        ) : null}
+        <p className="mt-1 text-[11px] leading-5 text-zinc-400">
+          Te avisaremos si se libera un lugar.
+        </p>
+        <p className="mt-0.5 text-[10px] text-zinc-600">La prioridad no garantiza lugar.</p>
+      </div>
+    </article>
+  );
+}
+
 export default async function StudentClassesPage({
   searchParams,
 }: {
@@ -100,7 +158,14 @@ export default async function StudentClassesPage({
   const query = await searchParams;
   const activeView = query.view === "history" ? "history" : "upcoming";
   const { supabase, studio } = await getStudentPortalContext();
-  const { data, error } = await supabase.rpc("student_classes_feed");
+  const [classesResult, waitlistResult, rewardStatusResult] = await Promise.all([
+    supabase.rpc("student_classes_feed"),
+    supabase.rpc("student_waitlist_feed"),
+    supabase.rpc("student_reward_status_snapshot"),
+  ]);
+  const { data, error } = classesResult;
+  const waitlistItems = (waitlistResult.data ?? []) as StudentWaitlistItem[];
+  const levelTitle = (rewardStatusResult.data as RewardStatusSnapshot | null)?.level_title ?? null;
   const feed =
     (data as {
       upcoming?: StudentClassFeedItem[];
@@ -200,6 +265,24 @@ export default async function StudentClassesPage({
         </section>
       ) : activeView === "upcoming" ? (
         <section className="space-y-3">
+          {waitlistItems.length ? (
+            <div>
+              <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-500">
+                Lista de espera
+              </p>
+              <div className="space-y-2">
+                {waitlistItems.map((item) => (
+                  <WaitlistRow
+                    key={item.waitlist_entry_id}
+                    item={item}
+                    timezone={studio.timezone}
+                    levelTitle={levelTitle}
+                  />
+                ))}
+              </div>
+            </div>
+          ) : null}
+
           {nextClass ? (
             <>
               <div>
@@ -275,7 +358,7 @@ export default async function StudentClassesPage({
                 </div>
               ) : null}
             </>
-          ) : (
+          ) : waitlistItems.length ? null : (
             <div className="rounded-3xl border border-dashed border-white/10 bg-white/[0.02] px-5 py-8 text-center">
               <div
                 aria-hidden="true"

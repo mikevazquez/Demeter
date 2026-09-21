@@ -205,6 +205,31 @@ export default async function StudentProfilePage({
         ) : null}
       </section>
 
+      <Link
+        href="/student/paquete"
+        data-profile-block="package"
+        className="grid grid-cols-[1fr_auto] items-center gap-4 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 transition hover:border-fuchsia-500/25 hover:bg-white/[0.05]"
+      >
+        <div className="min-w-0">
+          <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-zinc-500">
+            Paquete vigente
+          </p>
+          <p className="mt-1 truncate text-sm font-semibold text-white">
+            {activePackage?.name ?? "Sin paquete activo"}
+          </p>
+          <p className="mt-0.5 text-xs text-zinc-400">
+            {activePackage
+              ? activePackage.unlimited
+                ? `Ilimitado · vence ${formatDate(activePackage.expires_on, studio.timezone)}`
+                : `${activePackage.available_credits ?? 0} clases disponibles · vence ${formatDate(activePackage.expires_on, studio.timezone)}`
+              : "Compra o activa un paquete para reservar clases."}
+          </p>
+        </div>
+        <span aria-hidden="true" className="text-xl text-zinc-600">
+          ›
+        </span>
+      </Link>
+
       <section data-profile-block="accesses">
         <div className="mb-2">
           <h2 className="text-lg font-semibold text-white">Accesos rápidos</h2>

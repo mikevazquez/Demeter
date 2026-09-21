@@ -20,12 +20,16 @@ export default async function StudentCancelReservationPage({
   const { reservationId } = await params;
   const query = await searchParams;
   const { supabase, studio } = await getStudentPortalContext();
-  const [{ data, error }, { data: previewData }] = await Promise.all([
-    supabase.rpc("student_classes_feed"),
-    supabase.rpc("student_cancellation_preview", {
-      target_reservation_id: reservationId,
-    }),
-  ]);
+  const [{ data, error }, { data: previewData }, { data: invitationContextData }] =
+    await Promise.all([
+      supabase.rpc("student_classes_feed"),
+      supabase.rpc("student_cancellation_preview", {
+        target_reservation_id: reservationId,
+      }),
+      supabase.rpc("student_reward_invitation_context", {
+        target_host_reservation_id: reservationId,
+      }),
+    ]);
 
   if (error || !data) {
     throw new Error("student_classes_feed_failed");
@@ -52,6 +56,17 @@ export default async function StudentCancelReservationPage({
   const willReturnCredit = Boolean(
     preview?.ok && !preview.late && preview.credit_will_return === true,
   );
+  const activeGuests =
+    (
+      invitationContextData as {
+        active_guests?: Array<{
+          invitation_id: string;
+          guest_name: string;
+          status: string;
+        }>;
+      } | null
+    )?.active_guests?.filter((guest) => guest.status === "active") ?? [];
+  const activeGuestNames = activeGuests.map((guest) => guest.guest_name).filter(Boolean);
 
   if (item.status !== "reserved") {
     return (
@@ -123,6 +138,24 @@ export default async function StudentCancelReservationPage({
           </p>
         </div>
 
+        {activeGuests.length > 0 ? (
+          <div className="mt-4 rounded-2xl border border-rose-500/30 bg-rose-500/[0.09] p-4">
+            <p className="text-sm font-semibold text-rose-100">
+              También se cancelará{" "}
+              {activeGuests.length === 1 ? "la invitación" : "las invitaciones"}
+            </p>
+            <p className="mt-1.5 text-xs leading-5 text-rose-100/80">
+              {activeGuests.length === 1
+                ? `${activeGuestNames[0] ?? "Tu invitado"} ya no podrá asistir a esta clase.`
+                : `${activeGuestNames.join(", ")} ya no podrán asistir a esta clase.`}
+            </p>
+            <p className="mt-1.5 text-xs leading-5 text-zinc-400">
+              La invitación depende de tu reserva en esta misma clase y se cancelará automáticamente
+              al cancelar tu lugar.
+            </p>
+          </div>
+        ) : null}
+
         {willLoseCredit ? (
           <div className="mt-4 rounded-2xl border border-amber-400/25 bg-amber-400/[0.08] p-4">
             <p className="text-sm font-semibold text-amber-100">
@@ -176,7 +209,13 @@ export default async function StudentCancelReservationPage({
             pendingLabel="Cancelando…"
             className="min-h-11 w-full rounded-2xl bg-fuchsia-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-fuchsia-500 disabled:cursor-wait disabled:opacity-70"
           >
-            {query.error ? "Intentar de nuevo" : "Sí, cancelar"}
+            {query.error
+              ? "Intentar de nuevo"
+              : activeGuests.length > 0
+                ? activeGuests.length === 1
+                  ? "Sí, cancelar mi reserva y la invitación"
+                  : "Sí, cancelar mi reserva y las invitaciones"
+                : "Sí, cancelar"}
           </PendingActionButton>
 
           <Link

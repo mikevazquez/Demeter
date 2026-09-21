@@ -91,6 +91,44 @@ type MercadoPagoOrderResult = {
   error?: string;
 } | null;
 
+export async function joinStudentWaitlistInlineAction(sessionId: string) {
+  const normalizedSessionId = sessionId.trim();
+  if (!normalizedSessionId) {
+    return { ok: false as const, error: "session_required" };
+  }
+
+  const { supabase } = await getStudentPortalContext();
+  const { data, error } = await supabase.rpc("student_join_waitlist", {
+    target_session_id: normalizedSessionId,
+  });
+
+  if (error) {
+    return { ok: false as const, error: errorCode(error, "waitlist_failed") };
+  }
+
+  const result = data as {
+    ok?: boolean;
+    reason_code?: string | null;
+    waitlist_entry_id?: string;
+    level_title?: string | null;
+  } | null;
+
+  if (!result?.ok || !result.waitlist_entry_id) {
+    return {
+      ok: false as const,
+      error: result?.reason_code ?? "waitlist_failed",
+    };
+  }
+
+  revalidateStudentBookingSurfaces();
+
+  return {
+    ok: true as const,
+    waitlistEntryId: result.waitlist_entry_id,
+    levelTitle: result.level_title ?? null,
+  };
+}
+
 export async function bookStudentSessionInlineAction(sessionId: string) {
   const normalizedSessionId = sessionId.trim();
   if (!normalizedSessionId) {
@@ -161,6 +199,216 @@ export async function bookStudentSessionAction(formData: FormData) {
       sessionId,
     )}&reservation=${encodeURIComponent(result.reservation_id)}${dateQuery}`,
   );
+}
+
+function normalizeGuestIdentityName(value: string) {
+  return value.trim().replace(/\s+/g, " ").toLocaleLowerCase("es-MX");
+}
+
+function normalizeMexicanPhone(value: string) {
+  const digits = value.replace(/\D/g, "");
+  return digits.length === 10 ? `+52${digits}` : null;
+}
+
+export async function createGuestInvitationAction(formData: FormData) {
+  const reservationId = String(formData.get("reservation_id") ?? "").trim();
+  const guestName = String(formData.get("guest_name") ?? "").trim();
+  const guestPhoneInput = String(formData.get("guest_phone") ?? "").trim();
+
+  if (!reservationId) redirect("/student/mis-clases?error=reservation_required");
+
+  const detailPath = `/student/mis-clases/${reservationId}`;
+  const guestPhone = normalizeMexicanPhone(guestPhoneInput);
+  if (!guestPhone) {
+    redirect(`${detailPath}?invite=1&invite_error=guest_phone_invalid`);
+  }
+  const { supabase } = await getStudentPortalContext();
+  const { data: lookupData, error: lookupError } = await supabase.rpc(
+    "student_guest_invitation_contact_lookup",
+    { target_guest_phone: guestPhone },
+  );
+
+  if (lookupError) {
+    redirect(
+      `${detailPath}?invite=1&invite_error=${encodeURIComponent(
+        errorCode(lookupError, "invite_failed"),
+      )}`,
+    );
+  }
+
+  const contactLookup = lookupData as {
+    ok?: boolean;
+    found?: boolean;
+    person_id?: string;
+    display_name?: string | null;
+    lifecycle_status?: string | null;
+    reason_code?: string | null;
+  } | null;
+
+  if (contactLookup?.ok === false) {
+    redirect(
+      `${detailPath}?invite=1&invite_error=${encodeURIComponent(
+        contactLookup.reason_code ?? "invite_failed",
+      )}`,
+    );
+  }
+
+  if (contactLookup?.found && contactLookup.lifecycle_status === "student") {
+    redirect(`${detailPath}?invite=1&invite_error=guest_already_student`);
+  }
+
+  if (
+    contactLookup?.found &&
+    contactLookup.person_id &&
+    contactLookup.display_name &&
+    normalizeGuestIdentityName(contactLookup.display_name) !== normalizeGuestIdentityName(guestName)
+  ) {
+    redirect(`${detailPath}?invite=1&contact_match=${encodeURIComponent(contactLookup.person_id)}`);
+  }
+
+  if (contactLookup?.found && contactLookup.person_id) {
+    const { data, error } = await supabase.rpc("student_create_guest_invitation_existing", {
+      target_host_reservation_id: reservationId,
+      target_guest_person_id: contactLookup.person_id,
+    });
+
+    if (error) {
+      redirect(
+        `${detailPath}?invite=1&invite_error=${encodeURIComponent(
+          errorCode(error, "invite_failed"),
+        )}`,
+      );
+    }
+
+    const result = data as {
+      ok?: boolean;
+      reason_code?: string | null;
+      invitation_id?: string;
+    } | null;
+
+    if (!result?.ok || !result.invitation_id) {
+      redirect(
+        `${detailPath}?invite=1&invite_error=${encodeURIComponent(
+          result?.reason_code ?? "invite_failed",
+        )}`,
+      );
+    }
+
+    revalidateStudentBookingSurfaces();
+    revalidatePath(detailPath);
+    redirect(detailPath);
+  }
+
+  const { data, error } = await supabase.rpc("student_create_guest_invitation", {
+    target_host_reservation_id: reservationId,
+    target_guest_full_name: guestName,
+    target_guest_phone: guestPhone,
+  });
+
+  if (error) {
+    redirect(
+      `${detailPath}?invite=1&invite_error=${encodeURIComponent(
+        errorCode(error, "invite_failed"),
+      )}`,
+    );
+  }
+
+  const result = data as {
+    ok?: boolean;
+    reason_code?: string | null;
+    invitation_id?: string;
+  } | null;
+
+  if (!result?.ok || !result.invitation_id) {
+    redirect(
+      `${detailPath}?invite=1&invite_error=${encodeURIComponent(
+        result?.reason_code ?? "invite_failed",
+      )}`,
+    );
+  }
+
+  revalidateStudentBookingSurfaces();
+  revalidatePath(detailPath);
+  redirect(detailPath);
+}
+
+export async function confirmExistingGuestInvitationAction(formData: FormData) {
+  const reservationId = String(formData.get("reservation_id") ?? "").trim();
+  const guestPersonId = String(formData.get("guest_person_id") ?? "").trim();
+
+  if (!reservationId || !guestPersonId) {
+    redirect("/student/mis-clases?error=invitation_required");
+  }
+
+  const detailPath = `/student/mis-clases/${reservationId}`;
+  const { supabase } = await getStudentPortalContext();
+  const { data, error } = await supabase.rpc("student_create_guest_invitation_existing", {
+    target_host_reservation_id: reservationId,
+    target_guest_person_id: guestPersonId,
+  });
+
+  if (error) {
+    redirect(
+      `${detailPath}?invite=1&invite_error=${encodeURIComponent(
+        errorCode(error, "invite_failed"),
+      )}`,
+    );
+  }
+
+  const result = data as {
+    ok?: boolean;
+    reason_code?: string | null;
+    invitation_id?: string;
+  } | null;
+
+  if (!result?.ok || !result.invitation_id) {
+    redirect(
+      `${detailPath}?invite=1&invite_error=${encodeURIComponent(
+        result?.reason_code ?? "invite_failed",
+      )}`,
+    );
+  }
+
+  revalidateStudentBookingSurfaces();
+  revalidatePath(detailPath);
+  redirect(detailPath);
+}
+
+export async function cancelGuestInvitationAction(formData: FormData) {
+  const hostReservationId = String(formData.get("host_reservation_id") ?? "").trim();
+  const invitationId = String(formData.get("invitation_id") ?? "").trim();
+
+  if (!hostReservationId || !invitationId) {
+    redirect("/student/mis-clases?error=invitation_required");
+  }
+
+  const detailPath = `/student/mis-clases/${hostReservationId}`;
+  const { supabase } = await getStudentPortalContext();
+  const { data, error } = await supabase.rpc("student_cancel_guest_invitation", {
+    target_invitation_id: invitationId,
+  });
+
+  if (error) {
+    redirect(`${detailPath}?invite_error=invite_cancel_failed`);
+  }
+
+  const result = data as {
+    ok?: boolean;
+    reason_code?: string | null;
+    returned?: boolean;
+  } | null;
+
+  if (!result?.ok) {
+    redirect(
+      `${detailPath}?invite_error=${encodeURIComponent(
+        result?.reason_code ?? "invite_cancel_failed",
+      )}`,
+    );
+  }
+
+  revalidateStudentBookingSurfaces();
+  revalidatePath(detailPath);
+  redirect(detailPath);
 }
 
 export async function cancelStudentReservationAction(formData: FormData) {

@@ -25,7 +25,7 @@ export type CoachSessionDetail = {
 
 export type CoachRosterItem = {
   reservation_id: string;
-  student_id: string;
+  student_id: string | null;
   student_name: string;
   attendance_status: "reserved" | "attended" | "no_show";
   package_name: string | null;

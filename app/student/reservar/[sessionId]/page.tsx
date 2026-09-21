@@ -11,8 +11,26 @@ import {
 } from "@/lib/student/portal";
 
 import PurchaseSingleClassButton from "../PurchaseSingleClassButton";
+import WaitlistControl from "../WaitlistControl";
 
 const DROP_IN_REASONS = new Set(["no_active_product", "outside_product", "no_credits"]);
+
+type StudentWaitlistItem = {
+  session_id: string;
+  status: string;
+};
+
+type RewardStatusSnapshot = {
+  level_title?: string | null;
+};
+
+type RewardPricePreview = {
+  regular_amount_minor?: number;
+  final_amount_minor?: number;
+  discount_pct?: number;
+  level_title?: string | null;
+  eligible?: boolean;
+};
 
 export default async function StudentSessionDetailPage({
   params,
@@ -40,6 +58,14 @@ export default async function StudentSessionDetailPage({
     .limit(1)
     .maybeSingle();
   const activityColor = activityStyle?.color_hex ?? "#FF0A8A";
+  const [{ data: waitlistData }, { data: rewardStatusData }] = await Promise.all([
+    supabase.rpc("student_waitlist_feed"),
+    supabase.rpc("student_reward_status_snapshot"),
+  ]);
+  const waitlisted = ((waitlistData ?? []) as StudentWaitlistItem[]).some(
+    (item) => item.session_id === session.session_id && item.status === "active",
+  );
+  const levelTitle = (rewardStatusData as RewardStatusSnapshot | null)?.level_title ?? null;
   const eligible = Boolean(session.eligibility?.eligible);
   const alreadyReserved = Boolean(session.reservation_id);
   const reason = session.eligibility?.reason_code;
@@ -50,6 +76,16 @@ export default async function StudentSessionDetailPage({
     !eligible &&
     Boolean(reason && DROP_IN_REASONS.has(reason)) &&
     session.drop_in_price_minor != null;
+  const { data: rewardPriceData } = showDropIn
+    ? await supabase.rpc("student_reward_single_class_price", {
+        target_session_id: session.session_id,
+      })
+    : { data: null };
+  const rewardPrice = (rewardPriceData as RewardPricePreview | null) ?? null;
+  const regularDropInMinor = rewardPrice?.regular_amount_minor ?? session.drop_in_price_minor ?? 0;
+  const finalDropInMinor = rewardPrice?.final_amount_minor ?? regularDropInMinor;
+  const rewardDiscountPct = rewardPrice?.discount_pct ?? 0;
+  const rewardPriceLevelTitle = rewardPrice?.level_title ?? null;
   const durationMinutes = Math.max(
     Math.round(
       (new Date(session.ends_at).getTime() - new Date(session.starts_at).getTime()) / 60000,
@@ -147,17 +183,19 @@ export default async function StudentSessionDetailPage({
           </Link>
         </section>
       ) : reason === "session_full" ? (
-        <section className="rounded-3xl border border-rose-500/20 bg-rose-500/[0.07] p-5">
-          <p className="text-sm font-semibold text-rose-200">Esta clase ya está llena</p>
+        <section className="rounded-3xl border border-amber-400/25 bg-amber-400/[0.06] p-5">
+          <p className="text-sm font-semibold text-amber-100">Esta clase está llena</p>
           <p className="mt-1.5 text-xs leading-5 text-zinc-400">
-            No hay lugares disponibles. Elige otra clase de la agenda.
+            Puedes entrar a la lista de espera. La prioridad se aplica automáticamente según tu
+            nivel vigente.
           </p>
-          <Link
-            href={`/student/reservar?date=${returnDate}`}
-            className="mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-2xl border border-fuchsia-500/40 px-4 py-2.5 text-sm font-semibold text-fuchsia-200"
-          >
-            Ver otras clases
-          </Link>
+          <div className="mt-4">
+            <WaitlistControl
+              sessionId={session.session_id}
+              initialWaitlisted={waitlisted}
+              levelTitle={levelTitle}
+            />
+          </div>
         </section>
       ) : eligible ? (
         <section className="rounded-3xl border border-white/10 bg-white/[0.03] p-4">
@@ -178,7 +216,7 @@ export default async function StudentSessionDetailPage({
           <p className="text-sm font-semibold text-amber-100">{bookingReasonCopy(reason)}</p>
           {showDropIn ? (
             <p className="mt-2 text-xs leading-5 text-zinc-400">
-              Clase suelta: {formatMoney(session.drop_in_price_minor ?? 0)} MXN.
+              Clase suelta: {formatMoney(finalDropInMinor)} MXN.
             </p>
           ) : (
             <p className="mt-2 text-xs leading-5 text-zinc-400">
@@ -195,7 +233,10 @@ export default async function StudentSessionDetailPage({
               </Link>
               <PurchaseSingleClassButton
                 sessionId={session.session_id}
-                priceLabel={formatMoney(session.drop_in_price_minor ?? 0).replace(".00", "")}
+                priceLabel={formatMoney(finalDropInMinor).replace(".00", "")}
+                regularPriceLabel={formatMoney(regularDropInMinor).replace(".00", "")}
+                discountPct={rewardDiscountPct}
+                levelTitle={rewardPriceLevelTitle}
               />
             </div>
           ) : (

@@ -92,25 +92,25 @@ export function SessionOperations({
       const error = params.get("error");
 
       if (created) {
-        setFeedback({
-          kind: "success",
-          message:
-            created === "attendance-finalized"
-              ? "Asistencia finalizada correctamente."
-              : created === "attendance-corrected"
-                ? "Corrección registrada con motivo y trazabilidad."
-                : created === "attended"
-                  ? "Asistencia registrada."
-                  : created === "no_show"
-                    ? "No-show registrado."
-                    : created === "walkin"
-                      ? "Walk-in registrada y agregada a la clase."
-                      : created === "walkin-existing"
-                        ? "Alumna agregada como walk-in. La venta o paquete queda pendiente."
-                        : created === "cancel"
-                          ? "Reserva cancelada correctamente."
-                          : "Reserva creada correctamente.",
-        });
+        if (created === "attended" || created === "no_show") {
+          setFeedback(null);
+        } else {
+          setFeedback({
+            kind: "success",
+            message:
+              created === "attendance-finalized"
+                ? "Asistencia finalizada correctamente."
+                : created === "attendance-corrected"
+                  ? "Corrección registrada con motivo y trazabilidad."
+                  : created === "walkin"
+                    ? "Walk-in registrada y agregada a la clase."
+                    : created === "walkin-existing"
+                      ? "Alumna agregada como walk-in. La venta o paquete queda pendiente."
+                      : created === "cancel"
+                        ? "Reserva cancelada correctamente."
+                        : "Reserva creada correctamente.",
+          });
+        }
       } else if (error) {
         setFeedback({
           kind: "error",

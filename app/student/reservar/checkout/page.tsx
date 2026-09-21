@@ -37,7 +37,9 @@ export default async function SingleClassCheckoutReturnPage({
   const { data: attempt } = attemptId
     ? await supabase
         .from("online_checkout_attempts")
-        .select("id,session_id,product_name_snapshot,amount_minor,status")
+        .select(
+          "id,session_id,product_name_snapshot,amount_minor,regular_amount_minor,reward_discount_pct,reward_level_title_snapshot,status",
+        )
         .eq("id", attemptId)
         .eq("provider", "mercado_pago")
         .maybeSingle()
@@ -109,7 +111,26 @@ export default async function SingleClassCheckoutReturnPage({
               Compra
             </p>
             <p className="mt-2 text-sm font-medium text-white">{attempt.product_name_snapshot}</p>
-            <p className="mt-1 text-xs text-zinc-400">{formatMoney(attempt.amount_minor)} MXN</p>
+            {attempt.reward_discount_pct > 0 && attempt.reward_level_title_snapshot ? (
+              <div className="mt-2 space-y-1.5 text-xs">
+                <div className="flex items-center justify-between gap-3 text-zinc-500">
+                  <span>Precio regular</span>
+                  <span className="line-through">
+                    {formatMoney(attempt.regular_amount_minor ?? attempt.amount_minor)} MXN
+                  </span>
+                </div>
+                <div className="flex items-center justify-between gap-3 text-fuchsia-300">
+                  <span>Beneficio {attempt.reward_level_title_snapshot}</span>
+                  <span>-{attempt.reward_discount_pct}%</span>
+                </div>
+                <div className="flex items-center justify-between gap-3 border-t border-white/10 pt-1.5 text-white">
+                  <span className="font-semibold">Total pagado</span>
+                  <strong>{formatMoney(attempt.amount_minor)} MXN</strong>
+                </div>
+              </div>
+            ) : (
+              <p className="mt-1 text-xs text-zinc-400">{formatMoney(attempt.amount_minor)} MXN</p>
+            )}
           </div>
         ) : null}
 

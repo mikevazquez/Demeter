@@ -23,9 +23,15 @@ const errorCopy: Record<string, string> = {
 export default function PurchaseSingleClassButton({
   sessionId,
   priceLabel,
+  regularPriceLabel,
+  discountPct = 0,
+  levelTitle = null,
 }: {
   sessionId: string;
   priceLabel: string;
+  regularPriceLabel?: string | null;
+  discountPct?: number;
+  levelTitle?: string | null;
 }) {
   const [isPending, startTransition] = useTransition();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -50,14 +56,30 @@ export default function PurchaseSingleClassButton({
   }
 
   return (
-    <div>
+    <div className="space-y-3">
+      {discountPct > 0 && levelTitle && regularPriceLabel ? (
+        <div className="rounded-2xl border border-fuchsia-500/20 bg-fuchsia-500/[0.055] p-3 text-left">
+          <div className="flex items-center justify-between gap-3 text-xs">
+            <span className="text-zinc-500">Precio regular</span>
+            <span className="text-zinc-400 line-through">{regularPriceLabel}</span>
+          </div>
+          <div className="mt-1.5 flex items-center justify-between gap-3 text-xs">
+            <span className="font-medium text-fuchsia-300">Beneficio {levelTitle}</span>
+            <span className="font-semibold text-fuchsia-200">-{discountPct}%</span>
+          </div>
+          <div className="mt-2 flex items-center justify-between gap-3 border-t border-white/10 pt-2">
+            <span className="text-xs font-semibold text-white">Total para ti</span>
+            <strong className="text-base text-white">{priceLabel}</strong>
+          </div>
+        </div>
+      ) : null}
       <button
         type="button"
         onClick={buy}
         disabled={isPending}
         className="min-h-11 rounded-2xl bg-fuchsia-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-fuchsia-500 disabled:cursor-wait disabled:opacity-60"
       >
-        {isPending ? "Abriendo Mercado Pago…" : `Comprar · ${priceLabel}`}
+        {isPending ? "Abriendo pago seguro…" : `Comprar · ${priceLabel}`}
       </button>
       {errorMessage ? <p className="mt-2 max-w-xs text-xs text-rose-300">{errorMessage}</p> : null}
     </div>
