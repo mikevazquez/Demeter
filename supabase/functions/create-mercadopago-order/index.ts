@@ -6,6 +6,8 @@ type CreateOrderRequest = {
   sessionId?: unknown;
   clientRequestKey?: unknown;
   returnBaseUrl?: unknown;
+  evaluationInvitationId?: unknown;
+  evaluationSessionId?: unknown;
 };
 
 type CheckoutAttempt = {
@@ -108,6 +110,9 @@ const handler = {
     const sessionId = safeText(payload.sessionId);
     const clientRequestKey = safeText(payload.clientRequestKey);
     const returnBaseUrl = validReturnBaseUrl(payload.returnBaseUrl);
+    const evaluationInvitationId = safeText(payload.evaluationInvitationId);
+    const evaluationSessionId = safeText(payload.evaluationSessionId);
+    const hasEvaluationContext = Boolean(evaluationInvitationId || evaluationSessionId);
     const buyingSingleClass = Boolean(sessionId);
 
     if (
@@ -116,7 +121,15 @@ const handler = {
       !UUID_PATTERN.test(clientRequestKey) ||
       (buyingSingleClass && (!sessionId || !UUID_PATTERN.test(sessionId))) ||
       (!buyingSingleClass && (!productTemplateId || !UUID_PATTERN.test(productTemplateId))) ||
-      (buyingSingleClass && Boolean(productTemplateId))
+      (buyingSingleClass && Boolean(productTemplateId)) ||
+      (hasEvaluationContext &&
+        (!evaluationInvitationId ||
+          !evaluationSessionId ||
+          !UUID_PATTERN.test(evaluationInvitationId) ||
+          !UUID_PATTERN.test(evaluationSessionId))) ||
+      (buyingSingleClass &&
+        hasEvaluationContext &&
+        evaluationSessionId !== sessionId)
     ) {
       return jsonResponse({ error: "invalid_request" }, 400);
     }
@@ -257,11 +270,16 @@ const handler = {
       return jsonResponse({ error: "mercadopago_not_configured" }, 503);
     }
 
-    const returnPath = attemptRow.session_id
-      ? "/student/reservar/checkout"
-      : "/student/paquete/checkout";
+    const returnPath = hasEvaluationContext
+      ? `/student/evaluaciones/${evaluationInvitationId}/checkout`
+      : attemptRow.session_id
+        ? "/student/reservar/checkout"
+        : "/student/paquete/checkout";
     const returnUrl = new URL(returnPath, returnBaseUrl);
     returnUrl.searchParams.set("attempt", attemptRow.id);
+    if (hasEvaluationContext && evaluationSessionId) {
+      returnUrl.searchParams.set("session", evaluationSessionId);
+    }
 
     const successUrl = new URL(returnUrl);
     successUrl.searchParams.set("outcome", "success");
