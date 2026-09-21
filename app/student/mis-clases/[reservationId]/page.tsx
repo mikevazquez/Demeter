@@ -49,7 +49,7 @@ type InvitationContactMatch = {
 
 const inviteErrorCopy: Record<string, string> = {
   guest_name_required: "Escribe el nombre completo de tu invitado.",
-  guest_phone_invalid: "Usa un teléfono válido con código de país, por ejemplo +5213312345678.",
+  guest_phone_invalid: "Escribe un número de teléfono de 10 dígitos.",
   no_invites_remaining: "Ya utilizaste las invitaciones disponibles de este mes.",
   session_full: "Ya no hay un cupo adicional disponible para tu invitado.",
   session_not_bookable: "Esta clase ya no admite invitaciones.",
