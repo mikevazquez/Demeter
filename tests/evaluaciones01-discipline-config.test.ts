@@ -3,42 +3,34 @@ import { join } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
-const overview = readFileSync(
-  join(process.cwd(), "app/admin/evaluaciones/configuracion/page.tsx"),
+const evaluations = readFileSync(
+  join(process.cwd(), "app/admin/evaluaciones/page.tsx"),
   "utf8",
 );
 
 const discipline = readFileSync(
-  join(
-    process.cwd(),
-    "app/admin/evaluaciones/configuracion/[disciplineId]/page.tsx",
-  ),
+  join(process.cwd(), "app/admin/evaluaciones/disciplina/[disciplineId]/page.tsx"),
   "utf8",
 );
 
 describe("EVALUACIONES-01 discipline-first configuration", () => {
-  it("keeps the global configuration screen focused on disciplines", () => {
-    expect(overview).toContain("Configura cada disciplina de forma independiente");
-    expect(overview).toContain("Configurar →");
-    expect(overview).not.toContain('href="#niveles"');
-    expect(overview).not.toContain('href="#reglas"');
-    expect(overview).not.toContain('href="#plantillas"');
+  it("starts Evaluaciones by asking which discipline to work with", () => {
+    expect(evaluations).toContain("¿Qué disciplina quieres evaluar?");
+    expect(evaluations).toContain("/admin/evaluaciones/disciplina/");
+    expect(evaluations).not.toContain("/admin/evaluaciones/configuracion#");
   });
 
-  it("moves levels, upcoming evaluations and templates inside each discipline", () => {
-    expect(discipline).toContain('view === "niveles"');
-    expect(discipline).toContain('view === "proximas"');
-    expect(discipline).toContain('view === "plantillas"');
-    expect(discipline).toContain("Próximas evaluaciones");
-    expect(discipline).toContain("Plantillas de evaluación");
+  it("keeps levels, rules, templates and upcoming evaluations inside each discipline", () => {
     expect(discipline).toContain("Niveles de");
+    expect(discipline).toContain("Reglas de evaluación");
+    expect(discipline).toContain("Plantillas de evaluación");
+    expect(discipline).toContain("Próximas evaluaciones");
   });
 
-  it("uses real tab navigation instead of same-page anchors", () => {
-    expect(discipline).toContain("?view=niveles");
-    expect(discipline).toContain("?view=proximas");
-    expect(discipline).toContain("?view=plantillas");
-    expect(discipline).not.toContain('href="#niveles"');
-    expect(discipline).not.toContain('href="#plantillas"');
+  it("does not use a top tab menu to split discipline configuration", () => {
+    expect(discipline).not.toContain('className="eval-tabs"');
+    expect(discipline).not.toContain("?view=niveles");
+    expect(discipline).not.toContain("?view=plantillas");
+    expect(discipline).not.toContain("?view=proximas");
   });
 });
