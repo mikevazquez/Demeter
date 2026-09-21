@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useState } from "react";
 
 import { SessionOperations } from "./SessionOperations";
 
@@ -51,15 +51,13 @@ export function TodayClasses({
   canBook,
   canCreateStudent,
 }: TodayClassesProps) {
-  const ids = useMemo(() => new Set(classes.map((item) => item.id)), [classes]);
-  const [openSessionId, setOpenSessionId] = useState<string | null>(null);
-
-  useEffect(() => {
+  const [openSessionId, setOpenSessionId] = useState<string | null>(() => {
+    if (typeof window === "undefined") return null;
     const hash = window.location.hash;
-    if (!hash.startsWith("#session-")) return;
+    if (!hash.startsWith("#session-")) return null;
     const sessionId = hash.replace("#session-", "");
-    if (ids.has(sessionId)) setOpenSessionId(sessionId);
-  }, [ids]);
+    return classes.some((item) => item.id === sessionId) ? sessionId : null;
+  });
 
   if (!classes.length) {
     return <div className="today-empty-state">No hay clases programadas para este día.</div>;
