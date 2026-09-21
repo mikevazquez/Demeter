@@ -35,7 +35,9 @@ describe("SF-174 reservation_cancelled Asistian routing", () => {
   });
 
   it("uses the shared Asistian transport and preserves execution idempotency", () => {
-    expect(processor).toContain('import { sendAsistianWebhook } from "../_shared/asistian-messaging.ts"');
+    expect(processor).toContain(
+      'import { sendAsistianWebhook } from "../_shared/asistian-messaging.ts"',
+    );
     expect(processor).toContain("await sendAsistianWebhook({");
     expect(processor).toContain('p_provider_key: "asistian"');
     expect(processor).not.toContain("MockMessagingProvider");

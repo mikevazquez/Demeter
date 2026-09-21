@@ -188,7 +188,8 @@ async function loadContext(adminClient: SupabaseClient, reservationId: string) {
     hasConsume,
     creditsRemaining,
     contextComplete:
-      !templateError && Boolean(student && session && studio && template && reservation.cancelled_at),
+      !templateError &&
+      Boolean(student && session && studio && template && reservation.cancelled_at),
   };
 }
 
@@ -716,8 +717,7 @@ const handler = {
       });
     }
 
-    const retryable =
-      providerResult.status === "skipped" ? true : providerResult.retryable;
+    const retryable = providerResult.status === "skipped" ? true : providerResult.retryable;
     const errorMessage =
       providerResult.status === "skipped"
         ? "El webhook de Asistian no está configurado para reservation_cancelled."
