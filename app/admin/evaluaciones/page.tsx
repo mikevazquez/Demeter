@@ -38,11 +38,6 @@ export default async function EvaluationsDashboardPage({
           <h1>Evaluaciones</h1>
           <p>Elige una disciplina para configurar sus niveles técnicos.</p>
         </div>
-        {ctx.can(CAPABILITIES.EVALUATIONS_WRITE) ? (
-          <Link className="eval-primary-button compact-mobile" href="/admin/evaluaciones/nueva">
-            + Nueva evaluación
-          </Link>
-        ) : null}
       </header>
 
       {qs.error ? (
