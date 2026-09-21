@@ -47,6 +47,7 @@ type PurchasableProduct = {
 type EnrollmentRequirement = {
   required?: boolean;
   missing?: boolean;
+  product_template_id?: string | null;
   name?: string | null;
   price_minor?: number | null;
   currency?: string | null;
@@ -272,12 +273,26 @@ export default async function ScheduleEvaluationPage({
                 ) : null}
               </div>
               <p className="mt-2 text-xs leading-5 text-zinc-500">
-                No necesitas hacer una compra separada: se agregará al mismo pago de la clase o paquete que elijas.
+                {needsClassAccess
+                  ? "No necesitas hacer una compra separada: se agregará al mismo pago de la clase o paquete que elijas."
+                  : "Tu paquete y tus créditos se conservan. Paga únicamente la inscripción para completar esta reserva."}
               </p>
+
+              {!needsClassAccess && enrollmentRequirement.product_template_id ? (
+                <div className="mt-4">
+                  <PurchasePackageButton
+                    productTemplateId={enrollmentRequirement.product_template_id}
+                    productName={enrollmentRequirement.name ?? "Inscripción"}
+                    evaluationInvitationId={invitation.id}
+                    evaluationSessionId={selectedSession?.session_id}
+                    buttonLabel="Pagar inscripción"
+                  />
+                </div>
+              ) : null}
             </div>
           ) : null}
 
-          {needsPurchase && selectedSession ? (
+          {needsPurchase && selectedSession && needsClassAccess ? (
             <div className="mt-5 space-y-4">
               {selectedSession.drop_in_price_minor != null ? (
                 <div className="rounded-2xl border border-fuchsia-500/25 bg-black/15 p-4">
