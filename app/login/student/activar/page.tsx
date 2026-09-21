@@ -14,23 +14,17 @@ type EntryRoute = "activate" | "profile" | "login" | "invalid";
 export default async function StudentActivationPage({
   searchParams,
 }: {
-  searchParams: Promise<{
-    error?: string;
-    token_hash?: string;
-    type?: string;
-    entry?: string;
-  }>;
+  searchParams: Promise<{ error?: string; token_hash?: string; type?: string }>;
 }) {
-  const { error, token_hash: tokenHash, type, entry } = await searchParams;
+  const { error, token_hash: tokenHash, type } = await searchParams;
   const recoveryToken = typeof tokenHash === "string" && type === "recovery" ? tokenHash : null;
-  const entryKey = typeof entry === "string" && entry.trim() ? entry.trim() : null;
   const supabase = await createClient();
 
   let entryRoute: EntryRoute | null = null;
 
-  if (entryKey) {
+  if (recoveryToken) {
     const { data, error: routeError } = await supabase.rpc("student_portal_entry_route", {
-      target_entry_key: entryKey,
+      target_entry_token: recoveryToken,
     });
 
     entryRoute =
@@ -42,12 +36,9 @@ export default async function StudentActivationPage({
     if (entryRoute === "login") redirect("/login/student");
   }
 
-  const invalidLinkState =
-    entryRoute === "invalid" ||
-    (entryRoute === "activate" && (!recoveryToken || error === "link")) ||
-    (!entryKey && !recoveryToken && error === "link");
+  const invalidLinkState = error === "link";
 
-  if (!entryKey && !recoveryToken && !invalidLinkState) {
+  if (!recoveryToken && !invalidLinkState) {
     const {
       data: { user },
     } = await supabase.auth.getUser();
@@ -108,7 +99,6 @@ export default async function StudentActivationPage({
             ) : null}
 
             <form action={completeStudentPasswordActivation} className="auth-form">
-              {entryKey ? <input type="hidden" name="entry" value={entryKey} /> : null}
               {recoveryToken ? (
                 <>
                   <input type="hidden" name="token_hash" value={recoveryToken} />
