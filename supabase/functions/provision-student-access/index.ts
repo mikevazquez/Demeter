@@ -172,8 +172,7 @@ const handler = {
       if (!tokenHash) return jsonResponse({ error: "activation_link_failed" }, 500);
 
       const activationLink = buildStudentActivationLink(activationUrl, tokenHash);
-      const welcomeEventId =
-        `student_welcome:${student.id}:${student.user_id}:${crypto.randomUUID()}`;
+      const welcomeEventId = `student_welcome:${student.id}:${student.user_id}:${crypto.randomUUID()}`;
       const welcomeDelivery = await sendAsistianWebhook({
         adminClient,
         studioId: student.studio_id,
@@ -328,8 +327,7 @@ const handler = {
     }
 
     const activationLink = buildStudentActivationLink(activationUrl, tokenHash);
-    const welcomeEventId =
-      `student_welcome:${student.id}:${provisionedUser.id}:${crypto.randomUUID()}`;
+    const welcomeEventId = `student_welcome:${student.id}:${provisionedUser.id}:${crypto.randomUUID()}`;
     const welcomeDelivery = await sendAsistianWebhook({
       adminClient,
       studioId: student.studio_id,
