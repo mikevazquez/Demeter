@@ -202,7 +202,7 @@ export async function createProgramAction(formData: FormData) {
       throw new Error(error?.message ?? "reward_program_create_failed");
     }
     revalidateRewards();
-    successPath = `/admin/recompensas/programas/${data}?saved=created`;
+    successPath = `/admin/recompensas/programas/${data}`;
   } catch (error) {
     redirect(rewardErrorUrl(path, error));
   }
@@ -224,7 +224,7 @@ export async function startProgramVersionAction(formData: FormData) {
   } catch (error) {
     redirect(rewardErrorUrl(path, error));
   }
-  redirect(`${path}?saved=draft_created`);
+  redirect(path);
 }
 
 export async function updateProgramDraftAction(formData: FormData) {
@@ -260,7 +260,7 @@ export async function updateProgramDraftAction(formData: FormData) {
   } catch (error) {
     redirect(rewardErrorUrl(path, error));
   }
-  redirect(`${path}?saved=program`);
+  redirect(path);
 }
 
 export async function publishProgramAction(formData: FormData) {
@@ -279,7 +279,7 @@ export async function publishProgramAction(formData: FormData) {
   } catch (error) {
     redirect(rewardErrorUrl(path, error));
   }
-  redirect(`${path}?saved=published`);
+  redirect(path);
 }
 
 export async function transitionProgramAction(formData: FormData) {
@@ -302,7 +302,7 @@ export async function transitionProgramAction(formData: FormData) {
   } catch (error) {
     redirect(rewardErrorUrl(path, error));
   }
-  redirect(`${path}?saved=${action}`);
+  redirect(path);
 }
 
 export async function saveProgramLevelAction(formData: FormData) {
@@ -438,7 +438,7 @@ export async function saveProgramLevelAction(formData: FormData) {
   } catch (error) {
     redirect(rewardErrorUrl(path, error));
   }
-  redirect(`${path}?saved=level`);
+  redirect(path);
 }
 
 export async function deleteProgramLevelAction(formData: FormData) {
@@ -507,7 +507,7 @@ export async function deleteProgramLevelAction(formData: FormData) {
   } catch (error) {
     redirect(rewardErrorUrl(path, error));
   }
-  redirect(`${path}?saved=level_removed`);
+  redirect(path);
 }
 
 async function saveStandaloneRule(formData: FormData, familyOverride: "achievement" | "challenge") {
@@ -620,7 +620,7 @@ export async function saveAchievementAction(formData: FormData) {
   try {
     const id = await saveStandaloneRule(formData, "achievement");
     revalidateRewards();
-    successPath = `/admin/recompensas/logros/${id}?saved=rule`;
+    successPath = `/admin/recompensas/logros/${id}`;
   } catch (error) {
     redirect(rewardErrorUrl(base, error));
   }
@@ -634,7 +634,7 @@ export async function saveChallengeAction(formData: FormData) {
   try {
     const id = await saveStandaloneRule(formData, "challenge");
     revalidateRewards();
-    successPath = `/admin/recompensas/retos/${id}?saved=rule`;
+    successPath = `/admin/recompensas/retos/${id}`;
   } catch (error) {
     redirect(rewardErrorUrl(base, error));
   }
@@ -685,7 +685,7 @@ export async function updateStandaloneCopyAction(formData: FormData) {
   } catch (error) {
     redirect(rewardErrorUrl(path, error));
   }
-  redirect(`${path}?saved=copy`);
+  redirect(path);
 }
 
 export async function adjustRewardAction(formData: FormData) {
@@ -705,5 +705,5 @@ export async function adjustRewardAction(formData: FormData) {
   } catch (error) {
     redirect(rewardErrorUrl(path, error));
   }
-  redirect(`${path}?saved=adjusted`);
+  redirect(path);
 }
