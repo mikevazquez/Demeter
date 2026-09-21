@@ -140,6 +140,22 @@ export default async function SessionDetailPage({
     .format(new Date(session.starts_at))
     .replace(" ", "T");
 
+  const reservationIds = (reservations ?? []).map((reservation) => reservation.id);
+  const { data: evaluationInvitations } = reservationIds.length
+    ? await supabase
+        .from("evaluation_invitations")
+        .select("reservation_id,status")
+        .in("reservation_id", reservationIds)
+        .in("status", ["scheduled", "in_progress"])
+    : {
+        data: [] as { reservation_id: string | null; status: string }[],
+      };
+  const evaluationByReservation = new Map(
+    (evaluationInvitations ?? [])
+      .filter((item) => item.reservation_id)
+      .map((item) => [item.reservation_id!, item.status]),
+  );
+
   const acquisitionIds = [
     ...new Set(
       (reservations ?? []).map((reservation) => reservation.acquisition_id).filter(Boolean),
@@ -224,6 +240,7 @@ export default async function SessionDetailPage({
             ? `${balance ?? 0} créditos disponibles`
             : "—",
       expiresLabel: isGuest ? "Misma clase" : formatExpiry(acquisition?.expires_on ?? null),
+      evaluationStatus: evaluationByReservation.get(reservation.id) ?? null,
     };
   });
 
