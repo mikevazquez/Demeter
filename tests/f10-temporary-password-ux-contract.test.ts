@@ -64,13 +64,15 @@ describe("F10 student self-password activation contracts", () => {
     const edgeFunction = source("supabase/functions/provision-student-access/index.ts");
     const page = source("app/login/student/activar/page.tsx");
     const migration = source(
-      "supabase/migrations/20260921180500_sf174_permanent_student_portal_entry.sql",
+      "supabase/migrations/20260921183000_sf174_portal_entry_token_fingerprint.sql",
     );
 
-    expect(edgeFunction).toContain('activationLink.searchParams.set("entry", entryKey)');
-    expect(edgeFunction).toContain("portal_entry_key");
+    expect(edgeFunction).toContain('activationLink.searchParams.set("token_hash", tokenHash)');
+    expect(edgeFunction).not.toContain('activationLink.searchParams.set("entry"');
     expect(page).toContain('type EntryRoute = "activate" | "profile" | "login" | "invalid"');
-    expect(migration).toContain("student_portal_entry_route");
+    expect(page).toContain('target_entry_token: recoveryToken');
+    expect(migration).toContain("student_portal_entry_tokens");
+    expect(migration).toContain("capture_student_portal_entry_token");
     expect(migration).toContain("return 'profile'");
     expect(migration).toContain("return 'login'");
     expect(migration).toContain(
