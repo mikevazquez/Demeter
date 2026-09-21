@@ -59,7 +59,8 @@ function formatReminderVariables(input: {
   location: string | null;
 }) {
   const startsAt = new Date(input.startsAt);
-  if (!Number.isFinite(startsAt.getTime())) throw new Error("class_reminder_invalid_start_time");
+  if (!Number.isFinite(startsAt.getTime()))
+    throw new Error("class_reminder_invalid_start_time");
 
   return {
     nombre: input.studentName.trim() || "Alumna",
@@ -187,10 +188,14 @@ async function loadContext(adminClient: SupabaseClient, reservationId: string) {
 
 const handler = {
   fetch: withSupabase({ auth: "none" }, async (request, context) => {
-    if (request.method !== "POST") return jsonResponse({ error: "method_not_allowed" }, 405);
+    if (request.method !== "POST") {
+      return jsonResponse({ error: "method_not_allowed" }, 405);
+    }
 
     const adminClient = context.supabaseAdmin;
-    const dispatchToken = safeText(request.headers.get("x-studio-flow-dispatch-token"));
+    const dispatchToken = safeText(
+      request.headers.get("x-studio-flow-dispatch-token"),
+    );
     if (!dispatchToken) return jsonResponse({ error: "unauthenticated" }, 401);
 
     const { data: dispatchAuthorized, error: dispatchAuthError } = await adminClient.rpc(
@@ -224,7 +229,9 @@ const handler = {
       .eq("event_id", eventId)
       .maybeSingle();
 
-    if (eventError || !event) return jsonResponse({ error: "class_reminder_event_not_found" }, 404);
+    if (eventError || !event) {
+      return jsonResponse({ error: "class_reminder_event_not_found" }, 404);
+    }
 
     if (event.event_type !== "class.reminder_due" || event.source_entity_type !== "reservation") {
       return jsonResponse({ error: "class_reminder_event_invalid" }, 409);
@@ -236,7 +243,9 @@ const handler = {
     }
 
     const contextData = await loadContext(adminClient, reservationId);
-    if ("error" in contextData) return jsonResponse({ error: contextData.error }, 404);
+    if ("error" in contextData) {
+      return jsonResponse({ error: contextData.error }, 404);
+    }
 
     const eligible =
       contextData.reservation.status === "reserved" &&
