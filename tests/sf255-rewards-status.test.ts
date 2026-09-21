@@ -27,8 +27,16 @@ const waitlistControl = readFileSync(
 );
 const homePage = readFileSync(join(process.cwd(), "app/student/page.tsx"), "utf8");
 const profilePage = readFileSync(join(process.cwd(), "app/student/perfil/page.tsx"), "utf8");
+const studentActions = readFileSync(join(process.cwd(), "app/student/actions.ts"), "utf8");
 const invitationMigration = readFileSync(
   join(process.cwd(), "supabase/migrations/20260921014500_sf255_guest_invitations.sql"),
+  "utf8",
+);
+const contactConfirmationMigration = readFileSync(
+  join(
+    process.cwd(),
+    "supabase/migrations/20260921020138_sf255_guest_contact_confirmation.sql",
+  ),
   "utf8",
 );
 const discountMigration = readFileSync(
@@ -140,6 +148,19 @@ describe("SF-255A monthly level and waitlist contracts", () => {
     expect(studentActions).not.toContain("?invited=1");
     expect(studentActions).not.toContain("?guest_cancelled=");
     expect(studentActions).toContain("?invite_error=");
+  });
+
+  it("warns before reusing a phone that belongs to a differently named contact", () => {
+    expect(contactConfirmationMigration).toContain("student_guest_invitation_contact_lookup");
+    expect(contactConfirmationMigration).toContain("student_guest_invitation_contact_identity");
+    expect(contactConfirmationMigration).toContain("student_create_guest_invitation_existing");
+    expect(studentActions).toContain("normalizeGuestIdentityName");
+    expect(studentActions).toContain("contact_match=");
+    expect(reservationDetail).toContain("Contacto encontrado");
+    expect(reservationDetail).toContain("Usaremos ese contacto para esta invitación.");
+    expect(reservationDetail).toContain("No cambiaremos su nombre ni crearemos un registro duplicado.");
+    expect(reservationDetail).toContain("Usar este contacto");
+    expect(reservationDetail).toContain("Corregir datos");
   });
 
   it("snapshots the approved level discount into checkout and surfaces M05 pricing", () => {
