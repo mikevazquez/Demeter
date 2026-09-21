@@ -662,7 +662,7 @@ export async function transitionStandaloneRuleAction(formData: FormData) {
   } catch (error) {
     redirect(rewardErrorUrl(path, error));
   }
-  redirect(`${path}?saved=${action}`);
+  redirect(path);
 }
 
 export async function updateStandaloneCopyAction(formData: FormData) {
