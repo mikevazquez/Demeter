@@ -68,9 +68,7 @@ describe("SF-174 Asistian messaging provider", () => {
       student_welcome: "https://example.invalid/hooks/welcome",
     });
 
-    expect(() => parseAsistianWebhookUrls(undefined)).toThrow(
-      "asistian_webhook_urls_required",
-    );
+    expect(() => parseAsistianWebhookUrls(undefined)).toThrow("asistian_webhook_urls_required");
     expect(() =>
       parseAsistianWebhookUrls(
         JSON.stringify({
