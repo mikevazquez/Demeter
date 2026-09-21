@@ -56,7 +56,8 @@ export async function enableEvaluationDiscipline(formData: FormData) {
 
   revalidatePath("/admin/evaluaciones");
   revalidatePath("/admin/evaluaciones/configuracion");
-  redirect("/admin/evaluaciones/configuracion");
+  revalidatePath(`/admin/evaluaciones/configuracion/${disciplineId}`);
+  redirect(`/admin/evaluaciones/configuracion/${disciplineId}`);
 }
 
 export async function setEvaluationDisciplineActive(formData: FormData) {
@@ -74,16 +75,44 @@ export async function setEvaluationDisciplineActive(formData: FormData) {
 
   revalidatePath("/admin/evaluaciones");
   revalidatePath("/admin/evaluaciones/configuracion");
+  revalidatePath(`/admin/evaluaciones/configuracion/${disciplineId}`);
   redirect("/admin/evaluaciones/configuracion");
+}
+
+export async function setEvaluationDisciplineLevelActive(formData: FormData) {
+  const ctx = await getAdminContext(CAPABILITIES.EVALUATIONS_CONFIGURE);
+  const disciplineId = text(formData, "discipline_id");
+  const disciplineLevelId = text(formData, "discipline_level_id");
+  const active = text(formData, "active") === "true";
+
+  const { error } = await ctx.supabase
+    .from("discipline_technical_levels")
+    .update({ active })
+    .eq("id", disciplineLevelId)
+    .eq("studio_id", ctx.studio.id)
+    .eq("discipline_id", disciplineId);
+
+  if (error) {
+    redirect(`/admin/evaluaciones/configuracion/${disciplineId}?view=niveles&error=level`);
+  }
+
+  revalidatePath("/admin/evaluaciones");
+  revalidatePath("/admin/evaluaciones/configuracion");
+  revalidatePath(`/admin/evaluaciones/configuracion/${disciplineId}`);
+  redirect(`/admin/evaluaciones/configuracion/${disciplineId}?view=niveles`);
 }
 
 export async function createEvaluationTemplate(formData: FormData) {
   const ctx = await getAdminContext(CAPABILITIES.EVALUATIONS_CONFIGURE);
   const disciplineLevelId = text(formData, "discipline_level_id");
+  const disciplineId = text(formData, "discipline_id");
   const name = text(formData, "name");
+  const errorTarget = disciplineId
+    ? `/admin/evaluaciones/configuracion/${disciplineId}?view=plantillas&error=template`
+    : "/admin/evaluaciones/configuracion?error=template";
 
   if (name.length < 2 || !disciplineLevelId) {
-    redirect("/admin/evaluaciones/configuracion?error=template");
+    redirect(errorTarget);
   }
 
   const { data: level } = await ctx.supabase
@@ -94,7 +123,7 @@ export async function createEvaluationTemplate(formData: FormData) {
     .eq("active", true)
     .maybeSingle();
 
-  if (!level) redirect("/admin/evaluaciones/configuracion?error=template");
+  if (!level) redirect(errorTarget);
 
   const { data: template, error: templateError } = await ctx.supabase
     .from("evaluation_templates")
@@ -109,7 +138,7 @@ export async function createEvaluationTemplate(formData: FormData) {
     .single();
 
   if (templateError || !template) {
-    redirect("/admin/evaluaciones/configuracion?error=template");
+    redirect(errorTarget);
   }
 
   const { data: version, error: versionError } = await ctx.supabase
@@ -129,7 +158,7 @@ export async function createEvaluationTemplate(formData: FormData) {
     .single();
 
   if (versionError || !version) {
-    redirect("/admin/evaluaciones/configuracion?error=template");
+    redirect(errorTarget);
   }
 
   const { error: criteriaError } = await ctx.supabase.from("evaluation_template_criteria").insert([
@@ -176,10 +205,11 @@ export async function createEvaluationTemplate(formData: FormData) {
   ]);
 
   if (criteriaError) {
-    redirect("/admin/evaluaciones/configuracion?error=template");
+    redirect(errorTarget);
   }
 
   revalidatePath("/admin/evaluaciones/configuracion");
+  revalidatePath(`/admin/evaluaciones/configuracion/${level.discipline_id}`);
   redirect(`/admin/evaluaciones/plantillas/${template.id}`);
 }
 
