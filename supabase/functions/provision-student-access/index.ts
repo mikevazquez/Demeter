@@ -182,6 +182,7 @@ const handler = {
         variables: {
           nombre: student.full_name,
           activation_url: activationLink,
+          activation_token: tokenHash,
         },
         metadata: {
           source: "student_access_activation_resend",
