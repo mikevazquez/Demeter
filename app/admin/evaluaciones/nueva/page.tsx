@@ -6,7 +6,7 @@ import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { createTechnicalEvaluationAction } from "../actions";
 
 const errorCopy: Record<string, string> = {
-  template: "La plantilla seleccionada ya no está activa.",
+  template: "La configuración seleccionada ya no está disponible.",
   create: "No pudimos crear la evaluación.",
 };
 
@@ -49,7 +49,11 @@ export default async function NewTechnicalEvaluationPage({
         .eq("active", true),
     ]);
 
-  const versions = versionsResult.data ?? [];
+  const versions = Array.from(
+    new Map(
+      (versionsResult.data ?? []).map((version) => [version.template_id, version]),
+    ).values(),
+  );
   const templateIds = Array.from(new Set(versions.map((version) => version.template_id)));
   const templatesResult = templateIds.length
     ? await ctx.supabase
@@ -90,7 +94,7 @@ export default async function NewTechnicalEvaluationPage({
             ← Evaluaciones
           </Link>
           <h1>Nueva evaluación</h1>
-          <p>Selecciona alumna, nivel objetivo y plantilla activa.</p>
+          <p>Selecciona alumna y nivel objetivo.</p>
         </div>
       </header>
 
@@ -103,10 +107,10 @@ export default async function NewTechnicalEvaluationPage({
       <section className="eval-panel eval-config-section">
         {!versions.length ? (
           <div className="eval-empty">
-            No hay plantillas activas. Primero configura y activa una plantilla.
+            No hay niveles configurados para evaluar. Primero edita y guarda un nivel.
             <div style={{ marginTop: 12 }}>
-              <Link className="eval-primary-button" href="/admin/evaluaciones/configuracion">
-                Ir a configuración
+              <Link className="eval-primary-button" href="/admin/evaluaciones">
+                Ir a Evaluaciones
               </Link>
             </div>
           </div>
@@ -127,7 +131,7 @@ export default async function NewTechnicalEvaluationPage({
             </div>
 
             <div className="eval-field">
-              <label htmlFor="template-version">Disciplina, nivel y plantilla</label>
+              <label htmlFor="template-version">Disciplina y nivel</label>
               <select id="template-version" name="template_version_id" required defaultValue="">
                 <option value="" disabled>
                   Selecciona la evaluación…
@@ -139,7 +143,7 @@ export default async function NewTechnicalEvaluationPage({
                   return (
                     <option value={version.id} key={version.id}>
                       {disciplines.get(template.discipline_id) ?? "Disciplina"} ·{" "}
-                      {level?.title ?? "Nivel"} · {template.name} · v{version.version_number}
+                      {level?.title ?? "Nivel"}
                     </option>
                   );
                 })}
