@@ -26,6 +26,14 @@ function generateInternalPassword() {
   return `Sf!${crypto.randomUUID()}A9`;
 }
 
+function generateTemporaryPassword() {
+  const randomValues = new Uint32Array(6);
+  crypto.getRandomValues(randomValues);
+  const suffix = Array.from(randomValues, (value) => String(value % 10)).join("");
+
+  return `Demeter${suffix}`;
+}
+
 function buildStudentActivationLink(baseUrl: string, tokenHash: string) {
   const activationLink = new URL(baseUrl);
   activationLink.searchParams.set("token_hash", tokenHash);
@@ -58,23 +66,27 @@ const handler = {
     const mode =
       payload.mode === "resend" || payload.mode === "reset"
         ? "resend"
-        : payload.mode === undefined
-          ? "provision"
-          : "";
+        : payload.mode === "temporary_password"
+          ? "temporary_password"
+          : payload.mode === undefined
+            ? "provision"
+            : "";
     const activationUrl =
       typeof payload.activationUrl === "string" ? payload.activationUrl.trim() : "";
     if (!studentId || !mode) return jsonResponse({ error: "invalid_request" }, 400);
 
-    try {
-      const parsedActivationUrl = new URL(activationUrl);
-      if (
-        parsedActivationUrl.protocol !== "https:" ||
-        parsedActivationUrl.pathname !== "/login/student/activar"
-      ) {
+    if (mode !== "temporary_password") {
+      try {
+        const parsedActivationUrl = new URL(activationUrl);
+        if (
+          parsedActivationUrl.protocol !== "https:" ||
+          parsedActivationUrl.pathname !== "/login/student/activar"
+        ) {
+          return jsonResponse({ error: "activation_url_invalid" }, 400);
+        }
+      } catch {
         return jsonResponse({ error: "activation_url_invalid" }, 400);
       }
-    } catch {
-      return jsonResponse({ error: "activation_url_invalid" }, 400);
     }
 
     const { data: student, error: studentError } = await userClient
@@ -86,7 +98,10 @@ const handler = {
     if (studentError) return jsonResponse({ error: "student_lookup_failed" }, 500);
     if (!student) return jsonResponse({ error: "student_not_found" }, 404);
     if (!student.person_id) return jsonResponse({ error: "student_person_missing" }, 409);
-    if (!student.active || student.lifecycle_status !== "active") {
+    if (
+      mode !== "temporary_password" &&
+      (!student.active || student.lifecycle_status !== "active")
+    ) {
       return jsonResponse({ error: "student_not_active" }, 409);
     }
 
@@ -114,7 +129,7 @@ const handler = {
     if (permissionError) return jsonResponse({ error: "authorization_failed" }, 500);
     if (!permission) return jsonResponse({ error: "forbidden" }, 403);
 
-    if (mode === "resend") {
+    if (mode === "resend" || mode === "temporary_password") {
       if (!student.user_id) return jsonResponse({ error: "student_access_missing" }, 409);
 
       const [
@@ -144,6 +159,45 @@ const handler = {
       ) {
         return jsonResponse({ error: "student_access_inconsistent" }, 409);
       }
+      if (mode === "temporary_password") {
+        const temporaryPassword = generateTemporaryPassword();
+        const shouldReopenActivation = account.must_change_password !== true;
+
+        if (shouldReopenActivation) {
+          const { error: activationStateError } = await adminClient
+            .from("user_accounts")
+            .update({ must_change_password: true, updated_at: new Date().toISOString() })
+            .eq("id", student.user_id);
+
+          if (activationStateError) {
+            return jsonResponse({ error: "access_reset_state_failed" }, 500);
+          }
+        }
+
+        const { error: resetError } = await adminClient.auth.admin.updateUserById(student.user_id, {
+          email: authEmail,
+          email_confirm: true,
+          password: temporaryPassword,
+        });
+
+        if (resetError) {
+          if (shouldReopenActivation) {
+            await adminClient
+              .from("user_accounts")
+              .update({ must_change_password: false, updated_at: new Date().toISOString() })
+              .eq("id", student.user_id);
+          }
+          return jsonResponse({ error: "auth_password_reset_failed" }, 500);
+        }
+
+        return jsonResponse({
+          ok: true,
+          phone: student.phone,
+          temporaryPassword,
+          mustChangePassword: true,
+        });
+      }
+
       if (account.must_change_password !== true) {
         return jsonResponse({ error: "activation_already_completed" }, 409);
       }

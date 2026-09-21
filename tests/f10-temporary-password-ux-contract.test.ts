@@ -8,17 +8,21 @@ function source(path: string) {
 }
 
 describe("F10 student self-password activation contracts", () => {
-  it("never exposes an initial student password to the admin UI", () => {
+  it("keeps initial onboarding passwordless while allowing explicit admin recovery", () => {
     const component = source("app/admin/alumnas/[studentId]/StudentAccessProvisioner.tsx");
     const actions = source("app/admin/alumnas/[studentId]/actions.ts");
     const edgeFunction = source("supabase/functions/provision-student-access/index.ts");
 
-    expect(component).not.toContain("Copiar contraseña");
-    expect(component).not.toContain("temporaryPassword");
-    expect(actions).not.toContain("temporaryPassword");
-    expect(edgeFunction).not.toContain("temporary_password");
-    expect(edgeFunction).not.toContain("Demeter");
     expect(component).toContain("Reenviar enlace de activación");
+    expect(component).toContain("Generar contraseña temporal");
+    expect(component).toContain("Copiar contraseña");
+    expect(actions).toContain("resetStudentTemporaryPassword");
+    expect(actions).toContain('"temporary_password"');
+    expect(edgeFunction).toContain("generateInternalPassword");
+    expect(edgeFunction).toContain("generateTemporaryPassword");
+    expect(edgeFunction).toContain('if (mode === "temporary_password")');
+    expect(edgeFunction).toContain("must_change_password: true");
+    expect(edgeFunction).toContain("auth_password_reset_failed");
   });
 
   it("generates a recovery activation link and sends only that link through student_welcome", () => {
@@ -35,11 +39,11 @@ describe("F10 student self-password activation contracts", () => {
     const edgeFunction = source("supabase/functions/provision-student-access/index.ts");
     const actions = source("app/admin/alumnas/[studentId]/actions.ts");
 
-    expect(edgeFunction).toContain('if (mode === "resend")');
+    expect(edgeFunction).toContain('if (mode === "resend" || mode === "temporary_password")');
     expect(edgeFunction).toContain("account.must_change_password !== true");
     expect(edgeFunction).toContain('error: "activation_already_completed"');
     expect(actions).toContain("resendStudentActivationLink");
-    expect(actions).toContain('{ studentId, mode: "resend" as const, activationUrl }');
+    expect(actions).toContain('{ studentId, mode: "resend", activationUrl }');
   });
 
   it("does not consume the one-time token on page load", () => {

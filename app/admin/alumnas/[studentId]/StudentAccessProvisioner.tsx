@@ -3,7 +3,11 @@
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import LoadingSpinner from "@/app/admin/components/LoadingSpinner";
-import { provisionStudentAccess, resendStudentActivationLink } from "./actions";
+import {
+  provisionStudentAccess,
+  resendStudentActivationLink,
+  resetStudentTemporaryPassword,
+} from "./actions";
 
 const errorCopy: Record<string, string> = {
   invalid_request: "No se pudo identificar a la alumna.",
@@ -20,6 +24,9 @@ const errorCopy: Record<string, string> = {
     "La alumna ya creó su contraseña. Si la olvidó, debe usar el flujo de recuperación de acceso.",
   auth_activation_reset_failed:
     "No se pudo preparar un nuevo enlace de activación. Inténtalo nuevamente.",
+  auth_password_reset_failed: "Supabase Auth no pudo generar una nueva contraseña temporal.",
+  access_reset_state_failed:
+    "No se pudo preparar la cuenta para cambiar la contraseña. Inténtalo nuevamente.",
   activation_link_failed:
     "La cuenta está lista, pero no se pudo generar el enlace de activación. Puedes reenviarlo.",
   activation_url_invalid: "No se pudo construir una liga segura de activación.",
@@ -70,7 +77,7 @@ function StudentActivationAction({
 
       setResult({
         phone: response.phone,
-        activationLinkGenerated: response.activationLinkGenerated,
+        activationLinkGenerated: response.activationLinkGenerated === true,
         welcomeStatus: response.welcomeDelivery?.status ?? null,
       });
     });
@@ -166,4 +173,121 @@ export function StudentActivationLinkResender({
   phone: string;
 }) {
   return <StudentActivationAction studentId={studentId} phone={phone} mode="resend" />;
+}
+
+export function StudentTemporaryPasswordResetter({
+  studentId,
+  phone,
+}: {
+  studentId: string;
+  phone: string;
+}) {
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+  const [temporaryPassword, setTemporaryPassword] = useState<string | null>(null);
+
+  function run() {
+    const confirmed = window.confirm(
+      "Se reemplazará la contraseña actual de la alumna. La contraseña anterior dejará de funcionar inmediatamente.",
+    );
+    if (!confirmed) return;
+
+    setError(null);
+    setCopied(false);
+    startTransition(async () => {
+      const response = await resetStudentTemporaryPassword(studentId);
+
+      if (!response.ok) {
+        setError(errorCopy[response.error] ?? "No se pudo completar la operación.");
+        return;
+      }
+
+      if (!response.temporaryPassword) {
+        setError("La contraseña se actualizó, pero no pudo mostrarse. Inténtalo nuevamente.");
+        return;
+      }
+
+      setTemporaryPassword(response.temporaryPassword);
+    });
+  }
+
+  async function copyPassword() {
+    if (!temporaryPassword) return;
+
+    try {
+      await navigator.clipboard.writeText(temporaryPassword);
+      setCopied(true);
+    } catch {
+      setCopied(false);
+    }
+  }
+
+  function acknowledge() {
+    setTemporaryPassword(null);
+    setCopied(false);
+    router.refresh();
+  }
+
+  if (temporaryPassword) {
+    return (
+      <div className="student-list">
+        <div className="notice success">
+          Nueva contraseña temporal generada. La contraseña anterior ya no funciona. Al iniciar
+          sesión, la alumna deberá crear una contraseña propia.
+        </div>
+        <div className="student-row">
+          <div>
+            <strong>Teléfono de acceso</strong>
+            <span>{phone}</span>
+          </div>
+        </div>
+        <div className="student-row">
+          <div>
+            <strong>Contraseña temporal</strong>
+            <span className="font-mono break-all">{temporaryPassword}</span>
+          </div>
+        </div>
+        <div className="compact-form">
+          <button className="primary-button" type="button" onClick={copyPassword}>
+            {copied ? "Contraseña copiada" : "Copiar contraseña"}
+          </button>
+          <button className="secondary-button" type="button" onClick={acknowledge}>
+            Ya la guardé
+          </button>
+        </div>
+        <p className="text-sm text-zinc-400">
+          Compártela por un canal privado. Studio Flow no guarda esta contraseña y no podrá volver a
+          mostrar la misma después de cerrar este panel.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="compact-form">
+      <p>
+        Si la alumna olvidó su contraseña, puedes generar una temporal para <strong>{phone}</strong>
+        . La contraseña actual dejará de funcionar y se le pedirá crear una nueva al entrar.
+      </p>
+      {error ? <div className="notice error">{error}</div> : null}
+      <button
+        className="secondary-button"
+        type="button"
+        onClick={run}
+        disabled={isPending}
+        aria-busy={isPending}
+      >
+        {isPending ? (
+          <span className="inline-flex items-center justify-center gap-2">
+            <LoadingSpinner />
+            <span>Generando contraseña…</span>
+          </span>
+        ) : (
+          "Generar contraseña temporal"
+        )}
+      </button>
+    </div>
+  );
 }
