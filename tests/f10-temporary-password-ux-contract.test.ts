@@ -39,7 +39,9 @@ describe("F10 student self-password activation contracts", () => {
     const edgeFunction = source("supabase/functions/provision-student-access/index.ts");
     const actions = source("app/admin/alumnas/[studentId]/actions.ts");
 
-    expect(edgeFunction).toContain('if (mode === "resend")');
+    expect(edgeFunction).toContain(
+      'if (mode === "resend" || mode === "temporary_password")',
+    );
     expect(edgeFunction).toContain("account.must_change_password !== true");
     expect(edgeFunction).toContain('error: "activation_already_completed"');
     expect(actions).toContain("resendStudentActivationLink");
