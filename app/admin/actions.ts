@@ -22,6 +22,17 @@ function sessionReturnUrl(returnDate: string, sessionId: string) {
   return sessionId ? `${url}#session-${sessionId}` : url;
 }
 
+function safeAdminReturn(value: string, fallback: string) {
+  if (!value.startsWith("/admin")) return fallback;
+  if (value.startsWith("//")) return fallback;
+  return value;
+}
+
+function operationReturnUrl(formData: FormData, returnDate: string, sessionId: string) {
+  const fallback = sessionReturnUrl(returnDate, sessionId);
+  return safeAdminReturn(String(formData.get("return_to") ?? ""), fallback);
+}
+
 function refreshSession(sessionId: string) {
   revalidatePath("/admin");
   revalidatePath(`/admin/agenda/${sessionId}`);
@@ -31,7 +42,7 @@ export async function bookStudentFromToday(formData: FormData) {
   const sessionId = String(formData.get("session_id") ?? "");
   const studentId = String(formData.get("student_id") ?? "");
   const returnDate = String(formData.get("return_date") ?? "");
-  const returnUrl = todayReturnUrl(returnDate);
+  const returnUrl = operationReturnUrl(formData, returnDate, sessionId);
 
   if (!sessionId || !studentId) {
     redirect(withQuery(returnUrl, "error", "booking"));
@@ -50,7 +61,7 @@ export async function bookStudentFromToday(formData: FormData) {
   }
 
   if (!can(CAPABILITIES.SCHEDULE_WRITE)) {
-    redirect(withQuery(sessionReturnUrl(returnDate, sessionId), "error", "forbidden"));
+    redirect(withQuery(returnUrl, "error", "forbidden"));
   }
 
   const { data: eligibility, error: eligibilityError } = await supabase.rpc("booking_eligibility", {
@@ -59,7 +70,7 @@ export async function bookStudentFromToday(formData: FormData) {
   });
 
   if (eligibilityError) {
-    redirect(withQuery(sessionReturnUrl(returnDate, sessionId), "error", eligibilityError.message));
+    redirect(withQuery(returnUrl, "error", eligibilityError.message));
   }
 
   const result = (eligibility ?? {}) as {
@@ -74,22 +85,22 @@ export async function bookStudentFromToday(formData: FormData) {
     });
 
     if (error) {
-      redirect(withQuery(sessionReturnUrl(returnDate, sessionId), "error", error.message));
+      redirect(withQuery(returnUrl, "error", error.message));
     }
 
     refreshSession(sessionId);
-    redirect(withQuery(sessionReturnUrl(returnDate, sessionId), "created", "booking"));
+    redirect(withQuery(returnUrl, "created", "booking"));
   }
 
   const commercialPendingReasons = new Set(["no_active_product", "outside_product", "no_credits"]);
   const reason = result.reason_code ?? "booking";
 
   if (!commercialPendingReasons.has(reason)) {
-    redirect(withQuery(sessionReturnUrl(returnDate, sessionId), "error", reason));
+    redirect(withQuery(returnUrl, "error", reason));
   }
 
   if (!can(CAPABILITIES.ATTENDANCE_WRITE)) {
-    redirect(withQuery(sessionReturnUrl(returnDate, sessionId), "error", "forbidden"));
+    redirect(withQuery(returnUrl, "error", "forbidden"));
   }
 
   const { error } = await supabase.rpc("add_existing_walkin_student", {
@@ -98,18 +109,18 @@ export async function bookStudentFromToday(formData: FormData) {
   });
 
   if (error) {
-    redirect(withQuery(sessionReturnUrl(returnDate, sessionId), "error", error.message));
+    redirect(withQuery(returnUrl, "error", error.message));
   }
 
   refreshSession(sessionId);
-  redirect(withQuery(sessionReturnUrl(returnDate, sessionId), "created", "walkin-existing"));
+  redirect(withQuery(returnUrl, "created", "walkin-existing"));
 }
 
 export async function cancelReservationFromToday(formData: FormData) {
   const sessionId = String(formData.get("session_id") ?? "");
   const reservationId = String(formData.get("reservation_id") ?? "");
   const returnDate = String(formData.get("return_date") ?? "");
-  const returnUrl = todayReturnUrl(returnDate);
+  const returnUrl = operationReturnUrl(formData, returnDate, sessionId);
 
   if (!sessionId || !reservationId) {
     redirect(withQuery(returnUrl, "error", "cancel"));
@@ -121,11 +132,11 @@ export async function cancelReservationFromToday(formData: FormData) {
   });
 
   if (error) {
-    redirect(withQuery(sessionReturnUrl(returnDate, sessionId), "error", "cancel"));
+    redirect(withQuery(returnUrl, "error", "cancel"));
   }
 
   refreshSession(sessionId);
-  redirect(withQuery(sessionReturnUrl(returnDate, sessionId), "created", "cancel"));
+  redirect(withQuery(returnUrl, "created", "cancel"));
 }
 
 export async function setAttendanceFromToday(formData: FormData) {
@@ -134,7 +145,7 @@ export async function setAttendanceFromToday(formData: FormData) {
   const status = String(formData.get("status") ?? "");
   const reason = String(formData.get("reason") ?? "").trim();
   const returnDate = String(formData.get("return_date") ?? "");
-  const returnUrl = sessionReturnUrl(returnDate, sessionId);
+  const returnUrl = operationReturnUrl(formData, returnDate, sessionId);
 
   if (!sessionId || !reservationId || !["attended", "no_show"].includes(status)) {
     redirect(withQuery(returnUrl, "error", "attendance"));
@@ -161,7 +172,7 @@ export async function createWalkinFromToday(formData: FormData) {
   const firstName = String(formData.get("first_name") ?? "").trim();
   const lastName = String(formData.get("last_name") ?? "").trim();
   const phone = normalizeMexicanPhone(String(formData.get("phone") ?? ""));
-  const returnUrl = sessionReturnUrl(returnDate, sessionId);
+  const returnUrl = operationReturnUrl(formData, returnDate, sessionId);
 
   if (!sessionId || !firstName || !phone) {
     redirect(withQuery(returnUrl, "error", "walkin_invalid"));
@@ -187,10 +198,10 @@ export async function createWalkinFromToday(formData: FormData) {
 export async function finalizeAttendanceFromToday(formData: FormData) {
   const sessionId = String(formData.get("session_id") ?? "");
   const returnDate = String(formData.get("return_date") ?? "");
-  const returnUrl = sessionReturnUrl(returnDate, sessionId);
+  const returnUrl = operationReturnUrl(formData, returnDate, sessionId);
 
   if (!sessionId) {
-    redirect(withQuery(todayReturnUrl(returnDate), "error", "attendance"));
+    redirect(withQuery(returnUrl, "error", "attendance"));
   }
 
   const { supabase } = await getAdminContext(CAPABILITIES.ATTENDANCE_WRITE);
