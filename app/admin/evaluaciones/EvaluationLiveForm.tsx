@@ -2,10 +2,7 @@
 
 import { useState, useTransition } from "react";
 
-import {
-  saveTechnicalComboResultAction,
-  saveTechnicalElementResultAction,
-} from "./actions";
+import { saveTechnicalComboResultAction, saveTechnicalElementResultAction } from "./actions";
 
 type LiveItem = {
   id: string;
@@ -40,10 +37,7 @@ function ResultEditor({
   function save(nextStatus = status, nextNotes = notes) {
     const formData = new FormData();
     formData.set("evaluation_id", evaluationId);
-    formData.set(
-      kind === "element" ? "template_element_id" : "template_combo_id",
-      item.id,
-    );
+    formData.set(kind === "element" ? "template_element_id" : "template_combo_id", item.id);
     formData.set("result_status", nextStatus);
     formData.set("score", score);
     formData.set("attempt_count", attemptCount);
@@ -132,10 +126,18 @@ function ResultEditor({
         </div>
 
         <div className="eval-choice-row">
-          <button type="button" className="eval-choice" onClick={() => addQuickComment("Buen control")}>
+          <button
+            type="button"
+            className="eval-choice"
+            onClick={() => addQuickComment("Buen control")}
+          >
             Buen control
           </button>
-          <button type="button" className="eval-choice" onClick={() => addQuickComment("Evitar impulso")}>
+          <button
+            type="button"
+            className="eval-choice"
+            onClick={() => addQuickComment("Evitar impulso")}
+          >
             Evitar impulso
           </button>
           <label className="eval-choice" style={{ display: "grid", placeItems: "center" }}>
