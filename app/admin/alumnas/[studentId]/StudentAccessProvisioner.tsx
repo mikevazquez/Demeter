@@ -82,8 +82,7 @@ function StudentActivationAction({
   }
 
   if (result) {
-    const delivered =
-      result.activationLinkGenerated && result.welcomeStatus === "accepted";
+    const delivered = result.activationLinkGenerated && result.welcomeStatus === "accepted";
 
     return (
       <div className="student-list">
