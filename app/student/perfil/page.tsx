@@ -7,36 +7,6 @@ import { updateStudentAvatarAction, updateStudentProfileAction } from "../action
 import PendingActionButton from "../components/PendingActionButton";
 import StudentNoticeDialog from "../components/StudentNoticeDialog";
 
-type RewardLevelView = {
-  key?: string;
-  title?: string;
-  maintenance_attendance?: number;
-  promotion_attendance?: number;
-  min_active_months?: number;
-  max_uncovered_days?: number;
-  waitlist_priority?: number;
-  private_discount_pct?: number;
-  event_discount_pct?: number;
-  monthly_guest_invites?: number;
-};
-
-type RewardLevelDefinitionRow = RewardLevelView & {
-  level_key: string;
-  level_order: number;
-};
-
-type RewardStatusSnapshot = {
-  level_title?: string | null;
-  attendance_count?: number;
-  active_months?: number;
-  max_uncovered_days?: number;
-  maintenance_met?: boolean;
-  promotion_met?: boolean;
-  period_end?: string;
-  current_level?: RewardLevelView | null;
-  next_level?: RewardLevelView | null;
-};
-
 const errorCopy: Record<string, string> = {
   email_invalid: "Revisa el formato de tu correo.",
   profile_update_failed: "No pudimos guardar los cambios. Intenta de nuevo.",
@@ -59,63 +29,10 @@ export default async function StudentProfilePage({
     edit?: string;
     avatar?: string;
     avatar_error?: string;
-    benefits?: string;
   }>;
 }) {
   const query = await searchParams;
-  const { snapshot, studio, supabase, membership } = await getStudentPortalContext();
-  const [rewardStatusResult, rewardMembershipResult, rewardLevelsResult] = await Promise.all([
-    supabase.rpc("student_reward_status_snapshot"),
-    supabase
-      .from("reward_status_memberships")
-      .select("current_level_key")
-      .eq("studio_id", membership.studio_id)
-      .eq("student_id", snapshot.profile.student_id)
-      .maybeSingle(),
-    supabase
-      .from("reward_status_level_definitions")
-      .select(
-        "level_key,level_order,title,maintenance_attendance,promotion_attendance,min_active_months,max_uncovered_days,waitlist_priority,private_discount_pct,event_discount_pct,monthly_guest_invites",
-      )
-      .eq("studio_id", membership.studio_id)
-      .order("level_order"),
-  ]);
-
-  const rewardStatus = (rewardStatusResult.data as RewardStatusSnapshot | null) ?? null;
-  const levelDefinitions = (rewardLevelsResult.data ?? []) as RewardLevelDefinitionRow[];
-  const fallbackLevelKey = rewardMembershipResult.data?.current_level_key ?? null;
-  const fallbackLevelRow =
-    levelDefinitions.find((level) => level.level_key === fallbackLevelKey) ?? null;
-  const fallbackNextRow = fallbackLevelRow
-    ? (levelDefinitions.find((level) => level.level_order === fallbackLevelRow.level_order + 1) ??
-      null)
-    : null;
-  const toLevelView = (row: RewardLevelDefinitionRow | null): RewardLevelView | null =>
-    row
-      ? {
-          key: row.level_key,
-          title: row.title,
-          maintenance_attendance: row.maintenance_attendance,
-          promotion_attendance: row.promotion_attendance,
-          min_active_months: row.min_active_months,
-          max_uncovered_days: row.max_uncovered_days,
-          waitlist_priority: row.waitlist_priority,
-          private_discount_pct: row.private_discount_pct,
-          event_discount_pct: row.event_discount_pct,
-          monthly_guest_invites: row.monthly_guest_invites,
-        }
-      : null;
-  const currentLevel = rewardStatus?.current_level ?? toLevelView(fallbackLevelRow);
-  const nextLevel = rewardStatus?.next_level ?? toLevelView(fallbackNextRow);
-  const attendanceCount = rewardStatus?.attendance_count ?? snapshot.stats.attended_this_month ?? 0;
-  const maintenanceTarget = currentLevel?.maintenance_attendance ?? 0;
-  const promotionTarget = nextLevel?.promotion_attendance ?? 0;
-  const maintenanceProgress = maintenanceTarget
-    ? Math.min(100, Math.round((attendanceCount / maintenanceTarget) * 100))
-    : 100;
-  const promotionProgress = promotionTarget
-    ? Math.min(100, Math.round((attendanceCount / promotionTarget) * 100))
-    : 100;
+  const { snapshot, studio } = await getStudentPortalContext();
   const activePackage = snapshot.acquisitions.find((item) => item.active_now) ?? null;
   const fullName = [snapshot.profile.first_name, snapshot.profile.last_name]
     .filter(Boolean)
@@ -177,61 +94,12 @@ export default async function StudentProfilePage({
         </StudentNoticeDialog>
       ) : null}
 
-      {query.benefits === "1" && currentLevel ? (
-        <StudentNoticeDialog
-          eyebrow={`Nivel ${currentLevel.title ?? rewardStatus?.level_title ?? ""}`}
-          title="Tus beneficios"
-          dismissHref="/student/perfil"
-          confirmLabel="Cerrar"
-        >
-          <div className="space-y-3">
-            <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-4">
-              <p className="font-semibold text-white">Beneficios activos este mes</p>
-              <div className="mt-3 space-y-2 text-sm text-zinc-300">
-                <p>
-                  Lista de espera ·{" "}
-                  {currentLevel.title === "Bronce"
-                    ? "prioridad base"
-                    : `prioridad ${currentLevel.title}`}
-                </p>
-                <p>Clases privadas · {currentLevel.private_discount_pct ?? 0}% de descuento</p>
-                <p>Eventos elegibles · {currentLevel.event_discount_pct ?? 0}% de descuento</p>
-                <p>
-                  Invitaciones ·{" "}
-                  {(currentLevel.monthly_guest_invites ?? 0) > 0
-                    ? `${currentLevel.monthly_guest_invites} al mes`
-                    : "sin invitaciones"}
-                </p>
-              </div>
-            </div>
-            {nextLevel ? (
-              <div className="rounded-2xl border border-fuchsia-500/20 bg-fuchsia-500/[0.055] p-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-fuchsia-300">
-                  Siguiente nivel · {nextLevel.title}
-                </p>
-                <p className="mt-2 text-sm text-zinc-300">
-                  {nextLevel.private_discount_pct}% en privadas · {nextLevel.event_discount_pct}% en
-                  eventos
-                  {(nextLevel.monthly_guest_invites ?? 0) > 0
-                    ? ` · ${nextLevel.monthly_guest_invites} invitación${nextLevel.monthly_guest_invites === 1 ? "" : "es"} al mes`
-                    : ""}
-                </p>
-              </div>
-            ) : (
-              <p className="text-sm text-zinc-400">
-                Nivel máximo. Mantén tu constancia para conservar Diamante.
-              </p>
-            )}
-          </div>
-        </StudentNoticeDialog>
-      ) : null}
-
       <section
         data-profile-block="identity"
         className="overflow-hidden rounded-3xl border border-fuchsia-500/15 bg-[radial-gradient(circle_at_18%_0%,rgba(236,72,153,0.15),transparent_28%),linear-gradient(135deg,rgba(255,255,255,0.05),rgba(255,255,255,0.015))]"
       >
         <div className="border-b border-white/10 p-5 sm:p-6">
-          <div className="grid grid-cols-[auto_1fr] items-center gap-4 sm:grid-cols-[auto_1fr_auto]">
+          <div className="flex items-center gap-4">
             <div className="shrink-0">
               <div className="relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-full border border-fuchsia-400/50 bg-gradient-to-br from-fuchsia-500/70 to-fuchsia-950 text-xl font-semibold text-white shadow-[0_0_28px_rgba(236,72,153,0.22)] sm:h-20 sm:w-20 sm:text-2xl">
                 {initials}
@@ -263,58 +131,6 @@ export default async function StudentProfilePage({
               <h2 className="truncate text-xl font-semibold text-white sm:text-2xl">{fullName}</h2>
               <p className="mt-1 text-sm text-zinc-400">Alumna · {studio.name}</p>
             </div>
-            {currentLevel ? (
-              <div className="col-span-2 rounded-2xl border border-fuchsia-500/20 bg-black/25 p-3 sm:col-span-1 sm:w-64">
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-zinc-500">
-                      Nivel actual
-                    </p>
-                    <p className="mt-0.5 text-base font-semibold text-white">
-                      {currentLevel.title}
-                    </p>
-                  </div>
-                  <span className="rounded-full border border-fuchsia-500/30 bg-fuchsia-500/10 px-2.5 py-1 text-[10px] font-semibold text-fuchsia-200">
-                    {attendanceCount}/{maintenanceTarget} asistencias
-                  </span>
-                </div>
-                <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/10">
-                  <div
-                    className="h-full rounded-full bg-fuchsia-500"
-                    style={{ width: `${maintenanceProgress}%` }}
-                  />
-                </div>
-                <p className="mt-2 text-[10px] leading-4 text-zinc-500">
-                  {rewardStatus?.maintenance_met
-                    ? "Mantenimiento cumplido este mes."
-                    : `Te faltan ${Math.max(maintenanceTarget - attendanceCount, 0)} asistencias para mantener ${currentLevel.title}.`}
-                </p>
-                {nextLevel ? (
-                  <div className="mt-2 border-t border-white/10 pt-2">
-                    <div className="flex items-center justify-between gap-2 text-[10px]">
-                      <span className="text-zinc-500">Hacia {nextLevel.title}</span>
-                      <span className="font-semibold text-zinc-300">
-                        {attendanceCount}/{promotionTarget}
-                      </span>
-                    </div>
-                    <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-white/10">
-                      <div
-                        className="h-full rounded-full bg-fuchsia-500/70"
-                        style={{ width: `${promotionProgress}%` }}
-                      />
-                    </div>
-                  </div>
-                ) : (
-                  <p className="mt-2 text-[10px] font-semibold text-zinc-400">Nivel máximo</p>
-                )}
-                <Link
-                  href="/student/perfil?benefits=1"
-                  className="mt-3 inline-flex text-[11px] font-semibold text-fuchsia-300"
-                >
-                  Tus beneficios →
-                </Link>
-              </div>
-            ) : null}
           </div>
         </div>
 
