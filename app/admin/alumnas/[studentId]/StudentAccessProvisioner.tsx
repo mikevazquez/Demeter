@@ -268,9 +268,8 @@ export function StudentTemporaryPasswordResetter({
   return (
     <div className="compact-form">
       <p>
-        Si la alumna olvidó su contraseña, puedes generar una temporal para{" "}
-        <strong>{phone}</strong>. La contraseña actual dejará de funcionar y se le pedirá crear una
-        nueva al entrar.
+        Si la alumna olvidó su contraseña, puedes generar una temporal para <strong>{phone}</strong>
+        . La contraseña actual dejará de funcionar y se le pedirá crear una nueva al entrar.
       </p>
       {error ? <div className="notice error">{error}</div> : null}
       <button
