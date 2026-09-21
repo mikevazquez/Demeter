@@ -91,6 +91,44 @@ type MercadoPagoOrderResult = {
   error?: string;
 } | null;
 
+export async function joinStudentWaitlistInlineAction(sessionId: string) {
+  const normalizedSessionId = sessionId.trim();
+  if (!normalizedSessionId) {
+    return { ok: false as const, error: "session_required" };
+  }
+
+  const { supabase } = await getStudentPortalContext();
+  const { data, error } = await supabase.rpc("student_join_waitlist", {
+    target_session_id: normalizedSessionId,
+  });
+
+  if (error) {
+    return { ok: false as const, error: errorCode(error, "waitlist_failed") };
+  }
+
+  const result = data as {
+    ok?: boolean;
+    reason_code?: string | null;
+    waitlist_entry_id?: string;
+    level_title?: string | null;
+  } | null;
+
+  if (!result?.ok || !result.waitlist_entry_id) {
+    return {
+      ok: false as const,
+      error: result?.reason_code ?? "waitlist_failed",
+    };
+  }
+
+  revalidateStudentBookingSurfaces();
+
+  return {
+    ok: true as const,
+    waitlistEntryId: result.waitlist_entry_id,
+    levelTitle: result.level_title ?? null,
+  };
+}
+
 export async function bookStudentSessionInlineAction(sessionId: string) {
   const normalizedSessionId = sessionId.trim();
   if (!normalizedSessionId) {
