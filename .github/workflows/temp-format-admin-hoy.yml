@@ -1,0 +1,43 @@
+name: TEMP Format ADMIN Hoy
+
+on:
+  push:
+    branches:
+      - admin-hoy-approved
+
+permissions:
+  contents: read
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: admin-hoy-approved
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Format target files
+        run: npx prettier --write app/admin/hoy.css app/admin/hoy/SessionOperations.tsx app/admin/page.tsx
+
+      - name: Verify format
+        run: npm run format:check
+
+      - name: Upload formatted files
+        uses: actions/upload-artifact@v4
+        with:
+          name: admin-hoy-formatted
+          path: |
+            app/admin/hoy.css
+            app/admin/hoy/SessionOperations.tsx
+            app/admin/page.tsx
+          if-no-files-found: error
