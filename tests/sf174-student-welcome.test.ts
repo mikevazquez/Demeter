@@ -26,8 +26,8 @@ describe("SF-174 student welcome integration", () => {
     expect(provision).toContain("adminClient.auth.admin.generateLink");
     expect(provision).toContain('type: "recovery"');
     expect(provision).toContain("activation_url: activationLink");
-    expect(provision).toContain('activationLink.searchParams.set("entry", entryKey)');
-    expect(provision).toContain("portal_entry_key");
+    expect(provision).toContain('activationLink.searchParams.set("token_hash", tokenHash)');
+    expect(provision).not.toContain("portal_entry_key");
     expect(provision).not.toContain("temporary_password");
     expect(provision).not.toContain("temporaryPassword");
   });
