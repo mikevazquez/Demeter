@@ -142,19 +142,10 @@ export default async function EvaluationTemplateEditorPage({
           >
             ← {discipline?.name ?? "Disciplina"}
           </Link>
-          <h1>Configurar {levelTitle}</h1>
-          <p>
-            {discipline?.name ?? "Disciplina"} · {template.name} · Versión {version.version_number}
-          </p>
+          <h1>Editar {levelTitle}</h1>
+          <p>{discipline?.name ?? "Disciplina"} · configuración técnica del nivel</p>
         </div>
 
-        <span className={`eval-status ${version.status === "active" ? "approved" : ""}`}>
-          {version.status === "active"
-            ? "Activa"
-            : version.status === "archived"
-              ? "Archivada"
-              : "Borrador"}
-        </span>
       </header>
 
       {qs.error ? (
@@ -167,9 +158,10 @@ export default async function EvaluationTemplateEditorPage({
         <section className="eval-panel eval-config-section">
           <header>
             <div>
-              <h2>Versión protegida</h2>
+              <h2>Configuración protegida</h2>
               <p>
-                Esta versión ya forma parte del historial. Para modificarla, crea una nueva versión.
+                Esta configuración ya se usó en evaluaciones. Crea una edición para hacer cambios
+                sin alterar el historial.
               </p>
             </div>
           </header>
@@ -178,7 +170,7 @@ export default async function EvaluationTemplateEditorPage({
             <input type="hidden" name="template_id" value={template.id} />
             <input type="hidden" name="version_id" value={version.id} />
             <button className="eval-primary-button" type="submit">
-              + Crear nueva versión
+              + Crear edición
             </button>
           </form>
         </section>
@@ -261,8 +253,8 @@ export default async function EvaluationTemplateEditorPage({
           <header>
             <div>
               <small className="eval-step-label">Paso 2 de 5</small>
-              <h2>Figuras y elementos</h2>
-              <p>Agrega las figuras, habilidades, transiciones o nomenclatura de este nivel.</p>
+              <h2>Figuras obligatorias</h2>
+              <p>Define las figuras o elementos que la alumna debe cumplir en este nivel.</p>
             </div>
           </header>
 
@@ -341,7 +333,7 @@ export default async function EvaluationTemplateEditorPage({
 
               <div className="eval-form-actions">
                 <label>
-                  <input type="checkbox" name="mandatory" /> Obligatorio
+                  <input type="checkbox" name="mandatory" defaultChecked /> Obligatorio
                 </label>
                 <input type="hidden" name="scored" value="on" />
                 <input type="hidden" name="max_score" value="10" />
@@ -374,8 +366,8 @@ export default async function EvaluationTemplateEditorPage({
           <header>
             <div>
               <small className="eval-step-label">Paso 3 de 5</small>
-              <h2>Combos</h2>
-              <p>Agrega secuencias obligatorias o complementarias. Si no aplican, continúa.</p>
+              <h2>Requisitos complementarios</h2>
+              <p>Agrega combos u otros requisitos complementarios. Si no aplican, continúa.</p>
             </div>
           </header>
 
@@ -471,7 +463,7 @@ export default async function EvaluationTemplateEditorPage({
           <header>
             <div>
               <small className="eval-step-label">Paso 4 de 5</small>
-              <h2>Reglas e instrucciones</h2>
+              <h2>Reglas de aprobación</h2>
               <p>Define los mínimos y las indicaciones que aplican a este nivel.</p>
             </div>
           </header>
@@ -548,7 +540,7 @@ export default async function EvaluationTemplateEditorPage({
                 className="eval-secondary-button"
                 href={`/admin/evaluaciones/plantillas/${template.id}?step=combos`}
               >
-                ← Combos
+                ← Requisitos
               </Link>
               {editable ? (
                 <button className="eval-primary-button" type="submit">
@@ -572,8 +564,8 @@ export default async function EvaluationTemplateEditorPage({
           <header>
             <div>
               <small className="eval-step-label">Paso 5 de 5</small>
-              <h2>Revisar configuración</h2>
-              <p>Confirma que el nivel esté listo antes de activarlo para evaluaciones.</p>
+              <h2>Revisar y guardar</h2>
+              <p>Confirma la configuración. Al guardar regresarás a los niveles de la disciplina.</p>
             </div>
           </header>
 
@@ -616,22 +608,14 @@ export default async function EvaluationTemplateEditorPage({
               ← Reglas
             </Link>
 
-            {version.status === "draft" ? (
-              <form action={activateEvaluationTemplateVersion}>
-                <input type="hidden" name="template_id" value={template.id} />
-                <input type="hidden" name="version_id" value={version.id} />
-                <button className="eval-primary-button" type="submit">
-                  Activar nivel
-                </button>
-              </form>
-            ) : (
-              <Link
-                className="eval-primary-button"
-                href={`/admin/evaluaciones/disciplina/${template.discipline_id}`}
-              >
-                Volver a {discipline?.name ?? "disciplina"}
-              </Link>
-            )}
+            <form action={activateEvaluationTemplateVersion}>
+              <input type="hidden" name="template_id" value={template.id} />
+              <input type="hidden" name="version_id" value={version.id} />
+              <input type="hidden" name="discipline_id" value={template.discipline_id} />
+              <button className="eval-primary-button" type="submit">
+                Guardar configuración
+              </button>
+            </form>
           </div>
         </section>
       ) : null}
