@@ -9,6 +9,7 @@ import {
   finalizeAttendanceFromToday,
   setAttendanceFromToday,
 } from "../actions";
+import { startScheduledEvaluationAction } from "../alumnas/[studentId]/evaluation-actions";
 
 type RosterItem = {
   id: string;
@@ -17,6 +18,8 @@ type RosterItem = {
   packageLabel: string;
   creditsLabel: string;
   expiresLabel: string;
+  studentId?: string | null;
+  evaluationInvitationId?: string | null;
   evaluationStatus?: string | null;
 };
 
@@ -220,6 +223,22 @@ export function SessionOperations({
                             ? item.creditsLabel
                             : `${item.packageLabel} · ${item.creditsLabel}`}
                         </span>
+                        {item.evaluationStatus === "scheduled" &&
+                        item.evaluationInvitationId &&
+                        item.studentId ? (
+                          <form
+                            action={startScheduledEvaluationAction}
+                            className="today-evaluation-start-form"
+                          >
+                            <input type="hidden" name="student_id" value={item.studentId} />
+                            <input
+                              type="hidden"
+                              name="invitation_id"
+                              value={item.evaluationInvitationId}
+                            />
+                            <button type="submit">Iniciar evaluación →</button>
+                          </form>
+                        ) : null}
                       </div>
 
                       {!isCompleted &&
