@@ -19,11 +19,16 @@ const fixPath = join(
   process.cwd(),
   "supabase/migrations/20260921080228_evaluaciones01_runtime_calculation_fix.sql",
 );
+const completionGatePath = join(
+  process.cwd(),
+  "supabase/migrations/20260921223200_evaluaciones01_completion_gate.sql",
+);
 
 const runtime = readFileSync(runtimePath, "utf8");
 const guard = readFileSync(guardPath, "utf8");
 const timestamp = readFileSync(timestampPath, "utf8");
 const fix = readFileSync(fixPath, "utf8");
+const completionGate = readFileSync(completionGatePath, "utf8");
 
 describe("EVALUACIONES-01 runtime", () => {
   it("creates and autosaves draft evaluations through capability-gated RPCs", () => {
@@ -49,6 +54,17 @@ describe("EVALUACIONES-01 runtime", () => {
     expect(runtime).toContain("source_evaluation_id");
     expect(runtime).not.toContain("update public.reward_status_memberships");
     expect(runtime).not.toContain("insert into public.reward_status_memberships");
+  });
+
+  it("keeps any missing technical capture incomplete and blocks publication", () => {
+    expect(completionGate).toContain("private.evaluations_capture_incomplete");
+    expect(completionGate).toContain("coalesce(er.result_status, 'not_evaluated')");
+    expect(completionGate).toContain("coalesce(cr.result_status, 'not_evaluated')");
+    expect(completionGate).toContain("te.scored and er.score is null");
+    expect(completionGate).toContain("tc.scored and cr.score is null");
+    expect(completionGate).toContain("automatic_outcome = 'incomplete'");
+    expect(completionGate).toContain("technical_evaluations_completion_gate");
+    expect(completionGate).toContain("raise exception 'evaluation_incomplete'");
   });
 
   it("keeps calculated criterion history under the published-result guard", () => {
