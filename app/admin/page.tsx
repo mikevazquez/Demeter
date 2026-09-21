@@ -194,44 +194,42 @@ export default async function AdminPage({
     ...new Set((selectedSessions ?? []).map((session) => session.space_id).filter(Boolean)),
   ] as string[];
 
-  const [
-    { data: reservations },
-    { data: templates },
-    { data: instructors },
-    { data: spaces },
-  ] = await Promise.all([
-    sessionIds.length
-      ? supabase
-          .from("reservations")
-          .select("id,session_id,student_id,guest_person_id,status,acquisition_id")
-          .in("session_id", sessionIds)
-          .in("status", ["reserved", "attended", "no_show"])
-          .order("booked_at")
-      : Promise.resolve({
-          data: [] as {
-            id: string;
-            session_id: string;
-            student_id: string | null;
-            guest_person_id: string | null;
-            status: string;
-            acquisition_id: string | null;
-          }[],
-        }),
-    templateIds.length
-      ? supabase.from("class_templates").select("id,name,color_hex").in("id", templateIds)
-      : Promise.resolve({
-          data: [] as { id: string; name: string; color_hex: string | null }[],
-        }),
-    instructorIds.length
-      ? supabase.from("instructors").select("id,person_id").in("id", instructorIds)
-      : Promise.resolve({ data: [] as { id: string; person_id: string }[] }),
-    spaceIds.length
-      ? supabase.from("spaces").select("id,name").in("id", spaceIds)
-      : Promise.resolve({ data: [] as { id: string; name: string }[] }),
-  ]);
+  const [{ data: reservations }, { data: templates }, { data: instructors }, { data: spaces }] =
+    await Promise.all([
+      sessionIds.length
+        ? supabase
+            .from("reservations")
+            .select("id,session_id,student_id,guest_person_id,status,acquisition_id")
+            .in("session_id", sessionIds)
+            .in("status", ["reserved", "attended", "no_show"])
+            .order("booked_at")
+        : Promise.resolve({
+            data: [] as {
+              id: string;
+              session_id: string;
+              student_id: string | null;
+              guest_person_id: string | null;
+              status: string;
+              acquisition_id: string | null;
+            }[],
+          }),
+      templateIds.length
+        ? supabase.from("class_templates").select("id,name,color_hex").in("id", templateIds)
+        : Promise.resolve({
+            data: [] as { id: string; name: string; color_hex: string | null }[],
+          }),
+      instructorIds.length
+        ? supabase.from("instructors").select("id,person_id").in("id", instructorIds)
+        : Promise.resolve({ data: [] as { id: string; person_id: string }[] }),
+      spaceIds.length
+        ? supabase.from("spaces").select("id,name").in("id", spaceIds)
+        : Promise.resolve({ data: [] as { id: string; name: string }[] }),
+    ]);
 
   const guestPersonIds = [
-    ...new Set((reservations ?? []).map((reservation) => reservation.guest_person_id).filter(Boolean)),
+    ...new Set(
+      (reservations ?? []).map((reservation) => reservation.guest_person_id).filter(Boolean),
+    ),
   ] as string[];
   const personIds = [
     ...new Set([
@@ -251,7 +249,9 @@ export default async function AdminPage({
       };
 
   const acquisitionIds = [
-    ...new Set((reservations ?? []).map((reservation) => reservation.acquisition_id).filter(Boolean)),
+    ...new Set(
+      (reservations ?? []).map((reservation) => reservation.acquisition_id).filter(Boolean),
+    ),
   ] as string[];
   const { data: acquisitions } = acquisitionIds.length
     ? await supabase

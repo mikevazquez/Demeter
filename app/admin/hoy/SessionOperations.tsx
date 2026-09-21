@@ -203,7 +203,9 @@ export function SessionOperations({
                       <div className="today-student-identity">
                         <div className="today-student-name-line">
                           <strong>{item.studentName}</strong>
-                          {isInvitation ? <span className="today-invite-tag">Invitación</span> : null}
+                          {isInvitation ? (
+                            <span className="today-invite-tag">Invitación</span>
+                          ) : null}
                         </div>
                         <span>
                           {isInvitation
@@ -287,7 +289,9 @@ export function SessionOperations({
                           <input type="hidden" name="session_id" value={sessionId} />
                           <input type="hidden" name="reservation_id" value={item.id} />
                           <input type="hidden" name="return_date" value={returnDate} />
-                          {returnTo ? <input type="hidden" name="return_to" value={returnTo} /> : null}
+                          {returnTo ? (
+                            <input type="hidden" name="return_to" value={returnTo} />
+                          ) : null}
                           <input type="hidden" name="status" value={correctionTarget} />
                           <input
                             name="reason"
