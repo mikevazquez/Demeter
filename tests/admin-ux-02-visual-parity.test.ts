@@ -11,6 +11,8 @@ describe("ADMIN-UX-02 approved visual parity", () => {
   const layout = source("app/admin/layout.tsx");
   const navigation = source("app/admin/admin-navigation.tsx");
   const today = source("app/admin/page.tsx");
+  const classDetail = source("app/admin/agenda/[sessionId]/page.tsx");
+  const classOperations = source("app/admin/hoy/SessionOperations.tsx");
   const more = source("app/admin/mas/page.tsx");
   const products = source("app/admin/productos/page.tsx");
   const team = source("app/admin/instructores/page.tsx");
@@ -49,6 +51,22 @@ describe("ADMIN-UX-02 approved visual parity", () => {
     expect(today).toContain("Semana siguiente");
     expect(today).toContain("selectedDayLabel");
     expect(today).not.toContain("Ver agenda →");
+    expect(today).toContain("hoy-kpi-grid");
+    expect(today).toContain("hoy-overview-grid");
+    expect(today).toContain("hoy-class-row");
+    expect(today).toContain("/admin/agenda/");
+    expect(today).not.toContain("<SessionOperations");
+  });
+
+  it("keeps Today clean while class detail owns roster and attendance operations", () => {
+    expect(classDetail).toContain("OPERACIÓN DE CLASE");
+    expect(classDetail).toContain("<SessionOperations");
+    expect(classDetail).toContain("initiallyOpen");
+    expect(classDetail).toContain("showToggle={false}");
+    expect(classOperations).toContain("returnTo");
+    expect(classOperations).toContain("No show");
+    expect(classOperations).toContain("Finalizar asistencia");
+    expect(classOperations).toContain("Walk-in");
   });
 
   it("matches the approved mobile architecture", () => {
