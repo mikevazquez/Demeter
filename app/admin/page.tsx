@@ -107,7 +107,7 @@ function selectedDayLabel(value: Date, isToday: boolean) {
   }).format(value)}`;
 }
 
-function KpiIcon({ kind }: { kind: "classes" | "students" | "sales" }) {
+function KpiIcon({ kind }: { kind: "classes" | "students" | "sales" | "reservations" }) {
   const common = {
     width: 22,
     height: 22,
@@ -139,9 +139,19 @@ function KpiIcon({ kind }: { kind: "classes" | "students" | "sales" }) {
     );
   }
 
+  if (kind === "sales") {
+    return (
+      <svg {...common}>
+        <path d="M5 20V12M12 20V7M19 20V3" />
+      </svg>
+    );
+  }
+
   return (
     <svg {...common}>
-      <path d="M5 20V12M12 20V7M19 20V3" />
+      <circle cx="12" cy="12" r="8" />
+      <path d="M12 8v4l3 2" />
+      <path d="M17.5 6.5 19 5" />
     </svg>
   );
 }
@@ -197,18 +207,11 @@ export default async function AdminPage({
   const canWriteAttendance = can(CAPABILITIES.ATTENDANCE_WRITE);
 
   const [
-    { data: todaySessions },
     { data: selectedSessions },
     { count: activeStudents },
     { data: salesToday },
     { data: students },
   ] = await Promise.all([
-    supabase
-      .from("class_sessions")
-      .select("id,status")
-      .eq("studio_id", studio.id)
-      .gte("starts_at", todayStart.toISOString())
-      .lt("starts_at", todayEnd.toISOString()),
     supabase
       .from("class_sessions")
       .select("id,starts_at,capacity,status,template_id,instructor_id,space_id")
@@ -449,6 +452,11 @@ export default async function AdminPage({
     });
   }
 
+  const totalDailyCapacity = classes.reduce((sum, item) => sum + item.capacity, 0);
+  const totalDailyReservations = classes.reduce((sum, item) => sum + item.occupied, 0);
+  const dailyReservationPercentage =
+    totalDailyCapacity > 0 ? Math.round((totalDailyReservations / totalDailyCapacity) * 100) : 0;
+
   const visibleSales = (salesToday ?? []).filter((sale) => sale.status !== "voided");
   const salesTotalMinor = visibleSales.reduce((sum, sale) => sum + (sale.total_minor ?? 0), 0);
   const salesTotal = new Intl.NumberFormat("es-MX", {
@@ -517,13 +525,13 @@ export default async function AdminPage({
       </section>
 
       <section className="hoy-kpi-grid" aria-label="Resumen del estudio">
-        <Link className="hoy-kpi-card" href={`/admin?date=${todayKey}`}>
+        <Link className="hoy-kpi-card" href={`/admin?date=${selectedKey}`}>
           <span className="hoy-kpi-icon">
             <KpiIcon kind="classes" />
           </span>
           <span>
-            <small>Clases hoy</small>
-            <strong>{todaySessions?.length ?? 0}</strong>
+            <small>{selectedKey === todayKey ? "Clases hoy" : "Clases del día"}</small>
+            <strong>{selectedSessions?.length ?? 0}</strong>
           </span>
           <b aria-hidden="true">›</b>
         </Link>
@@ -561,6 +569,19 @@ export default async function AdminPage({
             </span>
           </article>
         )}
+
+        <article className="hoy-kpi-card hoy-kpi-reservations">
+          <span className="hoy-kpi-icon">
+            <KpiIcon kind="reservations" />
+          </span>
+          <span>
+            <small>Reservas del día</small>
+            <strong>{dailyReservationPercentage}%</strong>
+            <em>
+              {totalDailyReservations}/{totalDailyCapacity} lugares
+            </em>
+          </span>
+        </article>
       </section>
 
       <TodayClasses
