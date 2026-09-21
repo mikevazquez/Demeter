@@ -48,7 +48,9 @@ describe("F10 student self-password activation contracts", () => {
 
     expect(page).toContain('name="token_hash"');
     expect(page).not.toContain("verifyOtp");
-    expect(page).toContain("if (!recoveryToken && !invalidLinkState)");
+    expect(page).toContain('supabase.rpc("student_portal_entry_route"');
+    expect(page).toContain('if (entryRoute === "profile") redirect("/student")');
+    expect(page).toContain('if (entryRoute === "login") redirect("/login/student")');
     expect(actions).toContain("supabase.auth.verifyOtp");
     expect(actions).toContain('type: "recovery"');
 
@@ -56,6 +58,22 @@ describe("F10 student self-password activation contracts", () => {
     const verifyMarker = actions.indexOf("supabase.auth.verifyOtp");
     expect(validationMarker).toBeGreaterThan(-1);
     expect(verifyMarker).toBeGreaterThan(validationMarker);
+  });
+
+  it("keeps the same welcome link useful after activation", () => {
+    const edgeFunction = source("supabase/functions/provision-student-access/index.ts");
+    const page = source("app/login/student/activar/page.tsx");
+    const migration = source(
+      "supabase/migrations/20260921180500_sf174_permanent_student_portal_entry.sql",
+    );
+
+    expect(edgeFunction).toContain('activationLink.searchParams.set("entry", entryKey)');
+    expect(edgeFunction).toContain("portal_entry_key");
+    expect(page).toContain('type EntryRoute = "activate" | "profile" | "login" | "invalid"');
+    expect(migration).toContain("student_portal_entry_route");
+    expect(migration).toContain("return 'profile'");
+    expect(migration).toContain("return 'login'");
+    expect(migration).toContain("grant execute on function public.student_portal_entry_route(text) to anon, authenticated");
   });
 
   it("builds the activation URL from the active environment host", () => {
