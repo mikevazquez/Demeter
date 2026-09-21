@@ -577,3 +577,112 @@ export async function createTechnicalEvaluationAction(formData: FormData) {
   revalidatePath("/admin/evaluaciones");
   redirect(`/admin/evaluaciones/${evaluationId}`);
 }
+
+
+export async function saveTechnicalElementResultAction(formData: FormData) {
+  const ctx = await getAdminContext(CAPABILITIES.EVALUATIONS_WRITE);
+  const evaluationId = text(formData, "evaluation_id");
+  const templateElementId = text(formData, "template_element_id");
+  const status = text(formData, "result_status") || "not_evaluated";
+  const rawScore = text(formData, "score");
+  const rawAttempts = text(formData, "attempt_count");
+  const notes = text(formData, "notes");
+
+  const { error } = await ctx.supabase.rpc("admin_save_technical_element_result", {
+    p_evaluation_id: evaluationId,
+    p_template_element_id: templateElementId,
+    p_result_status: status,
+    p_score: rawScore ? Number(rawScore) : null,
+    p_attempt_count: rawAttempts ? Number(rawAttempts) : 0,
+    p_notes: notes || null,
+    p_quick_comments: [],
+  });
+
+  if (error) return { ok: false, message: error.message };
+  revalidatePath(`/admin/evaluaciones/${evaluationId}`);
+  return { ok: true };
+}
+
+export async function saveTechnicalComboResultAction(formData: FormData) {
+  const ctx = await getAdminContext(CAPABILITIES.EVALUATIONS_WRITE);
+  const evaluationId = text(formData, "evaluation_id");
+  const templateComboId = text(formData, "template_combo_id");
+  const status = text(formData, "result_status") || "not_evaluated";
+  const rawScore = text(formData, "score");
+  const rawAttempts = text(formData, "attempt_count");
+  const notes = text(formData, "notes");
+
+  const { error } = await ctx.supabase.rpc("admin_save_technical_combo_result", {
+    p_evaluation_id: evaluationId,
+    p_template_combo_id: templateComboId,
+    p_result_status: status,
+    p_score: rawScore ? Number(rawScore) : null,
+    p_attempt_count: rawAttempts ? Number(rawAttempts) : 0,
+    p_notes: notes || null,
+    p_quick_comments: [],
+  });
+
+  if (error) return { ok: false, message: error.message };
+  revalidatePath(`/admin/evaluaciones/${evaluationId}`);
+  return { ok: true };
+}
+
+export async function recalculateTechnicalEvaluationAction(formData: FormData) {
+  const ctx = await getAdminContext(CAPABILITIES.EVALUATIONS_WRITE);
+  const evaluationId = text(formData, "evaluation_id");
+
+  const { error } = await ctx.supabase.rpc("admin_recalculate_technical_evaluation", {
+    p_evaluation_id: evaluationId,
+  });
+
+  if (error) redirect(`/admin/evaluaciones/${evaluationId}?error=calculate`);
+  revalidatePath(`/admin/evaluaciones/${evaluationId}`);
+  redirect(`/admin/evaluaciones/${evaluationId}?step=resumen`);
+}
+
+export async function openEvaluationFeedbackAction(formData: FormData) {
+  const ctx = await getAdminContext(CAPABILITIES.EVALUATIONS_WRITE);
+  const evaluationId = text(formData, "evaluation_id");
+
+  const { error } = await ctx.supabase.rpc("admin_recalculate_technical_evaluation", {
+    p_evaluation_id: evaluationId,
+  });
+
+  if (error) redirect(`/admin/evaluaciones/${evaluationId}?step=resumen&error=calculate`);
+  revalidatePath(`/admin/evaluaciones/${evaluationId}`);
+  redirect(`/admin/evaluaciones/${evaluationId}?step=feedback`);
+}
+
+function lines(value: string) {
+  return value
+    .split("\n")
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+export async function publishTechnicalEvaluationAction(formData: FormData) {
+  const ctx = await getAdminContext(CAPABILITIES.EVALUATIONS_WRITE);
+  const evaluationId = text(formData, "evaluation_id");
+  const finalOutcome = text(formData, "final_outcome") || null;
+  const overrideReason = text(formData, "override_reason") || null;
+  const strengths = lines(text(formData, "strengths"));
+  const improvementAreas = lines(text(formData, "improvement_areas"));
+  const coachMessage = text(formData, "coach_message");
+  const nextObjective = text(formData, "next_objective");
+
+  const { error } = await ctx.supabase.rpc("admin_publish_technical_evaluation", {
+    p_evaluation_id: evaluationId,
+    p_final_outcome: finalOutcome,
+    p_override_reason: overrideReason,
+    p_strengths: strengths,
+    p_improvement_areas: improvementAreas,
+    p_coach_message: coachMessage || null,
+    p_next_objective: nextObjective || null,
+  });
+
+  if (error) redirect(`/admin/evaluaciones/${evaluationId}?step=feedback&error=publish`);
+
+  revalidatePath("/admin/evaluaciones");
+  revalidatePath(`/admin/evaluaciones/${evaluationId}`);
+  redirect(`/admin/evaluaciones/${evaluationId}?published=1`);
+}
