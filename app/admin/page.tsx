@@ -151,8 +151,20 @@ export default async function AdminPage({
 }: {
   searchParams: Promise<{ error?: string; created?: string; date?: string }>;
 }) {
-  const { supabase, studio, can } = await getAdminContext();
+  const { supabase, studio, can, user } = await getAdminContext();
   const params = await searchParams;
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("full_name")
+    .eq("id", user.id)
+    .maybeSingle();
+  const headerName = profile?.full_name?.trim() || user.email?.split("@")[0] || "Usuario";
+  const headerInitials =
+    headerName
+      .split(/\s+/)
+      .slice(0, 2)
+      .map((part) => part.slice(0, 1).toUpperCase())
+      .join("") || "U";
   const timeZone = studio.timezone ?? "America/Mexico_City";
   const now = new Date();
   const todayKey = localDateKey(now, timeZone);
@@ -447,6 +459,18 @@ export default async function AdminPage({
 
   return (
     <main className="dashboard-shell hoy-dashboard hoy-approved">
+      <header className="hoy-product-header">
+        <div className="hoy-product-wordmark" aria-label="Studio Flow">
+          <span>
+            STUDIO <b>FLOW</b>
+          </span>
+          <small>MOVIMIENTO QUE TRANSFORMA</small>
+        </div>
+        <span className="hoy-product-avatar" aria-label={headerName}>
+          {headerInitials}
+        </span>
+      </header>
+
       <header className="hoy-title-block">
         <h1>{selectedDayLabel(selectedDate, selectedKey === todayKey)}</h1>
         <p>Administra, conecta, haz fluir.</p>
