@@ -1,3 +1,4 @@
+// SF-177 final rebase gate against approved ADMIN Hoy.
 // SF-177 contract tests run against the live main baseline.
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
