@@ -56,7 +56,7 @@ export async function enableEvaluationDiscipline(formData: FormData) {
 
   revalidatePath("/admin/evaluaciones");
   revalidatePath("/admin/evaluaciones/configuracion");
-  redirect("/admin/evaluaciones/configuracion?saved=discipline");
+  redirect("/admin/evaluaciones/configuracion");
 }
 
 export async function setEvaluationDisciplineActive(formData: FormData) {
@@ -74,7 +74,7 @@ export async function setEvaluationDisciplineActive(formData: FormData) {
 
   revalidatePath("/admin/evaluaciones");
   revalidatePath("/admin/evaluaciones/configuracion");
-  redirect("/admin/evaluaciones/configuracion?saved=discipline");
+  redirect("/admin/evaluaciones/configuracion");
 }
 
 export async function createEvaluationTemplate(formData: FormData) {
@@ -180,7 +180,7 @@ export async function createEvaluationTemplate(formData: FormData) {
   }
 
   revalidatePath("/admin/evaluaciones/configuracion");
-  redirect(`/admin/evaluaciones/plantillas/${template.id}?created=1`);
+  redirect(`/admin/evaluaciones/plantillas/${template.id}`);
 }
 
 export async function updateEvaluationTemplateSettings(formData: FormData) {
@@ -208,7 +208,7 @@ export async function updateEvaluationTemplateSettings(formData: FormData) {
   if (error) redirect(`/admin/evaluaciones/plantillas/${templateId}?error=settings`);
 
   revalidatePath(`/admin/evaluaciones/plantillas/${templateId}`);
-  redirect(`/admin/evaluaciones/plantillas/${templateId}?saved=settings`);
+  redirect(`/admin/evaluaciones/plantillas/${templateId}`);
 }
 
 export async function updateEvaluationCriteria(formData: FormData) {
@@ -241,7 +241,7 @@ export async function updateEvaluationCriteria(formData: FormData) {
   }
 
   revalidatePath(`/admin/evaluaciones/plantillas/${templateId}`);
-  redirect(`/admin/evaluaciones/plantillas/${templateId}?saved=criteria`);
+  redirect(`/admin/evaluaciones/plantillas/${templateId}`);
 }
 
 export async function addEvaluationElement(formData: FormData) {
@@ -308,7 +308,7 @@ export async function addEvaluationElement(formData: FormData) {
   if (error) redirect(`/admin/evaluaciones/plantillas/${templateId}?error=element`);
 
   revalidatePath(`/admin/evaluaciones/plantillas/${templateId}`);
-  redirect(`/admin/evaluaciones/plantillas/${templateId}?saved=element`);
+  redirect(`/admin/evaluaciones/plantillas/${templateId}`);
 }
 
 export async function addEvaluationCombo(formData: FormData) {
@@ -371,7 +371,7 @@ export async function addEvaluationCombo(formData: FormData) {
   if (error) redirect(`/admin/evaluaciones/plantillas/${templateId}?error=combo`);
 
   revalidatePath(`/admin/evaluaciones/plantillas/${templateId}`);
-  redirect(`/admin/evaluaciones/plantillas/${templateId}?saved=combo`);
+  redirect(`/admin/evaluaciones/plantillas/${templateId}`);
 }
 
 export async function activateEvaluationTemplateVersion(formData: FormData) {
@@ -409,7 +409,7 @@ export async function activateEvaluationTemplateVersion(formData: FormData) {
   revalidatePath("/admin/evaluaciones");
   revalidatePath("/admin/evaluaciones/configuracion");
   revalidatePath(`/admin/evaluaciones/plantillas/${templateId}`);
-  redirect(`/admin/evaluaciones/plantillas/${templateId}?saved=activated`);
+  redirect(`/admin/evaluaciones/plantillas/${templateId}`);
 }
 
 export async function createNextEvaluationTemplateVersion(formData: FormData) {
@@ -528,7 +528,7 @@ export async function createNextEvaluationTemplateVersion(formData: FormData) {
   }
 
   revalidatePath(`/admin/evaluaciones/plantillas/${templateId}`);
-  redirect(`/admin/evaluaciones/plantillas/${templateId}?saved=version`);
+  redirect(`/admin/evaluaciones/plantillas/${templateId}`);
 }
 
 export async function createTechnicalEvaluationAction(formData: FormData) {
@@ -679,5 +679,5 @@ export async function publishTechnicalEvaluationAction(formData: FormData) {
 
   revalidatePath("/admin/evaluaciones");
   revalidatePath(`/admin/evaluaciones/${evaluationId}`);
-  redirect(`/admin/evaluaciones/${evaluationId}?published=1`);
+  redirect(`/admin/evaluaciones/${evaluationId}`);
 }
