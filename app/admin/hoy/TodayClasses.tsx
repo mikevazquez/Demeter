@@ -101,7 +101,9 @@ export function TodayClasses({
                 {item.evaluationCount > 0 ? (
                   <small className="today-class-evaluation-summary">
                     {item.evaluationCount}{" "}
-                    {item.evaluationCount === 1 ? "evaluación programada" : "evaluaciones programadas"}
+                    {item.evaluationCount === 1
+                      ? "evaluación programada"
+                      : "evaluaciones programadas"}
                   </small>
                 ) : null}
               </span>
