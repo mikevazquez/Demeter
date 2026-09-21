@@ -48,6 +48,10 @@ const reservationDetail = readFileSync(
   join(process.cwd(), "app/student/mis-clases/[reservationId]/page.tsx"),
   "utf8",
 );
+const cancellationPage = readFileSync(
+  join(process.cwd(), "app/student/mis-clases/[reservationId]/cancelar/page.tsx"),
+  "utf8",
+);
 const singleClassPurchase = readFileSync(
   join(process.cwd(), "app/student/reservar/PurchaseSingleClassButton.tsx"),
   "utf8",
@@ -178,6 +182,16 @@ describe("SF-255A monthly level and waitlist contracts", () => {
     );
     expect(reservationDetail).toContain("Usar este contacto");
     expect(reservationDetail).toContain("Corregir datos");
+  });
+
+  it("warns that cancelling the host reservation also cancels active guest invitations", () => {
+    expect(cancellationPage).toContain("student_reward_invitation_context");
+    expect(cancellationPage).toContain("También se cancelará");
+    expect(cancellationPage).toContain("ya no podrá asistir a esta clase.");
+    expect(cancellationPage).toContain(
+      "La invitación depende de tu reserva en esta misma clase",
+    );
+    expect(cancellationPage).toContain("Sí, cancelar mi reserva y la invitación");
   });
 
   it("snapshots the approved level discount into checkout and surfaces M05 pricing", () => {
