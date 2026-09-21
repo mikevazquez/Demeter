@@ -85,5 +85,4 @@ describe("SF-177 walk-in commercial pending", () => {
     expect(bindMigration).toContain("v_balance < v_credit_cost");
     expect(bindMigration).toContain("p_event_type => 'walkin.commercial_resolved'");
   });
-
 });

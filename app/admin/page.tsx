@@ -369,10 +369,7 @@ export default async function AdminPage({
           recorded_at: string;
         }[],
       };
-  const walkinCommercialState = new Map<
-    string,
-    { pending: boolean; reasonCode: string | null }
-  >();
+  const walkinCommercialState = new Map<string, { pending: boolean; reasonCode: string | null }>();
   for (const event of walkinCommercialEvents ?? []) {
     const reasonCode =
       typeof event.payload?.reason_code === "string" ? event.payload.reason_code : null;
