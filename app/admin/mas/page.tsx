@@ -52,7 +52,7 @@ export default async function MorePage() {
   });
 
   return (
-    <main className="dashboard-shell admin-module-page more-page">
+    <main className="dashboard-shell admin-module-page more-page admin-ux04-secondary">
       <header className="module-header">
         <div>
           <h1>Más</h1>

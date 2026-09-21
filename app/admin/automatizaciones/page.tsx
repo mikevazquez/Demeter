@@ -83,7 +83,7 @@ export default async function AutomationsPage({
   const errorCount = instanceRows.filter((item) => item.status === "error").length;
 
   return (
-    <main className="dashboard-shell admin-module-page automation-page">
+    <main className="dashboard-shell admin-module-page automation-page admin-ux04-secondary">
       <header className="module-header">
         <div>
           <h1>Automatizaciones</h1>

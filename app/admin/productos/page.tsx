@@ -27,7 +27,7 @@ export default async function ProductsPage({
     .order("name");
 
   return (
-    <main className="dashboard-shell admin-module-page">
+    <main className="dashboard-shell admin-module-page admin-ux04-secondary">
       <header className="module-header">
         <div>
           <h1>Productos</h1>
