@@ -27,6 +27,26 @@ const waitlistControl = readFileSync(
 );
 const homePage = readFileSync(join(process.cwd(), "app/student/page.tsx"), "utf8");
 const profilePage = readFileSync(join(process.cwd(), "app/student/perfil/page.tsx"), "utf8");
+const invitationMigration = readFileSync(
+  join(process.cwd(), "supabase/migrations/20260921014500_sf255_guest_invitations.sql"),
+  "utf8",
+);
+const discountMigration = readFileSync(
+  join(process.cwd(), "supabase/migrations/20260921013000_sf255_reward_checkout_discounts.sql"),
+  "utf8",
+);
+const reservationDetail = readFileSync(
+  join(process.cwd(), "app/student/mis-clases/[reservationId]/page.tsx"),
+  "utf8",
+);
+const singleClassPurchase = readFileSync(
+  join(process.cwd(), "app/student/reservar/PurchaseSingleClassButton.tsx"),
+  "utf8",
+);
+const checkoutReturn = readFileSync(
+  join(process.cwd(), "app/student/reservar/checkout/page.tsx"),
+  "utf8",
+);
 
 describe("SF-255A monthly level and waitlist contracts", () => {
   it("keeps the approved four deterministic levels", () => {
@@ -71,6 +91,7 @@ describe("SF-255A monthly level and waitlist contracts", () => {
     expect(homePage).toContain("student_reward_status_snapshot");
     expect(homePage).toContain("reward_status_memberships");
     expect(homePage).toContain("reward_status_level_definitions");
+    expect(homePage).toContain("student_reward_invitation_balance");
     expect(homePage).toContain('data-home-block="identity-level"');
     expect(homePage).toContain("Mi nivel");
     expect(homePage).toContain("Ver mis beneficios");
@@ -86,5 +107,46 @@ describe("SF-255A monthly level and waitlist contracts", () => {
     expect(profilePage).not.toContain("student_reward_status_snapshot");
     expect(profilePage).not.toContain("Nivel actual");
     expect(profilePage).not.toContain("Tus beneficios");
+  });
+
+  it("uses real capacity reservations for monthly guest invitations without fake students", () => {
+    expect(invitationMigration).toContain("guest_person_id uuid");
+    expect(invitationMigration).toContain("host_reservation_id uuid");
+    expect(invitationMigration).toContain("'reserved',0");
+    expect(invitationMigration).toContain("student_create_guest_invitation");
+    expect(invitationMigration).toContain("student_cancel_guest_invitation");
+    expect(invitationMigration).toContain("cancelled_on_time");
+    expect(invitationMigration).toContain("cancelled_late");
+    expect(invitationMigration).toContain("no_show");
+    expect(invitationMigration).toContain("lifecycle_status text not null default 'trial'");
+    expect(invitationMigration).toContain("guest_already_student");
+    expect(invitationMigration).not.toContain("insert into public.students(");
+  });
+
+  it("shows M03 and M04 inside the existing confirmed reservation detail", () => {
+    expect(reservationDetail).toContain("student_reward_invitation_context");
+    expect(reservationDetail).toContain("Invitar a alguien");
+    expect(reservationDetail).toContain("Tu invitado asistirá a esta misma clase contigo.");
+    expect(reservationDetail).toContain("Nombre completo");
+    expect(reservationDetail).toContain("Número de teléfono");
+    expect(reservationDetail).toContain("Confirmar invitación");
+    expect(reservationDetail).toContain("ocupará un lugar real del aforo");
+  });
+
+  it("snapshots the approved level discount into checkout and surfaces M05 pricing", () => {
+    expect(discountMigration).toContain("reward_discount_eligible boolean not null default false");
+    expect(discountMigration).toContain("regular_amount_minor");
+    expect(discountMigration).toContain("reward_discount_pct");
+    expect(discountMigration).toContain("reward_level_key_snapshot");
+    expect(discountMigration).toContain("private.reward_checkout_price");
+    expect(discountMigration).toContain("'private_class'");
+    expect(discountMigration).toContain("'workshop'");
+    expect(discountMigration).toContain("'masterclass'");
+    expect(discountMigration).toContain("'event'");
+    expect(singleClassPurchase).toContain("Precio regular");
+    expect(singleClassPurchase).toContain("Beneficio");
+    expect(singleClassPurchase).toContain("Total para ti");
+    expect(checkoutReturn).toContain("Total pagado");
+    expect(singleClassPurchase).not.toContain("Abriendo Mercado Pago");
   });
 });
