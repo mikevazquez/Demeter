@@ -20,11 +20,14 @@ describe("EVALUACIONES-01 discipline-first configuration", () => {
     expect(evaluations).not.toContain("/admin/evaluaciones/configuracion#");
   });
 
-  it("keeps levels, rules, templates and upcoming evaluations inside each discipline", () => {
-    expect(discipline).toContain("Niveles de");
-    expect(discipline).toContain("Reglas de evaluación");
-    expect(discipline).toContain("Plantillas de evaluación");
-    expect(discipline).toContain("Próximas evaluaciones");
+  it("keeps the discipline screen focused only on levels", () => {
+    expect(discipline).toContain("<h2>Niveles</h2>");
+    expect(discipline).toContain("Editar");
+    expect(discipline).toContain("Activar");
+    expect(discipline).toContain("Desactivar");
+    expect(discipline).not.toContain("Plantillas de evaluación");
+    expect(discipline).not.toContain("Reglas de evaluación");
+    expect(discipline).not.toContain("Próximas evaluaciones");
   });
 
   it("does not use a top tab menu to split discipline configuration", () => {
