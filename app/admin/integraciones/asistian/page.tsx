@@ -7,7 +7,8 @@ import { sendAsistianHandshake } from "./actions";
 
 const errorCopy: Record<string, string> = {
   invalid_url: "La URL no es válida. Debe ser la URL HTTPS del Webhook entrante de Asistian.",
-  network: "No se pudo conectar con Asistian. Verifica que siga en modo escucha e inténtalo de nuevo.",
+  network:
+    "No se pudo conectar con Asistian. Verifica que siga en modo escucha e inténtalo de nuevo.",
   http: "Asistian rechazó el webhook de prueba.",
 };
 
