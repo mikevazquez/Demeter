@@ -1154,3 +1154,11 @@
     justify-content: flex-start;
   }
 }
+
+
+.eval-summary-hint {
+  margin: -2px 2px 0;
+  color: #8f9aaa;
+  font-size: 9px;
+  line-height: 1.55;
+}
