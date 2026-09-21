@@ -658,7 +658,7 @@
 
 .hoy-kpi-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 10px;
 }
 
@@ -686,6 +686,10 @@
 
 .hoy-kpi-card:nth-child(3) {
   border-color: rgba(255, 10, 138, 0.42);
+}
+
+.hoy-kpi-card:nth-child(4) {
+  border-color: rgba(70, 182, 255, 0.38);
 }
 
 .hoy-kpi-icon {
@@ -717,6 +721,13 @@
   letter-spacing: -0.035em;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.hoy-kpi-card em {
+  color: #7f8a99;
+  font-size: 9px;
+  font-style: normal;
+  line-height: 1;
 }
 
 .hoy-kpi-card > b {
@@ -998,8 +1009,8 @@
   }
 
   .hoy-kpi-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 6px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 7px;
   }
 
   .hoy-kpi-card {
@@ -1307,6 +1318,10 @@
     border-radius: 16px;
   }
 
+  .hoy-kpi-reservations {
+    grid-template-columns: 29px minmax(0, 1fr);
+  }
+
   .hoy-kpi-icon {
     width: 29px;
     height: 29px;
@@ -1330,6 +1345,10 @@
 
   .hoy-kpi-card strong {
     font-size: 19px;
+  }
+
+  .hoy-kpi-card em {
+    font-size: 8px;
   }
 
   .hoy-kpi-card > b {
