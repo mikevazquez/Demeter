@@ -27,7 +27,7 @@ export default async function EvaluationTemplateEditorPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ saved?: string; error?: string; created?: string }>;
+  searchParams: Promise<{ error?: string }>;
 }) {
   const { id } = await params;
   const qs = await searchParams;
@@ -121,10 +121,6 @@ export default async function EvaluationTemplateEditorPage({
               : "Borrador"}
         </span>
       </header>
-
-      {qs.created || qs.saved ? (
-        <div className="eval-notice success">Plantilla actualizada correctamente.</div>
-      ) : null}
       {qs.error ? (
         <div className="eval-notice">
           {errorCopy[qs.error] ?? "No pudimos guardar los cambios."}
