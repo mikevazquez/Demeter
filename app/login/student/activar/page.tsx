@@ -22,7 +22,9 @@ export default async function StudentActivationPage({
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user && !recoveryToken) {
+  const invalidLinkState = !user && !recoveryToken && error === "link";
+
+  if (!user && !recoveryToken && !invalidLinkState) {
     if (tokenHash || type) redirect("/login/student/activar?error=link");
     redirect("/login/student");
   }
@@ -64,39 +66,45 @@ export default async function StudentActivationPage({
 
         {error && messages[error] ? <div className="notice error">{messages[error]}</div> : null}
 
-        <form action={completeStudentPasswordActivation} className="auth-form">
-          {recoveryToken ? (
-            <>
-              <input type="hidden" name="token_hash" value={recoveryToken} />
-              <input type="hidden" name="type" value="recovery" />
-            </>
-          ) : null}
-          <label>
-            Nueva contraseña
-            <input
-              name="password"
-              type="password"
-              minLength={8}
-              autoComplete="new-password"
-              required
-              placeholder="Mínimo 8 caracteres"
-            />
-          </label>
-          <label>
-            Confirmar contraseña
-            <input
-              name="password_confirmation"
-              type="password"
-              minLength={8}
-              autoComplete="new-password"
-              required
-              placeholder="Repite tu contraseña"
-            />
-          </label>
-          <button className="primary-button" type="submit">
-            Guardar y entrar
-          </button>
-        </form>
+        {invalidLinkState ? (
+          <a className="primary-button" href="/login/student">
+            Ir al inicio de sesión
+          </a>
+        ) : (
+          <form action={completeStudentPasswordActivation} className="auth-form">
+            {recoveryToken ? (
+              <>
+                <input type="hidden" name="token_hash" value={recoveryToken} />
+                <input type="hidden" name="type" value="recovery" />
+              </>
+            ) : null}
+            <label>
+              Nueva contraseña
+              <input
+                name="password"
+                type="password"
+                minLength={8}
+                autoComplete="new-password"
+                required
+                placeholder="Mínimo 8 caracteres"
+              />
+            </label>
+            <label>
+              Confirmar contraseña
+              <input
+                name="password_confirmation"
+                type="password"
+                minLength={8}
+                autoComplete="new-password"
+                required
+                placeholder="Repite tu contraseña"
+              />
+            </label>
+            <button className="primary-button" type="submit">
+              Guardar y entrar
+            </button>
+          </form>
+        )}
       </section>
     </main>
   );
