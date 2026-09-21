@@ -87,6 +87,7 @@ export default async function StudentReservationDetailPage({
     invite_error?: string;
     guest_cancelled?: string;
     contact_match?: string;
+    cancel_invite?: string;
   }>;
 }) {
   const { reservationId } = await params;
@@ -125,6 +126,21 @@ export default async function StudentReservationDetailPage({
       : { data: null };
   const contactMatch = (contactMatchData as InvitationContactMatch | null) ?? null;
   const activeGuests = invitationContext?.active_guests ?? [];
+  const cancellationGuest =
+    query.cancel_invite
+      ? activeGuests.find((guest) => guest.invitation_id === query.cancel_invite) ?? null
+      : null;
+  const { data: cancellationPreviewData } =
+    isActiveReservation && cancellationGuest
+      ? await supabase.rpc("student_cancellation_preview", {
+          target_reservation_id: reservationId,
+        })
+      : { data: null };
+  const cancellationPreview = cancellationPreviewData as {
+    ok?: boolean;
+    late?: boolean;
+  } | null;
+  const invitationCancellationIsLate = Boolean(cancellationPreview?.ok && cancellationPreview.late);
   const invitationTotal = invitationContext?.total ?? 0;
   const invitationRemaining = invitationContext?.remaining ?? 0;
   const showInvitationBenefit = invitationTotal > 0 || activeGuests.length > 0;
@@ -218,16 +234,14 @@ export default async function StudentReservationDetailPage({
                     </p>
                   </div>
                   {guest.status === "active" ? (
-                    <form action={cancelGuestInvitationAction}>
-                      <input type="hidden" name="host_reservation_id" value={reservationId} />
-                      <input type="hidden" name="invitation_id" value={guest.invitation_id} />
-                      <button
-                        type="submit"
-                        className="rounded-xl border border-rose-500/25 px-3 py-2 text-[11px] font-semibold text-rose-200"
-                      >
-                        Cancelar
-                      </button>
-                    </form>
+                    <Link
+                      href={`/student/mis-clases/${reservationId}?cancel_invite=${encodeURIComponent(
+                        guest.invitation_id,
+                      )}`}
+                      className="rounded-xl border border-rose-500/25 px-3 py-2 text-[11px] font-semibold text-rose-200"
+                    >
+                      Cancelar
+                    </Link>
                   ) : null}
                 </div>
               ))}
@@ -284,6 +298,80 @@ export default async function StudentReservationDetailPage({
           </Link>
         </section>
       )}
+      {cancellationGuest ? (
+        <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/75 p-4 backdrop-blur-sm sm:items-center">
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="guest-cancel-title"
+            className="w-full max-w-md rounded-3xl border border-rose-500/25 bg-[#160d16] p-5 shadow-2xl"
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-rose-300">
+                  Cancelar invitación
+                </p>
+                <h2 id="guest-cancel-title" className="mt-1 text-2xl font-semibold text-white">
+                  ¿Cancelar el lugar de {cancellationGuest.guest_name}?
+                </h2>
+              </div>
+              <Link
+                href={`/student/mis-clases/${reservationId}`}
+                aria-label="Cerrar"
+                className="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 text-zinc-400"
+              >
+                ×
+              </Link>
+            </div>
+
+            <div className="mt-4 rounded-2xl border border-white/10 bg-black/20 p-3">
+              <p className="text-sm font-semibold text-white">{item.activity}</p>
+              <p className="mt-1 text-xs text-zinc-400">
+                {formatDateTime(item.starts_at, studio.timezone)}
+              </p>
+              <p className="mt-0.5 text-[11px] text-zinc-500">{item.space ?? "Estudio"}</p>
+            </div>
+
+            {invitationCancellationIsLate ? (
+              <div className="mt-4 rounded-2xl border border-amber-400/30 bg-amber-400/[0.08] p-4">
+                <p className="text-sm font-semibold text-amber-100">
+                  Estás fuera del horario de cancelación
+                </p>
+                <p className="mt-1.5 text-xs leading-5 text-amber-100/80">
+                  {cancellationGuest.guest_name} perderá su lugar en esta clase y la invitación se
+                  consumirá. No regresará a tu saldo de este mes.
+                </p>
+              </div>
+            ) : (
+              <div className="mt-4 rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.07] p-4">
+                <p className="text-xs leading-5 text-emerald-100">
+                  {cancellationGuest.guest_name} perderá su lugar en esta clase, pero la invitación
+                  regresará a tu saldo de este mes.
+                </p>
+              </div>
+            )}
+
+            <form action={cancelGuestInvitationAction} className="mt-5 space-y-3">
+              <input type="hidden" name="host_reservation_id" value={reservationId} />
+              <input type="hidden" name="invitation_id" value={cancellationGuest.invitation_id} />
+              <button
+                type="submit"
+                className="min-h-11 w-full rounded-2xl bg-rose-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-rose-500"
+              >
+                {invitationCancellationIsLate
+                  ? "Sí, cancelar y consumir invitación"
+                  : "Sí, cancelar invitación"}
+              </button>
+              <Link
+                href={`/student/mis-clases/${reservationId}`}
+                className="inline-flex min-h-11 w-full items-center justify-center rounded-2xl border border-white/10 px-4 py-2.5 text-sm font-semibold text-zinc-300"
+              >
+                No, mantener invitación
+              </Link>
+            </form>
+          </section>
+        </div>
+      ) : null}
       {query.invite === "1" && invitationContext?.can_invite ? (
         <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/75 p-4 backdrop-blur-sm sm:items-center">
           <section
