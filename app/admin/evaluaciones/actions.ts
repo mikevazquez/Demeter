@@ -95,7 +95,6 @@ export async function setEvaluationDisciplineLevelActive(formData: FormData) {
   }
 
   revalidatePath("/admin/evaluaciones");
-  revalidatePath("/admin/evaluaciones");
   revalidatePath(`/admin/evaluaciones/disciplina/${disciplineId}`);
   redirect(`/admin/evaluaciones/disciplina/${disciplineId}`);
 }
