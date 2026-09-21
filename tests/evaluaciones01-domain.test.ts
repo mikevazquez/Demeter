@@ -4,18 +4,12 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 const domain = readFileSync(
-  join(
-    process.cwd(),
-    "supabase/migrations/20260921074309_evaluaciones01_domain_persistence.sql",
-  ),
+  join(process.cwd(), "supabase/migrations/20260921074309_evaluaciones01_domain_persistence.sql"),
   "utf8",
 );
 
 const hardening = readFileSync(
-  join(
-    process.cwd(),
-    "supabase/migrations/20260921074428_evaluaciones01_domain_hardening.sql",
-  ),
+  join(process.cwd(), "supabase/migrations/20260921074428_evaluaciones01_domain_hardening.sql"),
   "utf8",
 );
 
