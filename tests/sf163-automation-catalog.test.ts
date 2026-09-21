@@ -12,13 +12,13 @@ import {
 describe("SF-163 automation catalog", () => {
   it("locks the active catalog after retiring incident automations", () => {
     expect(AUTOMATION_CATALOG_VERSION).toBe(1);
-    expect(AUTOMATION_CATALOG).toHaveLength(13);
+    expect(AUTOMATION_CATALOG).toHaveLength(14);
 
     const codes = AUTOMATION_CATALOG.map((entry) => entry.code);
     const keys = AUTOMATION_CATALOG.map((entry) => entry.key);
 
-    expect(new Set(codes).size).toBe(13);
-    expect(new Set(keys).size).toBe(13);
+    expect(new Set(codes).size).toBe(14);
+    expect(new Set(keys).size).toBe(14);
     expect(codes).toEqual([
       "AUT-CAT-01",
       "AUT-CAT-02",
@@ -33,11 +33,12 @@ describe("SF-163 automation catalog", () => {
       "AUT-CAT-14",
       "AUT-CAT-15",
       "AUT-CAT-16",
+      "AUT-CAT-17",
     ]);
   });
 
   it("preserves the active category split", () => {
-    expect(getAutomationTemplatesByCategory("operation")).toHaveLength(6);
+    expect(getAutomationTemplatesByCategory("operation")).toHaveLength(7);
     expect(getAutomationTemplatesByCategory("team")).toHaveLength(1);
     expect(getAutomationTemplatesByCategory("administration")).toHaveLength(0);
     expect(getAutomationTemplatesByCategory("conversion")).toHaveLength(2);
@@ -45,7 +46,13 @@ describe("SF-163 automation catalog", () => {
   });
 
   it("keeps the visible operational contracts and instance modes", () => {
-    for (const code of ["AUT-CAT-01", "AUT-CAT-02", "AUT-CAT-03", "AUT-CAT-05"] as const) {
+    for (const code of [
+      "AUT-CAT-01",
+      "AUT-CAT-02",
+      "AUT-CAT-03",
+      "AUT-CAT-05",
+      "AUT-CAT-17",
+    ] as const) {
       const template = getAutomationTemplate(code);
       expect(template.priority.communication).toBe("P1");
       expect(template.recipients).toContain("student");
