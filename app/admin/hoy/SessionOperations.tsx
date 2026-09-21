@@ -362,7 +362,7 @@ export function SessionOperations({
                             {candidate.eligible
                               ? ""
                               : canFallbackToWalkin
-                                ? " · walk-in"
+                                ? " · walk-in / venta pendiente"
                                 : " · bloqueada"}
                           </option>
                         );
