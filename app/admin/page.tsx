@@ -107,6 +107,45 @@ function selectedDayLabel(value: Date, isToday: boolean) {
   }).format(value)}`;
 }
 
+function KpiIcon({ kind }: { kind: "classes" | "students" | "sales" }) {
+  const common = {
+    width: 22,
+    height: 22,
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: 1.8,
+    strokeLinecap: "round" as const,
+    strokeLinejoin: "round" as const,
+    "aria-hidden": true,
+  };
+
+  if (kind === "classes") {
+    return (
+      <svg {...common}>
+        <rect x="3" y="5" width="18" height="16" rx="2" />
+        <path d="M7 3v4M17 3v4M3 10h18" />
+      </svg>
+    );
+  }
+
+  if (kind === "students") {
+    return (
+      <svg {...common}>
+        <circle cx="9" cy="8" r="3" />
+        <path d="M3.5 20c.6-4 2.6-6 5.5-6s4.9 2 5.5 6" />
+        <path d="M16 7.5a2.5 2.5 0 0 1 0 5M17 15c2.2.6 3.4 2.3 3.8 5" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg {...common}>
+      <path d="M5 20V12M12 20V7M19 20V3" />
+    </svg>
+  );
+}
+
 export default async function AdminPage({
   searchParams,
 }: {
@@ -455,8 +494,8 @@ export default async function AdminPage({
 
       <section className="hoy-kpi-grid" aria-label="Resumen del estudio">
         <Link className="hoy-kpi-card" href={`/admin?date=${todayKey}`}>
-          <span className="hoy-kpi-icon" aria-hidden="true">
-            ◫
+          <span className="hoy-kpi-icon">
+            <KpiIcon kind="classes" />
           </span>
           <span>
             <small>Clases hoy</small>
@@ -466,8 +505,8 @@ export default async function AdminPage({
         </Link>
 
         <Link className="hoy-kpi-card" href="/admin/alumnas">
-          <span className="hoy-kpi-icon" aria-hidden="true">
-            ♧
+          <span className="hoy-kpi-icon">
+            <KpiIcon kind="students" />
           </span>
           <span>
             <small>Alumnas activas</small>
@@ -478,8 +517,8 @@ export default async function AdminPage({
 
         {canWriteSales ? (
           <Link className="hoy-kpi-card" href="/admin/ventas">
-            <span className="hoy-kpi-icon" aria-hidden="true">
-              ▥
+            <span className="hoy-kpi-icon">
+              <KpiIcon kind="sales" />
             </span>
             <span>
               <small>Ventas hoy</small>
@@ -489,8 +528,8 @@ export default async function AdminPage({
           </Link>
         ) : (
           <article className="hoy-kpi-card">
-            <span className="hoy-kpi-icon" aria-hidden="true">
-              ▥
+            <span className="hoy-kpi-icon">
+              <KpiIcon kind="sales" />
             </span>
             <span>
               <small>Ventas hoy</small>
