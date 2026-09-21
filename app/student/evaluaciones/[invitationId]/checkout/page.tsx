@@ -68,8 +68,7 @@ export default async function EvaluationCheckoutReturnPage({
   if (!attempt) notFound();
 
   const attemptWithExtra = attempt as
-    | (typeof attempt & { extra_fulfillment_snapshot?: unknown })
-    | null;
+    (typeof attempt & { extra_fulfillment_snapshot?: unknown }) | null;
   const extraSnapshot = attemptWithExtra?.extra_fulfillment_snapshot;
   const extraFulfillment =
     extraSnapshot && typeof extraSnapshot === "object" && !Array.isArray(extraSnapshot)
