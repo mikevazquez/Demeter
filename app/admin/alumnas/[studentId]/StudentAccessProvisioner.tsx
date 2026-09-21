@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import LoadingSpinner from "@/app/admin/components/LoadingSpinner";
-import { provisionStudentAccess, resetStudentTemporaryPassword } from "./actions";
+import { provisionStudentAccess, resendStudentActivationLink } from "./actions";
 
 const errorCopy: Record<string, string> = {
   invalid_request: "No se pudo identificar a la alumna.",
@@ -16,9 +16,13 @@ const errorCopy: Record<string, string> = {
   student_access_missing: "La alumna todavía no tiene una cuenta de acceso vinculada.",
   student_access_inconsistent: "La cuenta de acceso está incompleta o inconsistente.",
   access_lookup_failed: "No se pudo consultar el estado de la cuenta de acceso.",
-  temporary_password_reset_closed:
-    "La alumna ya completó su activación. Ya no se puede regenerar la contraseña temporal.",
-  auth_password_reset_failed: "Supabase Auth no pudo generar una nueva contraseña temporal.",
+  activation_already_completed:
+    "La alumna ya creó su contraseña. Si la olvidó, debe usar el flujo de recuperación de acceso.",
+  auth_activation_reset_failed:
+    "No se pudo preparar un nuevo enlace de activación. Inténtalo nuevamente.",
+  activation_link_failed:
+    "La cuenta está lista, pero no se pudo generar el enlace de activación. Puedes reenviarlo.",
+  activation_url_invalid: "No se pudo construir una liga segura de activación.",
   unauthenticated: "Tu sesión administrativa expiró. Vuelve a iniciar sesión e inténtalo de nuevo.",
   forbidden: "Tu cuenta no tiene permiso para habilitar accesos al portal.",
   authorization_failed: "No se pudo validar tu permiso administrativo.",
@@ -31,99 +35,78 @@ const errorCopy: Record<string, string> = {
   provision_unavailable: "El servicio seguro de aprovisionamiento no está disponible.",
 };
 
-type CredentialMode = "provision" | "reset";
+type ActivationMode = "provision" | "resend";
 
-function StudentCredentialAction({
+function StudentActivationAction({
   studentId,
   phone,
   mode,
 }: {
   studentId: string;
   phone: string;
-  mode: CredentialMode;
+  mode: ActivationMode;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
-  const [credentials, setCredentials] = useState<{
+  const [result, setResult] = useState<{
     phone: string;
-    temporaryPassword: string;
+    activationLinkGenerated: boolean;
     welcomeStatus: "accepted" | "skipped" | "error" | null;
   } | null>(null);
 
   function run() {
     setError(null);
-    setCopied(false);
     startTransition(async () => {
-      const result =
+      const response =
         mode === "provision"
           ? await provisionStudentAccess(studentId)
-          : await resetStudentTemporaryPassword(studentId);
+          : await resendStudentActivationLink(studentId);
 
-      if (!result.ok) {
-        setError(errorCopy[result.error] ?? "No se pudo completar la operación.");
+      if (!response.ok) {
+        setError(errorCopy[response.error] ?? "No se pudo completar la operación.");
         return;
       }
 
-      setCredentials({
-        phone: result.phone,
-        temporaryPassword: result.temporaryPassword,
-        welcomeStatus: result.welcomeDelivery?.status ?? null,
+      setResult({
+        phone: response.phone,
+        activationLinkGenerated: response.activationLinkGenerated,
+        welcomeStatus: response.welcomeDelivery?.status ?? null,
       });
     });
   }
 
-  async function copyPassword() {
-    if (!credentials) return;
-
-    try {
-      await navigator.clipboard.writeText(credentials.temporaryPassword);
-      setCopied(true);
-    } catch {
-      setCopied(false);
-    }
-  }
-
-  function acknowledgeCredentials() {
-    setCredentials(null);
+  function acknowledge() {
+    setResult(null);
     router.refresh();
   }
 
-  if (credentials) {
+  if (result) {
+    const delivered =
+      result.activationLinkGenerated && result.welcomeStatus === "accepted";
+
     return (
       <div className="student-list">
-        <div className="notice success">
-          {mode === "provision"
-            ? credentials.welcomeStatus === "accepted"
-              ? "Cuenta creada y vinculada. La bienvenida fue entregada a Asistian para su envío por WhatsApp."
-              : "Cuenta creada y vinculada. La bienvenida no pudo entregarse a Asistian; conserva la contraseña para compartirla manualmente."
-            : "Nueva contraseña temporal generada. La anterior ya no funciona y esta permanecerá visible hasta que pulses ‘Ya la guardé’."}
+        <div className={delivered ? "notice success" : "notice error"}>
+          {delivered
+            ? mode === "provision"
+              ? "Cuenta creada y vinculada. El enlace para crear su contraseña fue entregado a Asistian para enviarlo por WhatsApp."
+              : "Nuevo enlace de activación entregado a Asistian para enviarlo por WhatsApp."
+            : "La cuenta quedó preparada, pero el enlace de activación no pudo entregarse por WhatsApp. Puedes intentar reenviarlo."}
         </div>
         <div className="student-row">
           <div>
             <strong>Teléfono de acceso</strong>
-            <span>{credentials.phone}</span>
+            <span>{result.phone}</span>
           </div>
-        </div>
-        <div className="student-row">
-          <div>
-            <strong>Contraseña temporal</strong>
-            <span className="font-mono break-all">{credentials.temporaryPassword}</span>
-          </div>
-        </div>
-        <div className="compact-form">
-          <button className="primary-button" type="button" onClick={copyPassword}>
-            {copied ? "Contraseña copiada" : "Copiar contraseña"}
-          </button>
-          <button className="secondary-button" type="button" onClick={acknowledgeCredentials}>
-            Ya la guardé
-          </button>
         </div>
         <p className="text-sm text-zinc-400">
-          Entrégala por un canal privado. Studio Flow no guarda esta contraseña y no puede volver a
-          mostrar la misma después de cerrar este panel.
+          Studio Flow no muestra ni envía una contraseña inicial. La alumna elegirá su propia
+          contraseña desde el enlace de activación.
         </p>
+        <button className="secondary-button" type="button" onClick={acknowledge}>
+          Listo
+        </button>
       </div>
     );
   }
@@ -133,13 +116,13 @@ function StudentCredentialAction({
       <p>
         {mode === "provision" ? (
           <>
-            Se creará una cuenta Auth separada del expediente operativo y se vinculará con rol
-            Student. El acceso usará <strong>{phone}</strong> y una contraseña temporal aleatoria.
+            Se creará una cuenta de acceso para <strong>{phone}</strong>. La alumna recibirá por
+            WhatsApp un enlace seguro para crear su propia contraseña.
           </>
         ) : (
           <>
-            La cuenta ya existe y sigue pendiente de activación. Puedes generar una nueva contraseña
-            temporal para <strong>{phone}</strong>; la anterior dejará de funcionar.
+            La cuenta sigue pendiente de activación. Puedes enviar un nuevo enlace a{" "}
+            <strong>{phone}</strong>. El enlace anterior dejará de ser la vía de acceso prevista.
           </>
         )}
       </p>
@@ -154,12 +137,12 @@ function StudentCredentialAction({
         {isPending ? (
           <span className="inline-flex items-center justify-center gap-2">
             <LoadingSpinner />
-            <span>{mode === "provision" ? "Habilitando acceso…" : "Generando contraseña…"}</span>
+            <span>{mode === "provision" ? "Habilitando acceso…" : "Generando enlace…"}</span>
           </span>
         ) : mode === "provision" ? (
           "Habilitar acceso al portal"
         ) : (
-          "Generar nueva contraseña temporal"
+          "Reenviar enlace de activación"
         )}
       </button>
     </div>
@@ -173,15 +156,15 @@ export function StudentAccessProvisioner({
   studentId: string;
   phone: string;
 }) {
-  return <StudentCredentialAction studentId={studentId} phone={phone} mode="provision" />;
+  return <StudentActivationAction studentId={studentId} phone={phone} mode="provision" />;
 }
 
-export function StudentTemporaryPasswordResetter({
+export function StudentActivationLinkResender({
   studentId,
   phone,
 }: {
   studentId: string;
   phone: string;
 }) {
-  return <StudentCredentialAction studentId={studentId} phone={phone} mode="reset" />;
+  return <StudentActivationAction studentId={studentId} phone={phone} mode="resend" />;
 }
