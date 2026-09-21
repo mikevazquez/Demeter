@@ -234,11 +234,14 @@ const handler = {
       return jsonResponse({ error: "checkout_context_failed" }, 500);
     }
 
+    const isEvaluationEnrollment =
+      hasEvaluationContext && String(product.product_type) === "enrollment";
+
     if (
       attemptRow.product_template_id !== product.id ||
       attemptRow.studio_id !== product.studio_id ||
       product.active !== true ||
-      product.online_purchasable !== true ||
+      (product.online_purchasable !== true && !isEvaluationEnrollment) ||
       !["package", "membership", "single_class", "enrollment"].includes(
         String(product.product_type),
       )
