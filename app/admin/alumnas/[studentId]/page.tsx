@@ -473,33 +473,22 @@ export default async function StudentProfilePage({
     benefitDefinition: unknown;
   }> = [];
   if (canReadRewards) {
-    const { data: activePrograms } = await supabase
-      .from("reward_programs")
-      .select("id,published_version_number")
+    const { data: statusMembership } = await supabase
+      .from("reward_status_memberships")
+      .select("current_level_key")
       .eq("studio_id", studio.id)
-      .eq("status", "active");
-    const activeProgramIds = (activePrograms ?? []).map((program) => program.id);
-    const { data: participations } = activeProgramIds.length
-      ? await supabase
-          .from("reward_program_participations")
-          .select("id,program_id,program_version_number,current_level_order,status,joined_at")
-          .eq("studio_id", studio.id)
-          .eq("student_id", student.id)
-          .eq("status", "active")
-          .in("program_id", activeProgramIds)
-          .order("joined_at", { ascending: false })
-      : { data: [] };
-    const profileParticipation = participations?.length === 1 ? participations[0] : null;
-    if (profileParticipation?.current_level_order) {
-      const { data: level } = await supabase
-        .from("reward_program_levels")
+      .eq("student_id", student.id)
+      .maybeSingle();
+
+    if (statusMembership?.current_level_key) {
+      const { data: statusLevel } = await supabase
+        .from("reward_status_level_definitions")
         .select("title")
         .eq("studio_id", studio.id)
-        .eq("program_id", profileParticipation.program_id)
-        .eq("program_version_number", profileParticipation.program_version_number)
-        .eq("level_order", profileParticipation.current_level_order)
+        .eq("level_key", statusMembership.current_level_key)
         .maybeSingle();
-      levelTitle = level?.title ?? null;
+
+      levelTitle = statusLevel?.title ?? null;
     }
     const rewardCountResult = await supabase
       .from("reward_instances")

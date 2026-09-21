@@ -27,6 +27,10 @@ const waitlistControl = readFileSync(
 );
 const homePage = readFileSync(join(process.cwd(), "app/student/page.tsx"), "utf8");
 const profilePage = readFileSync(join(process.cwd(), "app/student/perfil/page.tsx"), "utf8");
+const adminStudentProfilePage = readFileSync(
+  join(process.cwd(), "app/admin/alumnas/[studentId]/page.tsx"),
+  "utf8",
+);
 const studentActions = readFileSync(join(process.cwd(), "app/student/actions.ts"), "utf8");
 const invitationMigration = readFileSync(
   join(process.cwd(), "supabase/migrations/20260921014500_sf255_guest_invitations.sql"),
@@ -76,6 +80,24 @@ describe("SF-255A monthly level and waitlist contracts", () => {
     expect(core).toContain("('diamond', 4, 'Diamante', 10, 16, 6, 3, 4, 20, 20, 2)");
     expect(core).toContain("maintenance_attendance");
     expect(core).toContain("promotion_attendance");
+  });
+
+  it("seeds Bronze for existing and newly created students", () => {
+    expect(core).toContain("insert into public.reward_status_memberships");
+    expect(core).toContain("from public.students s");
+    expect(core).toContain(
+      "create or replace function private.seed_reward_status_for_new_student()",
+    );
+    expect(core).toContain("create trigger reward_status_seed_student");
+    expect(core).toContain("after insert on public.students");
+    expect(core).toContain("current_level_key text not null default 'bronze'");
+  });
+
+  it("uses the SF-255 status membership as Profile 360 general level source", () => {
+    expect(adminStudentProfilePage).toContain('.from("reward_status_memberships")');
+    expect(adminStudentProfilePage).toContain('.from("reward_status_level_definitions")');
+    expect(adminStudentProfilePage).toContain('select("current_level_key")');
+    expect(adminStudentProfilePage).not.toContain("profileParticipation");
   });
 
   it("limits monthly movement and preserves the Bronze floor", () => {
