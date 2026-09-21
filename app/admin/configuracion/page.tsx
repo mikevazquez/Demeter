@@ -33,7 +33,7 @@ export default async function ConfigurationPage({
   const portalPath = `/s/${ctx.studio.slug}`;
 
   return (
-    <main className="dashboard-shell">
+    <main className="dashboard-shell admin-ux04-secondary configuration-page">
       <header className="topbar">
         <div>
           <Link className="back-link compact" href="/admin/mas">

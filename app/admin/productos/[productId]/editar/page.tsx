@@ -34,7 +34,7 @@ export default async function EditProductPage({
   );
 
   return (
-    <main className="mx-auto max-w-3xl space-y-6">
+    <main className="dashboard-shell admin-ux04-secondary-detail product-editor-page">
       <header>
         <p className="text-sm text-zinc-400">Productos · Editor</p>
         <h1 className="text-3xl font-semibold text-white">Editar {product.name}</h1>

@@ -245,7 +245,7 @@ export default async function AutomationDetailPage({
     canManage && (template.configurationMode === "multiple" || nonArchived.length === 0);
 
   return (
-    <main className="space-y-6">
+    <main className="dashboard-shell admin-ux04-secondary-detail automation-detail-page">
       <header>
         <Link
           href="/admin/automatizaciones"

@@ -1,0 +1,450 @@
+/* ADMIN-UX-04 · Secondary admin screens
+   Baseline: Hoy + Agenda + Alumnas + Perfil 360 + Operación de sesión. */
+
+.admin-ux04-secondary {
+  align-content: start;
+  gap: 14px;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding-bottom: 38px;
+}
+
+.admin-ux04-secondary .module-header,
+.admin-ux04-secondary > .topbar {
+  min-height: 0;
+  align-items: flex-end;
+  padding: 2px 0 4px;
+}
+
+.admin-ux04-secondary .module-header h1,
+.admin-ux04-secondary > .topbar .dashboard-title {
+  margin: 0;
+  color: #f7f8fa;
+  font-size: clamp(32px, 3vw, 42px);
+  line-height: 1;
+  letter-spacing: -0.045em;
+}
+
+.admin-ux04-secondary .module-header p,
+.admin-ux04-secondary > .topbar p:last-child {
+  margin: 7px 0 0;
+  color: #96a2b4;
+  font-size: 11px;
+}
+
+.admin-ux04-secondary .module-primary-action {
+  min-height: 40px;
+  padding-inline: 14px;
+  border-radius: 12px;
+  background: linear-gradient(90deg, #ff0a8a, #f10d76);
+  box-shadow: 0 10px 26px rgba(255, 10, 138, 0.14);
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.admin-ux04-secondary .module-tabs {
+  gap: 4px;
+  padding: 4px;
+  border-color: #29333f;
+  border-radius: 13px;
+  background: #0d141c;
+}
+
+.admin-ux04-secondary .module-tabs a {
+  min-height: 34px;
+  padding-inline: 13px;
+  border-radius: 9px;
+  font-size: 9px;
+}
+
+.admin-ux04-secondary .module-tabs a.is-active {
+  background: rgba(255, 10, 138, 0.1);
+  color: #ff75b9;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 10, 138, 0.18),
+    inset 0 -2px 0 #ff0a8a;
+}
+
+.admin-ux04-secondary .module-toolbar {
+  gap: 10px;
+}
+
+.admin-ux04-secondary .module-search {
+  width: min(340px, 46vw);
+}
+
+.admin-ux04-secondary .module-search input {
+  height: 40px;
+  padding: 0 13px;
+  border-color: #2a3441;
+  border-radius: 12px;
+  background: #0d141c;
+  color: #e6ebf1;
+  font-size: 10px;
+}
+
+.admin-ux04-secondary .module-search input:focus {
+  border-color: rgba(255, 10, 138, 0.68);
+  box-shadow: 0 0 0 3px rgba(255, 10, 138, 0.08);
+}
+
+.admin-ux04-secondary .module-list,
+.admin-ux04-secondary .more-list,
+.admin-ux04-secondary .automation-list {
+  gap: 8px;
+}
+
+.admin-ux04-secondary .module-list-row,
+.admin-ux04-secondary .more-row,
+.admin-ux04-secondary .automation-list-row {
+  min-height: 68px;
+  padding: 11px 13px;
+  border-color: #28323e;
+  border-radius: 15px;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(255, 10, 138, 0.035), transparent 34%), #0d141c;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.1);
+}
+
+.admin-ux04-secondary .module-list-row:hover,
+.admin-ux04-secondary .more-row:hover,
+.admin-ux04-secondary .automation-list-row:hover {
+  border-color: rgba(255, 10, 138, 0.44);
+  background: linear-gradient(90deg, rgba(255, 10, 138, 0.055), transparent 30%), #101720;
+}
+
+.admin-ux04-secondary .module-row-icon,
+.admin-ux04-secondary .more-row-icon {
+  width: 36px;
+  height: 36px;
+  border-color: rgba(255, 10, 138, 0.34);
+  border-radius: 11px;
+  background: rgba(255, 10, 138, 0.07);
+  color: #ff6fb7;
+}
+
+.admin-ux04-secondary .module-row-copy strong,
+.admin-ux04-secondary .more-row-copy strong {
+  color: #eef1f5;
+  font-size: 11px;
+}
+
+.admin-ux04-secondary .module-row-copy small,
+.admin-ux04-secondary .more-row-copy small {
+  color: #8e9aaa;
+  font-size: 9px;
+}
+
+.admin-ux04-secondary .module-row-meta strong {
+  color: #edf1f5;
+  font-size: 10px;
+}
+
+.admin-ux04-secondary .module-row-meta small {
+  color: #8793a3;
+}
+
+.admin-ux04-secondary .module-chevron {
+  color: #788495;
+}
+
+.admin-ux04-secondary .module-empty {
+  padding: 42px 18px;
+  border-color: #2a3441;
+  border-radius: 15px;
+  background: #0d141c;
+  color: #8995a5;
+}
+
+.admin-ux04-secondary .team-avatar {
+  width: 36px;
+  height: 36px;
+  border: 1px solid rgba(255, 10, 138, 0.46);
+  background: linear-gradient(145deg, rgba(255, 10, 138, 0.22), rgba(42, 20, 38, 0.7));
+  box-shadow: 0 0 20px rgba(255, 10, 138, 0.06);
+  font-size: 9px;
+}
+
+.admin-ux04-secondary .status-chip {
+  padding: 5px 8px;
+  font-size: 8px;
+}
+
+.admin-ux04-secondary .module-create-details {
+  position: relative;
+}
+
+.admin-ux04-secondary .module-create-panel {
+  top: calc(100% + 8px);
+  width: min(390px, 88vw);
+  gap: 9px;
+  padding: 14px;
+  border-color: rgba(255, 10, 138, 0.42);
+  border-radius: 17px;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(255, 10, 138, 0.08), transparent 34%), #0f161e;
+  box-shadow:
+    0 24px 64px rgba(0, 0, 0, 0.45),
+    0 0 30px rgba(255, 10, 138, 0.05);
+}
+
+.admin-ux04-secondary .module-create-panel input,
+.admin-ux04-secondary .module-create-panel textarea {
+  min-height: 40px;
+  padding: 10px 11px;
+  border-color: #2b3541;
+  border-radius: 11px;
+  background: #0b1118;
+  font-size: 10px;
+}
+
+.admin-ux04-secondary .more-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.admin-ux04-secondary.more-page {
+  max-width: 980px;
+}
+
+.admin-ux04-secondary .more-row {
+  grid-template-columns: 40px minmax(0, 1fr) 20px;
+  min-height: 82px;
+}
+
+.admin-ux04-secondary .automation-settings-panel,
+.admin-ux04-secondary .automation-summary-card {
+  border: 1px solid #28323e;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(255, 10, 138, 0.04), transparent 34%), #0d141c;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.11);
+}
+
+.admin-ux04-secondary .automation-settings-panel {
+  padding: 16px;
+  border-radius: 18px;
+}
+
+.admin-ux04-secondary .automation-settings-panel input {
+  border-color: #2b3541;
+  background: #0f161e;
+}
+
+.admin-ux04-secondary .automation-settings-panel button {
+  border-radius: 12px;
+  background: linear-gradient(90deg, #ff0a8a, #f10d76);
+}
+
+.admin-ux04-secondary .automation-summary-grid {
+  gap: 9px;
+}
+
+.admin-ux04-secondary .automation-summary-card {
+  min-height: 90px;
+  padding: 13px;
+  border-radius: 15px;
+}
+
+.admin-ux04-secondary .automation-list-row {
+  padding: 15px;
+  border-radius: 17px;
+}
+
+.admin-ux04-secondary .automation-list-row h2 {
+  color: #eef1f5;
+  font-size: 15px;
+}
+
+.admin-ux04-secondary .automation-list-row p {
+  color: #8e9aaa;
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+.admin-ux04-secondary .automation-list-row > div:last-child {
+  border-top-color: #27313d;
+}
+
+/* Progress & Rewards */
+.rewards-admin-page {
+  gap: 14px !important;
+}
+
+.rewards-admin-page > nav {
+  gap: 4px !important;
+  padding: 4px !important;
+  border-color: #29333f !important;
+  border-radius: 14px !important;
+  background: #0d141c !important;
+}
+
+.rewards-admin-page > nav a {
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 10px !important;
+  color: #8f9bab !important;
+  font-size: 10px !important;
+}
+
+.rewards-admin-page > nav a[class*="bg-[#FF0A8A]"] {
+  background: rgba(255, 10, 138, 0.1) !important;
+  color: #ff78bc !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 10, 138, 0.16),
+    inset 0 -2px 0 #ff0a8a;
+}
+
+.rewards-admin-page > header {
+  padding: 4px 0 2px;
+}
+
+.rewards-admin-page > header .dashboard-title {
+  color: #f7f8fa;
+  font-size: clamp(32px, 3vw, 42px);
+  line-height: 1;
+  letter-spacing: -0.045em;
+}
+
+.rewards-admin-page > section > article,
+.rewards-admin-page > section > a,
+.rewards-admin-page > section > div,
+.rewards-admin-page [class*="rounded-2xl"][class*="border"] {
+  border-color: #28323e !important;
+}
+
+.rewards-admin-page [class*="bg-white/[0.03]"],
+.rewards-admin-page [class*="bg-black/20"] {
+  background-color: #0d141c !important;
+}
+
+/* Configuration */
+.configuration-page > .topbar {
+  min-height: 0;
+  padding: 3px 0;
+}
+
+.configuration-page .branding-config-grid {
+  gap: 12px;
+}
+
+.configuration-page .branding-config-grid > .panel {
+  overflow: hidden;
+  border-color: #28323e;
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(255, 10, 138, 0.045), transparent 34%), #0d141c;
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.12);
+}
+
+.configuration-page .branding-field input,
+.configuration-page .branding-upload {
+  border-color: #2a3441;
+  border-radius: 12px;
+  background: #0f161e;
+}
+
+.configuration-page .branding-preview-card {
+  border-color: rgba(255, 10, 138, 0.32);
+  border-radius: 17px;
+  background:
+    radial-gradient(
+      circle at 50% 0%,
+      color-mix(in srgb, var(--preview-accent) 10%, transparent),
+      transparent 36%
+    ),
+    #0b1118;
+}
+
+@media (max-width: 760px) {
+  .admin-ux04-secondary {
+    gap: 10px;
+    padding: 14px 14px 92px;
+  }
+
+  .admin-ux04-secondary .module-header {
+    align-items: start;
+  }
+
+  .admin-ux04-secondary .module-header h1,
+  .admin-ux04-secondary > .topbar .dashboard-title,
+  .rewards-admin-page > header .dashboard-title {
+    font-size: 29px;
+  }
+
+  .admin-ux04-secondary .module-header p,
+  .admin-ux04-secondary > .topbar p:last-child {
+    font-size: 10px;
+  }
+
+  .admin-ux04-secondary .module-primary-action {
+    width: 40px;
+    min-width: 40px;
+    height: 40px;
+    overflow: hidden;
+    padding: 0;
+    font-size: 0;
+  }
+
+  .admin-ux04-secondary .module-primary-action::after {
+    content: "+";
+    font-size: 22px;
+    line-height: 1;
+  }
+
+  .admin-ux04-secondary .module-toolbar {
+    align-items: stretch;
+  }
+
+  .admin-ux04-secondary .module-search {
+    width: 100%;
+  }
+
+  .admin-ux04-secondary .module-list-row,
+  .admin-ux04-secondary .more-row {
+    min-height: 66px;
+  }
+
+  .admin-ux04-secondary .more-list {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .admin-ux04-secondary .more-row {
+    min-height: 74px;
+  }
+
+  .admin-ux04-secondary .automation-summary-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 7px;
+  }
+
+  .admin-ux04-secondary .automation-summary-card {
+    min-height: 78px;
+    padding: 10px;
+    border-radius: 13px;
+  }
+
+  .admin-ux04-secondary .automation-list-row {
+    padding: 12px;
+  }
+
+  .rewards-admin-page > nav {
+    margin-inline: -1px;
+    overflow-x: auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .admin-ux04-secondary {
+    padding-inline: 10px;
+  }
+
+  .admin-ux04-secondary .automation-summary-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .admin-ux04-secondary .module-tabs {
+    max-width: 100%;
+    overflow-x: auto;
+  }
+}

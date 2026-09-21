@@ -1,0 +1,424 @@
+/* ADMIN-UX-04 · Perfil 360 visual homologation
+   Baseline: Hoy + Agenda + Alumnas approved. No business logic changes. */
+
+.admin-ux04-profile360 {
+  align-content: start;
+  gap: 14px;
+  padding-bottom: 38px;
+}
+
+.admin-ux04-profile360 .profile360-approved-header {
+  gap: 13px;
+  padding: 2px 0 0;
+}
+
+.admin-ux04-profile360 .profile360-back {
+  color: #8f9aaa;
+  font-size: 10px;
+  font-weight: 780;
+}
+
+.admin-ux04-profile360 .profile360-approved-person {
+  position: relative;
+  gap: 15px;
+  align-items: center;
+  padding: 16px;
+  border: 1px solid #28323e;
+  border-radius: 20px;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(255, 10, 138, 0.07), transparent 34%),
+    linear-gradient(180deg, #0f151d 0%, #0b1118 100%);
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.16);
+}
+
+.admin-ux04-profile360 .profile360-avatar {
+  width: 78px;
+  height: 78px;
+  border-color: rgba(255, 10, 138, 0.62);
+  background: linear-gradient(145deg, rgba(255, 10, 138, 0.28), rgba(43, 20, 39, 0.72));
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.03),
+    0 0 24px rgba(255, 10, 138, 0.08);
+}
+
+.admin-ux04-profile360 .profile360-approved-copy {
+  gap: 6px;
+}
+
+.admin-ux04-profile360 .profile360-approved-title h1 {
+  color: #f6f8fb;
+  font-size: clamp(29px, 3.2vw, 40px);
+}
+
+.admin-ux04-profile360 .profile360-approved-contact {
+  color: #929ead;
+  font-size: 11px;
+}
+
+.admin-ux04-profile360 .profile360-approved-meta {
+  min-width: 104px;
+  gap: 7px;
+}
+
+.admin-ux04-profile360 .profile360-level-pill,
+.admin-ux04-profile360 .profile360-state-pill {
+  min-height: 26px;
+  padding: 0 9px;
+  border-radius: 999px;
+  font-size: 8px;
+}
+
+.admin-ux04-profile360 .profile360-level-pill {
+  border: 1px solid rgba(255, 10, 138, 0.26);
+  background: rgba(255, 10, 138, 0.06);
+  color: #ff8cc5;
+}
+
+.admin-ux04-profile360 .profile360-edit-link {
+  min-height: 31px;
+  padding: 0 10px;
+  border-color: rgba(255, 10, 138, 0.36);
+  border-radius: 10px;
+  background: rgba(255, 10, 138, 0.03);
+  color: #ff7cbc;
+  font-size: 9px;
+}
+
+.admin-ux04-profile360 .profile360-approved-tabs {
+  gap: 4px;
+  margin-top: 0;
+  padding: 0 4px;
+  border: 1px solid #28323e;
+  border-radius: 14px;
+  background: #0c1219;
+}
+
+.admin-ux04-profile360 .profile360-approved-tabs a {
+  min-height: 42px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 11px;
+  color: #8d99a9;
+  font-size: 10px;
+  font-weight: 780;
+}
+
+.admin-ux04-profile360 .profile360-approved-tabs a.is-active {
+  color: #ff72b8;
+}
+
+.admin-ux04-profile360 .profile360-approved-tabs a.is-active::after {
+  left: 9px;
+  right: 9px;
+  height: 2px;
+  background: #ff0a8a;
+}
+
+.admin-ux04-profile360 .profile360-approved-summary {
+  gap: 12px;
+}
+
+.admin-ux04-profile360 .profile360-approved-package,
+.admin-ux04-profile360 .profile360-approved-alerts,
+.admin-ux04-profile360 .profile360-view-panel,
+.admin-ux04-profile360 .profile360-detail {
+  border-color: #28323e;
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(255, 10, 138, 0.045), transparent 34%), #0d141c;
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.13);
+}
+
+.admin-ux04-profile360 .profile360-approved-package,
+.admin-ux04-profile360 .profile360-approved-alerts,
+.admin-ux04-profile360 .profile360-view-panel {
+  padding: 15px;
+}
+
+.admin-ux04-profile360 .profile360-approved-card-heading h2,
+.admin-ux04-profile360 .profile360-view-heading h2 {
+  color: #f1f3f6;
+}
+
+.admin-ux04-profile360 .profile360-approved-package-row {
+  gap: 8px;
+}
+
+.admin-ux04-profile360 .profile360-approved-package-balance,
+.admin-ux04-profile360 .profile360-approved-package-expiry {
+  padding: 11px 12px;
+  border: 1px solid #27313d;
+  border-radius: 12px;
+  background: #101720;
+}
+
+.admin-ux04-profile360 .profile360-approved-package-balance strong,
+.admin-ux04-profile360 .profile360-approved-package-expiry strong {
+  color: #f3f5f8;
+  font-size: 14px;
+}
+
+.admin-ux04-profile360 .profile360-approved-package-balance span,
+.admin-ux04-profile360 .profile360-approved-package-expiry span,
+.admin-ux04-profile360 .profile360-approved-next > span {
+  color: #8894a4;
+  font-size: 8px;
+}
+
+.admin-ux04-profile360 .profile360-approved-progress {
+  height: 5px;
+  background: #222b35;
+}
+
+.admin-ux04-profile360 .profile360-approved-progress span {
+  background: linear-gradient(90deg, #ff0a8a, #ff74ba);
+}
+
+.admin-ux04-profile360 .profile360-approved-next {
+  padding: 11px 12px 0;
+  border-top-color: #27313d;
+}
+
+.admin-ux04-profile360 .profile360-approved-indicators {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.admin-ux04-profile360 .profile360-approved-indicators article {
+  min-height: 72px;
+  padding: 11px;
+  border-color: #28323e;
+  border-radius: 13px;
+  background: #0d141c;
+}
+
+.admin-ux04-profile360 .profile360-approved-indicators span {
+  color: #8793a3;
+  font-size: 8px;
+}
+
+.admin-ux04-profile360 .profile360-approved-indicators strong {
+  color: #f3f5f8;
+  font-size: 13px;
+}
+
+.admin-ux04-profile360 .profile360-approved-alerts {
+  border-color: rgba(255, 10, 138, 0.3);
+  background:
+    radial-gradient(circle at 100% 0%, rgba(255, 10, 138, 0.09), transparent 38%), #0d141c;
+}
+
+.admin-ux04-profile360 .profile360-approved-alert-list > div {
+  border-color: #29333f;
+  background: #0f161e;
+}
+
+.admin-ux04-profile360 .profile360-approved-alert-list strong {
+  color: #ff81c0;
+}
+
+.admin-ux04-profile360 .profile360-package-card {
+  border-color: #29333f;
+  background: #0d141c;
+}
+
+.admin-ux04-profile360 .profile360-package-card.is-current {
+  border-color: rgba(255, 10, 138, 0.36);
+  box-shadow: 0 0 0 1px rgba(255, 10, 138, 0.04);
+}
+
+.admin-ux04-profile360 .profile360-package-card > summary {
+  padding: 13px;
+}
+
+.admin-ux04-profile360 .profile360-package-card-body {
+  border-top-color: #26303b;
+}
+
+.admin-ux04-profile360 .profile360-package-facts > div {
+  border-color: #29333f;
+  background: #101720;
+}
+
+.admin-ux04-profile360 .profile360-package-edit {
+  border-color: rgba(255, 10, 138, 0.22);
+  background: rgba(255, 10, 138, 0.035);
+}
+
+.admin-ux04-profile360 .profile360-reward-list article,
+.admin-ux04-profile360 .profile360-history-list article,
+.admin-ux04-profile360 .profile360-package-class-row {
+  border-color: #28323e;
+  background: #0f161e;
+}
+
+.admin-ux04-profile360 .profile360-detail > summary {
+  min-height: 56px;
+  padding: 12px 14px;
+}
+
+.admin-ux04-profile360 .profile360-detail > summary strong {
+  color: #eef1f5;
+  font-size: 12px;
+}
+
+.admin-ux04-profile360 .profile360-detail > summary small {
+  color: #8995a5;
+  font-size: 9px;
+}
+
+.admin-ux04-profile360 .profile360-detail > .panel {
+  border-top-color: #27313d;
+  background: rgba(0, 0, 0, 0.09);
+}
+
+.admin-ux04-profile360 .panel-heading {
+  border-bottom-color: #28323e;
+}
+
+.admin-ux04-profile360 .compact-form input,
+.admin-ux04-profile360 .compact-form select,
+.admin-ux04-profile360 .compact-form textarea {
+  border-color: #2a3441;
+  background: #0f161e;
+  color: #eef1f5;
+}
+
+.admin-ux04-profile360 .compact-form input:focus,
+.admin-ux04-profile360 .compact-form select:focus,
+.admin-ux04-profile360 .compact-form textarea:focus {
+  border-color: rgba(255, 10, 138, 0.68);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(255, 10, 138, 0.08);
+}
+
+@media (min-width: 1100px) {
+  .admin-ux04-profile360 {
+    max-width: 1180px;
+    margin: 0 auto;
+  }
+
+  .admin-ux04-profile360 .profile360-approved-summary {
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+    align-items: start;
+  }
+
+  .admin-ux04-profile360 .profile360-approved-package {
+    grid-row: span 2;
+  }
+
+  .admin-ux04-profile360 .profile360-approved-indicators {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .admin-ux04-profile360 {
+    gap: 10px;
+    padding: 14px 14px 92px;
+  }
+
+  .admin-ux04-profile360 .profile360-approved-person {
+    grid-template-columns: 68px minmax(0, 1fr) auto;
+    gap: 10px;
+    padding: 13px;
+    border-radius: 17px;
+  }
+
+  .admin-ux04-profile360 .profile360-avatar {
+    width: 68px;
+    height: 68px;
+    font-size: 18px;
+  }
+
+  .admin-ux04-profile360 .profile360-approved-title h1 {
+    font-size: 24px;
+  }
+
+  .admin-ux04-profile360 .profile360-approved-contact {
+    font-size: 9px;
+  }
+
+  .admin-ux04-profile360 .profile360-approved-meta {
+    min-width: 78px;
+    gap: 5px;
+  }
+
+  .admin-ux04-profile360 .profile360-approved-meta .profile360-level-pill,
+  .admin-ux04-profile360 .profile360-approved-meta .profile360-state-pill {
+    max-width: 94px;
+    min-height: 23px;
+    padding: 0 7px;
+    overflow: hidden;
+    font-size: 7px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .admin-ux04-profile360 .profile360-edit-link {
+    min-height: 27px;
+    font-size: 8px;
+  }
+
+  .admin-ux04-profile360 .profile360-approved-tabs {
+    margin-inline: -1px;
+    border-radius: 13px;
+  }
+
+  .admin-ux04-profile360 .profile360-approved-tabs a {
+    min-height: 39px;
+    padding-inline: 9px;
+    font-size: 9px;
+  }
+
+  .admin-ux04-profile360 .profile360-approved-indicators {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .admin-ux04-profile360 .profile360-approved-package,
+  .admin-ux04-profile360 .profile360-approved-alerts,
+  .admin-ux04-profile360 .profile360-view-panel {
+    padding: 13px;
+    border-radius: 16px;
+  }
+
+  .admin-ux04-profile360 .profile360-approved-package-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 430px) {
+  .admin-ux04-profile360 {
+    padding-inline: 10px;
+  }
+
+  .admin-ux04-profile360 .profile360-approved-person {
+    grid-template-columns: 62px minmax(0, 1fr);
+  }
+
+  .admin-ux04-profile360 .profile360-avatar {
+    width: 62px;
+    height: 62px;
+  }
+
+  .admin-ux04-profile360 .profile360-approved-meta {
+    grid-column: 2;
+    display: flex;
+    flex-wrap: wrap;
+    justify-items: start;
+    justify-content: flex-start;
+    min-width: 0;
+  }
+
+  .admin-ux04-profile360 .profile360-approved-title h1 {
+    font-size: 22px;
+  }
+
+  .admin-ux04-profile360 .profile360-approved-package-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .admin-ux04-profile360 .profile360-approved-package-expiry {
+    text-align: left;
+  }
+}

@@ -12,7 +12,7 @@ export default async function NewProductPage() {
     .order("name");
 
   return (
-    <main className="mx-auto max-w-3xl space-y-6">
+    <main className="dashboard-shell admin-ux04-secondary-detail product-editor-page">
       <header>
         <p className="text-sm text-zinc-400">Productos</p>
         <h1 className="text-3xl font-semibold text-white">Nuevo producto</h1>

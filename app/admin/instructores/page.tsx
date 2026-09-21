@@ -61,7 +61,7 @@ export default async function InstructorsPage({
           : null;
 
   return (
-    <main className="dashboard-shell admin-module-page">
+    <main className="dashboard-shell admin-module-page admin-ux04-secondary">
       <header className="module-header">
         <div>
           <h1>Equipo</h1>

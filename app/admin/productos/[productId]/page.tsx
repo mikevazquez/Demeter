@@ -48,7 +48,7 @@ export default async function ProductDetailPage({
         : null;
 
   return (
-    <main className="mx-auto max-w-4xl space-y-6">
+    <main className="dashboard-shell admin-ux04-secondary-detail product-detail-page">
       {statusMessage ? (
         <section
           role="status"
