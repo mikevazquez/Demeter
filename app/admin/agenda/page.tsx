@@ -389,15 +389,6 @@ export default async function AgendaPage({
         </div>
       </header>
 
-      {params.created ? (
-        <div className="notice success">
-          {params.created === "schedule"
-            ? "Horario recurrente creado. Las próximas sesiones ya están disponibles."
-            : params.created === "cancel-session"
-              ? "Clase cancelada correctamente."
-              : "Cambio guardado correctamente."}
-        </div>
-      ) : null}
       {params.error ? (
         <div className="notice error">
           {errorCopy[decodeURIComponent(params.error)] ?? "No se pudo guardar. Revisa los datos."}

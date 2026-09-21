@@ -45,10 +45,6 @@ export default async function ConfigurationPage({
         </div>
       </header>
 
-      {params.saved === "1" ? (
-        <div className="notice success">Identidad del portal actualizada correctamente.</div>
-      ) : null}
-
       {params.error ? (
         <div className="notice error">
           {errorCopy[params.error] ?? "No pudimos guardar los cambios."}

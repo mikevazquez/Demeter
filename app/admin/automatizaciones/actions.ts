@@ -108,7 +108,7 @@ export async function saveGlobalCommunicationWindowAction(formData: FormData) {
   }
 
   revalidatePath("/admin/automatizaciones");
-  redirect("/admin/automatizaciones?saved=communication_window");
+  redirect("/admin/automatizaciones");
 }
 
 export async function createAutomationAction(formData: FormData) {

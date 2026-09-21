@@ -247,7 +247,7 @@ export async function updateStudent(formData: FormData) {
 
   revalidatePath(`/admin/alumnas/${studentId}`);
   revalidatePath("/admin/alumnas");
-  redirect(`/admin/alumnas/${studentId}?saved=1`);
+  redirect(`/admin/alumnas/${studentId}`);
 }
 
 export async function updateCommunicationPreferences(formData: FormData) {
@@ -276,7 +276,7 @@ export async function updateCommunicationPreferences(formData: FormData) {
 
   revalidatePath(`/admin/alumnas/${studentId}`);
   revalidatePath("/admin/alumnas");
-  redirect(`/admin/alumnas/${studentId}?saved=communication_preferences#comunicacion`);
+  redirect(`/admin/alumnas/${studentId}#comunicacion`);
 }
 
 export async function updateDynamicProfileFields(formData: FormData) {
@@ -341,7 +341,7 @@ export async function updateDynamicProfileFields(formData: FormData) {
 
   revalidatePath(`/admin/alumnas/${studentId}`);
   revalidatePath("/admin/alumnas");
-  redirect(`/admin/alumnas/${studentId}?saved=fields`);
+  redirect(`/admin/alumnas/${studentId}`);
 }
 
 export async function setStudentLifecycle(formData: FormData) {
@@ -419,7 +419,7 @@ export async function setAcquisitionStartDate(formData: FormData) {
   }
 
   revalidateAcquisitionViews(studentId);
-  redirect(`/admin/alumnas/${studentId}?saved=acquisition_date`);
+  redirect(`/admin/alumnas/${studentId}`);
 }
 
 export async function setAcquisitionAvailableCredits(formData: FormData) {
@@ -451,5 +451,5 @@ export async function setAcquisitionAvailableCredits(formData: FormData) {
   }
 
   revalidateAcquisitionViews(studentId);
-  redirect(`/admin/alumnas/${studentId}?saved=credits_adjusted`);
+  redirect(`/admin/alumnas/${studentId}`);
 }

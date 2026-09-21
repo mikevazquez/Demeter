@@ -69,32 +69,17 @@ describe("SF-253 Rewards admin control center", () => {
     expect(loyaltySupport).toContain("condition_family");
   });
 
-  it("uses the approved dialog pattern for program success feedback", () => {
-    expect(programDetail).toContain("ProgramSavedNotice");
+  it("uses updated UI state instead of persistent reward success feedback", () => {
     expect(programDetail).not.toContain("notice success");
-    expect(programSavedNotice).toContain("NoticeDialog");
-    expect(programSavedNotice).toContain("Cambio guardado correctamente");
-  });
-
-  it("uses the approved dialog pattern for achievement success feedback", () => {
-    expect(achievementDetail).toContain("AchievementSavedNotice");
     expect(achievementDetail).not.toContain("notice success");
-    expect(achievementSavedNotice).toContain("NoticeDialog");
-    expect(achievementSavedNotice).toContain("Cambio guardado correctamente");
-  });
-
-  it("uses the approved dialog pattern for challenge success feedback", () => {
-    expect(challengeDetail).toContain("ChallengeSavedNotice");
     expect(challengeDetail).not.toContain("notice success");
-    expect(challengeSavedNotice).toContain("NoticeDialog");
-    expect(challengeSavedNotice).toContain("Cambio guardado correctamente");
-  });
-
-  it("uses the approved dialog pattern for exceptional reward adjustments", () => {
-    expect(rewardDetail).toContain("RewardAdjustedNotice");
     expect(rewardDetail).not.toContain("notice success");
-    expect(rewardAdjustedNotice).toContain("NoticeDialog");
-    expect(rewardAdjustedNotice).toContain("Ajuste guardado correctamente");
+
+    expect(programSavedNotice).not.toContain("NoticeDialog");
+    expect(achievementSavedNotice).not.toContain("NoticeDialog");
+    expect(challengeSavedNotice).not.toContain("NoticeDialog");
+    expect(rewardAdjustedNotice).not.toContain("NoticeDialog");
+    expect(actions).not.toContain("?saved=");
   });
 
   it("keeps active copy edits outside structural versions", () => {

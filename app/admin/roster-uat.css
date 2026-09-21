@@ -120,6 +120,24 @@
   font-weight: 800;
 }
 
+.today-evaluation-tag {
+  flex: 0 0 auto;
+  padding: 3px 7px;
+  border: 1px solid rgba(151, 103, 255, 0.55);
+  border-radius: 999px;
+  background: rgba(126, 79, 255, 0.12);
+  color: #cdb8ff;
+  font-size: 8px;
+  font-weight: 850;
+  letter-spacing: 0.01em;
+}
+
+.today-evaluation-tag.is-active {
+  border-color: rgba(255, 10, 138, 0.5);
+  background: rgba(255, 10, 138, 0.1);
+  color: #ff91c7;
+}
+
 .today-attendance-preview {
   display: grid;
   grid-template-columns: repeat(2, minmax(78px, 1fr));
@@ -431,4 +449,28 @@
   .today-add-form .primary-button {
     grid-column: auto;
   }
+}
+
+
+.today-evaluation-start-form {
+  margin-top: 2px;
+}
+
+.today-evaluation-start-form button {
+  min-height: 28px;
+  padding: 0 9px;
+  border: 1px solid rgba(151, 103, 255, 0.5);
+  border-radius: 9px;
+  background: rgba(126, 79, 255, 0.1);
+  color: #d8c8ff;
+  font: inherit;
+  font-size: 9px;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.today-evaluation-start-form button:hover {
+  border-color: rgba(187, 155, 255, 0.75);
+  background: rgba(126, 79, 255, 0.16);
+  color: #f0e9ff;
 }

@@ -6,6 +6,8 @@ type CreateOrderRequest = {
   sessionId?: unknown;
   clientRequestKey?: unknown;
   returnBaseUrl?: unknown;
+  evaluationInvitationId?: unknown;
+  evaluationSessionId?: unknown;
 };
 
 type CheckoutAttempt = {
@@ -18,6 +20,11 @@ type CheckoutAttempt = {
   status: string;
   provider_order_id: string | null;
   checkout_url: string | null;
+  extra_fulfillment_snapshot?: {
+    type?: unknown;
+    name?: unknown;
+    price_minor?: unknown;
+  } | null;
   created_at: string;
 };
 
@@ -108,6 +115,9 @@ const handler = {
     const sessionId = safeText(payload.sessionId);
     const clientRequestKey = safeText(payload.clientRequestKey);
     const returnBaseUrl = validReturnBaseUrl(payload.returnBaseUrl);
+    const evaluationInvitationId = safeText(payload.evaluationInvitationId);
+    const evaluationSessionId = safeText(payload.evaluationSessionId);
+    const hasEvaluationContext = Boolean(evaluationInvitationId || evaluationSessionId);
     const buyingSingleClass = Boolean(sessionId);
 
     if (
@@ -116,20 +126,33 @@ const handler = {
       !UUID_PATTERN.test(clientRequestKey) ||
       (buyingSingleClass && (!sessionId || !UUID_PATTERN.test(sessionId))) ||
       (!buyingSingleClass && (!productTemplateId || !UUID_PATTERN.test(productTemplateId))) ||
-      (buyingSingleClass && Boolean(productTemplateId))
+      (buyingSingleClass && Boolean(productTemplateId)) ||
+      (hasEvaluationContext &&
+        (!evaluationInvitationId ||
+          !evaluationSessionId ||
+          !UUID_PATTERN.test(evaluationInvitationId) ||
+          !UUID_PATTERN.test(evaluationSessionId))) ||
+      (buyingSingleClass && hasEvaluationContext && evaluationSessionId !== sessionId)
     ) {
       return jsonResponse({ error: "invalid_request" }, 400);
     }
 
-    const { data: attemptData, error: attemptError } = buyingSingleClass
-      ? await userClient.rpc("student_create_single_class_checkout_attempt", {
-          target_session_id: sessionId,
-          target_client_request_key: clientRequestKey,
-        })
-      : await userClient.rpc("student_create_online_checkout_attempt", {
+    const { data: attemptData, error: attemptError } = hasEvaluationContext
+      ? await userClient.rpc("student_create_evaluation_checkout_attempt", {
+          target_invitation_id: evaluationInvitationId,
+          target_session_id: evaluationSessionId,
           target_product_template_id: productTemplateId,
           target_client_request_key: clientRequestKey,
-        });
+        })
+      : buyingSingleClass
+        ? await userClient.rpc("student_create_single_class_checkout_attempt", {
+            target_session_id: sessionId,
+            target_client_request_key: clientRequestKey,
+          })
+        : await userClient.rpc("student_create_online_checkout_attempt", {
+            target_product_template_id: productTemplateId,
+            target_client_request_key: clientRequestKey,
+          });
 
     if (attemptError || !attemptData) {
       const message = attemptError?.message ?? "checkout_attempt_failed";
@@ -195,7 +218,7 @@ const handler = {
       adminClient
         .from("online_checkout_attempts")
         .select(
-          "id,studio_id,student_id,product_template_id,session_id,client_request_key,external_reference,amount_minor,currency,status,provider_order_id,checkout_url",
+          "id,studio_id,student_id,product_template_id,session_id,client_request_key,external_reference,amount_minor,currency,status,provider_order_id,checkout_url,extra_fulfillment_snapshot",
         )
         .eq("id", attempt.id)
         .maybeSingle(),
@@ -211,12 +234,17 @@ const handler = {
       return jsonResponse({ error: "checkout_context_failed" }, 500);
     }
 
+    const isEvaluationEnrollment =
+      hasEvaluationContext && String(product.product_type) === "enrollment";
+
     if (
       attemptRow.product_template_id !== product.id ||
       attemptRow.studio_id !== product.studio_id ||
       product.active !== true ||
-      product.online_purchasable !== true ||
-      !["package", "membership", "single_class"].includes(String(product.product_type))
+      (product.online_purchasable !== true && !isEvaluationEnrollment) ||
+      !["package", "membership", "single_class", "enrollment"].includes(
+        String(product.product_type),
+      )
     ) {
       await markAttemptFailure("product_not_available_online");
       return jsonResponse({ error: "product_not_available_online" }, 409);
@@ -251,17 +279,43 @@ const handler = {
       return jsonResponse({ error: "online_price_invalid" }, 409);
     }
 
+    const extraSnapshot =
+      attemptRow.extra_fulfillment_snapshot &&
+      typeof attemptRow.extra_fulfillment_snapshot === "object"
+        ? attemptRow.extra_fulfillment_snapshot
+        : null;
+    const extraName = safeText(extraSnapshot?.name);
+    const extraPriceMinor =
+      typeof extraSnapshot?.price_minor === "number" &&
+      Number.isInteger(extraSnapshot.price_minor) &&
+      extraSnapshot.price_minor > 0
+        ? extraSnapshot.price_minor
+        : 0;
+    const mainPriceMinor = attemptRow.amount_minor - extraPriceMinor;
+    const mainAmount = moneyFromMinor(mainPriceMinor);
+    const extraAmount = extraPriceMinor ? moneyFromMinor(extraPriceMinor) : null;
+
+    if (!mainAmount || (extraPriceMinor && (!extraName || !extraAmount))) {
+      await markAttemptFailure("online_price_invalid");
+      return jsonResponse({ error: "online_price_invalid" }, 409);
+    }
+
     const accessToken = Deno.env.get("MERCADOPAGO_ACCESS_TOKEN")?.trim();
     if (!accessToken) {
       await markAttemptFailure("mercadopago_not_configured");
       return jsonResponse({ error: "mercadopago_not_configured" }, 503);
     }
 
-    const returnPath = attemptRow.session_id
-      ? "/student/reservar/checkout"
-      : "/student/paquete/checkout";
+    const returnPath = hasEvaluationContext
+      ? `/student/evaluaciones/${evaluationInvitationId}/checkout`
+      : attemptRow.session_id
+        ? "/student/reservar/checkout"
+        : "/student/paquete/checkout";
     const returnUrl = new URL(returnPath, returnBaseUrl);
     returnUrl.searchParams.set("attempt", attemptRow.id);
+    if (hasEvaluationContext && evaluationSessionId) {
+      returnUrl.searchParams.set("session", evaluationSessionId);
+    }
 
     const successUrl = new URL(returnUrl);
     successUrl.searchParams.set("outcome", "success");
@@ -288,9 +342,18 @@ const handler = {
       items: [
         {
           title: product.name,
-          unit_price: totalAmount,
+          unit_price: mainAmount,
           quantity: 1,
         },
+        ...(extraName && extraAmount
+          ? [
+              {
+                title: extraName,
+                unit_price: extraAmount,
+                quantity: 1,
+              },
+            ]
+          : []),
       ],
     };
 

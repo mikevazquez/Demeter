@@ -7,40 +7,30 @@ import NoticeDialog from "@/app/admin/components/NoticeDialog";
 type AutomationNoticeProps = {
   error?: string;
   saved?: string;
-  version?: string;
+  version?: string | number;
 };
 
-export default function AutomationNotice({ error, saved, version }: AutomationNoticeProps) {
-  const [open, setOpen] = useState(Boolean(error || saved));
+export default function AutomationNotice({ error }: AutomationNoticeProps) {
+  const [open, setOpen] = useState(Boolean(error));
 
-  if (!open || (!error && !saved)) return null;
+  if (!open || !error) return null;
 
   const close = () => {
     setOpen(false);
-    window.history.replaceState(null, "", window.location.pathname);
-  };
 
-  if (error) {
-    return (
-      <NoticeDialog
-        eyebrow="Automatizaciones"
-        title="No se pudo completar la operación"
-        tone="error"
-        onConfirm={close}
-      >
-        {error}
-      </NoticeDialog>
-    );
-  }
+    const url = new URL(window.location.href);
+    url.searchParams.delete("error");
+    window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
+  };
 
   return (
     <NoticeDialog
       eyebrow="Automatizaciones"
-      title="Cambio guardado correctamente"
-      tone="success"
+      title="No se pudo completar la operación"
+      tone="error"
       onConfirm={close}
     >
-      La operación se aplicó correctamente. {version ? `Nueva versión: ${version}.` : ""}
+      {error}
     </NoticeDialog>
   );
 }

@@ -35,17 +35,20 @@ describe("SF-166 automation admin UI", () => {
     expect(detail).toContain("variables_snapshot");
   });
 
-  it("uses the approved contextual NoticeDialog instead of top-of-page feedback banners", () => {
+  it("keeps actionable automation errors contextual without persistent success feedback", () => {
     const detail = source("app/admin/automatizaciones/[code]/page.tsx");
     const list = source("app/admin/automatizaciones/page.tsx");
     const notice = source("app/admin/automatizaciones/AutomationNotice.tsx");
+    const actions = source("app/admin/automatizaciones/actions.ts");
 
     expect(detail).toContain("AutomationNotice");
     expect(list).toContain("AutomationNotice");
     expect(notice).toContain("NoticeDialog");
-    expect(notice).toContain('title="Cambio guardado correctamente"');
+    expect(notice).toContain('title="No se pudo completar la operación"');
     expect(notice).toContain("window.history.replaceState");
     expect(notice).toContain('tone="error"');
+    expect(notice).not.toContain('tone="success"');
+    expect(actions).not.toContain("?saved=");
   });
 
   it("uses protected admin RPCs for instance lifecycle and configuration", () => {

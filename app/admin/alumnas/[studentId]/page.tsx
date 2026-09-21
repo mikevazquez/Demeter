@@ -5,6 +5,7 @@ import StudentLifecycleNoticeDialog from "./StudentLifecycleNoticeDialog";
 import Profile360Overview from "./Profile360Overview";
 import StudentPackageCard from "./StudentPackageCard";
 import StudentPortalAccessSection from "./StudentPortalAccessSection";
+import StudentEvaluationsPanel from "./StudentEvaluationsPanel";
 import { notFound } from "next/navigation";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getAdminContext } from "@/lib/auth/admin-context";
@@ -143,6 +144,7 @@ export default async function StudentProfilePage({
     sale?: string;
     lifecycle?: string;
     lifecycle_error?: string;
+    evaluation_error?: string;
     view?: string;
   }>;
 }) {
@@ -150,10 +152,12 @@ export default async function StudentProfilePage({
   const query = await searchParams;
   const requestedView = String(query.view ?? "summary");
   const view = (
-    ["summary", "packages", "rewards", "followup", "history", "profile"].includes(requestedView)
+    ["summary", "packages", "rewards", "evaluations", "followup", "history", "profile"].includes(
+      requestedView,
+    )
       ? requestedView
       : "summary"
-  ) as "summary" | "packages" | "rewards" | "followup" | "history" | "profile";
+  ) as "summary" | "packages" | "rewards" | "evaluations" | "followup" | "history" | "profile";
   const { supabase, studio, can } = await getAdminContext(CAPABILITIES.STUDENTS_READ);
 
   const { data: student } = await supabase
@@ -283,6 +287,7 @@ export default async function StudentProfilePage({
   const canReadSchedule = can(CAPABILITIES.SCHEDULE_READ);
   const canReadSales = can(CAPABILITIES.SALES_READ);
   const canReadRewards = can(CAPABILITIES.REWARDS_READ);
+  const canReadEvaluations = can(CAPABILITIES.EVALUATIONS_READ);
   const canArchive = can(CAPABILITIES.STUDENTS_ARCHIVE);
   const lifecycleEventsResult = canArchive
     ? await supabase
@@ -696,6 +701,7 @@ export default async function StudentProfilePage({
         birthDate={birthDate}
         levelTitle={levelTitle}
         rewardsAvailable={rewardsAvailable}
+        showEvaluations={canReadEvaluations}
         currentPackage={currentPackageView}
         nextClass={nextClass}
         historicalValueMinor={historicalValueMinor}
@@ -721,7 +727,6 @@ export default async function StudentProfilePage({
         error={query.lifecycle_error}
       />
 
-      {query.saved ? <div className="notice success">Cambios guardados correctamente.</div> : null}
       {query.error ? (
         <div className="notice error">
           {errorCopy[query.error] ?? "No se pudo guardar el cambio."}
@@ -1203,6 +1208,14 @@ export default async function StudentProfilePage({
             </div>
           ) : null}
         </section>
+      ) : null}
+
+      {view === "evaluations" && canReadEvaluations ? (
+        <StudentEvaluationsPanel
+          studentId={student.id}
+          timeZone={timeZone}
+          error={query.evaluation_error}
+        />
       ) : null}
 
       {view === "followup" ? (

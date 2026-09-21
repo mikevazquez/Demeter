@@ -225,7 +225,7 @@ export async function updateSession(formData: FormData) {
   revalidatePath("/admin/agenda");
   revalidatePath(`/admin/agenda/${sessionId}`);
   revalidatePath("/admin");
-  redirect(`/admin/agenda/${sessionId}?saved=1`);
+  redirect(`/admin/agenda/${sessionId}`);
 }
 
 export async function cancelSession(formData: FormData) {
@@ -242,5 +242,5 @@ export async function cancelSession(formData: FormData) {
   revalidatePath("/admin/agenda");
   revalidatePath(`/admin/agenda/${sessionId}`);
   revalidatePath("/admin");
-  redirect(`/admin/agenda/${sessionId}?saved=cancelled`);
+  redirect(`/admin/agenda/${sessionId}`);
 }

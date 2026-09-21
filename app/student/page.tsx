@@ -44,6 +44,21 @@ type RewardInvitationBalance = {
   level_title?: string | null;
 };
 
+type EvaluationHomeCard = {
+  discipline_id: string;
+  discipline_name: string;
+  current_level_title: string;
+  invitation_id: string | null;
+  invitation_kind: "first" | "periodic" | null;
+  invitation_status: "offered" | "pending_schedule" | "scheduled" | "in_progress" | null;
+  window_start: string | null;
+  window_end: string | null;
+};
+
+type StudentEvaluationsHomeSnapshot = {
+  disciplines?: EvaluationHomeCard[];
+};
+
 const levelVisuals = {
   bronze: {
     accent: "#CD7F32",
@@ -109,28 +124,42 @@ export default async function StudentHomePage({
 }) {
   const query = await searchParams;
   const { snapshot, studio, supabase, membership } = await getStudentPortalContext();
-  const [rewardStatusResult, rewardMembershipResult, rewardLevelsResult, invitationBalanceResult] =
-    await Promise.all([
-      supabase.rpc("student_reward_status_snapshot"),
-      supabase
-        .from("reward_status_memberships")
-        .select("current_level_key")
-        .eq("studio_id", membership.studio_id)
-        .eq("student_id", snapshot.profile.student_id)
-        .maybeSingle(),
-      supabase
-        .from("reward_status_level_definitions")
-        .select(
-          "level_key,level_order,title,maintenance_attendance,promotion_attendance,min_active_months,max_uncovered_days,waitlist_priority,private_discount_pct,event_discount_pct,monthly_guest_invites",
-        )
-        .eq("studio_id", membership.studio_id)
-        .order("level_order"),
-      supabase.rpc("student_reward_invitation_balance"),
-    ]);
+  const [
+    rewardStatusResult,
+    rewardMembershipResult,
+    rewardLevelsResult,
+    invitationBalanceResult,
+    evaluationsResult,
+  ] = await Promise.all([
+    supabase.rpc("student_reward_status_snapshot"),
+    supabase
+      .from("reward_status_memberships")
+      .select("current_level_key")
+      .eq("studio_id", membership.studio_id)
+      .eq("student_id", snapshot.profile.student_id)
+      .maybeSingle(),
+    supabase
+      .from("reward_status_level_definitions")
+      .select(
+        "level_key,level_order,title,maintenance_attendance,promotion_attendance,min_active_months,max_uncovered_days,waitlist_priority,private_discount_pct,event_discount_pct,monthly_guest_invites",
+      )
+      .eq("studio_id", membership.studio_id)
+      .order("level_order"),
+    supabase.rpc("student_reward_invitation_balance"),
+    supabase.rpc("student_evaluations_snapshot"),
+  ]);
 
   const rewardStatus = (rewardStatusResult.data as RewardStatusSnapshot | null) ?? null;
   const invitationBalance =
     (invitationBalanceResult.data as RewardInvitationBalance | null) ?? null;
+  const evaluationsSnapshot =
+    (evaluationsResult.data as StudentEvaluationsHomeSnapshot | null) ?? null;
+  const activeEvaluationInvitation =
+    evaluationsSnapshot?.disciplines?.find(
+      (item) =>
+        item.invitation_id &&
+        (item.invitation_status === "offered" || item.invitation_status === "pending_schedule"),
+    ) ?? null;
   const levelDefinitions = (rewardLevelsResult.data ?? []) as RewardLevelDefinitionRow[];
   const fallbackLevelKey = rewardMembershipResult.data?.current_level_key ?? null;
   const fallbackLevelRow =
@@ -273,6 +302,58 @@ export default async function StudentHomePage({
             )}
           </div>
         </StudentNoticeDialog>
+      ) : null}
+
+      {activeEvaluationInvitation?.invitation_id ? (
+        <section
+          data-home-block="evaluation-invitation"
+          className="relative overflow-hidden rounded-[26px] border border-fuchsia-500/40 bg-[radial-gradient(circle_at_88%_0%,rgba(236,72,153,0.22),transparent_36%),linear-gradient(135deg,rgba(236,72,153,0.11),rgba(124,58,237,0.06))] p-4 shadow-[0_0_28px_rgba(236,72,153,0.08)] sm:p-5"
+        >
+          <span
+            aria-hidden="true"
+            className="absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-fuchsia-500 to-violet-500"
+          />
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <span className="inline-flex rounded-full border border-fuchsia-500/30 bg-fuchsia-500/[0.08] px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.16em] text-fuchsia-300">
+                {activeEvaluationInvitation.invitation_status === "offered"
+                  ? "Evaluación disponible"
+                  : "Evaluación pendiente"}
+              </span>
+              <h2 className="mt-3 text-lg font-semibold text-white">
+                {activeEvaluationInvitation.discipline_name}
+              </h2>
+              <p className="mt-1 text-xs leading-5 text-zinc-300">
+                {activeEvaluationInvitation.invitation_status === "offered"
+                  ? `Tienes una invitación para evaluar tu nivel ${activeEvaluationInvitation.current_level_title}.`
+                  : "Ya aceptaste tu evaluación. Elige una clase para programarla."}
+              </p>
+              {activeEvaluationInvitation.window_start && activeEvaluationInvitation.window_end ? (
+                <p className="mt-1 text-[11px] text-zinc-500">
+                  Disponible del{" "}
+                  {formatDate(activeEvaluationInvitation.window_start, studio.timezone)} al{" "}
+                  {formatDate(activeEvaluationInvitation.window_end, studio.timezone)}
+                </p>
+              ) : null}
+            </div>
+            <span aria-hidden="true" className="text-2xl text-fuchsia-300">
+              ✦
+            </span>
+          </div>
+
+          <Link
+            href={
+              activeEvaluationInvitation.invitation_status === "offered"
+                ? "/student/evaluaciones/" + activeEvaluationInvitation.invitation_id
+                : "/student/evaluaciones/" + activeEvaluationInvitation.invitation_id + "/programar"
+            }
+            className="mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-2xl bg-fuchsia-600 px-4 text-sm font-semibold text-white transition hover:bg-fuchsia-500"
+          >
+            {activeEvaluationInvitation.invitation_status === "offered"
+              ? "Ver invitación"
+              : "Programar evaluación"}
+          </Link>
+        </section>
       ) : null}
 
       <header
