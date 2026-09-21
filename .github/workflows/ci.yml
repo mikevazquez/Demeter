@@ -34,10 +34,7 @@ jobs:
         run: npm ci
 
       - name: Format check
-        run: |
-          npm run format
-          git diff -- app/login/student/activar/page.tsx tests/f10-temporary-password-ux-contract.test.ts
-          exit 1
+        run: npm run format:check
 
       - name: Lint
         run: npm run lint
