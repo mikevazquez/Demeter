@@ -134,8 +134,8 @@ function StudentCredentialAction({
         ) : (
           <>
             La cuenta ya existe. Puedes generar una nueva contraseña temporal para{" "}
-            <strong>{phone}</strong>; la anterior dejará de funcionar y la alumna deberá reemplazarla
-            al iniciar sesión.
+            <strong>{phone}</strong>; la anterior dejará de funcionar y la alumna deberá
+            reemplazarla al iniciar sesión.
           </>
         )}
       </p>
