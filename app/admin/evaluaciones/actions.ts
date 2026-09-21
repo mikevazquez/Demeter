@@ -245,3 +245,291 @@ export async function updateEvaluationCriteria(formData: FormData) {
   revalidatePath(`/admin/evaluaciones/plantillas/${templateId}`);
   redirect(`/admin/evaluaciones/plantillas/${templateId}?saved=criteria`);
 }
+
+
+export async function addEvaluationElement(formData: FormData) {
+  const ctx = await getAdminContext(CAPABILITIES.EVALUATIONS_CONFIGURE);
+  const templateId = text(formData, "template_id");
+  const versionId = text(formData, "version_id");
+  const disciplineId = text(formData, "discipline_id");
+  const criterionId = text(formData, "criterion_id");
+  const name = text(formData, "name");
+  const kind = text(formData, "kind") || "figure";
+  const mandatory = formData.get("mandatory") === "on";
+  const scored = formData.get("scored") !== "off";
+  const maxScore = number(formData, "max_score", 10);
+  const attempts = number(formData, "attempts", 3);
+
+  if (!name || !criterionId) {
+    redirect(`/admin/evaluaciones/plantillas/${templateId}?error=element`);
+  }
+
+  const { data: existing } = await ctx.supabase
+    .from("technical_elements")
+    .select("id")
+    .eq("studio_id", ctx.studio.id)
+    .eq("discipline_id", disciplineId)
+    .ilike("name", name)
+    .maybeSingle();
+
+  let elementId = existing?.id ?? null;
+  if (!elementId) {
+    const { data: created, error } = await ctx.supabase
+      .from("technical_elements")
+      .insert({
+        studio_id: ctx.studio.id,
+        discipline_id: disciplineId,
+        name,
+        element_kind: kind,
+      })
+      .select("id")
+      .single();
+
+    if (error || !created) {
+      redirect(`/admin/evaluaciones/plantillas/${templateId}?error=element`);
+    }
+    elementId = created.id;
+  }
+
+  const { count } = await ctx.supabase
+    .from("evaluation_template_elements")
+    .select("id", { count: "exact", head: true })
+    .eq("template_version_id", versionId);
+
+  const { error } = await ctx.supabase.from("evaluation_template_elements").insert({
+    studio_id: ctx.studio.id,
+    template_version_id: versionId,
+    element_id: elementId,
+    criterion_id: criterionId,
+    mandatory,
+    scored,
+    max_score: maxScore,
+    attempts_allowed: attempts,
+    sort_order: (count ?? 0) + 1,
+  });
+
+  if (error) redirect(`/admin/evaluaciones/plantillas/${templateId}?error=element`);
+
+  revalidatePath(`/admin/evaluaciones/plantillas/${templateId}`);
+  redirect(`/admin/evaluaciones/plantillas/${templateId}?saved=element`);
+}
+
+export async function addEvaluationCombo(formData: FormData) {
+  const ctx = await getAdminContext(CAPABILITIES.EVALUATIONS_CONFIGURE);
+  const templateId = text(formData, "template_id");
+  const versionId = text(formData, "version_id");
+  const disciplineId = text(formData, "discipline_id");
+  const criterionId = text(formData, "criterion_id") || null;
+  const name = text(formData, "name");
+  const mandatory = formData.get("mandatory") === "on";
+  const scored = formData.get("scored") === "on";
+  const maxScore = number(formData, "max_score", 10);
+  const attempts = number(formData, "attempts", 3);
+
+  if (!name) redirect(`/admin/evaluaciones/plantillas/${templateId}?error=combo`);
+
+  const { data: existing } = await ctx.supabase
+    .from("technical_combos")
+    .select("id")
+    .eq("studio_id", ctx.studio.id)
+    .eq("discipline_id", disciplineId)
+    .ilike("name", name)
+    .maybeSingle();
+
+  let comboId = existing?.id ?? null;
+  if (!comboId) {
+    const { data: created, error } = await ctx.supabase
+      .from("technical_combos")
+      .insert({
+        studio_id: ctx.studio.id,
+        discipline_id: disciplineId,
+        name,
+      })
+      .select("id")
+      .single();
+
+    if (error || !created) {
+      redirect(`/admin/evaluaciones/plantillas/${templateId}?error=combo`);
+    }
+    comboId = created.id;
+  }
+
+  const { count } = await ctx.supabase
+    .from("evaluation_template_combos")
+    .select("id", { count: "exact", head: true })
+    .eq("template_version_id", versionId);
+
+  const { error } = await ctx.supabase.from("evaluation_template_combos").insert({
+    studio_id: ctx.studio.id,
+    template_version_id: versionId,
+    combo_id: comboId,
+    criterion_id: criterionId,
+    mandatory,
+    scored,
+    max_score: maxScore,
+    attempts_allowed: attempts,
+    sort_order: (count ?? 0) + 1,
+  });
+
+  if (error) redirect(`/admin/evaluaciones/plantillas/${templateId}?error=combo`);
+
+  revalidatePath(`/admin/evaluaciones/plantillas/${templateId}`);
+  redirect(`/admin/evaluaciones/plantillas/${templateId}?saved=combo`);
+}
+
+export async function activateEvaluationTemplateVersion(formData: FormData) {
+  const ctx = await getAdminContext(CAPABILITIES.EVALUATIONS_CONFIGURE);
+  const templateId = text(formData, "template_id");
+  const versionId = text(formData, "version_id");
+
+  const [{ data: criteria }, { count: elementCount }] = await Promise.all([
+    ctx.supabase
+      .from("evaluation_template_criteria")
+      .select("weight_percent")
+      .eq("studio_id", ctx.studio.id)
+      .eq("template_version_id", versionId),
+    ctx.supabase
+      .from("evaluation_template_elements")
+      .select("id", { count: "exact", head: true })
+      .eq("studio_id", ctx.studio.id)
+      .eq("template_version_id", versionId),
+  ]);
+
+  const total = (criteria ?? []).reduce((sum, item) => sum + Number(item.weight_percent ?? 0), 0);
+  if (Math.abs(total - 100) > 0.001 || !elementCount) {
+    redirect(`/admin/evaluaciones/plantillas/${templateId}?error=activate`);
+  }
+
+  const { error } = await ctx.supabase
+    .from("evaluation_template_versions")
+    .update({ status: "active", activated_at: new Date().toISOString() })
+    .eq("id", versionId)
+    .eq("studio_id", ctx.studio.id)
+    .eq("status", "draft");
+
+  if (error) redirect(`/admin/evaluaciones/plantillas/${templateId}?error=activate`);
+
+  revalidatePath("/admin/evaluaciones");
+  revalidatePath("/admin/evaluaciones/configuracion");
+  revalidatePath(`/admin/evaluaciones/plantillas/${templateId}`);
+  redirect(`/admin/evaluaciones/plantillas/${templateId}?saved=activated`);
+}
+
+export async function createNextEvaluationTemplateVersion(formData: FormData) {
+  const ctx = await getAdminContext(CAPABILITIES.EVALUATIONS_CONFIGURE);
+  const templateId = text(formData, "template_id");
+  const sourceVersionId = text(formData, "version_id");
+
+  const { data: source } = await ctx.supabase
+    .from("evaluation_template_versions")
+    .select(
+      "version_number,pass_threshold,default_category_min,default_attempts_per_element,default_attempts_per_combo,evaluator_instructions",
+    )
+    .eq("id", sourceVersionId)
+    .eq("studio_id", ctx.studio.id)
+    .single();
+
+  if (!source) redirect(`/admin/evaluaciones/plantillas/${templateId}?error=version`);
+
+  const { data: created, error } = await ctx.supabase
+    .from("evaluation_template_versions")
+    .insert({
+      studio_id: ctx.studio.id,
+      template_id: templateId,
+      version_number: source.version_number + 1,
+      status: "draft",
+      pass_threshold: source.pass_threshold,
+      default_category_min: source.default_category_min,
+      default_attempts_per_element: source.default_attempts_per_element,
+      default_attempts_per_combo: source.default_attempts_per_combo,
+      evaluator_instructions: source.evaluator_instructions,
+      created_by: ctx.user.id,
+    })
+    .select("id")
+    .single();
+
+  if (error || !created) {
+    redirect(`/admin/evaluaciones/plantillas/${templateId}?error=version`);
+  }
+
+  const { data: sourceCriteria } = await ctx.supabase
+    .from("evaluation_template_criteria")
+    .select("id,criterion_key,label,description,weight_percent,min_percent,sort_order")
+    .eq("template_version_id", sourceVersionId)
+    .order("sort_order");
+
+  const criterionIdMap = new Map<string, string>();
+  for (const criterion of sourceCriteria ?? []) {
+    const { data: copied } = await ctx.supabase
+      .from("evaluation_template_criteria")
+      .insert({
+        studio_id: ctx.studio.id,
+        template_version_id: created.id,
+        criterion_key: criterion.criterion_key,
+        label: criterion.label,
+        description: criterion.description,
+        weight_percent: criterion.weight_percent,
+        min_percent: criterion.min_percent,
+        sort_order: criterion.sort_order,
+      })
+      .select("id")
+      .single();
+    if (copied) criterionIdMap.set(criterion.id, copied.id);
+  }
+
+  const [{ data: sourceElements }, { data: sourceCombos }] = await Promise.all([
+    ctx.supabase
+      .from("evaluation_template_elements")
+      .select(
+        "element_id,criterion_id,mandatory,scored,max_score,min_score,attempts_allowed,sort_order,evaluator_instructions",
+      )
+      .eq("template_version_id", sourceVersionId)
+      .order("sort_order"),
+    ctx.supabase
+      .from("evaluation_template_combos")
+      .select(
+        "combo_id,criterion_id,mandatory,scored,max_score,min_score,attempts_allowed,sort_order,evaluator_instructions",
+      )
+      .eq("template_version_id", sourceVersionId)
+      .order("sort_order"),
+  ]);
+
+  if (sourceElements?.length) {
+    await ctx.supabase.from("evaluation_template_elements").insert(
+      sourceElements.map((item) => ({
+        studio_id: ctx.studio.id,
+        template_version_id: created.id,
+        element_id: item.element_id,
+        criterion_id: item.criterion_id ? criterionIdMap.get(item.criterion_id) : null,
+        mandatory: item.mandatory,
+        scored: item.scored,
+        max_score: item.max_score,
+        min_score: item.min_score,
+        attempts_allowed: item.attempts_allowed,
+        sort_order: item.sort_order,
+        evaluator_instructions: item.evaluator_instructions,
+      })),
+    );
+  }
+
+  if (sourceCombos?.length) {
+    await ctx.supabase.from("evaluation_template_combos").insert(
+      sourceCombos.map((item) => ({
+        studio_id: ctx.studio.id,
+        template_version_id: created.id,
+        combo_id: item.combo_id,
+        criterion_id: item.criterion_id ? criterionIdMap.get(item.criterion_id) : null,
+        mandatory: item.mandatory,
+        scored: item.scored,
+        max_score: item.max_score,
+        min_score: item.min_score,
+        attempts_allowed: item.attempts_allowed,
+        sort_order: item.sort_order,
+        evaluator_instructions: item.evaluator_instructions,
+      })),
+    );
+  }
+
+  revalidatePath(`/admin/evaluaciones/plantillas/${templateId}`);
+  redirect(`/admin/evaluaciones/plantillas/${templateId}?saved=version`);
+}
