@@ -19,11 +19,21 @@ function safeWebhookUrl(value: string) {
 }
 
 export async function sendAsistianHandshake(formData: FormData) {
-  await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
+  const { supabase, studio } = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
 
   const webhookUrl = safeWebhookUrl(String(formData.get("webhook_url") ?? ""));
   if (!webhookUrl) {
     redirect("/admin/integraciones/asistian?error=invalid_url");
+  }
+
+  const { error: saveError } = await supabase.rpc("admin_set_asistian_webhook", {
+    target_studio_id: studio.id,
+    target_template: "student_welcome",
+    target_url: webhookUrl,
+  });
+
+  if (saveError) {
+    redirect("/admin/integraciones/asistian?error=save");
   }
 
   const eventId = crypto.randomUUID();
