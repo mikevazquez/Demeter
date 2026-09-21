@@ -7,6 +7,13 @@ const operational = readFileSync(
   join(process.cwd(), "supabase/migrations/20260921191446_evaluaciones01_operational_cycle.sql"),
   "utf8",
 );
+const reminders = readFileSync(
+  join(
+    process.cwd(),
+    "supabase/migrations/20260921200036_evaluaciones01_pending_schedule_reminders.sql",
+  ),
+  "utf8",
+);
 const studentReadModels = readFileSync(
   join(
     process.cwd(),
@@ -68,6 +75,8 @@ describe("EVALUACIONES-01 operational cycle", () => {
     expect(operational).toContain("public.admin_start_scheduled_evaluation");
     expect(operational).toContain("public.system_generate_due_evaluation_invitations");
     expect(operational).toContain("v_result.evaluation_date::timestamp");
+    expect(reminders).toContain("public.system_emit_evaluation_schedule_reminders");
+    expect(reminders).toContain("evaluation.pending_schedule.reminder");
   });
 
   it("uses an automatic technical outcome in the normal coach workflow", () => {
