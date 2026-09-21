@@ -17,6 +17,7 @@ type RosterItem = {
   packageLabel: string;
   creditsLabel: string;
   expiresLabel: string;
+  evaluationStatus?: string | null;
 };
 
 type Candidate = {
@@ -205,6 +206,13 @@ export function SessionOperations({
                           <strong>{item.studentName}</strong>
                           {isInvitation ? (
                             <span className="today-invite-tag">Invitación</span>
+                          ) : null}
+                          {item.evaluationStatus === "scheduled" ? (
+                            <span className="today-evaluation-tag">Evaluación programada</span>
+                          ) : item.evaluationStatus === "in_progress" ? (
+                            <span className="today-evaluation-tag is-active">
+                              Evaluación en curso
+                            </span>
                           ) : null}
                         </div>
                         <span>
