@@ -34,10 +34,7 @@ jobs:
         run: npm ci
 
       - name: Format check
-        run: |
-          npx prettier --write supabase/functions/process-class-reminder/index.ts
-          git diff -- supabase/functions/process-class-reminder/index.ts
-          exit 1
+        run: npm run format:check
 
       - name: Lint
         run: npm run lint
