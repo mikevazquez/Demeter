@@ -745,12 +745,19 @@ export async function openEvaluationFeedbackAction(formData: FormData) {
   const ctx = await getAdminContext(CAPABILITIES.EVALUATIONS_WRITE);
   const evaluationId = text(formData, "evaluation_id");
 
-  const { error } = await ctx.supabase.rpc("admin_recalculate_technical_evaluation", {
+  const { data, error } = await ctx.supabase.rpc("admin_recalculate_technical_evaluation", {
     p_evaluation_id: evaluationId,
   });
 
   if (error) redirect(`/admin/evaluaciones/${evaluationId}?step=resumen&error=calculate`);
+
+  const recalculated = Array.isArray(data) ? data[0] : data;
   revalidatePath(`/admin/evaluaciones/${evaluationId}`);
+
+  if (recalculated?.automatic_outcome === "incomplete") {
+    redirect(`/admin/evaluaciones/${evaluationId}?step=resumen`);
+  }
+
   redirect(`/admin/evaluaciones/${evaluationId}?step=feedback`);
 }
 
@@ -779,6 +786,9 @@ export async function publishTechnicalEvaluationAction(formData: FormData) {
     p_next_objective: nextObjective || null,
   });
 
+  if (error?.message.includes("evaluation_incomplete")) {
+    redirect(`/admin/evaluaciones/${evaluationId}?step=resumen`);
+  }
   if (error) redirect(`/admin/evaluaciones/${evaluationId}?step=feedback&error=publish`);
 
   revalidatePath("/admin/evaluaciones");
