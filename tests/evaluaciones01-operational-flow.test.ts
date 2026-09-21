@@ -108,7 +108,7 @@ describe("EVALUACIONES-01 operational cycle", () => {
     expect(evaluationDetail).not.toContain("Override del resultado");
     expect(evaluationActions).toContain("p_final_outcome: null");
     expect(evaluationActions).toContain("p_override_reason: null");
-    expect(evaluationDetail).toContain("Faltan datos obligatorios");
+    expect(evaluationDetail).toContain("Faltan datos por evaluar");
   });
 
   it("serves student-safe read models and hides drafts", () => {
@@ -172,10 +172,13 @@ describe("EVALUACIONES-01 operational cycle", () => {
     expect(adminSessionOperations).toContain("startScheduledEvaluationAction");
   });
 
-  it("distinguishes incomplete evidence from a low passing score", () => {
-    expect(evaluationDetail).toContain("Faltan datos obligatorios");
-    expect(evaluationDetail).toContain("Cumplir los obligatorios no significa aprobar la evaluación");
+  it("distinguishes incomplete capture from an evaluated low score", () => {
+    expect(evaluationDetail).toContain("Faltan datos por evaluar");
+    expect(evaluationDetail).toContain("todos los");
+    expect(evaluationDetail).toContain("Requisitos de progresión");
+    expect(evaluationDetail).toContain("Finalizar parte técnica");
     expect(evaluationDetail).toContain("puntaje total");
+    expect(evaluationActions).toContain('automatic_outcome === "incomplete"');
   });
 
   it("renders both final student result states", () => {
