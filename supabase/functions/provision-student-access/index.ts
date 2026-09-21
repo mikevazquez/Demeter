@@ -126,11 +126,7 @@ const handler = {
         { data: account, error: accountError },
         { data: targetMembership, error: targetError },
       ] = await Promise.all([
-        userClient
-          .from("user_accounts")
-          .select("status")
-          .eq("id", student.user_id)
-          .maybeSingle(),
+        userClient.from("user_accounts").select("status").eq("id", student.user_id).maybeSingle(),
         userClient
           .from("studio_memberships")
           .select("role, active")
