@@ -39,7 +39,9 @@ describe("SF-174 student welcome integration", () => {
 
   it("can intentionally resend student_welcome while activation is pending", () => {
     const resendBlock =
-      provision.split('if (mode === "resend")')[1]?.split("if (student.user_id)")[0] ?? "";
+      provision
+        .split('if (mode === "resend" || mode === "temporary_password")')[1]
+        ?.split("if (student.user_id)")[0] ?? "";
 
     expect(resendBlock).toContain("sendAsistianWebhook");
     expect(resendBlock).toContain('source: "student_access_activation_resend"');
