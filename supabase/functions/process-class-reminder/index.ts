@@ -5,8 +5,7 @@ import { sendAsistianWebhook } from "../_shared/asistian-messaging.ts";
 
 const CLASS_REMINDER_TEMPLATE = "class_reminder";
 const CLASS_REMINDER_CONSUMER_KEY = "sf.class_reminder_3h";
-const UUID_PATTERN =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 type ProcessClassReminderRequest = {
   eventId?: unknown;
@@ -24,9 +23,7 @@ function safeText(value: unknown) {
 }
 
 function joinName(firstName: unknown, lastName: unknown) {
-  return (
-    [safeText(firstName), safeText(lastName)].filter(Boolean).join(" ") || null
-  );
+  return [safeText(firstName), safeText(lastName)].filter(Boolean).join(" ") || null;
 }
 
 function isValidWhatsAppRecipient(recipient: string | null | undefined) {
@@ -61,8 +58,7 @@ function formatReminderVariables(input: {
   location: string | null;
 }) {
   const startsAt = new Date(input.startsAt);
-  if (!Number.isFinite(startsAt.getTime()))
-    throw new Error("class_reminder_invalid_start_time");
+  if (!Number.isFinite(startsAt.getTime())) throw new Error("class_reminder_invalid_start_time");
 
   return {
     nombre: input.studentName.trim() || "Alumna",
@@ -95,28 +91,27 @@ async function loadContext(adminClient: SupabaseClient, reservationId: string) {
     return { error: "reservation_not_found" as const };
   }
 
-  const [{ data: student }, { data: session }, { data: studio }] =
-    await Promise.all([
-      reservation.student_id
-        ? adminClient
-            .from("students")
-            .select("id,full_name,phone,active,lifecycle_status")
-            .eq("id", reservation.student_id)
-            .eq("studio_id", reservation.studio_id)
-            .maybeSingle()
-        : Promise.resolve({ data: null }),
-      adminClient
-        .from("class_sessions")
-        .select("id,template_id,instructor_id,space_id,starts_at,status")
-        .eq("id", reservation.session_id)
-        .eq("studio_id", reservation.studio_id)
-        .maybeSingle(),
-      adminClient
-        .from("studios")
-        .select("id,name,timezone")
-        .eq("id", reservation.studio_id)
-        .maybeSingle(),
-    ]);
+  const [{ data: student }, { data: session }, { data: studio }] = await Promise.all([
+    reservation.student_id
+      ? adminClient
+          .from("students")
+          .select("id,full_name,phone,active,lifecycle_status")
+          .eq("id", reservation.student_id)
+          .eq("studio_id", reservation.studio_id)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
+    adminClient
+      .from("class_sessions")
+      .select("id,template_id,instructor_id,space_id,starts_at,status")
+      .eq("id", reservation.session_id)
+      .eq("studio_id", reservation.studio_id)
+      .maybeSingle(),
+    adminClient
+      .from("studios")
+      .select("id,name,timezone")
+      .eq("id", reservation.studio_id)
+      .maybeSingle(),
+  ]);
 
   const { data: template } = session
     ? await adminClient
@@ -198,15 +193,15 @@ const handler = {
     }
 
     const adminClient = context.supabaseAdmin;
-    const dispatchToken = safeText(
-      request.headers.get("x-studio-flow-dispatch-token"),
-    );
+    const dispatchToken = safeText(request.headers.get("x-studio-flow-dispatch-token"));
     if (!dispatchToken) return jsonResponse({ error: "unauthenticated" }, 401);
 
-    const { data: dispatchAuthorized, error: dispatchAuthError } =
-      await adminClient.rpc("verify_automation_dispatch_token", {
+    const { data: dispatchAuthorized, error: dispatchAuthError } = await adminClient.rpc(
+      "verify_automation_dispatch_token",
+      {
         p_token: dispatchToken,
-      });
+      },
+    );
 
     if (dispatchAuthError || dispatchAuthorized !== true) {
       return jsonResponse({ error: "forbidden" }, 403);
@@ -243,10 +238,7 @@ const handler = {
       return jsonResponse({ error: "class_reminder_event_not_found" }, 404);
     }
 
-    if (
-      event.event_type !== "class.reminder_due" ||
-      event.source_entity_type !== "reservation"
-    ) {
+    if (event.event_type !== "class.reminder_due" || event.source_entity_type !== "reservation") {
       return jsonResponse({ error: "class_reminder_event_invalid" }, 409);
     }
 
@@ -281,8 +273,7 @@ const handler = {
 
     const variables = formatReminderVariables({
       studentName: contextData.student?.full_name ?? "",
-      discipline:
-        contextData.discipline?.name ?? contextData.template?.name ?? "",
+      discipline: contextData.discipline?.name ?? contextData.template?.name ?? "",
       startsAt: contextData.session?.starts_at ?? new Date().toISOString(),
       timeZone: contextData.studio?.timezone ?? "UTC",
       coach: contextData.coach,
@@ -319,8 +310,7 @@ const handler = {
       outcome: "error",
       eventId,
       errorCode: providerResult.errorCode,
-      retryable:
-        providerResult.status === "skipped" ? true : providerResult.retryable,
+      retryable: providerResult.status === "skipped" ? true : providerResult.retryable,
     });
   }),
 };
