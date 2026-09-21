@@ -71,23 +71,33 @@ export default async function EvaluationsDashboardPage() {
       </section>
 
       <nav className="eval-tabs">
-        <Link className="is-active" href="/admin/evaluaciones">Resumen</Link>
+        <Link className="is-active" href="/admin/evaluaciones">
+          Resumen
+        </Link>
         <Link href="/admin/evaluaciones/nueva">Nueva evaluación</Link>
         <Link href="/admin/evaluaciones/configuracion">Configuración</Link>
       </nav>
 
       <section className="eval-shortcuts">
         <Link className="eval-shortcut" href="/admin/evaluaciones/nueva">
-          <span>＋</span><strong>Nueva evaluación</strong><small>Iniciar evaluación en vivo</small>
+          <span>＋</span>
+          <strong>Nueva evaluación</strong>
+          <small>Iniciar evaluación en vivo</small>
         </Link>
         <Link className="eval-shortcut" href="/admin/evaluaciones/configuracion">
-          <span>▤</span><strong>Plantillas</strong><small>Criterios y niveles</small>
+          <span>▤</span>
+          <strong>Plantillas</strong>
+          <small>Criterios y niveles</small>
         </Link>
         <Link className="eval-shortcut" href="/admin/evaluaciones/configuracion#disciplinas">
-          <span>◇</span><strong>Biblioteca técnica</strong><small>Figuras y combos</small>
+          <span>◇</span>
+          <strong>Biblioteca técnica</strong>
+          <small>Figuras y combos</small>
         </Link>
         <Link className="eval-shortcut" href="/admin/evaluaciones?view=historial">
-          <span>◷</span><strong>Historial</strong><small>Evaluaciones publicadas</small>
+          <span>◷</span>
+          <strong>Historial</strong>
+          <small>Evaluaciones publicadas</small>
         </Link>
       </section>
 
