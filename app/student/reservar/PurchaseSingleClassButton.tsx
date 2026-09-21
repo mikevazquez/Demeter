@@ -49,13 +49,13 @@ export default function PurchaseSingleClassButton({
     setErrorMessage(null);
 
     startTransition(async () => {
-      const result = await createSingleClassMercadoPagoOrderAction(
-        sessionId,
-        requestKey,
+      const result =
         evaluationInvitationId && evaluationSessionId
-          ? { invitationId: evaluationInvitationId, sessionId: evaluationSessionId }
-          : undefined,
-      );
+          ? await createSingleClassMercadoPagoOrderAction(sessionId, requestKey, {
+              invitationId: evaluationInvitationId,
+              sessionId: evaluationSessionId,
+            })
+          : await createSingleClassMercadoPagoOrderAction(sessionId, requestKey);
       if (!result.ok) {
         setErrorMessage(errorCopy[result.error] ?? errorCopy.checkout_failed);
         return;
