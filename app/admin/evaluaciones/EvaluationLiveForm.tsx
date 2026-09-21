@@ -1,11 +1,26 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 
-import { saveTechnicalComboResultAction, saveTechnicalElementResultAction } from "./actions";
+import {
+  saveTechnicalComboResultAction,
+  saveTechnicalCriterionResultAction,
+  saveTechnicalElementResultAction,
+} from "./actions";
+
+type CriterionLive = {
+  id: string;
+  label: string;
+  weightPercent: number;
+  minPercent: number;
+  scorePercent: number | null;
+  notes: string;
+  captured: boolean;
+};
 
 type LiveItem = {
   id: string;
+  criterionId: string | null;
   name: string;
   description?: string | null;
   mandatory: boolean;
@@ -17,6 +32,89 @@ type LiveItem = {
   attemptCount: number;
   notes: string;
 };
+
+function CriterionScoreEditor({
+  evaluationId,
+  criterion,
+}: {
+  evaluationId: string;
+  criterion: CriterionLive;
+}) {
+  const [score, setScore] = useState(
+    criterion.scorePercent === null ? "" : String(criterion.scorePercent),
+  );
+  const [notes, setNotes] = useState(criterion.notes);
+  const [message, setMessage] = useState(criterion.captured ? "Guardado" : "");
+  const [isPending, startTransition] = useTransition();
+
+  function save(nextNotes = notes) {
+    if (score === "") {
+      setMessage("Captura una puntuación");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.set("evaluation_id", evaluationId);
+    formData.set("template_criterion_id", criterion.id);
+    formData.set("score_percent", score);
+    formData.set("notes", nextNotes);
+
+    startTransition(async () => {
+      const result = await saveTechnicalCriterionResultAction(formData);
+      setMessage(result.ok ? "Guardado" : "No se pudo guardar");
+    });
+  }
+
+  return (
+    <section className="eval-panel eval-config-section">
+      <header>
+        <div>
+          <span className="eval-step-label">Calificación general</span>
+          <h2>{criterion.label}</h2>
+          <p>
+            Peso {criterion.weightPercent}% · mínimo {criterion.minPercent}%
+          </p>
+        </div>
+        <span className={"eval-status " + (criterion.captured ? "approved" : "incomplete")}>
+          {criterion.captured ? "Capturado" : "Pendiente"}
+        </span>
+      </header>
+
+      <div className="eval-field-grid">
+        <div className="eval-field">
+          <label htmlFor={"criterion-score-" + criterion.id}>Puntuación · 0 a 100</label>
+          <input
+            id={"criterion-score-" + criterion.id}
+            aria-label={"Puntuación de " + criterion.label}
+            type="number"
+            min="0"
+            max="100"
+            step="1"
+            value={score}
+            onChange={(event) => setScore(event.target.value)}
+            onBlur={() => save()}
+            placeholder="/ 100"
+          />
+        </div>
+        <div className="eval-field">
+          <label htmlFor={"criterion-notes-" + criterion.id}>Observaciones del criterio</label>
+          <textarea
+            id={"criterion-notes-" + criterion.id}
+            aria-label={"Observaciones de " + criterion.label}
+            value={notes}
+            onChange={(event) => setNotes(event.target.value)}
+            onBlur={() => save()}
+            placeholder={"Observaciones sobre " + criterion.label.toLowerCase() + "…"}
+          />
+        </div>
+      </div>
+
+      <small style={{ color: isPending ? "#ff65b3" : "#748193", fontSize: 8 }}>
+        {isPending ? "Guardando…" : message || "Autoguardado activo"}
+      </small>
+    </section>
+  );
+}
 
 function ResultEditor({
   evaluationId,
@@ -165,29 +263,109 @@ function ResultEditor({
 
 export function EvaluationLiveForm({
   evaluationId,
+  criteria,
   elements,
   combos,
 }: {
   evaluationId: string;
+  criteria: CriterionLive[];
   elements: LiveItem[];
   combos: LiveItem[];
 }) {
+  const [activeCriterionId, setActiveCriterionId] = useState(criteria[0]?.id ?? null);
+  const activeCriterion =
+    criteria.find((criterion) => criterion.id === activeCriterionId) ?? criteria[0] ?? null;
+
+  const criterionElements = useMemo(
+    () => elements.filter((item) => item.criterionId === activeCriterion?.id),
+    [elements, activeCriterion?.id],
+  );
+  const criterionCombos = useMemo(
+    () => combos.filter((item) => item.criterionId === activeCriterion?.id),
+    [combos, activeCriterion?.id],
+  );
+  const unassignedElements = elements.filter((item) => !item.criterionId);
+  const unassignedCombos = combos.filter((item) => !item.criterionId);
+
   return (
     <div className="eval-element-list">
-      {elements.map((item) => (
-        <ResultEditor key={item.id} evaluationId={evaluationId} item={item} kind="element" />
-      ))}
+      <div className="eval-criteria-tabs" role="tablist" aria-label="Criterios de evaluación">
+        {criteria.map((criterion) => (
+          <button
+            type="button"
+            role="tab"
+            aria-selected={criterion.id === activeCriterion?.id}
+            className={
+              "eval-criterion-tab " + (criterion.id === activeCriterion?.id ? "is-active" : "")
+            }
+            key={criterion.id}
+            onClick={() => setActiveCriterionId(criterion.id)}
+          >
+            <strong>{criterion.label}</strong>
+            <small>
+              {criterion.scorePercent === null
+                ? "Sin calificar"
+                : Math.round(criterion.scorePercent) + "%"}{" "}
+              · peso {criterion.weightPercent}%
+            </small>
+          </button>
+        ))}
+      </div>
 
-      {combos.length ? (
+      {activeCriterion ? (
         <>
-          <div className="eval-panel-header" style={{ marginTop: 6, paddingInline: 0 }}>
-            <h2>Combos</h2>
-          </div>
-          {combos.map((item) => (
-            <ResultEditor key={item.id} evaluationId={evaluationId} item={item} kind="combo" />
-          ))}
+          <CriterionScoreEditor evaluationId={evaluationId} criterion={activeCriterion} />
+
+          {criterionElements.length || criterionCombos.length ? (
+            <section className="eval-panel eval-config-section">
+              <header>
+                <div>
+                  <h2>Elementos de {activeCriterion.label}</h2>
+                  <p>Evalúa las figuras y combos asociados a este criterio.</p>
+                </div>
+              </header>
+              <div className="eval-element-list">
+                {criterionElements.map((item) => (
+                  <ResultEditor
+                    key={item.id}
+                    evaluationId={evaluationId}
+                    item={item}
+                    kind="element"
+                  />
+                ))}
+                {criterionCombos.map((item) => (
+                  <ResultEditor key={item.id} evaluationId={evaluationId} item={item} kind="combo" />
+                ))}
+              </div>
+            </section>
+          ) : (
+            <div className="eval-notice">
+              Este criterio no tiene figuras o combos asociados. Captura su calificación general para
+              continuar.
+            </div>
+          )}
         </>
+      ) : null}
+
+      {unassignedElements.length || unassignedCombos.length ? (
+        <section className="eval-panel eval-config-section">
+          <header>
+            <div>
+              <h2>Requisitos generales</h2>
+              <p>Elementos técnicos que no pertenecen a un criterio específico.</p>
+            </div>
+          </header>
+          <div className="eval-element-list">
+            {unassignedElements.map((item) => (
+              <ResultEditor key={item.id} evaluationId={evaluationId} item={item} kind="element" />
+            ))}
+            {unassignedCombos.map((item) => (
+              <ResultEditor key={item.id} evaluationId={evaluationId} item={item} kind="combo" />
+            ))}
+          </div>
+        </section>
       ) : null}
     </div>
   );
 }
+
