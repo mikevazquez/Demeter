@@ -891,19 +891,48 @@
   .agenda-session-block {
     left: 10px;
     right: 10px;
-    gap: 3px;
-    padding: 7px 10px 7px 14px;
+    gap: 2px;
+    padding: 6px 52px 6px 14px;
     border-radius: 13px;
+    align-content: center;
+  }
+
+  .agenda-session-time {
+    overflow: hidden;
+    color: #cbd3de;
+    font-size: 8px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .agenda-session-block strong {
-    font-size: 12px;
+    display: block;
+    overflow: hidden;
+    color: #ffffff;
+    font-size: 13px;
+    font-weight: 820;
+    line-height: 1.08;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
-  .agenda-session-block small,
-  .agenda-session-time,
+  .agenda-session-block small {
+    display: block;
+    overflow: hidden;
+    color: #aeb8c6;
+    font-size: 8px;
+    line-height: 1.1;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
   .agenda-session-block b {
-    font-size: 9px;
+    position: absolute;
+    top: 50%;
+    right: 11px;
+    transform: translateY(-50%);
+    color: #f7f8fa;
+    font-size: 10px;
   }
 
   .agenda-session-editor {
@@ -1005,5 +1034,25 @@
     min-height: 35px;
     padding: 5px;
     font-size: 7px;
+  }
+}
+
+.agenda-config-page {
+  align-content: start;
+  gap: 16px;
+  padding-bottom: 36px;
+}
+
+@media (max-width: 760px) {
+  .agenda-config-page {
+    padding: 18px 14px 92px;
+  }
+
+  .agenda-config-page .agenda-calendar-header {
+    display: block;
+  }
+
+  .agenda-config-page .agenda-calendar-header h1 {
+    margin-top: 8px;
   }
 }
