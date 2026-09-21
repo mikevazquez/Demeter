@@ -12,6 +12,17 @@ import {
 import PendingActionButton from "../../../components/PendingActionButton";
 import { scheduleEvaluationAction } from "../../actions";
 
+type InvitationDetail = {
+  id: string;
+  discipline_id: string;
+  discipline_name: string;
+  invitation_kind: "first" | "periodic";
+  status: string;
+  window_start: string;
+  window_end: string;
+  reservation_id: string | null;
+};
+
 const purchaseReasons = new Set(["no_active_product", "outside_product", "no_credits"]);
 
 function errorCopy(value?: string) {
@@ -35,19 +46,18 @@ export default async function ScheduleEvaluationPage({
 }) {
   const { invitationId } = await params;
   const qs = await searchParams;
-  const { supabase, snapshot, studio } = await getStudentPortalContext();
+  const { supabase, studio } = await getStudentPortalContext();
 
-  const { data: invitation } = await supabase
-    .from("evaluation_invitations")
-    .select(
-      "id,student_id,discipline_id,discipline_level_id,invitation_kind,status,window_start,window_end,reservation_id",
-    )
-    .eq("id", invitationId)
-    .eq("studio_id", snapshot.profile.studio_id)
-    .eq("student_id", snapshot.profile.student_id)
-    .maybeSingle();
+  const { data: invitationData, error: invitationError } = await supabase.rpc(
+    "student_evaluation_invitation_detail",
+    {
+      p_invitation_id: invitationId,
+    },
+  );
 
-  if (!invitation) notFound();
+  if (invitationError || !invitationData) notFound();
+
+  const invitation = invitationData as InvitationDetail;
 
   if (invitation.status === "offered") {
     redirect("/student/evaluaciones/" + invitation.id);
@@ -61,14 +71,11 @@ export default async function ScheduleEvaluationPage({
     redirect("/student/evaluaciones");
   }
 
-  const [{ data: discipline }, { data: scheduleData }] = await Promise.all([
-    supabase.from("disciplines").select("name").eq("id", invitation.discipline_id).maybeSingle(),
-    supabase.rpc("student_schedule_feed", {
-      target_start: invitation.window_start,
-      target_end: invitation.window_end,
-      target_discipline_id: invitation.discipline_id,
-    }),
-  ]);
+  const { data: scheduleData } = await supabase.rpc("student_schedule_feed", {
+    target_start: invitation.window_start,
+    target_end: invitation.window_end,
+    target_discipline_id: invitation.discipline_id,
+  });
 
   const sessions = (Array.isArray(scheduleData) ? scheduleData : []) as StudentSession[];
   const selectedSession = qs.session
@@ -88,7 +95,7 @@ export default async function ScheduleEvaluationPage({
 
       <header>
         <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-fuchsia-300">
-          {discipline?.name ?? "Evaluación"}
+          {invitation.discipline_name}
         </p>
         <h1 className="mt-1 text-3xl font-semibold tracking-tight text-white">
           Programar evaluación
@@ -212,8 +219,8 @@ export default async function ScheduleEvaluationPage({
           <div className="rounded-3xl border border-white/10 bg-white/[0.025] p-6 text-center">
             <p className="text-sm font-semibold text-white">No hay clases disponibles</p>
             <p className="mt-1 text-xs leading-5 text-zinc-500">
-              No encontramos clases de {discipline?.name ?? "esta disciplina"} dentro de esta
-              ventana. Tu evaluación seguirá pendiente.
+              No encontramos clases de {invitation.discipline_name} dentro de esta ventana. Tu
+              evaluación seguirá pendiente.
             </p>
           </div>
         )}
