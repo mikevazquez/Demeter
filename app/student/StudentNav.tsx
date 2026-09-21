@@ -12,6 +12,7 @@ const items = [
 
 function isActive(pathname: string, href: string) {
   if (href === "/student") return pathname === href;
+  if (href === "/student/perfil" && pathname.startsWith("/student/evaluaciones")) return true;
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
