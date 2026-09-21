@@ -45,8 +45,7 @@ type DomainEventRow = {
   payload: Record<string, unknown>;
 };
 
-const UUID_PATTERN =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 function jsonResponse(body: Record<string, unknown>, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -140,13 +139,7 @@ async function loadContext(adminClient: SupabaseClient, event: DomainEventRow) {
 
   let variables: PaymentConfirmedVariables | null = null;
   try {
-    if (
-      amountMinor !== null &&
-      balanceMinor !== null &&
-      currency &&
-      method &&
-      concept
-    ) {
+    if (amountMinor !== null && balanceMinor !== null && currency && method && concept) {
       variables = buildPaymentConfirmedVariables({
         amountMinor,
         currency,
@@ -182,10 +175,10 @@ async function loadContext(adminClient: SupabaseClient, event: DomainEventRow) {
     variables,
     contextComplete: Boolean(
       variables &&
-        payloadStudentId &&
-        payloadStudentId === sale.student_id &&
-        saleFolio &&
-        currency,
+      payloadStudentId &&
+      payloadStudentId === sale.student_id &&
+      saleFolio &&
+      currency,
     ),
   };
 }
@@ -231,11 +224,7 @@ async function recordEligibility(
   };
 }
 
-async function existingExecution(
-  adminClient: SupabaseClient,
-  studioId: string,
-  paymentId: string,
-) {
+async function existingExecution(adminClient: SupabaseClient, studioId: string, paymentId: string) {
   const { data } = await adminClient
     .from("automation_executions")
     .select(
@@ -590,14 +579,11 @@ const handler = {
     }
 
     if (providerResult.status === "accepted") {
-      const { error: sentError } = await adminClient.rpc(
-        "system_mark_automation_execution_sent",
-        {
-          p_attempt_id: attempt.attempt_id,
-          p_provider_key: provider.key,
-          p_request_snapshot: requestSnapshot(providerInput),
-        },
-      );
+      const { error: sentError } = await adminClient.rpc("system_mark_automation_execution_sent", {
+        p_attempt_id: attempt.attempt_id,
+        p_provider_key: provider.key,
+        p_request_snapshot: requestSnapshot(providerInput),
+      });
 
       if (sentError) {
         const refreshed = await existingExecution(adminClient, event.studio_id, paymentId);
@@ -653,15 +639,12 @@ const handler = {
       });
     }
 
-    const { error: markError } = await adminClient.rpc(
-      "system_mark_automation_execution_error",
-      {
-        p_attempt_id: attempt.attempt_id,
-        p_error_code: providerResult.errorCode,
-        p_error_message: providerResult.errorMessage,
-        p_retryable: providerResult.retryable,
-      },
-    );
+    const { error: markError } = await adminClient.rpc("system_mark_automation_execution_error", {
+      p_attempt_id: attempt.attempt_id,
+      p_error_code: providerResult.errorCode,
+      p_error_message: providerResult.errorMessage,
+      p_retryable: providerResult.retryable,
+    });
 
     if (markError) return jsonResponse({ error: "execution_error_persist_failed" }, 500);
 

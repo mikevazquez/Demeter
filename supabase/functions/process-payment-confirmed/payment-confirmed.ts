@@ -52,8 +52,7 @@ export interface MessagingProviderErrorResult {
 }
 
 export type MessagingProviderResult =
-  | MessagingProviderAcceptedResult
-  | MessagingProviderErrorResult;
+  MessagingProviderAcceptedResult | MessagingProviderErrorResult;
 
 export interface MessagingProvider {
   readonly key: string;

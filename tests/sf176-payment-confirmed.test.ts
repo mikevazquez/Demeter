@@ -88,9 +88,7 @@ describe("SF-176 payment confirmed", () => {
   it("uses AUT-CAT-05 and stable payment-scoped idempotency", () => {
     expect(PAYMENT_CONFIRMED_CATALOG_CODE).toBe("AUT-CAT-05");
     expect(paymentConfirmedCandidateKey("payment-123")).toBe("payment:payment-123");
-    expect(paymentConfirmedIdempotencyKey("payment-123")).toBe(
-      "sf176:payment:payment-123",
-    );
+    expect(paymentConfirmedIdempotencyKey("payment-123")).toBe("sf176:payment:payment-123");
   });
 
   it("delivers through the mock provider without Asistian", async () => {
