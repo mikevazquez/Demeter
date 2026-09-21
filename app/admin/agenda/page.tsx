@@ -2,9 +2,6 @@ import Link from "next/link";
 
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getAdminContext } from "@/lib/auth/admin-context";
-import { createDiscipline } from "./actions";
-import { createActivity, createRecurringSchedules, updateActivityColor } from "./recurring-actions";
-import { ScheduleBuilder } from "./schedule-builder";
 import { cancelSession, updateSession } from "./[sessionId]/actions";
 
 function formatMoney(minor: number) {
@@ -385,9 +382,9 @@ export default async function AgendaPage({
             Hoy
           </Link>
           {canEdit ? (
-            <a className="agenda-config-button" href="#configuracion-agenda">
+            <Link className="agenda-config-button" href="/admin/agenda/configuracion">
               Configurar agenda
-            </a>
+            </Link>
           ) : null}
         </div>
       </header>
@@ -658,200 +655,6 @@ export default async function AgendaPage({
         ) : null}
       </div>
 
-      <details id="configuracion-agenda" className="agenda-config-section">
-        <summary>
-          <span>
-            <small>CONFIGURACIÓN</small>
-            <strong>Actividades y horarios recurrentes</strong>
-          </span>
-          <b aria-hidden="true">⌄</b>
-        </summary>
-
-        <div className="agenda-config-content">
-          <section>
-            <div className="panel-heading">
-              <div>
-                <p className="eyebrow">HORARIOS ACTIVOS</p>
-                <h2>Programación semanal</h2>
-              </div>
-              <span className="count-badge">{schedules?.length ?? 0}</span>
-            </div>
-            {!schedules?.length ? (
-              <div className="empty-state">No hay horarios recurrentes activos.</div>
-            ) : (
-              <div className="agenda-recurring-list">
-                {schedules.map((schedule) => (
-                  <div
-                    className="agenda-recurring-row"
-                    key={schedule.id}
-                    style={
-                      {
-                        "--agenda-session-color":
-                          templateMap.get(schedule.template_id)?.color_hex ?? "#FF0A8A",
-                      } as React.CSSProperties
-                    }
-                  >
-                    <div>
-                      <strong>{templateMap.get(schedule.template_id)?.name ?? "Actividad"}</strong>
-                      <span>
-                        {["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"][schedule.weekday]} ·{" "}
-                        {String(schedule.local_time).slice(0, 5)} ·{" "}
-                        {schedule.instructor_id
-                          ? instructorMap.get(schedule.instructor_id)
-                          : "Sin instructor"}
-                      </span>
-                    </div>
-                    <b>{schedule.capacity} lugares</b>
-                  </div>
-                ))}
-              </div>
-            )}
-          </section>
-
-          {canEdit ? (
-            <div className="agenda-config-grid">
-              <section className="agenda-config-card">
-                <p className="eyebrow">1 · DISCIPLINA</p>
-                <h2>Nueva disciplina</h2>
-                <form action={createDiscipline} className="compact-form">
-                  <input name="name" required placeholder="Ej. Pole Fitness" />
-                  <button className="primary-button" type="submit">
-                    Agregar
-                  </button>
-                </form>
-              </section>
-
-              <section className="agenda-config-card">
-                <p className="eyebrow">2 · ACTIVIDAD</p>
-                <h2>Crear actividad</h2>
-                <form action={createActivity} className="compact-form">
-                  <input name="name" required placeholder="Ej. Exotic" />
-                  <select name="discipline_id" required defaultValue="">
-                    <option value="" disabled>
-                      Disciplina
-                    </option>
-                    {disciplines
-                      ?.filter((item) => item.active)
-                      .map((item) => (
-                        <option key={item.id} value={item.id}>
-                          {item.name}
-                        </option>
-                      ))}
-                  </select>
-                  <div className="form-split">
-                    <label>
-                      Duración (min)
-                      <input
-                        name="duration_minutes"
-                        type="number"
-                        min="15"
-                        max="360"
-                        defaultValue="60"
-                        required
-                      />
-                    </label>
-                    <label>
-                      Créditos
-                      <input name="credit_cost" type="number" min="1" defaultValue="1" required />
-                    </label>
-                  </div>
-                  <div className="form-split">
-                    <label>
-                      Cupo predeterminado
-                      <input name="capacity" type="number" min="1" defaultValue="8" required />
-                    </label>
-                    <label>
-                      Precio clase suelta (MXN)
-                      <input
-                        name="drop_in_price"
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        inputMode="decimal"
-                        placeholder="Opcional"
-                      />
-                    </label>
-                  </div>
-                  <label>
-                    Color en el horario
-                    <input name="color_hex" type="color" defaultValue="#FF0A8A" />
-                  </label>
-                  <button className="primary-button" type="submit" disabled={!disciplines?.length}>
-                    Crear actividad
-                  </button>
-                </form>
-              </section>
-
-              <section className="agenda-config-card">
-                <p className="eyebrow">COLOR POR ACTIVIDAD</p>
-                <h2>Identificación en horario</h2>
-                <div className="compact-form">
-                  {templates?.map((item) => (
-                    <form action={updateActivityColor} className="form-split" key={item.id}>
-                      <input type="hidden" name="activity_id" value={item.id} />
-                      <label>
-                        {item.name}
-                        <input
-                          name="color_hex"
-                          type="color"
-                          defaultValue={item.color_hex ?? "#FF0A8A"}
-                          aria-label={`Color de ${item.name}`}
-                        />
-                      </label>
-                      <button className="ghost-button" type="submit">
-                        Guardar
-                      </button>
-                    </form>
-                  ))}
-                </div>
-              </section>
-
-              <section id="programar-clase" className="agenda-config-card">
-                <p className="eyebrow">3 · HORARIO RECURRENTE</p>
-                <h2>Programar actividad</h2>
-                <form action={createRecurringSchedules} className="compact-form">
-                  <select name="template_id" required defaultValue="">
-                    <option value="" disabled>
-                      Actividad
-                    </option>
-                    {templates?.map((item) => (
-                      <option key={item.id} value={item.id}>
-                        {item.name} · {item.duration_minutes} min · {item.credit_cost} crédito
-                        {item.credit_cost === 1 ? "" : "s"}
-                        {item.drop_in_price_minor != null
-                          ? ` · Suelta ${formatMoney(item.drop_in_price_minor)}`
-                          : ""}
-                      </option>
-                    ))}
-                  </select>
-                  <label>
-                    Comenzar desde
-                    <input name="starts_on" type="date" required />
-                  </label>
-                  <ScheduleBuilder
-                    defaultCapacity={templates?.[0]?.capacity ?? 8}
-                    instructors={(instructors ?? []).map((item) => ({
-                      id: item.id,
-                      label: personMap.get(item.person_id) ?? "Instructor",
-                    }))}
-                    spaces={(spaces ?? []).map((item) => ({
-                      id: item.id,
-                      label: item.name,
-                      capacity: item.capacity,
-                    }))}
-                  />
-                  <textarea name="notes" rows={2} placeholder="Notas opcionales" />
-                  <button className="primary-button" type="submit" disabled={!templates?.length}>
-                    Guardar horario
-                  </button>
-                </form>
-              </section>
-            </div>
-          ) : (
-            <p>Puedes consultar la agenda, pero no modificarla.</p>
-          )}
-        </div>
-      </details>
     </main>
   );
 }
