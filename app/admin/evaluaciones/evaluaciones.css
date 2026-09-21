@@ -189,8 +189,7 @@
   border: 1px solid #28323e;
   border-radius: 18px;
   background:
-    radial-gradient(circle at 100% 0%, rgba(255, 10, 138, 0.04), transparent 34%),
-    #0d141c;
+    radial-gradient(circle at 100% 0%, rgba(255, 10, 138, 0.04), transparent 34%), #0d141c;
   box-shadow: 0 14px 34px rgba(0, 0, 0, 0.11);
 }
 
