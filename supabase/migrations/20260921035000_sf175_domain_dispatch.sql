@@ -3,7 +3,7 @@
 -- The network request is queued by pg_net and therefore starts only after commit.
 -- Missing dispatch configuration must never invalidate a booking.
 
-create extension if not exists pg_net;
+create extension if not exists pg_net with schema extensions;
 
 create or replace function public.book_student(
   target_session_id uuid,
