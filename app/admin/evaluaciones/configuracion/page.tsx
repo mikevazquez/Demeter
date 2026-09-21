@@ -69,7 +69,9 @@ export default async function EvaluationConfigurationPage({
     }
   }
 
-  const enabledDisciplines = new Set(links.filter((link) => link.active).map((link) => link.discipline_id));
+  const enabledDisciplines = new Set(
+    links.filter((link) => link.active).map((link) => link.discipline_id),
+  );
   const activeLinks = links.filter((link) => link.active);
 
   return (
@@ -264,7 +266,9 @@ export default async function EvaluationConfigurationPage({
                   >
                     <header>
                       <h3>{template.name}</h3>
-                      <span className={`eval-status ${version?.status === "active" ? "approved" : ""}`}>
+                      <span
+                        className={`eval-status ${version?.status === "active" ? "approved" : ""}`}
+                      >
                         {version?.status === "active"
                           ? "Activa"
                           : version?.status === "archived"
