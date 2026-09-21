@@ -54,8 +54,8 @@ function initials(name: string) {
 
 function attendanceLabel(status: string) {
   if (status === "attended") return "Asistió";
-  if (status === "no_show") return "No show";
-  return "Reservada";
+  if (status === "no_show") return "No asistió";
+  return "Pendiente";
 }
 
 export function SessionOperations({
@@ -73,6 +73,7 @@ export function SessionOperations({
   showToggle = true,
 }: SessionOperationsProps) {
   const [open, setOpen] = useState(initiallyOpen);
+  const [showAddStudent, setShowAddStudent] = useState(false);
   const [newWalkin, setNewWalkin] = useState(false);
   const [feedback, setFeedback] = useState<{
     kind: "success" | "error";
@@ -108,11 +109,11 @@ export function SessionOperations({
               created === "attendance-finalized"
                 ? "Asistencia finalizada correctamente."
                 : created === "attendance-corrected"
-                  ? "Corrección registrada con motivo y trazabilidad."
+                  ? "Corrección registrada correctamente."
                   : created === "walkin"
                     ? "Walk-in registrada y agregada a la clase."
                     : created === "walkin-existing"
-                      ? "Alumna agregada como walk-in. La venta o paquete queda pendiente."
+                      ? "Alumna agregada a la clase."
                       : created === "cancel"
                         ? "Reserva cancelada correctamente."
                         : "Reserva creada correctamente.",
@@ -163,38 +164,52 @@ export function SessionOperations({
           ) : null}
 
           <section className="today-roster roster-priority">
-            <div className="today-roster-header">
+            <div className="today-roster-header compact">
               <div>
-                <span className="today-roster-kicker">ASISTENCIA</span>
-                <h3>Lista de clase</h3>
-              </div>
-              <div className="today-roster-count">
-                <strong>{attendanceCount}</strong>
+                <h3>Asistencia</h3>
                 <span>
-                  asistieron · {noShowCount} no-show · {pendingCount} pendientes
+                  {roster.length} {roster.length === 1 ? "alumna" : "alumnas"}
                 </span>
               </div>
+
+              {canAddWalkin ? (
+                <button
+                  className="today-add-student-button"
+                  type="button"
+                  onClick={() => setShowAddStudent((value) => !value)}
+                  aria-expanded={showAddStudent}
+                  aria-label={showAddStudent ? "Cerrar agregar alumna" : "Agregar alumna"}
+                  title="Agregar alumna"
+                >
+                  {showAddStudent ? "×" : "+"}
+                </button>
+              ) : null}
             </div>
 
             {roster.length ? (
-              <div className="today-student-list">
+              <div className="today-student-list compact">
                 {roster.map((item) => {
                   const canCorrect =
                     isCompleted && canAttendance && ["attended", "no_show"].includes(item.status);
                   const correctionTarget = item.status === "attended" ? "no_show" : "attended";
+                  const isInvitation = item.packageLabel === "Invitación";
 
                   return (
-                    <article className="today-student-card" key={item.id}>
+                    <article className="today-student-card compact" key={item.id}>
                       <div className="today-student-avatar" aria-hidden="true">
                         {initials(item.studentName)}
                       </div>
+
                       <div className="today-student-identity">
-                        <strong>{item.studentName}</strong>
-                        <span>{item.packageLabel}</span>
-                      </div>
-                      <div className="today-student-balance">
-                        <strong>{item.creditsLabel}</strong>
-                        <span>{item.expiresLabel}</span>
+                        <div className="today-student-name-line">
+                          <strong>{item.studentName}</strong>
+                          {isInvitation ? <span className="today-invite-tag">Invitación</span> : null}
+                        </div>
+                        <span>
+                          {isInvitation
+                            ? item.creditsLabel
+                            : `${item.packageLabel} · ${item.creditsLabel}`}
+                        </span>
                       </div>
 
                       {!isCompleted &&
@@ -217,9 +232,11 @@ export function SessionOperations({
                               disabled={item.status === "attended"}
                               aria-pressed={item.status === "attended"}
                             >
-                              ✓ Asistió
+                              {item.status === "attended" ? "✓ " : ""}
+                              Asistió
                             </button>
                           </form>
+
                           <form action={setAttendanceFromToday}>
                             <input type="hidden" name="session_id" value={sessionId} />
                             <input type="hidden" name="reservation_id" value={item.id} />
@@ -234,56 +251,52 @@ export function SessionOperations({
                               disabled={item.status === "no_show"}
                               aria-pressed={item.status === "no_show"}
                             >
-                              No show
+                              No asistió
                             </button>
                           </form>
                         </div>
                       ) : (
-                        <span className="status-pill">{attendanceLabel(item.status)}</span>
+                        <span
+                          className={`today-attendance-state${item.status === "attended" ? " is-attended" : ""}${item.status === "no_show" ? " is-no-show" : ""}`}
+                        >
+                          {attendanceLabel(item.status)}
+                        </span>
+                      )}
+
+                      {!isCompleted && canBook && item.status === "reserved" ? (
+                        <details className="today-student-more">
+                          <summary aria-label={`Más acciones para ${item.studentName}`}>⋮</summary>
+                          <div>
+                            <form action={cancelReservationFromToday}>
+                              <input type="hidden" name="session_id" value={sessionId} />
+                              <input type="hidden" name="reservation_id" value={item.id} />
+                              <input type="hidden" name="return_date" value={returnDate} />
+                              {returnTo ? (
+                                <input type="hidden" name="return_to" value={returnTo} />
+                              ) : null}
+                              <button type="submit">Cancelar reserva</button>
+                            </form>
+                          </div>
+                        </details>
+                      ) : (
+                        <span className="today-student-more-placeholder" aria-hidden="true" />
                       )}
 
                       {canCorrect ? (
-                        <div className="today-walkin-form">
-                          <div className="today-drawer-heading">
-                            <div>
-                              <strong>Corrección</strong>
-                              <span>
-                                La sesión está finalizada. El cambio requiere motivo y quedará
-                                registrado.
-                              </span>
-                            </div>
-                          </div>
-                          <form action={setAttendanceFromToday} className="today-walkin-form">
-                            <input type="hidden" name="session_id" value={sessionId} />
-                            <input type="hidden" name="reservation_id" value={item.id} />
-                            <input type="hidden" name="return_date" value={returnDate} />
-                            {returnTo ? (
-                              <input type="hidden" name="return_to" value={returnTo} />
-                            ) : null}
-                            <input type="hidden" name="status" value={correctionTarget} />
-                            <input
-                              name="reason"
-                              placeholder="Motivo de la corrección"
-                              required
-                              aria-label="Motivo de la corrección"
-                            />
-                            <button className="secondary-button" type="submit">
-                              Corregir a {correctionTarget === "attended" ? "Asistió" : "No show"}
-                            </button>
-                          </form>
-                        </div>
-                      ) : null}
-
-                      {!isCompleted && canBook && item.status === "reserved" ? (
-                        <form action={cancelReservationFromToday} className="today-cancel-form">
+                        <form action={setAttendanceFromToday} className="today-correction-form">
                           <input type="hidden" name="session_id" value={sessionId} />
                           <input type="hidden" name="reservation_id" value={item.id} />
                           <input type="hidden" name="return_date" value={returnDate} />
-                          {returnTo ? (
-                            <input type="hidden" name="return_to" value={returnTo} />
-                          ) : null}
-                          <button className="today-inline-danger" type="submit">
-                            Cancelar reserva
+                          {returnTo ? <input type="hidden" name="return_to" value={returnTo} /> : null}
+                          <input type="hidden" name="status" value={correctionTarget} />
+                          <input
+                            name="reason"
+                            placeholder="Motivo de la corrección"
+                            required
+                            aria-label="Motivo de la corrección"
+                          />
+                          <button className="secondary-button" type="submit">
+                            Corregir a {correctionTarget === "attended" ? "Asistió" : "No asistió"}
                           </button>
                         </form>
                       ) : null}
@@ -292,109 +305,94 @@ export function SessionOperations({
                 })}
               </div>
             ) : (
-              <div className="today-drawer-empty">Todavía no hay alumnas en la lista.</div>
+              <div className="today-drawer-empty">Todavía no hay alumnas en esta clase.</div>
             )}
-          </section>
 
-          {canAddWalkin ? (
-            <section className="today-walkin add-student-secondary">
-              <div className="today-drawer-heading">
-                <div>
-                  <strong>Walk-in</strong>
-                  <span>Agrega una alumna existente o registra una nueva con datos mínimos.</span>
+            {showAddStudent ? (
+              <div className="today-add-panel">
+                <div className="today-add-panel-heading">
+                  <strong>Agregar alumna</strong>
+                  {canAddExisting && canAddNew ? (
+                    <button
+                      type="button"
+                      onClick={() => setNewWalkin((value) => !value)}
+                      className="today-add-mode"
+                    >
+                      {showNewWalkin ? "Buscar existente" : "Nueva alumna"}
+                    </button>
+                  ) : null}
                 </div>
-                {canAddExisting && canAddNew ? (
-                  <button
-                    className="secondary-button"
-                    type="button"
-                    onClick={() => setNewWalkin((value) => !value)}
-                  >
-                    {showNewWalkin ? "Usar existente" : "Nueva alumna"}
-                  </button>
+
+                {available <= 0 ? (
+                  <div className="today-drawer-empty">La clase ya está llena.</div>
+                ) : showNewWalkin ? (
+                  <form action={createWalkinFromToday} className="today-add-form">
+                    <input type="hidden" name="session_id" value={sessionId} />
+                    <input type="hidden" name="return_date" value={returnDate} />
+                    {returnTo ? <input type="hidden" name="return_to" value={returnTo} /> : null}
+                    <input name="first_name" placeholder="Nombre" required />
+                    <input name="last_name" placeholder="Apellido" />
+                    <input name="phone" type="tel" placeholder="Teléfono" required />
+                    <button className="primary-button" type="submit">
+                      Registrar y agregar
+                    </button>
+                  </form>
+                ) : canAddExisting ? (
+                  <form action={bookStudentFromToday} className="today-add-form is-existing">
+                    <input type="hidden" name="session_id" value={sessionId} />
+                    <input type="hidden" name="return_date" value={returnDate} />
+                    {returnTo ? <input type="hidden" name="return_to" value={returnTo} /> : null}
+                    <select name="student_id" defaultValue="" required>
+                      <option value="" disabled>
+                        Selecciona una alumna
+                      </option>
+                      {candidates.map((candidate) => {
+                        const canFallbackToWalkin = walkinFallbackDetails.has(candidate.detail);
+                        return (
+                          <option
+                            key={candidate.id}
+                            value={candidate.id}
+                            disabled={!candidate.eligible && !canFallbackToWalkin}
+                          >
+                            {candidate.fullName} · {candidate.detail}
+                            {candidate.eligible
+                              ? ""
+                              : canFallbackToWalkin
+                                ? " · walk-in"
+                                : " · bloqueada"}
+                          </option>
+                        );
+                      })}
+                    </select>
+                    <button className="primary-button" type="submit" disabled={!candidates.length}>
+                      Agregar
+                    </button>
+                  </form>
                 ) : null}
               </div>
-
-              {available <= 0 ? (
-                <div className="today-drawer-empty">La clase ya está llena.</div>
-              ) : showNewWalkin ? (
-                <form action={createWalkinFromToday} className="today-walkin-form">
-                  <input type="hidden" name="session_id" value={sessionId} />
-                  <input type="hidden" name="return_date" value={returnDate} />
-                  {returnTo ? <input type="hidden" name="return_to" value={returnTo} /> : null}
-                  <input name="first_name" placeholder="Nombre" required />
-                  <input name="last_name" placeholder="Apellido" />
-                  <input name="phone" type="tel" placeholder="Teléfono" required />
-                  <small>
-                    Se crea un expediente mínimo. La venta o producto se registra después en el
-                    flujo de Ventas.
-                  </small>
-                  <button className="primary-button" type="submit">
-                    Registrar y agregar
-                  </button>
-                </form>
-              ) : canAddExisting ? (
-                <form action={bookStudentFromToday} className="today-walkin-form">
-                  <input type="hidden" name="session_id" value={sessionId} />
-                  <input type="hidden" name="return_date" value={returnDate} />
-                  {returnTo ? <input type="hidden" name="return_to" value={returnTo} /> : null}
-                  <select name="student_id" defaultValue="" required>
-                    <option value="" disabled>
-                      Selecciona una alumna
-                    </option>
-                    {candidates.map((candidate) => {
-                      const canFallbackToWalkin = walkinFallbackDetails.has(candidate.detail);
-                      return (
-                        <option
-                          key={candidate.id}
-                          value={candidate.id}
-                          disabled={!candidate.eligible && !canFallbackToWalkin}
-                        >
-                          {candidate.fullName} · {candidate.detail}
-                          {candidate.eligible
-                            ? ""
-                            : canFallbackToWalkin
-                              ? " · walk-in / venta pendiente"
-                              : " · bloqueada"}
-                        </option>
-                      );
-                    })}
-                  </select>
-                  <button className="primary-button" type="submit" disabled={!candidates.length}>
-                    Agregar a la clase
-                  </button>
-                  <small>
-                    El fallback walk-in sólo aplica cuando falta paquete, cobertura o créditos. Si
-                    existe otro requisito obligatorio, debe resolverse antes de reservar.
-                  </small>
-                </form>
-              ) : null}
-            </section>
-          ) : null}
+            ) : null}
+          </section>
 
           {canAttendance ? (
-            <section className="today-walkin">
-              <div className="today-drawer-heading">
-                <div>
-                  <strong>{isCompleted ? "Asistencia finalizada" : "Resumen"}</strong>
-                  <span>
-                    {attendanceCount} asistieron · {noShowCount} no-show · {pendingCount}{" "}
-                    pendientes.
-                    {isCompleted
-                      ? " Cualquier cambio posterior es una Corrección y exige motivo."
-                      : " Al finalizar, los pendientes se registran como no-show y se resuelven los créditos."}
-                  </span>
-                </div>
+            <section className="today-attendance-footer">
+              <div className="today-attendance-summary">
+                <span>{attendanceCount} asistieron</span>
+                <span>{noShowCount} no asistieron</span>
+                <span>{pendingCount} pendientes</span>
               </div>
+
               {!isCompleted ? (
                 <form action={finalizeAttendanceFromToday}>
                   <input type="hidden" name="session_id" value={sessionId} />
                   <input type="hidden" name="return_date" value={returnDate} />
                   {returnTo ? <input type="hidden" name="return_to" value={returnTo} /> : null}
-                  <button className="primary-button" type="submit">
+                  <button className="today-finalize-button" type="submit">
                     Finalizar asistencia
                   </button>
                 </form>
-              ) : null}
+              ) : (
+                <p>Asistencia finalizada. Las correcciones requieren motivo.</p>
+              )}
             </section>
           ) : null}
         </div>
