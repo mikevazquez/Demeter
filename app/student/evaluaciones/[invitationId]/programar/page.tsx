@@ -256,7 +256,7 @@ export default async function ScheduleEvaluationPage({
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-violet-300">
-                    ${needsClassAccess ? "Además · Inscripción requerida" : "Inscripción requerida"}
+                    {needsClassAccess ? "Además · Inscripción requerida" : "Inscripción requerida"}
                   </p>
                   <p className="mt-1 text-sm font-semibold text-white">
                     {enrollmentRequirement.name ?? "Inscripción"}
