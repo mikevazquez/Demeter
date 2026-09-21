@@ -1,8 +1,11 @@
 import { withSupabase } from "npm:@supabase/server";
 
+import { sendAsistianWebhook } from "../_shared/asistian-messaging.ts";
+
 type ProvisionRequest = {
   studentId?: unknown;
   mode?: unknown;
+  loginUrl?: unknown;
 };
 
 function jsonResponse(body: Record<string, unknown>, status = 200) {
@@ -50,7 +53,18 @@ const handler = {
 
     const studentId = typeof payload.studentId === "string" ? payload.studentId.trim() : "";
     const mode = payload.mode === "reset" ? "reset" : payload.mode === undefined ? "provision" : "";
+    const loginUrl = typeof payload.loginUrl === "string" ? payload.loginUrl.trim() : "";
     if (!studentId || !mode) return jsonResponse({ error: "invalid_request" }, 400);
+    if (mode === "provision") {
+      try {
+        const parsedLoginUrl = new URL(loginUrl);
+        if (parsedLoginUrl.protocol !== "https:" || parsedLoginUrl.pathname !== "/login/student") {
+          return jsonResponse({ error: "login_url_invalid" }, 400);
+        }
+      } catch {
+        return jsonResponse({ error: "login_url_invalid" }, 400);
+      }
+    }
 
     const { data: student, error: studentError } = await userClient
       .from("students")
@@ -170,11 +184,36 @@ const handler = {
       return jsonResponse({ error: "link_failed" }, 500);
     }
 
+    const welcomeEventId = `student_welcome:${student.id}:${createdUser.user.id}`;
+    const welcomeDelivery = await sendAsistianWebhook({
+      adminClient,
+      studioId: student.studio_id,
+      template: "student_welcome",
+      eventId: welcomeEventId,
+      recipient: student.phone,
+      variables: {
+        nombre: student.full_name,
+        login_url: loginUrl,
+        temporary_password: temporaryPassword,
+      },
+      metadata: {
+        source: "student_access_provisioning",
+        student_id: student.id,
+        user_id: createdUser.user.id,
+        must_change_password: true,
+        sensitive_variable_keys: ["temporary_password"],
+      },
+    });
+
     return jsonResponse({
       ok: true,
       temporaryPassword,
       phone: student.phone,
       mustChangePassword: true,
+      welcomeDelivery: {
+        status: welcomeDelivery.status,
+        errorCode: welcomeDelivery.status === "accepted" ? null : welcomeDelivery.errorCode,
+      },
     });
   }),
 };
