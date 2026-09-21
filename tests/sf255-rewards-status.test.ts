@@ -85,7 +85,9 @@ describe("SF-255A monthly level and waitlist contracts", () => {
   it("seeds Bronze for existing and newly created students", () => {
     expect(core).toContain("insert into public.reward_status_memberships");
     expect(core).toContain("from public.students s");
-    expect(core).toContain("create or replace function private.seed_reward_status_for_new_student()");
+    expect(core).toContain(
+      "create or replace function private.seed_reward_status_for_new_student()",
+    );
     expect(core).toContain("create trigger reward_status_seed_student");
     expect(core).toContain("after insert on public.students");
     expect(core).toContain("current_level_key text not null default 'bronze'");
