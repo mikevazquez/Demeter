@@ -75,7 +75,9 @@ export default async function TechnicalEvaluationDetailPage({
         .eq("evaluation_id", evaluation.id),
       ctx.supabase
         .from("technical_evaluation_combo_results")
-        .select("template_combo_id,result_status,score,attempt_count,notes,quick_comments,evaluated_at")
+        .select(
+          "template_combo_id,result_status,score,attempt_count,notes,quick_comments,evaluated_at",
+        )
         .eq("evaluation_id", evaluation.id),
     ]);
 
@@ -113,14 +115,9 @@ export default async function TechnicalEvaluationDetailPage({
   const levelLinks = levelLinksResult.data ?? [];
   const levelIds = levelLinks.map((link) => link.technical_level_id);
   const levelDefsResult = levelIds.length
-    ? await ctx.supabase
-        .from("technical_level_definitions")
-        .select("id,title")
-        .in("id", levelIds)
+    ? await ctx.supabase.from("technical_level_definitions").select("id,title").in("id", levelIds)
     : { data: [] };
-  const levelDefMap = new Map(
-    (levelDefsResult.data ?? []).map((level) => [level.id, level.title]),
-  );
+  const levelDefMap = new Map((levelDefsResult.data ?? []).map((level) => [level.id, level.title]));
   const levelTitleMap = new Map(
     levelLinks.map((link) => [
       link.id,
@@ -178,7 +175,7 @@ export default async function TechnicalEvaluationDetailPage({
 
   const targetLevel = levelTitleMap.get(evaluation.target_discipline_level_id) ?? "Nivel técnico";
   const currentLevel = evaluation.current_discipline_level_id_at_start
-    ? levelTitleMap.get(evaluation.current_discipline_level_id_at_start) ?? "Nivel técnico"
+    ? (levelTitleMap.get(evaluation.current_discipline_level_id_at_start) ?? "Nivel técnico")
     : "Sin nivel previo";
 
   const criterionResultQuery = await ctx.supabase
@@ -191,7 +188,7 @@ export default async function TechnicalEvaluationDetailPage({
   const criteria = criteriaResult.data ?? [];
 
   const isPublished = evaluation.status === "published";
-  const step = isPublished ? "published" : qs.step ?? "live";
+  const step = isPublished ? "published" : (qs.step ?? "live");
 
   return (
     <main className="evaluations-page">
@@ -223,7 +220,9 @@ export default async function TechnicalEvaluationDetailPage({
         <div className="eval-notice success">Evaluación publicada para la alumna.</div>
       ) : null}
       {qs.error ? (
-        <div className="eval-notice">No pudimos completar la acción. Revisa los datos e inténtalo de nuevo.</div>
+        <div className="eval-notice">
+          No pudimos completar la acción. Revisa los datos e inténtalo de nuevo.
+        </div>
       ) : null}
 
       <section className="eval-panel eval-config-section">
@@ -235,7 +234,9 @@ export default async function TechnicalEvaluationDetailPage({
               {currentLevel}
             </p>
           </div>
-          <span className="eval-status">v{version.version_number} · {templateResult.data?.name}</span>
+          <span className="eval-status">
+            v{version.version_number} · {templateResult.data?.name}
+          </span>
         </header>
       </section>
 
@@ -255,7 +256,10 @@ export default async function TechnicalEvaluationDetailPage({
 
           <div className="eval-criteria-tabs">
             {criteria.map((criterion, index) => (
-              <span className={`eval-criterion-tab ${index === 0 ? "is-active" : ""}`} key={criterion.id}>
+              <span
+                className={`eval-criterion-tab ${index === 0 ? "is-active" : ""}`}
+                key={criterion.id}
+              >
                 <strong>{criterion.label}</strong>
                 <small>{criterion.weight_percent}%</small>
               </span>
@@ -319,8 +323,7 @@ export default async function TechnicalEvaluationDetailPage({
                   {
                     templateElements.filter(
                       (item) =>
-                        item.mandatory &&
-                        elementResultMap.get(item.id)?.result_status === "meets",
+                        item.mandatory && elementResultMap.get(item.id)?.result_status === "meets",
                     ).length
                   }{" "}
                   / {templateElements.filter((item) => item.mandatory).length} completas
@@ -372,7 +375,11 @@ export default async function TechnicalEvaluationDetailPage({
             <div className="eval-field-grid">
               <div className="eval-field">
                 <label htmlFor="strengths">Fortalezas · una por línea</label>
-                <textarea id="strengths" name="strengths" placeholder={"Buen control\nLíneas limpias"} />
+                <textarea
+                  id="strengths"
+                  name="strengths"
+                  placeholder={"Buen control\nLíneas limpias"}
+                />
               </div>
               <div className="eval-field">
                 <label htmlFor="improvements">Áreas por mejorar · una por línea</label>
@@ -441,27 +448,39 @@ export default async function TechnicalEvaluationDetailPage({
               <h3>Tus fortalezas</h3>
               {(evaluation.strengths ?? []).length ? (
                 <ul>
-                  {evaluation.strengths.map((item) => <li key={item}>✓ {item}</li>)}
+                  {evaluation.strengths.map((item) => (
+                    <li key={item}>✓ {item}</li>
+                  ))}
                 </ul>
               ) : (
-                <p className="eval-row-copy"><small>Sin fortalezas capturadas.</small></p>
+                <p className="eval-row-copy">
+                  <small>Sin fortalezas capturadas.</small>
+                </p>
               )}
             </article>
             <article className="eval-panel eval-feedback-card">
               <h3>Áreas por mejorar</h3>
               {(evaluation.improvement_areas ?? []).length ? (
                 <ul>
-                  {evaluation.improvement_areas.map((item) => <li key={item}>↗ {item}</li>)}
+                  {evaluation.improvement_areas.map((item) => (
+                    <li key={item}>↗ {item}</li>
+                  ))}
                 </ul>
               ) : (
-                <p className="eval-row-copy"><small>Sin áreas capturadas.</small></p>
+                <p className="eval-row-copy">
+                  <small>Sin áreas capturadas.</small>
+                </p>
               )}
             </article>
           </section>
 
           {evaluation.coach_message ? (
             <section className="eval-panel eval-config-section">
-              <header><div><h2>Comentario de tu coach</h2></div></header>
+              <header>
+                <div>
+                  <h2>Comentario de tu coach</h2>
+                </div>
+              </header>
               <p style={{ color: "#b8c1cd", fontSize: 11, lineHeight: 1.7 }}>
                 {evaluation.coach_message}
               </p>
@@ -470,7 +489,11 @@ export default async function TechnicalEvaluationDetailPage({
 
           {evaluation.next_objective ? (
             <section className="eval-panel eval-config-section">
-              <header><div><h2>Próximo objetivo</h2></div></header>
+              <header>
+                <div>
+                  <h2>Próximo objetivo</h2>
+                </div>
+              </header>
               <p style={{ color: "#b8c1cd", fontSize: 11, lineHeight: 1.7 }}>
                 {evaluation.next_objective}
               </p>
