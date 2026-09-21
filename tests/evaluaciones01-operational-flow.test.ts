@@ -29,6 +29,15 @@ const studentReadModels = readFileSync(
   "utf8",
 );
 const adminDashboard = readFileSync(join(process.cwd(), "app/admin/evaluaciones/page.tsx"), "utf8");
+const adminToday = readFileSync(join(process.cwd(), "app/admin/page.tsx"), "utf8");
+const adminSessionOperations = readFileSync(
+  join(process.cwd(), "app/admin/hoy/SessionOperations.tsx"),
+  "utf8",
+);
+const adminSessionDetail = readFileSync(
+  join(process.cwd(), "app/admin/agenda/[sessionId]/page.tsx"),
+  "utf8",
+);
 const adminProfile = readFileSync(
   join(process.cwd(), "app/admin/alumnas/[studentId]/StudentEvaluationsPanel.tsx"),
   "utf8",
@@ -136,7 +145,8 @@ describe("EVALUACIONES-01 operational cycle", () => {
     expect(studentSchedule).toContain("Comprar un paquete");
     expect(studentSchedule).toContain('"enrollment_required"');
     expect(studentSchedule).toContain('"student_enrollment_checkout_requirement"');
-    expect(studentSchedule).toContain("Se agregará automáticamente al mismo pago");
+    expect(studentSchedule).toContain("No necesitas hacer una compra separada");
+    expect(studentSchedule).toContain('buttonLabel="Pagar inscripción"');
     expect(enrollmentCheckout).toContain("public.student_create_evaluation_checkout_attempt");
     expect(enrollmentCheckout).toContain("extra_fulfillment_snapshot");
     expect(enrollmentCheckout).toContain("insert into public.student_enrollments");
@@ -148,6 +158,16 @@ describe("EVALUACIONES-01 operational cycle", () => {
     expect(studentEvaluationCheckout).toContain('"reconcile-mercadopago-order"');
     expect(studentEvaluationCheckout).toContain('"student_schedule_evaluation"');
     expect(studentEvaluationCheckout).toContain("Evaluación programada");
+  });
+
+  it("distinguishes evaluation reservations from normal class reservations for coaches", () => {
+    expect(adminToday).toContain('"evaluation_invitations"');
+    expect(adminToday).toContain("evaluationCount");
+    expect(adminToday).toContain("evaluationStatus");
+    expect(adminSessionDetail).toContain('"evaluation_invitations"');
+    expect(adminSessionDetail).toContain("evaluationStatus");
+    expect(adminSessionOperations).toContain("Evaluación programada");
+    expect(adminSessionOperations).toContain("Evaluación en curso");
   });
 
   it("renders both final student result states", () => {
