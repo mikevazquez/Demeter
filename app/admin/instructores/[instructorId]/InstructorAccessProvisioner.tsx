@@ -19,6 +19,7 @@ const errorCopy: Record<string, string> = {
   temporary_password_reset_closed:
     "El instructor ya completó su activación. Ya no se puede regenerar la contraseña temporal.",
   auth_password_reset_failed: "Supabase Auth no pudo generar una nueva contraseña temporal.",
+  access_reset_state_failed: "No se pudo preparar la cuenta para el cambio obligatorio de contraseña.",
   unauthenticated: "Tu sesión administrativa expiró. Vuelve a iniciar sesión.",
   forbidden: "Tu cuenta no tiene permiso para habilitar accesos.",
   authorization_failed: "No se pudo validar tu permiso administrativo.",
