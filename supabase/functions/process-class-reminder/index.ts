@@ -24,7 +24,9 @@ function safeText(value: unknown) {
 }
 
 function joinName(firstName: unknown, lastName: unknown) {
-  return [safeText(firstName), safeText(lastName)].filter(Boolean).join(" ") || null;
+  return (
+    [safeText(firstName), safeText(lastName)].filter(Boolean).join(" ") || null
+  );
 }
 
 function isValidWhatsAppRecipient(recipient: string | null | undefined) {
@@ -89,29 +91,32 @@ async function loadContext(adminClient: SupabaseClient, reservationId: string) {
     .eq("id", reservationId)
     .maybeSingle();
 
-  if (reservationError || !reservation) return { error: "reservation_not_found" as const };
+  if (reservationError || !reservation) {
+    return { error: "reservation_not_found" as const };
+  }
 
-  const [{ data: student }, { data: session }, { data: studio }] = await Promise.all([
-    reservation.student_id
+  const [{ data: student }, { data: session }, { data: studio }] =
+    await Promise.all([
+      reservation.student_id
       ? adminClient
           .from("students")
           .select("id,full_name,phone,active,lifecycle_status")
           .eq("id", reservation.student_id)
           .eq("studio_id", reservation.studio_id)
           .maybeSingle()
-      : Promise.resolve({ data: null }),
-    adminClient
-      .from("class_sessions")
+        : Promise.resolve({ data: null }),
+      adminClient
+        .from("class_sessions")
       .select("id,template_id,instructor_id,space_id,starts_at,status")
       .eq("id", reservation.session_id)
       .eq("studio_id", reservation.studio_id)
-      .maybeSingle(),
-    adminClient
-      .from("studios")
+        .maybeSingle(),
+      adminClient
+        .from("studios")
       .select("id,name,timezone")
       .eq("id", reservation.studio_id)
-      .maybeSingle(),
-  ]);
+        .maybeSingle(),
+    ]);
 
   const { data: template } = session
     ? await adminClient
@@ -198,10 +203,10 @@ const handler = {
     );
     if (!dispatchToken) return jsonResponse({ error: "unauthenticated" }, 401);
 
-    const { data: dispatchAuthorized, error: dispatchAuthError } = await adminClient.rpc(
-      "verify_automation_dispatch_token",
-      { p_token: dispatchToken },
-    );
+    const { data: dispatchAuthorized, error: dispatchAuthError } =
+      await adminClient.rpc("verify_automation_dispatch_token", {
+        p_token: dispatchToken,
+      });
 
     if (dispatchAuthError || dispatchAuthorized !== true) {
       return jsonResponse({ error: "forbidden" }, 403);
@@ -220,7 +225,12 @@ const handler = {
     }
 
     if (await isConsumed(adminClient, eventId)) {
-      return jsonResponse({ ok: true, outcome: "accepted", reused: true, eventId });
+      return jsonResponse({
+        ok: true,
+        outcome: "accepted",
+        reused: true,
+        eventId,
+      });
     }
 
     const { data: event, error: eventError } = await adminClient
@@ -233,7 +243,10 @@ const handler = {
       return jsonResponse({ error: "class_reminder_event_not_found" }, 404);
     }
 
-    if (event.event_type !== "class.reminder_due" || event.source_entity_type !== "reservation") {
+    if (
+      event.event_type !== "class.reminder_due" ||
+      event.source_entity_type !== "reservation"
+    ) {
       return jsonResponse({ error: "class_reminder_event_invalid" }, 409);
     }
 
@@ -268,7 +281,8 @@ const handler = {
 
     const variables = formatReminderVariables({
       studentName: contextData.student?.full_name ?? "",
-      discipline: contextData.discipline?.name ?? contextData.template?.name ?? "",
+      discipline:
+        contextData.discipline?.name ?? contextData.template?.name ?? "",
       startsAt: contextData.session?.starts_at ?? new Date().toISOString(),
       timeZone: contextData.studio?.timezone ?? "UTC",
       coach: contextData.coach,
@@ -305,7 +319,8 @@ const handler = {
       outcome: "error",
       eventId,
       errorCode: providerResult.errorCode,
-      retryable: providerResult.status === "skipped" ? true : providerResult.retryable,
+      retryable:
+        providerResult.status === "skipped" ? true : providerResult.retryable,
     });
   }),
 };
