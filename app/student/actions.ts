@@ -205,14 +205,23 @@ function normalizeGuestIdentityName(value: string) {
   return value.trim().replace(/\s+/g, " ").toLocaleLowerCase("es-MX");
 }
 
+function normalizeMexicanPhone(value: string) {
+  const digits = value.replace(/\D/g, "");
+  return digits.length === 10 ? `+52${digits}` : null;
+}
+
 export async function createGuestInvitationAction(formData: FormData) {
   const reservationId = String(formData.get("reservation_id") ?? "").trim();
   const guestName = String(formData.get("guest_name") ?? "").trim();
-  const guestPhone = String(formData.get("guest_phone") ?? "").trim();
+  const guestPhoneInput = String(formData.get("guest_phone") ?? "").trim();
 
   if (!reservationId) redirect("/student/mis-clases?error=reservation_required");
 
   const detailPath = `/student/mis-clases/${reservationId}`;
+  const guestPhone = normalizeMexicanPhone(guestPhoneInput);
+  if (!guestPhone) {
+    redirect(`${detailPath}?invite=1&invite_error=guest_phone_invalid`);
+  }
   const { supabase } = await getStudentPortalContext();
   const { data: lookupData, error: lookupError } = await supabase.rpc(
     "student_guest_invitation_contact_lookup",
@@ -255,6 +264,39 @@ export async function createGuestInvitationAction(formData: FormData) {
     normalizeGuestIdentityName(contactLookup.display_name) !== normalizeGuestIdentityName(guestName)
   ) {
     redirect(`${detailPath}?invite=1&contact_match=${encodeURIComponent(contactLookup.person_id)}`);
+  }
+
+  if (contactLookup?.found && contactLookup.person_id) {
+    const { data, error } = await supabase.rpc("student_create_guest_invitation_existing", {
+      target_host_reservation_id: reservationId,
+      target_guest_person_id: contactLookup.person_id,
+    });
+
+    if (error) {
+      redirect(
+        `${detailPath}?invite=1&invite_error=${encodeURIComponent(
+          errorCode(error, "invite_failed"),
+        )}`,
+      );
+    }
+
+    const result = data as {
+      ok?: boolean;
+      reason_code?: string | null;
+      invitation_id?: string;
+    } | null;
+
+    if (!result?.ok || !result.invitation_id) {
+      redirect(
+        `${detailPath}?invite=1&invite_error=${encodeURIComponent(
+          result?.reason_code ?? "invite_failed",
+        )}`,
+      );
+    }
+
+    revalidateStudentBookingSurfaces();
+    revalidatePath(detailPath);
+    redirect(detailPath);
   }
 
   const { data, error } = await supabase.rpc("student_create_guest_invitation", {
