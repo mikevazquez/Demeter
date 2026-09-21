@@ -81,7 +81,6 @@ export async function sendAsistianHandshake(formData: FormData) {
   );
 }
 
-
 export async function saveAsistianSigningSecret(formData: FormData) {
   const { supabase, studio } = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
 
