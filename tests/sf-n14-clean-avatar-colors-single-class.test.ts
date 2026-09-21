@@ -13,6 +13,7 @@ describe("SF-N14 clean avatar, activity colors and single-class purchase", () =>
   const studentActions = source("app/student/actions.ts");
   const avatarRoute = source("app/student/perfil/avatar/route.ts");
   const agenda = source("app/admin/agenda/page.tsx");
+  const agendaConfiguration = source("app/admin/agenda/configuracion/page.tsx");
   const agendaActions = source("app/admin/agenda/recurring-actions.ts");
   const reserve = source("app/student/reservar/page.tsx");
   const detail = source("app/student/reservar/[sessionId]/page.tsx");
@@ -56,8 +57,8 @@ describe("SF-N14 clean avatar, activity colors and single-class purchase", () =>
     expect(colorMigration).toContain("add column if not exists color_hex");
     expect(agendaActions).toContain("updateActivityColor");
     expect(agendaActions).toContain(".update({ color_hex: colorHex })");
-    expect(agenda).toContain('type="color"');
-    expect(agenda).toContain("borderLeftColor: template?.color_hex");
+    expect(agendaConfiguration).toContain('type="color"');
+    expect(agenda).toContain('"--agenda-session-color": session.color');
     expect(reserve).toContain("borderLeftColor: activityColor");
     expect(detail).toContain('select("color_hex")');
     expect(detail).toContain("activityColor");

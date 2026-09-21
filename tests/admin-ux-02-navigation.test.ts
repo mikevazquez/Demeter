@@ -16,6 +16,7 @@ describe("ADMIN-UX-02 navigation architecture", () => {
   const styles = source("app/globals.css");
   const today = source("app/admin/page.tsx");
   const agenda = source("app/admin/agenda/page.tsx");
+  const agendaConfiguration = source("app/admin/agenda/configuracion/page.tsx");
 
   it("uses durable entities as the desktop navigation architecture", () => {
     for (const label of ["Hoy", "Agenda", "Alumnas", "Productos", "Equipo", "Automatizaciones"]) {
@@ -69,7 +70,7 @@ describe("ADMIN-UX-02 navigation architecture", () => {
     expect(today).not.toContain(">Crear reserva<");
     expect(today).not.toContain(">Crear clase<");
     expect(agenda).toContain('id="clases-programadas"');
-    expect(agenda).toContain('id="programar-clase"');
+    expect(agendaConfiguration).toContain('id="programar-clase"');
     expect(layout).not.toContain('label: "Ventas"');
   });
 
