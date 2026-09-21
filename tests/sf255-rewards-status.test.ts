@@ -52,6 +52,13 @@ const cancellationPage = readFileSync(
   join(process.cwd(), "app/student/mis-clases/[reservationId]/cancelar/page.tsx"),
   "utf8",
 );
+const guestCancellationPage = readFileSync(
+  join(
+    process.cwd(),
+    "app/student/mis-clases/[reservationId]/invitacion/[invitationId]/cancelar/page.tsx",
+  ),
+  "utf8",
+);
 const singleClassPurchase = readFileSync(
   join(process.cwd(), "app/student/reservar/PurchaseSingleClassButton.tsx"),
   "utf8",
@@ -192,16 +199,17 @@ describe("SF-255A monthly level and waitlist contracts", () => {
     expect(cancellationPage).toContain("Sí, cancelar mi reserva y la invitación");
   });
 
-  it("warns before a guest invitation cancellation and explains late consumption", () => {
-    expect(reservationDetail).toContain("cancel_invite");
-    expect(reservationDetail).toContain("student_cancellation_preview");
-    expect(reservationDetail).toContain("Estás fuera del horario de cancelación");
-    expect(reservationDetail).toContain("perderá su lugar en esta clase");
-    expect(reservationDetail).toContain(
+  it("routes guest invitation cancellation through a dedicated warning screen", () => {
+    expect(reservationDetail).toContain("/invitacion/");
+    expect(reservationDetail).toContain("/cancelar");
+    expect(guestCancellationPage).toContain("student_cancellation_preview");
+    expect(guestCancellationPage).toContain("Estás fuera del horario de cancelación");
+    expect(guestCancellationPage).toContain("perderá su lugar en esta clase");
+    expect(guestCancellationPage).toContain(
       "la invitación se consumirá. No regresará a tu saldo de este mes.",
     );
-    expect(reservationDetail).toContain("Sí, cancelar y consumir invitación");
-    expect(reservationDetail).toContain("No, mantener invitación");
+    expect(guestCancellationPage).toContain("Sí, cancelar y consumir invitación");
+    expect(guestCancellationPage).toContain("No, mantener invitación");
   });
 
   it("snapshots the approved level discount into checkout and surfaces M05 pricing", () => {
