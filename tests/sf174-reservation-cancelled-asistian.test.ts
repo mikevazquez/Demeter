@@ -15,7 +15,7 @@ function source(path: string) {
 describe("SF-174 reservation_cancelled Asistian routing", () => {
   const processor = source("supabase/functions/process-booking-cancelled/index.ts");
   const migration = source(
-    "supabase/migrations/20260921063500_sf174_booking_cancelled_dispatch.sql",
+    "supabase/migrations/20260921063752_sf174_booking_cancelled_dispatch.sql",
   );
 
   it("emits one canonical booking.cancelled event from reservation state transition", () => {
