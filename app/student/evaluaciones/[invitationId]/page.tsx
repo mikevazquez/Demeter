@@ -6,6 +6,24 @@ import { formatDate, getStudentPortalContext } from "@/lib/student/portal";
 import PendingActionButton from "../../components/PendingActionButton";
 import { respondEvaluationInvitationAction } from "../actions";
 
+type InvitationDetail = {
+  id: string;
+  student_id: string;
+  discipline_id: string;
+  discipline_name: string;
+  discipline_level_id: string;
+  level_title: string;
+  invitation_kind: "first" | "periodic";
+  status: string;
+  window_start: string;
+  window_end: string;
+  cadence_months: number;
+  reservation_id: string | null;
+  offered_at: string;
+  scheduled_at: string | null;
+  scheduled_starts_at: string | null;
+};
+
 const errorCopy: Record<string, string> = {
   evaluation_response_invalid: "No pudimos registrar tu respuesta.",
   evaluation_response_failed: "No pudimos registrar tu respuesta. Intenta de nuevo.",
@@ -23,43 +41,19 @@ export default async function EvaluationInvitationPage({
 }) {
   const { invitationId } = await params;
   const qs = await searchParams;
-  const { supabase, snapshot, studio } = await getStudentPortalContext();
+  const { supabase, studio } = await getStudentPortalContext();
 
-  const { data: invitation } = await supabase
-    .from("evaluation_invitations")
-    .select(
-      "id,student_id,discipline_id,discipline_level_id,invitation_kind,status,window_start,window_end,cadence_months",
-    )
-    .eq("id", invitationId)
-    .eq("studio_id", snapshot.profile.studio_id)
-    .eq("student_id", snapshot.profile.student_id)
-    .maybeSingle();
+  const { data, error } = await supabase.rpc("student_evaluation_invitation_detail", {
+    p_invitation_id: invitationId,
+  });
 
-  if (!invitation) notFound();
+  if (error || !data) notFound();
+
+  const invitation = data as InvitationDetail;
 
   if (invitation.status === "pending_schedule") {
-    redirect(`/student/evaluaciones/${invitation.id}/programar`);
+    redirect("/student/evaluaciones/" + invitation.id + "/programar");
   }
-
-  const [{ data: discipline }, { data: levelLink }] = await Promise.all([
-    supabase.from("disciplines").select("name").eq("id", invitation.discipline_id).maybeSingle(),
-    supabase
-      .from("discipline_technical_levels")
-      .select("technical_level_id")
-      .eq("id", invitation.discipline_level_id)
-      .maybeSingle(),
-  ]);
-
-  const { data: level } = levelLink?.technical_level_id
-    ? await supabase
-        .from("technical_level_definitions")
-        .select("title")
-        .eq("id", levelLink.technical_level_id)
-        .maybeSingle()
-    : { data: null };
-
-  const disciplineName = discipline?.name ?? "Disciplina";
-  const levelName = level?.title ?? "Nivel técnico";
 
   return (
     <main className="space-y-5 pb-4">
@@ -79,7 +73,7 @@ export default async function EvaluationInvitationPage({
           </span>
 
           <h1 className="mt-4 text-3xl font-semibold tracking-tight text-white">
-            {disciplineName}
+            {invitation.discipline_name}
           </h1>
           <p className="mt-1 text-sm text-zinc-400">Tu próxima evaluación está lista.</p>
 
@@ -92,7 +86,9 @@ export default async function EvaluationInvitationPage({
                 <p className="text-[10px] uppercase tracking-[0.14em] text-zinc-500">
                   Nivel a evaluar
                 </p>
-                <strong className="mt-1 block text-sm text-white">{levelName}</strong>
+                <strong className="mt-1 block text-sm text-white">
+                  {invitation.level_title}
+                </strong>
               </div>
             </div>
 
@@ -130,9 +126,11 @@ export default async function EvaluationInvitationPage({
                 ◷
               </span>
               <div>
-                <p className="text-[10px] uppercase tracking-[0.14em] text-zinc-500">Duración</p>
+                <p className="text-[10px] uppercase tracking-[0.14em] text-zinc-500">
+                  Cómo funciona
+                </p>
                 <strong className="mt-1 block text-sm text-white">
-                  Durante tu clase regular
+                  Se realiza dentro de una clase regular que tú eliges.
                 </strong>
               </div>
             </div>
@@ -171,7 +169,9 @@ export default async function EvaluationInvitationPage({
           </div>
         ) : invitation.status === "scheduled" ? (
           <div className="border-t border-white/10 p-5 sm:p-6">
-            <p className="text-sm font-semibold text-emerald-300">Tu evaluación ya está programada.</p>
+            <p className="text-sm font-semibold text-emerald-300">
+              Tu evaluación ya está programada.
+            </p>
             <Link
               href="/student/evaluaciones"
               className="mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-2xl bg-fuchsia-600 px-4 text-sm font-semibold text-white"
