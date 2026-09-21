@@ -2,7 +2,7 @@ import Link from "next/link";
 
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getAdminContext } from "@/lib/auth/admin-context";
-import { SessionOperations } from "./hoy/SessionOperations";
+import { TodayClasses, type TodayClassItem } from "./hoy/TodayClasses";
 
 type EligibilityResult = {
   eligible?: boolean;
@@ -17,6 +17,8 @@ const eligibilityCopy: Record<string, string> = {
   already_reserved: "ya reservada",
   session_full: "clase llena",
   no_active_product: "sin paquete activo",
+  enrollment_required: "inscripción no vigente",
+  payment_pending: "pago pendiente",
   outside_product: "fuera de paquete",
   no_credits: "sin créditos",
 };
@@ -101,8 +103,57 @@ function selectedDayLabel(value: Date, isToday: boolean) {
     timeZone: "UTC",
     weekday: "long",
     day: "numeric",
-    month: "short",
+    month: "long",
   }).format(value)}`;
+}
+
+function KpiIcon({ kind }: { kind: "classes" | "students" | "sales" | "reservations" }) {
+  const common = {
+    width: 22,
+    height: 22,
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: 1.8,
+    strokeLinecap: "round" as const,
+    strokeLinejoin: "round" as const,
+    "aria-hidden": true,
+  };
+
+  if (kind === "classes") {
+    return (
+      <svg {...common}>
+        <rect x="3" y="5" width="18" height="16" rx="2" />
+        <path d="M7 3v4M17 3v4M3 10h18" />
+      </svg>
+    );
+  }
+
+  if (kind === "students") {
+    return (
+      <svg {...common}>
+        <circle cx="9" cy="8" r="3" />
+        <path d="M3.5 20c.6-4 2.6-6 5.5-6s4.9 2 5.5 6" />
+        <path d="M16 7.5a2.5 2.5 0 0 1 0 5M17 15c2.2.6 3.4 2.3 3.8 5" />
+      </svg>
+    );
+  }
+
+  if (kind === "sales") {
+    return (
+      <svg {...common}>
+        <path d="M5 20V12M12 20V7M19 20V3" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg {...common}>
+      <circle cx="12" cy="12" r="8" />
+      <path d="M12 8v4l3 2" />
+      <path d="M17.5 6.5 19 5" />
+    </svg>
+  );
 }
 
 export default async function AdminPage({
@@ -110,8 +161,20 @@ export default async function AdminPage({
 }: {
   searchParams: Promise<{ error?: string; created?: string; date?: string }>;
 }) {
-  const { supabase, user, studio, can } = await getAdminContext();
+  const { supabase, studio, can, user } = await getAdminContext();
   const params = await searchParams;
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("full_name")
+    .eq("id", user.id)
+    .maybeSingle();
+  const headerName = profile?.full_name?.trim() || user.email?.split("@")[0] || "Usuario";
+  const headerInitials =
+    headerName
+      .split(/\s+/)
+      .slice(0, 2)
+      .map((part: string) => part.slice(0, 1).toUpperCase())
+      .join("") || "U";
   const timeZone = studio.timezone ?? "America/Mexico_City";
   const now = new Date();
   const todayKey = localDateKey(now, timeZone);
@@ -119,8 +182,8 @@ export default async function AdminPage({
   const selectedKey = utcDateKey(selectedDate);
   const weekStart = weekStartMonday(selectedDate);
   const weekDays = Array.from({ length: 7 }, (_, index) => shiftUtcDays(weekStart, index));
-  const previousWeekKey = utcDateKey(shiftUtcDays(selectedDate, -7));
-  const nextWeekKey = utcDateKey(shiftUtcDays(selectedDate, 7));
+  const previousWeekKey = utcDateKey(shiftUtcDays(weekStart, -7));
+  const nextWeekKey = utcDateKey(shiftUtcDays(weekStart, 7));
   const weekEnd = shiftUtcDays(weekStart, 6);
 
   const offsetName =
@@ -144,23 +207,14 @@ export default async function AdminPage({
   const canWriteAttendance = can(CAPABILITIES.ATTENDANCE_WRITE);
 
   const [
-    { data: profile },
-    { data: todaySessions },
     { data: selectedSessions },
     { count: activeStudents },
     { data: salesToday },
+    { data: students },
   ] = await Promise.all([
-    supabase.from("profiles").select("full_name").eq("id", user.id).maybeSingle(),
     supabase
       .from("class_sessions")
-      .select("id,starts_at,capacity,status,template_id")
-      .eq("studio_id", studio.id)
-      .gte("starts_at", todayStart.toISOString())
-      .lt("starts_at", todayEnd.toISOString())
-      .order("starts_at", { ascending: true }),
-    supabase
-      .from("class_sessions")
-      .select("id,starts_at,capacity,status,template_id")
+      .select("id,starts_at,capacity,status,template_id,instructor_id,space_id")
       .eq("studio_id", studio.id)
       .gte("starts_at", selectedStart.toISOString())
       .lt("starts_at", selectedEnd.toISOString())
@@ -176,31 +230,6 @@ export default async function AdminPage({
       .eq("studio_id", studio.id)
       .gte("created_at", todayStart.toISOString())
       .lt("created_at", todayEnd.toISOString()),
-  ]);
-
-  const sessionIds = (selectedSessions ?? []).map((session) => session.id);
-  const templateIds = [...new Set((selectedSessions ?? []).map((session) => session.template_id))];
-  const [{ data: reservations }, { data: templates }, { data: students }] = await Promise.all([
-    sessionIds.length
-      ? supabase
-          .from("reservations")
-          .select("id,session_id,student_id,guest_person_id,status,acquisition_id")
-          .in("session_id", sessionIds)
-          .in("status", ["reserved", "attended", "no_show"])
-          .order("booked_at")
-      : Promise.resolve({
-          data: [] as {
-            id: string;
-            session_id: string;
-            student_id: string | null;
-            guest_person_id: string | null;
-            status: string;
-            acquisition_id: string | null;
-          }[],
-        }),
-    templateIds.length
-      ? supabase.from("class_templates").select("id,name").in("id", templateIds)
-      : Promise.resolve({ data: [] as { id: string; name: string }[] }),
     supabase
       .from("students")
       .select("id,full_name")
@@ -210,26 +239,73 @@ export default async function AdminPage({
       .order("full_name"),
   ]);
 
-  const studentMap = new Map((students ?? []).map((item) => [item.id, item.full_name]));
-  const guestPersonIds = [
-    ...new Set((reservations ?? []).map((item) => item.guest_person_id).filter(Boolean)),
+  const sessionIds = (selectedSessions ?? []).map((session) => session.id);
+  const templateIds = [...new Set((selectedSessions ?? []).map((session) => session.template_id))];
+  const instructorIds = [
+    ...new Set((selectedSessions ?? []).map((session) => session.instructor_id).filter(Boolean)),
   ] as string[];
-  const { data: guestPersons } = guestPersonIds.length
+  const spaceIds = [
+    ...new Set((selectedSessions ?? []).map((session) => session.space_id).filter(Boolean)),
+  ] as string[];
+
+  const [{ data: reservations }, { data: templates }, { data: instructors }, { data: spaces }] =
+    await Promise.all([
+      sessionIds.length
+        ? supabase
+            .from("reservations")
+            .select("id,session_id,student_id,guest_person_id,status,acquisition_id")
+            .in("session_id", sessionIds)
+            .in("status", ["reserved", "attended", "no_show"])
+            .order("booked_at")
+        : Promise.resolve({
+            data: [] as {
+              id: string;
+              session_id: string;
+              student_id: string | null;
+              guest_person_id: string | null;
+              status: string;
+              acquisition_id: string | null;
+            }[],
+          }),
+      templateIds.length
+        ? supabase.from("class_templates").select("id,name,color_hex").in("id", templateIds)
+        : Promise.resolve({
+            data: [] as { id: string; name: string; color_hex: string | null }[],
+          }),
+      instructorIds.length
+        ? supabase.from("instructors").select("id,person_id").in("id", instructorIds)
+        : Promise.resolve({ data: [] as { id: string; person_id: string }[] }),
+      spaceIds.length
+        ? supabase.from("spaces").select("id,name").in("id", spaceIds)
+        : Promise.resolve({ data: [] as { id: string; name: string }[] }),
+    ]);
+
+  const guestPersonIds = [
+    ...new Set(
+      (reservations ?? []).map((reservation) => reservation.guest_person_id).filter(Boolean),
+    ),
+  ] as string[];
+  const personIds = [
+    ...new Set([
+      ...(instructors ?? []).map((instructor) => instructor.person_id),
+      ...guestPersonIds,
+    ]),
+  ];
+
+  const { data: persons } = personIds.length
     ? await supabase
         .from("persons")
         .select("id,first_name,last_name")
         .eq("studio_id", studio.id)
-        .in("id", guestPersonIds)
-    : { data: [] as { id: string; first_name: string | null; last_name: string | null }[] };
-  const guestNameMap = new Map(
-    (guestPersons ?? []).map((person) => [
-      person.id,
-      [person.first_name, person.last_name].filter(Boolean).join(" ") || "Invitado",
-    ]),
-  );
+        .in("id", personIds)
+    : {
+        data: [] as { id: string; first_name: string | null; last_name: string | null }[],
+      };
 
   const acquisitionIds = [
-    ...new Set((reservations ?? []).map((item) => item.acquisition_id).filter(Boolean)),
+    ...new Set(
+      (reservations ?? []).map((reservation) => reservation.acquisition_id).filter(Boolean),
+    ),
   ] as string[];
   const { data: acquisitions } = acquisitionIds.length
     ? await supabase
@@ -244,10 +320,12 @@ export default async function AdminPage({
           unlimited: boolean;
         }[],
       };
+
   const productIds = [...new Set((acquisitions ?? []).map((item) => item.product_template_id))];
   const { data: products } = productIds.length
     ? await supabase.from("product_templates").select("id,name").in("id", productIds)
     : { data: [] as { id: string; name: string }[] };
+
   const balances = await Promise.all(
     (acquisitions ?? []).map(async (acquisition) => {
       if (acquisition.unlimited) return [acquisition.id, null] as const;
@@ -258,10 +336,25 @@ export default async function AdminPage({
     }),
   );
 
-  const templateMap = new Map((templates ?? []).map((item) => [item.id, item.name]));
+  const templateMap = new Map((templates ?? []).map((item) => [item.id, item]));
+  const personMap = new Map(
+    (persons ?? []).map((person) => [
+      person.id,
+      [person.first_name, person.last_name].filter(Boolean).join(" ") || "Persona",
+    ]),
+  );
+  const instructorMap = new Map(
+    (instructors ?? []).map((instructor) => [
+      instructor.id,
+      personMap.get(instructor.person_id) ?? "Instructor",
+    ]),
+  );
+  const spaceMap = new Map((spaces ?? []).map((space) => [space.id, space.name]));
+  const studentMap = new Map((students ?? []).map((student) => [student.id, student.full_name]));
   const acquisitionMap = new Map((acquisitions ?? []).map((item) => [item.id, item]));
   const productMap = new Map((products ?? []).map((item) => [item.id, item.name]));
   const balanceMap = new Map(balances);
+
   const reservationsBySession = new Map<string, typeof reservations>();
   for (const reservation of reservations ?? []) {
     const list = reservationsBySession.get(reservation.session_id) ?? [];
@@ -269,24 +362,13 @@ export default async function AdminPage({
     reservationsBySession.set(reservation.session_id, list);
   }
 
-  const operationsBySession = new Map<
-    string,
-    {
-      roster: {
-        id: string;
-        studentName: string;
-        status: string;
-        packageLabel: string;
-        creditsLabel: string;
-        expiresLabel: string;
-      }[];
-      candidates: { id: string; fullName: string; eligible: boolean; detail: string }[];
-    }
-  >();
+  const classes: TodayClassItem[] = [];
 
   for (const session of selectedSessions ?? []) {
     const sessionReservations = reservationsBySession.get(session.id) ?? [];
-    const bookedIds = new Set(sessionReservations.map((item) => item.student_id).filter(Boolean));
+    const bookedIds = new Set(
+      sessionReservations.map((reservation) => reservation.student_id).filter(Boolean),
+    );
     const candidates = (students ?? []).filter((student) => !bookedIds.has(student.id));
     const eligibilityEntries = canWriteSchedule
       ? await Promise.all(
@@ -300,8 +382,25 @@ export default async function AdminPage({
         )
       : [];
     const eligibilityMap = new Map(eligibilityEntries);
+    const template = templateMap.get(session.template_id);
+    const occupied = sessionReservations.filter((reservation) =>
+      occupyingReservationStatuses.has(reservation.status),
+    ).length;
 
-    operationsBySession.set(session.id, {
+    classes.push({
+      id: session.id,
+      time: formatTime(session.starts_at, timeZone),
+      name: template?.name ?? "Clase",
+      instructor: session.instructor_id
+        ? (instructorMap.get(session.instructor_id) ?? "Instructor")
+        : "Sin instructor",
+      space: session.space_id ? (spaceMap.get(session.space_id) ?? "Espacio") : "Sin espacio",
+      occupied,
+      capacity: session.capacity,
+      color: template?.color_hex ?? "#FF0A8A",
+      sessionStatus: session.status,
+      available: Math.max(session.capacity - occupied, 0),
+      returnTo: `/admin?date=${selectedKey}#session-${session.id}`,
       roster: sessionReservations.map((reservation) => {
         const isGuest = Boolean(reservation.guest_person_id);
         const acquisition = reservation.acquisition_id
@@ -310,10 +409,11 @@ export default async function AdminPage({
         const balance = reservation.acquisition_id
           ? balanceMap.get(reservation.acquisition_id)
           : null;
+
         return {
           id: reservation.id,
           studentName: isGuest
-            ? (guestNameMap.get(reservation.guest_person_id!) ?? "Invitado")
+            ? (personMap.get(reservation.guest_person_id!) ?? "Invitado")
             : reservation.student_id
               ? (studentMap.get(reservation.student_id) ?? "Alumna")
               : "Alumna",
@@ -328,7 +428,7 @@ export default async function AdminPage({
             : acquisition?.unlimited
               ? "Ilimitado"
               : acquisition
-                ? `${balance ?? 0} créditos disponibles`
+                ? `${balance ?? 0} créditos`
                 : "—",
           expiresLabel: isGuest ? "Misma clase" : formatExpiry(acquisition?.expires_on ?? null),
         };
@@ -352,7 +452,11 @@ export default async function AdminPage({
     });
   }
 
-  const firstName = profile?.full_name?.trim().split(/\s+/)[0] || "Mike";
+  const totalDailyCapacity = classes.reduce((sum, item) => sum + item.capacity, 0);
+  const totalDailyReservations = classes.reduce((sum, item) => sum + item.occupied, 0);
+  const dailyReservationPercentage =
+    totalDailyCapacity > 0 ? Math.round((totalDailyReservations / totalDailyCapacity) * 100) : 0;
+
   const visibleSales = (salesToday ?? []).filter((sale) => sale.status !== "voided");
   const salesTotalMinor = visibleSales.reduce((sum, sale) => sum + (sale.total_minor ?? 0), 0);
   const salesTotal = new Intl.NumberFormat("es-MX", {
@@ -362,149 +466,131 @@ export default async function AdminPage({
   }).format(salesTotalMinor / 100);
 
   return (
-    <main className="dashboard-shell hoy-dashboard">
-      <header className="hoy-overview-header">
-        <div>
-          <h1>Hola, {firstName}</h1>
-          <p>Aquí tienes un resumen de hoy.</p>
+    <main className="dashboard-shell hoy-dashboard hoy-approved">
+      <header className="hoy-product-header">
+        <div className="hoy-product-wordmark" aria-label="Studio Flow">
+          <span>
+            STUDIO <b>FLOW</b>
+          </span>
+          <small>MOVIMIENTO QUE TRANSFORMA</small>
         </div>
-        <details className="admin-quick-menu">
-          <summary>
-            <span aria-hidden="true">＋</span>
-            Acción rápida
-            <span aria-hidden="true">⌄</span>
-          </summary>
-          <div className="admin-quick-popover">
-            {canWriteStudents ? <Link href="/admin/alumnas#alta-rapida">Nueva alumna</Link> : null}
-            {canWriteSales ? <Link href="/admin/ventas/nueva">Registrar venta</Link> : null}
-            {canWriteSchedule ? (
-              <Link href="/admin/agenda#clases-programadas">Crear reserva</Link>
-            ) : null}
-            {canWriteSchedule ? (
-              <Link href="/admin/agenda#programar-clase">Crear clase</Link>
-            ) : null}
-          </div>
-        </details>
+        <span className="hoy-product-avatar" aria-label={headerName}>
+          {headerInitials}
+        </span>
       </header>
 
-      {params.created && !["attended", "no_show"].includes(params.created) ? (
-        <div className="notice success">
-          {params.created === "cancel"
-            ? "Reserva cancelada correctamente."
-            : "Reserva creada correctamente."}
-        </div>
-      ) : null}
+      <header className="hoy-title-block">
+        <h1>{selectedDayLabel(selectedDate, selectedKey === todayKey)}</h1>
+        <p>Administra, conecta, haz fluir.</p>
+      </header>
+
       {params.error ? (
         <div className="notice error">
           No se pudo completar la operación: {decodeURIComponent(params.error)}
         </div>
       ) : null}
 
-      <section className="mock-kpi-grid" aria-label="Resumen del estudio">
-        <article className="mock-kpi-card">
-          <div>
-            <span>Clases hoy</span>
-            <strong>{todaySessions?.length ?? 0}</strong>
-            <small>
-              {(todaySessions ?? []).filter((session) => session.status === "scheduled").length}{" "}
-              programadas
-            </small>
-          </div>
-          <b aria-hidden="true">▣</b>
-        </article>
-        <article className="mock-kpi-card">
-          <div>
-            <span>Alumnas activas</span>
+      <section className="hoy-week-card" aria-label="Calendario semanal">
+        <div className="hoy-week-heading">
+          <Link href={`/admin?date=${previousWeekKey}`} aria-label="Semana anterior">
+            ‹
+          </Link>
+          <strong>
+            {weekStart.getUTCDate()} {shortMonth(weekStart)} — {weekEnd.getUTCDate()}{" "}
+            {shortMonth(weekEnd)}
+          </strong>
+          <Link href={`/admin?date=${nextWeekKey}`} aria-label="Semana siguiente">
+            ›
+          </Link>
+        </div>
+
+        <nav className="mock-week-calendar">
+          {weekDays.map((day) => {
+            const key = utcDateKey(day);
+            const isSelected = key === selectedKey;
+            const isToday = key === todayKey;
+            return (
+              <Link
+                key={key}
+                href={`/admin?date=${key}`}
+                className={`mock-week-day${isSelected ? " is-selected" : ""}${isToday ? " is-today" : ""}`}
+                aria-current={isSelected ? "date" : undefined}
+              >
+                <span>{shortWeekday(day)}</span>
+                <strong>{day.getUTCDate()}</strong>
+              </Link>
+            );
+          })}
+        </nav>
+      </section>
+
+      <section className="hoy-kpi-grid" aria-label="Resumen del estudio">
+        <Link className="hoy-kpi-card" href={`/admin?date=${selectedKey}`}>
+          <span className="hoy-kpi-icon">
+            <KpiIcon kind="classes" />
+          </span>
+          <span>
+            <small>{selectedKey === todayKey ? "Clases hoy" : "Clases del día"}</small>
+            <strong>{selectedSessions?.length ?? 0}</strong>
+          </span>
+          <b aria-hidden="true">›</b>
+        </Link>
+
+        <Link className="hoy-kpi-card" href="/admin/alumnas">
+          <span className="hoy-kpi-icon">
+            <KpiIcon kind="students" />
+          </span>
+          <span>
+            <small>Alumnas activas</small>
             <strong>{activeStudents ?? 0}</strong>
-            <small>Expedientes activos</small>
-          </div>
-          <b aria-hidden="true">◎</b>
-        </article>
-        <article className="mock-kpi-card">
-          <div>
-            <span>Ventas hoy</span>
-            <strong>{salesTotal}</strong>
-            <small>{visibleSales.length} ventas</small>
-          </div>
-          <b aria-hidden="true">▤</b>
-        </article>
-      </section>
+          </span>
+          <b aria-hidden="true">›</b>
+        </Link>
 
-      <section className="mock-overview-grid">
-        <article className="mock-overview-card">
-          <div className="mock-card-heading mock-calendar-heading">
-            <h2>{selectedDayLabel(selectedDate, selectedKey === todayKey)}</h2>
-            <div className="mock-week-nav" aria-label="Cambiar semana">
-              <Link href={`/admin?date=${previousWeekKey}`} aria-label="Semana anterior">
-                ‹
-              </Link>
-              <span>
-                {weekStart.getUTCDate()} {shortMonth(weekStart)} — {weekEnd.getUTCDate()}{" "}
-                {shortMonth(weekEnd)}
-              </span>
-              <Link href={`/admin?date=${nextWeekKey}`} aria-label="Semana siguiente">
-                ›
-              </Link>
-            </div>
-          </div>
+        {canWriteSales ? (
+          <Link className="hoy-kpi-card" href="/admin/ventas">
+            <span className="hoy-kpi-icon">
+              <KpiIcon kind="sales" />
+            </span>
+            <span>
+              <small>Ventas hoy</small>
+              <strong>{salesTotal}</strong>
+            </span>
+            <b aria-hidden="true">›</b>
+          </Link>
+        ) : (
+          <article className="hoy-kpi-card">
+            <span className="hoy-kpi-icon">
+              <KpiIcon kind="sales" />
+            </span>
+            <span>
+              <small>Ventas hoy</small>
+              <strong>{salesTotal}</strong>
+            </span>
+          </article>
+        )}
 
-          <nav className="mock-week-calendar" aria-label="Calendario semanal">
-            {weekDays.map((day) => {
-              const key = utcDateKey(day);
-              const isSelected = key === selectedKey;
-              const isToday = key === todayKey;
-              return (
-                <Link
-                  key={key}
-                  href={`/admin?date=${key}`}
-                  className={`mock-week-day${isSelected ? " is-selected" : ""}${isToday ? " is-today" : ""}`}
-                  aria-current={isSelected ? "date" : undefined}
-                >
-                  <span>{shortWeekday(day)}</span>
-                  <strong>{day.getUTCDate()}</strong>
-                </Link>
-              );
-            })}
-          </nav>
-
-          <div className="mock-list">
-            {(selectedSessions ?? []).map((session) => {
-              const occupied = (reservationsBySession.get(session.id) ?? []).filter((reservation) =>
-                occupyingReservationStatuses.has(reservation.status),
-              ).length;
-              const operation = operationsBySession.get(session.id);
-              return (
-                <div className="today-session-block" key={session.id}>
-                  <div className="mock-list-row">
-                    <span className="mock-time">{formatTime(session.starts_at, timeZone)}</span>
-                    <span className="mock-dot" aria-hidden="true" />
-                    <strong>{templateMap.get(session.template_id) ?? "Clase"}</strong>
-                    <small>
-                      {occupied}/{session.capacity}
-                    </small>
-                  </div>
-                  {operation ? (
-                    <SessionOperations
-                      sessionId={session.id}
-                      returnDate={selectedKey}
-                      sessionStatus={session.status}
-                      roster={operation.roster}
-                      candidates={operation.candidates}
-                      available={Math.max(session.capacity - occupied, 0)}
-                      canAttendance={canWriteAttendance}
-                      canBook={canWriteSchedule}
-                      canCreateStudent={canWriteStudents}
-                    />
-                  ) : null}
-                </div>
-              );
-            })}
-            {(selectedSessions?.length ?? 0) === 0 ? (
-              <div className="mock-empty">No hay clases programadas para este día.</div>
-            ) : null}
-          </div>
+        <article className="hoy-kpi-card hoy-kpi-reservations">
+          <span className="hoy-kpi-icon">
+            <KpiIcon kind="reservations" />
+          </span>
+          <span>
+            <small>Reservas del día</small>
+            <strong>{dailyReservationPercentage}%</strong>
+            <em>
+              {totalDailyReservations}/{totalDailyCapacity} lugares
+            </em>
+          </span>
         </article>
       </section>
+
+      <TodayClasses
+        classes={classes}
+        returnDate={selectedKey}
+        canAttendance={canWriteAttendance}
+        canBook={canWriteSchedule}
+        canCreateStudent={canWriteStudents}
+      />
     </main>
   );
 }
