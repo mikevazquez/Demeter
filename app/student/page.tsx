@@ -79,6 +79,10 @@ function availableCredits(activePackage: StudentAcquisition | null) {
   return activePackage.available_credits ?? 0;
 }
 
+function unlimitedPackageLabel(activePackage: StudentAcquisition) {
+  return activePackage.unlimited ? "Ilimitado" : "";
+}
+
 function creditLimit(activePackage: StudentAcquisition) {
   if (activePackage.credit_limit && activePackage.credit_limit > 0) {
     return activePackage.credit_limit;
