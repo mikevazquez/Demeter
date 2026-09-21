@@ -19,6 +19,21 @@ describe("Registrar venta reuses the approved commercial flow", () => {
     expect(page).toContain("Cambiar alumna");
   });
 
+  it("includes fixed-credit packages and unlimited memberships in the approved flow", () => {
+    const onboardingPage = source("app/admin/alumnas/[studentId]/alta/page.tsx");
+    const migration = source(
+      "supabase/migrations/20260921041000_hotfix_unlimited_membership_sales.sql",
+    );
+
+    expect(page).toContain('.in("product_type", ["package", "membership"])');
+    expect(onboardingPage).toContain('.in("product_type", ["package", "membership"])');
+    expect(actions).toContain('.in("product_type", ["package", "membership"])');
+    expect(migration).toContain("product_type in ('package','membership')");
+    expect(form).toContain('item.unlimited ? "Clases ilimitadas"');
+
+    expect(page).toContain("StudentOnboardingForm");
+  });
+
   it("uses the exact approved package, discount and payment controls", () => {
     expect(page).toContain("StudentOnboardingForm");
     expect(page).toContain('flowContext="sale"');

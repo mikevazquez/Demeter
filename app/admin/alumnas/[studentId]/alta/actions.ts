@@ -132,7 +132,7 @@ export async function createStudentOnboardingSale(formData: FormData) {
       .eq("id", productId)
       .eq("studio_id", studio.id)
       .eq("active", true)
-      .eq("product_type", "package")
+      .in("product_type", ["package", "membership"])
       .maybeSingle(),
   ]);
 
