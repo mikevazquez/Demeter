@@ -247,23 +247,25 @@ export async function updateEvaluationCriteria(formData: FormData) {
     .from("evaluation_template_criteria")
     .select("id")
     .eq("studio_id", ctx.studio.id)
-    .eq("template_version_id", versionId);
+    .eq("template_version_id", versionId)
+    .order("sort_order");
 
-  if (!criteria?.length) redirect(`/admin/evaluaciones/plantillas/${templateId}?error=criteria`);
+  if (!criteria?.length) {
+    redirect(`/admin/evaluaciones/plantillas/${templateId}?error=criteria`);
+  }
 
-  const updates = criteria.map(async (criterion) =>
-    ctx.supabase
-      .from("evaluation_template_criteria")
-      .update({
-        weight_percent: number(formData, `weight_${criterion.id}`),
-        min_percent: number(formData, `min_${criterion.id}`, 70),
-      })
-      .eq("id", criterion.id)
-      .eq("studio_id", ctx.studio.id),
-  );
+  const payload = criteria.map((criterion) => ({
+    id: criterion.id,
+    weight_percent: number(formData, `weight_${criterion.id}`),
+    min_percent: number(formData, `min_${criterion.id}`, 70),
+  }));
 
-  const results = await Promise.all(updates);
-  if (results.some((result) => result.error)) {
+  const { error } = await ctx.supabase.rpc("admin_update_evaluation_criteria", {
+    p_template_version_id: versionId,
+    p_criteria: payload,
+  });
+
+  if (error) {
     redirect(`/admin/evaluaciones/plantillas/${templateId}?error=criteria`);
   }
 
