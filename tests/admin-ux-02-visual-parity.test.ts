@@ -41,6 +41,7 @@ describe("ADMIN-UX-02 approved visual parity", () => {
     expect(today).toContain("hoy-week-card");
     expect(today).toContain("hoy-kpi-grid");
     expect(today).toContain("Ventas hoy");
+    expect(today).toContain("Reservas del día");
     expect(today).toContain("<TodayClasses");
     expect(today).not.toContain("admin-quick-menu");
     expect(today).not.toContain("mock-overview-grid");
@@ -48,6 +49,15 @@ describe("ADMIN-UX-02 approved visual parity", () => {
     expect(hoyStyles).toContain("border-radius: 20px");
     expect(hoyStyles).toContain("today-class-card");
     expect(hoyStyles).toContain("--class-accent");
+  });
+
+  it("keeps selected-day KPIs synchronized with the selected calendar date", () => {
+    expect(today).toContain("<strong>{selectedSessions?.length ?? 0}</strong>");
+    expect(today).not.toContain("todaySessions?.length");
+    expect(today).toContain("totalDailyCapacity");
+    expect(today).toContain("totalDailyReservations");
+    expect(today).toContain("dailyReservationPercentage");
+    expect(today).toContain("Math.round((totalDailyReservations / totalDailyCapacity) * 100)");
   });
 
   it("always moves week arrows to Monday of the target week", () => {
