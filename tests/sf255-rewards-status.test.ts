@@ -68,6 +68,8 @@ describe("SF-255A monthly level and waitlist contracts", () => {
 
   it("integrates status and benefits into Profile without a new level route", () => {
     expect(profilePage).toContain("student_reward_status_snapshot");
+    expect(profilePage).toContain("reward_status_memberships");
+    expect(profilePage).toContain("reward_status_level_definitions");
     expect(profilePage).toContain('data-profile-block="package"');
     expect(profilePage).toContain("Tus beneficios");
     expect(profilePage).toContain("Nivel actual");
