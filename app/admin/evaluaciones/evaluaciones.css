@@ -1099,3 +1099,54 @@
     flex: 1;
   }
 }
+
+
+.eval-discipline-card-button {
+  width: 100%;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.eval-level-row {
+  min-height: 76px;
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 11px;
+  padding: 10px 12px;
+  border: 1px solid #293440;
+  border-radius: 14px;
+  background: #101720;
+}
+
+.eval-level-number {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border-radius: 11px;
+  background: rgba(255, 10, 138, 0.1);
+  color: #ff55ae;
+  font-size: 14px;
+  font-weight: 850;
+}
+
+.eval-level-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 760px) {
+  .eval-level-row {
+    grid-template-columns: 36px minmax(0, 1fr) auto;
+  }
+
+  .eval-level-actions {
+    grid-column: 2 / -1;
+    justify-content: flex-start;
+  }
+}
