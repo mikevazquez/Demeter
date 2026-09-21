@@ -1140,6 +1140,15 @@
   flex-wrap: wrap;
 }
 
+.eval-level-actions .eval-secondary-button,
+.eval-level-actions .eval-primary-button,
+.eval-level-actions .eval-danger-button {
+  width: 96px;
+  min-width: 96px;
+  height: 42px;
+  padding-inline: 12px;
+}
+
 @media (max-width: 760px) {
   .eval-level-row {
     grid-template-columns: 36px minmax(0, 1fr) auto;
