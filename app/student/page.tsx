@@ -37,6 +37,13 @@ type RewardStatusSnapshot = {
   next_level?: RewardLevelView | null;
 };
 
+type RewardInvitationBalance = {
+  total?: number;
+  used?: number;
+  remaining?: number;
+  level_title?: string | null;
+};
+
 const levelVisuals = {
   bronze: {
     accent: "#CD7F32",
@@ -102,7 +109,12 @@ export default async function StudentHomePage({
 }) {
   const query = await searchParams;
   const { snapshot, studio, supabase, membership } = await getStudentPortalContext();
-  const [rewardStatusResult, rewardMembershipResult, rewardLevelsResult] = await Promise.all([
+  const [
+    rewardStatusResult,
+    rewardMembershipResult,
+    rewardLevelsResult,
+    invitationBalanceResult,
+  ] = await Promise.all([
     supabase.rpc("student_reward_status_snapshot"),
     supabase
       .from("reward_status_memberships")
@@ -117,9 +129,12 @@ export default async function StudentHomePage({
       )
       .eq("studio_id", membership.studio_id)
       .order("level_order"),
+    supabase.rpc("student_reward_invitation_balance"),
   ]);
 
   const rewardStatus = (rewardStatusResult.data as RewardStatusSnapshot | null) ?? null;
+  const invitationBalance =
+    (invitationBalanceResult.data as RewardInvitationBalance | null) ?? null;
   const levelDefinitions = (rewardLevelsResult.data ?? []) as RewardLevelDefinitionRow[];
   const fallbackLevelKey = rewardMembershipResult.data?.current_level_key ?? null;
   const fallbackLevelRow =
@@ -235,7 +250,9 @@ export default async function StudentHomePage({
                 <p>
                   Invitaciones ·{" "}
                   {(currentLevel.monthly_guest_invites ?? 0) > 0
-                    ? `${currentLevel.monthly_guest_invites} al mes`
+                    ? `${invitationBalance?.remaining ?? currentLevel.monthly_guest_invites} de ${
+                        invitationBalance?.total ?? currentLevel.monthly_guest_invites
+                      } disponibles este mes`
                     : "sin invitaciones"}
                 </p>
               </div>
