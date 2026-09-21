@@ -17,7 +17,7 @@ const errorCopy: Record<string, string> = {
 export default async function EvaluationConfigurationPage({
   searchParams,
 }: {
-  searchParams: Promise<{ saved?: string; error?: string }>;
+  searchParams: Promise<{ error?: string }>;
 }) {
   const params = await searchParams;
   const ctx = await getAdminContext(CAPABILITIES.EVALUATIONS_CONFIGURE);
@@ -85,10 +85,6 @@ export default async function EvaluationConfigurationPage({
           <p>Administra disciplinas, niveles y reglas técnicas.</p>
         </div>
       </header>
-
-      {params.saved ? (
-        <div className="eval-notice success">Cambios guardados correctamente.</div>
-      ) : null}
       {params.error ? (
         <div className="eval-notice">
           {errorCopy[params.error] ?? "No pudimos guardar los cambios."}
