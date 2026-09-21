@@ -159,7 +159,6 @@ export default async function StudentEvaluationsPanel({ studentId, timeZone, err
   const templates = templatesResult.data ?? [];
 
   const definitionTitle = new Map(definitions.map((item) => [item.id, item.title]));
-  const linkById = new Map(links.map((item) => [item.id, item]));
   const levelTitle = new Map(
     links.map((item) => [item.id, definitionTitle.get(item.technical_level_id) ?? "Nivel técnico"]),
   );
@@ -242,8 +241,6 @@ export default async function StudentEvaluationsPanel({ studentId, timeZone, err
 
       return {
         discipline,
-        disciplineLinks,
-        resolvedLevelId,
         currentLevelTitle: resolvedLevelId
           ? (levelTitle.get(resolvedLevelId) ?? "Principiante")
           : null,
@@ -260,14 +257,15 @@ export default async function StudentEvaluationsPanel({ studentId, timeZone, err
     })
     .filter(Boolean) as Array<{
     discipline: { id: string; name: string };
-    disciplineLinks: typeof links;
-    resolvedLevelId: string | null;
     currentLevelTitle: string | null;
     cycle: (typeof cycles)[number] | undefined;
     openInvitation: (typeof invitations)[number] | undefined;
     draftEvaluation: (typeof evaluations)[number] | undefined;
     latestPublished: (typeof evaluations)[number] | undefined;
-    scheduledSession: (typeof sessionsResult.data extends Array<infer T> ? T : never) | undefined;
+    scheduledSession:
+      | { id: string; template_id: string; starts_at: string; ends_at: string }
+      | null
+      | undefined;
     scheduledClassName: string | null;
     configured: boolean;
   }>;
