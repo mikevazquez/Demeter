@@ -94,7 +94,7 @@ export default async function StudentOnboardingPage({
           .from("product_templates")
           .select("id,name,package_term,price_minor,currency,credit_limit,validity_days,unlimited")
           .eq("studio_id", studio.id)
-          .eq("product_type", "package")
+          .in("product_type", ["package", "membership"])
           .eq("active", true)
           .order("price_minor")
       : Promise.resolve({ data: [] }),
