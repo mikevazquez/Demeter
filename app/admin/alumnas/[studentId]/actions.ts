@@ -64,9 +64,6 @@ async function invokeStudentAccess(
     if (accountError || !account || account.status !== "active") {
       return { ok: false, error: "student_access_inconsistent" };
     }
-    if (account.must_change_password !== true) {
-      return { ok: false, error: "temporary_password_reset_closed" };
-    }
   }
 
   const {
