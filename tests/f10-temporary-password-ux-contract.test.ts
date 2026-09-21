@@ -48,6 +48,7 @@ describe("F10 student self-password activation contracts", () => {
 
     expect(page).toContain('name="token_hash"');
     expect(page).not.toContain("verifyOtp");
+    expect(page).toContain("if (!recoveryToken && !invalidLinkState)");
     expect(actions).toContain("supabase.auth.verifyOtp");
     expect(actions).toContain('type: "recovery"');
 
