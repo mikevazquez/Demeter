@@ -9,6 +9,7 @@ import {
   formatDateTime,
   formatMoney,
   getStudentPortalContext,
+  localDateKey,
   type StudentSession,
 } from "@/lib/student/portal";
 
@@ -86,7 +87,7 @@ export default async function ScheduleEvaluationPage({
 }) {
   const { invitationId } = await params;
   const qs = await searchParams;
-  const { supabase, studio, membership } = await getStudentPortalContext();
+  const { supabase, studio, membership, snapshot } = await getStudentPortalContext();
 
   const { data: invitationData, error: invitationError } = await supabase.rpc(
     "student_evaluation_invitation_detail",
@@ -126,6 +127,7 @@ export default async function ScheduleEvaluationPage({
 
   let rewardPrice: RewardPricePreview | null = null;
   let eligiblePackages: PurchasableProduct[] = [];
+  let eligibleProductIds: string[] = [];
   let enrollmentRequirement: EnrollmentRequirement | null = null;
 
   if (needsPurchase && selectedSession) {
@@ -147,7 +149,7 @@ export default async function ScheduleEvaluationPage({
       .eq("studio_id", membership.studio_id)
       .eq("discipline_id", invitation.discipline_id);
 
-    const eligibleProductIds = [
+    eligibleProductIds = [
       ...new Set((disciplineProductRows ?? []).map((row) => row.product_template_id)),
     ];
 
@@ -169,6 +171,24 @@ export default async function ScheduleEvaluationPage({
   const regularDropInMinor =
     rewardPrice?.regular_amount_minor ?? selectedSession?.drop_in_price_minor ?? 0;
   const finalDropInMinor = rewardPrice?.final_amount_minor ?? regularDropInMinor;
+
+  const selectedClassDate = selectedSession
+    ? localDateKey(new Date(selectedSession.starts_at), studio.timezone)
+    : null;
+  const hasAccessForSelectedClass = Boolean(
+    selectedSession &&
+      selectedClassDate &&
+      snapshot.acquisitions.some(
+        (acquisition) =>
+          acquisition.status === "active" &&
+          acquisition.starts_on <= selectedClassDate &&
+          acquisition.expires_on >= selectedClassDate &&
+          eligibleProductIds.includes(acquisition.product_id) &&
+          (acquisition.unlimited ||
+            (acquisition.available_credits ?? 0) >= selectedSession.credit_cost),
+      ),
+  );
+  const needsClassAccess = Boolean(needsPurchase && selectedSession && !hasAccessForSelectedClass);
 
   return (
     <main className="space-y-5 pb-4">
@@ -211,17 +231,23 @@ export default async function ScheduleEvaluationPage({
           }
         >
           <h2 className="text-lg font-semibold text-white">
-            {needsPurchase ? "Necesitas acceso para reservar esta clase" : "No pudimos programarla"}
+            {needsPurchase
+              ? needsClassAccess
+                ? "No tienes créditos disponibles para esta clase"
+                : enrollmentRequirement?.missing
+                  ? "Necesitas una inscripción vigente"
+                  : "Completa lo necesario para reservar"
+              : "No pudimos programarla"}
           </h2>
           <p className="mt-1 text-xs leading-5 text-zinc-400">
             {needsPurchase
-              ? enrollmentRequirement?.missing
+              ? needsClassAccess
                 ? selectedSession?.drop_in_price_minor != null
-                  ? "Puedes pagar esta clase o comprar un paquete. Además, necesitas una inscripción vigente; Studio Flow la agregará al mismo checkout automáticamente."
-                  : "Puedes comprar un paquete para continuar. Además, necesitas una inscripción vigente; Studio Flow la agregará al mismo checkout automáticamente."
-                : selectedSession?.drop_in_price_minor != null
-                  ? "No tienes créditos disponibles para esta clase. Puedes pagar sólo esta clase o comprar un paquete sin salir del flujo de tu evaluación."
-                  : "No tienes créditos disponibles para esta clase. Compra un paquete válido para continuar sin salir del flujo de tu evaluación."
+                  ? "Puedes pagar sólo esta clase o comprar un paquete sin salir del flujo de tu evaluación."
+                  : "Compra un paquete válido para continuar sin salir del flujo de tu evaluación."
+                : enrollmentRequirement?.missing
+                  ? "Tu paquete sí tiene créditos disponibles. La inscripción es el único requisito que está bloqueando esta reserva."
+                  : errorMessage
               : errorMessage}
           </p>
 
@@ -230,7 +256,7 @@ export default async function ScheduleEvaluationPage({
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-violet-300">
-                    Además · Inscripción requerida
+                    ${needsClassAccess ? "Además · Inscripción requerida" : "Inscripción requerida"}
                   </p>
                   <p className="mt-1 text-sm font-semibold text-white">
                     {enrollmentRequirement.name ?? "Inscripción"}
