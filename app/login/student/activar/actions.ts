@@ -3,15 +3,9 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
-function activationErrorUrl(
-  tokenHash: string | null,
-  type: string | null,
-  entryKey: string | null,
-  error: string,
-) {
+function activationErrorUrl(tokenHash: string | null, type: string | null, error: string) {
   const params = new URLSearchParams({ error });
 
-  if (entryKey) params.set("entry", entryKey);
   if (tokenHash && type === "recovery") {
     params.set("token_hash", tokenHash);
     params.set("type", "recovery");
@@ -25,17 +19,16 @@ export async function completeStudentPasswordActivation(formData: FormData) {
   const confirmation = String(formData.get("password_confirmation") ?? "");
   const tokenHash = String(formData.get("token_hash") ?? "").trim() || null;
   const type = String(formData.get("type") ?? "").trim() || null;
-  const entryKey = String(formData.get("entry") ?? "").trim() || null;
 
   if (password.length < 8 || password !== confirmation) {
-    redirect(activationErrorUrl(tokenHash, type, entryKey, "invalid"));
+    redirect(activationErrorUrl(tokenHash, type, "invalid"));
   }
 
   const supabase = await createClient();
 
   if (tokenHash) {
     if (type !== "recovery") {
-      redirect(activationErrorUrl(null, null, entryKey, "link"));
+      redirect(activationErrorUrl(null, null, "link"));
     }
 
     const { error: verifyError } = await supabase.auth.verifyOtp({
@@ -44,7 +37,7 @@ export async function completeStudentPasswordActivation(formData: FormData) {
     });
 
     if (verifyError) {
-      redirect(activationErrorUrl(tokenHash, type, entryKey, "link"));
+      redirect(activationErrorUrl(tokenHash, type, "link"));
     }
   }
 
@@ -79,12 +72,12 @@ export async function completeStudentPasswordActivation(formData: FormData) {
 
   const { error: passwordError } = await supabase.auth.updateUser({ password });
   if (passwordError) {
-    redirect(activationErrorUrl(tokenHash, type, entryKey, "password"));
+    redirect(activationErrorUrl(tokenHash, type, "password"));
   }
 
   const { error: activationError } = await supabase.rpc("student_complete_password_activation");
   if (activationError) {
-    redirect(activationErrorUrl(tokenHash, type, entryKey, "save"));
+    redirect(activationErrorUrl(tokenHash, type, "save"));
   }
 
   redirect("/student");
