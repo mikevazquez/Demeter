@@ -7,7 +7,11 @@ import {
   type StudentClassFeedItem,
 } from "@/lib/student/portal";
 
-import { cancelGuestInvitationAction, createGuestInvitationAction } from "../../actions";
+import {
+  cancelGuestInvitationAction,
+  confirmExistingGuestInvitationAction,
+  createGuestInvitationAction,
+} from "../../actions";
 
 const statusCopy: Record<string, string> = {
   reserved: "Reservada",
@@ -34,6 +38,13 @@ type InvitationContext = {
   spots_available?: number;
   can_invite?: boolean;
   active_guests?: InvitationGuest[];
+};
+
+type InvitationContactMatch = {
+  ok?: boolean;
+  person_id?: string;
+  display_name?: string | null;
+  lifecycle_status?: string | null;
 };
 
 const inviteErrorCopy: Record<string, string> = {
@@ -75,6 +86,7 @@ export default async function StudentReservationDetailPage({
     invited?: string;
     invite_error?: string;
     guest_cancelled?: string;
+    contact_match?: string;
   }>;
 }) {
   const { reservationId } = await params;
@@ -105,6 +117,13 @@ export default async function StudentReservationDetailPage({
       })
     : { data: null };
   const invitationContext = (invitationContextData as InvitationContext | null) ?? null;
+  const { data: contactMatchData } =
+    isActiveReservation && query.contact_match
+      ? await supabase.rpc("student_guest_invitation_contact_identity", {
+          target_guest_person_id: query.contact_match,
+        })
+      : { data: null };
+  const contactMatch = (contactMatchData as InvitationContactMatch | null) ?? null;
   const activeGuests = invitationContext?.active_guests ?? [];
   const invitationTotal = invitationContext?.total ?? 0;
   const invitationRemaining = invitationContext?.remaining ?? 0;
@@ -313,47 +332,86 @@ export default async function StudentReservationDetailPage({
               </div>
             ) : null}
 
-            <form action={createGuestInvitationAction} className="mt-4 space-y-3">
-              <input type="hidden" name="reservation_id" value={reservationId} />
-              <label className="block text-xs font-medium text-zinc-300">
-                Nombre completo
-                <input
-                  name="guest_name"
-                  required
-                  autoComplete="name"
-                  className="mt-1.5 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-3 text-sm text-white outline-none focus:border-fuchsia-500/60"
-                  placeholder="Nombre y apellidos"
-                />
-              </label>
-              <label className="block text-xs font-medium text-zinc-300">
-                Número de teléfono
-                <input
-                  name="guest_phone"
-                  type="tel"
-                  required
-                  inputMode="tel"
-                  pattern="\+[1-9][0-9]{7,14}"
-                  className="mt-1.5 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-3 text-sm text-white outline-none focus:border-fuchsia-500/60"
-                  placeholder="+5213312345678"
-                />
-                <span className="mt-1 block text-[10px] text-zinc-600">
-                  Incluye código de país.
-                </span>
-              </label>
+            {contactMatch?.ok &&
+            contactMatch.person_id &&
+            contactMatch.display_name &&
+            contactMatch.lifecycle_status !== "student" ? (
+              <div className="mt-4 space-y-3">
+                <div className="rounded-2xl border border-amber-400/25 bg-amber-400/[0.07] p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-amber-300">
+                    Contacto encontrado
+                  </p>
+                  <p className="mt-2 text-sm leading-6 text-zinc-200">
+                    Este teléfono ya pertenece a{" "}
+                    <strong className="font-semibold text-white">{contactMatch.display_name}</strong>.
+                    Usaremos ese contacto para esta invitación.
+                  </p>
+                  <p className="mt-1 text-xs leading-5 text-zinc-500">
+                    No cambiaremos su nombre ni crearemos un registro duplicado.
+                  </p>
+                </div>
 
-              <button
-                type="submit"
-                className="min-h-11 w-full rounded-2xl bg-fuchsia-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-fuchsia-500"
-              >
-                Confirmar invitación
-              </button>
-              <Link
-                href={`/student/mis-clases/${reservationId}`}
-                className="inline-flex min-h-10 w-full items-center justify-center rounded-2xl border border-white/10 px-4 py-2 text-sm font-semibold text-zinc-300"
-              >
-                Cancelar
-              </Link>
-            </form>
+                <form action={confirmExistingGuestInvitationAction}>
+                  <input type="hidden" name="reservation_id" value={reservationId} />
+                  <input type="hidden" name="guest_person_id" value={contactMatch.person_id} />
+                  <button
+                    type="submit"
+                    className="min-h-11 w-full rounded-2xl bg-fuchsia-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-fuchsia-500"
+                  >
+                    Usar este contacto
+                  </button>
+                </form>
+
+                <Link
+                  href={`/student/mis-clases/${reservationId}?invite=1`}
+                  className="inline-flex min-h-10 w-full items-center justify-center rounded-2xl border border-white/10 px-4 py-2 text-sm font-semibold text-zinc-300"
+                >
+                  Corregir datos
+                </Link>
+              </div>
+            ) : (
+              <form action={createGuestInvitationAction} className="mt-4 space-y-3">
+                <input type="hidden" name="reservation_id" value={reservationId} />
+                <label className="block text-xs font-medium text-zinc-300">
+                  Nombre completo
+                  <input
+                    name="guest_name"
+                    required
+                    autoComplete="name"
+                    className="mt-1.5 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-3 text-sm text-white outline-none focus:border-fuchsia-500/60"
+                    placeholder="Nombre y apellidos"
+                  />
+                </label>
+                <label className="block text-xs font-medium text-zinc-300">
+                  Número de teléfono
+                  <input
+                    name="guest_phone"
+                    type="tel"
+                    required
+                    inputMode="tel"
+                    pattern="\+[1-9][0-9]{7,14}"
+                    className="mt-1.5 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-3 text-sm text-white outline-none focus:border-fuchsia-500/60"
+                    placeholder="+5213312345678"
+                  />
+                  <span className="mt-1 block text-[10px] text-zinc-600">
+                    Incluye código de país.
+                  </span>
+                </label>
+
+                <button
+                  type="submit"
+                  className="min-h-11 w-full rounded-2xl bg-fuchsia-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-fuchsia-500"
+                >
+                  Confirmar invitación
+                </button>
+                <Link
+                  href={`/student/mis-clases/${reservationId}`}
+                  className="inline-flex min-h-10 w-full items-center justify-center rounded-2xl border border-white/10 px-4 py-2 text-sm font-semibold text-zinc-300"
+                >
+                  Cancelar
+                </Link>
+              </form>
+            )}
           </section>
         </div>
       ) : null}
