@@ -6,7 +6,7 @@ on:
       - admin-hoy-approved
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   format:
@@ -32,12 +32,12 @@ jobs:
       - name: Verify format
         run: npm run format:check
 
-      - name: Upload formatted files
-        uses: actions/upload-artifact@v4
-        with:
-          name: admin-hoy-formatted
-          path: |
-            app/admin/hoy.css
-            app/admin/hoy/SessionOperations.tsx
-            app/admin/page.tsx
-          if-no-files-found: error
+      - name: Commit formatted files
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/admin/hoy.css app/admin/hoy/SessionOperations.tsx app/admin/page.tsx
+          if ! git diff --cached --quiet; then
+            git commit -m "chore: format ADMIN Hoy"
+            git push origin HEAD:admin-hoy-approved
+          fi
