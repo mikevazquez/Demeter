@@ -60,9 +60,7 @@ describe("F10 student self-password activation contracts", () => {
   it("builds the activation URL from the active environment host", () => {
     const actions = source("app/admin/alumnas/[studentId]/actions.ts");
 
-    expect(actions).toContain(
-      'new URL("/login/student/activar", `https://${host}`).toString()',
-    );
+    expect(actions).toContain('new URL("/login/student/activar", `https://${host}`).toString()');
     expect(actions).toContain("activationUrl");
   });
 });
