@@ -302,6 +302,22 @@ export default async function AdminPage({
         data: [] as { id: string; first_name: string | null; last_name: string | null }[],
       };
 
+  const reservationIds = (reservations ?? []).map((reservation) => reservation.id);
+  const { data: evaluationInvitations } = reservationIds.length
+    ? await supabase
+        .from("evaluation_invitations")
+        .select("reservation_id,status")
+        .in("reservation_id", reservationIds)
+        .in("status", ["scheduled", "in_progress"])
+    : {
+        data: [] as { reservation_id: string | null; status: string }[],
+      };
+  const evaluationByReservation = new Map(
+    (evaluationInvitations ?? [])
+      .filter((item) => item.reservation_id)
+      .map((item) => [item.reservation_id!, item.status]),
+  );
+
   const acquisitionIds = [
     ...new Set(
       (reservations ?? []).map((reservation) => reservation.acquisition_id).filter(Boolean),
@@ -400,6 +416,9 @@ export default async function AdminPage({
       color: template?.color_hex ?? "#FF0A8A",
       sessionStatus: session.status,
       available: Math.max(session.capacity - occupied, 0),
+      evaluationCount: sessionReservations.filter((reservation) =>
+        evaluationByReservation.has(reservation.id),
+      ).length,
       returnTo: `/admin?date=${selectedKey}#session-${session.id}`,
       roster: sessionReservations.map((reservation) => {
         const isGuest = Boolean(reservation.guest_person_id);
@@ -431,6 +450,7 @@ export default async function AdminPage({
                 ? `${balance ?? 0} créditos`
                 : "—",
           expiresLabel: isGuest ? "Misma clase" : formatExpiry(acquisition?.expires_on ?? null),
+          evaluationStatus: evaluationByReservation.get(reservation.id) ?? null,
         };
       }),
       candidates: candidates.map((student) => {
