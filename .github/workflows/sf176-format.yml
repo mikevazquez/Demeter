@@ -1,0 +1,47 @@
+name: SF176 Format
+
+on:
+  push:
+    branches:
+      - feat/sf-176-payment-confirmed
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Format SF-176 files
+        run: |
+          npx prettier --write \
+            supabase/functions/process-payment-confirmed/index.ts \
+            supabase/functions/process-payment-confirmed/payment-confirmed.ts \
+            tests/sf176-payment-confirmed.test.ts
+
+      - name: Commit formatting
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            supabase/functions/process-payment-confirmed/index.ts \
+            supabase/functions/process-payment-confirmed/payment-confirmed.ts \
+            tests/sf176-payment-confirmed.test.ts
+          if git diff --cached --quiet; then
+            echo "No formatting changes needed."
+            exit 0
+          fi
+          git commit -m "style(sf176): apply prettier"
+          git push origin HEAD:feat/sf-176-payment-confirmed
