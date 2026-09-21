@@ -109,28 +109,24 @@ export default async function StudentHomePage({
 }) {
   const query = await searchParams;
   const { snapshot, studio, supabase, membership } = await getStudentPortalContext();
-  const [
-    rewardStatusResult,
-    rewardMembershipResult,
-    rewardLevelsResult,
-    invitationBalanceResult,
-  ] = await Promise.all([
-    supabase.rpc("student_reward_status_snapshot"),
-    supabase
-      .from("reward_status_memberships")
-      .select("current_level_key")
-      .eq("studio_id", membership.studio_id)
-      .eq("student_id", snapshot.profile.student_id)
-      .maybeSingle(),
-    supabase
-      .from("reward_status_level_definitions")
-      .select(
-        "level_key,level_order,title,maintenance_attendance,promotion_attendance,min_active_months,max_uncovered_days,waitlist_priority,private_discount_pct,event_discount_pct,monthly_guest_invites",
-      )
-      .eq("studio_id", membership.studio_id)
-      .order("level_order"),
-    supabase.rpc("student_reward_invitation_balance"),
-  ]);
+  const [rewardStatusResult, rewardMembershipResult, rewardLevelsResult, invitationBalanceResult] =
+    await Promise.all([
+      supabase.rpc("student_reward_status_snapshot"),
+      supabase
+        .from("reward_status_memberships")
+        .select("current_level_key")
+        .eq("studio_id", membership.studio_id)
+        .eq("student_id", snapshot.profile.student_id)
+        .maybeSingle(),
+      supabase
+        .from("reward_status_level_definitions")
+        .select(
+          "level_key,level_order,title,maintenance_attendance,promotion_attendance,min_active_months,max_uncovered_days,waitlist_priority,private_discount_pct,event_discount_pct,monthly_guest_invites",
+        )
+        .eq("studio_id", membership.studio_id)
+        .order("level_order"),
+      supabase.rpc("student_reward_invitation_balance"),
+    ]);
 
   const rewardStatus = (rewardStatusResult.data as RewardStatusSnapshot | null) ?? null;
   const invitationBalance =

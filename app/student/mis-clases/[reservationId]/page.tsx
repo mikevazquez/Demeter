@@ -7,10 +7,7 @@ import {
   type StudentClassFeedItem,
 } from "@/lib/student/portal";
 
-import {
-  cancelGuestInvitationAction,
-  createGuestInvitationAction,
-} from "../../actions";
+import { cancelGuestInvitationAction, createGuestInvitationAction } from "../../actions";
 
 const statusCopy: Record<string, string> = {
   reserved: "Reservada",
@@ -188,9 +185,7 @@ export default async function StudentReservationDetailPage({
               <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-fuchsia-300">
                 Invitaciones
               </p>
-              <h2 className="mt-1 text-base font-semibold text-white">
-                Comparte esta clase
-              </h2>
+              <h2 className="mt-1 text-base font-semibold text-white">Comparte esta clase</h2>
             </div>
             <span className="rounded-full border border-fuchsia-500/25 bg-fuchsia-500/[0.08] px-2.5 py-1 text-[10px] font-semibold text-fuchsia-200">
               {invitationRemaining} de {invitationTotal} disponibles
@@ -319,8 +314,8 @@ export default async function StudentReservationDetailPage({
               Tu invitado asistirá a esta misma clase contigo.
             </p>
             <p className="mt-1 text-xs text-zinc-500">
-              Usarás 1 invitación · después te quedará{" "}
-              {Math.max(invitationRemaining - 1, 0)} este mes.
+              Usarás 1 invitación · después te quedará {Math.max(invitationRemaining - 1, 0)} este
+              mes.
             </p>
 
             {inviteError ? (

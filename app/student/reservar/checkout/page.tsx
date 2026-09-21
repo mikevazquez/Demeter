@@ -129,9 +129,7 @@ export default async function SingleClassCheckoutReturnPage({
                 </div>
               </div>
             ) : (
-              <p className="mt-1 text-xs text-zinc-400">
-                {formatMoney(attempt.amount_minor)} MXN
-              </p>
+              <p className="mt-1 text-xs text-zinc-400">{formatMoney(attempt.amount_minor)} MXN</p>
             )}
           </div>
         ) : null}

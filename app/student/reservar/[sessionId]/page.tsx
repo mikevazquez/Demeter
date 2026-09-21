@@ -82,8 +82,7 @@ export default async function StudentSessionDetailPage({
       })
     : { data: null };
   const rewardPrice = (rewardPriceData as RewardPricePreview | null) ?? null;
-  const regularDropInMinor =
-    rewardPrice?.regular_amount_minor ?? session.drop_in_price_minor ?? 0;
+  const regularDropInMinor = rewardPrice?.regular_amount_minor ?? session.drop_in_price_minor ?? 0;
   const finalDropInMinor = rewardPrice?.final_amount_minor ?? regularDropInMinor;
   const rewardDiscountPct = rewardPrice?.discount_pct ?? 0;
   const rewardPriceLevelTitle = rewardPrice?.level_title ?? null;
