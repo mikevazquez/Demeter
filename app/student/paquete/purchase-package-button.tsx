@@ -45,13 +45,13 @@ export function PurchasePackageButton({
     setErrorMessage(null);
 
     startTransition(async () => {
-      const result = await createMercadoPagoOrderAction(
-        productTemplateId,
-        requestKey,
+      const result =
         evaluationInvitationId && evaluationSessionId
-          ? { invitationId: evaluationInvitationId, sessionId: evaluationSessionId }
-          : undefined,
-      );
+          ? await createMercadoPagoOrderAction(productTemplateId, requestKey, {
+              invitationId: evaluationInvitationId,
+              sessionId: evaluationSessionId,
+            })
+          : await createMercadoPagoOrderAction(productTemplateId, requestKey);
 
       if (!result.ok) {
         setErrorMessage(errorCopy[result.error] ?? errorCopy.checkout_failed);
