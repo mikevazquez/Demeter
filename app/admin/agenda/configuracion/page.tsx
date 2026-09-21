@@ -3,7 +3,11 @@ import Link from "next/link";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { createDiscipline } from "../actions";
-import { createActivity, createRecurringSchedules, updateActivityColor } from "../recurring-actions";
+import {
+  createActivity,
+  createRecurringSchedules,
+  updateActivityColor,
+} from "../recurring-actions";
 import { ScheduleBuilder } from "../schedule-builder";
 
 function formatMoney(minor: number) {
@@ -19,30 +23,35 @@ export default async function AgendaConfigurationPage({
   const { supabase, studio, can } = await getAdminContext(CAPABILITIES.SCHEDULE_READ);
   const canEdit = can(CAPABILITIES.SCHEDULE_WRITE);
 
-  const [{ data: disciplines }, { data: templates }, { data: spaces }, { data: instructors }, { data: persons }] =
-    await Promise.all([
-      supabase.from("disciplines").select("id,name,active").eq("studio_id", studio.id).order("name"),
-      supabase
-        .from("class_templates")
-        .select(
-          "id,name,duration_minutes,capacity,discipline_id,credit_cost,drop_in_price_minor,color_hex",
-        )
-        .eq("studio_id", studio.id)
-        .eq("active", true)
-        .order("name"),
-      supabase
-        .from("spaces")
-        .select("id,name,capacity,site_id")
-        .eq("studio_id", studio.id)
-        .eq("active", true)
-        .order("name"),
-      supabase
-        .from("instructors")
-        .select("id,person_id,status")
-        .eq("studio_id", studio.id)
-        .eq("status", "active"),
-      supabase.from("persons").select("id,first_name,last_name").eq("studio_id", studio.id),
-    ]);
+  const [
+    { data: disciplines },
+    { data: templates },
+    { data: spaces },
+    { data: instructors },
+    { data: persons },
+  ] = await Promise.all([
+    supabase.from("disciplines").select("id,name,active").eq("studio_id", studio.id).order("name"),
+    supabase
+      .from("class_templates")
+      .select(
+        "id,name,duration_minutes,capacity,discipline_id,credit_cost,drop_in_price_minor,color_hex",
+      )
+      .eq("studio_id", studio.id)
+      .eq("active", true)
+      .order("name"),
+    supabase
+      .from("spaces")
+      .select("id,name,capacity,site_id")
+      .eq("studio_id", studio.id)
+      .eq("active", true)
+      .order("name"),
+    supabase
+      .from("instructors")
+      .select("id,person_id,status")
+      .eq("studio_id", studio.id)
+      .eq("status", "active"),
+    supabase.from("persons").select("id,first_name,last_name").eq("studio_id", studio.id),
+  ]);
 
   const personMap = new Map(
     (persons ?? []).map((item) => [
@@ -117,7 +126,14 @@ export default async function AgendaConfigurationPage({
               <div className="form-split">
                 <label>
                   Duración (min)
-                  <input name="duration_minutes" type="number" min="15" max="360" defaultValue="60" required />
+                  <input
+                    name="duration_minutes"
+                    type="number"
+                    min="15"
+                    max="360"
+                    defaultValue="60"
+                    required
+                  />
                 </label>
                 <label>
                   Créditos
@@ -131,7 +147,14 @@ export default async function AgendaConfigurationPage({
                 </label>
                 <label>
                   Precio clase suelta (MXN)
-                  <input name="drop_in_price" type="number" min="0" step="0.01" inputMode="decimal" placeholder="Opcional" />
+                  <input
+                    name="drop_in_price"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    inputMode="decimal"
+                    placeholder="Opcional"
+                  />
                 </label>
               </div>
               <label>

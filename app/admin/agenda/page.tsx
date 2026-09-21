@@ -654,7 +654,6 @@ export default async function AgendaPage({
           </aside>
         ) : null}
       </div>
-
     </main>
   );
 }
