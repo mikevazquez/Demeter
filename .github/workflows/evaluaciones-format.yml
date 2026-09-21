@@ -21,7 +21,12 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npx prettier --write "app/student/evaluaciones/[invitationId]/checkout/page.tsx"
+      - run: |
+          npx prettier --write \
+            "app/admin/alumnas/[studentId]/StudentEvaluationsPanel.tsx" \
+            "app/admin/alumnas/profile-360-admin-ux-04.css" \
+            "app/student/evaluaciones/[invitationId]/programar/page.tsx" \
+            "tests/evaluaciones01-operational-flow.test.ts"
       - name: Commit formatting
         run: |
           if git diff --quiet; then
@@ -30,5 +35,5 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add .
-          git commit -m "EVALUACIONES-01 · format bundled checkout type guard"
+          git commit -m "EVALUACIONES-01 · format invitation traceability"
           git push origin HEAD:feat/evaluaciones-01-sync
