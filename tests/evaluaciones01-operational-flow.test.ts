@@ -112,6 +112,14 @@ describe("EVALUACIONES-01 operational cycle", () => {
     expect(studentResult).toContain('"student_evaluation_result_detail"');
   });
 
+  it("keeps a visible history of invitation responses in Perfil 360", () => {
+    expect(adminProfile).toContain("Historial de invitaciones");
+    expect(adminProfile).toContain("Invitación anterior rechazada");
+    expect(adminProfile).toContain("Antes de volver a invitar");
+    expect(adminProfile).toContain("responded_at");
+    expect(adminProfile).toContain("Rechazada");
+  });
+
   it("surfaces an actionable invitation on the student landing screen only when present", () => {
     expect(studentHome).toContain('supabase.rpc("student_evaluations_snapshot")');
     expect(studentHome).toContain('data-home-block="evaluation-invitation"');
