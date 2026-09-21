@@ -281,8 +281,6 @@ export default async function SessionDetailPage({
     walkin_invalid: "Completa los datos mínimos para registrar la walk-in.",
   };
 
-  const showManagementNotice = query.created === "edit" || query.created === "cancel-session";
-
   return (
     <main className="dashboard-shell admin-class-detail admin-ux04-session-detail">
       <header className="topbar admin-class-detail-header">
@@ -305,9 +303,6 @@ export default async function SessionDetailPage({
         </Link>
       </header>
 
-      {showManagementNotice ? (
-        <div className="notice success">Cambio guardado correctamente.</div>
-      ) : null}
       {query.error ? (
         <div className="notice error">
           {errorCopy[decodeURIComponent(query.error)] ?? "No se pudo completar la operación."}
