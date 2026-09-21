@@ -82,7 +82,6 @@ export default async function AgendaConfigurationPage({
         </div>
       </header>
 
-      {params.created ? <div className="notice success">Cambio guardado correctamente.</div> : null}
       {params.error ? (
         <div className="notice error">
           {errorCopy[params.error] ?? "No se pudo guardar. Revisa los datos."}
