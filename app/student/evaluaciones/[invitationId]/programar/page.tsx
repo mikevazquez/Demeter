@@ -211,13 +211,17 @@ export default async function ScheduleEvaluationPage({
           }
         >
           <h2 className="text-lg font-semibold text-white">
-            {needsPurchase ? "Completa lo necesario para reservar" : "No pudimos programarla"}
+            {needsPurchase ? "Necesitas acceso para reservar esta clase" : "No pudimos programarla"}
           </h2>
           <p className="mt-1 text-xs leading-5 text-zinc-400">
             {needsPurchase
               ? enrollmentRequirement?.missing
-                ? "Te falta una inscripción vigente y acceso para esta clase. Studio Flow puede incluir ambos en un solo checkout para que no salgas del flujo de tu evaluación."
-                : "No tienes un paquete o crédito vigente para esta reserva. Puedes pagar sólo esta clase o comprar un paquete sin salir del flujo de tu evaluación."
+                ? selectedSession?.drop_in_price_minor != null
+                  ? "Puedes pagar esta clase o comprar un paquete. Además, necesitas una inscripción vigente; Studio Flow la agregará al mismo checkout automáticamente."
+                  : "Puedes comprar un paquete para continuar. Además, necesitas una inscripción vigente; Studio Flow la agregará al mismo checkout automáticamente."
+                : selectedSession?.drop_in_price_minor != null
+                  ? "No tienes créditos disponibles para esta clase. Puedes pagar sólo esta clase o comprar un paquete sin salir del flujo de tu evaluación."
+                  : "No tienes créditos disponibles para esta clase. Compra un paquete válido para continuar sin salir del flujo de tu evaluación."
               : errorMessage}
           </p>
 
@@ -226,7 +230,7 @@ export default async function ScheduleEvaluationPage({
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-violet-300">
-                    Inscripción requerida
+                    Además · Inscripción requerida
                   </p>
                   <p className="mt-1 text-sm font-semibold text-white">
                     {enrollmentRequirement.name ?? "Inscripción"}
@@ -242,7 +246,7 @@ export default async function ScheduleEvaluationPage({
                 ) : null}
               </div>
               <p className="mt-2 text-xs leading-5 text-zinc-500">
-                Se agregará automáticamente al mismo pago de la clase o paquete que elijas.
+                No necesitas hacer una compra separada: se agregará al mismo pago de la clase o paquete que elijas.
               </p>
             </div>
           ) : null}
