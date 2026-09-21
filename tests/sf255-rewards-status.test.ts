@@ -36,6 +36,10 @@ const contactConfirmationMigration = readFileSync(
   join(process.cwd(), "supabase/migrations/20260921020138_sf255_guest_contact_confirmation.sql"),
   "utf8",
 );
+const phoneNormalizationMigration = readFileSync(
+  join(process.cwd(), "supabase/migrations/20260921021023_sf255_guest_phone_normalization.sql"),
+  "utf8",
+);
 const discountMigration = readFileSync(
   join(process.cwd(), "supabase/migrations/20260921013000_sf255_reward_checkout_discounts.sql"),
   "utf8",
@@ -145,6 +149,52 @@ describe("SF-255A monthly level and waitlist contracts", () => {
     expect(studentActions).not.toContain("?invited=1");
     expect(studentActions).not.toContain("?guest_cancelled=");
     expect(studentActions).toContain("?invite_error=");
+  });
+
+  it("normalizes Mexican guest phones from 10 local digits", () => {
+    expect(studentActions).toContain("function normalizeMexicanPhone");
+    expect(studentActions).toContain("`+52${digits}`");
+    expect(reservationDetail).toContain('pattern="[0-9]{10}"');
+    expect(reservationDetail).toContain("maxLength={10}");
+    expect(reservationDetail).toContain('placeholder="3312345678"');
+    expect(reservationDetail).toContain(
+      "Agregamos el código de país automáticamente.",
+    );
+    expect(phoneNormalizationMigration).toContain(
+      "right(regexp_replace(pc.value,'[^0-9]','','g'),10)",
+    );
+    expect(phoneNormalizationMigration).toContain("'^\\+52[0-9]{10}    expect(contactConfirmationMigration).toContain("student_guest_invitation_contact_lookup");
+    expect(contactConfirmationMigration).toContain("student_guest_invitation_contact_identity");
+    expect(contactConfirmationMigration).toContain("student_create_guest_invitation_existing");
+    expect(studentActions).toContain("normalizeGuestIdentityName");
+    expect(studentActions).toContain("contact_match=");
+    expect(reservationDetail).toContain("Contacto encontrado");
+    expect(reservationDetail).toContain("Usaremos ese contacto para esta invitación.");
+    expect(reservationDetail).toContain(
+      "No cambiaremos su nombre ni crearemos un registro duplicado.",
+    );
+    expect(reservationDetail).toContain("Usar este contacto");
+    expect(reservationDetail).toContain("Corregir datos");
+  });
+
+  it("snapshots the approved level discount into checkout and surfaces M05 pricing", () => {
+    expect(discountMigration).toContain("reward_discount_eligible boolean not null default false");
+    expect(discountMigration).toContain("regular_amount_minor");
+    expect(discountMigration).toContain("reward_discount_pct");
+    expect(discountMigration).toContain("reward_level_key_snapshot");
+    expect(discountMigration).toContain("private.reward_checkout_price");
+    expect(discountMigration).toContain("'private_class'");
+    expect(discountMigration).toContain("'workshop'");
+    expect(discountMigration).toContain("'masterclass'");
+    expect(discountMigration).toContain("'event'");
+    expect(singleClassPurchase).toContain("Precio regular");
+    expect(singleClassPurchase).toContain("Beneficio");
+    expect(singleClassPurchase).toContain("Total para ti");
+    expect(checkoutReturn).toContain("Total pagado");
+    expect(singleClassPurchase).not.toContain("Abriendo Mercado Pago");
+  });
+});
+");
   });
 
   it("warns before reusing a phone that belongs to a differently named contact", () => {
