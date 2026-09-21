@@ -6,6 +6,7 @@ import "./hoy.css";
 import "./roster-uat.css";
 import "./mobile-nav-overrides.css";
 import "./alumnas/profile-360.css";
+import "./agenda/agenda-calendar.css";
 
 const roleLabels: Record<string, string> = {
   owner: "Owner",
