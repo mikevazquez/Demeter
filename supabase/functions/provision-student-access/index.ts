@@ -26,6 +26,11 @@ function generateInternalPassword() {
   return `Sf!${crypto.randomUUID()}A9`;
 }
 
+function generateTemporaryPassword() {
+  const digits = crypto.getRandomValues(new Uint32Array(1))[0] % 1000000;
+  return `Demeter${String(digits).padStart(6, "0")}`;
+}
+
 function buildStudentActivationLink(baseUrl: string, tokenHash: string) {
   const activationLink = new URL(baseUrl);
   activationLink.searchParams.set("token_hash", tokenHash);
@@ -57,7 +62,7 @@ const handler = {
     const studentId = typeof payload.studentId === "string" ? payload.studentId.trim() : "";
     const mode =
       payload.mode === "resend" || payload.mode === "reset"
-        ? "resend"
+        ? payload.mode
         : payload.mode === undefined
           ? "provision"
           : "";
@@ -86,7 +91,7 @@ const handler = {
     if (studentError) return jsonResponse({ error: "student_lookup_failed" }, 500);
     if (!student) return jsonResponse({ error: "student_not_found" }, 404);
     if (!student.person_id) return jsonResponse({ error: "student_person_missing" }, 409);
-    if (!student.active || student.lifecycle_status !== "active") {
+    if (mode === "provision" && (!student.active || student.lifecycle_status !== "active")) {
       return jsonResponse({ error: "student_not_active" }, 409);
     }
 
@@ -113,6 +118,61 @@ const handler = {
 
     if (permissionError) return jsonResponse({ error: "authorization_failed" }, 500);
     if (!permission) return jsonResponse({ error: "forbidden" }, 403);
+
+    if (mode === "reset") {
+      if (!student.user_id) return jsonResponse({ error: "student_access_missing" }, 409);
+
+      const [
+        { data: account, error: accountError },
+        { data: targetMembership, error: targetError },
+      ] = await Promise.all([
+        userClient
+          .from("user_accounts")
+          .select("status")
+          .eq("id", student.user_id)
+          .maybeSingle(),
+        userClient
+          .from("studio_memberships")
+          .select("role, active")
+          .eq("studio_id", student.studio_id)
+          .eq("user_id", student.user_id)
+          .maybeSingle(),
+      ]);
+
+      if (accountError || targetError) return jsonResponse({ error: "access_lookup_failed" }, 500);
+      if (
+        !account ||
+        account.status !== "active" ||
+        !targetMembership ||
+        targetMembership.role !== "student" ||
+        targetMembership.active !== true
+      ) {
+        return jsonResponse({ error: "student_access_inconsistent" }, 409);
+      }
+
+      const temporaryPassword = generateTemporaryPassword();
+      const { error: resetError } = await adminClient.auth.admin.updateUserById(student.user_id, {
+        email: authEmail,
+        email_confirm: true,
+        password: temporaryPassword,
+      });
+      if (resetError) return jsonResponse({ error: "auth_password_reset_failed" }, 500);
+
+      const { error: accountUpdateError } = await adminClient
+        .from("user_accounts")
+        .update({ must_change_password: true })
+        .eq("id", student.user_id);
+      if (accountUpdateError) return jsonResponse({ error: "account_update_failed" }, 500);
+
+      return jsonResponse({
+        ok: true,
+        phone: student.phone,
+        temporaryPassword,
+        mustChangePassword: true,
+        activationLinkGenerated: false,
+        welcomeDelivery: null,
+      });
+    }
 
     if (mode === "resend") {
       if (!student.user_id) return jsonResponse({ error: "student_access_missing" }, 409);
