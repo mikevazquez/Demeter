@@ -19,8 +19,6 @@ const errorCopy: Record<string, string> = {
   temporary_password_reset_closed:
     "El instructor ya completó su activación. Ya no se puede regenerar la contraseña temporal.",
   auth_password_reset_failed: "Supabase Auth no pudo generar una nueva contraseña temporal.",
-  access_reset_state_failed:
-    "No se pudo preparar la cuenta para el cambio obligatorio de contraseña.",
   unauthenticated: "Tu sesión administrativa expiró. Vuelve a iniciar sesión.",
   forbidden: "Tu cuenta no tiene permiso para habilitar accesos.",
   authorization_failed: "No se pudo validar tu permiso administrativo.",
@@ -93,7 +91,7 @@ export function InstructorAccessProvisioner({
         <div className="notice success">
           {mode === "provision"
             ? "Cuenta Coach creada y vinculada. Guarda la contraseña temporal antes de cerrar este panel."
-            : "Nueva contraseña temporal generada. La anterior ya no funciona y el instructor deberá reemplazar esta al iniciar sesión."}
+            : "Nueva contraseña temporal generada. La anterior ya no funciona."}
         </div>
         <div className="student-row">
           <div>
@@ -133,9 +131,8 @@ export function InstructorAccessProvisioner({
           </>
         ) : (
           <>
-            La cuenta ya existe. Puedes generar una nueva contraseña temporal para{" "}
-            <strong>{email}</strong>; la anterior dejará de funcionar y el instructor deberá
-            reemplazarla al iniciar sesión.
+            La cuenta ya existe y sigue pendiente de activación. Puedes generar una nueva contraseña
+            temporal para <strong>{email}</strong>.
           </>
         )}
       </p>
