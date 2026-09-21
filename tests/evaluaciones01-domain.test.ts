@@ -3,23 +3,22 @@ import { join } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
-const domain = readFileSync(
-  join(process.cwd(), "supabase/migrations/20260921074309_evaluaciones01_domain_persistence.sql"),
-  "utf8",
+const domainPath = join(
+  process.cwd(),
+  "supabase/migrations/20260921074309_evaluaciones01_domain_persistence.sql",
+);
+const hardeningPath = join(
+  process.cwd(),
+  "supabase/migrations/20260921074428_evaluaciones01_domain_hardening.sql",
+);
+const rlsHardeningPath = join(
+  process.cwd(),
+  "supabase/migrations/20260921074539_evaluaciones01_rls_performance_hardening.sql",
 );
 
-const hardening = readFileSync(
-  join(process.cwd(), "supabase/migrations/20260921074428_evaluaciones01_domain_hardening.sql"),
-  "utf8",
-);
-
-const rlsHardening = readFileSync(
-  join(
-    process.cwd(),
-    "supabase/migrations/20260921074539_evaluaciones01_rls_performance_hardening.sql",
-  ),
-  "utf8",
-);
+const domain = readFileSync(domainPath, "utf8");
+const hardening = readFileSync(hardeningPath, "utf8");
+const rlsHardening = readFileSync(rlsHardeningPath, "utf8");
 
 describe("EVALUACIONES-01 technical evaluation domain", () => {
   it("separates technical levels from Rewards", () => {
