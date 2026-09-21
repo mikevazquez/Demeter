@@ -36,6 +36,9 @@ type SessionOperationsProps = {
   canAttendance: boolean;
   canBook: boolean;
   canCreateStudent: boolean;
+  returnTo?: string;
+  initiallyOpen?: boolean;
+  showToggle?: boolean;
 };
 
 const walkinFallbackDetails = new Set(["sin paquete activo", "fuera de paquete", "sin créditos"]);
@@ -65,8 +68,11 @@ export function SessionOperations({
   canAttendance,
   canBook,
   canCreateStudent,
+  returnTo = "",
+  initiallyOpen = false,
+  showToggle = true,
 }: SessionOperationsProps) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(initiallyOpen);
   const [newWalkin, setNewWalkin] = useState(false);
   const [feedback, setFeedback] = useState<{
     kind: "success" | "error";
@@ -83,10 +89,11 @@ export function SessionOperations({
   const pendingCount = roster.filter((item) => item.status === "reserved").length;
 
   useEffect(() => {
-    if (window.location.hash !== `#session-${sessionId}`) return;
+    const matchesSessionHash = window.location.hash === `#session-${sessionId}`;
+    if (showToggle && !matchesSessionHash) return;
 
     const frame = window.requestAnimationFrame(() => {
-      setOpen(true);
+      if (matchesSessionHash) setOpen(true);
       const params = new URLSearchParams(window.location.search);
       const created = params.get("created");
       const error = params.get("error");
@@ -129,18 +136,23 @@ export function SessionOperations({
     });
 
     return () => window.cancelAnimationFrame(frame);
-  }, [sessionId]);
+  }, [sessionId, showToggle]);
 
   return (
-    <div className="today-session-operations" id={`session-${sessionId}`}>
-      <button
-        className="today-session-toggle"
-        type="button"
-        onClick={() => setOpen((value) => !value)}
-        aria-expanded={open}
-      >
-        {open ? "Cerrar clase" : `Ver alumnas · ${roster.length}`}
-      </button>
+    <div
+      className={`today-session-operations${showToggle ? "" : " is-detail"}`}
+      id={`session-${sessionId}`}
+    >
+      {showToggle ? (
+        <button
+          className="today-session-toggle"
+          type="button"
+          onClick={() => setOpen((value) => !value)}
+          aria-expanded={open}
+        >
+          {open ? "Cerrar clase" : `Ver alumnas · ${roster.length}`}
+        </button>
+      ) : null}
 
       {open ? (
         <div className="today-session-drawer roster-first">
@@ -193,6 +205,7 @@ export function SessionOperations({
                             <input type="hidden" name="session_id" value={sessionId} />
                             <input type="hidden" name="reservation_id" value={item.id} />
                             <input type="hidden" name="return_date" value={returnDate} />
+                            {returnTo ? <input type="hidden" name="return_to" value={returnTo} /> : null}
                             <input type="hidden" name="status" value="attended" />
                             <button
                               className={
@@ -209,6 +222,7 @@ export function SessionOperations({
                             <input type="hidden" name="session_id" value={sessionId} />
                             <input type="hidden" name="reservation_id" value={item.id} />
                             <input type="hidden" name="return_date" value={returnDate} />
+                            {returnTo ? <input type="hidden" name="return_to" value={returnTo} /> : null}
                             <input type="hidden" name="status" value="no_show" />
                             <button
                               className={item.status === "no_show" ? "is-selected is-no-show" : ""}
@@ -239,6 +253,7 @@ export function SessionOperations({
                             <input type="hidden" name="session_id" value={sessionId} />
                             <input type="hidden" name="reservation_id" value={item.id} />
                             <input type="hidden" name="return_date" value={returnDate} />
+                            {returnTo ? <input type="hidden" name="return_to" value={returnTo} /> : null}
                             <input type="hidden" name="status" value={correctionTarget} />
                             <input
                               name="reason"
@@ -258,6 +273,7 @@ export function SessionOperations({
                           <input type="hidden" name="session_id" value={sessionId} />
                           <input type="hidden" name="reservation_id" value={item.id} />
                           <input type="hidden" name="return_date" value={returnDate} />
+                            {returnTo ? <input type="hidden" name="return_to" value={returnTo} /> : null}
                           <button className="today-inline-danger" type="submit">
                             Cancelar reserva
                           </button>
@@ -296,6 +312,7 @@ export function SessionOperations({
                 <form action={createWalkinFromToday} className="today-walkin-form">
                   <input type="hidden" name="session_id" value={sessionId} />
                   <input type="hidden" name="return_date" value={returnDate} />
+                            {returnTo ? <input type="hidden" name="return_to" value={returnTo} /> : null}
                   <input name="first_name" placeholder="Nombre" required />
                   <input name="last_name" placeholder="Apellido" />
                   <input name="phone" type="tel" placeholder="Teléfono" required />
@@ -311,6 +328,7 @@ export function SessionOperations({
                 <form action={bookStudentFromToday} className="today-walkin-form">
                   <input type="hidden" name="session_id" value={sessionId} />
                   <input type="hidden" name="return_date" value={returnDate} />
+                            {returnTo ? <input type="hidden" name="return_to" value={returnTo} /> : null}
                   <select name="student_id" defaultValue="" required>
                     <option value="" disabled>
                       Selecciona una alumna
@@ -363,6 +381,7 @@ export function SessionOperations({
                 <form action={finalizeAttendanceFromToday}>
                   <input type="hidden" name="session_id" value={sessionId} />
                   <input type="hidden" name="return_date" value={returnDate} />
+                            {returnTo ? <input type="hidden" name="return_to" value={returnTo} /> : null}
                   <button className="primary-button" type="submit">
                     Finalizar asistencia
                   </button>
