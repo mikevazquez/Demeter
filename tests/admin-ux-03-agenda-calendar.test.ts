@@ -7,6 +7,7 @@ function source(path: string) {
   return readFileSync(join(process.cwd(), path), "utf8");
 }
 
+// Approved mobile and desktop Agenda baselines.
 describe("ADMIN-UX-03 Agenda calendario operativo", () => {
   const agenda = source("app/admin/agenda/page.tsx");
   const actions = source("app/admin/agenda/[sessionId]/actions.ts");
