@@ -240,7 +240,7 @@ export async function createGuestInvitationAction(formData: FormData) {
 
   revalidateStudentBookingSurfaces();
   revalidatePath(detailPath);
-  redirect(`${detailPath}?invited=1`);
+  redirect(detailPath);
 }
 
 export async function cancelGuestInvitationAction(formData: FormData) {
@@ -277,7 +277,7 @@ export async function cancelGuestInvitationAction(formData: FormData) {
 
   revalidateStudentBookingSurfaces();
   revalidatePath(detailPath);
-  redirect(`${detailPath}?guest_cancelled=${result.returned ? "returned" : "consumed"}`);
+  redirect(detailPath);
 }
 
 export async function cancelStudentReservationAction(formData: FormData) {
