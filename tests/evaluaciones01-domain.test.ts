@@ -70,14 +70,8 @@ describe("EVALUACIONES-01 technical evaluation domain", () => {
     expect(rlsHardening).toContain("technical_levels_configure_insert");
     expect(rlsHardening).toContain("technical_levels_configure_update");
     expect(rlsHardening).toContain("technical_levels_configure_delete");
-    expect(rlsHardening).toContain(
-      "technical_evaluation_element_results_staff_insert",
-    );
-    expect(rlsHardening).toContain(
-      "technical_evaluation_combo_results_staff_update",
-    );
-    expect(rlsHardening).toContain(
-      "technical_evaluation_criterion_results_staff_delete",
-    );
+    expect(rlsHardening).toContain("technical_evaluation_element_results_staff_insert");
+    expect(rlsHardening).toContain("technical_evaluation_combo_results_staff_update");
+    expect(rlsHardening).toContain("technical_evaluation_criterion_results_staff_delete");
   });
 });
