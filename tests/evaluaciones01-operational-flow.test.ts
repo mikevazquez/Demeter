@@ -14,6 +14,13 @@ const reminders = readFileSync(
   ),
   "utf8",
 );
+const enrollmentCheckout = readFileSync(
+  join(
+    process.cwd(),
+    "supabase/migrations/20260921210000_evaluaciones01_checkout_with_required_enrollment.sql",
+  ),
+  "utf8",
+);
 const studentReadModels = readFileSync(
   join(
     process.cwd(),
@@ -119,6 +126,12 @@ describe("EVALUACIONES-01 operational cycle", () => {
     expect(studentSchedule).toContain("target_discipline_id: invitation.discipline_id");
     expect(studentSchedule).toContain("Pagar esta clase");
     expect(studentSchedule).toContain("Comprar un paquete");
+    expect(studentSchedule).toContain('"enrollment_required"');
+    expect(studentSchedule).toContain('"student_enrollment_checkout_requirement"');
+    expect(studentSchedule).toContain("Se agregará automáticamente al mismo pago");
+    expect(enrollmentCheckout).toContain("public.student_create_evaluation_checkout_attempt");
+    expect(enrollmentCheckout).toContain("extra_fulfillment_snapshot");
+    expect(enrollmentCheckout).toContain("insert into public.student_enrollments");
     expect(studentSchedule).toContain("PurchaseSingleClassButton");
     expect(studentSchedule).toContain("PurchasePackageButton");
     expect(studentSchedule).toContain("evaluationInvitationId={invitation.id}");
