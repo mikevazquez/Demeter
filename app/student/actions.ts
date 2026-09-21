@@ -201,6 +201,85 @@ export async function bookStudentSessionAction(formData: FormData) {
   );
 }
 
+export async function createGuestInvitationAction(formData: FormData) {
+  const reservationId = String(formData.get("reservation_id") ?? "").trim();
+  const guestName = String(formData.get("guest_name") ?? "").trim();
+  const guestPhone = String(formData.get("guest_phone") ?? "").trim();
+
+  if (!reservationId) redirect("/student/mis-clases?error=reservation_required");
+
+  const detailPath = `/student/mis-clases/${reservationId}`;
+  const { supabase } = await getStudentPortalContext();
+  const { data, error } = await supabase.rpc("student_create_guest_invitation", {
+    target_host_reservation_id: reservationId,
+    target_guest_full_name: guestName,
+    target_guest_phone: guestPhone,
+  });
+
+  if (error) {
+    redirect(
+      `${detailPath}?invite=1&invite_error=${encodeURIComponent(
+        errorCode(error, "invite_failed"),
+      )}`,
+    );
+  }
+
+  const result = data as {
+    ok?: boolean;
+    reason_code?: string | null;
+    invitation_id?: string;
+  } | null;
+
+  if (!result?.ok || !result.invitation_id) {
+    redirect(
+      `${detailPath}?invite=1&invite_error=${encodeURIComponent(
+        result?.reason_code ?? "invite_failed",
+      )}`,
+    );
+  }
+
+  revalidateStudentBookingSurfaces();
+  revalidatePath(detailPath);
+  redirect(`${detailPath}?invited=1`);
+}
+
+export async function cancelGuestInvitationAction(formData: FormData) {
+  const hostReservationId = String(formData.get("host_reservation_id") ?? "").trim();
+  const invitationId = String(formData.get("invitation_id") ?? "").trim();
+
+  if (!hostReservationId || !invitationId) {
+    redirect("/student/mis-clases?error=invitation_required");
+  }
+
+  const detailPath = `/student/mis-clases/${hostReservationId}`;
+  const { supabase } = await getStudentPortalContext();
+  const { data, error } = await supabase.rpc("student_cancel_guest_invitation", {
+    target_invitation_id: invitationId,
+  });
+
+  if (error) {
+    redirect(`${detailPath}?invite_error=invite_cancel_failed`);
+  }
+
+  const result = data as {
+    ok?: boolean;
+    reason_code?: string | null;
+    returned?: boolean;
+  } | null;
+
+  if (!result?.ok) {
+    redirect(
+      `${detailPath}?invite_error=${encodeURIComponent(
+        result?.reason_code ?? "invite_cancel_failed",
+      )}`,
+    );
+  }
+
+  revalidateStudentBookingSurfaces();
+  revalidatePath(detailPath);
+  redirect(`${detailPath}?guest_cancelled=${result.returned ? "returned" : "consumed"}`);
+}
+
 export async function cancelStudentReservationAction(formData: FormData) {
   const reservationId = String(formData.get("reservation_id") ?? "").trim();
   const reason = String(formData.get("reason") ?? "").trim() || null;
