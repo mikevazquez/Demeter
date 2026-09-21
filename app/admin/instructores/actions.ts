@@ -31,7 +31,7 @@ export async function createInstructor(formData: FormData) {
 
   if (error || !data) redirect("/admin/instructores?error=create_failed");
   revalidatePath("/admin/instructores");
-  redirect(`/admin/instructores/${data}?created=1`);
+  redirect(`/admin/instructores/${data}`);
 }
 
 export async function setInstructorStatus(formData: FormData) {
@@ -50,5 +50,5 @@ export async function setInstructorStatus(formData: FormData) {
 
   revalidatePath("/admin/instructores");
   revalidatePath(`/admin/instructores/${instructorId}`);
-  redirect(`/admin/instructores/${instructorId}?saved=status`);
+  redirect(`/admin/instructores/${instructorId}`);
 }
