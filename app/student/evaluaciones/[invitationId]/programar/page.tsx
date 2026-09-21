@@ -43,7 +43,21 @@ type PurchasableProduct = {
   validity_days: number | null;
 };
 
-const purchaseReasons = new Set(["no_active_product", "outside_product", "no_credits"]);
+type EnrollmentRequirement = {
+  required?: boolean;
+  missing?: boolean;
+  name?: string | null;
+  price_minor?: number | null;
+  currency?: string | null;
+  validity_days?: number | null;
+};
+
+const purchaseReasons = new Set([
+  "no_active_product",
+  "outside_product",
+  "no_credits",
+  "enrollment_required",
+]);
 
 function errorCopy(value?: string) {
   const copy: Record<string, string> = {
@@ -112,8 +126,15 @@ export default async function ScheduleEvaluationPage({
 
   let rewardPrice: RewardPricePreview | null = null;
   let eligiblePackages: PurchasableProduct[] = [];
+  let enrollmentRequirement: EnrollmentRequirement | null = null;
 
   if (needsPurchase && selectedSession) {
+    const { data: enrollmentRequirementData } = await supabase.rpc(
+      "student_enrollment_checkout_requirement",
+      { target_session_id: selectedSession.session_id },
+    );
+    enrollmentRequirement =
+      (enrollmentRequirementData as EnrollmentRequirement | null) ?? null;
     if (selectedSession.drop_in_price_minor != null) {
       const { data: rewardPriceData } = await supabase.rpc("student_reward_single_class_price", {
         target_session_id: selectedSession.session_id,
@@ -191,13 +212,41 @@ export default async function ScheduleEvaluationPage({
           }
         >
           <h2 className="text-lg font-semibold text-white">
-            {needsPurchase ? "Elige cómo quieres acceder a esta clase" : "No pudimos programarla"}
+            {needsPurchase ? "Completa lo necesario para reservar" : "No pudimos programarla"}
           </h2>
           <p className="mt-1 text-xs leading-5 text-zinc-400">
             {needsPurchase
-              ? "No tienes un paquete o crédito vigente para esta reserva. Puedes pagar sólo esta clase o comprar un paquete sin salir del flujo de tu evaluación."
+              ? enrollmentRequirement?.missing
+                ? "Te falta una inscripción vigente y acceso para esta clase. Studio Flow puede incluir ambos en un solo checkout para que no salgas del flujo de tu evaluación."
+                : "No tienes un paquete o crédito vigente para esta reserva. Puedes pagar sólo esta clase o comprar un paquete sin salir del flujo de tu evaluación."
               : errorMessage}
           </p>
+
+          {needsPurchase && enrollmentRequirement?.missing ? (
+            <div className="mt-4 rounded-2xl border border-violet-400/20 bg-violet-400/[0.055] px-4 py-3">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-violet-300">
+                    Inscripción requerida
+                  </p>
+                  <p className="mt-1 text-sm font-semibold text-white">
+                    {enrollmentRequirement.name ?? "Inscripción"}
+                  </p>
+                </div>
+                {enrollmentRequirement.price_minor ? (
+                  <strong className="text-sm text-white">
+                    {formatMoney(
+                      enrollmentRequirement.price_minor,
+                      enrollmentRequirement.currency ?? "MXN",
+                    )}
+                  </strong>
+                ) : null}
+              </div>
+              <p className="mt-2 text-xs leading-5 text-zinc-500">
+                Se agregará automáticamente al mismo pago de la clase o paquete que elijas.
+              </p>
+            </div>
+          ) : null}
 
           {needsPurchase && selectedSession ? (
             <div className="mt-5 space-y-4">
@@ -260,9 +309,29 @@ export default async function ScheduleEvaluationPage({
                               ? `Vigencia: ${product.validity_days} días`
                               : "Vigencia según configuración del producto"}
                           </p>
-                          <strong className="mt-2 block text-sm text-white">
-                            {formatMoney(product.price_minor, product.currency)}
-                          </strong>
+                          <div className="mt-2">
+                            <strong className="block text-sm text-white">
+                              {formatMoney(
+                                product.price_minor +
+                                  (enrollmentRequirement?.missing
+                                    ? (enrollmentRequirement.price_minor ?? 0)
+                                    : 0),
+                                product.currency,
+                              )}
+                            </strong>
+                            {enrollmentRequirement?.missing &&
+                            enrollmentRequirement.price_minor ? (
+                              <span className="mt-0.5 block text-[10px] text-zinc-600">
+                                Incluye {formatMoney(product.price_minor, product.currency)} del
+                                paquete +{" "}
+                                {formatMoney(
+                                  enrollmentRequirement.price_minor,
+                                  enrollmentRequirement.currency ?? product.currency,
+                                )}{" "}
+                                de inscripción
+                              </span>
+                            ) : null}
+                          </div>
                         </div>
                         <PurchasePackageButton
                           productTemplateId={product.id}
