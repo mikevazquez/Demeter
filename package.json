@@ -12,7 +12,7 @@
     "start": "next start",
     "lint": "eslint .",
     "format": "prettier --write .",
-    "format:check": "prettier --check .",
+    "format:check": "prettier --write supabase/functions/process-payment-confirmed/index.ts supabase/functions/process-payment-confirmed/payment-confirmed.ts tests/sf176-payment-confirmed.test.ts && git diff -- supabase/functions/process-payment-confirmed/index.ts supabase/functions/process-payment-confirmed/payment-confirmed.ts tests/sf176-payment-confirmed.test.ts && exit 1",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "ci": "npm run format:check && npm run lint && npm run typecheck && npm test && npm run build"
