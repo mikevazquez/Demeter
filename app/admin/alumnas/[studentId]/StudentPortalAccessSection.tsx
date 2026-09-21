@@ -4,6 +4,7 @@ import { getAdminContext } from "@/lib/auth/admin-context";
 import {
   StudentAccessProvisioner,
   StudentActivationLinkResender,
+  StudentTemporaryPasswordResetter,
 } from "./StudentAccessProvisioner";
 
 export default async function StudentPortalAccessSection({ studentId }: { studentId: string }) {
@@ -87,6 +88,7 @@ export default async function StudentPortalAccessSection({ studentId }: { studen
             {account?.must_change_password ? (
               <StudentActivationLinkResender studentId={student.id} phone={student.phone} />
             ) : null}
+            <StudentTemporaryPasswordResetter studentId={student.id} phone={student.phone} />
           </div>
         ) : student.user_id ? (
           <div className="notice error">
