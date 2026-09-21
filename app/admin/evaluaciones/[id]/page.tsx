@@ -341,6 +341,10 @@ export default async function TechnicalEvaluationDetailPage({
               </p>
             </article>
           </section>
+          <p className="eval-summary-hint">
+            Cumplir los obligatorios no significa aprobar la evaluación. El resultado global también
+            depende del puntaje total y de los mínimos configurados.
+          </p>
         </>
       ) : null}
 
