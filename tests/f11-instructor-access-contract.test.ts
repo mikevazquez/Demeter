@@ -47,6 +47,20 @@ describe("F11 instructor access provisioning", () => {
     expect(adminAction).not.toContain("service_role");
   });
 
+  it("supports owner-authorized recovery after the Coach already activated the account", () => {
+    const edge = source("supabase/functions/provision-instructor-access/index.ts");
+    const action = source("app/admin/instructores/[instructorId]/access-actions.ts");
+    const profile = source("app/admin/instructores/[instructorId]/page.tsx");
+
+    expect(edge).toContain("shouldReopenActivation");
+    expect(edge).toContain("must_change_password: true");
+    expect(edge).toContain("must_change_password: false");
+    expect(edge).not.toContain('error: "temporary_password_reset_closed"');
+    expect(action).not.toContain('error: "temporary_password_reset_closed"');
+    expect(profile).toContain('mode="reset"');
+    expect(profile).toContain("puedes emitir una nueva contraseña temporal");
+  });
+
   it("requires instructor email and refuses silent linking of an existing Auth identity", () => {
     const edge = source("supabase/functions/provision-instructor-access/index.ts");
     const profile = source("app/admin/instructores/[instructorId]/page.tsx");
