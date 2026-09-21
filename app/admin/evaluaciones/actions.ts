@@ -533,3 +533,47 @@ export async function createNextEvaluationTemplateVersion(formData: FormData) {
   revalidatePath(`/admin/evaluaciones/plantillas/${templateId}`);
   redirect(`/admin/evaluaciones/plantillas/${templateId}?saved=version`);
 }
+
+
+export async function createTechnicalEvaluationAction(formData: FormData) {
+  const ctx = await getAdminContext(CAPABILITIES.EVALUATIONS_WRITE);
+  const studentId = text(formData, "student_id");
+  const templateVersionId = text(formData, "template_version_id");
+  const evaluationDate = text(formData, "evaluation_date");
+
+  const { data: version } = await ctx.supabase
+    .from("evaluation_template_versions")
+    .select("id,template_id,status")
+    .eq("id", templateVersionId)
+    .eq("studio_id", ctx.studio.id)
+    .eq("status", "active")
+    .maybeSingle();
+
+  if (!version) redirect("/admin/evaluaciones/nueva?error=template");
+
+  const { data: template } = await ctx.supabase
+    .from("evaluation_templates")
+    .select("discipline_id,discipline_technical_level_id")
+    .eq("id", version.template_id)
+    .eq("studio_id", ctx.studio.id)
+    .maybeSingle();
+
+  if (!template) redirect("/admin/evaluaciones/nueva?error=template");
+
+  const { data: evaluationId, error } = await ctx.supabase.rpc(
+    "admin_create_technical_evaluation",
+    {
+      p_student_id: studentId,
+      p_discipline_id: template.discipline_id,
+      p_target_discipline_level_id: template.discipline_technical_level_id,
+      p_template_version_id: version.id,
+      p_evaluation_date: evaluationDate || null,
+      p_evaluator_user_id: ctx.user.id,
+    },
+  );
+
+  if (error || !evaluationId) redirect("/admin/evaluaciones/nueva?error=create");
+
+  revalidatePath("/admin/evaluaciones");
+  redirect(`/admin/evaluaciones/${evaluationId}`);
+}
