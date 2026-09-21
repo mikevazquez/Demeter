@@ -91,7 +91,7 @@ export function InstructorAccessProvisioner({
         <div className="notice success">
           {mode === "provision"
             ? "Cuenta Coach creada y vinculada. Guarda la contraseña temporal antes de cerrar este panel."
-            : "Nueva contraseña temporal generada. La anterior ya no funciona."}
+            : "Nueva contraseña temporal generada. La anterior ya no funciona y el instructor deberá reemplazar esta al iniciar sesión."}
         </div>
         <div className="student-row">
           <div>
@@ -131,8 +131,9 @@ export function InstructorAccessProvisioner({
           </>
         ) : (
           <>
-            La cuenta ya existe y sigue pendiente de activación. Puedes generar una nueva contraseña
-            temporal para <strong>{email}</strong>.
+            La cuenta ya existe. Puedes generar una nueva contraseña temporal para{" "}
+            <strong>{email}</strong>; la anterior dejará de funcionar y el instructor deberá
+            reemplazarla al iniciar sesión.
           </>
         )}
       </p>
