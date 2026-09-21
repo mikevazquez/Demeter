@@ -57,7 +57,7 @@ describe("SF-N14 clean avatar, activity colors and single-class purchase", () =>
     expect(agendaActions).toContain("updateActivityColor");
     expect(agendaActions).toContain(".update({ color_hex: colorHex })");
     expect(agenda).toContain('type="color"');
-    expect(agenda).toContain("borderLeftColor: template?.color_hex");
+    expect(agenda).toContain('"--agenda-session-color": session.color');
     expect(reserve).toContain("borderLeftColor: activityColor");
     expect(detail).toContain('select("color_hex")');
     expect(detail).toContain("activityColor");
