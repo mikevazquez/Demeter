@@ -3,7 +3,7 @@ import { getAdminContext } from "@/lib/auth/admin-context";
 
 import {
   StudentAccessProvisioner,
-  StudentTemporaryPasswordResetter,
+  StudentActivationLinkResender,
 } from "./StudentAccessProvisioner";
 
 export default async function StudentPortalAccessSection({ studentId }: { studentId: string }) {
@@ -79,13 +79,13 @@ export default async function StudentPortalAccessSection({ studentId }: { studen
                 <strong>Contraseña</strong>
                 <span>
                   {account?.must_change_password
-                    ? "Pendiente de reemplazar la contraseña temporal en el primer inicio de sesión."
+                    ? "Pendiente de crear su contraseña desde el enlace de activación."
                     : "Activación completada por la alumna."}
                 </span>
               </div>
             </div>
             {account?.must_change_password ? (
-              <StudentTemporaryPasswordResetter studentId={student.id} phone={student.phone} />
+              <StudentActivationLinkResender studentId={student.id} phone={student.phone} />
             ) : null}
           </div>
         ) : student.user_id ? (

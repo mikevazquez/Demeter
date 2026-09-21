@@ -5,7 +5,7 @@ import { sendAsistianWebhook } from "../_shared/asistian-messaging.ts";
 type ProvisionRequest = {
   studentId?: unknown;
   mode?: unknown;
-  loginUrl?: unknown;
+  activationUrl?: unknown;
 };
 
 function jsonResponse(body: Record<string, unknown>, status = 200) {
@@ -22,12 +22,15 @@ function studentAuthEmailFromPhone(phone: string) {
   return `student.${digits}@auth.studioflow.invalid`;
 }
 
-function generateTemporaryPassword() {
-  const randomValues = new Uint32Array(6);
-  crypto.getRandomValues(randomValues);
-  const suffix = Array.from(randomValues, (value) => String(value % 10)).join("");
+function generateInternalPassword() {
+  return `Sf!${crypto.randomUUID()}A9`;
+}
 
-  return `Demeter${suffix}`;
+function buildStudentActivationLink(baseUrl: string, tokenHash: string) {
+  const activationLink = new URL(baseUrl);
+  activationLink.searchParams.set("token_hash", tokenHash);
+  activationLink.searchParams.set("type", "recovery");
+  return activationLink.toString();
 }
 
 const handler = {
@@ -52,18 +55,26 @@ const handler = {
     }
 
     const studentId = typeof payload.studentId === "string" ? payload.studentId.trim() : "";
-    const mode = payload.mode === "reset" ? "reset" : payload.mode === undefined ? "provision" : "";
-    const loginUrl = typeof payload.loginUrl === "string" ? payload.loginUrl.trim() : "";
+    const mode =
+      payload.mode === "resend" || payload.mode === "reset"
+        ? "resend"
+        : payload.mode === undefined
+          ? "provision"
+          : "";
+    const activationUrl =
+      typeof payload.activationUrl === "string" ? payload.activationUrl.trim() : "";
     if (!studentId || !mode) return jsonResponse({ error: "invalid_request" }, 400);
-    if (mode === "provision") {
-      try {
-        const parsedLoginUrl = new URL(loginUrl);
-        if (parsedLoginUrl.protocol !== "https:" || parsedLoginUrl.pathname !== "/login/student") {
-          return jsonResponse({ error: "login_url_invalid" }, 400);
-        }
-      } catch {
-        return jsonResponse({ error: "login_url_invalid" }, 400);
+
+    try {
+      const parsedActivationUrl = new URL(activationUrl);
+      if (
+        parsedActivationUrl.protocol !== "https:" ||
+        parsedActivationUrl.pathname !== "/login/student/activar"
+      ) {
+        return jsonResponse({ error: "activation_url_invalid" }, 400);
       }
+    } catch {
+      return jsonResponse({ error: "activation_url_invalid" }, 400);
     }
 
     const { data: student, error: studentError } = await userClient
@@ -103,9 +114,7 @@ const handler = {
     if (permissionError) return jsonResponse({ error: "authorization_failed" }, 500);
     if (!permission) return jsonResponse({ error: "forbidden" }, 403);
 
-    const temporaryPassword = generateTemporaryPassword();
-
-    if (mode === "reset") {
+    if (mode === "resend") {
       if (!student.user_id) return jsonResponse({ error: "student_access_missing" }, 409);
 
       const [
@@ -135,47 +144,72 @@ const handler = {
       ) {
         return jsonResponse({ error: "student_access_inconsistent" }, 409);
       }
-      const shouldReopenActivation = account.must_change_password !== true;
-      if (shouldReopenActivation) {
-        const { error: activationStateError } = await adminClient
-          .from("user_accounts")
-          .update({ must_change_password: true, updated_at: new Date().toISOString() })
-          .eq("id", student.user_id);
-
-        if (activationStateError) {
-          return jsonResponse({ error: "access_reset_state_failed" }, 500);
-        }
+      if (account.must_change_password !== true) {
+        return jsonResponse({ error: "activation_already_completed" }, 409);
       }
 
+      const internalPassword = generateInternalPassword();
       const { error: resetError } = await adminClient.auth.admin.updateUserById(student.user_id, {
         email: authEmail,
         email_confirm: true,
-        password: temporaryPassword,
+        password: internalPassword,
       });
+      if (resetError) return jsonResponse({ error: "auth_activation_reset_failed" }, 500);
 
-      if (resetError) {
-        if (shouldReopenActivation) {
-          await adminClient
-            .from("user_accounts")
-            .update({ must_change_password: false, updated_at: new Date().toISOString() })
-            .eq("id", student.user_id);
-        }
-        return jsonResponse({ error: "auth_password_reset_failed" }, 500);
+      const { data: activationData, error: activationError } =
+        await adminClient.auth.admin.generateLink({
+          type: "recovery",
+          email: authEmail,
+          options: { redirectTo: activationUrl },
+        });
+
+      if (activationError || !activationData.properties?.action_link) {
+        return jsonResponse({ error: "activation_link_failed" }, 500);
       }
+
+      const generatedActionLink = new URL(activationData.properties.action_link);
+      const tokenHash = generatedActionLink.searchParams.get("token");
+      if (!tokenHash) return jsonResponse({ error: "activation_link_failed" }, 500);
+
+      const activationLink = buildStudentActivationLink(activationUrl, tokenHash);
+      const welcomeEventId = `student_welcome:${student.id}:${student.user_id}:${crypto.randomUUID()}`;
+      const welcomeDelivery = await sendAsistianWebhook({
+        adminClient,
+        studioId: student.studio_id,
+        template: "student_welcome",
+        eventId: welcomeEventId,
+        recipient: student.phone,
+        variables: {
+          nombre: student.full_name,
+          activation_url: activationLink,
+        },
+        metadata: {
+          source: "student_access_activation_resend",
+          student_id: student.id,
+          user_id: student.user_id,
+          must_change_password: true,
+        },
+      });
 
       return jsonResponse({
         ok: true,
-        temporaryPassword,
         phone: student.phone,
         mustChangePassword: true,
+        activationLinkGenerated: true,
+        welcomeDelivery: {
+          status: welcomeDelivery.status,
+          errorCode: welcomeDelivery.status === "accepted" ? null : welcomeDelivery.errorCode,
+        },
       });
     }
 
     if (student.user_id) return jsonResponse({ error: "student_already_linked" }, 409);
 
+    const internalPassword = generateInternalPassword();
+
     let { data: createdUser, error: createError } = await adminClient.auth.admin.createUser({
       email: authEmail,
-      password: temporaryPassword,
+      password: internalPassword,
       email_confirm: true,
       user_metadata: { full_name: student.full_name, login_phone: student.phone },
     });
@@ -234,7 +268,7 @@ const handler = {
 
       const retry = await adminClient.auth.admin.createUser({
         email: authEmail,
-        password: temporaryPassword,
+        password: internalPassword,
         email_confirm: true,
         user_metadata: { full_name: student.full_name, login_phone: student.phone },
       });
@@ -257,7 +291,43 @@ const handler = {
       return jsonResponse({ error: "link_failed" }, 500);
     }
 
-    const welcomeEventId = `student_welcome:${student.id}:${provisionedUser.id}`;
+    const { data: activationData, error: activationError } =
+      await adminClient.auth.admin.generateLink({
+        type: "recovery",
+        email: authEmail,
+        options: { redirectTo: activationUrl },
+      });
+
+    if (activationError || !activationData.properties?.action_link) {
+      return jsonResponse({
+        ok: true,
+        phone: student.phone,
+        mustChangePassword: true,
+        activationLinkGenerated: false,
+        welcomeDelivery: {
+          status: "error",
+          errorCode: "activation_link_failed",
+        },
+      });
+    }
+
+    const generatedActionLink = new URL(activationData.properties.action_link);
+    const tokenHash = generatedActionLink.searchParams.get("token");
+    if (!tokenHash) {
+      return jsonResponse({
+        ok: true,
+        phone: student.phone,
+        mustChangePassword: true,
+        activationLinkGenerated: false,
+        welcomeDelivery: {
+          status: "error",
+          errorCode: "activation_link_failed",
+        },
+      });
+    }
+
+    const activationLink = buildStudentActivationLink(activationUrl, tokenHash);
+    const welcomeEventId = `student_welcome:${student.id}:${provisionedUser.id}:${crypto.randomUUID()}`;
     const welcomeDelivery = await sendAsistianWebhook({
       adminClient,
       studioId: student.studio_id,
@@ -266,23 +336,21 @@ const handler = {
       recipient: student.phone,
       variables: {
         nombre: student.full_name,
-        login_url: loginUrl,
-        temporary_password: temporaryPassword,
+        activation_url: activationLink,
       },
       metadata: {
         source: "student_access_provisioning",
         student_id: student.id,
         user_id: provisionedUser.id,
         must_change_password: true,
-        sensitive_variable_keys: ["temporary_password"],
       },
     });
 
     return jsonResponse({
       ok: true,
-      temporaryPassword,
       phone: student.phone,
       mustChangePassword: true,
+      activationLinkGenerated: true,
       welcomeDelivery: {
         status: welcomeDelivery.status,
         errorCode: welcomeDelivery.status === "accepted" ? null : welcomeDelivery.errorCode,
