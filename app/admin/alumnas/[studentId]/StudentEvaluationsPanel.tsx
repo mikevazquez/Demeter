@@ -56,6 +56,28 @@ function outcomeCopy(value: string | null) {
   return "Incompleta";
 }
 
+function invitationStatusCopy(value: string) {
+  const copy: Record<string, string> = {
+    offered: "Enviada",
+    declined: "Rechazada",
+    pending_schedule: "Aceptada · pendiente",
+    scheduled: "Programada",
+    in_progress: "En curso",
+    completed: "Completada",
+    cancelled: "Cancelada",
+    expired: "Vencida",
+  };
+  return copy[value] ?? value;
+}
+
+function invitationStatusTone(value: string) {
+  if (value === "declined" || value === "expired") return "is-warning";
+  if (value === "completed") return "is-green";
+  if (value === "scheduled" || value === "pending_schedule") return "is-purple";
+  if (value === "offered" || value === "in_progress") return "is-magenta";
+  return "";
+}
+
 function errorCopy(value?: string) {
   const copy: Record<string, string> = {
     evaluation_invitation_already_open:
@@ -125,7 +147,7 @@ export default async function StudentEvaluationsPanel({ studentId, timeZone, err
     ctx.supabase
       .from("evaluation_invitations")
       .select(
-        "id,discipline_id,discipline_level_id,cycle_id,invitation_kind,status,window_start,window_end,reservation_id,offered_at,scheduled_at,completed_at",
+        "id,discipline_id,discipline_level_id,cycle_id,invitation_kind,status,window_start,window_end,reservation_id,offered_at,responded_at,accepted_at,scheduled_at,completed_at,created_at",
       )
       .eq("studio_id", ctx.studio.id)
       .eq("student_id", studentId)
@@ -226,6 +248,9 @@ export default async function StudentEvaluationsPanel({ studentId, timeZone, err
       const openInvitation = invitations.find(
         (item) => item.discipline_id === discipline.id && openStatuses.has(item.status),
       );
+      const lastDeclinedInvitation = invitations.find(
+        (item) => item.discipline_id === discipline.id && item.status === "declined",
+      );
       const draftEvaluation = evaluations.find(
         (item) => item.discipline_id === discipline.id && item.status === "draft",
       );
@@ -246,6 +271,7 @@ export default async function StudentEvaluationsPanel({ studentId, timeZone, err
           : null,
         cycle,
         openInvitation,
+        lastDeclinedInvitation,
         draftEvaluation,
         latestPublished,
         scheduledSession,
@@ -260,6 +286,7 @@ export default async function StudentEvaluationsPanel({ studentId, timeZone, err
     currentLevelTitle: string | null;
     cycle: (typeof cycles)[number] | undefined;
     openInvitation: (typeof invitations)[number] | undefined;
+    lastDeclinedInvitation: (typeof invitations)[number] | undefined;
     draftEvaluation: (typeof evaluations)[number] | undefined;
     latestPublished: (typeof evaluations)[number] | undefined;
     scheduledSession:
@@ -403,15 +430,28 @@ export default async function StudentEvaluationsPanel({ studentId, timeZone, err
                     {!item.cycle ? (
                       <details className="profile360-evaluation-invite">
                         <summary>
-                          {invitations.some(
-                            (candidate) =>
-                              candidate.discipline_id === item.discipline.id &&
-                              candidate.status === "declined",
-                          )
+                          {item.lastDeclinedInvitation
                             ? "Volver a invitar"
                             : "Invitar a evaluación"}
                         </summary>
                         <form action={inviteStudentToEvaluationAction}>
+                          {item.lastDeclinedInvitation ? (
+                            <div className="profile360-evaluation-decline-note">
+                              <strong>Invitación anterior rechazada</strong>
+                              <span>
+                                {formatDateTime(
+                                  item.lastDeclinedInvitation.responded_at ??
+                                    item.lastDeclinedInvitation.offered_at ??
+                                    item.lastDeclinedInvitation.created_at,
+                                  timeZone,
+                                )}
+                              </span>
+                              <small>
+                                Antes de volver a invitar, conviene confirmar con la alumna si ya se
+                                siente lista para una evaluación.
+                              </small>
+                            </div>
+                          ) : null}
                           <input type="hidden" name="student_id" value={studentId} />
                           <input type="hidden" name="discipline_id" value={item.discipline.id} />
                           <label>
@@ -493,6 +533,57 @@ export default async function StudentEvaluationsPanel({ studentId, timeZone, err
           </div>
         ) : (
           <div className="empty-state">Aún no hay evaluaciones finalizadas.</div>
+        )}
+      </section>
+
+
+      <section className="profile360-evaluation-history">
+        <div className="profile360-package-group-heading">
+          <strong>Historial de invitaciones</strong>
+          <span>{invitations.length}</span>
+        </div>
+
+        {invitations.length ? (
+          <div className="profile360-evaluation-history-list">
+            {invitations.map((invitation) => {
+              const discipline = disciplines.find(
+                (item) => item.id === invitation.discipline_id,
+              );
+              const eventDate =
+                invitation.responded_at ??
+                invitation.scheduled_at ??
+                invitation.completed_at ??
+                invitation.offered_at ??
+                invitation.created_at;
+
+              return (
+                <div
+                  className="profile360-invitation-history-row"
+                  key={invitation.id}
+                >
+                  <span>{formatDateTime(eventDate, timeZone)}</span>
+                  <strong>{discipline?.name ?? "Disciplina"}</strong>
+                  <span>
+                    {invitation.invitation_kind === "periodic"
+                      ? "Periódica"
+                      : "Primera invitación"}
+                  </span>
+                  <span
+                    className={`profile360-evaluation-chip ${invitationStatusTone(
+                      invitation.status,
+                    )}`}
+                  >
+                    {invitationStatusCopy(invitation.status)}
+                  </span>
+                  <span>
+                    {formatDate(invitation.window_start)} – {formatDate(invitation.window_end)}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="empty-state">Aún no hay invitaciones registradas.</div>
         )}
       </section>
     </section>
