@@ -32,12 +32,14 @@ describe("ADMIN-UX-03 Agenda calendario operativo", () => {
   it("edits a selected session directly from Agenda", () => {
     expect(agenda).toContain("agenda-session-editor");
     expect(agenda).toContain("action={updateSession}");
-    expect(agenda).toContain("action={cancelSession}");
+    expect(agenda).toContain("formAction={cancelSession}");
     expect(agenda).toContain('name="return_to"');
+    expect(agenda).toContain("<legend>Aplicar a</legend>");
     expect(agenda).toContain("Solo esta sesión");
     expect(agenda).toContain("Esta y siguientes");
     expect(agenda).toContain("Guardar cambios");
     expect(agenda).toContain("Cancelar clase");
+    expect(agenda).not.toContain('className="agenda-cancel-form"');
   });
 
   it("preserves existing session business actions and supports returning to Agenda", () => {
