@@ -123,14 +123,6 @@ export default async function StudentReservationDetailPage({
         Mis clases
       </Link>
 
-      {query.guest_cancelled ? (
-        <div className="rounded-2xl border border-amber-400/20 bg-amber-400/[0.07] px-4 py-3 text-sm text-amber-100">
-          {query.guest_cancelled === "returned"
-            ? "Invitación cancelada a tiempo. El beneficio volvió a tu saldo de este mes."
-            : "La invitación fue cancelada fuera de tiempo y se considera utilizada."}
-        </div>
-      ) : null}
-
       {inviteError && query.invite !== "1" ? (
         <div className="rounded-2xl border border-rose-500/20 bg-rose-500/[0.07] px-4 py-3 text-sm text-rose-100">
           {inviteError}
