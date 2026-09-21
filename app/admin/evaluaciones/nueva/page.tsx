@@ -49,11 +49,16 @@ export default async function NewTechnicalEvaluationPage({
         .eq("active", true),
     ]);
 
-  const versions = Array.from(
-    new Map(
-      (versionsResult.data ?? []).map((version) => [version.template_id, version]),
-    ).values(),
-  );
+  const latestVersionByTemplate = new Map<
+    string,
+    { id: string; template_id: string; version_number: number; status: string }
+  >();
+  for (const version of versionsResult.data ?? []) {
+    if (!latestVersionByTemplate.has(version.template_id)) {
+      latestVersionByTemplate.set(version.template_id, version);
+    }
+  }
+  const versions = Array.from(latestVersionByTemplate.values());
   const templateIds = Array.from(new Set(versions.map((version) => version.template_id)));
   const templatesResult = templateIds.length
     ? await ctx.supabase
