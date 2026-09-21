@@ -35,7 +35,7 @@ export default async function TechnicalEvaluationDetailPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ step?: string; published?: string; error?: string }>;
+  searchParams: Promise<{ step?: string; error?: string }>;
 }) {
   const { id } = await params;
   const qs = await searchParams;
@@ -215,10 +215,6 @@ export default async function TechnicalEvaluationDetailPage({
           {isPublished ? "Publicada" : "Borrador"}
         </span>
       </header>
-
-      {qs.published ? (
-        <div className="eval-notice success">Evaluación publicada para la alumna.</div>
-      ) : null}
       {qs.error ? (
         <div className="eval-notice">
           No pudimos completar la acción. Revisa los datos e inténtalo de nuevo.
