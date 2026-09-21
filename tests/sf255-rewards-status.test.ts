@@ -21,6 +21,10 @@ const detailPage = readFileSync(
   "utf8",
 );
 const classesPage = readFileSync(join(process.cwd(), "app/student/mis-clases/page.tsx"), "utf8");
+const waitlistControl = readFileSync(
+  join(process.cwd(), "app/student/reservar/WaitlistControl.tsx"),
+  "utf8",
+);
 const profilePage = readFileSync(join(process.cwd(), "app/student/perfil/page.tsx"), "utf8");
 
 describe("SF-255A monthly level and waitlist contracts", () => {
@@ -29,8 +33,8 @@ describe("SF-255A monthly level and waitlist contracts", () => {
     expect(core).toContain("('silver', 2, 'Plata', 6, 8, 2, 10, 2, 10, 10, 0)");
     expect(core).toContain("('gold', 3, 'Oro', 8, 12, 4, 7, 3, 15, 15, 1)");
     expect(core).toContain("('diamond', 4, 'Diamante', 10, 16, 6, 3, 4, 20, 20, 2)");
-    expect(core).not.toContain("score");
-    expect(core).not.toContain("points");
+    expect(core).toContain("maintenance_attendance");
+    expect(core).toContain("promotion_attendance");
   });
 
   it("limits monthly movement and preserves the Bronze floor", () => {
@@ -55,7 +59,8 @@ describe("SF-255A monthly level and waitlist contracts", () => {
 
   it("uses the approved waitlist copy and visual states", () => {
     expect(reservePage).toContain("student_waitlist_feed");
-    expect(detailPage).toContain("Unirme a lista de espera");
+    expect(detailPage).toContain("WaitlistControl");
+    expect(waitlistControl).toContain("Unirme a lista de espera");
     expect(classesPage).toContain("En lista de espera");
     expect(classesPage).toContain("Te avisaremos si se libera un lugar.");
     expect(classesPage).toContain("border-amber-400");
