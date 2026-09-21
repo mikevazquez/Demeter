@@ -11,7 +11,8 @@ function text(formData: FormData, key: string) {
 }
 
 function number(formData: FormData, key: string, fallback = 0) {
-  const value = Number(formData.get(key));
+  const raw = String(formData.get(key) ?? "").trim().replace(",", ".");
+  const value = Number(raw);
   return Number.isFinite(value) ? value : fallback;
 }
 
@@ -207,7 +208,7 @@ export async function createEvaluationTemplate(formData: FormData) {
 
   revalidatePath("/admin/evaluaciones");
   revalidatePath(`/admin/evaluaciones/disciplina/${level.discipline_id}`);
-  redirect(`/admin/evaluaciones/plantillas/${template.id}`);
+  redirect(`/admin/evaluaciones/plantillas/${template.id}?step=criterios`);
 }
 
 export async function updateEvaluationTemplateSettings(formData: FormData) {
@@ -232,10 +233,12 @@ export async function updateEvaluationTemplateSettings(formData: FormData) {
     .eq("id", versionId)
     .eq("studio_id", ctx.studio.id);
 
-  if (error) redirect(`/admin/evaluaciones/plantillas/${templateId}?error=settings`);
+  if (error) {
+    redirect(`/admin/evaluaciones/plantillas/${templateId}?step=reglas&error=settings`);
+  }
 
   revalidatePath(`/admin/evaluaciones/plantillas/${templateId}`);
-  redirect(`/admin/evaluaciones/plantillas/${templateId}`);
+  redirect(`/admin/evaluaciones/plantillas/${templateId}?step=resumen`);
 }
 
 export async function updateEvaluationCriteria(formData: FormData) {
@@ -251,7 +254,7 @@ export async function updateEvaluationCriteria(formData: FormData) {
     .order("sort_order");
 
   if (!criteria?.length) {
-    redirect(`/admin/evaluaciones/plantillas/${templateId}?error=criteria`);
+    redirect(`/admin/evaluaciones/plantillas/${templateId}?step=criterios&error=criteria`);
   }
 
   const payload = criteria.map((criterion) => ({
@@ -259,6 +262,11 @@ export async function updateEvaluationCriteria(formData: FormData) {
     weight_percent: number(formData, `weight_${criterion.id}`),
     min_percent: number(formData, `min_${criterion.id}`, 70),
   }));
+  const total = payload.reduce((sum, criterion) => sum + criterion.weight_percent, 0);
+
+  if (Math.abs(total - 100) > 0.001) {
+    redirect(`/admin/evaluaciones/plantillas/${templateId}?step=criterios&error=criteria_total`);
+  }
 
   const { error } = await ctx.supabase.rpc("admin_update_evaluation_criteria", {
     p_template_version_id: versionId,
@@ -266,11 +274,11 @@ export async function updateEvaluationCriteria(formData: FormData) {
   });
 
   if (error) {
-    redirect(`/admin/evaluaciones/plantillas/${templateId}?error=criteria`);
+    redirect(`/admin/evaluaciones/plantillas/${templateId}?step=criterios&error=criteria`);
   }
 
   revalidatePath(`/admin/evaluaciones/plantillas/${templateId}`);
-  redirect(`/admin/evaluaciones/plantillas/${templateId}`);
+  redirect(`/admin/evaluaciones/plantillas/${templateId}?step=figuras`);
 }
 
 export async function addEvaluationElement(formData: FormData) {
@@ -287,7 +295,7 @@ export async function addEvaluationElement(formData: FormData) {
   const attempts = number(formData, "attempts", 3);
 
   if (!name || !criterionId) {
-    redirect(`/admin/evaluaciones/plantillas/${templateId}?error=element`);
+    redirect(`/admin/evaluaciones/plantillas/${templateId}?step=figuras&error=element`);
   }
 
   const { data: existing } = await ctx.supabase
@@ -312,7 +320,7 @@ export async function addEvaluationElement(formData: FormData) {
       .single();
 
     if (error || !created) {
-      redirect(`/admin/evaluaciones/plantillas/${templateId}?error=element`);
+      redirect(`/admin/evaluaciones/plantillas/${templateId}?step=figuras&error=element`);
     }
     elementId = created.id;
   }
@@ -334,10 +342,10 @@ export async function addEvaluationElement(formData: FormData) {
     sort_order: (count ?? 0) + 1,
   });
 
-  if (error) redirect(`/admin/evaluaciones/plantillas/${templateId}?error=element`);
+  if (error) redirect(`/admin/evaluaciones/plantillas/${templateId}?step=figuras&error=element`);
 
   revalidatePath(`/admin/evaluaciones/plantillas/${templateId}`);
-  redirect(`/admin/evaluaciones/plantillas/${templateId}`);
+  redirect(`/admin/evaluaciones/plantillas/${templateId}?step=figuras`);
 }
 
 export async function addEvaluationCombo(formData: FormData) {
@@ -352,7 +360,7 @@ export async function addEvaluationCombo(formData: FormData) {
   const maxScore = number(formData, "max_score", 10);
   const attempts = number(formData, "attempts", 3);
 
-  if (!name) redirect(`/admin/evaluaciones/plantillas/${templateId}?error=combo`);
+  if (!name) redirect(`/admin/evaluaciones/plantillas/${templateId}?step=combos&error=combo`);
 
   const { data: existing } = await ctx.supabase
     .from("technical_combos")
@@ -375,7 +383,7 @@ export async function addEvaluationCombo(formData: FormData) {
       .single();
 
     if (error || !created) {
-      redirect(`/admin/evaluaciones/plantillas/${templateId}?error=combo`);
+      redirect(`/admin/evaluaciones/plantillas/${templateId}?step=combos&error=combo`);
     }
     comboId = created.id;
   }
@@ -397,10 +405,10 @@ export async function addEvaluationCombo(formData: FormData) {
     sort_order: (count ?? 0) + 1,
   });
 
-  if (error) redirect(`/admin/evaluaciones/plantillas/${templateId}?error=combo`);
+  if (error) redirect(`/admin/evaluaciones/plantillas/${templateId}?step=combos&error=combo`);
 
   revalidatePath(`/admin/evaluaciones/plantillas/${templateId}`);
-  redirect(`/admin/evaluaciones/plantillas/${templateId}`);
+  redirect(`/admin/evaluaciones/plantillas/${templateId}?step=combos`);
 }
 
 export async function activateEvaluationTemplateVersion(formData: FormData) {
@@ -423,7 +431,7 @@ export async function activateEvaluationTemplateVersion(formData: FormData) {
 
   const total = (criteria ?? []).reduce((sum, item) => sum + Number(item.weight_percent ?? 0), 0);
   if (Math.abs(total - 100) > 0.001 || !elementCount) {
-    redirect(`/admin/evaluaciones/plantillas/${templateId}?error=activate`);
+    redirect(`/admin/evaluaciones/plantillas/${templateId}?step=resumen&error=activate`);
   }
 
   const { error } = await ctx.supabase
@@ -433,12 +441,13 @@ export async function activateEvaluationTemplateVersion(formData: FormData) {
     .eq("studio_id", ctx.studio.id)
     .eq("status", "draft");
 
-  if (error) redirect(`/admin/evaluaciones/plantillas/${templateId}?error=activate`);
+  if (error) {
+    redirect(`/admin/evaluaciones/plantillas/${templateId}?step=resumen&error=activate`);
+  }
 
   revalidatePath("/admin/evaluaciones");
-  revalidatePath("/admin/evaluaciones");
   revalidatePath(`/admin/evaluaciones/plantillas/${templateId}`);
-  redirect(`/admin/evaluaciones/plantillas/${templateId}`);
+  redirect(`/admin/evaluaciones/plantillas/${templateId}?step=resumen`);
 }
 
 export async function createNextEvaluationTemplateVersion(formData: FormData) {
@@ -557,7 +566,7 @@ export async function createNextEvaluationTemplateVersion(formData: FormData) {
   }
 
   revalidatePath(`/admin/evaluaciones/plantillas/${templateId}`);
-  redirect(`/admin/evaluaciones/plantillas/${templateId}`);
+  redirect(`/admin/evaluaciones/plantillas/${templateId}?step=criterios`);
 }
 
 export async function createTechnicalEvaluationAction(formData: FormData) {
