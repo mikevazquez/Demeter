@@ -52,7 +52,6 @@ function CriterionScoreEditor({
       setMessage("Captura una puntuación");
       return;
     }
-
     const formData = new FormData();
     formData.set("evaluation_id", evaluationId);
     formData.set("template_criterion_id", criterion.id);
@@ -334,14 +333,19 @@ export function EvaluationLiveForm({
                   />
                 ))}
                 {criterionCombos.map((item) => (
-                  <ResultEditor key={item.id} evaluationId={evaluationId} item={item} kind="combo" />
+                  <ResultEditor
+                    key={item.id}
+                    evaluationId={evaluationId}
+                    item={item}
+                    kind="combo"
+                  />
                 ))}
               </div>
             </section>
           ) : (
             <div className="eval-notice">
-              Este criterio no tiene figuras o combos asociados. Captura su calificación general para
-              continuar.
+              Este criterio no tiene figuras o combos asociados. Captura su calificación general
+              para continuar.
             </div>
           )}
         </>
