@@ -1,0 +1,453 @@
+/* ADMIN-UX-04 · Secondary module detail/editor screens
+   Visual only. Existing permissions, actions and business rules remain unchanged. */
+
+.admin-ux04-secondary-detail {
+  align-content: start;
+  gap: 14px;
+  max-width: 1080px;
+  margin: 0 auto;
+  padding-bottom: 38px;
+}
+
+.admin-ux04-secondary-detail > header,
+.admin-ux04-secondary-detail > .topbar {
+  min-height: 0;
+  padding: 2px 0 4px;
+}
+
+.admin-ux04-secondary-detail > header h1,
+.admin-ux04-secondary-detail > .topbar .dashboard-title {
+  margin: 4px 0 0;
+  color: #f7f8fa;
+  font-size: clamp(31px, 3vw, 42px);
+  line-height: 1;
+  letter-spacing: -0.045em;
+}
+
+.admin-ux04-secondary-detail > header p,
+.admin-ux04-secondary-detail > .topbar p:last-child {
+  color: #929eae;
+}
+
+.admin-ux04-secondary-detail > header a,
+.admin-ux04-secondary-detail .back-link {
+  color: #8d99a9;
+  font-size: 10px;
+  font-weight: 760;
+}
+
+.admin-ux04-secondary-detail > header a:hover,
+.admin-ux04-secondary-detail .back-link:hover {
+  color: #ff78bb;
+}
+
+/* Products · detail */
+.product-detail-page > section[class*="grid"],
+.product-detail-page > section[class*="rounded-2xl"],
+.product-detail-page > section[class*="flex"] {
+  gap: 10px;
+}
+
+.product-detail-page > section[class*="grid"] > div,
+.product-detail-page > section[class*="rounded-2xl"] {
+  border-color: #28323e !important;
+  border-radius: 16px !important;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(255, 10, 138, 0.04), transparent 36%), #0d141c !important;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.11);
+}
+
+.product-detail-page > section[class*="grid"] > div {
+  min-height: 92px;
+  padding: 14px !important;
+}
+
+.product-detail-page > section[class*="grid"] > div p:first-child {
+  color: #8793a3;
+  font-size: 9px;
+}
+
+.product-detail-page > section[class*="grid"] > div p:last-child {
+  color: #f3f5f8;
+  font-size: 21px;
+}
+
+.product-detail-page > section[class*="rounded-2xl"] {
+  padding: 16px !important;
+}
+
+.product-detail-page > section[class*="rounded-2xl"] h2 {
+  color: #eef1f5;
+  font-size: 14px;
+}
+
+.product-detail-page > section[class*="rounded-2xl"] p {
+  color: #8f9bab;
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.product-detail-page > section:last-child a[class*="bg-fuchsia"],
+.product-detail-page > section:last-child button {
+  min-height: 40px;
+  border-radius: 12px !important;
+  font-size: 10px !important;
+  font-weight: 800 !important;
+}
+
+.product-detail-page > section:last-child a[class*="bg-fuchsia"] {
+  background: linear-gradient(90deg, #ff0a8a, #f10d76) !important;
+  box-shadow: 0 10px 26px rgba(255, 10, 138, 0.12);
+}
+
+.product-detail-page > section:last-child button {
+  border-color: #2b3541 !important;
+  background: #0f161e;
+}
+
+/* Products · create/edit */
+.product-editor-page {
+  max-width: 860px;
+}
+
+.product-editor-page > header {
+  padding: 2px 0 3px;
+}
+
+.product-editor-page > form {
+  display: grid;
+  gap: 16px !important;
+  padding: 17px !important;
+  border-color: #28323e !important;
+  border-radius: 18px !important;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(255, 10, 138, 0.045), transparent 34%), #0d141c !important;
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.12);
+}
+
+.product-editor-page label {
+  color: #aab4c1 !important;
+  font-size: 9px !important;
+  font-weight: 680;
+}
+
+.product-editor-page input,
+.product-editor-page select,
+.product-editor-page textarea {
+  min-height: 42px;
+  border-color: #2a3441 !important;
+  border-radius: 12px !important;
+  background: #0f161e !important;
+  color: #eef1f5 !important;
+  font-size: 10px !important;
+}
+
+.product-editor-page textarea {
+  min-height: 82px;
+}
+
+.product-editor-page input:focus,
+.product-editor-page select:focus,
+.product-editor-page textarea:focus {
+  border-color: rgba(255, 10, 138, 0.66) !important;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(255, 10, 138, 0.08);
+}
+
+.product-editor-page fieldset,
+.product-editor-page [class*="border"][class*="rounded-xl"] {
+  border-color: #29333f !important;
+  background: #101720 !important;
+}
+
+.product-editor-page button[class*="bg-fuchsia"] {
+  min-height: 42px;
+  border-radius: 12px !important;
+  background: linear-gradient(90deg, #ff0a8a, #f10d76) !important;
+  box-shadow: 0 10px 24px rgba(255, 10, 138, 0.12);
+  font-size: 10px !important;
+}
+
+/* Team · instructor detail */
+.team-detail-page {
+  max-width: 1000px;
+}
+
+.team-detail-page > .topbar {
+  min-height: 106px;
+  align-items: flex-end;
+  padding: 16px 18px;
+  border: 1px solid #28323e;
+  border-radius: 19px;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(255, 10, 138, 0.07), transparent 34%),
+    linear-gradient(180deg, #101720, #0b1118);
+}
+
+.team-detail-page > .topbar .role-pill {
+  border-color: rgba(255, 10, 138, 0.28);
+  background: rgba(255, 10, 138, 0.055);
+  color: #ff83c1;
+}
+
+.team-detail-page .panel-grid {
+  gap: 10px;
+}
+
+.team-detail-page > .panel,
+.team-detail-page .panel-grid > .panel {
+  overflow: hidden;
+  padding: 15px;
+  border-color: #28323e;
+  border-radius: 17px;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(255, 10, 138, 0.035), transparent 36%), #0d141c;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.1);
+}
+
+.team-detail-page .panel h2 {
+  color: #eef1f5;
+  font-size: 14px;
+}
+
+.team-detail-page .student-list {
+  gap: 0;
+  margin-top: 10px;
+  overflow: hidden;
+  border: 1px solid #27313d;
+  border-radius: 13px;
+}
+
+.team-detail-page .student-row {
+  min-height: 54px;
+  padding: 10px 12px;
+  border: 0;
+  border-bottom: 1px solid #27313d;
+  border-radius: 0;
+  background: #0f161e;
+}
+
+.team-detail-page .student-row:last-child {
+  border-bottom: 0;
+}
+
+.team-detail-page .student-row strong {
+  color: #edf1f5;
+  font-size: 10px;
+}
+
+.team-detail-page .student-row span {
+  color: #8995a5;
+  font-size: 8px;
+}
+
+.team-detail-page .primary-button {
+  border-radius: 12px;
+  background: linear-gradient(90deg, #ff0a8a, #f10d76);
+}
+
+.team-detail-page .secondary-button,
+.team-detail-page .ghost-button {
+  border-color: #2b3541;
+  border-radius: 12px;
+  background: #101720;
+}
+
+/* Automations · detail */
+.automation-detail-page {
+  max-width: 1120px;
+}
+
+.automation-detail-page > header {
+  padding: 2px 0 4px;
+}
+
+.automation-detail-page > header h1 {
+  color: #f7f8fa !important;
+  font-size: clamp(31px, 3vw, 42px) !important;
+  line-height: 1;
+  letter-spacing: -0.045em;
+}
+
+.automation-detail-page > header p:last-child {
+  color: #929eae !important;
+  font-size: 11px !important;
+}
+
+.automation-detail-page > section {
+  gap: 10px;
+}
+
+.automation-detail-page article[class*="rounded-2xl"],
+.automation-detail-page section[class*="rounded-2xl"],
+.automation-detail-page form[class*="rounded-2xl"],
+.automation-detail-page details[class*="rounded-2xl"] {
+  border-color: #28323e !important;
+  border-radius: 17px !important;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(255, 10, 138, 0.035), transparent 34%), #0d141c !important;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.1);
+}
+
+.automation-detail-page input,
+.automation-detail-page select,
+.automation-detail-page textarea {
+  border-color: #2a3441 !important;
+  border-radius: 11px !important;
+  background: #0f161e !important;
+  color: #eef1f5 !important;
+  font-size: 10px !important;
+}
+
+.automation-detail-page input:focus,
+.automation-detail-page select:focus,
+.automation-detail-page textarea:focus {
+  border-color: rgba(255, 10, 138, 0.66) !important;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(255, 10, 138, 0.07);
+}
+
+.automation-detail-page button[class*="bg-fuchsia"] {
+  background: linear-gradient(90deg, #ff0a8a, #f10d76) !important;
+}
+
+.automation-detail-page button,
+.automation-detail-page a[class*="rounded-xl"] {
+  border-radius: 11px !important;
+}
+
+/* Rewards · all internal editors/details inherit RewardsShell */
+.rewards-admin-page > header {
+  padding: 2px 0 4px;
+}
+
+.rewards-admin-page > header .dashboard-title {
+  margin-top: 4px;
+}
+
+.rewards-admin-page > header > div > a,
+.rewards-admin-page > header > a {
+  color: #8d99a9 !important;
+  font-size: 10px !important;
+  font-weight: 760 !important;
+}
+
+.rewards-admin-page form[class*="rounded-2xl"],
+.rewards-admin-page section[class*="rounded-2xl"],
+.rewards-admin-page article[class*="rounded-2xl"],
+.rewards-admin-page div[class*="rounded-2xl"][class*="border"] {
+  border-color: #28323e !important;
+  border-radius: 17px !important;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(255, 10, 138, 0.035), transparent 34%), #0d141c !important;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.09);
+}
+
+.rewards-admin-page div[class*="rounded-xl"][class*="border"],
+.rewards-admin-page article[class*="rounded-xl"][class*="border"],
+.rewards-admin-page a[class*="rounded-xl"][class*="border"] {
+  border-color: #29333f !important;
+  background: #0f161e !important;
+}
+
+.rewards-admin-page input,
+.rewards-admin-page select,
+.rewards-admin-page textarea {
+  min-height: 40px;
+  border-color: #2a3441 !important;
+  border-radius: 11px !important;
+  background: #0f161e !important;
+  color: #eef1f5 !important;
+  font-size: 10px !important;
+}
+
+.rewards-admin-page textarea {
+  min-height: 76px;
+}
+
+.rewards-admin-page input:focus,
+.rewards-admin-page select:focus,
+.rewards-admin-page textarea:focus {
+  border-color: rgba(255, 10, 138, 0.66) !important;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(255, 10, 138, 0.07);
+}
+
+.rewards-admin-page button[class*="bg-[#FF0A8A]"],
+.rewards-admin-page a[class*="bg-[#FF0A8A]"] {
+  border-radius: 11px !important;
+  background: linear-gradient(90deg, #ff0a8a, #f10d76) !important;
+  box-shadow: 0 9px 22px rgba(255, 10, 138, 0.11);
+}
+
+.rewards-admin-page label {
+  color: #aab4c1 !important;
+  font-size: 10px !important;
+}
+
+.rewards-admin-page h2,
+.rewards-admin-page h3 {
+  color: #eef1f5;
+}
+
+@media (max-width: 760px) {
+  .admin-ux04-secondary-detail {
+    gap: 10px;
+    padding: 14px 14px 92px;
+  }
+
+  .admin-ux04-secondary-detail > header h1,
+  .admin-ux04-secondary-detail > .topbar .dashboard-title,
+  .automation-detail-page > header h1 {
+    font-size: 29px !important;
+  }
+
+  .product-detail-page > section[class*="grid"] {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .product-detail-page > section:last-child {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .product-detail-page > section:last-child a,
+  .product-detail-page > section:last-child form,
+  .product-detail-page > section:last-child button {
+    width: 100%;
+  }
+
+  .team-detail-page > .topbar {
+    min-height: 0;
+    padding: 13px;
+    border-radius: 16px;
+  }
+
+  .team-detail-page .panel-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .automation-detail-page > section[class*="grid"] {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .rewards-admin-page form[class*="rounded-2xl"],
+  .rewards-admin-page section[class*="rounded-2xl"],
+  .rewards-admin-page article[class*="rounded-2xl"] {
+    padding: 14px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .admin-ux04-secondary-detail {
+    padding-inline: 10px;
+  }
+
+  .product-editor-page > form {
+    padding: 13px !important;
+  }
+
+  .team-detail-page > .topbar {
+    padding: 11px;
+  }
+}

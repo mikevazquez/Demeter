@@ -681,7 +681,7 @@ export default async function StudentProfilePage({
   };
 
   return (
-    <main className="dashboard-shell">
+    <main className="dashboard-shell profile360-page admin-ux04-profile360">
       <Profile360Overview
         activeView={view}
         student={{

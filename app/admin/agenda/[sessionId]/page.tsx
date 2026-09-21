@@ -284,7 +284,7 @@ export default async function SessionDetailPage({
   const showManagementNotice = query.created === "edit" || query.created === "cancel-session";
 
   return (
-    <main className="dashboard-shell admin-class-detail">
+    <main className="dashboard-shell admin-class-detail admin-ux04-session-detail">
       <header className="topbar admin-class-detail-header">
         <div>
           <Link className="back-link compact" href={backHref}>
@@ -367,67 +367,92 @@ export default async function SessionDetailPage({
           </summary>
 
           <div className="admin-session-settings-body">
-            <form action={updateSession} className="compact-form">
+            <form action={updateSession} className="compact-form admin-session-management-form">
               <input type="hidden" name="session_id" value={sessionId} />
-              <input name="starts_at" type="datetime-local" defaultValue={localInput} required />
-              <select name="instructor_id" defaultValue={session.instructor_id ?? ""}>
-                <option value="">Sin instructor</option>
-                {instructors?.map((instructor) => (
-                  <option key={instructor.id} value={instructor.id}>
-                    {instructorMap.get(instructor.id)}
-                  </option>
-                ))}
-              </select>
-              <select name="space_id" defaultValue={session.space_id ?? ""}>
-                <option value="">Sin espacio</option>
-                {spaces?.map((space) => (
-                  <option key={space.id} value={space.id}>
-                    {space.name}
-                    {space.capacity ? ` · máx. ${space.capacity}` : ""}
-                  </option>
-                ))}
-              </select>
-              <input
-                name="capacity"
-                type="number"
-                min="1"
-                defaultValue={session.capacity}
-                required
-              />
-              <textarea name="notes" rows={3} defaultValue={session.notes ?? ""} />
+              <input type="hidden" name="return_to" value={returnTo} />
+
+              <div className="admin-session-field-grid">
+                <label>
+                  <span>Horario</span>
+                  <input
+                    name="starts_at"
+                    type="datetime-local"
+                    defaultValue={localInput}
+                    required
+                  />
+                </label>
+                <label>
+                  <span>Coach</span>
+                  <select name="instructor_id" defaultValue={session.instructor_id ?? ""}>
+                    <option value="">Sin instructor</option>
+                    {instructors?.map((instructor) => (
+                      <option key={instructor.id} value={instructor.id}>
+                        {instructorMap.get(instructor.id)}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  <span>Espacio</span>
+                  <select name="space_id" defaultValue={session.space_id ?? ""}>
+                    <option value="">Sin espacio</option>
+                    {spaces?.map((space) => (
+                      <option key={space.id} value={space.id}>
+                        {space.name}
+                        {space.capacity ? ` · máx. ${space.capacity}` : ""}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  <span>Cupo</span>
+                  <input
+                    name="capacity"
+                    type="number"
+                    min="1"
+                    defaultValue={session.capacity}
+                    required
+                  />
+                </label>
+              </div>
+
+              <label className="admin-session-notes">
+                <span>Notas</span>
+                <textarea name="notes" rows={3} defaultValue={session.notes ?? ""} />
+              </label>
+
               {session.recurring_schedule_id ? (
-                <fieldset className="rounded-xl border border-white/10 p-3">
-                  <legend>Aplicar cambios a</legend>
-                  <label className="block">
+                <fieldset className="admin-session-scope">
+                  <legend>Aplicar a</legend>
+                  <label>
                     <input type="radio" name="scope" value="single" defaultChecked /> Solo esta
                     sesión
                   </label>
-                  <label className="block mt-2">
-                    <input type="radio" name="scope" value="future" /> Esta y todas las siguientes
+                  <label>
+                    <input type="radio" name="scope" value="future" /> Esta y siguientes
                   </label>
                 </fieldset>
               ) : (
                 <input type="hidden" name="scope" value="single" />
               )}
-              <button className="primary-button" type="submit">
-                Guardar cambios
-              </button>
-            </form>
 
-            <form action={cancelSession} className="compact-form mt-4">
-              <input type="hidden" name="session_id" value={sessionId} />
-              {session.recurring_schedule_id ? (
-                <select name="scope" defaultValue="single">
-                  <option value="single">Cancelar solo esta sesión</option>
-                  <option value="future">Cancelar esta y todas las siguientes</option>
-                </select>
-              ) : (
-                <input type="hidden" name="scope" value="single" />
-              )}
-              <small>Las reservas activas se cancelarán y sus créditos se liberarán.</small>
-              <button className="ghost-button" type="submit">
-                Cancelar clase
-              </button>
+              <div className="admin-session-form-actions">
+                <button className="primary-button" type="submit">
+                  Guardar cambios
+                </button>
+                <button
+                  className="admin-session-cancel-button"
+                  type="submit"
+                  formAction={cancelSession}
+                  formNoValidate
+                >
+                  Cancelar clase
+                </button>
+              </div>
+
+              <small className="admin-session-cancel-note">
+                Al cancelar, las reservas activas se cancelarán y sus créditos se liberarán.
+              </small>
             </form>
           </div>
         </details>

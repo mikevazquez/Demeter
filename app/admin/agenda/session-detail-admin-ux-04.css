@@ -1,0 +1,444 @@
+/* ADMIN-UX-04 · Operación completa de sesión
+   Visual homologation only. Baseline: Hoy + Agenda + Alumnas + Perfil 360. */
+
+.admin-ux04-session-detail {
+  align-content: start;
+  gap: 14px;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding-bottom: 38px;
+}
+
+.admin-ux04-session-detail .admin-class-detail-header {
+  min-height: 118px;
+  align-items: flex-end;
+  padding: 18px 20px;
+  border: 1px solid #28323e;
+  border-radius: 20px;
+  background:
+    radial-gradient(circle at 88% 0%, rgba(255, 10, 138, 0.09), transparent 34%),
+    linear-gradient(180deg, #101720 0%, #0b1118 100%);
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.16);
+}
+
+.admin-ux04-session-detail .admin-class-detail-header .back-link {
+  color: #8d98a8;
+  font-size: 10px;
+}
+
+.admin-ux04-session-detail .admin-class-detail-header .eyebrow {
+  margin-top: 10px;
+  color: #ff6ab4;
+  font-size: 8px;
+  font-weight: 850;
+  letter-spacing: 0.12em;
+}
+
+.admin-ux04-session-detail .dashboard-title {
+  margin: 4px 0 6px;
+  color: #f7f8fa;
+  font-size: clamp(31px, 3vw, 42px);
+  line-height: 1;
+  letter-spacing: -0.045em;
+}
+
+.admin-ux04-session-detail .admin-class-detail-header p:last-child {
+  margin: 0;
+  color: #94a0af;
+  font-size: 11px;
+}
+
+.admin-ux04-session-detail .admin-class-detail-header > .secondary-button {
+  min-height: 40px;
+  padding-inline: 14px;
+  border: 1px solid rgba(255, 10, 138, 0.34);
+  border-radius: 12px;
+  background: rgba(255, 10, 138, 0.035);
+  color: #ff78bb;
+  font-size: 10px;
+}
+
+.admin-ux04-session-detail .admin-class-stats {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.admin-ux04-session-detail .admin-class-stats .stat-card {
+  min-height: 82px;
+  padding: 12px;
+  border: 1px solid #29333f;
+  border-radius: 15px;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(255, 255, 255, 0.025), transparent 45%), #0d141c;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.12);
+}
+
+.admin-ux04-session-detail .admin-class-stats .stat-card span {
+  color: #8995a5;
+  font-size: 8px;
+}
+
+.admin-ux04-session-detail .admin-class-stats .stat-card strong {
+  color: #f5f7fa;
+  font-size: 22px;
+  line-height: 1;
+}
+
+.admin-ux04-session-detail .admin-class-stats .stat-card small {
+  color: #7f8b9b;
+  font-size: 8px;
+}
+
+.admin-ux04-session-detail .admin-class-operations-panel {
+  overflow: hidden;
+  padding: 0;
+  border: 1px solid #28323e;
+  border-radius: 20px;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(255, 10, 138, 0.045), transparent 34%), #0d141c;
+  box-shadow: 0 16px 38px rgba(0, 0, 0, 0.14);
+}
+
+.admin-ux04-session-detail .today-session-operations.is-detail .today-session-drawer {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  background: transparent;
+}
+
+.admin-ux04-session-detail .today-roster {
+  overflow: hidden;
+  border: 1px solid #28323e;
+  border-radius: 16px;
+  background: #0b1118;
+}
+
+.admin-ux04-session-detail .today-roster-header.compact {
+  min-height: 58px;
+  padding: 11px 13px;
+  border-bottom: 1px solid #26303b;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(255, 10, 138, 0.05), transparent 36%), #0f161e;
+}
+
+.admin-ux04-session-detail .today-roster-header h3 {
+  color: #eef1f5;
+  font-size: 14px;
+}
+
+.admin-ux04-session-detail .today-roster-header span {
+  color: #8c98a8;
+  font-size: 9px;
+}
+
+.admin-ux04-session-detail .today-add-student-button {
+  border-color: rgba(255, 10, 138, 0.5);
+  background: rgba(255, 10, 138, 0.05);
+  color: #ff7cbc;
+}
+
+.admin-ux04-session-detail .today-student-list.compact {
+  gap: 0;
+}
+
+.admin-ux04-session-detail .today-student-card.compact {
+  min-height: 64px;
+  border: 0;
+  border-bottom: 1px solid #232c37;
+  border-radius: 0;
+  background: transparent;
+}
+
+.admin-ux04-session-detail .today-student-card.compact:last-child {
+  border-bottom: 0;
+}
+
+.admin-ux04-session-detail .today-student-card.compact:hover {
+  background:
+    linear-gradient(90deg, rgba(255, 10, 138, 0.055), transparent 34%), rgba(255, 255, 255, 0.01);
+}
+
+.admin-ux04-session-detail .today-student-avatar {
+  border-color: rgba(255, 10, 138, 0.5);
+  background: linear-gradient(145deg, rgba(255, 10, 138, 0.22), rgba(42, 20, 38, 0.68));
+}
+
+.admin-ux04-session-detail .today-student-identity strong {
+  color: #f0f3f6;
+}
+
+.admin-ux04-session-detail .today-student-identity > span {
+  color: #8c98a8;
+}
+
+.admin-ux04-session-detail .today-attendance-preview button {
+  border-color: #2b3541;
+  background: #101720;
+  color: #aeb8c5;
+}
+
+.admin-ux04-session-detail .today-attendance-preview button.is-attended {
+  border-color: rgba(46, 211, 135, 0.38);
+  background: rgba(46, 211, 135, 0.08);
+  color: #68e8a7;
+}
+
+.admin-ux04-session-detail .today-attendance-preview button.is-no-show {
+  border-color: rgba(255, 88, 119, 0.35);
+  background: rgba(255, 88, 119, 0.07);
+  color: #ff839c;
+}
+
+.admin-ux04-session-detail .today-add-panel {
+  border-top-color: #28323e;
+  background: #0e151d;
+}
+
+.admin-ux04-session-detail .today-add-form input,
+.admin-ux04-session-detail .today-add-form select,
+.admin-ux04-session-detail .today-correction-form input {
+  border-color: #2b3541;
+  background: #0f161e;
+  color: #eef1f5;
+}
+
+.admin-ux04-session-detail .today-attendance-footer {
+  border: 1px solid #28323e;
+  border-radius: 15px;
+  background: #0d141c;
+}
+
+.admin-ux04-session-detail .today-attendance-summary {
+  color: #8f9bab;
+}
+
+.admin-ux04-session-detail .today-finalize-button {
+  border: 0;
+  border-radius: 12px;
+  background: linear-gradient(90deg, #ff0a8a, #f10d76);
+  color: #fff;
+  box-shadow: 0 10px 24px rgba(255, 10, 138, 0.14);
+}
+
+.admin-ux04-session-detail .admin-session-settings {
+  overflow: hidden;
+  padding: 0;
+  border: 1px solid #28323e;
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(255, 10, 138, 0.04), transparent 34%), #0d141c;
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.12);
+}
+
+.admin-ux04-session-detail .admin-session-settings > summary {
+  min-height: 62px;
+  padding: 0 15px;
+}
+
+.admin-ux04-session-detail .admin-session-settings > summary small {
+  color: #ff6eb7;
+  font-size: 8px;
+}
+
+.admin-ux04-session-detail .admin-session-settings > summary strong {
+  color: #eef1f5;
+  font-size: 13px;
+}
+
+.admin-ux04-session-detail .admin-session-settings-body {
+  padding: 14px;
+  border-top: 1px solid #28323e;
+}
+
+.admin-ux04-session-detail .admin-session-management-form {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+}
+
+.admin-ux04-session-detail .admin-session-field-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.admin-ux04-session-detail .admin-session-field-grid > label,
+.admin-ux04-session-detail .admin-session-notes {
+  display: grid;
+  gap: 6px;
+  padding: 10px 11px;
+  border: 1px solid #2b3541;
+  border-radius: 13px;
+  background: #101720;
+}
+
+.admin-ux04-session-detail .admin-session-field-grid label > span,
+.admin-ux04-session-detail .admin-session-notes > span {
+  color: #8d99a9;
+  font-size: 8px;
+  font-weight: 760;
+}
+
+.admin-ux04-session-detail .admin-session-field-grid input,
+.admin-ux04-session-detail .admin-session-field-grid select,
+.admin-ux04-session-detail .admin-session-notes textarea {
+  width: 100%;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: #eef1f5;
+  font: inherit;
+  font-size: 11px;
+}
+
+.admin-ux04-session-detail .admin-session-field-grid input[type="datetime-local"] {
+  color-scheme: dark;
+}
+
+.admin-ux04-session-detail .admin-session-notes textarea {
+  min-height: 66px;
+  resize: vertical;
+}
+
+.admin-ux04-session-detail .admin-session-scope {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  padding: 11px;
+  border: 1px solid #29333f;
+  border-radius: 13px;
+}
+
+.admin-ux04-session-detail .admin-session-scope legend {
+  padding: 0 5px;
+  color: #8995a5;
+  font-size: 8px;
+  font-weight: 760;
+}
+
+.admin-ux04-session-detail .admin-session-scope label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #b6c0cc;
+  font-size: 9px;
+}
+
+.admin-ux04-session-detail .admin-session-scope input {
+  accent-color: #ff0a8a;
+}
+
+.admin-ux04-session-detail .admin-session-form-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 8px;
+}
+
+.admin-ux04-session-detail .admin-session-form-actions .primary-button,
+.admin-ux04-session-detail .admin-session-cancel-button {
+  min-height: 44px;
+  border-radius: 13px;
+  font: inherit;
+  font-size: 10px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.admin-ux04-session-detail .admin-session-form-actions .primary-button {
+  border: 0;
+  background: linear-gradient(90deg, #ff0a8a, #f10d76);
+  color: #fff;
+}
+
+.admin-ux04-session-detail .admin-session-cancel-button {
+  border: 1px solid rgba(251, 56, 111, 0.66);
+  background: rgba(251, 56, 111, 0.025);
+  color: #ff7f9d;
+}
+
+.admin-ux04-session-detail .admin-session-cancel-note {
+  color: #7f8b9b;
+  font-size: 8px;
+  line-height: 1.4;
+}
+
+@media (max-width: 760px) {
+  .admin-ux04-session-detail {
+    gap: 10px;
+    padding: 14px 14px 92px;
+  }
+
+  .admin-ux04-session-detail .admin-class-detail-header {
+    min-height: 0;
+    padding: 14px;
+    border-radius: 17px;
+  }
+
+  .admin-ux04-session-detail .dashboard-title {
+    font-size: 29px;
+  }
+
+  .admin-ux04-session-detail .admin-class-detail-header .eyebrow {
+    display: none;
+  }
+
+  .admin-ux04-session-detail .admin-class-detail-header p:last-child {
+    font-size: 9px;
+    line-height: 1.4;
+  }
+
+  .admin-ux04-session-detail .admin-class-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 7px;
+  }
+
+  .admin-ux04-session-detail .admin-class-stats .stat-card {
+    min-height: 72px;
+    padding: 10px;
+    border-radius: 13px;
+  }
+
+  .admin-ux04-session-detail .admin-class-stats .stat-card strong {
+    font-size: 19px;
+  }
+
+  .admin-ux04-session-detail .today-session-operations.is-detail .today-session-drawer {
+    padding: 10px;
+  }
+
+  .admin-ux04-session-detail .today-roster {
+    border-radius: 14px;
+  }
+
+  .admin-ux04-session-detail .admin-session-field-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .admin-ux04-session-detail .admin-session-form-actions {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .admin-ux04-session-detail .admin-session-scope {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 430px) {
+  .admin-ux04-session-detail {
+    padding-inline: 10px;
+  }
+
+  .admin-ux04-session-detail .admin-class-detail-header {
+    padding: 12px;
+  }
+
+  .admin-ux04-session-detail .dashboard-title {
+    font-size: 26px;
+  }
+
+  .admin-ux04-session-detail .today-student-card.compact {
+    padding-inline: 9px;
+  }
+}

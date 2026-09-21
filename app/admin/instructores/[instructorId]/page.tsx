@@ -97,7 +97,7 @@ export default async function InstructorProfilePage({
         : "active";
 
   return (
-    <main className="dashboard-shell">
+    <main className="dashboard-shell admin-ux04-secondary-detail team-detail-page">
       <header className="topbar">
         <div>
           <Link className="back-link compact" href="/admin/instructores">
