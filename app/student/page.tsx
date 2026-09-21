@@ -292,7 +292,7 @@ export default async function StudentHomePage({
           >
             <div>
               <div
-                className="relative mx-auto h-28 w-28 overflow-hidden rounded-full border-2 bg-black/20 sm:h-32 sm:w-32"
+                className="relative mx-auto h-44 w-full max-w-[160px] overflow-hidden rounded-[24px] border-2 bg-black/20 sm:h-52 sm:max-w-[190px]"
                 style={{
                   borderColor: levelVisual.accent,
                   boxShadow: `0 0 30px ${levelVisual.glow}`,
