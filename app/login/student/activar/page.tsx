@@ -103,7 +103,9 @@ export default async function StudentActivationPage({
           </>
         ) : (
           <>
-            {error && messages[error] ? <div className="notice error">{messages[error]}</div> : null}
+            {error && messages[error] ? (
+              <div className="notice error">{messages[error]}</div>
+            ) : null}
 
             <form action={completeStudentPasswordActivation} className="auth-form">
               {entryKey ? <input type="hidden" name="entry" value={entryKey} /> : null}
