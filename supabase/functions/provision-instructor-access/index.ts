@@ -118,16 +118,8 @@ const handler = {
       if (!account || account.status !== "active" || !existing.active) {
         return jsonResponse({ error: "instructor_access_inconsistent" }, 409);
       }
-      const shouldReopenActivation = account.must_change_password !== true;
-      if (shouldReopenActivation) {
-        const { error: activationStateError } = await adminClient
-          .from("user_accounts")
-          .update({ must_change_password: true, updated_at: new Date().toISOString() })
-          .eq("id", existing.user_id);
-
-        if (activationStateError) {
-          return jsonResponse({ error: "access_reset_state_failed" }, 500);
-        }
+      if (!account.must_change_password) {
+        return jsonResponse({ error: "temporary_password_reset_closed" }, 409);
       }
 
       const { error } = await adminClient.auth.admin.updateUserById(existing.user_id, {
@@ -135,15 +127,7 @@ const handler = {
         email_confirm: true,
         password: temporaryPassword,
       });
-      if (error) {
-        if (shouldReopenActivation) {
-          await adminClient
-            .from("user_accounts")
-            .update({ must_change_password: false, updated_at: new Date().toISOString() })
-            .eq("id", existing.user_id);
-        }
-        return jsonResponse({ error: "auth_password_reset_failed" }, 500);
-      }
+      if (error) return jsonResponse({ error: "auth_password_reset_failed" }, 500);
 
       return jsonResponse({
         ok: true,
