@@ -52,9 +52,7 @@ describe("SF-174 student welcome integration", () => {
   });
 
   it("builds the activation URL from the active environment host", () => {
-    expect(actions).toContain(
-      'new URL("/login/student/activar", `https://${host}`).toString()',
-    );
+    expect(actions).toContain('new URL("/login/student/activar", `https://${host}`).toString()');
     expect(actions).toContain("activationUrl");
   });
 });
