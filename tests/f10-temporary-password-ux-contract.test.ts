@@ -70,7 +70,7 @@ describe("F10 student self-password activation contracts", () => {
     expect(edgeFunction).toContain('activationLink.searchParams.set("token_hash", tokenHash)');
     expect(edgeFunction).not.toContain('activationLink.searchParams.set("entry"');
     expect(page).toContain('type EntryRoute = "activate" | "profile" | "login" | "invalid"');
-    expect(page).toContain('target_entry_token: recoveryToken');
+    expect(page).toContain("target_entry_token: recoveryToken");
     expect(migration).toContain("student_portal_entry_tokens");
     expect(migration).toContain("capture_student_portal_entry_token");
     expect(migration).toContain("return 'profile'");
