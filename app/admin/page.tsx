@@ -306,16 +306,16 @@ export default async function AdminPage({
   const { data: evaluationInvitations } = reservationIds.length
     ? await supabase
         .from("evaluation_invitations")
-        .select("reservation_id,status")
+        .select("id,reservation_id,status")
         .in("reservation_id", reservationIds)
         .in("status", ["scheduled", "in_progress"])
     : {
-        data: [] as { reservation_id: string | null; status: string }[],
+        data: [] as { id: string; reservation_id: string | null; status: string }[],
       };
   const evaluationByReservation = new Map(
     (evaluationInvitations ?? [])
       .filter((item) => item.reservation_id)
-      .map((item) => [item.reservation_id!, item.status]),
+      .map((item) => [item.reservation_id!, item]),
   );
 
   const acquisitionIds = [
@@ -429,6 +429,8 @@ export default async function AdminPage({
           ? balanceMap.get(reservation.acquisition_id)
           : null;
 
+        const evaluationInvitation = evaluationByReservation.get(reservation.id);
+
         return {
           id: reservation.id,
           studentName: isGuest
@@ -450,7 +452,9 @@ export default async function AdminPage({
                 ? `${balance ?? 0} créditos`
                 : "—",
           expiresLabel: isGuest ? "Misma clase" : formatExpiry(acquisition?.expires_on ?? null),
-          evaluationStatus: evaluationByReservation.get(reservation.id) ?? null,
+          studentId: reservation.student_id,
+          evaluationInvitationId: evaluationInvitation?.id ?? null,
+          evaluationStatus: evaluationInvitation?.status ?? null,
         };
       }),
       candidates: candidates.map((student) => {
