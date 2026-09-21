@@ -17,19 +17,19 @@ export default async function StudentActivationPage({
   const { error, token_hash: tokenHash, type } = await searchParams;
   const recoveryToken = typeof tokenHash === "string" && type === "recovery" ? tokenHash : null;
 
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const invalidLinkState = !recoveryToken && error === "link";
 
-  const invalidLinkState = !user && !recoveryToken && error === "link";
+  if (!recoveryToken && !invalidLinkState) {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-  if (!user && !recoveryToken && !invalidLinkState) {
-    if (tokenHash || type) redirect("/login/student/activar?error=link");
-    redirect("/login/student");
-  }
+    if (!user) {
+      if (tokenHash || type) redirect("/login/student/activar?error=link");
+      redirect("/login/student");
+    }
 
-  if (user) {
     const [{ data: account }, { data: membership }] = await Promise.all([
       supabase
         .from("user_accounts")
