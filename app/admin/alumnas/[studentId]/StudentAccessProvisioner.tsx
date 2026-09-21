@@ -24,6 +24,8 @@ const errorCopy: Record<string, string> = {
     "La alumna ya creó su contraseña. Si la olvidó, debe usar el flujo de recuperación de acceso.",
   auth_activation_reset_failed:
     "No se pudo preparar un nuevo enlace de activación. Inténtalo nuevamente.",
+  auth_password_reset_failed: "No se pudo actualizar la contraseña. Inténtalo nuevamente.",
+  account_update_failed: "La contraseña cambió, pero no se pudo actualizar el estado de la cuenta.",
   activation_link_failed:
     "La cuenta está lista, pero no se pudo generar el enlace de activación. Puedes reenviarlo.",
   activation_url_invalid: "No se pudo construir una liga segura de activación.",
