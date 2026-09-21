@@ -17,10 +17,7 @@ export type AsistianDeliveryInput = {
   adminClient: SupabaseClient;
   studioId: string;
   template:
-    | "student_welcome"
-    | "reservation_confirmed"
-    | "reservation_cancelled"
-    | "waitlist_promoted";
+    "student_welcome" | "reservation_confirmed" | "reservation_cancelled" | "waitlist_promoted";
   eventId: string;
   recipient: string;
   variables: Record<string, unknown>;
