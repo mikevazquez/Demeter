@@ -1139,3 +1139,274 @@
     font-size: 16px;
   }
 }
+
+
+/* ADMIN Hoy · screenshot parity correction
+   Prevent the dashboard grid from stretching compact rows to viewport height
+   and keep the approved mobile composition dense. */
+.hoy-dashboard.hoy-approved {
+  align-content: start;
+}
+
+.admin-mobile-brand-copy {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.admin-mobile-brand-copy strong,
+.admin-mobile-brand-copy small {
+  display: block;
+}
+
+.admin-mobile-brand-copy small {
+  overflow: hidden;
+  color: #8f99a9;
+  font-size: 7px;
+  font-weight: 650;
+  letter-spacing: 0.16em;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.admin-mobile-user-button {
+  flex: 0 0 auto;
+}
+
+@media (max-width: 760px) {
+  .admin-mobile-header {
+    min-height: 66px;
+    padding: max(11px, env(safe-area-inset-top)) 18px 9px;
+    background:
+      radial-gradient(circle at 78% 0%, rgba(255, 10, 138, 0.08), transparent 34%), #080b10;
+  }
+
+  .admin-mobile-brand {
+    gap: 10px;
+  }
+
+  .admin-mobile-brand .brand-mark {
+    width: 31px;
+    height: 31px;
+    border-radius: 9px;
+  }
+
+  .admin-mobile-brand-copy strong {
+    max-width: 220px;
+    overflow: hidden;
+    color: #f5f7fa;
+    font-size: 13px;
+    font-weight: 760;
+    letter-spacing: 0.015em;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .admin-mobile-user-button {
+    width: 37px;
+    height: 37px;
+    border-color: rgba(255, 10, 138, 0.62);
+    background: rgba(255, 10, 138, 0.035);
+    color: #f8d8e9;
+    box-shadow: 0 0 0 1px rgba(255, 10, 138, 0.06);
+  }
+
+  .hoy-approved {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-content: start;
+    column-gap: 8px;
+    row-gap: 10px;
+    padding: 16px 18px 92px;
+  }
+
+  .hoy-title-block {
+    grid-column: 1;
+    grid-row: 1;
+    align-self: end;
+    gap: 5px;
+    padding: 0;
+  }
+
+  .hoy-title-block h1 {
+    font-size: 29px;
+    line-height: 0.98;
+  }
+
+  .hoy-title-block p {
+    color: #9ca8bb;
+    font-size: 11px;
+    white-space: nowrap;
+  }
+
+  .hoy-week-card {
+    display: contents;
+  }
+
+  .hoy-week-heading {
+    grid-column: 2;
+    grid-row: 1;
+    align-self: end;
+    grid-template-columns: 34px 94px 34px;
+    gap: 5px;
+    padding: 0;
+  }
+
+  .hoy-week-heading > a {
+    width: 34px;
+    height: 34px;
+    border-radius: 11px;
+    font-size: 22px;
+  }
+
+  .hoy-week-heading > strong {
+    color: #b4bdca;
+    font-size: 9px;
+  }
+
+  .hoy-week-card .mock-week-calendar {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    min-height: 88px;
+    gap: 2px;
+    padding: 8px;
+    border: 1px solid #27303c;
+    border-radius: 18px;
+    background:
+      radial-gradient(circle at 14% 25%, rgba(255, 10, 138, 0.055), transparent 30%), #0c1118;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.14);
+  }
+
+  .hoy-week-card .mock-week-day {
+    min-height: 68px;
+    border-radius: 12px;
+  }
+
+  .hoy-week-card .mock-week-day span {
+    font-size: 7px;
+  }
+
+  .hoy-week-card .mock-week-day strong {
+    font-size: 16px;
+  }
+
+  .hoy-approved > .notice,
+  .hoy-kpi-grid,
+  .today-class-list {
+    grid-column: 1 / -1;
+  }
+
+  .hoy-kpi-grid {
+    gap: 7px;
+  }
+
+  .hoy-kpi-card {
+    min-height: 78px;
+    grid-template-columns: 29px minmax(0, 1fr) 12px;
+    gap: 8px;
+    padding: 10px 9px;
+    border-radius: 16px;
+  }
+
+  .hoy-kpi-icon {
+    width: 29px;
+    height: 29px;
+    grid-column: auto;
+    border-radius: 9px;
+  }
+
+  .hoy-kpi-icon svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .hoy-kpi-card > span:nth-child(2) {
+    gap: 4px;
+  }
+
+  .hoy-kpi-card small {
+    font-size: 8px;
+    line-height: 1.15;
+  }
+
+  .hoy-kpi-card strong {
+    font-size: 19px;
+  }
+
+  .hoy-kpi-card > b {
+    align-self: center;
+    font-size: 15px;
+  }
+
+  .today-class-list {
+    gap: 9px;
+  }
+
+  .today-class-card {
+    border-radius: 18px;
+  }
+
+  .today-class-summary {
+    min-height: 72px;
+  }
+}
+
+@media (max-width: 430px) {
+  .hoy-approved {
+    padding-inline: 14px;
+    column-gap: 6px;
+  }
+
+  .hoy-title-block h1 {
+    font-size: 26px;
+  }
+
+  .hoy-title-block p {
+    font-size: 10px;
+  }
+
+  .hoy-week-heading {
+    grid-template-columns: 32px 88px 32px;
+    gap: 4px;
+  }
+
+  .hoy-week-heading > a {
+    width: 32px;
+    height: 32px;
+    font-size: 20px;
+  }
+
+  .hoy-week-heading > strong {
+    font-size: 8px;
+  }
+
+  .hoy-kpi-card {
+    min-height: 74px;
+    grid-template-columns: 26px minmax(0, 1fr) 10px;
+    gap: 6px;
+    padding: 9px 8px;
+  }
+
+  .hoy-kpi-icon {
+    width: 26px;
+    height: 26px;
+    display: grid;
+  }
+
+  .hoy-kpi-icon svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .hoy-kpi-card small {
+    font-size: 7px;
+  }
+
+  .hoy-kpi-card strong {
+    font-size: 17px;
+  }
+
+  .today-class-summary {
+    min-height: 68px;
+  }
+}
