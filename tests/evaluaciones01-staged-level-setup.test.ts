@@ -27,8 +27,10 @@ describe("EVALUACIONES-01 staged level setup", () => {
     expect(editor).not.toContain('href="#reglas"');
   });
 
-  it("uses save-and-continue for criteria", () => {
+  it("uses a clean save-and-continue flow", () => {
     expect(editor).toContain("Guardar y continuar →");
-    expect(editor).toContain("?step=figuras");
+    expect(editor).toContain("Figuras obligatorias");
+    expect(editor).toContain("Reglas de aprobación");
+    expect(editor).toContain("Guardar configuración");
   });
 });
