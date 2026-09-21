@@ -98,23 +98,23 @@ async function loadContext(adminClient: SupabaseClient, reservationId: string) {
   const [{ data: student }, { data: session }, { data: studio }] =
     await Promise.all([
       reservation.student_id
-      ? adminClient
-          .from("students")
-          .select("id,full_name,phone,active,lifecycle_status")
-          .eq("id", reservation.student_id)
-          .eq("studio_id", reservation.studio_id)
-          .maybeSingle()
+        ? adminClient
+            .from("students")
+            .select("id,full_name,phone,active,lifecycle_status")
+            .eq("id", reservation.student_id)
+            .eq("studio_id", reservation.studio_id)
+            .maybeSingle()
         : Promise.resolve({ data: null }),
       adminClient
         .from("class_sessions")
-      .select("id,template_id,instructor_id,space_id,starts_at,status")
-      .eq("id", reservation.session_id)
-      .eq("studio_id", reservation.studio_id)
+        .select("id,template_id,instructor_id,space_id,starts_at,status")
+        .eq("id", reservation.session_id)
+        .eq("studio_id", reservation.studio_id)
         .maybeSingle(),
       adminClient
         .from("studios")
-      .select("id,name,timezone")
-      .eq("id", reservation.studio_id)
+        .select("id,name,timezone")
+        .eq("id", reservation.studio_id)
         .maybeSingle(),
     ]);
 
