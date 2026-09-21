@@ -448,7 +448,7 @@ export default async function TechnicalEvaluationDetailPage({
               <h3>Tus fortalezas</h3>
               {(evaluation.strengths ?? []).length ? (
                 <ul>
-                  {evaluation.strengths.map((item) => (
+                  {evaluation.strengths.map((item: string) => (
                     <li key={item}>✓ {item}</li>
                   ))}
                 </ul>
@@ -462,7 +462,7 @@ export default async function TechnicalEvaluationDetailPage({
               <h3>Áreas por mejorar</h3>
               {(evaluation.improvement_areas ?? []).length ? (
                 <ul>
-                  {evaluation.improvement_areas.map((item) => (
+                  {evaluation.improvement_areas.map((item: string) => (
                     <li key={item}>↗ {item}</li>
                   ))}
                 </ul>
