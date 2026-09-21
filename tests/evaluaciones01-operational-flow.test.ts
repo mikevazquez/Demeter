@@ -50,6 +50,10 @@ const evaluationActions = readFileSync(
   join(process.cwd(), "app/admin/evaluaciones/actions.ts"),
   "utf8",
 );
+const evaluationLiveForm = readFileSync(
+  join(process.cwd(), "app/admin/evaluaciones/EvaluationLiveForm.tsx"),
+  "utf8",
+);
 const studentHome = readFileSync(join(process.cwd(), "app/student/page.tsx"), "utf8");
 const studentOverview = readFileSync(
   join(process.cwd(), "app/student/evaluaciones/page.tsx"),
@@ -170,6 +174,16 @@ describe("EVALUACIONES-01 operational cycle", () => {
     expect(adminSessionOperations).toContain("Evaluación en curso");
     expect(adminSessionOperations).toContain("Iniciar evaluación →");
     expect(adminSessionOperations).toContain("startScheduledEvaluationAction");
+  });
+
+  it("lets the coach select and score every weighted criterion", () => {
+    expect(evaluationLiveForm).toContain('role="tablist"');
+    expect(evaluationLiveForm).toContain('role="tab"');
+    expect(evaluationLiveForm).toContain("setActiveCriterionId");
+    expect(evaluationLiveForm).toContain("Puntuación · 0 a 100");
+    expect(evaluationLiveForm).toContain("saveTechnicalCriterionResultAction");
+    expect(evaluationActions).toContain("admin_save_technical_criterion_result");
+    expect(evaluationDetail).toContain("criteria={liveCriteria}");
   });
 
   it("distinguishes incomplete capture from an evaluated low score", () => {
