@@ -68,9 +68,6 @@ async function invokeInstructorAccess(
     if (accountError || !account || account.status !== "active" || membership.active !== true) {
       return { ok: false, error: "instructor_access_inconsistent" };
     }
-    if (account.must_change_password !== true) {
-      return { ok: false, error: "temporary_password_reset_closed" };
-    }
   }
 
   const {
