@@ -141,7 +141,9 @@ export default async function SessionDetailPage({
     .replace(" ", "T");
 
   const acquisitionIds = [
-    ...new Set((reservations ?? []).map((reservation) => reservation.acquisition_id).filter(Boolean)),
+    ...new Set(
+      (reservations ?? []).map((reservation) => reservation.acquisition_id).filter(Boolean),
+    ),
   ] as string[];
 
   const { data: acquisitions } = acquisitionIds.length
@@ -199,9 +201,7 @@ export default async function SessionDetailPage({
     const acquisition = reservation.acquisition_id
       ? acquisitionMap.get(reservation.acquisition_id)
       : null;
-    const balance = reservation.acquisition_id
-      ? balanceMap.get(reservation.acquisition_id)
-      : null;
+    const balance = reservation.acquisition_id ? balanceMap.get(reservation.acquisition_id) : null;
 
     return {
       id: reservation.id,
@@ -248,10 +248,12 @@ export default async function SessionDetailPage({
   const occupied = (reservations ?? []).filter((reservation) =>
     ["reserved", "attended"].includes(reservation.status),
   ).length;
-  const attended = (reservations ?? []).filter((reservation) => reservation.status === "attended")
-    .length;
-  const noShow = (reservations ?? []).filter((reservation) => reservation.status === "no_show")
-    .length;
+  const attended = (reservations ?? []).filter(
+    (reservation) => reservation.status === "attended",
+  ).length;
+  const noShow = (reservations ?? []).filter(
+    (reservation) => reservation.status === "no_show",
+  ).length;
   const available = Math.max(session.capacity - occupied, 0);
 
   const from = validDateKey(query.from) ? query.from! : "";
@@ -385,13 +387,20 @@ export default async function SessionDetailPage({
                   </option>
                 ))}
               </select>
-              <input name="capacity" type="number" min="1" defaultValue={session.capacity} required />
+              <input
+                name="capacity"
+                type="number"
+                min="1"
+                defaultValue={session.capacity}
+                required
+              />
               <textarea name="notes" rows={3} defaultValue={session.notes ?? ""} />
               {session.recurring_schedule_id ? (
                 <fieldset className="rounded-xl border border-white/10 p-3">
                   <legend>Aplicar cambios a</legend>
                   <label className="block">
-                    <input type="radio" name="scope" value="single" defaultChecked /> Solo esta sesión
+                    <input type="radio" name="scope" value="single" defaultChecked /> Solo esta
+                    sesión
                   </label>
                   <label className="block mt-2">
                     <input type="radio" name="scope" value="future" /> Esta y todas las siguientes

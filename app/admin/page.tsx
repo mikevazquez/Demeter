@@ -165,31 +165,27 @@ export default async function AdminPage({
     ...new Set((selectedSessions ?? []).map((session) => session.space_id).filter(Boolean)),
   ] as string[];
 
-  const [
-    { data: reservations },
-    { data: templates },
-    { data: instructors },
-    { data: spaces },
-  ] = await Promise.all([
-    sessionIds.length
-      ? supabase
-          .from("reservations")
-          .select("session_id,status")
-          .in("session_id", sessionIds)
-          .in("status", ["reserved", "attended", "no_show"])
-      : Promise.resolve({ data: [] as { session_id: string; status: string }[] }),
-    templateIds.length
-      ? supabase.from("class_templates").select("id,name,color_hex").in("id", templateIds)
-      : Promise.resolve({
-          data: [] as { id: string; name: string; color_hex: string | null }[],
-        }),
-    instructorIds.length
-      ? supabase.from("instructors").select("id,person_id").in("id", instructorIds)
-      : Promise.resolve({ data: [] as { id: string; person_id: string }[] }),
-    spaceIds.length
-      ? supabase.from("spaces").select("id,name").in("id", spaceIds)
-      : Promise.resolve({ data: [] as { id: string; name: string }[] }),
-  ]);
+  const [{ data: reservations }, { data: templates }, { data: instructors }, { data: spaces }] =
+    await Promise.all([
+      sessionIds.length
+        ? supabase
+            .from("reservations")
+            .select("session_id,status")
+            .in("session_id", sessionIds)
+            .in("status", ["reserved", "attended", "no_show"])
+        : Promise.resolve({ data: [] as { session_id: string; status: string }[] }),
+      templateIds.length
+        ? supabase.from("class_templates").select("id,name,color_hex").in("id", templateIds)
+        : Promise.resolve({
+            data: [] as { id: string; name: string; color_hex: string | null }[],
+          }),
+      instructorIds.length
+        ? supabase.from("instructors").select("id,person_id").in("id", instructorIds)
+        : Promise.resolve({ data: [] as { id: string; person_id: string }[] }),
+      spaceIds.length
+        ? supabase.from("spaces").select("id,name").in("id", spaceIds)
+        : Promise.resolve({ data: [] as { id: string; name: string }[] }),
+    ]);
 
   const personIds = [...new Set((instructors ?? []).map((item) => item.person_id))];
   const { data: persons } = personIds.length

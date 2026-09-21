@@ -205,7 +205,9 @@ export function SessionOperations({
                             <input type="hidden" name="session_id" value={sessionId} />
                             <input type="hidden" name="reservation_id" value={item.id} />
                             <input type="hidden" name="return_date" value={returnDate} />
-                            {returnTo ? <input type="hidden" name="return_to" value={returnTo} /> : null}
+                            {returnTo ? (
+                              <input type="hidden" name="return_to" value={returnTo} />
+                            ) : null}
                             <input type="hidden" name="status" value="attended" />
                             <button
                               className={
@@ -222,7 +224,9 @@ export function SessionOperations({
                             <input type="hidden" name="session_id" value={sessionId} />
                             <input type="hidden" name="reservation_id" value={item.id} />
                             <input type="hidden" name="return_date" value={returnDate} />
-                            {returnTo ? <input type="hidden" name="return_to" value={returnTo} /> : null}
+                            {returnTo ? (
+                              <input type="hidden" name="return_to" value={returnTo} />
+                            ) : null}
                             <input type="hidden" name="status" value="no_show" />
                             <button
                               className={item.status === "no_show" ? "is-selected is-no-show" : ""}
@@ -253,7 +257,9 @@ export function SessionOperations({
                             <input type="hidden" name="session_id" value={sessionId} />
                             <input type="hidden" name="reservation_id" value={item.id} />
                             <input type="hidden" name="return_date" value={returnDate} />
-                            {returnTo ? <input type="hidden" name="return_to" value={returnTo} /> : null}
+                            {returnTo ? (
+                              <input type="hidden" name="return_to" value={returnTo} />
+                            ) : null}
                             <input type="hidden" name="status" value={correctionTarget} />
                             <input
                               name="reason"
@@ -273,7 +279,9 @@ export function SessionOperations({
                           <input type="hidden" name="session_id" value={sessionId} />
                           <input type="hidden" name="reservation_id" value={item.id} />
                           <input type="hidden" name="return_date" value={returnDate} />
-                            {returnTo ? <input type="hidden" name="return_to" value={returnTo} /> : null}
+                          {returnTo ? (
+                            <input type="hidden" name="return_to" value={returnTo} />
+                          ) : null}
                           <button className="today-inline-danger" type="submit">
                             Cancelar reserva
                           </button>
@@ -312,7 +320,7 @@ export function SessionOperations({
                 <form action={createWalkinFromToday} className="today-walkin-form">
                   <input type="hidden" name="session_id" value={sessionId} />
                   <input type="hidden" name="return_date" value={returnDate} />
-                            {returnTo ? <input type="hidden" name="return_to" value={returnTo} /> : null}
+                  {returnTo ? <input type="hidden" name="return_to" value={returnTo} /> : null}
                   <input name="first_name" placeholder="Nombre" required />
                   <input name="last_name" placeholder="Apellido" />
                   <input name="phone" type="tel" placeholder="Teléfono" required />
@@ -328,7 +336,7 @@ export function SessionOperations({
                 <form action={bookStudentFromToday} className="today-walkin-form">
                   <input type="hidden" name="session_id" value={sessionId} />
                   <input type="hidden" name="return_date" value={returnDate} />
-                            {returnTo ? <input type="hidden" name="return_to" value={returnTo} /> : null}
+                  {returnTo ? <input type="hidden" name="return_to" value={returnTo} /> : null}
                   <select name="student_id" defaultValue="" required>
                     <option value="" disabled>
                       Selecciona una alumna
@@ -381,7 +389,7 @@ export function SessionOperations({
                 <form action={finalizeAttendanceFromToday}>
                   <input type="hidden" name="session_id" value={sessionId} />
                   <input type="hidden" name="return_date" value={returnDate} />
-                            {returnTo ? <input type="hidden" name="return_to" value={returnTo} /> : null}
+                  {returnTo ? <input type="hidden" name="return_to" value={returnTo} /> : null}
                   <button className="primary-button" type="submit">
                     Finalizar asistencia
                   </button>
