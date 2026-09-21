@@ -426,7 +426,11 @@ export default async function AgendaPage({
       </nav>
 
       <div className={`agenda-workspace${selectedSession ? " has-editor" : ""}`}>
-        <section id="clases-programadas" className="agenda-calendar-shell" aria-label="Calendario semanal">
+        <section
+          id="clases-programadas"
+          className="agenda-calendar-shell"
+          aria-label="Calendario semanal"
+        >
           <div className="agenda-mobile-day-summary">
             <strong>{fullDateLabel(selectedDate)}</strong>
             <span>
