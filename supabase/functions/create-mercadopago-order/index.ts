@@ -20,6 +20,11 @@ type CheckoutAttempt = {
   status: string;
   provider_order_id: string | null;
   checkout_url: string | null;
+  extra_fulfillment_snapshot?: {
+    type?: unknown;
+    name?: unknown;
+    price_minor?: unknown;
+  } | null;
   created_at: string;
 };
 
@@ -132,15 +137,22 @@ const handler = {
       return jsonResponse({ error: "invalid_request" }, 400);
     }
 
-    const { data: attemptData, error: attemptError } = buyingSingleClass
-      ? await userClient.rpc("student_create_single_class_checkout_attempt", {
-          target_session_id: sessionId,
-          target_client_request_key: clientRequestKey,
-        })
-      : await userClient.rpc("student_create_online_checkout_attempt", {
+    const { data: attemptData, error: attemptError } = hasEvaluationContext
+      ? await userClient.rpc("student_create_evaluation_checkout_attempt", {
+          target_invitation_id: evaluationInvitationId,
+          target_session_id: evaluationSessionId,
           target_product_template_id: productTemplateId,
           target_client_request_key: clientRequestKey,
-        });
+        })
+      : buyingSingleClass
+        ? await userClient.rpc("student_create_single_class_checkout_attempt", {
+            target_session_id: sessionId,
+            target_client_request_key: clientRequestKey,
+          })
+        : await userClient.rpc("student_create_online_checkout_attempt", {
+            target_product_template_id: productTemplateId,
+            target_client_request_key: clientRequestKey,
+          });
 
     if (attemptError || !attemptData) {
       const message = attemptError?.message ?? "checkout_attempt_failed";
@@ -206,7 +218,7 @@ const handler = {
       adminClient
         .from("online_checkout_attempts")
         .select(
-          "id,studio_id,student_id,product_template_id,session_id,client_request_key,external_reference,amount_minor,currency,status,provider_order_id,checkout_url",
+          "id,studio_id,student_id,product_template_id,session_id,client_request_key,external_reference,amount_minor,currency,status,provider_order_id,checkout_url,extra_fulfillment_snapshot",
         )
         .eq("id", attempt.id)
         .maybeSingle(),
@@ -262,6 +274,27 @@ const handler = {
       return jsonResponse({ error: "online_price_invalid" }, 409);
     }
 
+    const extraSnapshot =
+      attemptRow.extra_fulfillment_snapshot &&
+      typeof attemptRow.extra_fulfillment_snapshot === "object"
+        ? attemptRow.extra_fulfillment_snapshot
+        : null;
+    const extraName = safeText(extraSnapshot?.name);
+    const extraPriceMinor =
+      typeof extraSnapshot?.price_minor === "number" &&
+      Number.isInteger(extraSnapshot.price_minor) &&
+      extraSnapshot.price_minor > 0
+        ? extraSnapshot.price_minor
+        : 0;
+    const mainPriceMinor = attemptRow.amount_minor - extraPriceMinor;
+    const mainAmount = moneyFromMinor(mainPriceMinor);
+    const extraAmount = extraPriceMinor ? moneyFromMinor(extraPriceMinor) : null;
+
+    if (!mainAmount || (extraPriceMinor && (!extraName || !extraAmount))) {
+      await markAttemptFailure("online_price_invalid");
+      return jsonResponse({ error: "online_price_invalid" }, 409);
+    }
+
     const accessToken = Deno.env.get("MERCADOPAGO_ACCESS_TOKEN")?.trim();
     if (!accessToken) {
       await markAttemptFailure("mercadopago_not_configured");
@@ -304,9 +337,18 @@ const handler = {
       items: [
         {
           title: product.name,
-          unit_price: totalAmount,
+          unit_price: mainAmount,
           quantity: 1,
         },
+        ...(extraName && extraAmount
+          ? [
+              {
+                title: extraName,
+                unit_price: extraAmount,
+                quantity: 1,
+              },
+            ]
+          : []),
       ],
     };
 
