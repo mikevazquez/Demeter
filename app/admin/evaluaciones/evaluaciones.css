@@ -615,7 +615,10 @@
   border-radius: 13px;
   background: #0d141c;
   color: #aeb8c6;
+  font: inherit;
   font-size: 9px;
+  text-align: center;
+  cursor: pointer;
 }
 
 .eval-criterion-tab.is-active {
