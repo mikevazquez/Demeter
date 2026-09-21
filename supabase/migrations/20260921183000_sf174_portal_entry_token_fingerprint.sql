@@ -73,6 +73,8 @@ where s.active = true
   and u.recovery_token <> ''
 on conflict (token_hash) do nothing;
 
+drop function if exists public.student_portal_entry_route(text);
+
 create or replace function public.student_portal_entry_route(target_entry_token text)
 returns text
 language plpgsql
