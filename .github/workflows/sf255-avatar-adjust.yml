@@ -1,0 +1,40 @@
+name: SF255 Home Avatar Adjustment
+
+on:
+  push:
+    branches: [sf-255-rewards-status]
+
+permissions:
+  contents: write
+
+jobs:
+  adjust:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: sf-255-rewards-status
+      - name: Apply approved avatar adjustment
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('app/student/page.tsx')
+          text = path.read_text()
+          old = 'className="relative mx-auto h-28 w-28 overflow-hidden rounded-full border-2 bg-black/20 sm:h-32 sm:w-32"'
+          new = 'className="relative mx-auto h-40 w-full max-w-[13rem] overflow-hidden rounded-[24px] border-2 bg-black/20 sm:h-48 sm:max-w-[15rem]"'
+          if old not in text:
+              raise SystemExit('Expected approved avatar class not found; refusing broad edit')
+          text = text.replace(old, new, 1)
+          path.write_text(text)
+          PY
+      - run: npx prettier --write app/student/page.tsx
+      - name: Commit approved visual adjustment
+        run: |
+          if git diff --quiet; then
+            exit 0
+          fi
+          git config user.name "studio-flow-ci"
+          git config user.email "actions@users.noreply.github.com"
+          git add app/student/page.tsx
+          git commit -m "SF-255 enlarge home profile photo"
+          git push origin HEAD:sf-255-rewards-status
