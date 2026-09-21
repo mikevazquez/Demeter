@@ -10,6 +10,7 @@ const errorCopy: Record<string, string> = {
   network:
     "No se pudo conectar con Asistian. Verifica que siga en modo escucha e inténtalo de nuevo.",
   http: "Asistian rechazó el webhook de prueba.",
+  save: "No se pudo guardar el webhook de Asistian en el Vault de Sandbox.",
 };
 
 export default async function AsistianIntegrationTestPage({
@@ -30,8 +31,8 @@ export default async function AsistianIntegrationTestPage({
           <p className="eyebrow">INTEGRACIONES · ASISTIAN</p>
           <h1 className="dashboard-title">Prueba de conexión</h1>
           <p>
-            Usa esta pantalla únicamente mientras Asistian esté en modo escucha. La URL no se guarda
-            en Studio Flow.
+            Usa esta pantalla únicamente mientras Asistian esté en modo escucha. La URL se guarda
+            cifrada en el Vault de Sandbox y no se expone en el repositorio ni en la auditoría.
           </p>
         </div>
       </header>
@@ -71,12 +72,12 @@ export default async function AsistianIntegrationTestPage({
           </label>
 
           <p className="text-sm text-zinc-400">
-            Se enviará un payload sintético. No contiene datos reales de alumnas ni contraseñas.
-            Studio Flow no persistirá esta URL.
+            Se guardará como el webhook de <strong>student_welcome</strong> en Supabase Vault y se
+            enviará un payload sintético. No contiene datos reales de alumnas ni contraseñas.
           </p>
 
           <button className="primary-button" type="submit">
-            Enviar prueba a Asistian
+            Guardar en Sandbox y enviar prueba
           </button>
         </form>
       </section>
