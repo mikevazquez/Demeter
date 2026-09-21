@@ -178,16 +178,16 @@ export default async function ScheduleEvaluationPage({
     : null;
   const hasAccessForSelectedClass = Boolean(
     selectedSession &&
-      selectedClassDate &&
-      snapshot.acquisitions.some(
-        (acquisition) =>
-          acquisition.status === "active" &&
-          acquisition.starts_on <= selectedClassDate &&
-          acquisition.expires_on >= selectedClassDate &&
-          eligibleProductIds.includes(acquisition.product_id) &&
-          (acquisition.unlimited ||
-            (acquisition.available_credits ?? 0) >= selectedSession.credit_cost),
-      ),
+    selectedClassDate &&
+    snapshot.acquisitions.some(
+      (acquisition) =>
+        acquisition.status === "active" &&
+        acquisition.starts_on <= selectedClassDate &&
+        acquisition.expires_on >= selectedClassDate &&
+        eligibleProductIds.includes(acquisition.product_id) &&
+        (acquisition.unlimited ||
+          (acquisition.available_credits ?? 0) >= selectedSession.credit_cost),
+    ),
   );
   const needsClassAccess = Boolean(needsPurchase && selectedSession && !hasAccessForSelectedClass);
 

@@ -536,7 +536,6 @@ export default async function StudentEvaluationsPanel({ studentId, timeZone, err
         )}
       </section>
 
-
       <section className="profile360-evaluation-history">
         <div className="profile360-package-group-heading">
           <strong>Historial de invitaciones</strong>
@@ -546,9 +545,7 @@ export default async function StudentEvaluationsPanel({ studentId, timeZone, err
         {invitations.length ? (
           <div className="profile360-evaluation-history-list">
             {invitations.map((invitation) => {
-              const discipline = disciplines.find(
-                (item) => item.id === invitation.discipline_id,
-              );
+              const discipline = disciplines.find((item) => item.id === invitation.discipline_id);
               const eventDate =
                 invitation.responded_at ??
                 invitation.scheduled_at ??
@@ -557,16 +554,11 @@ export default async function StudentEvaluationsPanel({ studentId, timeZone, err
                 invitation.created_at;
 
               return (
-                <div
-                  className="profile360-invitation-history-row"
-                  key={invitation.id}
-                >
+                <div className="profile360-invitation-history-row" key={invitation.id}>
                   <span>{formatDateTime(eventDate, timeZone)}</span>
                   <strong>{discipline?.name ?? "Disciplina"}</strong>
                   <span>
-                    {invitation.invitation_kind === "periodic"
-                      ? "Periódica"
-                      : "Primera invitación"}
+                    {invitation.invitation_kind === "periodic" ? "Periódica" : "Primera invitación"}
                   </span>
                   <span
                     className={`profile360-evaluation-chip ${invitationStatusTone(
