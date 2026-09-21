@@ -254,9 +254,7 @@ export async function createGuestInvitationAction(formData: FormData) {
     contactLookup.display_name &&
     normalizeGuestIdentityName(contactLookup.display_name) !== normalizeGuestIdentityName(guestName)
   ) {
-    redirect(
-      `${detailPath}?invite=1&contact_match=${encodeURIComponent(contactLookup.person_id)}`,
-    );
+    redirect(`${detailPath}?invite=1&contact_match=${encodeURIComponent(contactLookup.person_id)}`);
   }
 
   const { data, error } = await supabase.rpc("student_create_guest_invitation", {

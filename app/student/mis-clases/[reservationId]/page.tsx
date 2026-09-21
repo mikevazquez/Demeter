@@ -343,8 +343,10 @@ export default async function StudentReservationDetailPage({
                   </p>
                   <p className="mt-2 text-sm leading-6 text-zinc-200">
                     Este teléfono ya pertenece a{" "}
-                    <strong className="font-semibold text-white">{contactMatch.display_name}</strong>.
-                    Usaremos ese contacto para esta invitación.
+                    <strong className="font-semibold text-white">
+                      {contactMatch.display_name}
+                    </strong>
+                    . Usaremos ese contacto para esta invitación.
                   </p>
                   <p className="mt-1 text-xs leading-5 text-zinc-500">
                     No cambiaremos su nombre ni crearemos un registro duplicado.

@@ -33,10 +33,7 @@ const invitationMigration = readFileSync(
   "utf8",
 );
 const contactConfirmationMigration = readFileSync(
-  join(
-    process.cwd(),
-    "supabase/migrations/20260921020138_sf255_guest_contact_confirmation.sql",
-  ),
+  join(process.cwd(), "supabase/migrations/20260921020138_sf255_guest_contact_confirmation.sql"),
   "utf8",
 );
 const discountMigration = readFileSync(
@@ -158,7 +155,9 @@ describe("SF-255A monthly level and waitlist contracts", () => {
     expect(studentActions).toContain("contact_match=");
     expect(reservationDetail).toContain("Contacto encontrado");
     expect(reservationDetail).toContain("Usaremos ese contacto para esta invitación.");
-    expect(reservationDetail).toContain("No cambiaremos su nombre ni crearemos un registro duplicado.");
+    expect(reservationDetail).toContain(
+      "No cambiaremos su nombre ni crearemos un registro duplicado.",
+    );
     expect(reservationDetail).toContain("Usar este contacto");
     expect(reservationDetail).toContain("Corregir datos");
   });
