@@ -280,7 +280,7 @@ export default async function EvaluationDisciplinePage({
                   return (
                     <Link
                       className="eval-template-card"
-                      href={`/admin/evaluaciones/plantillas/${template.id}#reglas`}
+                      href={`/admin/evaluaciones/plantillas/${template.id}?step=reglas`}
                       key={template.id}
                     >
                       <header>
