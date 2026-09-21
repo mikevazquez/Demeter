@@ -600,7 +600,7 @@ export default async function AgendaPage({
 
                   {selectedSession.recurring_schedule_id ? (
                     <fieldset className="agenda-editor-scope">
-                      <legend>Aplicar cambios a</legend>
+                      <legend>Aplicar a</legend>
                       <label>
                         <input type="radio" name="scope" value="single" defaultChecked />
                         <span>Solo esta sesión</span>
@@ -623,20 +623,15 @@ export default async function AgendaPage({
                   <button className="agenda-save-button" type="submit">
                     Guardar cambios
                   </button>
-                </form>
 
-                <form action={cancelSession} className="agenda-cancel-form">
-                  <input type="hidden" name="session_id" value={selectedSession.id} />
-                  <input type="hidden" name="return_to" value={returnTo} />
-                  {selectedSession.recurring_schedule_id ? (
-                    <select name="scope" defaultValue="single">
-                      <option value="single">Cancelar solo esta sesión</option>
-                      <option value="future">Cancelar esta y todas las siguientes</option>
-                    </select>
-                  ) : (
-                    <input type="hidden" name="scope" value="single" />
-                  )}
-                  <button type="submit">Cancelar clase</button>
+                  <button
+                    className="agenda-cancel-button"
+                    type="submit"
+                    formAction={cancelSession}
+                    formNoValidate
+                  >
+                    Cancelar clase
+                  </button>
                 </form>
 
                 <Link
