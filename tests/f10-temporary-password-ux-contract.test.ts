@@ -18,19 +18,17 @@ describe("F10 temporary password UX contracts", () => {
     expect(accessAction).not.toContain("revalidatePath");
   });
 
-  it("allows authorized password recovery and reopens mandatory activation", () => {
+  it("allows a server-only temporary password regeneration only while activation is pending", () => {
     const edgeFunction = source("supabase/functions/provision-student-access/index.ts");
     const actions = source("app/admin/alumnas/[studentId]/actions.ts");
 
     expect(edgeFunction).toContain('payload.mode === "reset"');
-    expect(edgeFunction).toContain("shouldReopenActivation");
-    expect(edgeFunction).toContain("must_change_password: true");
+    expect(edgeFunction).toContain("account.must_change_password !== true");
     expect(edgeFunction).toContain("adminClient.auth.admin.updateUserById(student.user_id");
-    expect(edgeFunction).toContain("must_change_password: false");
-    expect(edgeFunction).not.toContain('error: "temporary_password_reset_closed"');
+    expect(edgeFunction).toContain('{ error: "temporary_password_reset_closed" }');
     expect(actions).toContain("resetStudentTemporaryPassword");
     expect(actions).toContain('{ studentId, mode: "reset" }');
-    expect(actions).not.toContain('error: "temporary_password_reset_closed"');
+    expect(actions).toContain("account.must_change_password !== true");
   });
 
   it("keeps generated credentials visible until the admin acknowledges them", () => {
@@ -43,6 +41,5 @@ describe("F10 temporary password UX contracts", () => {
     expect(component).toContain("StudentTemporaryPasswordResetter");
     expect(accessSection).toContain("account?.must_change_password");
     expect(accessSection).toContain("StudentTemporaryPasswordResetter");
-    expect(accessSection).toContain("puedes emitir una nueva contraseña temporal");
   });
 });
