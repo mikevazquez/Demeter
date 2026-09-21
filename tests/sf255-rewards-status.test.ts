@@ -133,6 +133,9 @@ describe("SF-255A monthly level and waitlist contracts", () => {
     expect(reservationDetail).toContain("Número de teléfono");
     expect(reservationDetail).toContain("Confirmar invitación");
     expect(reservationDetail).toContain("ocupará un lugar real del aforo");
+    expect(reservationDetail).not.toContain(
+      "Invitación confirmada. Tu invitado ya ocupa un lugar real en esta clase.",
+    );
   });
 
   it("snapshots the approved level discount into checkout and surfaces M05 pricing", () => {
