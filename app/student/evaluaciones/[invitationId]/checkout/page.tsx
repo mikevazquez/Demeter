@@ -67,6 +67,17 @@ export default async function EvaluationCheckoutReturnPage({
 
   if (!attempt) notFound();
 
+  const extraFulfillment =
+    attempt?.extra_fulfillment_snapshot &&
+    typeof attempt.extra_fulfillment_snapshot === "object" &&
+    !Array.isArray(attempt.extra_fulfillment_snapshot)
+      ? (attempt.extra_fulfillment_snapshot as {
+          name?: string;
+          price_minor?: number;
+          currency?: string;
+        })
+      : null;
+
   const status = reconciliation?.ok
     ? (reconciliation.status ?? attempt.status ?? "unknown")
     : (attempt.status ?? "unknown");
@@ -166,11 +177,28 @@ export default async function EvaluationCheckoutReturnPage({
           <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-zinc-500">
             Compra
           </p>
-          <div className="mt-2 flex items-center justify-between gap-4">
-            <span className="text-sm text-white">{attempt.product_name_snapshot}</span>
-            <strong className="text-sm text-white">
-              {formatMoney(attempt.amount_minor, attempt.currency)}
-            </strong>
+          <div className="mt-2 space-y-2">
+            <div className="flex items-center justify-between gap-4">
+              <span className="text-sm text-white">{attempt.product_name_snapshot}</span>
+              <span className="text-xs text-zinc-500">Acceso</span>
+            </div>
+            {extraFulfillment?.name && extraFulfillment.price_minor ? (
+              <div className="flex items-center justify-between gap-4 border-t border-white/[0.06] pt-2">
+                <span className="text-sm text-white">{extraFulfillment.name}</span>
+                <span className="text-xs text-zinc-500">
+                  {formatMoney(
+                    extraFulfillment.price_minor,
+                    extraFulfillment.currency ?? attempt.currency,
+                  )}
+                </span>
+              </div>
+            ) : null}
+            <div className="flex items-center justify-between gap-4 border-t border-white/10 pt-2">
+              <strong className="text-xs uppercase tracking-[0.12em] text-zinc-500">Total</strong>
+              <strong className="text-sm text-white">
+                {formatMoney(attempt.amount_minor, attempt.currency)}
+              </strong>
+            </div>
           </div>
         </div>
 
