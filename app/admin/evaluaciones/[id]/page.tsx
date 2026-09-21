@@ -143,6 +143,7 @@ export default async function TechnicalEvaluationDetailPage({
     const result = elementResultMap.get(item.id);
     return {
       id: item.id,
+      criterionId: item.criterion_id,
       name: snapshotName(item.element_snapshot, "Elemento técnico"),
       description: snapshotDescription(item.element_snapshot),
       mandatory: item.mandatory,
@@ -160,6 +161,7 @@ export default async function TechnicalEvaluationDetailPage({
     const result = comboResultMap.get(item.id);
     return {
       id: item.id,
+      criterionId: item.criterion_id,
       name: snapshotName(item.combo_snapshot, "Combo técnico"),
       description: snapshotDescription(item.combo_snapshot),
       mandatory: item.mandatory,
@@ -180,12 +182,27 @@ export default async function TechnicalEvaluationDetailPage({
 
   const criterionResultQuery = await ctx.supabase
     .from("technical_evaluation_criterion_results")
-    .select("template_criterion_id,score_percent,weighted_points,passed")
+    .select("template_criterion_id,score_percent,weighted_points,passed,notes,captured_at")
     .eq("evaluation_id", evaluation.id);
   const criterionResultMap = new Map(
     (criterionResultQuery.data ?? []).map((item) => [item.template_criterion_id, item]),
   );
   const criteria = criteriaResult.data ?? [];
+  const liveCriteria = criteria.map((criterion) => {
+    const result = criterionResultMap.get(criterion.id);
+    return {
+      id: criterion.id,
+      label: criterion.label,
+      weightPercent: Number(criterion.weight_percent),
+      minPercent: Number(criterion.min_percent ?? version.default_category_min),
+      scorePercent:
+        result?.captured_at && result.score_percent !== null && result.score_percent !== undefined
+          ? Number(result.score_percent)
+          : null,
+      notes: result?.notes ?? "",
+      captured: Boolean(result?.captured_at),
+    };
+  });
 
   const isPublished = evaluation.status === "published";
   const step = isPublished ? "published" : (qs.step ?? "live");
@@ -250,20 +267,9 @@ export default async function TechnicalEvaluationDetailPage({
             </div>
           </section>
 
-          <div className="eval-criteria-tabs">
-            {criteria.map((criterion, index) => (
-              <span
-                className={`eval-criterion-tab ${index === 0 ? "is-active" : ""}`}
-                key={criterion.id}
-              >
-                <strong>{criterion.label}</strong>
-                <small>{criterion.weight_percent}%</small>
-              </span>
-            ))}
-          </div>
-
           <EvaluationLiveForm
             evaluationId={evaluation.id}
+            criteria={liveCriteria}
             elements={liveElements}
             combos={liveCombos}
           />
