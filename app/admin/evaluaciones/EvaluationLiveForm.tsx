@@ -96,7 +96,7 @@ function ResultEditor({
             className={`eval-choice ${status === "not_evaluated" ? "is-selected" : ""}`}
             onClick={() => choose("not_evaluated")}
           >
-            N/A
+            No evaluado
           </button>
         </div>
 
