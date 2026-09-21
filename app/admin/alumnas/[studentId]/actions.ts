@@ -15,7 +15,8 @@ export type ProvisionStudentAccessResult =
       ok: true;
       phone: string;
       mustChangePassword: true;
-      activationLinkGenerated: boolean;
+      temporaryPassword?: string;
+      activationLinkGenerated?: boolean;
       welcomeDelivery: {
         status: "accepted" | "skipped" | "error";
         errorCode: string | null;
@@ -36,7 +37,7 @@ async function readProvisioningFunctionError(error: unknown) {
 
 async function invokeStudentAccess(
   studentId: string,
-  mode: "provision" | "resend",
+  mode: "provision" | "resend" | "temporary_password",
 ): Promise<ProvisionStudentAccessResult> {
   if (!studentId) return { ok: false, error: "invalid_request" };
 
@@ -49,7 +50,10 @@ async function invokeStudentAccess(
     .maybeSingle();
 
   if (studentError || !student) return { ok: false, error: "student_not_found" };
-  if (!student.active || student.lifecycle_status !== "active") {
+  if (
+    mode !== "temporary_password" &&
+    (!student.active || student.lifecycle_status !== "active")
+  ) {
     return { ok: false, error: "student_not_active" };
   }
 
@@ -57,7 +61,7 @@ async function invokeStudentAccess(
     return { ok: false, error: "student_already_linked" };
   }
 
-  if (mode === "resend") {
+  if (mode === "resend" || mode === "temporary_password") {
     if (!student.user_id) return { ok: false, error: "student_access_missing" };
 
     const { data: account, error: accountError } = await supabase
@@ -69,7 +73,7 @@ async function invokeStudentAccess(
     if (accountError || !account || account.status !== "active") {
       return { ok: false, error: "student_access_inconsistent" };
     }
-    if (account.must_change_password !== true) {
+    if (mode === "resend" && account.must_change_password !== true) {
       return { ok: false, error: "activation_already_completed" };
     }
   }
@@ -82,16 +86,25 @@ async function invokeStudentAccess(
     return { ok: false, error: "provision_unavailable" };
   }
 
-  const requestHeaders = await headers();
-  const forwardedHost = requestHeaders.get("x-forwarded-host")?.split(",")[0]?.trim();
-  const host = forwardedHost || requestHeaders.get("host")?.trim();
-  if (!host) return { ok: false, error: "provision_unavailable" };
+  let body:
+    | { studentId: string; mode: "temporary_password" }
+    | { studentId: string; mode: "resend"; activationUrl: string }
+    | { studentId: string; activationUrl: string };
 
-  const activationUrl = new URL("/login/student/activar", `https://${host}`).toString();
-  const body =
-    mode === "resend"
-      ? { studentId, mode: "resend" as const, activationUrl }
-      : { studentId, activationUrl };
+  if (mode === "temporary_password") {
+    body = { studentId, mode: "temporary_password" };
+  } else {
+    const requestHeaders = await headers();
+    const forwardedHost = requestHeaders.get("x-forwarded-host")?.split(",")[0]?.trim();
+    const host = forwardedHost || requestHeaders.get("host")?.trim();
+    if (!host) return { ok: false, error: "provision_unavailable" };
+
+    const activationUrl = new URL("/login/student/activar", `https://${host}`).toString();
+    body =
+      mode === "resend"
+        ? { studentId, mode: "resend", activationUrl }
+        : { studentId, activationUrl };
+  }
 
   const { data, error } = await supabase.functions.invoke("provision-student-access", {
     body,
@@ -110,11 +123,20 @@ async function invokeStudentAccess(
     };
   }
 
+  if (mode === "temporary_password" && typeof data.temporaryPassword !== "string") {
+    return { ok: false, error: "provision_unavailable" };
+  }
+
   return {
     ok: true,
     phone: String(data.phone),
     mustChangePassword: true,
-    activationLinkGenerated: data.activationLinkGenerated === true,
+    ...(typeof data.temporaryPassword === "string"
+      ? { temporaryPassword: data.temporaryPassword }
+      : {}),
+    ...(typeof data.activationLinkGenerated === "boolean"
+      ? { activationLinkGenerated: data.activationLinkGenerated }
+      : {}),
     welcomeDelivery:
       data.welcomeDelivery && typeof data.welcomeDelivery === "object"
         ? {
@@ -143,6 +165,12 @@ export async function resendStudentActivationLink(
   studentId: string,
 ): Promise<ProvisionStudentAccessResult> {
   return invokeStudentAccess(studentId, "resend");
+}
+
+export async function resetStudentTemporaryPassword(
+  studentId: string,
+): Promise<ProvisionStudentAccessResult> {
+  return invokeStudentAccess(studentId, "temporary_password");
 }
 
 async function getAcquisitionEditContext(studentId: string, acquisitionId: string) {
