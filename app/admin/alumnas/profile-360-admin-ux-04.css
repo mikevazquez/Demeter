@@ -679,3 +679,57 @@
     display: none;
   }
 }
+
+
+.admin-ux04-profile360 .profile360-evaluation-decline-note {
+  display: grid;
+  gap: 4px;
+  padding: 10px 11px;
+  border: 1px solid rgba(246, 200, 78, 0.28);
+  border-radius: 11px;
+  background: rgba(246, 200, 78, 0.055);
+}
+
+.admin-ux04-profile360 .profile360-evaluation-decline-note strong {
+  color: #f3cf72;
+  font-size: 9px;
+}
+
+.admin-ux04-profile360 .profile360-evaluation-decline-note span,
+.admin-ux04-profile360 .profile360-evaluation-decline-note small {
+  color: #9ca5b3;
+  font-size: 8px;
+  line-height: 1.45;
+}
+
+.admin-ux04-profile360 .profile360-invitation-history-row {
+  min-height: 52px;
+  display: grid;
+  grid-template-columns: 118px 1fr 1fr auto minmax(150px, 1fr);
+  align-items: center;
+  gap: 9px;
+  padding: 8px 6px;
+  border-top: 1px solid rgba(255, 255, 255, 0.055);
+  color: #8f9bab;
+  font-size: 9px;
+}
+
+.admin-ux04-profile360 .profile360-invitation-history-row:first-child {
+  border-top: 0;
+}
+
+.admin-ux04-profile360 .profile360-invitation-history-row strong {
+  color: #edf1f5;
+  font-size: 10px;
+}
+
+@media (max-width: 760px) {
+  .admin-ux04-profile360 .profile360-invitation-history-row {
+    grid-template-columns: 92px minmax(0, 1fr) auto;
+  }
+
+  .admin-ux04-profile360 .profile360-invitation-history-row > :nth-child(3),
+  .admin-ux04-profile360 .profile360-invitation-history-row > :nth-child(5) {
+    display: none;
+  }
+}
