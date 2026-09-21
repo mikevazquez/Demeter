@@ -68,9 +68,7 @@ function ResultEditor({
       <div className="eval-element-copy">
         <strong>{item.name}</strong>
         {item.description ? <small>{item.description}</small> : null}
-        {item.mandatory ? (
-          <span className="eval-mandatory">Requisito para progresión</span>
-        ) : null}
+        {item.mandatory ? <span className="eval-mandatory">Requisito para progresión</span> : null}
         <small>
           {item.scored ? `Puntuación / ${item.maxScore}` : "Requisito complementario"} ·{" "}
           {item.attemptsAllowed} intentos
