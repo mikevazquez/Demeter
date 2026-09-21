@@ -133,8 +133,7 @@ export default async function ScheduleEvaluationPage({
       "student_enrollment_checkout_requirement",
       { target_session_id: selectedSession.session_id },
     );
-    enrollmentRequirement =
-      (enrollmentRequirementData as EnrollmentRequirement | null) ?? null;
+    enrollmentRequirement = (enrollmentRequirementData as EnrollmentRequirement | null) ?? null;
     if (selectedSession.drop_in_price_minor != null) {
       const { data: rewardPriceData } = await supabase.rpc("student_reward_single_class_price", {
         target_session_id: selectedSession.session_id,
@@ -319,8 +318,7 @@ export default async function ScheduleEvaluationPage({
                                 product.currency,
                               )}
                             </strong>
-                            {enrollmentRequirement?.missing &&
-                            enrollmentRequirement.price_minor ? (
+                            {enrollmentRequirement?.missing && enrollmentRequirement.price_minor ? (
                               <span className="mt-0.5 block text-[10px] text-zinc-600">
                                 Incluye {formatMoney(product.price_minor, product.currency)} del
                                 paquete +{" "}
