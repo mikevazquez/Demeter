@@ -21,10 +21,7 @@ const studentReadModels = readFileSync(
   ),
   "utf8",
 );
-const adminDashboard = readFileSync(
-  join(process.cwd(), "app/admin/evaluaciones/page.tsx"),
-  "utf8",
-);
+const adminDashboard = readFileSync(join(process.cwd(), "app/admin/evaluaciones/page.tsx"), "utf8");
 const adminProfile = readFileSync(
   join(process.cwd(), "app/admin/alumnas/[studentId]/StudentEvaluationsPanel.tsx"),
   "utf8",
