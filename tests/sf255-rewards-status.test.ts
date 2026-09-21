@@ -188,9 +188,7 @@ describe("SF-255A monthly level and waitlist contracts", () => {
     expect(cancellationPage).toContain("student_reward_invitation_context");
     expect(cancellationPage).toContain("También se cancelará");
     expect(cancellationPage).toContain("ya no podrá asistir a esta clase.");
-    expect(cancellationPage).toContain(
-      "La invitación depende de tu reserva en esta misma clase",
-    );
+    expect(cancellationPage).toContain("La invitación depende de tu reserva en esta misma clase");
     expect(cancellationPage).toContain("Sí, cancelar mi reserva y la invitación");
   });
 

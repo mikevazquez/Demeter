@@ -141,7 +141,8 @@ export default async function StudentCancelReservationPage({
         {activeGuests.length > 0 ? (
           <div className="mt-4 rounded-2xl border border-rose-500/30 bg-rose-500/[0.09] p-4">
             <p className="text-sm font-semibold text-rose-100">
-              También se cancelará {activeGuests.length === 1 ? "la invitación" : "las invitaciones"}
+              También se cancelará{" "}
+              {activeGuests.length === 1 ? "la invitación" : "las invitaciones"}
             </p>
             <p className="mt-1.5 text-xs leading-5 text-rose-100/80">
               {activeGuests.length === 1
