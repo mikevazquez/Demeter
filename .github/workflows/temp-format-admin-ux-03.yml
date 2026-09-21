@@ -1,0 +1,43 @@
+name: TEMP Format ADMIN-UX-03
+
+on:
+  push:
+    branches:
+      - admin-ux-03-agenda-calendar
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: admin-ux-03-agenda-calendar
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Format target files
+        run: npx prettier --write app/admin/agenda/[sessionId]/actions.ts app/admin/agenda/agenda-calendar.css app/admin/agenda/page.tsx tests/admin-ux-03-agenda-calendar.test.ts
+
+      - name: Verify format
+        run: npm run format:check
+
+      - name: Commit formatted files
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/admin/agenda/[sessionId]/actions.ts app/admin/agenda/agenda-calendar.css app/admin/agenda/page.tsx tests/admin-ux-03-agenda-calendar.test.ts
+          if ! git diff --cached --quiet; then
+            git commit -m "chore: format ADMIN-UX-03 Agenda"
+            git push origin HEAD:admin-ux-03-agenda-calendar
+          fi
