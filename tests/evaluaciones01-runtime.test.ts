@@ -23,12 +23,17 @@ const completionGatePath = join(
   process.cwd(),
   "supabase/migrations/20260921223200_evaluaciones01_completion_gate.sql",
 );
+const directScoringPath = join(
+  process.cwd(),
+  "supabase/migrations/20260921231000_evaluaciones01_direct_criterion_scoring.sql",
+);
 
 const runtime = readFileSync(runtimePath, "utf8");
 const guard = readFileSync(guardPath, "utf8");
 const timestamp = readFileSync(timestampPath, "utf8");
 const fix = readFileSync(fixPath, "utf8");
 const completionGate = readFileSync(completionGatePath, "utf8");
+const directScoring = readFileSync(directScoringPath, "utf8");
 
 describe("EVALUACIONES-01 runtime", () => {
   it("creates and autosaves draft evaluations through capability-gated RPCs", () => {
@@ -67,7 +72,15 @@ describe("EVALUACIONES-01 runtime", () => {
     expect(completionGate).toContain("raise exception 'evaluation_incomplete'");
   });
 
-  it("keeps calculated criterion history under the published-result guard", () => {
+  it("captures every weighted criterion directly before technical close", () => {
+    expect(directScoring).toContain("public.admin_save_technical_criterion_result");
+    expect(directScoring).toContain("add column if not exists captured_at");
+    expect(directScoring).toContain("r.captured_at is null");
+    expect(directScoring).toContain("sum(r.weighted_points)");
+    expect(directScoring).not.toContain("delete from public.technical_evaluation_criterion_results");
+  });
+
+  it("keeps criterion history under the published-result guard", () => {
     expect(guard).toContain("technical_evaluation_criterion_results_guard");
     expect(timestamp).toContain("add column if not exists updated_at");
     expect(guard).toContain("private.evaluations_guard_result_history()");
