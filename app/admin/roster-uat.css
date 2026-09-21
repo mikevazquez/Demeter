@@ -450,3 +450,27 @@
     grid-column: auto;
   }
 }
+
+
+.today-evaluation-start-form {
+  margin-top: 2px;
+}
+
+.today-evaluation-start-form button {
+  min-height: 28px;
+  padding: 0 9px;
+  border: 1px solid rgba(151, 103, 255, 0.5);
+  border-radius: 9px;
+  background: rgba(126, 79, 255, 0.1);
+  color: #d8c8ff;
+  font: inherit;
+  font-size: 9px;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.today-evaluation-start-form button:hover {
+  border-color: rgba(187, 155, 255, 0.75);
+  background: rgba(126, 79, 255, 0.16);
+  color: #f0e9ff;
+}
