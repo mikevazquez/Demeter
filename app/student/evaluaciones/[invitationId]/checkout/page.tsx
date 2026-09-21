@@ -67,11 +67,13 @@ export default async function EvaluationCheckoutReturnPage({
 
   if (!attempt) notFound();
 
+  const attemptWithExtra = attempt as
+    | (typeof attempt & { extra_fulfillment_snapshot?: unknown })
+    | null;
+  const extraSnapshot = attemptWithExtra?.extra_fulfillment_snapshot;
   const extraFulfillment =
-    attempt?.extra_fulfillment_snapshot &&
-    typeof attempt.extra_fulfillment_snapshot === "object" &&
-    !Array.isArray(attempt.extra_fulfillment_snapshot)
-      ? (attempt.extra_fulfillment_snapshot as {
+    extraSnapshot && typeof extraSnapshot === "object" && !Array.isArray(extraSnapshot)
+      ? (extraSnapshot as {
           name?: string;
           price_minor?: number;
           currency?: string;
