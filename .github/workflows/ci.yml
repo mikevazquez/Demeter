@@ -34,7 +34,10 @@ jobs:
         run: npm ci
 
       - name: Format check
-        run: npm run format:check
+        run: |
+          npm run format
+          git diff -- app/admin/alumnas/[studentId]/StudentAccessProvisioner.tsx app/login/student/activar/actions.ts supabase/functions/provision-student-access/index.ts tests/f10-temporary-password-ux-contract.test.ts tests/sf174-student-welcome.test.ts
+          exit 1
 
       - name: Lint
         run: npm run lint
