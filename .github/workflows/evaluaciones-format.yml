@@ -1,0 +1,51 @@
+name: EVALUACIONES format repair
+
+on:
+  push:
+    branches:
+      - feat/evaluaciones-01-sync
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/evaluaciones-01-sync
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Format EVALUACIONES files
+        run: |
+          npx prettier --write \
+            "app/admin/alumnas/[studentId]/page.tsx" \
+            "app/admin/alumnas/[studentId]/Profile360Overview.tsx" \
+            "app/admin/alumnas/[studentId]/StudentEvaluationsPanel.tsx" \
+            "app/admin/alumnas/profile-360-admin-ux-04.css" \
+            "app/admin/evaluaciones/actions.ts" \
+            "app/admin/evaluaciones/disciplina/[disciplineId]/page.tsx" \
+            "app/admin/evaluaciones/evaluaciones.css" \
+            "app/admin/evaluaciones/page.tsx" \
+            "app/admin/evaluaciones/plantillas/[id]/page.tsx" \
+            "app/student/evaluaciones/[invitationId]/page.tsx" \
+            "app/student/evaluaciones/[invitationId]/programar/page.tsx" \
+            "app/student/evaluaciones/page.tsx" \
+            "app/student/evaluaciones/resultado/[evaluationId]/page.tsx" \
+            "tests/admin-no-success-confirmation-banners.test.ts" \
+            "tests/evaluaciones01-discipline-config.test.ts"
+      - name: Commit formatting
+        run: |
+          if git diff --quiet; then
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .
+          git commit -m "EVALUACIONES-01 · format implementation"
+          git push origin HEAD:feat/evaluaciones-01-sync
