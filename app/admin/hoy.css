@@ -1506,3 +1506,11 @@
     grid-row: 3;
   }
 }
+
+
+.today-class-evaluation-summary {
+  margin-top: 2px;
+  color: #cdb8ff !important;
+  font-size: 9px !important;
+  font-weight: 800;
+}
