@@ -267,22 +267,5 @@ begin
 end;
 $$;
 
-do $$
-declare
-  v_job_id bigint;
-begin
-  select jobid into v_job_id
-  from cron.job
-  where jobname = 'sf_class_reminder_3h'
-  limit 1;
-
-  if v_job_id is not null then
-    perform cron.unschedule(v_job_id);
-  end if;
-
-  perform cron.schedule(
-    'sf_class_reminder_3h',
-    '* * * * *',
-    'select private.emit_class_reminders_3h_due();'
-  );
-end $$;
+-- El cron queda deliberadamente DESACTIVADO durante el piloto productivo.
+-- Se habilitará en una migración separada después de validar el primer envío real.
