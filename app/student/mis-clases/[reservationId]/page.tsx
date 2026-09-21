@@ -179,7 +179,10 @@ export default async function StudentReservationDetailPage({
       </section>
 
       {isActiveReservation && showInvitationBenefit ? (
-        <section className="rounded-3xl border border-fuchsia-500/20 bg-fuchsia-500/[0.045] p-4">
+        <section
+          data-feature="sf255-guest-invitations"
+          className="rounded-3xl border border-fuchsia-500/20 bg-fuchsia-500/[0.045] p-4"
+        >
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-fuchsia-300">
