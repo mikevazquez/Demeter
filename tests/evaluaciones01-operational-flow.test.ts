@@ -47,6 +47,14 @@ const studentSchedule = readFileSync(
   join(process.cwd(), "app/student/evaluaciones/[invitationId]/programar/page.tsx"),
   "utf8",
 );
+const studentEvaluationCheckout = readFileSync(
+  join(process.cwd(), "app/student/evaluaciones/[invitationId]/checkout/page.tsx"),
+  "utf8",
+);
+const mercadoPagoOrder = readFileSync(
+  join(process.cwd(), "supabase/functions/create-mercadopago-order/index.ts"),
+  "utf8",
+);
 const studentResult = readFileSync(
   join(process.cwd(), "app/student/evaluaciones/resultado/[evaluationId]/page.tsx"),
   "utf8",
@@ -106,12 +114,19 @@ describe("EVALUACIONES-01 operational cycle", () => {
     expect(studentHome).toContain("activeEvaluationInvitation?.invitation_id");
   });
 
-  it("reuses the normal class feed for evaluation scheduling", () => {
+  it("reuses the normal class feed and keeps checkout inside evaluation scheduling", () => {
     expect(studentSchedule).toContain('"student_schedule_feed"');
     expect(studentSchedule).toContain("target_discipline_id: invitation.discipline_id");
-    expect(studentSchedule).toContain("Necesitas créditos");
-    expect(studentSchedule).toContain("Comprar una clase");
+    expect(studentSchedule).toContain("Pagar esta clase");
     expect(studentSchedule).toContain("Comprar un paquete");
+    expect(studentSchedule).toContain("PurchaseSingleClassButton");
+    expect(studentSchedule).toContain("PurchasePackageButton");
+    expect(studentSchedule).toContain("evaluationInvitationId={invitation.id}");
+    expect(mercadoPagoOrder).toContain("evaluationInvitationId");
+    expect(mercadoPagoOrder).toContain("/student/evaluaciones/");
+    expect(studentEvaluationCheckout).toContain('"reconcile-mercadopago-order"');
+    expect(studentEvaluationCheckout).toContain('"student_schedule_evaluation"');
+    expect(studentEvaluationCheckout).toContain("Evaluación programada");
   });
 
   it("renders both final student result states", () => {
