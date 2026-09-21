@@ -144,7 +144,12 @@ export default async function StudentProfilePage({
             <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-4">
               <p className="font-semibold text-white">Beneficios activos este mes</p>
               <div className="mt-3 space-y-2 text-sm text-zinc-300">
-                <p>Lista de espera · {currentLevel.title === "Bronce" ? "prioridad base" : `prioridad ${currentLevel.title}`}</p>
+                <p>
+                  Lista de espera ·{" "}
+                  {currentLevel.title === "Bronce"
+                    ? "prioridad base"
+                    : `prioridad ${currentLevel.title}`}
+                </p>
                 <p>Clases privadas · {currentLevel.private_discount_pct ?? 0}% de descuento</p>
                 <p>Eventos elegibles · {currentLevel.event_discount_pct ?? 0}% de descuento</p>
                 <p>
@@ -161,14 +166,17 @@ export default async function StudentProfilePage({
                   Siguiente nivel · {nextLevel.title}
                 </p>
                 <p className="mt-2 text-sm text-zinc-300">
-                  {nextLevel.private_discount_pct}% en privadas · {nextLevel.event_discount_pct}% en eventos
+                  {nextLevel.private_discount_pct}% en privadas · {nextLevel.event_discount_pct}% en
+                  eventos
                   {(nextLevel.monthly_guest_invites ?? 0) > 0
                     ? ` · ${nextLevel.monthly_guest_invites} invitación${nextLevel.monthly_guest_invites === 1 ? "" : "es"} al mes`
                     : ""}
                 </p>
               </div>
             ) : (
-              <p className="text-sm text-zinc-400">Nivel máximo. Mantén tu constancia para conservar Diamante.</p>
+              <p className="text-sm text-zinc-400">
+                Nivel máximo. Mantén tu constancia para conservar Diamante.
+              </p>
             )}
           </div>
         </StudentNoticeDialog>
@@ -215,15 +223,22 @@ export default async function StudentProfilePage({
               <div className="col-span-2 rounded-2xl border border-fuchsia-500/20 bg-black/25 p-3 sm:col-span-1 sm:w-64">
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-zinc-500">Nivel actual</p>
-                    <p className="mt-0.5 text-base font-semibold text-white">{currentLevel.title}</p>
+                    <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-zinc-500">
+                      Nivel actual
+                    </p>
+                    <p className="mt-0.5 text-base font-semibold text-white">
+                      {currentLevel.title}
+                    </p>
                   </div>
                   <span className="rounded-full border border-fuchsia-500/30 bg-fuchsia-500/10 px-2.5 py-1 text-[10px] font-semibold text-fuchsia-200">
                     {attendanceCount}/{maintenanceTarget} asistencias
                   </span>
                 </div>
                 <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/10">
-                  <div className="h-full rounded-full bg-fuchsia-500" style={{ width: `${maintenanceProgress}%` }} />
+                  <div
+                    className="h-full rounded-full bg-fuchsia-500"
+                    style={{ width: `${maintenanceProgress}%` }}
+                  />
                 </div>
                 <p className="mt-2 text-[10px] leading-4 text-zinc-500">
                   {rewardStatus?.maintenance_met
@@ -234,16 +249,24 @@ export default async function StudentProfilePage({
                   <div className="mt-2 border-t border-white/10 pt-2">
                     <div className="flex items-center justify-between gap-2 text-[10px]">
                       <span className="text-zinc-500">Hacia {nextLevel.title}</span>
-                      <span className="font-semibold text-zinc-300">{attendanceCount}/{promotionTarget}</span>
+                      <span className="font-semibold text-zinc-300">
+                        {attendanceCount}/{promotionTarget}
+                      </span>
                     </div>
                     <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-white/10">
-                      <div className="h-full rounded-full bg-fuchsia-500/70" style={{ width: `${promotionProgress}%` }} />
+                      <div
+                        className="h-full rounded-full bg-fuchsia-500/70"
+                        style={{ width: `${promotionProgress}%` }}
+                      />
                     </div>
                   </div>
                 ) : (
                   <p className="mt-2 text-[10px] font-semibold text-zinc-400">Nivel máximo</p>
                 )}
-                <Link href="/student/perfil?benefits=1" className="mt-3 inline-flex text-[11px] font-semibold text-fuchsia-300">
+                <Link
+                  href="/student/perfil?benefits=1"
+                  className="mt-3 inline-flex text-[11px] font-semibold text-fuchsia-300"
+                >
                   Tus beneficios →
                 </Link>
               </div>
@@ -328,7 +351,9 @@ export default async function StudentProfilePage({
         className="grid grid-cols-[1fr_auto] items-center gap-4 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 transition hover:border-fuchsia-500/25 hover:bg-white/[0.05]"
       >
         <div className="min-w-0">
-          <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-zinc-500">Paquete vigente</p>
+          <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-zinc-500">
+            Paquete vigente
+          </p>
           <p className="mt-1 truncate text-sm font-semibold text-white">
             {activePackage?.name ?? "Sin paquete activo"}
           </p>
@@ -340,7 +365,9 @@ export default async function StudentProfilePage({
               : "Compra o activa un paquete para reservar clases."}
           </p>
         </div>
-        <span aria-hidden="true" className="text-xl text-zinc-600">›</span>
+        <span aria-hidden="true" className="text-xl text-zinc-600">
+          ›
+        </span>
       </Link>
 
       <section data-profile-block="accesses">

@@ -38,9 +38,7 @@ export default function WaitlistControl({
   const [error, setError] = useState<string | null>(null);
 
   const priorityLabel =
-    levelTitle === "Oro" || levelTitle === "Diamante"
-      ? `Prioridad ${levelTitle} aplicada`
-      : null;
+    levelTitle === "Oro" || levelTitle === "Diamante" ? `Prioridad ${levelTitle} aplicada` : null;
 
   function join() {
     if (waitlisted || isPending) return;

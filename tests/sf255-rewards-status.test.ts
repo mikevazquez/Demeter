@@ -20,10 +20,7 @@ const detailPage = readFileSync(
   join(process.cwd(), "app/student/reservar/[sessionId]/page.tsx"),
   "utf8",
 );
-const classesPage = readFileSync(
-  join(process.cwd(), "app/student/mis-clases/page.tsx"),
-  "utf8",
-);
+const classesPage = readFileSync(join(process.cwd(), "app/student/mis-clases/page.tsx"), "utf8");
 const profilePage = readFileSync(join(process.cwd(), "app/student/perfil/page.tsx"), "utf8");
 
 describe("SF-255A monthly level and waitlist contracts", () => {
@@ -44,9 +41,7 @@ describe("SF-255A monthly level and waitlist contracts", () => {
   });
 
   it("orders waitlist by current level and FIFO without public position", () => {
-    expect(waitlist).toContain(
-      "order by d.level_order desc, w.joined_at asc, w.id asc",
-    );
+    expect(waitlist).toContain("order by d.level_order desc, w.joined_at asc, w.id asc");
     expect(waitlist).not.toContain("position_number");
     expect(waitlist).not.toContain("rank()");
   });

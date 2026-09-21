@@ -114,9 +114,7 @@ function WaitlistRow({
   levelTitle: string | null;
 }) {
   const priorityLabel =
-    levelTitle === "Oro" || levelTitle === "Diamante"
-      ? `Prioridad ${levelTitle} aplicada`
-      : null;
+    levelTitle === "Oro" || levelTitle === "Diamante" ? `Prioridad ${levelTitle} aplicada` : null;
 
   return (
     <article className="rounded-2xl border border-amber-400/25 bg-amber-400/[0.055] px-4 py-3">
@@ -167,8 +165,7 @@ export default async function StudentClassesPage({
   ]);
   const { data, error } = classesResult;
   const waitlistItems = (waitlistResult.data ?? []) as StudentWaitlistItem[];
-  const levelTitle =
-    (rewardStatusResult.data as RewardStatusSnapshot | null)?.level_title ?? null;
+  const levelTitle = (rewardStatusResult.data as RewardStatusSnapshot | null)?.level_title ?? null;
   const feed =
     (data as {
       upcoming?: StudentClassFeedItem[];
