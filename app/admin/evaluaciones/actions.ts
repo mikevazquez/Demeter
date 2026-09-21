@@ -47,12 +47,10 @@ export async function enableEvaluationDiscipline(formData: FormData) {
     active: true,
   }));
 
-  const { error } = await ctx.supabase
-    .from("discipline_technical_levels")
-    .upsert(rows, {
-      onConflict: "studio_id,discipline_id,technical_level_id",
-      ignoreDuplicates: false,
-    });
+  const { error } = await ctx.supabase.from("discipline_technical_levels").upsert(rows, {
+    onConflict: "studio_id,discipline_id,technical_level_id",
+    ignoreDuplicates: false,
+  });
 
   if (error) redirect("/admin/evaluaciones/configuracion?error=discipline");
 
@@ -245,7 +243,6 @@ export async function updateEvaluationCriteria(formData: FormData) {
   revalidatePath(`/admin/evaluaciones/plantillas/${templateId}`);
   redirect(`/admin/evaluaciones/plantillas/${templateId}?saved=criteria`);
 }
-
 
 export async function addEvaluationElement(formData: FormData) {
   const ctx = await getAdminContext(CAPABILITIES.EVALUATIONS_CONFIGURE);
@@ -534,7 +531,6 @@ export async function createNextEvaluationTemplateVersion(formData: FormData) {
   redirect(`/admin/evaluaciones/plantillas/${templateId}?saved=version`);
 }
 
-
 export async function createTechnicalEvaluationAction(formData: FormData) {
   const ctx = await getAdminContext(CAPABILITIES.EVALUATIONS_WRITE);
   const studentId = text(formData, "student_id");
@@ -577,7 +573,6 @@ export async function createTechnicalEvaluationAction(formData: FormData) {
   revalidatePath("/admin/evaluaciones");
   redirect(`/admin/evaluaciones/${evaluationId}`);
 }
-
 
 export async function saveTechnicalElementResultAction(formData: FormData) {
   const ctx = await getAdminContext(CAPABILITIES.EVALUATIONS_WRITE);
