@@ -179,8 +179,14 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
                 ) : (
                   <span className="brand-mark">{studio.name.slice(0, 1).toUpperCase()}</span>
                 )}
-                <strong>{studio.name}</strong>
+                <span className="admin-mobile-brand-copy">
+                  <strong>{studio.name}</strong>
+                  <small>Movimiento que transforma</small>
+                </span>
               </div>
+              <span className="admin-user-button admin-mobile-user-button" aria-label={userName}>
+                {userInitials || "U"}
+              </span>
             </header>
           </>
         ) : null}
