@@ -387,7 +387,7 @@ export default async function AdminPage({
         </details>
       </header>
 
-      {params.created ? (
+      {params.created && !["attended", "no_show"].includes(params.created) ? (
         <div className="notice success">
           {params.created === "cancel"
             ? "Reserva cancelada correctamente."
