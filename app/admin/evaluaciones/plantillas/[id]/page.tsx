@@ -109,7 +109,7 @@ export default async function EvaluationTemplateEditorPage({
         <div className="eval-header-copy">
           <Link
             className="back-link compact"
-            href={`/admin/evaluaciones/configuracion/${template.discipline_id}?view=plantillas`}
+            href={`/admin/evaluaciones/disciplina/${template.discipline_id}`}
           >
             ← {discipline?.name ?? "Disciplina"}
           </Link>
