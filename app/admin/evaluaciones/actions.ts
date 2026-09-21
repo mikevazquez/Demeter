@@ -36,7 +36,7 @@ export async function enableEvaluationDiscipline(formData: FormData) {
   ]);
 
   if (!discipline || !levels?.length) {
-    redirect("/admin/evaluaciones/configuracion?error=discipline");
+    redirect(`/admin/evaluaciones/disciplina/${disciplineId}?error=discipline`);
   }
 
   const rows = levels.map((level) => ({
@@ -52,9 +52,8 @@ export async function enableEvaluationDiscipline(formData: FormData) {
     ignoreDuplicates: false,
   });
 
-  if (error) redirect("/admin/evaluaciones/configuracion?error=discipline");
+  if (error) redirect(`/admin/evaluaciones/disciplina/${disciplineId}?error=discipline`);
 
-  revalidatePath("/admin/evaluaciones");
   revalidatePath("/admin/evaluaciones");
   revalidatePath(`/admin/evaluaciones/disciplina/${disciplineId}`);
   redirect(`/admin/evaluaciones/disciplina/${disciplineId}`);
@@ -71,12 +70,11 @@ export async function setEvaluationDisciplineActive(formData: FormData) {
     .eq("studio_id", ctx.studio.id)
     .eq("discipline_id", disciplineId);
 
-  if (error) redirect("/admin/evaluaciones/configuracion?error=discipline");
+  if (error) redirect(`/admin/evaluaciones/disciplina/${disciplineId}?error=discipline`);
 
   revalidatePath("/admin/evaluaciones");
-  revalidatePath("/admin/evaluaciones");
   revalidatePath(`/admin/evaluaciones/disciplina/${disciplineId}`);
-  redirect("/admin/evaluaciones/configuracion");
+  redirect("/admin/evaluaciones");
 }
 
 export async function setEvaluationDisciplineLevelActive(formData: FormData) {
