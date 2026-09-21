@@ -1410,3 +1410,82 @@
     min-height: 68px;
   }
 }
+
+
+.hoy-product-header {
+  display: none;
+}
+
+@media (max-width: 760px) {
+  .admin-content:has(.hoy-approved) > .admin-mobile-header {
+    display: none;
+  }
+
+  .hoy-product-header {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    min-height: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 0 2px 4px;
+  }
+
+  .hoy-product-wordmark {
+    min-width: 0;
+    display: grid;
+    gap: 5px;
+  }
+
+  .hoy-product-wordmark > span {
+    color: #e7e9ee;
+    font-size: 15px;
+    font-weight: 350;
+    letter-spacing: 0.28em;
+    white-space: nowrap;
+  }
+
+  .hoy-product-wordmark > span b {
+    color: #ff0a8a;
+    font-weight: 800;
+    letter-spacing: 0.18em;
+  }
+
+  .hoy-product-wordmark small {
+    color: #818b9a;
+    font-size: 6px;
+    font-weight: 650;
+    letter-spacing: 0.34em;
+    white-space: nowrap;
+  }
+
+  .hoy-product-avatar {
+    width: 38px;
+    height: 38px;
+    flex: 0 0 auto;
+    display: grid;
+    place-items: center;
+    border: 1px solid rgba(255, 10, 138, 0.8);
+    border-radius: 999px;
+    background: rgba(255, 10, 138, 0.035);
+    color: #f3d9e7;
+    font-size: 11px;
+    font-weight: 760;
+    box-shadow:
+      inset 0 0 0 1px rgba(255, 10, 138, 0.05),
+      0 0 20px rgba(255, 10, 138, 0.08);
+  }
+
+  .hoy-title-block {
+    grid-row: 2;
+  }
+
+  .hoy-week-heading {
+    grid-row: 2;
+  }
+
+  .hoy-week-card .mock-week-calendar {
+    grid-row: 3;
+  }
+}
