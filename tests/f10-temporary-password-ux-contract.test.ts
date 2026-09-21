@@ -18,14 +18,17 @@ describe("F10 temporary password UX contracts", () => {
     expect(accessAction).not.toContain("revalidatePath");
   });
 
-  it("allows a server-only temporary password regeneration only while activation is pending", () => {
+  it("keeps temporary password regeneration server-only and safely reopens activation when needed", () => {
     const edgeFunction = source("supabase/functions/provision-student-access/index.ts");
     const actions = source("app/admin/alumnas/[studentId]/actions.ts");
 
     expect(edgeFunction).toContain('payload.mode === "reset"');
-    expect(edgeFunction).toContain("account.must_change_password !== true");
+    expect(edgeFunction).toContain(
+      "const shouldReopenActivation = account.must_change_password !== true",
+    );
     expect(edgeFunction).toContain("adminClient.auth.admin.updateUserById(student.user_id");
-    expect(edgeFunction).toContain('{ error: "temporary_password_reset_closed" }');
+    expect(edgeFunction).toContain("must_change_password: true");
+    expect(edgeFunction).toContain("must_change_password: false");
     expect(actions).toContain("resetStudentTemporaryPassword");
     expect(actions).toContain('{ studentId, mode: "reset" }');
     expect(actions).toContain("account.must_change_password !== true");

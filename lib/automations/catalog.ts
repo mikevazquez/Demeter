@@ -28,7 +28,8 @@ export type AutomationCatalogCode =
   | "AUT-CAT-13"
   | "AUT-CAT-14"
   | "AUT-CAT-15"
-  | "AUT-CAT-16";
+  | "AUT-CAT-16"
+  | "AUT-CAT-17";
 
 export type AutomationSequenceCode = "SEC-01" | "SEC-02" | "SEC-03";
 
@@ -298,6 +299,46 @@ export const AUTOMATION_CATALOG = [
     output: {
       kind: "internal_summary",
       description: "Resumen interno para el coach; no usa preferencias comerciales de alumnas.",
+    },
+    sequenceIds: [],
+    requirements: [],
+  },
+  {
+    code: "AUT-CAT-17",
+    key: "waitlist_promoted",
+    name: "Lugar obtenido desde lista de espera",
+    category: "operation",
+    description:
+      "Confirma que Studio Flow promovió a una alumna desde lista de espera y creó su reserva.",
+    priority: { communication: "P1", scope: "aut05" },
+    recipients: ["student"],
+    trigger: {
+      kind: "event",
+      description: "booking.created con source=waitlist y waitlist_entry_id válido.",
+    },
+    protectedConditions: [
+      "La reserva debe haber sido creada realmente desde lista de espera.",
+      "La entrada de waitlist debe corresponder a la reserva promovida.",
+      "La alumna debe seguir identificada y con canal disponible.",
+    ],
+    configurableParameters: [],
+    variables: [
+      "nombre",
+      "disciplina",
+      "fecha",
+      "hora",
+      "coach",
+      "ubicacion",
+      "creditos_restantes",
+    ],
+    frequency: {
+      mode: "once_per_source",
+      description: "Una ejecución por promoción efectiva desde lista de espera.",
+    },
+    configurationMode: "single",
+    output: {
+      kind: "whatsapp_student",
+      description: "Comunica que se liberó un lugar y que la alumna ya quedó dentro de la clase.",
     },
     sequenceIds: [],
     requirements: [],

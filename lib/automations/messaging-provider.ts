@@ -148,11 +148,34 @@ function buildProviderInput(input: DeliverAutomationMessageInput): MessagingProv
   };
 }
 
+function sensitiveVariableKeys(metadata: Record<string, unknown>): Set<string> {
+  const configured = metadata.sensitive_variable_keys;
+  if (!Array.isArray(configured)) return new Set();
+
+  return new Set(
+    configured
+      .filter((key): key is string => typeof key === "string" && key.trim().length > 0)
+      .map((key) => key.trim()),
+  );
+}
+
+function snapshotVariables(input: MessagingProviderInput): Record<string, unknown> {
+  const sensitiveKeys = sensitiveVariableKeys(input.metadata);
+  if (!sensitiveKeys.size) return input.variables;
+
+  return Object.fromEntries(
+    Object.entries(input.variables).map(([key, value]) => [
+      key,
+      sensitiveKeys.has(key) ? "[REDACTED]" : value,
+    ]),
+  );
+}
+
 function requestSnapshot(input: MessagingProviderInput): Record<string, unknown> {
   return {
     recipient: input.recipient,
     template: input.template,
-    variables: input.variables,
+    variables: snapshotVariables(input),
     execution_id: input.executionId,
     metadata: input.metadata,
   };
