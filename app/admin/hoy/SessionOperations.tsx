@@ -13,13 +13,13 @@ import {
 
 type RosterItem = {
   id: string;
-  studentId: string | null;
+  studentId?: string | null;
   studentName: string;
   status: string;
   packageLabel: string;
   creditsLabel: string;
   expiresLabel: string;
-  commercialPending: boolean;
+  commercialPending?: boolean;
 };
 
 type Candidate = {
@@ -39,7 +39,7 @@ type SessionOperationsProps = {
   canAttendance: boolean;
   canBook: boolean;
   canCreateStudent: boolean;
-  canWriteSales: boolean;
+  canWriteSales?: boolean;
   returnTo?: string;
   initiallyOpen?: boolean;
   showToggle?: boolean;
@@ -72,7 +72,7 @@ export function SessionOperations({
   canAttendance,
   canBook,
   canCreateStudent,
-  canWriteSales,
+  canWriteSales = false,
   returnTo = "",
   initiallyOpen = false,
   showToggle = true,
