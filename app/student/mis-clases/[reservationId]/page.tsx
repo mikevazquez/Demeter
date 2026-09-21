@@ -126,10 +126,9 @@ export default async function StudentReservationDetailPage({
       : { data: null };
   const contactMatch = (contactMatchData as InvitationContactMatch | null) ?? null;
   const activeGuests = invitationContext?.active_guests ?? [];
-  const cancellationGuest =
-    query.cancel_invite
-      ? activeGuests.find((guest) => guest.invitation_id === query.cancel_invite) ?? null
-      : null;
+  const cancellationGuest = query.cancel_invite
+    ? (activeGuests.find((guest) => guest.invitation_id === query.cancel_invite) ?? null)
+    : null;
   const { data: cancellationPreviewData } =
     isActiveReservation && cancellationGuest
       ? await supabase.rpc("student_cancellation_preview", {
