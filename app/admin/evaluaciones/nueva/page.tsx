@@ -59,7 +59,9 @@ export default async function NewTechnicalEvaluationPage({
         .eq("studio_id", ctx.studio.id)
     : { data: [] };
 
-  const templates = new Map((templatesResult.data ?? []).map((template) => [template.id, template]));
+  const templates = new Map(
+    (templatesResult.data ?? []).map((template) => [template.id, template]),
+  );
   const disciplines = new Map(
     (disciplinesResult.data ?? []).map((discipline) => [discipline.id, discipline.name]),
   );
@@ -162,8 +164,8 @@ export default async function NewTechnicalEvaluationPage({
             </div>
 
             <div className="eval-notice">
-              La evaluación se creará como borrador. La alumna no verá ningún resultado hasta que
-              la publiques.
+              La evaluación se creará como borrador. La alumna no verá ningún resultado hasta que la
+              publiques.
             </div>
 
             <div className="eval-form-actions">
