@@ -155,6 +155,7 @@ describe("SF-255A monthly level and waitlist contracts", () => {
     expect(studentActions).toContain("function normalizeMexicanPhone");
     expect(studentActions).toContain("`+52${digits}`");
     expect(reservationDetail).toContain('pattern="[0-9]{10}"');
+    expect(reservationDetail).toContain("minLength={10}");
     expect(reservationDetail).toContain("maxLength={10}");
     expect(reservationDetail).toContain('placeholder="3312345678"');
     expect(reservationDetail).toContain(
@@ -163,7 +164,11 @@ describe("SF-255A monthly level and waitlist contracts", () => {
     expect(phoneNormalizationMigration).toContain(
       "right(regexp_replace(pc.value,'[^0-9]','','g'),10)",
     );
-    expect(phoneNormalizationMigration).toContain("'^\\+52[0-9]{10}    expect(contactConfirmationMigration).toContain("student_guest_invitation_contact_lookup");
+    expect(phoneNormalizationMigration).toContain("'^\\+52[0-9]{10}$'");
+  });
+
+  it("warns before reusing a phone that belongs to a differently named contact", () => {
+    expect(contactConfirmationMigration).toContain("student_guest_invitation_contact_lookup");
     expect(contactConfirmationMigration).toContain("student_guest_invitation_contact_identity");
     expect(contactConfirmationMigration).toContain("student_create_guest_invitation_existing");
     expect(studentActions).toContain("normalizeGuestIdentityName");
