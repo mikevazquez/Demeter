@@ -80,3 +80,24 @@ export async function sendAsistianHandshake(formData: FormData) {
     `/admin/integraciones/asistian?sent=1&status=${encodeURIComponent(String(response.status))}`,
   );
 }
+
+
+export async function saveAsistianSigningSecret(formData: FormData) {
+  const { supabase, studio } = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
+
+  const signingSecret = String(formData.get("signing_secret") ?? "").trim();
+  if (signingSecret.length < 12) {
+    redirect("/admin/integraciones/asistian?error=invalid_secret");
+  }
+
+  const { error: saveError } = await supabase.rpc("admin_set_asistian_signing_secret", {
+    target_studio_id: studio.id,
+    target_secret: signingSecret,
+  });
+
+  if (saveError) {
+    redirect("/admin/integraciones/asistian?error=secret_save");
+  }
+
+  redirect("/admin/integraciones/asistian?secret_saved=1");
+}
