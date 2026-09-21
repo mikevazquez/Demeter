@@ -144,16 +144,16 @@ export default async function SessionDetailPage({
   const { data: evaluationInvitations } = reservationIds.length
     ? await supabase
         .from("evaluation_invitations")
-        .select("reservation_id,status")
+        .select("id,reservation_id,status")
         .in("reservation_id", reservationIds)
         .in("status", ["scheduled", "in_progress"])
     : {
-        data: [] as { reservation_id: string | null; status: string }[],
+        data: [] as { id: string; reservation_id: string | null; status: string }[],
       };
   const evaluationByReservation = new Map(
     (evaluationInvitations ?? [])
       .filter((item) => item.reservation_id)
-      .map((item) => [item.reservation_id!, item.status]),
+      .map((item) => [item.reservation_id!, item]),
   );
 
   const acquisitionIds = [
@@ -214,6 +214,7 @@ export default async function SessionDetailPage({
 
   const roster = (reservations ?? []).map((reservation) => {
     const isGuest = Boolean(reservation.guest_person_id);
+    const evaluationInvitation = evaluationByReservation.get(reservation.id);
     const acquisition = reservation.acquisition_id
       ? acquisitionMap.get(reservation.acquisition_id)
       : null;
@@ -240,7 +241,9 @@ export default async function SessionDetailPage({
             ? `${balance ?? 0} créditos disponibles`
             : "—",
       expiresLabel: isGuest ? "Misma clase" : formatExpiry(acquisition?.expires_on ?? null),
-      evaluationStatus: evaluationByReservation.get(reservation.id) ?? null,
+      studentId: reservation.student_id,
+      evaluationInvitationId: evaluationInvitation?.id ?? null,
+      evaluationStatus: evaluationInvitation?.status ?? null,
     };
   });
 
