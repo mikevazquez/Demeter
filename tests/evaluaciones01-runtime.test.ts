@@ -77,7 +77,9 @@ describe("EVALUACIONES-01 runtime", () => {
     expect(directScoring).toContain("add column if not exists captured_at");
     expect(directScoring).toContain("r.captured_at is null");
     expect(directScoring).toContain("sum(r.weighted_points)");
-    expect(directScoring).not.toContain("delete from public.technical_evaluation_criterion_results");
+    expect(directScoring).not.toContain(
+      "delete from public.technical_evaluation_criterion_results",
+    );
   });
 
   it("keeps criterion history under the published-result guard", () => {
