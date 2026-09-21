@@ -162,7 +162,9 @@ export default async function EvaluationTemplateEditorPage({
       </section>
 
       <nav className="eval-tabs" aria-label="Editor de plantilla">
-        <a className="is-active" href="#criterios">Criterios</a>
+        <a className="is-active" href="#criterios">
+          Criterios
+        </a>
         <a href="#figuras">Figuras</a>
         <a href="#combos">Combos</a>
         <a href="#reglas">Reglas</a>
@@ -186,7 +188,9 @@ export default async function EvaluationTemplateEditorPage({
           <div className="eval-discipline-list">
             {criteria.map((criterion) => (
               <article className="eval-discipline-row" key={criterion.id}>
-                <span className="eval-discipline-icon" aria-hidden="true">▥</span>
+                <span className="eval-discipline-icon" aria-hidden="true">
+                  ▥
+                </span>
                 <span className="eval-discipline-copy">
                   <strong>{criterion.label}</strong>
                   <small>{criterion.description}</small>
@@ -222,7 +226,9 @@ export default async function EvaluationTemplateEditorPage({
           </div>
           {editable ? (
             <div className="eval-form-actions">
-              <button className="eval-primary-button" type="submit">Guardar criterios</button>
+              <button className="eval-primary-button" type="submit">
+                Guardar criterios
+              </button>
             </div>
           ) : null}
         </form>
@@ -245,7 +251,9 @@ export default async function EvaluationTemplateEditorPage({
                   : {};
               return (
                 <article className="eval-discipline-row" key={item.id}>
-                  <span className="eval-discipline-icon" aria-hidden="true">★</span>
+                  <span className="eval-discipline-icon" aria-hidden="true">
+                    ★
+                  </span>
                   <span className="eval-discipline-copy">
                     <strong>{String(snapshot.name ?? "Elemento técnico")}</strong>
                     <small>
@@ -278,9 +286,13 @@ export default async function EvaluationTemplateEditorPage({
               <div className="eval-field">
                 <label htmlFor="element-criterion">Criterio</label>
                 <select id="element-criterion" name="criterion_id" required defaultValue="">
-                  <option value="" disabled>Selecciona…</option>
+                  <option value="" disabled>
+                    Selecciona…
+                  </option>
                   {criteria.map((criterion) => (
-                    <option value={criterion.id} key={criterion.id}>{criterion.label}</option>
+                    <option value={criterion.id} key={criterion.id}>
+                      {criterion.label}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -305,10 +317,14 @@ export default async function EvaluationTemplateEditorPage({
               </div>
             </div>
             <div className="eval-form-actions">
-              <label><input type="checkbox" name="mandatory" /> Obligatorio</label>
+              <label>
+                <input type="checkbox" name="mandatory" /> Obligatorio
+              </label>
               <input type="hidden" name="scored" value="on" />
               <input type="hidden" name="max_score" value="10" />
-              <button className="eval-primary-button" type="submit">+ Agregar elemento</button>
+              <button className="eval-primary-button" type="submit">
+                + Agregar elemento
+              </button>
             </div>
           </form>
         ) : null}
@@ -331,7 +347,9 @@ export default async function EvaluationTemplateEditorPage({
                   : {};
               return (
                 <article className="eval-discipline-row" key={item.id}>
-                  <span className="eval-discipline-icon" aria-hidden="true">↗</span>
+                  <span className="eval-discipline-icon" aria-hidden="true">
+                    ↗
+                  </span>
                   <span className="eval-discipline-copy">
                     <strong>{String(snapshot.name ?? "Combo técnico")}</strong>
                     <small>
@@ -358,28 +376,37 @@ export default async function EvaluationTemplateEditorPage({
             <div className="eval-field-grid">
               <div className="eval-field">
                 <label htmlFor="combo-name">Nombre o secuencia</label>
-                <input id="combo-name" name="name" placeholder="Invert → Gemini → Back Hook" required />
+                <input
+                  id="combo-name"
+                  name="name"
+                  placeholder="Invert → Gemini → Back Hook"
+                  required
+                />
               </div>
               <div className="eval-field">
                 <label htmlFor="combo-criterion">Criterio si puntúa</label>
                 <select id="combo-criterion" name="criterion_id" defaultValue="">
                   <option value="">Sin criterio ponderado</option>
                   {criteria.map((criterion) => (
-                    <option value={criterion.id} key={criterion.id}>{criterion.label}</option>
+                    <option value={criterion.id} key={criterion.id}>
+                      {criterion.label}
+                    </option>
                   ))}
                 </select>
               </div>
             </div>
             <div className="eval-form-actions">
-              <label><input type="checkbox" name="mandatory" defaultChecked /> Obligatorio</label>
-              <label><input type="checkbox" name="scored" /> Puntuable</label>
+              <label>
+                <input type="checkbox" name="mandatory" defaultChecked /> Obligatorio
+              </label>
+              <label>
+                <input type="checkbox" name="scored" /> Puntuable
+              </label>
               <input type="hidden" name="max_score" value="10" />
-              <input
-                type="hidden"
-                name="attempts"
-                value={version.default_attempts_per_combo}
-              />
-              <button className="eval-primary-button" type="submit">+ Agregar combo</button>
+              <input type="hidden" name="attempts" value={version.default_attempts_per_combo} />
+              <button className="eval-primary-button" type="submit">
+                + Agregar combo
+              </button>
             </div>
           </form>
         ) : null}
@@ -456,7 +483,9 @@ export default async function EvaluationTemplateEditorPage({
           </div>
           {editable ? (
             <div className="eval-form-actions">
-              <button className="eval-primary-button" type="submit">Guardar reglas</button>
+              <button className="eval-primary-button" type="submit">
+                Guardar reglas
+              </button>
             </div>
           ) : null}
         </form>
@@ -473,7 +502,9 @@ export default async function EvaluationTemplateEditorPage({
           <form action={activateEvaluationTemplateVersion} className="eval-form-actions">
             <input type="hidden" name="template_id" value={template.id} />
             <input type="hidden" name="version_id" value={version.id} />
-            <button className="eval-primary-button" type="submit">Activar versión {version.version_number}</button>
+            <button className="eval-primary-button" type="submit">
+              Activar versión {version.version_number}
+            </button>
           </form>
         </section>
       ) : null}
