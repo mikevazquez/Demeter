@@ -49,6 +49,7 @@ function StudentCredentialAction({
   const [credentials, setCredentials] = useState<{
     phone: string;
     temporaryPassword: string;
+    welcomeStatus: "accepted" | "skipped" | "error" | null;
   } | null>(null);
 
   function run() {
@@ -65,7 +66,11 @@ function StudentCredentialAction({
         return;
       }
 
-      setCredentials({ phone: result.phone, temporaryPassword: result.temporaryPassword });
+      setCredentials({
+        phone: result.phone,
+        temporaryPassword: result.temporaryPassword,
+        welcomeStatus: result.welcomeDelivery?.status ?? null,
+      });
     });
   }
 
@@ -90,7 +95,9 @@ function StudentCredentialAction({
       <div className="student-list">
         <div className="notice success">
           {mode === "provision"
-            ? "Cuenta creada y vinculada. La contraseña permanecerá visible hasta que pulses ‘Ya la guardé’."
+            ? credentials.welcomeStatus === "accepted"
+              ? "Cuenta creada y vinculada. La bienvenida fue entregada a Asistian para su envío por WhatsApp."
+              : "Cuenta creada y vinculada. La bienvenida no pudo entregarse a Asistian; conserva la contraseña para compartirla manualmente."
             : "Nueva contraseña temporal generada. La anterior ya no funciona y esta permanecerá visible hasta que pulses ‘Ya la guardé’."}
         </div>
         <div className="student-row">
