@@ -33,13 +33,13 @@ describe("F10 temporary password UX contracts", () => {
 
   it("keeps generated credentials visible until the admin acknowledges them", () => {
     const component = source("app/admin/alumnas/[studentId]/StudentAccessProvisioner.tsx");
-    const layout = source("app/admin/alumnas/[studentId]/layout.tsx");
+    const accessSection = source("app/admin/alumnas/[studentId]/StudentPortalAccessSection.tsx");
 
     expect(component).toContain("Copiar contraseña");
     expect(component).toContain("Ya la guardé");
     expect(component).toContain("setCredentials(null)");
     expect(component).toContain("StudentTemporaryPasswordResetter");
-    expect(layout).toContain("account?.must_change_password");
-    expect(layout).toContain("StudentTemporaryPasswordResetter");
+    expect(accessSection).toContain("account?.must_change_password");
+    expect(accessSection).toContain("StudentTemporaryPasswordResetter");
   });
 });

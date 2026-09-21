@@ -54,14 +54,14 @@ describe("commercial improvements contracts", () => {
 
   it("adjusts available credits through an auditable ledger movement with a required reason", () => {
     const actions = source("app/admin/alumnas/[studentId]/actions.ts");
-    const page = source("app/admin/alumnas/[studentId]/page.tsx");
+    const packageCard = source("app/admin/alumnas/[studentId]/StudentPackageCard.tsx");
     const migration = source(
       "supabase/migrations/20260916170000_commercial_catalog_and_acquisition_controls.sql",
     );
 
     expect(actions).toContain('rpc("admin_set_acquisition_available_credits"');
     expect(actions).toContain("target_reason: reason");
-    expect(page).toContain("Motivo del ajuste");
+    expect(packageCard).toContain("Motivo del ajuste");
     expect(migration).toContain("movement_type");
     expect(migration).toContain("'adjustment'");
     expect(migration).toContain("adjustment_reason_required");

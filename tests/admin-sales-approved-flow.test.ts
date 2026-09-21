@@ -38,8 +38,8 @@ describe("Registrar venta reuses the approved commercial flow", () => {
     expect(actions).toContain("/admin/ventas/${result.sale_id}?created=sale");
   });
 
-  it("exposes the same sale flow contextually from Perfil 360", () => {
-    expect(profile).toContain("/admin/ventas/nueva?student_id=${student.id}");
-    expect(profile).toContain("Registrar venta");
+  it("keeps Perfil 360 consultation-first and leaves sales in the Ventas flow", () => {
+    expect(profile).not.toContain("/admin/ventas/nueva?student_id=${student.id}");
+    expect(profile).not.toContain("Registrar venta");
   });
 });

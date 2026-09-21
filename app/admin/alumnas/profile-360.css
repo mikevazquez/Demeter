@@ -1,0 +1,1643 @@
+.student-directory-page,
+.profile360-page {
+  display: grid;
+  gap: 14px;
+}
+
+.student-directory-header,
+.profile360-identity {
+  display: grid;
+  gap: 14px;
+}
+
+.student-directory-header h1,
+.profile360-identity h1 {
+  margin: 0;
+  color: var(--text);
+  letter-spacing: -0.04em;
+}
+
+.student-directory-search {
+  display: grid;
+  gap: 10px;
+}
+
+.student-directory-search input {
+  width: 100%;
+  min-height: 48px;
+  padding: 0 16px;
+  border: 1px solid var(--line);
+  border-radius: 15px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+}
+
+.student-directory-filters,
+.profile360-tabs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+  scrollbar-width: none;
+}
+
+.student-directory-filters::-webkit-scrollbar,
+.profile360-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.student-filter-chip,
+.profile360-tab {
+  flex: 0 0 auto;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 38px;
+  min-height: 38px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.025);
+  color: var(--muted);
+  text-decoration: none;
+  white-space: nowrap;
+  line-height: 1;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.student-filter-chip.is-active,
+.profile360-tab.is-active {
+  border-color: rgba(255, 10, 138, 0.55);
+  background: var(--accent-soft);
+  color: #ff91ca;
+}
+
+.student-filter-chip.is-future {
+  opacity: 0.52;
+}
+
+.student-directory-list {
+  display: grid;
+  gap: 8px;
+}
+
+.student-directory-card {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  min-height: 74px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 17px;
+  background: var(--surface);
+  color: inherit;
+  text-decoration: none;
+}
+
+.student-directory-card:hover {
+  border-color: rgba(255, 10, 138, 0.38);
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.student-avatar,
+.profile360-avatar {
+  position: relative;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 10, 138, 0.55);
+  background: linear-gradient(145deg, rgba(255, 10, 138, 0.28), rgba(40, 18, 36, 0.65));
+  color: white;
+  font-weight: 850;
+}
+
+.student-avatar {
+  width: 46px;
+  height: 46px;
+  font-size: 13px;
+}
+
+.profile360-avatar {
+  width: 86px;
+  height: 86px;
+  font-size: 24px;
+}
+
+.student-avatar img,
+.profile360-avatar img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.student-directory-main {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.student-directory-main strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.student-directory-meta {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.student-state-pill,
+.profile360-state-pill,
+.profile360-level-pill {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  gap: 6px;
+  padding: 6px 9px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 850;
+}
+
+.student-state-pill.is-active,
+.profile360-state-pill.is-active {
+  border: 1px solid rgba(56, 211, 137, 0.28);
+  background: rgba(56, 211, 137, 0.1);
+  color: #7cf0ae;
+}
+
+.student-state-pill.is-inactive,
+.profile360-state-pill.is-inactive {
+  border: 1px solid rgba(255, 95, 126, 0.25);
+  background: rgba(255, 95, 126, 0.08);
+  color: #ff8ea5;
+}
+
+.student-directory-arrow {
+  color: #ff79ba;
+  font-size: 20px;
+}
+
+.profile360-identity {
+  padding: 2px 0 4px;
+}
+
+.profile360-back {
+  width: fit-content;
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.profile360-person {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 16px;
+  align-items: center;
+}
+
+.profile360-person-copy {
+  min-width: 0;
+  display: grid;
+  gap: 7px;
+}
+
+.profile360-person-copy h1 {
+  font-size: clamp(27px, 7vw, 42px);
+}
+
+.profile360-contact {
+  display: grid;
+  gap: 5px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.profile360-contact a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.profile360-level-pill {
+  border: 1px solid rgba(255, 190, 70, 0.36);
+  background: linear-gradient(135deg, rgba(255, 184, 55, 0.16), rgba(255, 10, 138, 0.07));
+  color: #ffd982;
+}
+
+.profile360-actions {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.profile360-action {
+  min-width: 0;
+  min-height: 64px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 5px;
+  padding: 8px 4px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--surface);
+  color: var(--text);
+  text-decoration: none;
+  font-size: 10px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.profile360-action strong {
+  color: #ff76bb;
+  font-size: 19px;
+  line-height: 1;
+}
+
+.profile360-section {
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--surface);
+}
+
+.profile360-section-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.profile360-section-heading h2 {
+  margin: 0;
+  font-size: 17px;
+}
+
+.profile360-package-main {
+  display: grid;
+  gap: 13px;
+}
+
+.profile360-package-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.profile360-package-title strong {
+  font-size: 17px;
+}
+
+.profile360-progress {
+  display: grid;
+  gap: 7px;
+}
+
+.profile360-progress-track {
+  overflow: hidden;
+  height: 7px;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.profile360-progress-track span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #ff0a8a, #ff7ac0);
+}
+
+.profile360-package-meta,
+.profile360-next-class {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.profile360-next-class {
+  display: grid;
+  gap: 5px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.profile360-next-class strong {
+  color: var(--text);
+}
+
+.profile360-metrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.profile360-metric {
+  min-height: 98px;
+  display: grid;
+  align-content: center;
+  gap: 5px;
+  padding: 13px;
+  border: 1px solid var(--line);
+  border-radius: 15px;
+  background: var(--surface);
+}
+
+.profile360-metric span {
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.profile360-metric strong {
+  font-size: 17px;
+}
+
+.profile360-alerts {
+  display: grid;
+  gap: 8px;
+  padding: 14px;
+  border: 1px solid rgba(255, 78, 135, 0.28);
+  border-radius: 18px;
+  background: linear-gradient(135deg, rgba(255, 37, 100, 0.11), rgba(255, 10, 138, 0.045));
+}
+
+.profile360-alert {
+  display: grid;
+  gap: 3px;
+  padding: 11px 12px;
+  border: 1px solid rgba(255, 108, 153, 0.18);
+  border-radius: 13px;
+  background: rgba(0, 0, 0, 0.14);
+}
+
+.profile360-alert strong {
+  color: #ff90bb;
+  font-size: 12px;
+}
+
+.profile360-alert span {
+  color: #d7a0b7;
+  font-size: 11px;
+}
+
+.profile360-recent {
+  display: grid;
+  gap: 0;
+}
+
+.profile360-recent-row {
+  display: grid;
+  grid-template-columns: 70px minmax(0, 1fr);
+  gap: 10px;
+  padding: 10px 0;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.profile360-recent-row:first-child {
+  border-top: 0;
+}
+
+.profile360-recent-row strong {
+  color: var(--text);
+  font-weight: 700;
+}
+
+@media (min-width: 768px) {
+  .student-directory-page,
+  .profile360-page {
+    gap: 18px;
+  }
+
+  .student-directory-header {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+  }
+
+  .student-directory-search {
+    grid-column: 1 / -1;
+  }
+
+  .profile360-person {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+
+  .profile360-actions {
+    width: min(100%, 540px);
+    grid-template-columns: repeat(4, minmax(100px, 1fr));
+  }
+
+  .profile360-metrics {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1100px) {
+  .student-directory-page,
+  .profile360-page {
+    max-width: 1120px;
+    margin: 0 auto;
+  }
+
+  .profile360-overview-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.3fr) minmax(320px, 0.7fr);
+    gap: 14px;
+    align-items: start;
+  }
+}
+
+.profile360-action[aria-disabled="true"] {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* SF-N02 · Perfil 360 mobile-first simplificado */
+.profile360-hero {
+  display: grid;
+  gap: 14px;
+}
+
+.profile360-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.profile360-contact-primary {
+  display: grid;
+  gap: 4px;
+  color: #d8dbe4;
+  font-size: 14px;
+  line-height: 1.35;
+}
+
+.profile360-contact-primary a,
+.profile360-contact-primary span {
+  overflow-wrap: anywhere;
+}
+
+.profile360-contact-primary a {
+  color: #f4f4f6;
+  text-decoration: none;
+  font-weight: 700;
+}
+
+.profile360-current-card {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--surface);
+}
+
+.profile360-current-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.profile360-current-heading h2 {
+  margin: 3px 0 0;
+  font-size: 19px;
+  letter-spacing: -0.02em;
+}
+
+.profile360-current-facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.profile360-current-facts > div {
+  display: grid;
+  gap: 3px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.profile360-current-facts strong {
+  font-size: 17px;
+  color: var(--text);
+}
+
+.profile360-current-facts span,
+.profile360-next-compact > span,
+.profile360-current-empty {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.profile360-next-compact {
+  display: grid;
+  gap: 4px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+.profile360-next-compact strong {
+  font-size: 13px;
+  color: var(--text);
+}
+
+.profile360-attention,
+.profile360-more,
+.profile360-detail {
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--surface);
+}
+
+.profile360-attention {
+  border-color: rgba(255, 80, 142, 0.28);
+  background: linear-gradient(135deg, rgba(255, 10, 138, 0.08), rgba(255, 255, 255, 0.02));
+}
+
+.profile360-attention > summary,
+.profile360-more > summary,
+.profile360-detail > summary {
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 58px;
+  padding: 13px 15px;
+  cursor: pointer;
+}
+
+.profile360-attention > summary::-webkit-details-marker,
+.profile360-more > summary::-webkit-details-marker,
+.profile360-detail > summary::-webkit-details-marker {
+  display: none;
+}
+
+.profile360-attention > summary > span:first-child,
+.profile360-more > summary > span:first-child,
+.profile360-detail > summary > span:first-child {
+  display: grid;
+  gap: 3px;
+}
+
+.profile360-attention summary strong,
+.profile360-more summary strong,
+.profile360-detail summary strong {
+  color: var(--text);
+  font-size: 13px;
+}
+
+.profile360-attention summary small,
+.profile360-more summary small,
+.profile360-detail summary small {
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.profile360-attention > summary > span:last-child,
+.profile360-more > summary > span:last-child,
+.profile360-detail > summary > span:last-child {
+  color: #ff72b7;
+  font-size: 22px;
+  line-height: 1;
+  transition: transform 0.2s ease;
+}
+
+.profile360-attention[open] > summary > span:last-child,
+.profile360-more[open] > summary > span:last-child,
+.profile360-detail[open] > summary > span:last-child {
+  transform: rotate(90deg);
+}
+
+.profile360-attention-body,
+.profile360-more-body {
+  display: grid;
+  gap: 10px;
+  padding: 0 14px 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.profile360-attention-body {
+  padding-top: 12px;
+}
+
+.profile360-mini-summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  padding-top: 12px;
+}
+
+.profile360-mini-summary > div {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.profile360-mini-summary span {
+  color: var(--muted);
+  font-size: 9px;
+}
+
+.profile360-mini-summary strong {
+  overflow: hidden;
+  color: var(--text);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.profile360-more-links {
+  display: grid;
+  gap: 2px;
+}
+
+.profile360-more-links a {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 46px;
+  padding: 0 4px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  color: var(--text);
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.profile360-more-links a b {
+  color: #ff72b7;
+  font-size: 18px;
+}
+
+.profile360-detail {
+  scroll-margin-top: 90px;
+}
+
+.profile360-detail > .panel {
+  margin: 0;
+  border: 0;
+  border-top: 1px solid var(--line);
+  border-radius: 0;
+  background: rgba(0, 0, 0, 0.08);
+}
+
+@media (max-width: 640px) {
+  .profile360-avatar {
+    width: 74px;
+    height: 74px;
+    font-size: 21px;
+  }
+
+  .profile360-person {
+    gap: 13px;
+  }
+
+  .profile360-person-copy h1 {
+    font-size: 30px;
+    line-height: 1.05;
+  }
+
+  .profile360-state-pill,
+  .profile360-level-pill {
+    padding: 5px 8px;
+    font-size: 9px;
+  }
+
+  .profile360-actions {
+    gap: 6px;
+  }
+
+  .profile360-action {
+    min-height: 58px;
+    border-radius: 14px;
+  }
+
+  .profile360-action strong {
+    font-size: 18px;
+  }
+}
+
+/* SF-N02 · Ajuste visual Caso 2 */
+.profile360-hero {
+  padding: 4px 2px 10px;
+}
+
+.profile360-hero + .profile360-current-card {
+  margin-top: 12px;
+}
+
+.profile360-current-card + .profile360-attention,
+.profile360-current-card + .profile360-summary-detail,
+.profile360-attention + .profile360-summary-detail {
+  margin-top: 14px;
+}
+
+.profile360-person-copy {
+  gap: 9px;
+}
+
+.profile360-contact-primary {
+  gap: 6px;
+  font-size: 15px;
+}
+
+.profile360-inline-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: 2px;
+}
+
+.profile360-inline-actions a {
+  color: #ff79ba;
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.profile360-current-card {
+  gap: 16px;
+  padding: 18px;
+  border-radius: 20px;
+}
+
+.profile360-current-facts {
+  gap: 10px;
+}
+
+.profile360-current-facts > div {
+  padding: 14px;
+}
+
+.profile360-next-compact {
+  padding-top: 15px;
+}
+
+.profile360-context-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 9px;
+  padding-top: 2px;
+}
+
+.profile360-context-primary,
+.profile360-context-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 14px;
+  border-radius: 13px;
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.profile360-context-primary {
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: white;
+}
+
+.profile360-context-secondary {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.025);
+  color: var(--text);
+}
+
+.profile360-summary-detail {
+  overflow: hidden;
+  margin-top: 14px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.018);
+}
+
+.profile360-summary-detail > summary {
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 58px;
+  padding: 13px 15px;
+  cursor: pointer;
+}
+
+.profile360-summary-detail > summary::-webkit-details-marker {
+  display: none;
+}
+
+.profile360-summary-detail > summary > span:first-child {
+  display: grid;
+  gap: 3px;
+}
+
+.profile360-summary-detail summary strong {
+  color: var(--text);
+  font-size: 13px;
+}
+
+.profile360-summary-detail summary small {
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.profile360-summary-detail > summary > span:last-child {
+  color: #ff72b7;
+  font-size: 22px;
+  line-height: 1;
+  transition: transform 0.2s ease;
+}
+
+.profile360-summary-detail[open] > summary > span:last-child {
+  transform: rotate(90deg);
+}
+
+.profile360-summary-detail .profile360-mini-summary {
+  padding: 12px 14px 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.profile360-detail {
+  margin-top: 14px;
+}
+
+@media (max-width: 640px) {
+  .profile360-person {
+    align-items: start;
+  }
+
+  .profile360-contact-primary {
+    font-size: 14px;
+  }
+
+  .profile360-context-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .profile360-current-card {
+    padding: 17px;
+  }
+}
+
+/* SF-N02 · Perfil 360 · baseline mockup aprobado */
+.profile360-approved-header {
+  display: grid;
+  gap: 14px;
+  padding: 4px 0 2px;
+}
+
+.profile360-approved-person {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: start;
+}
+
+.profile360-approved-copy {
+  min-width: 0;
+  display: grid;
+  gap: 7px;
+}
+
+.profile360-approved-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.profile360-approved-title h1 {
+  margin: 0;
+  color: var(--text);
+  font-size: clamp(28px, 7vw, 38px);
+  line-height: 1.02;
+  letter-spacing: -0.045em;
+}
+
+.profile360-approved-contact {
+  display: grid;
+  gap: 4px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.profile360-approved-contact span {
+  overflow-wrap: anywhere;
+}
+
+.profile360-edit-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 0 10px;
+  border: 1px solid rgba(255, 10, 138, 0.28);
+  border-radius: 10px;
+  color: #ff79ba;
+  text-decoration: none;
+  font-size: 11px;
+  font-weight: 850;
+}
+
+.profile360-approved-tabs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow-x: auto;
+  margin-top: 4px;
+  padding: 0 0 2px;
+  border-bottom: 1px solid var(--line);
+  scrollbar-width: none;
+}
+
+.profile360-approved-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.profile360-approved-tabs a {
+  position: relative;
+  flex: 0 0 auto;
+  padding: 11px 10px 12px;
+  color: var(--muted);
+  text-decoration: none;
+  white-space: nowrap;
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.profile360-approved-tabs a.is-active {
+  color: #ff79ba;
+}
+
+.profile360-approved-tabs a.is-active::after {
+  content: "";
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: -1px;
+  height: 2px;
+  border-radius: 99px;
+  background: var(--accent);
+}
+
+.profile360-approved-summary {
+  display: grid;
+  gap: 16px;
+  padding-top: 2px;
+}
+
+.profile360-approved-package,
+.profile360-approved-alerts,
+.profile360-view-panel {
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--surface);
+}
+
+.profile360-approved-package {
+  display: grid;
+  gap: 13px;
+}
+
+.profile360-approved-card-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.profile360-approved-card-heading h2 {
+  margin: 3px 0 0;
+  color: var(--text);
+  font-size: 17px;
+  letter-spacing: -0.02em;
+}
+
+.profile360-approved-package-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 10px;
+}
+
+.profile360-approved-package-balance,
+.profile360-approved-package-expiry {
+  display: grid;
+  gap: 2px;
+}
+
+.profile360-approved-package-balance strong,
+.profile360-approved-package-expiry strong {
+  color: var(--text);
+  font-size: 15px;
+}
+
+.profile360-approved-package-balance span,
+.profile360-approved-package-expiry span,
+.profile360-approved-next > span {
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.profile360-approved-package-expiry {
+  text-align: right;
+}
+
+.profile360-approved-progress {
+  overflow: hidden;
+  height: 6px;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.09);
+}
+
+.profile360-approved-progress span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #ff0a8a, #ff78bd);
+}
+
+.profile360-approved-next {
+  display: grid;
+  gap: 4px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.profile360-approved-next strong {
+  color: var(--text);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.profile360-approved-empty {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.profile360-approved-indicators {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.profile360-approved-indicators article {
+  min-width: 0;
+  display: grid;
+  gap: 5px;
+  min-height: 78px;
+  align-content: center;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.022);
+}
+
+.profile360-approved-indicators span {
+  color: var(--muted);
+  font-size: 9px;
+}
+
+.profile360-approved-indicators strong {
+  overflow: hidden;
+  color: var(--text);
+  font-size: 14px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.profile360-approved-alerts {
+  display: grid;
+  gap: 12px;
+  border-color: rgba(255, 10, 138, 0.22);
+  background:
+    linear-gradient(135deg, rgba(255, 10, 138, 0.075), rgba(255, 255, 255, 0.02)), var(--surface);
+}
+
+.profile360-approved-alert-list {
+  display: grid;
+  gap: 7px;
+}
+
+.profile360-approved-alert-list > div {
+  display: grid;
+  gap: 3px;
+  padding: 10px 11px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.13);
+}
+
+.profile360-approved-alert-list strong {
+  color: #ff8bc3;
+  font-size: 11px;
+}
+
+.profile360-approved-alert-list span {
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+.profile360-approved-alerts > a {
+  width: fit-content;
+  color: #ff79ba;
+  text-decoration: none;
+  font-size: 11px;
+  font-weight: 850;
+}
+
+.profile360-view-panel {
+  display: grid;
+  gap: 14px;
+  margin-top: 2px;
+}
+
+.profile360-view-note {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+@media (max-width: 640px) {
+  .profile360-approved-person {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .profile360-edit-link {
+    grid-column: 2;
+    width: fit-content;
+  }
+
+  .profile360-avatar {
+    width: 76px;
+    height: 76px;
+    font-size: 21px;
+  }
+
+  .profile360-approved-title {
+    display: grid;
+    gap: 7px;
+  }
+
+  .profile360-level-pill {
+    max-width: 100%;
+  }
+
+  .profile360-approved-package,
+  .profile360-approved-alerts,
+  .profile360-view-panel {
+    padding: 15px;
+  }
+}
+
+/* SF-N02 · Vistas secundarias jerarquizadas */
+.profile360-packages-view,
+.profile360-rewards-section {
+  display: grid;
+  gap: 14px;
+}
+
+.profile360-view-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.profile360-view-heading h2 {
+  margin: 3px 0 0;
+  color: var(--text);
+  font-size: 18px;
+}
+
+.profile360-view-heading p:last-child {
+  margin: 6px 0 0;
+  max-width: 62ch;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.profile360-package-group {
+  display: grid;
+  gap: 10px;
+}
+
+.profile360-package-group-heading,
+.profile360-package-subheading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.profile360-package-group-heading strong,
+.profile360-package-subheading strong {
+  color: var(--text);
+  font-size: 12px;
+}
+
+.profile360-package-group-heading span,
+.profile360-package-subheading span {
+  display: inline-grid;
+  place-items: center;
+  min-width: 26px;
+  height: 26px;
+  padding: 0 8px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.profile360-package-card {
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--surface);
+}
+
+.profile360-package-card.is-current {
+  border-color: rgba(255, 10, 138, 0.28);
+}
+
+.profile360-package-card > summary {
+  list-style: none;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  padding: 14px;
+  cursor: pointer;
+}
+
+.profile360-package-card > summary::-webkit-details-marker {
+  display: none;
+}
+
+.profile360-package-card-summary {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+}
+
+.profile360-package-card-summary > div:first-child {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.profile360-package-card-summary h3 {
+  margin: 0;
+  color: var(--text);
+  font-size: 15px;
+}
+
+.profile360-package-card-summary > div:first-child > span {
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.profile360-package-card-side {
+  display: grid;
+  justify-items: end;
+  gap: 7px;
+  flex: 0 0 auto;
+}
+
+.profile360-package-card-side > strong {
+  color: var(--text);
+  font-size: 11px;
+}
+
+.profile360-package-chevron {
+  color: #ff79ba;
+  font-size: 20px;
+  transition: transform 0.2s ease;
+}
+
+.profile360-package-card[open] .profile360-package-chevron {
+  transform: rotate(90deg);
+}
+
+.profile360-package-card-body {
+  display: grid;
+  gap: 14px;
+  padding: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.profile360-package-facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.profile360-package-facts > div {
+  display: grid;
+  gap: 3px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.profile360-package-facts span {
+  color: var(--muted);
+  font-size: 9px;
+}
+
+.profile360-package-facts strong {
+  color: var(--text);
+  font-size: 12px;
+}
+
+.profile360-package-edit {
+  overflow: hidden;
+  border: 1px solid rgba(255, 10, 138, 0.18);
+  border-radius: 13px;
+  background: rgba(255, 10, 138, 0.035);
+}
+
+.profile360-package-edit > summary {
+  list-style: none;
+  padding: 11px 12px;
+  color: #ff79ba;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 850;
+}
+
+.profile360-package-edit > summary::-webkit-details-marker {
+  display: none;
+}
+
+.profile360-package-edit-body {
+  display: grid;
+  gap: 12px;
+  padding: 12px;
+  border-top: 1px solid rgba(255, 10, 138, 0.12);
+}
+
+.profile360-package-classes {
+  display: grid;
+  gap: 9px;
+}
+
+.profile360-package-class-list {
+  display: grid;
+  gap: 6px;
+}
+
+.profile360-package-class-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.055);
+}
+
+.profile360-package-class-row:first-child {
+  border-top: 0;
+}
+
+.profile360-package-class-row > div {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.profile360-package-class-row > div:last-child {
+  justify-items: end;
+  text-align: right;
+}
+
+.profile360-package-class-row strong {
+  color: var(--text);
+  font-size: 11px;
+}
+
+.profile360-package-class-row span {
+  color: var(--muted);
+  font-size: 9px;
+}
+
+.profile360-reward-list {
+  display: grid;
+  gap: 7px;
+}
+
+.profile360-reward-list article {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 12px;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.profile360-reward-list article > div {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.profile360-reward-list strong {
+  color: var(--text);
+  font-size: 11px;
+}
+
+.profile360-reward-list span {
+  color: var(--muted);
+  font-size: 9px;
+}
+
+.profile360-history-list {
+  display: grid;
+  gap: 0;
+}
+
+.profile360-history-list article {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 10px;
+  padding: 11px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.055);
+}
+
+.profile360-history-list article:first-child {
+  border-top: 0;
+}
+
+.profile360-history-list article > div:last-child {
+  display: grid;
+  gap: 3px;
+}
+
+.profile360-history-list strong {
+  color: var(--text);
+  font-size: 11px;
+}
+
+.profile360-history-list span,
+.profile360-history-list small {
+  color: var(--muted);
+  font-size: 9px;
+}
+
+.profile360-history-dot {
+  width: 9px;
+  height: 9px;
+  margin-top: 4px;
+  border-radius: 999px;
+  background: #ff79ba;
+  box-shadow: 0 0 0 4px rgba(255, 121, 186, 0.08);
+}
+
+.profile360-history-dot.is-class {
+  background: #8da4ff;
+}
+
+.profile360-history-dot.is-package {
+  background: #ff79ba;
+}
+
+.profile360-history-dot.is-reward,
+.profile360-history-dot.is-level {
+  background: #e8c16a;
+}
+
+.profile360-history-dot.is-status {
+  background: #7fd5a8;
+}
+
+@media (max-width: 640px) {
+  .profile360-package-card-summary {
+    gap: 9px;
+  }
+
+  .profile360-package-card-side {
+    max-width: 112px;
+  }
+
+  .profile360-package-card-side .status-pill {
+    max-width: 112px;
+    text-align: center;
+  }
+}
+
+/* SF-N02 · UAT Caso 2 · separación visual entre tabs y contenido */
+.profile360-approved-tabs {
+  margin-bottom: 16px;
+}
+
+.profile360-approved-summary,
+.profile360-packages-view,
+.profile360-view-panel {
+  position: relative;
+}
+
+.profile360-approved-summary > .profile360-approved-package,
+.profile360-view-panel,
+.profile360-package-card.is-current {
+  border-color: rgba(255, 10, 138, 0.24);
+  background:
+    linear-gradient(145deg, rgba(255, 10, 138, 0.045), rgba(255, 255, 255, 0.015)), var(--surface);
+  box-shadow:
+    0 10px 28px rgba(0, 0, 0, 0.18),
+    0 0 0 1px rgba(255, 10, 138, 0.025);
+}
+
+.profile360-packages-view > .profile360-view-heading {
+  margin-bottom: 2px;
+}
+
+@media (max-width: 640px) {
+  .profile360-approved-tabs {
+    margin-bottom: 14px;
+  }
+}
+
+/* SF-N02 · UAT 8.1 · compactar nivel/estado en la cabecera */
+.profile360-approved-meta {
+  display: grid;
+  justify-items: end;
+  align-content: start;
+  gap: 6px;
+  min-width: 96px;
+}
+
+.profile360-approved-meta .profile360-level-pill,
+.profile360-approved-meta .profile360-state-pill {
+  padding: 5px 8px;
+  font-size: 9px;
+  opacity: 0.86;
+  white-space: nowrap;
+}
+
+.profile360-approved-meta .profile360-edit-link {
+  min-height: 30px;
+  padding: 0 9px;
+  font-size: 10px;
+}
+
+@media (max-width: 640px) {
+  .profile360-approved-person {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 10px;
+    align-items: start;
+  }
+
+  .profile360-approved-meta {
+    grid-column: auto;
+    min-width: 88px;
+  }
+
+  .profile360-edit-link {
+    grid-column: auto;
+  }
+
+  .profile360-approved-meta .profile360-level-pill,
+  .profile360-approved-meta .profile360-state-pill {
+    max-width: 112px;
+  }
+
+  .profile360-approved-title h1 {
+    font-size: clamp(24px, 6.5vw, 32px);
+  }
+}

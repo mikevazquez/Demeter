@@ -82,7 +82,7 @@ describe("F10 student portal contracts", () => {
   it("provisions Auth only through a privileged backend boundary", () => {
     const edgeFunction = source("supabase/functions/provision-student-access/index.ts");
     const adminAction = source("app/admin/alumnas/[studentId]/actions.ts");
-    const accessLayout = source("app/admin/alumnas/[studentId]/layout.tsx");
+    const accessSection = source("app/admin/alumnas/[studentId]/StudentPortalAccessSection.tsx");
     expect(edgeFunction).toContain('withSupabase({ auth: "user" }');
     expect(edgeFunction).toContain("context.supabaseAdmin");
     expect(edgeFunction).toContain("userClient.auth.getUser()");
@@ -102,7 +102,7 @@ describe("F10 student portal contracts", () => {
     expect(adminAction).toContain("Authorization: `Bearer ${session.access_token}`");
     expect(adminAction).toContain("FunctionsHttpError");
     expect(adminAction).toContain("error.context.json()");
-    expect(accessLayout).toContain("CAPABILITIES.SETTINGS_WRITE");
+    expect(accessSection).toContain("CAPABILITIES.SETTINGS_WRITE");
     expect(adminAction).not.toContain("SUPABASE_SERVICE_ROLE_KEY");
     expect(adminAction).not.toContain("service_role");
   });
