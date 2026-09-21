@@ -806,7 +806,7 @@ export default async function AgendaPage({
                 </div>
               </section>
 
-              <section className="agenda-config-card">
+              <section id="programar-clase" className="agenda-config-card">
                 <p className="eyebrow">3 · HORARIO RECURRENTE</p>
                 <h2>Programar actividad</h2>
                 <form action={createRecurringSchedules} className="compact-form">
