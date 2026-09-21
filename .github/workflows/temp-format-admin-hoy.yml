@@ -1,0 +1,43 @@
+name: TEMP Format ADMIN Hoy
+
+on:
+  push:
+    branches:
+      - admin-hoy-approved
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: admin-hoy-approved
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Format target files
+        run: npx prettier --write app/admin/hoy.css app/admin/page.tsx app/admin/layout.tsx
+
+      - name: Verify format
+        run: npm run format:check
+
+      - name: Commit formatted files
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/admin/hoy.css app/admin/page.tsx app/admin/layout.tsx
+          if ! git diff --cached --quiet; then
+            git commit -m "chore: format ADMIN Hoy parity fix"
+            git push origin HEAD:admin-hoy-approved
+          fi
