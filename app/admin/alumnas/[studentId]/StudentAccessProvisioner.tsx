@@ -77,7 +77,7 @@ function StudentActivationAction({
 
       setResult({
         phone: response.phone,
-        activationLinkGenerated: response.activationLinkGenerated,
+        activationLinkGenerated: response.activationLinkGenerated === true,
         welcomeStatus: response.welcomeDelivery?.status ?? null,
       });
     });
@@ -174,7 +174,6 @@ export function StudentActivationLinkResender({
 }) {
   return <StudentActivationAction studentId={studentId} phone={phone} mode="resend" />;
 }
-
 
 export function StudentTemporaryPasswordResetter({
   studentId,
