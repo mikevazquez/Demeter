@@ -127,9 +127,7 @@ const handler = {
           !evaluationSessionId ||
           !UUID_PATTERN.test(evaluationInvitationId) ||
           !UUID_PATTERN.test(evaluationSessionId))) ||
-      (buyingSingleClass &&
-        hasEvaluationContext &&
-        evaluationSessionId !== sessionId)
+      (buyingSingleClass && hasEvaluationContext && evaluationSessionId !== sessionId)
     ) {
       return jsonResponse({ error: "invalid_request" }, 400);
     }

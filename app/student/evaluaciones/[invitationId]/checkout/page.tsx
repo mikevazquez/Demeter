@@ -1,11 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import {
-  bookingReasonCopy,
-  formatMoney,
-  getStudentPortalContext,
-} from "@/lib/student/portal";
+import { bookingReasonCopy, formatMoney, getStudentPortalContext } from "@/lib/student/portal";
 
 type ReconcileResult = {
   ok?: boolean;
