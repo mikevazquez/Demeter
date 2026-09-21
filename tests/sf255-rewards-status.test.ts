@@ -76,6 +76,12 @@ describe("SF-255A monthly level and waitlist contracts", () => {
     expect(homePage).toContain("Ver mis beneficios");
     expect(homePage).toContain("Mantener");
     expect(homePage).toContain("Camino a");
+    expect(homePage).toContain("#CD7F32");
+    expect(homePage).toContain("#C0C0C0");
+    expect(homePage).toContain("#D4AF37");
+    expect(homePage).toContain("#5EDFFF");
+    expect(homePage).toContain('data-density="compact"');
+    expect(homePage).toContain("px-3.5 py-2.5");
     expect(profilePage).toContain('data-profile-block="package"');
     expect(profilePage).not.toContain("student_reward_status_snapshot");
     expect(profilePage).not.toContain("Nivel actual");
