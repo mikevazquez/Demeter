@@ -24,6 +24,14 @@ type RewardStatusSnapshot = {
   level_title?: string | null;
 };
 
+type RewardPricePreview = {
+  regular_amount_minor?: number;
+  final_amount_minor?: number;
+  discount_pct?: number;
+  level_title?: string | null;
+  eligible?: boolean;
+};
+
 export default async function StudentSessionDetailPage({
   params,
   searchParams,
@@ -68,6 +76,17 @@ export default async function StudentSessionDetailPage({
     !eligible &&
     Boolean(reason && DROP_IN_REASONS.has(reason)) &&
     session.drop_in_price_minor != null;
+  const { data: rewardPriceData } = showDropIn
+    ? await supabase.rpc("student_reward_single_class_price", {
+        target_session_id: session.session_id,
+      })
+    : { data: null };
+  const rewardPrice = (rewardPriceData as RewardPricePreview | null) ?? null;
+  const regularDropInMinor =
+    rewardPrice?.regular_amount_minor ?? session.drop_in_price_minor ?? 0;
+  const finalDropInMinor = rewardPrice?.final_amount_minor ?? regularDropInMinor;
+  const rewardDiscountPct = rewardPrice?.discount_pct ?? 0;
+  const rewardPriceLevelTitle = rewardPrice?.level_title ?? null;
   const durationMinutes = Math.max(
     Math.round(
       (new Date(session.ends_at).getTime() - new Date(session.starts_at).getTime()) / 60000,
@@ -198,7 +217,7 @@ export default async function StudentSessionDetailPage({
           <p className="text-sm font-semibold text-amber-100">{bookingReasonCopy(reason)}</p>
           {showDropIn ? (
             <p className="mt-2 text-xs leading-5 text-zinc-400">
-              Clase suelta: {formatMoney(session.drop_in_price_minor ?? 0)} MXN.
+              Clase suelta: {formatMoney(finalDropInMinor)} MXN.
             </p>
           ) : (
             <p className="mt-2 text-xs leading-5 text-zinc-400">
@@ -215,7 +234,10 @@ export default async function StudentSessionDetailPage({
               </Link>
               <PurchaseSingleClassButton
                 sessionId={session.session_id}
-                priceLabel={formatMoney(session.drop_in_price_minor ?? 0).replace(".00", "")}
+                priceLabel={formatMoney(finalDropInMinor).replace(".00", "")}
+                regularPriceLabel={formatMoney(regularDropInMinor).replace(".00", "")}
+                discountPct={rewardDiscountPct}
+                levelTitle={rewardPriceLevelTitle}
               />
             </div>
           ) : (
