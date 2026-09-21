@@ -390,13 +390,15 @@ export default async function StudentReservationDetailPage({
                     name="guest_phone"
                     type="tel"
                     required
-                    inputMode="tel"
-                    pattern="\+[1-9][0-9]{7,14}"
+                    inputMode="numeric"
+                    pattern="[0-9]{10}"
+                    minLength={10}
+                    maxLength={10}
                     className="mt-1.5 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-3 text-sm text-white outline-none focus:border-fuchsia-500/60"
-                    placeholder="+5213312345678"
+                    placeholder="3312345678"
                   />
                   <span className="mt-1 block text-[10px] text-zinc-600">
-                    Incluye código de país.
+                    Escribe los 10 dígitos. Agregamos el código de país automáticamente.
                   </span>
                 </label>
 
