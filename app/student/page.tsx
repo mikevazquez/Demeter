@@ -37,6 +37,37 @@ type RewardStatusSnapshot = {
   next_level?: RewardLevelView | null;
 };
 
+const levelVisuals = {
+  bronze: {
+    accent: "#CD7F32",
+    border: "rgba(205,127,50,0.72)",
+    divider: "rgba(205,127,50,0.34)",
+    glow: "rgba(205,127,50,0.22)",
+    wash: "rgba(205,127,50,0.12)",
+  },
+  silver: {
+    accent: "#C0C0C0",
+    border: "rgba(192,192,192,0.72)",
+    divider: "rgba(192,192,192,0.32)",
+    glow: "rgba(192,192,192,0.18)",
+    wash: "rgba(192,192,192,0.10)",
+  },
+  gold: {
+    accent: "#D4AF37",
+    border: "rgba(212,175,55,0.76)",
+    divider: "rgba(212,175,55,0.34)",
+    glow: "rgba(212,175,55,0.22)",
+    wash: "rgba(212,175,55,0.12)",
+  },
+  diamond: {
+    accent: "#5EDFFF",
+    border: "rgba(94,223,255,0.78)",
+    divider: "rgba(94,223,255,0.36)",
+    glow: "rgba(94,223,255,0.24)",
+    wash: "rgba(94,223,255,0.12)",
+  },
+} as const;
+
 function dateDistanceInDays(from: string, to: string) {
   const start = Date.parse(`${from}T12:00:00Z`);
   const end = Date.parse(`${to}T12:00:00Z`);
@@ -119,6 +150,13 @@ export default async function StudentHomePage({
   const promotionProgress = promotionTarget
     ? Math.min(100, Math.round((attendanceCount / promotionTarget) * 100))
     : 100;
+  const levelKey =
+    currentLevel?.key === "silver" ||
+    currentLevel?.key === "gold" ||
+    currentLevel?.key === "diamond"
+      ? currentLevel.key
+      : "bronze";
+  const levelVisual = levelVisuals[levelKey];
   const fullName = [snapshot.profile.first_name, snapshot.profile.last_name]
     .filter(Boolean)
     .join(" ");
@@ -217,12 +255,27 @@ export default async function StudentHomePage({
 
       <header
         data-home-block="identity-level"
-        className="relative overflow-hidden rounded-[28px] border border-fuchsia-500/35 bg-[radial-gradient(circle_at_82%_12%,rgba(255,10,138,0.16),transparent_30%),linear-gradient(135deg,rgba(255,255,255,0.035),rgba(255,255,255,0.012))] p-4 shadow-[0_0_0_1px_rgba(255,10,138,0.03)] sm:p-5"
+        data-level={levelKey}
+        className="relative overflow-hidden rounded-[28px] border p-4 transition-colors sm:p-5"
+        style={{
+          borderColor: levelVisual.border,
+          boxShadow: `0 0 34px ${levelVisual.glow}, inset 0 0 0 1px rgba(255,255,255,0.025)`,
+          backgroundImage: `radial-gradient(circle at 82% 12%, ${levelVisual.wash}, transparent 30%), linear-gradient(135deg, rgba(255,255,255,0.035), rgba(255,255,255,0.012))`,
+        }}
       >
         <div className="grid grid-cols-[0.88fr_1.12fr] gap-4">
-          <div className="flex min-w-0 flex-col justify-between border-r border-fuchsia-500/25 pr-4">
+          <div
+            className="flex min-w-0 flex-col justify-between border-r pr-4"
+            style={{ borderColor: levelVisual.divider }}
+          >
             <div>
-              <div className="relative mx-auto h-28 w-28 overflow-hidden rounded-full border-2 border-fuchsia-500 bg-fuchsia-500/10 shadow-[0_0_34px_rgba(255,10,138,0.2)] sm:h-32 sm:w-32">
+              <div
+                className="relative mx-auto h-28 w-28 overflow-hidden rounded-full border-2 bg-black/20 sm:h-32 sm:w-32"
+                style={{
+                  borderColor: levelVisual.accent,
+                  boxShadow: `0 0 30px ${levelVisual.glow}`,
+                }}
+              >
                 <div className="absolute inset-0 flex items-center justify-center text-2xl font-semibold text-fuchsia-200">
                   {snapshot.profile.first_name.trim().charAt(0).toUpperCase()}
                 </div>
@@ -247,8 +300,11 @@ export default async function StudentHomePage({
             </div>
           </div>
 
-          <div className="min-w-0 rounded-3xl border border-white/10 bg-black/20 p-3.5 sm:p-4">
-            <div className="flex items-start justify-between gap-3">
+          <div
+            className="min-w-0 rounded-3xl border bg-black/20 p-3.5 sm:p-4"
+            style={{ borderColor: levelVisual.divider }}
+          >
+            <div className="flex items-center justify-between gap-3">
               <div>
                 <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-fuchsia-300">
                   Mi nivel
@@ -256,7 +312,13 @@ export default async function StudentHomePage({
                 <div className="mt-3 flex items-center gap-3">
                   <div
                     aria-hidden="true"
-                    className="flex h-14 w-14 shrink-0 items-center justify-center rounded-[18px] border border-amber-300/60 bg-gradient-to-br from-amber-300/30 via-amber-400/20 to-amber-900/20 text-2xl shadow-[0_0_24px_rgba(251,191,36,0.18)]"
+                    className="flex h-14 w-14 shrink-0 items-center justify-center rounded-[18px] border text-2xl"
+                    style={{
+                      borderColor: levelVisual.border,
+                      background: `linear-gradient(135deg, ${levelVisual.wash}, rgba(0,0,0,0.18))`,
+                      boxShadow: `0 0 24px ${levelVisual.glow}`,
+                      color: levelVisual.accent,
+                    }}
                   >
                     ♛
                   </div>
@@ -333,60 +395,52 @@ export default async function StudentHomePage({
         <section
           data-home-block="package"
           data-density="compact"
-          className="rounded-3xl border border-fuchsia-500/20 bg-gradient-to-br from-fuchsia-500/[0.09] via-white/[0.035] to-transparent p-4"
+          className="rounded-2xl border border-white/10 bg-white/[0.025] px-3.5 py-2.5"
         >
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-fuchsia-300">
-                Mi paquete
-              </p>
-              <h2 className="mt-1 truncate text-base font-semibold text-white">
-                {activePackage.name}
-              </h2>
+              <div className="flex min-w-0 items-baseline gap-2">
+                <p className="shrink-0 text-[9px] font-semibold uppercase tracking-[0.18em] text-zinc-500">
+                  Mi paquete
+                </p>
+                <h2 className="truncate text-sm font-semibold text-white">{activePackage.name}</h2>
+              </div>
             </div>
             <Link
               href="/student/paquete"
-              className="shrink-0 text-xs font-semibold text-fuchsia-300"
+              className="shrink-0 text-[11px] font-semibold text-zinc-400 transition hover:text-fuchsia-300"
             >
               Ver detalles
             </Link>
           </div>
 
-          <div className="mt-3 grid grid-cols-[1fr_auto] items-end gap-4">
-            <div>
-              <strong className="text-2xl font-semibold text-white">
-                {activePackage.unlimited ? "Ilimitado" : `${credits} clases`}
+          <div className="mt-1.5 flex items-center justify-between gap-3 text-xs">
+            <p className="min-w-0 truncate text-zinc-400">
+              <strong className="font-semibold text-white">
+                {activePackage.unlimited ? "Ilimitado" : `${credits} clases disponibles`}
               </strong>
-              <p className="mt-0.5 text-xs text-zinc-400">
-                {activePackage.unlimited ? "Acceso durante tu vigencia" : "disponibles"}
-              </p>
-            </div>
-
-            <div className="text-right">
-              <div className="flex items-center justify-end gap-1.5">
-                <span className="text-[10px] uppercase tracking-[0.14em] text-zinc-500">Vence</span>
-                {expiresSoon ? (
-                  <span className="rounded-full border border-amber-400/25 bg-amber-400/10 px-2 py-0.5 text-[10px] font-semibold text-amber-300">
-                    Pronto
-                  </span>
-                ) : null}
-              </div>
-              <p
-                className={`mt-0.5 text-sm font-semibold ${expiresSoon ? "text-amber-200" : "text-white"}`}
-              >
+            </p>
+            <div className="flex shrink-0 items-center gap-1.5">
+              <span className="text-[9px] uppercase tracking-[0.12em] text-zinc-600">Vence</span>
+              <span className={`font-semibold ${expiresSoon ? "text-amber-200" : "text-zinc-300"}`}>
                 {formatDate(activePackage.expires_on, studio.timezone)}
-              </p>
+              </span>
+              {expiresSoon ? (
+                <span className="rounded-full border border-amber-400/20 bg-amber-400/[0.08] px-1.5 py-0.5 text-[9px] font-semibold text-amber-300">
+                  Pronto
+                </span>
+              ) : null}
             </div>
           </div>
 
           {activePackage.unlimited ? (
-            <p className="mt-3 border-t border-white/10 pt-2.5 text-xs text-zinc-400">
+            <p className="mt-2 border-t border-white/10 pt-2 text-[11px] text-zinc-500">
               Reservas sujetas a disponibilidad y reglas vigentes.
             </p>
           ) : (
-            <div className="mt-3">
+            <div className="mt-2">
               <div
-                className="h-1.5 overflow-hidden rounded-full bg-white/10"
+                className="h-1 overflow-hidden rounded-full bg-white/10"
                 role="progressbar"
                 aria-label="Clases utilizadas"
                 aria-valuemin={0}
@@ -398,7 +452,7 @@ export default async function StudentHomePage({
                   style={{ width: `${usedProgress}%` }}
                 />
               </div>
-              <div className="mt-1.5 flex items-center justify-between text-[11px] text-zinc-500">
+              <div className="mt-1 flex items-center justify-between text-[9px] text-zinc-600">
                 <span>{activePackage.used_credits} utilizadas</span>
                 <span>{packageLimit} total</span>
               </div>
