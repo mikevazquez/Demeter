@@ -168,6 +168,8 @@ describe("EVALUACIONES-01 operational cycle", () => {
     expect(adminSessionDetail).toContain("evaluationStatus");
     expect(adminSessionOperations).toContain("Evaluación programada");
     expect(adminSessionOperations).toContain("Evaluación en curso");
+    expect(adminSessionOperations).toContain("Iniciar evaluación →");
+    expect(adminSessionOperations).toContain("startScheduledEvaluationAction");
   });
 
   it("renders both final student result states", () => {
