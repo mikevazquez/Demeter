@@ -956,3 +956,18 @@
     min-width: calc(50% - 4px);
   }
 }
+
+
+.eval-discipline-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 760px) {
+  .eval-discipline-actions {
+    justify-content: flex-start;
+  }
+}
