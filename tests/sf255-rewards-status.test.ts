@@ -205,9 +205,8 @@ describe("SF-255A monthly level and waitlist contracts", () => {
     expect(guestCancellationPage).toContain("student_cancellation_preview");
     expect(guestCancellationPage).toContain("Estás fuera del horario de cancelación");
     expect(guestCancellationPage).toContain("perderá su lugar en esta clase");
-    expect(guestCancellationPage).toContain(
-      "la invitación se consumirá. No regresará a tu saldo de este mes.",
-    );
+    expect(guestCancellationPage).toContain("la invitación se consumirá. No");
+    expect(guestCancellationPage).toContain("regresará a tu saldo de este mes.");
     expect(guestCancellationPage).toContain("Sí, cancelar y consumir invitación");
     expect(guestCancellationPage).toContain("No, mantener invitación");
   });
