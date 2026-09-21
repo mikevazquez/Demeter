@@ -131,23 +131,23 @@ export default async function StudentHomePage({
     invitationBalanceResult,
     evaluationsResult,
   ] = await Promise.all([
-      supabase.rpc("student_reward_status_snapshot"),
-      supabase
-        .from("reward_status_memberships")
-        .select("current_level_key")
-        .eq("studio_id", membership.studio_id)
-        .eq("student_id", snapshot.profile.student_id)
-        .maybeSingle(),
-      supabase
-        .from("reward_status_level_definitions")
-        .select(
-          "level_key,level_order,title,maintenance_attendance,promotion_attendance,min_active_months,max_uncovered_days,waitlist_priority,private_discount_pct,event_discount_pct,monthly_guest_invites",
-        )
-        .eq("studio_id", membership.studio_id)
-        .order("level_order"),
-      supabase.rpc("student_reward_invitation_balance"),
-      supabase.rpc("student_evaluations_snapshot"),
-    ]);
+    supabase.rpc("student_reward_status_snapshot"),
+    supabase
+      .from("reward_status_memberships")
+      .select("current_level_key")
+      .eq("studio_id", membership.studio_id)
+      .eq("student_id", snapshot.profile.student_id)
+      .maybeSingle(),
+    supabase
+      .from("reward_status_level_definitions")
+      .select(
+        "level_key,level_order,title,maintenance_attendance,promotion_attendance,min_active_months,max_uncovered_days,waitlist_priority,private_discount_pct,event_discount_pct,monthly_guest_invites",
+      )
+      .eq("studio_id", membership.studio_id)
+      .order("level_order"),
+    supabase.rpc("student_reward_invitation_balance"),
+    supabase.rpc("student_evaluations_snapshot"),
+  ]);
 
   const rewardStatus = (rewardStatusResult.data as RewardStatusSnapshot | null) ?? null;
   const invitationBalance =
@@ -328,8 +328,7 @@ export default async function StudentHomePage({
                   ? `Tienes una invitación para evaluar tu nivel ${activeEvaluationInvitation.current_level_title}.`
                   : "Ya aceptaste tu evaluación. Elige una clase para programarla."}
               </p>
-              {activeEvaluationInvitation.window_start &&
-              activeEvaluationInvitation.window_end ? (
+              {activeEvaluationInvitation.window_start && activeEvaluationInvitation.window_end ? (
                 <p className="mt-1 text-[11px] text-zinc-500">
                   Disponible del{" "}
                   {formatDate(activeEvaluationInvitation.window_start, studio.timezone)} al{" "}
@@ -346,9 +345,7 @@ export default async function StudentHomePage({
             href={
               activeEvaluationInvitation.invitation_status === "offered"
                 ? "/student/evaluaciones/" + activeEvaluationInvitation.invitation_id
-                : "/student/evaluaciones/" +
-                  activeEvaluationInvitation.invitation_id +
-                  "/programar"
+                : "/student/evaluaciones/" + activeEvaluationInvitation.invitation_id + "/programar"
             }
             className="mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-2xl bg-fuchsia-600 px-4 text-sm font-semibold text-white transition hover:bg-fuchsia-500"
           >
