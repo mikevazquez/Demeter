@@ -25,6 +25,7 @@ const waitlistControl = readFileSync(
   join(process.cwd(), "app/student/reservar/WaitlistControl.tsx"),
   "utf8",
 );
+const homePage = readFileSync(join(process.cwd(), "app/student/page.tsx"), "utf8");
 const profilePage = readFileSync(join(process.cwd(), "app/student/perfil/page.tsx"), "utf8");
 
 describe("SF-255A monthly level and waitlist contracts", () => {
@@ -66,13 +67,18 @@ describe("SF-255A monthly level and waitlist contracts", () => {
     expect(classesPage).toContain("border-amber-400");
   });
 
-  it("integrates status and benefits into Profile without a new level route", () => {
-    expect(profilePage).toContain("student_reward_status_snapshot");
-    expect(profilePage).toContain("reward_status_memberships");
-    expect(profilePage).toContain("reward_status_level_definitions");
+  it("integrates the approved level composition into Home and keeps Profile clean", () => {
+    expect(homePage).toContain("student_reward_status_snapshot");
+    expect(homePage).toContain("reward_status_memberships");
+    expect(homePage).toContain("reward_status_level_definitions");
+    expect(homePage).toContain('data-home-block="identity-level"');
+    expect(homePage).toContain("Mi nivel");
+    expect(homePage).toContain("Ver mis beneficios");
+    expect(homePage).toContain("Mantener");
+    expect(homePage).toContain("Camino a");
     expect(profilePage).toContain('data-profile-block="package"');
-    expect(profilePage).toContain("Tus beneficios");
-    expect(profilePage).toContain("Nivel actual");
-    expect(profilePage).not.toContain('href="/student/nivel"');
+    expect(profilePage).not.toContain("student_reward_status_snapshot");
+    expect(profilePage).not.toContain("Nivel actual");
+    expect(profilePage).not.toContain("Tus beneficios");
   });
 });
