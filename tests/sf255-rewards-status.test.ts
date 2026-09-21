@@ -192,6 +192,18 @@ describe("SF-255A monthly level and waitlist contracts", () => {
     expect(cancellationPage).toContain("Sí, cancelar mi reserva y la invitación");
   });
 
+  it("warns before a guest invitation cancellation and explains late consumption", () => {
+    expect(reservationDetail).toContain("cancel_invite");
+    expect(reservationDetail).toContain("student_cancellation_preview");
+    expect(reservationDetail).toContain("Estás fuera del horario de cancelación");
+    expect(reservationDetail).toContain("perderá su lugar en esta clase");
+    expect(reservationDetail).toContain(
+      "la invitación se consumirá. No regresará a tu saldo de este mes.",
+    );
+    expect(reservationDetail).toContain("Sí, cancelar y consumir invitación");
+    expect(reservationDetail).toContain("No, mantener invitación");
+  });
+
   it("snapshots the approved level discount into checkout and surfaces M05 pricing", () => {
     expect(discountMigration).toContain("reward_discount_eligible boolean not null default false");
     expect(discountMigration).toContain("regular_amount_minor");
