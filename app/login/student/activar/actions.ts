@@ -3,15 +3,45 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
+function activationErrorUrl(tokenHash: string | null, type: string | null, error: string) {
+  if (!tokenHash || type !== "recovery") return `/login/student/activar?error=${error}`;
+
+  const params = new URLSearchParams({
+    error,
+    token_hash: tokenHash,
+    type: "recovery",
+  });
+  return `/login/student/activar?${params.toString()}`;
+}
+
 export async function completeStudentPasswordActivation(formData: FormData) {
   const password = String(formData.get("password") ?? "");
   const confirmation = String(formData.get("password_confirmation") ?? "");
+  const tokenHash =
+    String(formData.get("token_hash") ?? "").trim() || null;
+  const type = String(formData.get("type") ?? "").trim() || null;
 
   if (password.length < 8 || password !== confirmation) {
-    redirect("/login/student/activar?error=invalid");
+    redirect(activationErrorUrl(tokenHash, type, "invalid"));
   }
 
   const supabase = await createClient();
+
+  if (tokenHash) {
+    if (type !== "recovery") {
+      redirect("/login/student/activar?error=link");
+    }
+
+    const { error: verifyError } = await supabase.auth.verifyOtp({
+      token_hash: tokenHash,
+      type: "recovery",
+    });
+
+    if (verifyError) {
+      redirect("/login/student/activar?error=link");
+    }
+  }
+
   const {
     data: { user },
   } = await supabase.auth.getUser();
