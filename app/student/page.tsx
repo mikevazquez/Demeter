@@ -182,6 +182,9 @@ export default async function StudentHomePage({
 
   const noCredits = Boolean(activePackage && !activePackage.unlimited && credits === 0);
   const canReserve = Boolean(activePackage && (activePackage.unlimited || (credits ?? 0) > 0));
+  const compactPackageHeadline = activePackage
+    ? activePackage.unlimited ? "Ilimitado" : `${credits} clases disponibles`
+    : "";
 
   return (
     <main className="space-y-3 pb-4 sm:space-y-4">
@@ -417,9 +420,10 @@ export default async function StudentHomePage({
           <div className="mt-1.5 flex items-center justify-between gap-3 text-xs">
             <p className="min-w-0 truncate text-zinc-400">
               <strong className="font-semibold text-white">
-                {activePackage.unlimited
-                  ? "Ilimitado · Acceso durante tu vigencia"
-                  : `${credits} clases disponibles`}
+                {compactPackageHeadline}
+                {activePackage.unlimited ? (
+                  <span className="font-normal text-zinc-500"> · Acceso durante tu vigencia</span>
+                ) : null}
               </strong>
             </p>
             <div className="flex shrink-0 items-center gap-1.5">
