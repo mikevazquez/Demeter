@@ -27,13 +27,13 @@ describe("SF-163 automation catalog", () => {
       "AUT-CAT-05",
       "AUT-CAT-06",
       "AUT-CAT-07",
+      "AUT-CAT-17",
       "AUT-CAT-11",
       "AUT-CAT-12",
       "AUT-CAT-13",
       "AUT-CAT-14",
       "AUT-CAT-15",
       "AUT-CAT-16",
-      "AUT-CAT-17",
     ]);
   });
 
