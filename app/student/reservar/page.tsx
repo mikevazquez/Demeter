@@ -67,21 +67,36 @@ function timeOnly(value: string, timeZone: string) {
   }).format(new Date(value));
 }
 
-function statusClass(session: StudentSession) {
+type StudentWaitlistItem = {
+  waitlist_entry_id: string;
+  session_id: string;
+  status: string;
+  joined_at: string;
+};
+
+type RewardStatusSnapshot = {
+  level_title?: string | null;
+};
+
+function statusClass(session: StudentSession, waitlisted = false) {
   if (session.is_reserved) {
     return "border-emerald-500/25 bg-emerald-500/10 text-emerald-300";
+  }
+  if (waitlisted) {
+    return "border-amber-400/30 bg-amber-400/[0.09] text-amber-200";
   }
   if (session.eligibility?.eligible) {
     return "border-fuchsia-500/25 bg-fuchsia-500/10 text-fuchsia-200";
   }
   if (session.eligibility?.reason_code === "session_full") {
-    return "border-rose-500/25 bg-rose-500/10 text-rose-300";
+    return "border-amber-400/30 bg-amber-400/[0.09] text-amber-200";
   }
   return "border-amber-400/25 bg-amber-400/[0.08] text-amber-200";
 }
 
-function statusCopy(session: StudentSession) {
+function statusCopy(session: StudentSession, waitlisted = false) {
   if (session.is_reserved) return "Ya reservada";
+  if (waitlisted) return "En lista de espera";
   if (session.eligibility?.eligible) return "Disponible";
   return bookingReasonCopy(session.eligibility?.reason_code);
 }
@@ -110,6 +125,15 @@ export default async function StudentReservePage({
   });
 
   const items = (sessions ?? []) as StudentSession[];
+  const [{ data: waitlistData }, { data: rewardStatusData }] = await Promise.all([
+    supabase.rpc("student_waitlist_feed"),
+    supabase.rpc("student_reward_status_snapshot"),
+  ]);
+  const waitlistItems = (waitlistData ?? []) as StudentWaitlistItem[];
+  const waitlistedSessionIds = new Set(
+    waitlistItems.filter((item) => item.status === "active").map((item) => item.session_id),
+  );
+  const levelTitle = (rewardStatusData as RewardStatusSnapshot | null)?.level_title ?? null;
   const activityNames = [...new Set(items.map((item) => item.activity))];
   const { data: activityStyles } = activityNames.length
     ? await supabase
@@ -255,6 +279,8 @@ export default async function StudentReservePage({
               const timeLabel = timeOnly(session.starts_at, studio.timezone);
               const eligible = Boolean(session.eligibility?.eligible);
               const reserved = Boolean(session.is_reserved);
+              const waitlisted = waitlistedSessionIds.has(session.session_id);
+              const full = session.eligibility?.reason_code === "session_full";
               const style = activityStyleMap.get(session.activity);
               const activityColor = style?.color ?? "#FF0A8A";
               const dropInPriceMinor = style?.dropInPriceMinor ?? null;
@@ -307,9 +333,10 @@ export default async function StudentReservePage({
                       <span
                         className={`hidden rounded-full border px-2 py-1 text-[10px] font-semibold sm:inline-flex ${statusClass(
                           session,
+                          waitlisted,
                         )}`}
                       >
-                        {statusCopy(session)}
+                        {statusCopy(session, waitlisted)}
                       </span>
                       <span aria-hidden="true" className="text-xl text-zinc-500">
                         ›
@@ -359,6 +386,9 @@ export default async function StudentReservePage({
                           timeLabel={timeLabel}
                           eligible={eligible}
                           reserved={reserved}
+                          full={full}
+                          waitlisted={waitlisted}
+                          levelTitle={levelTitle}
                         />
                       </div>
                     )}
