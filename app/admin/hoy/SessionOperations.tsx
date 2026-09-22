@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
 import {
   bookStudentFromToday,
@@ -67,14 +67,6 @@ function attendanceLabel(status: string) {
   return "Pendiente";
 }
 
-function normalizeSearch(value: string) {
-  return value
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLocaleLowerCase("es-MX")
-    .trim();
-}
-
 export function SessionOperations({
   sessionId,
   returnDate,
@@ -100,8 +92,6 @@ export function SessionOperations({
     message: string;
   } | null>(null);
   const [now, setNow] = useState<number | null>(null);
-  const [studentSearch, setStudentSearch] = useState("");
-  const [selectedStudentId, setSelectedStudentId] = useState("");
 
   const isCompleted = sessionStatus === "completed";
   const isCancelled = sessionStatus === "cancelled";
@@ -118,18 +108,6 @@ export function SessionOperations({
   const canAddNew = sessionOpen && canCreateStudent;
   const canAddWalkin = canAddExisting || canAddNew;
   const showNewWalkin = canAddNew && (newWalkin || !canAddExisting);
-  const normalizedStudentSearch = normalizeSearch(studentSearch);
-  const matchingCandidates = useMemo(() => {
-    if (!normalizedStudentSearch) return [];
-    return candidates
-      .filter((candidate) =>
-        normalizeSearch(candidate.fullName).includes(normalizedStudentSearch),
-      )
-      .slice(0, 8);
-  }, [candidates, normalizedStudentSearch]);
-  const selectedCandidate = candidates.find(
-    (candidate) => candidate.id === selectedStudentId,
-  );
 
   useEffect(() => {
     const updateNow = () => setNow(Date.now());
@@ -442,81 +420,31 @@ export function SessionOperations({
                   <form action={bookStudentFromToday} className="today-add-form is-existing">
                     <input type="hidden" name="session_id" value={sessionId} />
                     <input type="hidden" name="return_date" value={returnDate} />
-                    <input type="hidden" name="student_id" value={selectedStudentId} />
                     {returnTo ? <input type="hidden" name="return_to" value={returnTo} /> : null}
-
-                    <div className="today-student-search">
-                      <input
-                        type="search"
-                        value={studentSearch}
-                        onChange={(event) => {
-                          setStudentSearch(event.target.value);
-                          setSelectedStudentId("");
-                        }}
-                        placeholder="Buscar alumna por nombre"
-                        aria-label="Buscar alumna por nombre"
-                        autoComplete="off"
-                      />
-
-                      {normalizedStudentSearch ? (
-                        <div className="today-student-search-results" role="listbox">
-                          {matchingCandidates.length ? (
-                            matchingCandidates.map((candidate) => {
-                              const canFallbackToWalkin = walkinFallbackDetails.has(
-                                candidate.detail,
-                              );
-                              const disabled =
-                                !canPostCloseAdd && !candidate.eligible && !canFallbackToWalkin;
-                              const selected = candidate.id === selectedStudentId;
-
-                              return (
-                                <button
-                                  key={candidate.id}
-                                  type="button"
-                                  className={`today-student-search-result${selected ? " is-selected" : ""}`}
-                                  onClick={() => {
-                                    if (disabled) return;
-                                    setSelectedStudentId(candidate.id);
-                                    setStudentSearch(candidate.fullName);
-                                  }}
-                                  disabled={disabled}
-                                  role="option"
-                                  aria-selected={selected}
-                                >
-                                  <span>{candidate.fullName}</span>
-                                  <small>
-                                    {canPostCloseAdd
-                                      ? "Agregar después del cierre"
-                                      : candidate.detail}
-                                  </small>
-                                </button>
-                              );
-                            })
-                          ) : (
-                            <div className="today-student-search-empty">
-                              No encontramos alumnas con ese nombre.
-                            </div>
-                          )}
-                        </div>
-                      ) : (
-                        <p className="today-student-search-hint">
-                          Escribe el nombre para ver coincidencias.
-                        </p>
-                      )}
-                    </div>
-
-                    {selectedCandidate ? (
-                      <div className="today-student-search-selected">
-                        <span>Seleccionada</span>
-                        <strong>{selectedCandidate.fullName}</strong>
-                      </div>
-                    ) : null}
-
-                    <button
-                      className="primary-button"
-                      type="submit"
-                      disabled={!selectedStudentId}
-                    >
+                    <select name="student_id" defaultValue="" required>
+                      <option value="" disabled>
+                        Selecciona una alumna
+                      </option>
+                      {candidates.map((candidate) => {
+                        const canFallbackToWalkin = walkinFallbackDetails.has(candidate.detail);
+                        const disabled =
+                          !canPostCloseAdd && !candidate.eligible && !canFallbackToWalkin;
+                        return (
+                          <option key={candidate.id} value={candidate.id} disabled={disabled}>
+                            {candidate.fullName} ·{" "}
+                            {canPostCloseAdd
+                              ? "agregar después del cierre"
+                              : candidate.detail}
+                            {canPostCloseAdd || candidate.eligible
+                              ? ""
+                              : canFallbackToWalkin
+                                ? " · walk-in / venta pendiente"
+                                : " · bloqueada"}
+                          </option>
+                        );
+                      })}
+                    </select>
+                    <button className="primary-button" type="submit" disabled={!candidates.length}>
                       Agregar
                     </button>
                   </form>
