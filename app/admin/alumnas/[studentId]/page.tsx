@@ -339,6 +339,7 @@ export default async function StudentProfilePage({
     status: string;
     className: string;
     startsAt: string;
+    cancelledAt: string | null;
     creditsHeld: number;
   };
   const packageClassEvents = new Map<string, PackageClassEvent[]>();
@@ -348,7 +349,7 @@ export default async function StudentProfilePage({
   if (canReadSchedule) {
     const { data: reservationRows } = await supabase
       .from("reservations")
-      .select("id,session_id,acquisition_id,status,credits_held")
+      .select("id,session_id,acquisition_id,status,credits_held,cancelled_at")
       .eq("studio_id", studio.id)
       .eq("student_id", student.id)
       .order("booked_at", { ascending: false });
@@ -383,6 +384,7 @@ export default async function StudentProfilePage({
         status: reservation.status,
         className: templateNameMap.get(session.template_id) ?? "Clase",
         startsAt: session.starts_at,
+        cancelledAt: reservation.cancelled_at,
         creditsHeld: reservation.credits_held ?? 0,
       };
       generalClassEvents.push(event);
@@ -636,12 +638,19 @@ export default async function StudentProfilePage({
       no_show: "No show",
       cancelled_by_studio: "Clase cancelada por el estudio",
     };
+    const isCancellation = [
+      "cancelled_on_time",
+      "cancelled_late",
+      "cancelled_by_studio",
+    ].includes(event.status);
     profileHistoryEvents.push({
       id: "class:" + event.id,
-      at: event.startsAt,
+      at: isCancellation && event.cancelledAt ? event.cancelledAt : event.startsAt,
       kind: "class",
       title: classTitleMap[event.status] ?? "Actividad de clase",
-      detail: event.className,
+      detail: isCancellation
+        ? `${event.className} · clase programada ${formatDateTime(event.startsAt)}`
+        : event.className,
     });
   }
 
