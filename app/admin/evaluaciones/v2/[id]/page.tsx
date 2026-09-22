@@ -1,3 +1,5 @@
+import type { CSSProperties } from "react";
+
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -413,7 +415,7 @@ export default async function EvaluationV2EditorPage({
               <input type="hidden" name="version_id" value={version.id} />
               <input type="hidden" name="block_id" value={activeBlock.id} />
               <button className="eval-simple-trash" type="submit" aria-label="Eliminar apartado">
-                ♲
+                ⌫
               </button>
             </form>
           ) : null}
@@ -423,7 +425,7 @@ export default async function EvaluationV2EditorPage({
 
         {normalizedType === "weighted_criteria" ? (
           <section className="eval-simple-panel eval-simple-distribution-card">
-            <div className="eval-simple-mini-ring" style={{ "--progress": safePercent(internalTotal) } as React.CSSProperties}>
+            <div className="eval-simple-mini-ring" style={{ "--progress": safePercent(internalTotal) } as CSSProperties}>
               <strong>{internalTotal}%</strong>
             </div>
             <div>
@@ -490,7 +492,7 @@ export default async function EvaluationV2EditorPage({
                       formAction={deleteEvaluationV2ItemAction}
                       aria-label={`Eliminar ${itemLabel(item)}`}
                     >
-                      ♲
+                      ⌫
                     </button>
                   ) : null}
                   <button className="eval-simple-hidden-submit" type="submit" aria-hidden="true">
@@ -742,7 +744,7 @@ export default async function EvaluationV2EditorPage({
           <div className="eval-simple-total-card">
             <div
               className="eval-simple-ring"
-              style={{ "--progress": safePercent(totalWeight) } as React.CSSProperties}
+              style={{ "--progress": safePercent(totalWeight) } as CSSProperties}
             >
               <strong>{totalWeight}%</strong>
             </div>
@@ -846,7 +848,7 @@ export default async function EvaluationV2EditorPage({
           <div className="eval-simple-total-card">
             <div
               className="eval-simple-ring"
-              style={{ "--progress": safePercent(totalWeight) } as React.CSSProperties}
+              style={{ "--progress": safePercent(totalWeight) } as CSSProperties}
             >
               <strong>{totalWeight}%</strong>
             </div>
