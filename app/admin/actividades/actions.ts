@@ -346,28 +346,6 @@ export async function saveActivity(formData: FormData) {
         if (error) throw error;
       }
     } else {
-          const { data: inserted, error } = await supabase
-            .from("recurring_schedules")
-            .insert({
-              studio_id: studio.id,
-              template_id: activityId,
-              instructor_id: row.instructor_id,
-              space_id: row.space_id,
-              weekday: row.weekday,
-              local_time: row.local_time,
-              duration_minutes: row.duration_minutes,
-              capacity,
-              starts_on: row.starts_on,
-              ends_on: row.ends_on,
-              active: true,
-            })
-            .select("id")
-            .single();
-          if (error || !inserted) throw error ?? new Error("schedule_insert_failed");
-          row.id = inserted.id;
-        }
-      }
-    } else {
       const { data: created, error: createError } = await supabase
         .from("class_templates")
         .insert({
