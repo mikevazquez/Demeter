@@ -6,7 +6,6 @@ import {
   bookStudentFromToday,
   cancelReservationFromToday,
   createWalkinFromToday,
-  finalizeAttendanceFromToday,
   setAttendanceFromToday,
 } from "../actions";
 import { startScheduledEvaluationAction } from "../alumnas/[studentId]/evaluation-actions";
@@ -34,6 +33,8 @@ type SessionOperationsProps = {
   sessionId: string;
   returnDate: string;
   sessionStatus: string;
+  startsAt: string;
+  endsAt: string;
   roster: RosterItem[];
   candidates: Candidate[];
   available: number;
@@ -66,6 +67,8 @@ export function SessionOperations({
   sessionId,
   returnDate,
   sessionStatus,
+  startsAt,
+  endsAt,
   roster,
   candidates,
   available,
@@ -83,6 +86,7 @@ export function SessionOperations({
     kind: "success" | "error";
     message: string;
   } | null>(null);
+  const [now, setNow] = useState<number | null>(null);
 
   const isCompleted = sessionStatus === "completed";
   const canAddExisting = !isCompleted && canBook;
@@ -92,6 +96,17 @@ export function SessionOperations({
   const attendanceCount = roster.filter((item) => item.status === "attended").length;
   const noShowCount = roster.filter((item) => item.status === "no_show").length;
   const pendingCount = roster.filter((item) => item.status === "reserved").length;
+  const startsAtMs = new Date(startsAt).getTime();
+  const endsAtMs = new Date(endsAt).getTime();
+  const inProgress =
+    !isCompleted && now !== null && now >= startsAtMs && now < endsAtMs;
+
+  useEffect(() => {
+    const updateNow = () => setNow(Date.now());
+    updateNow();
+    const interval = window.setInterval(updateNow, 30_000);
+    return () => window.clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     const matchesSessionHash = window.location.hash === `#session-${sessionId}`;
@@ -241,7 +256,7 @@ export function SessionOperations({
                         ) : null}
                       </div>
 
-                      {!isCompleted &&
+                      {inProgress &&
                       canAttendance &&
                       ["reserved", "attended", "no_show"].includes(item.status) ? (
                         <div className="today-attendance-preview">
@@ -412,17 +427,14 @@ export function SessionOperations({
                 <span>{pendingCount} pendientes</span>
               </div>
 
-              {!isCompleted ? (
-                <form action={finalizeAttendanceFromToday}>
-                  <input type="hidden" name="session_id" value={sessionId} />
-                  <input type="hidden" name="return_date" value={returnDate} />
-                  {returnTo ? <input type="hidden" name="return_to" value={returnTo} /> : null}
-                  <button className="today-finalize-button" type="submit">
-                    Finalizar asistencia
-                  </button>
-                </form>
-              ) : (
+              {isCompleted ? (
                 <p>Asistencia finalizada. Las correcciones requieren motivo.</p>
+              ) : inProgress ? (
+                <p>Clase en curso · el cierre de asistencia es automático.</p>
+              ) : now !== null && now < startsAtMs ? (
+                <p>La asistencia manual se habilita cuando inicia la clase.</p>
+              ) : (
+                <p>Cerrando asistencia automáticamente…</p>
               )}
             </section>
           ) : null}
