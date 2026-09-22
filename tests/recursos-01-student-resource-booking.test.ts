@@ -66,7 +66,7 @@ describe("RECURSOS-01 student resource selection", () => {
     expect(detailPage).toContain("/recurso?date=");
     expect(resourcePage).toContain('rpc("student_session_resource_map"');
     expect(picker).toContain("Elige tu recurso");
-    expect(picker).toContain("data");
+    expect(picker).toContain("resourceMap");
   });
 
   it("shows available, full and unavailable states on the canonical map", () => {
@@ -84,7 +84,7 @@ describe("RECURSOS-01 student resource selection", () => {
   });
 
   it("revalidates the selected resource on confirmation and on final booking", () => {
-    expect(confirmPage).toContain('rpc("student_session_resource_map"');
+    expect(confirmPage).toMatch(/rpc\(\s*"student_session_resource_map"/);
     expect(confirmPage).toContain('name="resource_id"');
     expect(confirmPage).toContain("selectedResource.available <= 0");
     expect(actions).toContain("resource_full");
