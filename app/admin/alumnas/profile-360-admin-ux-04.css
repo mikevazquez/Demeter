@@ -208,6 +208,89 @@
     radial-gradient(circle at 100% 0%, rgba(255, 10, 138, 0.09), transparent 38%), #0d141c;
 }
 
+.admin-ux04-profile360 .profile360-technical-levels {
+  padding: 15px;
+  border: 1px solid #28323e;
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(255, 10, 138, 0.07), transparent 34%), #0d141c;
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.13);
+}
+
+.admin-ux04-profile360 .profile360-technical-levels .profile360-approved-card-heading {
+  align-items: flex-start;
+}
+
+.admin-ux04-profile360 .profile360-technical-levels .profile360-approved-card-heading > a {
+  color: #ff79bd;
+  font-size: 9px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.admin-ux04-profile360 .profile360-technical-level-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.admin-ux04-profile360 .profile360-technical-level-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 46px;
+  padding: 10px 12px;
+  border: 1px solid #27313d;
+  border-radius: 13px;
+  background: #101720;
+}
+
+.admin-ux04-profile360 .profile360-technical-level-row > span {
+  min-width: 0;
+  color: #a7b0bc;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.admin-ux04-profile360 .profile360-technical-level-row > strong {
+  flex: 0 0 auto;
+  padding: 6px 10px;
+  border: 1px solid rgba(255, 10, 138, 0.3);
+  border-radius: 999px;
+  background: rgba(255, 10, 138, 0.08);
+  color: #ff7abe;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.admin-ux04-profile360 .profile360-technical-level-empty {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 12px;
+  padding: 11px 12px;
+  border: 1px dashed #35404d;
+  border-radius: 13px;
+  color: #8e99a8;
+  font-size: 11px;
+}
+
+.admin-ux04-profile360 .profile360-technical-level-empty a {
+  flex: 0 0 auto;
+  color: #ff79bd;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+@media (max-width: 560px) {
+  .admin-ux04-profile360 .profile360-technical-level-empty {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
 .admin-ux04-profile360 .profile360-approved-alert-list > div {
   border-color: #29333f;
   background: #0f161e;
