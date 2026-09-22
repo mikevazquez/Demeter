@@ -69,9 +69,7 @@ describe("RECURSOS-01 domain contract", () => {
       "recursos01_release_assignment_after_reservation_status",
     );
     expect(migration).toContain("released_at = coalesce(released_at, now())");
-    expect(migration).toContain(
-      "'reservation_status:' || new.status::text",
-    );
+    expect(migration).toContain("'reservation_status:' || new.status::text");
   });
 
   it("prevents destructive resource changes while active assignments exist", () => {
