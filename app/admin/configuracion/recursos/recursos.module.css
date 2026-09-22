@@ -865,7 +865,7 @@
 
 .mapElement[data-kind="door"] {
   border-color: rgba(245, 183, 79, 0.88);
-  background: rgba(245, 183, 79, 0.10);
+  background: rgba(245, 183, 79, 0.1);
   color: #ffd27d;
 }
 
