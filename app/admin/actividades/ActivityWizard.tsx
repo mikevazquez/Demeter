@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useFormStatus } from "react-dom";
 
 import { saveActivity } from "./actions";
 
@@ -31,6 +32,20 @@ export type ActivityDraft = {
 };
 
 const DAYS = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+
+function SaveActivityButton({ mode }: { mode: "create" | "edit" }) {
+  const { pending } = useFormStatus();
+
+  return (
+    <button type="submit" className="activities-next-button" disabled={pending}>
+      {pending
+        ? "Guardando…"
+        : mode === "create"
+          ? "Crear actividad"
+          : "Guardar cambios"}
+    </button>
+  );
+}
 
 const STEPS = [
   { key: "general", label: "Información general" },
@@ -660,9 +675,7 @@ export function ActivityWizard({
         ) : (
           <form action={saveActivity}>
             <input type="hidden" name="payload" value={JSON.stringify(draft)} />
-            <button type="submit" className="activities-next-button">
-              {mode === "create" ? "Crear actividad" : "Guardar cambios"}
-            </button>
+            <SaveActivityButton mode={mode} />
           </form>
         )}
       </footer>
