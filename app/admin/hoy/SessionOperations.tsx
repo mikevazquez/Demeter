@@ -153,12 +153,12 @@ export function SessionOperations({
               : error === "attendance_not_persisted"
                 ? "La corrección no se guardó. Intenta nuevamente."
                 : error === "phone_exists"
-                ? "Ese teléfono ya pertenece a una alumna. Agrégala como alumna existente."
-                : error === "session_full"
-                  ? "La clase ya está llena."
-                  : error === "enrollment_required"
-                    ? "La alumna necesita una inscripción vigente para reservar esta clase."
-                    : "No se pudo completar la operación.",
+                  ? "Ese teléfono ya pertenece a una alumna. Agrégala como alumna existente."
+                  : error === "session_full"
+                    ? "La clase ya está llena."
+                    : error === "enrollment_required"
+                      ? "La alumna necesita una inscripción vigente para reservar esta clase."
+                      : "No se pudo completar la operación.",
         });
       }
     });
