@@ -382,8 +382,8 @@ export default async function AgendaPage({
             Hoy
           </Link>
           {canEdit ? (
-            <Link className="agenda-config-button" href="/admin/agenda/configuracion">
-              Configurar agenda
+            <Link className="agenda-config-button" href="/admin/actividades">
+              Actividades
             </Link>
           ) : null}
         </div>
