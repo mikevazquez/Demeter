@@ -28,6 +28,12 @@ function formatTime(value?: string) {
   }).format(new Date(value));
 }
 
+function feedbackForDuration(kind: Exclude<Feedback, null>["kind"] | undefined) {
+  if (kind === "error") return 5000;
+  if (kind === "duplicate") return 4500;
+  return 3800;
+}
+
 function feedbackFor(result: CheckInResponse): Feedback {
   const classLine = [result.activity, formatTime(result.starts_at)].filter(Boolean).join(" · ");
 
@@ -116,7 +122,8 @@ export function KioskScanner({ studioName }: { studioName: string }) {
           cache: "no-store",
         });
         const result = (await response.json()) as CheckInResponse;
-        setFeedback(feedbackFor(result));
+        const nextFeedback = feedbackFor(result);
+        setFeedback(nextFeedback);
       } catch {
         setFeedback({
           kind: "error",
@@ -126,7 +133,10 @@ export function KioskScanner({ studioName }: { studioName: string }) {
       }
 
       if (resetTimerRef.current) clearTimeout(resetTimerRef.current);
-      resetTimerRef.current = setTimeout(resetReader, 2800);
+      const feedbackDurationMs =
+        feedbackForDuration(nextFeedback?.kind);
+
+      resetTimerRef.current = setTimeout(resetReader, feedbackDurationMs);
     },
     [resetReader],
   );
