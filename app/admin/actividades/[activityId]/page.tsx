@@ -23,11 +23,13 @@ export default async function ActivityDetailPage({
     { data: instructors },
     { data: persons },
     { data: spaces },
+    { data: resources },
+    { data: resourceSettings },
   ] = await Promise.all([
     supabase
       .from("class_templates")
       .select(
-        "id,name,description,duration_minutes,capacity,drop_in_price_minor,individual_purchase_notes,requires_resource,color_hex,active",
+        "id,name,description,duration_minutes,capacity,drop_in_price_minor,individual_purchase_notes,requires_resource,resource_uses_per_item,color_hex,active",
       )
       .eq("id", activityId)
       .eq("studio_id", studio.id)
@@ -54,6 +56,17 @@ export default async function ActivityDetailPage({
       .eq("studio_id", studio.id)
       .eq("active", true)
       .order("name"),
+    supabase
+      .from("resources")
+      .select("id,name,short_label,space_id")
+      .eq("studio_id", studio.id)
+      .eq("active", true)
+      .order("name"),
+    supabase
+      .from("class_template_resources")
+      .select("resource_id,enabled,capacity_override")
+      .eq("studio_id", studio.id)
+      .eq("template_id", activityId),
   ]);
 
   if (!activity) notFound();
@@ -75,6 +88,12 @@ export default async function ActivityDetailPage({
     capacity: activity.capacity,
     colorHex: activity.color_hex ?? "#FF0A8A",
     requiresResource: activity.requires_resource,
+    resourceUsesPerItem: activity.resource_uses_per_item ?? 1,
+    resourceSettings: (resourceSettings ?? []).map((setting) => ({
+      resourceId: setting.resource_id,
+      enabled: setting.enabled,
+      capacityOverride: setting.capacity_override,
+    })),
     defaultInstructorId: firstSchedule?.instructor_id ?? "",
     defaultSpaceId: firstSchedule?.space_id ?? "",
     startsOn: firstSchedule?.starts_on ?? new Date().toISOString().slice(0, 10),
@@ -122,6 +141,11 @@ export default async function ActivityDetailPage({
         spaces={(spaces ?? []).map((item) => ({
           id: item.id,
           label: item.capacity ? `${item.name} · máx. ${item.capacity}` : item.name,
+        }))}
+        resources={(resources ?? []).map((item) => ({
+          id: item.id,
+          spaceId: item.space_id,
+          label: item.short_label || item.name,
         }))}
       />
     </main>
