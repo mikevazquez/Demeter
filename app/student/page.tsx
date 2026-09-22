@@ -144,7 +144,7 @@ export default async function StudentHomePage({
   searchParams: Promise<{ cancelled?: string; error?: string; benefits?: string }>;
 }) {
   const query = await searchParams;
-  const { snapshot, studio, supabase, membership, user } = await getStudentPortalContext();
+  const { snapshot, studio, supabase, membership } = await getStudentPortalContext();
   const [
     rewardStatusResult,
     rewardMembershipResult,
@@ -174,7 +174,7 @@ export default async function StudentHomePage({
     supabase
       .from("app_notifications")
       .select("id,title,body,notification_type,created_at,payload")
-      .eq("recipient_user_id", user.id)
+      .eq("student_id", snapshot.profile.student_id)
       .eq("recipient_kind", "student")
       .is("read_at", null)
       .order("created_at", { ascending: false })
