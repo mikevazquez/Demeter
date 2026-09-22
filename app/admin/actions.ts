@@ -168,11 +168,7 @@ export async function setAttendanceFromToday(formData: FormData) {
     changed?: boolean;
   };
 
-  if (
-    result.ok !== true ||
-    result.status !== status ||
-    (reason && result.changed !== true)
-  ) {
+  if (result.ok !== true || result.status !== status || (reason && result.changed !== true)) {
     redirect(withQuery(returnUrl, "error", "attendance_not_persisted"));
   }
 
