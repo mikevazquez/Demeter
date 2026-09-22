@@ -254,7 +254,7 @@ function V2ItemEditor({
           <input
             value={notes}
             onChange={(event) => setNotes(event.target.value)}
-            onBlur={() => save(status, event.currentTarget.value)}
+            onBlur={(event) => save(status, event.currentTarget.value)}
             placeholder="Opcional…"
           />
         </label>
