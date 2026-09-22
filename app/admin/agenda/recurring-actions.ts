@@ -120,7 +120,7 @@ export async function createRecurringSchedules(formData: FormData) {
 
   const { data: template } = await supabase
     .from("class_templates")
-    .select("id,capacity")
+    .select("id,capacity,requires_resource")
     .eq("id", templateId)
     .eq("studio_id", studio.id)
     .eq("active", true)
@@ -160,6 +160,10 @@ export async function createRecurringSchedules(formData: FormData) {
         .maybeSingle();
 
       if (!data) redirect("/admin/agenda?error=instructor");
+    }
+
+    if (template.requires_resource && !row.space_id) {
+      redirect("/admin/agenda?error=space");
     }
 
     if (row.space_id) {
