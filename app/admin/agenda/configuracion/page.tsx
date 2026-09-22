@@ -162,8 +162,8 @@ export default async function AgendaConfigurationPage({
                 Requiere recurso físico
               </label>
               <small>
-                Si está activo, cada sesión inicia con 1 uso por recurso y puede ajustarse
-                después sin cambiar la actividad.
+                Si está activo, cada sesión inicia con 1 uso por recurso y puede ajustarse después
+                sin cambiar la actividad.
               </small>
               <label>
                 Color en el horario
