@@ -96,8 +96,8 @@ export default async function ResourcesConfigurationPage({
           <p className={styles.eyebrow}>CONFIGURACIÓN · {ctx.studio.name}</p>
           <h1>Recursos</h1>
           <p>
-            Define los recursos físicos de cada espacio y construye una sola geometría que
-            Studio Flow reutiliza en administración, sesiones y reservas.
+            Define los recursos físicos de cada espacio y construye una sola geometría que Studio
+            Flow reutiliza en administración, sesiones y reservas.
           </p>
         </div>
 
@@ -280,7 +280,9 @@ export default async function ResourcesConfigurationPage({
                     <span>
                       <b>{referenceCount}</b> referencias
                     </span>
-                    <span>{space.capacity ? `Cupo físico ${space.capacity}` : "Sin cupo físico"}</span>
+                    <span>
+                      {space.capacity ? `Cupo físico ${space.capacity}` : "Sin cupo físico"}
+                    </span>
                   </div>
                 </article>
               );

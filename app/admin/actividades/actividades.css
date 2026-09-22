@@ -71,17 +71,14 @@
   padding: 14px;
   border: 1px solid #26313d;
   border-radius: 17px;
-  background:
-    radial-gradient(circle at 100% 0%, rgba(251, 3, 151, 0.07), transparent 38%),
-    #0b1118;
+  background: radial-gradient(circle at 100% 0%, rgba(251, 3, 151, 0.07), transparent 38%), #0b1118;
   box-shadow: 0 12px 30px rgba(0, 0, 0, 0.13);
 }
 
 .activities-summary-grid article:nth-child(2) {
   border-color: rgba(70, 188, 232, 0.35);
   background:
-    radial-gradient(circle at 100% 0%, rgba(70, 188, 232, 0.08), transparent 38%),
-    #0b1118;
+    radial-gradient(circle at 100% 0%, rgba(70, 188, 232, 0.08), transparent 38%), #0b1118;
 }
 
 .activities-summary-grid span {
@@ -156,8 +153,7 @@
 
 .activities-row:hover {
   background:
-    linear-gradient(90deg, rgba(251, 3, 151, 0.075), transparent 35%),
-    rgba(255, 255, 255, 0.012);
+    linear-gradient(90deg, rgba(251, 3, 151, 0.075), transparent 35%), rgba(255, 255, 255, 0.012);
 }
 
 .activities-row.is-inactive {
@@ -343,9 +339,7 @@
 
 .activities-stepper button.is-active {
   border-color: rgba(251, 3, 151, 0.42);
-  background:
-    radial-gradient(circle at 0% 50%, rgba(251, 3, 151, 0.12), transparent 62%),
-    #0b121a;
+  background: radial-gradient(circle at 0% 50%, rgba(251, 3, 151, 0.12), transparent 62%), #0b121a;
   color: #f7f8fa;
 }
 
@@ -377,8 +371,7 @@
   border: 1px solid #26313d;
   border-radius: 20px;
   background:
-    radial-gradient(circle at 100% 0%, rgba(251, 3, 151, 0.045), transparent 34%),
-    #071018;
+    radial-gradient(circle at 100% 0%, rgba(251, 3, 151, 0.045), transparent 34%), #071018;
   box-shadow: 0 16px 42px rgba(0, 0, 0, 0.16);
 }
 
@@ -689,8 +682,7 @@
   padding: 15px;
   border-color: rgba(70, 188, 232, 0.33);
   background:
-    radial-gradient(circle at 100% 0%, rgba(70, 188, 232, 0.09), transparent 42%),
-    #0a1119;
+    radial-gradient(circle at 100% 0%, rgba(70, 188, 232, 0.09), transparent 42%), #0a1119;
 }
 
 .activities-credit-card > span {

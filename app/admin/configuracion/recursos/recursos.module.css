@@ -13,9 +13,7 @@
   padding: 24px;
   border: 1px solid #1f2935;
   border-radius: 26px;
-  background:
-    radial-gradient(circle at 100% 0%, rgba(251, 3, 151, 0.07), transparent 28%),
-    #04070c;
+  background: radial-gradient(circle at 100% 0%, rgba(251, 3, 151, 0.07), transparent 28%), #04070c;
   color: #f5f7fa;
   box-shadow: 0 18px 50px rgba(0, 0, 0, 0.34);
 }
@@ -123,7 +121,7 @@
 
 .primaryButton:hover {
   transform: translateY(-1px);
-  box-shadow: 0 13px 26px rgba(251, 3, 151, 0.30);
+  box-shadow: 0 13px 26px rgba(251, 3, 151, 0.3);
 }
 
 .secondaryButton,
@@ -354,7 +352,7 @@
 .activePill {
   padding: 4px 7px;
   border-radius: 999px;
-  background: rgba(56, 217, 150, 0.10);
+  background: rgba(56, 217, 150, 0.1);
   color: #58dca1;
   font-size: 7px;
   font-weight: 850;
@@ -369,8 +367,7 @@
   border-radius: 14px;
   background:
     linear-gradient(rgba(255, 255, 255, 0.038) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.038) 1px, transparent 1px),
-    #050b11;
+    linear-gradient(90deg, rgba(255, 255, 255, 0.038) 1px, transparent 1px), #050b11;
   background-size: 26px 26px;
 }
 
@@ -418,7 +415,7 @@
 
 .previewElement[data-kind="mirror"] {
   border-color: rgba(70, 188, 232, 0.72);
-  background: rgba(70, 188, 232, 0.10);
+  background: rgba(70, 188, 232, 0.1);
   color: #73d6f7;
 }
 
@@ -501,7 +498,7 @@
 .status {
   padding: 5px 8px;
   border-radius: 999px;
-  background: rgba(56, 217, 150, 0.10);
+  background: rgba(56, 217, 150, 0.1);
   color: #58dca1;
   font-size: 8px;
   font-weight: 800;
@@ -874,7 +871,7 @@
 
 .mapElement[data-kind="window"] {
   border-color: rgba(56, 217, 150, 0.75);
-  background: rgba(56, 217, 150, 0.10);
+  background: rgba(56, 217, 150, 0.1);
   color: #63e0aa;
 }
 

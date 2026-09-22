@@ -79,7 +79,9 @@ export default async function ActivitiesPage({
         </article>
         <article>
           <span>CON RECURSO</span>
-          <strong>{(activities ?? []).filter((item) => item.active && item.requires_resource).length}</strong>
+          <strong>
+            {(activities ?? []).filter((item) => item.active && item.requires_resource).length}
+          </strong>
           <small>usan selección física</small>
         </article>
         <article>

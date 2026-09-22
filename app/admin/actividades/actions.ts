@@ -341,7 +341,11 @@ export async function saveActivity(formData: FormData) {
         .select("id");
 
       if (scheduleError || !insertedSchedules) {
-        await supabase.from("class_templates").delete().eq("id", activityId).eq("studio_id", studio.id);
+        await supabase
+          .from("class_templates")
+          .delete()
+          .eq("id", activityId)
+          .eq("studio_id", studio.id);
         throw scheduleError ?? new Error("schedule_insert_failed");
       }
 

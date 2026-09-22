@@ -4,22 +4,13 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 describe("ACTIVIDADES-01 restored module", () => {
-  const listPage = readFileSync(
-    join(process.cwd(), "app/admin/actividades/page.tsx"),
-    "utf8",
-  );
-  const newPage = readFileSync(
-    join(process.cwd(), "app/admin/actividades/nueva/page.tsx"),
-    "utf8",
-  );
+  const listPage = readFileSync(join(process.cwd(), "app/admin/actividades/page.tsx"), "utf8");
+  const newPage = readFileSync(join(process.cwd(), "app/admin/actividades/nueva/page.tsx"), "utf8");
   const wizard = readFileSync(
     join(process.cwd(), "app/admin/actividades/ActivityWizard.tsx"),
     "utf8",
   );
-  const actions = readFileSync(
-    join(process.cwd(), "app/admin/actividades/actions.ts"),
-    "utf8",
-  );
+  const actions = readFileSync(join(process.cwd(), "app/admin/actividades/actions.ts"), "utf8");
   const layout = readFileSync(join(process.cwd(), "app/admin/layout.tsx"), "utf8");
   const more = readFileSync(join(process.cwd(), "app/admin/mas/page.tsx"), "utf8");
   const agenda = readFileSync(join(process.cwd(), "app/admin/agenda/page.tsx"), "utf8");
@@ -27,10 +18,7 @@ describe("ACTIVIDADES-01 restored module", () => {
     join(process.cwd(), "app/admin/agenda/configuracion/page.tsx"),
     "utf8",
   );
-  const styles = readFileSync(
-    join(process.cwd(), "app/admin/actividades/actividades.css"),
-    "utf8",
-  );
+  const styles = readFileSync(join(process.cwd(), "app/admin/actividades/actividades.css"), "utf8");
 
   it("restores Activities as its own admin module", () => {
     expect(layout).toContain('href: "/admin/actividades"');

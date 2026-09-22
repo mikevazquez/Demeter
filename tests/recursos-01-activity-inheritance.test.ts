@@ -21,10 +21,7 @@ describe("RECURSOS-01 activity and session inheritance", () => {
     "utf8",
   );
   const restoredActivities = readFileSync(
-    join(
-      process.cwd(),
-      "supabase/migrations/20260922134500_actividades01_restore.sql",
-    ),
+    join(process.cwd(), "supabase/migrations/20260922134500_actividades01_restore.sql"),
     "utf8",
   );
   const defaults = readFileSync(

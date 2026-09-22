@@ -30,15 +30,7 @@ export type ActivityDraft = {
   individualPurchaseNotes: string;
 };
 
-const DAYS = [
-  "Domingo",
-  "Lunes",
-  "Martes",
-  "Miércoles",
-  "Jueves",
-  "Viernes",
-  "Sábado",
-];
+const DAYS = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
 
 const STEPS = [
   { key: "general", label: "Información general" },
@@ -236,7 +228,9 @@ export function ActivityWizard({
             <span>A01</span>
             <div>
               <h2>Información general</h2>
-              <p>Define lo esencial de la actividad. Las reglas de cada sesión se ajustan después.</p>
+              <p>
+                Define lo esencial de la actividad. Las reglas de cada sesión se ajustan después.
+              </p>
             </div>
           </div>
 
@@ -373,7 +367,9 @@ export function ActivityWizard({
                         <input
                           type="time"
                           value={row.endTime}
-                          onChange={(event) => patchSchedule(index, { endTime: event.target.value })}
+                          onChange={(event) =>
+                            patchSchedule(index, { endTime: event.target.value })
+                          }
                         />
                       </label>
 
@@ -398,7 +394,9 @@ export function ActivityWizard({
                         <span>Espacio{draft.requiresResource ? " *" : ""}</span>
                         <select
                           value={row.spaceId}
-                          onChange={(event) => patchSchedule(index, { spaceId: event.target.value })}
+                          onChange={(event) =>
+                            patchSchedule(index, { spaceId: event.target.value })
+                          }
                         >
                           <option value="">Sin espacio asignado</option>
                           {spaces.map((item) => (
@@ -414,7 +412,9 @@ export function ActivityWizard({
                         <input
                           type="date"
                           value={row.startsOn}
-                          onChange={(event) => patchSchedule(index, { startsOn: event.target.value })}
+                          onChange={(event) =>
+                            patchSchedule(index, { startsOn: event.target.value })
+                          }
                         />
                       </label>
 
@@ -527,7 +527,9 @@ export function ActivityWizard({
             <span>A04</span>
             <div>
               <h2>Confirmación</h2>
-              <p>Revisa la actividad antes de {mode === "create" ? "crearla" : "guardar cambios"}.</p>
+              <p>
+                Revisa la actividad antes de {mode === "create" ? "crearla" : "guardar cambios"}.
+              </p>
             </div>
           </div>
 
