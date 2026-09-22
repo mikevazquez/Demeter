@@ -90,6 +90,7 @@ export async function createTemplate(formData: FormData) {
   const disciplineId = String(formData.get("discipline_id") ?? "");
   const durationMinutes = Number(formData.get("duration_minutes"));
   const capacity = Number(formData.get("capacity"));
+  const requiresResource = String(formData.get("requires_resource") ?? "") === "1";
   if (!name || !disciplineId || !Number.isFinite(durationMinutes) || !Number.isFinite(capacity))
     redirect("/admin/agenda?error=template");
   const { supabase, studio } = await getAdminContext(CAPABILITIES.SCHEDULE_WRITE);
@@ -99,6 +100,7 @@ export async function createTemplate(formData: FormData) {
     name,
     duration_minutes: durationMinutes,
     capacity,
+    requires_resource: requiresResource,
   });
   if (error) redirect("/admin/agenda?error=template");
   revalidatePath("/admin/agenda");
@@ -117,7 +119,7 @@ export async function createSession(formData: FormData) {
   const { supabase, studio } = await getAdminContext(CAPABILITIES.SCHEDULE_WRITE);
   const { data: template } = await supabase
     .from("class_templates")
-    .select("id, duration_minutes, capacity")
+    .select("id, duration_minutes, capacity, requires_resource")
     .eq("id", templateId)
     .eq("studio_id", studio.id)
     .single();
@@ -156,6 +158,8 @@ export async function createSession(formData: FormData) {
       ends_at: endsAt.toISOString(),
       capacity,
       notes,
+      requires_resource: template.requires_resource,
+      resource_uses_per_item: 1,
     });
   }
   const { error } = await supabase.from("class_sessions").insert(rows);
