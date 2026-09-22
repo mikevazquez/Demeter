@@ -9,6 +9,9 @@ function source(path: string) {
 
 describe("KIOSCO-01 check-in contracts", () => {
   const migration = source("supabase/migrations/20260922170000_kiosco01_checkin_core.sql");
+  const attendedFeedMigration = source(
+    "supabase/migrations/20260922183000_kiosco01_attended_active_feed.sql",
+  );
 
   it("creates one opaque token per valid reservation and never models waitlist as a QR source", () => {
     expect(migration).toContain("reservation_checkin_tokens");
@@ -72,5 +75,16 @@ describe("KIOSCO-01 check-in contracts", () => {
     expect(route).toContain('"unauthorized"');
     expect(route).toContain('"forbidden"');
     expect(route).toContain('"Cache-Control": "no-store"');
+  });
+
+  it("keeps an attended reservation and its QR accessible until the session ends", () => {
+    const detail = source("app/student/mis-clases/[reservationId]/page.tsx");
+
+    expect(attendedFeedMigration).toContain("r.status in ('reserved', 'attended')");
+    expect(attendedFeedMigration).toContain("cs.ends_at > now()");
+    expect(detail).toContain(
+      'const canShowCheckIn = item.status === "reserved" || item.status === "attended";',
+    );
+    expect(detail).toContain("student_reservation_checkin_token");
   });
 });
