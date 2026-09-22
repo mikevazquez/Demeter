@@ -18,6 +18,7 @@ describe("ADMIN-UX-01 unified Studio access", () => {
   const coachContext = source("lib/auth/coach-context.ts");
   const adminLayout = source("app/admin/layout.tsx");
   const myClasses = source("app/admin/mis-clases/page.tsx");
+  const coachToday = source("app/admin/hoy/CoachTodayView.tsx");
   const coachLayout = source("app/coach/layout.tsx");
   const coachHome = source("app/coach/page.tsx");
 
@@ -47,7 +48,7 @@ describe("ADMIN-UX-01 unified Studio access", () => {
     expect(authActions).toContain('from("studio_memberships")');
     expect(authActions).toContain("CAPABILITIES.ADMIN_PORTAL");
     expect(authActions).toContain("CAPABILITIES.INSTRUCTOR_PORTAL");
-    expect(authActions).toContain('"/admin/mis-clases"');
+    expect(authActions).toContain('return "/admin"');
     expect(authActions).not.toContain('requestedMode === "coach"');
   });
 
@@ -68,20 +69,23 @@ describe("ADMIN-UX-01 unified Studio access", () => {
     expect(coachContext).toContain('.eq("role", "instructor")');
   });
 
-  it("integrates instructor work into the Studio shell", () => {
-    expect(adminLayout).toContain('href: "/admin/mis-clases"');
-    expect(adminLayout).toContain('label: "Mis clases"');
+  it("integrates instructor work into the shared Hoy surface", () => {
+    expect(adminLayout).toContain('href: "/admin"');
+    expect(adminLayout).toContain('label: "Hoy"');
+    expect(adminLayout).toContain('href: "/admin/perfil"');
+    expect(adminLayout).toContain('label: "Perfil"');
     expect(adminLayout).toContain('activeFor: ["/coach"]');
-    expect(myClasses).toContain("Mis clases");
-    expect(myClasses).toContain("Operar clase");
+    expect(coachToday).toContain('supabase.rpc("coach_my_sessions"');
+    expect(myClasses).toContain('redirect("/admin")');
     expect(coachLayout).toContain("<AdminLayout>{children}</AdminLayout>");
-    expect(coachHome).toContain('"/admin/mis-clases"');
+    expect(coachHome).toContain('redirect("/admin")');
   });
 
   it("does not expose admin entity navigation to instructor-only access", () => {
     const instructorNav =
       adminLayout.split("const desktopNavItems = instructorOnly")[1]?.split(": [")[0] ?? "";
-    expect(instructorNav).toContain('label: "Mis clases"');
+    expect(instructorNav).toContain('label: "Hoy"');
+    expect(instructorNav).toContain('label: "Perfil"');
     expect(instructorNav).not.toContain('label: "Alumnas"');
     expect(instructorNav).not.toContain('label: "Empresa"');
   });
