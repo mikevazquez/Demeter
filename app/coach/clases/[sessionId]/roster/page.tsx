@@ -53,7 +53,13 @@ export default async function CoachRosterPage({
   const attended = roster.filter((item) => item.attendance_status === "attended").length;
   const noShow = roster.filter((item) => item.attendance_status === "no_show").length;
   const pending = roster.filter((item) => item.attendance_status === "reserved").length;
-  const editable = detail.status === "scheduled";
+  const now = Date.now();
+  const startsAt = new Date(detail.starts_at).getTime();
+  const endsAt = new Date(detail.ends_at).getTime();
+  const inProgress = detail.status === "scheduled" && now >= startsAt && now < endsAt;
+  const beforeStart = detail.status === "scheduled" && now < startsAt;
+  const awaitingAutomaticClose = detail.status === "scheduled" && now >= endsAt;
+  const editable = inProgress;
   const full = roster.length >= detail.capacity;
 
   return (
@@ -115,12 +121,9 @@ export default async function CoachRosterPage({
                 + Agregar walk-in
               </Link>
             )}
-            <Link
-              href={`/coach/clases/${sessionId}/resumen`}
-              className="rounded-xl bg-fuchsia-600 px-4 py-3 text-center text-sm font-semibold text-white transition hover:bg-fuchsia-500"
-            >
-              Revisar resumen y finalizar
-            </Link>
+            <div className="rounded-xl border border-emerald-400/20 bg-emerald-400/10 px-4 py-3 text-center text-sm font-semibold text-emerald-100">
+              Clase en curso · cierre automático
+            </div>
           </div>
         ) : detail.status === "completed" ? (
           <Link
@@ -129,6 +132,14 @@ export default async function CoachRosterPage({
           >
             Ver asistencia final
           </Link>
+        ) : beforeStart ? (
+          <div className="mt-5 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-center text-sm text-zinc-400">
+            La asistencia manual se habilita cuando inicia la clase.
+          </div>
+        ) : awaitingAutomaticClose ? (
+          <div className="mt-5 rounded-xl border border-fuchsia-400/20 bg-fuchsia-500/[0.07] px-4 py-3 text-center text-sm text-fuchsia-100">
+            Cerrando asistencia automáticamente…
+          </div>
         ) : null}
       </section>
 
