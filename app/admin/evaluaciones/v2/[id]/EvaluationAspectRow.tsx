@@ -55,7 +55,7 @@ export function EvaluationAspectRow({
   }
 
   return (
-    <div className="eval-simple-item-row">
+    <div className={`eval-simple-item-row ${weighted ? "is-weighted" : "is-simple"}`}>
       <span className="eval-simple-drag" aria-hidden="true">
         ⠿
       </span>
