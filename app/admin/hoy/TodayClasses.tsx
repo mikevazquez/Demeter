@@ -11,6 +11,8 @@ export type TodayRosterItem = {
   packageLabel: string;
   creditsLabel: string;
   expiresLabel: string;
+  studentId?: string | null;
+  evaluationInvitationId?: string | null;
   evaluationStatus?: string | null;
   attendanceSource?: string | null;
   checkedInAt?: string | null;
