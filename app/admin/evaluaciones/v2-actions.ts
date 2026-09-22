@@ -178,10 +178,10 @@ export async function openEvaluationV2EditorAction(formData: FormData) {
           label: block.label,
           description: block.description,
           weight_percent: block.weight_percent,
-          min_percent: block.min_percent,
+          min_percent: null,
           sort_order: block.sort_order,
           block_type: block.block_type ?? "direct_score",
-          progression_required: block.progression_required ?? false,
+          progression_required: false,
           evaluator_instructions: block.evaluator_instructions,
         })
         .select("id")
