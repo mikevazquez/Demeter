@@ -55,6 +55,18 @@ export default async function ConfigurationPage({
         </div>
       ) : null}
 
+      <section className="panel">
+        <p className="eyebrow">RECURSOS</p>
+        <h2>Recursos y mapa</h2>
+        <p>
+          Define qué recursos físicos existen y dónde están ubicados. Las sesiones administran
+          después su disponibilidad y capacidad.
+        </p>
+        <Link className="primary-button" href="/admin/configuracion/recursos">
+          Configurar recursos
+        </Link>
+      </section>
+
       <PortalIdentityForm
         initialName={ctx.studio.name}
         initialLogoUrl={logoUrl}

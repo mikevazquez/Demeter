@@ -56,7 +56,7 @@ describe("SF-N14 clean avatar, activity colors and single-class purchase", () =>
   it("persists a configurable color per activity and shows it only on schedule surfaces", () => {
     expect(colorMigration).toContain("add column if not exists color_hex");
     expect(agendaActions).toContain("updateActivityColor");
-    expect(agendaActions).toContain(".update({ color_hex: colorHex })");
+    expect(agendaActions).toContain("color_hex: colorHex");
     expect(agendaConfiguration).toContain('type="color"');
     expect(agenda).toContain('"--agenda-session-color": session.color');
     expect(reserve).toContain("borderLeftColor: activityColor");

@@ -32,6 +32,44 @@ export type CoachRosterItem = {
   commercial_pending: boolean;
 };
 
+export type CoachResourceChoice = {
+  resource_id: string;
+  name: string;
+  short_label: string | null;
+  type_name: string;
+  enabled: boolean;
+  capacity: number;
+  used: number;
+  available: number;
+};
+
+export type CoachMapElement = {
+  id: string;
+  resource_id: string | null;
+  element_kind: string;
+  label: string | null;
+  x: number | string;
+  y: number | string;
+  width: number | string;
+  height: number | string;
+  rotation_degrees: number | string;
+  z_index: number;
+};
+
+export type CoachResourceMap = {
+  session_id: string;
+  requires_resource: boolean;
+  default_uses: number;
+  map: {
+    space_id: string;
+    canvas_width: number;
+    canvas_height: number;
+    revision: number;
+  } | null;
+  resources: CoachResourceChoice[];
+  elements: CoachMapElement[];
+};
+
 export function localDateKey(date: Date, timeZone: string) {
   return new Intl.DateTimeFormat("en-CA", {
     timeZone,
