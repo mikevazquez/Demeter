@@ -88,7 +88,7 @@
 
 .error {
   border-color: rgba(255, 100, 116, 0.4);
-  background: #0a11194f6;
+  background: rgba(255, 100, 116, 0.08);
   color: #ff98a4;
 }
 
@@ -139,7 +139,7 @@
 
 .dangerButton {
   border: 1px solid rgba(255, 100, 116, 0.38);
-  background: #0a11196f7;
+  background: rgba(255, 100, 116, 0.08);
   color: #ff8c99;
 }
 
@@ -421,7 +421,7 @@
 
 .previewElement[data-kind="door"] {
   border-color: rgba(245, 183, 79, 0.72);
-  background: #0a11198e7;
+  background: rgba(245, 183, 79, 0.09);
   color: #f5c96f;
 }
 
@@ -697,7 +697,7 @@
 .palette button:hover,
 .unplacedButton:hover {
   border-color: #ff58b6;
-  background: #0a11192f8;
+  background: rgba(251, 3, 151, 0.08);
   color: #ff4aad;
 }
 
@@ -865,7 +865,7 @@
 
 .mapElement[data-kind="door"] {
   border-color: rgba(245, 183, 79, 0.88);
-  background: #0a11197e3;
+  background: rgba(245, 183, 79, 0.10);
   color: #ffd27d;
 }
 
@@ -998,7 +998,7 @@
 
 .inspectorActions .removeButton {
   border-color: rgba(255, 100, 116, 0.38);
-  background: #0a11195f6;
+  background: rgba(255, 100, 116, 0.07);
   color: #ff8c99;
 }
 
