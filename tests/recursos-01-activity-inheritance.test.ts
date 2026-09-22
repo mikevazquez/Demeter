@@ -24,6 +24,10 @@ describe("RECURSOS-01 activity and session inheritance", () => {
     join(process.cwd(), "supabase/migrations/20260922134500_actividades01_restore.sql"),
     "utf8",
   );
+  const atomicSave = readFileSync(
+    join(process.cwd(), "supabase/migrations/20260922155500_actividades01_atomic_save.sql"),
+    "utf8",
+  );
   const defaults = readFileSync(
     join(
       process.cwd(),
@@ -34,7 +38,7 @@ describe("RECURSOS-01 activity and session inheritance", () => {
 
   it("captures only whether an activity requires a resource", () => {
     expect(activityWizard).toContain("¿Requiere recurso?");
-    expect(activityActions).toContain("requires_resource: Boolean(payload.requiresResource)");
+    expect(activityActions).toContain("p_requires_resource: Boolean(payload.requiresResource)");
     expect(activityWizard).not.toContain("resource_uses_per_item");
     expect(activityWizard).not.toContain("capacity_override");
   });
@@ -62,6 +66,7 @@ describe("RECURSOS-01 activity and session inheritance", () => {
     expect(agendaActions).toContain("template.requires_resource && !spaceId");
     expect(activityActions).toContain("payload.requiresResource && !defaultSpaceId");
     expect(restoredActivities).toContain("resource_activity_requires_space");
+    expect(atomicSave).toContain("resource_activity_requires_space");
   });
 
   it("automatically makes active resources from the session space available", () => {
