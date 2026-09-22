@@ -24,6 +24,8 @@ export type TodayCandidate = {
 export type TodayClassItem = {
   id: string;
   time: string;
+  startsAt: string;
+  endsAt: string;
   name: string;
   instructor: string;
   space: string;
@@ -120,6 +122,8 @@ export function TodayClasses({
                 sessionId={item.id}
                 returnDate={returnDate}
                 sessionStatus={item.sessionStatus}
+                startsAt={item.startsAt}
+                endsAt={item.endsAt}
                 roster={item.roster}
                 candidates={item.candidates}
                 available={item.available}
