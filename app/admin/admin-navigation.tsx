@@ -52,6 +52,14 @@ function NavIcon({ label }: { label: string }) {
       </svg>
     );
   }
+  if (label === "Perfil") {
+    return (
+      <svg {...common}>
+        <circle cx="12" cy="8" r="3.5" />
+        <path d="M5 21c.8-4.5 3.1-6.8 7-6.8s6.2 2.3 7 6.8" />
+      </svg>
+    );
+  }
   if (label === "Alumnas") {
     return (
       <svg {...common}>
