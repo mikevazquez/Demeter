@@ -94,6 +94,7 @@ export default function ResourcePicker({
             const selectable = Boolean(resource && resource.enabled && resource.available > 0);
             const isSelected = resource?.resource_id === selectedId;
             const isFull = Boolean(resource && resource.available <= 0);
+            const isShared = Boolean(resource && resource.used > 0 && resource.available > 0);
             const label = resource
               ? resource.short_label || resource.name
               : element.label || element.element_kind;
@@ -137,9 +138,11 @@ export default function ResourcePicker({
                   "absolute grid place-items-center rounded-full border px-1 text-center text-[9px] font-semibold transition",
                   isSelected
                     ? "border-fuchsia-300 bg-fuchsia-500/30 text-white ring-2 ring-fuchsia-400/40"
-                    : selectable
-                      ? "border-fuchsia-500/50 bg-fuchsia-500/15 text-fuchsia-100 hover:bg-fuchsia-500/25"
-                      : isFull
+                    : selectable && isShared
+                      ? "border-amber-400/55 bg-amber-400/15 text-amber-100 hover:bg-amber-400/25"
+                      : selectable
+                        ? "border-fuchsia-500/50 bg-fuchsia-500/15 text-fuchsia-100 hover:bg-fuchsia-500/25"
+                        : isFull
                         ? "cursor-not-allowed border-rose-500/35 bg-rose-500/10 text-rose-300/60"
                         : "cursor-not-allowed border-white/10 bg-white/[0.025] text-zinc-600",
                 ].join(" ")}
@@ -167,6 +170,9 @@ export default function ResourcePicker({
         <div className="mt-3 flex flex-wrap gap-3 text-[10px] text-zinc-500">
           <span className="inline-flex items-center gap-1.5">
             <i className="h-2 w-2 rounded-full bg-fuchsia-400" /> Disponible
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <i className="h-2 w-2 rounded-full bg-amber-400/80" /> Compartido
           </span>
           <span className="inline-flex items-center gap-1.5">
             <i className="h-2 w-2 rounded-full bg-rose-400/60" /> Completo
