@@ -82,7 +82,6 @@ async function preserveBookedAndClearGeneratedSessions(
       .eq("studio_id", studioId);
     if (error) throw error;
   }
-
 }
 
 export async function saveActivity(formData: FormData) {
