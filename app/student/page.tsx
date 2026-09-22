@@ -55,8 +55,20 @@ type EvaluationHomeCard = {
   window_end: string | null;
 };
 
+type EvaluationHomeHistoryItem = {
+  id: string;
+  discipline_name: string;
+  evaluated_level_title: string | null;
+  resulting_level_title: string | null;
+  evaluation_date: string;
+  total_score: number | null;
+  final_outcome: "approved" | "stays" | null;
+  published_at: string | null;
+};
+
 type StudentEvaluationsHomeSnapshot = {
   disciplines?: EvaluationHomeCard[];
+  history?: EvaluationHomeHistoryItem[];
 };
 
 const levelVisuals = {
@@ -160,6 +172,7 @@ export default async function StudentHomePage({
         item.invitation_id &&
         (item.invitation_status === "offered" || item.invitation_status === "pending_schedule"),
     ) ?? null;
+  const latestPublishedEvaluation = evaluationsSnapshot?.history?.[0] ?? null;
   const levelDefinitions = (rewardLevelsResult.data ?? []) as RewardLevelDefinitionRow[];
   const fallbackLevelKey = rewardMembershipResult.data?.current_level_key ?? null;
   const fallbackLevelRow =
@@ -304,6 +317,53 @@ export default async function StudentHomePage({
         </StudentNoticeDialog>
       ) : null}
 
+      {latestPublishedEvaluation ? (
+        <section
+          data-home-block="evaluation-result"
+          className="relative overflow-hidden rounded-[26px] border border-fuchsia-500/45 bg-[radial-gradient(circle_at_88%_0%,rgba(236,72,153,0.24),transparent_36%),linear-gradient(135deg,rgba(236,72,153,0.12),rgba(124,58,237,0.07))] p-4 shadow-[0_0_30px_rgba(236,72,153,0.1)] sm:p-5"
+        >
+          <span
+            aria-hidden="true"
+            className="absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-fuchsia-500 to-violet-500"
+          />
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <span
+                className={
+                  "inline-flex rounded-full border px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.16em] " +
+                  (latestPublishedEvaluation.final_outcome === "approved"
+                    ? "border-emerald-400/35 bg-emerald-400/[0.08] text-emerald-300"
+                    : "border-amber-400/35 bg-amber-400/[0.08] text-amber-300")
+                }
+              >
+                Resultado disponible
+              </span>
+              <h2 className="mt-3 text-lg font-semibold text-white">
+                Resultado de tu evaluación
+              </h2>
+              <p className="mt-1 text-xs leading-5 text-zinc-300">
+                {latestPublishedEvaluation.discipline_name}
+                {latestPublishedEvaluation.evaluated_level_title
+                  ? ` · ${latestPublishedEvaluation.evaluated_level_title}`
+                  : ""}
+                {latestPublishedEvaluation.total_score !== null
+                  ? ` · ${Math.round(latestPublishedEvaluation.total_score)}%`
+                  : ""}
+              </p>
+            </div>
+            <span aria-hidden="true" className="text-2xl text-fuchsia-300">
+              ✦
+            </span>
+          </div>
+
+          <Link
+            href={"/student/evaluaciones/resultado/" + latestPublishedEvaluation.id}
+            className="mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-2xl bg-fuchsia-600 px-4 text-sm font-semibold text-white transition hover:bg-fuchsia-500"
+          >
+            Ver resultado de tu evaluación
+          </Link>
+        </section>
+      ) : null}
       {activeEvaluationInvitation?.invitation_id ? (
         <section
           data-home-block="evaluation-invitation"
