@@ -7,7 +7,7 @@ describe("RECURSOS-01 student resource selection", () => {
   const migration = readFileSync(
     join(
       process.cwd(),
-      "supabase/migrations/20260922073500_recursos01_student_resource_booking.sql",
+      "supabase/migrations/20260922063440_recursos01_student_resource_booking.sql",
     ),
     "utf8",
   );
@@ -72,6 +72,7 @@ describe("RECURSOS-01 student resource selection", () => {
   it("shows available, full and unavailable states on the canonical map", () => {
     expect(picker).toContain("resource.available > 0");
     expect(picker).toContain("Disponible");
+    expect(picker).toContain("Compartido");
     expect(picker).toContain("Completo");
     expect(picker).toContain("No disponible");
     expect(picker).toContain("element.rotation_degrees");
