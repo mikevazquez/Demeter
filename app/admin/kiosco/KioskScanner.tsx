@@ -114,6 +114,8 @@ export function KioskScanner({ studioName }: { studioName: string }) {
       if (busyRef.current) return;
       busyRef.current = true;
 
+      let nextFeedback: Feedback = null;
+
       try {
         const response = await fetch("/api/check-in", {
           method: "POST",
@@ -122,19 +124,19 @@ export function KioskScanner({ studioName }: { studioName: string }) {
           cache: "no-store",
         });
         const result = (await response.json()) as CheckInResponse;
-        const nextFeedback = feedbackFor(result);
+        nextFeedback = feedbackFor(result);
         setFeedback(nextFeedback);
       } catch {
-        setFeedback({
+        nextFeedback = {
           kind: "error",
           title: "No hay conexión con Studio Flow",
           detail: "No se registró ninguna asistencia. Intenta de nuevo.",
-        });
+        };
+        setFeedback(nextFeedback);
       }
 
       if (resetTimerRef.current) clearTimeout(resetTimerRef.current);
-      const feedbackDurationMs =
-        feedbackForDuration(nextFeedback?.kind);
+      const feedbackDurationMs = feedbackForDuration(nextFeedback?.kind);
 
       resetTimerRef.current = setTimeout(resetReader, feedbackDurationMs);
     },
