@@ -143,8 +143,8 @@ export default function ResourcePicker({
                       : selectable
                         ? "border-fuchsia-500/50 bg-fuchsia-500/15 text-fuchsia-100 hover:bg-fuchsia-500/25"
                         : isFull
-                        ? "cursor-not-allowed border-rose-500/35 bg-rose-500/10 text-rose-300/60"
-                        : "cursor-not-allowed border-white/10 bg-white/[0.025] text-zinc-600",
+                          ? "cursor-not-allowed border-rose-500/35 bg-rose-500/10 text-rose-300/60"
+                          : "cursor-not-allowed border-white/10 bg-white/[0.025] text-zinc-600",
                 ].join(" ")}
                 style={commonStyle}
               >
