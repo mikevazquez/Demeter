@@ -83,7 +83,7 @@ begin
     raise exception 'checkin_secret_missing';
   end if;
 
-  return 'sfci_' || extensions.encode(
+  return 'sfci_' || encode(
     extensions.hmac(
       convert_to(target_reservation_id::text || ':' || target_version::text, 'UTF8'),
       v_secret,
