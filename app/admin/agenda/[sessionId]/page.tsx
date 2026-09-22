@@ -52,7 +52,7 @@ export default async function SessionDetailPage({
   const { data: session } = await supabase
     .from("class_sessions")
     .select(
-      "id,template_id,starts_at,ends_at,capacity,status,notes,space_id,instructor_id,recurring_schedule_id,is_schedule_exception",
+      "id,template_id,starts_at,ends_at,capacity,status,notes,space_id,instructor_id,recurring_schedule_id,is_schedule_exception,requires_resource,resource_uses_per_item",
     )
     .eq("id", sessionId)
     .eq("studio_id", studio.id)
@@ -283,6 +283,16 @@ export default async function SessionDetailPage({
 
   const showManagementNotice = query.created === "edit" || query.created === "cancel-session";
 
+  const { data: sessionResourceRows } = session.requires_resource
+    ? await supabase
+        .from("session_resources")
+        .select("id,enabled")
+        .eq("studio_id", studio.id)
+        .eq("session_id", session.id)
+    : { data: [] as { id: string; enabled: boolean }[] };
+
+  const enabledSessionResources = (sessionResourceRows ?? []).filter((item) => item.enabled).length;
+
   return (
     <main className="dashboard-shell admin-class-detail admin-ux04-session-detail">
       <header className="topbar admin-class-detail-header">
@@ -356,12 +366,26 @@ export default async function SessionDetailPage({
         />
       </section>
 
+      {session.requires_resource ? (
+        <section className="panel">
+          <p className="eyebrow">RECURSOS</p>
+          <h2>Recursos de esta sesión</h2>
+          <p>
+            {enabledSessionResources} recursos habilitados · {session.resource_uses_per_item} uso
+            {session.resource_uses_per_item === 1 ? "" : "s"} por recurso
+          </p>
+          <Link className="secondary-button" href={`/admin/agenda/${sessionId}/recursos`}>
+            Configurar recursos
+          </Link>
+        </section>
+      ) : null}
+
       {canEdit && session.status !== "cancelled" ? (
         <details className="panel admin-session-settings">
           <summary>
             <span>
               <small>CONFIGURACIÓN</small>
-              <strong>Horario y recursos</strong>
+              <strong>Horario y operación</strong>
             </span>
             <b aria-hidden="true">⌄</b>
           </summary>
