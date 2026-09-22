@@ -338,9 +338,7 @@ export default async function StudentHomePage({
               >
                 Resultado disponible
               </span>
-              <h2 className="mt-3 text-lg font-semibold text-white">
-                Resultado de tu evaluación
-              </h2>
+              <h2 className="mt-3 text-lg font-semibold text-white">Resultado de tu evaluación</h2>
               <p className="mt-1 text-xs leading-5 text-zinc-300">
                 {latestPublishedEvaluation.discipline_name}
                 {latestPublishedEvaluation.evaluated_level_title

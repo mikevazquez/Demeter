@@ -120,9 +120,7 @@ export default async function StudentEvaluationResultPage({
             >
               {approved ? "✓ Evaluación completada" : "− Evaluación completada"}
             </span>
-            <h1 className="mt-3 text-3xl font-semibold tracking-tight text-white">
-              {headline}
-            </h1>
+            <h1 className="mt-3 text-3xl font-semibold tracking-tight text-white">{headline}</h1>
             <p className="mt-1 text-sm text-zinc-400">{subheadline}</p>
             <div className="mt-4 flex items-center justify-between gap-3 border-t border-white/[0.06] pt-4">
               <div>
@@ -173,9 +171,7 @@ export default async function StudentEvaluationResultPage({
           </strong>
         </div>
         <div className="p-4">
-          <p className="text-[10px] uppercase tracking-[0.14em] text-zinc-500">
-            Puntuación total
-          </p>
+          <p className="text-[10px] uppercase tracking-[0.14em] text-zinc-500">Puntuación total</p>
           <strong className="mt-1 block text-base text-white">{percent(result.total_score)}</strong>
         </div>
       </section>
@@ -261,10 +257,14 @@ export default async function StudentEvaluationResultPage({
 
       <section className="rounded-[24px] border border-fuchsia-500/25 bg-fuchsia-500/[0.03] p-4">
         <p className="text-sm font-semibold text-white">
-          {approved ? "Disciplina hoy, más movimiento mañana." : "El progreso también se mide en constancia."}
+          {approved
+            ? "Disciplina hoy, más movimiento mañana."
+            : "El progreso también se mide en constancia."}
         </p>
         <p className="mt-1 text-xs text-zinc-400">
-          {approved ? "Sigue explorando tu potencial." : "Sigue entrenando, vas construyendo tu camino."}
+          {approved
+            ? "Sigue explorando tu potencial."
+            : "Sigue entrenando, vas construyendo tu camino."}
         </p>
       </section>
 
