@@ -97,3 +97,21 @@ export async function scheduleEvaluationAction(formData: FormData) {
   revalidatePath("/student/mis-clases");
   redirect("/student/evaluaciones");
 }
+
+
+export async function markEvaluationResultViewedAction(evaluationId: string) {
+  if (!evaluationId) return { ok: false };
+
+  const { supabase } = await getStudentPortalContext();
+  const { error } = await supabase.rpc("student_mark_evaluation_result_viewed", {
+    p_evaluation_id: evaluationId,
+  });
+
+  if (error) {
+    return { ok: false };
+  }
+
+  revalidatePath("/student");
+  revalidatePath("/student/evaluaciones");
+  return { ok: true };
+}
