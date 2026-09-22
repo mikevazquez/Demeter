@@ -427,6 +427,16 @@ export function SessionOperations({
             ) : null}
           </section>
 
+          {!isCancelled ? (
+            <Link
+              href={`/admin/agenda/${sessionId}?from=${encodeURIComponent(returnDate)}`}
+              className="today-session-detail-link"
+            >
+              Ver detalle de la sesión
+              <span aria-hidden="true">›</span>
+            </Link>
+          ) : null}
+
           {canAttendance ? (
             <section className="today-attendance-footer">
               <div className="today-attendance-summary">
