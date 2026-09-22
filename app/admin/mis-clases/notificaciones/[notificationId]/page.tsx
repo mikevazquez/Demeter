@@ -20,17 +20,27 @@ export default async function CoachNotificationDetailPage({
   params: Promise<{ notificationId: string }>;
 }) {
   const { notificationId } = await params;
-  const { supabase, user, studio, membership } = await getAdminContext(
+  const { supabase, studio, membership } = await getAdminContext(
     CAPABILITIES.SCHEDULE_READ,
   );
 
   if (membership.role !== "instructor") notFound();
 
+  const { data: currentInstructor } = await supabase
+    .from("instructors")
+    .select("id")
+    .eq("studio_id", studio.id)
+    .eq("person_id", membership.person_id)
+    .eq("status", "active")
+    .maybeSingle();
+
+  if (!currentInstructor) notFound();
+
   const { data: notification } = await supabase
     .from("app_notifications")
     .select("id,title,body,notification_type,created_at,read_at,payload")
     .eq("id", notificationId)
-    .eq("recipient_user_id", user.id)
+    .eq("instructor_id", currentInstructor.id)
     .eq("recipient_kind", "instructor")
     .maybeSingle();
 
