@@ -101,8 +101,9 @@ export function SessionOperations({
   const endsAtMs = new Date(endsAt).getTime();
   const inProgress =
     sessionStatus === "scheduled" && now !== null && now >= startsAtMs && now < endsAtMs;
-  const canAddExisting = inProgress && canBook;
-  const canAddNew = inProgress && canCreateStudent;
+  const sessionOpen = sessionStatus === "scheduled";
+  const canAddExisting = sessionOpen && canBook;
+  const canAddNew = sessionOpen && canCreateStudent;
   const canAddWalkin = canAddExisting || canAddNew;
   const showNewWalkin = canAddNew && (newWalkin || !canAddExisting);
 
