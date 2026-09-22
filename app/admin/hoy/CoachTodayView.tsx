@@ -217,7 +217,9 @@ export async function CoachTodayView({
               <Link
                 key={key}
                 href={`/admin?date=${key}`}
-                className={`mock-week-day${isSelected ? " is-selected" : ""}${isToday ? " is-today" : ""}`}
+                className={`mock-week-day${isSelected ? " is-selected" : ""}${
+                  isToday ? " is-today" : ""
+                }`}
                 aria-current={isSelected ? "date" : undefined}
               >
                 <span>{shortWeekday(day)}</span>
