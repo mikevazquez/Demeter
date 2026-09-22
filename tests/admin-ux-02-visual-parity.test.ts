@@ -76,7 +76,8 @@ describe("ADMIN-UX-02 approved visual parity", () => {
     expect(classOperations).toContain("No asistió");
     expect(classOperations).not.toContain(">No show<");
     expect(classOperations).toContain("today-add-student-button");
-    expect(classOperations).toContain("Finalizar asistencia");
+    expect(classOperations).toContain("el cierre de asistencia es automático");
+    expect(classOperations).not.toContain("Finalizar asistencia");
     expect(rosterStyles).toContain("today-student-card.compact");
     expect(rosterStyles).toContain("today-student-more");
   });

@@ -135,15 +135,19 @@ describe("F9 sales contracts", () => {
   it("does not bypass required enrollment through the existing-student walk-in fallback", () => {
     const adminActions = source("app/admin/actions.ts");
     const operations = source("app/admin/hoy/SessionOperations.tsx");
+    const picker = source("app/admin/hoy/ExistingStudentAddForm.tsx");
+    const existingStudentForm = source("app/admin/hoy/ExistingStudentAddForm.tsx");
     expect(adminActions).toContain(
       'new Set(["no_active_product", "outside_product", "no_credits"])',
     );
     expect(adminActions).not.toContain(
       'new Set(["no_active_product", "outside_product", "no_credits", "enrollment_required"])',
     );
-    expect(operations).toContain("walkinFallbackDetails");
+    expect(existingStudentForm).toContain("walkinFallbackDetails");
     expect(operations).toContain('error === "enrollment_required"');
-    expect(operations).toContain("disabled={!candidate.eligible && !canFallbackToWalkin}");
+    expect(existingStudentForm).toContain(
+      "!canPostCloseAdd && !candidate.eligible && !canFallbackToWalkin",
+    );
   });
 
   it("exposes enrollment as an administrative product without class-access fields", () => {

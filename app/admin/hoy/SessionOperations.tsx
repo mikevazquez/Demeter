@@ -3,13 +3,12 @@
 import { useEffect, useState } from "react";
 
 import {
-  bookStudentFromToday,
   cancelReservationFromToday,
   createWalkinFromToday,
-  finalizeAttendanceFromToday,
   setAttendanceFromToday,
 } from "../actions";
 import { startScheduledEvaluationAction } from "../alumnas/[studentId]/evaluation-actions";
+import { ExistingStudentAddForm } from "./ExistingStudentAddForm";
 
 type RosterItem = {
   id: string;
@@ -21,6 +20,9 @@ type RosterItem = {
   studentId?: string | null;
   evaluationInvitationId?: string | null;
   evaluationStatus?: string | null;
+  attendanceSource?: string | null;
+  checkedInAt?: string | null;
+  attendanceProvenance?: string | null;
 };
 
 type Candidate = {
@@ -34,18 +36,19 @@ type SessionOperationsProps = {
   sessionId: string;
   returnDate: string;
   sessionStatus: string;
+  startsAt: string;
+  endsAt: string;
   roster: RosterItem[];
   candidates: Candidate[];
   available: number;
   canAttendance: boolean;
   canBook: boolean;
   canCreateStudent: boolean;
+  canCorrectCompleted?: boolean;
   returnTo?: string;
   initiallyOpen?: boolean;
   showToggle?: boolean;
 };
-
-const walkinFallbackDetails = new Set(["sin paquete activo", "fuera de paquete", "sin créditos"]);
 
 function initials(name: string) {
   return name
@@ -66,12 +69,15 @@ export function SessionOperations({
   sessionId,
   returnDate,
   sessionStatus,
+  startsAt,
+  endsAt,
   roster,
   candidates,
   available,
   canAttendance,
   canBook,
   canCreateStudent,
+  canCorrectCompleted = true,
   returnTo = "",
   initiallyOpen = false,
   showToggle = true,
@@ -83,15 +89,30 @@ export function SessionOperations({
     kind: "success" | "error";
     message: string;
   } | null>(null);
+  const [now, setNow] = useState<number | null>(null);
 
   const isCompleted = sessionStatus === "completed";
-  const canAddExisting = !isCompleted && canBook;
-  const canAddNew = !isCompleted && canCreateStudent;
-  const canAddWalkin = canAddExisting || canAddNew;
-  const showNewWalkin = canAddNew && (newWalkin || !canAddExisting);
+  const isCancelled = sessionStatus === "cancelled";
   const attendanceCount = roster.filter((item) => item.status === "attended").length;
   const noShowCount = roster.filter((item) => item.status === "no_show").length;
   const pendingCount = roster.filter((item) => item.status === "reserved").length;
+  const startsAtMs = new Date(startsAt).getTime();
+  const endsAtMs = new Date(endsAt).getTime();
+  const inProgress =
+    sessionStatus === "scheduled" && now !== null && now >= startsAtMs && now < endsAtMs;
+  const sessionOpen = sessionStatus === "scheduled";
+  const canPostCloseAdd = isCompleted && canCorrectCompleted && canAttendance;
+  const canAddExisting = (sessionOpen && canBook) || canPostCloseAdd;
+  const canAddNew = sessionOpen && canCreateStudent;
+  const canAddWalkin = canAddExisting || canAddNew;
+  const showNewWalkin = canAddNew && (newWalkin || !canAddExisting);
+
+  useEffect(() => {
+    const updateNow = () => setNow(Date.now());
+    updateNow();
+    const interval = window.setInterval(updateNow, 30_000);
+    return () => window.clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     const matchesSessionHash = window.location.hash === `#session-${sessionId}`;
@@ -114,13 +135,15 @@ export function SessionOperations({
                 ? "Asistencia finalizada correctamente."
                 : created === "attendance-corrected"
                   ? "Corrección registrada correctamente."
-                  : created === "walkin"
-                    ? "Walk-in registrada y agregada a la clase."
-                    : created === "walkin-existing"
-                      ? "Alumna agregada a la clase."
-                      : created === "cancel"
-                        ? "Reserva cancelada correctamente."
-                        : "Reserva creada correctamente.",
+                  : created === "post-close-attendee"
+                    ? "Asistencia agregada después del cierre."
+                    : created === "walkin"
+                      ? "Walk-in registrada y agregada a la clase."
+                      : created === "walkin-existing"
+                        ? "Alumna agregada a la clase."
+                        : created === "cancel"
+                          ? "Reserva cancelada correctamente."
+                          : "Reserva creada correctamente.",
           });
         }
       } else if (error) {
@@ -129,13 +152,15 @@ export function SessionOperations({
           message:
             error === "correction_reason_required"
               ? "La corrección requiere un motivo."
-              : error === "phone_exists"
-                ? "Ese teléfono ya pertenece a una alumna. Agrégala como alumna existente."
-                : error === "session_full"
-                  ? "La clase ya está llena."
-                  : error === "enrollment_required"
-                    ? "La alumna necesita una inscripción vigente para reservar esta clase."
-                    : "No se pudo completar la operación.",
+              : error === "attendance_not_persisted"
+                ? "La corrección no se guardó. Intenta nuevamente."
+                : error === "phone_exists"
+                  ? "Ese teléfono ya pertenece a una alumna. Agrégala como alumna existente."
+                  : error === "session_full"
+                    ? "La clase ya está llena."
+                    : error === "enrollment_required"
+                      ? "La alumna necesita una inscripción vigente para reservar esta clase."
+                      : "No se pudo completar la operación.",
         });
       }
     });
@@ -194,7 +219,10 @@ export function SessionOperations({
               <div className="today-student-list compact">
                 {roster.map((item) => {
                   const canCorrect =
-                    isCompleted && canAttendance && ["attended", "no_show"].includes(item.status);
+                    isCompleted &&
+                    canCorrectCompleted &&
+                    canAttendance &&
+                    ["attended", "no_show"].includes(item.status);
                   const correctionTarget = item.status === "attended" ? "no_show" : "attended";
                   const isInvitation = item.packageLabel === "Invitación";
 
@@ -223,6 +251,24 @@ export function SessionOperations({
                             ? item.creditsLabel
                             : `${item.packageLabel} · ${item.creditsLabel}`}
                         </span>
+                        {item.status === "attended" ? (
+                          <>
+                            <span className="today-attendance-origin">
+                              {item.attendanceSource === "KIOSK" ? "Check-in" : "Manual"}
+                              {item.checkedInAt
+                                ? ` · ${new Intl.DateTimeFormat("es-MX", {
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  }).format(new Date(item.checkedInAt))}`
+                                : ""}
+                            </span>
+                            {item.attendanceProvenance ? (
+                              <span className="today-attendance-origin">
+                                {item.attendanceProvenance}
+                              </span>
+                            ) : null}
+                          </>
+                        ) : null}
                         {item.evaluationStatus === "scheduled" &&
                         item.evaluationInvitationId &&
                         item.studentId ? (
@@ -241,7 +287,7 @@ export function SessionOperations({
                         ) : null}
                       </div>
 
-                      {!isCompleted &&
+                      {inProgress &&
                       canAttendance &&
                       ["reserved", "attended", "no_show"].includes(item.status) ? (
                         <div className="today-attendance-preview">
@@ -292,7 +338,7 @@ export function SessionOperations({
                         </span>
                       )}
 
-                      {!isCompleted && canBook && item.status === "reserved" ? (
+                      {!isCompleted && !isCancelled && canBook && item.status === "reserved" ? (
                         <details className="today-student-more">
                           <summary aria-label={`Más acciones para ${item.studentName}`}>⋮</summary>
                           <div>
@@ -369,36 +415,13 @@ export function SessionOperations({
                     </button>
                   </form>
                 ) : canAddExisting ? (
-                  <form action={bookStudentFromToday} className="today-add-form is-existing">
-                    <input type="hidden" name="session_id" value={sessionId} />
-                    <input type="hidden" name="return_date" value={returnDate} />
-                    {returnTo ? <input type="hidden" name="return_to" value={returnTo} /> : null}
-                    <select name="student_id" defaultValue="" required>
-                      <option value="" disabled>
-                        Selecciona una alumna
-                      </option>
-                      {candidates.map((candidate) => {
-                        const canFallbackToWalkin = walkinFallbackDetails.has(candidate.detail);
-                        return (
-                          <option
-                            key={candidate.id}
-                            value={candidate.id}
-                            disabled={!candidate.eligible && !canFallbackToWalkin}
-                          >
-                            {candidate.fullName} · {candidate.detail}
-                            {candidate.eligible
-                              ? ""
-                              : canFallbackToWalkin
-                                ? " · walk-in / venta pendiente"
-                                : " · bloqueada"}
-                          </option>
-                        );
-                      })}
-                    </select>
-                    <button className="primary-button" type="submit" disabled={!candidates.length}>
-                      Agregar
-                    </button>
-                  </form>
+                  <ExistingStudentAddForm
+                    sessionId={sessionId}
+                    returnDate={returnDate}
+                    returnTo={returnTo}
+                    candidates={candidates}
+                    canPostCloseAdd={canPostCloseAdd}
+                  />
                 ) : null}
               </div>
             ) : null}
@@ -412,17 +435,20 @@ export function SessionOperations({
                 <span>{pendingCount} pendientes</span>
               </div>
 
-              {!isCompleted ? (
-                <form action={finalizeAttendanceFromToday}>
-                  <input type="hidden" name="session_id" value={sessionId} />
-                  <input type="hidden" name="return_date" value={returnDate} />
-                  {returnTo ? <input type="hidden" name="return_to" value={returnTo} /> : null}
-                  <button className="today-finalize-button" type="submit">
-                    Finalizar asistencia
-                  </button>
-                </form>
+              {isCompleted ? (
+                <p>
+                  {canCorrectCompleted
+                    ? "Asistencia finalizada. Las correcciones requieren motivo."
+                    : "Clase finalizada · asistencia en modo solo lectura."}
+                </p>
+              ) : isCancelled ? (
+                <p>Clase cancelada · sin acciones operativas.</p>
+              ) : inProgress ? (
+                <p>Clase en curso · el cierre de asistencia es automático.</p>
+              ) : now !== null && now < startsAtMs ? (
+                <p>La asistencia manual se habilita cuando inicia la clase.</p>
               ) : (
-                <p>Asistencia finalizada. Las correcciones requieren motivo.</p>
+                <p>Cerrando asistencia automáticamente…</p>
               )}
             </section>
           ) : null}
