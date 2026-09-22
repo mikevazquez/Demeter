@@ -71,7 +71,6 @@ export async function saveSessionResourcesAction(formData: FormData) {
   redirect(`/admin/agenda/${sessionId}/recursos?saved=1`);
 }
 
-
 export async function reassignReservationResourceAction(formData: FormData) {
   const sessionId = String(formData.get("session_id") ?? "").trim();
   const assignmentId = String(formData.get("assignment_id") ?? "").trim();
