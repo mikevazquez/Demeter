@@ -140,6 +140,22 @@ export default async function SessionDetailPage({
     .format(new Date(session.starts_at))
     .replace(" ", "T");
 
+  const reservationIds = (reservations ?? []).map((reservation) => reservation.id);
+  const { data: evaluationInvitations } = reservationIds.length
+    ? await supabase
+        .from("evaluation_invitations")
+        .select("id,reservation_id,status")
+        .in("reservation_id", reservationIds)
+        .in("status", ["scheduled", "in_progress"])
+    : {
+        data: [] as { id: string; reservation_id: string | null; status: string }[],
+      };
+  const evaluationByReservation = new Map(
+    (evaluationInvitations ?? [])
+      .filter((item) => item.reservation_id)
+      .map((item) => [item.reservation_id!, item]),
+  );
+
   const acquisitionIds = [
     ...new Set(
       (reservations ?? []).map((reservation) => reservation.acquisition_id).filter(Boolean),
@@ -198,6 +214,7 @@ export default async function SessionDetailPage({
 
   const roster = (reservations ?? []).map((reservation) => {
     const isGuest = Boolean(reservation.guest_person_id);
+    const evaluationInvitation = evaluationByReservation.get(reservation.id);
     const acquisition = reservation.acquisition_id
       ? acquisitionMap.get(reservation.acquisition_id)
       : null;
@@ -224,6 +241,9 @@ export default async function SessionDetailPage({
             ? `${balance ?? 0} créditos disponibles`
             : "—",
       expiresLabel: isGuest ? "Misma clase" : formatExpiry(acquisition?.expires_on ?? null),
+      studentId: reservation.student_id,
+      evaluationInvitationId: evaluationInvitation?.id ?? null,
+      evaluationStatus: evaluationInvitation?.status ?? null,
     };
   });
 
@@ -281,8 +301,6 @@ export default async function SessionDetailPage({
     walkin_invalid: "Completa los datos mínimos para registrar la walk-in.",
   };
 
-  const showManagementNotice = query.created === "edit" || query.created === "cancel-session";
-
   return (
     <main className="dashboard-shell admin-class-detail admin-ux04-session-detail">
       <header className="topbar admin-class-detail-header">
@@ -305,9 +323,6 @@ export default async function SessionDetailPage({
         </Link>
       </header>
 
-      {showManagementNotice ? (
-        <div className="notice success">Cambio guardado correctamente.</div>
-      ) : null}
       {query.error ? (
         <div className="notice error">
           {errorCopy[decodeURIComponent(query.error)] ?? "No se pudo completar la operación."}

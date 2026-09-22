@@ -10,33 +10,33 @@ function source(path: string) {
 describe("F10/N14 student home visual hierarchy", () => {
   const home = source("app/student/page.tsx");
 
-  it("prioritizes an active package before the next booked class", () => {
+  it("prioritizes an active package before reserved classes", () => {
     expect(home.indexOf('data-home-block="package"')).toBeLessThan(
-      home.indexOf('data-home-block="next-class"'),
+      home.indexOf('data-home-block="reserved-classes"'),
     );
     expect(home).toContain("Mi paquete");
     expect(home).toContain("Vence");
     expect(home).toContain('role="progressbar"');
   });
 
-  it("keeps the next booked class immediately after package context", () => {
-    expect(home).toContain("Tu próxima clase");
+  it("keeps reserved classes immediately after package context", () => {
+    expect(home).toContain("Tus clases reservadas");
     expect(home).toContain("Confirmada");
     expect(home).toContain('href="/student/mis-clases"');
   });
 
   it("uses useful empty states instead of the old date carousel", () => {
     expect(home).toContain("Aún no tienes clases reservadas");
-    expect(home).toContain("No tienes un paquete activo");
+    expect(home).toContain("Aún no tienes un paquete activo");
     expect(home).not.toContain("Clases del día");
     expect(home).not.toContain("Semana anterior");
   });
 
-  it("keeps quick actions and activity after the primary context", () => {
-    expect(home).toContain("Acciones rápidas");
-    expect(home).toContain("Reservar");
-    expect(home).toContain("Mis clases");
-    expect(home).toContain("Mi paquete");
-    expect(home).toContain("Disciplina también es amor propio");
+  it("removes duplicated progress, quick actions and activity metrics from home", () => {
+    expect(home).not.toContain("Acciones rápidas");
+    expect(home).not.toContain("Disciplina también es amor propio");
+    expect(home).not.toContain('data-home-block="progress"');
+    expect(home).toContain("Mis beneficios");
+    expect(home).toContain("Niveles técnicos");
   });
 });

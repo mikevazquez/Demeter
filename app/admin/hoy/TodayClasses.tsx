@@ -11,6 +11,7 @@ export type TodayRosterItem = {
   packageLabel: string;
   creditsLabel: string;
   expiresLabel: string;
+  evaluationStatus?: string | null;
 };
 
 export type TodayCandidate = {
@@ -33,6 +34,7 @@ export type TodayClassItem = {
   roster: TodayRosterItem[];
   candidates: TodayCandidate[];
   available: number;
+  evaluationCount: number;
   returnTo: string;
 };
 
@@ -96,6 +98,14 @@ export function TodayClasses({
                 <small>
                   {item.instructor} · {item.space}
                 </small>
+                {item.evaluationCount > 0 ? (
+                  <small className="today-class-evaluation-summary">
+                    {item.evaluationCount}{" "}
+                    {item.evaluationCount === 1
+                      ? "evaluación programada"
+                      : "evaluaciones programadas"}
+                  </small>
+                ) : null}
               </span>
               <span className="today-class-capacity">
                 {item.occupied}/{item.capacity}
