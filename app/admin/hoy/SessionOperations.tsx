@@ -127,7 +127,9 @@ export function SessionOperations({
       )
       .slice(0, 8);
   }, [candidates, normalizedStudentSearch]);
-  const selectedCandidate = candidates.find((candidate) => candidate.id === selectedStudentId);
+  const selectedCandidate = candidates.find(
+    (candidate) => candidate.id === selectedStudentId,
+  );
 
   useEffect(() => {
     const updateNow = () => setNow(Date.now());
