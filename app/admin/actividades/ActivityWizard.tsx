@@ -55,11 +55,13 @@ export function ActivityWizard({
   spaces,
   initial,
   mode,
+  saveError = false,
 }: {
   instructors: Option[];
   spaces: Option[];
   initial?: ActivityDraft;
   mode: "create" | "edit";
+  saveError?: boolean;
 }) {
   const [step, setStep] = useState(0);
   const [message, setMessage] = useState("");
@@ -631,6 +633,9 @@ export function ActivityWizard({
       ) : null}
 
       <footer className="activities-wizard-footer">
+        {saveError ? (
+          <p className="activities-save-error">No se guardó. Revisa los datos e inténtalo de nuevo.</p>
+        ) : null}
         <button
           type="button"
           className="activities-back-button"
