@@ -139,11 +139,11 @@ export function SessionOperations({
                     ? "Asistencia agregada después del cierre."
                     : created === "walkin"
                       ? "Walk-in registrada y agregada a la clase."
-                    : created === "walkin-existing"
-                      ? "Alumna agregada a la clase."
-                      : created === "cancel"
-                        ? "Reserva cancelada correctamente."
-                        : "Reserva creada correctamente.",
+                      : created === "walkin-existing"
+                        ? "Alumna agregada a la clase."
+                        : created === "cancel"
+                          ? "Reserva cancelada correctamente."
+                          : "Reserva creada correctamente.",
           });
         }
       } else if (error) {

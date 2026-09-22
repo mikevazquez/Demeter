@@ -77,8 +77,7 @@ export function ExistingStudentAddForm({
             {matches.length ? (
               matches.map((candidate) => {
                 const canFallbackToWalkin = walkinFallbackDetails.has(candidate.detail);
-                const disabled =
-                  !canPostCloseAdd && !candidate.eligible && !canFallbackToWalkin;
+                const disabled = !canPostCloseAdd && !candidate.eligible && !canFallbackToWalkin;
                 const selected = candidate.id === selectedStudentId;
 
                 return (
