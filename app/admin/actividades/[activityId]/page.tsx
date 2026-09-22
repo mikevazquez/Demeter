@@ -27,7 +27,7 @@ export default async function ActivityDetailPage({
     supabase
       .from("class_templates")
       .select(
-        "id,name,description,duration_minutes,capacity,drop_in_price_minor,individual_purchase_notes,requires_resource,color_hex,active",
+        "id,name,description,duration_minutes,capacity,drop_in_price_minor,individual_purchase_notes,requires_resource,color_hex,active,minimum_reservations_enabled,minimum_reservations,minimum_review_minutes_before,allow_minimum_reservation_override",
       )
       .eq("id", activityId)
       .eq("studio_id", studio.id)
@@ -90,6 +90,15 @@ export default async function ActivityDetailPage({
         ? String(activity.drop_in_price_minor / 100).replace(/\.0+$/, "")
         : "",
     individualPurchaseNotes: activity.individual_purchase_notes ?? "",
+    minimumReservationsEnabled: activity.minimum_reservations_enabled ?? false,
+    minimumReservations: activity.minimum_reservations ?? 2,
+    minimumReviewUnit:
+      (activity.minimum_review_minutes_before ?? 120) % 60 === 0 ? "hours" : "minutes",
+    minimumReviewValue:
+      (activity.minimum_review_minutes_before ?? 120) % 60 === 0
+        ? (activity.minimum_review_minutes_before ?? 120) / 60
+        : (activity.minimum_review_minutes_before ?? 120),
+    allowMinimumReservationOverride: activity.allow_minimum_reservation_override ?? true,
   };
 
   return (
