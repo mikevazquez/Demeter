@@ -121,9 +121,7 @@ export default async function SessionResourcesPage({
     ...new Set((assignmentReservations ?? []).map((item) => item.student_id).filter(Boolean)),
   ] as string[];
   const assignmentGuestIds = [
-    ...new Set(
-      (assignmentReservations ?? []).map((item) => item.guest_person_id).filter(Boolean),
-    ),
+    ...new Set((assignmentReservations ?? []).map((item) => item.guest_person_id).filter(Boolean)),
   ] as string[];
 
   const [{ data: assignmentStudents }, { data: assignmentGuests }] = await Promise.all([
@@ -131,10 +129,7 @@ export default async function SessionResourcesPage({
       ? supabase.from("students").select("id,full_name").in("id", assignmentStudentIds)
       : Promise.resolve({ data: [] as { id: string; full_name: string }[] }),
     assignmentGuestIds.length
-      ? supabase
-          .from("persons")
-          .select("id,first_name,last_name")
-          .in("id", assignmentGuestIds)
+      ? supabase.from("persons").select("id,first_name,last_name").in("id", assignmentGuestIds)
       : Promise.resolve({
           data: [] as { id: string; first_name: string | null; last_name: string | null }[],
         }),
@@ -375,7 +370,10 @@ export default async function SessionResourcesPage({
                   <div className={styles.assignmentCopy}>
                     <strong>{studentName}</strong>
                     <small>
-                      Actual: {currentResource?.name ?? resourceMap.get(assignment.resource_id) ?? "Recurso"}
+                      Actual:{" "}
+                      {currentResource?.name ??
+                        resourceMap.get(assignment.resource_id) ??
+                        "Recurso"}
                     </small>
                   </div>
 
@@ -410,9 +408,7 @@ export default async function SessionResourcesPage({
                           );
                         })}
                     </select>
-                    {canEdit ? (
-                      <button type="submit">Reasignar</button>
-                    ) : null}
+                    {canEdit ? <button type="submit">Reasignar</button> : null}
                   </div>
                 </form>
               );
