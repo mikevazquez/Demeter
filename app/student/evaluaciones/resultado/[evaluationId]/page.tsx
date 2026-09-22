@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 
 import { formatDate, getStudentPortalContext } from "@/lib/student/portal";
 
+import { MarkEvaluationResultViewed } from "./MarkEvaluationResultViewed";
+
 type CriterionResult = {
   label: string;
   weight_percent: number;
@@ -81,6 +83,7 @@ export default async function StudentEvaluationResultPage({
 
   return (
     <main className="mx-auto max-w-3xl space-y-3 pb-4">
+      <MarkEvaluationResultViewed evaluationId={result.id} />
       <div className="flex items-center justify-between gap-3">
         <Link
           href="/student/evaluaciones"
