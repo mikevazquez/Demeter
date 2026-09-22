@@ -48,7 +48,9 @@ describe("KIOSCO-01 automatic session lifecycle", () => {
   });
 
   it("uses the same session-first locking order as QR check-in", () => {
-    expect(closeMigration).toContain("from public.class_sessions\n  where id = target_session_id\n  for update;");
+    expect(closeMigration).toContain(
+      "from public.class_sessions\n  where id = target_session_id\n  for update;",
+    );
   });
 
   it("revokes reservation QR credentials when a session is cancelled or completed", () => {
