@@ -159,8 +159,7 @@ export async function saveActivity(formData: FormData) {
   const normalizedResourceSettings = resourceSettings.map((setting) => ({
     resource_id: String(setting.resourceId),
     enabled: Boolean(setting.enabled),
-    capacity_override:
-      setting.capacityOverride == null ? null : Number(setting.capacityOverride),
+    capacity_override: setting.capacityOverride == null ? null : Number(setting.capacityOverride),
   }));
 
   const { data, error } = await supabase.rpc("admin_save_activity_v2", {
