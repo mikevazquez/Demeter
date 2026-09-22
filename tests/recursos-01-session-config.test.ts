@@ -17,10 +17,7 @@ describe("RECURSOS-01 per-session configuration", () => {
     "utf8",
   );
   const migration = readFileSync(
-    join(
-      process.cwd(),
-      "supabase/migrations/20260922223000_activity_resource_defaults.sql",
-    ),
+    join(process.cwd(), "supabase/migrations/20260922223000_activity_resource_defaults.sql"),
     "utf8",
   );
 
