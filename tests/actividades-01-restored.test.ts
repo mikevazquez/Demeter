@@ -78,6 +78,26 @@ describe("ACTIVIDADES-01 restored module", () => {
     expect(wizard).toContain("Se creará como activa");
   });
 
+  it("does not swallow successful redirects or show prohibited banners", () => {
+    const detailPage = readFileSync(
+      join(process.cwd(), "app/admin/actividades/[activityId]/page.tsx"),
+      "utf8",
+    );
+    const newActivityPage = readFileSync(
+      join(process.cwd(), "app/admin/actividades/nueva/page.tsx"),
+      "utf8",
+    );
+
+    expect(actions).toContain("redirect(`/admin/actividades/${savedActivityId}`)");
+    expect(actions).not.toContain("?saved=1");
+    expect(listPage).not.toContain("notice success");
+    expect(listPage).not.toContain("notice error");
+    expect(detailPage).not.toContain("notice success");
+    expect(detailPage).not.toContain("notice error");
+    expect(newActivityPage).not.toContain("notice error");
+    expect(wizard).toContain("activities-save-error");
+  });
+
   it("uses the approved Studio Flow dark palette", () => {
     expect(styles).toContain("#071018");
     expect(styles).toContain("#0b1118");
