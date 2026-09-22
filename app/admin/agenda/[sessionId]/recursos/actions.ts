@@ -101,3 +101,31 @@ export async function reassignReservationResourceAction(formData: FormData) {
   revalidatePath("/coach");
   redirect(`/admin/agenda/${sessionId}/recursos?reassigned=1`);
 }
+
+
+export async function restoreSessionResourceDefaultsAction(formData: FormData) {
+  const sessionId = String(formData.get("session_id") ?? "").trim();
+
+  if (!sessionId) {
+    redirect("/admin/agenda");
+  }
+
+  const { supabase } = await getAdminContext(CAPABILITIES.SCHEDULE_WRITE);
+  const { error } = await supabase.rpc("admin_restore_session_resource_defaults", {
+    p_session_id: sessionId,
+  });
+
+  if (error) {
+    const code = error.message.includes("resource_defaults_conflict")
+      ? "restore_conflict"
+      : error.message.includes("resource_session_requires_space")
+        ? "restore_space"
+        : "restore";
+    redirect(`/admin/agenda/${sessionId}/recursos?error=${code}`);
+  }
+
+  revalidatePath(`/admin/agenda/${sessionId}/recursos`);
+  revalidatePath(`/admin/agenda/${sessionId}`);
+  revalidatePath("/student/reservar");
+  redirect(`/admin/agenda/${sessionId}/recursos?restored=1`);
+}
