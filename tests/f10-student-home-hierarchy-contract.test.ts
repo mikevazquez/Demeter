@@ -27,7 +27,7 @@ describe("F10/N14 student home visual hierarchy", () => {
 
   it("uses useful empty states instead of the old date carousel", () => {
     expect(home).toContain("Aún no tienes clases reservadas");
-    expect(home).toContain("No tienes un paquete activo");
+    expect(home).toContain("Aún no tienes un paquete activo");
     expect(home).not.toContain("Clases del día");
     expect(home).not.toContain("Semana anterior");
   });
