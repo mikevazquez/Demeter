@@ -369,4 +369,6 @@ export async function saveActivity(formData: FormData) {
         : "/admin/actividades/nueva?error=save",
     );
   }
+
+  redirect(`/admin/actividades/${savedActivityId}`);
 }
