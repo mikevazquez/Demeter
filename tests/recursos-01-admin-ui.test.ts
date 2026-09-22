@@ -21,6 +21,10 @@ describe("RECURSOS-01 admin configuration", () => {
     "utf8",
   );
   const settings = readFileSync(join(process.cwd(), "app/admin/configuracion/page.tsx"), "utf8");
+  const recursosStyles = readFileSync(
+    join(process.cwd(), "app/admin/configuracion/recursos/recursos.module.css"),
+    "utf8",
+  );
   const mapRpc = readFileSync(
     join(process.cwd(), "supabase/migrations/20260922061500_recursos01_admin_map_rpc.sql"),
     "utf8",
@@ -84,6 +88,15 @@ describe("RECURSOS-01 admin configuration", () => {
     expect(mapRpc).toContain("jsonb_array_elements(p_elements)");
     expect(mapRpc).toContain("private.has_capability(v_space.studio_id, 'settings.write')");
     expect(wallSupport).toContain("'resource', 'wall', 'door', 'mirror', 'window', 'label'");
+  });
+
+  it("uses the approved dark Studio Flow palette", () => {
+    expect(recursosStyles).toContain("#04070c");
+    expect(recursosStyles).toContain("#071018");
+    expect(recursosStyles).toContain("#fb0397");
+    expect(recursosStyles).toContain("#46bce8");
+    expect(recursosStyles).not.toContain("neutral light surfaces");
+    expect(recursosStyles).not.toContain("#f6f7f9");
   });
 
   it("matches the approved R01/R02 visual composition", () => {
