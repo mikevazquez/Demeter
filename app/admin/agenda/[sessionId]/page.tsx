@@ -341,6 +341,23 @@ export default async function SessionDetailPage({
 
   const enabledSessionResources = (sessionResourceRows ?? []).filter((item) => item.enabled).length;
 
+  const { data: cancellationNotifications } =
+    session.minimum_review_status === "cancelled"
+      ? await supabase
+          .from("app_notifications")
+          .select("recipient_kind,created_at")
+          .eq("studio_id", studio.id)
+          .eq("session_id", session.id)
+          .eq("notification_type", "session_minimum_cancelled")
+      : { data: [] as { recipient_kind: string; created_at: string }[] };
+
+  const studentNotificationCount = (cancellationNotifications ?? []).filter(
+    (item) => item.recipient_kind === "student",
+  ).length;
+  const coachNotificationCount = (cancellationNotifications ?? []).filter(
+    (item) => item.recipient_kind === "instructor",
+  ).length;
+
   return (
     <main className="dashboard-shell admin-class-detail admin-ux04-session-detail">
       <header className="topbar admin-class-detail-header">
@@ -445,6 +462,16 @@ export default async function SessionDetailPage({
               <p>
                 Reservas canceladas: {session.minimum_cancelled_reservations ?? 0} · créditos
                 devueltos: {session.minimum_credits_returned ?? 0}.
+              </p>
+              <p>
+                Avisos en app: {studentNotificationCount} alumna
+                {studentNotificationCount === 1 ? "" : "s"} ·{" "}
+                {coachNotificationCount > 0
+                  ? "coach notificado"
+                  : session.instructor_id
+                    ? "aviso al coach pendiente"
+                    : "sin coach asignado"}
+                .
               </p>
             </div>
           ) : null}
