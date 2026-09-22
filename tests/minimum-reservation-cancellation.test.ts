@@ -30,7 +30,7 @@ describe("CANCELACION-MIN-01 automatic minimum reservation cancellation", () => 
     expect(wizard).toContain("Cancelación automática por mínimo de reservas");
     expect(wizard).toContain("Mínimo de reservas");
     expect(wizard).toContain("Revisar antes de la clase");
-    expect(wizard).toContain("Permitir excepción por sesión");
+    expect(wizard).not.toContain("Permitir excepción por sesión");
     expect(activityActions).toContain("p_minimum_reservations_enabled");
     expect(activityActions).toContain("p_minimum_review_minutes_before");
   });
