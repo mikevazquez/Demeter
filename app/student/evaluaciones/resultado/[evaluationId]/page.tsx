@@ -68,7 +68,11 @@ export default async function StudentEvaluationResultPage({
     : placement
       ? "Nivel actual"
       : "Nivel actual";
-  const headline = approved ? "¡Evaluación aprobada!" : "Continúas en tu nivel";
+  const headline = approved
+    ? "¡Evaluación aprobada!"
+    : placement
+      ? "Nivel todavía no confirmado"
+      : "Continúas en tu nivel";
   const subheadline = approved
     ? "Tu esfuerzo dio resultados."
     : placement
