@@ -97,11 +97,31 @@ export async function updateSession(formData: FormData) {
   const { supabase, studio } = await getAdminContext(CAPABILITIES.SCHEDULE_WRITE);
   const { data: session } = await supabase
     .from("class_sessions")
-    .select("id,template_id,starts_at,recurring_schedule_id,status")
+    .select("id,template_id,starts_at,recurring_schedule_id,status,space_id,requires_resource")
     .eq("id", sessionId)
     .eq("studio_id", studio.id)
     .single();
   if (!session || session.status !== "scheduled") redirect(returnUrl);
+
+  if (
+    session.requires_resource &&
+    session.space_id &&
+    spaceId !== session.space_id
+  ) {
+    const { data: activeResourceAssignment } = await supabase
+      .from("reservation_resource_assignments")
+      .select("id")
+      .eq("studio_id", studio.id)
+      .eq("session_id", session.id)
+      .is("released_at", null)
+      .limit(1)
+      .maybeSingle();
+
+    if (activeResourceAssignment) {
+      redirect(withQuery(returnUrl, "error", "resource_space_assigned"));
+    }
+  }
+
   const { data: template } = await supabase
     .from("class_templates")
     .select("duration_minutes")
