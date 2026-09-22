@@ -47,15 +47,19 @@ describe("ACTIVIDADES-01 restored module", () => {
     expect(actions).toContain("discipline_id: null");
   });
 
-  it("supports grouped schedule slots with coach, space and validity", () => {
-    expect(wizard).toContain("+ Agregar horario");
+  it("keeps schedule rows compact and applies operation defaults to generated sessions", () => {
+    expect(wizard).toContain("+ Agregar hora");
     expect(wizard).toContain("+ Agregar día");
-    expect(wizard).toContain("<span>Inicio</span>");
-    expect(wizard).toContain("<span>Fin</span>");
-    expect(wizard).toContain("<span>Coach</span>");
+    expect(wizard).toContain("<span>Hora</span>");
+    expect(wizard).toContain("Coach predeterminado");
+    expect(wizard).toContain("Espacio");
     expect(wizard).toContain("Comienza");
     expect(wizard).toContain("Termina");
-    expect(actions).toContain("duration_minutes: scheduleDuration");
+    expect(wizard).not.toContain("<span>Inicio</span>");
+    expect(wizard).not.toContain("<span>Fin</span>");
+    expect(actions).toContain("instructor_id: defaultInstructorId");
+    expect(actions).toContain("space_id: defaultSpaceId");
+    expect(actions).toContain("duration_minutes: durationMinutes");
   });
 
   it("keeps credits fixed and individual purchase configurable", () => {
