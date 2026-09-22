@@ -2268,6 +2268,22 @@
   gap: 8px;
 }
 
+.eval-simple-item-row.is-simple {
+  grid-template-columns: 20px minmax(0, 1fr) 30px;
+}
+
+.eval-simple-item-row > form {
+  display: grid;
+  place-items: center;
+}
+
+.eval-simple-inline-save {
+  grid-column: 2 / -1;
+  min-height: 10px;
+  color: #738091;
+  font-size: 7px;
+}
+
 .eval-simple-item-name {
   width: 100%;
   min-width: 0;
@@ -2506,7 +2522,7 @@
     gap: 6px;
   }
 
-  .eval-simple-item-row:has(input[name="item_weight_percent"][type="hidden"]) {
+  .eval-simple-item-row.is-simple {
     grid-template-columns: 18px minmax(0, 1fr) 28px;
   }
 
