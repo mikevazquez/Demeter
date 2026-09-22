@@ -634,7 +634,9 @@ export function ActivityWizard({
 
       <footer className="activities-wizard-footer">
         {saveError ? (
-          <p className="activities-save-error">No se guardó. Revisa los datos e inténtalo de nuevo.</p>
+          <p className="activities-save-error">
+            No se guardó. Revisa los datos e inténtalo de nuevo.
+          </p>
         ) : null}
         <button
           type="button"
