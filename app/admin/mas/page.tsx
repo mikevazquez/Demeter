@@ -13,6 +13,12 @@ type MoreItem = {
 
 const items: MoreItem[] = [
   {
+    title: "Actividades",
+    description: "Qué ofreces, horarios, recursos y forma de acceso.",
+    href: "/admin/actividades",
+    capability: CAPABILITIES.SCHEDULE_READ,
+  },
+  {
     title: "Productos",
     description: "Paquetes, membresías, clases sueltas e inscripciones.",
     href: "/admin/productos",
