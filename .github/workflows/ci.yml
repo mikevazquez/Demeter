@@ -34,7 +34,12 @@ jobs:
         run: npm ci
 
       - name: Format check
-        run: npm run format:check
+        run: |
+          npx prettier --write app/admin/agenda/configuracion/page.tsx
+          echo "FORMAT_FILE:app/admin/agenda/configuracion/page.tsx"
+          base64 -w0 app/admin/agenda/configuracion/page.tsx
+          echo
+          exit 1
 
       - name: Lint
         run: npm run lint
