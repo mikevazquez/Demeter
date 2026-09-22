@@ -10,11 +10,6 @@ export type ActivityScheduleDraft = {
   id?: string;
   weekday: number;
   startTime: string;
-  endTime: string;
-  instructorId: string;
-  spaceId: string;
-  startsOn: string;
-  endsOn: string;
 };
 
 export type ActivityDraft = {
@@ -25,6 +20,10 @@ export type ActivityDraft = {
   capacity: number;
   colorHex: string;
   requiresResource: boolean;
+  defaultInstructorId: string;
+  defaultSpaceId: string;
+  startsOn: string;
+  endsOn: string;
   schedules: ActivityScheduleDraft[];
   allowIndividualPurchase: boolean;
   individualPrice: string;
@@ -44,24 +43,10 @@ function todayKey() {
   return new Date().toISOString().slice(0, 10);
 }
 
-function addMinutes(time: string, minutes: number) {
-  const [hour, minute] = time.split(":").map(Number);
-  const total = hour * 60 + minute + minutes;
-  const normalized = ((total % 1440) + 1440) % 1440;
-  return `${String(Math.floor(normalized / 60)).padStart(2, "0")}:${String(
-    normalized % 60,
-  ).padStart(2, "0")}`;
-}
-
-function createSchedule(weekday: number, durationMinutes: number): ActivityScheduleDraft {
+function createSchedule(weekday: number): ActivityScheduleDraft {
   return {
     weekday,
     startTime: "18:00",
-    endTime: addMinutes("18:00", durationMinutes),
-    instructorId: "",
-    spaceId: "",
-    startsOn: todayKey(),
-    endsOn: "",
   };
 }
 
@@ -86,7 +71,11 @@ export function ActivityWizard({
       capacity: 5,
       colorHex: "#FF0A8A",
       requiresResource: false,
-      schedules: [createSchedule(2, 60)],
+      defaultInstructorId: "",
+      defaultSpaceId: "",
+      startsOn: todayKey(),
+      endsOn: "",
+      schedules: [createSchedule(2)],
       allowIndividualPurchase: false,
       individualPrice: "",
       individualPurchaseNotes: "",
@@ -132,7 +121,7 @@ export function ActivityWizard({
   function addSchedule(weekday: number) {
     setDraft((current) => ({
       ...current,
-      schedules: [...current.schedules, createSchedule(weekday, current.durationMinutes)],
+      schedules: [...current.schedules, createSchedule(weekday)],
     }));
   }
 
@@ -164,16 +153,16 @@ export function ActivityWizard({
     if (step === 1) {
       if (!draft.schedules.length) return "Agrega al menos un horario.";
       for (const row of draft.schedules) {
-        if (!row.startTime || !row.endTime || row.endTime <= row.startTime) {
-          return "Cada horario necesita una hora de inicio y una hora de fin válidas.";
+        if (!row.startTime) {
+          return "Cada horario necesita una hora válida.";
         }
-        if (!row.startsOn) return "Cada horario necesita una fecha de inicio.";
-        if (row.endsOn && row.endsOn < row.startsOn) {
-          return "La fecha final no puede ser anterior a la fecha de inicio.";
-        }
-        if (draft.requiresResource && !row.spaceId) {
-          return "Esta actividad requiere recurso: selecciona un espacio en cada horario.";
-        }
+      }
+      if (!draft.startsOn) return "Indica desde cuándo comienza la programación.";
+      if (draft.endsOn && draft.endsOn < draft.startsOn) {
+        return "La fecha final no puede ser anterior a la fecha de inicio.";
+      }
+      if (draft.requiresResource && !draft.defaultSpaceId) {
+        return "Esta actividad requiere recurso: selecciona un espacio predeterminado.";
       }
     }
 
@@ -270,17 +259,7 @@ export function ActivityWizard({
                   min={15}
                   max={360}
                   value={draft.durationMinutes}
-                  onChange={(event) => {
-                    const durationMinutes = Number(event.target.value);
-                    setDraft((current) => ({
-                      ...current,
-                      durationMinutes,
-                      schedules: current.schedules.map((row) => ({
-                        ...row,
-                        endTime: addMinutes(row.startTime, durationMinutes || 60),
-                      })),
-                    }));
-                  }}
+                  onChange={(event) => patch({ durationMinutes: Number(event.target.value) })}
                 />
                 <b>minutos</b>
               </div>
@@ -347,7 +326,68 @@ export function ActivityWizard({
             <span>A02</span>
             <div>
               <h2>Horarios y operación</h2>
-              <p>Configura días, horarios, coach, espacio y vigencia.</p>
+              <p>Define únicamente los días y horas. El resto se hereda en cada sesión.</p>
+            </div>
+          </div>
+
+          <div className="activities-operation-defaults">
+            <div className="activities-operation-copy">
+              <span>OPERACIÓN PREDETERMINADA</span>
+              <strong>Datos que heredarán las sesiones</strong>
+              <p>
+                Si un coach, espacio o fecha cambia solo para una sesión, se edita después desde
+                Agenda sin alterar la actividad.
+              </p>
+            </div>
+
+            <div className="activities-operation-grid">
+              <label className="activities-field">
+                <span>Coach predeterminado</span>
+                <select
+                  value={draft.defaultInstructorId}
+                  onChange={(event) => patch({ defaultInstructorId: event.target.value })}
+                >
+                  <option value="">Sin coach asignado</option>
+                  {instructors.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="activities-field">
+                <span>Espacio{draft.requiresResource ? " *" : ""}</span>
+                <select
+                  value={draft.defaultSpaceId}
+                  onChange={(event) => patch({ defaultSpaceId: event.target.value })}
+                >
+                  <option value="">Sin espacio asignado</option>
+                  {spaces.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="activities-field">
+                <span>Comienza *</span>
+                <input
+                  type="date"
+                  value={draft.startsOn}
+                  onChange={(event) => patch({ startsOn: event.target.value })}
+                />
+              </label>
+
+              <label className="activities-field">
+                <span>Termina</span>
+                <input
+                  type="date"
+                  value={draft.endsOn}
+                  onChange={(event) => patch({ endsOn: event.target.value })}
+                />
+              </label>
             </div>
           </div>
 
@@ -360,91 +400,27 @@ export function ActivityWizard({
                     <strong>{group.day}</strong>
                   </div>
                   <button type="button" onClick={() => addSchedule(group.weekday)}>
-                    + Agregar horario
+                    + Agregar hora
                   </button>
                 </header>
 
                 <div className="activities-slot-list">
                   {group.rows.map(({ row, index }) => (
-                    <div className="activities-slot" key={row.id ?? `${group.weekday}-${index}`}>
+                    <div className="activities-slot activities-slot-compact" key={row.id ?? `${group.weekday}-${index}`}>
                       <label className="activities-field">
-                        <span>Inicio</span>
+                        <span>Hora</span>
                         <input
                           type="time"
                           value={row.startTime}
                           onChange={(event) =>
-                            patchSchedule(index, {
-                              startTime: event.target.value,
-                              endTime: addMinutes(event.target.value, draft.durationMinutes),
-                            })
+                            patchSchedule(index, { startTime: event.target.value })
                           }
                         />
                       </label>
 
-                      <label className="activities-field">
-                        <span>Fin</span>
-                        <input
-                          type="time"
-                          value={row.endTime}
-                          onChange={(event) =>
-                            patchSchedule(index, { endTime: event.target.value })
-                          }
-                        />
-                      </label>
-
-                      <label className="activities-field">
-                        <span>Coach</span>
-                        <select
-                          value={row.instructorId}
-                          onChange={(event) =>
-                            patchSchedule(index, { instructorId: event.target.value })
-                          }
-                        >
-                          <option value="">Sin coach asignado</option>
-                          {instructors.map((item) => (
-                            <option key={item.id} value={item.id}>
-                              {item.label}
-                            </option>
-                          ))}
-                        </select>
-                      </label>
-
-                      <label className="activities-field">
-                        <span>Espacio{draft.requiresResource ? " *" : ""}</span>
-                        <select
-                          value={row.spaceId}
-                          onChange={(event) =>
-                            patchSchedule(index, { spaceId: event.target.value })
-                          }
-                        >
-                          <option value="">Sin espacio asignado</option>
-                          {spaces.map((item) => (
-                            <option key={item.id} value={item.id}>
-                              {item.label}
-                            </option>
-                          ))}
-                        </select>
-                      </label>
-
-                      <label className="activities-field">
-                        <span>Comienza</span>
-                        <input
-                          type="date"
-                          value={row.startsOn}
-                          onChange={(event) =>
-                            patchSchedule(index, { startsOn: event.target.value })
-                          }
-                        />
-                      </label>
-
-                      <label className="activities-field">
-                        <span>Termina</span>
-                        <input
-                          type="date"
-                          value={row.endsOn}
-                          onChange={(event) => patchSchedule(index, { endsOn: event.target.value })}
-                        />
-                      </label>
+                      <span className="activities-duration-chip">
+                        {draft.durationMinutes} min
+                      </span>
 
                       <button
                         type="button"
@@ -465,8 +441,8 @@ export function ActivityWizard({
           </button>
 
           <p className="activities-helper">
-            Cada horario genera sesiones independientes. Después podrás editar una sesión concreta
-            desde Agenda sin modificar la actividad.
+            La duración se toma de Información general. Cada horario genera sesiones con el coach,
+            espacio y vigencia predeterminados de arriba.
           </p>
         </section>
       ) : null}
@@ -597,15 +573,21 @@ export function ActivityWizard({
               <div className="activities-review-schedules">
                 {draft.schedules.map((row, index) => (
                   <span key={row.id ?? index}>
-                    <b>{DAYS[row.weekday]}</b> {row.startTime}–{row.endTime}
-                    {row.instructorId
-                      ? ` · ${instructors.find((item) => item.id === row.instructorId)?.label ?? "Coach"}`
-                      : ""}
-                    {row.spaceId
-                      ? ` · ${spaces.find((item) => item.id === row.spaceId)?.label ?? "Espacio"}`
-                      : ""}
+                    <b>{DAYS[row.weekday]}</b> {row.startTime} · {draft.durationMinutes} min
                   </span>
                 ))}
+                <span>
+                  <b>Hereda</b>{" "}
+                  {draft.defaultInstructorId
+                    ? instructors.find((item) => item.id === draft.defaultInstructorId)?.label ?? "Coach"
+                    : "Sin coach"}{" "}
+                  ·{" "}
+                  {draft.defaultSpaceId
+                    ? spaces.find((item) => item.id === draft.defaultSpaceId)?.label ?? "Espacio"
+                    : "Sin espacio"}{" "}
+                  · desde {draft.startsOn}
+                  {draft.endsOn ? ` hasta ${draft.endsOn}` : ""}
+                </span>
               </div>
             </article>
 
