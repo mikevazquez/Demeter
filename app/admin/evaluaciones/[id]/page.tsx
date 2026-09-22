@@ -433,23 +433,37 @@ export default async function TechnicalEvaluationDetailPage({
 
           {isV2 && evaluation.automatic_outcome !== "incomplete" ? (
             <section className="eval-panel eval-v2-outcome-card">
-              <small>Consecuencia del resultado</small>
-              <strong>
-                {evaluation.evaluation_purpose === "placement"
-                  ? evaluation.automatic_outcome === "approved"
-                    ? `Nivel confirmado: ${targetLevel}`
-                    : "Nivel todavía no confirmado"
-                  : evaluation.evaluation_purpose === "progression"
-                    ? evaluation.automatic_outcome === "approved"
-                      ? nextProgressionLevel === targetLevel
-                        ? `Nivel confirmado: ${targetLevel}`
-                        : `Nuevo nivel: ${nextProgressionLevel}`
-                      : `Mantiene su nivel actual: ${currentLevel}`
-                    : `Nivel evaluado: ${targetLevel}`}
-              </strong>
-              {step !== "published" ? (
-                <span>El cambio se aplicará al publicar resultados.</span>
-              ) : null}
+              <small>Resultado de nivel</small>
+              <div className="eval-v2-level-result">
+                <div>
+                  <span>Nivel evaluado</span>
+                  <strong>{targetLevel}</strong>
+                </div>
+                <div>
+                  <span>Nivel confirmado después de la evaluación</span>
+                  <strong>
+                    {evaluation.evaluation_purpose === "placement"
+                      ? evaluation.automatic_outcome === "approved"
+                        ? targetLevel
+                        : "Sin nivel confirmado"
+                      : evaluation.evaluation_purpose === "progression"
+                        ? evaluation.automatic_outcome === "approved"
+                          ? nextProgressionLevel
+                          : currentLevel
+                        : currentLevel}
+                  </strong>
+                </div>
+              </div>
+              {step === "published" ? (
+                <span>
+                  {evaluation.evaluation_purpose === "placement" &&
+                  evaluation.automatic_outcome !== "approved"
+                    ? `Resultado publicado. Esta colocación no confirmó ${targetLevel}.`
+                    : "Resultado publicado y nivel actualizado según corresponda."}
+                </span>
+              ) : (
+                <span>El nivel se actualizará al publicar el resultado.</span>
+              )}
             </section>
           ) : null}
 
