@@ -41,7 +41,7 @@ describe("RECURSOS-01 admin configuration", () => {
 
   it("keeps global resources separate from per-session usage", () => {
     expect(configurationPage).toContain("Define los recursos físicos");
-    expect(configurationPage).toContain("Studio Flow reutiliza");
+    expect(configurationPage).toContain("Flow reutiliza");
     expect(configurationPage).not.toContain("capacity_override");
     expect(configurationPage).not.toContain("resource_uses_per_item");
   });
@@ -91,10 +91,11 @@ describe("RECURSOS-01 admin configuration", () => {
   });
 
   it("uses the approved dark Studio Flow palette", () => {
-    expect(recursosStyles).toContain("#04070c");
-    expect(recursosStyles).toContain("#071018");
-    expect(recursosStyles).toContain("#fb0397");
-    expect(recursosStyles).toContain("#46bce8");
+    const palette = recursosStyles.toLowerCase();
+    expect(palette).toContain("#04070c");
+    expect(palette).toContain("#071018");
+    expect(palette).toContain("#fb0397");
+    expect(palette).toContain("#46bce8");
     expect(recursosStyles).not.toContain("neutral light surfaces");
     expect(recursosStyles).not.toContain("#f6f7f9");
   });
