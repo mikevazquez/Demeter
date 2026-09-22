@@ -205,6 +205,7 @@ export default async function AdminPage({
   const canWriteStudents = can(CAPABILITIES.STUDENTS_WRITE);
   const canWriteSales = can(CAPABILITIES.SALES_WRITE);
   const canWriteAttendance = can(CAPABILITIES.ATTENDANCE_WRITE);
+  const { data: serverNow } = await supabase.rpc("current_server_time");
 
   const [
     { data: selectedSessions },
@@ -214,7 +215,7 @@ export default async function AdminPage({
   ] = await Promise.all([
     supabase
       .from("class_sessions")
-      .select("id,starts_at,capacity,status,template_id,instructor_id,space_id,minimum_reservations_enabled,minimum_reservations,minimum_review_status")
+      .select("id,starts_at,ends_at,capacity,status,template_id,instructor_id,space_id,minimum_reservations_enabled,minimum_reservations,minimum_review_status")
       .eq("studio_id", studio.id)
       .gte("starts_at", selectedStart.toISOString())
       .lt("starts_at", selectedEnd.toISOString())
@@ -253,7 +254,7 @@ export default async function AdminPage({
       sessionIds.length
         ? supabase
             .from("reservations")
-            .select("id,session_id,student_id,guest_person_id,status,acquisition_id")
+            .select("id,session_id,student_id,guest_person_id,status,acquisition_id,booked_at")
             .in("session_id", sessionIds)
             .in("status", ["reserved", "attended", "no_show"])
             .order("booked_at")
@@ -265,6 +266,7 @@ export default async function AdminPage({
               guest_person_id: string | null;
               status: string;
               acquisition_id: string | null;
+              booked_at: string;
             }[],
           }),
       templateIds.length
@@ -303,6 +305,22 @@ export default async function AdminPage({
       };
 
   const reservationIds = (reservations ?? []).map((reservation) => reservation.id);
+  const { data: attendanceCheckins } = reservationIds.length
+    ? await supabase
+        .from("attendance_checkins")
+        .select("reservation_id,source,checked_in_at")
+        .in("reservation_id", reservationIds)
+    : {
+        data: [] as {
+          reservation_id: string;
+          source: string;
+          checked_in_at: string;
+        }[],
+      };
+  const checkinByReservation = new Map(
+    (attendanceCheckins ?? []).map((item) => [item.reservation_id, item]),
+  );
+
   const { data: evaluationInvitations } = reservationIds.length
     ? await supabase
         .from("evaluation_invitations")
@@ -406,6 +424,8 @@ export default async function AdminPage({
     classes.push({
       id: session.id,
       time: formatTime(session.starts_at, timeZone),
+      startsAt: session.starts_at,
+      endsAt: session.ends_at,
       name: template?.name ?? "Clase",
       instructor: session.instructor_id
         ? (instructorMap.get(session.instructor_id) ?? "Instructor")
@@ -433,6 +453,7 @@ export default async function AdminPage({
           : null;
 
         const evaluationInvitation = evaluationByReservation.get(reservation.id);
+        const attendanceCheckin = checkinByReservation.get(reservation.id);
 
         return {
           id: reservation.id,
@@ -458,6 +479,13 @@ export default async function AdminPage({
           studentId: reservation.student_id,
           evaluationInvitationId: evaluationInvitation?.id ?? null,
           evaluationStatus: evaluationInvitation?.status ?? null,
+          attendanceSource: attendanceCheckin?.source ?? null,
+          checkedInAt: attendanceCheckin?.checked_in_at ?? null,
+          attendanceProvenance:
+            session.status === "completed" &&
+            new Date(reservation.booked_at).getTime() >= new Date(session.ends_at).getTime()
+              ? "Agregada manualmente después del cierre"
+              : null,
         };
       }),
       candidates: candidates.map((student) => {
@@ -501,9 +529,19 @@ export default async function AdminPage({
           </span>
           <small>MOVIMIENTO QUE TRANSFORMA</small>
         </div>
-        <span className="hoy-product-avatar" aria-label={headerName}>
-          {headerInitials}
-        </span>
+        <div className="flex items-center gap-2">
+          {canWriteAttendance ? (
+            <Link
+              href="/admin/kiosco"
+              className="rounded-full border border-fuchsia-500/25 bg-fuchsia-500/[0.08] px-3.5 py-2 text-xs font-semibold text-fuchsia-100 transition hover:bg-fuchsia-500/[0.14]"
+            >
+              Check-in
+            </Link>
+          ) : null}
+          <span className="hoy-product-avatar" aria-label={headerName}>
+            {headerInitials}
+          </span>
+        </div>
       </header>
 
       <header className="hoy-title-block">
@@ -614,9 +652,11 @@ export default async function AdminPage({
       <TodayClasses
         classes={classes}
         returnDate={selectedKey}
+        serverNow={String(serverNow ?? now.toISOString())}
         canAttendance={canWriteAttendance}
         canBook={canWriteSchedule}
         canCreateStudent={canWriteStudents}
+        canCorrectCompleted
       />
     </main>
   );
