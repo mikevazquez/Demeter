@@ -406,7 +406,10 @@ export function ActivityWizard({
 
                 <div className="activities-slot-list">
                   {group.rows.map(({ row, index }) => (
-                    <div className="activities-slot activities-slot-compact" key={row.id ?? `${group.weekday}-${index}`}>
+                    <div
+                      className="activities-slot activities-slot-compact"
+                      key={row.id ?? `${group.weekday}-${index}`}
+                    >
                       <label className="activities-field">
                         <span>Hora</span>
                         <input
@@ -418,9 +421,7 @@ export function ActivityWizard({
                         />
                       </label>
 
-                      <span className="activities-duration-chip">
-                        {draft.durationMinutes} min
-                      </span>
+                      <span className="activities-duration-chip">{draft.durationMinutes} min</span>
 
                       <button
                         type="button"
