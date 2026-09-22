@@ -1,12 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import {
   bookStudentFromToday,
   cancelReservationFromToday,
   createWalkinFromToday,
-  finalizeAttendanceFromToday,
   setAttendanceFromToday,
 } from "../actions";
 import { startScheduledEvaluationAction } from "../alumnas/[studentId]/evaluation-actions";
@@ -21,6 +20,9 @@ type RosterItem = {
   studentId?: string | null;
   evaluationInvitationId?: string | null;
   evaluationStatus?: string | null;
+  attendanceSource?: string | null;
+  checkedInAt?: string | null;
+  attendanceProvenance?: string | null;
 };
 
 type Candidate = {
@@ -34,12 +36,15 @@ type SessionOperationsProps = {
   sessionId: string;
   returnDate: string;
   sessionStatus: string;
+  startsAt: string;
+  endsAt: string;
   roster: RosterItem[];
   candidates: Candidate[];
   available: number;
   canAttendance: boolean;
   canBook: boolean;
   canCreateStudent: boolean;
+  canCorrectCompleted?: boolean;
   returnTo?: string;
   initiallyOpen?: boolean;
   showToggle?: boolean;
@@ -62,16 +67,27 @@ function attendanceLabel(status: string) {
   return "Pendiente";
 }
 
+function normalizeSearch(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLocaleLowerCase("es-MX")
+    .trim();
+}
+
 export function SessionOperations({
   sessionId,
   returnDate,
   sessionStatus,
+  startsAt,
+  endsAt,
   roster,
   candidates,
   available,
   canAttendance,
   canBook,
   canCreateStudent,
+  canCorrectCompleted = true,
   returnTo = "",
   initiallyOpen = false,
   showToggle = true,
@@ -83,15 +99,42 @@ export function SessionOperations({
     kind: "success" | "error";
     message: string;
   } | null>(null);
+  const [now, setNow] = useState<number | null>(null);
+  const [studentSearch, setStudentSearch] = useState("");
+  const [selectedStudentId, setSelectedStudentId] = useState("");
 
   const isCompleted = sessionStatus === "completed";
-  const canAddExisting = !isCompleted && canBook;
-  const canAddNew = !isCompleted && canCreateStudent;
-  const canAddWalkin = canAddExisting || canAddNew;
-  const showNewWalkin = canAddNew && (newWalkin || !canAddExisting);
+  const isCancelled = sessionStatus === "cancelled";
   const attendanceCount = roster.filter((item) => item.status === "attended").length;
   const noShowCount = roster.filter((item) => item.status === "no_show").length;
   const pendingCount = roster.filter((item) => item.status === "reserved").length;
+  const startsAtMs = new Date(startsAt).getTime();
+  const endsAtMs = new Date(endsAt).getTime();
+  const inProgress =
+    sessionStatus === "scheduled" && now !== null && now >= startsAtMs && now < endsAtMs;
+  const sessionOpen = sessionStatus === "scheduled";
+  const canPostCloseAdd = isCompleted && canCorrectCompleted && canAttendance;
+  const canAddExisting = (sessionOpen && canBook) || canPostCloseAdd;
+  const canAddNew = sessionOpen && canCreateStudent;
+  const canAddWalkin = canAddExisting || canAddNew;
+  const showNewWalkin = canAddNew && (newWalkin || !canAddExisting);
+  const normalizedStudentSearch = normalizeSearch(studentSearch);
+  const matchingCandidates = useMemo(() => {
+    if (!normalizedStudentSearch) return [];
+    return candidates
+      .filter((candidate) =>
+        normalizeSearch(candidate.fullName).includes(normalizedStudentSearch),
+      )
+      .slice(0, 8);
+  }, [candidates, normalizedStudentSearch]);
+  const selectedCandidate = candidates.find((candidate) => candidate.id === selectedStudentId);
+
+  useEffect(() => {
+    const updateNow = () => setNow(Date.now());
+    updateNow();
+    const interval = window.setInterval(updateNow, 30_000);
+    return () => window.clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     const matchesSessionHash = window.location.hash === `#session-${sessionId}`;
@@ -114,8 +157,10 @@ export function SessionOperations({
                 ? "Asistencia finalizada correctamente."
                 : created === "attendance-corrected"
                   ? "Corrección registrada correctamente."
-                  : created === "walkin"
-                    ? "Walk-in registrada y agregada a la clase."
+                  : created === "post-close-attendee"
+                    ? "Asistencia agregada después del cierre."
+                    : created === "walkin"
+                      ? "Walk-in registrada y agregada a la clase."
                     : created === "walkin-existing"
                       ? "Alumna agregada a la clase."
                       : created === "cancel"
@@ -129,13 +174,15 @@ export function SessionOperations({
           message:
             error === "correction_reason_required"
               ? "La corrección requiere un motivo."
-              : error === "phone_exists"
-                ? "Ese teléfono ya pertenece a una alumna. Agrégala como alumna existente."
-                : error === "session_full"
-                  ? "La clase ya está llena."
-                  : error === "enrollment_required"
-                    ? "La alumna necesita una inscripción vigente para reservar esta clase."
-                    : "No se pudo completar la operación.",
+              : error === "attendance_not_persisted"
+                ? "La corrección no se guardó. Intenta nuevamente."
+                : error === "phone_exists"
+                  ? "Ese teléfono ya pertenece a una alumna. Agrégala como alumna existente."
+                  : error === "session_full"
+                    ? "La clase ya está llena."
+                    : error === "enrollment_required"
+                      ? "La alumna necesita una inscripción vigente para reservar esta clase."
+                      : "No se pudo completar la operación.",
         });
       }
     });
@@ -194,7 +241,10 @@ export function SessionOperations({
               <div className="today-student-list compact">
                 {roster.map((item) => {
                   const canCorrect =
-                    isCompleted && canAttendance && ["attended", "no_show"].includes(item.status);
+                    isCompleted &&
+                    canCorrectCompleted &&
+                    canAttendance &&
+                    ["attended", "no_show"].includes(item.status);
                   const correctionTarget = item.status === "attended" ? "no_show" : "attended";
                   const isInvitation = item.packageLabel === "Invitación";
 
@@ -223,6 +273,24 @@ export function SessionOperations({
                             ? item.creditsLabel
                             : `${item.packageLabel} · ${item.creditsLabel}`}
                         </span>
+                        {item.status === "attended" ? (
+                          <>
+                            <span className="today-attendance-origin">
+                              {item.attendanceSource === "KIOSK" ? "Check-in" : "Manual"}
+                              {item.checkedInAt
+                                ? ` · ${new Intl.DateTimeFormat("es-MX", {
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  }).format(new Date(item.checkedInAt))}`
+                                : ""}
+                            </span>
+                            {item.attendanceProvenance ? (
+                              <span className="today-attendance-origin">
+                                {item.attendanceProvenance}
+                              </span>
+                            ) : null}
+                          </>
+                        ) : null}
                         {item.evaluationStatus === "scheduled" &&
                         item.evaluationInvitationId &&
                         item.studentId ? (
@@ -241,7 +309,7 @@ export function SessionOperations({
                         ) : null}
                       </div>
 
-                      {!isCompleted &&
+                      {inProgress &&
                       canAttendance &&
                       ["reserved", "attended", "no_show"].includes(item.status) ? (
                         <div className="today-attendance-preview">
@@ -292,7 +360,7 @@ export function SessionOperations({
                         </span>
                       )}
 
-                      {!isCompleted && canBook && item.status === "reserved" ? (
+                      {!isCompleted && !isCancelled && canBook && item.status === "reserved" ? (
                         <details className="today-student-more">
                           <summary aria-label={`Más acciones para ${item.studentName}`}>⋮</summary>
                           <div>
@@ -372,30 +440,81 @@ export function SessionOperations({
                   <form action={bookStudentFromToday} className="today-add-form is-existing">
                     <input type="hidden" name="session_id" value={sessionId} />
                     <input type="hidden" name="return_date" value={returnDate} />
+                    <input type="hidden" name="student_id" value={selectedStudentId} />
                     {returnTo ? <input type="hidden" name="return_to" value={returnTo} /> : null}
-                    <select name="student_id" defaultValue="" required>
-                      <option value="" disabled>
-                        Selecciona una alumna
-                      </option>
-                      {candidates.map((candidate) => {
-                        const canFallbackToWalkin = walkinFallbackDetails.has(candidate.detail);
-                        return (
-                          <option
-                            key={candidate.id}
-                            value={candidate.id}
-                            disabled={!candidate.eligible && !canFallbackToWalkin}
-                          >
-                            {candidate.fullName} · {candidate.detail}
-                            {candidate.eligible
-                              ? ""
-                              : canFallbackToWalkin
-                                ? " · walk-in / venta pendiente"
-                                : " · bloqueada"}
-                          </option>
-                        );
-                      })}
-                    </select>
-                    <button className="primary-button" type="submit" disabled={!candidates.length}>
+
+                    <div className="today-student-search">
+                      <input
+                        type="search"
+                        value={studentSearch}
+                        onChange={(event) => {
+                          setStudentSearch(event.target.value);
+                          setSelectedStudentId("");
+                        }}
+                        placeholder="Buscar alumna por nombre"
+                        aria-label="Buscar alumna por nombre"
+                        autoComplete="off"
+                      />
+
+                      {normalizedStudentSearch ? (
+                        <div className="today-student-search-results" role="listbox">
+                          {matchingCandidates.length ? (
+                            matchingCandidates.map((candidate) => {
+                              const canFallbackToWalkin = walkinFallbackDetails.has(
+                                candidate.detail,
+                              );
+                              const disabled =
+                                !canPostCloseAdd && !candidate.eligible && !canFallbackToWalkin;
+                              const selected = candidate.id === selectedStudentId;
+
+                              return (
+                                <button
+                                  key={candidate.id}
+                                  type="button"
+                                  className={`today-student-search-result${selected ? " is-selected" : ""}`}
+                                  onClick={() => {
+                                    if (disabled) return;
+                                    setSelectedStudentId(candidate.id);
+                                    setStudentSearch(candidate.fullName);
+                                  }}
+                                  disabled={disabled}
+                                  role="option"
+                                  aria-selected={selected}
+                                >
+                                  <span>{candidate.fullName}</span>
+                                  <small>
+                                    {canPostCloseAdd
+                                      ? "Agregar después del cierre"
+                                      : candidate.detail}
+                                  </small>
+                                </button>
+                              );
+                            })
+                          ) : (
+                            <div className="today-student-search-empty">
+                              No encontramos alumnas con ese nombre.
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <p className="today-student-search-hint">
+                          Escribe el nombre para ver coincidencias.
+                        </p>
+                      )}
+                    </div>
+
+                    {selectedCandidate ? (
+                      <div className="today-student-search-selected">
+                        <span>Seleccionada</span>
+                        <strong>{selectedCandidate.fullName}</strong>
+                      </div>
+                    ) : null}
+
+                    <button
+                      className="primary-button"
+                      type="submit"
+                      disabled={!selectedStudentId}
+                    >
                       Agregar
                     </button>
                   </form>
@@ -412,17 +531,20 @@ export function SessionOperations({
                 <span>{pendingCount} pendientes</span>
               </div>
 
-              {!isCompleted ? (
-                <form action={finalizeAttendanceFromToday}>
-                  <input type="hidden" name="session_id" value={sessionId} />
-                  <input type="hidden" name="return_date" value={returnDate} />
-                  {returnTo ? <input type="hidden" name="return_to" value={returnTo} /> : null}
-                  <button className="today-finalize-button" type="submit">
-                    Finalizar asistencia
-                  </button>
-                </form>
+              {isCompleted ? (
+                <p>
+                  {canCorrectCompleted
+                    ? "Asistencia finalizada. Las correcciones requieren motivo."
+                    : "Clase finalizada · asistencia en modo solo lectura."}
+                </p>
+              ) : isCancelled ? (
+                <p>Clase cancelada · sin acciones operativas.</p>
+              ) : inProgress ? (
+                <p>Clase en curso · el cierre de asistencia es automático.</p>
+              ) : now !== null && now < startsAtMs ? (
+                <p>La asistencia manual se habilita cuando inicia la clase.</p>
               ) : (
-                <p>Asistencia finalizada. Las correcciones requieren motivo.</p>
+                <p>Cerrando asistencia automáticamente…</p>
               )}
             </section>
           ) : null}
