@@ -565,9 +565,7 @@ export default async function StudentProfilePage({
     ];
     const disciplineLevelIds = [
       ...new Set(
-        (studentLevelRows ?? [])
-          .map((item) => item.discipline_technical_level_id)
-          .filter(Boolean),
+        (studentLevelRows ?? []).map((item) => item.discipline_technical_level_id).filter(Boolean),
       ),
     ];
 
@@ -616,9 +614,7 @@ export default async function StudentProfilePage({
           ? { disciplineName, levelTitle: technicalLevelTitle }
           : null;
       })
-      .filter(
-        (item): item is { disciplineName: string; levelTitle: string } => Boolean(item),
-      )
+      .filter((item): item is { disciplineName: string; levelTitle: string } => Boolean(item))
       .sort((left, right) => left.disciplineName.localeCompare(right.disciplineName, "es"));
   }
 

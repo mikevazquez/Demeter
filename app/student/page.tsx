@@ -507,7 +507,10 @@ export default async function StudentHomePage({
               Niveles técnicos
             </p>
             {technicalLevels.length ? (
-              <Link href="/student/evaluaciones" className="text-[10px] font-semibold text-fuchsia-300">
+              <Link
+                href="/student/evaluaciones"
+                className="text-[10px] font-semibold text-fuchsia-300"
+              >
                 Ver evaluaciones →
               </Link>
             ) : null}
@@ -544,7 +547,9 @@ export default async function StudentHomePage({
               <p className="text-[9px] font-semibold uppercase tracking-[0.22em] text-zinc-400">
                 Mi paquete
               </p>
-              <h2 className="mt-2 truncate text-lg font-semibold text-white">{activePackage.name}</h2>
+              <h2 className="mt-2 truncate text-lg font-semibold text-white">
+                {activePackage.name}
+              </h2>
             </div>
             <Link href="/student/paquete" className="shrink-0 text-xs font-semibold text-white">
               Ver detalles →
@@ -564,7 +569,9 @@ export default async function StudentHomePage({
             </div>
             <div className="text-right">
               <span className="text-[9px] uppercase tracking-[0.14em] text-zinc-600">Vence</span>
-              <strong className={`ml-2 text-sm ${expiresSoon ? "text-amber-200" : "text-zinc-300"}`}>
+              <strong
+                className={`ml-2 text-sm ${expiresSoon ? "text-amber-200" : "text-zinc-300"}`}
+              >
                 {formatDate(activePackage.expires_on, studio.timezone)}
               </strong>
             </div>
@@ -601,8 +608,12 @@ export default async function StudentHomePage({
             Mi paquete
           </p>
           <div className="mt-5 text-center">
-            <span aria-hidden="true" className="text-3xl text-zinc-500">◇</span>
-            <h2 className="mt-3 text-base font-semibold text-white">Aún no tienes un paquete activo</h2>
+            <span aria-hidden="true" className="text-3xl text-zinc-500">
+              ◇
+            </span>
+            <h2 className="mt-3 text-base font-semibold text-white">
+              Aún no tienes un paquete activo
+            </h2>
             <p className="mx-auto mt-1.5 max-w-sm text-xs leading-5 text-zinc-400">
               Explora las opciones disponibles y elige la que se adapte a ti.
             </p>
@@ -638,11 +649,15 @@ export default async function StudentHomePage({
           >
             <div className="relative h-[76px] overflow-hidden rounded-xl border border-fuchsia-500/25 bg-[radial-gradient(circle_at_45%_25%,rgba(236,72,153,0.45),transparent_24%),linear-gradient(145deg,#2b0b22,#090c12_72%)]">
               <span className="absolute inset-y-2 left-1/2 w-px -translate-x-1/2 bg-fuchsia-300/45" />
-              <span className="absolute inset-0 grid place-items-center text-lg text-fuchsia-200">✦</span>
+              <span className="absolute inset-0 grid place-items-center text-lg text-fuchsia-200">
+                ✦
+              </span>
             </div>
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
-                <h2 className="truncate text-base font-semibold text-white">{nextClass.activity}</h2>
+                <h2 className="truncate text-base font-semibold text-white">
+                  {nextClass.activity}
+                </h2>
                 <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold text-emerald-300">
                   Confirmada
                 </span>
@@ -655,12 +670,18 @@ export default async function StudentHomePage({
                   "Consulta los detalles de tu clase"}
               </p>
             </div>
-            <span aria-hidden="true" className="text-xl text-zinc-500">›</span>
+            <span aria-hidden="true" className="text-xl text-zinc-500">
+              ›
+            </span>
           </Link>
         ) : (
           <div className="mt-3 rounded-2xl border border-white/10 bg-black/15 px-4 py-5 text-center">
-            <span aria-hidden="true" className="text-2xl text-zinc-500">▣</span>
-            <h2 className="mt-3 text-sm font-semibold text-white">Aún no tienes clases reservadas</h2>
+            <span aria-hidden="true" className="text-2xl text-zinc-500">
+              ▣
+            </span>
+            <h2 className="mt-3 text-sm font-semibold text-white">
+              Aún no tienes clases reservadas
+            </h2>
             <p className="mx-auto mt-1.5 max-w-sm text-xs leading-5 text-zinc-400">
               Reserva tu próxima clase y sigue avanzando en tu entrenamiento.
             </p>
@@ -673,7 +694,6 @@ export default async function StudentHomePage({
           </div>
         )}
       </section>
-
     </main>
   );
 }
