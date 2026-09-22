@@ -16,6 +16,9 @@ function errorCode(error: { message?: string } | null, fallback: string) {
     "reservation_not_found",
     "first_name_required",
     "email_invalid",
+    "resource_required",
+    "resource_full",
+    "resource_not_available",
   ];
   return known.find((item) => error.message?.includes(item)) ?? fallback;
 }
@@ -136,8 +139,9 @@ export async function bookStudentSessionInlineAction(sessionId: string) {
   }
 
   const { supabase } = await getStudentPortalContext();
-  const { data, error } = await supabase.rpc("student_book_session", {
+  const { data, error } = await supabase.rpc("student_book_session_with_resource", {
     target_session_id: normalizedSessionId,
+    target_resource_id: null,
   });
 
   if (error) {
@@ -163,14 +167,16 @@ export async function bookStudentSessionInlineAction(sessionId: string) {
 export async function bookStudentSessionAction(formData: FormData) {
   const sessionId = String(formData.get("session_id") ?? "").trim();
   const rawDate = String(formData.get("date") ?? "").trim();
+  const resourceId = String(formData.get("resource_id") ?? "").trim() || null;
   const selectedDate = /^\d{4}-\d{2}-\d{2}$/.test(rawDate) ? rawDate : "";
   const dateQuery = selectedDate ? `&date=${encodeURIComponent(selectedDate)}` : "";
 
   if (!sessionId) redirect("/student/reservar?error=session_required");
 
   const { supabase } = await getStudentPortalContext();
-  const { data, error } = await supabase.rpc("student_book_session", {
+  const { data, error } = await supabase.rpc("student_book_session_with_resource", {
     target_session_id: sessionId,
+    target_resource_id: resourceId,
   });
 
   if (error) {
@@ -185,10 +191,14 @@ export async function bookStudentSessionAction(formData: FormData) {
   const result = data as BookingRpcResult;
 
   if (!result?.eligible || !result.reservation_id) {
+    const reason = result?.reason_code ?? "booking_failed";
+    if (["resource_required", "resource_full", "resource_not_available"].includes(reason)) {
+      redirect(
+        `/student/reservar/${sessionId}/recurso?error=${encodeURIComponent(reason)}${dateQuery}`,
+      );
+    }
     redirect(
-      `/student/reservar/${sessionId}/confirmar?error=${encodeURIComponent(
-        result?.reason_code ?? "booking_failed",
-      )}${dateQuery}`,
+      `/student/reservar/${sessionId}/confirmar?error=${encodeURIComponent(reason)}${dateQuery}`,
     );
   }
 
