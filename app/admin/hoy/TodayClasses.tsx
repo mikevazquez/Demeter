@@ -6,11 +6,13 @@ import { SessionOperations } from "./SessionOperations";
 
 export type TodayRosterItem = {
   id: string;
+  studentId: string | null;
   studentName: string;
   status: string;
   packageLabel: string;
   creditsLabel: string;
   expiresLabel: string;
+  commercialPending: boolean;
 };
 
 export type TodayCandidate = {
@@ -42,6 +44,7 @@ type TodayClassesProps = {
   canAttendance: boolean;
   canBook: boolean;
   canCreateStudent: boolean;
+  canWriteSales: boolean;
 };
 
 export function TodayClasses({
@@ -50,6 +53,7 @@ export function TodayClasses({
   canAttendance,
   canBook,
   canCreateStudent,
+  canWriteSales,
 }: TodayClassesProps) {
   const [openSessionId, setOpenSessionId] = useState<string | null>(() => {
     if (typeof window === "undefined") return null;
@@ -116,6 +120,7 @@ export function TodayClasses({
                 canAttendance={canAttendance}
                 canBook={canBook}
                 canCreateStudent={canCreateStudent}
+                canWriteSales={canWriteSales}
                 returnTo={item.returnTo}
                 initiallyOpen
                 showToggle={false}

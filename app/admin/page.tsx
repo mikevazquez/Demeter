@@ -351,6 +351,35 @@ export default async function AdminPage({
   );
   const spaceMap = new Map((spaces ?? []).map((space) => [space.id, space.name]));
   const studentMap = new Map((students ?? []).map((student) => [student.id, student.full_name]));
+  const reservationIds = (reservations ?? []).map((reservation) => reservation.id);
+  const { data: walkinCommercialEvents } = reservationIds.length
+    ? await supabase
+        .from("domain_events")
+        .select("event_type,source_entity_id,payload,recorded_at")
+        .eq("studio_id", studio.id)
+        .eq("source_entity_type", "reservation")
+        .in("event_type", ["walkin.commercial_pending", "walkin.commercial_resolved"])
+        .in("source_entity_id", reservationIds)
+        .order("recorded_at", { ascending: true })
+    : {
+        data: [] as {
+          event_type: string;
+          source_entity_id: string;
+          payload: Record<string, unknown>;
+          recorded_at: string;
+        }[],
+      };
+  const walkinCommercialState = new Map<string, { pending: boolean; reasonCode: string | null }>();
+  for (const event of walkinCommercialEvents ?? []) {
+    const reasonCode =
+      typeof event.payload?.reason_code === "string" ? event.payload.reason_code : null;
+    if (event.event_type === "walkin.commercial_pending") {
+      walkinCommercialState.set(event.source_entity_id, { pending: true, reasonCode });
+    } else if (event.event_type === "walkin.commercial_resolved") {
+      walkinCommercialState.set(event.source_entity_id, { pending: false, reasonCode: null });
+    }
+  }
+
   const acquisitionMap = new Map((acquisitions ?? []).map((item) => [item.id, item]));
   const productMap = new Map((products ?? []).map((item) => [item.id, item.name]));
   const balanceMap = new Map(balances);
@@ -409,9 +438,15 @@ export default async function AdminPage({
         const balance = reservation.acquisition_id
           ? balanceMap.get(reservation.acquisition_id)
           : null;
+        const commercialState = walkinCommercialState.get(reservation.id);
+        const commercialPending = commercialState?.pending === true;
+        const commercialReason = commercialState?.reasonCode
+          ? (eligibilityCopy[commercialState.reasonCode] ?? "cobertura pendiente")
+          : "cobertura pendiente";
 
         return {
           id: reservation.id,
+          studentId: reservation.student_id,
           studentName: isGuest
             ? (personMap.get(reservation.guest_person_id!) ?? "Invitado")
             : reservation.student_id
@@ -420,17 +455,26 @@ export default async function AdminPage({
           status: reservation.status,
           packageLabel: isGuest
             ? "Invitación"
-            : acquisition
-              ? (productMap.get(acquisition.product_template_id) ?? "Producto activo")
-              : "Sin producto vinculado",
+            : commercialPending
+              ? "Venta pendiente"
+              : acquisition
+                ? (productMap.get(acquisition.product_template_id) ?? "Producto activo")
+                : "Sin producto vinculado",
           creditsLabel: isGuest
             ? "Beneficio por nivel"
-            : acquisition?.unlimited
-              ? "Ilimitado"
-              : acquisition
-                ? `${balance ?? 0} créditos`
-                : "—",
-          expiresLabel: isGuest ? "Misma clase" : formatExpiry(acquisition?.expires_on ?? null),
+            : commercialPending
+              ? commercialReason
+              : acquisition?.unlimited
+                ? "Ilimitado"
+                : acquisition
+                  ? `${balance ?? 0} créditos`
+                  : "—",
+          expiresLabel: isGuest
+            ? "Misma clase"
+            : commercialPending
+              ? "Regularizar en Ventas"
+              : formatExpiry(acquisition?.expires_on ?? null),
+          commercialPending,
         };
       }),
       candidates: candidates.map((student) => {
@@ -590,6 +634,7 @@ export default async function AdminPage({
         canAttendance={canWriteAttendance}
         canBook={canWriteSchedule}
         canCreateStudent={canWriteStudents}
+        canWriteSales={canWriteSales}
       />
     </main>
   );

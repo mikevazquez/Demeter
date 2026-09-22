@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import {
@@ -12,11 +13,13 @@ import {
 
 type RosterItem = {
   id: string;
+  studentId?: string | null;
   studentName: string;
   status: string;
   packageLabel: string;
   creditsLabel: string;
   expiresLabel: string;
+  commercialPending?: boolean;
 };
 
 type Candidate = {
@@ -36,6 +39,7 @@ type SessionOperationsProps = {
   canAttendance: boolean;
   canBook: boolean;
   canCreateStudent: boolean;
+  canWriteSales?: boolean;
   returnTo?: string;
   initiallyOpen?: boolean;
   showToggle?: boolean;
@@ -68,6 +72,7 @@ export function SessionOperations({
   canAttendance,
   canBook,
   canCreateStudent,
+  canWriteSales = false,
   returnTo = "",
   initiallyOpen = false,
   showToggle = true,
@@ -212,6 +217,14 @@ export function SessionOperations({
                             ? item.creditsLabel
                             : `${item.packageLabel} · ${item.creditsLabel}`}
                         </span>
+                        {item.commercialPending && item.studentId && canWriteSales ? (
+                          <Link
+                            className="back-link compact"
+                            href={`/admin/ventas/nueva?student_id=${item.studentId}`}
+                          >
+                            Resolver venta pendiente
+                          </Link>
+                        ) : null}
                       </div>
 
                       {!isCompleted &&
