@@ -51,13 +51,31 @@ export async function bookStudentFromToday(formData: FormData) {
   const { supabase, studio, can } = await getAdminContext();
   const { data: session } = await supabase
     .from("class_sessions")
-    .select("id")
+    .select("id,status")
     .eq("id", sessionId)
     .eq("studio_id", studio.id)
     .single();
 
   if (!session) {
     redirect(returnUrl);
+  }
+
+  if (session.status === "completed") {
+    if (!can(CAPABILITIES.ATTENDANCE_WRITE)) {
+      redirect(withQuery(returnUrl, "error", "forbidden"));
+    }
+
+    const { data: result, error } = await supabase.rpc("admin_add_post_close_attendee", {
+      target_session_id: sessionId,
+      target_student_id: studentId,
+    });
+
+    if (error || !result?.ok || result?.status !== "attended") {
+      redirect(withQuery(returnUrl, "error", error?.message ?? "post_close_attendee"));
+    }
+
+    refreshSession(sessionId);
+    redirect(withQuery(returnUrl, "created", "post-close-attendee"));
   }
 
   if (!can(CAPABILITIES.SCHEDULE_WRITE)) {
@@ -152,7 +170,7 @@ export async function setAttendanceFromToday(formData: FormData) {
   }
 
   const { supabase } = await getAdminContext(CAPABILITIES.ATTENDANCE_WRITE);
-  const { error } = await supabase.rpc("set_attendance_status", {
+  const { data: attendanceResult, error } = await supabase.rpc("set_attendance_status", {
     target_reservation_id: reservationId,
     target_status: status,
     target_reason: reason || null,
@@ -160,6 +178,26 @@ export async function setAttendanceFromToday(formData: FormData) {
 
   if (error) {
     redirect(withQuery(returnUrl, "error", error.message));
+  }
+
+  const result = (attendanceResult ?? {}) as {
+    ok?: boolean;
+    status?: string;
+    changed?: boolean;
+  };
+
+  if (result.ok !== true || result.status !== status || (reason && result.changed !== true)) {
+    redirect(withQuery(returnUrl, "error", "attendance_not_persisted"));
+  }
+
+  const { data: persisted, error: persistenceError } = await supabase
+    .from("reservations")
+    .select("status")
+    .eq("id", reservationId)
+    .single();
+
+  if (persistenceError || persisted?.status !== status) {
+    redirect(withQuery(returnUrl, "error", "attendance_not_persisted"));
   }
 
   refreshSession(sessionId);
