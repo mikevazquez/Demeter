@@ -23,6 +23,7 @@ export type ActivityDraft = {
   description: string;
   durationMinutes: number;
   capacity: number;
+  colorHex: string;
   requiresResource: boolean;
   schedules: ActivityScheduleDraft[];
   allowIndividualPurchase: boolean;
@@ -83,6 +84,7 @@ export function ActivityWizard({
       description: "",
       durationMinutes: 60,
       capacity: 5,
+      colorHex: "#FF0A8A",
       requiresResource: false,
       schedules: [createSchedule(2, 60)],
       allowIndividualPurchase: false,
@@ -153,6 +155,9 @@ export function ActivityWizard({
       }
       if (!Number.isInteger(Number(draft.capacity)) || draft.capacity < 1) {
         return "El cupo predeterminado debe ser de al menos 1 lugar.";
+      }
+      if (!/^#[0-9A-Fa-f]{6}$/.test(draft.colorHex)) {
+        return "Selecciona un color válido para la actividad.";
       }
     }
 
@@ -292,6 +297,20 @@ export function ActivityWizard({
                 />
                 <b>lugares</b>
               </div>
+            </label>
+
+            <label className="activities-field activities-color-field">
+              <span>Color en el horario *</span>
+              <div className="activities-color-control">
+                <input
+                  type="color"
+                  value={draft.colorHex}
+                  onChange={(event) => patch({ colorHex: event.target.value.toUpperCase() })}
+                  aria-label="Color de la actividad"
+                />
+                <b>{draft.colorHex.toUpperCase()}</b>
+              </div>
+              <small>Se usa para identificar esta actividad en Agenda y en reservas.</small>
             </label>
 
             <fieldset className="activities-choice activities-field-wide">
@@ -553,6 +572,13 @@ export function ActivityWizard({
                 <div>
                   <dt>Cupo</dt>
                   <dd>{draft.capacity} lugares</dd>
+                </div>
+                <div>
+                  <dt>Color</dt>
+                  <dd className="activities-review-color">
+                    <i style={{ background: draft.colorHex }} />
+                    {draft.colorHex.toUpperCase()}
+                  </dd>
                 </div>
                 <div>
                   <dt>Requiere recurso</dt>
