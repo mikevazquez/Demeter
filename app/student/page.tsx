@@ -142,6 +142,7 @@ export default async function StudentHomePage({
     rewardLevelsResult,
     invitationBalanceResult,
     evaluationsResult,
+    unreadEvaluationResult,
   ] = await Promise.all([
     supabase.rpc("student_reward_status_snapshot"),
     supabase
@@ -159,6 +160,7 @@ export default async function StudentHomePage({
       .order("level_order"),
     supabase.rpc("student_reward_invitation_balance"),
     supabase.rpc("student_evaluations_snapshot"),
+    supabase.rpc("student_latest_unread_evaluation_result"),
   ]);
 
   const rewardStatus = (rewardStatusResult.data as RewardStatusSnapshot | null) ?? null;
@@ -172,7 +174,8 @@ export default async function StudentHomePage({
         item.invitation_id &&
         (item.invitation_status === "offered" || item.invitation_status === "pending_schedule"),
     ) ?? null;
-  const latestPublishedEvaluation = evaluationsSnapshot?.history?.[0] ?? null;
+  const latestPublishedEvaluation =
+    (unreadEvaluationResult.data as EvaluationHomeHistoryItem | null) ?? null;
   const levelDefinitions = (rewardLevelsResult.data ?? []) as RewardLevelDefinitionRow[];
   const fallbackLevelKey = rewardMembershipResult.data?.current_level_key ?? null;
   const fallbackLevelRow =
