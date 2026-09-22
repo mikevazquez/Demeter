@@ -580,11 +580,12 @@ export function ActivityWizard({
                 <span>
                   <b>Hereda</b>{" "}
                   {draft.defaultInstructorId
-                    ? instructors.find((item) => item.id === draft.defaultInstructorId)?.label ?? "Coach"
+                    ? (instructors.find((item) => item.id === draft.defaultInstructorId)?.label ??
+                      "Coach")
                     : "Sin coach"}{" "}
                   ·{" "}
                   {draft.defaultSpaceId
-                    ? spaces.find((item) => item.id === draft.defaultSpaceId)?.label ?? "Espacio"
+                    ? (spaces.find((item) => item.id === draft.defaultSpaceId)?.label ?? "Espacio")
                     : "Sin espacio"}{" "}
                   · desde {draft.startsOn}
                   {draft.endsOn ? ` hasta ${draft.endsOn}` : ""}
