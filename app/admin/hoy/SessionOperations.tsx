@@ -3,12 +3,12 @@
 import { useEffect, useState } from "react";
 
 import {
-  bookStudentFromToday,
   cancelReservationFromToday,
   createWalkinFromToday,
   setAttendanceFromToday,
 } from "../actions";
 import { startScheduledEvaluationAction } from "../alumnas/[studentId]/evaluation-actions";
+import { ExistingStudentAddForm } from "./ExistingStudentAddForm";
 
 type RosterItem = {
   id: string;
@@ -49,8 +49,6 @@ type SessionOperationsProps = {
   initiallyOpen?: boolean;
   showToggle?: boolean;
 };
-
-const walkinFallbackDetails = new Set(["sin paquete activo", "fuera de paquete", "sin créditos"]);
 
 function initials(name: string) {
   return name
@@ -417,37 +415,13 @@ export function SessionOperations({
                     </button>
                   </form>
                 ) : canAddExisting ? (
-                  <form action={bookStudentFromToday} className="today-add-form is-existing">
-                    <input type="hidden" name="session_id" value={sessionId} />
-                    <input type="hidden" name="return_date" value={returnDate} />
-                    {returnTo ? <input type="hidden" name="return_to" value={returnTo} /> : null}
-                    <select name="student_id" defaultValue="" required>
-                      <option value="" disabled>
-                        Selecciona una alumna
-                      </option>
-                      {candidates.map((candidate) => {
-                        const canFallbackToWalkin = walkinFallbackDetails.has(candidate.detail);
-                        const disabled =
-                          !canPostCloseAdd && !candidate.eligible && !canFallbackToWalkin;
-                        return (
-                          <option key={candidate.id} value={candidate.id} disabled={disabled}>
-                            {candidate.fullName} ·{" "}
-                            {canPostCloseAdd
-                              ? "agregar después del cierre"
-                              : candidate.detail}
-                            {canPostCloseAdd || candidate.eligible
-                              ? ""
-                              : canFallbackToWalkin
-                                ? " · walk-in / venta pendiente"
-                                : " · bloqueada"}
-                          </option>
-                        );
-                      })}
-                    </select>
-                    <button className="primary-button" type="submit" disabled={!candidates.length}>
-                      Agregar
-                    </button>
-                  </form>
+                  <ExistingStudentAddForm
+                    sessionId={sessionId}
+                    returnDate={returnDate}
+                    returnTo={returnTo}
+                    candidates={candidates}
+                    canPostCloseAdd={canPostCloseAdd}
+                  />
                 ) : null}
               </div>
             ) : null}
