@@ -23,6 +23,7 @@ type ActivityPayload = {
   description?: string;
   durationMinutes: number;
   capacity: number;
+  colorHex: string;
   requiresResource: boolean;
   schedules: SchedulePayload[];
   allowIndividualPurchase: boolean;
@@ -113,6 +114,7 @@ export async function saveActivity(formData: FormData) {
   const description = String(payload.description ?? "").trim() || null;
   const durationMinutes = Number(payload.durationMinutes);
   const capacity = Number(payload.capacity);
+  const colorHex = String(payload.colorHex ?? "").trim().toUpperCase();
   const schedules = Array.isArray(payload.schedules) ? payload.schedules : [];
   const notes = String(payload.individualPurchaseNotes ?? "").trim() || null;
   const dropInPriceMinor = payload.allowIndividualPurchase
@@ -128,6 +130,7 @@ export async function saveActivity(formData: FormData) {
     durationMinutes > 360 ||
     !Number.isInteger(capacity) ||
     capacity < 1 ||
+    !/^#[0-9A-F]{6}$/.test(colorHex) ||
     !schedules.length ||
     (notes?.length ?? 0) > 300 ||
     dropInPriceMinor === undefined ||
@@ -222,6 +225,7 @@ export async function saveActivity(formData: FormData) {
           description,
           duration_minutes: durationMinutes,
           capacity,
+          color_hex: colorHex,
           requires_resource: Boolean(payload.requiresResource),
           credit_cost: 1,
           drop_in_price_minor: dropInPriceMinor,
@@ -312,7 +316,7 @@ export async function saveActivity(formData: FormData) {
           credit_cost: 1,
           drop_in_price_minor: dropInPriceMinor,
           individual_purchase_notes: payload.allowIndividualPurchase ? notes : null,
-          color_hex: "#FF0A8A",
+          color_hex: colorHex,
           requires_resource: Boolean(payload.requiresResource),
         })
         .select("id")
