@@ -67,8 +67,9 @@ export function TodayClasses({
   const router = useRouter();
   const initialNow = useMemo(() => new Date(serverNow).getTime(), [serverNow]);
   const [now, setNow] = useState(initialNow);
+  const effectiveNow = Math.max(now, initialNow);
+
   useEffect(() => {
-    setNow(initialNow);
     const startedAt = Date.now();
     const interval = window.setInterval(() => {
       setNow(initialNow + (Date.now() - startedAt));
@@ -78,7 +79,7 @@ export function TodayClasses({
 
   const hasLiveOrClosingSession = classes.some((item) => {
     if (item.sessionStatus !== "scheduled") return false;
-    return now >= new Date(item.startsAt).getTime();
+    return effectiveNow >= new Date(item.startsAt).getTime();
   });
 
   useEffect(() => {
@@ -110,9 +111,9 @@ export function TodayClasses({
             ? "cancelled"
             : item.sessionStatus === "completed"
               ? "finished"
-              : now < startsAt
+              : effectiveNow < startsAt
                 ? "upcoming"
-                : now < endsAt
+                : effectiveNow < endsAt
                   ? "live"
                   : "closing";
         const phaseLabel =
@@ -125,7 +126,7 @@ export function TodayClasses({
                 : phase === "closing"
                   ? "Finalizando"
                   : "Próxima";
-        const remainingMs = Math.max(endsAt - now, 0);
+        const remainingMs = Math.max(endsAt - effectiveNow, 0);
         const remainingSeconds = Math.floor(remainingMs / 1000);
         const hours = Math.floor(remainingSeconds / 3600);
         const minutes = Math.floor((remainingSeconds % 3600) / 60);
