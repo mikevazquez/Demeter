@@ -318,9 +318,14 @@ export default async function SessionDetailPage({
               : "Sin instructor"}
           </p>
         </div>
-        <Link className="secondary-button" href="/admin/agenda">
-          Ver agenda
-        </Link>
+        <div className="flex flex-wrap gap-2">
+          <Link className="secondary-button" href={`/admin/agenda/${sessionId}/roster`}>
+            Ver roster en vivo
+          </Link>
+          <Link className="secondary-button" href="/admin/agenda">
+            Ver agenda
+          </Link>
+        </div>
       </header>
 
       {query.error ? (
