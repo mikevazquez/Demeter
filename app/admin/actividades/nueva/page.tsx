@@ -48,14 +48,9 @@ export default async function NewActivityPage({
         </div>
       </header>
 
-      {params.error ? (
-        <div className="notice error">
-          No pudimos crear la actividad. Revisa los datos de las cuatro etapas.
-        </div>
-      ) : null}
-
       <ActivityWizard
         mode="create"
+        saveError={Boolean(params.error)}
         instructors={(instructors ?? []).map((item) => ({
           id: item.id,
           label: personMap.get(item.person_id) || "Coach",
