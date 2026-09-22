@@ -361,9 +361,7 @@ export default async function StudentHomePage({
               <h2 className="mt-3 text-lg font-semibold text-white">
                 {latestAppNotification.title}
               </h2>
-              <p className="mt-1 text-xs leading-5 text-zinc-300">
-                {latestAppNotification.body}
-              </p>
+              <p className="mt-1 text-xs leading-5 text-zinc-300">{latestAppNotification.body}</p>
             </div>
             <span aria-hidden="true" className="text-2xl text-rose-300">
               ×

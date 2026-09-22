@@ -446,16 +446,14 @@ export function ActivityWizard({
               <span>
                 <strong>Cancelación automática por mínimo de reservas</strong>
                 <small>
-                  Si al momento de la revisión hay menos reservas confirmadas que el mínimo,
-                  Studio Flow cancelará únicamente esa sesión.
+                  Si al momento de la revisión hay menos reservas confirmadas que el mínimo, Studio
+                  Flow cancelará únicamente esa sesión.
                 </small>
               </span>
               <input
                 type="checkbox"
                 checked={draft.minimumReservationsEnabled}
-                onChange={(event) =>
-                  patch({ minimumReservationsEnabled: event.target.checked })
-                }
+                onChange={(event) => patch({ minimumReservationsEnabled: event.target.checked })}
               />
             </label>
 
@@ -519,8 +517,8 @@ export function ActivityWizard({
                   <span>✓</span>
                   <p>
                     <strong>Ejemplo.</strong> Con mínimo {draft.minimumReservations}, si al llegar
-                    la revisión hay {draft.minimumReservations} o más reservas, la clase se
-                    imparte. Si hay menos, la sesión se cancela automáticamente.
+                    la revisión hay {draft.minimumReservations} o más reservas, la clase se imparte.
+                    Si hay menos, la sesión se cancela automáticamente.
                   </p>
                 </div>
 
@@ -528,8 +526,8 @@ export function ActivityWizard({
                   <span>
                     <strong>Permitir excepción por sesión</strong>
                     <small>
-                      Administración podrá marcar “Impartir aunque no alcance el mínimo” sin
-                      cambiar la regla general de la actividad.
+                      Administración podrá marcar “Impartir aunque no alcance el mínimo” sin cambiar
+                      la regla general de la actividad.
                     </small>
                   </span>
                   <input

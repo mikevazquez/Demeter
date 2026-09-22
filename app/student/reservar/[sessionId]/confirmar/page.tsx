@@ -125,7 +125,8 @@ export default async function StudentBookingConfirmPage({
               "Estudio"}
           </p>
           <p className="mt-2 text-[11px] text-zinc-500">
-            {Math.max(session.capacity - session.spots_available, 0)} de {session.capacity} reservados
+            {Math.max(session.capacity - session.spots_available, 0)} de {session.capacity}{" "}
+            reservados
           </p>
           {selectedResource ? (
             <div className="mt-3 rounded-xl border border-fuchsia-500/20 bg-fuchsia-500/[0.07] px-3 py-2.5">

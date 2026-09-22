@@ -101,9 +101,7 @@ export async function saveActivity(formData: FormData) {
   const minimumReservations = Number(payload.minimumReservations);
   const minimumReviewValue = Number(payload.minimumReviewValue);
   const minimumReviewMinutes =
-    payload.minimumReviewUnit === "hours"
-      ? minimumReviewValue * 60
-      : minimumReviewValue;
+    payload.minimumReviewUnit === "hours" ? minimumReviewValue * 60 : minimumReviewValue;
 
   if (
     !name ||

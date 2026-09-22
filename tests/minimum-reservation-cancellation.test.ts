@@ -24,9 +24,7 @@ describe("CANCELACION-MIN-01 automatic minimum reservation cancellation", () => 
   const studentList = source("app/student/reservar/page.tsx");
   const studentDetail = source("app/student/reservar/[sessionId]/page.tsx");
   const studentConfirm = source("app/student/reservar/[sessionId]/confirmar/page.tsx");
-  const coachProcessor = source(
-    "supabase/functions/process-session-minimum-cancelled/index.ts",
-  );
+  const coachProcessor = source("supabase/functions/process-session-minimum-cancelled/index.ts");
 
   it("configures the approved activity rule", () => {
     expect(wizard).toContain("Cancelación automática por mínimo de reservas");

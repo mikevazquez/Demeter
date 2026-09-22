@@ -37,9 +37,7 @@ export default async function StudentNotificationDetailPage({
   });
 
   const payload = (notification.payload ?? {}) as NotificationPayload;
-  const startsAt = payload.starts_at
-    ? formatDateTime(payload.starts_at, studio.timezone)
-    : null;
+  const startsAt = payload.starts_at ? formatDateTime(payload.starts_at, studio.timezone) : null;
 
   return (
     <main className="mx-auto max-w-xl space-y-4 pb-6">

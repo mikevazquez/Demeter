@@ -20,9 +20,7 @@ export default async function CoachNotificationDetailPage({
   params: Promise<{ notificationId: string }>;
 }) {
   const { notificationId } = await params;
-  const { supabase, studio, membership } = await getAdminContext(
-    CAPABILITIES.SCHEDULE_READ,
-  );
+  const { supabase, studio, membership } = await getAdminContext(CAPABILITIES.SCHEDULE_READ);
 
   if (membership.role !== "instructor") notFound();
 
@@ -60,9 +58,7 @@ export default async function CoachNotificationDetailPage({
         month: "long",
       }).format(startsAt)
     : null;
-  const timeLabel = payload.starts_at
-    ? formatTime(payload.starts_at, studio.timezone)
-    : null;
+  const timeLabel = payload.starts_at ? formatTime(payload.starts_at, studio.timezone) : null;
 
   return (
     <main className="dashboard-shell space-y-5">

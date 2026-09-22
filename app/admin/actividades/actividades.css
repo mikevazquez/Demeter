@@ -1122,7 +1122,6 @@
   }
 }
 
-
 /* CANCELACION-MIN-01 · mínimo de reservas */
 .activities-minimum-card {
   display: grid;
@@ -1130,9 +1129,7 @@
   padding: 15px;
   border: 1px solid rgba(251, 3, 151, 0.42);
   border-radius: 17px;
-  background:
-    radial-gradient(circle at 100% 0%, rgba(251, 3, 151, 0.08), transparent 38%),
-    #09111a;
+  background: radial-gradient(circle at 100% 0%, rgba(251, 3, 151, 0.08), transparent 38%), #09111a;
   box-shadow: 0 14px 34px rgba(0, 0, 0, 0.12);
 }
 

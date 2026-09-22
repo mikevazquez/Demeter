@@ -5,8 +5,7 @@ import { sendAsistianWebhook } from "../_shared/asistian-messaging.ts";
 
 const TEMPLATE = "class_cancelled_coach";
 const CONSUMER_KEY = "minimum_reservation.coach_notification";
-const UUID_PATTERN =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 type RequestBody = {
   eventId?: unknown;
@@ -106,7 +105,9 @@ const handler = {
 
     const { data: session } = await adminClient
       .from("class_sessions")
-      .select("id,studio_id,template_id,instructor_id,starts_at,minimum_reservations,minimum_reservations_at_review")
+      .select(
+        "id,studio_id,template_id,instructor_id,starts_at,minimum_reservations,minimum_reservations_at_review",
+      )
       .eq("id", event.source_entity_id)
       .eq("studio_id", event.studio_id)
       .maybeSingle();
@@ -171,8 +172,7 @@ const handler = {
     const startsAt = new Date(session.starts_at);
     const timeZone = studio.timezone ?? "America/Mexico_City";
     const payload = (event.payload ?? {}) as Record<string, unknown>;
-    const minimum =
-      Number(payload.minimum_required ?? session.minimum_reservations ?? 0) || 0;
+    const minimum = Number(payload.minimum_required ?? session.minimum_reservations ?? 0) || 0;
     const reservationsAtReview =
       Number(payload.reservations_at_review ?? session.minimum_reservations_at_review ?? 0) || 0;
     const coachName =
