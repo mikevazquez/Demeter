@@ -63,11 +63,7 @@ export async function getAdminContext(requiredCapability?: Capability) {
   }
 
   if (requiredCapability && !capabilities.has(requiredCapability)) {
-    redirect(
-      capabilities.has(CAPABILITIES.ADMIN_PORTAL)
-        ? "/admin?error=access"
-        : "/admin?error=access",
-    );
+    redirect("/admin?error=access");
   }
 
   return {
