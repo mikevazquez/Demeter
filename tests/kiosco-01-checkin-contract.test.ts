@@ -8,11 +8,15 @@ function source(path: string) {
 }
 
 describe("KIOSCO-01 check-in contracts", () => {
-  const migration = source("supabase/migrations/20260922170000_kiosco01_checkin_core.sql");
+  const migration = source(
+    "supabase/migrations/20260922170000_kiosco01_checkin_core.sql",
+  );
 
   it("creates one opaque token per valid reservation and never models waitlist as a QR source", () => {
     expect(migration).toContain("reservation_checkin_tokens");
-    expect(migration).toContain("constraint reservation_checkin_tokens_reservation_unique unique (reservation_id)");
+    expect(migration).toContain(
+      "constraint reservation_checkin_tokens_reservation_unique unique (reservation_id)",
+    );
     expect(migration).toContain("extensions.hmac(");
     expect(migration).toContain("extensions.digest(");
     expect(migration).toContain("where r.status in ('reserved','attended')");
@@ -36,16 +40,22 @@ describe("KIOSCO-01 check-in contracts", () => {
 
   it("marks attendance idempotently and emits one domain event", () => {
     expect(migration).toContain("status = 'attended'");
-    expect(migration).toContain("constraint attendance_checkins_reservation_unique unique (reservation_id)");
+    expect(migration).toContain(
+      "constraint attendance_checkins_reservation_unique unique (reservation_id)",
+    );
     expect(migration).toContain("on conflict (reservation_id) do nothing");
     expect(migration).toContain("'attendance.checked_in'");
-    expect(migration).toContain("'attendance:checked_in:' || v_reservation.id::text");
+    expect(migration).toContain(
+      "'attendance:checked_in:' || v_reservation.id::text",
+    );
     expect(migration).toContain("'already_attended'");
   });
 
   it("locks session before reservation to avoid the close/check-in race", () => {
     const sessionLock = migration.indexOf("where id = v_session_id\n  for update;");
-    const reservationLock = migration.indexOf("and session_id = v_session.id\n  for update;");
+    const reservationLock = migration.indexOf(
+      "and session_id = v_session.id\n  for update;",
+    );
 
     expect(sessionLock).toBeGreaterThan(-1);
     expect(reservationLock).toBeGreaterThan(sessionLock);
@@ -55,7 +65,9 @@ describe("KIOSCO-01 check-in contracts", () => {
     expect(migration).toContain("public.student_reservation_checkin_token");
     expect(migration).toContain("v_reservation.student_user_id = v_uid");
     expect(migration).toContain("host.id = v_reservation.host_reservation_id");
-    expect(migration).toContain("private.has_capability(v_reservation.studio_id, 'attendance.write')");
+    expect(migration).toContain(
+      "private.has_capability(v_reservation.studio_id, 'attendance.write')",
+    );
   });
 
   it("keeps the API authenticated and delegates the decision to the canonical RPC", () => {
