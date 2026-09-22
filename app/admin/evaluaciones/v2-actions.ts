@@ -157,7 +157,7 @@ export async function openEvaluationV2EditorAction(formData: FormData) {
     .single();
 
   if (createError || !created)
-    redirect(editorUrl(templateId, "configuracion", undefined, "version"));
+    redirect(editorUrl(templateId, "apartados", undefined, "version"));
 
   if (source.schema_version === 2) {
     const { data: sourceBlocks } = await ctx.supabase
@@ -260,7 +260,7 @@ export async function saveEvaluationV2GeneralAction(formData: FormData) {
   ]);
 
   if (templateError || versionError)
-    redirect(editorUrl(templateId, "configuracion", undefined, "general"));
+    redirect(editorUrl(templateId, returnStep, undefined, "general"));
   revalidatePath(editorUrl(templateId));
   redirect(editorUrl(templateId, returnStep));
 }
@@ -285,7 +285,7 @@ export async function addEvaluationV2BlockAction(formData: FormData) {
       studio_id: ctx.studio.id,
       template_version_id: versionId,
       criterion_key: key,
-      label: "Nuevo bloque",
+      label: "Nuevo apartado",
       description: null,
       weight_percent: 0,
       min_percent: null,
@@ -344,7 +344,7 @@ export async function updateEvaluationV2BlockAction(formData: FormData) {
     .eq("template_version_id", versionId)
     .eq("studio_id", ctx.studio.id);
 
-  if (error) redirect(editorUrl(templateId, "bloques", blockId, "block"));
+  if (error) redirect(editorUrl(templateId, "apartados", blockId, "block", returnView));
   revalidatePath(editorUrl(templateId));
   redirect(editorUrl(templateId, "apartados", blockId, undefined, returnView));
 }
@@ -371,7 +371,7 @@ export async function deleteEvaluationV2BlockAction(formData: FormData) {
 
   if (error) redirect(editorUrl(templateId, "apartados", undefined, "block"));
   revalidatePath(editorUrl(templateId));
-  redirect(editorUrl(templateId, "bloques"));
+  redirect(editorUrl(templateId, "apartados"));
 }
 
 export async function addEvaluationV2ItemAction(formData: FormData) {
