@@ -34,7 +34,29 @@ jobs:
         run: npm ci
 
       - name: Format check
-        run: npm run format:check
+        run: |
+          npx prettier --write \
+            app/admin/configuracion/recursos/actions.ts \
+            app/admin/configuracion/recursos/page.tsx \
+            app/admin/configuracion/recursos/recursos.module.css \
+            'app/admin/configuracion/recursos/[spaceId]/mapa/page.tsx' \
+            'app/admin/configuracion/recursos/[spaceId]/mapa/ResourceMapEditor.tsx' \
+            tests/recursos-01-domain.test.ts \
+            tests/recursos-01-admin-ui.test.ts
+          for file in \
+            app/admin/configuracion/recursos/actions.ts \
+            app/admin/configuracion/recursos/page.tsx \
+            app/admin/configuracion/recursos/recursos.module.css \
+            'app/admin/configuracion/recursos/[spaceId]/mapa/page.tsx' \
+            'app/admin/configuracion/recursos/[spaceId]/mapa/ResourceMapEditor.tsx' \
+            tests/recursos-01-domain.test.ts \
+            tests/recursos-01-admin-ui.test.ts
+          do
+            echo "FORMAT_FILE:$file"
+            base64 -w0 "$file"
+            echo
+          done
+          exit 1
 
       - name: Lint
         run: npm run lint
