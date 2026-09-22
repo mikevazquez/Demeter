@@ -49,7 +49,7 @@ export default function ResourcePicker({
     () => new Map(resources.map((resource) => [resource.resource_id, resource])),
     [resources],
   );
-  const selected = selectedId ? resourceMap.get(selectedId) ?? null : null;
+  const selected = selectedId ? (resourceMap.get(selectedId) ?? null) : null;
   const availableCount = resources.filter(
     (resource) => resource.enabled && resource.available > 0,
   ).length;
@@ -89,11 +89,9 @@ export default function ResourcePicker({
         >
           {elements.map((element) => {
             const resource = element.resource_id
-              ? resourceMap.get(element.resource_id) ?? null
+              ? (resourceMap.get(element.resource_id) ?? null)
               : null;
-            const selectable = Boolean(
-              resource && resource.enabled && resource.available > 0,
-            );
+            const selectable = Boolean(resource && resource.enabled && resource.available > 0);
             const isSelected = resource?.resource_id === selectedId;
             const isFull = Boolean(resource && resource.available <= 0);
             const label = resource
