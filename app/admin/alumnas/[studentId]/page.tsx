@@ -638,11 +638,9 @@ export default async function StudentProfilePage({
       no_show: "No show",
       cancelled_by_studio: "Clase cancelada por el estudio",
     };
-    const isCancellation = [
-      "cancelled_on_time",
-      "cancelled_late",
-      "cancelled_by_studio",
-    ].includes(event.status);
+    const isCancellation = ["cancelled_on_time", "cancelled_late", "cancelled_by_studio"].includes(
+      event.status,
+    );
     profileHistoryEvents.push({
       id: "class:" + event.id,
       at: isCancellation && event.cancelledAt ? event.cancelledAt : event.startsAt,
