@@ -152,7 +152,7 @@ export async function setAttendanceFromToday(formData: FormData) {
   }
 
   const { supabase } = await getAdminContext(CAPABILITIES.ATTENDANCE_WRITE);
-  const { error } = await supabase.rpc("set_attendance_status", {
+  const { data: attendanceResult, error } = await supabase.rpc("set_attendance_status", {
     target_reservation_id: reservationId,
     target_status: status,
     target_reason: reason || null,
@@ -160,6 +160,30 @@ export async function setAttendanceFromToday(formData: FormData) {
 
   if (error) {
     redirect(withQuery(returnUrl, "error", error.message));
+  }
+
+  const result = (attendanceResult ?? {}) as {
+    ok?: boolean;
+    status?: string;
+    changed?: boolean;
+  };
+
+  if (
+    result.ok !== true ||
+    result.status !== status ||
+    (reason && result.changed !== true)
+  ) {
+    redirect(withQuery(returnUrl, "error", "attendance_not_persisted"));
+  }
+
+  const { data: persisted, error: persistenceError } = await supabase
+    .from("reservations")
+    .select("status")
+    .eq("id", reservationId)
+    .single();
+
+  if (persistenceError || persisted?.status !== status) {
+    redirect(withQuery(returnUrl, "error", "attendance_not_persisted"));
   }
 
   refreshSession(sessionId);
