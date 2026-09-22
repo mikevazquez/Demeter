@@ -55,10 +55,7 @@ export default async function ResourceMapPage({
       .eq("space_id", spaceId)
       .eq("studio_id", ctx.studio.id)
       .order("name"),
-    ctx.supabase
-      .from("resource_types")
-      .select("id,name")
-      .eq("studio_id", ctx.studio.id),
+    ctx.supabase.from("resource_types").select("id,name").eq("studio_id", ctx.studio.id),
   ]);
 
   if (!space) {
@@ -94,16 +91,13 @@ export default async function ResourceMapPage({
           <p className={styles.eyebrow}>EDITOR DE MAPA · {ctx.studio.name}</p>
           <h1>{space.name}</h1>
           <p>
-            Esta geometría es la fuente única para administración, sesiones y reserva de
-            alumnas.
+            Esta geometría es la fuente única para administración, sesiones y reserva de alumnas.
           </p>
         </div>
       </header>
 
       {query.saved === "1" ? (
-        <div className={`${styles.notice} ${styles.success}`}>
-          Mapa guardado correctamente.
-        </div>
+        <div className={`${styles.notice} ${styles.success}`}>Mapa guardado correctamente.</div>
       ) : null}
 
       {query.error ? (
