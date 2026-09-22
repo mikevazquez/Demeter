@@ -418,10 +418,14 @@ export default async function EvaluationV2EditorPage({
             </div>
             <div>
               <span>Distribución del apartado</span>
-              <strong>{internalTotal}% de 100%</strong>
+              <strong>
+                {Math.abs(internalTotal - 100) <= 0.01
+                  ? "Distribución completa"
+                  : `Falta asignar ${Math.max(0, 100 - internalTotal)}%`}
+              </strong>
               <small className={Math.abs(internalTotal - 100) <= 0.01 ? "is-ok" : ""}>
                 {Math.abs(internalTotal - 100) <= 0.01
-                  ? "✓ Distribución correcta."
+                  ? "✓ Lista para usar."
                   : "Los aspectos deben sumar 100%."}
               </small>
             </div>
@@ -632,11 +636,15 @@ export default async function EvaluationV2EditorPage({
             </div>
             <div>
               <span>Resultado final</span>
-              <strong>{totalWeight}% de 100%</strong>
+              <strong>
+                {Math.abs(totalWeight - 100) <= 0.01
+                  ? "Peso total completo"
+                  : `Falta asignar ${Math.max(0, 100 - totalWeight)}%`}
+              </strong>
               <small className={Math.abs(totalWeight - 100) <= 0.01 ? "is-ok" : ""}>
                 {Math.abs(totalWeight - 100) <= 0.01
-                  ? "✓ La evaluación está completa."
-                  : `Falta asignar ${Math.max(0, 100 - totalWeight)}%.`}
+                  ? "✓ Los apartados suman 100%."
+                  : "Ajusta el peso de los apartados."}
               </small>
             </div>
           </div>
@@ -737,9 +745,17 @@ export default async function EvaluationV2EditorPage({
             </div>
             <div>
               <span>Resultado final</span>
-              <strong>{totalWeight}% de 100%</strong>
+              <strong>
+                {ready
+                  ? "Configuración lista"
+                  : Math.abs(totalWeight - 100) > 0.01
+                    ? `Falta asignar ${Math.max(0, 100 - totalWeight)}%`
+                    : "Falta completar contenido"}
+              </strong>
               <small className={ready ? "is-ok" : ""}>
-                {ready ? "✓ Configuración lista." : "Todavía falta completar la evaluación."}
+                {ready
+                  ? "✓ Lista para activar."
+                  : "Revisa los apartados marcados abajo."}
               </small>
             </div>
           </div>
