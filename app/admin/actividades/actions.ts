@@ -10,11 +10,6 @@ type SchedulePayload = {
   id?: string;
   weekday: number;
   startTime: string;
-  endTime: string;
-  instructorId?: string;
-  spaceId?: string;
-  startsOn: string;
-  endsOn?: string;
 };
 
 type ActivityPayload = {
@@ -25,6 +20,10 @@ type ActivityPayload = {
   capacity: number;
   colorHex: string;
   requiresResource: boolean;
+  defaultInstructorId?: string;
+  defaultSpaceId?: string;
+  startsOn: string;
+  endsOn?: string;
   schedules: SchedulePayload[];
   allowIndividualPurchase: boolean;
   individualPrice?: string;
@@ -40,21 +39,6 @@ function moneyToMinor(value: string | undefined) {
   const [whole, decimals = ""] = normalized.split(".");
   const minor = Number(whole) * 100 + Number(decimals.padEnd(2, "0"));
   return Number.isSafeInteger(minor) ? minor : undefined;
-}
-
-function timeToMinutes(value: string) {
-  if (!/^\d{2}:\d{2}$/.test(value)) return null;
-  const [hour, minute] = value.split(":").map(Number);
-  if (hour < 0 || hour > 23 || minute < 0 || minute > 59) return null;
-  return hour * 60 + minute;
-}
-
-function durationBetween(start: string, end: string) {
-  const startMinutes = timeToMinutes(start);
-  const endMinutes = timeToMinutes(end);
-  if (startMinutes == null || endMinutes == null) return null;
-  const duration = endMinutes - startMinutes;
-  return duration > 0 ? duration : null;
 }
 
 async function preserveBookedAndClearGeneratedSessions(
@@ -134,6 +118,9 @@ export async function saveActivity(formData: FormData) {
     capacity < 1 ||
     !/^#[0-9A-F]{6}$/.test(colorHex) ||
     !schedules.length ||
+    !/^\d{4}-\d{2}-\d{2}$/.test(startsOn) ||
+    (endsOn && (!/^\d{4}-\d{2}-\d{2}$/.test(endsOn) || endsOn < startsOn)) ||
+    (payload.requiresResource && !defaultSpaceId) ||
     (notes?.length ?? 0) > 300 ||
     dropInPriceMinor === undefined ||
     (payload.allowIndividualPurchase && (dropInPriceMinor == null || dropInPriceMinor <= 0))
@@ -146,21 +133,14 @@ export async function saveActivity(formData: FormData) {
   }
 
   const normalizedSchedules = schedules.map((row) => {
-    const scheduleDuration = durationBetween(String(row.startTime), String(row.endTime));
     const weekday = Number(row.weekday);
-    const startsOn = String(row.startsOn ?? "");
-    const endsOn = String(row.endsOn ?? "").trim() || null;
+    const localTime = String(row.startTime ?? "");
 
     if (
       !Number.isInteger(weekday) ||
       weekday < 0 ||
       weekday > 6 ||
-      !scheduleDuration ||
-      scheduleDuration < 15 ||
-      scheduleDuration > 360 ||
-      !/^\d{4}-\d{2}-\d{2}$/.test(startsOn) ||
-      (endsOn && (!/^\d{4}-\d{2}-\d{2}$/.test(endsOn) || endsOn < startsOn)) ||
-      (payload.requiresResource && !row.spaceId)
+      !/^\d{2}:\d{2}$/.test(localTime)
     ) {
       throw new Error("invalid_schedule");
     }
@@ -168,10 +148,10 @@ export async function saveActivity(formData: FormData) {
     return {
       id: row.id || null,
       weekday,
-      local_time: row.startTime,
-      duration_minutes: scheduleDuration,
-      instructor_id: row.instructorId || null,
-      space_id: row.spaceId || null,
+      local_time: localTime,
+      duration_minutes: durationMinutes,
+      instructor_id: defaultInstructorId,
+      space_id: defaultSpaceId,
       starts_on: startsOn,
       ends_on: endsOn,
     };
