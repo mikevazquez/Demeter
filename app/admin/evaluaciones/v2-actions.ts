@@ -122,15 +122,6 @@ export async function openEvaluationV2EditorAction(formData: FormData) {
     redirect(editorUrl(templateId));
   }
 
-  if (source.schema_version === 2 && source.status === "active" && !usedCount) {
-    const { error } = await ctx.supabase
-      .from("evaluation_template_versions")
-      .update({ status: "draft", activated_at: null })
-      .eq("id", source.id)
-      .eq("studio_id", ctx.studio.id);
-    if (!error) redirect(editorUrl(templateId));
-  }
-
   const { data: latest } = await ctx.supabase
     .from("evaluation_template_versions")
     .select("version_number")
