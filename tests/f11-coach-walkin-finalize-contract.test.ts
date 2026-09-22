@@ -33,7 +33,8 @@ describe("F11 coach walk-in and finalization contract", () => {
   });
 
   it("keeps finalized Coach attendance read-only after automatic close", () => {
-    const finalized = source("app/coach/clases/[sessionId]/finalizada/page.tsx");
+    const unifiedRoster = source("app/admin/hoy/SessionOperations.tsx");
+    const coachToday = source("app/admin/hoy/CoachTodayView.tsx");
     const closeMigration = source(
       "supabase/migrations/20260922173000_kiosco01_automatic_session_close.sql",
     );
@@ -43,9 +44,10 @@ describe("F11 coach walk-in and finalization contract", () => {
 
     expect(closeMigration).toContain("private.finalize_due_sessions()");
     expect(closeMigration).toContain("'studio-flow-finalize-due-sessions'");
-    expect(finalized).toContain("Vista de consulta para Coach");
-    expect(finalized).toContain("las realiza Administración");
-    expect(finalized).not.toContain("correctCoachAttendanceAction");
+    expect(coachToday).toContain("canCorrectCompleted={false}");
+    expect(unifiedRoster).toContain("Clase finalizada · asistencia en modo solo lectura.");
+    expect(unifiedRoster).toContain("canCorrectCompleted");
+    expect(unifiedRoster).not.toContain("correctCoachAttendanceAction");
     expect(scopeMigration).toContain("if v_session.status = 'completed' then");
     expect(scopeMigration).toContain("if not v_is_admin then");
   });
