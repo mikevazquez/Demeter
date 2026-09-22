@@ -135,6 +135,7 @@ describe("F9 sales contracts", () => {
   it("does not bypass required enrollment through the existing-student walk-in fallback", () => {
     const adminActions = source("app/admin/actions.ts");
     const operations = source("app/admin/hoy/SessionOperations.tsx");
+    const picker = source("app/admin/hoy/ExistingStudentAddForm.tsx");
     const existingStudentForm = source("app/admin/hoy/ExistingStudentAddForm.tsx");
     expect(adminActions).toContain(
       'new Set(["no_active_product", "outside_product", "no_credits"])',
