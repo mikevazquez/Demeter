@@ -83,6 +83,38 @@ async function validateResources(
   return null;
 }
 
+export async function setMinimumOverride(formData: FormData) {
+  const sessionId = String(formData.get("session_id") ?? "");
+  const returnUrl = sessionManagementReturn(formData, sessionId);
+  const enabled = String(formData.get("enabled") ?? "") === "true";
+
+  if (!sessionId) redirect("/admin/agenda");
+
+  const { supabase } = await getAdminContext(CAPABILITIES.SCHEDULE_WRITE);
+  const { error } = await supabase.rpc("admin_set_session_minimum_override", {
+    target_session_id: sessionId,
+    p_enabled: enabled,
+  });
+
+  if (error) {
+    const message = String(error.message ?? "");
+    const code = [
+      "minimum_review_already_completed",
+      "minimum_rule_disabled",
+      "minimum_override_not_allowed",
+      "session_not_scheduled",
+      "forbidden",
+    ].find((item) => message.includes(item));
+
+    redirect(withQuery(returnUrl, "error", code ?? "minimum_override"));
+  }
+
+  revalidatePath(`/admin/agenda/${sessionId}`);
+  revalidatePath("/admin/agenda");
+  revalidatePath("/admin");
+  redirect(withQuery(returnUrl, "created", "minimum-override"));
+}
+
 export async function updateSession(formData: FormData) {
   const sessionId = String(formData.get("session_id") ?? "");
   const returnUrl = sessionManagementReturn(formData, sessionId);

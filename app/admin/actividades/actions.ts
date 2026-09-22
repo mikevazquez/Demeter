@@ -28,6 +28,10 @@ type ActivityPayload = {
   allowIndividualPurchase: boolean;
   individualPrice?: string;
   individualPurchaseNotes?: string;
+  minimumReservationsEnabled: boolean;
+  minimumReservations: number;
+  minimumReviewValue: number;
+  minimumReviewUnit: "minutes" | "hours";
 };
 
 function moneyToMinor(value: string | undefined) {
@@ -61,6 +65,7 @@ function normalizeRpcError(message: string | undefined) {
     "duplicate_schedule",
     "activity_not_found",
     "schedule_not_found",
+    "invalid_minimum_reservation_rule",
   ];
 
   return candidates.find((code) => message?.includes(code)) ?? "save";
@@ -92,6 +97,10 @@ export async function saveActivity(formData: FormData) {
   const dropInPriceMinor = payload.allowIndividualPurchase
     ? moneyToMinor(payload.individualPrice)
     : null;
+  const minimumReservations = Number(payload.minimumReservations);
+  const minimumReviewValue = Number(payload.minimumReviewValue);
+  const minimumReviewMinutes =
+    payload.minimumReviewUnit === "hours" ? minimumReviewValue * 60 : minimumReviewValue;
 
   if (
     !name ||
@@ -109,7 +118,15 @@ export async function saveActivity(formData: FormData) {
     (payload.requiresResource && !defaultSpaceId) ||
     (notes?.length ?? 0) > 300 ||
     dropInPriceMinor === undefined ||
-    (payload.allowIndividualPurchase && (dropInPriceMinor == null || dropInPriceMinor <= 0))
+    (payload.allowIndividualPurchase && (dropInPriceMinor == null || dropInPriceMinor <= 0)) ||
+    (payload.minimumReservationsEnabled &&
+      (!Number.isInteger(minimumReservations) ||
+        minimumReservations < 1 ||
+        minimumReservations > capacity ||
+        !Number.isInteger(minimumReviewValue) ||
+        minimumReviewValue < 1 ||
+        minimumReviewMinutes < 15 ||
+        minimumReviewMinutes > 10080))
   ) {
     redirect(routeForError(payload, "invalid_activity"));
   }
@@ -148,6 +165,13 @@ export async function saveActivity(formData: FormData) {
     p_starts_on: startsOn,
     p_ends_on: endsOn,
     p_schedules: normalizedSchedules,
+    p_minimum_reservations_enabled: Boolean(payload.minimumReservationsEnabled),
+    p_minimum_reservations: Number.isInteger(minimumReservations) ? minimumReservations : 2,
+    p_minimum_review_minutes_before:
+      Number.isInteger(minimumReviewMinutes) && minimumReviewMinutes >= 15
+        ? minimumReviewMinutes
+        : 120,
+    p_allow_minimum_reservation_override: true,
   });
 
   if (error || !data) {

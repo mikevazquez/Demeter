@@ -1121,3 +1121,115 @@
     border-bottom: 0;
   }
 }
+
+/* CANCELACION-MIN-01 · mínimo de reservas */
+.activities-minimum-card {
+  display: grid;
+  gap: 14px;
+  padding: 15px;
+  border: 1px solid rgba(251, 3, 151, 0.42);
+  border-radius: 17px;
+  background: radial-gradient(circle at 100% 0%, rgba(251, 3, 151, 0.08), transparent 38%), #09111a;
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.12);
+}
+
+.activities-minimum-toggle {
+  padding-bottom: 12px;
+}
+
+.activities-minimum-how {
+  display: grid;
+  gap: 7px;
+  padding: 12px 13px;
+  border: 1px solid #293744;
+  border-radius: 13px;
+  background: #0d1722;
+}
+
+.activities-minimum-how strong {
+  color: #edf3f8;
+  font-size: 10px;
+}
+
+.activities-minimum-how ol {
+  display: grid;
+  gap: 5px;
+  margin: 0;
+  padding-left: 20px;
+  color: #9aa7b6;
+  font-size: 8px;
+  line-height: 1.55;
+}
+
+.activities-minimum-how li::marker {
+  color: #ff31a5;
+  font-weight: 900;
+}
+
+.activities-minimum-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.activities-minimum-time {
+  display: grid;
+  grid-template-columns: minmax(70px, 0.7fr) minmax(130px, 1.3fr);
+  gap: 8px;
+}
+
+.activities-minimum-example {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  padding: 11px 12px;
+  border: 1px solid rgba(56, 217, 150, 0.34);
+  border-radius: 13px;
+  background: rgba(56, 217, 150, 0.055);
+}
+
+.activities-minimum-example > span {
+  width: 27px;
+  height: 27px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: rgba(56, 217, 150, 0.14);
+  color: #58dfa1;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.activities-minimum-example p {
+  margin: 0;
+  color: #9db9aa;
+  font-size: 8px;
+  line-height: 1.5;
+}
+
+.activities-minimum-example strong {
+  color: #65e6aa;
+}
+
+.activities-minimum-exception {
+  padding: 12px 0 0;
+  border-top: 1px solid #24303b;
+  border-bottom: 0;
+}
+
+@media (max-width: 760px) {
+  .activities-minimum-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .activities-minimum-card {
+    padding: 12px;
+  }
+
+  .activities-minimum-time {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

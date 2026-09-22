@@ -1700,3 +1700,54 @@
     border-radius: 22px;
   }
 }
+
+/* CANCELACION-MIN-01 · badges en lista de clases */
+.today-class-capacity {
+  display: grid;
+  justify-items: end;
+  gap: 4px;
+}
+
+.today-class-minimum-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 20px;
+  padding: 0 7px;
+  border: 1px solid rgba(255, 10, 138, 0.4);
+  border-radius: 999px;
+  background: rgba(255, 10, 138, 0.08);
+  color: #ff76bd;
+  font-size: 8px;
+  font-weight: 850;
+  letter-spacing: 0.02em;
+}
+
+@media (max-width: 760px) {
+  .today-class-minimum-badge {
+    min-height: 18px;
+    padding-inline: 6px;
+    font-size: 7px;
+  }
+}
+
+/* CANCELACION-MIN-01 · acceso al detalle desde Hoy */
+.today-session-detail-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 42px;
+  margin-top: 12px;
+  padding: 0 14px;
+  border: 1px solid rgba(255, 10, 138, 0.32);
+  border-radius: 13px;
+  background: rgba(255, 10, 138, 0.06);
+  color: #ff8fc7;
+  font-size: 10px;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.today-session-detail-link:hover {
+  background: rgba(255, 10, 138, 0.1);
+}

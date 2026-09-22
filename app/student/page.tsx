@@ -71,6 +71,15 @@ type StudentEvaluationsHomeSnapshot = {
   history?: EvaluationHomeHistoryItem[];
 };
 
+type AppNotificationHomeItem = {
+  id: string;
+  title: string;
+  body: string;
+  notification_type: string;
+  created_at: string;
+  payload: Record<string, unknown>;
+};
+
 const levelVisuals = {
   bronze: {
     accent: "#CD7F32",
@@ -143,6 +152,7 @@ export default async function StudentHomePage({
     invitationBalanceResult,
     evaluationsResult,
     unreadEvaluationResult,
+    appNotificationResult,
   ] = await Promise.all([
     supabase.rpc("student_reward_status_snapshot"),
     supabase
@@ -161,6 +171,15 @@ export default async function StudentHomePage({
     supabase.rpc("student_reward_invitation_balance"),
     supabase.rpc("student_evaluations_snapshot"),
     supabase.rpc("student_latest_unread_evaluation_result"),
+    supabase
+      .from("app_notifications")
+      .select("id,title,body,notification_type,created_at,payload")
+      .eq("student_id", snapshot.profile.student_id)
+      .eq("recipient_kind", "student")
+      .is("read_at", null)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
   ]);
 
   const rewardStatus = (rewardStatusResult.data as RewardStatusSnapshot | null) ?? null;
@@ -176,6 +195,8 @@ export default async function StudentHomePage({
     ) ?? null;
   const latestPublishedEvaluation =
     (unreadEvaluationResult.data as EvaluationHomeHistoryItem | null) ?? null;
+  const latestAppNotification =
+    (appNotificationResult.data as AppNotificationHomeItem | null) ?? null;
 
   const technicalLevelMap = new Map<string, { disciplineName: string; levelTitle: string }>();
   for (const evaluation of evaluationsSnapshot?.history ?? []) {
@@ -321,6 +342,39 @@ export default async function StudentHomePage({
             )}
           </div>
         </StudentNoticeDialog>
+      ) : null}
+
+      {latestAppNotification?.notification_type === "session_minimum_cancelled" ? (
+        <section
+          data-home-block="minimum-cancellation-notification"
+          className="relative overflow-hidden rounded-[26px] border border-rose-500/35 bg-[radial-gradient(circle_at_88%_0%,rgba(244,63,94,0.18),transparent_38%),rgba(255,255,255,0.025)] p-4 shadow-[0_0_28px_rgba(244,63,94,0.08)] sm:p-5"
+        >
+          <span
+            aria-hidden="true"
+            className="absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-rose-500 to-fuchsia-500"
+          />
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <span className="inline-flex rounded-full border border-rose-400/30 bg-rose-400/[0.08] px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.16em] text-rose-200">
+                Clase cancelada
+              </span>
+              <h2 className="mt-3 text-lg font-semibold text-white">
+                {latestAppNotification.title}
+              </h2>
+              <p className="mt-1 text-xs leading-5 text-zinc-300">{latestAppNotification.body}</p>
+            </div>
+            <span aria-hidden="true" className="text-2xl text-rose-300">
+              ×
+            </span>
+          </div>
+
+          <Link
+            href={`/student/notificaciones/${latestAppNotification.id}`}
+            className="mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-2xl border border-rose-400/25 bg-rose-500/[0.1] px-4 text-sm font-semibold text-rose-100 transition hover:bg-rose-500/[0.16]"
+          >
+            Ver detalle
+          </Link>
+        </section>
       ) : null}
 
       {latestPublishedEvaluation ? (

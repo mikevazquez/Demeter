@@ -44,6 +44,9 @@ export type TodayClassItem = {
   available: number;
   evaluationCount: number;
   returnTo: string;
+  minimumReservationsEnabled: boolean;
+  minimumReservations: number;
+  minimumReviewStatus: string;
 };
 
 type TodayClassesProps = {
@@ -184,6 +187,11 @@ export function TodayClasses({
               </span>
               <span className="today-class-capacity">
                 {item.occupied}/{item.capacity}
+                {item.minimumReservationsEnabled ? (
+                  <small className="today-class-minimum-badge">
+                    Mín. {item.minimumReservations}
+                  </small>
+                ) : null}
               </span>
               <span className="today-class-chevron" aria-hidden="true">
                 {isOpen ? "⌃" : "⌄"}

@@ -21,7 +21,8 @@ export type AsistianDeliveryInput = {
     | "reservation_confirmed"
     | "reservation_cancelled"
     | "waitlist_promoted"
-    | "class_reminder";
+    | "class_reminder"
+    | "class_cancelled_coach";
   eventId: string;
   recipient: string;
   variables: Record<string, unknown>;

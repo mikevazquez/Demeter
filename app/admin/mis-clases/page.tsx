@@ -40,14 +40,35 @@ export default async function MyClassesPage({
     );
   }
 
+  const { data: currentInstructor } = await supabase
+    .from("instructors")
+    .select("id")
+    .eq("studio_id", studio.id)
+    .eq("person_id", membership.person_id)
+    .eq("status", "active")
+    .maybeSingle();
+
   const today = localDateKey(new Date(), studio.timezone);
   const tomorrow = addDays(today, 1);
   const selectedDate = isDateKey(query.date) ? query.date! : today;
-  const { data, error: feedError } = await supabase.rpc("coach_my_sessions", {
-    target_studio_id: studio.id,
-    target_start: selectedDate,
-    target_end: selectedDate,
-  });
+  const [{ data, error: feedError }, { data: latestNotification }] = await Promise.all([
+    supabase.rpc("coach_my_sessions", {
+      target_studio_id: studio.id,
+      target_start: selectedDate,
+      target_end: selectedDate,
+    }),
+    currentInstructor
+      ? supabase
+          .from("app_notifications")
+          .select("id,title,body,notification_type,created_at,payload")
+          .eq("instructor_id", currentInstructor.id)
+          .eq("recipient_kind", "instructor")
+          .is("read_at", null)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
+  ]);
   const sessions = (data ?? []) as CoachSession[];
 
   return (
@@ -62,6 +83,28 @@ export default async function MyClassesPage({
 
       {query.error === "access" ? (
         <div className="notice error">No tienes permiso para realizar esa acción.</div>
+      ) : null}
+
+      {latestNotification?.notification_type === "session_minimum_cancelled" ? (
+        <section className="relative overflow-hidden rounded-3xl border border-rose-500/35 bg-[radial-gradient(circle_at_88%_0%,rgba(244,63,94,0.16),transparent_38%),rgba(255,255,255,0.025)] p-5">
+          <span
+            aria-hidden="true"
+            className="absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-rose-500 to-fuchsia-500"
+          />
+          <span className="inline-flex rounded-full border border-rose-400/30 bg-rose-400/[0.08] px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.16em] text-rose-200">
+            Clase cancelada
+          </span>
+          <h2 className="mt-3 text-lg font-semibold text-white">{latestNotification.title}</h2>
+          <p className="mt-1 max-w-2xl text-sm leading-6 text-zinc-300">
+            {latestNotification.body}
+          </p>
+          <Link
+            href={`/admin/mis-clases/notificaciones/${latestNotification.id}`}
+            className="mt-4 inline-flex min-h-10 items-center justify-center rounded-xl border border-rose-400/25 bg-rose-500/[0.1] px-4 text-sm font-semibold text-rose-100 transition hover:bg-rose-500/[0.16]"
+          >
+            Ver detalle
+          </Link>
+        </section>
       ) : null}
 
       <section className="rounded-3xl border border-white/10 bg-white/[0.03] p-4 sm:p-5">

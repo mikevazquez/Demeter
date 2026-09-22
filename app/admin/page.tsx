@@ -215,7 +215,9 @@ export default async function AdminPage({
   ] = await Promise.all([
     supabase
       .from("class_sessions")
-      .select("id,starts_at,ends_at,capacity,status,template_id,instructor_id,space_id")
+      .select(
+        "id,starts_at,ends_at,capacity,status,template_id,instructor_id,space_id,minimum_reservations_enabled,minimum_reservations,minimum_review_status",
+      )
       .eq("studio_id", studio.id)
       .gte("starts_at", selectedStart.toISOString())
       .lt("starts_at", selectedEnd.toISOString())
@@ -440,6 +442,9 @@ export default async function AdminPage({
         evaluationByReservation.has(reservation.id),
       ).length,
       returnTo: `/admin?date=${selectedKey}#session-${session.id}`,
+      minimumReservationsEnabled: session.minimum_reservations_enabled ?? false,
+      minimumReservations: session.minimum_reservations ?? 2,
+      minimumReviewStatus: session.minimum_review_status ?? "not_required",
       roster: sessionReservations.map((reservation) => {
         const isGuest = Boolean(reservation.guest_person_id);
         const acquisition = reservation.acquisition_id

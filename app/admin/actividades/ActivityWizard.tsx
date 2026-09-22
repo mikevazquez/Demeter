@@ -29,6 +29,10 @@ export type ActivityDraft = {
   allowIndividualPurchase: boolean;
   individualPrice: string;
   individualPurchaseNotes: string;
+  minimumReservationsEnabled: boolean;
+  minimumReservations: number;
+  minimumReviewValue: number;
+  minimumReviewUnit: "minutes" | "hours";
 };
 
 const DAYS = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
@@ -93,6 +97,10 @@ export function ActivityWizard({
       allowIndividualPurchase: false,
       individualPrice: "",
       individualPurchaseNotes: "",
+      minimumReservationsEnabled: false,
+      minimumReservations: 2,
+      minimumReviewValue: 2,
+      minimumReviewUnit: "hours",
     },
   );
 
@@ -179,6 +187,27 @@ export function ActivityWizard({
       }
       if (draft.requiresResource && !draft.defaultSpaceId) {
         return "Esta actividad requiere recurso: selecciona un espacio predeterminado.";
+      }
+      if (draft.minimumReservationsEnabled) {
+        const reviewMinutes =
+          draft.minimumReviewUnit === "hours"
+            ? draft.minimumReviewValue * 60
+            : draft.minimumReviewValue;
+        if (
+          !Number.isInteger(Number(draft.minimumReservations)) ||
+          draft.minimumReservations < 1 ||
+          draft.minimumReservations > draft.capacity
+        ) {
+          return "El mínimo de reservas debe estar entre 1 y el cupo de la actividad.";
+        }
+        if (
+          !Number.isInteger(Number(draft.minimumReviewValue)) ||
+          draft.minimumReviewValue < 1 ||
+          reviewMinutes < 15 ||
+          reviewMinutes > 10080
+        ) {
+          return "La revisión debe configurarse entre 15 minutos y 7 días antes.";
+        }
       }
     }
 
@@ -410,6 +439,90 @@ export function ActivityWizard({
             </div>
           </div>
 
+          <div className="activities-minimum-card">
+            <label className="activities-toggle-row activities-minimum-toggle">
+              <span>
+                <strong>Cancelación automática por mínimo de reservas</strong>
+                <small>
+                  Si al momento de la revisión hay menos reservas confirmadas que el mínimo, Studio
+                  Flow cancelará únicamente esa sesión.
+                </small>
+              </span>
+              <input
+                type="checkbox"
+                checked={draft.minimumReservationsEnabled}
+                onChange={(event) => patch({ minimumReservationsEnabled: event.target.checked })}
+              />
+            </label>
+
+            {draft.minimumReservationsEnabled ? (
+              <>
+                <div className="activities-minimum-how">
+                  <strong>¿Cómo funciona?</strong>
+                  <ol>
+                    <li>El sistema revisa las reservas una sola vez antes de la clase.</li>
+                    <li>Si se alcanza el mínimo, la sesión continúa normalmente.</li>
+                    <li>
+                      Si no se alcanza, se cancela la sesión, se devuelven los créditos y se
+                      notifica a las alumnas y al coach asignado.
+                    </li>
+                  </ol>
+                </div>
+
+                <div className="activities-minimum-grid">
+                  <label className="activities-field">
+                    <span>Mínimo de reservas *</span>
+                    <input
+                      type="number"
+                      min={1}
+                      max={draft.capacity}
+                      value={draft.minimumReservations}
+                      onChange={(event) =>
+                        patch({ minimumReservations: Number(event.target.value) })
+                      }
+                    />
+                    <small>Número mínimo de reservas para que la sesión se imparta.</small>
+                  </label>
+
+                  <label className="activities-field">
+                    <span>Revisar antes de la clase *</span>
+                    <div className="activities-minimum-time">
+                      <input
+                        type="number"
+                        min={1}
+                        value={draft.minimumReviewValue}
+                        onChange={(event) =>
+                          patch({ minimumReviewValue: Number(event.target.value) })
+                        }
+                      />
+                      <select
+                        value={draft.minimumReviewUnit}
+                        onChange={(event) =>
+                          patch({
+                            minimumReviewUnit: event.target.value as "minutes" | "hours",
+                          })
+                        }
+                      >
+                        <option value="hours">Horas antes</option>
+                        <option value="minutes">Minutos antes</option>
+                      </select>
+                    </div>
+                    <small>La revisión se ejecuta una sola vez por sesión.</small>
+                  </label>
+                </div>
+
+                <div className="activities-minimum-example">
+                  <span>✓</span>
+                  <p>
+                    <strong>Ejemplo.</strong> Con mínimo {draft.minimumReservations}, si al llegar
+                    la revisión hay {draft.minimumReservations} o más reservas, la clase se imparte.
+                    Si hay menos, la sesión se cancela automáticamente.
+                  </p>
+                </div>
+              </>
+            ) : null}
+          </div>
+
           <div className="activities-day-list">
             {groupedSchedules.map((group) => (
               <article className="activities-day-card" key={group.weekday}>
@@ -596,6 +709,12 @@ export function ActivityWizard({
                     <b>{DAYS[row.weekday]}</b> {row.startTime} · {draft.durationMinutes} min
                   </span>
                 ))}
+                <span>
+                  <b>Mínimo de reservas</b>{" "}
+                  {draft.minimumReservationsEnabled
+                    ? `${draft.minimumReservations} · revisión ${draft.minimumReviewValue} ${draft.minimumReviewUnit === "hours" ? "hora(s)" : "minuto(s)"} antes`
+                    : "Desactivado"}
+                </span>
                 <span>
                   <b>Hereda</b>{" "}
                   {draft.defaultInstructorId

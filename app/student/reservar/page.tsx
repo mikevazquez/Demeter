@@ -320,7 +320,8 @@ export default async function StudentReservePage({
                     <div>
                       <p className="text-sm font-semibold text-white">{timeLabel}</p>
                       <p className="mt-0.5 text-[10px] text-zinc-600">
-                        {session.spots_available}/{session.capacity} lugares
+                        {Math.max(session.capacity - session.spots_available, 0)}/{session.capacity}{" "}
+                        reservados
                       </p>
                     </div>
 
