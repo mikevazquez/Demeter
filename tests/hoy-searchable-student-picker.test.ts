@@ -10,17 +10,19 @@ function source(path: string) {
 describe("Hoy searchable student picker", () => {
   it("uses name search instead of a long select for existing students", () => {
     const operations = source("app/admin/hoy/SessionOperations.tsx");
+    const picker = source("app/admin/hoy/ExistingStudentAddForm.tsx");
 
-    expect(operations).toContain('placeholder="Buscar alumna por nombre"');
-    expect(operations).toContain("matchingCandidates");
-    expect(operations).toContain("normalizeSearch");
-    expect(operations).not.toContain('<select name="student_id"');
+    expect(operations).toContain("ExistingStudentAddForm");
+    expect(picker).toContain('placeholder="Buscar alumna por nombre"');
+    expect(picker).toContain("matches");
+    expect(picker).toContain("normalizeSearch");
+    expect(picker).not.toContain('<select name="student_id"');
   });
 
   it("requires choosing a matching student before adding", () => {
-    const operations = source("app/admin/hoy/SessionOperations.tsx");
+    const picker = source("app/admin/hoy/ExistingStudentAddForm.tsx");
 
-    expect(operations).toContain('name="student_id" value={selectedStudentId}');
-    expect(operations).toContain("disabled={!selectedStudentId}");
+    expect(picker).toContain('name="student_id" value={selectedStudentId}');
+    expect(picker).toContain("disabled={!selectedStudentId}");
   });
 });
