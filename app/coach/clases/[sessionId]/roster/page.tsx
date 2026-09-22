@@ -34,26 +34,30 @@ export default async function CoachRosterPage({
   const { sessionId } = await params;
   const query = await searchParams;
   const { supabase, studio } = await getCoachContext(CAPABILITIES.ATTENDANCE_WRITE);
-  const [{ data: detailData, error: detailError }, { data: rosterData, error: rosterError }] =
-    await Promise.all([
-      supabase.rpc("coach_session_detail", {
-        target_studio_id: studio.id,
-        target_session_id: sessionId,
-      }),
-      supabase.rpc("coach_session_roster", {
-        target_studio_id: studio.id,
-        target_session_id: sessionId,
-      }),
-    ]);
+  const [
+    { data: detailData, error: detailError },
+    { data: rosterData, error: rosterError },
+    { data: serverNow, error: clockError },
+  ] = await Promise.all([
+    supabase.rpc("coach_session_detail", {
+      target_studio_id: studio.id,
+      target_session_id: sessionId,
+    }),
+    supabase.rpc("coach_session_roster", {
+      target_studio_id: studio.id,
+      target_session_id: sessionId,
+    }),
+    supabase.rpc("current_server_time"),
+  ]);
 
-  if (detailError || rosterError || !detailData) notFound();
+  if (detailError || rosterError || clockError || !detailData || !serverNow) notFound();
 
   const detail = detailData as CoachSessionDetail;
   const roster = (rosterData ?? []) as CoachRosterItem[];
   const attended = roster.filter((item) => item.attendance_status === "attended").length;
   const noShow = roster.filter((item) => item.attendance_status === "no_show").length;
   const pending = roster.filter((item) => item.attendance_status === "reserved").length;
-  const now = Date.now();
+  const now = new Date(String(serverNow)).getTime();
   const startsAt = new Date(detail.starts_at).getTime();
   const endsAt = new Date(detail.ends_at).getTime();
   const inProgress = detail.status === "scheduled" && now >= startsAt && now < endsAt;
