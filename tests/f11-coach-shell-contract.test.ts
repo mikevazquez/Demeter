@@ -15,7 +15,7 @@ describe("F11 coach shell contract", () => {
     const coachLayout = source("app/coach/layout.tsx");
 
     expect(actions).toContain("CAPABILITIES.INSTRUCTOR_PORTAL");
-    expect(actions).toContain('"/admin/mis-clases"');
+    expect(actions).toContain('return "/admin"');
     expect(actions).toContain("Supabase Auth rejected sign-in");
     expect(loginCard).toContain('mode: "studio" | "student"');
     expect(loginCard).toContain('type={passwordVisible ? "text" : "password"}');
@@ -36,12 +36,12 @@ describe("F11 coach shell contract", () => {
 
   it("keeps student and reservation access out of the generic Coach context", () => {
     const context = source("lib/auth/coach-context.ts");
-    const coachHome = source("app/admin/mis-clases/page.tsx");
+    const coachHome = source("app/admin/hoy/CoachTodayView.tsx");
     const detail = source("app/coach/clases/[sessionId]/page.tsx");
 
     expect(context).not.toContain('.from("students")');
     expect(context).not.toContain('.from("reservations")');
     expect(coachHome).toContain('supabase.rpc("coach_my_sessions"');
-    expect(detail).toContain('supabase.rpc("coach_session_detail"');
+    expect(detail).toContain('redirect(`/admin#session-${sessionId}`)');
   });
 });
