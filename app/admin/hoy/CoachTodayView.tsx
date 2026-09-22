@@ -138,7 +138,7 @@ export async function CoachTodayView({
       startsAt: session.starts_at,
       endsAt: session.ends_at,
       name: session.template_name,
-      instructor: "Tu clase",
+      instructor: profile?.full_name?.trim() || "Coach",
       space: session.space_name ?? "Espacio por confirmar",
       occupied: Number(session.reserved_count),
       capacity: session.capacity,
