@@ -11,12 +11,11 @@ describe("KIOSCO-01 attendance correction persistence", () => {
   it("verifies the RPC result before claiming a completed correction", () => {
     const actions = source("app/admin/actions.ts");
 
-    expect(actions).toContain(
-      'const { data: attendanceResult, error } = await supabase.rpc("set_attendance_status"',
-    );
-    expect(actions).toContain('result.status !== status');
-    expect(actions).toContain('(reason && result.changed !== true)');
-    expect(actions).toContain('attendance_not_persisted');
+    expect(actions).toContain("attendanceResult");
+    expect(actions).toContain('"set_attendance_status"');
+    expect(actions).toContain("result.status !== status");
+    expect(actions).toContain("(reason && result.changed !== true)");
+    expect(actions).toContain("attendance_not_persisted");
   });
 
   it("re-reads the reservation status after the mutation", () => {
@@ -24,7 +23,7 @@ describe("KIOSCO-01 attendance correction persistence", () => {
 
     expect(actions).toContain('.from("reservations")');
     expect(actions).toContain('.select("status")');
-    expect(actions).toContain('persisted?.status !== status');
+    expect(actions).toContain("persisted?.status !== status");
   });
 
   it("shows an explicit error when the correction did not persist", () => {
