@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
 
 import { SessionOperations } from "./SessionOperations";
 
@@ -11,7 +12,12 @@ export type TodayRosterItem = {
   packageLabel: string;
   creditsLabel: string;
   expiresLabel: string;
+  studentId?: string | null;
+  evaluationInvitationId?: string | null;
   evaluationStatus?: string | null;
+  attendanceSource?: string | null;
+  checkedInAt?: string | null;
+  attendanceProvenance?: string | null;
 };
 
 export type TodayCandidate = {
@@ -24,6 +30,8 @@ export type TodayCandidate = {
 export type TodayClassItem = {
   id: string;
   time: string;
+  startsAt: string;
+  endsAt: string;
   name: string;
   instructor: string;
   space: string;
@@ -44,6 +52,8 @@ type TodayClassesProps = {
   canAttendance: boolean;
   canBook: boolean;
   canCreateStudent: boolean;
+  canCorrectCompleted?: boolean;
+  serverNow: string;
 };
 
 export function TodayClasses({
@@ -52,7 +62,33 @@ export function TodayClasses({
   canAttendance,
   canBook,
   canCreateStudent,
+  canCorrectCompleted = true,
+  serverNow,
 }: TodayClassesProps) {
+  const router = useRouter();
+  const initialNow = useMemo(() => new Date(serverNow).getTime(), [serverNow]);
+  const [now, setNow] = useState(initialNow);
+  const effectiveNow = Math.max(now, initialNow);
+
+  useEffect(() => {
+    const startedAt = Date.now();
+    const interval = window.setInterval(() => {
+      setNow(initialNow + (Date.now() - startedAt));
+    }, 1000);
+    return () => window.clearInterval(interval);
+  }, [initialNow]);
+
+  const hasLiveOrClosingSession = classes.some((item) => {
+    if (item.sessionStatus !== "scheduled") return false;
+    return effectiveNow >= new Date(item.startsAt).getTime();
+  });
+
+  useEffect(() => {
+    if (!hasLiveOrClosingSession) return;
+    const interval = window.setInterval(() => router.refresh(), 8000);
+    return () => window.clearInterval(interval);
+  }, [hasLiveOrClosingSession, router]);
+
   const [openSessionId, setOpenSessionId] = useState<string | null>(() => {
     if (typeof window === "undefined") return null;
     const hash = window.location.hash;
@@ -69,6 +105,37 @@ export function TodayClasses({
     <div className="today-class-list">
       {classes.map((item) => {
         const isOpen = openSessionId === item.id;
+        const startsAt = new Date(item.startsAt).getTime();
+        const endsAt = new Date(item.endsAt).getTime();
+        const phase =
+          item.sessionStatus === "cancelled"
+            ? "cancelled"
+            : item.sessionStatus === "completed"
+              ? "finished"
+              : effectiveNow < startsAt
+                ? "upcoming"
+                : effectiveNow < endsAt
+                  ? "live"
+                  : "closing";
+        const phaseLabel =
+          phase === "cancelled"
+            ? "Cancelada"
+            : phase === "finished"
+              ? "Finalizada"
+              : phase === "live"
+                ? "En curso"
+                : phase === "closing"
+                  ? "Finalizando"
+                  : "Próxima";
+        const remainingMs = Math.max(endsAt - effectiveNow, 0);
+        const remainingSeconds = Math.floor(remainingMs / 1000);
+        const hours = Math.floor(remainingSeconds / 3600);
+        const minutes = Math.floor((remainingSeconds % 3600) / 60);
+        const seconds = remainingSeconds % 60;
+        const remainingLabel = [hours, minutes, seconds]
+          .map((value) => String(value).padStart(2, "0"))
+          .join(":");
+
         return (
           <article
             className={`today-class-card${isOpen ? " is-open" : ""}`}
@@ -98,6 +165,14 @@ export function TodayClasses({
                 <small>
                   {item.instructor} · {item.space}
                 </small>
+                <span className="today-class-state-row">
+                  <span className={`today-class-state is-${phase}`}>{phaseLabel}</span>
+                  {phase === "live" ? (
+                    <span className="today-class-countdown" aria-label="Tiempo restante">
+                      ◷ {remainingLabel}
+                    </span>
+                  ) : null}
+                </span>
                 {item.evaluationCount > 0 ? (
                   <small className="today-class-evaluation-summary">
                     {item.evaluationCount}{" "}
@@ -120,12 +195,15 @@ export function TodayClasses({
                 sessionId={item.id}
                 returnDate={returnDate}
                 sessionStatus={item.sessionStatus}
+                startsAt={item.startsAt}
+                endsAt={item.endsAt}
                 roster={item.roster}
                 candidates={item.candidates}
                 available={item.available}
                 canAttendance={canAttendance}
                 canBook={canBook}
                 canCreateStudent={canCreateStudent}
+                canCorrectCompleted={canCorrectCompleted}
                 returnTo={item.returnTo}
                 initiallyOpen
                 showToggle={false}
