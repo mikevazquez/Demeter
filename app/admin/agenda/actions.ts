@@ -119,7 +119,7 @@ export async function createSession(formData: FormData) {
   const { supabase, studio } = await getAdminContext(CAPABILITIES.SCHEDULE_WRITE);
   const { data: template } = await supabase
     .from("class_templates")
-    .select("id, duration_minutes, capacity, requires_resource")
+    .select("id, duration_minutes, capacity, requires_resource, resource_uses_per_item")
     .eq("id", templateId)
     .eq("studio_id", studio.id)
     .single();
@@ -163,7 +163,7 @@ export async function createSession(formData: FormData) {
       capacity,
       notes,
       requires_resource: template.requires_resource,
-      resource_uses_per_item: 1,
+      resource_uses_per_item: template.resource_uses_per_item ?? 1,
     });
   }
   const { error } = await supabase.from("class_sessions").insert(rows);

@@ -20,6 +20,12 @@ type ActivityPayload = {
   capacity: number;
   colorHex: string;
   requiresResource: boolean;
+  resourceUsesPerItem: number;
+  resourceSettings: {
+    resourceId: string;
+    enabled: boolean;
+    capacityOverride: number | null;
+  }[];
   defaultInstructorId?: string;
   defaultSpaceId?: string;
   startsOn: string;
@@ -54,6 +60,11 @@ function normalizeRpcError(message: string | undefined) {
     "forbidden",
     "invalid_activity",
     "resource_activity_requires_space",
+    "invalid_resource_uses",
+    "invalid_resource_settings",
+    "invalid_resource_id",
+    "invalid_resource_capacity",
+    "resource_not_in_activity_space",
     "invalid_instructor",
     "invalid_space",
     "space_capacity",
@@ -84,6 +95,8 @@ export async function saveActivity(formData: FormData) {
     .trim()
     .toUpperCase();
   const schedules = Array.isArray(payload.schedules) ? payload.schedules : [];
+  const resourceUsesPerItem = Number(payload.resourceUsesPerItem);
+  const resourceSettings = Array.isArray(payload.resourceSettings) ? payload.resourceSettings : [];
   const defaultInstructorId = String(payload.defaultInstructorId ?? "").trim() || null;
   const defaultSpaceId = String(payload.defaultSpaceId ?? "").trim() || null;
   const startsOn = String(payload.startsOn ?? "").trim();
@@ -107,6 +120,17 @@ export async function saveActivity(formData: FormData) {
     !/^\d{4}-\d{2}-\d{2}$/.test(startsOn) ||
     (endsOn && (!/^\d{4}-\d{2}-\d{2}$/.test(endsOn) || endsOn < startsOn)) ||
     (payload.requiresResource && !defaultSpaceId) ||
+    !Number.isInteger(resourceUsesPerItem) ||
+    resourceUsesPerItem < 1 ||
+    resourceUsesPerItem > 20 ||
+    resourceSettings.some(
+      (setting) =>
+        !setting?.resourceId ||
+        (setting.capacityOverride != null &&
+          (!Number.isInteger(Number(setting.capacityOverride)) ||
+            Number(setting.capacityOverride) < 1 ||
+            Number(setting.capacityOverride) > 20)),
+    ) ||
     (notes?.length ?? 0) > 300 ||
     dropInPriceMinor === undefined ||
     (payload.allowIndividualPurchase && (dropInPriceMinor == null || dropInPriceMinor <= 0))
@@ -132,7 +156,13 @@ export async function saveActivity(formData: FormData) {
     redirect(routeForError(payload, "invalid_schedule"));
   }
 
-  const { data, error } = await supabase.rpc("admin_save_activity", {
+  const normalizedResourceSettings = resourceSettings.map((setting) => ({
+    resource_id: String(setting.resourceId),
+    enabled: Boolean(setting.enabled),
+    capacity_override: setting.capacityOverride == null ? null : Number(setting.capacityOverride),
+  }));
+
+  const { data, error } = await supabase.rpc("admin_save_activity_v2", {
     p_studio_id: studio.id,
     p_activity_id: payload.activityId || null,
     p_name: name,
@@ -141,6 +171,8 @@ export async function saveActivity(formData: FormData) {
     p_capacity: capacity,
     p_color_hex: colorHex,
     p_requires_resource: Boolean(payload.requiresResource),
+    p_resource_uses_per_item: resourceUsesPerItem,
+    p_resource_settings: payload.requiresResource ? normalizedResourceSettings : [],
     p_drop_in_price_minor: dropInPriceMinor,
     p_individual_purchase_notes: payload.allowIndividualPurchase ? notes : null,
     p_default_instructor_id: defaultInstructorId,

@@ -296,7 +296,7 @@
 
 .activities-stepper {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 6px;
   padding: 6px;
   border: 1px solid #26313d;
@@ -1044,7 +1044,7 @@
   }
 
   .activities-stepper {
-    grid-template-columns: repeat(4, minmax(70px, 1fr));
+    grid-template-columns: repeat(5, minmax(70px, 1fr));
     overflow-x: auto;
   }
 
@@ -1119,5 +1119,105 @@
 
   .activities-review-card dl > div:last-child {
     border-bottom: 0;
+  }
+}
+
+.activities-resource-defaults {
+  margin-top: 18px;
+  border: 1px solid rgba(132, 153, 176, 0.22);
+  border-radius: 22px;
+  background: linear-gradient(180deg, rgba(14, 23, 34, 0.96), rgba(8, 15, 24, 0.96));
+  padding: 18px;
+}
+
+.activities-resource-defaults-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+
+.activities-resource-defaults-header > div {
+  display: grid;
+  gap: 4px;
+}
+
+.activities-resource-defaults-header strong {
+  color: #f7fbff;
+  font-size: 0.98rem;
+}
+
+.activities-resource-defaults-header p {
+  margin: 0;
+  color: #8492a6;
+  font-size: 0.84rem;
+}
+
+.activities-resource-defaults-header button {
+  border: 1px solid rgba(251, 3, 151, 0.38);
+  border-radius: 12px;
+  background: rgba(251, 3, 151, 0.08);
+  color: #ff8bcf;
+  padding: 10px 13px;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.activities-resource-defaults-list {
+  display: grid;
+  gap: 10px;
+}
+
+.activities-resource-default-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(180px, 240px);
+  align-items: center;
+  gap: 18px;
+  border: 1px solid rgba(132, 153, 176, 0.18);
+  border-radius: 16px;
+  background: #0b1118;
+  padding: 14px 16px;
+}
+
+.activities-resource-toggle {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.activities-resource-toggle input {
+  width: 20px;
+  height: 20px;
+  accent-color: #fb0397;
+}
+
+.activities-resource-toggle span {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.activities-resource-toggle strong {
+  color: #f7fbff;
+}
+
+.activities-resource-toggle small {
+  color: #7f8da1;
+}
+
+@media (max-width: 760px) {
+  .activities-resource-defaults-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .activities-resource-defaults-header button {
+    width: 100%;
+  }
+
+  .activities-resource-default-row {
+    grid-template-columns: 1fr;
   }
 }

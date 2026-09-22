@@ -13,20 +13,27 @@ export default async function NewActivityPage({
   const params = await searchParams;
   const { supabase, studio } = await getAdminContext(CAPABILITIES.SCHEDULE_WRITE);
 
-  const [{ data: instructors }, { data: persons }, { data: spaces }] = await Promise.all([
-    supabase
-      .from("instructors")
-      .select("id,person_id,status")
-      .eq("studio_id", studio.id)
-      .eq("status", "active"),
-    supabase.from("persons").select("id,first_name,last_name").eq("studio_id", studio.id),
-    supabase
-      .from("spaces")
-      .select("id,name,capacity")
-      .eq("studio_id", studio.id)
-      .eq("active", true)
-      .order("name"),
-  ]);
+  const [{ data: instructors }, { data: persons }, { data: spaces }, { data: resources }] =
+    await Promise.all([
+      supabase
+        .from("instructors")
+        .select("id,person_id,status")
+        .eq("studio_id", studio.id)
+        .eq("status", "active"),
+      supabase.from("persons").select("id,first_name,last_name").eq("studio_id", studio.id),
+      supabase
+        .from("spaces")
+        .select("id,name,capacity")
+        .eq("studio_id", studio.id)
+        .eq("active", true)
+        .order("name"),
+      supabase
+        .from("resources")
+        .select("id,name,short_label,space_id")
+        .eq("studio_id", studio.id)
+        .eq("active", true)
+        .order("name"),
+    ]);
 
   const personMap = new Map(
     (persons ?? []).map((item) => [
@@ -44,7 +51,7 @@ export default async function NewActivityPage({
           </Link>
           <p className="eyebrow">NUEVA ACTIVIDAD · {studio.name}</p>
           <h1>Nueva actividad</h1>
-          <p>Completa las cuatro etapas aprobadas antes de crearla.</p>
+          <p>Completa las cinco etapas aprobadas antes de crearla.</p>
         </div>
       </header>
 
@@ -58,6 +65,11 @@ export default async function NewActivityPage({
         spaces={(spaces ?? []).map((item) => ({
           id: item.id,
           label: item.capacity ? `${item.name} · máx. ${item.capacity}` : item.name,
+        }))}
+        resources={(resources ?? []).map((item) => ({
+          id: item.id,
+          spaceId: item.space_id,
+          label: item.short_label || item.name,
         }))}
       />
     </main>
