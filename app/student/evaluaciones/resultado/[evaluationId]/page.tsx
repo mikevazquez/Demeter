@@ -130,7 +130,7 @@ export default async function StudentEvaluationResultPage({
             </div>
             <div className="rounded-2xl border border-white/10 bg-black/15 p-4">
               <p className="text-[9px] uppercase tracking-[0.14em] text-zinc-500">
-                {placement ? "Nivel validado" : "Nivel evaluado"}
+                Nivel evaluado
               </p>
               <strong className="mt-1 block text-sm text-white">
                 {result.evaluated_level_title}
