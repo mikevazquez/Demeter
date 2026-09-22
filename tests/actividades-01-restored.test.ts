@@ -88,7 +88,7 @@ describe("ACTIVIDADES-01 restored module", () => {
       "utf8",
     );
 
-    expect(actions).toContain("redirect(`/admin/actividades/${savedActivityId}`)");
+    expect(actions).toContain('redirect("/admin/actividades")');
     expect(actions).not.toContain("?saved=1");
     expect(listPage).not.toContain("notice success");
     expect(listPage).not.toContain("notice error");
@@ -96,6 +96,7 @@ describe("ACTIVIDADES-01 restored module", () => {
     expect(detailPage).not.toContain("notice error");
     expect(newActivityPage).not.toContain("notice error");
     expect(wizard).toContain("activities-save-error");
+    expect(wizard).toContain("Guardando…");
   });
 
   it("uses the approved Studio Flow dark palette", () => {
