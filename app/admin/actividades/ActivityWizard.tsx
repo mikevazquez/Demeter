@@ -38,11 +38,7 @@ function SaveActivityButton({ mode }: { mode: "create" | "edit" }) {
 
   return (
     <button type="submit" className="activities-next-button" disabled={pending}>
-      {pending
-        ? "Guardando…"
-        : mode === "create"
-          ? "Crear actividad"
-          : "Guardar cambios"}
+      {pending ? "Guardando…" : mode === "create" ? "Crear actividad" : "Guardar cambios"}
     </button>
   );
 }
