@@ -4,7 +4,11 @@ import { redirect } from "next/navigation";
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 
-import { reassignReservationResourceAction, saveSessionResourcesAction } from "./actions";
+import {
+  reassignReservationResourceAction,
+  restoreSessionResourceDefaultsAction,
+  saveSessionResourcesAction,
+} from "./actions";
 import styles from "./session-resources.module.css";
 
 type MapElement = {
@@ -28,7 +32,12 @@ export default async function SessionResourcesPage({
   searchParams,
 }: {
   params: Promise<{ sessionId: string }>;
-  searchParams: Promise<{ saved?: string; reassigned?: string; error?: string }>;
+  searchParams: Promise<{
+    saved?: string;
+    restored?: string;
+    reassigned?: string;
+    error?: string;
+  }>;
 }) {
   const { sessionId } = await params;
   const query = await searchParams;
@@ -36,7 +45,9 @@ export default async function SessionResourcesPage({
 
   const { data: session } = await supabase
     .from("class_sessions")
-    .select("id,template_id,space_id,starts_at,status,requires_resource,resource_uses_per_item")
+    .select(
+      "id,template_id,space_id,starts_at,status,requires_resource,resource_uses_per_item,resource_config_customized,resource_config_needs_review",
+    )
     .eq("id", sessionId)
     .eq("studio_id", studio.id)
     .maybeSingle();
@@ -60,7 +71,11 @@ export default async function SessionResourcesPage({
     { data: mapElements },
     { data: assignments },
   ] = await Promise.all([
-    supabase.from("class_templates").select("name").eq("id", session.template_id).maybeSingle(),
+    supabase
+      .from("class_templates")
+      .select("name,resource_uses_per_item")
+      .eq("id", session.template_id)
+      .maybeSingle(),
     session.space_id
       ? supabase
           .from("spaces")
@@ -166,10 +181,14 @@ export default async function SessionResourcesPage({
   const occupiedCount = (assignments ?? []).length;
   const elements = (mapElements ?? []) as MapElement[];
   const errorCopy: Record<string, string> = {
-    invalid: "Usa un número válido de usos por recurso.",
+    invalid: "Usa un número válido de personas por recurso.",
     assigned: "No puedes reducir o desactivar ese recurso porque ya tiene alumnas asignadas.",
     cancelled: "La sesión está cancelada y ya no puede modificarse.",
     save: "No pudimos guardar la configuración de recursos.",
+    restore_conflict:
+      "No se pueden restaurar los valores de la actividad porque hay asignaciones que quedarían inválidas.",
+    restore_space: "La sesión necesita un espacio antes de restaurar los recursos.",
+    restore: "No pudimos restaurar la configuración de la actividad.",
     reassign_full: "El recurso destino acaba de llenarse. Elige otro disponible.",
     reassign_unavailable: "Ese recurso no está disponible para esta sesión.",
     reassign: "No pudimos reasignar el recurso.",
@@ -205,6 +224,12 @@ export default async function SessionResourcesPage({
         </div>
       ) : null}
 
+      {query.restored === "1" ? (
+        <div className={`${styles.notice} ${styles.success}`}>
+          Se restauró la configuración heredada de la actividad.
+        </div>
+      ) : null}
+
       {query.reassigned === "1" ? (
         <div className={`${styles.notice} ${styles.success}`}>
           Recurso reasignado correctamente.
@@ -217,6 +242,38 @@ export default async function SessionResourcesPage({
         </div>
       ) : null}
 
+      <section className={styles.panel}>
+        <div className={styles.panelHeader}>
+          <div>
+            <h2>
+              {session.resource_config_customized
+                ? "Configuración personalizada"
+                : "Heredado de la actividad"}
+            </h2>
+            <p>
+              {session.resource_config_customized
+                ? "Esta sesión tiene una configuración propia y ya no cambia automáticamente con la actividad."
+                : `Hereda ${template?.name ?? "la actividad"} · ${session.resource_uses_per_item} ${session.resource_uses_per_item === 1 ? "persona" : "personas"} por recurso.`}
+            </p>
+          </div>
+          {canEdit && session.resource_config_customized ? (
+            <form action={restoreSessionResourceDefaultsAction}>
+              <input type="hidden" name="session_id" value={session.id} />
+              <button className={styles.save} type="submit">
+                Restaurar configuración de la actividad
+              </button>
+            </form>
+          ) : null}
+        </div>
+
+        {session.resource_config_needs_review ? (
+          <div className={`${styles.notice} ${styles.error}`}>
+            La actividad cambió, pero esta sesión conserva su configuración porque tiene
+            asignaciones que deben revisarse.
+          </div>
+        ) : null}
+      </section>
+
       <section className={styles.summary}>
         <article>
           <span>Recursos disponibles</span>
@@ -224,9 +281,11 @@ export default async function SessionResourcesPage({
           <small>Habilitados para esta sesión</small>
         </article>
         <article>
-          <span>Usos por recurso</span>
+          <span>Personas por recurso</span>
           <strong>{session.resource_uses_per_item}</strong>
-          <small>Valor predeterminado de esta sesión</small>
+          <small>
+            {session.resource_config_customized ? "Personalizado en esta sesión" : "Heredado de la actividad"}
+          </small>
         </article>
         <article>
           <span>Asignaciones actuales</span>
@@ -256,7 +315,7 @@ export default async function SessionResourcesPage({
 
             <label className={styles.defaultUses}>
               <span>
-                <strong>Usos predeterminados por recurso</strong>
+                <strong>Personas predeterminadas por recurso</strong>
                 <small>
                   1 = una alumna por recurso. 2 = dos alumnas pueden compartir el mismo recurso.
                 </small>
@@ -307,7 +366,7 @@ export default async function SessionResourcesPage({
                         placeholder={String(session.resource_uses_per_item)}
                         defaultValue={setting?.capacity_override ?? ""}
                         disabled={!canEdit || !resource.active}
-                        aria-label={`Usos personalizados para ${resource.name}`}
+                        aria-label={`Personas personalizadas para ${resource.name}`}
                       />
                     </label>
                     <span className={styles.usage}>
