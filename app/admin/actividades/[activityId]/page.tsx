@@ -36,7 +36,7 @@ export default async function ActivityDetailPage({
     supabase
       .from("class_templates")
       .select(
-        "id,name,description,duration_minutes,capacity,drop_in_price_minor,individual_purchase_notes,requires_resource,active",
+        "id,name,description,duration_minutes,capacity,drop_in_price_minor,individual_purchase_notes,requires_resource,color_hex,active",
       )
       .eq("id", activityId)
       .eq("studio_id", studio.id)
@@ -80,6 +80,7 @@ export default async function ActivityDetailPage({
     description: activity.description ?? "",
     durationMinutes: activity.duration_minutes,
     capacity: activity.capacity,
+    colorHex: activity.color_hex ?? "#FF0A8A",
     requiresResource: activity.requires_resource,
     schedules: (schedules ?? []).map((schedule) => {
       const startTime = String(schedule.local_time).slice(0, 5);
