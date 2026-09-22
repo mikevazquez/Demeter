@@ -284,6 +284,7 @@ export default async function EvaluationV2EditorPage({
           {qs.error ? <div className="eval-simple-error">{errorCopy[qs.error]}</div> : null}
 
           <section className="eval-simple-panel eval-simple-section-config">
+            <div className="eval-simple-section-step">1. Información general</div>
             <form action={updateEvaluationV2BlockAction} className="eval-simple-form">
               <input type="hidden" name="template_id" value={template.id} />
               <input type="hidden" name="version_id" value={version.id} />
@@ -299,11 +300,6 @@ export default async function EvaluationV2EditorPage({
                 <input type="hidden" name="progression_required" value="on" />
               ) : null}
               <input type="hidden" name="return_view" value="content" />
-
-              <div className="eval-simple-numbered-title">
-                <span>1.</span>
-                <strong>Información general</strong>
-              </div>
 
               <label className="eval-simple-field">
                 <span>Nombre del apartado</span>
@@ -504,8 +500,7 @@ export default async function EvaluationV2EditorPage({
           )}
 
           {normalizedType !== "direct_score" && editable ? (
-            <details className="eval-simple-add-details">
-              <summary>+ {addTitle}</summary>
+            <div className="eval-simple-add-details">
               <form action={addEvaluationV2ItemAction} className="eval-simple-add-form">
                 <input type="hidden" name="template_id" value={template.id} />
                 <input type="hidden" name="version_id" value={version.id} />
@@ -550,11 +545,11 @@ export default async function EvaluationV2EditorPage({
                 ) : (
                   <input type="hidden" name="item_weight_percent" value="" />
                 )}
-                <button className="eval-simple-primary" type="submit">
-                  Agregar
+                <button className="eval-simple-add-section" type="submit">
+                  + {addTitle}
                 </button>
               </form>
-            </details>
+            </div>
           ) : null}
 
           {normalizedType === "weighted_criteria" ? (
