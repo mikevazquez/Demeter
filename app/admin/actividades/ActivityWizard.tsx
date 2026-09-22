@@ -33,7 +33,6 @@ export type ActivityDraft = {
   minimumReservations: number;
   minimumReviewValue: number;
   minimumReviewUnit: "minutes" | "hours";
-  allowMinimumReservationOverride: boolean;
 };
 
 const DAYS = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
@@ -102,7 +101,6 @@ export function ActivityWizard({
       minimumReservations: 2,
       minimumReviewValue: 2,
       minimumReviewUnit: "hours",
-      allowMinimumReservationOverride: true,
     },
   );
 
@@ -522,22 +520,6 @@ export function ActivityWizard({
                   </p>
                 </div>
 
-                <label className="activities-toggle-row activities-minimum-exception">
-                  <span>
-                    <strong>Permitir excepción por sesión</strong>
-                    <small>
-                      Administración podrá marcar “Impartir aunque no alcance el mínimo” sin cambiar
-                      la regla general de la actividad.
-                    </small>
-                  </span>
-                  <input
-                    type="checkbox"
-                    checked={draft.allowMinimumReservationOverride}
-                    onChange={(event) =>
-                      patch({ allowMinimumReservationOverride: event.target.checked })
-                    }
-                  />
-                </label>
               </>
             ) : null}
           </div>
@@ -731,7 +713,7 @@ export function ActivityWizard({
                 <span>
                   <b>Mínimo de reservas</b>{" "}
                   {draft.minimumReservationsEnabled
-                    ? `${draft.minimumReservations} · revisión ${draft.minimumReviewValue} ${draft.minimumReviewUnit === "hours" ? "hora(s)" : "minuto(s)"} antes · ${draft.allowMinimumReservationOverride ? "permite excepción" : "sin excepción"}`
+                    ? `${draft.minimumReservations} · revisión ${draft.minimumReviewValue} ${draft.minimumReviewUnit === "hours" ? "hora(s)" : "minuto(s)"} antes`
                     : "Desactivado"}
                 </span>
                 <span>
