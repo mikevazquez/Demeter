@@ -17,6 +17,7 @@ export type TodayRosterItem = {
   evaluationStatus?: string | null;
   attendanceSource?: string | null;
   checkedInAt?: string | null;
+  attendanceProvenance?: string | null;
 };
 
 export type TodayCandidate = {
