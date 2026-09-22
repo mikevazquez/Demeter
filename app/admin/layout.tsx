@@ -10,6 +10,7 @@ import "./alumnas/admin-ux-04.css";
 import "./alumnas/profile-360-admin-ux-04.css";
 import "./agenda/agenda-calendar.css";
 import "./agenda/session-detail-admin-ux-04.css";
+import "./actividades/actividades.css";
 import "./admin-ux-04-secondary.css";
 import "./admin-ux-04-secondary-detail.css";
 
@@ -51,7 +52,10 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
     : [
         { href: "/admin", label: "Hoy", enabled: true },
         ...(can(CAPABILITIES.SCHEDULE_READ)
-          ? [{ href: "/admin/agenda", label: "Agenda", enabled: true }]
+          ? [
+              { href: "/admin/agenda", label: "Agenda", enabled: true },
+              { href: "/admin/actividades", label: "Actividades", enabled: true },
+            ]
           : []),
         ...(can(CAPABILITIES.STUDENTS_READ)
           ? [{ href: "/admin/alumnas", label: "Alumnas", enabled: true }]
@@ -81,6 +85,7 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
       ];
 
   const hasMoreDestinations =
+    can(CAPABILITIES.SCHEDULE_READ) ||
     can(CAPABILITIES.REWARDS_READ) ||
     can(CAPABILITIES.PRODUCTS_READ) ||
     can(CAPABILITIES.INSTRUCTORS_READ) ||
@@ -104,6 +109,7 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
                 label: "Más",
                 enabled: true,
                 activeFor: [
+                  "/admin/actividades",
                   "/admin/recompensas",
                   "/admin/productos",
                   "/admin/instructores",
