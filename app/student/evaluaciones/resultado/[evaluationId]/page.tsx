@@ -129,9 +129,7 @@ export default async function StudentEvaluationResultPage({
               </strong>
             </div>
             <div className="rounded-2xl border border-white/10 bg-black/15 p-4">
-              <p className="text-[9px] uppercase tracking-[0.14em] text-zinc-500">
-                Nivel evaluado
-              </p>
+              <p className="text-[9px] uppercase tracking-[0.14em] text-zinc-500">Nivel evaluado</p>
               <strong className="mt-1 block text-sm text-white">
                 {result.evaluated_level_title}
               </strong>
