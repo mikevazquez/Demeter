@@ -114,7 +114,9 @@ export async function saveActivity(formData: FormData) {
   const description = String(payload.description ?? "").trim() || null;
   const durationMinutes = Number(payload.durationMinutes);
   const capacity = Number(payload.capacity);
-  const colorHex = String(payload.colorHex ?? "").trim().toUpperCase();
+  const colorHex = String(payload.colorHex ?? "")
+    .trim()
+    .toUpperCase();
   const schedules = Array.isArray(payload.schedules) ? payload.schedules : [];
   const notes = String(payload.individualPurchaseNotes ?? "").trim() || null;
   const dropInPriceMinor = payload.allowIndividualPurchase
