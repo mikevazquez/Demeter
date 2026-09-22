@@ -8,9 +8,7 @@ function source(path: string) {
 }
 
 describe("KIOSCO-01 check-in contracts", () => {
-  const migration = source(
-    "supabase/migrations/20260922170000_kiosco01_checkin_core.sql",
-  );
+  const migration = source("supabase/migrations/20260922170000_kiosco01_checkin_core.sql");
 
   it("creates one opaque token per valid reservation and never models waitlist as a QR source", () => {
     expect(migration).toContain("reservation_checkin_tokens");
@@ -45,17 +43,13 @@ describe("KIOSCO-01 check-in contracts", () => {
     );
     expect(migration).toContain("on conflict (reservation_id) do nothing");
     expect(migration).toContain("'attendance.checked_in'");
-    expect(migration).toContain(
-      "'attendance:checked_in:' || v_reservation.id::text",
-    );
+    expect(migration).toContain("'attendance:checked_in:' || v_reservation.id::text");
     expect(migration).toContain("'already_attended'");
   });
 
   it("locks session before reservation to avoid the close/check-in race", () => {
     const sessionLock = migration.indexOf("where id = v_session_id\n  for update;");
-    const reservationLock = migration.indexOf(
-      "and session_id = v_session.id\n  for update;",
-    );
+    const reservationLock = migration.indexOf("and session_id = v_session.id\n  for update;");
 
     expect(sessionLock).toBeGreaterThan(-1);
     expect(reservationLock).toBeGreaterThan(sessionLock);
