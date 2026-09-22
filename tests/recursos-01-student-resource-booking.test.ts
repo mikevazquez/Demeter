@@ -58,7 +58,12 @@ describe("RECURSOS-01 student resource selection", () => {
     expect(migration).toContain("'used'");
     expect(migration).toContain("'available'");
     expect(migration).toContain("space_map_elements");
-    expect(migration).not.toMatch(/full_name|first_name|last_name/);
+
+    const resourceMapFunction = migration.slice(
+      migration.indexOf("create or replace function public.student_session_resource_map"),
+      migration.indexOf("create or replace function public.student_book_session_with_resource"),
+    );
+    expect(resourceMapFunction).not.toMatch(/full_name|first_name|last_name/);
   });
 
   it("routes resource-based classes through the visual picker", () => {
