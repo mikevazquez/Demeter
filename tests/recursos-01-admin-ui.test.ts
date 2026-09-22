@@ -9,32 +9,20 @@ describe("RECURSOS-01 admin configuration", () => {
     "utf8",
   );
   const mapPage = readFileSync(
-    join(
-      process.cwd(),
-      "app/admin/configuracion/recursos/[spaceId]/mapa/page.tsx",
-    ),
+    join(process.cwd(), "app/admin/configuracion/recursos/[spaceId]/mapa/page.tsx"),
     "utf8",
   );
   const editor = readFileSync(
-    join(
-      process.cwd(),
-      "app/admin/configuracion/recursos/[spaceId]/mapa/ResourceMapEditor.tsx",
-    ),
+    join(process.cwd(), "app/admin/configuracion/recursos/[spaceId]/mapa/ResourceMapEditor.tsx"),
     "utf8",
   );
   const actions = readFileSync(
     join(process.cwd(), "app/admin/configuracion/recursos/actions.ts"),
     "utf8",
   );
-  const settings = readFileSync(
-    join(process.cwd(), "app/admin/configuracion/page.tsx"),
-    "utf8",
-  );
+  const settings = readFileSync(join(process.cwd(), "app/admin/configuracion/page.tsx"), "utf8");
   const mapRpc = readFileSync(
-    join(
-      process.cwd(),
-      "supabase/migrations/20260922061500_recursos01_admin_map_rpc.sql",
-    ),
+    join(process.cwd(), "supabase/migrations/20260922061500_recursos01_admin_map_rpc.sql"),
     "utf8",
   );
 
@@ -88,8 +76,6 @@ describe("RECURSOS-01 admin configuration", () => {
     expect(mapRpc).toContain("for update;");
     expect(mapRpc).toContain("delete from public.space_map_elements");
     expect(mapRpc).toContain("jsonb_array_elements(p_elements)");
-    expect(mapRpc).toContain(
-      "private.has_capability(v_space.studio_id, 'settings.write')",
-    );
+    expect(mapRpc).toContain("private.has_capability(v_space.studio_id, 'settings.write')");
   });
 });
