@@ -20,13 +20,13 @@ export default async function StudentNotificationDetailPage({
   params: Promise<{ notificationId: string }>;
 }) {
   const { notificationId } = await params;
-  const { supabase, user, studio } = await getStudentPortalContext();
+  const { supabase, snapshot, studio } = await getStudentPortalContext();
 
   const { data: notification } = await supabase
     .from("app_notifications")
     .select("id,title,body,notification_type,created_at,read_at,payload")
     .eq("id", notificationId)
-    .eq("recipient_user_id", user.id)
+    .eq("student_id", snapshot.profile.student_id)
     .eq("recipient_kind", "student")
     .maybeSingle();
 
