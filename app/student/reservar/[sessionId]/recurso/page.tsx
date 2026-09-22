@@ -102,9 +102,7 @@ export default async function StudentResourceSelectionPage({
           role="alert"
           className="rounded-2xl border border-amber-400/25 bg-amber-400/[0.07] p-4"
         >
-          <p className="text-sm font-semibold text-amber-100">
-            Actualizamos la disponibilidad
-          </p>
+          <p className="text-sm font-semibold text-amber-100">Actualizamos la disponibilidad</p>
           <p className="mt-1 text-xs leading-5 text-zinc-400">
             {resourceErrorCopy[query.error] ?? "Elige nuevamente un recurso disponible."}
           </p>
@@ -113,22 +111,18 @@ export default async function StudentResourceSelectionPage({
 
       {!resourceMap.map || !resourceMap.elements.length ? (
         <section className="rounded-3xl border border-amber-400/20 bg-amber-400/[0.06] p-5">
-          <p className="text-sm font-semibold text-amber-100">
-            El mapa todavía no está disponible
-          </p>
+          <p className="text-sm font-semibold text-amber-100">El mapa todavía no está disponible</p>
           <p className="mt-1.5 text-xs leading-5 text-zinc-400">
-            Esta clase requiere un recurso, pero su espacio aún no tiene una distribución
-            publicada. El estudio debe configurarla antes de aceptar esta reserva.
+            Esta clase requiere un recurso, pero su espacio aún no tiene una distribución publicada.
+            El estudio debe configurarla antes de aceptar esta reserva.
           </p>
         </section>
       ) : selectableCount === 0 ? (
         <section className="rounded-3xl border border-amber-400/20 bg-amber-400/[0.06] p-5">
-          <p className="text-sm font-semibold text-amber-100">
-            No quedan recursos disponibles
-          </p>
+          <p className="text-sm font-semibold text-amber-100">No quedan recursos disponibles</p>
           <p className="mt-1.5 text-xs leading-5 text-zinc-400">
-            La clase todavía puede mostrar lugares generales, pero todos los recursos habilitados
-            ya están ocupados.
+            La clase todavía puede mostrar lugares generales, pero todos los recursos habilitados ya
+            están ocupados.
           </p>
         </section>
       ) : (
