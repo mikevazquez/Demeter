@@ -94,7 +94,11 @@ export function EvaluationAspectRow({
             <input type="hidden" name="version_id" value={versionId} />
             <input type="hidden" name="block_id" value={blockId} />
             <input type="hidden" name="item_id" value={itemId} />
-            <button className="eval-simple-row-delete" type="submit" aria-label={`Eliminar ${name}`}>
+            <button
+              className="eval-simple-row-delete"
+              type="submit"
+              aria-label={`Eliminar ${name}`}
+            >
               ⌫
             </button>
           </form>

@@ -753,9 +753,7 @@ export default async function EvaluationV2EditorPage({
                     : "Falta completar contenido"}
               </strong>
               <small className={ready ? "is-ok" : ""}>
-                {ready
-                  ? "✓ Lista para activar."
-                  : "Revisa los apartados marcados abajo."}
+                {ready ? "✓ Lista para activar." : "Revisa los apartados marcados abajo."}
               </small>
             </div>
           </div>
