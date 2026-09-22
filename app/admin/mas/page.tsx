@@ -19,6 +19,12 @@ const items: MoreItem[] = [
     capability: CAPABILITIES.SCHEDULE_READ,
   },
   {
+    title: "Evaluaciones",
+    description: "Configura disciplinas, niveles y criterios técnicos.",
+    href: "/admin/evaluaciones",
+    capability: CAPABILITIES.EVALUATIONS_READ,
+  },
+  {
     title: "Productos",
     description: "Paquetes, membresías, clases sueltas e inscripciones.",
     href: "/admin/productos",

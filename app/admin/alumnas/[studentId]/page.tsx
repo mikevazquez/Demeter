@@ -5,6 +5,7 @@ import StudentLifecycleNoticeDialog from "./StudentLifecycleNoticeDialog";
 import Profile360Overview from "./Profile360Overview";
 import StudentPackageCard from "./StudentPackageCard";
 import StudentPortalAccessSection from "./StudentPortalAccessSection";
+import StudentEvaluationsPanel from "./StudentEvaluationsPanel";
 import { notFound } from "next/navigation";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getAdminContext } from "@/lib/auth/admin-context";
@@ -143,6 +144,7 @@ export default async function StudentProfilePage({
     sale?: string;
     lifecycle?: string;
     lifecycle_error?: string;
+    evaluation_error?: string;
     view?: string;
   }>;
 }) {
@@ -150,10 +152,12 @@ export default async function StudentProfilePage({
   const query = await searchParams;
   const requestedView = String(query.view ?? "summary");
   const view = (
-    ["summary", "packages", "rewards", "followup", "history", "profile"].includes(requestedView)
+    ["summary", "packages", "rewards", "evaluations", "followup", "history", "profile"].includes(
+      requestedView,
+    )
       ? requestedView
       : "summary"
-  ) as "summary" | "packages" | "rewards" | "followup" | "history" | "profile";
+  ) as "summary" | "packages" | "rewards" | "evaluations" | "followup" | "history" | "profile";
   const { supabase, studio, can } = await getAdminContext(CAPABILITIES.STUDENTS_READ);
 
   const { data: student } = await supabase
@@ -283,6 +287,7 @@ export default async function StudentProfilePage({
   const canReadSchedule = can(CAPABILITIES.SCHEDULE_READ);
   const canReadSales = can(CAPABILITIES.SALES_READ);
   const canReadRewards = can(CAPABILITIES.REWARDS_READ);
+  const canReadEvaluations = can(CAPABILITIES.EVALUATIONS_READ);
   const canArchive = can(CAPABILITIES.STUDENTS_ARCHIVE);
   const lifecycleEventsResult = canArchive
     ? await supabase
@@ -450,6 +455,7 @@ export default async function StudentProfilePage({
 
   let levelTitle: string | null = null;
   let rewardsAvailable: number | null = null;
+  let technicalLevels: Array<{ disciplineName: string; levelTitle: string }> = [];
   let rewardAchievements: Array<{
     id: string;
     title: string;
@@ -545,6 +551,71 @@ export default async function StudentProfilePage({
       createdAt: item.created_at,
       benefitDefinition: item.benefit_definition,
     }));
+  }
+
+  if (canReadEvaluations) {
+    const { data: studentLevelRows } = await supabase
+      .from("student_discipline_levels")
+      .select("discipline_id,discipline_technical_level_id")
+      .eq("studio_id", studio.id)
+      .eq("student_id", student.id);
+
+    const disciplineIds = [
+      ...new Set((studentLevelRows ?? []).map((item) => item.discipline_id).filter(Boolean)),
+    ];
+    const disciplineLevelIds = [
+      ...new Set(
+        (studentLevelRows ?? []).map((item) => item.discipline_technical_level_id).filter(Boolean),
+      ),
+    ];
+
+    const [{ data: disciplineRows }, { data: disciplineLevelRows }] = await Promise.all([
+      disciplineIds.length
+        ? supabase.from("disciplines").select("id,name").in("id", disciplineIds)
+        : Promise.resolve({ data: [] }),
+      disciplineLevelIds.length
+        ? supabase
+            .from("discipline_technical_levels")
+            .select("id,technical_level_id")
+            .in("id", disciplineLevelIds)
+        : Promise.resolve({ data: [] }),
+    ]);
+
+    const technicalLevelIds = [
+      ...new Set(
+        (disciplineLevelRows ?? []).map((item) => item.technical_level_id).filter(Boolean),
+      ),
+    ];
+    const { data: technicalLevelRows } = technicalLevelIds.length
+      ? await supabase
+          .from("technical_level_definitions")
+          .select("id,title")
+          .in("id", technicalLevelIds)
+      : { data: [] };
+
+    const disciplineNameMap = new Map((disciplineRows ?? []).map((item) => [item.id, item.name]));
+    const disciplineTechnicalLevelMap = new Map(
+      (disciplineLevelRows ?? []).map((item) => [item.id, item.technical_level_id]),
+    );
+    const technicalLevelTitleMap = new Map(
+      (technicalLevelRows ?? []).map((item) => [item.id, item.title]),
+    );
+
+    technicalLevels = (studentLevelRows ?? [])
+      .map((item) => {
+        const technicalLevelId = disciplineTechnicalLevelMap.get(
+          item.discipline_technical_level_id,
+        );
+        const disciplineName = disciplineNameMap.get(item.discipline_id);
+        const technicalLevelTitle = technicalLevelId
+          ? technicalLevelTitleMap.get(technicalLevelId)
+          : null;
+        return disciplineName && technicalLevelTitle
+          ? { disciplineName, levelTitle: technicalLevelTitle }
+          : null;
+      })
+      .filter((item): item is { disciplineName: string; levelTitle: string } => Boolean(item))
+      .sort((left, right) => left.disciplineName.localeCompare(right.disciplineName, "es"));
   }
 
   type ProfileHistoryEvent = {
@@ -696,6 +767,8 @@ export default async function StudentProfilePage({
         birthDate={birthDate}
         levelTitle={levelTitle}
         rewardsAvailable={rewardsAvailable}
+        technicalLevels={technicalLevels}
+        showEvaluations={canReadEvaluations}
         currentPackage={currentPackageView}
         nextClass={nextClass}
         historicalValueMinor={historicalValueMinor}
@@ -721,7 +794,6 @@ export default async function StudentProfilePage({
         error={query.lifecycle_error}
       />
 
-      {query.saved ? <div className="notice success">Cambios guardados correctamente.</div> : null}
       {query.error ? (
         <div className="notice error">
           {errorCopy[query.error] ?? "No se pudo guardar el cambio."}
@@ -1203,6 +1275,14 @@ export default async function StudentProfilePage({
             </div>
           ) : null}
         </section>
+      ) : null}
+
+      {view === "evaluations" && canReadEvaluations ? (
+        <StudentEvaluationsPanel
+          studentId={student.id}
+          timeZone={timeZone}
+          error={query.evaluation_error}
+        />
       ) : null}
 
       {view === "followup" ? (

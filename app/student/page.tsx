@@ -44,6 +44,33 @@ type RewardInvitationBalance = {
   level_title?: string | null;
 };
 
+type EvaluationHomeCard = {
+  discipline_id: string;
+  discipline_name: string;
+  current_level_title: string;
+  invitation_id: string | null;
+  invitation_kind: "first" | "periodic" | null;
+  invitation_status: "offered" | "pending_schedule" | "scheduled" | "in_progress" | null;
+  window_start: string | null;
+  window_end: string | null;
+};
+
+type EvaluationHomeHistoryItem = {
+  id: string;
+  discipline_name: string;
+  evaluated_level_title: string | null;
+  resulting_level_title: string | null;
+  evaluation_date: string;
+  total_score: number | null;
+  final_outcome: "approved" | "stays" | null;
+  published_at: string | null;
+};
+
+type StudentEvaluationsHomeSnapshot = {
+  disciplines?: EvaluationHomeCard[];
+  history?: EvaluationHomeHistoryItem[];
+};
+
 const levelVisuals = {
   bronze: {
     accent: "#CD7F32",
@@ -109,28 +136,58 @@ export default async function StudentHomePage({
 }) {
   const query = await searchParams;
   const { snapshot, studio, supabase, membership } = await getStudentPortalContext();
-  const [rewardStatusResult, rewardMembershipResult, rewardLevelsResult, invitationBalanceResult] =
-    await Promise.all([
-      supabase.rpc("student_reward_status_snapshot"),
-      supabase
-        .from("reward_status_memberships")
-        .select("current_level_key")
-        .eq("studio_id", membership.studio_id)
-        .eq("student_id", snapshot.profile.student_id)
-        .maybeSingle(),
-      supabase
-        .from("reward_status_level_definitions")
-        .select(
-          "level_key,level_order,title,maintenance_attendance,promotion_attendance,min_active_months,max_uncovered_days,waitlist_priority,private_discount_pct,event_discount_pct,monthly_guest_invites",
-        )
-        .eq("studio_id", membership.studio_id)
-        .order("level_order"),
-      supabase.rpc("student_reward_invitation_balance"),
-    ]);
+  const [
+    rewardStatusResult,
+    rewardMembershipResult,
+    rewardLevelsResult,
+    invitationBalanceResult,
+    evaluationsResult,
+    unreadEvaluationResult,
+  ] = await Promise.all([
+    supabase.rpc("student_reward_status_snapshot"),
+    supabase
+      .from("reward_status_memberships")
+      .select("current_level_key")
+      .eq("studio_id", membership.studio_id)
+      .eq("student_id", snapshot.profile.student_id)
+      .maybeSingle(),
+    supabase
+      .from("reward_status_level_definitions")
+      .select(
+        "level_key,level_order,title,maintenance_attendance,promotion_attendance,min_active_months,max_uncovered_days,waitlist_priority,private_discount_pct,event_discount_pct,monthly_guest_invites",
+      )
+      .eq("studio_id", membership.studio_id)
+      .order("level_order"),
+    supabase.rpc("student_reward_invitation_balance"),
+    supabase.rpc("student_evaluations_snapshot"),
+    supabase.rpc("student_latest_unread_evaluation_result"),
+  ]);
 
   const rewardStatus = (rewardStatusResult.data as RewardStatusSnapshot | null) ?? null;
   const invitationBalance =
     (invitationBalanceResult.data as RewardInvitationBalance | null) ?? null;
+  const evaluationsSnapshot =
+    (evaluationsResult.data as StudentEvaluationsHomeSnapshot | null) ?? null;
+  const activeEvaluationInvitation =
+    evaluationsSnapshot?.disciplines?.find(
+      (item) =>
+        item.invitation_id &&
+        (item.invitation_status === "offered" || item.invitation_status === "pending_schedule"),
+    ) ?? null;
+  const latestPublishedEvaluation =
+    (unreadEvaluationResult.data as EvaluationHomeHistoryItem | null) ?? null;
+
+  const technicalLevelMap = new Map<string, { disciplineName: string; levelTitle: string }>();
+  for (const evaluation of evaluationsSnapshot?.history ?? []) {
+    if (!evaluation.resulting_level_title || technicalLevelMap.has(evaluation.discipline_name)) {
+      continue;
+    }
+    technicalLevelMap.set(evaluation.discipline_name, {
+      disciplineName: evaluation.discipline_name,
+      levelTitle: evaluation.resulting_level_title,
+    });
+  }
+  const technicalLevels = [...technicalLevelMap.values()];
   const levelDefinitions = (rewardLevelsResult.data ?? []) as RewardLevelDefinitionRow[];
   const fallbackLevelKey = rewardMembershipResult.data?.current_level_key ?? null;
   const fallbackLevelRow =
@@ -156,15 +213,6 @@ export default async function StudentHomePage({
       : null;
   const currentLevel = rewardStatus?.current_level ?? toLevelView(fallbackLevelRow);
   const nextLevel = rewardStatus?.next_level ?? toLevelView(fallbackNextRow);
-  const attendanceCount = rewardStatus?.attendance_count ?? snapshot.stats.attended_this_month ?? 0;
-  const maintenanceTarget = currentLevel?.maintenance_attendance ?? 0;
-  const promotionTarget = nextLevel?.promotion_attendance ?? 0;
-  const maintenanceProgress = maintenanceTarget
-    ? Math.min(100, Math.round((attendanceCount / maintenanceTarget) * 100))
-    : 100;
-  const promotionProgress = promotionTarget
-    ? Math.min(100, Math.round((attendanceCount / promotionTarget) * 100))
-    : 100;
   const levelKey =
     currentLevel?.key === "silver" ||
     currentLevel?.key === "gold" ||
@@ -275,197 +323,264 @@ export default async function StudentHomePage({
         </StudentNoticeDialog>
       ) : null}
 
+      {latestPublishedEvaluation ? (
+        <section
+          data-home-block="evaluation-result"
+          className="relative overflow-hidden rounded-[26px] border border-fuchsia-500/45 bg-[radial-gradient(circle_at_88%_0%,rgba(236,72,153,0.24),transparent_36%),linear-gradient(135deg,rgba(236,72,153,0.12),rgba(124,58,237,0.07))] p-4 shadow-[0_0_30px_rgba(236,72,153,0.1)] sm:p-5"
+        >
+          <span
+            aria-hidden="true"
+            className="absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-fuchsia-500 to-violet-500"
+          />
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <span
+                className={
+                  "inline-flex rounded-full border px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.16em] " +
+                  (latestPublishedEvaluation.final_outcome === "approved"
+                    ? "border-emerald-400/35 bg-emerald-400/[0.08] text-emerald-300"
+                    : "border-amber-400/35 bg-amber-400/[0.08] text-amber-300")
+                }
+              >
+                Resultado disponible
+              </span>
+              <h2 className="mt-3 text-lg font-semibold text-white">Resultado de tu evaluación</h2>
+              <p className="mt-1 text-xs leading-5 text-zinc-300">
+                {latestPublishedEvaluation.discipline_name}
+                {latestPublishedEvaluation.evaluated_level_title
+                  ? ` · ${latestPublishedEvaluation.evaluated_level_title}`
+                  : ""}
+                {latestPublishedEvaluation.total_score !== null
+                  ? ` · ${Math.round(latestPublishedEvaluation.total_score)}%`
+                  : ""}
+              </p>
+            </div>
+            <span aria-hidden="true" className="text-2xl text-fuchsia-300">
+              ✦
+            </span>
+          </div>
+
+          <Link
+            href={"/student/evaluaciones/resultado/" + latestPublishedEvaluation.id}
+            className="mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-2xl bg-fuchsia-600 px-4 text-sm font-semibold text-white transition hover:bg-fuchsia-500"
+          >
+            Ver resultado de tu evaluación
+          </Link>
+        </section>
+      ) : null}
+      {activeEvaluationInvitation?.invitation_id ? (
+        <section
+          data-home-block="evaluation-invitation"
+          className="relative overflow-hidden rounded-[26px] border border-fuchsia-500/40 bg-[radial-gradient(circle_at_88%_0%,rgba(236,72,153,0.22),transparent_36%),linear-gradient(135deg,rgba(236,72,153,0.11),rgba(124,58,237,0.06))] p-4 shadow-[0_0_28px_rgba(236,72,153,0.08)] sm:p-5"
+        >
+          <span
+            aria-hidden="true"
+            className="absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-fuchsia-500 to-violet-500"
+          />
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <span className="inline-flex rounded-full border border-fuchsia-500/30 bg-fuchsia-500/[0.08] px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.16em] text-fuchsia-300">
+                {activeEvaluationInvitation.invitation_status === "offered"
+                  ? "Evaluación disponible"
+                  : "Evaluación pendiente"}
+              </span>
+              <h2 className="mt-3 text-lg font-semibold text-white">
+                {activeEvaluationInvitation.discipline_name}
+              </h2>
+              <p className="mt-1 text-xs leading-5 text-zinc-300">
+                {activeEvaluationInvitation.invitation_status === "offered"
+                  ? `Tienes una invitación para evaluar tu nivel ${activeEvaluationInvitation.current_level_title}.`
+                  : "Ya aceptaste tu evaluación. Elige una clase para programarla."}
+              </p>
+              {activeEvaluationInvitation.window_start && activeEvaluationInvitation.window_end ? (
+                <p className="mt-1 text-[11px] text-zinc-500">
+                  Disponible del{" "}
+                  {formatDate(activeEvaluationInvitation.window_start, studio.timezone)} al{" "}
+                  {formatDate(activeEvaluationInvitation.window_end, studio.timezone)}
+                </p>
+              ) : null}
+            </div>
+            <span aria-hidden="true" className="text-2xl text-fuchsia-300">
+              ✦
+            </span>
+          </div>
+
+          <Link
+            href={
+              activeEvaluationInvitation.invitation_status === "offered"
+                ? "/student/evaluaciones/" + activeEvaluationInvitation.invitation_id
+                : "/student/evaluaciones/" + activeEvaluationInvitation.invitation_id + "/programar"
+            }
+            className="mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-2xl bg-fuchsia-600 px-4 text-sm font-semibold text-white transition hover:bg-fuchsia-500"
+          >
+            {activeEvaluationInvitation.invitation_status === "offered"
+              ? "Ver invitación"
+              : "Programar evaluación"}
+          </Link>
+        </section>
+      ) : null}
+
       <header
-        data-home-block="identity-level"
+        data-home-block="identity-benefits-technical"
         data-level={levelKey}
         className="relative overflow-hidden rounded-[28px] border p-4 transition-colors sm:p-5"
         style={{
           borderColor: levelVisual.border,
           boxShadow: `0 0 34px ${levelVisual.glow}, inset 0 0 0 1px rgba(255,255,255,0.025)`,
-          backgroundImage: `radial-gradient(circle at 82% 12%, ${levelVisual.wash}, transparent 30%), linear-gradient(135deg, rgba(255,255,255,0.035), rgba(255,255,255,0.012))`,
+          backgroundImage: `radial-gradient(circle at 86% 8%, ${levelVisual.wash}, transparent 30%), linear-gradient(135deg, rgba(255,255,255,0.035), rgba(255,255,255,0.012))`,
         }}
       >
-        <div className="grid grid-cols-[0.88fr_1.12fr] gap-4">
-          <div
-            className="flex min-w-0 flex-col justify-between border-r pr-4"
+        <div className="grid grid-cols-[0.92fr_1.08fr] items-start gap-4">
+          <div className="min-w-0">
+            <div
+              className="relative h-28 w-28 overflow-hidden rounded-full border-2 bg-black/25 sm:h-32 sm:w-32"
+              style={{
+                borderColor: levelVisual.accent,
+                boxShadow: `0 0 28px ${levelVisual.glow}`,
+              }}
+            >
+              <div className="absolute inset-0 flex items-center justify-center text-2xl font-semibold text-fuchsia-200">
+                {snapshot.profile.first_name.trim().charAt(0).toUpperCase()}
+              </div>
+              <Image
+                src="/student/perfil/avatar"
+                alt="Foto de perfil"
+                fill
+                unoptimized
+                className="object-cover"
+              />
+            </div>
+
+            <p className="mt-4 text-[9px] font-semibold uppercase tracking-[0.26em] text-zinc-500">
+              Mi perfil
+            </p>
+            <h1 className="mt-1.5 text-xl font-semibold leading-tight tracking-tight text-white sm:text-2xl">
+              {fullName}
+            </h1>
+          </div>
+
+          <Link
+            href="/student?benefits=1"
+            className="min-w-0 rounded-3xl border bg-black/20 p-3.5 transition hover:bg-white/[0.035] sm:p-4"
             style={{ borderColor: levelVisual.divider }}
           >
-            <div>
+            <p
+              className="text-[9px] font-semibold uppercase tracking-[0.22em]"
+              style={{ color: levelVisual.accent }}
+            >
+              Mis beneficios
+            </p>
+            <div className="mt-3 flex items-center gap-3">
               <div
-                className="relative mx-auto h-44 w-full max-w-[160px] overflow-hidden rounded-[24px] border-2 bg-black/20 sm:h-52 sm:max-w-[190px]"
+                aria-hidden="true"
+                className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[16px] border text-xl"
                 style={{
-                  borderColor: levelVisual.accent,
-                  boxShadow: `0 0 30px ${levelVisual.glow}`,
+                  borderColor: levelVisual.border,
+                  background: `linear-gradient(135deg, ${levelVisual.wash}, rgba(0,0,0,0.18))`,
+                  boxShadow: `0 0 22px ${levelVisual.glow}`,
+                  color: levelVisual.accent,
                 }}
               >
-                <div className="absolute inset-0 flex items-center justify-center text-2xl font-semibold text-fuchsia-200">
-                  {snapshot.profile.first_name.trim().charAt(0).toUpperCase()}
-                </div>
-                <Image
-                  src="/student/perfil/avatar"
-                  alt="Foto de perfil"
-                  fill
-                  unoptimized
-                  className="object-cover"
-                />
+                ♛
               </div>
-            </div>
-
-            <div className="mt-5">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-zinc-500">
-                Mi perfil
-              </p>
-              <h1 className="mt-2 text-2xl font-semibold leading-tight tracking-tight text-white sm:text-3xl">
-                {fullName}
-              </h1>
-              <p className="mt-1 text-sm text-zinc-400">Movimiento que transforma</p>
-            </div>
-          </div>
-
-          <div
-            className="min-w-0 rounded-3xl border bg-black/20 p-3.5 sm:p-4"
-            style={{ borderColor: levelVisual.divider }}
-          >
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-fuchsia-300">
-                  Mi nivel
+              <div className="min-w-0">
+                <h2 className="truncate text-xl font-semibold text-white">
+                  {currentLevel?.title ?? "Bronce"}
+                </h2>
+                <p className="mt-0.5 text-[11px] leading-4 text-zinc-400">
+                  Tu constancia te lleva más lejos
                 </p>
-                <div className="mt-3 flex items-center gap-3">
-                  <div
-                    aria-hidden="true"
-                    className="flex h-14 w-14 shrink-0 items-center justify-center rounded-[18px] border text-2xl"
-                    style={{
-                      borderColor: levelVisual.border,
-                      background: `linear-gradient(135deg, ${levelVisual.wash}, rgba(0,0,0,0.18))`,
-                      boxShadow: `0 0 24px ${levelVisual.glow}`,
-                      color: levelVisual.accent,
-                    }}
-                  >
-                    ♛
-                  </div>
-                  <div className="min-w-0">
-                    <h2 className="text-2xl font-semibold text-white">
-                      {currentLevel?.title ?? "Bronce"}
-                    </h2>
-                    <p className="mt-0.5 text-xs leading-4 text-zinc-400">
-                      Tu constancia te lleva más lejos
-                    </p>
-                  </div>
-                </div>
               </div>
-              <span aria-hidden="true" className="text-xl text-zinc-600">
+            </div>
+            <div className="mt-4 flex items-center justify-between border-t border-white/10 pt-3 text-xs font-semibold text-white">
+              <span>Ver mis beneficios</span>
+              <span aria-hidden="true" className="text-lg text-zinc-600">
                 ›
               </span>
             </div>
+          </Link>
+        </div>
 
-            <div className="mt-4 rounded-2xl border border-white/10 bg-black/20 p-3">
-              <div>
-                <div className="flex items-center justify-between gap-3 text-xs">
-                  <span className="font-medium text-zinc-200">
-                    Mantener {currentLevel?.title ?? "Bronce"}
-                  </span>
-                  <span className="font-semibold text-white">
-                    {attendanceCount} / {maintenanceTarget}
-                  </span>
-                </div>
-                <div className="mt-2 h-2 overflow-hidden rounded-full bg-white/10">
-                  <div
-                    className="h-full rounded-full bg-fuchsia-500"
-                    style={{ width: `${maintenanceProgress}%` }}
-                  />
-                </div>
-              </div>
-
-              <div className="mt-3">
-                <div className="flex items-center justify-between gap-3 text-xs">
-                  <span className="font-medium text-zinc-200">
-                    {nextLevel ? `Camino a ${nextLevel.title}` : "Nivel máximo"}
-                  </span>
-                  <span className="font-semibold text-white">
-                    {nextLevel ? `${attendanceCount} / ${promotionTarget}` : "✓"}
-                  </span>
-                </div>
-                <div className="mt-2 h-2 overflow-hidden rounded-full bg-white/10">
-                  <div
-                    className="h-full rounded-full bg-fuchsia-500"
-                    style={{ width: `${nextLevel ? promotionProgress : 100}%` }}
-                  />
-                </div>
-              </div>
-            </div>
-
-            <Link
-              href="/student?benefits=1"
-              className="mt-3 flex min-h-11 items-center justify-between gap-3 border-t border-white/10 pt-3 text-sm font-semibold text-white"
-            >
-              <span className="flex items-center gap-2">
-                <span aria-hidden="true" className="text-xl text-fuchsia-400">
-                  ♡
-                </span>
-                Ver mis beneficios
-              </span>
-              <span aria-hidden="true" className="text-xl text-zinc-600">
-                ›
-              </span>
-            </Link>
+        <div className="mt-4 border-t border-white/10 pt-4">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-[9px] font-semibold uppercase tracking-[0.24em] text-zinc-400">
+              Niveles técnicos
+            </p>
+            {technicalLevels.length ? (
+              <Link
+                href="/student/evaluaciones"
+                className="text-[10px] font-semibold text-fuchsia-300"
+              >
+                Ver evaluaciones →
+              </Link>
+            ) : null}
           </div>
+
+          {technicalLevels.length ? (
+            <div className="mt-3 flex flex-wrap gap-2">
+              {technicalLevels.map((item) => (
+                <span
+                  key={item.disciplineName}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-cyan-400/40 bg-cyan-400/[0.06] px-3 py-1.5 text-[11px] font-semibold text-cyan-200"
+                >
+                  <span>{item.disciplineName}</span>
+                  <span className="text-cyan-500">·</span>
+                  <strong>{item.levelTitle}</strong>
+                </span>
+              ))}
+            </div>
+          ) : (
+            <div className="mt-3 rounded-2xl border border-white/10 bg-black/15 px-3.5 py-3">
+              <p className="text-xs text-zinc-400">Aún no tienes niveles técnicos confirmados.</p>
+            </div>
+          )}
         </div>
       </header>
 
       {activePackage ? (
         <section
           data-home-block="package"
-          data-density="compact"
-          className="rounded-2xl border border-white/10 bg-white/[0.025] px-3.5 py-2.5"
+          className="rounded-[24px] border border-fuchsia-500/30 bg-[radial-gradient(circle_at_100%_0%,rgba(236,72,153,0.09),transparent_36%),rgba(255,255,255,0.025)] p-4"
         >
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <div className="flex min-w-0 items-baseline gap-2">
-                <p className="shrink-0 text-[9px] font-semibold uppercase tracking-[0.18em] text-zinc-500">
-                  Mi paquete
-                </p>
-                <h2 className="truncate text-sm font-semibold text-white">{activePackage.name}</h2>
-              </div>
+              <p className="text-[9px] font-semibold uppercase tracking-[0.22em] text-zinc-400">
+                Mi paquete
+              </p>
+              <h2 className="mt-2 truncate text-lg font-semibold text-white">
+                {activePackage.name}
+              </h2>
             </div>
-            <Link
-              href="/student/paquete"
-              className="shrink-0 text-[11px] font-semibold text-zinc-400 transition hover:text-fuchsia-300"
-            >
-              Ver detalles
+            <Link href="/student/paquete" className="shrink-0 text-xs font-semibold text-white">
+              Ver detalles →
             </Link>
           </div>
 
-          <div className="mt-1.5 flex items-center justify-between gap-3 text-xs">
-            <p className="min-w-0 truncate text-zinc-400">
-              <strong className="font-semibold text-white">
+          <div className="mt-4 flex items-end justify-between gap-4 border-t border-white/10 pt-4">
+            <div>
+              <strong className="block text-base font-semibold text-white">
                 {compactPackageHeadline}
-                {activePackage.unlimited ? (
-                  <span className="font-normal text-zinc-500"> · Acceso durante tu vigencia</span>
-                ) : null}
               </strong>
-            </p>
-            <div className="flex shrink-0 items-center gap-1.5">
-              <span className="text-[9px] uppercase tracking-[0.12em] text-zinc-600">Vence</span>
-              <span className={`font-semibold ${expiresSoon ? "text-amber-200" : "text-zinc-300"}`}>
-                {formatDate(activePackage.expires_on, studio.timezone)}
-              </span>
-              {expiresSoon ? (
-                <span className="rounded-full border border-amber-400/20 bg-amber-400/[0.08] px-1.5 py-0.5 text-[9px] font-semibold text-amber-300">
-                  Pronto
+              {activePackage.unlimited ? (
+                <span className="mt-1 block text-[11px] text-zinc-500">
+                  Acceso durante tu vigencia
                 </span>
               ) : null}
             </div>
+            <div className="text-right">
+              <span className="text-[9px] uppercase tracking-[0.14em] text-zinc-600">Vence</span>
+              <strong
+                className={`ml-2 text-sm ${expiresSoon ? "text-amber-200" : "text-zinc-300"}`}
+              >
+                {formatDate(activePackage.expires_on, studio.timezone)}
+              </strong>
+            </div>
           </div>
 
-          {activePackage.unlimited ? (
-            <p className="mt-2 border-t border-white/10 pt-2 text-[11px] text-zinc-500">
-              Reservas sujetas a disponibilidad y reglas vigentes.
-            </p>
-          ) : (
-            <div className="mt-2">
+          {!activePackage.unlimited ? (
+            <div className="mt-3">
               <div
-                className="h-1 overflow-hidden rounded-full bg-white/10"
+                className="h-1.5 overflow-hidden rounded-full bg-white/10"
                 role="progressbar"
                 aria-label="Clases utilizadas"
                 aria-valuemin={0}
@@ -477,27 +592,52 @@ export default async function StudentHomePage({
                   style={{ width: `${usedProgress}%` }}
                 />
               </div>
-              <div className="mt-1 flex items-center justify-between text-[9px] text-zinc-600">
+              <div className="mt-1.5 flex items-center justify-between text-[10px] text-zinc-600">
                 <span>{activePackage.used_credits} utilizadas</span>
                 <span>{packageLimit} total</span>
               </div>
             </div>
-          )}
+          ) : null}
         </section>
-      ) : null}
+      ) : (
+        <section
+          data-home-block="no-package"
+          className="rounded-[24px] border border-fuchsia-500/30 bg-[radial-gradient(circle_at_100%_0%,rgba(236,72,153,0.08),transparent_36%),rgba(255,255,255,0.025)] p-4"
+        >
+          <p className="text-[9px] font-semibold uppercase tracking-[0.22em] text-zinc-400">
+            Mi paquete
+          </p>
+          <div className="mt-5 text-center">
+            <span aria-hidden="true" className="text-3xl text-zinc-500">
+              ◇
+            </span>
+            <h2 className="mt-3 text-base font-semibold text-white">
+              Aún no tienes un paquete activo
+            </h2>
+            <p className="mx-auto mt-1.5 max-w-sm text-xs leading-5 text-zinc-400">
+              Explora las opciones disponibles y elige la que se adapte a ti.
+            </p>
+            <Link
+              href="/student/paquete"
+              className="mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-2xl bg-fuchsia-600 px-4 text-sm font-semibold text-white transition hover:bg-fuchsia-500"
+            >
+              Comprar paquete
+            </Link>
+          </div>
+        </section>
+      )}
 
       <section
-        data-home-block="next-class"
-        data-density="compact"
-        className="rounded-3xl border border-white/10 bg-white/[0.03] p-4"
+        data-home-block="reserved-classes"
+        className="rounded-[24px] border border-fuchsia-500/25 bg-white/[0.025] p-4"
       >
         <div className="flex items-center justify-between gap-3">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-400">
-            Tu próxima clase
+          <p className="text-[9px] font-semibold uppercase tracking-[0.22em] text-zinc-400">
+            Tus clases reservadas
           </p>
           {nextClass ? (
-            <Link href="/student/mis-clases" className="text-xs font-semibold text-fuchsia-300">
-              Ver todas
+            <Link href="/student/mis-clases" className="text-xs font-semibold text-white">
+              Ver todas →
             </Link>
           ) : null}
         </div>
@@ -505,8 +645,14 @@ export default async function StudentHomePage({
         {nextClass ? (
           <Link
             href="/student/mis-clases"
-            className="mt-3 grid grid-cols-[1fr_auto] items-center gap-3 rounded-2xl border border-white/10 bg-black/20 px-3.5 py-3 transition hover:bg-white/[0.04]"
+            className="mt-3 grid grid-cols-[68px_1fr_auto] items-center gap-3 rounded-2xl border border-white/10 bg-black/20 p-3 transition hover:bg-white/[0.04]"
           >
+            <div className="relative h-[76px] overflow-hidden rounded-xl border border-fuchsia-500/25 bg-[radial-gradient(circle_at_45%_25%,rgba(236,72,153,0.45),transparent_24%),linear-gradient(145deg,#2b0b22,#090c12_72%)]">
+              <span className="absolute inset-y-2 left-1/2 w-px -translate-x-1/2 bg-fuchsia-300/45" />
+              <span className="absolute inset-0 grid place-items-center text-lg text-fuchsia-200">
+                ✦
+              </span>
+            </div>
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
                 <h2 className="truncate text-base font-semibold text-white">
@@ -516,11 +662,10 @@ export default async function StudentHomePage({
                   Confirmada
                 </span>
               </div>
-              <p className="mt-0.5 text-xs font-medium text-fuchsia-300">{nextClass.discipline}</p>
-              <p className="mt-1.5 text-xs text-zinc-300">
+              <p className="mt-1 text-xs text-zinc-300">
                 {formatDateTime(nextClass.starts_at, studio.timezone)}
               </p>
-              <p className="mt-0.5 truncate text-[11px] text-zinc-500">
+              <p className="mt-1 truncate text-[11px] text-zinc-500">
                 {[nextClass.space, nextClass.coach].filter(Boolean).join(" · ") ||
                   "Consulta los detalles de tu clase"}
               </p>
@@ -530,146 +675,24 @@ export default async function StudentHomePage({
             </span>
           </Link>
         ) : (
-          <div className="mt-3 rounded-2xl border border-dashed border-white/10 bg-black/15 px-4 py-4 text-center">
-            <h2 className="text-sm font-semibold text-white">
-              {noCredits
-                ? "No tienes clases reservadas"
-                : activePackage
-                  ? "Aún no tienes clases reservadas"
-                  : "No tienes clases reservadas"}
+          <div className="mt-3 rounded-2xl border border-white/10 bg-black/15 px-4 py-5 text-center">
+            <span aria-hidden="true" className="text-2xl text-zinc-500">
+              ▣
+            </span>
+            <h2 className="mt-3 text-sm font-semibold text-white">
+              Aún no tienes clases reservadas
             </h2>
-            <p className="mx-auto mt-1.5 max-w-md text-xs leading-5 text-zinc-400">
-              {noCredits
-                ? "Tu paquete ya no tiene clases disponibles."
-                : activePackage
-                  ? "Tu próxima reserva aparecerá aquí."
-                  : "Adquiere un paquete para comenzar a reservar."}
+            <p className="mx-auto mt-1.5 max-w-sm text-xs leading-5 text-zinc-400">
+              Reserva tu próxima clase y sigue avanzando en tu entrenamiento.
             </p>
             <Link
-              href={canReserve ? "/student/reservar" : "/student/paquete"}
-              className="mt-3 inline-flex min-h-10 items-center justify-center rounded-xl bg-fuchsia-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-fuchsia-500"
+              href="/student/reservar"
+              className="mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-2xl border border-fuchsia-500/70 px-4 text-sm font-semibold text-fuchsia-300 transition hover:bg-fuchsia-500/[0.08]"
             >
-              {canReserve ? "Reservar clase" : "Ver paquetes"}
+              Reservar clase
             </Link>
           </div>
         )}
-      </section>
-
-      {!activePackage ? (
-        <section
-          data-home-block="no-package"
-          data-density="compact"
-          className="rounded-3xl border border-dashed border-white/10 bg-white/[0.02] p-4 text-center"
-        >
-          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-500">
-            Mi paquete
-          </p>
-          <h2 className="mt-2 text-base font-semibold text-white">No tienes un paquete activo</h2>
-          <p className="mx-auto mt-1 max-w-md text-xs leading-5 text-zinc-400">
-            Consulta los paquetes disponibles para seguir entrenando.
-          </p>
-          <Link
-            href="/student/paquete"
-            className="mt-3 inline-flex min-h-10 items-center justify-center rounded-xl bg-fuchsia-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-fuchsia-500"
-          >
-            Ver paquetes
-          </Link>
-        </section>
-      ) : null}
-
-      <Link
-        href="/student/recompensas"
-        data-home-block="progress"
-        className="group flex min-h-20 items-center justify-between gap-4 rounded-3xl border border-fuchsia-500/20 bg-[radial-gradient(circle_at_88%_15%,rgba(236,72,153,0.14),transparent_34%),rgba(255,255,255,0.03)] px-4 py-3.5 transition hover:border-fuchsia-400/35 hover:bg-fuchsia-500/[0.06]"
-      >
-        <div className="flex min-w-0 items-center gap-3">
-          <span
-            aria-hidden="true"
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-fuchsia-500/10 text-lg text-fuchsia-300"
-          >
-            ✦
-          </span>
-          <span className="min-w-0">
-            <strong className="block text-sm font-semibold text-white">Mi progreso</strong>
-            <span className="mt-0.5 block text-xs text-zinc-500">
-              Metas, rachas, logros y recompensas
-            </span>
-          </span>
-        </div>
-        <span
-          aria-hidden="true"
-          className="text-xl text-zinc-600 transition group-hover:text-fuchsia-300"
-        >
-          ›
-        </span>
-      </Link>
-
-      <section data-home-block="quick-actions">
-        <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-500">
-          Acciones rápidas
-        </p>
-        <div className="grid grid-cols-3 gap-2">
-          <Link
-            href="/student/reservar"
-            className="flex min-h-16 items-center justify-center gap-2 rounded-2xl border border-fuchsia-500/20 bg-fuchsia-500/[0.07] px-2 py-2 text-center transition hover:bg-fuchsia-500/[0.12]"
-          >
-            <span aria-hidden="true" className="text-base text-fuchsia-300">
-              ◫
-            </span>
-            <span className="text-[11px] font-semibold leading-tight text-white sm:text-xs">
-              Reservar
-            </span>
-          </Link>
-          <Link
-            href="/student/mis-clases"
-            className="flex min-h-16 items-center justify-center gap-2 rounded-2xl border border-fuchsia-500/20 bg-fuchsia-500/[0.07] px-2 py-2 text-center transition hover:bg-fuchsia-500/[0.12]"
-          >
-            <span aria-hidden="true" className="text-base text-fuchsia-300">
-              ≡
-            </span>
-            <span className="text-[11px] font-semibold leading-tight text-white sm:text-xs">
-              Mis clases
-            </span>
-          </Link>
-          <Link
-            href="/student/paquete"
-            className="flex min-h-16 items-center justify-center gap-2 rounded-2xl border border-fuchsia-500/20 bg-fuchsia-500/[0.07] px-2 py-2 text-center transition hover:bg-fuchsia-500/[0.12]"
-          >
-            <span aria-hidden="true" className="text-base text-fuchsia-300">
-              ▭
-            </span>
-            <span className="text-[11px] font-semibold leading-tight text-white sm:text-xs">
-              Mi paquete
-            </span>
-          </Link>
-        </div>
-      </section>
-
-      <section
-        data-density="compact"
-        className="rounded-3xl border border-white/10 bg-[radial-gradient(circle_at_85%_20%,rgba(236,72,153,0.12),transparent_28%),linear-gradient(135deg,rgba(255,255,255,0.045),rgba(255,255,255,0.015))] p-4"
-      >
-        <div className="flex items-center justify-between gap-3">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-zinc-400">
-            Disciplina también es amor propio
-          </p>
-        </div>
-        <div className="mt-3 grid grid-cols-3 gap-3 border-t border-white/10 pt-3">
-          <div>
-            <strong className="block text-lg text-white">
-              {snapshot.stats.attended_this_month}
-            </strong>
-            <span className="text-[11px] text-zinc-500">este mes</span>
-          </div>
-          <div>
-            <strong className="block text-lg text-white">{snapshot.stats.attended_total}</strong>
-            <span className="text-[11px] text-zinc-500">asistencias</span>
-          </div>
-          <div>
-            <strong className="block text-lg text-white">{snapshot.stats.streak_days}</strong>
-            <span className="text-[11px] text-zinc-500">racha</span>
-          </div>
-        </div>
       </section>
     </main>
   );

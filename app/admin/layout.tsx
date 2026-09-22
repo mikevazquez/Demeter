@@ -13,6 +13,7 @@ import "./agenda/session-detail-admin-ux-04.css";
 import "./actividades/actividades.css";
 import "./admin-ux-04-secondary.css";
 import "./admin-ux-04-secondary-detail.css";
+import "./evaluaciones/evaluaciones.css";
 
 const roleLabels: Record<string, string> = {
   owner: "Owner",
@@ -63,6 +64,9 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
         ...(can(CAPABILITIES.REWARDS_READ)
           ? [{ href: "/admin/recompensas", label: "Progreso", enabled: true }]
           : []),
+        ...(can(CAPABILITIES.EVALUATIONS_READ)
+          ? [{ href: "/admin/evaluaciones", label: "Evaluaciones", enabled: true }]
+          : []),
         ...(can(CAPABILITIES.PRODUCTS_READ)
           ? [{ href: "/admin/productos", label: "Productos", enabled: true }]
           : []),
@@ -87,6 +91,7 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
   const hasMoreDestinations =
     can(CAPABILITIES.SCHEDULE_READ) ||
     can(CAPABILITIES.REWARDS_READ) ||
+    can(CAPABILITIES.EVALUATIONS_READ) ||
     can(CAPABILITIES.PRODUCTS_READ) ||
     can(CAPABILITIES.INSTRUCTORS_READ) ||
     can(CAPABILITIES.AUTOMATIONS_READ) ||
@@ -111,6 +116,7 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
                 activeFor: [
                   "/admin/actividades",
                   "/admin/recompensas",
+                  "/admin/evaluaciones",
                   "/admin/productos",
                   "/admin/instructores",
                   "/admin/automatizaciones",

@@ -292,6 +292,30 @@ export default async function StudentProfilePage({
           </Link>
 
           <Link
+            href="/student/evaluaciones"
+            className="group grid min-h-24 grid-cols-[auto_1fr_auto] items-center gap-3 rounded-2xl border border-fuchsia-500/20 bg-fuchsia-500/[0.055] px-4 py-3 transition hover:border-fuchsia-400/35 hover:bg-fuchsia-500/[0.08]"
+          >
+            <span
+              aria-hidden="true"
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-fuchsia-500/10 text-lg text-fuchsia-300"
+            >
+              ◎
+            </span>
+            <span>
+              <strong className="block text-sm font-semibold text-white">Evaluaciones</strong>
+              <span className="mt-0.5 block text-xs text-zinc-500">
+                Nivel técnico, próximas evaluaciones y resultados
+              </span>
+            </span>
+            <span
+              aria-hidden="true"
+              className="text-xl text-zinc-600 transition group-hover:text-fuchsia-300"
+            >
+              ›
+            </span>
+          </Link>
+
+          <Link
             href="/student/mis-clases"
             className="group grid min-h-24 grid-cols-[auto_1fr_auto] items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 transition hover:border-fuchsia-500/25 hover:bg-white/[0.05]"
           >

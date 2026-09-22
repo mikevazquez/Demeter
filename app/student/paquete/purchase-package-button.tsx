@@ -20,9 +20,18 @@ const errorCopy: Record<string, string> = {
 type Props = {
   productTemplateId: string;
   productName: string;
+  evaluationInvitationId?: string;
+  evaluationSessionId?: string;
+  buttonLabel?: string;
 };
 
-export function PurchasePackageButton({ productTemplateId, productName }: Props) {
+export function PurchasePackageButton({
+  productTemplateId,
+  productName,
+  evaluationInvitationId,
+  evaluationSessionId,
+  buttonLabel = "Comprar",
+}: Props) {
   const [isPending, startTransition] = useTransition();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const requestKeyRef = useRef<string | null>(null);
@@ -38,7 +47,13 @@ export function PurchasePackageButton({ productTemplateId, productName }: Props)
     setErrorMessage(null);
 
     startTransition(async () => {
-      const result = await createMercadoPagoOrderAction(productTemplateId, requestKey);
+      const result =
+        evaluationInvitationId && evaluationSessionId
+          ? await createMercadoPagoOrderAction(productTemplateId, requestKey, {
+              invitationId: evaluationInvitationId,
+              sessionId: evaluationSessionId,
+            })
+          : await createMercadoPagoOrderAction(productTemplateId, requestKey);
 
       if (!result.ok) {
         setErrorMessage(errorCopy[result.error] ?? errorCopy.checkout_failed);
@@ -55,10 +70,10 @@ export function PurchasePackageButton({ productTemplateId, productName }: Props)
         type="button"
         onClick={buy}
         disabled={isPending}
-        aria-label={`Comprar ${productName}`}
+        aria-label={`${buttonLabel} ${productName}`}
         className="min-h-11 rounded-2xl bg-fuchsia-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-fuchsia-500 disabled:cursor-wait disabled:opacity-60"
       >
-        {isPending ? "Abriendo Mercado Pago…" : "Comprar"}
+        {isPending ? "Abriendo Mercado Pago…" : buttonLabel}
       </button>
       {errorMessage ? <p className="mt-2 max-w-xs text-xs text-rose-300">{errorMessage}</p> : null}
     </div>

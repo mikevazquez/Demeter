@@ -4,7 +4,8 @@ import Link from "next/link";
 type Alert = { title: string; detail: string };
 
 type Props = {
-  activeView: "summary" | "packages" | "rewards" | "followup" | "history" | "profile";
+  activeView:
+    "summary" | "packages" | "rewards" | "evaluations" | "followup" | "history" | "profile";
   student: {
     id: string;
     userId: string | null;
@@ -17,6 +18,8 @@ type Props = {
   birthDate: string | null;
   levelTitle: string | null;
   rewardsAvailable: number | null;
+  technicalLevels: Array<{ disciplineName: string; levelTitle: string }>;
+  showEvaluations: boolean;
   currentPackage: {
     name: string;
     unlimited: boolean;
@@ -79,6 +82,8 @@ export default function Profile360Overview({
   birthDate,
   levelTitle,
   rewardsAvailable,
+  technicalLevels,
+  showEvaluations,
   currentPackage,
   nextClass,
   historicalValueMinor,
@@ -169,6 +174,14 @@ export default function Profile360Overview({
         <Link className={activeView === "rewards" ? "is-active" : ""} href={href("rewards")}>
           Rewards
         </Link>
+        {showEvaluations ? (
+          <Link
+            className={activeView === "evaluations" ? "is-active" : ""}
+            href={href("evaluations")}
+          >
+            Evaluaciones
+          </Link>
+        ) : null}
         <Link className={activeView === "followup" ? "is-active" : ""} href={href("followup")}>
           Seguimiento
         </Link>
@@ -230,6 +243,34 @@ export default function Profile360Overview({
               <p className="profile360-approved-empty">Esta alumna no tiene un paquete vigente.</p>
             )}
           </section>
+
+          {showEvaluations ? (
+            <section className="profile360-technical-levels">
+              <div className="profile360-approved-card-heading">
+                <div>
+                  <p className="eyebrow">NIVELES TÉCNICOS</p>
+                  <h2>Por disciplina</h2>
+                </div>
+                <Link href={href("evaluations")}>Ver evaluaciones →</Link>
+              </div>
+
+              {technicalLevels.length ? (
+                <div className="profile360-technical-level-list">
+                  {technicalLevels.map((item) => (
+                    <div key={item.disciplineName} className="profile360-technical-level-row">
+                      <span>{item.disciplineName}</span>
+                      <strong>{item.levelTitle}</strong>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="profile360-technical-level-empty">
+                  <span>Sin niveles técnicos confirmados.</span>
+                  <Link href={href("evaluations")}>Abrir evaluaciones →</Link>
+                </div>
+              )}
+            </section>
+          ) : null}
 
           <section className="profile360-approved-indicators" aria-label="Indicadores rápidos">
             <article>

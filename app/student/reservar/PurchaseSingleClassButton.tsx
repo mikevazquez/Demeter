@@ -26,12 +26,16 @@ export default function PurchaseSingleClassButton({
   regularPriceLabel,
   discountPct = 0,
   levelTitle = null,
+  evaluationInvitationId,
+  evaluationSessionId,
 }: {
   sessionId: string;
   priceLabel: string;
   regularPriceLabel?: string | null;
   discountPct?: number;
   levelTitle?: string | null;
+  evaluationInvitationId?: string;
+  evaluationSessionId?: string;
 }) {
   const [isPending, startTransition] = useTransition();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -45,7 +49,13 @@ export default function PurchaseSingleClassButton({
     setErrorMessage(null);
 
     startTransition(async () => {
-      const result = await createSingleClassMercadoPagoOrderAction(sessionId, requestKey);
+      const result =
+        evaluationInvitationId && evaluationSessionId
+          ? await createSingleClassMercadoPagoOrderAction(sessionId, requestKey, {
+              invitationId: evaluationInvitationId,
+              sessionId: evaluationSessionId,
+            })
+          : await createSingleClassMercadoPagoOrderAction(sessionId, requestKey);
       if (!result.ok) {
         setErrorMessage(errorCopy[result.error] ?? errorCopy.checkout_failed);
         return;

@@ -476,6 +476,7 @@ export async function cancelStudentReservationAction(formData: FormData) {
 export async function createSingleClassMercadoPagoOrderAction(
   sessionId: string,
   clientRequestKey: string,
+  evaluationContext?: { invitationId: string; sessionId: string },
 ) {
   const normalizedSessionId = sessionId.trim();
   const normalizedRequestKey = clientRequestKey.trim();
@@ -491,6 +492,8 @@ export async function createSingleClassMercadoPagoOrderAction(
       sessionId: normalizedSessionId,
       clientRequestKey: normalizedRequestKey,
       returnBaseUrl,
+      evaluationInvitationId: evaluationContext?.invitationId,
+      evaluationSessionId: evaluationContext?.sessionId,
     },
   });
 
@@ -526,6 +529,7 @@ export async function createSingleClassMercadoPagoOrderAction(
 export async function createMercadoPagoOrderAction(
   productTemplateId: string,
   clientRequestKey: string,
+  evaluationContext?: { invitationId: string; sessionId: string },
 ) {
   const normalizedProductId = productTemplateId.trim();
   const normalizedRequestKey = clientRequestKey.trim();
@@ -541,6 +545,8 @@ export async function createMercadoPagoOrderAction(
       productTemplateId: normalizedProductId,
       clientRequestKey: normalizedRequestKey,
       returnBaseUrl,
+      evaluationInvitationId: evaluationContext?.invitationId,
+      evaluationSessionId: evaluationContext?.sessionId,
     },
   });
 

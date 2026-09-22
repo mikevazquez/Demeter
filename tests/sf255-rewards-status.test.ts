@@ -129,24 +129,23 @@ describe("SF-255A monthly level and waitlist contracts", () => {
     expect(classesPage).toContain("border-amber-400");
   });
 
-  it("integrates the approved level composition into Home and keeps Profile clean", () => {
+  it("integrates benefits and confirmed technical levels into Home while keeping Profile clean", () => {
     expect(homePage).toContain("student_reward_status_snapshot");
     expect(homePage).toContain("reward_status_memberships");
     expect(homePage).toContain("reward_status_level_definitions");
     expect(homePage).toContain("student_reward_invitation_balance");
-    expect(homePage).toContain('data-home-block="identity-level"');
-    expect(homePage).toContain("Mi nivel");
+    expect(homePage).toContain('data-home-block="identity-benefits-technical"');
+    expect(homePage).toContain("Mis beneficios");
     expect(homePage).toContain("Ver mis beneficios");
-    expect(homePage).toContain("Mantener");
-    expect(homePage).toContain("Camino a");
+    expect(homePage).toContain("Niveles técnicos");
+    expect(homePage).toContain("resulting_level_title");
     expect(homePage).toContain("#CD7F32");
     expect(homePage).toContain("#C0C0C0");
     expect(homePage).toContain("#D4AF37");
     expect(homePage).toContain("#5EDFFF");
-    expect(homePage).toContain('data-density="compact"');
-    expect(homePage).toContain("px-3.5 py-2.5");
-    expect(homePage).toContain("h-44 w-full max-w-[160px]");
+    expect(homePage).toContain("h-28 w-28");
     expect(homePage).toContain("rounded-[24px]");
+    expect(homePage).not.toContain("Movimiento que transforma");
     expect(profilePage).toContain('data-profile-block="package"');
     expect(profilePage).not.toContain("student_reward_status_snapshot");
     expect(profilePage).not.toContain("Nivel actual");

@@ -13,11 +13,11 @@ describe("SF-N14 PORTAL UX-02 home", () => {
   const nav = source("app/student/StudentNav.tsx");
 
   it("covers the approved package and reservation states", () => {
-    expect(home).toContain("Tu próxima clase");
+    expect(home).toContain("Tus clases reservadas");
     expect(home).toContain("Aún no tienes clases reservadas");
-    expect(home).toContain("Tu paquete ya no tiene clases disponibles");
-    expect(home).toContain("No tienes un paquete activo");
-    expect(home).toContain("Pronto");
+    expect(home).toContain("Aún no tienes un paquete activo");
+    expect(home).toContain("Comprar paquete");
+    expect(home).toContain("Reservar clase");
   });
 
   it("keeps unlimited packages semantically distinct from credits", () => {
@@ -25,18 +25,19 @@ describe("SF-N14 PORTAL UX-02 home", () => {
     expect(home).toContain("Acceso durante tu vigencia");
   });
 
-  it("keeps an active package above the next class and uses compact mobile density", () => {
+  it("keeps an active package above reserved classes with mobile-first cards", () => {
     expect(home.indexOf('data-home-block="package"')).toBeLessThan(
-      home.indexOf('data-home-block="next-class"'),
+      home.indexOf('data-home-block="reserved-classes"'),
     );
-    expect(home).toContain('data-density="compact"');
-    expect(home).toContain("min-h-16");
+    expect(home).toContain("rounded-[24px]");
+    expect(home).toContain("min-h-11");
   });
 
-  it("offers the approved quick actions", () => {
-    expect(home).toContain("Reservar");
-    expect(home).toContain("Mis clases");
-    expect(home).toContain("Mi paquete");
+  it("removes duplicate quick actions from home while preserving navigation destinations", () => {
+    expect(home).not.toContain("Acciones rápidas");
+    expect(home).toContain('href="/student/reservar"');
+    expect(home).toContain('href="/student/mis-clases"');
+    expect(home).toContain('href="/student/paquete"');
   });
 
   it("provides a recoverable temporary error state", () => {

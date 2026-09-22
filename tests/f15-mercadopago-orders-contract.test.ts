@@ -27,7 +27,8 @@ describe("F15 Mercado Pago Orders API", () => {
     expect(edge).toContain('type: "online"');
     expect(edge).toContain('processing_mode: "manual"');
     expect(edge).toContain("total_amount: totalAmount");
-    expect(edge).toContain("unit_price: totalAmount");
+    expect(edge).toContain("unit_price: mainAmount");
+    expect(edge).toContain("unit_price: extraAmount");
     expect(edge).toContain("quantity: 1");
     expect(edge).not.toContain("notification_url");
     expect(edge).not.toContain("unit_measure");

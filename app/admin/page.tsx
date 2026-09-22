@@ -302,6 +302,22 @@ export default async function AdminPage({
         data: [] as { id: string; first_name: string | null; last_name: string | null }[],
       };
 
+  const reservationIds = (reservations ?? []).map((reservation) => reservation.id);
+  const { data: evaluationInvitations } = reservationIds.length
+    ? await supabase
+        .from("evaluation_invitations")
+        .select("id,reservation_id,status")
+        .in("reservation_id", reservationIds)
+        .in("status", ["scheduled", "in_progress"])
+    : {
+        data: [] as { id: string; reservation_id: string | null; status: string }[],
+      };
+  const evaluationByReservation = new Map(
+    (evaluationInvitations ?? [])
+      .filter((item) => item.reservation_id)
+      .map((item) => [item.reservation_id!, item]),
+  );
+
   const acquisitionIds = [
     ...new Set(
       (reservations ?? []).map((reservation) => reservation.acquisition_id).filter(Boolean),
@@ -400,6 +416,9 @@ export default async function AdminPage({
       color: template?.color_hex ?? "#FF0A8A",
       sessionStatus: session.status,
       available: Math.max(session.capacity - occupied, 0),
+      evaluationCount: sessionReservations.filter((reservation) =>
+        evaluationByReservation.has(reservation.id),
+      ).length,
       returnTo: `/admin?date=${selectedKey}#session-${session.id}`,
       roster: sessionReservations.map((reservation) => {
         const isGuest = Boolean(reservation.guest_person_id);
@@ -409,6 +428,8 @@ export default async function AdminPage({
         const balance = reservation.acquisition_id
           ? balanceMap.get(reservation.acquisition_id)
           : null;
+
+        const evaluationInvitation = evaluationByReservation.get(reservation.id);
 
         return {
           id: reservation.id,
@@ -431,6 +452,9 @@ export default async function AdminPage({
                 ? `${balance ?? 0} créditos`
                 : "—",
           expiresLabel: isGuest ? "Misma clase" : formatExpiry(acquisition?.expires_on ?? null),
+          studentId: reservation.student_id,
+          evaluationInvitationId: evaluationInvitation?.id ?? null,
+          evaluationStatus: evaluationInvitation?.status ?? null,
         };
       }),
       candidates: candidates.map((student) => {
