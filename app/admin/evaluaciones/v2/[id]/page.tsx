@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 
-import { AutoSubmitSelect } from "./AutoSubmitSelect";
+import { AutoSubmitInput } from "./AutoSubmitInput";
 
 import {
   activateEvaluationV2Action,
@@ -12,29 +12,55 @@ import {
   addEvaluationV2ItemAction,
   deleteEvaluationV2BlockAction,
   deleteEvaluationV2ItemAction,
-  distributeEvaluationV2ItemWeightsAction,
   openEvaluationV2EditorAction,
   saveEvaluationV2GeneralAction,
   updateEvaluationV2BlockAction,
   updateEvaluationV2ItemAction,
 } from "../../v2-actions";
 
-type EditorStep = "configuracion" | "bloques" | "revision";
+type EditorTab = "apartados" | "reglas" | "preview";
+type SectionView = "config" | "content";
 
-function resolveStep(value?: string): EditorStep {
-  if (value === "bloques" || value === "revision") return value;
-  return "configuracion";
+function resolveTab(value?: string): EditorTab {
+  if (value === "reglas" || value === "configuracion") return "reglas";
+  if (value === "preview" || value === "revision") return "preview";
+  return "apartados";
 }
 
-function blockTypeLabel(value: string) {
-  const labels: Record<string, string> = {
-    direct_score: "Puntuación directa",
-    weighted_criteria: "Varios criterios",
-    element_list: "Lista de elementos",
-    correct_incorrect: "Correcto / Incorrecto",
-    meets: "Cumple / No cumple",
-  };
-  return labels[value] ?? value;
+function resolveSectionView(value?: string): SectionView {
+  return value === "content" ? "content" : "config";
+}
+
+function editorUrl(
+  templateId: string,
+  tab: EditorTab = "apartados",
+  blockId?: string,
+  view?: SectionView,
+) {
+  const params = new URLSearchParams({ step: tab });
+  if (blockId) params.set("block", blockId);
+  if (view) params.set("view", view);
+  return `/admin/evaluaciones/v2/${templateId}?${params.toString()}`;
+}
+
+function modeLabel(value: string) {
+  if (value === "weighted_criteria") return "Por aspectos y puntuación";
+  if (value === "meets" || value === "element_list") return "Cumple / No cumple";
+  if (value === "correct_incorrect") return "Correcto / Incorrecto";
+  return "Una sola calificación";
+}
+
+function modeDescription(value: string) {
+  if (value === "weighted_criteria") {
+    return "Evalúas varios aspectos con calificación de 0 a 100.";
+  }
+  if (value === "meets" || value === "element_list") {
+    return "Lista de elementos que deben cumplirse.";
+  }
+  if (value === "correct_incorrect") {
+    return "Lista de preguntas o conceptos.";
+  }
+  return "Una calificación general de 0 a 100.";
 }
 
 function itemLabel(item: { item_label: string | null; element_snapshot: unknown }) {
@@ -50,16 +76,21 @@ function itemLabel(item: { item_label: string | null; element_snapshot: unknown 
   return "Elemento";
 }
 
+function safePercent(value: number) {
+  return Math.max(0, Math.min(100, value));
+}
+
 export default async function EvaluationV2EditorPage({
   params,
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ step?: string; block?: string; error?: string }>;
+  searchParams: Promise<{ step?: string; block?: string; view?: string; error?: string }>;
 }) {
   const { id } = await params;
   const qs = await searchParams;
-  const step = resolveStep(qs.step);
+  const tab = resolveTab(qs.step);
+  const sectionView = resolveSectionView(qs.view);
   const ctx = await getAdminContext(CAPABILITIES.EVALUATIONS_CONFIGURE);
 
   const { data: template } = await ctx.supabase
@@ -99,38 +130,34 @@ export default async function EvaluationV2EditorPage({
         .single()
     : { data: null };
 
+  const disciplineName = discipline?.name ?? "Disciplina";
+  const levelTitle = level?.title ?? "Nivel técnico";
+
   if (version.schema_version !== 2) {
     return (
       <main className="evaluations-page">
-        <header className="eval-header">
-          <div className="eval-header-copy">
-            <Link
-              className="back-link compact"
-              href={`/admin/evaluaciones/disciplina/${template.discipline_id}`}
-            >
-              ← {discipline?.name ?? "Disciplina"}
-            </Link>
-            <h1>
-              {discipline?.name} · {level?.title ?? "Nivel técnico"}
-            </h1>
-            <p>La configuración anterior se conserva intacta para el historial.</p>
+        <header className="eval-simple-header">
+          <Link className="eval-simple-back" href={`/admin/evaluaciones/disciplina/${template.discipline_id}`}>
+            ←
+          </Link>
+          <div>
+            <h1>{disciplineName} · {levelTitle}</h1>
+            <p>Configuración de evaluación</p>
           </div>
         </header>
-        <section className="eval-panel eval-config-section">
-          <header>
-            <div>
-              <h2>Actualizar al editor configurable</h2>
-              <p>
-                Crea una nueva edición para usar bloques, pesos y requisitos de progresión sin
-                modificar evaluaciones anteriores.
-              </p>
-            </div>
-          </header>
-          <form action={openEvaluationV2EditorAction} className="eval-form-actions">
+
+        <section className="eval-simple-panel">
+          <span className="eval-simple-kicker">ACTUALIZAR CONFIGURACIÓN</span>
+          <h2>Usar el nuevo editor simplificado</h2>
+          <p>
+            La evaluación anterior se conserva para el historial. La nueva configuración usará
+            apartados, pesos y formas de evaluación más claras.
+          </p>
+          <form action={openEvaluationV2EditorAction}>
             <input type="hidden" name="template_id" value={template.id} />
             <input type="hidden" name="version_id" value={version.id} />
-            <button className="eval-primary-button" type="submit">
-              Crear edición configurable →
+            <button className="eval-simple-primary" type="submit">
+              Crear nueva configuración →
             </button>
           </form>
         </section>
@@ -163,21 +190,19 @@ export default async function EvaluationV2EditorPage({
   const items = itemsResult.data ?? [];
   const used = (usedResult.count ?? 0) > 0;
   const editable = version.status === "draft" && !used;
-  const activeBlock =
-    blocks.find((block) => block.id === qs.block) ?? (qs.block ? undefined : null);
+  const activeBlock = blocks.find((block) => block.id === qs.block) ?? null;
   const totalWeight = blocks.reduce((sum, block) => sum + Number(block.weight_percent ?? 0), 0);
-  const levelTitle = level?.title ?? "Nivel técnico";
 
-  const blockValidation = blocks.map((block) => {
+  const validations = blocks.map((block) => {
     const blockItems = items.filter((item) => item.criterion_id === block.id);
     const itemWeightTotal = blockItems.reduce(
       (sum, item) => sum + Number(item.item_weight_percent ?? 0),
       0,
     );
     const weightedCount = blockItems.filter((item) => item.item_weight_percent !== null).length;
-    const needsItems = block.block_type !== "direct_score";
-    const internalWeightValid =
-      !needsItems ||
+    const requiresItems = block.block_type !== "direct_score";
+    const contentValid =
+      !requiresItems ||
       (block.block_type === "weighted_criteria"
         ? blockItems.length > 0 &&
           weightedCount === blockItems.length &&
@@ -193,286 +218,374 @@ export default async function EvaluationV2EditorPage({
           !item.scored ||
           item.min_score !== null,
       );
+
     return {
       id: block.id,
-      valid: internalWeightValid && progressionValid,
       itemCount: blockItems.length,
       itemWeightTotal,
+      valid: contentValid && progressionValid,
     };
   });
 
   const ready =
     blocks.length > 0 &&
     Math.abs(totalWeight - 100) <= 0.01 &&
-    blockValidation.every((item) => item.valid);
+    validations.every((item) => item.valid);
 
   const errorCopy: Record<string, string> = {
-    general: "Revisa el nombre y el porcentaje mínimo.",
-    block: "No pudimos guardar el bloque. Revisa sus datos.",
+    general: "Revisa los datos antes de guardar.",
+    block: "No pudimos guardar el apartado. Revisa sus datos.",
     item: "No pudimos guardar el elemento.",
-    weights: "Los pesos deben sumar 100% antes de activar la evaluación.",
+    weights: "Los porcentajes deben sumar 100% antes de activar la evaluación.",
     progression:
-      "Todo requisito de progresión puntuable necesita un mínimo para considerarse cumplido.",
+      "Todo requisito de progresión con puntuación necesita un mínimo para considerarse cumplido.",
     activate: "Todavía falta completar parte de la configuración.",
-    locked: "Esta edición ya no puede modificarse.",
-    version: "No pudimos crear una nueva edición.",
+    locked: "Esta configuración ya no puede modificarse.",
+    version: "No pudimos crear una nueva configuración.",
   };
 
-  return (
-    <main className="evaluations-page">
-      <header className="eval-header">
-        <div className="eval-header-copy">
-          <Link
-            className="back-link compact"
-            href={`/admin/evaluaciones/disciplina/${template.discipline_id}`}
-          >
-            ← {discipline?.name ?? "Disciplina"}
-          </Link>
-          <h1>
-            {discipline?.name ?? "Disciplina"} · {levelTitle}
-          </h1>
-          <p>Editor de evaluación</p>
-        </div>
-        <span className={`eval-status ${version.status === "active" ? "approved" : ""}`}>
-          {version.status === "active" ? "Activa" : "Borrador"}
-        </span>
-      </header>
+  if (activeBlock) {
+    const blockItems = items.filter((item) => item.criterion_id === activeBlock.id);
+    const internalTotal = blockItems.reduce(
+      (sum, item) => sum + Number(item.item_weight_percent ?? 0),
+      0,
+    );
+    const normalizedType =
+      activeBlock.block_type === "element_list" ? "meets" : activeBlock.block_type;
+    const itemTitle =
+      normalizedType === "weighted_criteria"
+        ? "Aspectos a evaluar"
+        : normalizedType === "correct_incorrect"
+          ? "Preguntas o conceptos"
+          : normalizedType === "meets"
+            ? "Elementos a evaluar"
+            : "Calificación";
+    const addTitle =
+      normalizedType === "weighted_criteria"
+        ? "Agregar aspecto"
+        : normalizedType === "correct_incorrect"
+          ? "Agregar pregunta o concepto"
+          : "Agregar elemento";
 
-      {qs.error ? (
-        <div className="eval-notice">
-          {errorCopy[qs.error] ?? "No pudimos completar la acción."}
-        </div>
-      ) : null}
-
-      {!editable ? (
-        <section className="eval-panel eval-config-section">
-          <header>
+    if (sectionView === "config") {
+      return (
+        <main className="evaluations-page">
+          <header className="eval-simple-section-header">
+            <Link className="eval-simple-back" href={editorUrl(template.id, "apartados")}>
+              ←
+            </Link>
             <div>
-              <h2>Configuración protegida</h2>
-              <p>
-                Esta edición está activa o ya fue utilizada. Los cambios se hacen en una nueva
-                edición para conservar el historial.
-              </p>
-            </div>
-          </header>
-          <form action={openEvaluationV2EditorAction} className="eval-form-actions">
-            <input type="hidden" name="template_id" value={template.id} />
-            <input type="hidden" name="version_id" value={version.id} />
-            <button className="eval-primary-button" type="submit">
-              Editar configuración →
-            </button>
-          </form>
-        </section>
-      ) : null}
-
-      <nav className="eval-v2-steps" aria-label="Editor de evaluación">
-        <Link
-          className={step === "configuracion" ? "is-active" : ""}
-          href={editorUrl(template.id, "configuracion")}
-        >
-          1. Configuración
-        </Link>
-        <Link
-          className={step === "bloques" ? "is-active" : ""}
-          href={editorUrl(template.id, "bloques")}
-        >
-          2. Bloques
-        </Link>
-        <Link
-          className={step === "revision" ? "is-active" : ""}
-          href={editorUrl(template.id, "revision")}
-        >
-          3. Revisión
-        </Link>
-      </nav>
-
-      {step === "configuracion" ? (
-        <section className="eval-panel eval-config-section">
-          <header>
-            <div>
-              <span className="eval-step-label">Información general</span>
-              <h2>{levelTitle}</h2>
-              <p>
-                Esta configuración sirve tanto para colocación inicial como para progresión del
-                nivel.
-              </p>
+              <h1>{activeBlock.label === "Nuevo apartado" ? "Nuevo apartado" : activeBlock.label}</h1>
             </div>
           </header>
 
-          <form action={saveEvaluationV2GeneralAction} className="eval-form">
-            <input type="hidden" name="template_id" value={template.id} />
-            <input type="hidden" name="version_id" value={version.id} />
+          {qs.error ? <div className="eval-simple-error">{errorCopy[qs.error]}</div> : null}
 
-            <div className="eval-field-grid">
-              <label className="eval-field">
-                <span>Nombre de la evaluación</span>
-                <input name="name" defaultValue={template.name} disabled={!editable} required />
+          <section className="eval-simple-panel eval-simple-section-config">
+            <form action={updateEvaluationV2BlockAction} className="eval-simple-form">
+              <input type="hidden" name="template_id" value={template.id} />
+              <input type="hidden" name="version_id" value={version.id} />
+              <input type="hidden" name="block_id" value={activeBlock.id} />
+              <input type="hidden" name="description" value={activeBlock.description ?? ""} />
+              <input type="hidden" name="min_percent" value={activeBlock.min_percent ?? ""} />
+              <input
+                type="hidden"
+                name="evaluator_instructions"
+                value={activeBlock.evaluator_instructions ?? ""}
+              />
+              {activeBlock.progression_required ? (
+                <input type="hidden" name="progression_required" value="on" />
+              ) : null}
+              <input type="hidden" name="return_view" value="content" />
+
+              <div className="eval-simple-numbered-title">
+                <span>1.</span>
+                <strong>Información general</strong>
+              </div>
+
+              <label className="eval-simple-field">
+                <span>Nombre del apartado</span>
+                <input
+                  name="label"
+                  defaultValue={activeBlock.label}
+                  disabled={!editable}
+                  placeholder="Ej. Combo técnico"
+                  required
+                />
               </label>
-              <label className="eval-field">
-                <span>Mínimo global para aprobar</span>
-                <div className="eval-v2-percent-input">
+
+              <label className="eval-simple-field">
+                <span>¿Cuánto vale en el resultado final?</span>
+                <div className="eval-simple-percent-field">
                   <input
-                    name="pass_threshold"
+                    name="weight_percent"
                     type="number"
                     min="0"
                     max="100"
                     step="0.01"
-                    defaultValue={version.pass_threshold}
+                    defaultValue={activeBlock.weight_percent}
                     disabled={!editable}
                     required
                   />
                   <span>%</span>
                 </div>
               </label>
-            </div>
 
-            <label className="eval-field">
-              <span>Instrucciones para el coach</span>
-              <textarea
-                name="instructions"
-                defaultValue={version.evaluator_instructions ?? ""}
-                disabled={!editable}
-                placeholder="Indicaciones que aparecerán durante la evaluación…"
-              />
-            </label>
+              <div className="eval-simple-numbered-title">
+                <span>2.</span>
+                <strong>¿Cómo se evaluará?</strong>
+              </div>
 
-            {editable ? (
-              <div className="eval-form-actions">
-                <button className="eval-primary-button" type="submit">
+              <div className="eval-simple-mode-grid">
+                {[
+                  {
+                    value: "weighted_criteria",
+                    icon: "▥",
+                    title: "Por aspectos y puntuación",
+                    description: "Evalúas varios aspectos con calificación de 0 a 100.",
+                  },
+                  {
+                    value: "meets",
+                    icon: "☑",
+                    title: "Cumple / No cumple",
+                    description: "Lista de elementos que deben cumplirse.",
+                  },
+                  {
+                    value: "correct_incorrect",
+                    icon: "⊗",
+                    title: "Correcto / Incorrecto",
+                    description: "Lista de preguntas o conceptos.",
+                  },
+                  {
+                    value: "direct_score",
+                    icon: "★",
+                    title: "Una sola calificación",
+                    description: "Una calificación general de 0 a 100.",
+                  },
+                ].map((mode) => (
+                  <label className="eval-simple-mode-option" key={mode.value}>
+                    <input
+                      type="radio"
+                      name="block_type"
+                      value={mode.value}
+                      defaultChecked={normalizedType === mode.value}
+                      disabled={!editable}
+                    />
+                    <span className="eval-simple-mode-icon">{mode.icon}</span>
+                    <span>
+                      <strong>{mode.title}</strong>
+                      <small>{mode.description}</small>
+                    </span>
+                  </label>
+                ))}
+              </div>
+
+              <div className="eval-simple-footer-actions">
+                <Link className="eval-simple-secondary" href={editorUrl(template.id, "apartados")}>
+                  Cancelar
+                </Link>
+                <button className="eval-simple-primary" type="submit" disabled={!editable}>
                   Siguiente →
                 </button>
               </div>
-            ) : null}
-          </form>
-        </section>
-      ) : null}
+            </form>
+          </section>
+        </main>
+      );
+    }
 
-      {step === "bloques" ? (
-        <>
-          <section className="eval-panel eval-config-section">
-            <header>
-              <div>
-                <span className="eval-step-label">Bloques de evaluación</span>
-                <h2>Peso total</h2>
-                <p>Los bloques que aportan calificación deben sumar exactamente 100%.</p>
-              </div>
-              <span
-                className={`eval-status ${Math.abs(totalWeight - 100) <= 0.01 ? "approved" : "incomplete"}`}
-              >
-                {totalWeight}% de 100%
-              </span>
-            </header>
-            <div className="eval-v2-weight-track">
-              <i style={{ width: `${Math.min(100, totalWeight)}%` }} />
+    return (
+      <main className="evaluations-page">
+        <header className="eval-simple-section-header">
+          <Link
+            className="eval-simple-back"
+            href={editorUrl(template.id, "apartados", activeBlock.id, "config")}
+          >
+            ←
+          </Link>
+          <div>
+            <h1>{activeBlock.label}</h1>
+            <p>{modeLabel(activeBlock.block_type)}</p>
+          </div>
+          {editable ? (
+            <form action={deleteEvaluationV2BlockAction}>
+              <input type="hidden" name="template_id" value={template.id} />
+              <input type="hidden" name="version_id" value={version.id} />
+              <input type="hidden" name="block_id" value={activeBlock.id} />
+              <button className="eval-simple-trash" type="submit" aria-label="Eliminar apartado">
+                ♲
+              </button>
+            </form>
+          ) : null}
+        </header>
+
+        {qs.error ? <div className="eval-simple-error">{errorCopy[qs.error]}</div> : null}
+
+        {normalizedType === "weighted_criteria" ? (
+          <section className="eval-simple-panel eval-simple-distribution-card">
+            <div className="eval-simple-mini-ring" style={{ "--progress": safePercent(internalTotal) } as React.CSSProperties}>
+              <strong>{internalTotal}%</strong>
             </div>
-
-            <div className="eval-v2-block-list">
-              {blocks.map((block) => {
-                const validation = blockValidation.find((item) => item.id === block.id);
-                return (
-                  <Link
-                    className={`eval-v2-block-card ${activeBlock?.id === block.id ? "is-active" : ""}`}
-                    href={editorUrl(template.id, "bloques", block.id)}
-                    key={block.id}
-                  >
-                    <span className="eval-discipline-icon" aria-hidden="true">
-                      ◇
-                    </span>
-                    <span className="eval-discipline-copy">
-                      <strong>{block.label}</strong>
-                      <small>
-                        {blockTypeLabel(block.block_type)}
-                        {block.block_type !== "direct_score"
-                          ? ` · ${validation?.itemCount ?? 0} elementos`
-                          : ""}
-                      </small>
-                    </span>
-                    <strong>{block.weight_percent}%</strong>
-                    <span aria-hidden="true">›</span>
-                  </Link>
-                );
-              })}
-            </div>
-
-            {editable ? (
-              <form action={addEvaluationV2BlockAction}>
-                <input type="hidden" name="template_id" value={template.id} />
-                <input type="hidden" name="version_id" value={version.id} />
-                <button className="eval-v2-add-button" type="submit">
-                  + Agregar bloque
-                </button>
-              </form>
-            ) : null}
-
-            <div className="eval-form-actions eval-v2-nav-actions">
-              <Link
-                className="eval-secondary-button"
-                href={editorUrl(template.id, "configuracion")}
-              >
-                ← Anterior
-              </Link>
-              <Link className="eval-primary-button" href={editorUrl(template.id, "revision")}>
-                Siguiente →
-              </Link>
+            <div>
+              <span>Distribución del apartado</span>
+              <strong>{internalTotal}% de 100%</strong>
+              <small className={Math.abs(internalTotal - 100) <= 0.01 ? "is-ok" : ""}>
+                {Math.abs(internalTotal - 100) <= 0.01
+                  ? "✓ Distribución correcta."
+                  : "Los aspectos deben sumar 100%."}
+              </small>
             </div>
           </section>
+        ) : null}
 
-          {activeBlock ? (
-            <section className="eval-panel eval-config-section eval-v2-block-editor">
-              <header>
-                <div>
-                  <span className="eval-step-label">Editar bloque</span>
-                  <h2>{activeBlock.label}</h2>
-                  <p>{blockTypeLabel(activeBlock.block_type)}</p>
-                </div>
-              </header>
+        <section className="eval-simple-content-section">
+          <h2>{itemTitle}</h2>
 
-              <form action={updateEvaluationV2BlockAction} className="eval-form">
+          {normalizedType === "direct_score" ? (
+            <div className="eval-simple-info-card">
+              El coach asignará una sola calificación de 0 a 100 para este apartado.
+            </div>
+          ) : (
+            <div className="eval-simple-item-list">
+              {blockItems.map((item) => (
+                <form action={updateEvaluationV2ItemAction} className="eval-simple-item-row" key={item.id}>
+                  <input type="hidden" name="template_id" value={template.id} />
+                  <input type="hidden" name="version_id" value={version.id} />
+                  <input type="hidden" name="block_id" value={activeBlock.id} />
+                  <input type="hidden" name="item_id" value={item.id} />
+                  <input type="hidden" name="min_score" value={item.min_score ?? ""} />
+                  {Boolean(item.progression_required || item.mandatory) ? (
+                    <input type="hidden" name="progression_required" value="on" />
+                  ) : null}
+
+                  <span className="eval-simple-drag" aria-hidden="true">⠿</span>
+                  <AutoSubmitInput
+                    ariaLabel={`Nombre de ${itemLabel(item)}`}
+                    className="eval-simple-item-name"
+                    defaultValue={itemLabel(item)}
+                    disabled={!editable}
+                    name="label"
+                  />
+                  {normalizedType === "weighted_criteria" ? (
+                    <div className="eval-simple-item-percent">
+                      <AutoSubmitInput
+                        ariaLabel={`Peso de ${itemLabel(item)}`}
+                        defaultValue={item.item_weight_percent ?? ""}
+                        disabled={!editable}
+                        max={100}
+                        min={0}
+                        name="item_weight_percent"
+                        step="0.01"
+                        type="number"
+                      />
+                      <span>%</span>
+                    </div>
+                  ) : (
+                    <input type="hidden" name="item_weight_percent" value="" />
+                  )}
+                  {editable ? (
+                    <button
+                      className="eval-simple-row-delete"
+                      type="submit"
+                      formAction={deleteEvaluationV2ItemAction}
+                      aria-label={`Eliminar ${itemLabel(item)}`}
+                    >
+                      ♲
+                    </button>
+                  ) : null}
+                  <button className="eval-simple-hidden-submit" type="submit" aria-hidden="true">
+                    Guardar
+                  </button>
+                </form>
+              ))}
+            </div>
+          )}
+
+          {normalizedType !== "direct_score" && editable ? (
+            <details className="eval-simple-add-details">
+              <summary>+ {addTitle}</summary>
+              <form action={addEvaluationV2ItemAction} className="eval-simple-add-form">
                 <input type="hidden" name="template_id" value={template.id} />
                 <input type="hidden" name="version_id" value={version.id} />
                 <input type="hidden" name="block_id" value={activeBlock.id} />
-
-                <div className="eval-field-grid">
-                  <label className="eval-field">
-                    <span>Nombre del bloque</span>
-                    <input name="label" defaultValue={activeBlock.label} disabled={!editable} />
-                  </label>
-                  <label className="eval-field">
-                    <span>Peso en la evaluación</span>
-                    <div className="eval-v2-percent-input">
+                <input type="hidden" name="discipline_id" value={template.discipline_id} />
+                {normalizedType === "weighted_criteria" ? (
+                  <>
+                    <input type="hidden" name="scored" value="on" />
+                    <input type="hidden" name="max_score" value="100" />
+                  </>
+                ) : null}
+                <label className="eval-simple-field">
+                  <span>Nombre</span>
+                  <input
+                    name="label"
+                    placeholder={
+                      normalizedType === "weighted_criteria"
+                        ? "Ej. Fluidez"
+                        : normalizedType === "correct_incorrect"
+                          ? "Ej. Nombre de figura"
+                          : "Ej. Inversión"
+                    }
+                    required
+                  />
+                </label>
+                {normalizedType === "weighted_criteria" ? (
+                  <label className="eval-simple-field">
+                    <span>Peso dentro del apartado</span>
+                    <div className="eval-simple-percent-field">
                       <input
-                        name="weight_percent"
+                        name="item_weight_percent"
                         type="number"
                         min="0"
                         max="100"
                         step="0.01"
-                        defaultValue={activeBlock.weight_percent}
-                        disabled={!editable}
+                        placeholder="0"
+                        required
                       />
                       <span>%</span>
                     </div>
                   </label>
-                </div>
+                ) : (
+                  <input type="hidden" name="item_weight_percent" value="" />
+                )}
+                <button className="eval-simple-primary" type="submit">
+                  Agregar
+                </button>
+              </form>
+            </details>
+          ) : null}
 
-                <label className="eval-field">
-                  <span>¿Cómo quieres evaluar este bloque?</span>
-                  <AutoSubmitSelect
-                    name="block_type"
-                    defaultValue={activeBlock.block_type}
-                    disabled={!editable}
-                    options={[
-                      { value: "direct_score", label: "Puntuación directa" },
-                      { value: "weighted_criteria", label: "Varios criterios" },
-                      { value: "element_list", label: "Lista de elementos" },
-                      { value: "correct_incorrect", label: "Correcto / Incorrecto" },
-                      { value: "meets", label: "Cumple / No cumple" },
-                    ]}
-                  />
-                </label>
+          {normalizedType === "weighted_criteria" ? (
+            <div className="eval-simple-info-card">
+              ⓘ Los porcentajes de todos los aspectos deben sumar 100%.
+            </div>
+          ) : null}
 
-                <div className="eval-field-grid">
-                  <label className="eval-field">
-                    <span>Mínimo del bloque (obligatorio si es requisito)</span>
+          <details className="eval-simple-accordion">
+            <summary>
+              <span>⚙</span>
+              <strong>Reglas para avanzar (opcional)</strong>
+              <span>›</span>
+            </summary>
+            <div className="eval-simple-accordion-body">
+              <form action={updateEvaluationV2BlockAction} className="eval-simple-form">
+                <input type="hidden" name="template_id" value={template.id} />
+                <input type="hidden" name="version_id" value={version.id} />
+                <input type="hidden" name="block_id" value={activeBlock.id} />
+                <input type="hidden" name="label" value={activeBlock.label} />
+                <input type="hidden" name="description" value={activeBlock.description ?? ""} />
+                <input type="hidden" name="weight_percent" value={activeBlock.weight_percent} />
+                <input type="hidden" name="block_type" value={normalizedType} />
+                <input
+                  type="hidden"
+                  name="evaluator_instructions"
+                  value={activeBlock.evaluator_instructions ?? ""}
+                />
+                <input type="hidden" name="return_view" value="content" />
+
+                <label className="eval-simple-field">
+                  <span>Mínimo del apartado</span>
+                  <div className="eval-simple-percent-field">
                     <input
                       name="min_percent"
                       type="number"
@@ -480,314 +593,313 @@ export default async function EvaluationV2EditorPage({
                       max="100"
                       step="0.01"
                       defaultValue={activeBlock.min_percent ?? ""}
-                      disabled={!editable}
-                      placeholder="Sin mínimo"
+                      placeholder="Opcional"
                     />
-                  </label>
-                  <label className="eval-v2-check">
-                    <input
-                      name="progression_required"
-                      type="checkbox"
-                      defaultChecked={activeBlock.progression_required}
-                      disabled={!editable}
-                    />
-                    <span>Este bloque es requisito para progresión</span>
-                  </label>
-                </div>
-
-                <label className="eval-field">
-                  <span>Descripción</span>
-                  <textarea
-                    name="description"
-                    defaultValue={activeBlock.description ?? ""}
-                    disabled={!editable}
-                  />
-                </label>
-
-                <label className="eval-field">
-                  <span>Instrucciones del bloque</span>
-                  <textarea
-                    name="evaluator_instructions"
-                    defaultValue={activeBlock.evaluator_instructions ?? ""}
-                    disabled={!editable}
-                  />
-                </label>
-
-                {editable ? (
-                  <div className="eval-form-actions">
-                    <button className="eval-primary-button" type="submit">
-                      Guardar bloque
-                    </button>
+                    <span>%</span>
                   </div>
-                ) : null}
+                </label>
+                <label className="eval-simple-check">
+                  <input
+                    name="progression_required"
+                    type="checkbox"
+                    defaultChecked={activeBlock.progression_required}
+                  />
+                  <span>Este apartado debe cumplirse para avanzar de nivel</span>
+                </label>
+                <button className="eval-simple-secondary" type="submit">
+                  Guardar reglas
+                </button>
               </form>
 
-              {activeBlock.block_type !== "direct_score" ? (
-                <div className="eval-v2-items-section">
-                  <div className="eval-v2-items-heading">
-                    <div>
-                      <h3>
-                        {activeBlock.block_type === "weighted_criteria"
-                          ? "Criterios del bloque"
-                          : activeBlock.block_type === "correct_incorrect"
-                            ? "Preguntas / nombres"
-                            : "Elementos del bloque"}
-                      </h3>
-                      <p>
-                        {items.filter((item) => item.criterion_id === activeBlock.id).length}{" "}
-                        elementos
-                      </p>
-                    </div>
-                    {editable &&
-                    items.filter((item) => item.criterion_id === activeBlock.id).length > 1 ? (
-                      <form action={distributeEvaluationV2ItemWeightsAction}>
-                        <input type="hidden" name="template_id" value={template.id} />
-                        <input type="hidden" name="version_id" value={version.id} />
-                        <input type="hidden" name="block_id" value={activeBlock.id} />
-                        <button className="eval-secondary-button" type="submit">
-                          Distribuir peso por igual
-                        </button>
-                      </form>
-                    ) : null}
-                  </div>
-
-                  <div className="eval-v2-item-list">
-                    {items
-                      .filter((item) => item.criterion_id === activeBlock.id)
-                      .map((item) => (
-                        <form
-                          action={updateEvaluationV2ItemAction}
-                          className="eval-v2-item-row"
-                          key={item.id}
-                        >
-                          <input type="hidden" name="template_id" value={template.id} />
-                          <input type="hidden" name="version_id" value={version.id} />
-                          <input type="hidden" name="block_id" value={activeBlock.id} />
-                          <input type="hidden" name="item_id" value={item.id} />
-                          <input
-                            className="eval-v2-item-name"
-                            name="label"
-                            defaultValue={itemLabel(item)}
-                            disabled={!editable}
-                          />
-                          <label className="eval-v2-mini-field">
-                            <span>Peso</span>
-                            <div className="eval-v2-mini-percent">
-                              <input
-                                name="item_weight_percent"
-                                type="number"
-                                min="0"
-                                max="100"
-                                step="0.01"
-                                defaultValue={item.item_weight_percent ?? ""}
-                                disabled={!editable}
-                                placeholder="—"
-                              />
-                              <span>%</span>
-                            </div>
-                          </label>
-                          {item.scored ? (
-                            <label className="eval-v2-mini-field">
-                              <span>Mínimo</span>
-                              <div className="eval-v2-mini-percent">
-                                <input
-                                  name="min_score"
-                                  type="number"
-                                  min="0"
-                                  max={item.max_score}
-                                  step="0.01"
-                                  defaultValue={item.min_score ?? ""}
-                                  disabled={!editable}
-                                  placeholder="—"
-                                />
-                                <span>/ {item.max_score}</span>
-                              </div>
-                            </label>
-                          ) : (
-                            <input type="hidden" name="min_score" value="" />
-                          )}
-                          <label className="eval-v2-check compact">
-                            <input
-                              name="progression_required"
-                              type="checkbox"
-                              defaultChecked={Boolean(item.progression_required || item.mandatory)}
-                              disabled={!editable}
-                            />
-                            <span>Requisito para progresión</span>
-                          </label>
-                          {editable ? (
-                            <>
-                              <button className="eval-secondary-button compact" type="submit">
-                                Guardar
-                              </button>
-                              <button
-                                className="eval-icon-danger"
-                                type="submit"
-                                formAction={deleteEvaluationV2ItemAction}
-                                aria-label={`Eliminar ${itemLabel(item)}`}
-                              >
-                                ×
-                              </button>
-                            </>
-                          ) : null}
-                        </form>
-                      ))}
-                  </div>
-
-                  {editable ? (
-                    <form action={addEvaluationV2ItemAction} className="eval-v2-new-item">
+              {blockItems.length ? (
+                <div className="eval-simple-requirements-list">
+                  <span>Elementos indispensables</span>
+                  {blockItems.map((item) => (
+                    <form action={updateEvaluationV2ItemAction} key={item.id}>
                       <input type="hidden" name="template_id" value={template.id} />
                       <input type="hidden" name="version_id" value={version.id} />
                       <input type="hidden" name="block_id" value={activeBlock.id} />
-                      <input type="hidden" name="discipline_id" value={template.discipline_id} />
-
-                      <label className="eval-field">
-                        <span>
-                          {activeBlock.block_type === "weighted_criteria"
-                            ? "Nuevo criterio"
-                            : activeBlock.block_type === "correct_incorrect"
-                              ? "Nuevo nombre / pregunta"
-                              : "Nuevo elemento"}
-                        </span>
-                        <input name="label" placeholder="Nombre" required />
+                      <input type="hidden" name="item_id" value={item.id} />
+                      <input type="hidden" name="label" value={itemLabel(item)} />
+                      <input
+                        type="hidden"
+                        name="item_weight_percent"
+                        value={item.item_weight_percent ?? ""}
+                      />
+                      <input type="hidden" name="min_score" value={item.min_score ?? ""} />
+                      <label className="eval-simple-check">
+                        <input
+                          name="progression_required"
+                          type="checkbox"
+                          defaultChecked={Boolean(item.progression_required || item.mandatory)}
+                        />
+                        <span>{itemLabel(item)}</span>
                       </label>
-                      <label className="eval-field">
-                        <span>Peso dentro del bloque</span>
-                        <div className="eval-v2-percent-input">
-                          <input
-                            name="item_weight_percent"
-                            type="number"
-                            min="0"
-                            max="100"
-                            step="0.01"
-                            placeholder="Opcional"
-                          />
-                          <span>%</span>
-                        </div>
-                      </label>
-                      <label className="eval-field">
-                        <span>Mínimo para cumplir si es requisito</span>
-                        <div className="eval-v2-percent-input">
-                          <input
-                            name="min_score"
-                            type="number"
-                            min="0"
-                            max="100"
-                            step="0.01"
-                            placeholder="Opcional"
-                          />
-                          <span>/ 100</span>
-                        </div>
-                      </label>
-                      {activeBlock.block_type === "element_list" ? (
-                        <label className="eval-v2-check">
-                          <input name="scored" type="checkbox" />
-                          <span>También tendrá puntuación numérica</span>
-                        </label>
-                      ) : null}
-                      {activeBlock.block_type === "weighted_criteria" ? (
-                        <>
-                          <input type="hidden" name="scored" value="on" />
-                          <input type="hidden" name="max_score" value="100" />
-                        </>
-                      ) : null}
-                      <label className="eval-v2-check">
-                        <input name="progression_required" type="checkbox" />
-                        <span>Requisito para progresión</span>
-                      </label>
-                      <button className="eval-v2-add-button" type="submit">
-                        + Agregar elemento
+                      <button className="eval-simple-mini-save" type="submit">
+                        Guardar
                       </button>
                     </form>
-                  ) : null}
+                  ))}
                 </div>
-              ) : (
-                <div className="eval-notice">
-                  Durante la evaluación el coach capturará una puntuación de 0 a 100 para este
-                  bloque.
-                </div>
-              )}
-
-              {editable ? (
-                <form action={deleteEvaluationV2BlockAction} className="eval-form-actions">
-                  <input type="hidden" name="template_id" value={template.id} />
-                  <input type="hidden" name="version_id" value={version.id} />
-                  <input type="hidden" name="block_id" value={activeBlock.id} />
-                  <button className="eval-danger-button" type="submit">
-                    Eliminar bloque
-                  </button>
-                </form>
               ) : null}
-            </section>
-          ) : null}
-        </>
+            </div>
+          </details>
+
+          <details className="eval-simple-accordion">
+            <summary>
+              <span>▤</span>
+              <strong>Instrucciones para el evaluador (opcional)</strong>
+              <span>›</span>
+            </summary>
+            <form action={updateEvaluationV2BlockAction} className="eval-simple-accordion-body eval-simple-form">
+              <input type="hidden" name="template_id" value={template.id} />
+              <input type="hidden" name="version_id" value={version.id} />
+              <input type="hidden" name="block_id" value={activeBlock.id} />
+              <input type="hidden" name="label" value={activeBlock.label} />
+              <input type="hidden" name="description" value={activeBlock.description ?? ""} />
+              <input type="hidden" name="weight_percent" value={activeBlock.weight_percent} />
+              <input type="hidden" name="block_type" value={normalizedType} />
+              <input type="hidden" name="min_percent" value={activeBlock.min_percent ?? ""} />
+              {activeBlock.progression_required ? (
+                <input type="hidden" name="progression_required" value="on" />
+              ) : null}
+              <input type="hidden" name="return_view" value="content" />
+              <label className="eval-simple-field">
+                <span>Indicaciones para el coach</span>
+                <textarea
+                  name="evaluator_instructions"
+                  defaultValue={activeBlock.evaluator_instructions ?? ""}
+                  placeholder="Ej. Priorizar control, limpieza y continuidad."
+                />
+              </label>
+              <button className="eval-simple-secondary" type="submit">
+                Guardar instrucciones
+              </button>
+            </form>
+          </details>
+
+          <div className="eval-simple-footer-actions">
+            <Link
+              className="eval-simple-secondary"
+              href={editorUrl(template.id, "apartados", activeBlock.id, "config")}
+            >
+              ← Anterior
+            </Link>
+            <Link className="eval-simple-primary" href={editorUrl(template.id, "apartados")}>
+              Guardar apartado
+            </Link>
+          </div>
+        </section>
+      </main>
+    );
+  }
+
+  return (
+    <main className="evaluations-page">
+      <header className="eval-simple-header">
+        <Link className="eval-simple-back" href={`/admin/evaluaciones/disciplina/${template.discipline_id}`}>
+          ←
+        </Link>
+        <div>
+          <h1>{disciplineName} · {levelTitle}</h1>
+          <p>Configuración de evaluación</p>
+        </div>
+        <span className="eval-simple-more">•••</span>
+      </header>
+
+      {qs.error ? <div className="eval-simple-error">{errorCopy[qs.error]}</div> : null}
+
+      {!editable ? (
+        <section className="eval-simple-lock">
+          <div>
+            <strong>Configuración protegida</strong>
+            <span>Los cambios se aplicarán únicamente a evaluaciones nuevas.</span>
+          </div>
+          <form action={openEvaluationV2EditorAction}>
+            <input type="hidden" name="template_id" value={template.id} />
+            <input type="hidden" name="version_id" value={version.id} />
+            <button className="eval-simple-secondary" type="submit">
+              Editar configuración
+            </button>
+          </form>
+        </section>
       ) : null}
 
-      {step === "revision" ? (
-        <section className="eval-panel eval-config-section">
-          <header>
-            <div>
-              <span className="eval-step-label">Revisión</span>
-              <h2>{ready ? "Configuración lista" : "Falta completar la configuración"}</h2>
-              <p>Studio Flow valida la estructura antes de permitir nuevas evaluaciones.</p>
-            </div>
-            <span className={`eval-status ${ready ? "approved" : "incomplete"}`}>
-              {ready ? "Lista" : "Pendiente"}
-            </span>
-          </header>
+      <nav className="eval-simple-tabs" aria-label="Editor de evaluación">
+        <Link className={tab === "apartados" ? "is-active" : ""} href={editorUrl(template.id, "apartados")}>
+          Apartados
+        </Link>
+        <Link className={tab === "reglas" ? "is-active" : ""} href={editorUrl(template.id, "reglas")}>
+          Reglas
+        </Link>
+        <Link className={tab === "preview" ? "is-active" : ""} href={editorUrl(template.id, "preview")}>
+          Vista previa
+        </Link>
+      </nav>
 
-          <div className="eval-v2-review-list">
-            <article>
-              <span>Peso total de bloques</span>
-              <strong>
-                {totalWeight}% {Math.abs(totalWeight - 100) <= 0.01 ? "✓" : ""}
-              </strong>
-            </article>
-            <article>
-              <span>Mínimo global</span>
-              <strong>{version.pass_threshold}%</strong>
-            </article>
+      {tab === "apartados" ? (
+        <section className="eval-simple-overview">
+          <div className="eval-simple-total-card">
+            <div
+              className="eval-simple-ring"
+              style={{ "--progress": safePercent(totalWeight) } as React.CSSProperties}
+            >
+              <strong>{totalWeight}%</strong>
+            </div>
+            <div>
+              <span>Resultado final</span>
+              <strong>{totalWeight}% de 100%</strong>
+              <small className={Math.abs(totalWeight - 100) <= 0.01 ? "is-ok" : ""}>
+                {Math.abs(totalWeight - 100) <= 0.01
+                  ? "✓ La evaluación está completa."
+                  : `Falta asignar ${Math.max(0, 100 - totalWeight)}%.`}
+              </small>
+            </div>
+          </div>
+
+          <div className="eval-simple-section-list">
+            {blocks.map((block, index) => (
+              <Link
+                className="eval-simple-section-card"
+                href={editorUrl(template.id, "apartados", block.id, "config")}
+                key={block.id}
+              >
+                <span className="eval-simple-drag" aria-hidden="true">⠿</span>
+                <span className="eval-simple-index">{index + 1}</span>
+                <span className="eval-simple-section-copy">
+                  <strong>{block.label}</strong>
+                  <small>{block.weight_percent}% del resultado</small>
+                </span>
+                <span className="eval-simple-chevron">›</span>
+              </Link>
+            ))}
+          </div>
+
+          {editable ? (
+            <form action={addEvaluationV2BlockAction}>
+              <input type="hidden" name="template_id" value={template.id} />
+              <input type="hidden" name="version_id" value={version.id} />
+              <button className="eval-simple-add-section" type="submit">
+                + Agregar apartado
+              </button>
+            </form>
+          ) : null}
+
+          <div className="eval-simple-info-card">
+            ⓘ Los porcentajes de todos los apartados deben sumar 100% para poder activar la evaluación.
+          </div>
+        </section>
+      ) : null}
+
+      {tab === "reglas" ? (
+        <section className="eval-simple-panel">
+          <span className="eval-simple-kicker">REGLAS GENERALES</span>
+          <h2>¿Cuándo se considera aprobada?</h2>
+          <p>
+            Estas reglas se aplican después de calcular el resultado de todos los apartados.
+          </p>
+
+          <form action={saveEvaluationV2GeneralAction} className="eval-simple-form">
+            <input type="hidden" name="template_id" value={template.id} />
+            <input type="hidden" name="version_id" value={version.id} />
+            <input type="hidden" name="name" value={template.name} />
+            <input type="hidden" name="return_step" value="reglas" />
+
+            <label className="eval-simple-field">
+              <span>Mínimo global para aprobar</span>
+              <div className="eval-simple-percent-field">
+                <input
+                  name="pass_threshold"
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="0.01"
+                  defaultValue={version.pass_threshold}
+                  disabled={!editable}
+                  required
+                />
+                <span>%</span>
+              </div>
+            </label>
+
+            <label className="eval-simple-field">
+              <span>Instrucciones generales para el coach</span>
+              <textarea
+                name="instructions"
+                defaultValue={version.evaluator_instructions ?? ""}
+                disabled={!editable}
+                placeholder="Opcional"
+              />
+            </label>
+
+            {editable ? (
+              <button className="eval-simple-primary" type="submit">
+                Guardar reglas
+              </button>
+            ) : null}
+          </form>
+        </section>
+      ) : null}
+
+      {tab === "preview" ? (
+        <section className="eval-simple-preview">
+          <div className="eval-simple-total-card">
+            <div
+              className="eval-simple-ring"
+              style={{ "--progress": safePercent(totalWeight) } as React.CSSProperties}
+            >
+              <strong>{totalWeight}%</strong>
+            </div>
+            <div>
+              <span>Resultado final</span>
+              <strong>{totalWeight}% de 100%</strong>
+              <small className={ready ? "is-ok" : ""}>
+                {ready ? "✓ Configuración lista." : "Todavía falta completar la evaluación."}
+              </small>
+            </div>
+          </div>
+
+          <div className="eval-simple-preview-list">
             {blocks.map((block) => {
-              const validation = blockValidation.find((item) => item.id === block.id);
+              const validation = validations.find((item) => item.id === block.id);
               return (
                 <article key={block.id}>
-                  <span>
-                    {block.label} · {blockTypeLabel(block.block_type)}
-                  </span>
-                  <strong>{validation?.valid ? "Completo ✓" : "Revisar"}</strong>
+                  <div>
+                    <strong>{block.label}</strong>
+                    <span>{modeLabel(block.block_type)}</span>
+                  </div>
+                  <div>
+                    <strong>{block.weight_percent}%</strong>
+                    <span className={validation?.valid ? "is-ok" : ""}>
+                      {validation?.valid ? "Completo ✓" : "Revisar"}
+                    </span>
+                  </div>
                 </article>
               );
             })}
           </div>
 
-          <div className="eval-notice">
-            Al activar, los cambios aplicarán sólo a evaluaciones nuevas. Las evaluaciones
-            anteriores y las que ya estén en curso conservan su configuración.
+          <div className="eval-simple-rule-summary">
+            <span>Mínimo global</span>
+            <strong>{version.pass_threshold}%</strong>
           </div>
 
-          <div className="eval-form-actions eval-v2-nav-actions">
-            <Link className="eval-secondary-button" href={editorUrl(template.id, "bloques")}>
-              ← Anterior
-            </Link>
-            {editable ? (
-              <form action={activateEvaluationV2Action}>
-                <input type="hidden" name="template_id" value={template.id} />
-                <input type="hidden" name="version_id" value={version.id} />
-                <input type="hidden" name="discipline_id" value={template.discipline_id} />
-                <button className="eval-primary-button" type="submit" disabled={!ready}>
-                  Activar evaluación
-                </button>
-              </form>
-            ) : null}
+          <div className="eval-simple-info-card">
+            Al activar, esta configuración se usará sólo en evaluaciones nuevas. Las evaluaciones anteriores o en curso conservan su configuración.
           </div>
+
+          {editable ? (
+            <form action={activateEvaluationV2Action}>
+              <input type="hidden" name="template_id" value={template.id} />
+              <input type="hidden" name="version_id" value={version.id} />
+              <input type="hidden" name="discipline_id" value={template.discipline_id} />
+              <button className="eval-simple-primary eval-simple-full" type="submit" disabled={!ready}>
+                Activar evaluación
+              </button>
+            </form>
+          ) : null}
         </section>
       ) : null}
     </main>
   );
-}
-
-function editorUrl(templateId: string, step: EditorStep, blockId?: string) {
-  const params = new URLSearchParams({ step });
-  if (blockId) params.set("block", blockId);
-  return `/admin/evaluaciones/v2/${templateId}?${params.toString()}`;
 }
