@@ -6,6 +6,13 @@ import { useFormStatus } from "react-dom";
 import { saveActivity } from "./actions";
 
 type Option = { id: string; label: string };
+type ResourceOption = { id: string; spaceId: string; label: string; typeLabel?: string };
+
+export type ActivityResourceSettingDraft = {
+  resourceId: string;
+  enabled: boolean;
+  capacityOverride: number | null;
+};
 
 export type ActivityScheduleDraft = {
   id?: string;
@@ -21,6 +28,8 @@ export type ActivityDraft = {
   capacity: number;
   colorHex: string;
   requiresResource: boolean;
+  resourceUsesPerItem: number;
+  resourceSettings: ActivityResourceSettingDraft[];
   defaultInstructorId: string;
   defaultSpaceId: string;
   startsOn: string;
@@ -47,6 +56,7 @@ const STEPS = [
   { key: "general", label: "Información general" },
   { key: "schedule", label: "Horarios y operación" },
   { key: "sales", label: "Venta y acceso" },
+  { key: "resources", label: "Recursos" },
   { key: "confirm", label: "Confirmación" },
 ] as const;
 
@@ -64,17 +74,19 @@ function createSchedule(weekday: number): ActivityScheduleDraft {
 export function ActivityWizard({
   instructors,
   spaces,
+  resources,
   initial,
   mode,
   saveError = false,
 }: {
   instructors: Option[];
   spaces: Option[];
+  resources: ResourceOption[];
   initial?: ActivityDraft;
   mode: "create" | "edit";
   saveError?: boolean;
 }) {
-  const [step, setStep] = useState(saveError ? 3 : 0);
+  const [step, setStep] = useState(saveError ? 4 : 0);
   const [message, setMessage] = useState("");
   const [serverSaveError, setServerSaveError] = useState(saveError);
   const [draft, setDraft] = useState<ActivityDraft>(
@@ -85,6 +97,8 @@ export function ActivityWizard({
       capacity: 5,
       colorHex: "#FF0A8A",
       requiresResource: false,
+      resourceUsesPerItem: 1,
+      resourceSettings: [],
       defaultInstructorId: "",
       defaultSpaceId: "",
       startsOn: todayKey(),
@@ -106,8 +120,74 @@ export function ActivityWizard({
     })).filter((group) => group.rows.length);
   }, [draft.schedules]);
 
+  const visibleResources = useMemo(
+    () => resources.filter((resource) => resource.spaceId === draft.defaultSpaceId),
+    [resources, draft.defaultSpaceId],
+  );
+
+  const resourceSettingMap = useMemo(
+    () => new Map(draft.resourceSettings.map((setting) => [setting.resourceId, setting])),
+    [draft.resourceSettings],
+  );
+
   function patch(next: Partial<ActivityDraft>) {
     setDraft((current) => ({ ...current, ...next }));
+    setMessage("");
+    setServerSaveError(false);
+  }
+
+  function selectDefaultSpace(spaceId: string) {
+    setDraft((current) => {
+      const previousSettings = new Map(
+        current.resourceSettings.map((setting) => [setting.resourceId, setting]),
+      );
+      const nextSettings = resources
+        .filter((resource) => resource.spaceId === spaceId)
+        .map(
+          (resource) =>
+            previousSettings.get(resource.id) ?? {
+              resourceId: resource.id,
+              enabled: true,
+              capacityOverride: null,
+            },
+        );
+
+      return {
+        ...current,
+        defaultSpaceId: spaceId,
+        resourceSettings: nextSettings,
+      };
+    });
+    setMessage("");
+    setServerSaveError(false);
+  }
+
+  function patchResourceSetting(
+    resourceId: string,
+    next: Partial<ActivityResourceSettingDraft>,
+  ) {
+    setDraft((current) => {
+      const existing = current.resourceSettings.find(
+        (setting) => setting.resourceId === resourceId,
+      ) ?? {
+        resourceId,
+        enabled: true,
+        capacityOverride: null,
+      };
+
+      const hasExisting = current.resourceSettings.some(
+        (setting) => setting.resourceId === resourceId,
+      );
+
+      return {
+        ...current,
+        resourceSettings: hasExisting
+          ? current.resourceSettings.map((setting) =>
+              setting.resourceId === resourceId ? { ...setting, ...next } : setting,
+            )
+          : [...current.resourceSettings, { ...existing, ...next }],
+      };
+    });
     setMessage("");
     setServerSaveError(false);
   }
@@ -188,6 +268,39 @@ export function ActivityWizard({
       }
       if (draft.individualPurchaseNotes.length > 300) {
         return "Las notas admiten máximo 300 caracteres.";
+      }
+    }
+
+    if (step === 3 && draft.requiresResource) {
+      if (!draft.defaultSpaceId) {
+        return "Selecciona el espacio donde estarán los recursos.";
+      }
+      if (
+        !Number.isInteger(Number(draft.resourceUsesPerItem)) ||
+        draft.resourceUsesPerItem < 1 ||
+        draft.resourceUsesPerItem > 20
+      ) {
+        return "Personas por recurso debe estar entre 1 y 20.";
+      }
+      if (!visibleResources.length) {
+        return "Este espacio todavía no tiene recursos activos configurados.";
+      }
+      const activeSettings = visibleResources.filter((resource) => {
+        const setting = resourceSettingMap.get(resource.id);
+        return setting?.enabled ?? true;
+      });
+      if (!activeSettings.length) {
+        return "Activa al menos un recurso para esta actividad.";
+      }
+      const invalidCapacity = visibleResources.some((resource) => {
+        const capacity = resourceSettingMap.get(resource.id)?.capacityOverride;
+        return (
+          capacity != null &&
+          (!Number.isInteger(Number(capacity)) || Number(capacity) < 1 || Number(capacity) > 20)
+        );
+      });
+      if (invalidCapacity) {
+        return "La capacidad personalizada de cada recurso debe estar entre 1 y 20.";
       }
     }
 
@@ -379,7 +492,7 @@ export function ActivityWizard({
                 <span>Espacio{draft.requiresResource ? " *" : ""}</span>
                 <select
                   value={draft.defaultSpaceId}
-                  onChange={(event) => patch({ defaultSpaceId: event.target.value })}
+                  onChange={(event) => selectDefaultSpace(event.target.value)}
                 >
                   <option value="">Sin espacio asignado</option>
                   {spaces.map((item) => (
@@ -541,6 +654,174 @@ export function ActivityWizard({
           <div className="activities-stage-heading">
             <span>A04</span>
             <div>
+              <h2>Recursos</h2>
+              <p>
+                Define la configuración base que heredarán las nuevas sesiones. Una sesión puede
+                personalizarse después sin cambiar la actividad.
+              </p>
+            </div>
+          </div>
+
+          {!draft.requiresResource ? (
+            <div className="activities-credit-card">
+              <span>RECURSOS</span>
+              <strong>Esta actividad no requiere recursos físicos</strong>
+              <p>
+                Si cambias “¿Requiere recurso?” a Sí en Información general, aquí podrás definir la
+                capacidad de cada recurso.
+              </p>
+            </div>
+          ) : (
+            <>
+              <div className="activities-operation-defaults">
+                <div className="activities-operation-copy">
+                  <span>CONFIGURACIÓN PREDETERMINADA</span>
+                  <strong>Recursos que heredarán las sesiones</strong>
+                  <p>
+                    El valor general se aplica a todos. Puedes hacer excepciones por recurso y
+                    después personalizar una sesión concreta desde Agenda.
+                  </p>
+                </div>
+
+                <div className="activities-operation-grid">
+                  <label className="activities-field">
+                    <span>Espacio predeterminado *</span>
+                    <select
+                      value={draft.defaultSpaceId}
+                      onChange={(event) => selectDefaultSpace(event.target.value)}
+                    >
+                      <option value="">Selecciona un espacio</option>
+                      {spaces.map((item) => (
+                        <option key={item.id} value={item.id}>
+                          {item.label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label className="activities-field">
+                    <span>Personas por recurso *</span>
+                    <div className="activities-unit-field">
+                      <input
+                        type="number"
+                        min={1}
+                        max={20}
+                        value={draft.resourceUsesPerItem}
+                        onChange={(event) =>
+                          patch({ resourceUsesPerItem: Number(event.target.value) })
+                        }
+                      />
+                      <b>personas</b>
+                    </div>
+                    <small>
+                      Este valor se aplicará por defecto a cada recurso de las nuevas sesiones.
+                    </small>
+                  </label>
+                </div>
+              </div>
+
+              <div className="activities-resource-defaults">
+                <div className="activities-resource-defaults-header">
+                  <div>
+                    <strong>Recursos disponibles en el espacio</strong>
+                    <p>Activa los que usa esta actividad y define excepciones de capacidad.</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setDraft((current) => ({
+                        ...current,
+                        resourceSettings: visibleResources.map((resource) => ({
+                          resourceId: resource.id,
+                          enabled: true,
+                          capacityOverride: null,
+                        })),
+                      }))
+                    }
+                  >
+                    Aplicar a todos
+                  </button>
+                </div>
+
+                {visibleResources.length ? (
+                  <div className="activities-resource-defaults-list">
+                    {visibleResources.map((resource) => {
+                      const setting = resourceSettingMap.get(resource.id) ?? {
+                        resourceId: resource.id,
+                        enabled: true,
+                        capacityOverride: null,
+                      };
+                      const effectiveCapacity =
+                        setting.capacityOverride ?? draft.resourceUsesPerItem;
+
+                      return (
+                        <article className="activities-resource-default-row" key={resource.id}>
+                          <label className="activities-resource-toggle">
+                            <input
+                              type="checkbox"
+                              checked={setting.enabled}
+                              onChange={(event) =>
+                                patchResourceSetting(resource.id, {
+                                  enabled: event.target.checked,
+                                })
+                              }
+                            />
+                            <span>
+                              <strong>{resource.label}</strong>
+                              <small>{resource.typeLabel ?? "Recurso"}</small>
+                            </span>
+                          </label>
+
+                          <label className="activities-field">
+                            <span>Personas por recurso</span>
+                            <select
+                              value={effectiveCapacity}
+                              disabled={!setting.enabled}
+                              onChange={(event) => {
+                                const value = Number(event.target.value);
+                                patchResourceSetting(resource.id, {
+                                  capacityOverride:
+                                    value === draft.resourceUsesPerItem ? null : value,
+                                });
+                              }}
+                            >
+                              {Array.from({ length: 20 }, (_, index) => index + 1).map((value) => (
+                                <option key={value} value={value}>
+                                  {value}
+                                </option>
+                              ))}
+                            </select>
+                            <small>
+                              {setting.capacityOverride == null
+                                ? "Hereda el valor general"
+                                : "Excepción para este recurso"}
+                            </small>
+                          </label>
+                        </article>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="activities-inline-error">
+                    Este espacio todavía no tiene recursos activos configurados.
+                  </div>
+                )}
+              </div>
+
+              <p className="activities-helper">
+                Las sesiones nuevas heredarán esta configuración. Si personalizas una sesión desde
+                Agenda, esa sesión conservará su propia configuración.
+              </p>
+            </>
+          )}
+        </section>
+      ) : null}
+
+      {step === 4 ? (
+        <section className="activities-stage">
+          <div className="activities-stage-heading">
+            <span>A05</span>
+            <div>
               <h2>Confirmación</h2>
               <p>
                 Revisa la actividad antes de {mode === "create" ? "crearla" : "guardar cambios"}.
@@ -636,6 +917,39 @@ export function ActivityWizard({
                 ) : null}
               </dl>
             </article>
+
+            <article className="activities-review-card">
+              <header>
+                <strong>Recursos</strong>
+                <button type="button" onClick={() => setStep(3)}>
+                  Editar
+                </button>
+              </header>
+              <dl>
+                <div>
+                  <dt>Requiere recursos</dt>
+                  <dd>{draft.requiresResource ? "Sí" : "No"}</dd>
+                </div>
+                {draft.requiresResource ? (
+                  <>
+                    <div>
+                      <dt>Personas por recurso</dt>
+                      <dd>{draft.resourceUsesPerItem}</dd>
+                    </div>
+                    <div>
+                      <dt>Recursos activos</dt>
+                      <dd>
+                        {
+                          visibleResources.filter(
+                            (resource) => resourceSettingMap.get(resource.id)?.enabled ?? true,
+                          ).length
+                        }
+                      </dd>
+                    </div>
+                  </>
+                ) : null}
+              </dl>
+            </article>
           </div>
 
           <div className="activities-ready-card">
@@ -650,7 +964,7 @@ export function ActivityWizard({
       ) : null}
 
       <footer className="activities-wizard-footer">
-        {serverSaveError && step === 3 ? (
+        {serverSaveError && step === 4 ? (
           <p className="activities-save-error">
             No se guardó. Revisa los datos e inténtalo de nuevo.
           </p>
