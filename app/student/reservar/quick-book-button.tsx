@@ -60,7 +60,7 @@ export function QuickBookButton({
     if (!eligible || reserved || isPending) return;
 
     if (requiresResource) {
-      router.push(`/student/reservar/${sessionId}/recurso`);
+      router.push(`/student/reservar/${sessionId}`);
       return;
     }
 
@@ -97,7 +97,7 @@ export function QuickBookButton({
           disabled={isPending}
           className="min-h-11 rounded-2xl bg-fuchsia-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-fuchsia-500 disabled:cursor-wait disabled:opacity-60"
         >
-          {requiresResource ? "Elegir recurso" : isPending ? "Reservando…" : "Reservar"}
+          {isPending ? "Reservando…" : "Reservar"}
         </button>
       ) : full ? (
         <WaitlistControl
