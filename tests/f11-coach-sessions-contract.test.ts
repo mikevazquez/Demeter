@@ -46,7 +46,7 @@ describe("F11 coach session scope", () => {
     expect(migration).toContain("raise exception 'session_not_available'");
     expect(page).toContain('supabase.rpc("coach_session_roster"');
     expect(page).toContain('supabase.rpc("coach_my_sessions"');
-    expect(legacyDetail).toContain('redirect(`/admin#session-${sessionId}`)');
+    expect(legacyDetail).toContain("redirect(`/admin#session-${sessionId}`)");
   });
 
   it("limits an Instructor account to its own instructor directory record", () => {
