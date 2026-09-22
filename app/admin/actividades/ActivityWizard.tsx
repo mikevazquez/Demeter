@@ -519,7 +519,6 @@ export function ActivityWizard({
                     Si hay menos, la sesión se cancela automáticamente.
                   </p>
                 </div>
-
               </>
             ) : null}
           </div>
