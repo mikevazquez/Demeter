@@ -205,10 +205,14 @@ export default async function StudentSessionDetailPage({
               : `Tienes ${session.eligibility?.available_credits ?? 0} crédito(s) disponibles. Esta reserva utiliza ${session.credit_cost}.`}
           </p>
           <Link
-            href={`/student/reservar/${session.session_id}/confirmar?date=${returnDate}`}
+            href={
+              session.requires_resource
+                ? `/student/reservar/${session.session_id}/recurso?date=${returnDate}`
+                : `/student/reservar/${session.session_id}/confirmar?date=${returnDate}`
+            }
             className="mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-2xl bg-fuchsia-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-fuchsia-500"
           >
-            Reservar clase
+            {session.requires_resource ? "Seleccionar recurso" : "Reservar clase"}
           </Link>
         </section>
       ) : (

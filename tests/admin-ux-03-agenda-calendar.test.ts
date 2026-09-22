@@ -12,6 +12,11 @@ describe("ADMIN-UX-03 Agenda calendario operativo", () => {
   const agenda = source("app/admin/agenda/page.tsx");
   const actions = source("app/admin/agenda/[sessionId]/actions.ts");
   const configuration = source("app/admin/agenda/configuracion/page.tsx");
+  const activitiesWizard = source("app/admin/actividades/ActivityWizard.tsx");
+  const activityActions = source("app/admin/actividades/actions.ts");
+  const atomicActivitySave = source(
+    "supabase/migrations/20260922155500_actividades01_atomic_save.sql",
+  );
   const styles = source("app/admin/agenda/agenda-calendar.css");
 
   it("replaces the old session list with the approved calendar architecture", () => {
@@ -60,10 +65,12 @@ describe("ADMIN-UX-03 Agenda calendario operativo", () => {
 
   it("keeps recurring configuration available without cluttering the calendar", () => {
     expect(agenda).not.toContain('id="configuracion-agenda"');
-    expect(agenda).toContain('href="/admin/agenda/configuracion"');
-    expect(configuration).toContain("<ScheduleBuilder");
-    expect(configuration).toContain("action={createRecurringSchedules}");
-    expect(configuration).toContain('id="programar-clase"');
+    expect(agenda).toContain('href="/admin/actividades"');
+    expect(configuration).toContain('redirect("/admin/actividades")');
+    expect(activitiesWizard).toContain("Horarios y operación");
+    expect(activitiesWizard).toContain("+ Agregar hora");
+    expect(activityActions).toContain('.rpc("admin_save_activity"');
+    expect(atomicActivitySave).toContain("materialize_recurring_schedule");
   });
 
   it("keeps class names visible in compact mobile blocks", () => {
