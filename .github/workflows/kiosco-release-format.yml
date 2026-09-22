@@ -1,0 +1,43 @@
+name: KIOSCO release formatter
+
+on:
+  push:
+    branches:
+      - release/kiosco-01-approved
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: release/kiosco-01-approved
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Format release files
+        run: npx prettier --write app/admin/hoy/ExistingStudentAddForm.tsx app/admin/hoy/SessionOperations.tsx
+
+      - name: Commit formatting
+        run: |
+          if git diff --quiet; then
+            echo "No formatting changes needed"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/admin/hoy/ExistingStudentAddForm.tsx app/admin/hoy/SessionOperations.tsx
+          git commit -m "style(kiosco): apply prettier to release"
+          git push origin HEAD:release/kiosco-01-approved
