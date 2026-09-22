@@ -41,6 +41,7 @@ export async function createActivity(formData: FormData) {
   const creditCost = Number(formData.get("credit_cost"));
   const dropInPriceMinor = optionalMoneyToMinor(formData.get("drop_in_price"));
   const colorHex = normalizeColorHex(formData.get("color_hex"));
+  const requiresResource = String(formData.get("requires_resource") ?? "") === "1";
 
   if (
     !name ||
@@ -66,6 +67,7 @@ export async function createActivity(formData: FormData) {
     credit_cost: creditCost,
     drop_in_price_minor: dropInPriceMinor,
     color_hex: colorHex,
+    requires_resource: requiresResource,
   });
 
   if (error) redirect("/admin/agenda?error=activity");
