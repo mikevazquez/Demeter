@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 
-import { saveSessionResourcesAction } from "./actions";
+import { reassignReservationResourceAction, saveSessionResourcesAction } from "./actions";
 import styles from "./session-resources.module.css";
 
 type MapElement = {
@@ -28,7 +28,7 @@ export default async function SessionResourcesPage({
   searchParams,
 }: {
   params: Promise<{ sessionId: string }>;
-  searchParams: Promise<{ saved?: string; error?: string }>;
+  searchParams: Promise<{ saved?: string; reassigned?: string; error?: string }>;
 }) {
   const { sessionId } = await params;
   const query = await searchParams;
@@ -97,11 +97,59 @@ export default async function SessionResourcesPage({
       : Promise.resolve({ data: [] }),
     supabase
       .from("reservation_resource_assignments")
-      .select("resource_id")
+      .select("id,reservation_id,resource_id")
       .eq("studio_id", studio.id)
       .eq("session_id", session.id)
       .is("released_at", null),
   ]);
+
+  const assignmentReservationIds = (assignments ?? []).map((item) => item.reservation_id);
+  const { data: assignmentReservations } = assignmentReservationIds.length
+    ? await supabase
+        .from("reservations")
+        .select("id,student_id,guest_person_id")
+        .in("id", assignmentReservationIds)
+    : {
+        data: [] as {
+          id: string;
+          student_id: string | null;
+          guest_person_id: string | null;
+        }[],
+      };
+
+  const assignmentStudentIds = [
+    ...new Set((assignmentReservations ?? []).map((item) => item.student_id).filter(Boolean)),
+  ] as string[];
+  const assignmentGuestIds = [
+    ...new Set(
+      (assignmentReservations ?? []).map((item) => item.guest_person_id).filter(Boolean),
+    ),
+  ] as string[];
+
+  const [{ data: assignmentStudents }, { data: assignmentGuests }] = await Promise.all([
+    assignmentStudentIds.length
+      ? supabase.from("students").select("id,full_name").in("id", assignmentStudentIds)
+      : Promise.resolve({ data: [] as { id: string; full_name: string }[] }),
+    assignmentGuestIds.length
+      ? supabase
+          .from("persons")
+          .select("id,first_name,last_name")
+          .in("id", assignmentGuestIds)
+      : Promise.resolve({
+          data: [] as { id: string; first_name: string | null; last_name: string | null }[],
+        }),
+  ]);
+
+  const reservationMap = new Map((assignmentReservations ?? []).map((item) => [item.id, item]));
+  const assignmentStudentMap = new Map(
+    (assignmentStudents ?? []).map((item) => [item.id, item.full_name]),
+  );
+  const assignmentGuestMap = new Map(
+    (assignmentGuests ?? []).map((item) => [
+      item.id,
+      [item.first_name, item.last_name].filter(Boolean).join(" ") || "Invitado",
+    ]),
+  );
 
   const settingMap = new Map((settings ?? []).map((item) => [item.resource_id, item]));
   const typeMap = new Map((types ?? []).map((item) => [item.id, item.name]));
@@ -127,6 +175,9 @@ export default async function SessionResourcesPage({
     assigned: "No puedes reducir o desactivar ese recurso porque ya tiene alumnas asignadas.",
     cancelled: "La sesión está cancelada y ya no puede modificarse.",
     save: "No pudimos guardar la configuración de recursos.",
+    reassign_full: "El recurso destino acaba de llenarse. Elige otro disponible.",
+    reassign_unavailable: "Ese recurso no está disponible para esta sesión.",
+    reassign: "No pudimos reasignar el recurso.",
   };
 
   const dateLabel = new Intl.DateTimeFormat("es-MX", {
@@ -156,6 +207,12 @@ export default async function SessionResourcesPage({
       {query.saved === "1" ? (
         <div className={`${styles.notice} ${styles.success}`}>
           Configuración de recursos guardada.
+        </div>
+      ) : null}
+
+      {query.reassigned === "1" ? (
+        <div className={`${styles.notice} ${styles.success}`}>
+          Recurso reasignado correctamente.
         </div>
       ) : null}
 
@@ -282,6 +339,89 @@ export default async function SessionResourcesPage({
           </section>
         </form>
       )}
+
+      <section className={styles.panel}>
+        <div className={styles.panelHeader}>
+          <div>
+            <h2>Asignaciones actuales</h2>
+            <p>
+              Mueve una reserva a otro recurso habilitado sin modificar la geometría del espacio.
+            </p>
+          </div>
+        </div>
+
+        {(assignments ?? []).length ? (
+          <div className={styles.assignmentList}>
+            {(assignments ?? []).map((assignment) => {
+              const reservation = reservationMap.get(assignment.reservation_id);
+              const studentName = reservation?.student_id
+                ? (assignmentStudentMap.get(reservation.student_id) ?? "Alumna")
+                : reservation?.guest_person_id
+                  ? (assignmentGuestMap.get(reservation.guest_person_id) ?? "Invitado")
+                  : "Reserva";
+              const currentResource = (resources ?? []).find(
+                (resource) => resource.id === assignment.resource_id,
+              );
+
+              return (
+                <form
+                  action={reassignReservationResourceAction}
+                  className={styles.assignmentRow}
+                  key={assignment.id}
+                >
+                  <input type="hidden" name="session_id" value={session.id} />
+                  <input type="hidden" name="assignment_id" value={assignment.id} />
+
+                  <div className={styles.assignmentCopy}>
+                    <strong>{studentName}</strong>
+                    <small>
+                      Actual: {currentResource?.name ?? resourceMap.get(assignment.resource_id) ?? "Recurso"}
+                    </small>
+                  </div>
+
+                  <div className={styles.reassignControls}>
+                    <select
+                      name="target_resource_id"
+                      defaultValue={assignment.resource_id}
+                      disabled={!canEdit}
+                      aria-label={`Reasignar recurso de ${studentName}`}
+                    >
+                      {(resources ?? [])
+                        .filter((resource) => {
+                          const setting = settingMap.get(resource.id);
+                          const capacity =
+                            setting?.capacity_override ?? session.resource_uses_per_item;
+                          const used = assignmentCount.get(resource.id) ?? 0;
+                          return (
+                            resource.active &&
+                            setting?.enabled === true &&
+                            (resource.id === assignment.resource_id || used < capacity)
+                          );
+                        })
+                        .map((resource) => {
+                          const setting = settingMap.get(resource.id);
+                          const capacity =
+                            setting?.capacity_override ?? session.resource_uses_per_item;
+                          const used = assignmentCount.get(resource.id) ?? 0;
+                          return (
+                            <option key={resource.id} value={resource.id}>
+                              {resource.name} · {used}/{capacity}
+                            </option>
+                          );
+                        })}
+                    </select>
+                    {canEdit ? (
+                      <button type="submit">Reasignar</button>
+                    ) : null}
+                  </div>
+                </form>
+              );
+            })}
+          </div>
+        ) : (
+          <div className={styles.notice}>Esta sesión todavía no tiene recursos asignados.</div>
+        )}
+      </section>
 
       <section className={styles.panel}>
         <div className={styles.panelHeader}>
