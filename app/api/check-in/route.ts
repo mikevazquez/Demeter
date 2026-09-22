@@ -16,7 +16,10 @@ export async function POST(request: Request) {
   try {
     body = await request.json();
   } catch {
-    return NextResponse.json({ ok: false, status: "invalid_request" }, { status: 400 });
+    return NextResponse.json(
+      { ok: false, status: "invalid_request" },
+      { status: 400 },
+    );
   }
 
   const token =
@@ -28,7 +31,10 @@ export async function POST(request: Request) {
       : "";
 
   if (!token || token.length > 200) {
-    return NextResponse.json({ ok: false, status: "invalid_request" }, { status: 400 });
+    return NextResponse.json(
+      { ok: false, status: "invalid_request" },
+      { status: 400 },
+    );
   }
 
   const supabase = await createClient();
@@ -37,7 +43,10 @@ export async function POST(request: Request) {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return NextResponse.json({ ok: false, status: "unauthorized" }, { status: 401 });
+    return NextResponse.json(
+      { ok: false, status: "unauthorized" },
+      { status: 401 },
+    );
   }
 
   const { data, error } = await supabase.rpc("check_in_reservation", {
@@ -46,7 +55,10 @@ export async function POST(request: Request) {
 
   if (error) {
     if (error.message.includes("forbidden")) {
-      return NextResponse.json({ ok: false, status: "forbidden" }, { status: 403 });
+      return NextResponse.json(
+        { ok: false, status: "forbidden" },
+        { status: 403 },
+      );
     }
 
     console.error("KIOSCO-01 check-in failed", {
@@ -54,13 +66,19 @@ export async function POST(request: Request) {
       message: error.message,
     });
 
-    return NextResponse.json({ ok: false, status: "server_error" }, { status: 500 });
+    return NextResponse.json(
+      { ok: false, status: "server_error" },
+      { status: 500 },
+    );
   }
 
-  return NextResponse.json((data ?? { ok: false, status: "server_error" }) as CheckInResult, {
-    status: 200,
-    headers: {
-      "Cache-Control": "no-store",
+  return NextResponse.json(
+    (data ?? { ok: false, status: "server_error" }) as CheckInResult,
+    {
+      status: 200,
+      headers: {
+        "Cache-Control": "no-store",
+      },
     },
-  });
+  );
 }
