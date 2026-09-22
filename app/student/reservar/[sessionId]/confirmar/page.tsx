@@ -93,11 +93,15 @@ export default async function StudentBookingConfirmPage({
   return (
     <main className="mx-auto max-w-md space-y-4 pb-4">
       <Link
-        href={`/student/reservar/${session.session_id}?date=${returnDate}`}
+        href={
+          session.requires_resource
+            ? `/student/reservar/${session.session_id}/recurso?date=${returnDate}`
+            : `/student/reservar/${session.session_id}?date=${returnDate}`
+        }
         className="inline-flex items-center gap-2 text-xs font-semibold text-fuchsia-300"
       >
         <span aria-hidden="true">←</span>
-        Volver al detalle
+        {session.requires_resource ? "Cambiar recurso" : "Volver al detalle"}
       </Link>
 
       <section className="rounded-3xl border border-white/10 bg-white/[0.03] p-5">
