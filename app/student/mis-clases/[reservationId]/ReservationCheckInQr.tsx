@@ -1,7 +1,7 @@
 import { BarcodeFormat, QRCodeWriter } from "@zxing/library";
 
 function qrPath(value: string) {
-  const matrix = new QRCodeWriter().encode(value, BarcodeFormat.QR_CODE, 0, 0);
+  const matrix = new QRCodeWriter().encode(value, BarcodeFormat.QR_CODE, 0, 0, new Map());
   const width = matrix.getWidth();
   const height = matrix.getHeight();
   const cells: string[] = [];
