@@ -144,7 +144,7 @@ export default async function StudentSessionDetailPage({
               Disponibilidad
             </dt>
             <dd className="mt-1 text-xs font-semibold text-white">
-              {session.spots_available} de {session.capacity} lugares
+              {Math.max(session.capacity - session.spots_available, 0)} de {session.capacity} reservados
             </dd>
           </div>
           <div className="bg-[#111218] px-4 py-3">
