@@ -102,6 +102,10 @@ export async function saveActivity(formData: FormData) {
     .trim()
     .toUpperCase();
   const schedules = Array.isArray(payload.schedules) ? payload.schedules : [];
+  const defaultInstructorId = String(payload.defaultInstructorId ?? "").trim() || null;
+  const defaultSpaceId = String(payload.defaultSpaceId ?? "").trim() || null;
+  const startsOn = String(payload.startsOn ?? "").trim();
+  const endsOn = String(payload.endsOn ?? "").trim() || null;
   const notes = String(payload.individualPurchaseNotes ?? "").trim() || null;
   const dropInPriceMinor = payload.allowIndividualPurchase
     ? moneyToMinor(payload.individualPrice)
