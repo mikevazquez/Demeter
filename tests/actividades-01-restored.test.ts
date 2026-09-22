@@ -33,10 +33,11 @@ describe("ACTIVIDADES-01 restored module", () => {
     expect(legacyAgendaConfig).toContain('redirect("/admin/actividades")');
   });
 
-  it("restores the four approved creation stages", () => {
+  it("restores the approved creation stages including Resources", () => {
     expect(wizard).toContain('label: "Información general"');
     expect(wizard).toContain('label: "Horarios y operación"');
     expect(wizard).toContain('label: "Venta y acceso"');
+    expect(wizard).toContain('label: "Recursos"');
     expect(wizard).toContain('label: "Confirmación"');
     expect(newPage).toContain('mode="create"');
   });
@@ -78,10 +79,12 @@ describe("ACTIVIDADES-01 restored module", () => {
     expect(atomicSave).toContain("drop_in_price_minor");
   });
 
-  it("restores A04 review with inline Edit links", () => {
+  it("restores the final review with inline Edit links", () => {
     expect(wizard).toContain("Información general");
     expect(wizard).toContain("Horarios y operación");
     expect(wizard).toContain("Venta y acceso");
+    expect(wizard).toContain("Recursos");
+    expect(wizard).toContain("Personas por recurso");
     expect(wizard).toContain("Editar");
     expect(wizard).toContain("Se creará como activa");
   });
@@ -97,7 +100,7 @@ describe("ACTIVIDADES-01 restored module", () => {
     );
 
     expect(actions).toContain('redirect("/admin/actividades")');
-    expect(actions).toContain('.rpc("admin_save_activity"');
+    expect(actions).toContain('.rpc("admin_save_activity_v2"');
     expect(actions).not.toContain("?saved=1");
     expect(listPage).not.toContain("notice success");
     expect(listPage).not.toContain("notice error");
