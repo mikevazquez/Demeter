@@ -14,12 +14,7 @@ function formatMoney(minor: number | null) {
   }).format(minor / 100);
 }
 
-export default async function ActivitiesPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ saved?: string; error?: string }>;
-}) {
-  const params = await searchParams;
+export default async function ActivitiesPage() {
   const { supabase, studio, can } = await getAdminContext(CAPABILITIES.SCHEDULE_READ);
   const canEdit = can(CAPABILITIES.SCHEDULE_WRITE);
 
@@ -65,11 +60,6 @@ export default async function ActivitiesPage({
           </Link>
         ) : null}
       </header>
-
-      {params.saved === "1" ? (
-        <div className="notice success">Actividad guardada correctamente.</div>
-      ) : null}
-      {params.error ? <div className="notice error">No pudimos guardar la actividad.</div> : null}
 
       <section className="activities-summary-grid">
         <article>
