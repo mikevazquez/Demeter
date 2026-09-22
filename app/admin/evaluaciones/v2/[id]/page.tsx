@@ -183,9 +183,17 @@ export default async function EvaluationV2EditorPage({
         : blockItems.length > 0 &&
           (weightedCount === 0 ||
             (weightedCount === blockItems.length && Math.abs(itemWeightTotal - 100) <= 0.01)));
+    const progressionValid =
+      (!block.progression_required || block.min_percent !== null) &&
+      blockItems.every(
+        (item) =>
+          !Boolean(item.progression_required || item.mandatory) ||
+          !item.scored ||
+          item.min_score !== null,
+      );
     return {
       id: block.id,
-      valid: internalWeightValid,
+      valid: internalWeightValid && progressionValid,
       itemCount: blockItems.length,
       itemWeightTotal,
     };
@@ -201,6 +209,8 @@ export default async function EvaluationV2EditorPage({
     block: "No pudimos guardar el bloque. Revisa sus datos.",
     item: "No pudimos guardar el elemento.",
     weights: "Los pesos deben sumar 100% antes de activar la evaluación.",
+    progression:
+      "Todo requisito de progresión puntuable necesita un mínimo para considerarse cumplido.",
     activate: "Todavía falta completar parte de la configuración.",
     locked: "Esta edición ya no puede modificarse.",
     version: "No pudimos crear una nueva edición.",
@@ -459,7 +469,7 @@ export default async function EvaluationV2EditorPage({
 
                 <div className="eval-field-grid">
                   <label className="eval-field">
-                    <span>Mínimo específico del bloque (opcional)</span>
+                    <span>Mínimo del bloque (obligatorio si es requisito)</span>
                     <input
                       name="min_percent"
                       type="number"
@@ -557,19 +567,42 @@ export default async function EvaluationV2EditorPage({
                             defaultValue={itemLabel(item)}
                             disabled={!editable}
                           />
-                          <div className="eval-v2-mini-percent">
-                            <input
-                              name="item_weight_percent"
-                              type="number"
-                              min="0"
-                              max="100"
-                              step="0.01"
-                              defaultValue={item.item_weight_percent ?? ""}
-                              disabled={!editable}
-                              placeholder="—"
-                            />
-                            <span>%</span>
-                          </div>
+                          <label className="eval-v2-mini-field">
+                            <span>Peso</span>
+                            <div className="eval-v2-mini-percent">
+                              <input
+                                name="item_weight_percent"
+                                type="number"
+                                min="0"
+                                max="100"
+                                step="0.01"
+                                defaultValue={item.item_weight_percent ?? ""}
+                                disabled={!editable}
+                                placeholder="—"
+                              />
+                              <span>%</span>
+                            </div>
+                          </label>
+                          {item.scored ? (
+                            <label className="eval-v2-mini-field">
+                              <span>Mínimo</span>
+                              <div className="eval-v2-mini-percent">
+                                <input
+                                  name="min_score"
+                                  type="number"
+                                  min="0"
+                                  max={item.max_score}
+                                  step="0.01"
+                                  defaultValue={item.min_score ?? ""}
+                                  disabled={!editable}
+                                  placeholder="—"
+                                />
+                                <span>/ {item.max_score}</span>
+                              </div>
+                            </label>
+                          ) : (
+                            <input type="hidden" name="min_score" value="" />
+                          )}
                           <label className="eval-v2-check compact">
                             <input
                               name="progression_required"
@@ -627,6 +660,20 @@ export default async function EvaluationV2EditorPage({
                             placeholder="Opcional"
                           />
                           <span>%</span>
+                        </div>
+                      </label>
+                      <label className="eval-field">
+                        <span>Mínimo para cumplir si es requisito</span>
+                        <div className="eval-v2-percent-input">
+                          <input
+                            name="min_score"
+                            type="number"
+                            min="0"
+                            max="100"
+                            step="0.01"
+                            placeholder="Opcional"
+                          />
+                          <span>/ 100</span>
                         </div>
                       </label>
                       {activeBlock.block_type === "element_list" ? (
