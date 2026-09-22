@@ -34,16 +34,7 @@ jobs:
         run: npm ci
 
       - name: Format check
-        run: |
-          if ! npm run format:check; then
-            echo "::group::PRETTIER_PAGE"
-            npx prettier "app/coach/clases/[sessionId]/page.tsx"
-            echo "::endgroup::"
-            echo "::group::PRETTIER_TEST"
-            npx prettier "tests/recursos-01-coach-resource-map.test.ts"
-            echo "::endgroup::"
-            exit 1
-          fi
+        run: npm run format:check
 
       - name: Lint
         run: npm run lint
