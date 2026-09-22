@@ -1,0 +1,30 @@
+name: Format simplified evaluation editor
+
+on:
+  push:
+    branches: [feat/evaluaciones-01-sync]
+    paths: [".github/workflows/format-simplified-evaluation-editor.yml"]
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/evaluaciones-01-sync
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx prettier --write "app/admin/evaluaciones/evaluaciones.css" "app/admin/evaluaciones/v2-actions.ts" "app/admin/evaluaciones/v2/[id]/page.tsx"
+      - run: |
+          if git diff --quiet; then exit 0; fi
+          git config user.name "studio-flow-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add "app/admin/evaluaciones/evaluaciones.css" "app/admin/evaluaciones/v2-actions.ts" "app/admin/evaluaciones/v2/[id]/page.tsx"
+          git commit -m "style: format simplified evaluation editor [skip ci]"
+          git push origin HEAD:feat/evaluaciones-01-sync
