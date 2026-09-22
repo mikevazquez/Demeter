@@ -151,7 +151,8 @@ export async function CoachTodayView({
           studentName: item.student_name,
           status: item.attendance_status,
           packageLabel:
-            item.package_name ?? (item.commercial_pending ? "Pendiente comercial" : "Reserva"),
+            item.package_name ??
+            (item.commercial_pending ? "Pendiente comercial" : "Reserva"),
           creditsLabel: item.commercial_pending ? "Venta pendiente" : "Studio Flow",
           expiresLabel: "—",
           evaluationStatus: null,
