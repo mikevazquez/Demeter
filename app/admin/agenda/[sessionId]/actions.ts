@@ -103,11 +103,7 @@ export async function updateSession(formData: FormData) {
     .single();
   if (!session || session.status !== "scheduled") redirect(returnUrl);
 
-  if (
-    session.requires_resource &&
-    session.space_id &&
-    spaceId !== session.space_id
-  ) {
+  if (session.requires_resource && session.space_id && spaceId !== session.space_id) {
     const { data: activeResourceAssignment } = await supabase
       .from("reservation_resource_assignments")
       .select("id")
