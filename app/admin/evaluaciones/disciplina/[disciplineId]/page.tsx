@@ -173,7 +173,7 @@ export default async function EvaluationDisciplinePage({
                     ) : version?.schema_version === 2 && version.status === "draft" && !used ? (
                       <Link
                         className="eval-secondary-button"
-                        href={`/admin/evaluaciones/v2/${template.id}?step=configuracion`}
+                        href={`/admin/evaluaciones/v2/${template.id}?step=apartados`}
                       >
                         Editar
                       </Link>
