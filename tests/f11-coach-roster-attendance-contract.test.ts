@@ -24,14 +24,16 @@ describe("F11 coach roster and attendance scope", () => {
 
   it("returns only the roster of an assigned session", () => {
     const migration = source("supabase/migrations/20260916143800_f11_coach_session_roster.sql");
-    const page = source("app/coach/clases/[sessionId]/roster/page.tsx");
+    const page = source("app/admin/hoy/CoachTodayView.tsx");
 
     expect(migration).toContain("cs.instructor_id = v_instructor_id");
     expect(migration).toContain("raise exception 'session_not_available'");
     expect(migration).not.toContain("phone");
     expect(migration).not.toContain("email");
     expect(page).toContain('supabase.rpc("coach_session_roster"');
-    expect(page).toContain("setCoachAttendanceAction");
+    expect(page).toContain("<TodayClasses");
+    expect(page).not.toContain('.from("students")');
+    expect(page).not.toContain('.from("reservations")');
   });
 
   it("uses the hardened canonical F8 attendance RPC instead of direct reservation updates", () => {

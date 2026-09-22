@@ -79,6 +79,8 @@ describe("ADMIN-UX-02 navigation architecture", () => {
     expect(layout).toContain("CAPABILITIES.INSTRUCTORS_READ");
     expect(layout).toContain("CAPABILITIES.AUTOMATIONS_READ");
     expect(layout).not.toContain("CAPABILITIES.REQUIRED_ACTIONS_READ");
-    expect(layout).toContain('label: "Mis clases"');
+    expect(layout).toContain("instructorOnly");
+    expect(layout).toContain('href: "/admin/perfil"');
+    expect(layout).toContain('label: "Perfil"');
   });
 });

@@ -83,7 +83,7 @@ export async function getCoachContext(requiredCapability?: Capability) {
   }
 
   if (requiredCapability && !capabilities.has(requiredCapability)) {
-    redirect("/admin/mis-clases?error=access");
+    redirect("/admin?error=access");
   }
 
   return {

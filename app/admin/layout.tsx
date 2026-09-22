@@ -42,12 +42,8 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
 
   const desktopNavItems = instructorOnly
     ? [
-        {
-          href: "/admin/mis-clases",
-          label: "Mis clases",
-          enabled: true,
-          activeFor: ["/coach"],
-        },
+        { href: "/admin", label: "Hoy", enabled: true, activeFor: ["/coach"] },
+        { href: "/admin/perfil", label: "Perfil", enabled: true },
       ]
     : [
         { href: "/admin", label: "Hoy", enabled: true },

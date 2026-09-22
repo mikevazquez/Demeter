@@ -32,16 +32,23 @@ describe("F11 coach walk-in and finalization contract", () => {
     expect(actions).not.toContain('.from("product_acquisitions")');
   });
 
-  it("finalizes through the canonical attendance RPC and supports reasoned corrections", () => {
-    const actions = source("app/coach/actions.ts");
-    const summary = source("app/coach/clases/[sessionId]/resumen/page.tsx");
-    const finalized = source("app/coach/clases/[sessionId]/finalizada/page.tsx");
+  it("keeps finalized Coach attendance read-only after automatic close", () => {
+    const unifiedRoster = source("app/admin/hoy/SessionOperations.tsx");
+    const coachToday = source("app/admin/hoy/CoachTodayView.tsx");
+    const closeMigration = source(
+      "supabase/migrations/20260922173000_kiosco01_automatic_session_close.sql",
+    );
+    const scopeMigration = source(
+      "supabase/migrations/20260922175000_kiosco01_attendance_edit_scope.sql",
+    );
 
-    expect(actions).toContain('supabase.rpc("finalize_attendance"');
-    expect(actions).toContain("target_reason: reason");
-    expect(summary).toContain("Confirmar y finalizar asistencia");
-    expect(summary).toContain("se marcarán como no-show");
-    expect(finalized).toContain("Motivo obligatorio de la corrección");
-    expect(finalized).toContain("correctCoachAttendanceAction");
+    expect(closeMigration).toContain("private.finalize_due_sessions()");
+    expect(closeMigration).toContain("'studio-flow-finalize-due-sessions'");
+    expect(coachToday).toContain("canCorrectCompleted={false}");
+    expect(unifiedRoster).toContain("Clase finalizada · asistencia en modo solo lectura.");
+    expect(unifiedRoster).toContain("canCorrectCompleted");
+    expect(unifiedRoster).not.toContain("correctCoachAttendanceAction");
+    expect(scopeMigration).toContain("if v_session.status = 'completed' then");
+    expect(scopeMigration).toContain("if not v_is_admin then");
   });
 });
