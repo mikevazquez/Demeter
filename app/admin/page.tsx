@@ -214,7 +214,7 @@ export default async function AdminPage({
   ] = await Promise.all([
     supabase
       .from("class_sessions")
-      .select("id,starts_at,capacity,status,template_id,instructor_id,space_id")
+      .select("id,starts_at,ends_at,capacity,status,template_id,instructor_id,space_id")
       .eq("studio_id", studio.id)
       .gte("starts_at", selectedStart.toISOString())
       .lt("starts_at", selectedEnd.toISOString())
@@ -406,6 +406,8 @@ export default async function AdminPage({
     classes.push({
       id: session.id,
       time: formatTime(session.starts_at, timeZone),
+      startsAt: session.starts_at,
+      endsAt: session.ends_at,
       name: template?.name ?? "Clase",
       instructor: session.instructor_id
         ? (instructorMap.get(session.instructor_id) ?? "Instructor")
