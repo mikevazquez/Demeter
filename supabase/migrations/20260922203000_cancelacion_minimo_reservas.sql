@@ -171,30 +171,6 @@ on public.class_sessions
 for each row
 execute function private.minimum_reservation_prepare_session();
 
-create or replace function private.minimum_reservation_evaluate_if_due()
-returns trigger
-language plpgsql
-security definer
-set search_path = ''
-as $
-begin
-  if new.status = 'scheduled'
-     and new.minimum_reservations_enabled
-     and not new.minimum_override
-     and new.minimum_review_status = 'pending'
-     and new.minimum_review_at is not null
-     and new.minimum_review_at <= clock_timestamp()
-     and new.starts_at > clock_timestamp() then
-    perform private.process_due_minimum_reservation_sessions(new.studio_id, new.id);
-  end if;
-
-  return new;
-end;
-$;
-
-revoke all on function private.minimum_reservation_evaluate_if_due()
-from public, anon, authenticated, service_role;
-
 create or replace function private.cancel_session_reservations_internal(
   target_session_id uuid,
   target_reason text default null,
@@ -485,20 +461,6 @@ $$;
 revoke all on function private.process_due_minimum_reservation_sessions(uuid,uuid)
 from public, anon, authenticated, service_role;
 
-
-drop trigger if exists minimum_reservation_evaluate_if_due on public.class_sessions;
-create trigger minimum_reservation_evaluate_if_due
-after insert or update of
-  starts_at,
-  template_id,
-  minimum_reservations_enabled,
-  minimum_reservations,
-  minimum_review_minutes_before,
-  minimum_override_allowed,
-  minimum_override
-on public.class_sessions
-for each row
-execute function private.minimum_reservation_evaluate_if_due();
 
 create or replace function public.admin_process_session_minimum_review(
   target_session_id uuid
