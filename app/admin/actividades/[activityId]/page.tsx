@@ -121,7 +121,7 @@ export default async function ActivityDetailPage({
           <p className="eyebrow">EDITAR ACTIVIDAD · {studio.name}</p>
           <h1>{activity.name}</h1>
           <p>
-            Puedes entrar directamente a cualquiera de las cuatro etapas sin reconstruir la
+            Puedes entrar directamente a cualquiera de las cinco etapas sin reconstruir la
             actividad desde cero.
           </p>
         </div>
