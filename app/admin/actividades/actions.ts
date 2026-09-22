@@ -84,6 +84,42 @@ async function preserveBookedAndClearGeneratedSessions(
   }
 }
 
+function recurringScheduleChanged(
+  existing: {
+    instructor_id: string | null;
+    space_id: string | null;
+    weekday: number;
+    local_time: string;
+    duration_minutes: number | null;
+    capacity: number;
+    starts_on: string;
+    ends_on: string | null;
+    active: boolean;
+  },
+  incoming: {
+    instructor_id: string | null;
+    space_id: string | null;
+    weekday: number;
+    local_time: string;
+    duration_minutes: number;
+    starts_on: string;
+    ends_on: string | null;
+  },
+  capacity: number,
+) {
+  return (
+    existing.instructor_id !== incoming.instructor_id ||
+    existing.space_id !== incoming.space_id ||
+    existing.weekday !== incoming.weekday ||
+    String(existing.local_time).slice(0, 5) !== incoming.local_time ||
+    (existing.duration_minutes ?? incoming.duration_minutes) !== incoming.duration_minutes ||
+    existing.capacity !== capacity ||
+    existing.starts_on !== incoming.starts_on ||
+    (existing.ends_on ?? null) !== incoming.ends_on ||
+    !existing.active
+  );
+}
+
 export async function saveActivity(formData: FormData) {
   const { supabase, studio } = await getAdminContext(CAPABILITIES.SCHEDULE_WRITE);
 
@@ -226,7 +262,9 @@ export async function saveActivity(formData: FormData) {
 
       const { data: currentSchedules, error: currentSchedulesError } = await supabase
         .from("recurring_schedules")
-        .select("id")
+        .select(
+          "id,instructor_id,space_id,weekday,local_time,duration_minutes,capacity,starts_on,ends_on,active",
+        )
         .eq("studio_id", studio.id)
         .eq("template_id", activityId);
 
@@ -235,9 +273,11 @@ export async function saveActivity(formData: FormData) {
       const incomingIds = new Set(
         normalizedSchedules.map((row) => row.id).filter(Boolean) as string[],
       );
+      const currentById = new Map((currentSchedules ?? []).map((row) => [row.id, row]));
+      const schedulesToMaterialize = new Set<string>();
 
       for (const existingSchedule of currentSchedules ?? []) {
-        if (!incomingIds.has(existingSchedule.id)) {
+        if (!incomingIds.has(existingSchedule.id) && existingSchedule.active) {
           await preserveBookedAndClearGeneratedSessions(supabase, studio.id, existingSchedule.id);
           const { error } = await supabase
             .from("recurring_schedules")
@@ -250,10 +290,36 @@ export async function saveActivity(formData: FormData) {
 
       for (const row of normalizedSchedules) {
         if (row.id) {
-          await preserveBookedAndClearGeneratedSessions(supabase, studio.id, row.id);
-          const { error } = await supabase
+          const existingSchedule = currentById.get(row.id);
+          if (!existingSchedule) throw new Error("schedule_not_found");
+
+          if (recurringScheduleChanged(existingSchedule, row, capacity)) {
+            await preserveBookedAndClearGeneratedSessions(supabase, studio.id, row.id);
+            const { error } = await supabase
+              .from("recurring_schedules")
+              .update({
+                instructor_id: row.instructor_id,
+                space_id: row.space_id,
+                weekday: row.weekday,
+                local_time: row.local_time,
+                duration_minutes: row.duration_minutes,
+                capacity,
+                starts_on: row.starts_on,
+                ends_on: row.ends_on,
+                active: true,
+              })
+              .eq("id", row.id)
+              .eq("template_id", activityId)
+              .eq("studio_id", studio.id);
+            if (error) throw error;
+            schedulesToMaterialize.add(row.id);
+          }
+        } else {
+          const { data: inserted, error } = await supabase
             .from("recurring_schedules")
-            .update({
+            .insert({
+              studio_id: studio.id,
+              template_id: activityId,
               instructor_id: row.instructor_id,
               space_id: row.space_id,
               weekday: row.weekday,
@@ -264,11 +330,22 @@ export async function saveActivity(formData: FormData) {
               ends_on: row.ends_on,
               active: true,
             })
-            .eq("id", row.id)
-            .eq("template_id", activityId)
-            .eq("studio_id", studio.id);
-          if (error) throw error;
-        } else {
+            .select("id")
+            .single();
+          if (error || !inserted) throw error ?? new Error("schedule_insert_failed");
+          row.id = inserted.id;
+          schedulesToMaterialize.add(inserted.id);
+        }
+      }
+
+      for (const scheduleId of schedulesToMaterialize) {
+        const { error } = await supabase.rpc("materialize_recurring_schedule", {
+          p_schedule_id: scheduleId,
+          p_through: null,
+        });
+        if (error) throw error;
+      }
+    } else {
           const { data: inserted, error } = await supabase
             .from("recurring_schedules")
             .insert({
@@ -346,13 +423,15 @@ export async function saveActivity(formData: FormData) {
       });
     }
 
-    for (const row of normalizedSchedules) {
-      if (!row.id) continue;
-      const { error } = await supabase.rpc("materialize_recurring_schedule", {
-        p_schedule_id: row.id,
-        p_through: null,
-      });
-      if (error) throw error;
+    if (!payload.activityId) {
+      for (const row of normalizedSchedules) {
+        if (!row.id) continue;
+        const { error } = await supabase.rpc("materialize_recurring_schedule", {
+          p_schedule_id: row.id,
+          p_through: null,
+        });
+        if (error) throw error;
+      }
     }
 
     savedActivityId = activityId;
