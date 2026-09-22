@@ -20,6 +20,8 @@ type RosterItem = {
   studentId?: string | null;
   evaluationInvitationId?: string | null;
   evaluationStatus?: string | null;
+  attendanceSource?: string | null;
+  checkedInAt?: string | null;
 };
 
 type Candidate = {
@@ -41,6 +43,7 @@ type SessionOperationsProps = {
   canAttendance: boolean;
   canBook: boolean;
   canCreateStudent: boolean;
+  canCorrectCompleted?: boolean;
   returnTo?: string;
   initiallyOpen?: boolean;
   showToggle?: boolean;
@@ -75,6 +78,7 @@ export function SessionOperations({
   canAttendance,
   canBook,
   canCreateStudent,
+  canCorrectCompleted = true,
   returnTo = "",
   initiallyOpen = false,
   showToggle = true,
@@ -89,16 +93,18 @@ export function SessionOperations({
   const [now, setNow] = useState<number | null>(null);
 
   const isCompleted = sessionStatus === "completed";
-  const canAddExisting = !isCompleted && canBook;
-  const canAddNew = !isCompleted && canCreateStudent;
-  const canAddWalkin = canAddExisting || canAddNew;
-  const showNewWalkin = canAddNew && (newWalkin || !canAddExisting);
+  const isCancelled = sessionStatus === "cancelled";
   const attendanceCount = roster.filter((item) => item.status === "attended").length;
   const noShowCount = roster.filter((item) => item.status === "no_show").length;
   const pendingCount = roster.filter((item) => item.status === "reserved").length;
   const startsAtMs = new Date(startsAt).getTime();
   const endsAtMs = new Date(endsAt).getTime();
-  const inProgress = !isCompleted && now !== null && now >= startsAtMs && now < endsAtMs;
+  const inProgress =
+    sessionStatus === "scheduled" && now !== null && now >= startsAtMs && now < endsAtMs;
+  const canAddExisting = inProgress && canBook;
+  const canAddNew = inProgress && canCreateStudent;
+  const canAddWalkin = canAddExisting || canAddNew;
+  const showNewWalkin = canAddNew && (newWalkin || !canAddExisting);
 
   useEffect(() => {
     const updateNow = () => setNow(Date.now());
@@ -208,7 +214,10 @@ export function SessionOperations({
               <div className="today-student-list compact">
                 {roster.map((item) => {
                   const canCorrect =
-                    isCompleted && canAttendance && ["attended", "no_show"].includes(item.status);
+                    isCompleted &&
+                    canCorrectCompleted &&
+                    canAttendance &&
+                    ["attended", "no_show"].includes(item.status);
                   const correctionTarget = item.status === "attended" ? "no_show" : "attended";
                   const isInvitation = item.packageLabel === "Invitación";
 
@@ -237,6 +246,17 @@ export function SessionOperations({
                             ? item.creditsLabel
                             : `${item.packageLabel} · ${item.creditsLabel}`}
                         </span>
+                        {item.status === "attended" ? (
+                          <span className="today-attendance-origin">
+                            {item.attendanceSource === "KIOSK" ? "Check-in" : "Manual"}
+                            {item.checkedInAt
+                              ? ` · ${new Intl.DateTimeFormat("es-MX", {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                }).format(new Date(item.checkedInAt))}`
+                              : ""}
+                          </span>
+                        ) : null}
                         {item.evaluationStatus === "scheduled" &&
                         item.evaluationInvitationId &&
                         item.studentId ? (
@@ -306,7 +326,7 @@ export function SessionOperations({
                         </span>
                       )}
 
-                      {!isCompleted && canBook && item.status === "reserved" ? (
+                      {!isCompleted && !isCancelled && canBook && item.status === "reserved" ? (
                         <details className="today-student-more">
                           <summary aria-label={`Más acciones para ${item.studentName}`}>⋮</summary>
                           <div>
@@ -427,7 +447,13 @@ export function SessionOperations({
               </div>
 
               {isCompleted ? (
-                <p>Asistencia finalizada. Las correcciones requieren motivo.</p>
+                <p>
+                  {canCorrectCompleted
+                    ? "Asistencia finalizada. Las correcciones requieren motivo."
+                    : "Clase finalizada · asistencia en modo solo lectura."}
+                </p>
+              ) : isCancelled ? (
+                <p>Clase cancelada · sin acciones operativas.</p>
               ) : inProgress ? (
                 <p>Clase en curso · el cierre de asistencia es automático.</p>
               ) : now !== null && now < startsAtMs ? (
