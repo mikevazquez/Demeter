@@ -1445,6 +1445,40 @@
   font-size: 8px;
 }
 
+.eval-v2-level-result {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 6px 0 4px;
+}
+
+.eval-v2-level-result > div {
+  display: grid;
+  gap: 4px;
+  padding: 10px 12px;
+  border: 1px solid #2d3745;
+  border-radius: 12px;
+  background: rgba(8, 13, 19, 0.45);
+}
+
+.eval-v2-level-result > div > span {
+  color: #7f8b9c;
+  font-size: 8px;
+  font-weight: 750;
+  text-transform: uppercase;
+}
+
+.eval-v2-level-result > div > strong {
+  color: #fff;
+  font-size: 13px;
+}
+
+@media (max-width: 560px) {
+  .eval-v2-level-result {
+    grid-template-columns: 1fr;
+  }
+}
+
 .eval-v2-live-layout {
   display: grid;
   grid-template-columns: 190px minmax(0, 1fr);
