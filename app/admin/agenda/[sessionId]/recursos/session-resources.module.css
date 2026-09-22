@@ -305,3 +305,79 @@
     grid-template-columns: 1fr 90px;
   }
 }
+
+
+.assignmentList {
+  display: grid;
+  gap: 8px;
+}
+
+.assignmentRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, auto);
+  gap: 12px;
+  align-items: center;
+  padding: 11px;
+  border: 1px solid #26303b;
+  border-radius: 12px;
+  background: #0b1118;
+}
+
+.assignmentCopy strong,
+.assignmentCopy small {
+  display: block;
+}
+
+.assignmentCopy strong {
+  color: #edf0f4;
+  font-size: 10px;
+}
+
+.assignmentCopy small {
+  margin-top: 3px;
+  color: #7f8a98;
+  font-size: 8px;
+}
+
+.reassignControls {
+  display: grid;
+  grid-template-columns: minmax(150px, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.reassignControls select {
+  min-height: 38px;
+  padding: 0 10px;
+  border: 1px solid #2c3541;
+  border-radius: 9px;
+  background: #101720;
+  color: #edf0f4;
+  font-size: 9px;
+}
+
+.reassignControls button {
+  min-height: 38px;
+  padding: 0 13px;
+  border: 1px solid rgba(255, 10, 138, 0.45);
+  border-radius: 9px;
+  background: rgba(255, 10, 138, 0.1);
+  color: #ff82c0;
+  font-size: 9px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.reassignControls button:hover {
+  background: rgba(255, 10, 138, 0.16);
+}
+
+@media (max-width: 720px) {
+  .assignmentRow {
+    grid-template-columns: 1fr;
+  }
+
+  .reassignControls {
+    grid-template-columns: 1fr auto;
+  }
+}
