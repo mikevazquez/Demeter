@@ -173,10 +173,14 @@ export async function bookStudentSessionAction(formData: FormData) {
   if (!sessionId) redirect("/student/reservar?error=session_required");
 
   const { supabase } = await getStudentPortalContext();
-  const { data, error } = await supabase.rpc("student_book_session_with_resource", {
-    target_session_id: sessionId,
-    target_resource_id: resourceId,
-  });
+  const { data, error } = resourceId
+    ? await supabase.rpc("student_book_session_with_resource", {
+        target_session_id: sessionId,
+        target_resource_id: resourceId,
+      })
+    : await supabase.rpc("student_book_session", {
+        target_session_id: sessionId,
+      });
 
   if (error) {
     redirect(
