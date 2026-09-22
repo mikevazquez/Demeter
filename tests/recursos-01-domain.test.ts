@@ -5,17 +5,11 @@ import { describe, expect, it } from "vitest";
 
 describe("RECURSOS-01 domain contract", () => {
   const migration = readFileSync(
-    join(
-      process.cwd(),
-      "supabase/migrations/20260922055300_recursos01_domain_persistence.sql",
-    ),
+    join(process.cwd(), "supabase/migrations/20260922055300_recursos01_domain_persistence.sql"),
     "utf8",
   );
   const hardening = readFileSync(
-    join(
-      process.cwd(),
-      "supabase/migrations/20260922055433_recursos01_rls_policy_hardening.sql",
-    ),
+    join(process.cwd(), "supabase/migrations/20260922055433_recursos01_rls_policy_hardening.sql"),
     "utf8",
   );
 
