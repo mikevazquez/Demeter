@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
 import {
   bookingReasonCopy,
@@ -17,6 +17,9 @@ const errorCopy: Record<string, string> = {
   forbidden: "Tu cuenta no puede reservar esta clase.",
   session_not_found: "Esta clase ya no está disponible.",
   session_required: "No se pudo identificar la clase.",
+  resource_required: "Selecciona un recurso antes de confirmar.",
+  resource_full: "Ese recurso acaba de llenarse. Selecciona otro.",
+  resource_not_available: "Ese recurso ya no está disponible.",
 };
 
 export default async function StudentBookingConfirmPage({
@@ -24,7 +27,7 @@ export default async function StudentBookingConfirmPage({
   searchParams,
 }: {
   params: Promise<{ sessionId: string }>;
-  searchParams: Promise<{ date?: string; error?: string }>;
+  searchParams: Promise<{ date?: string; error?: string; resource?: string }>;
 }) {
   const { sessionId } = await params;
   const query = await searchParams;
@@ -41,6 +44,51 @@ export default async function StudentBookingConfirmPage({
   const sessionDate = localDateKey(new Date(session.starts_at), studio.timezone);
   const returnDate =
     query.date && /^\d{4}-\d{2}-\d{2}$/.test(query.date) ? query.date : sessionDate;
+
+  let selectedResource: {
+    resource_id: string;
+    name: string;
+    short_label: string | null;
+    type_name: string;
+    enabled: boolean;
+    available: number;
+    capacity: number;
+  } | null = null;
+
+  if (session.requires_resource) {
+    const { data: resourceData, error: resourceError } = await supabase.rpc(
+      "student_session_resource_map",
+      { target_session_id: session.session_id },
+    );
+
+    if (resourceError || !resourceData) {
+      redirect(
+        `/student/reservar/${session.session_id}/recurso?error=resource_not_available&date=${returnDate}`,
+      );
+    }
+
+    const payload = resourceData as {
+      resources?: Array<{
+        resource_id: string;
+        name: string;
+        short_label: string | null;
+        type_name: string;
+        enabled: boolean;
+        available: number;
+        capacity: number;
+      }>;
+    };
+
+    selectedResource =
+      payload.resources?.find((resource) => resource.resource_id === query.resource) ?? null;
+
+    if (!selectedResource || !selectedResource.enabled || selectedResource.available <= 0) {
+      const errorCode = query.resource ? "resource_not_available" : "resource_required";
+      redirect(
+        `/student/reservar/${session.session_id}/recurso?error=${errorCode}&date=${returnDate}`,
+      );
+    }
+  }
 
   return (
     <main className="mx-auto max-w-md space-y-4 pb-4">
@@ -75,6 +123,19 @@ export default async function StudentBookingConfirmPage({
           <p className="mt-2 text-[11px] text-zinc-500">
             {session.spots_available} de {session.capacity} lugares disponibles
           </p>
+          {selectedResource ? (
+            <div className="mt-3 rounded-xl border border-fuchsia-500/20 bg-fuchsia-500/[0.07] px-3 py-2.5">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-fuchsia-300">
+                Recurso seleccionado
+              </p>
+              <p className="mt-1 text-xs font-semibold text-white">
+                {selectedResource.name}
+              </p>
+              <p className="mt-0.5 text-[10px] text-zinc-500">
+                {selectedResource.type_name}
+              </p>
+            </div>
+          ) : null}
         </div>
 
         {query.error ? (
@@ -112,6 +173,9 @@ export default async function StudentBookingConfirmPage({
             <form action={bookStudentSessionAction} className="mt-5 space-y-3">
               <input type="hidden" name="session_id" value={session.session_id} />
               <input type="hidden" name="date" value={returnDate} />
+              {selectedResource ? (
+                <input type="hidden" name="resource_id" value={selectedResource.resource_id} />
+              ) : null}
               <PendingActionButton
                 pendingLabel="Reservando…"
                 className="min-h-11 w-full rounded-2xl bg-fuchsia-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-fuchsia-500 disabled:cursor-wait disabled:opacity-70"
@@ -119,7 +183,11 @@ export default async function StudentBookingConfirmPage({
                 {query.error ? "Intentar de nuevo" : "Confirmar reserva"}
               </PendingActionButton>
               <Link
-                href={`/student/reservar/${session.session_id}?date=${returnDate}`}
+                href={
+                  session.requires_resource && selectedResource
+                    ? `/student/reservar/${session.session_id}/recurso?date=${returnDate}`
+                    : `/student/reservar/${session.session_id}?date=${returnDate}`
+                }
                 className="flex min-h-11 w-full items-center justify-center rounded-2xl border border-white/10 px-4 py-2.5 text-sm font-semibold text-zinc-300"
               >
                 Cancelar
