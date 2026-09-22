@@ -14,10 +14,7 @@ describe("RECURSOS-01 activity and session inheritance", () => {
   );
   const agendaActions = readFileSync(join(process.cwd(), "app/admin/agenda/actions.ts"), "utf8");
   const migration = readFileSync(
-    join(
-      process.cwd(),
-      "supabase/migrations/20260922223000_activity_resource_defaults.sql",
-    ),
+    join(process.cwd(), "supabase/migrations/20260922223000_activity_resource_defaults.sql"),
     "utf8",
   );
 
@@ -45,9 +42,7 @@ describe("RECURSOS-01 activity and session inheritance", () => {
       '.select("id, duration_minutes, capacity, requires_resource, resource_uses_per_item")',
     );
     expect(agendaActions).toContain("requires_resource: template.requires_resource");
-    expect(agendaActions).toContain(
-      "resource_uses_per_item: template.resource_uses_per_item ?? 1",
-    );
+    expect(agendaActions).toContain("resource_uses_per_item: template.resource_uses_per_item ?? 1");
   });
 
   it("inherits activity defaults into recurring sessions", () => {
