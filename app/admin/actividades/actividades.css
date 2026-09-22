@@ -596,8 +596,7 @@
   border: 1px solid rgba(70, 188, 232, 0.28);
   border-radius: 16px;
   background:
-    radial-gradient(circle at 100% 0%, rgba(70, 188, 232, 0.07), transparent 42%),
-    #0a1119;
+    radial-gradient(circle at 100% 0%, rgba(70, 188, 232, 0.07), transparent 42%), #0a1119;
 }
 
 .activities-operation-copy {
