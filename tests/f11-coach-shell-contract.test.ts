@@ -42,6 +42,6 @@ describe("F11 coach shell contract", () => {
     expect(context).not.toContain('.from("students")');
     expect(context).not.toContain('.from("reservations")');
     expect(coachHome).toContain('supabase.rpc("coach_my_sessions"');
-    expect(detail).toContain('redirect(`/admin#session-${sessionId}`)');
+    expect(detail).toContain("redirect(`/admin#session-${sessionId}`)");
   });
 });
