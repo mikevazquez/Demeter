@@ -41,93 +41,39 @@ function moneyToMinor(value: string | undefined) {
   return Number.isSafeInteger(minor) ? minor : undefined;
 }
 
-async function preserveBookedAndClearGeneratedSessions(
-  supabase: Awaited<ReturnType<typeof getAdminContext>>["supabase"],
-  studioId: string,
-  scheduleId: string,
-) {
-  const { data: sessions } = await supabase
-    .from("class_sessions")
-    .select("id")
-    .eq("studio_id", studioId)
-    .eq("recurring_schedule_id", scheduleId)
-    .gte("starts_at", new Date().toISOString());
-
-  const ids = (sessions ?? []).map((session) => session.id);
-  if (!ids.length) return;
-
-  const { data: reservations } = await supabase
-    .from("reservations")
-    .select("session_id")
-    .in("session_id", ids);
-
-  const reservedIds = new Set((reservations ?? []).map((reservation) => reservation.session_id));
-  const preserved = ids.filter((id) => reservedIds.has(id));
-  const disposable = ids.filter((id) => !reservedIds.has(id));
-
-  if (preserved.length) {
-    const { error } = await supabase
-      .from("class_sessions")
-      .update({ recurring_schedule_id: null, is_schedule_exception: true })
-      .in("id", preserved)
-      .eq("studio_id", studioId);
-    if (error) throw error;
-  }
-
-  if (disposable.length) {
-    const { error } = await supabase
-      .from("class_sessions")
-      .delete()
-      .in("id", disposable)
-      .eq("studio_id", studioId);
-    if (error) throw error;
-  }
+function routeForError(payload: ActivityPayload | undefined, code: string) {
+  const safeCode = encodeURIComponent(code);
+  return payload?.activityId
+    ? `/admin/actividades/${payload.activityId}?error=${safeCode}`
+    : `/admin/actividades/nueva?error=${safeCode}`;
 }
 
-function recurringScheduleChanged(
-  existing: {
-    instructor_id: string | null;
-    space_id: string | null;
-    weekday: number;
-    local_time: string;
-    duration_minutes: number | null;
-    capacity: number;
-    starts_on: string;
-    ends_on: string | null;
-    active: boolean;
-  },
-  incoming: {
-    instructor_id: string | null;
-    space_id: string | null;
-    weekday: number;
-    local_time: string;
-    duration_minutes: number;
-    starts_on: string;
-    ends_on: string | null;
-  },
-  capacity: number,
-) {
-  return (
-    existing.instructor_id !== incoming.instructor_id ||
-    existing.space_id !== incoming.space_id ||
-    existing.weekday !== incoming.weekday ||
-    String(existing.local_time).slice(0, 5) !== incoming.local_time ||
-    (existing.duration_minutes ?? incoming.duration_minutes) !== incoming.duration_minutes ||
-    existing.capacity !== capacity ||
-    existing.starts_on !== incoming.starts_on ||
-    (existing.ends_on ?? null) !== incoming.ends_on ||
-    !existing.active
-  );
+function normalizeRpcError(message: string | undefined) {
+  const candidates = [
+    "unauthenticated",
+    "forbidden",
+    "invalid_activity",
+    "resource_activity_requires_space",
+    "invalid_instructor",
+    "invalid_space",
+    "space_capacity",
+    "invalid_schedule",
+    "duplicate_schedule",
+    "activity_not_found",
+    "schedule_not_found",
+  ];
+
+  return candidates.find((code) => message?.includes(code)) ?? "save";
 }
 
 export async function saveActivity(formData: FormData) {
   const { supabase, studio } = await getAdminContext(CAPABILITIES.SCHEDULE_WRITE);
 
-  let payload: ActivityPayload;
+  let payload: ActivityPayload | undefined;
   try {
-    payload = JSON.parse(String(formData.get("payload") ?? ""));
+    payload = JSON.parse(String(formData.get("payload") ?? "")) as ActivityPayload;
   } catch {
-    redirect("/admin/actividades/nueva?error=invalid");
+    redirect("/admin/actividades/nueva?error=invalid_activity");
   }
 
   const name = String(payload.name ?? "").trim();
@@ -165,265 +111,53 @@ export async function saveActivity(formData: FormData) {
     dropInPriceMinor === undefined ||
     (payload.allowIndividualPurchase && (dropInPriceMinor == null || dropInPriceMinor <= 0))
   ) {
-    redirect(
-      payload.activityId
-        ? `/admin/actividades/${payload.activityId}?error=invalid`
-        : "/admin/actividades/nueva?error=invalid",
-    );
+    redirect(routeForError(payload, "invalid_activity"));
   }
 
-  const normalizedSchedules = schedules.map((row) => {
-    const weekday = Number(row.weekday);
-    const localTime = String(row.startTime ?? "");
+  const normalizedSchedules = schedules.map((row) => ({
+    id: row.id || null,
+    weekday: Number(row.weekday),
+    startTime: String(row.startTime ?? ""),
+  }));
 
-    if (
-      !Number.isInteger(weekday) ||
-      weekday < 0 ||
-      weekday > 6 ||
-      !/^\d{2}:\d{2}$/.test(localTime)
-    ) {
-      throw new Error("invalid_schedule");
-    }
+  if (
+    normalizedSchedules.some(
+      (row) =>
+        !Number.isInteger(row.weekday) ||
+        row.weekday < 0 ||
+        row.weekday > 6 ||
+        !/^\d{2}:\d{2}$/.test(row.startTime),
+    )
+  ) {
+    redirect(routeForError(payload, "invalid_schedule"));
+  }
 
-    return {
-      id: row.id || null,
-      weekday,
-      local_time: localTime,
-      duration_minutes: durationMinutes,
-      instructor_id: defaultInstructorId,
-      space_id: defaultSpaceId,
-      starts_on: startsOn,
-      ends_on: endsOn,
-    };
+  const { data, error } = await supabase.rpc("admin_save_activity", {
+    p_studio_id: studio.id,
+    p_activity_id: payload.activityId || null,
+    p_name: name,
+    p_description: description,
+    p_duration_minutes: durationMinutes,
+    p_capacity: capacity,
+    p_color_hex: colorHex,
+    p_requires_resource: Boolean(payload.requiresResource),
+    p_drop_in_price_minor: dropInPriceMinor,
+    p_individual_purchase_notes: payload.allowIndividualPurchase ? notes : null,
+    p_default_instructor_id: defaultInstructorId,
+    p_default_space_id: defaultSpaceId,
+    p_starts_on: startsOn,
+    p_ends_on: endsOn,
+    p_schedules: normalizedSchedules,
   });
 
-  let savedActivityId = payload.activityId || "";
-
-  try {
-    const instructorIds = [
-      ...new Set(normalizedSchedules.map((row) => row.instructor_id).filter(Boolean)),
-    ] as string[];
-    const spaceIds = [
-      ...new Set(normalizedSchedules.map((row) => row.space_id).filter(Boolean)),
-    ] as string[];
-
-    if (instructorIds.length) {
-      const { data } = await supabase
-        .from("instructors")
-        .select("id")
-        .eq("studio_id", studio.id)
-        .eq("status", "active")
-        .in("id", instructorIds);
-      if ((data ?? []).length !== instructorIds.length) throw new Error("invalid_instructor");
-    }
-
-    if (spaceIds.length) {
-      const { data } = await supabase
-        .from("spaces")
-        .select("id,capacity")
-        .eq("studio_id", studio.id)
-        .eq("active", true)
-        .in("id", spaceIds);
-      if ((data ?? []).length !== spaceIds.length) throw new Error("invalid_space");
-      if ((data ?? []).some((space) => space.capacity && capacity > space.capacity)) {
-        throw new Error("space_capacity");
-      }
-    }
-
-    let activityId = payload.activityId || "";
-
-    if (activityId) {
-      const { data: existing, error: existingError } = await supabase
-        .from("class_templates")
-        .select("id,color_hex")
-        .eq("id", activityId)
-        .eq("studio_id", studio.id)
-        .maybeSingle();
-
-      if (existingError || !existing) throw new Error("activity_not_found");
-
-      const { error: updateError } = await supabase
-        .from("class_templates")
-        .update({
-          name,
-          description,
-          duration_minutes: durationMinutes,
-          capacity,
-          color_hex: colorHex,
-          requires_resource: Boolean(payload.requiresResource),
-          credit_cost: 1,
-          drop_in_price_minor: dropInPriceMinor,
-          individual_purchase_notes: payload.allowIndividualPurchase ? notes : null,
-        })
-        .eq("id", activityId)
-        .eq("studio_id", studio.id);
-
-      if (updateError) throw updateError;
-
-      const { data: currentSchedules, error: currentSchedulesError } = await supabase
-        .from("recurring_schedules")
-        .select(
-          "id,instructor_id,space_id,weekday,local_time,duration_minutes,capacity,starts_on,ends_on,active",
-        )
-        .eq("studio_id", studio.id)
-        .eq("template_id", activityId);
-
-      if (currentSchedulesError) throw currentSchedulesError;
-
-      const incomingIds = new Set(
-        normalizedSchedules.map((row) => row.id).filter(Boolean) as string[],
-      );
-      const currentById = new Map((currentSchedules ?? []).map((row) => [row.id, row]));
-      const schedulesToMaterialize = new Set<string>();
-
-      for (const existingSchedule of currentSchedules ?? []) {
-        if (!incomingIds.has(existingSchedule.id) && existingSchedule.active) {
-          await preserveBookedAndClearGeneratedSessions(supabase, studio.id, existingSchedule.id);
-          const { error } = await supabase
-            .from("recurring_schedules")
-            .update({ active: false })
-            .eq("id", existingSchedule.id)
-            .eq("studio_id", studio.id);
-          if (error) throw error;
-        }
-      }
-
-      for (const row of normalizedSchedules) {
-        if (row.id) {
-          const existingSchedule = currentById.get(row.id);
-          if (!existingSchedule) throw new Error("schedule_not_found");
-
-          if (recurringScheduleChanged(existingSchedule, row, capacity)) {
-            await preserveBookedAndClearGeneratedSessions(supabase, studio.id, row.id);
-            const { error } = await supabase
-              .from("recurring_schedules")
-              .update({
-                instructor_id: row.instructor_id,
-                space_id: row.space_id,
-                weekday: row.weekday,
-                local_time: row.local_time,
-                duration_minutes: row.duration_minutes,
-                capacity,
-                starts_on: row.starts_on,
-                ends_on: row.ends_on,
-                active: true,
-              })
-              .eq("id", row.id)
-              .eq("template_id", activityId)
-              .eq("studio_id", studio.id);
-            if (error) throw error;
-            schedulesToMaterialize.add(row.id);
-          }
-        } else {
-          const { data: inserted, error } = await supabase
-            .from("recurring_schedules")
-            .insert({
-              studio_id: studio.id,
-              template_id: activityId,
-              instructor_id: row.instructor_id,
-              space_id: row.space_id,
-              weekday: row.weekday,
-              local_time: row.local_time,
-              duration_minutes: row.duration_minutes,
-              capacity,
-              starts_on: row.starts_on,
-              ends_on: row.ends_on,
-              active: true,
-            })
-            .select("id")
-            .single();
-          if (error || !inserted) throw error ?? new Error("schedule_insert_failed");
-          row.id = inserted.id;
-          schedulesToMaterialize.add(inserted.id);
-        }
-      }
-
-      for (const scheduleId of schedulesToMaterialize) {
-        const { error } = await supabase.rpc("materialize_recurring_schedule", {
-          p_schedule_id: scheduleId,
-          p_through: null,
-        });
-        if (error) throw error;
-      }
-    } else {
-      const { data: created, error: createError } = await supabase
-        .from("class_templates")
-        .insert({
-          studio_id: studio.id,
-          discipline_id: null,
-          name,
-          description,
-          duration_minutes: durationMinutes,
-          capacity,
-          active: true,
-          credit_cost: 1,
-          drop_in_price_minor: dropInPriceMinor,
-          individual_purchase_notes: payload.allowIndividualPurchase ? notes : null,
-          color_hex: colorHex,
-          requires_resource: Boolean(payload.requiresResource),
-        })
-        .select("id")
-        .single();
-
-      if (createError || !created) throw createError ?? new Error("activity_insert_failed");
-      activityId = created.id;
-
-      const { data: insertedSchedules, error: scheduleError } = await supabase
-        .from("recurring_schedules")
-        .insert(
-          normalizedSchedules.map((row) => ({
-            studio_id: studio.id,
-            template_id: activityId,
-            instructor_id: row.instructor_id,
-            space_id: row.space_id,
-            weekday: row.weekday,
-            local_time: row.local_time,
-            duration_minutes: row.duration_minutes,
-            capacity,
-            starts_on: row.starts_on,
-            ends_on: row.ends_on,
-            active: true,
-          })),
-        )
-        .select("id");
-
-      if (scheduleError || !insertedSchedules) {
-        await supabase
-          .from("class_templates")
-          .delete()
-          .eq("id", activityId)
-          .eq("studio_id", studio.id);
-        throw scheduleError ?? new Error("schedule_insert_failed");
-      }
-
-      insertedSchedules.forEach((item, index) => {
-        normalizedSchedules[index].id = item.id;
-      });
-    }
-
-    if (!payload.activityId) {
-      for (const row of normalizedSchedules) {
-        if (!row.id) continue;
-        const { error } = await supabase.rpc("materialize_recurring_schedule", {
-          p_schedule_id: row.id,
-          p_through: null,
-        });
-        if (error) throw error;
-      }
-    }
-
-    savedActivityId = activityId;
-    revalidatePath("/admin/actividades");
-    revalidatePath("/admin/agenda");
-    revalidatePath("/admin");
-    revalidatePath("/student/reservar");
-  } catch {
-    redirect(
-      payload.activityId
-        ? `/admin/actividades/${payload.activityId}?error=save`
-        : "/admin/actividades/nueva?error=save",
-    );
+  if (error || !data) {
+    redirect(routeForError(payload, normalizeRpcError(error?.message)));
   }
+
+  revalidatePath("/admin/actividades");
+  revalidatePath("/admin/agenda");
+  revalidatePath("/admin");
+  revalidatePath("/student/reservar");
 
   redirect("/admin/actividades");
 }
