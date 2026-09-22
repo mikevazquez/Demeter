@@ -160,7 +160,7 @@ export async function openEvaluationV2EditorAction(formData: FormData) {
       )
       .eq("template_version_id", source.id)
       .order("sort_order");
-  
+
     const blockMap = new Map<string, string>();
     for (const block of sourceBlocks ?? []) {
       const { data: copied } = await ctx.supabase
@@ -182,7 +182,7 @@ export async function openEvaluationV2EditorAction(formData: FormData) {
         .single();
       if (copied) blockMap.set(block.id, copied.id);
     }
-  
+
     const { data: sourceItems } = await ctx.supabase
       .from("evaluation_template_elements")
       .select(
@@ -190,7 +190,7 @@ export async function openEvaluationV2EditorAction(formData: FormData) {
       )
       .eq("template_version_id", source.id)
       .order("sort_order");
-  
+
     if (sourceItems?.length) {
       await ctx.supabase.from("evaluation_template_elements").insert(
         sourceItems
@@ -216,8 +216,6 @@ export async function openEvaluationV2EditorAction(formData: FormData) {
           })),
       );
     }
-  
-  
   }
 
   revalidatePath(editorUrl(templateId));
