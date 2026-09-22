@@ -60,7 +60,7 @@ describe("RECURSOS-01 activity and session inheritance", () => {
 
   it("requires a physical space before creating resource-based sessions", () => {
     expect(agendaActions).toContain("template.requires_resource && !spaceId");
-    expect(activityActions).toContain("payload.requiresResource && !row.spaceId");
+    expect(activityActions).toContain("payload.requiresResource && !defaultSpaceId");
     expect(restoredActivities).toContain("resource_activity_requires_space");
   });
 
