@@ -27,11 +27,7 @@ function asPercent(value: number | string) {
 export default async function ResourcesConfigurationPage({
   searchParams,
 }: {
-  searchParams: Promise<{
-    created?: string;
-    saved?: string;
-    error?: string;
-  }>;
+  searchParams: Promise<{ created?: string; saved?: string; error?: string }>;
 }) {
   const params = await searchParams;
   const ctx = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
@@ -97,13 +93,72 @@ export default async function ResourcesConfigurationPage({
           <Link className={styles.backLink} href="/admin/configuracion">
             ← Configuración
           </Link>
-          <p className={styles.eyebrow}>RECURSOS · {ctx.studio.name}</p>
-          <h1>Recursos y mapa</h1>
+          <p className={styles.eyebrow}>CONFIGURACIÓN · {ctx.studio.name}</p>
+          <h1>Recursos</h1>
           <p>
-            Define qué recursos físicos existen y dónde están ubicados. Las reglas de uso se
-            configuran después por sesión.
+            Define los recursos físicos de cada espacio y construye una sola geometría que
+            Studio Flow reutiliza en administración, sesiones y reservas.
           </p>
         </div>
+
+        <details className={styles.createDrawer}>
+          <summary className={styles.primaryButton}>+ Nuevo recurso</summary>
+          <div className={styles.createPopover}>
+            <div className={styles.popoverHeading}>
+              <strong>Agregar recursos</strong>
+              <span>Si agregas varios, se numeran automáticamente.</span>
+            </div>
+
+            <form action={createResourceAction} className={styles.createForm}>
+              <label className={styles.field}>
+                <span>Espacio</span>
+                <select name="space_id" required defaultValue="">
+                  <option value="" disabled>
+                    Selecciona
+                  </option>
+                  {spaces?.map((space) => (
+                    <option key={space.id} value={space.id}>
+                      {space.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className={styles.field}>
+                <span>Tipo</span>
+                <select name="resource_type_id" required defaultValue="">
+                  <option value="" disabled>
+                    Selecciona
+                  </option>
+                  {resourceTypes?.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className={styles.field}>
+                <span>Nombre base</span>
+                <input name="name" required maxLength={80} placeholder="Ej. Pole" />
+              </label>
+
+              <label className={styles.field}>
+                <span>Etiqueta</span>
+                <input name="short_label" maxLength={20} placeholder="Ej. P" />
+              </label>
+
+              <label className={styles.field}>
+                <span>Cantidad</span>
+                <input name="quantity" type="number" min="1" max="30" defaultValue="1" required />
+              </label>
+
+              <button className={styles.primaryButton} type="submit">
+                Agregar recursos
+              </button>
+            </form>
+          </div>
+        </details>
       </header>
 
       {params.created ? (
@@ -125,89 +180,40 @@ export default async function ResourcesConfigurationPage({
       ) : null}
 
       <section className={styles.summary}>
-        <div className={styles.summaryCard}>
-          <span>Espacios</span>
-          <strong>{spaces?.length ?? 0}</strong>
-          <small>Geometría compartida por todo Studio Flow</small>
-        </div>
-        <div className={styles.summaryCard}>
-          <span>Recursos activos</span>
-          <strong>{activeResourceCount}</strong>
-          <small>Disponibles para configuración de sesiones</small>
-        </div>
-        <div className={styles.summaryCard}>
-          <span>Mapas configurados</span>
-          <strong>{configuredSpaceCount}</strong>
-          <small>De {spaces?.length ?? 0} espacios activos</small>
-        </div>
-      </section>
-
-      <section className={styles.section}>
-        <div className={styles.sectionHeader}>
+        <article className={styles.summaryCard}>
+          <span className={styles.summaryIcon}>◇</span>
           <div>
-            <h2>Agregar recursos</h2>
-            <p>
-              Crea los recursos físicos reales. Si agregas varios, Studio Flow los numera
-              automáticamente.
-            </p>
+            <small>Espacios</small>
+            <strong>{spaces?.length ?? 0}</strong>
+            <p>con distribución configurable</p>
           </div>
-        </div>
-
-        <form action={createResourceAction} className={styles.createForm}>
-          <label className={styles.field}>
-            <span>Espacio</span>
-            <select name="space_id" required defaultValue="">
-              <option value="" disabled>
-                Selecciona
-              </option>
-              {spaces?.map((space) => (
-                <option key={space.id} value={space.id}>
-                  {space.name}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label className={styles.field}>
-            <span>Tipo</span>
-            <select name="resource_type_id" required defaultValue="">
-              <option value="" disabled>
-                Selecciona
-              </option>
-              {resourceTypes?.map((item) => (
-                <option key={item.id} value={item.id}>
-                  {item.name}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label className={styles.field}>
-            <span>Nombre base</span>
-            <input name="name" required maxLength={80} placeholder="Ej. Pole" />
-          </label>
-
-          <label className={styles.field}>
-            <span>Etiqueta</span>
-            <input name="short_label" maxLength={20} placeholder="Ej. P" />
-          </label>
-
-          <label className={styles.field}>
-            <span>Cantidad</span>
-            <input name="quantity" type="number" min="1" max="30" defaultValue="1" required />
-          </label>
-
-          <button className={styles.primaryButton} type="submit">
-            Agregar
-          </button>
-        </form>
+        </article>
+        <article className={styles.summaryCard}>
+          <span className={styles.summaryIcon}>●</span>
+          <div>
+            <small>Recursos activos</small>
+            <strong>{activeResourceCount}</strong>
+            <p>físicos y reservables</p>
+          </div>
+        </article>
+        <article className={styles.summaryCard}>
+          <span className={styles.summaryIcon}>▦</span>
+          <div>
+            <small>Mapas configurados</small>
+            <strong>
+              {configuredSpaceCount}/{spaces?.length ?? 0}
+            </strong>
+            <p>misma geometría para todos</p>
+          </div>
+        </article>
       </section>
 
       <section className={styles.section}>
         <div className={styles.sectionHeader}>
           <div>
-            <h2>Espacios y distribución</h2>
-            <p>El mismo mapa se reutiliza en sesiones, administración y portal de alumna.</p>
+            <p className={styles.sectionEyebrow}>ESPACIOS</p>
+            <h2>Distribución física</h2>
+            <p>Previsualiza cada mapa y entra a editar su distribución.</p>
           </div>
         </div>
 
@@ -218,19 +224,21 @@ export default async function ResourcesConfigurationPage({
               const spaceResources = (resources ?? []).filter(
                 (item) => item.space_id === space.id && item.active,
               );
+              const referenceCount = spaceElements.filter((item) => !item.resource_id).length;
               const map = mapBySpace.get(space.id);
 
               return (
                 <article className={styles.spaceCard} key={space.id}>
                   <div className={styles.spaceTop}>
                     <div>
-                      <strong>{space.name}</strong>
-                      <small>
-                        {spaceResources.length} recursos · mapa v{map?.revision ?? 0}
-                      </small>
+                      <div className={styles.spaceTitleLine}>
+                        <strong>{space.name}</strong>
+                        <span className={styles.activePill}>Activo</span>
+                      </div>
+                      <small>Mapa v{map?.revision ?? 0}</small>
                     </div>
                     <Link
-                      className={styles.primaryButton}
+                      className={styles.secondaryButton}
                       href={`/admin/configuracion/recursos/${space.id}/mapa`}
                     >
                       Editar mapa
@@ -258,17 +266,21 @@ export default async function ResourcesConfigurationPage({
                         </span>
                       ))
                     ) : (
-                      <span className={styles.previewEmpty}>Mapa pendiente de configurar</span>
+                      <span className={styles.previewEmpty}>
+                        <b>Mapa pendiente</b>
+                        <small>Abre el editor para colocar referencias y recursos.</small>
+                      </span>
                     )}
                   </div>
 
                   <div className={styles.spaceFooter}>
                     <span>
-                      {space.capacity
-                        ? `Cupo físico: ${space.capacity}`
-                        : "Sin cupo físico definido"}
+                      <b>{spaceResources.length}</b> recursos configurados
                     </span>
-                    <span>{spaceElements.length} elementos ubicados</span>
+                    <span>
+                      <b>{referenceCount}</b> referencias
+                    </span>
+                    <span>{space.capacity ? `Cupo físico ${space.capacity}` : "Sin cupo físico"}</span>
                   </div>
                 </article>
               );
@@ -284,8 +296,9 @@ export default async function ResourcesConfigurationPage({
       <section className={styles.section}>
         <div className={styles.sectionHeader}>
           <div>
+            <p className={styles.sectionEyebrow}>INVENTARIO FÍSICO</p>
             <h2>Recursos existentes</h2>
-            <p>La identidad del recurso permanece aunque cambies su posición en el mapa.</p>
+            <p>La identidad de cada recurso se conserva aunque cambie de posición.</p>
           </div>
         </div>
 
