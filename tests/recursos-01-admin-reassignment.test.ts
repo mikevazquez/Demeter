@@ -8,9 +8,7 @@ function source(path: string) {
 }
 
 describe("RECURSOS-01 admin resource reassignment", () => {
-  const migration = source(
-    "supabase/migrations/20260922190500_recursos01_admin_reassignment.sql",
-  );
+  const migration = source("supabase/migrations/20260922190500_recursos01_admin_reassignment.sql");
   const actions = source("app/admin/agenda/[sessionId]/recursos/actions.ts");
   const page = source("app/admin/agenda/[sessionId]/recursos/page.tsx");
 
