@@ -80,7 +80,7 @@ describe("RECURSOS-01 student resource selection", () => {
 
   it("does not let quick booking bypass the detail and resource-selection flow", () => {
     expect(quickBook).toContain("requiresResource");
-    expect(quickBook).toContain('router.push(`/student/reservar/${sessionId}`)');
+    expect(quickBook).toContain("router.push(`/student/reservar/${sessionId}`)");
     expect(detailPage).toContain("/recurso?date=");
   });
 
