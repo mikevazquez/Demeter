@@ -188,7 +188,22 @@ export default async function TechnicalEvaluationDetailPage({
   const targetLevel = levelTitleMap.get(evaluation.target_discipline_level_id) ?? "Nivel técnico";
   const currentLevel = evaluation.current_discipline_level_id_at_start
     ? (levelTitleMap.get(evaluation.current_discipline_level_id_at_start) ?? "Nivel técnico")
-    : "Sin nivel previo";
+    : "Sin nivel confirmado";
+  const targetLink = levelLinks.find((link) => link.id === evaluation.target_discipline_level_id);
+  const nextProgressionLink = targetLink
+    ? [...levelLinks]
+        .sort((a, b) => a.discipline_order - b.discipline_order)
+        .find((link) => link.discipline_order > targetLink.discipline_order)
+    : null;
+  const nextProgressionLevel = nextProgressionLink
+    ? (levelTitleMap.get(nextProgressionLink.id) ?? targetLevel)
+    : targetLevel;
+  const evaluationPurposeLabel =
+    evaluation.evaluation_purpose === "placement"
+      ? "Evaluación de colocación"
+      : evaluation.evaluation_purpose === "exception"
+        ? "Evaluación excepcional"
+        : "Evaluación de progresión";
 
   const criterionResultQuery = await ctx.supabase
     .from("technical_evaluation_criterion_results")
@@ -302,7 +317,7 @@ export default async function TechnicalEvaluationDetailPage({
           </h1>
           <p>
             {evaluation.student_name_snapshot} · {disciplineResult.data?.name ?? "Disciplina"} ·{" "}
-            {targetLevel}
+            {isV2 ? evaluationPurposeLabel : targetLevel}
           </p>
         </div>
         <span className={`eval-status ${isPublished ? "approved" : ""}`}>
@@ -320,8 +335,14 @@ export default async function TechnicalEvaluationDetailPage({
           <div>
             <h2>{evaluation.student_name_snapshot}</h2>
             <p>
-              {disciplineResult.data?.name ?? "Disciplina"} · Objetivo: {targetLevel} · Actual:{" "}
-              {currentLevel}
+              {disciplineResult.data?.name ?? "Disciplina"} ·{" "}
+              {isV2 && evaluation.evaluation_purpose === "placement" ? (
+                <>Nivel a validar: {targetLevel} · Actual: {currentLevel}</>
+              ) : isV2 && evaluation.evaluation_purpose === "progression" ? (
+                <>Nivel actual: {currentLevel} · Objetivo: {nextProgressionLevel}</>
+              ) : (
+                <>Objetivo: {targetLevel} · Actual: {currentLevel}</>
+              )}
             </p>
           </div>
           <span className="eval-status">{templateResult.data?.name}</span>
@@ -395,6 +416,26 @@ export default async function TechnicalEvaluationDetailPage({
               </div>
             </div>
           </section>
+
+          {isV2 && evaluation.automatic_outcome !== "incomplete" ? (
+            <section className="eval-panel eval-v2-outcome-card">
+              <small>Consecuencia del resultado</small>
+              <strong>
+                {evaluation.evaluation_purpose === "placement"
+                  ? evaluation.automatic_outcome === "approved"
+                    ? `Nivel confirmado: ${targetLevel}`
+                    : "Nivel todavía no confirmado"
+                  : evaluation.evaluation_purpose === "progression"
+                    ? evaluation.automatic_outcome === "approved"
+                      ? nextProgressionLevel === targetLevel
+                        ? `Nivel confirmado: ${targetLevel}`
+                        : `Nuevo nivel: ${nextProgressionLevel}`
+                      : `Mantiene su nivel actual: ${currentLevel}`
+                    : `Nivel evaluado: ${targetLevel}`}
+              </strong>
+              {step !== "published" ? <span>El cambio se aplicará al publicar resultados.</span> : null}
+            </section>
+          ) : null}
 
           <section className="eval-feedback-grid">
             <article className="eval-panel eval-feedback-card">
