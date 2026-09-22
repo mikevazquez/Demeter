@@ -150,9 +150,7 @@ export async function toggleResourceActiveAction(formData: FormData) {
     });
     redirect(
       resourcesPath({
-        error: error.message.includes("resource_has_future_assignments")
-          ? "assigned"
-          : "resource",
+        error: error.message.includes("resource_has_future_assignments") ? "assigned" : "resource",
       }),
     );
   }
