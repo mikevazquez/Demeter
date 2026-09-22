@@ -4,11 +4,7 @@ import { redirect } from "next/navigation";
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 
-import {
-  createResourceAction,
-  renameResourceAction,
-  toggleResourceActiveAction,
-} from "./actions";
+import { createResourceAction, renameResourceAction, toggleResourceActiveAction } from "./actions";
 import styles from "./recursos.module.css";
 
 type MapElementRow = {
@@ -74,9 +70,7 @@ export default async function ResourcesConfigurationPage({
       .eq("studio_id", ctx.studio.id),
     ctx.supabase
       .from("space_map_elements")
-      .select(
-        "id,space_id,resource_id,element_kind,label,x,y,width,height,rotation_degrees",
-      )
+      .select("id,space_id,resource_id,element_kind,label,x,y,width,height,rotation_degrees")
       .eq("studio_id", ctx.studio.id),
   ]);
 
@@ -259,8 +253,8 @@ export default async function ResourcesConfigurationPage({
                           }}
                         >
                           {element.resource_id
-                            ? resourceName.get(element.resource_id) ?? "R"
-                            : element.label ?? element.element_kind}
+                            ? (resourceName.get(element.resource_id) ?? "R")
+                            : (element.label ?? element.element_kind)}
                         </span>
                       ))
                     ) : (
@@ -270,7 +264,9 @@ export default async function ResourcesConfigurationPage({
 
                   <div className={styles.spaceFooter}>
                     <span>
-                      {space.capacity ? `Cupo físico: ${space.capacity}` : "Sin cupo físico definido"}
+                      {space.capacity
+                        ? `Cupo físico: ${space.capacity}`
+                        : "Sin cupo físico definido"}
                     </span>
                     <span>{spaceElements.length} elementos ubicados</span>
                   </div>
@@ -310,9 +306,7 @@ export default async function ResourcesConfigurationPage({
                 </div>
                 <span
                   className={
-                    resource.active
-                      ? styles.status
-                      : `${styles.status} ${styles.statusInactive}`
+                    resource.active ? styles.status : `${styles.status} ${styles.statusInactive}`
                   }
                 >
                   {resource.active ? "Activo" : "Inactivo"}
@@ -342,11 +336,7 @@ export default async function ResourcesConfigurationPage({
 
                   <form action={toggleResourceActiveAction}>
                     <input type="hidden" name="resource_id" value={resource.id} />
-                    <input
-                      type="hidden"
-                      name="next_active"
-                      value={resource.active ? "0" : "1"}
-                    />
+                    <input type="hidden" name="next_active" value={resource.active ? "0" : "1"} />
                     <button
                       className={resource.active ? styles.dangerButton : styles.ghostButton}
                       type="submit"
