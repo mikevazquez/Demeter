@@ -1419,6 +1419,32 @@
   font-size: 10px;
 }
 
+.eval-v2-outcome-card {
+  display: grid;
+  gap: 5px;
+  padding: 14px 16px;
+  border-color: rgba(255, 10, 138, 0.42);
+  background:
+    radial-gradient(circle at 100% 0%, rgba(255, 10, 138, 0.09), transparent 42%), #101720;
+}
+
+.eval-v2-outcome-card small {
+  color: #7f8b9c;
+  font-size: 8px;
+  font-weight: 750;
+  text-transform: uppercase;
+}
+
+.eval-v2-outcome-card strong {
+  color: #fff;
+  font-size: 16px;
+}
+
+.eval-v2-outcome-card span {
+  color: #99a5b5;
+  font-size: 8px;
+}
+
 .eval-v2-live-layout {
   display: grid;
   grid-template-columns: 190px minmax(0, 1fr);
