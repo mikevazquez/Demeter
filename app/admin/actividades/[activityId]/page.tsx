@@ -6,15 +6,6 @@ import { CAPABILITIES } from "@/lib/auth/capabilities";
 
 import { ActivityWizard, type ActivityDraft } from "../ActivityWizard";
 
-function addMinutes(time: string, minutes: number) {
-  const [hour, minute] = time.slice(0, 5).split(":").map(Number);
-  const total = hour * 60 + minute + minutes;
-  const normalized = ((total % 1440) + 1440) % 1440;
-  return `${String(Math.floor(normalized / 60)).padStart(2, "0")}:${String(
-    normalized % 60,
-  ).padStart(2, "0")}`;
-}
-
 export default async function ActivityDetailPage({
   params,
   searchParams,
@@ -74,6 +65,8 @@ export default async function ActivityDetailPage({
     ]),
   );
 
+  const firstSchedule = schedules?.[0] ?? null;
+
   const initial: ActivityDraft = {
     activityId: activity.id,
     name: activity.name,
@@ -82,20 +75,15 @@ export default async function ActivityDetailPage({
     capacity: activity.capacity,
     colorHex: activity.color_hex ?? "#FF0A8A",
     requiresResource: activity.requires_resource,
-    schedules: (schedules ?? []).map((schedule) => {
-      const startTime = String(schedule.local_time).slice(0, 5);
-      const duration = schedule.duration_minutes ?? activity.duration_minutes;
-      return {
-        id: schedule.id,
-        weekday: schedule.weekday,
-        startTime,
-        endTime: addMinutes(startTime, duration),
-        instructorId: schedule.instructor_id ?? "",
-        spaceId: schedule.space_id ?? "",
-        startsOn: schedule.starts_on,
-        endsOn: schedule.ends_on ?? "",
-      };
-    }),
+    defaultInstructorId: firstSchedule?.instructor_id ?? "",
+    defaultSpaceId: firstSchedule?.space_id ?? "",
+    startsOn: firstSchedule?.starts_on ?? new Date().toISOString().slice(0, 10),
+    endsOn: firstSchedule?.ends_on ?? "",
+    schedules: (schedules ?? []).map((schedule) => ({
+      id: schedule.id,
+      weekday: schedule.weekday,
+      startTime: String(schedule.local_time).slice(0, 5),
+    })),
     allowIndividualPurchase: activity.drop_in_price_minor != null,
     individualPrice:
       activity.drop_in_price_minor != null
