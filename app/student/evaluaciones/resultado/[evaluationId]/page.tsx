@@ -16,6 +16,7 @@ type EvaluationResultDetail = {
   id: string;
   discipline_id: string;
   discipline_name: string;
+  evaluation_purpose: "placement" | "progression" | "exception";
   evaluated_level_title: string;
   resulting_level_title: string | null;
   evaluation_date: string;
@@ -52,10 +53,16 @@ export default async function StudentEvaluationResultPage({
 
   const result = data as EvaluationResultDetail;
   const approved = result.final_outcome === "approved";
+  const placement = result.evaluation_purpose === "placement";
   const promoted =
+    !placement &&
     approved &&
     Boolean(result.resulting_level_title) &&
     result.resulting_level_title !== result.evaluated_level_title;
+  const currentLevelCopy =
+    placement && !approved
+      ? "Sin nivel confirmado"
+      : (result.resulting_level_title ?? result.evaluated_level_title);
 
   return (
     <main className="space-y-5 pb-4">
@@ -91,19 +98,27 @@ export default async function StudentEvaluationResultPage({
           </p>
 
           <h1 className="mt-1 text-3xl font-semibold tracking-tight text-white sm:text-4xl">
-            {approved
-              ? promoted
-                ? "¡Subiste de nivel!"
-                : "¡Nivel aprobado!"
-              : "Te mantienes en tu nivel"}
+            {placement
+              ? approved
+                ? "¡Nivel confirmado!"
+                : "Nivel todavía no confirmado"
+              : approved
+                ? promoted
+                  ? "¡Subiste de nivel!"
+                  : "¡Nivel aprobado!"
+                : "Te mantienes en tu nivel"}
           </h1>
 
           <p className="mt-2 text-sm leading-6 text-zinc-400">
-            {approved
-              ? promoted
-                ? "Tu resultado cumplió automáticamente con los criterios técnicos de progresión."
-                : "Cumpliste automáticamente con los criterios técnicos definidos para este nivel."
-              : "Completaste la evaluación, pero todavía hay objetivos técnicos por consolidar antes de avanzar."}
+            {placement
+              ? approved
+                ? "Tu evaluación de colocación confirmó el nivel técnico que tu coach quería validar."
+                : "La evaluación de colocación terminó, pero este nivel todavía no queda confirmado."
+              : approved
+                ? promoted
+                  ? "Tu resultado cumplió automáticamente con los criterios técnicos de progresión."
+                  : "Cumpliste automáticamente con los criterios técnicos definidos para este nivel."
+                : "Completaste la evaluación, pero todavía hay objetivos técnicos por consolidar antes de avanzar."}
           </p>
 
           <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -114,7 +129,9 @@ export default async function StudentEvaluationResultPage({
               </strong>
             </div>
             <div className="rounded-2xl border border-white/10 bg-black/15 p-4">
-              <p className="text-[9px] uppercase tracking-[0.14em] text-zinc-500">Nivel evaluado</p>
+              <p className="text-[9px] uppercase tracking-[0.14em] text-zinc-500">
+                {placement ? "Nivel validado" : "Nivel evaluado"}
+              </p>
               <strong className="mt-1 block text-sm text-white">
                 {result.evaluated_level_title}
               </strong>
@@ -126,7 +143,7 @@ export default async function StudentEvaluationResultPage({
                   "mt-1 block text-sm " + (approved ? "text-emerald-300" : "text-amber-300")
                 }
               >
-                {result.resulting_level_title ?? result.evaluated_level_title}
+                {currentLevelCopy}
               </strong>
             </div>
             <div className="rounded-2xl border border-white/10 bg-black/15 p-4">
