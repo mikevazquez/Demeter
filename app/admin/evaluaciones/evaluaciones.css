@@ -1698,7 +1698,6 @@
   }
 }
 
-
 /* EVALUACIONES v2 · editor simplificado aprobado en UAT */
 .eval-simple-header,
 .eval-simple-section-header,
@@ -1797,8 +1796,7 @@
   border: 1px solid #293542;
   border-radius: 18px;
   background:
-    radial-gradient(circle at 100% 0%, rgba(139, 71, 255, 0.055), transparent 38%),
-    #0d141c;
+    radial-gradient(circle at 100% 0%, rgba(139, 71, 255, 0.055), transparent 38%), #0d141c;
 }
 
 .eval-simple-panel {
@@ -2124,8 +2122,7 @@
 .eval-simple-mode-option:has(input:checked) {
   border-color: #ff0a8a;
   background:
-    radial-gradient(circle at 100% 0%, rgba(255, 10, 138, 0.12), transparent 48%),
-    #11141d;
+    radial-gradient(circle at 100% 0%, rgba(255, 10, 138, 0.12), transparent 48%), #11141d;
   box-shadow: inset 0 0 0 1px rgba(255, 10, 138, 0.08);
 }
 
@@ -2538,7 +2535,6 @@
     grid-column: 1 / -1;
   }
 }
-
 
 /* EVALUACIONES v2 · approved simplified editor */
 .eval-simple-section-step {

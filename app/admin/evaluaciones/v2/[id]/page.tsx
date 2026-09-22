@@ -125,11 +125,16 @@ export default async function EvaluationV2EditorPage({
     return (
       <main className="evaluations-page">
         <header className="eval-simple-header">
-          <Link className="eval-simple-back" href={`/admin/evaluaciones/disciplina/${template.discipline_id}`}>
+          <Link
+            className="eval-simple-back"
+            href={`/admin/evaluaciones/disciplina/${template.discipline_id}`}
+          >
             ←
           </Link>
           <div>
-            <h1>{disciplineName} · {levelTitle}</h1>
+            <h1>
+              {disciplineName} · {levelTitle}
+            </h1>
             <p>Configuración de evaluación</p>
           </div>
         </header>
@@ -263,7 +268,9 @@ export default async function EvaluationV2EditorPage({
               ←
             </Link>
             <div>
-              <h1>{activeBlock.label === "Nuevo apartado" ? "Nuevo apartado" : activeBlock.label}</h1>
+              <h1>
+                {activeBlock.label === "Nuevo apartado" ? "Nuevo apartado" : activeBlock.label}
+              </h1>
             </div>
           </header>
 
@@ -407,7 +414,10 @@ export default async function EvaluationV2EditorPage({
 
         {normalizedType === "weighted_criteria" ? (
           <section className="eval-simple-panel eval-simple-distribution-card">
-            <div className="eval-simple-mini-ring" style={{ "--progress": safePercent(internalTotal) } as CSSProperties}>
+            <div
+              className="eval-simple-mini-ring"
+              style={{ "--progress": safePercent(internalTotal) } as CSSProperties}
+            >
               <strong>{internalTotal}%</strong>
             </div>
             <div>
@@ -614,7 +624,10 @@ export default async function EvaluationV2EditorPage({
               <strong>Instrucciones para el evaluador (opcional)</strong>
               <span>›</span>
             </summary>
-            <form action={updateEvaluationV2BlockAction} className="eval-simple-accordion-body eval-simple-form">
+            <form
+              action={updateEvaluationV2BlockAction}
+              className="eval-simple-accordion-body eval-simple-form"
+            >
               <input type="hidden" name="template_id" value={template.id} />
               <input type="hidden" name="version_id" value={version.id} />
               <input type="hidden" name="block_id" value={activeBlock.id} />
@@ -660,11 +673,16 @@ export default async function EvaluationV2EditorPage({
   return (
     <main className="evaluations-page">
       <header className="eval-simple-header">
-        <Link className="eval-simple-back" href={`/admin/evaluaciones/disciplina/${template.discipline_id}`}>
+        <Link
+          className="eval-simple-back"
+          href={`/admin/evaluaciones/disciplina/${template.discipline_id}`}
+        >
           ←
         </Link>
         <div>
-          <h1>{disciplineName} · {levelTitle}</h1>
+          <h1>
+            {disciplineName} · {levelTitle}
+          </h1>
           <p>Configuración de evaluación</p>
         </div>
         <span className="eval-simple-more">•••</span>
@@ -689,13 +707,22 @@ export default async function EvaluationV2EditorPage({
       ) : null}
 
       <nav className="eval-simple-tabs" aria-label="Editor de evaluación">
-        <Link className={tab === "apartados" ? "is-active" : ""} href={editorUrl(template.id, "apartados")}>
+        <Link
+          className={tab === "apartados" ? "is-active" : ""}
+          href={editorUrl(template.id, "apartados")}
+        >
           Apartados
         </Link>
-        <Link className={tab === "reglas" ? "is-active" : ""} href={editorUrl(template.id, "reglas")}>
+        <Link
+          className={tab === "reglas" ? "is-active" : ""}
+          href={editorUrl(template.id, "reglas")}
+        >
           Reglas
         </Link>
-        <Link className={tab === "preview" ? "is-active" : ""} href={editorUrl(template.id, "preview")}>
+        <Link
+          className={tab === "preview" ? "is-active" : ""}
+          href={editorUrl(template.id, "preview")}
+        >
           Vista previa
         </Link>
       </nav>
@@ -727,7 +754,9 @@ export default async function EvaluationV2EditorPage({
                 href={editorUrl(template.id, "apartados", block.id, "config")}
                 key={block.id}
               >
-                <span className="eval-simple-drag" aria-hidden="true">⠿</span>
+                <span className="eval-simple-drag" aria-hidden="true">
+                  ⠿
+                </span>
                 <span className="eval-simple-index">{index + 1}</span>
                 <span className="eval-simple-section-copy">
                   <strong>{block.label}</strong>
@@ -749,7 +778,8 @@ export default async function EvaluationV2EditorPage({
           ) : null}
 
           <div className="eval-simple-info-card">
-            ⓘ Los porcentajes de todos los apartados deben sumar 100% para poder activar la evaluación.
+            ⓘ Los porcentajes de todos los apartados deben sumar 100% para poder activar la
+            evaluación.
           </div>
         </section>
       ) : null}
@@ -758,9 +788,7 @@ export default async function EvaluationV2EditorPage({
         <section className="eval-simple-panel">
           <span className="eval-simple-kicker">REGLAS GENERALES</span>
           <h2>¿Cuándo se considera aprobada?</h2>
-          <p>
-            Estas reglas se aplican después de calcular el resultado de todos los apartados.
-          </p>
+          <p>Estas reglas se aplican después de calcular el resultado de todos los apartados.</p>
 
           <form action={saveEvaluationV2GeneralAction} className="eval-simple-form">
             <input type="hidden" name="template_id" value={template.id} />
@@ -848,7 +876,8 @@ export default async function EvaluationV2EditorPage({
           </div>
 
           <div className="eval-simple-info-card">
-            Al activar, esta configuración se usará sólo en evaluaciones nuevas. Las evaluaciones anteriores o en curso conservan su configuración.
+            Al activar, esta configuración se usará sólo en evaluaciones nuevas. Las evaluaciones
+            anteriores o en curso conservan su configuración.
           </div>
 
           {editable ? (
@@ -856,7 +885,11 @@ export default async function EvaluationV2EditorPage({
               <input type="hidden" name="template_id" value={template.id} />
               <input type="hidden" name="version_id" value={version.id} />
               <input type="hidden" name="discipline_id" value={template.discipline_id} />
-              <button className="eval-simple-primary eval-simple-full" type="submit" disabled={!ready}>
+              <button
+                className="eval-simple-primary eval-simple-full"
+                type="submit"
+                disabled={!ready}
+              >
                 Activar evaluación
               </button>
             </form>

@@ -2,10 +2,7 @@
 
 import { useState, useTransition } from "react";
 
-import {
-  deleteEvaluationV2ItemAction,
-  saveEvaluationV2ItemInlineAction,
-} from "../../v2-actions";
+import { deleteEvaluationV2ItemAction, saveEvaluationV2ItemInlineAction } from "../../v2-actions";
 
 export function EvaluationAspectRow({
   templateId,
@@ -98,9 +95,7 @@ export function EvaluationAspectRow({
         </form>
       ) : null}
 
-      <small className="eval-simple-inline-save">
-        {isPending ? "Guardando…" : message}
-      </small>
+      <small className="eval-simple-inline-save">{isPending ? "Guardando…" : message}</small>
     </div>
   );
 }

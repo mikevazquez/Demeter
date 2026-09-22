@@ -156,8 +156,7 @@ export async function openEvaluationV2EditorAction(formData: FormData) {
     .select("id")
     .single();
 
-  if (createError || !created)
-    redirect(editorUrl(templateId, "apartados", undefined, "version"));
+  if (createError || !created) redirect(editorUrl(templateId, "apartados", undefined, "version"));
 
   if (source.schema_version === 2) {
     const { data: sourceBlocks } = await ctx.supabase
@@ -444,7 +443,8 @@ export async function addEvaluationV2ItemAction(formData: FormData) {
       })
       .select("id")
       .single();
-    if (createError || !created) redirect(editorUrl(templateId, "apartados", blockId, "item", "content"));
+    if (createError || !created)
+      redirect(editorUrl(templateId, "apartados", blockId, "item", "content"));
     elementId = created.id;
   }
 
