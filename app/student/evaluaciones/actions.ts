@@ -98,7 +98,6 @@ export async function scheduleEvaluationAction(formData: FormData) {
   redirect("/student/evaluaciones");
 }
 
-
 export async function markEvaluationResultViewedAction(evaluationId: string) {
   if (!evaluationId) return { ok: false };
 
