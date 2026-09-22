@@ -11,7 +11,7 @@ export default async function ActivityDetailPage({
   searchParams,
 }: {
   params: Promise<{ activityId: string }>;
-  searchParams: Promise<{ saved?: string; error?: string }>;
+  searchParams: Promise<{ error?: string }>;
 }) {
   const { activityId } = await params;
   const query = await searchParams;
@@ -111,17 +111,9 @@ export default async function ActivityDetailPage({
         </span>
       </header>
 
-      {query.saved === "1" ? (
-        <div className="notice success">Cambios guardados correctamente.</div>
-      ) : null}
-      {query.error ? (
-        <div className="notice error">
-          No pudimos guardar los cambios. Revisa horarios, espacios y datos de venta.
-        </div>
-      ) : null}
-
       <ActivityWizard
         mode="edit"
+        saveError={Boolean(query.error)}
         initial={initial}
         instructors={(instructors ?? []).map((item) => ({
           id: item.id,
