@@ -52,19 +52,6 @@ function modeLabel(value: string) {
   return "Una sola calificación";
 }
 
-function modeDescription(value: string) {
-  if (value === "weighted_criteria") {
-    return "Evalúas varios aspectos con calificación de 0 a 100.";
-  }
-  if (value === "meets" || value === "element_list") {
-    return "Lista de elementos que deben cumplirse.";
-  }
-  if (value === "correct_incorrect") {
-    return "Lista de preguntas o conceptos.";
-  }
-  return "Una calificación general de 0 a 100.";
-}
-
 function itemLabel(item: { item_label: string | null; element_snapshot: unknown }) {
   if (item.item_label) return item.item_label;
   if (
@@ -500,7 +487,8 @@ export default async function EvaluationV2EditorPage({
           )}
 
           {normalizedType !== "direct_score" && editable ? (
-            <div className="eval-simple-add-details">
+            <details className="eval-simple-add-details">
+              <summary>+ {addTitle}</summary>
               <form action={addEvaluationV2ItemAction} className="eval-simple-add-form">
                 <input type="hidden" name="template_id" value={template.id} />
                 <input type="hidden" name="version_id" value={version.id} />
@@ -545,11 +533,11 @@ export default async function EvaluationV2EditorPage({
                 ) : (
                   <input type="hidden" name="item_weight_percent" value="" />
                 )}
-                <button className="eval-simple-add-section" type="submit">
-                  + {addTitle}
+                <button className="eval-simple-primary" type="submit">
+                  Agregar
                 </button>
               </form>
-            </div>
+            </details>
           ) : null}
 
           {normalizedType === "weighted_criteria" ? (
@@ -623,7 +611,6 @@ export default async function EvaluationV2EditorPage({
                         name="item_weight_percent"
                         value={item.item_weight_percent ?? ""}
                       />
-                      <input type="hidden" name="min_score" value={item.min_score ?? ""} />
                       <label className="eval-simple-check">
                         <input
                           name="progression_required"
@@ -632,6 +619,22 @@ export default async function EvaluationV2EditorPage({
                         />
                         <span>{itemLabel(item)}</span>
                       </label>
+                      {item.scored ? (
+                        <label className="eval-simple-requirement-min">
+                          <span>Mínimo</span>
+                          <input
+                            name="min_score"
+                            type="number"
+                            min="0"
+                            max={item.max_score}
+                            step="0.01"
+                            defaultValue={item.min_score ?? ""}
+                            placeholder="0"
+                          />
+                        </label>
+                      ) : (
+                        <input type="hidden" name="min_score" value="" />
+                      )}
                       <button className="eval-simple-mini-save" type="submit">
                         Guardar
                       </button>
