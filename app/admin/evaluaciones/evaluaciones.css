@@ -2494,3 +2494,67 @@
     min-height: 78px;
   }
 }
+
+
+/* EVALUACIONES v2 · approved simplified editor */
+.eval-simple-section-step {
+  margin: -2px 0 2px;
+  color: #f4f6f9;
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.eval-simple-section-config {
+  padding: 20px;
+}
+
+.eval-simple-section-config .eval-simple-form {
+  gap: 16px;
+}
+
+.eval-simple-section-config .eval-simple-numbered-title {
+  margin-top: 8px;
+}
+
+.eval-simple-add-details {
+  display: grid;
+}
+
+.eval-simple-add-form {
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.eval-simple-add-form .eval-simple-add-section {
+  margin-top: 2px;
+}
+
+@media (max-width: 560px) {
+  .evaluations-page:has(.eval-simple-tabs) {
+    gap: 12px;
+  }
+
+  .eval-simple-tabs {
+    border-radius: 14px;
+  }
+
+  .eval-simple-tabs a {
+    min-height: 48px;
+  }
+
+  .eval-simple-section-config {
+    padding: 18px 16px;
+  }
+
+  .eval-simple-mode-option {
+    grid-template-columns: 38px minmax(0, 1fr);
+    gap: 10px;
+    padding: 11px 12px;
+  }
+
+  .eval-simple-content-section {
+    padding-bottom: 18px;
+  }
+}
