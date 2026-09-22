@@ -86,13 +86,14 @@ export default async function ResourceMapPage({
       <header className={styles.header}>
         <div className={styles.headerCopy}>
           <Link className={styles.backLink} href="/admin/configuracion/recursos">
-            ← Recursos
+            ← Volver a recursos
           </Link>
           <p className={styles.eyebrow}>EDITOR DE MAPA · {ctx.studio.name}</p>
-          <h1>{space.name}</h1>
-          <p>
-            Esta geometría es la fuente única para administración, sesiones y reserva de alumnas.
-          </p>
+          <div className={styles.spaceTitleLine}>
+            <h1>{space.name}</h1>
+            <span className={styles.activePill}>Activo</span>
+          </div>
+          <p>Edita la distribución del espacio. Coloca referencias y recursos en el mapa.</p>
         </div>
       </header>
 
