@@ -128,12 +128,8 @@ export default async function StudentBookingConfirmPage({
               <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-fuchsia-300">
                 Recurso seleccionado
               </p>
-              <p className="mt-1 text-xs font-semibold text-white">
-                {selectedResource.name}
-              </p>
-              <p className="mt-0.5 text-[10px] text-zinc-500">
-                {selectedResource.type_name}
-              </p>
+              <p className="mt-1 text-xs font-semibold text-white">{selectedResource.name}</p>
+              <p className="mt-0.5 text-[10px] text-zinc-500">{selectedResource.type_name}</p>
             </div>
           ) : null}
         </div>
