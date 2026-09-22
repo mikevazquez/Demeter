@@ -168,9 +168,7 @@ export default async function CoachClassDetailPage({
               }}
             >
               {resourceMap.elements.map((element) => {
-                const resource = element.resource_id
-                  ? resourceById.get(element.resource_id)
-                  : null;
+                const resource = element.resource_id ? resourceById.get(element.resource_id) : null;
                 const enabled = resource ? resource.enabled : true;
                 const fullResource = resource ? resource.enabled && resource.available <= 0 : false;
                 const label = resource
@@ -197,9 +195,7 @@ export default async function CoachClassDetailPage({
                       transform: `rotate(${Number(element.rotation_degrees)}deg)`,
                     }}
                     title={
-                      resource
-                        ? `${resource.name}: ${resource.used}/${resource.capacity}`
-                        : label
+                      resource ? `${resource.name}: ${resource.used}/${resource.capacity}` : label
                     }
                   >
                     <span className="truncate px-1">{label}</span>
