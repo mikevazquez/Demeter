@@ -25,7 +25,7 @@ describe("F11 coach session scope", () => {
 
   it("uses the same scoped coach feed inside the unified Studio portal", () => {
     const migration = source("supabase/migrations/20260916142100_f11_coach_feed_local_dates.sql");
-    const page = source("app/admin/mis-clases/page.tsx");
+    const page = source("app/admin/hoy/CoachTodayView.tsx");
 
     expect(migration).toContain("public.coach_my_sessions(");
     expect(migration).toContain("target_studio_id uuid");
@@ -37,12 +37,14 @@ describe("F11 coach session scope", () => {
 
   it("protects class detail with the same authenticated assignment", () => {
     const migration = source("supabase/migrations/20260916142600_f11_coach_session_detail.sql");
-    const page = source("app/coach/clases/[sessionId]/page.tsx");
+    const page = source("app/admin/hoy/CoachTodayView.tsx");
+    const legacyDetail = source("app/coach/clases/[sessionId]/page.tsx");
 
     expect(migration).toContain("cs.instructor_id = v_instructor_id");
     expect(migration).toContain("raise exception 'session_not_available'");
-    expect(page).toContain('supabase.rpc("coach_session_detail"');
-    expect(page).toContain("notFound()");
+    expect(page).toContain('supabase.rpc("coach_session_roster"');
+    expect(page).toContain('supabase.rpc("coach_my_sessions"');
+    expect(legacyDetail).toContain('redirect(`/admin#session-${sessionId}`)');
   });
 
   it("limits an Instructor account to its own instructor directory record", () => {
