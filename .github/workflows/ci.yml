@@ -34,21 +34,7 @@ jobs:
         run: npm ci
 
       - name: Format check
-        run: |
-          npx prettier --write \
-            'app/student/reservar/[sessionId]/confirmar/page.tsx' \
-            'app/student/reservar/[sessionId]/recurso/page.tsx' \
-            'app/student/reservar/[sessionId]/recurso/ResourcePicker.tsx'
-          for file in \
-            'app/student/reservar/[sessionId]/confirmar/page.tsx' \
-            'app/student/reservar/[sessionId]/recurso/page.tsx' \
-            'app/student/reservar/[sessionId]/recurso/ResourcePicker.tsx'
-          do
-            echo "FORMAT_FILE:$file"
-            base64 -w0 "$file"
-            echo
-          done
-          exit 1
+        run: npm run format:check
 
       - name: Lint
         run: npm run lint
