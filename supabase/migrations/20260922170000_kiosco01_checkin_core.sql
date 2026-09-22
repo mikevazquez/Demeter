@@ -324,12 +324,13 @@ returns jsonb
 language plpgsql
 security definer
 set search_path = ''
-as $$
+as $
 declare
   v_token_hash bytea;
   v_token_row public.reservation_checkin_tokens%rowtype;
   v_reservation public.reservations%rowtype;
   v_session public.class_sessions%rowtype;
+  v_session_id uuid;
   v_activity text;
   v_student_name text;
   v_existing_checkin public.attendance_checkins%rowtype;
