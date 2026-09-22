@@ -1,0 +1,36 @@
+name: Temp format profile home
+
+on:
+  push:
+    branches:
+      - feat/evaluaciones-01-sync
+    paths:
+      - .github/workflows/format-profile-home-temp.yml
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/evaluaciones-01-sync
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx prettier --write "app/student/page.tsx" "app/admin/alumnas/[studentId]/page.tsx" "app/admin/alumnas/[studentId]/Profile360Overview.tsx" "app/admin/alumnas/profile-360-admin-ux-04.css"
+      - name: Commit formatting
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "app/student/page.tsx" "app/admin/alumnas/[studentId]/page.tsx" "app/admin/alumnas/[studentId]/Profile360Overview.tsx" "app/admin/alumnas/profile-360-admin-ux-04.css"
+          if git diff --cached --quiet; then
+            echo "No formatting changes."
+          else
+            git commit -m "chore: format profile and student home"
+            git push origin HEAD:feat/evaluaciones-01-sync
+          fi
