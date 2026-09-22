@@ -24,9 +24,7 @@ describe("F11 coach session scope", () => {
   });
 
   it("uses the same scoped coach feed inside the unified Studio portal", () => {
-    const migration = source(
-      "supabase/migrations/20260916142100_f11_coach_feed_local_dates.sql",
-    );
+    const migration = source("supabase/migrations/20260916142100_f11_coach_feed_local_dates.sql");
     const page = source("app/admin/hoy/CoachTodayView.tsx");
 
     expect(migration).toContain("public.coach_my_sessions(");
