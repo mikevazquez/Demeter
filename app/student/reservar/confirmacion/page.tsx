@@ -27,6 +27,25 @@ export default async function StudentReservationConfirmationPage({
   const selectedDate =
     query.date && /^\d{4}-\d{2}-\d{2}$/.test(query.date) ? query.date : sessionDate;
 
+  let assignedResourceName: string | null = null;
+  if (query.reservation) {
+    const { data: assignment } = await supabase
+      .from("reservation_resource_assignments")
+      .select("resource_id")
+      .eq("reservation_id", query.reservation)
+      .is("released_at", null)
+      .maybeSingle();
+
+    if (assignment?.resource_id) {
+      const { data: resource } = await supabase
+        .from("resources")
+        .select("name")
+        .eq("id", assignment.resource_id)
+        .maybeSingle();
+      assignedResourceName = resource?.name ?? null;
+    }
+  }
+
   return (
     <main className="mx-auto max-w-md space-y-4 pb-4">
       <section className="rounded-3xl border border-emerald-500/20 bg-emerald-500/[0.07] p-6 text-center">
@@ -54,6 +73,11 @@ export default async function StudentReservationConfirmationPage({
               {[session.coach, session.space || session.location].filter(Boolean).join(" · ") ||
                 "Estudio"}
             </p>
+            {assignedResourceName ? (
+              <p className="mt-2 text-[11px] font-semibold text-fuchsia-200">
+                Recurso: {assignedResourceName}
+              </p>
+            ) : null}
           </div>
         ) : null}
 

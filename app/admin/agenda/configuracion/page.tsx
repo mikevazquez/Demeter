@@ -34,7 +34,7 @@ export default async function AgendaConfigurationPage({
     supabase
       .from("class_templates")
       .select(
-        "id,name,duration_minutes,capacity,discipline_id,credit_cost,drop_in_price_minor,color_hex",
+        "id,name,duration_minutes,capacity,discipline_id,credit_cost,drop_in_price_minor,color_hex,requires_resource",
       )
       .eq("studio_id", studio.id)
       .eq("active", true)
@@ -161,6 +161,10 @@ export default async function AgendaConfigurationPage({
                 Color en el horario
                 <input name="color_hex" type="color" defaultValue="#FF0A8A" />
               </label>
+              <label>
+                <input name="requires_resource" type="checkbox" value="1" />
+                Requiere recurso físico
+              </label>
               <button className="primary-button" type="submit" disabled={!disciplines?.length}>
                 Crear actividad
               </button>
@@ -182,6 +186,15 @@ export default async function AgendaConfigurationPage({
                       defaultValue={item.color_hex ?? "#FF0A8A"}
                       aria-label={`Color de ${item.name}`}
                     />
+                  </label>
+                  <label>
+                    <input
+                      name="requires_resource"
+                      type="checkbox"
+                      value="1"
+                      defaultChecked={item.requires_resource}
+                    />
+                    Requiere recurso
                   </label>
                   <button className="ghost-button" type="submit">
                     Guardar

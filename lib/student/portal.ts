@@ -110,6 +110,8 @@ export type StudentSession = {
   location: string | null;
   coach: string | null;
   description: string | null;
+  requires_resource: boolean;
+  resource_uses_per_item?: number;
   is_reserved?: boolean;
   reservation_id?: string | null;
   eligibility: {

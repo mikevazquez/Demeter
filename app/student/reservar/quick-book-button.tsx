@@ -20,6 +20,9 @@ const errorCopy: Record<string, string> = {
   enrollment_required: "Necesitas una inscripción vigente para reservar.",
   session_not_bookable: "Esta clase ya no admite reservas.",
   student_not_operable: "Tu perfil no está habilitado para reservar en este momento.",
+  resource_required: "Elige un recurso antes de confirmar tu reserva.",
+  resource_full: "Ese recurso acaba de ocuparse. Elige otro lugar.",
+  resource_not_available: "Ese recurso ya no está disponible. Elige otro lugar.",
 };
 
 type Props = {
@@ -32,6 +35,7 @@ type Props = {
   full?: boolean;
   waitlisted?: boolean;
   levelTitle?: string | null;
+  requiresResource?: boolean;
 };
 
 export function QuickBookButton({
@@ -44,6 +48,7 @@ export function QuickBookButton({
   full = false,
   waitlisted = false,
   levelTitle = null,
+  requiresResource = false,
 }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -53,6 +58,11 @@ export function QuickBookButton({
 
   function reserve() {
     if (!eligible || reserved || isPending) return;
+
+    if (requiresResource) {
+      router.push(`/student/reservar/${sessionId}`);
+      return;
+    }
 
     startTransition(async () => {
       const result = await bookStudentSessionInlineAction(sessionId);

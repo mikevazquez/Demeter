@@ -52,7 +52,7 @@ export default async function SessionDetailPage({
   const { data: session } = await supabase
     .from("class_sessions")
     .select(
-      "id,template_id,starts_at,ends_at,capacity,status,notes,space_id,instructor_id,recurring_schedule_id,is_schedule_exception",
+      "id,template_id,starts_at,ends_at,capacity,status,notes,space_id,instructor_id,recurring_schedule_id,is_schedule_exception,requires_resource,resource_uses_per_item",
     )
     .eq("id", sessionId)
     .eq("studio_id", studio.id)
@@ -285,6 +285,8 @@ export default async function SessionDetailPage({
     space: "El espacio no admite ese cupo.",
     instructor: "Selecciona un instructor activo del estudio.",
     edit: "No se pudieron guardar los cambios.",
+    resource_space_assigned:
+      "No puedes cambiar el espacio mientras existan reservas con recursos asignados. Reasigna o cancela esas reservas primero.",
     booking: "No se pudo crear la reserva.",
     no_active_product: "La alumna no tiene un paquete o membresía vigente para esta clase.",
     enrollment_required: "La alumna no tiene una inscripción vigente para la fecha de esta clase.",
@@ -300,6 +302,18 @@ export default async function SessionDetailPage({
     attendance: "No se pudo registrar la asistencia.",
     walkin_invalid: "Completa los datos mínimos para registrar la walk-in.",
   };
+
+  const showManagementNotice = query.created === "edit" || query.created === "cancel-session";
+
+  const { data: sessionResourceRows } = session.requires_resource
+    ? await supabase
+        .from("session_resources")
+        .select("id,enabled")
+        .eq("studio_id", studio.id)
+        .eq("session_id", session.id)
+    : { data: [] as { id: string; enabled: boolean }[] };
+
+  const enabledSessionResources = (sessionResourceRows ?? []).filter((item) => item.enabled).length;
 
   return (
     <main className="dashboard-shell admin-class-detail admin-ux04-session-detail">
@@ -323,6 +337,9 @@ export default async function SessionDetailPage({
         </Link>
       </header>
 
+      {showManagementNotice ? (
+        <div className="notice success">Cambio guardado correctamente.</div>
+      ) : null}
       {query.error ? (
         <div className="notice error">
           {errorCopy[decodeURIComponent(query.error)] ?? "No se pudo completar la operación."}
@@ -371,12 +388,26 @@ export default async function SessionDetailPage({
         />
       </section>
 
+      {session.requires_resource ? (
+        <section className="panel">
+          <p className="eyebrow">RECURSOS</p>
+          <h2>Recursos de esta sesión</h2>
+          <p>
+            {enabledSessionResources} recursos habilitados · {session.resource_uses_per_item} uso
+            {session.resource_uses_per_item === 1 ? "" : "s"} por recurso
+          </p>
+          <Link className="secondary-button" href={`/admin/agenda/${sessionId}/recursos`}>
+            Configurar recursos
+          </Link>
+        </section>
+      ) : null}
+
       {canEdit && session.status !== "cancelled" ? (
         <details className="panel admin-session-settings">
           <summary>
             <span>
               <small>CONFIGURACIÓN</small>
-              <strong>Horario y recursos</strong>
+              <strong>Horario y operación</strong>
             </span>
             <b aria-hidden="true">⌄</b>
           </summary>
