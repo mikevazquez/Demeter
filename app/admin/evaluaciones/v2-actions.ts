@@ -470,6 +470,8 @@ export async function updateEvaluationV2ItemAction(formData: FormData) {
   const rawWeight = text(formData, "item_weight_percent");
   const itemWeight = rawWeight === "" ? null : numeric(formData, "item_weight_percent");
   const progressionRequired = formData.get("progression_required") === "on";
+  const rawMin = text(formData, "min_score");
+  const minScore = rawMin === "" ? null : numeric(formData, "min_score");
 
   const { error } = await ctx.supabase
     .from("evaluation_template_elements")
@@ -478,6 +480,7 @@ export async function updateEvaluationV2ItemAction(formData: FormData) {
       item_weight_percent: itemWeight,
       progression_required: progressionRequired,
       mandatory: progressionRequired,
+      min_score: minScore,
       updated_at: new Date().toISOString(),
     })
     .eq("id", itemId)
@@ -556,7 +559,11 @@ export async function activateEvaluationV2Action(formData: FormData) {
         templateId,
         "revision",
         undefined,
-        error.message.includes("weight") ? "weights" : "activate",
+        error.message.includes("weight")
+          ? "weights"
+          : error.message.includes("progression_min")
+            ? "progression"
+            : "activate",
       ),
     );
   }
