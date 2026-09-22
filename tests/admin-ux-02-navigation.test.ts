@@ -17,6 +17,7 @@ describe("ADMIN-UX-02 navigation architecture", () => {
   const today = source("app/admin/page.tsx");
   const agenda = source("app/admin/agenda/page.tsx");
   const agendaConfiguration = source("app/admin/agenda/configuracion/page.tsx");
+  const activitiesWizard = source("app/admin/actividades/ActivityWizard.tsx");
 
   it("uses durable entities as the desktop navigation architecture", () => {
     for (const label of ["Hoy", "Agenda", "Alumnas", "Productos", "Equipo", "Automatizaciones"]) {
@@ -70,7 +71,9 @@ describe("ADMIN-UX-02 navigation architecture", () => {
     expect(today).not.toContain(">Crear reserva<");
     expect(today).not.toContain(">Crear clase<");
     expect(agenda).toContain('id="clases-programadas"');
-    expect(agendaConfiguration).toContain('id="programar-clase"');
+    expect(agendaConfiguration).toContain('redirect("/admin/actividades")');
+    expect(activitiesWizard).toContain("Horarios y operación");
+    expect(activitiesWizard).toContain("+ Agregar horario");
     expect(layout).not.toContain('label: "Ventas"');
   });
 
