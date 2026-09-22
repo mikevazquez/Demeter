@@ -82,6 +82,8 @@ async function preserveBookedAndClearGeneratedSessions(
       .eq("studio_id", studioId);
     if (error) throw error;
   }
+
+  redirect(`/admin/actividades/${savedActivityId}`);
 }
 
 export async function saveActivity(formData: FormData) {
@@ -160,6 +162,8 @@ export async function saveActivity(formData: FormData) {
       ends_on: endsOn,
     };
   });
+
+  let savedActivityId = payload.activityId || "";
 
   try {
     const instructorIds = [
@@ -353,11 +357,11 @@ export async function saveActivity(formData: FormData) {
       if (error) throw error;
     }
 
+    savedActivityId = activityId;
     revalidatePath("/admin/actividades");
     revalidatePath("/admin/agenda");
     revalidatePath("/admin");
     revalidatePath("/student/reservar");
-    redirect(`/admin/actividades/${activityId}?saved=1`);
   } catch {
     redirect(
       payload.activityId
