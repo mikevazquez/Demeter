@@ -80,16 +80,26 @@ export default async function StudentEvaluationsPage() {
 
   return (
     <main className="space-y-5 pb-4">
-      <header>
-        <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-fuchsia-300">
-          Mi progreso
-        </p>
-        <h1 className="mt-1 text-3xl font-semibold tracking-tight text-white sm:text-4xl">
-          Evaluaciones
-        </h1>
-        <p className="mt-1.5 text-sm text-zinc-400">
-          Tu progreso técnico, disciplina por disciplina.
-        </p>
+      <header className="flex items-start justify-between gap-4">
+        <div>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-fuchsia-300">
+            Mi progreso
+          </p>
+          <h1 className="mt-1 text-3xl font-semibold tracking-tight text-white sm:text-4xl">
+            Evaluaciones
+          </h1>
+          <p className="mt-1.5 text-sm text-zinc-400">
+            Tu progreso técnico, disciplina por disciplina.
+          </p>
+        </div>
+
+        <Link
+          href="/student/perfil"
+          aria-label="Cerrar evaluaciones"
+          className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-white/10 bg-white/[0.035] text-xl text-zinc-300 transition hover:border-fuchsia-500/40 hover:bg-fuchsia-500/[0.08] hover:text-white"
+        >
+          ×
+        </Link>
       </header>
 
       <section className="space-y-3" aria-label="Estado de evaluaciones">
