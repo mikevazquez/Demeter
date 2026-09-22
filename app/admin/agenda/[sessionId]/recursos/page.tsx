@@ -36,9 +36,7 @@ export default async function SessionResourcesPage({
 
   const { data: session } = await supabase
     .from("class_sessions")
-    .select(
-      "id,template_id,space_id,starts_at,status,requires_resource,resource_uses_per_item",
-    )
+    .select("id,template_id,space_id,starts_at,status,requires_resource,resource_uses_per_item")
     .eq("id", sessionId)
     .eq("studio_id", studio.id)
     .maybeSingle();
@@ -92,9 +90,7 @@ export default async function SessionResourcesPage({
     session.space_id
       ? supabase
           .from("space_map_elements")
-          .select(
-            "id,resource_id,element_kind,label,x,y,width,height,rotation_degrees",
-          )
+          .select("id,resource_id,element_kind,label,x,y,width,height,rotation_degrees")
           .eq("studio_id", studio.id)
           .eq("space_id", session.space_id)
           .order("z_index")
@@ -128,8 +124,7 @@ export default async function SessionResourcesPage({
   const elements = (mapElements ?? []) as MapElement[];
   const errorCopy: Record<string, string> = {
     invalid: "Usa un número válido de usos por recurso.",
-    assigned:
-      "No puedes reducir o desactivar ese recurso porque ya tiene alumnas asignadas.",
+    assigned: "No puedes reducir o desactivar ese recurso porque ya tiene alumnas asignadas.",
     cancelled: "La sesión está cancelada y ya no puede modificarse.",
     save: "No pudimos guardar la configuración de recursos.",
   };
@@ -201,8 +196,8 @@ export default async function SessionResourcesPage({
               <div>
                 <h2>Recursos disponibles</h2>
                 <p>
-                  Activa solo los recursos que podrán elegirse en esta clase. El mapa global
-                  no se modifica.
+                  Activa solo los recursos que podrán elegirse en esta clase. El mapa global no se
+                  modifica.
                 </p>
               </div>
             </div>
@@ -211,8 +206,7 @@ export default async function SessionResourcesPage({
               <span>
                 <strong>Usos predeterminados por recurso</strong>
                 <small>
-                  1 = una alumna por recurso. 2 = dos alumnas pueden compartir el mismo
-                  recurso.
+                  1 = una alumna por recurso. 2 = dos alumnas pueden compartir el mismo recurso.
                 </small>
               </span>
               <input
@@ -300,9 +294,7 @@ export default async function SessionResourcesPage({
         <div className={styles.map}>
           {elements.length ? (
             elements.map((element) => {
-              const setting = element.resource_id
-                ? settingMap.get(element.resource_id)
-                : null;
+              const setting = element.resource_id ? settingMap.get(element.resource_id) : null;
               const enabled = element.resource_id ? setting?.enabled === true : true;
               const capacity = element.resource_id
                 ? (setting?.capacity_override ?? session.resource_uses_per_item)
