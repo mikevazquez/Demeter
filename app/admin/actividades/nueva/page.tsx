@@ -16,23 +16,23 @@ export default async function NewActivityPage({
   const [{ data: instructors }, { data: persons }, { data: spaces }, { data: resources }] =
     await Promise.all([
       supabase
-      .from("instructors")
-      .select("id,person_id,status")
-      .eq("studio_id", studio.id)
-      .eq("status", "active"),
+        .from("instructors")
+        .select("id,person_id,status")
+        .eq("studio_id", studio.id)
+        .eq("status", "active"),
       supabase.from("persons").select("id,first_name,last_name").eq("studio_id", studio.id),
       supabase
-      .from("spaces")
-      .select("id,name,capacity")
-      .eq("studio_id", studio.id)
-      .eq("active", true)
-      .order("name"),
+        .from("spaces")
+        .select("id,name,capacity")
+        .eq("studio_id", studio.id)
+        .eq("active", true)
+        .order("name"),
       supabase
         .from("resources")
-      .select("id,name,short_label,space_id")
-      .eq("studio_id", studio.id)
-      .eq("active", true)
-      .order("name"),
+        .select("id,name,short_label,space_id")
+        .eq("studio_id", studio.id)
+        .eq("active", true)
+        .order("name"),
     ]);
 
   const personMap = new Map(
