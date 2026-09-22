@@ -139,9 +139,8 @@ export async function bookStudentSessionInlineAction(sessionId: string) {
   }
 
   const { supabase } = await getStudentPortalContext();
-  const { data, error } = await supabase.rpc("student_book_session_with_resource", {
+  const { data, error } = await supabase.rpc("student_book_session", {
     target_session_id: normalizedSessionId,
-    target_resource_id: null,
   });
 
   if (error) {
