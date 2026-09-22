@@ -8,10 +8,7 @@ describe("RECURSOS-01 activity and session inheritance", () => {
     join(process.cwd(), "app/admin/agenda/recurring-actions.ts"),
     "utf8",
   );
-  const agendaActions = readFileSync(
-    join(process.cwd(), "app/admin/agenda/actions.ts"),
-    "utf8",
-  );
+  const agendaActions = readFileSync(join(process.cwd(), "app/admin/agenda/actions.ts"), "utf8");
   const agendaConfiguration = readFileSync(
     join(process.cwd(), "app/admin/agenda/configuracion/page.tsx"),
     "utf8",
@@ -40,9 +37,7 @@ describe("RECURSOS-01 activity and session inheritance", () => {
   });
 
   it("snapshots the activity requirement into new manual sessions", () => {
-    expect(agendaActions).toContain(
-      '.select("id, duration_minutes, capacity, requires_resource")',
-    );
+    expect(agendaActions).toContain('.select("id, duration_minutes, capacity, requires_resource")');
     expect(agendaActions).toContain("requires_resource: template.requires_resource");
     expect(agendaActions).toContain("resource_uses_per_item: 1");
   });
