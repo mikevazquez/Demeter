@@ -3,7 +3,12 @@ import { notFound } from "next/navigation";
 
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getCoachContext } from "@/lib/auth/coach-context";
-import {\n  formatSessionDate,\n  formatTime,\n  type CoachResourceMap,\n  type CoachSessionDetail,\n} from "@/lib/coach/portal";
+import {
+  formatSessionDate,
+  formatTime,
+  type CoachResourceMap,
+  type CoachSessionDetail,
+} from "@/lib/coach/portal";
 
 function statusLabel(status: CoachSessionDetail["status"]) {
   if (status === "completed") return "Finalizada";
