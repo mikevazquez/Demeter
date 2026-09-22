@@ -15,9 +15,16 @@ function numeric(formData: FormData, key: string, fallback = 0) {
   return Number.isFinite(value) ? value : fallback;
 }
 
-function editorUrl(templateId: string, step = "configuracion", blockId?: string, error?: string) {
+function editorUrl(
+  templateId: string,
+  step = "apartados",
+  blockId?: string,
+  error?: string,
+  view?: string,
+) {
   const params = new URLSearchParams({ step });
   if (blockId) params.set("block", blockId);
+  if (view) params.set("view", view);
   if (error) params.set("error", error);
   return `/admin/evaluaciones/v2/${templateId}?${params.toString()}`;
 }
@@ -38,7 +45,7 @@ async function assertDraftVersion(
     .eq("schema_version", 2)
     .maybeSingle();
 
-  if (!version) redirect(editorUrl(templateId, "configuracion", undefined, "locked"));
+  if (!version) redirect(editorUrl(templateId, "apartados", undefined, "locked"));
   return ctx;
 }
 
@@ -93,7 +100,7 @@ export async function createEvaluationV2TemplateAction(formData: FormData) {
 
   revalidatePath("/admin/evaluaciones");
   revalidatePath(`/admin/evaluaciones/disciplina/${disciplineId}`);
-  redirect(editorUrl(template.id));
+  redirect(editorUrl(template.id, "apartados"));
 }
 
 export async function openEvaluationV2EditorAction(formData: FormData) {
@@ -111,7 +118,7 @@ export async function openEvaluationV2EditorAction(formData: FormData) {
     .eq("studio_id", ctx.studio.id)
     .maybeSingle();
 
-  if (!source) redirect(editorUrl(templateId, "configuracion", undefined, "version"));
+  if (!source) redirect(editorUrl(templateId, "apartados", undefined, "version"));
 
   const { count: usedCount } = await ctx.supabase
     .from("technical_evaluations")
@@ -119,7 +126,7 @@ export async function openEvaluationV2EditorAction(formData: FormData) {
     .eq("template_version_id", source.id);
 
   if (source.schema_version === 2 && source.status === "draft" && !usedCount) {
-    redirect(editorUrl(templateId));
+    redirect(editorUrl(templateId, "apartados"));
   }
 
   const { data: latest } = await ctx.supabase
@@ -229,9 +236,10 @@ export async function saveEvaluationV2GeneralAction(formData: FormData) {
   const name = text(formData, "name");
   const passThreshold = numeric(formData, "pass_threshold", 75);
   const instructions = text(formData, "instructions");
+  const returnStep = text(formData, "return_step") || "reglas";
 
   if (!name || passThreshold < 0 || passThreshold > 100) {
-    redirect(editorUrl(templateId, "configuracion", undefined, "general"));
+    redirect(editorUrl(templateId, returnStep, undefined, "general"));
   }
 
   const [{ error: templateError }, { error: versionError }] = await Promise.all([
@@ -254,7 +262,7 @@ export async function saveEvaluationV2GeneralAction(formData: FormData) {
   if (templateError || versionError)
     redirect(editorUrl(templateId, "configuracion", undefined, "general"));
   revalidatePath(editorUrl(templateId));
-  redirect(editorUrl(templateId, "bloques"));
+  redirect(editorUrl(templateId, returnStep));
 }
 
 export async function addEvaluationV2BlockAction(formData: FormData) {
@@ -288,9 +296,9 @@ export async function addEvaluationV2BlockAction(formData: FormData) {
     .select("id")
     .single();
 
-  if (error || !data) redirect(editorUrl(templateId, "bloques", undefined, "block"));
+  if (error || !data) redirect(editorUrl(templateId, "apartados", undefined, "block"));
   revalidatePath(editorUrl(templateId));
-  redirect(editorUrl(templateId, "bloques", data.id));
+  redirect(editorUrl(templateId, "apartados", data.id, undefined, "config"));
 }
 
 export async function updateEvaluationV2BlockAction(formData: FormData) {
@@ -306,6 +314,7 @@ export async function updateEvaluationV2BlockAction(formData: FormData) {
   const minPercent = rawMin === "" ? null : numeric(formData, "min_percent");
   const progressionRequired = formData.get("progression_required") === "on";
   const instructions = text(formData, "evaluator_instructions");
+  const returnView = text(formData, "return_view") || "content";
 
   const allowed = new Set([
     "direct_score",
@@ -316,7 +325,7 @@ export async function updateEvaluationV2BlockAction(formData: FormData) {
   ]);
 
   if (!label || !allowed.has(blockType) || weight < 0 || weight > 100) {
-    redirect(editorUrl(templateId, "bloques", blockId, "block"));
+    redirect(editorUrl(templateId, "apartados", blockId, "block", returnView));
   }
 
   const { error } = await ctx.supabase
@@ -337,7 +346,7 @@ export async function updateEvaluationV2BlockAction(formData: FormData) {
 
   if (error) redirect(editorUrl(templateId, "bloques", blockId, "block"));
   revalidatePath(editorUrl(templateId));
-  redirect(editorUrl(templateId, "bloques", blockId));
+  redirect(editorUrl(templateId, "apartados", blockId, undefined, returnView));
 }
 
 export async function deleteEvaluationV2BlockAction(formData: FormData) {
@@ -360,7 +369,7 @@ export async function deleteEvaluationV2BlockAction(formData: FormData) {
     .eq("template_version_id", versionId)
     .eq("studio_id", ctx.studio.id);
 
-  if (error) redirect(editorUrl(templateId, "bloques", undefined, "block"));
+  if (error) redirect(editorUrl(templateId, "apartados", undefined, "block"));
   revalidatePath(editorUrl(templateId));
   redirect(editorUrl(templateId, "bloques"));
 }
@@ -382,7 +391,7 @@ export async function addEvaluationV2ItemAction(formData: FormData) {
   const minScore = rawMin === "" ? null : numeric(formData, "min_score");
   const attempts = Math.max(1, numeric(formData, "attempts_allowed", 3));
 
-  if (!label) redirect(editorUrl(templateId, "bloques", blockId, "item"));
+  if (!label) redirect(editorUrl(templateId, "apartados", blockId, "item", "content"));
 
   const { data: block } = await ctx.supabase
     .from("evaluation_template_criteria")
@@ -393,7 +402,7 @@ export async function addEvaluationV2ItemAction(formData: FormData) {
     .maybeSingle();
 
   if (!block || block.block_type === "direct_score") {
-    redirect(editorUrl(templateId, "bloques", blockId, "item"));
+    redirect(editorUrl(templateId, "apartados", blockId, "item", "content"));
   }
 
   const elementKind =
@@ -425,7 +434,7 @@ export async function addEvaluationV2ItemAction(formData: FormData) {
       })
       .select("id")
       .single();
-    if (createError || !created) redirect(editorUrl(templateId, "bloques", blockId, "item"));
+    if (createError || !created) redirect(editorUrl(templateId, "apartados", blockId, "item", "content"));
     elementId = created.id;
   }
 
@@ -463,9 +472,9 @@ export async function addEvaluationV2ItemAction(formData: FormData) {
     element_snapshot: { name: label, description: description || null },
   });
 
-  if (error) redirect(editorUrl(templateId, "bloques", blockId, "item"));
+  if (error) redirect(editorUrl(templateId, "apartados", blockId, "item", "content"));
   revalidatePath(editorUrl(templateId));
-  redirect(editorUrl(templateId, "bloques", blockId));
+  redirect(editorUrl(templateId, "apartados", blockId, undefined, "content"));
 }
 
 export async function updateEvaluationV2ItemAction(formData: FormData) {
@@ -496,9 +505,9 @@ export async function updateEvaluationV2ItemAction(formData: FormData) {
     .eq("template_version_id", versionId)
     .eq("studio_id", ctx.studio.id);
 
-  if (error) redirect(editorUrl(templateId, "bloques", blockId, "item"));
+  if (error) redirect(editorUrl(templateId, "apartados", blockId, "item", "content"));
   revalidatePath(editorUrl(templateId));
-  redirect(editorUrl(templateId, "bloques", blockId));
+  redirect(editorUrl(templateId, "apartados", blockId, undefined, "content"));
 }
 
 export async function deleteEvaluationV2ItemAction(formData: FormData) {
@@ -515,9 +524,9 @@ export async function deleteEvaluationV2ItemAction(formData: FormData) {
     .eq("template_version_id", versionId)
     .eq("studio_id", ctx.studio.id);
 
-  if (error) redirect(editorUrl(templateId, "bloques", blockId, "item"));
+  if (error) redirect(editorUrl(templateId, "apartados", blockId, "item", "content"));
   revalidatePath(editorUrl(templateId));
-  redirect(editorUrl(templateId, "bloques", blockId));
+  redirect(editorUrl(templateId, "apartados", blockId, undefined, "content"));
 }
 
 export async function distributeEvaluationV2ItemWeightsAction(formData: FormData) {
@@ -533,7 +542,7 @@ export async function distributeEvaluationV2ItemWeightsAction(formData: FormData
     .eq("criterion_id", blockId)
     .order("sort_order");
 
-  if (!items?.length) redirect(editorUrl(templateId, "bloques", blockId, "item"));
+  if (!items?.length) redirect(editorUrl(templateId, "apartados", blockId, "item", "content"));
 
   const base = Math.floor(10000 / items.length) / 100;
   let assigned = 0;
@@ -548,7 +557,7 @@ export async function distributeEvaluationV2ItemWeightsAction(formData: FormData
   }
 
   revalidatePath(editorUrl(templateId));
-  redirect(editorUrl(templateId, "bloques", blockId));
+  redirect(editorUrl(templateId, "apartados", blockId, undefined, "content"));
 }
 
 export async function activateEvaluationV2Action(formData: FormData) {
@@ -565,7 +574,7 @@ export async function activateEvaluationV2Action(formData: FormData) {
     redirect(
       editorUrl(
         templateId,
-        "revision",
+        "preview",
         undefined,
         error.message.includes("weight")
           ? "weights"
