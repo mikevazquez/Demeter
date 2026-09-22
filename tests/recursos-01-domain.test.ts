@@ -56,27 +56,19 @@ describe("RECURSOS-01 domain contract", () => {
   it("enforces resource capacity under concurrency", () => {
     expect(migration).toContain("for update;");
     expect(migration).toContain("resource_full");
-    expect(migration).toContain(
-      "reservation_resource_assignments_one_active_per_reservation",
-    );
-    expect(migration).toContain(
-      "reservation_resource_assignments_active_resource_idx",
-    );
+    expect(migration).toContain("reservation_resource_assignments_one_active_per_reservation");
+    expect(migration).toContain("reservation_resource_assignments_active_resource_idx");
   });
 
   it("releases resource assignments when a reservation stops being active", () => {
-    expect(migration).toContain(
-      "recursos01_release_assignment_after_reservation_status",
-    );
+    expect(migration).toContain("recursos01_release_assignment_after_reservation_status");
     expect(migration).toContain("released_at = coalesce(released_at, now())");
     expect(migration).toContain("'reservation_status:' || new.status::text");
   });
 
   it("prevents destructive resource changes while active assignments exist", () => {
     expect(migration).toContain("resource_has_active_assignments");
-    expect(migration).toContain(
-      "session_resource_capacity_below_active_assignments",
-    );
+    expect(migration).toContain("session_resource_capacity_below_active_assignments");
     expect(migration).toContain("resource_has_future_assignments");
   });
 
