@@ -285,6 +285,8 @@ export default async function SessionDetailPage({
     space: "El espacio no admite ese cupo.",
     instructor: "Selecciona un instructor activo del estudio.",
     edit: "No se pudieron guardar los cambios.",
+    resource_space_assigned:
+      "No puedes cambiar el espacio mientras existan reservas con recursos asignados. Reasigna o cancela esas reservas primero.",
     booking: "No se pudo crear la reserva.",
     no_active_product: "La alumna no tiene un paquete o membresía vigente para esta clase.",
     enrollment_required: "La alumna no tiene una inscripción vigente para la fecha de esta clase.",
