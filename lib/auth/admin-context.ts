@@ -66,7 +66,7 @@ export async function getAdminContext(requiredCapability?: Capability) {
     redirect(
       capabilities.has(CAPABILITIES.ADMIN_PORTAL)
         ? "/admin?error=access"
-        : "/admin/mis-clases?error=access",
+        : "/admin?error=access",
     );
   }
 
