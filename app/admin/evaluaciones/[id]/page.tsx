@@ -404,7 +404,9 @@ export default async function TechnicalEvaluationDetailPage({
                   {
                     templateElements.filter(
                       (item) =>
-                        (isV2 ? Boolean(item.progression_required || item.mandatory) : item.mandatory) &&
+                        (isV2
+                          ? Boolean(item.progression_required || item.mandatory)
+                          : item.mandatory) &&
                         elementResultMap.get(item.id)?.result_status === "meets",
                     ).length
                   }{" "}
@@ -420,18 +422,18 @@ export default async function TechnicalEvaluationDetailPage({
             </article>
             {!isV2 ? (
               <article className="eval-panel eval-feedback-card">
-              <h3>Requisitos de progresión · Combos</h3>
-              <p className="eval-row-copy">
-                <small>
-                  {
-                    templateCombos.filter(
-                      (item) =>
-                        item.mandatory && comboResultMap.get(item.id)?.result_status === "meets",
-                    ).length
-                  }{" "}
-                  / {templateCombos.filter((item) => item.mandatory).length} cumplen
-                </small>
-              </p>
+                <h3>Requisitos de progresión · Combos</h3>
+                <p className="eval-row-copy">
+                  <small>
+                    {
+                      templateCombos.filter(
+                        (item) =>
+                          item.mandatory && comboResultMap.get(item.id)?.result_status === "meets",
+                      ).length
+                    }{" "}
+                    / {templateCombos.filter((item) => item.mandatory).length} cumplen
+                  </small>
+                </p>
               </article>
             ) : (
               <article className="eval-panel eval-feedback-card">

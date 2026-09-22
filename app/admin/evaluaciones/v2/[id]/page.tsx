@@ -35,10 +35,7 @@ function blockTypeLabel(value: string) {
   return labels[value] ?? value;
 }
 
-function itemLabel(item: {
-  item_label: string | null;
-  element_snapshot: unknown;
-}) {
+function itemLabel(item: { item_label: string | null; element_snapshot: unknown }) {
   if (item.item_label) return item.item_label;
   if (
     typeof item.element_snapshot === "object" &&
@@ -111,7 +108,9 @@ export default async function EvaluationV2EditorPage({
             >
               ← {discipline?.name ?? "Disciplina"}
             </Link>
-            <h1>{discipline?.name} · {level?.title ?? "Nivel técnico"}</h1>
+            <h1>
+              {discipline?.name} · {level?.title ?? "Nivel técnico"}
+            </h1>
             <p>La configuración anterior se conserva intacta para el historial.</p>
           </div>
         </header>
@@ -217,7 +216,9 @@ export default async function EvaluationV2EditorPage({
           >
             ← {discipline?.name ?? "Disciplina"}
           </Link>
-          <h1>{discipline?.name ?? "Disciplina"} · {levelTitle}</h1>
+          <h1>
+            {discipline?.name ?? "Disciplina"} · {levelTitle}
+          </h1>
           <p>Editor de evaluación</p>
         </div>
         <span className={`eval-status ${version.status === "active" ? "approved" : ""}`}>
@@ -226,7 +227,9 @@ export default async function EvaluationV2EditorPage({
       </header>
 
       {qs.error ? (
-        <div className="eval-notice">{errorCopy[qs.error] ?? "No pudimos completar la acción."}</div>
+        <div className="eval-notice">
+          {errorCopy[qs.error] ?? "No pudimos completar la acción."}
+        </div>
       ) : null}
 
       {!editable ? (
@@ -341,7 +344,9 @@ export default async function EvaluationV2EditorPage({
                 <h2>Peso total</h2>
                 <p>Los bloques que aportan calificación deben sumar exactamente 100%.</p>
               </div>
-              <span className={`eval-status ${Math.abs(totalWeight - 100) <= 0.01 ? "approved" : "incomplete"}`}>
+              <span
+                className={`eval-status ${Math.abs(totalWeight - 100) <= 0.01 ? "approved" : "incomplete"}`}
+              >
                 {totalWeight}% de 100%
               </span>
             </header>
@@ -358,7 +363,9 @@ export default async function EvaluationV2EditorPage({
                     href={editorUrl(template.id, "bloques", block.id)}
                     key={block.id}
                   >
-                    <span className="eval-discipline-icon" aria-hidden="true">◇</span>
+                    <span className="eval-discipline-icon" aria-hidden="true">
+                      ◇
+                    </span>
                     <span className="eval-discipline-copy">
                       <strong>{block.label}</strong>
                       <small>
@@ -386,7 +393,10 @@ export default async function EvaluationV2EditorPage({
             ) : null}
 
             <div className="eval-form-actions eval-v2-nav-actions">
-              <Link className="eval-secondary-button" href={editorUrl(template.id, "configuracion")}>
+              <Link
+                className="eval-secondary-button"
+                href={editorUrl(template.id, "configuracion")}
+              >
                 ← Anterior
               </Link>
               <Link className="eval-primary-button" href={editorUrl(template.id, "revision")}>
@@ -434,7 +444,11 @@ export default async function EvaluationV2EditorPage({
 
                 <label className="eval-field">
                   <span>¿Cómo quieres evaluar este bloque?</span>
-                  <select name="block_type" defaultValue={activeBlock.block_type} disabled={!editable}>
+                  <select
+                    name="block_type"
+                    defaultValue={activeBlock.block_type}
+                    disabled={!editable}
+                  >
                     <option value="direct_score">Puntuación directa</option>
                     <option value="weighted_criteria">Varios criterios</option>
                     <option value="element_list">Lista de elementos</option>
@@ -488,7 +502,9 @@ export default async function EvaluationV2EditorPage({
 
                 {editable ? (
                   <div className="eval-form-actions">
-                    <button className="eval-primary-button" type="submit">Guardar bloque</button>
+                    <button className="eval-primary-button" type="submit">
+                      Guardar bloque
+                    </button>
                   </div>
                 ) : null}
               </form>
@@ -505,7 +521,8 @@ export default async function EvaluationV2EditorPage({
                             : "Elementos del bloque"}
                       </h3>
                       <p>
-                        {items.filter((item) => item.criterion_id === activeBlock.id).length} elementos
+                        {items.filter((item) => item.criterion_id === activeBlock.id).length}{" "}
+                        elementos
                       </p>
                     </div>
                     {editable &&
@@ -672,7 +689,9 @@ export default async function EvaluationV2EditorPage({
           <div className="eval-v2-review-list">
             <article>
               <span>Peso total de bloques</span>
-              <strong>{totalWeight}% {Math.abs(totalWeight - 100) <= 0.01 ? "✓" : ""}</strong>
+              <strong>
+                {totalWeight}% {Math.abs(totalWeight - 100) <= 0.01 ? "✓" : ""}
+              </strong>
             </article>
             <article>
               <span>Mínimo global</span>
@@ -682,7 +701,9 @@ export default async function EvaluationV2EditorPage({
               const validation = blockValidation.find((item) => item.id === block.id);
               return (
                 <article key={block.id}>
-                  <span>{block.label} · {blockTypeLabel(block.block_type)}</span>
+                  <span>
+                    {block.label} · {blockTypeLabel(block.block_type)}
+                  </span>
                   <strong>{validation?.valid ? "Completo ✓" : "Revisar"}</strong>
                 </article>
               );
@@ -690,8 +711,8 @@ export default async function EvaluationV2EditorPage({
           </div>
 
           <div className="eval-notice">
-            Al activar, los cambios aplicarán sólo a evaluaciones nuevas. Las evaluaciones anteriores
-            y las que ya estén en curso conservan su configuración.
+            Al activar, los cambios aplicarán sólo a evaluaciones nuevas. Las evaluaciones
+            anteriores y las que ya estén en curso conservan su configuración.
           </div>
 
           <div className="eval-form-actions eval-v2-nav-actions">

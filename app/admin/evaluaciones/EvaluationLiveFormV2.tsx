@@ -2,10 +2,7 @@
 
 import { useMemo, useState, useTransition } from "react";
 
-import {
-  saveTechnicalCriterionResultAction,
-  saveTechnicalElementResultAction,
-} from "./actions";
+import { saveTechnicalCriterionResultAction, saveTechnicalElementResultAction } from "./actions";
 
 export type EvaluationV2ItemLive = {
   id: string;
@@ -264,7 +261,16 @@ function V2ItemEditor({
       </div>
 
       <small className="eval-v2-autosave">
-        {isPending ? "Guardando…" : message || (isItemComplete({ ...item, resultStatus: status, score: score === "" ? null : Number(score) }) ? "Capturado" : "Pendiente")}
+        {isPending
+          ? "Guardando…"
+          : message ||
+            (isItemComplete({
+              ...item,
+              resultStatus: status,
+              score: score === "" ? null : Number(score),
+            })
+              ? "Capturado"
+              : "Pendiente")}
       </small>
     </article>
   );
@@ -317,7 +323,9 @@ export function EvaluationLiveFormV2({
                 {activeBlock.minPercent !== null ? ` · mínimo ${activeBlock.minPercent}%` : ""}
               </p>
             </div>
-            <span className={`eval-status ${blockComplete(activeBlock) ? "approved" : "incomplete"}`}>
+            <span
+              className={`eval-status ${blockComplete(activeBlock) ? "approved" : "incomplete"}`}
+            >
               {blockComplete(activeBlock) ? "Completo" : "Pendiente"}
             </span>
           </header>

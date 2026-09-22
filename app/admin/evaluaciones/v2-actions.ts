@@ -149,7 +149,8 @@ export async function openEvaluationV2EditorAction(formData: FormData) {
     .select("id")
     .single();
 
-  if (createError || !created) redirect(editorUrl(templateId, "configuracion", undefined, "version"));
+  if (createError || !created)
+    redirect(editorUrl(templateId, "configuracion", undefined, "version"));
 
   const { data: sourceBlocks } = await ctx.supabase
     .from("evaluation_template_criteria")
@@ -248,7 +249,8 @@ export async function saveEvaluationV2GeneralAction(formData: FormData) {
       .eq("studio_id", ctx.studio.id),
   ]);
 
-  if (templateError || versionError) redirect(editorUrl(templateId, "configuracion", undefined, "general"));
+  if (templateError || versionError)
+    redirect(editorUrl(templateId, "configuracion", undefined, "general"));
   revalidatePath(editorUrl(templateId));
   redirect(editorUrl(templateId, "bloques"));
 }
@@ -522,7 +524,7 @@ export async function distributeEvaluationV2ItemWeightsAction(formData: FormData
 
   if (!items?.length) redirect(editorUrl(templateId, "bloques", blockId, "item"));
 
-  const base = Math.floor((10000 / items.length)) / 100;
+  const base = Math.floor(10000 / items.length) / 100;
   let assigned = 0;
   for (let index = 0; index < items.length; index += 1) {
     const weight = index === items.length - 1 ? Number((100 - assigned).toFixed(2)) : base;
@@ -549,7 +551,14 @@ export async function activateEvaluationV2Action(formData: FormData) {
   });
 
   if (error) {
-    redirect(editorUrl(templateId, "revision", undefined, error.message.includes("weight") ? "weights" : "activate"));
+    redirect(
+      editorUrl(
+        templateId,
+        "revision",
+        undefined,
+        error.message.includes("weight") ? "weights" : "activate",
+      ),
+    );
   }
 
   revalidatePath("/admin/evaluaciones");

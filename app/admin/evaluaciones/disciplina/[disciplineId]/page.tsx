@@ -5,10 +5,7 @@ import { getAdminContext } from "@/lib/auth/admin-context";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 
 import { setEvaluationDisciplineLevelActive } from "../../actions";
-import {
-  createEvaluationV2TemplateAction,
-  openEvaluationV2EditorAction,
-} from "../../v2-actions";
+import { createEvaluationV2TemplateAction, openEvaluationV2EditorAction } from "../../v2-actions";
 
 export default async function EvaluationDisciplinePage({
   params,
@@ -70,13 +67,13 @@ export default async function EvaluationDisciplinePage({
   const latestVersion = new Map<
     string,
     {
-    id: string;
-    template_id: string;
-    version_number: number;
-    status: string;
-    schema_version: number;
-    pass_threshold: number;
-  }
+      id: string;
+      template_id: string;
+      version_number: number;
+      status: string;
+      schema_version: number;
+      pass_threshold: number;
+    }
   >();
 
   for (const version of versionsResult.data ?? []) {
@@ -173,9 +170,7 @@ export default async function EvaluationDisciplinePage({
                           Configurar
                         </button>
                       </form>
-                    ) : version?.schema_version === 2 &&
-                      version.status === "draft" &&
-                      !used ? (
+                    ) : version?.schema_version === 2 && version.status === "draft" && !used ? (
                       <Link
                         className="eval-secondary-button"
                         href={`/admin/evaluaciones/v2/${template.id}?step=configuracion`}

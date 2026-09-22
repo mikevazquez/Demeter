@@ -87,7 +87,8 @@ function errorCopy(value?: string) {
     evaluation_invitation_window_invalid: "Revisa la ventana de fechas de la evaluación.",
     evaluation_invitation_cadence_invalid: "Selecciona una periodicidad válida.",
     evaluation_level_not_available: "Esta disciplina no tiene un nivel activo disponible.",
-    evaluation_placement_level_required: "Selecciona el nivel que quieres validar en la primera evaluación.",
+    evaluation_placement_level_required:
+      "Selecciona el nivel que quieres validar en la primera evaluación.",
     evaluation_level_mismatch:
       "Las evaluaciones posteriores deben usar el nivel técnico actual de la alumna.",
     evaluation_reservation_not_active:
@@ -337,7 +338,8 @@ export default async function StudentEvaluationsPanel({ studentId, timeZone, err
                   <div>
                     <h3>{item.discipline.name}</h3>
                     <p>
-                      Nivel actual: <strong>{item.currentLevelTitle ?? "Sin nivel confirmado"}</strong>
+                      Nivel actual:{" "}
+                      <strong>{item.currentLevelTitle ?? "Sin nivel confirmado"}</strong>
                     </p>
                   </div>
                   {inProgressEvaluation ? (
@@ -433,7 +435,8 @@ export default async function StudentEvaluationsPanel({ studentId, timeZone, err
                         <>
                           <strong>Aún no forma parte del ciclo</strong>
                           <span>
-                            Primera evaluación de colocación: selecciona el nivel que quieres validar.
+                            Primera evaluación de colocación: selecciona el nivel que quieres
+                            validar.
                           </span>
                         </>
                       )}
@@ -565,7 +568,9 @@ export default async function StudentEvaluationsPanel({ studentId, timeZone, err
                   <span>{formatDate(evaluation.evaluation_date)}</span>
                   <strong>{discipline?.name ?? "Disciplina"}</strong>
                   <span>
-                    {evaluation.evaluation_purpose === "placement" ? "Colocación · " : "Progresión · "}
+                    {evaluation.evaluation_purpose === "placement"
+                      ? "Colocación · "
+                      : "Progresión · "}
                     {levelTitle.get(evaluation.target_discipline_level_id) ?? "Nivel técnico"}
                   </span>
                   <span
