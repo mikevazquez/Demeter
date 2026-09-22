@@ -122,6 +122,7 @@ export default async function StudentReservationDetailPage({
   if (!item) notFound();
 
   const isActiveReservation = item.status === "reserved";
+  const canShowCheckIn = item.status === "reserved" || item.status === "attended";
   const { data: invitationContextData } = isActiveReservation
     ? await supabase.rpc("student_reward_invitation_context", {
         target_host_reservation_id: reservationId,
@@ -143,7 +144,7 @@ export default async function StudentReservationDetailPage({
     ? (inviteErrorCopy[query.invite_error] ?? inviteErrorCopy.invite_failed)
     : null;
 
-  const { data: checkInData } = isActiveReservation
+  const { data: checkInData } = canShowCheckIn
     ? await supabase.rpc("student_reservation_checkin_token", {
         target_reservation_id: reservationId,
       })
