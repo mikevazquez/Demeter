@@ -25,6 +25,10 @@ describe("RECURSOS-01 admin configuration", () => {
     join(process.cwd(), "supabase/migrations/20260922061500_recursos01_admin_map_rpc.sql"),
     "utf8",
   );
+  const wallSupport = readFileSync(
+    join(process.cwd(), "supabase/migrations/20260922074500_recursos01_map_wall_element.sql"),
+    "utf8",
+  );
 
   it("exposes the resource configuration from studio settings", () => {
     expect(settings).toContain('href="/admin/configuracion/recursos"');
@@ -32,8 +36,8 @@ describe("RECURSOS-01 admin configuration", () => {
   });
 
   it("keeps global resources separate from per-session usage", () => {
-    expect(configurationPage).toContain("Define qué recursos físicos existen");
-    expect(configurationPage).toContain("Las reglas de uso se");
+    expect(configurationPage).toContain("Define los recursos físicos");
+    expect(configurationPage).toContain("Studio Flow reutiliza");
     expect(configurationPage).not.toContain("capacity_override");
     expect(configurationPage).not.toContain("resource_uses_per_item");
   });
@@ -55,8 +59,7 @@ describe("RECURSOS-01 admin configuration", () => {
     expect(editor).toContain("onPointerDown");
     expect(editor).toContain("onPointerMove");
     expect(editor).toContain("Girar +15°");
-    expect(editor).toContain("Centrar X");
-    expect(editor).toContain("Centrar Y");
+    expect(editor).toContain("Centrar");
     expect(editor).toContain("Vista previa");
     expect(editor).toContain("Deshacer");
     expect(editor).toContain("Rehacer");
@@ -66,7 +69,10 @@ describe("RECURSOS-01 admin configuration", () => {
     expect(editor).toContain('makeReference("door", "Puerta")');
     expect(editor).toContain('makeReference("mirror", "Espejo")');
     expect(editor).toContain('makeReference("window", "Ventana")');
-    expect(editor).toContain('makeReference("label", "Referencia")');
+    expect(editor).toContain('makeReference("label", "Etiqueta")');
+    expect(editor).toContain('makeReference("wall", "División")');
+    expect(editor).toContain("Mostrar cuadrícula");
+    expect(editor).toContain("Ajustar a cuadrícula");
     expect(editor).toContain("resourceElement(resource)");
     expect(mapPage).toContain("initialElements");
   });
@@ -77,5 +83,18 @@ describe("RECURSOS-01 admin configuration", () => {
     expect(mapRpc).toContain("delete from public.space_map_elements");
     expect(mapRpc).toContain("jsonb_array_elements(p_elements)");
     expect(mapRpc).toContain("private.has_capability(v_space.studio_id, 'settings.write')");
+    expect(wallSupport).toContain("'resource', 'wall', 'door', 'mirror', 'window', 'label'");
+  });
+
+  it("matches the approved R01/R02 visual composition", () => {
+    expect(configurationPage).toContain("<h1>Recursos</h1>");
+    expect(configurationPage).toContain("Distribución física");
+    expect(configurationPage).toContain("recursos configurados");
+    expect(editor).toContain("Elementos");
+    expect(editor).toContain("ESTRUCTURA");
+    expect(editor).toContain("REFERENCIAS");
+    expect(editor).toContain("RECURSOS");
+    expect(editor).toContain("PROPIEDADES");
+    expect(editor).toContain("Guardar cambios");
   });
 });
