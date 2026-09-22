@@ -12,6 +12,7 @@ import {
   confirmExistingGuestInvitationAction,
   createGuestInvitationAction,
 } from "../../actions";
+import { ReservationCheckInQr } from "./ReservationCheckInQr";
 
 const statusCopy: Record<string, string> = {
   reserved: "Reservada",
@@ -45,6 +46,16 @@ type InvitationContactMatch = {
   person_id?: string;
   display_name?: string | null;
   lifecycle_status?: string | null;
+};
+
+type CheckInTokenData = {
+  ok?: boolean;
+  reason_code?: string;
+  reservation_id?: string;
+  session_id?: string;
+  token?: string;
+  check_in_opens_at?: string;
+  check_in_closes_at?: string;
 };
 
 const inviteErrorCopy: Record<string, string> = {
@@ -132,6 +143,33 @@ export default async function StudentReservationDetailPage({
     ? (inviteErrorCopy[query.invite_error] ?? inviteErrorCopy.invite_failed)
     : null;
 
+  const { data: checkInData } = isActiveReservation
+    ? await supabase.rpc("student_reservation_checkin_token", {
+        target_reservation_id: reservationId,
+      })
+    : { data: null };
+  const checkIn = (checkInData as CheckInTokenData | null) ?? null;
+
+  const guestCheckIns = isActiveReservation
+    ? await Promise.all(
+        activeGuests
+          .filter((guest) => guest.status === "active")
+          .map(async (guest) => {
+            const { data: guestCheckInData } = await supabase.rpc(
+              "student_reservation_checkin_token",
+              {
+                target_reservation_id: guest.guest_reservation_id,
+              },
+            );
+
+            return {
+              guest,
+              checkIn: (guestCheckInData as CheckInTokenData | null) ?? null,
+            };
+          }),
+      )
+    : [];
+
   return (
     <main className="mx-auto max-w-2xl space-y-4 pb-4">
       <Link
@@ -182,6 +220,47 @@ export default async function StudentReservationDetailPage({
           </div>
         </dl>
       </section>
+
+      {checkIn?.ok && checkIn.token ? (
+        <section
+          data-feature="kiosco-01-reservation-qr"
+          className="rounded-3xl border border-fuchsia-500/20 bg-gradient-to-b from-fuchsia-500/[0.07] to-white/[0.025] p-4"
+        >
+          <div className="text-center">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-fuchsia-300">
+              Check-in
+            </p>
+            <h2 className="mt-1 text-lg font-semibold text-white">Tu código de acceso</h2>
+            <p className="mx-auto mt-2 max-w-sm text-xs leading-5 text-zinc-400">
+              Muéstralo en el kiosco al llegar. Este código corresponde únicamente a esta reserva.
+            </p>
+          </div>
+
+          <div className="mt-4">
+            <ReservationCheckInQr token={checkIn.token} label="Tu reserva" />
+          </div>
+
+          {guestCheckIns.some((entry) => entry.checkIn?.ok && entry.checkIn.token) ? (
+            <div className="mt-4 border-t border-white/10 pt-4">
+              <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-zinc-500">
+                Invitados
+              </p>
+              <div className="space-y-2">
+                {guestCheckIns.map(({ guest, checkIn: guestCheckIn }) =>
+                  guestCheckIn?.ok && guestCheckIn.token ? (
+                    <ReservationCheckInQr
+                      key={guest.guest_reservation_id}
+                      token={guestCheckIn.token}
+                      label={guest.guest_name}
+                      compact
+                    />
+                  ) : null,
+                )}
+              </div>
+            </div>
+          ) : null}
+        </section>
+      ) : null}
 
       {isActiveReservation && showInvitationBenefit ? (
         <section
