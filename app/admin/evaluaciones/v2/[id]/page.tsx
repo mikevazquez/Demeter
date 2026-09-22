@@ -16,7 +16,6 @@ import {
   openEvaluationV2EditorAction,
   saveEvaluationV2GeneralAction,
   updateEvaluationV2BlockAction,
-  updateEvaluationV2ItemAction,
 } from "../../v2-actions";
 
 type EditorTab = "apartados" | "reglas" | "preview";
@@ -283,15 +282,12 @@ export default async function EvaluationV2EditorPage({
               <input type="hidden" name="version_id" value={version.id} />
               <input type="hidden" name="block_id" value={activeBlock.id} />
               <input type="hidden" name="description" value={activeBlock.description ?? ""} />
-              <input type="hidden" name="min_percent" value={activeBlock.min_percent ?? ""} />
+              <input type="hidden" name="min_percent" value="" />
               <input
                 type="hidden"
                 name="evaluator_instructions"
                 value={activeBlock.evaluator_instructions ?? ""}
               />
-              {activeBlock.progression_required ? (
-                <input type="hidden" name="progression_required" value="on" />
-              ) : null}
               <input type="hidden" name="return_view" value="content" />
 
               <label className="eval-simple-field">
@@ -521,105 +517,6 @@ export default async function EvaluationV2EditorPage({
 
           <details className="eval-simple-accordion">
             <summary>
-              <span>⚙</span>
-              <strong>Reglas para avanzar (opcional)</strong>
-              <span>›</span>
-            </summary>
-            <div className="eval-simple-accordion-body">
-              <form action={updateEvaluationV2BlockAction} className="eval-simple-form">
-                <input type="hidden" name="template_id" value={template.id} />
-                <input type="hidden" name="version_id" value={version.id} />
-                <input type="hidden" name="block_id" value={activeBlock.id} />
-                <input type="hidden" name="label" value={activeBlock.label} />
-                <input type="hidden" name="description" value={activeBlock.description ?? ""} />
-                <input type="hidden" name="weight_percent" value={activeBlock.weight_percent} />
-                <input type="hidden" name="block_type" value={normalizedType} />
-                <input
-                  type="hidden"
-                  name="evaluator_instructions"
-                  value={activeBlock.evaluator_instructions ?? ""}
-                />
-                <input type="hidden" name="return_view" value="content" />
-
-                <label className="eval-simple-field">
-                  <span>Mínimo del apartado</span>
-                  <div className="eval-simple-percent-field">
-                    <input
-                      name="min_percent"
-                      type="number"
-                      min="0"
-                      max="100"
-                      step="0.01"
-                      defaultValue={activeBlock.min_percent ?? ""}
-                      placeholder="Opcional"
-                    />
-                    <span>%</span>
-                  </div>
-                </label>
-                <label className="eval-simple-check">
-                  <input
-                    name="progression_required"
-                    type="checkbox"
-                    defaultChecked={activeBlock.progression_required}
-                  />
-                  <span>Este apartado debe cumplirse para avanzar de nivel</span>
-                </label>
-                <button className="eval-simple-secondary" type="submit">
-                  Guardar reglas
-                </button>
-              </form>
-
-              {blockItems.length ? (
-                <div className="eval-simple-requirements-list">
-                  <span>Elementos indispensables</span>
-                  {blockItems.map((item) => (
-                    <form action={updateEvaluationV2ItemAction} key={item.id}>
-                      <input type="hidden" name="template_id" value={template.id} />
-                      <input type="hidden" name="version_id" value={version.id} />
-                      <input type="hidden" name="block_id" value={activeBlock.id} />
-                      <input type="hidden" name="item_id" value={item.id} />
-                      <input type="hidden" name="label" value={itemLabel(item)} />
-                      <input
-                        type="hidden"
-                        name="item_weight_percent"
-                        value={item.item_weight_percent ?? ""}
-                      />
-                      <label className="eval-simple-check">
-                        <input
-                          name="progression_required"
-                          type="checkbox"
-                          defaultChecked={Boolean(item.progression_required || item.mandatory)}
-                        />
-                        <span>{itemLabel(item)}</span>
-                      </label>
-                      {item.scored ? (
-                        <label className="eval-simple-requirement-min">
-                          <span>Mínimo</span>
-                          <input
-                            name="min_score"
-                            type="number"
-                            min="0"
-                            max={item.max_score}
-                            step="0.01"
-                            defaultValue={item.min_score ?? ""}
-                            placeholder="0"
-                          />
-                        </label>
-                      ) : (
-                        <input type="hidden" name="min_score" value="" />
-                      )}
-                      <button className="eval-simple-mini-save" type="submit">
-                        Guardar
-                      </button>
-                    </form>
-                  ))}
-                </div>
-              ) : null}
-            </div>
-          </details>
-
-          <details className="eval-simple-accordion">
-            <summary>
               <span>▤</span>
               <strong>Instrucciones para el evaluador (opcional)</strong>
               <span>›</span>
@@ -635,10 +532,7 @@ export default async function EvaluationV2EditorPage({
               <input type="hidden" name="description" value={activeBlock.description ?? ""} />
               <input type="hidden" name="weight_percent" value={activeBlock.weight_percent} />
               <input type="hidden" name="block_type" value={normalizedType} />
-              <input type="hidden" name="min_percent" value={activeBlock.min_percent ?? ""} />
-              {activeBlock.progression_required ? (
-                <input type="hidden" name="progression_required" value="on" />
-              ) : null}
+              <input type="hidden" name="min_percent" value="" />
               <input type="hidden" name="return_view" value="content" />
               <label className="eval-simple-field">
                 <span>Indicaciones para el coach</span>
