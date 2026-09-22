@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
 import { SessionOperations } from "./SessionOperations";
@@ -63,6 +64,7 @@ export function TodayClasses({
   canCorrectCompleted = true,
   serverNow,
 }: TodayClassesProps) {
+  const router = useRouter();
   const initialNow = useMemo(() => new Date(serverNow).getTime(), [serverNow]);
   const [now, setNow] = useState(initialNow);
   useEffect(() => {
@@ -73,6 +75,17 @@ export function TodayClasses({
     }, 1000);
     return () => window.clearInterval(interval);
   }, [initialNow]);
+
+  const hasLiveOrClosingSession = classes.some((item) => {
+    if (item.sessionStatus !== "scheduled") return false;
+    return now >= new Date(item.startsAt).getTime();
+  });
+
+  useEffect(() => {
+    if (!hasLiveOrClosingSession) return;
+    const interval = window.setInterval(() => router.refresh(), 8000);
+    return () => window.clearInterval(interval);
+  }, [hasLiveOrClosingSession, router]);
 
   const [openSessionId, setOpenSessionId] = useState<string | null>(() => {
     if (typeof window === "undefined") return null;
