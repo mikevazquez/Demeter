@@ -18,6 +18,8 @@ function evaluationError(error: { message?: string } | null) {
     "evaluation_invitation_window_invalid",
     "evaluation_invitation_cadence_invalid",
     "evaluation_level_not_available",
+    "evaluation_placement_level_required",
+    "evaluation_level_mismatch",
     "evaluation_reservation_not_active",
     "evaluation_not_scheduled",
   ];
@@ -31,6 +33,7 @@ export async function inviteStudentToEvaluationAction(formData: FormData) {
   const windowStart = value(formData, "window_start");
   const windowEnd = value(formData, "window_end");
   const cadenceMonths = Number(value(formData, "cadence_months") || "3");
+  const disciplineLevelId = value(formData, "discipline_level_id") || null;
 
   const returnTo = `/admin/alumnas/${studentId}?view=evaluations`;
 
@@ -38,12 +41,13 @@ export async function inviteStudentToEvaluationAction(formData: FormData) {
     redirect(`${returnTo}&evaluation_error=evaluation_invitation_window_invalid`);
   }
 
-  const { error } = await ctx.supabase.rpc("admin_create_evaluation_invitation", {
+  const { error } = await ctx.supabase.rpc("admin_create_evaluation_invitation_v2", {
     p_student_id: studentId,
     p_discipline_id: disciplineId,
     p_window_start: windowStart,
     p_window_end: windowEnd,
     p_cadence_months: cadenceMonths,
+    p_discipline_level_id: disciplineLevelId,
   });
 
   if (error) {
