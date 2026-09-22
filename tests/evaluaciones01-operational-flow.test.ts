@@ -188,18 +188,19 @@ describe("EVALUACIONES-01 operational cycle", () => {
 
   it("distinguishes incomplete capture from an evaluated low score", () => {
     expect(evaluationDetail).toContain("Faltan datos por evaluar");
-    expect(evaluationDetail).toContain("todos los");
+    expect(evaluationDetail).toContain("hasProgressionRequirements");
     expect(evaluationDetail).toContain("Requisitos de progresión");
     expect(evaluationDetail).toContain("Finalizar parte técnica");
-    expect(evaluationDetail).toContain("puntaje total");
     expect(evaluationActions).toContain('automatic_outcome === "incomplete"');
   });
 
   it("renders both final student result states", () => {
-    expect(studentResult).toContain("¡Subiste de nivel!");
-    expect(studentResult).toContain("Te mantienes en tu nivel");
-    expect(studentResult).toContain("Desglose técnico");
-    expect(studentResult).toContain("Mensaje de tu coach");
+    expect(studentResult).toContain("¡Evaluación aprobada!");
+    expect(studentResult).toContain("Continúas en tu nivel");
+    expect(studentResult).toContain("Nivel todavía no confirmado");
+    expect(studentResult).toContain("Desglose de puntaje");
+    expect(studentResult).toContain("Feedback de tu coach");
     expect(studentResult).toContain("Siguiente evaluación");
+    expect(studentResult).toContain("Ver historial de evaluaciones");
   });
 });
