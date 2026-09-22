@@ -15,6 +15,9 @@ describe("SF-N14 clean avatar, activity colors and single-class purchase", () =>
   const agenda = source("app/admin/agenda/page.tsx");
   const activityWizard = source("app/admin/actividades/ActivityWizard.tsx");
   const activityActions = source("app/admin/actividades/actions.ts");
+  const atomicActivitySave = source(
+    "supabase/migrations/20260922155500_actividades01_atomic_save.sql",
+  );
   const reserve = source("app/student/reservar/page.tsx");
   const detail = source("app/student/reservar/[sessionId]/page.tsx");
   const colorMigration = source(
@@ -57,7 +60,8 @@ describe("SF-N14 clean avatar, activity colors and single-class purchase", () =>
     expect(colorMigration).toContain("add column if not exists color_hex");
     expect(activityWizard).toContain('type="color"');
     expect(activityWizard).toContain("Color en el horario");
-    expect(activityActions).toContain("color_hex: colorHex");
+    expect(activityActions).toContain("p_color_hex: colorHex");
+    expect(atomicActivitySave).toContain("color_hex = upper(p_color_hex)");
     expect(agenda).toContain('"--agenda-session-color": session.color');
     expect(reserve).toContain("borderLeftColor: activityColor");
     expect(detail).toContain('select("color_hex")');
