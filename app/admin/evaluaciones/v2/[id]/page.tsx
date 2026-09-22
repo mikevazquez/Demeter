@@ -6,14 +6,13 @@ import { notFound } from "next/navigation";
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 
-import { AutoSubmitInput } from "./AutoSubmitInput";
+import { EvaluationAspectRow } from "./EvaluationAspectRow";
 
 import {
   activateEvaluationV2Action,
   addEvaluationV2BlockAction,
   addEvaluationV2ItemAction,
   deleteEvaluationV2BlockAction,
-  deleteEvaluationV2ItemAction,
   openEvaluationV2EditorAction,
   saveEvaluationV2GeneralAction,
   updateEvaluationV2BlockAction,
@@ -433,55 +432,19 @@ export default async function EvaluationV2EditorPage({
           ) : (
             <div className="eval-simple-item-list">
               {blockItems.map((item) => (
-                <form action={updateEvaluationV2ItemAction} className="eval-simple-item-row" key={item.id}>
-                  <input type="hidden" name="template_id" value={template.id} />
-                  <input type="hidden" name="version_id" value={version.id} />
-                  <input type="hidden" name="block_id" value={activeBlock.id} />
-                  <input type="hidden" name="item_id" value={item.id} />
-                  <input type="hidden" name="min_score" value={item.min_score ?? ""} />
-                  {Boolean(item.progression_required || item.mandatory) ? (
-                    <input type="hidden" name="progression_required" value="on" />
-                  ) : null}
-
-                  <span className="eval-simple-drag" aria-hidden="true">⠿</span>
-                  <AutoSubmitInput
-                    ariaLabel={`Nombre de ${itemLabel(item)}`}
-                    className="eval-simple-item-name"
-                    defaultValue={itemLabel(item)}
-                    disabled={!editable}
-                    name="label"
-                  />
-                  {normalizedType === "weighted_criteria" ? (
-                    <div className="eval-simple-item-percent">
-                      <AutoSubmitInput
-                        ariaLabel={`Peso de ${itemLabel(item)}`}
-                        defaultValue={item.item_weight_percent ?? ""}
-                        disabled={!editable}
-                        max={100}
-                        min={0}
-                        name="item_weight_percent"
-                        step="0.01"
-                        type="number"
-                      />
-                      <span>%</span>
-                    </div>
-                  ) : (
-                    <input type="hidden" name="item_weight_percent" value="" />
-                  )}
-                  {editable ? (
-                    <button
-                      className="eval-simple-row-delete"
-                      type="submit"
-                      formAction={deleteEvaluationV2ItemAction}
-                      aria-label={`Eliminar ${itemLabel(item)}`}
-                    >
-                      ⌫
-                    </button>
-                  ) : null}
-                  <button className="eval-simple-hidden-submit" type="submit" aria-hidden="true">
-                    Guardar
-                  </button>
-                </form>
+                <EvaluationAspectRow
+                  key={item.id}
+                  templateId={template.id}
+                  versionId={version.id}
+                  blockId={activeBlock.id}
+                  itemId={item.id}
+                  name={itemLabel(item)}
+                  weightPercent={item.item_weight_percent}
+                  minScore={item.min_score}
+                  progressionRequired={Boolean(item.progression_required || item.mandatory)}
+                  weighted={normalizedType === "weighted_criteria"}
+                  editable={editable}
+                />
               ))}
             </div>
           )}
