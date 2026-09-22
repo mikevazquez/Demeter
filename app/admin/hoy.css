@@ -1513,3 +1513,33 @@
   font-size: 9px !important;
   font-weight: 800;
 }
+
+
+/* CANCELACION-MIN-01 · badges en lista de clases */
+.today-class-capacity {
+  display: grid;
+  justify-items: end;
+  gap: 4px;
+}
+
+.today-class-minimum-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 20px;
+  padding: 0 7px;
+  border: 1px solid rgba(255, 10, 138, 0.4);
+  border-radius: 999px;
+  background: rgba(255, 10, 138, 0.08);
+  color: #ff76bd;
+  font-size: 8px;
+  font-weight: 850;
+  letter-spacing: 0.02em;
+}
+
+@media (max-width: 760px) {
+  .today-class-minimum-badge {
+    min-height: 18px;
+    padding-inline: 6px;
+    font-size: 7px;
+  }
+}
