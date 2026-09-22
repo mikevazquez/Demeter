@@ -23,7 +23,7 @@ export default async function MyClassesPage({
   searchParams: Promise<{ date?: string; error?: string }>;
 }) {
   const query = await searchParams;
-  const { supabase, studio, membership, user } = await getAdminContext(CAPABILITIES.SCHEDULE_READ);
+  const { supabase, studio, membership } = await getAdminContext(CAPABILITIES.SCHEDULE_READ);
 
   if (membership.role !== "instructor") {
     return (
@@ -40,6 +40,14 @@ export default async function MyClassesPage({
     );
   }
 
+  const { data: currentInstructor } = await supabase
+    .from("instructors")
+    .select("id")
+    .eq("studio_id", studio.id)
+    .eq("person_id", membership.person_id)
+    .eq("status", "active")
+    .maybeSingle();
+
   const today = localDateKey(new Date(), studio.timezone);
   const tomorrow = addDays(today, 1);
   const selectedDate = isDateKey(query.date) ? query.date! : today;
@@ -49,15 +57,17 @@ export default async function MyClassesPage({
       target_start: selectedDate,
       target_end: selectedDate,
     }),
-    supabase
-      .from("app_notifications")
-      .select("id,title,body,notification_type,created_at,payload")
-      .eq("recipient_user_id", user.id)
-      .eq("recipient_kind", "instructor")
-      .is("read_at", null)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle(),
+    currentInstructor
+      ? supabase
+          .from("app_notifications")
+          .select("id,title,body,notification_type,created_at,payload")
+          .eq("instructor_id", currentInstructor.id)
+          .eq("recipient_kind", "instructor")
+          .is("read_at", null)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
   ]);
   const sessions = (data ?? []) as CoachSession[];
 
