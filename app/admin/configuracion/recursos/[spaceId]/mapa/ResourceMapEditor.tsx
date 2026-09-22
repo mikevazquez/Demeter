@@ -105,8 +105,7 @@ export function ResourceMapEditor({
         (resource) =>
           resource.active &&
           !elements.some(
-            (element) =>
-              element.element_kind === "resource" && element.resource_id === resource.id,
+            (element) => element.element_kind === "resource" && element.resource_id === resource.id,
           ),
       ),
     [elements, resources],
@@ -118,11 +117,7 @@ export function ResourceMapEditor({
     setElements(next);
   }
 
-  function updateElement(
-    id: string,
-    change: Partial<EditableMapElement>,
-    recordHistory = true,
-  ) {
+  function updateElement(id: string, change: Partial<EditableMapElement>, recordHistory = true) {
     const next = elements.map((item) => (item.id === id ? { ...item, ...change } : item));
     if (recordHistory) {
       commit(next);
@@ -311,16 +306,10 @@ export function ResourceMapEditor({
               <button type="button" onClick={() => addElement(makeReference("door", "Puerta"))}>
                 Puerta
               </button>
-              <button
-                type="button"
-                onClick={() => addElement(makeReference("mirror", "Espejo"))}
-              >
+              <button type="button" onClick={() => addElement(makeReference("mirror", "Espejo"))}>
                 Espejo
               </button>
-              <button
-                type="button"
-                onClick={() => addElement(makeReference("window", "Ventana"))}
-              >
+              <button type="button" onClick={() => addElement(makeReference("window", "Ventana"))}>
                 Ventana
               </button>
               <button
@@ -363,11 +352,7 @@ export function ResourceMapEditor({
                   <input
                     value={selected.label ?? ""}
                     onChange={(event) =>
-                      updateElement(
-                        selected.id,
-                        { label: event.target.value || null },
-                        false,
-                      )
+                      updateElement(selected.id, { label: event.target.value || null }, false)
                     }
                     onBlur={() => {
                       setHistory((items) => [...items.slice(-39), elements]);
@@ -391,8 +376,7 @@ export function ResourceMapEditor({
                     type="button"
                     onClick={() =>
                       updateElement(selected.id, {
-                        rotation_degrees:
-                          (selected.rotation_degrees - 15 + 360) % 360,
+                        rotation_degrees: (selected.rotation_degrees - 15 + 360) % 360,
                       })
                     }
                   >
@@ -426,9 +410,7 @@ export function ResourceMapEditor({
                     Duplicar
                   </button>
                   <button type="button" onClick={removeSelected}>
-                    {selected.element_kind === "resource"
-                      ? "Quitar del mapa"
-                      : "Eliminar"}
+                    {selected.element_kind === "resource" ? "Quitar del mapa" : "Eliminar"}
                   </button>
                 </div>
               </div>
