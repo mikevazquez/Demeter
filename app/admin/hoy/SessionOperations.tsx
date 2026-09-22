@@ -22,6 +22,7 @@ type RosterItem = {
   evaluationStatus?: string | null;
   attendanceSource?: string | null;
   checkedInAt?: string | null;
+  attendanceProvenance?: string | null;
 };
 
 type Candidate = {
@@ -102,7 +103,8 @@ export function SessionOperations({
   const inProgress =
     sessionStatus === "scheduled" && now !== null && now >= startsAtMs && now < endsAtMs;
   const sessionOpen = sessionStatus === "scheduled";
-  const canAddExisting = sessionOpen && canBook;
+  const canPostCloseAdd = isCompleted && canCorrectCompleted && canAttendance;
+  const canAddExisting = (sessionOpen && canBook) || canPostCloseAdd;
   const canAddNew = sessionOpen && canCreateStudent;
   const canAddWalkin = canAddExisting || canAddNew;
   const showNewWalkin = canAddNew && (newWalkin || !canAddExisting);
@@ -135,8 +137,10 @@ export function SessionOperations({
                 ? "Asistencia finalizada correctamente."
                 : created === "attendance-corrected"
                   ? "Corrección registrada correctamente."
-                  : created === "walkin"
-                    ? "Walk-in registrada y agregada a la clase."
+                  : created === "post-close-attendee"
+                    ? "Asistencia agregada después del cierre."
+                    : created === "walkin"
+                      ? "Walk-in registrada y agregada a la clase."
                     : created === "walkin-existing"
                       ? "Alumna agregada a la clase."
                       : created === "cancel"
@@ -250,15 +254,22 @@ export function SessionOperations({
                             : `${item.packageLabel} · ${item.creditsLabel}`}
                         </span>
                         {item.status === "attended" ? (
-                          <span className="today-attendance-origin">
-                            {item.attendanceSource === "KIOSK" ? "Check-in" : "Manual"}
-                            {item.checkedInAt
-                              ? ` · ${new Intl.DateTimeFormat("es-MX", {
-                                  hour: "2-digit",
-                                  minute: "2-digit",
-                                }).format(new Date(item.checkedInAt))}`
-                              : ""}
-                          </span>
+                          <>
+                            <span className="today-attendance-origin">
+                              {item.attendanceSource === "KIOSK" ? "Check-in" : "Manual"}
+                              {item.checkedInAt
+                                ? ` · ${new Intl.DateTimeFormat("es-MX", {
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  }).format(new Date(item.checkedInAt))}`
+                                : ""}
+                            </span>
+                            {item.attendanceProvenance ? (
+                              <span className="today-attendance-origin">
+                                {item.attendanceProvenance}
+                              </span>
+                            ) : null}
+                          </>
                         ) : null}
                         {item.evaluationStatus === "scheduled" &&
                         item.evaluationInvitationId &&
@@ -416,14 +427,15 @@ export function SessionOperations({
                       </option>
                       {candidates.map((candidate) => {
                         const canFallbackToWalkin = walkinFallbackDetails.has(candidate.detail);
+                        const disabled =
+                          !canPostCloseAdd && !candidate.eligible && !canFallbackToWalkin;
                         return (
-                          <option
-                            key={candidate.id}
-                            value={candidate.id}
-                            disabled={!candidate.eligible && !canFallbackToWalkin}
-                          >
-                            {candidate.fullName} · {candidate.detail}
-                            {candidate.eligible
+                          <option key={candidate.id} value={candidate.id} disabled={disabled}>
+                            {candidate.fullName} ·{" "}
+                            {canPostCloseAdd
+                              ? "agregar después del cierre"
+                              : candidate.detail}
+                            {canPostCloseAdd || candidate.eligible
                               ? ""
                               : canFallbackToWalkin
                                 ? " · walk-in / venta pendiente"
