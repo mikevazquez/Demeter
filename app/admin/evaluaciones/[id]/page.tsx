@@ -296,6 +296,14 @@ export default async function TechnicalEvaluationDetailPage({
   const liveCompleted = isV2 ? v2CompletedUnits : evaluatedItems;
   const liveTotal = isV2 ? v2TotalUnits : totalItems;
 
+  const progressionRequirementItems = templateElements.filter((item) =>
+    isV2 ? Boolean(item.progression_required || item.mandatory) : item.mandatory,
+  );
+  const progressionRequirementsMet = progressionRequirementItems.filter(
+    (item) => elementResultMap.get(item.id)?.result_status === "meets",
+  ).length;
+  const hasProgressionRequirements = progressionRequirementItems.length > 0;
+
   const isPublished = evaluation.status === "published";
   const step = isPublished ? "published" : (qs.step ?? "live");
 
@@ -446,29 +454,16 @@ export default async function TechnicalEvaluationDetailPage({
           ) : null}
 
           <section className="eval-feedback-grid">
-            <article className="eval-panel eval-feedback-card">
-              <h3>Requisitos de progresión</h3>
-              <p className="eval-row-copy">
-                <small>
-                  {
-                    templateElements.filter(
-                      (item) =>
-                        (isV2
-                          ? Boolean(item.progression_required || item.mandatory)
-                          : item.mandatory) &&
-                        elementResultMap.get(item.id)?.result_status === "meets",
-                    ).length
-                  }{" "}
-                  /{" "}
-                  {
-                    templateElements.filter((item) =>
-                      isV2 ? Boolean(item.progression_required || item.mandatory) : item.mandatory,
-                    ).length
-                  }{" "}
-                  cumplen
-                </small>
-              </p>
-            </article>
+            {hasProgressionRequirements ? (
+              <article className="eval-panel eval-feedback-card">
+                <h3>Requisitos de progresión</h3>
+                <p className="eval-row-copy">
+                  <small>
+                    {progressionRequirementsMet} / {progressionRequirementItems.length} cumplen
+                  </small>
+                </p>
+              </article>
+            ) : null}
             {!isV2 ? (
               <article className="eval-panel eval-feedback-card">
                 <h3>Requisitos de progresión · Combos</h3>
@@ -499,11 +494,11 @@ export default async function TechnicalEvaluationDetailPage({
               </article>
             )}
           </section>
-          <p className="eval-summary-hint">
-            Los requisitos de progresión son una condición para subir de nivel, pero todos los
-            elementos de la evaluación deben tener resultado. El resultado global también depende
-            del puntaje total y de los mínimos configurados.
-          </p>
+          {hasProgressionRequirements ? (
+            <p className="eval-summary-hint">
+              Los requisitos de progresión son una condición adicional para subir de nivel.
+            </p>
+          ) : null}
         </>
       ) : null}
 
