@@ -248,7 +248,9 @@ export function KioskScanner({ studioName }: { studioName: string }) {
 
             {feedback ? (
               <div className="absolute inset-0 flex items-center justify-center bg-[#09090d]/92 p-6 backdrop-blur-sm">
-                <div className={`w-full max-w-lg rounded-[2rem] border p-7 text-center ${feedbackTone}`}>
+                <div
+                  className={`w-full max-w-lg rounded-[2rem] border p-7 text-center ${feedbackTone}`}
+                >
                   <div
                     className={`mx-auto flex h-16 w-16 items-center justify-center rounded-full border text-3xl ${
                       feedback.kind === "success"
