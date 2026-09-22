@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { SessionOperations } from "../../hoy/SessionOperations";
-import { cancelSession, updateSession } from "./actions";
+import { cancelSession, setMinimumOverride, updateSession } from "./actions";
 
 type EligibilityResult = {
   eligible?: boolean;
@@ -38,6 +38,25 @@ function validDateKey(value: string | undefined) {
   return Boolean(value && /^\d{4}-\d{2}-\d{2}$/.test(value));
 }
 
+function formatSessionDateTime(value: string | null, timeZone: string) {
+  if (!value) return "—";
+  return new Intl.DateTimeFormat("es-MX", {
+    timeZone,
+    day: "numeric",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(value));
+}
+
+function minimumStatusCopy(status: string) {
+  if (status === "met") return "Mínimo alcanzado";
+  if (status === "cancelled") return "Cancelada automáticamente";
+  if (status === "overridden") return "Excepción activa";
+  if (status === "pending") return "Revisión pendiente";
+  return "Sin revisión automática";
+}
+
 export default async function SessionDetailPage({
   params,
   searchParams,
@@ -52,7 +71,7 @@ export default async function SessionDetailPage({
   const { data: session } = await supabase
     .from("class_sessions")
     .select(
-      "id,template_id,starts_at,ends_at,capacity,status,notes,space_id,instructor_id,recurring_schedule_id,is_schedule_exception,requires_resource,resource_uses_per_item",
+      "id,template_id,starts_at,ends_at,capacity,status,notes,space_id,instructor_id,recurring_schedule_id,is_schedule_exception,requires_resource,resource_uses_per_item,minimum_reservations_enabled,minimum_reservations,minimum_review_minutes_before,minimum_override_allowed,minimum_override,minimum_review_status,minimum_review_at,minimum_reviewed_at,minimum_reservations_at_review,minimum_cancelled_at,minimum_cancelled_reservations,minimum_credits_returned",
     )
     .eq("id", sessionId)
     .eq("studio_id", studio.id)
@@ -301,9 +320,16 @@ export default async function SessionDetailPage({
     forbidden: "No tienes permisos para realizar esta acción.",
     attendance: "No se pudo registrar la asistencia.",
     walkin_invalid: "Completa los datos mínimos para registrar la walk-in.",
+    minimum_override: "No se pudo cambiar la excepción del mínimo de reservas.",
+    minimum_review_already_completed: "La revisión automática de esta sesión ya terminó.",
+    minimum_rule_disabled: "Esta sesión no tiene activa la regla de mínimo de reservas.",
+    minimum_override_not_allowed: "La actividad no permite excepciones para esta regla.",
   };
 
-  const showManagementNotice = query.created === "edit" || query.created === "cancel-session";
+  const showManagementNotice =
+    query.created === "edit" ||
+    query.created === "cancel-session" ||
+    query.created === "minimum-override";
 
   const { data: sessionResourceRows } = session.requires_resource
     ? await supabase
@@ -370,6 +396,104 @@ export default async function SessionDetailPage({
           <small>Ausencias registradas</small>
         </article>
       </section>
+
+      {session.minimum_reservations_enabled ? (
+        <section
+          className={`panel admin-minimum-status is-${session.minimum_review_status}`}
+          aria-label="Mínimo de reservas"
+        >
+          <div className="admin-minimum-status-head">
+            <div>
+              <p className="eyebrow">MÍNIMO DE RESERVAS</p>
+              <h2>{minimumStatusCopy(session.minimum_review_status)}</h2>
+              <p>
+                {occupied} de {session.capacity} reservados · mínimo {session.minimum_reservations}
+              </p>
+            </div>
+            <span className="admin-minimum-status-pill">
+              {minimumStatusCopy(session.minimum_review_status)}
+            </span>
+          </div>
+
+          <div className="admin-minimum-grid">
+            <div>
+              <span>Reservas actuales</span>
+              <strong>{occupied}</strong>
+            </div>
+            <div>
+              <span>Mínimo requerido</span>
+              <strong>{session.minimum_reservations}</strong>
+            </div>
+            <div>
+              <span>Revisión automática</span>
+              <strong>{formatSessionDateTime(session.minimum_review_at, timeZone)}</strong>
+            </div>
+            <div>
+              <span>Estado</span>
+              <strong>{minimumStatusCopy(session.minimum_review_status)}</strong>
+            </div>
+          </div>
+
+          {session.minimum_review_status === "cancelled" ? (
+            <div className="admin-minimum-cancelled-detail">
+              <strong>Sesión cancelada por mínimo no alcanzado</strong>
+              <p>
+                Cancelada {formatSessionDateTime(session.minimum_cancelled_at, timeZone)} · mínimo
+                requerido: {session.minimum_reservations} · reservas al revisar:{" "}
+                {session.minimum_reservations_at_review ?? 0}.
+              </p>
+              <p>
+                Reservas canceladas: {session.minimum_cancelled_reservations ?? 0} · créditos
+                devueltos: {session.minimum_credits_returned ?? 0}.
+              </p>
+            </div>
+          ) : null}
+
+          {session.minimum_review_status === "met" ? (
+            <div className="admin-minimum-success">
+              <span>✓</span>
+              <p>
+                La revisión se completó{" "}
+                {formatSessionDateTime(session.minimum_reviewed_at, timeZone)} con{" "}
+                {session.minimum_reservations_at_review ?? occupied} reservas. Esta sesión ya no
+                volverá a evaluarse automáticamente.
+              </p>
+            </div>
+          ) : null}
+
+          {session.minimum_review_status === "overridden" ? (
+            <div className="admin-minimum-override-note">
+              Esta sesión se impartirá aunque no alcance el mínimo. La regla general de la actividad
+              no cambia.
+            </div>
+          ) : null}
+
+          {canEdit &&
+          session.status === "scheduled" &&
+          session.minimum_override_allowed &&
+          (session.minimum_review_status === "pending" ||
+            session.minimum_review_status === "overridden") ? (
+            <form action={setMinimumOverride} className="admin-minimum-override-form">
+              <input type="hidden" name="session_id" value={sessionId} />
+              <input type="hidden" name="return_to" value={returnTo} />
+              <input
+                type="hidden"
+                name="enabled"
+                value={session.minimum_override ? "false" : "true"}
+              />
+              <div>
+                <strong>Impartir aunque no alcance el mínimo</strong>
+                <small>
+                  Esta excepción aplica únicamente a esta sesión y no modifica la actividad.
+                </small>
+              </div>
+              <button type="submit" className={session.minimum_override ? "is-active" : ""}>
+                {session.minimum_override ? "Quitar excepción" : "Activar excepción"}
+              </button>
+            </form>
+          ) : null}
+        </section>
+      ) : null}
 
       <section className="panel admin-class-operations-panel">
         <SessionOperations
