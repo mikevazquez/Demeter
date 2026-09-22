@@ -262,10 +262,13 @@ export async function addEvaluationV2BlockAction(formData: FormData) {
   const versionId = text(formData, "version_id");
   const ctx = await assertDraftVersion(templateId, versionId);
 
-  const { count } = await ctx.supabase
+  const { data: lastBlock } = await ctx.supabase
     .from("evaluation_template_criteria")
-    .select("id", { count: "exact", head: true })
-    .eq("template_version_id", versionId);
+    .select("sort_order")
+    .eq("template_version_id", versionId)
+    .order("sort_order", { ascending: false })
+    .limit(1)
+    .maybeSingle();
 
   const key = `block_${crypto.randomUUID().replaceAll("-", "")}`;
   const { data, error } = await ctx.supabase
@@ -278,7 +281,7 @@ export async function addEvaluationV2BlockAction(formData: FormData) {
       description: null,
       weight_percent: 0,
       min_percent: null,
-      sort_order: (count ?? 0) + 1,
+      sort_order: (lastBlock?.sort_order ?? 0) + 1,
       block_type: "direct_score",
       progression_required: false,
     })
@@ -426,11 +429,14 @@ export async function addEvaluationV2ItemAction(formData: FormData) {
     elementId = created.id;
   }
 
-  const { count } = await ctx.supabase
+  const { data: lastItem } = await ctx.supabase
     .from("evaluation_template_elements")
-    .select("id", { count: "exact", head: true })
+    .select("sort_order")
     .eq("template_version_id", versionId)
-    .eq("criterion_id", blockId);
+    .eq("criterion_id", blockId)
+    .order("sort_order", { ascending: false })
+    .limit(1)
+    .maybeSingle();
 
   const shouldScore = block.block_type === "weighted_criteria" ? true : scored;
   const { error } = await ctx.supabase.from("evaluation_template_elements").insert({
@@ -444,7 +450,7 @@ export async function addEvaluationV2ItemAction(formData: FormData) {
     max_score: shouldScore ? maxScore : 100,
     min_score: shouldScore ? minScore : null,
     attempts_allowed: attempts,
-    sort_order: (count ?? 0) + 1,
+    sort_order: (lastItem?.sort_order ?? 0) + 1,
     item_label: label,
     item_description: description || null,
     item_kind:
