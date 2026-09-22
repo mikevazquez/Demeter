@@ -106,7 +106,9 @@ export function ExistingStudentAddForm({
                       {candidate.fullName}
                     </span>
                     <small className="max-w-[46%] shrink-0 text-right text-[11px] text-zinc-500">
-                      {canPostCloseAdd ? "Agregar después del cierre" : candidate.detail}
+                      {canPostCloseAdd
+                        ? "Agregar después del cierre"
+                        : `${candidate.detail}${canFallbackToWalkin ? " · walk-in / venta pendiente" : ""}`}
                     </small>
                   </button>
                 );
