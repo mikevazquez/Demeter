@@ -11,7 +11,9 @@ describe("KIOSCO-01 attendance correction persistence", () => {
   it("verifies the RPC result before claiming a completed correction", () => {
     const actions = source("app/admin/actions.ts");
 
-    expect(actions).toContain('const { data: attendanceResult, error } = await supabase.rpc("set_attendance_status"');
+    expect(actions).toContain(
+      'const { data: attendanceResult, error } = await supabase.rpc("set_attendance_status"',
+    );
     expect(actions).toContain('result.status !== status');
     expect(actions).toContain('(reason && result.changed !== true)');
     expect(actions).toContain('attendance_not_persisted');
