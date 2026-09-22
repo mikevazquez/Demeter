@@ -2265,6 +2265,79 @@
   gap: 8px;
 }
 
+.eval-simple-item-card {
+  display: grid;
+  gap: 7px;
+  padding: 9px 10px;
+  border: 1px solid #293542;
+  border-radius: 14px;
+  background: #0d141c;
+}
+
+.eval-simple-item-card .eval-simple-item-row {
+  padding: 0;
+}
+
+.eval-simple-item-rule {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px 12px;
+  padding: 7px 2px 0 28px;
+  border-top: 1px solid rgba(53, 65, 80, 0.55);
+}
+
+.eval-simple-item-rule .eval-simple-check {
+  align-items: center;
+  color: #8f9bab;
+  font-size: 8px;
+}
+
+.eval-simple-item-rule > small:not(.eval-simple-inline-save) {
+  grid-column: 1 / -1;
+  color: #7f8b9a;
+  font-size: 8px;
+  line-height: 1.35;
+}
+
+.eval-simple-inline-minimum {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #8f9bab;
+  font-size: 8px;
+  font-weight: 700;
+}
+
+.eval-simple-inline-minimum > div {
+  min-width: 92px;
+  min-height: 34px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 5px;
+  padding-right: 8px;
+  border: 1px solid #33404f;
+  border-radius: 9px;
+  background: #0a1118;
+}
+
+.eval-simple-inline-minimum input {
+  min-width: 0;
+  min-height: 32px;
+  padding: 6px 8px;
+  border: 0;
+  background: transparent;
+  color: #fff;
+  font: inherit;
+}
+
+.eval-simple-item-rule .eval-simple-inline-save {
+  grid-column: 1 / -1;
+  min-height: 8px;
+  margin: 0;
+}
+
 .eval-simple-item-row.is-simple {
   grid-template-columns: 20px minmax(0, 1fr) 30px;
 }
@@ -2521,6 +2594,15 @@
 
   .eval-simple-item-row.is-simple {
     grid-template-columns: 18px minmax(0, 1fr) 28px;
+  }
+
+  .eval-simple-item-rule {
+    grid-template-columns: 1fr;
+    padding-left: 24px;
+  }
+
+  .eval-simple-inline-minimum {
+    justify-content: space-between;
   }
 
   .eval-simple-mode-option {
