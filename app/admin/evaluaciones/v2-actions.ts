@@ -452,7 +452,6 @@ export async function addEvaluationV2ItemAction(formData: FormData) {
     .from("evaluation_template_elements")
     .select("sort_order")
     .eq("template_version_id", versionId)
-    .eq("criterion_id", blockId)
     .order("sort_order", { ascending: false })
     .limit(1)
     .maybeSingle();
