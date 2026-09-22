@@ -11,6 +11,10 @@ describe("ACTIVIDADES-01 restored module", () => {
     "utf8",
   );
   const actions = readFileSync(join(process.cwd(), "app/admin/actividades/actions.ts"), "utf8");
+  const atomicSave = readFileSync(
+    join(process.cwd(), "supabase/migrations/20260922155500_actividades01_atomic_save.sql"),
+    "utf8",
+  );
   const layout = readFileSync(join(process.cwd(), "app/admin/layout.tsx"), "utf8");
   const more = readFileSync(join(process.cwd(), "app/admin/mas/page.tsx"), "utf8");
   const agenda = readFileSync(join(process.cwd(), "app/admin/agenda/page.tsx"), "utf8");
@@ -44,7 +48,8 @@ describe("ACTIVIDADES-01 restored module", () => {
     expect(wizard).toContain("Cupo predeterminado");
     expect(wizard).toContain("¿Requiere recurso?");
     expect(wizard).not.toContain("discipline_id");
-    expect(actions).toContain("discipline_id: null");
+    expect(atomicSave).toContain("discipline_id");
+    expect(atomicSave).toContain("null,");
   });
 
   it("keeps schedule rows compact and applies operation defaults to generated sessions", () => {
@@ -57,17 +62,20 @@ describe("ACTIVIDADES-01 restored module", () => {
     expect(wizard).toContain("Termina");
     expect(wizard).not.toContain("<span>Inicio</span>");
     expect(wizard).not.toContain("<span>Fin</span>");
-    expect(actions).toContain("instructor_id: defaultInstructorId");
-    expect(actions).toContain("space_id: defaultSpaceId");
-    expect(actions).toContain("duration_minutes: durationMinutes");
+    expect(actions).toContain("p_default_instructor_id: defaultInstructorId");
+    expect(actions).toContain("p_default_space_id: defaultSpaceId");
+    expect(actions).toContain("p_duration_minutes: durationMinutes");
+    expect(atomicSave).toContain("instructor_id = p_default_instructor_id");
+    expect(atomicSave).toContain("space_id = p_default_space_id");
   });
 
   it("keeps credits fixed and individual purchase configurable", () => {
     expect(wizard).toContain("Todas las actividades utilizan créditos");
     expect(wizard).toContain("Permitir compra individual");
     expect(wizard).toContain("Precio de compra individual");
-    expect(actions).toContain("credit_cost: 1");
-    expect(actions).toContain("drop_in_price_minor");
+    expect(actions).toContain("p_drop_in_price_minor: dropInPriceMinor");
+    expect(atomicSave).toContain("credit_cost");
+    expect(atomicSave).toContain("drop_in_price_minor");
   });
 
   it("restores A04 review with inline Edit links", () => {
@@ -89,6 +97,7 @@ describe("ACTIVIDADES-01 restored module", () => {
     );
 
     expect(actions).toContain('redirect("/admin/actividades")');
+    expect(actions).toContain('.rpc("admin_save_activity"');
     expect(actions).not.toContain("?saved=1");
     expect(listPage).not.toContain("notice success");
     expect(listPage).not.toContain("notice error");
