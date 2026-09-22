@@ -20,11 +20,6 @@ alter table public.evaluation_template_elements
     check (item_weight_percent is null or (item_weight_percent >= 0 and item_weight_percent <= 100)),
   add column if not exists progression_required boolean not null default false;
 
-update public.evaluation_template_elements
-set progression_required = mandatory
-where mandatory = true
-  and progression_required = false;
-
 alter table public.evaluation_invitations
   add column if not exists evaluation_purpose text not null default 'progression'
     check (evaluation_purpose in ('placement','progression','exception'));
@@ -570,7 +565,7 @@ begin
            and er.evaluation_id = p_evaluation_id
           where te.template_version_id = v_evaluation.template_version_id
             and te.criterion_id = v_block.id
-            and te.progression_required
+            and (te.progression_required or te.mandatory)
             and (
               coalesce(er.result_status, 'not_evaluated') <> 'meets'
               or (
