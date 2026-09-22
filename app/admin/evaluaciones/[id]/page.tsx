@@ -5,6 +5,7 @@ import { getAdminContext } from "@/lib/auth/admin-context";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 
 import { EvaluationLiveForm } from "../EvaluationLiveForm";
+import { EvaluationLiveFormV2 } from "../EvaluationLiveFormV2";
 import {
   openEvaluationFeedbackAction,
   publishTechnicalEvaluationAction,
@@ -44,7 +45,7 @@ export default async function TechnicalEvaluationDetailPage({
   const { data: evaluation } = await ctx.supabase
     .from("technical_evaluations")
     .select(
-      "id,student_id,student_name_snapshot,discipline_id,current_discipline_level_id_at_start,target_discipline_level_id,resulting_discipline_level_id,template_version_id,evaluation_date,status,automatic_outcome,final_outcome,total_score,override_reason,strengths,improvement_areas,coach_message,next_objective,last_saved_at,published_at",
+      "id,student_id,student_name_snapshot,discipline_id,current_discipline_level_id_at_start,target_discipline_level_id,resulting_discipline_level_id,template_version_id,evaluation_purpose,evaluation_date,status,automatic_outcome,final_outcome,total_score,override_reason,strengths,improvement_areas,coach_message,next_objective,last_saved_at,published_at",
     )
     .eq("id", id)
     .eq("studio_id", ctx.studio.id)
@@ -63,7 +64,7 @@ export default async function TechnicalEvaluationDetailPage({
       ctx.supabase
         .from("evaluation_template_versions")
         .select(
-          "id,template_id,version_number,pass_threshold,default_category_min,default_attempts_per_element,default_attempts_per_combo,evaluator_instructions",
+          "id,template_id,version_number,schema_version,pass_threshold,default_category_min,default_attempts_per_element,default_attempts_per_combo,evaluator_instructions",
         )
         .eq("id", evaluation.template_version_id)
         .single(),
@@ -83,6 +84,7 @@ export default async function TechnicalEvaluationDetailPage({
 
   const version = versionResult.data;
   if (!version) notFound();
+  const isV2 = Number(version.schema_version ?? 1) === 2;
 
   const [templateResult, criteriaResult, templateElementsResult, templateCombosResult] =
     await Promise.all([
@@ -93,13 +95,15 @@ export default async function TechnicalEvaluationDetailPage({
         .single(),
       ctx.supabase
         .from("evaluation_template_criteria")
-        .select("id,label,weight_percent,min_percent,sort_order")
+        .select(
+          "id,label,description,weight_percent,min_percent,sort_order,block_type,progression_required,evaluator_instructions",
+        )
         .eq("template_version_id", version.id)
         .order("sort_order"),
       ctx.supabase
         .from("evaluation_template_elements")
         .select(
-          "id,criterion_id,mandatory,scored,max_score,attempts_allowed,sort_order,element_snapshot",
+          "id,criterion_id,mandatory,scored,max_score,min_score,attempts_allowed,sort_order,element_snapshot,item_label,item_description,item_kind,item_weight_percent,progression_required",
         )
         .eq("template_version_id", version.id)
         .order("sort_order"),
@@ -144,11 +148,17 @@ export default async function TechnicalEvaluationDetailPage({
     return {
       id: item.id,
       criterionId: item.criterion_id,
-      name: snapshotName(item.element_snapshot, "Elemento técnico"),
-      description: snapshotDescription(item.element_snapshot),
+      name: item.item_label ?? snapshotName(item.element_snapshot, "Elemento técnico"),
+      description: item.item_description ?? snapshotDescription(item.element_snapshot),
       mandatory: item.mandatory,
       scored: item.scored,
       maxScore: Number(item.max_score),
+      minScore: item.min_score === null ? null : Number(item.min_score),
+      weightPercent:
+        item.item_weight_percent === null || item.item_weight_percent === undefined
+          ? null
+          : Number(item.item_weight_percent),
+      progressionRequired: Boolean(item.progression_required || item.mandatory),
       attemptsAllowed: item.attempts_allowed ?? version.default_attempts_per_element,
       resultStatus: result?.result_status ?? "not_evaluated",
       score: result?.score === null || result?.score === undefined ? null : Number(result.score),
@@ -204,6 +214,73 @@ export default async function TechnicalEvaluationDetailPage({
     };
   });
 
+  const liveV2Blocks = criteria.map((criterion) => {
+    const result = criterionResultMap.get(criterion.id);
+    const blockItems = liveElements
+      .filter((item) => item.criterionId === criterion.id)
+      .map((item) => ({
+        id: item.id,
+        name: item.name,
+        description: item.description,
+        scored: item.scored,
+        maxScore: item.maxScore,
+        minScore: item.minScore,
+        weightPercent: item.weightPercent,
+        progressionRequired: item.progressionRequired,
+        resultStatus: item.resultStatus,
+        score: item.score,
+        attemptCount: item.attemptCount,
+        attemptsAllowed: item.attemptsAllowed,
+        notes: item.notes,
+      }));
+
+    return {
+      id: criterion.id,
+      label: criterion.label,
+      description: criterion.description,
+      blockType: criterion.block_type ?? "direct_score",
+      weightPercent: Number(criterion.weight_percent),
+      minPercent:
+        criterion.min_percent === null || criterion.min_percent === undefined
+          ? null
+          : Number(criterion.min_percent),
+      progressionRequired: Boolean(criterion.progression_required),
+      instructions: criterion.evaluator_instructions,
+      scorePercent:
+        result?.captured_at && result.score_percent !== null && result.score_percent !== undefined
+          ? Number(result.score_percent)
+          : null,
+      notes: result?.notes ?? "",
+      captured: Boolean(result?.captured_at),
+      items: blockItems,
+    };
+  });
+
+  const v2TotalUnits = liveV2Blocks.reduce(
+    (sum, block) => sum + (block.blockType === "direct_score" ? 1 : block.items.length),
+    0,
+  );
+  const v2CompletedUnits = liveV2Blocks.reduce(
+    (sum, block) =>
+      sum +
+      (block.blockType === "direct_score"
+        ? block.captured
+          ? 1
+          : 0
+        : block.items.filter(
+            (item) =>
+              item.resultStatus !== "not_evaluated" && (!item.scored || item.score !== null),
+          ).length),
+    0,
+  );
+  const liveProgress = isV2
+    ? v2TotalUnits
+      ? Math.round((v2CompletedUnits / v2TotalUnits) * 100)
+      : 0
+    : progress;
+  const liveCompleted = isV2 ? v2CompletedUnits : evaluatedItems;
+  const liveTotal = isV2 ? v2TotalUnits : totalItems;
+
   const isPublished = evaluation.status === "published";
   const step = isPublished ? "published" : (qs.step ?? "live");
 
@@ -247,9 +324,7 @@ export default async function TechnicalEvaluationDetailPage({
               {currentLevel}
             </p>
           </div>
-          <span className="eval-status">
-            v{version.version_number} · {templateResult.data?.name}
-          </span>
+          <span className="eval-status">{templateResult.data?.name}</span>
         </header>
       </section>
 
@@ -257,22 +332,26 @@ export default async function TechnicalEvaluationDetailPage({
         <>
           <section className="eval-panel eval-live-progress">
             <div className="eval-progress-header">
-              <span>Elementos evaluados</span>
+              <span>{isV2 ? "Captura completada" : "Elementos evaluados"}</span>
               <strong>
-                {evaluatedItems} de {totalItems} · {progress}%
+                {liveCompleted} de {liveTotal} · {liveProgress}%
               </strong>
             </div>
             <div className="eval-progress-track">
-              <i style={{ width: `${progress}%` }} />
+              <i style={{ width: `${liveProgress}%` }} />
             </div>
           </section>
 
-          <EvaluationLiveForm
-            evaluationId={evaluation.id}
-            criteria={liveCriteria}
-            elements={liveElements}
-            combos={liveCombos}
-          />
+          {isV2 ? (
+            <EvaluationLiveFormV2 evaluationId={evaluation.id} blocks={liveV2Blocks} />
+          ) : (
+            <EvaluationLiveForm
+              evaluationId={evaluation.id}
+              criteria={liveCriteria}
+              elements={liveElements}
+              combos={liveCombos}
+            />
+          )}
 
           <form action={recalculateTechnicalEvaluationAction} className="eval-form-actions">
             <input type="hidden" name="evaluation_id" value={evaluation.id} />
@@ -319,20 +398,28 @@ export default async function TechnicalEvaluationDetailPage({
 
           <section className="eval-feedback-grid">
             <article className="eval-panel eval-feedback-card">
-              <h3>Requisitos de progresión · Figuras</h3>
+              <h3>Requisitos de progresión</h3>
               <p className="eval-row-copy">
                 <small>
                   {
                     templateElements.filter(
                       (item) =>
-                        item.mandatory && elementResultMap.get(item.id)?.result_status === "meets",
+                        (isV2 ? Boolean(item.progression_required || item.mandatory) : item.mandatory) &&
+                        elementResultMap.get(item.id)?.result_status === "meets",
                     ).length
                   }{" "}
-                  / {templateElements.filter((item) => item.mandatory).length} cumplen
+                  /{" "}
+                  {
+                    templateElements.filter((item) =>
+                      isV2 ? Boolean(item.progression_required || item.mandatory) : item.mandatory,
+                    ).length
+                  }{" "}
+                  cumplen
                 </small>
               </p>
             </article>
-            <article className="eval-panel eval-feedback-card">
+            {!isV2 ? (
+              <article className="eval-panel eval-feedback-card">
               <h3>Requisitos de progresión · Combos</h3>
               <p className="eval-row-copy">
                 <small>
@@ -345,7 +432,21 @@ export default async function TechnicalEvaluationDetailPage({
                   / {templateCombos.filter((item) => item.mandatory).length} cumplen
                 </small>
               </p>
-            </article>
+              </article>
+            ) : (
+              <article className="eval-panel eval-feedback-card">
+                <h3>Tipo de evaluación</h3>
+                <p className="eval-row-copy">
+                  <small>
+                    {evaluation.evaluation_purpose === "placement"
+                      ? "Colocación inicial"
+                      : evaluation.evaluation_purpose === "exception"
+                        ? "Evaluación excepcional"
+                        : "Progresión"}
+                  </small>
+                </p>
+              </article>
+            )}
           </section>
           <p className="eval-summary-hint">
             Los requisitos de progresión son una condición para subir de nivel, pero todos los
