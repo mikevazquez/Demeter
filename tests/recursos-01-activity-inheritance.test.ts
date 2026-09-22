@@ -13,73 +13,68 @@ describe("RECURSOS-01 activity and session inheritance", () => {
     "utf8",
   );
   const agendaActions = readFileSync(join(process.cwd(), "app/admin/agenda/actions.ts"), "utf8");
-  const inheritance = readFileSync(
+  const migration = readFileSync(
     join(
       process.cwd(),
-      "supabase/migrations/20260922064000_recursos01_activity_session_inheritance.sql",
-    ),
-    "utf8",
-  );
-  const restoredActivities = readFileSync(
-    join(process.cwd(), "supabase/migrations/20260922134500_actividades01_restore.sql"),
-    "utf8",
-  );
-  const atomicSave = readFileSync(
-    join(process.cwd(), "supabase/migrations/20260922155500_actividades01_atomic_save.sql"),
-    "utf8",
-  );
-  const defaults = readFileSync(
-    join(
-      process.cwd(),
-      "supabase/migrations/20260922065000_recursos01_session_resource_defaults.sql",
+      "supabase/migrations/20260922223000_activity_resource_defaults.sql",
     ),
     "utf8",
   );
 
-  it("captures only whether an activity requires a resource", () => {
+  it("configures resource defaults directly on the activity", () => {
     expect(activityWizard).toContain("¿Requiere recurso?");
-    expect(activityActions).toContain("p_requires_resource: Boolean(payload.requiresResource)");
-    expect(activityWizard).not.toContain("resource_uses_per_item");
-    expect(activityWizard).not.toContain("capacity_override");
+    expect(activityWizard).toContain('label: "Recursos"');
+    expect(activityWizard).toContain("Personas por recurso");
+    expect(activityWizard).toContain("Recursos disponibles en el espacio");
+    expect(activityWizard).toContain("capacityOverride");
+    expect(activityActions).toContain('rpc("admin_save_activity_v2"');
+    expect(activityActions).toContain("p_resource_uses_per_item: resourceUsesPerItem");
+    expect(activityActions).toContain("p_resource_settings:");
   });
 
-  it("keeps resource capacity out of Activities and at the session layer", () => {
-    expect(activityWizard).toContain("Esta actividad utiliza recursos del estudio.");
-    expect(activityWizard).not.toContain("Usos por recurso");
-    expect(activityWizard).not.toContain("Capacidad por recurso");
+  it("persists activity-level defaults and per-resource overrides", () => {
+    expect(migration).toContain("class_templates");
+    expect(migration).toContain("resource_uses_per_item");
+    expect(migration).toContain("class_template_resources");
+    expect(migration).toContain("capacity_override");
+    expect(migration).toContain("enabled boolean");
   });
 
-  it("snapshots the activity requirement into new manual sessions", () => {
-    expect(agendaActions).toContain('.select("id, duration_minutes, capacity, requires_resource")');
+  it("inherits the activity resource capacity into new manual sessions", () => {
+    expect(agendaActions).toContain(
+      '.select("id, duration_minutes, capacity, requires_resource, resource_uses_per_item")',
+    );
     expect(agendaActions).toContain("requires_resource: template.requires_resource");
-    expect(agendaActions).toContain("resource_uses_per_item: 1");
+    expect(agendaActions).toContain(
+      "resource_uses_per_item: template.resource_uses_per_item ?? 1",
+    );
   });
 
-  it("snapshots the activity requirement into recurring sessions", () => {
-    expect(inheritance).toContain("t.requires_resource");
-    expect(inheritance).toContain("resource_uses_per_item");
-    expect(restoredActivities).toContain("t.requires_resource");
-    expect(restoredActivities).toContain("duration_value");
+  it("inherits activity defaults into recurring sessions", () => {
+    expect(migration).toContain("create or replace function public.materialize_recurring_schedule");
+    expect(migration).toContain("t.requires_resource");
+    expect(migration).toContain("t.resource_uses_per_item");
+    expect(migration).toContain("recursos01_apply_activity_defaults_before_session");
   });
 
-  it("requires a physical space before creating resource-based sessions", () => {
+  it("syncs future inherited sessions while preserving customized sessions", () => {
+    expect(migration).toContain("resource_config_customized");
+    expect(migration).toContain("resource_config_needs_review");
+    expect(migration).toContain("recursos01_sync_activity_resource_defaults");
+    expect(migration).toContain("and not cs.resource_config_customized");
+    expect(migration).toContain("resource_defaults_conflict");
+  });
+
+  it("keeps activity changes safe when existing assignments would become invalid", () => {
+    expect(migration).toContain("reservation_resource_assignments");
+    expect(migration).toContain("assigned.used_count");
+    expect(migration).toContain("resource_config_needs_review = true");
+  });
+
+  it("requires a physical space for resource-based activities", () => {
     expect(agendaActions).toContain("template.requires_resource && !spaceId");
     expect(activityActions).toContain("payload.requiresResource && !defaultSpaceId");
-    expect(restoredActivities).toContain("resource_activity_requires_space");
-    expect(atomicSave).toContain("resource_activity_requires_space");
-  });
-
-  it("automatically makes active resources from the session space available", () => {
-    expect(defaults).toContain("recursos01_sync_session_resources");
-    expect(defaults).toContain("from public.resources r");
-    expect(defaults).toContain("r.space_id = new.space_id");
-    expect(defaults).toContain("and r.active");
-    expect(defaults).toContain("capacity_override");
-  });
-
-  it("does not backfill or rewrite already-created sessions in migrations", () => {
-    expect(inheritance).not.toMatch(/update\s+public\.class_sessions/i);
-    expect(defaults).not.toMatch(/update\s+public\.class_sessions/i);
-    expect(restoredActivities).not.toMatch(/update\s+public\.class_sessions/i);
+    expect(migration).toContain("resource_activity_requires_space");
+    expect(migration).toContain("resource_not_in_activity_space");
   });
 });
