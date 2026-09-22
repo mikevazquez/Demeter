@@ -63,8 +63,9 @@ export function ActivityWizard({
   mode: "create" | "edit";
   saveError?: boolean;
 }) {
-  const [step, setStep] = useState(0);
+  const [step, setStep] = useState(saveError ? 3 : 0);
   const [message, setMessage] = useState("");
+  const [serverSaveError, setServerSaveError] = useState(saveError);
   const [draft, setDraft] = useState<ActivityDraft>(
     initial ?? {
       name: "",
@@ -97,6 +98,7 @@ export function ActivityWizard({
   function patch(next: Partial<ActivityDraft>) {
     setDraft((current) => ({ ...current, ...next }));
     setMessage("");
+    setServerSaveError(false);
   }
 
   function patchSchedule(index: number, next: Partial<ActivityScheduleDraft>) {
@@ -107,6 +109,7 @@ export function ActivityWizard({
       ),
     }));
     setMessage("");
+    setServerSaveError(false);
   }
 
   function removeSchedule(index: number) {
@@ -187,11 +190,13 @@ export function ActivityWizard({
       return;
     }
     setMessage("");
+    setServerSaveError(false);
     setStep((current) => Math.min(current + 1, STEPS.length - 1));
   }
 
   function previous() {
     setMessage("");
+    setServerSaveError(false);
     setStep((current) => Math.max(current - 1, 0));
   }
 
@@ -206,6 +211,7 @@ export function ActivityWizard({
             onClick={() => {
               if (mode === "edit" || index <= step) {
                 setMessage("");
+                setServerSaveError(false);
                 setStep(index);
               }
             }}
@@ -633,7 +639,7 @@ export function ActivityWizard({
       ) : null}
 
       <footer className="activities-wizard-footer">
-        {saveError ? (
+        {serverSaveError && step === 3 ? (
           <p className="activities-save-error">
             No se guardó. Revisa los datos e inténtalo de nuevo.
           </p>
