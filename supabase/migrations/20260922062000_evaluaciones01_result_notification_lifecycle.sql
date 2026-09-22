@@ -1,11 +1,32 @@
 -- EVALUACIONES-01 · Result notification lifecycle.
--- Existing published results are historical, not new notifications.
--- A result is surfaced on Home only when it is the newest evaluation for that discipline.
+-- Result history remains immutable. Read receipts live in a separate table.
 
-update public.technical_evaluations
-set student_viewed_at = coalesce(student_viewed_at, published_at, updated_at)
-where status = 'published'
-  and student_viewed_at is null;
+create table if not exists public.student_evaluation_result_views (
+  studio_id uuid not null references public.studios(id) on delete cascade,
+  student_id uuid not null references public.students(id) on delete cascade,
+  evaluation_id uuid not null references public.technical_evaluations(id) on delete cascade,
+  viewed_at timestamptz not null default now(),
+  primary key (student_id, evaluation_id)
+);
+
+create index if not exists student_evaluation_result_views_studio_idx
+  on public.student_evaluation_result_views (studio_id, student_id, viewed_at desc);
+
+-- Historical published results predate the notification feature, so treat them as already seen.
+insert into public.student_evaluation_result_views (
+  studio_id,
+  student_id,
+  evaluation_id,
+  viewed_at
+)
+select
+  e.studio_id,
+  e.student_id,
+  e.id,
+  coalesce(e.published_at, e.updated_at, now())
+from public.technical_evaluations e
+where e.status = 'published'
+on conflict (student_id, evaluation_id) do nothing;
 
 create or replace function public.student_latest_unread_evaluation_result()
 returns jsonb
@@ -56,7 +77,12 @@ begin
   where e.studio_id = v_student.studio_id
     and e.student_id = v_student.id
     and e.status = 'published'
-    and e.student_viewed_at is null
+    and not exists (
+      select 1
+      from public.student_evaluation_result_views v
+      where v.student_id = e.student_id
+        and v.evaluation_id = e.id
+    )
     and not exists (
       select 1
       from public.technical_evaluations newer
@@ -73,26 +99,78 @@ begin
 end;
 $$;
 
-create or replace function private.evaluations_reset_student_viewed_on_publish()
-returns trigger
+create or replace function public.student_mark_evaluation_result_viewed(
+  p_evaluation_id uuid
+)
+returns void
 language plpgsql
+security definer
 set search_path = ''
 as $$
+declare
+  v_student public.students;
+  v_evaluation public.technical_evaluations;
 begin
-  if new.status = 'published' and old.status is distinct from 'published' then
-    new.student_viewed_at := null;
+  if auth.uid() is null then
+    raise exception 'unauthenticated';
   end if;
-  return new;
+
+  select s.* into v_student
+  from public.students s
+  where s.user_id = auth.uid()
+    and private.is_current_student(s.id, s.studio_id)
+  order by s.created_at asc
+  limit 1;
+
+  if v_student.id is null then
+    raise exception 'student_context_not_found';
+  end if;
+
+  if not private.has_capability(v_student.studio_id, 'student.portal') then
+    raise exception 'forbidden';
+  end if;
+
+  select e.* into v_evaluation
+  from public.technical_evaluations e
+  where e.id = p_evaluation_id
+    and e.studio_id = v_student.studio_id
+    and e.student_id = v_student.id
+    and e.status = 'published';
+
+  if v_evaluation.id is null then
+    raise exception 'evaluation_result_not_found';
+  end if;
+
+  insert into public.student_evaluation_result_views (
+    studio_id,
+    student_id,
+    evaluation_id,
+    viewed_at
+  )
+  values (
+    v_evaluation.studio_id,
+    v_evaluation.student_id,
+    v_evaluation.id,
+    now()
+  )
+  on conflict (student_id, evaluation_id)
+  do update set viewed_at = excluded.viewed_at;
 end;
 $$;
 
-drop trigger if exists technical_evaluations_reset_student_viewed_on_publish
-  on public.technical_evaluations;
-
-create trigger technical_evaluations_reset_student_viewed_on_publish
-before update of status on public.technical_evaluations
-for each row
-execute function private.evaluations_reset_student_viewed_on_publish();
+revoke all on table public.student_evaluation_result_views from public, anon, authenticated;
 
 revoke all on function public.student_latest_unread_evaluation_result() from public, anon;
 grant execute on function public.student_latest_unread_evaluation_result() to authenticated;
+
+revoke all on function public.student_mark_evaluation_result_viewed(uuid) from public, anon;
+grant execute on function public.student_mark_evaluation_result_viewed(uuid) to authenticated;
+
+-- The old inline receipt column is intentionally retired. Published evaluations remain immutable.
+drop trigger if exists technical_evaluations_reset_student_viewed_on_publish
+  on public.technical_evaluations;
+
+drop function if exists private.evaluations_reset_student_viewed_on_publish();
+
+alter table public.technical_evaluations
+  drop column if exists student_viewed_at;
