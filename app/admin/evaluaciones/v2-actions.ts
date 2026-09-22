@@ -152,68 +152,72 @@ export async function openEvaluationV2EditorAction(formData: FormData) {
   if (createError || !created)
     redirect(editorUrl(templateId, "configuracion", undefined, "version"));
 
-  const { data: sourceBlocks } = await ctx.supabase
-    .from("evaluation_template_criteria")
-    .select(
-      "id,criterion_key,label,description,weight_percent,min_percent,sort_order,block_type,progression_required,evaluator_instructions",
-    )
-    .eq("template_version_id", source.id)
-    .order("sort_order");
-
-  const blockMap = new Map<string, string>();
-  for (const block of sourceBlocks ?? []) {
-    const { data: copied } = await ctx.supabase
+  if (source.schema_version === 2) {
+    const { data: sourceBlocks } = await ctx.supabase
       .from("evaluation_template_criteria")
-      .insert({
-        studio_id: ctx.studio.id,
-        template_version_id: created.id,
-        criterion_key: block.criterion_key,
-        label: block.label,
-        description: block.description,
-        weight_percent: block.weight_percent,
-        min_percent: block.min_percent,
-        sort_order: block.sort_order,
-        block_type: block.block_type ?? "direct_score",
-        progression_required: block.progression_required ?? false,
-        evaluator_instructions: block.evaluator_instructions,
-      })
-      .select("id")
-      .single();
-    if (copied) blockMap.set(block.id, copied.id);
-  }
-
-  const { data: sourceItems } = await ctx.supabase
-    .from("evaluation_template_elements")
-    .select(
-      "element_id,criterion_id,mandatory,scored,max_score,min_score,attempts_allowed,sort_order,evaluator_instructions,element_snapshot,item_label,item_description,item_kind,item_weight_percent,progression_required",
-    )
-    .eq("template_version_id", source.id)
-    .order("sort_order");
-
-  if (sourceItems?.length) {
-    await ctx.supabase.from("evaluation_template_elements").insert(
-      sourceItems
-        .filter((item) => item.criterion_id && blockMap.has(item.criterion_id))
-        .map((item) => ({
+      .select(
+        "id,criterion_key,label,description,weight_percent,min_percent,sort_order,block_type,progression_required,evaluator_instructions",
+      )
+      .eq("template_version_id", source.id)
+      .order("sort_order");
+  
+    const blockMap = new Map<string, string>();
+    for (const block of sourceBlocks ?? []) {
+      const { data: copied } = await ctx.supabase
+        .from("evaluation_template_criteria")
+        .insert({
           studio_id: ctx.studio.id,
           template_version_id: created.id,
-          element_id: item.element_id,
-          criterion_id: blockMap.get(item.criterion_id!),
-          mandatory: item.mandatory,
-          scored: item.scored,
-          max_score: item.max_score,
-          min_score: item.min_score,
-          attempts_allowed: item.attempts_allowed,
-          sort_order: item.sort_order,
-          evaluator_instructions: item.evaluator_instructions,
-          element_snapshot: item.element_snapshot,
-          item_label: item.item_label,
-          item_description: item.item_description,
-          item_kind: item.item_kind ?? "element",
-          item_weight_percent: item.item_weight_percent,
-          progression_required: Boolean(item.progression_required || item.mandatory),
-        })),
-    );
+          criterion_key: block.criterion_key,
+          label: block.label,
+          description: block.description,
+          weight_percent: block.weight_percent,
+          min_percent: block.min_percent,
+          sort_order: block.sort_order,
+          block_type: block.block_type ?? "direct_score",
+          progression_required: block.progression_required ?? false,
+          evaluator_instructions: block.evaluator_instructions,
+        })
+        .select("id")
+        .single();
+      if (copied) blockMap.set(block.id, copied.id);
+    }
+  
+    const { data: sourceItems } = await ctx.supabase
+      .from("evaluation_template_elements")
+      .select(
+        "element_id,criterion_id,mandatory,scored,max_score,min_score,attempts_allowed,sort_order,evaluator_instructions,element_snapshot,item_label,item_description,item_kind,item_weight_percent,progression_required",
+      )
+      .eq("template_version_id", source.id)
+      .order("sort_order");
+  
+    if (sourceItems?.length) {
+      await ctx.supabase.from("evaluation_template_elements").insert(
+        sourceItems
+          .filter((item) => item.criterion_id && blockMap.has(item.criterion_id))
+          .map((item) => ({
+            studio_id: ctx.studio.id,
+            template_version_id: created.id,
+            element_id: item.element_id,
+            criterion_id: blockMap.get(item.criterion_id!),
+            mandatory: item.mandatory,
+            scored: item.scored,
+            max_score: item.max_score,
+            min_score: item.min_score,
+            attempts_allowed: item.attempts_allowed,
+            sort_order: item.sort_order,
+            evaluator_instructions: item.evaluator_instructions,
+            element_snapshot: item.element_snapshot,
+            item_label: item.item_label,
+            item_description: item.item_description,
+            item_kind: item.item_kind ?? "element",
+            item_weight_percent: item.item_weight_percent,
+            progression_required: Boolean(item.progression_required || item.mandatory),
+          })),
+      );
+    }
+  
+  
   }
 
   revalidatePath(editorUrl(templateId));
