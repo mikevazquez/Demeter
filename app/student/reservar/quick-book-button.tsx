@@ -32,6 +32,7 @@ type Props = {
   full?: boolean;
   waitlisted?: boolean;
   levelTitle?: string | null;
+  requiresResource?: boolean;
 };
 
 export function QuickBookButton({
@@ -44,6 +45,7 @@ export function QuickBookButton({
   full = false,
   waitlisted = false,
   levelTitle = null,
+  requiresResource = false,
 }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -53,6 +55,11 @@ export function QuickBookButton({
 
   function reserve() {
     if (!eligible || reserved || isPending) return;
+
+    if (requiresResource) {
+      router.push(`/student/reservar/${sessionId}/recurso`);
+      return;
+    }
 
     startTransition(async () => {
       const result = await bookStudentSessionInlineAction(sessionId);
@@ -87,7 +94,7 @@ export function QuickBookButton({
           disabled={isPending}
           className="min-h-11 rounded-2xl bg-fuchsia-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-fuchsia-500 disabled:cursor-wait disabled:opacity-60"
         >
-          {isPending ? "Reservando…" : "Reservar"}
+          {requiresResource ? "Elegir recurso" : isPending ? "Reservando…" : "Reservar"}
         </button>
       ) : full ? (
         <WaitlistControl
