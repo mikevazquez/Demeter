@@ -324,7 +324,7 @@ returns jsonb
 language plpgsql
 security definer
 set search_path = ''
-as $
+as $function$
 declare
   v_token_hash bytea;
   v_token_row public.reservation_checkin_tokens%rowtype;
@@ -517,7 +517,7 @@ begin
     'checked_in_at', v_checked_in_at
   );
 end;
-$$;
+$function$;
 
 revoke all on function public.check_in_reservation(text)
 from public, anon;
