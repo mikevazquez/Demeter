@@ -34,7 +34,7 @@ export default async function AgendaConfigurationPage({
     supabase
       .from("class_templates")
       .select(
-        "id,name,duration_minutes,capacity,discipline_id,credit_cost,drop_in_price_minor,color_hex",
+        "id,name,duration_minutes,capacity,discipline_id,credit_cost,drop_in_price_minor,color_hex,requires_resource",
       )
       .eq("studio_id", studio.id)
       .eq("active", true)
@@ -157,6 +157,14 @@ export default async function AgendaConfigurationPage({
                   />
                 </label>
               </div>
+              <label className="flex items-center gap-2">
+                <input name="requires_resource" type="checkbox" value="1" />
+                Requiere recurso físico
+              </label>
+              <small>
+                Si está activo, cada sesión inicia con 1 uso por recurso y puede ajustarse
+                después sin cambiar la actividad.
+              </small>
               <label>
                 Color en el horario
                 <input name="color_hex" type="color" defaultValue="#FF0A8A" />
@@ -206,6 +214,7 @@ export default async function AgendaConfigurationPage({
                     {item.drop_in_price_minor != null
                       ? ` · Suelta ${formatMoney(item.drop_in_price_minor)}`
                       : ""}
+                    {item.requires_resource ? " · Recurso" : ""}
                   </option>
                 ))}
               </select>
