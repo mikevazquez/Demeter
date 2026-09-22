@@ -73,7 +73,7 @@ describe("ADMIN-UX-02 navigation architecture", () => {
     expect(agenda).toContain('id="clases-programadas"');
     expect(agendaConfiguration).toContain('redirect("/admin/actividades")');
     expect(activitiesWizard).toContain("Horarios y operación");
-    expect(activitiesWizard).toContain("+ Agregar horario");
+    expect(activitiesWizard).toContain("+ Agregar hora");
     expect(layout).not.toContain('label: "Ventas"');
   });
 
