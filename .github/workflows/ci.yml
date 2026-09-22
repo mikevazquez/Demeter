@@ -34,7 +34,22 @@ jobs:
         run: npm ci
 
       - name: Format check
-        run: npm run format:check
+        run: |
+          if ! npm run format:check; then
+            echo "::group::PRETTIER_PAGE"
+            npx prettier "app/admin/agenda/[sessionId]/recursos/page.tsx"
+            echo "::endgroup::"
+            echo "::group::PRETTIER_ACTIONS"
+            npx prettier "app/admin/agenda/[sessionId]/recursos/actions.ts"
+            echo "::endgroup::"
+            echo "::group::PRETTIER_CSS"
+            npx prettier "app/admin/agenda/[sessionId]/recursos/session-resources.module.css"
+            echo "::endgroup::"
+            echo "::group::PRETTIER_TEST"
+            npx prettier "tests/recursos-01-admin-reassignment.test.ts"
+            echo "::endgroup::"
+            exit 1
+          fi
 
       - name: Lint
         run: npm run lint
