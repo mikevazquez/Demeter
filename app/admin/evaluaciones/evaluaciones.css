@@ -2402,9 +2402,29 @@
 
 .eval-simple-requirements-list form {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) 120px auto;
   align-items: center;
   gap: 8px;
+}
+
+.eval-simple-requirement-min {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 6px;
+  color: #8794a4;
+  font-size: 8px;
+}
+
+.eval-simple-requirement-min input {
+  min-width: 0;
+  min-height: 32px;
+  padding: 6px 8px;
+  border: 1px solid #33404f;
+  border-radius: 9px;
+  background: #0a1118;
+  color: #fff;
+  font: inherit;
 }
 
 .eval-simple-mini-save {
@@ -2492,6 +2512,14 @@
 
   .eval-simple-mode-option {
     min-height: 78px;
+  }
+
+  .eval-simple-requirements-list form {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .eval-simple-requirement-min {
+    grid-column: 1 / -1;
   }
 }
 
