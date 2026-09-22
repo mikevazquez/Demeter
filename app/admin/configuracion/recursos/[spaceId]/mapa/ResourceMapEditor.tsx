@@ -16,7 +16,7 @@ type ResourceItem = {
 export type EditableMapElement = {
   id: string;
   resource_id: string | null;
-  element_kind: "resource" | "door" | "mirror" | "window" | "label";
+  element_kind: "resource" | "wall" | "door" | "mirror" | "window" | "label";
   label: string | null;
   x: number;
   y: number;
@@ -44,18 +44,19 @@ function makeReference(
 ): EditableMapElement {
   const isLabel = kind === "label";
   const isWide = kind === "mirror" || kind === "window";
+  const isWall = kind === "wall";
 
   return {
     id: crypto.randomUUID(),
     resource_id: null,
     element_kind: kind,
     label,
-    x: 0.42,
+    x: 0.38,
     y: 0.42,
-    width: isLabel ? 0.16 : isWide ? 0.2 : 0.09,
-    height: isLabel ? 0.07 : isWide ? 0.055 : 0.13,
+    width: isWall ? 0.28 : isLabel ? 0.16 : isWide ? 0.22 : 0.09,
+    height: isWall ? 0.028 : isLabel ? 0.07 : isWide ? 0.055 : 0.13,
     rotation_degrees: 0,
-    z_index: 1,
+    z_index: isWall ? 0 : 1,
     metadata: {},
   };
 }
@@ -68,8 +69,8 @@ function resourceElement(resource: ResourceItem): EditableMapElement {
     label: resource.shortLabel || resource.name,
     x: 0.44,
     y: 0.42,
-    width: 0.085,
-    height: 0.12,
+    width: 0.075,
+    height: 0.105,
     rotation_degrees: 0,
     z_index: 2,
     metadata: {},
@@ -92,6 +93,8 @@ export function ResourceMapEditor({
   const [elements, setElements] = useState(initialElements);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [preview, setPreview] = useState(false);
+  const [showGrid, setShowGrid] = useState(true);
+  const [snapToGrid, setSnapToGrid] = useState(true);
   const [history, setHistory] = useState<EditableMapElement[][]>([]);
   const [future, setFuture] = useState<EditableMapElement[][]>([]);
   const canvasRef = useRef<HTMLDivElement>(null);
@@ -110,6 +113,16 @@ export function ResourceMapEditor({
       ),
     [elements, resources],
   );
+
+  const groupedResources = useMemo(() => {
+    const groups = new Map<string, ResourceItem[]>();
+    for (const resource of unplacedResources) {
+      const group = groups.get(resource.typeName) ?? [];
+      group.push(resource);
+      groups.set(resource.typeName, group);
+    }
+    return [...groups.entries()];
+  }, [unplacedResources]);
 
   function commit(next: EditableMapElement[]) {
     setHistory((items) => [...items.slice(-39), elements]);
@@ -139,13 +152,12 @@ export function ResourceMapEditor({
 
   function duplicateSelected() {
     if (!selected || selected.element_kind === "resource") return;
-    const copy = {
+    addElement({
       ...selected,
       id: crypto.randomUUID(),
       x: clamp(selected.x + 0.03, 0, 1 - selected.width),
       y: clamp(selected.y + 0.03, 0, 1 - selected.height),
-    };
-    addElement(copy);
+    });
   }
 
   function undo() {
@@ -164,6 +176,12 @@ export function ResourceMapEditor({
     setElements(next);
     setFuture((items) => items.slice(1));
     setSelectedId(null);
+  }
+
+  function snap(value: number) {
+    if (!snapToGrid) return value;
+    const grid = 0.025;
+    return Math.round(value / grid) * grid;
   }
 
   function onPointerDown(
@@ -195,12 +213,12 @@ export function ResourceMapEditor({
 
     const rect = canvas.getBoundingClientRect();
     const nextX = clamp(
-      (event.clientX - rect.left - drag.offsetX) / rect.width,
+      snap((event.clientX - rect.left - drag.offsetX) / rect.width),
       0,
       1 - element.width,
     );
     const nextY = clamp(
-      (event.clientY - rect.top - drag.offsetY) / rect.height,
+      snap((event.clientY - rect.top - drag.offsetY) / rect.height),
       0,
       1 - element.height,
     );
@@ -214,9 +232,40 @@ export function ResourceMapEditor({
     }
   }
 
+  function updateNumeric(
+    key: "x" | "y" | "width" | "height" | "rotation_degrees",
+    rawValue: string,
+  ) {
+    if (!selected) return;
+    const value = Number(rawValue);
+    if (!Number.isFinite(value)) return;
+
+    if (key === "rotation_degrees") {
+      updateElement(selected.id, { rotation_degrees: ((value % 360) + 360) % 360 });
+      return;
+    }
+
+    const normalized = value / 100;
+    if (key === "x") {
+      updateElement(selected.id, { x: clamp(normalized, 0, 1 - selected.width) });
+    } else if (key === "y") {
+      updateElement(selected.id, { y: clamp(normalized, 0, 1 - selected.height) });
+    } else if (key === "width") {
+      updateElement(selected.id, { width: clamp(normalized, 0.02, 1 - selected.x) });
+    } else {
+      updateElement(selected.id, { height: clamp(normalized, 0.02, 1 - selected.y) });
+    }
+  }
+
   return (
     <>
       <div className={styles.editorToolbar}>
+        <div className={styles.saveStatus}>
+          <span className={styles.savedDot} />
+          <strong>Guardado</strong>
+          <small>Los cambios se guardan al confirmar</small>
+        </div>
+
         <div className={styles.editorToolbarGroup}>
           <button
             type="button"
@@ -224,7 +273,7 @@ export function ResourceMapEditor({
             onClick={undo}
             disabled={!history.length}
           >
-            Deshacer
+            ↶ Deshacer
           </button>
           <button
             type="button"
@@ -232,7 +281,7 @@ export function ResourceMapEditor({
             onClick={redo}
             disabled={!future.length}
           >
-            Rehacer
+            ↷ Rehacer
           </button>
           <button
             type="button"
@@ -241,24 +290,134 @@ export function ResourceMapEditor({
           >
             {preview ? "Volver a editar" : "Vista previa"}
           </button>
-        </div>
 
-        <form action={saveSpaceMapAction}>
-          <input type="hidden" name="space_id" value={spaceId} />
-          <input type="hidden" name="canvas_width" value={initialCanvasWidth} />
-          <input type="hidden" name="canvas_height" value={initialCanvasHeight} />
-          <input type="hidden" name="elements_json" value={JSON.stringify(elements)} />
-          <button className={styles.primaryButton} type="submit">
-            Guardar mapa
-          </button>
-        </form>
+          <form action={saveSpaceMapAction}>
+            <input type="hidden" name="space_id" value={spaceId} />
+            <input type="hidden" name="canvas_width" value={initialCanvasWidth} />
+            <input type="hidden" name="canvas_height" value={initialCanvasHeight} />
+            <input type="hidden" name="elements_json" value={JSON.stringify(elements)} />
+            <button className={styles.primaryButton} type="submit">
+              Guardar cambios
+            </button>
+          </form>
+        </div>
       </div>
 
       <div className={styles.editorShell}>
+        <aside className={styles.libraryPanel}>
+          <div className={styles.panelTabs}>
+            <button className={styles.tabActive} type="button">
+              Elementos
+            </button>
+            <button type="button" disabled>
+              Configuración
+            </button>
+          </div>
+
+          <section className={styles.librarySection}>
+            <p className={styles.libraryLabel}>ESTRUCTURA</p>
+            <div className={styles.palette}>
+              <button type="button" onClick={() => addElement(makeReference("wall", "División"))}>
+                <span>━</span>
+                Pared / División
+              </button>
+            </div>
+          </section>
+
+          <section className={styles.librarySection}>
+            <p className={styles.libraryLabel}>REFERENCIAS</p>
+            <div className={styles.palette}>
+              <button type="button" onClick={() => addElement(makeReference("door", "Puerta"))}>
+                <span>▯</span>
+                Puerta
+              </button>
+              <button type="button" onClick={() => addElement(makeReference("mirror", "Espejo"))}>
+                <span>▭</span>
+                Espejo
+              </button>
+              <button type="button" onClick={() => addElement(makeReference("window", "Ventana"))}>
+                <span>⊟</span>
+                Ventana
+              </button>
+              <button type="button" onClick={() => addElement(makeReference("label", "Etiqueta"))}>
+                <span>T</span>
+                Texto / Etiqueta
+              </button>
+            </div>
+          </section>
+
+          <section className={styles.librarySection}>
+            <p className={styles.libraryLabel}>RECURSOS</p>
+            <p className={styles.libraryHelp}>
+              Coloca los recursos físicos que ya existen en este espacio.
+            </p>
+
+            <div className={styles.unplacedList}>
+              {groupedResources.length ? (
+                groupedResources.map(([typeName, items]) => (
+                  <div className={styles.resourceGroup} key={typeName}>
+                    <span>{typeName}</span>
+                    {items.map((resource) => (
+                      <button
+                        type="button"
+                        className={styles.unplacedButton}
+                        key={resource.id}
+                        onClick={() => addElement(resourceElement(resource))}
+                      >
+                        <b>{resource.shortLabel || resource.name}</b>
+                        <small>Colocar</small>
+                      </button>
+                    ))}
+                  </div>
+                ))
+              ) : (
+                <p className={styles.libraryEmpty}>Todos los recursos activos están ubicados.</p>
+              )}
+            </div>
+
+            <a className={styles.addMoreLink} href="/admin/configuracion/recursos">
+              + Añadir varios recursos
+            </a>
+          </section>
+        </aside>
+
         <section className={styles.canvasWrap}>
+          <div className={styles.canvasHeader}>
+            <div>
+              <strong>Mapa del espacio</strong>
+              <small>Arrastra los elementos para reproducir la distribución real.</small>
+            </div>
+
+            <div className={styles.canvasControls}>
+              <span>100%</span>
+              <label>
+                <input
+                  type="checkbox"
+                  checked={showGrid}
+                  onChange={(event) => setShowGrid(event.target.checked)}
+                />
+                Mostrar cuadrícula
+              </label>
+              <label>
+                <input
+                  type="checkbox"
+                  checked={snapToGrid}
+                  onChange={(event) => setSnapToGrid(event.target.checked)}
+                />
+                Ajustar a cuadrícula
+              </label>
+            </div>
+          </div>
+
           <div
             ref={canvasRef}
-            className={`${styles.canvas} ${preview ? styles.canvasPreview : ""}`}
+            className={[
+              styles.canvas,
+              preview ? styles.canvasPreview : "",
+              !showGrid ? styles.canvasNoGrid : "",
+            ]
+              .filter(Boolean)
+              .join(" ")}
           >
             {elements.map((element) => (
               <button
@@ -292,132 +451,137 @@ export function ResourceMapEditor({
 
           <div className={styles.legend}>
             <span>
-              <i /> Recurso físico
+              <i className={styles.resourceLegend} /> Recurso físico
             </span>
-            <span>Las referencias solo ayudan a ubicarse; no se reservan.</span>
+            <span>
+              <i className={styles.referenceLegend} /> Referencia
+            </span>
+            <span>La geometría será idéntica para admin, coach y alumna.</span>
           </div>
         </section>
 
-        <aside className={styles.sidePanel}>
-          <section className={styles.sideCard}>
-            <h2>Agregar referencia</h2>
-            <p>Marca elementos fijos del espacio para que el mapa sea fácil de reconocer.</p>
-            <div className={styles.palette}>
-              <button type="button" onClick={() => addElement(makeReference("door", "Puerta"))}>
-                Puerta
-              </button>
-              <button type="button" onClick={() => addElement(makeReference("mirror", "Espejo"))}>
-                Espejo
-              </button>
-              <button type="button" onClick={() => addElement(makeReference("window", "Ventana"))}>
-                Ventana
-              </button>
-              <button
-                type="button"
-                onClick={() => addElement(makeReference("label", "Referencia"))}
-              >
-                Texto
-              </button>
-            </div>
-          </section>
+        <aside className={styles.propertiesPanel}>
+          <div className={styles.propertiesHeading}>
+            <p className={styles.libraryLabel}>PROPIEDADES</p>
+            <strong>{selected?.label ?? "Selecciona un elemento"}</strong>
+            <small>
+              {selected
+                ? selected.element_kind === "resource"
+                  ? "Recurso físico"
+                  : "Referencia del espacio"
+                : "Haz clic en el mapa para editar posición, tamaño y rotación."}
+            </small>
+          </div>
 
-          <section className={styles.sideCard}>
-            <h3>Recursos sin ubicar</h3>
-            <p>Coloca cada recurso exactamente donde está físicamente.</p>
-            <div className={styles.unplacedList}>
-              {unplacedResources.length ? (
-                unplacedResources.map((resource) => (
-                  <button
-                    type="button"
-                    className={styles.unplacedButton}
-                    key={resource.id}
-                    onClick={() => addElement(resourceElement(resource))}
-                  >
-                    <span>{resource.shortLabel || resource.name}</span>
-                    <small>{resource.typeName}</small>
-                  </button>
-                ))
-              ) : (
-                <p>Todos los recursos activos ya están ubicados.</p>
-              )}
-            </div>
-          </section>
+          {selected ? (
+            <div className={styles.inspector}>
+              <label className={styles.field}>
+                <span>Nombre visible</span>
+                <input
+                  value={selected.label ?? ""}
+                  onChange={(event) =>
+                    updateElement(selected.id, { label: event.target.value || null })
+                  }
+                />
+              </label>
 
-          <section className={styles.sideCard}>
-            <h3>Elemento seleccionado</h3>
-            {selected ? (
-              <div className={styles.inspector}>
+              <div className={styles.propertyGrid}>
                 <label className={styles.field}>
-                  <span>Etiqueta visible</span>
+                  <span>X %</span>
                   <input
-                    value={selected.label ?? ""}
-                    onChange={(event) =>
-                      updateElement(selected.id, { label: event.target.value || null }, false)
-                    }
-                    onBlur={() => {
-                      setHistory((items) => [...items.slice(-39), elements]);
-                      setFuture([]);
-                    }}
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={Math.round(selected.x * 100)}
+                    onChange={(event) => updateNumeric("x", event.target.value)}
                   />
                 </label>
-
-                <div className={styles.inspectorActions}>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      updateElement(selected.id, {
-                        rotation_degrees: (selected.rotation_degrees + 15) % 360,
-                      })
-                    }
-                  >
-                    Girar +15°
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      updateElement(selected.id, {
-                        rotation_degrees: (selected.rotation_degrees - 15 + 360) % 360,
-                      })
-                    }
-                  >
-                    Girar −15°
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      updateElement(selected.id, {
-                        x: clamp(0.5 - selected.width / 2, 0, 1 - selected.width),
-                      })
-                    }
-                  >
-                    Centrar X
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      updateElement(selected.id, {
-                        y: clamp(0.5 - selected.height / 2, 0, 1 - selected.height),
-                      })
-                    }
-                  >
-                    Centrar Y
-                  </button>
-                  <button
-                    type="button"
-                    disabled={selected.element_kind === "resource"}
-                    onClick={duplicateSelected}
-                  >
-                    Duplicar
-                  </button>
-                  <button type="button" onClick={removeSelected}>
-                    {selected.element_kind === "resource" ? "Quitar del mapa" : "Eliminar"}
-                  </button>
-                </div>
+                <label className={styles.field}>
+                  <span>Y %</span>
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={Math.round(selected.y * 100)}
+                    onChange={(event) => updateNumeric("y", event.target.value)}
+                  />
+                </label>
+                <label className={styles.field}>
+                  <span>Ancho %</span>
+                  <input
+                    type="number"
+                    min="2"
+                    max="100"
+                    value={Math.round(selected.width * 100)}
+                    onChange={(event) => updateNumeric("width", event.target.value)}
+                  />
+                </label>
+                <label className={styles.field}>
+                  <span>Alto %</span>
+                  <input
+                    type="number"
+                    min="2"
+                    max="100"
+                    value={Math.round(selected.height * 100)}
+                    onChange={(event) => updateNumeric("height", event.target.value)}
+                  />
+                </label>
               </div>
-            ) : (
-              <p>Toca un elemento del mapa para editarlo.</p>
-            )}
-          </section>
+
+              <label className={styles.field}>
+                <span>Rotación</span>
+                <div className={styles.rotationField}>
+                  <input
+                    type="range"
+                    min="0"
+                    max="359"
+                    value={selected.rotation_degrees}
+                    onChange={(event) => updateNumeric("rotation_degrees", event.target.value)}
+                  />
+                  <b>{Math.round(selected.rotation_degrees)}°</b>
+                </div>
+              </label>
+
+              <div className={styles.inspectorActions}>
+                <button
+                  type="button"
+                  onClick={() =>
+                    updateElement(selected.id, {
+                      rotation_degrees: (selected.rotation_degrees + 15) % 360,
+                    })
+                  }
+                >
+                  Girar +15°
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    updateElement(selected.id, {
+                      x: clamp(0.5 - selected.width / 2, 0, 1 - selected.width),
+                      y: clamp(0.5 - selected.height / 2, 0, 1 - selected.height),
+                    })
+                  }
+                >
+                  Centrar
+                </button>
+                <button
+                  type="button"
+                  disabled={selected.element_kind === "resource"}
+                  onClick={duplicateSelected}
+                >
+                  Duplicar
+                </button>
+                <button type="button" className={styles.removeButton} onClick={removeSelected}>
+                  {selected.element_kind === "resource" ? "Quitar del mapa" : "Eliminar"}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className={styles.propertiesEmpty}>
+              <span>↖</span>
+              Selecciona una referencia o recurso del lienzo.
+            </div>
+          )}
         </aside>
       </div>
     </>
