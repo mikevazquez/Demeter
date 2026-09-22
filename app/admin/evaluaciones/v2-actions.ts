@@ -487,6 +487,46 @@ export async function addEvaluationV2ItemAction(formData: FormData) {
   redirect(editorUrl(templateId, "apartados", blockId, undefined, "content"));
 }
 
+export async function saveEvaluationV2ItemInlineAction(formData: FormData) {
+  const templateId = text(formData, "template_id");
+  const versionId = text(formData, "version_id");
+  const blockId = text(formData, "block_id");
+  const itemId = text(formData, "item_id");
+  const ctx = await assertDraftVersion(templateId, versionId);
+  const label = text(formData, "label");
+  const rawWeight = text(formData, "item_weight_percent");
+  const itemWeight = rawWeight === "" ? null : numeric(formData, "item_weight_percent");
+  const rawMin = text(formData, "min_score");
+  const minScore = rawMin === "" ? null : numeric(formData, "min_score");
+  const progressionRequired = formData.get("progression_required") === "on";
+
+  if (!label) {
+    return { ok: false, message: "El nombre no puede quedar vacío." };
+  }
+
+  const { error } = await ctx.supabase
+    .from("evaluation_template_elements")
+    .update({
+      item_label: label,
+      item_weight_percent: itemWeight,
+      min_score: minScore,
+      progression_required: progressionRequired,
+      mandatory: progressionRequired,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", itemId)
+    .eq("criterion_id", blockId)
+    .eq("template_version_id", versionId)
+    .eq("studio_id", ctx.studio.id);
+
+  if (error) {
+    return { ok: false, message: "No pudimos guardar el cambio." };
+  }
+
+  revalidatePath(editorUrl(templateId, "apartados", blockId, undefined, "content"));
+  return { ok: true, message: "Guardado" };
+}
+
 export async function updateEvaluationV2ItemAction(formData: FormData) {
   const templateId = text(formData, "template_id");
   const versionId = text(formData, "version_id");
