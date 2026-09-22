@@ -211,12 +211,10 @@ export default async function StudentEvaluationsPage() {
               {item.latest_evaluation_id && !item.invitation_status ? (
                 <Link
                   href={"/student/evaluaciones/resultado/" + item.latest_evaluation_id}
-                  className="mt-4 flex items-center justify-between rounded-2xl border border-white/10 bg-white/[0.025] px-4 py-3 text-sm text-zinc-300"
+                  className="mt-4 flex min-h-12 items-center justify-between rounded-2xl bg-fuchsia-600 px-4 text-sm font-semibold text-white transition hover:bg-fuchsia-500"
                 >
-                  <span>Última evaluación · {outcomeLabel(item.latest_outcome)}</span>
-                  <span aria-hidden="true" className="text-fuchsia-300">
-                    ›
-                  </span>
+                  <span>Ver resultado de tu evaluación</span>
+                  <span aria-hidden="true">→</span>
                 </Link>
               ) : null}
             </article>
