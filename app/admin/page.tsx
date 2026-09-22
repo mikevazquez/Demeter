@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getAdminContext } from "@/lib/auth/admin-context";
+import { CoachTodayView } from "./hoy/CoachTodayView";
 import { TodayClasses, type TodayClassItem } from "./hoy/TodayClasses";
 
 type EligibilityResult = {
@@ -161,8 +162,12 @@ export default async function AdminPage({
 }: {
   searchParams: Promise<{ error?: string; created?: string; date?: string }>;
 }) {
-  const { supabase, studio, can, user } = await getAdminContext();
+  const { supabase, studio, can, user, membership } = await getAdminContext();
   const params = await searchParams;
+
+  if (membership.role === "instructor") {
+    return <CoachTodayView searchParams={params} />;
+  }
   const { data: profile } = await supabase
     .from("profiles")
     .select("full_name")
@@ -205,6 +210,7 @@ export default async function AdminPage({
   const canWriteStudents = can(CAPABILITIES.STUDENTS_WRITE);
   const canWriteSales = can(CAPABILITIES.SALES_WRITE);
   const canWriteAttendance = can(CAPABILITIES.ATTENDANCE_WRITE);
+  const { data: serverNow } = await supabase.rpc("current_server_time");
 
   const [
     { data: selectedSessions },
@@ -303,6 +309,22 @@ export default async function AdminPage({
       };
 
   const reservationIds = (reservations ?? []).map((reservation) => reservation.id);
+  const { data: attendanceCheckins } = reservationIds.length
+    ? await supabase
+        .from("attendance_checkins")
+        .select("reservation_id,source,checked_in_at")
+        .in("reservation_id", reservationIds)
+    : {
+        data: [] as {
+          reservation_id: string;
+          source: string;
+          checked_in_at: string;
+        }[],
+      };
+  const checkinByReservation = new Map(
+    (attendanceCheckins ?? []).map((item) => [item.reservation_id, item]),
+  );
+
   const { data: evaluationInvitations } = reservationIds.length
     ? await supabase
         .from("evaluation_invitations")
@@ -432,6 +454,7 @@ export default async function AdminPage({
           : null;
 
         const evaluationInvitation = evaluationByReservation.get(reservation.id);
+        const attendanceCheckin = checkinByReservation.get(reservation.id);
 
         return {
           id: reservation.id,
@@ -457,6 +480,8 @@ export default async function AdminPage({
           studentId: reservation.student_id,
           evaluationInvitationId: evaluationInvitation?.id ?? null,
           evaluationStatus: evaluationInvitation?.status ?? null,
+          attendanceSource: attendanceCheckin?.source ?? null,
+          checkedInAt: attendanceCheckin?.checked_in_at ?? null,
         };
       }),
       candidates: candidates.map((student) => {
@@ -623,9 +648,11 @@ export default async function AdminPage({
       <TodayClasses
         classes={classes}
         returnDate={selectedKey}
+        serverNow={String(serverNow ?? now.toISOString())}
         canAttendance={canWriteAttendance}
         canBook={canWriteSchedule}
         canCreateStudent={canWriteStudents}
+        canCorrectCompleted
       />
     </main>
   );
