@@ -259,7 +259,7 @@ export default async function AdminPage({
       sessionIds.length
         ? supabase
             .from("reservations")
-            .select("id,session_id,student_id,guest_person_id,status,acquisition_id")
+            .select("id,session_id,student_id,guest_person_id,status,acquisition_id,booked_at")
             .in("session_id", sessionIds)
             .in("status", ["reserved", "attended", "no_show"])
             .order("booked_at")
@@ -271,6 +271,7 @@ export default async function AdminPage({
               guest_person_id: string | null;
               status: string;
               acquisition_id: string | null;
+              booked_at: string;
             }[],
           }),
       templateIds.length
@@ -482,6 +483,11 @@ export default async function AdminPage({
           evaluationStatus: evaluationInvitation?.status ?? null,
           attendanceSource: attendanceCheckin?.source ?? null,
           checkedInAt: attendanceCheckin?.checked_in_at ?? null,
+          attendanceProvenance:
+            session.status === "completed" &&
+            new Date(reservation.booked_at).getTime() >= new Date(session.ends_at).getTime()
+              ? "Agregada manualmente después del cierre"
+              : null,
         };
       }),
       candidates: candidates.map((student) => {
