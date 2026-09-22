@@ -162,10 +162,7 @@ export function ActivityWizard({
     setServerSaveError(false);
   }
 
-  function patchResourceSetting(
-    resourceId: string,
-    next: Partial<ActivityResourceSettingDraft>,
-  ) {
+  function patchResourceSetting(resourceId: string, next: Partial<ActivityResourceSettingDraft>) {
     setDraft((current) => {
       const existing = current.resourceSettings.find(
         (setting) => setting.resourceId === resourceId,

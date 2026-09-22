@@ -284,7 +284,9 @@ export default async function SessionResourcesPage({
           <span>Personas por recurso</span>
           <strong>{session.resource_uses_per_item}</strong>
           <small>
-            {session.resource_config_customized ? "Personalizado en esta sesión" : "Heredado de la actividad"}
+            {session.resource_config_customized
+              ? "Personalizado en esta sesión"
+              : "Heredado de la actividad"}
           </small>
         </article>
         <article>

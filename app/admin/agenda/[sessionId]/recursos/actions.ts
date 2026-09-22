@@ -102,7 +102,6 @@ export async function reassignReservationResourceAction(formData: FormData) {
   redirect(`/admin/agenda/${sessionId}/recursos?reassigned=1`);
 }
 
-
 export async function restoreSessionResourceDefaultsAction(formData: FormData) {
   const sessionId = String(formData.get("session_id") ?? "").trim();
 
