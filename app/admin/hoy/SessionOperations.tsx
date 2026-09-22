@@ -98,8 +98,7 @@ export function SessionOperations({
   const pendingCount = roster.filter((item) => item.status === "reserved").length;
   const startsAtMs = new Date(startsAt).getTime();
   const endsAtMs = new Date(endsAt).getTime();
-  const inProgress =
-    !isCompleted && now !== null && now >= startsAtMs && now < endsAtMs;
+  const inProgress = !isCompleted && now !== null && now >= startsAtMs && now < endsAtMs;
 
   useEffect(() => {
     const updateNow = () => setNow(Date.now());
