@@ -150,7 +150,9 @@ export function SessionOperations({
           message:
             error === "correction_reason_required"
               ? "La corrección requiere un motivo."
-              : error === "phone_exists"
+              : error === "attendance_not_persisted"
+                ? "La corrección no se guardó. Intenta nuevamente."
+                : error === "phone_exists"
                 ? "Ese teléfono ya pertenece a una alumna. Agrégala como alumna existente."
                 : error === "session_full"
                   ? "La clase ya está llena."
