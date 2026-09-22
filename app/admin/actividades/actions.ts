@@ -83,7 +83,6 @@ async function preserveBookedAndClearGeneratedSessions(
     if (error) throw error;
   }
 
-  redirect(`/admin/actividades/${savedActivityId}`);
 }
 
 export async function saveActivity(formData: FormData) {
