@@ -337,11 +337,17 @@ export default async function TechnicalEvaluationDetailPage({
             <p>
               {disciplineResult.data?.name ?? "Disciplina"} ·{" "}
               {isV2 && evaluation.evaluation_purpose === "placement" ? (
-                <>Nivel a validar: {targetLevel} · Actual: {currentLevel}</>
+                <>
+                  Nivel a validar: {targetLevel} · Actual: {currentLevel}
+                </>
               ) : isV2 && evaluation.evaluation_purpose === "progression" ? (
-                <>Nivel actual: {currentLevel} · Objetivo: {nextProgressionLevel}</>
+                <>
+                  Nivel actual: {currentLevel} · Objetivo: {nextProgressionLevel}
+                </>
               ) : (
-                <>Objetivo: {targetLevel} · Actual: {currentLevel}</>
+                <>
+                  Objetivo: {targetLevel} · Actual: {currentLevel}
+                </>
               )}
             </p>
           </div>
@@ -433,7 +439,9 @@ export default async function TechnicalEvaluationDetailPage({
                       : `Mantiene su nivel actual: ${currentLevel}`
                     : `Nivel evaluado: ${targetLevel}`}
               </strong>
-              {step !== "published" ? <span>El cambio se aplicará al publicar resultados.</span> : null}
+              {step !== "published" ? (
+                <span>El cambio se aplicará al publicar resultados.</span>
+              ) : null}
             </section>
           ) : null}
 
