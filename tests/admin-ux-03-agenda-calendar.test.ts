@@ -14,6 +14,9 @@ describe("ADMIN-UX-03 Agenda calendario operativo", () => {
   const configuration = source("app/admin/agenda/configuracion/page.tsx");
   const activitiesWizard = source("app/admin/actividades/ActivityWizard.tsx");
   const activityActions = source("app/admin/actividades/actions.ts");
+  const atomicActivitySave = source(
+    "supabase/migrations/20260922155500_actividades01_atomic_save.sql",
+  );
   const styles = source("app/admin/agenda/agenda-calendar.css");
 
   it("replaces the old session list with the approved calendar architecture", () => {
@@ -66,7 +69,8 @@ describe("ADMIN-UX-03 Agenda calendario operativo", () => {
     expect(configuration).toContain('redirect("/admin/actividades")');
     expect(activitiesWizard).toContain("Horarios y operación");
     expect(activitiesWizard).toContain("+ Agregar hora");
-    expect(activityActions).toContain("materialize_recurring_schedule");
+    expect(activityActions).toContain('.rpc("admin_save_activity"');
+    expect(atomicActivitySave).toContain("materialize_recurring_schedule");
   });
 
   it("keeps class names visible in compact mobile blocks", () => {
