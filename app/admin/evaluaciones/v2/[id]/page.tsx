@@ -4,6 +4,8 @@ import { notFound } from "next/navigation";
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 
+import { AutoSubmitSelect } from "./AutoSubmitSelect";
+
 import {
   activateEvaluationV2Action,
   addEvaluationV2BlockAction,
@@ -454,17 +456,18 @@ export default async function EvaluationV2EditorPage({
 
                 <label className="eval-field">
                   <span>¿Cómo quieres evaluar este bloque?</span>
-                  <select
+                  <AutoSubmitSelect
                     name="block_type"
                     defaultValue={activeBlock.block_type}
                     disabled={!editable}
-                  >
-                    <option value="direct_score">Puntuación directa</option>
-                    <option value="weighted_criteria">Varios criterios</option>
-                    <option value="element_list">Lista de elementos</option>
-                    <option value="correct_incorrect">Correcto / Incorrecto</option>
-                    <option value="meets">Cumple / No cumple</option>
-                  </select>
+                    options={[
+                      { value: "direct_score", label: "Puntuación directa" },
+                      { value: "weighted_criteria", label: "Varios criterios" },
+                      { value: "element_list", label: "Lista de elementos" },
+                      { value: "correct_incorrect", label: "Correcto / Incorrecto" },
+                      { value: "meets", label: "Cumple / No cumple" },
+                    ]}
+                  />
                 </label>
 
                 <div className="eval-field-grid">
