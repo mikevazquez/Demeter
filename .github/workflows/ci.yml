@@ -34,10 +34,7 @@ jobs:
         run: npm ci
 
       - name: Format check
-        run: |
-          npx prettier --write app/api/check-in/route.ts tests/kiosco-01-checkin-contract.test.ts
-          git diff -- app/api/check-in/route.ts tests/kiosco-01-checkin-contract.test.ts
-          git diff --exit-code -- app/api/check-in/route.ts tests/kiosco-01-checkin-contract.test.ts
+        run: npm run format:check
 
       - name: Lint
         run: npm run lint
