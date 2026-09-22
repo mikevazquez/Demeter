@@ -18,13 +18,12 @@ describe("SF-240 Progress & Rewards Portal Alumna v2", () => {
     expect(nav).not.toContain("grid-cols-5");
   });
 
-  it("adds contextual Mi progreso entries from Inicio and Perfil", () => {
+  it("keeps Mi progreso in Perfil without duplicating it on Inicio", () => {
     const home = read("app/student/page.tsx");
     const profile = read("app/student/perfil/page.tsx");
 
-    expect(home).toContain('href="/student/recompensas"');
-    expect(home).toContain('data-home-block="progress"');
-    expect(home).toContain("Mi progreso");
+    expect(home).not.toContain('data-home-block="progress"');
+    expect(home).not.toContain('href="/student/recompensas"');
     expect(profile).toContain('href="/student/recompensas"');
     expect(profile).toContain("Programas, retos, logros y recompensas");
   });
