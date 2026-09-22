@@ -60,9 +60,7 @@ export async function CoachTodayView({
 }: {
   searchParams: { error?: string; created?: string; date?: string };
 }) {
-  const { supabase, studio, membership, user } = await getAdminContext(
-    CAPABILITIES.SCHEDULE_READ,
-  );
+  const { supabase, studio, membership, user } = await getAdminContext(CAPABILITIES.SCHEDULE_READ);
 
   if (membership.role !== "instructor") redirect("/admin");
 
@@ -112,9 +110,7 @@ export async function CoachTodayView({
           checked_in_at: string;
         }[],
       };
-  const checkinByReservation = new Map(
-    (checkins ?? []).map((item) => [item.reservation_id, item]),
-  );
+  const checkinByReservation = new Map((checkins ?? []).map((item) => [item.reservation_id, item]));
 
   const templateNames = [...new Set(sessions.map((session) => session.template_name))];
   const { data: styles } = templateNames.length
@@ -151,8 +147,7 @@ export async function CoachTodayView({
           studentName: item.student_name,
           status: item.attendance_status,
           packageLabel:
-            item.package_name ??
-            (item.commercial_pending ? "Pendiente comercial" : "Reserva"),
+            item.package_name ?? (item.commercial_pending ? "Pendiente comercial" : "Reserva"),
           creditsLabel: item.commercial_pending ? "Venta pendiente" : "Studio Flow",
           expiresLabel: "—",
           evaluationStatus: null,
