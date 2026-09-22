@@ -345,6 +345,16 @@ export async function updateEvaluationV2BlockAction(formData: FormData) {
     .eq("studio_id", ctx.studio.id);
 
   if (error) redirect(editorUrl(templateId, "apartados", blockId, "block", returnView));
+
+  if (blockType !== "weighted_criteria") {
+    await ctx.supabase
+      .from("evaluation_template_elements")
+      .update({ item_weight_percent: null })
+      .eq("template_version_id", versionId)
+      .eq("criterion_id", blockId)
+      .eq("studio_id", ctx.studio.id);
+  }
+
   revalidatePath(editorUrl(templateId));
   redirect(editorUrl(templateId, "apartados", blockId, undefined, returnView));
 }
