@@ -29,7 +29,7 @@ describe("RECURSOS-01 per-session configuration", () => {
     expect(sessionDetail).toContain("/recursos");
     expect(sessionDetail).toContain("Horario y operación");
     expect(page).toContain("El mapa global");
-    expect(page).toContain("no se modifica");
+    expect(page).toMatch(/no se\s+modifica/);
   });
 
   it("supports a default number of uses plus per-resource overrides", () => {
