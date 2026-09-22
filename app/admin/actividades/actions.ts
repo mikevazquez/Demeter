@@ -425,5 +425,5 @@ export async function saveActivity(formData: FormData) {
     );
   }
 
-  redirect(`/admin/actividades/${savedActivityId}`);
+  redirect("/admin/actividades");
 }
