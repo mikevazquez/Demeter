@@ -527,6 +527,8 @@ export default async function SessionDetailPage({
           sessionId={sessionId}
           returnDate={from}
           sessionStatus={session.status}
+          startsAt={session.starts_at}
+          endsAt={session.ends_at}
           roster={roster}
           candidates={operationCandidates}
           available={available}
