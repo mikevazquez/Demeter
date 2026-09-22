@@ -13,7 +13,8 @@ export default async function NewActivityPage({
   const params = await searchParams;
   const { supabase, studio } = await getAdminContext(CAPABILITIES.SCHEDULE_WRITE);
 
-  const [{ data: instructors }, { data: persons }, { data: spaces }] = await Promise.all([
+  const [{ data: instructors }, { data: persons }, { data: spaces }, { data: resources }] =
+    await Promise.all([
     supabase
       .from("instructors")
       .select("id,person_id,status")
@@ -23,6 +24,12 @@ export default async function NewActivityPage({
     supabase
       .from("spaces")
       .select("id,name,capacity")
+      .eq("studio_id", studio.id)
+      .eq("active", true)
+      .order("name"),
+    supabase
+      .from("resources")
+      .select("id,name,short_label,space_id")
       .eq("studio_id", studio.id)
       .eq("active", true)
       .order("name"),
@@ -58,6 +65,11 @@ export default async function NewActivityPage({
         spaces={(spaces ?? []).map((item) => ({
           id: item.id,
           label: item.capacity ? `${item.name} · máx. ${item.capacity}` : item.name,
+        }))}
+        resources={(resources ?? []).map((item) => ({
+          id: item.id,
+          spaceId: item.space_id,
+          label: item.short_label || item.name,
         }))}
       />
     </main>
