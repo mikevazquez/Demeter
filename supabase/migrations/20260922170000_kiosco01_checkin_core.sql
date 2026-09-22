@@ -355,17 +355,17 @@ begin
 
   -- Lee la referencia primero y después bloquea en el mismo orden que el cierre:
   -- sesión -> reserva. Esto evita carreras entre el último scan y finalize_attendance.
-  select session_id into v_reservation.session_id
-  from public.reservations
-  where id = v_token_row.reservation_id;
+  select r.session_id into v_session_id
+  from public.reservations r
+  where r.id = v_token_row.reservation_id;
 
-  if v_reservation.session_id is null then
+  if v_session_id is null then
     return jsonb_build_object('ok', false, 'status', 'invalid_token');
   end if;
 
   select * into v_session
   from public.class_sessions
-  where id = v_reservation.session_id
+  where id = v_session_id
   for update;
 
   if not found then
