@@ -304,7 +304,7 @@ export async function signIn(formData: FormData) {
 
   const membership = studioAccess.memberships[0];
   await setSelectedStudio(membership.studio_id);
-  redirect(portalDestination(membership, studioAccess.capabilities));
+  redirect(portalDestination());
 }
 
 export async function selectStudio(formData: FormData) {
@@ -341,7 +341,7 @@ export async function selectStudio(formData: FormData) {
   }
 
   await setSelectedStudio(studioId);
-  redirect(portalDestination(membership, studioAccess.capabilities));
+  redirect(portalDestination());
 }
 
 export async function completeStudioPasswordActivation(formData: FormData) {
@@ -380,7 +380,7 @@ export async function completeStudioPasswordActivation(formData: FormData) {
     if (studioAccess.memberships.length > 1) redirect("/login/studio/seleccionar");
     const membership = studioAccess.memberships[0];
     await setSelectedStudio(membership.studio_id);
-    redirect(portalDestination(membership, studioAccess.capabilities));
+    redirect(portalDestination());
   }
 
   const hasInstructorMembership = studioAccess.memberships.some(
@@ -401,7 +401,7 @@ export async function completeStudioPasswordActivation(formData: FormData) {
 
   const membership = studioAccess.memberships[0];
   await setSelectedStudio(membership.studio_id);
-  redirect(portalDestination(membership, studioAccess.capabilities));
+  redirect(portalDestination());
 }
 
 export async function createInitialOwnerAccount(formData: FormData) {
