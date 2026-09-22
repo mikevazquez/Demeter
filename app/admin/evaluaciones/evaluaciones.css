@@ -1333,7 +1333,7 @@
 
 .eval-v2-item-row {
   display: grid;
-  grid-template-columns: minmax(130px, 1.2fr) 86px minmax(155px, 1fr) auto 30px;
+  grid-template-columns: minmax(130px, 1.2fr) 86px 110px minmax(155px, 1fr) auto 30px;
   align-items: center;
   gap: 8px;
   padding: 8px;
@@ -1354,6 +1354,17 @@
 
 .eval-v2-mini-percent {
   min-height: 36px;
+}
+
+.eval-v2-mini-field {
+  display: grid;
+  gap: 4px;
+}
+
+.eval-v2-mini-field > span {
+  color: #7f8b9c;
+  font-size: 7px;
+  font-weight: 750;
 }
 
 .eval-v2-mini-percent input {
