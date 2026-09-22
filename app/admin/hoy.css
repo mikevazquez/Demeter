@@ -1514,6 +1514,193 @@
   font-weight: 800;
 }
 
+/* Unified Hoy · class lifecycle + coach parity */
+.today-class-state-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.today-class-state,
+.today-class-countdown,
+.today-attendance-origin {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.today-class-state {
+  padding: 4px 8px;
+  color: #d6dbe3;
+  background: rgba(118, 130, 150, 0.14);
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.today-class-state.is-upcoming {
+  border-color: rgba(139, 154, 178, 0.24);
+  background: rgba(104, 119, 143, 0.14);
+  color: #d9e0ea;
+}
+
+.today-class-state.is-live {
+  border-color: rgba(52, 211, 153, 0.48);
+  background: rgba(16, 185, 129, 0.14);
+  color: #8cf4cd;
+  box-shadow: 0 0 18px rgba(16, 185, 129, 0.08);
+}
+
+.today-class-state.is-finished {
+  border-color: rgba(114, 113, 255, 0.5);
+  background: rgba(99, 102, 241, 0.16);
+  color: #c7c8ff;
+}
+
+.today-class-state.is-cancelled {
+  border-color: rgba(244, 63, 94, 0.46);
+  background: rgba(244, 63, 94, 0.13);
+  color: #ffb2c1;
+}
+
+.today-class-state.is-closing {
+  border-color: rgba(255, 10, 138, 0.34);
+  background: rgba(255, 10, 138, 0.09);
+  color: #ff9bce;
+}
+
+.today-class-countdown {
+  padding: 4px 7px;
+  border-color: rgba(255, 255, 255, 0.11);
+  background: rgba(255, 255, 255, 0.045);
+  color: #c9d0db;
+  font-size: 9px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.today-attendance-origin {
+  margin-top: 4px;
+  padding: 3px 7px;
+  border-color: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.035);
+  color: #aab4c2 !important;
+  font-size: 9px !important;
+  font-weight: 750;
+}
+
+.today-class-summary {
+  min-height: 86px;
+}
+
+.hoy-coach {
+  max-width: 980px;
+}
+
+.hoy-coach .today-class-list {
+  margin-top: 2px;
+}
+
+.coach-profile-page {
+  min-height: min(72vh, 680px);
+  display: grid;
+  place-items: center;
+}
+
+.coach-profile-card {
+  width: min(100%, 520px);
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  padding: 34px;
+  border: 1px solid #29323e;
+  border-radius: 26px;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(255, 10, 138, 0.12), transparent 38%),
+    linear-gradient(145deg, #11161e, #0b1016);
+  text-align: center;
+}
+
+.coach-profile-avatar {
+  width: 72px;
+  height: 72px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255, 10, 138, 0.62);
+  border-radius: 999px;
+  background: rgba(255, 10, 138, 0.06);
+  color: #f7d9e8;
+  font-size: 20px;
+  font-weight: 800;
+  box-shadow: 0 0 28px rgba(255, 10, 138, 0.08);
+}
+
+.coach-profile-card .dashboard-title {
+  margin: 0;
+}
+
+.coach-profile-copy {
+  max-width: 390px;
+  margin: 0 0 4px;
+  color: #98a3b4;
+  font-size: 13px;
+  line-height: 1.65;
+}
+
+@media (max-width: 760px) {
+  .hoy-coach {
+    grid-template-columns: 1fr;
+  }
+
+  .hoy-coach .hoy-product-header {
+    grid-column: 1;
+  }
+
+  .hoy-coach .hoy-week-heading {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .hoy-coach .hoy-week-card .mock-week-calendar {
+    grid-column: 1;
+    grid-row: 3;
+  }
+
+  .hoy-coach .today-class-list,
+  .hoy-coach > .notice {
+    grid-column: 1;
+  }
+
+  .today-class-summary {
+    min-height: 82px;
+  }
+
+  .today-class-state {
+    padding: 3px 7px;
+    font-size: 8px;
+  }
+
+  .today-class-countdown {
+    padding: 3px 6px;
+    font-size: 8px;
+  }
+
+  .coach-profile-page {
+    min-height: 62vh;
+    padding: 18px;
+  }
+
+  .coach-profile-card {
+    padding: 28px 20px;
+    border-radius: 22px;
+  }
+}
+
 
 /* CANCELACION-MIN-01 · badges en lista de clases */
 .today-class-capacity {
