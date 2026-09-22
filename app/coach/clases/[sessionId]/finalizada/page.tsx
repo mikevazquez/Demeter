@@ -61,9 +61,7 @@ export default async function CoachFinalizedPage({
           <p className="mt-2 text-3xl font-semibold text-white">{attended}</p>
         </div>
         <div className="rounded-3xl border border-rose-400/20 bg-rose-400/10 p-5">
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-rose-200">
-            No show
-          </p>
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-rose-200">No show</p>
           <p className="mt-2 text-3xl font-semibold text-white">{noShow}</p>
         </div>
       </section>
