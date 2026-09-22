@@ -128,6 +128,10 @@ export async function createSession(formData: FormData) {
     Number.isFinite(capacityOverride) && capacityOverride > 0
       ? capacityOverride
       : template.capacity;
+  if (template.requires_resource && !spaceId) {
+    redirect("/admin/agenda?error=space");
+  }
+
   const resourceError = await validateResources(
     supabase,
     studio.id,
