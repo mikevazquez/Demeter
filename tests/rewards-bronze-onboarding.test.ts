@@ -15,6 +15,10 @@ const pwaPush = readFileSync(
   join(process.cwd(), "supabase/migrations/20260923211000_rewards_onboarding_pwa_push.sql"),
   "utf8",
 );
+const documentosDomain = readFileSync(
+  join(process.cwd(), "supabase/migrations/20260923180328_documentos01_domain.sql"),
+  "utf8",
+);
 const rewardsPage = readFileSync(join(process.cwd(), "app/student/recompensas/page.tsx"), "utf8");
 const onboardingUi = readFileSync(
   join(process.cwd(), "app/student/recompensas/OnboardingActivation.tsx"),
@@ -82,9 +86,12 @@ describe("REWARDS Bronze onboarding", () => {
     expect(onboarding).toContain("new.status = 'attended'");
   });
 
-  it("supports future Documentos integration without inventing acceptance evidence", () => {
+  it("uses the native DOCUMENTOS-01 hook for the first onboarding milestone", () => {
     expect(onboarding).toContain("reward_onboarding_mark_documents_complete");
     expect(onboarding).toContain("documents_evidence");
+    expect(documentosDomain).toContain("document_refresh_rewards_onboarding");
+    expect(documentosDomain).toContain("reward_onboarding_mark_documents_complete(uuid,jsonb)");
+    expect(documentosDomain).toContain("document_acceptance_after_insert");
     expect(onboardingUi).toContain('href="/student/documentos"');
   });
 
