@@ -127,7 +127,7 @@ export default async function ReviewDocumentPage({
                     dateStyle: "medium",
                     timeStyle: "short",
                     timeZone: studio.timezone,
-                  }).format(new Date(version.effective_at ?? Date.now())),
+                  }).format(new Date(version.effective_at ?? version.created_at)),
                 ],
                 ["Nueva aceptación", version.requires_reacceptance ? "Sí" : "No"],
               ].map(([label, value]) => (
