@@ -1124,3 +1124,217 @@ drop trigger if exists reward_status_seed_student on public.students;
 create trigger reward_status_seed_student
 after insert on public.students
 for each row execute function private.seed_reward_status_for_new_student();
+
+
+-- Waitlist remains available before the first medal. No-medal students have
+-- base priority 0, below Bronze, and are still ordered FIFO among themselves.
+create or replace function public.student_join_waitlist(target_session_id uuid)
+returns jsonb
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_session public.class_sessions%rowtype;
+  v_student public.students%rowtype;
+  v_timezone text;
+  v_today date;
+  v_booked integer;
+  v_eligibility jsonb;
+  v_entry public.class_waitlist_entries%rowtype;
+  v_level public.reward_status_level_definitions%rowtype;
+begin
+  if (select auth.uid()) is null then raise exception 'unauthenticated'; end if;
+
+  select * into v_session
+  from public.class_sessions
+  where id = target_session_id
+  for update;
+
+  if not found then raise exception 'session_not_found'; end if;
+
+  select s.* into v_student
+  from public.students s
+  where s.studio_id = v_session.studio_id
+    and s.user_id = (select auth.uid())
+    and private.is_current_student(s.id, s.studio_id)
+  order by s.created_at asc
+  limit 1;
+
+  if not found then raise exception 'forbidden'; end if;
+
+  if v_session.status <> 'scheduled' or v_session.starts_at <= now() then
+    return jsonb_build_object('ok', false, 'reason_code', 'session_not_bookable');
+  end if;
+
+  if exists (
+    select 1
+    from public.reservations r
+    where r.session_id = v_session.id
+      and r.student_id = v_student.id
+      and r.status in ('reserved','attended')
+  ) then
+    return jsonb_build_object('ok', false, 'reason_code', 'already_reserved');
+  end if;
+
+  select * into v_entry
+  from public.class_waitlist_entries w
+  where w.session_id = v_session.id
+    and w.student_id = v_student.id
+    and w.status = 'active'
+  order by w.joined_at asc
+  limit 1;
+
+  select coalesce(s.timezone, 'America/Mexico_City')
+    into v_timezone
+  from public.studios s
+  where s.id = v_student.studio_id;
+  v_today := (clock_timestamp() at time zone v_timezone)::date;
+
+  perform private.reward_status_sync_student(v_student.id, v_today);
+
+  select d.* into v_level
+  from public.reward_status_memberships m
+  join public.reward_status_level_definitions d
+    on d.studio_id=m.studio_id
+   and d.level_key=m.current_level_key
+  where m.studio_id=v_student.studio_id
+    and m.student_id=v_student.id;
+
+  if v_entry.id is not null then
+    return jsonb_build_object(
+      'ok', true,
+      'reused', true,
+      'waitlist_entry_id', v_entry.id,
+      'status', 'active',
+      'level_key', v_level.level_key,
+      'level_title', v_level.title,
+      'medal_key', v_level.level_key,
+      'medal_title', v_level.title,
+      'waitlist_priority', coalesce(v_level.waitlist_priority,0)
+    );
+  end if;
+
+  select count(*)::integer into v_booked
+  from public.reservations r
+  where r.session_id = v_session.id
+    and r.status in ('reserved','attended');
+
+  if v_booked < v_session.capacity then
+    return jsonb_build_object('ok', false, 'reason_code', 'seat_available');
+  end if;
+
+  v_eligibility := private.waitlist_eligibility_core(v_session.id, v_student.id);
+  if not coalesce((v_eligibility->>'eligible')::boolean, false) then
+    return jsonb_build_object(
+      'ok', false,
+      'reason_code', coalesce(v_eligibility->>'reason_code','waitlist_not_eligible')
+    );
+  end if;
+
+  insert into public.class_waitlist_entries (
+    studio_id, session_id, student_id, status
+  )
+  values (
+    v_student.studio_id, v_session.id, v_student.id, 'active'
+  )
+  returning * into v_entry;
+
+  return jsonb_build_object(
+    'ok', true,
+    'reused', false,
+    'waitlist_entry_id', v_entry.id,
+    'status', 'active',
+    'level_key', v_level.level_key,
+    'level_title', v_level.title,
+    'medal_key', v_level.level_key,
+    'medal_title', v_level.title,
+    'waitlist_priority', coalesce(v_level.waitlist_priority,0)
+  );
+end;
+$$;
+
+revoke all on function public.student_join_waitlist(uuid)
+from public, anon;
+grant execute on function public.student_join_waitlist(uuid)
+to authenticated;
+
+create or replace function private.promote_waitlist_for_session(p_session_id uuid)
+returns jsonb
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_session public.class_sessions%rowtype;
+  v_timezone text;
+  v_today date;
+  v_candidate record;
+  v_result jsonb;
+begin
+  select * into v_session
+  from public.class_sessions
+  where id=p_session_id
+  for update;
+
+  if not found then
+    return jsonb_build_object('ok', false, 'reason_code', 'session_not_found');
+  end if;
+
+  if v_session.status <> 'scheduled' or v_session.starts_at <= now() then
+    update public.class_waitlist_entries
+    set status='expired',
+        resolved_at=now(),
+        resolution_reason='session_not_bookable',
+        updated_at=now()
+    where session_id=v_session.id and status='active';
+
+    return jsonb_build_object('ok', false, 'reason_code', 'session_not_bookable');
+  end if;
+
+  select coalesce(s.timezone, 'America/Mexico_City')
+    into v_timezone
+  from public.studios s
+  where s.id=v_session.studio_id;
+  v_today := (clock_timestamp() at time zone v_timezone)::date;
+
+  for v_candidate in
+    select w.student_id
+    from public.class_waitlist_entries w
+    where w.session_id=v_session.id and w.status='active'
+    order by w.joined_at asc, w.id asc
+  loop
+    perform private.reward_status_sync_student(v_candidate.student_id, v_today);
+  end loop;
+
+  for v_candidate in
+    select
+      w.id,
+      w.student_id,
+      coalesce(d.level_order,0) as medal_order,
+      w.joined_at
+    from public.class_waitlist_entries w
+    left join public.reward_status_memberships m
+      on m.studio_id=w.studio_id and m.student_id=w.student_id
+    left join public.reward_status_level_definitions d
+      on d.studio_id=m.studio_id and d.level_key=m.current_level_key
+    where w.session_id=v_session.id and w.status='active'
+    order by coalesce(d.level_order,0) desc, w.joined_at asc, w.id asc
+  loop
+    v_result := private.waitlist_book_student(v_candidate.id);
+
+    if coalesce((v_result->>'ok')::boolean, false) then
+      return v_result;
+    end if;
+
+    if v_result->>'reason_code' = 'session_full' then
+      return jsonb_build_object('ok', false, 'reason_code', 'session_full');
+    end if;
+  end loop;
+
+  return jsonb_build_object('ok', false, 'reason_code', 'no_eligible_waitlist_entry');
+end;
+$$;
+
+revoke all on function private.promote_waitlist_for_session(uuid)
+from public, anon, authenticated, service_role;
