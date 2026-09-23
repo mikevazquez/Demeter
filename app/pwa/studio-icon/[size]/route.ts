@@ -37,10 +37,7 @@ function storageUrl(path: string) {
   return env.supabaseUrl + "/storage/v1/object/public/studio-branding/" + encodedPath;
 }
 
-export async function GET(
-  request: Request,
-  { params }: { params: Promise<{ size: string }> },
-) {
+export async function GET(request: Request, { params }: { params: Promise<{ size: string }> }) {
   const { size: rawSize } = await params;
   const size = Number.parseInt(rawSize, 10);
 
