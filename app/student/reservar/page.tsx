@@ -196,7 +196,10 @@ export default async function StudentReservePage({
       </header>
 
       {globalRestrictions.length ? (
-        <BookingRestrictionCard restrictions={globalRestrictions} />
+        <BookingRestrictionCard
+          restrictions={globalRestrictions}
+          returnTo={`/student/reservar?date=${selectedDate}`}
+        />
       ) : null}
 
       <section
