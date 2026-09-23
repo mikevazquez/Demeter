@@ -11,6 +11,9 @@ const errorCopy: Record<string, string> = {
   email_invalid: "Revisa el formato de tu correo.",
   profile_update_failed: "No pudimos guardar los cambios. Intenta de nuevo.",
   forbidden: "Tu cuenta no tiene permiso para editar estos datos.",
+  birth_date_required: "Agrega tu fecha de nacimiento.",
+  birth_date_invalid: "Revisa tu fecha de nacimiento.",
+  birth_date_field_missing: "No encontramos el campo de fecha de nacimiento.",
 };
 
 function profileInitials(firstName: string, lastName: string | null) {
@@ -32,13 +35,41 @@ export default async function StudentProfilePage({
   }>;
 }) {
   const query = await searchParams;
-  const { snapshot, studio } = await getStudentPortalContext();
+  const { snapshot, studio, supabase } = await getStudentPortalContext();
   const activePackage = snapshot.acquisitions.find((item) => item.active_now) ?? null;
   const fullName = [snapshot.profile.first_name, snapshot.profile.last_name]
     .filter(Boolean)
     .join(" ");
   const initials = profileInitials(snapshot.profile.first_name, snapshot.profile.last_name);
-  const editingEmail = query.edit === "1" || Boolean(query.error);
+  const editingProfile = query.edit === "1" || Boolean(query.error);
+
+  const [{ data: studentIdentity }, { data: birthDateDefinition }] = await Promise.all([
+    supabase
+      .from("students")
+      .select("person_id")
+      .eq("id", snapshot.profile.student_id)
+      .maybeSingle(),
+    supabase
+      .from("profile_field_definitions")
+      .select("id")
+      .eq("studio_id", snapshot.profile.studio_id)
+      .eq("entity_type", "student")
+      .eq("key", "birth_date")
+      .eq("active", true)
+      .maybeSingle(),
+  ]);
+
+  let birthDate = "";
+  if (studentIdentity?.person_id && birthDateDefinition?.id) {
+    const { data: birthDateValue } = await supabase
+      .from("profile_field_values")
+      .select("value")
+      .eq("person_id", studentIdentity.person_id)
+      .eq("definition_id", birthDateDefinition.id)
+      .maybeSingle();
+
+    birthDate = typeof birthDateValue?.value === "string" ? birthDateValue.value : "";
+  }
 
   return (
     <main className="space-y-4 pb-4 sm:space-y-5">
@@ -78,7 +109,7 @@ export default async function StudentProfilePage({
       ) : query.updated ? (
         <StudentNoticeDialog
           eyebrow="Cambios guardados"
-          title="Tu correo está actualizado"
+          title="Tu perfil está actualizado"
           dismissHref="/student/perfil"
         >
           Tus datos se actualizaron correctamente.
@@ -155,35 +186,54 @@ export default async function StudentProfilePage({
             <p className="min-w-0 break-all text-sm text-white">
               {snapshot.profile.email || "Sin correo registrado"}
             </p>
-            {!editingEmail ? (
+            {!editingProfile ? (
               <Link
                 href="/student/perfil?edit=1"
                 className="inline-flex min-h-9 w-fit items-center justify-center rounded-xl border border-fuchsia-500/40 bg-fuchsia-500/[0.08] px-3 py-2 text-xs font-semibold text-fuchsia-200 transition hover:bg-fuchsia-500/[0.14]"
               >
-                Editar correo
+                Editar perfil
               </Link>
             ) : null}
           </div>
+          <div className="grid gap-1 py-3.5 sm:grid-cols-[120px_1fr_auto] sm:items-center sm:gap-4">
+            <p className="text-xs font-medium text-zinc-500">Fecha de nacimiento</p>
+            <p className="text-sm text-white">{birthDate || "Sin registrar"}</p>
+            <span className="text-[11px] text-zinc-600">
+              {birthDate ? "Registrada" : "Pendiente"}
+            </span>
+          </div>
         </div>
 
-        {editingEmail ? (
+        {editingProfile ? (
           <form
             action={updateStudentProfileAction}
             className="border-t border-fuchsia-500/15 bg-black/20 p-5 sm:p-6"
           >
-            <div className="sm:flex sm:items-end sm:gap-3">
-              <label className="block min-w-0 flex-1 text-sm text-zinc-300">
+            <div className="grid gap-3 sm:grid-cols-2">
+              <label className="block min-w-0 text-sm text-zinc-300">
                 Correo electrónico
                 <input
                   name="email"
                   type="email"
+                  required
                   defaultValue={snapshot.profile.email ?? ""}
                   autoComplete="email"
                   className="mt-2 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-3 text-white outline-none transition placeholder:text-zinc-600 focus:border-fuchsia-500/60 focus:ring-2 focus:ring-fuchsia-500/15"
                   placeholder="tu@correo.com"
                 />
               </label>
-              <div className="mt-3 flex gap-2 sm:mt-0">
+              <label className="block min-w-0 text-sm text-zinc-300">
+                Fecha de nacimiento
+                <input
+                  name="birth_date"
+                  type="date"
+                  required
+                  defaultValue={birthDate}
+                  className="mt-2 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-3 text-white outline-none transition focus:border-fuchsia-500/60 focus:ring-2 focus:ring-fuchsia-500/15"
+                />
+              </label>
+            </div>
+            <div className="mt-4 flex gap-2">
                 <PendingActionButton
                   pendingLabel="Guardando…"
                   className="min-h-11 rounded-xl bg-fuchsia-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-fuchsia-500 disabled:cursor-wait disabled:opacity-60"
@@ -196,10 +246,10 @@ export default async function StudentProfilePage({
                 >
                   Cancelar
                 </Link>
-              </div>
             </div>
             <p className="mt-2 text-xs text-zinc-500">
-              Tu nombre y teléfono forman parte de tu expediente y los administra el estudio.
+              Tu foto, correo y fecha de nacimiento forman parte de la activación de tu primera medalla.
+              Tu nombre y teléfono los administra el estudio.
             </p>
           </form>
         ) : null}
