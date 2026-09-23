@@ -186,6 +186,14 @@ export default async function EvaluationV2EditorPage({
   const totalWeight = blocks.reduce((sum, block) => sum + Number(block.weight_percent ?? 0), 0);
   const comboCriterionKeys = new Set(["execution", "strength", "lines", "flexibility"]);
   const comboBlocks = blocks.filter((block) => comboCriterionKeys.has(block.criterion_key));
+  const comboWeightTotal = comboBlocks.reduce(
+    (sum, block) => sum + Number(block.weight_percent ?? 0),
+    0,
+  );
+  const comboInternalWeight = (weight: number | string) =>
+    comboWeightTotal > 0
+      ? Math.round((Number(weight) / comboWeightTotal) * 10000) / 100
+      : 0;
   const requiredElementsBlock = blocks.find((block) => block.criterion_key === "required_elements");
   const requiredComboBlock = blocks.find((block) => block.criterion_key === "required_combos");
   const nomenclatureBlock = blocks.find((block) => block.criterion_key === "nomenclature");
@@ -322,22 +330,42 @@ export default async function EvaluationV2EditorPage({
                 />
               </label>
 
-              <label className="eval-simple-field">
-                <span>¿Cuánto vale en el resultado final?</span>
-                <div className="eval-simple-percent-field">
+              {isComboScoringBlock ? (
+                <label className="eval-simple-field">
+                  <span>Peso dentro del combo</span>
+                  <div className="eval-simple-percent-field">
+                    <input
+                      type="number"
+                      value={comboInternalWeight(activeBlock.weight_percent)}
+                      disabled
+                      readOnly
+                    />
+                    <span>%</span>
+                  </div>
                   <input
+                    type="hidden"
                     name="weight_percent"
-                    type="number"
-                    min="0"
-                    max="100"
-                    step="0.01"
-                    defaultValue={activeBlock.weight_percent}
-                    disabled={!editable}
-                    required
+                    value={activeBlock.weight_percent}
                   />
-                  <span>%</span>
-                </div>
-              </label>
+                </label>
+              ) : (
+                <label className="eval-simple-field">
+                  <span>¿Cuánto vale en el resultado final?</span>
+                  <div className="eval-simple-percent-field">
+                    <input
+                      name="weight_percent"
+                      type="number"
+                      min="0"
+                      max="100"
+                      step="0.01"
+                      defaultValue={activeBlock.weight_percent}
+                      disabled={!editable}
+                      required
+                    />
+                    <span>%</span>
+                  </div>
+                </label>
+              )}
 
               <div className="eval-simple-numbered-title">
                 <span>2.</span>
@@ -419,7 +447,7 @@ export default async function EvaluationV2EditorPage({
                 <p>
                   {comboSequenceLabels.length ? comboSequenceLabels.join(" · ") : "Combo del nivel"}
                   {" · "}
-                  {activeBlock.weight_percent}% del resultado
+                  {comboInternalWeight(activeBlock.weight_percent)}% del combo
                 </p>
               </>
             ) : (
@@ -698,7 +726,7 @@ export default async function EvaluationV2EditorPage({
                     : "Secuencia técnica del nivel"}
                 </small>
               </span>
-              <strong>100%</strong>
+              <strong>{comboWeightTotal}%</strong>
             </article>
 
             {comboBlocks.map((block, index) => (
@@ -713,7 +741,7 @@ export default async function EvaluationV2EditorPage({
                 <span className="eval-simple-index">{"1." + (index + 1)}</span>
                 <span className="eval-simple-section-copy">
                   <strong>{block.label}</strong>
-                  <small>{block.weight_percent}% del resultado</small>
+                  <small>{comboInternalWeight(block.weight_percent)}% del combo</small>
                 </span>
                 <span className="eval-simple-chevron">›</span>
               </Link>
@@ -889,7 +917,7 @@ export default async function EvaluationV2EditorPage({
                     <span>{modeLabel(block.block_type)}</span>
                   </div>
                   <div>
-                    <strong>{block.weight_percent}%</strong>
+                    <strong>{comboInternalWeight(block.weight_percent)}% del combo</strong>
                     <span className={validation?.valid ? "is-ok" : ""}>
                       {validation?.valid ? "Completo ✓" : "Revisar"}
                     </span>
@@ -939,7 +967,7 @@ export default async function EvaluationV2EditorPage({
                   <span>Identificación de figuras del nivel</span>
                 </div>
                 <div>
-                  <strong>4/5</strong>
+                  <strong>{nomenclatureBlock.weight_percent}%</strong>
                   <span className={validations.find((item) => item.id === nomenclatureBlock.id)?.valid ? "is-ok" : ""}>
                     {validations.find((item) => item.id === nomenclatureBlock.id)?.valid
                       ? "Completo ✓"
