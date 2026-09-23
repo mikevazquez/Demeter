@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import { formatDateTime } from "@/lib/student/portal";
+import { formatDateTime, getStudentPortalContext } from "@/lib/student/portal";
 import {
   conditionProgress,
   getStudentRewardsContext,
@@ -16,6 +16,7 @@ import {
 } from "@/lib/student/reward-progress-ui";
 
 import { ProgressBar, RewardsEmpty, SectionHeading, StateChip, SummaryTile } from "./components";
+import RewardOnboardingActivation, { type RewardOnboardingSnapshot } from "./RewardOnboardingActivation";
 
 function rewardLabelFromDefinition(value: unknown) {
   const definition = rewardObject(value);
@@ -31,6 +32,31 @@ function plural(count: number, singular: string, pluralValue: string) {
 }
 
 export default async function StudentProgressPage() {
+  const portal = await getStudentPortalContext();
+  const { data: onboardingData, error: onboardingError } = await portal.supabase.rpc(
+    "student_reward_onboarding_snapshot",
+  );
+
+  if (onboardingError || !onboardingData) {
+    throw new Error("student_reward_onboarding_load_failed");
+  }
+
+  const onboarding = onboardingData as RewardOnboardingSnapshot;
+  if (!onboarding.medal_unlocked) {
+    const nextClass =
+      [...portal.snapshot.upcoming].sort(
+        (left, right) => Date.parse(left.starts_at) - Date.parse(right.starts_at),
+      )[0] ?? null;
+
+    return (
+      <RewardOnboardingActivation
+        onboarding={onboarding}
+        nextClass={nextClass}
+        timeZone={portal.studio.timezone}
+      />
+    );
+  }
+
   const ctx = await getStudentRewardsContext();
 
   const activePrograms = ctx.programParticipations
@@ -263,7 +289,7 @@ export default async function StudentProgressPage() {
             {activePrograms.map((item) => {
               const displayLevel =
                 item.level?.level_visibility === "hidden"
-                  ? "Nivel secreto"
+                  ? "Objetivo secreto"
                   : (item.level?.title ?? "Objetivo actual");
 
               return (
