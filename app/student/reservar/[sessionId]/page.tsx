@@ -12,6 +12,7 @@ import {
 
 import PurchaseSingleClassButton from "../PurchaseSingleClassButton";
 import WaitlistControl from "../WaitlistControl";
+import { BookingRestrictionCard } from "../BookingRestrictionCard";
 
 const DROP_IN_REASONS = new Set(["no_active_product", "outside_product", "no_credits"]);
 
@@ -218,7 +219,11 @@ export default async function StudentSessionDetailPage({
         </section>
       ) : (
         <section className="rounded-3xl border border-amber-400/20 bg-amber-400/[0.06] p-5">
-          <p className="text-sm font-semibold text-amber-100">{bookingReasonCopy(reason)}</p>
+          {session.eligibility?.restrictions?.length ? (
+            <BookingRestrictionCard restrictions={session.eligibility.restrictions} compact />
+          ) : (
+            <p className="text-sm font-semibold text-amber-100">{bookingReasonCopy(reason)}</p>
+          )}
           {showDropIn ? (
             <p className="mt-2 text-xs leading-5 text-zinc-400">
               Clase suelta: {formatMoney(finalDropInMinor)} MXN.
@@ -244,7 +249,7 @@ export default async function StudentSessionDetailPage({
                 levelTitle={rewardPriceLevelTitle}
               />
             </div>
-          ) : (
+          ) : session.eligibility?.restrictions?.length ? null : (
             <Link
               href="/student/paquete"
               className="mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-2xl border border-white/10 px-4 py-2.5 text-sm font-semibold text-white"
