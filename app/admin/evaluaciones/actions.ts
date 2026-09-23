@@ -779,6 +779,75 @@ export async function openEvaluationFeedbackAction(formData: FormData) {
     redirect(`/admin/evaluaciones/${evaluationId}?step=resumen`);
   }
 
+  const { data: evaluation } = await ctx.supabase
+    .from("technical_evaluations")
+    .select(
+      "id,studio_id,discipline_id,target_discipline_level_id,evaluation_invitation_id,evaluation_purpose",
+    )
+    .eq("id", evaluationId)
+    .eq("studio_id", ctx.studio.id)
+    .maybeSingle();
+
+  if (
+    evaluation?.evaluation_purpose === "diagnostic" &&
+    recalculated?.automatic_outcome === "approved"
+  ) {
+    const { data: targetLink } = await ctx.supabase
+      .from("discipline_technical_levels")
+      .select("discipline_order")
+      .eq("id", evaluation.target_discipline_level_id)
+      .eq("studio_id", ctx.studio.id)
+      .maybeSingle();
+
+    const { data: nextLevel } = targetLink
+      ? await ctx.supabase
+          .from("discipline_technical_levels")
+          .select("id")
+          .eq("studio_id", ctx.studio.id)
+          .eq("discipline_id", evaluation.discipline_id)
+          .eq("active", true)
+          .gt("discipline_order", targetLink.discipline_order)
+          .order("discipline_order")
+          .limit(1)
+          .maybeSingle()
+      : { data: null };
+
+    if (nextLevel) {
+      const { error: publishError } = await ctx.supabase.rpc(
+        "admin_publish_technical_evaluation",
+        {
+          p_evaluation_id: evaluationId,
+          p_final_outcome: null,
+          p_override_reason: null,
+          p_strengths: [],
+          p_improvement_areas: [],
+          p_coach_message: null,
+          p_next_objective: null,
+        },
+      );
+
+      if (publishError) {
+        redirect(`/admin/evaluaciones/${evaluationId}?step=resumen&error=publish`);
+      }
+
+      const { data: nextDiagnostic } = evaluation.evaluation_invitation_id
+        ? await ctx.supabase
+            .from("technical_evaluations")
+            .select("id")
+            .eq("evaluation_invitation_id", evaluation.evaluation_invitation_id)
+            .eq("status", "draft")
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .maybeSingle()
+        : { data: null };
+
+      if (nextDiagnostic?.id) {
+        revalidatePath("/admin/evaluaciones");
+        redirect(`/admin/evaluaciones/${nextDiagnostic.id}`);
+      }
+    }
+  }
+
   redirect(`/admin/evaluaciones/${evaluationId}?step=feedback`);
 }
 
