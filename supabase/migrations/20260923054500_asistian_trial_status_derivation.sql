@@ -97,7 +97,7 @@ execute function private.asistian_refresh_trial_status_trigger();
 
 do $$
 declare
-  v row;
+  v record;
 begin
   for v in
     select id, studio_id
