@@ -84,6 +84,12 @@ describe("Asistian lifecycle synchronization contract", () => {
     expect(serviceMapping).toContain("private.asistian_mapped_service_name");
   });
 
+  it("keeps attendance ownership in Studio Flow", () => {
+    expect(receiver).toContain('"attendance_owned_by_studio_flow"');
+    expect(receiver).toContain('eventName === "booking_completed"');
+    expect(receiver).toContain('eventName === "booking_no_show"');
+  });
+
   it("does not silently auto-book resource-required sessions", () => {
     expect(lifecycle).toContain("'resource_selection_required'");
     expect(lifecycle).toContain("'requires_attention'");
