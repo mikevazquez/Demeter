@@ -132,7 +132,11 @@ export default function PushNotificationSettings({ studioId }: { studioId: strin
   }, [refreshServerStatus]);
 
   useEffect(() => {
-    void refreshBrowserStatus();
+    const timer = window.setTimeout(() => {
+      void refreshBrowserStatus();
+    }, 0);
+
+    return () => window.clearTimeout(timer);
   }, [refreshBrowserStatus]);
 
   async function activate() {
