@@ -121,6 +121,19 @@ export type StudentSession = {
     unlimited?: boolean;
     available_credits?: number | null;
     credit_cost?: number;
+    restrictions?: Array<{
+      code: string;
+      type: string;
+      title: string;
+      detail?: string | null;
+      action_kind?: string | null;
+      action_href?: string | null;
+      action_label?: string | null;
+      version_id?: string | null;
+      document_id?: string | null;
+      document_name?: string | null;
+      restriction_id?: string | null;
+    }>;
   };
 };
 
@@ -244,10 +257,14 @@ export function bookingReasonCopy(reason?: string | null) {
     no_active_product: "No tienes un paquete activo para esta fecha",
     outside_product: "Esta clase no está incluida en tu paquete",
     no_credits: "No tienes créditos suficientes para reservar esta clase",
-    payment_pending: "Tu paquete tiene un pago pendiente",
+    payment_pending: "Tienes un pago pendiente que debes resolver",
     enrollment_required: "Necesitas una inscripción vigente para reservar",
     session_not_bookable: "Esta clase ya no admite reservas",
     student_not_operable: "Tu perfil no está habilitado para reservar",
+    document_required: "Tienes un documento pendiente",
+    guardian_required: "Tu responsable debe completar un documento",
+    birth_date_required: "Completa tu fecha de nacimiento para continuar",
+    account_restricted: "Tu cuenta tiene un requisito pendiente",
   };
   return reason ? (messages[reason] ?? "No disponible") : "Disponible";
 }
