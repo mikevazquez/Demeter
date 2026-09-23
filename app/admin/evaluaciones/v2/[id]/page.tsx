@@ -861,12 +861,31 @@ export default async function EvaluationV2EditorPage({
           </div>
 
           <div className="eval-simple-preview-list">
-            {blocks.map((block) => {
+            <article>
+              <div>
+                <strong>1. Combo técnico</strong>
+                <span>
+                  {comboSequenceLabels.length
+                    ? comboSequenceLabels.join(" · ")
+                    : "Secuencia técnica del nivel"}
+                </span>
+              </div>
+              <div>
+                <strong>100%</strong>
+                <span className={comboBlocks.every((block) => validations.find((item) => item.id === block.id)?.valid) ? "is-ok" : ""}>
+                  {comboBlocks.every((block) => validations.find((item) => item.id === block.id)?.valid)
+                    ? "Completo ✓"
+                    : "Revisar"}
+                </span>
+              </div>
+            </article>
+
+            {comboBlocks.map((block, index) => {
               const validation = validations.find((item) => item.id === block.id);
               return (
                 <article key={block.id}>
                   <div>
-                    <strong>{block.label}</strong>
+                    <strong>{"1." + (index + 1) + " " + block.label}</strong>
                     <span>{modeLabel(block.block_type)}</span>
                   </div>
                   <div>
@@ -878,6 +897,57 @@ export default async function EvaluationV2EditorPage({
                 </article>
               );
             })}
+
+            {requiredComboBlock ? (
+              <article>
+                <div>
+                  <strong>1.5 Cumplimiento del combo</strong>
+                  <span>Requisito obligatorio para avanzar</span>
+                </div>
+                <div>
+                  <strong>—</strong>
+                  <span className={validations.find((item) => item.id === requiredComboBlock.id)?.valid ? "is-ok" : ""}>
+                    {validations.find((item) => item.id === requiredComboBlock.id)?.valid
+                      ? "Completo ✓"
+                      : "Revisar"}
+                  </span>
+                </div>
+              </article>
+            ) : null}
+
+            {requiredElementsBlock ? (
+              <article>
+                <div>
+                  <strong>2. Elementos obligatorios</strong>
+                  <span>Todos deben cumplirse para avanzar</span>
+                </div>
+                <div>
+                  <strong>—</strong>
+                  <span className={validations.find((item) => item.id === requiredElementsBlock.id)?.valid ? "is-ok" : ""}>
+                    {validations.find((item) => item.id === requiredElementsBlock.id)?.valid
+                      ? "Completo ✓"
+                      : "Revisar"}
+                  </span>
+                </div>
+              </article>
+            ) : null}
+
+            {nomenclatureBlock ? (
+              <article>
+                <div>
+                  <strong>3. Nomenclatura</strong>
+                  <span>Identificación de figuras del nivel</span>
+                </div>
+                <div>
+                  <strong>4/5</strong>
+                  <span className={validations.find((item) => item.id === nomenclatureBlock.id)?.valid ? "is-ok" : ""}>
+                    {validations.find((item) => item.id === nomenclatureBlock.id)?.valid
+                      ? "Completo ✓"
+                      : "Revisar"}
+                  </span>
+                </div>
+              </article>
+            ) : null}
           </div>
 
           <div className="eval-simple-rule-summary">
