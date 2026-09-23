@@ -627,6 +627,25 @@ export async function updateStudentAvatarAction(formData: FormData) {
   redirect("/student/perfil?avatar=updated");
 }
 
+export async function updateStudentBirthDateAction(formData: FormData) {
+  const value = String(formData.get("birth_date") ?? "").trim();
+  const birthDate = value || null;
+
+  const { supabase } = await getStudentPortalContext();
+  const { error } = await supabase.rpc("student_update_own_birth_date", {
+    target_birth_date: birthDate,
+  });
+
+  if (error) {
+    redirect(`/student/perfil?onboarding=1&birth_error=${errorCode(error, "birth_date_update_failed")}`);
+  }
+
+  revalidatePath("/student");
+  revalidatePath("/student/perfil");
+  revalidatePath("/student/recompensas");
+  redirect("/student/perfil?onboarding=1&birth=updated");
+}
+
 export async function updateStudentProfileAction(formData: FormData) {
   const email = String(formData.get("email") ?? "").trim() || null;
 
