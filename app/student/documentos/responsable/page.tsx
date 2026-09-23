@@ -2,6 +2,7 @@ import { headers } from "next/headers";
 import Link from "next/link";
 
 import QueryNotice from "@/app/components/QueryNotice";
+import { safeReservationReturnTo } from "@/lib/documents";
 import { getStudentPortalContext } from "@/lib/student/portal";
 
 import { registerGuardianAction } from "../actions";
@@ -9,9 +10,10 @@ import { registerGuardianAction } from "../actions";
 export default async function StudentGuardianPage({
   searchParams,
 }: {
-  searchParams: Promise<{ created?: string; token?: string; error?: string }>;
+  searchParams: Promise<{ created?: string; token?: string; error?: string; returnTo?: string }>;
 }) {
   const query = await searchParams;
+  const returnTo = safeReservationReturnTo(query.returnTo);
   const { supabase, snapshot, membership } = await getStudentPortalContext();
   const studentId = snapshot.profile.student_id;
 
@@ -169,6 +171,7 @@ export default async function StudentGuardianPage({
             placeholder="Detalle de relación (opcional)"
             className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white"
           />
+          {returnTo ? <input type="hidden" name="return_to" value={returnTo} /> : null}
           <button className="w-full rounded-2xl bg-fuchsia-600 px-5 py-3 text-sm font-semibold text-white">
             Crear invitación
           </button>
