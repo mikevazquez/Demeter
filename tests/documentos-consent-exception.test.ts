@@ -9,9 +9,7 @@ function source(path: string) {
 
 describe("DOCUMENTOS-01 optional consent and document exceptions", () => {
   const reader = source("app/student/documentos/[versionId]/page.tsx");
-  const confirmation = source(
-    "app/student/documentos/[versionId]/confirmar/page.tsx",
-  );
+  const confirmation = source("app/student/documentos/[versionId]/confirmar/page.tsx");
   const result = source("app/student/documentos/confirmacion/page.tsx");
   const migration = source(
     "supabase/migrations/20260923205541_documentos01_optional_consent_and_document_exceptions.sql",
@@ -30,9 +28,7 @@ describe("DOCUMENTOS-01 optional consent and document exceptions", () => {
   });
 
   it("stores a new immutable event when an optional decision changes", () => {
-    expect(migration).toContain(
-      "drop index if exists public.document_acceptances_identity_idx",
-    );
+    expect(migration).toContain("drop index if exists public.document_acceptances_identity_idx");
     expect(migration).toContain("v_existing_decision=p_decision");
     expect(migration).toContain("'previous_acceptance_id',v_existing");
     expect(migration).toContain("'previous_decision',v_existing_decision");
