@@ -4,14 +4,8 @@ import "./globals.css";
 import "./ui-primitives.css";
 
 export const metadata: Metadata = {
-  applicationName: "Studio Flow",
   title: "Studio Flow",
   description: "Administración y portal de estudios boutique",
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: "black-translucent",
-    title: "Studio Flow",
-  },
   formatDetection: {
     telephone: false,
   },
