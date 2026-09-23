@@ -19,6 +19,12 @@ const items: MoreItem[] = [
     capability: CAPABILITIES.SCHEDULE_READ,
   },
   {
+    title: "Documentos",
+    description: "Contratos, responsivas, reglamentos y consentimientos.",
+    href: "/admin/documentos",
+    capability: CAPABILITIES.DOCUMENTS_READ,
+  },
+  {
     title: "Evaluaciones",
     description: "Configura disciplinas, niveles y criterios técnicos.",
     href: "/admin/evaluaciones",
