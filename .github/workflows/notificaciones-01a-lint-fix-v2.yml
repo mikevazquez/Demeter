@@ -1,0 +1,71 @@
+name: NOTIFICACIONES-01A lint fix v2
+
+on:
+  push:
+    branches: [feat/notificaciones-01a-pwa-push]
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: feat/notificaciones-01a-pwa-push
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Apply React effect fix
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          path = Path("app/student/components/PushNotificationSettings.tsx")
+          content = path.read_text()
+
+          pattern = re.compile(
+              r'useEffect\(\(\) => \{\s*void refreshBrowserStatus\(\);\s*\}, \[refreshBrowserStatus\]\);',
+              re.MULTILINE,
+          )
+
+          replacement = '''useEffect(() => {
+            const timer = window.setTimeout(() => {
+              void refreshBrowserStatus();
+            }, 0);
+
+            return () => window.clearTimeout(timer);
+          }, [refreshBrowserStatus]);'''
+
+          updated, count = pattern.subn(replacement, content, count=1)
+
+          if count != 1:
+              raise SystemExit(f"Expected one effect block, found {count}")
+
+          path.write_text(updated)
+          PY
+
+          npx prettier --write app/student/components/PushNotificationSettings.tsx
+
+      - name: Commit fix
+        run: |
+          if git diff --quiet; then
+            echo "Nothing to change."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/student/components/PushNotificationSettings.tsx
+          git commit -m "NOTIFICACIONES-01A · Corregir sincronización inicial Push"
+          git push origin HEAD:feat/notificaciones-01a-pwa-push
