@@ -38,9 +38,11 @@ function tone(actionKind?: string | null) {
 export function BookingRestrictionCard({
   restrictions,
   compact = false,
+  returnTo,
 }: {
   restrictions: Restriction[];
   compact?: boolean;
+  returnTo?: string;
 }) {
   if (!restrictions.length) return null;
 
@@ -67,7 +69,11 @@ export function BookingRestrictionCard({
                 ) : null}
                 {item.action_href ? (
                   <Link
-                    href={item.action_href}
+                    href={
+                      item.action_kind === "documents" && returnTo
+                        ? `${item.action_href}${item.action_href.includes("?") ? "&" : "?"}returnTo=${encodeURIComponent(returnTo)}`
+                        : item.action_href
+                    }
                     className={`mt-3 inline-flex rounded-xl border px-3 py-2 text-xs font-semibold ${styles.button}`}
                   >
                     {item.action_label || "Resolver requisito"}
