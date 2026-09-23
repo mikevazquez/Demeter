@@ -64,9 +64,11 @@ describe("SF-N14 PORTAL UX-04 Reservar", () => {
   });
 
   it("covers the canonical non-eligible reasons surfaced by the booking engine", () => {
-    expect(portal).toContain('payment_pending: "Tu paquete tiene un pago pendiente"');
+    expect(portal).toContain('payment_pending: "Tienes un pago pendiente que debes resolver"');
     expect(portal).toContain("No tienes créditos suficientes para reservar esta clase");
     expect(portal).toContain("Clase llena");
     expect(portal).toContain("Ya reservaste esta clase");
+    expect(portal).toContain('document_required: "Tienes un documento pendiente"');
+    expect(portal).toContain('guardian_required: "Tu responsable debe completar un documento"');
   });
 });
