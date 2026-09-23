@@ -87,8 +87,12 @@ function errorCopy(value?: string) {
     evaluation_invitation_window_invalid: "Revisa la ventana de fechas de la evaluación.",
     evaluation_invitation_cadence_invalid: "Selecciona una periodicidad válida.",
     evaluation_level_not_available: "Esta disciplina no tiene un nivel activo disponible.",
-    evaluation_placement_level_required:
-      "Selecciona el nivel que quieres validar en la primera evaluación.",
+    evaluation_diagnostic_level_selection_disabled:
+      "El diagnóstico inicial siempre comienza en Principiante y avanza automáticamente.",
+    evaluation_diagnostic_next_level_not_configured:
+      "El siguiente nivel del diagnóstico todavía no tiene una evaluación activa configurada.",
+    evaluation_confirmed_level_missing:
+      "La alumna no tiene un nivel confirmado disponible para iniciar progresión.",
     evaluation_level_mismatch:
       "Las evaluaciones posteriores deben usar el nivel técnico actual de la alumna.",
     evaluation_reservation_not_active:
@@ -248,6 +252,14 @@ export default async function StudentEvaluationsPanel({ studentId, timeZone, err
       const current = currentLevels.find((item) => item.discipline_id === discipline.id);
       const resolvedLevelId = current?.discipline_technical_level_id ?? null;
       const configuredLevels = disciplineLinks.filter((link) => configuredLevelIds.has(link.id));
+      const hasConfirmedDiagnostic = evaluations.some(
+        (evaluation) =>
+          evaluation.discipline_id === discipline.id &&
+          evaluation.status === "published" &&
+          (evaluation.evaluation_purpose === "diagnostic" ||
+            evaluation.evaluation_purpose === "placement") &&
+          Boolean(evaluation.resulting_discipline_level_id),
+      );
       const cycle = cycles.find((item) => item.discipline_id === discipline.id && item.active);
       const openInvitation = invitations.find(
         (item) => item.discipline_id === discipline.id && openStatuses.has(item.status),
@@ -270,9 +282,11 @@ export default async function StudentEvaluationsPanel({ studentId, timeZone, err
 
       return {
         discipline,
-        currentLevelTitle: resolvedLevelId
-          ? (levelTitle.get(resolvedLevelId) ?? "Nivel técnico")
-          : null,
+        currentLevelTitle:
+          hasConfirmedDiagnostic && resolvedLevelId
+            ? (levelTitle.get(resolvedLevelId) ?? "Nivel técnico")
+            : null,
+        hasConfirmedDiagnostic,
         cycle,
         openInvitation,
         lastDeclinedInvitation,
@@ -282,9 +296,9 @@ export default async function StudentEvaluationsPanel({ studentId, timeZone, err
         scheduledClassName: scheduledSession
           ? (classNameMap.get(scheduledSession.template_id) ?? discipline.name)
           : null,
-        configured: resolvedLevelId
-          ? configuredLevelIds.has(resolvedLevelId)
-          : configuredLevels.length > 0,
+        configured: hasConfirmedDiagnostic
+          ? Boolean(resolvedLevelId && configuredLevelIds.has(resolvedLevelId))
+          : configuredLevels.length === disciplineLinks.length && disciplineLinks.length > 0,
         configuredLevels: configuredLevels.map((link) => ({
           id: link.id,
           title: levelTitle.get(link.id) ?? "Nivel técnico",
@@ -294,6 +308,7 @@ export default async function StudentEvaluationsPanel({ studentId, timeZone, err
     .filter(Boolean) as Array<{
     discipline: { id: string; name: string };
     currentLevelTitle: string | null;
+    hasConfirmedDiagnostic: boolean;
     cycle: (typeof cycles)[number] | undefined;
     openInvitation: (typeof invitations)[number] | undefined;
     lastDeclinedInvitation: (typeof invitations)[number] | undefined;
@@ -339,7 +354,12 @@ export default async function StudentEvaluationsPanel({ studentId, timeZone, err
                     <h3>{item.discipline.name}</h3>
                     <p>
                       Nivel actual:{" "}
-                      <strong>{item.currentLevelTitle ?? "Sin nivel confirmado"}</strong>
+                      <strong>
+                        {item.currentLevelTitle ??
+                          (invite?.evaluation_purpose === "diagnostic"
+                            ? "Diagnóstico en curso"
+                            : "Pendiente de diagnóstico")}
+                      </strong>
                     </p>
                   </div>
                   {inProgressEvaluation ? (
@@ -435,8 +455,8 @@ export default async function StudentEvaluationsPanel({ studentId, timeZone, err
                         <>
                           <strong>Aún no forma parte del ciclo</strong>
                           <span>
-                            Primera evaluación de colocación: selecciona el nivel que quieres
-                            validar.
+                            Su primera invitación iniciará un diagnóstico adaptativo desde
+                            Principiante y avanzará nivel por nivel mientras cumpla.
                           </span>
                         </>
                       )}
@@ -469,42 +489,26 @@ export default async function StudentEvaluationsPanel({ studentId, timeZone, err
                           ) : null}
                           <input type="hidden" name="student_id" value={studentId} />
                           <input type="hidden" name="discipline_id" value={item.discipline.id} />
-                          {item.currentLevelTitle ? (
-                            <>
-                              <input
-                                type="hidden"
-                                name="discipline_level_id"
-                                value={
-                                  currentLevels.find(
-                                    (current) => current.discipline_id === item.discipline.id,
-                                  )?.discipline_technical_level_id ?? ""
-                                }
-                              />
-                              <div className="profile360-evaluation-placement-note">
-                                <strong>Evaluación de progresión</strong>
-                                <span>
-                                  Se evaluará automáticamente su nivel actual:{" "}
-                                  {item.currentLevelTitle}.
-                                </span>
-                              </div>
-                            </>
+                          {item.hasConfirmedDiagnostic ? (
+                            <div className="profile360-evaluation-placement-note">
+                              <strong>Evaluación de progresión</strong>
+                              <span>
+                                Se evaluará automáticamente su nivel confirmado:{" "}
+                                {item.currentLevelTitle ?? "Nivel técnico"}.
+                              </span>
+                            </div>
                           ) : (
-                            <label>
-                              <span>Nivel que quieres validar</span>
-                              <select name="discipline_level_id" required defaultValue="">
-                                <option value="" disabled>
-                                  Selecciona un nivel
-                                </option>
-                                {item.configuredLevels.map((level) => (
-                                  <option key={level.id} value={level.id}>
-                                    {level.title}
-                                  </option>
-                                ))}
-                              </select>
+                            <div className="profile360-evaluation-placement-note">
+                              <strong>Diagnóstico inicial adaptativo</strong>
+                              <span>
+                                Comienza en Principiante. Si cumple, continúa automáticamente al
+                                siguiente nivel y se detiene en el primero que no cumpla.
+                              </span>
                               <small>
-                                Primera evaluación de colocación: el coach elige el nivel estimado.
+                                El coach no selecciona el nivel inicial. El sistema asignará el nivel
+                                más alto demostrado.
                               </small>
-                            </label>
+                            </div>
                           )}
                           <label>
                             <span>Disponible desde</span>
@@ -519,13 +523,14 @@ export default async function StudentEvaluationsPanel({ studentId, timeZone, err
                               required
                             />
                           </label>
-                          <label>
-                            <span>Periodicidad posterior</span>
-                            <select name="cadence_months" defaultValue="3">
-                              <option value="3">Cada 3 meses</option>
-                              <option value="6">Cada 6 meses</option>
-                            </select>
-                          </label>
+                          <input type="hidden" name="cadence_months" value="3" />
+                          <div className="profile360-evaluation-placement-note">
+                            <strong>Ciclo posterior</strong>
+                            <span>
+                              Una vez confirmado el nivel, la siguiente evaluación se habilita en
+                              3 meses.
+                            </span>
+                          </div>
                           {!item.configured ? (
                             <p className="profile360-evaluation-warning">
                               Configura y guarda este nivel antes de enviar una invitación.
@@ -568,9 +573,11 @@ export default async function StudentEvaluationsPanel({ studentId, timeZone, err
                   <span>{formatDate(evaluation.evaluation_date)}</span>
                   <strong>{discipline?.name ?? "Disciplina"}</strong>
                   <span>
-                    {evaluation.evaluation_purpose === "placement"
-                      ? "Colocación · "
-                      : "Progresión · "}
+                    {evaluation.evaluation_purpose === "diagnostic"
+                      ? "Diagnóstico · "
+                      : evaluation.evaluation_purpose === "placement"
+                        ? "Colocación · "
+                        : "Progresión · "}
                     {levelTitle.get(evaluation.target_discipline_level_id) ?? "Nivel técnico"}
                   </span>
                   <span
@@ -613,11 +620,13 @@ export default async function StudentEvaluationsPanel({ studentId, timeZone, err
                   <span>{formatDateTime(eventDate, timeZone)}</span>
                   <strong>{discipline?.name ?? "Disciplina"}</strong>
                   <span>
-                    {invitation.evaluation_purpose === "placement"
-                      ? "Colocación"
-                      : invitation.evaluation_purpose === "exception"
-                        ? "Excepcional"
-                        : "Progresión"}
+                    {invitation.evaluation_purpose === "diagnostic"
+                      ? "Diagnóstico inicial"
+                      : invitation.evaluation_purpose === "placement"
+                        ? "Colocación"
+                        : invitation.evaluation_purpose === "exception"
+                          ? "Excepcional"
+                          : "Progresión"}
                   </span>
                   <span
                     className={`profile360-evaluation-chip ${invitationStatusTone(
