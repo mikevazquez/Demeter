@@ -184,6 +184,19 @@ export default async function EvaluationV2EditorPage({
   const editable = version.status === "draft" && !used;
   const activeBlock = blocks.find((block) => block.id === qs.block) ?? null;
   const totalWeight = blocks.reduce((sum, block) => sum + Number(block.weight_percent ?? 0), 0);
+  const comboCriterionKeys = new Set(["execution", "strength", "lines", "flexibility"]);
+  const comboBlocks = blocks.filter((block) => comboCriterionKeys.has(block.criterion_key));
+  const requiredElementsBlock = blocks.find((block) => block.criterion_key === "required_elements");
+  const requiredComboBlock = blocks.find((block) => block.criterion_key === "required_combos");
+  const nomenclatureBlock = blocks.find((block) => block.criterion_key === "nomenclature");
+  const comboSequenceLabels = requiredComboBlock
+    ? items
+        .filter((item) => item.criterion_id === requiredComboBlock.id)
+        .map((item) => itemLabel(item))
+    : [];
+  const isComboScoringBlock = activeBlock
+    ? comboCriterionKeys.has(activeBlock.criterion_key)
+    : false;
 
   const validations = blocks.map((block) => {
     const blockItems = items.filter((item) => item.criterion_id === block.id);
@@ -267,9 +280,17 @@ export default async function EvaluationV2EditorPage({
               ←
             </Link>
             <div>
-              <h1>
-                {activeBlock.label === "Nuevo apartado" ? "Nuevo apartado" : activeBlock.label}
-              </h1>
+              {isComboScoringBlock ? (
+                <>
+                  <span className="eval-step-label">1. Combo técnico</span>
+                  <h1>{activeBlock.label}</h1>
+                  {comboSequenceLabels.length ? <p>{comboSequenceLabels.join(" · ")}</p> : null}
+                </>
+              ) : (
+                <h1>
+                  {activeBlock.label === "Nuevo apartado" ? "Nuevo apartado" : activeBlock.label}
+                </h1>
+              )}
             </div>
           </header>
 
@@ -391,8 +412,22 @@ export default async function EvaluationV2EditorPage({
             ←
           </Link>
           <div>
-            <h1>{activeBlock.label}</h1>
-            <p>{modeLabel(activeBlock.block_type)}</p>
+            {isComboScoringBlock ? (
+              <>
+                <span className="eval-step-label">1. Combo técnico</span>
+                <h1>{activeBlock.label}</h1>
+                <p>
+                  {comboSequenceLabels.length ? comboSequenceLabels.join(" · ") : "Combo del nivel"}
+                  {" · "}
+                  {activeBlock.weight_percent}% del resultado
+                </p>
+              </>
+            ) : (
+              <>
+                <h1>{activeBlock.label}</h1>
+                <p>{modeLabel(activeBlock.block_type)}</p>
+              </>
+            )}
           </div>
           {editable ? (
             <form action={deleteEvaluationV2BlockAction}>
@@ -650,16 +685,32 @@ export default async function EvaluationV2EditorPage({
           </div>
 
           <div className="eval-simple-section-list">
-            {blocks.map((block, index) => (
+            <article className="eval-simple-section-card">
+              <span className="eval-simple-drag" aria-hidden="true">
+                ◆
+              </span>
+              <span className="eval-simple-index">1</span>
+              <span className="eval-simple-section-copy">
+                <strong>Combo técnico</strong>
+                <small>
+                  {comboSequenceLabels.length
+                    ? comboSequenceLabels.join(" · ")
+                    : "Secuencia técnica del nivel"}
+                </small>
+              </span>
+              <strong>100%</strong>
+            </article>
+
+            {comboBlocks.map((block, index) => (
               <Link
                 className="eval-simple-section-card"
-                href={editorUrl(template.id, "apartados", block.id, "config")}
+                href={editorUrl(template.id, "apartados", block.id, "content")}
                 key={block.id}
               >
                 <span className="eval-simple-drag" aria-hidden="true">
-                  ⠿
+                  ↳
                 </span>
-                <span className="eval-simple-index">{index + 1}</span>
+                <span className="eval-simple-index">{"1." + (index + 1)}</span>
                 <span className="eval-simple-section-copy">
                   <strong>{block.label}</strong>
                   <small>{block.weight_percent}% del resultado</small>
@@ -667,6 +718,57 @@ export default async function EvaluationV2EditorPage({
                 <span className="eval-simple-chevron">›</span>
               </Link>
             ))}
+
+            {requiredComboBlock ? (
+              <Link
+                className="eval-simple-section-card"
+                href={editorUrl(template.id, "apartados", requiredComboBlock.id, "content")}
+              >
+                <span className="eval-simple-drag" aria-hidden="true">
+                  ↳
+                </span>
+                <span className="eval-simple-index">1.5</span>
+                <span className="eval-simple-section-copy">
+                  <strong>Cumplimiento del combo</strong>
+                  <small>Requisito obligatorio para avanzar</small>
+                </span>
+                <span className="eval-simple-chevron">›</span>
+              </Link>
+            ) : null}
+
+            {requiredElementsBlock ? (
+              <Link
+                className="eval-simple-section-card"
+                href={editorUrl(template.id, "apartados", requiredElementsBlock.id, "content")}
+              >
+                <span className="eval-simple-drag" aria-hidden="true">
+                  ◆
+                </span>
+                <span className="eval-simple-index">2</span>
+                <span className="eval-simple-section-copy">
+                  <strong>Elementos obligatorios</strong>
+                  <small>Todos deben cumplirse para avanzar</small>
+                </span>
+                <span className="eval-simple-chevron">›</span>
+              </Link>
+            ) : null}
+
+            {nomenclatureBlock ? (
+              <Link
+                className="eval-simple-section-card"
+                href={editorUrl(template.id, "apartados", nomenclatureBlock.id, "content")}
+              >
+                <span className="eval-simple-drag" aria-hidden="true">
+                  ◆
+                </span>
+                <span className="eval-simple-index">3</span>
+                <span className="eval-simple-section-copy">
+                  <strong>Nomenclatura</strong>
+                  <small>Identificación de figuras del nivel</small>
+                </span>
+                <span className="eval-simple-chevron">›</span>
+              </Link>
+            ) : null}
           </div>
 
           {editable ? (
