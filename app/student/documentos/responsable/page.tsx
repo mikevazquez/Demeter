@@ -1,6 +1,7 @@
 import { headers } from "next/headers";
 import Link from "next/link";
 
+import QueryNotice from "@/app/components/QueryNotice";
 import { getStudentPortalContext } from "@/lib/student/portal";
 
 import { registerGuardianAction } from "../actions";
@@ -64,13 +65,22 @@ export default async function StudentGuardianPage({
       </header>
 
       {query.error ? (
-        <div className="rounded-3xl border border-rose-500/25 bg-rose-500/[0.07] p-4 text-sm text-rose-100">
-          {query.error === "not_required"
-            ? "Tu perfil no requiere responsable para este flujo."
-            : query.error === "contact_required"
-              ? "Agrega al menos correo o teléfono del responsable."
-              : "No pudimos registrar al responsable."}
-        </div>
+        <QueryNotice
+          eyebrow="Documentos"
+          title={
+            query.error === "not_required"
+              ? "No necesitas responsable"
+              : "No pudimos registrar al responsable"
+          }
+          message={
+            query.error === "not_required"
+              ? "Tu perfil no requiere responsable para este flujo."
+              : query.error === "contact_required"
+                ? "Agrega al menos correo o teléfono del responsable."
+                : "Revisa los datos e inténtalo nuevamente."
+          }
+          tone={query.error === "not_required" ? "info" : "error"}
+        />
       ) : null}
 
       {invitationUrl ? (
