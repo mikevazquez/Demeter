@@ -24,9 +24,9 @@ describe("DOCUMENTOS-01 booking continuation", () => {
   });
 
   it("preserves list, session detail and confirmation booking targets", () => {
-    expect(reserve).toContain('returnTo={\`/student/reservar?date=\${selectedDate}\`}');
+    expect(reserve).toContain("returnTo={\`/student/reservar?date=\${selectedDate}\`}");
     expect(detail).toContain(
-      'returnTo={\`/student/reservar/\${session.session_id}?date=\${returnDate}\`}',
+      "returnTo={\`/student/reservar/\${session.session_id}?date=\${returnDate}\`}",
     );
     expect(confirm).toContain("/confirmar?date=\${returnDate}");
     expect(confirm).toContain("selectedResource.resource_id");

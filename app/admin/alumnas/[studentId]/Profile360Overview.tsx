@@ -192,10 +192,7 @@ export default function Profile360Overview({
           </Link>
         ) : null}
         {showDocuments ? (
-          <Link
-            className={activeView === "documents" ? "is-active" : ""}
-            href={href("documents")}
-          >
+          <Link className={activeView === "documents" ? "is-active" : ""} href={href("documents")}>
             Documentos
           </Link>
         ) : null}

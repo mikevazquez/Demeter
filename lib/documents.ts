@@ -97,7 +97,6 @@ export function formatFileSize(bytes?: number | null) {
   return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 }
 
-
 export function safeReservationReturnTo(value?: string | null) {
   const candidate = String(value ?? "").trim();
   if (!candidate.startsWith("/student/reservar")) return null;

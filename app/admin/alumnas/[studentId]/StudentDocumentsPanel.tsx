@@ -415,9 +415,7 @@ export default async function StudentDocumentsPanel({
                     <p className="text-[10px] uppercase tracking-[0.14em] text-zinc-600">
                       Confirmación registrada
                     </p>
-                    <p className="mt-2 text-xs leading-5 text-zinc-300">
-                      {item.affirmation_text}
-                    </p>
+                    <p className="mt-2 text-xs leading-5 text-zinc-300">{item.affirmation_text}</p>
                   </div>
                 ) : null}
 

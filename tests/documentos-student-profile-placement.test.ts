@@ -12,12 +12,8 @@ describe("DOCUMENTOS-01 person-centric information architecture", () => {
   const overview = source("app/admin/alumnas/[studentId]/Profile360Overview.tsx");
   const panel = source("app/admin/alumnas/[studentId]/StudentDocumentsPanel.tsx");
   const documentDetail = source("app/admin/documentos/[documentId]/page.tsx");
-  const trackingRedirect = source(
-    "app/admin/documentos/[documentId]/aceptaciones/page.tsx",
-  );
-  const evidenceRedirect = source(
-    "app/admin/documentos/aceptaciones/[acceptanceId]/page.tsx",
-  );
+  const trackingRedirect = source("app/admin/documentos/[documentId]/aceptaciones/page.tsx");
+  const evidenceRedirect = source("app/admin/documentos/aceptaciones/[acceptanceId]/page.tsx");
 
   it("places document status inside the student profile 360", () => {
     expect(overview).toContain('href={href("documents")}');
