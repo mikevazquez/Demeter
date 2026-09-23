@@ -199,7 +199,11 @@ export default async function StudentBookingConfirmPage({
         ) : (
           <div className="mt-4 rounded-2xl border border-amber-400/20 bg-amber-400/[0.06] p-4">
             {session.eligibility?.restrictions?.length ? (
-              <BookingRestrictionCard restrictions={session.eligibility.restrictions} compact />
+              <BookingRestrictionCard
+                restrictions={session.eligibility.restrictions}
+                compact
+                returnTo={`/student/reservar/${session.session_id}/confirmar?date=${returnDate}${selectedResource ? `&resource=${encodeURIComponent(selectedResource.resource_id)}` : ""}`}
+              />
             ) : (
               <p className="text-sm font-semibold text-amber-100">
                 {bookingReasonCopy(session.eligibility?.reason_code)}
