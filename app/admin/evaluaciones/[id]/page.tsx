@@ -198,12 +198,17 @@ export default async function TechnicalEvaluationDetailPage({
   const nextProgressionLevel = nextProgressionLink
     ? (levelTitleMap.get(nextProgressionLink.id) ?? targetLevel)
     : targetLevel;
+  const resultingLevel = evaluation.resulting_discipline_level_id
+    ? (levelTitleMap.get(evaluation.resulting_discipline_level_id) ?? "Nivel técnico")
+    : null;
   const evaluationPurposeLabel =
-    evaluation.evaluation_purpose === "placement"
-      ? "Evaluación de colocación"
-      : evaluation.evaluation_purpose === "exception"
-        ? "Evaluación excepcional"
-        : "Evaluación de progresión";
+    evaluation.evaluation_purpose === "diagnostic"
+      ? "Diagnóstico inicial"
+      : evaluation.evaluation_purpose === "placement"
+        ? "Evaluación de colocación"
+        : evaluation.evaluation_purpose === "exception"
+          ? "Evaluación excepcional"
+          : "Evaluación de progresión";
 
   const criterionResultQuery = await ctx.supabase
     .from("technical_evaluation_criterion_results")
@@ -345,7 +350,11 @@ export default async function TechnicalEvaluationDetailPage({
             <h2>{evaluation.student_name_snapshot}</h2>
             <p>
               {disciplineResult.data?.name ?? "Disciplina"} ·{" "}
-              {isV2 && evaluation.evaluation_purpose === "placement" ? (
+              {isV2 && evaluation.evaluation_purpose === "diagnostic" ? (
+                <>
+                  Diagnóstico adaptativo · Nivel en evaluación: {targetLevel}
+                </>
+              ) : isV2 && evaluation.evaluation_purpose === "placement" ? (
                 <>
                   Nivel a validar: {targetLevel} · Actual: {currentLevel}
                 </>
@@ -443,24 +452,33 @@ export default async function TechnicalEvaluationDetailPage({
                 <div>
                   <span>Nivel confirmado después de la evaluación</span>
                   <strong>
-                    {evaluation.evaluation_purpose === "placement"
-                      ? evaluation.automatic_outcome === "approved"
-                        ? targetLevel
-                        : "Sin nivel confirmado"
-                      : evaluation.evaluation_purpose === "progression"
+                    {evaluation.evaluation_purpose === "diagnostic"
+                      ? resultingLevel ??
+                        (evaluation.automatic_outcome === "approved"
+                          ? `Continúa a ${nextProgressionLevel}`
+                          : "Se confirmará al cerrar el diagnóstico")
+                      : evaluation.evaluation_purpose === "placement"
                         ? evaluation.automatic_outcome === "approved"
-                          ? nextProgressionLevel
-                          : currentLevel
-                        : currentLevel}
+                          ? targetLevel
+                          : "Sin nivel confirmado"
+                        : evaluation.evaluation_purpose === "progression"
+                          ? evaluation.automatic_outcome === "approved"
+                            ? nextProgressionLevel
+                            : currentLevel
+                          : currentLevel}
                   </strong>
                 </div>
               </div>
               {step === "published" ? (
                 <span>
-                  {evaluation.evaluation_purpose === "placement" &&
-                  evaluation.automatic_outcome !== "approved"
-                    ? `Resultado publicado. Esta colocación no confirmó ${targetLevel}.`
-                    : "Resultado publicado y nivel actualizado según corresponda."}
+                  {evaluation.evaluation_purpose === "diagnostic"
+                    ? resultingLevel
+                      ? `Diagnóstico finalizado. Nivel confirmado: ${resultingLevel}.`
+                      : `Nivel ${targetLevel} superado. El diagnóstico continúa.`
+                    : evaluation.evaluation_purpose === "placement" &&
+                        evaluation.automatic_outcome !== "approved"
+                      ? `Resultado publicado. Esta colocación no confirmó ${targetLevel}.`
+                      : "Resultado publicado y nivel actualizado según corresponda."}
                 </span>
               ) : (
                 <span>El nivel se actualizará al publicar el resultado.</span>
@@ -499,11 +517,13 @@ export default async function TechnicalEvaluationDetailPage({
                 <h3>Tipo de evaluación</h3>
                 <p className="eval-row-copy">
                   <small>
-                    {evaluation.evaluation_purpose === "placement"
-                      ? "Colocación inicial"
-                      : evaluation.evaluation_purpose === "exception"
-                        ? "Evaluación excepcional"
-                        : "Progresión"}
+                    {evaluation.evaluation_purpose === "diagnostic"
+                      ? "Diagnóstico inicial adaptativo"
+                      : evaluation.evaluation_purpose === "placement"
+                        ? "Colocación inicial"
+                        : evaluation.evaluation_purpose === "exception"
+                          ? "Evaluación excepcional"
+                          : "Progresión"}
                   </small>
                 </p>
               </article>
