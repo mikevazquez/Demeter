@@ -285,6 +285,9 @@ export function EvaluationLiveFormV2({
 }) {
   const comboLabels = new Set(["Ejecución", "Fuerza", "Líneas", "Flexibilidad"]);
   const comboBlocks = blocks.filter((block) => comboLabels.has(block.label));
+  const comboWeightTotal = comboBlocks.reduce((sum, block) => sum + block.weightPercent, 0);
+  const comboInternalWeight = (weight: number) =>
+    comboWeightTotal > 0 ? Math.round((weight / comboWeightTotal) * 10000) / 100 : 0;
   const requiredComboBlock = blocks.find((block) => block.label === "Cumplimiento del combo");
   const requiredElementsBlock = blocks.find((block) => block.label === "Elementos obligatorios");
   const nomenclatureBlock = blocks.find((block) => block.label === "Nomenclatura");
@@ -334,7 +337,7 @@ export function EvaluationLiveFormV2({
           <span>bloques completados</span>
         </div>
         <div style={{ padding: "10px 12px 6px", color: "#ffffff", fontSize: 12, fontWeight: 800 }}>
-          1 · Combo técnico
+          1 · Combo técnico · {comboWeightTotal}%
           {comboSequence ? (
             <small style={{ display: "block", marginTop: 4, color: "#8d98a8", fontWeight: 500 }}>
               {comboSequence}
@@ -366,7 +369,14 @@ export function EvaluationLiveFormV2({
                 {comboLabels.has(activeBlock.label) && comboSequence
                   ? comboSequence + " · "
                   : ""}
-                {activeBlock.weightPercent}% de la evaluación
+                {comboLabels.has(activeBlock.label)
+                  ? comboInternalWeight(activeBlock.weightPercent) + "% del combo"
+                  : activeBlock.label === "Nomenclatura"
+                    ? activeBlock.weightPercent + "% de la calificación total"
+                    : activeBlock.label === "Elementos obligatorios" ||
+                        activeBlock.label === "Cumplimiento del combo"
+                      ? "Requisito obligatorio para avanzar"
+                      : activeBlock.weightPercent + "% de la evaluación"}
                 {activeBlock.minPercent !== null
                   ? " · mínimo " + activeBlock.minPercent + "%"
                   : ""}
