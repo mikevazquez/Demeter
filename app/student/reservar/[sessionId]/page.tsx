@@ -33,7 +33,10 @@ type RewardPricePreview = {
   eligible?: boolean;
 };
 
-export default async function StudentSessionDetailPage({
+export default async export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
+function StudentSessionDetailPage({
   params,
   searchParams,
 }: {
