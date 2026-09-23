@@ -509,8 +509,8 @@ export default async function StudentEvaluationsPanel({ studentId, timeZone, err
                                 siguiente nivel y se detiene en el primero que no cumpla.
                               </span>
                               <small>
-                                El coach no selecciona el nivel inicial. El sistema asignará el nivel
-                                más alto demostrado.
+                                El coach no selecciona el nivel inicial. El sistema asignará el
+                                nivel más alto demostrado.
                               </small>
                             </div>
                           )}
@@ -531,8 +531,8 @@ export default async function StudentEvaluationsPanel({ studentId, timeZone, err
                           <div className="profile360-evaluation-placement-note">
                             <strong>Ciclo posterior</strong>
                             <span>
-                              Una vez confirmado el nivel, la siguiente evaluación se habilita en
-                              3 meses.
+                              Una vez confirmado el nivel, la siguiente evaluación se habilita en 3
+                              meses.
                             </span>
                           </div>
                           {!item.configured ? (

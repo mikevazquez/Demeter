@@ -131,13 +131,17 @@ export default async function StudentEvaluationResultPage({
             ✦
           </span>
           <div className="min-w-0">
-            <strong className="block truncate text-base text-white">{result.discipline_name}</strong>
+            <strong className="block truncate text-base text-white">
+              {result.discipline_name}
+            </strong>
             <p className="mt-0.5 text-xs text-zinc-400">
               Nivel evaluado: {result.evaluated_level_title}
             </p>
           </div>
         </div>
-        <span aria-hidden="true" className="text-xl text-zinc-500">›</span>
+        <span aria-hidden="true" className="text-xl text-zinc-500">
+          ›
+        </span>
       </section>
 
       <section
@@ -168,7 +172,9 @@ export default async function StudentEvaluationResultPage({
       <section className="grid grid-cols-2 gap-3">
         <div className="rounded-[22px] border border-white/10 bg-white/[0.025] p-4">
           <div className="flex items-center gap-3">
-            <span aria-hidden="true" className="text-xl text-fuchsia-400">▣</span>
+            <span aria-hidden="true" className="text-xl text-fuchsia-400">
+              ▣
+            </span>
             <div>
               <p className="text-[10px] text-zinc-500">Fecha de evaluación</p>
               <strong className="mt-0.5 block text-base text-white">
@@ -179,10 +185,14 @@ export default async function StudentEvaluationResultPage({
         </div>
         <div className="rounded-[22px] border border-white/10 bg-white/[0.025] p-4">
           <div className="flex items-center gap-3">
-            <span aria-hidden="true" className="text-xl text-fuchsia-400">☆</span>
+            <span aria-hidden="true" className="text-xl text-fuchsia-400">
+              ☆
+            </span>
             <div>
               <p className="text-[10px] text-zinc-500">Puntuación total</p>
-              <strong className="mt-0.5 block text-base text-white">{percent(result.total_score)}</strong>
+              <strong className="mt-0.5 block text-base text-white">
+                {percent(result.total_score)}
+              </strong>
             </div>
           </div>
         </div>
@@ -203,7 +213,9 @@ export default async function StudentEvaluationResultPage({
                   key={criterion.label}
                   className="grid grid-cols-[minmax(0,120px)_1fr_auto] items-center gap-3 py-3 first:pt-0 last:pb-0"
                 >
-                  <span className="truncate text-xs font-medium text-zinc-200">{criterion.label}</span>
+                  <span className="truncate text-xs font-medium text-zinc-200">
+                    {criterion.label}
+                  </span>
                   <span className="h-1.5 overflow-hidden rounded-full bg-white/[0.08]">
                     <span
                       className="block h-full rounded-full bg-fuchsia-500"
@@ -269,7 +281,9 @@ export default async function StudentEvaluationResultPage({
       <section className="rounded-[24px] border border-fuchsia-500/25 bg-[linear-gradient(110deg,rgba(112,26,75,0.35),rgba(236,72,153,0.04))] p-4">
         <div className="flex items-center justify-between gap-4">
           <div>
-            <span aria-hidden="true" className="text-lg text-fuchsia-400">“</span>
+            <span aria-hidden="true" className="text-lg text-fuchsia-400">
+              “
+            </span>
             <p className="mt-1 text-sm italic text-zinc-200">
               {diagnostic
                 ? "Tu punto de partida ya está confirmado."

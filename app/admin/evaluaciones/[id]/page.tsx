@@ -351,9 +351,7 @@ export default async function TechnicalEvaluationDetailPage({
             <p>
               {disciplineResult.data?.name ?? "Disciplina"} ·{" "}
               {isV2 && evaluation.evaluation_purpose === "diagnostic" ? (
-                <>
-                  Diagnóstico adaptativo · Nivel en evaluación: {targetLevel}
-                </>
+                <>Diagnóstico adaptativo · Nivel en evaluación: {targetLevel}</>
               ) : isV2 && evaluation.evaluation_purpose === "placement" ? (
                 <>
                   Nivel a validar: {targetLevel} · Actual: {currentLevel}
@@ -453,10 +451,10 @@ export default async function TechnicalEvaluationDetailPage({
                   <span>Nivel confirmado después de la evaluación</span>
                   <strong>
                     {evaluation.evaluation_purpose === "diagnostic"
-                      ? resultingLevel ??
+                      ? (resultingLevel ??
                         (evaluation.automatic_outcome === "approved"
                           ? `Continúa a ${nextProgressionLevel}`
-                          : "Se confirmará al cerrar el diagnóstico")
+                          : "Se confirmará al cerrar el diagnóstico"))
                       : evaluation.evaluation_purpose === "placement"
                         ? evaluation.automatic_outcome === "approved"
                           ? targetLevel

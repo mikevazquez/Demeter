@@ -206,7 +206,8 @@ export default async function StudentEvaluationsPage() {
                       Política de reserva
                     </p>
                     <p className="mt-1 text-xs leading-5 text-zinc-400">
-                      Tu evaluación utiliza la misma reserva, créditos y políticas de la clase elegida.
+                      Tu evaluación utiliza la misma reserva, créditos y políticas de la clase
+                      elegida.
                     </p>
                   </div>
                 </div>
