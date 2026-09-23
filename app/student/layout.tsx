@@ -18,6 +18,7 @@ function pwaBrandQuery(brand: {
     slug: brand.slug,
     primary: brand.primary_color,
     logo: brand.logo_path ?? "",
+    v: "2",
   }).toString();
 }
 
