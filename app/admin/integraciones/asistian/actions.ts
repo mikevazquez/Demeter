@@ -21,6 +21,26 @@ function safeWebhookUrl(value: string) {
   }
 }
 
+export async function saveAsistianToStudioReceiverSecret(formData: FormData) {
+  const { supabase, studio } = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
+  const signingSecret = String(formData.get("provider_signing_secret") ?? "").trim();
+
+  if (signingSecret.length < 12) {
+    redirect("/admin/integraciones/asistian?error=receiver_secret_invalid");
+  }
+
+  const { error } = await supabase.rpc("admin_set_asistian_to_studio_signing_secret", {
+    target_studio_id: studio.id,
+    target_secret: signingSecret,
+  });
+
+  if (error) {
+    redirect("/admin/integraciones/asistian?error=receiver_secret_save");
+  }
+
+  redirect("/admin/integraciones/asistian?receiver_saved=1");
+}
+
 export async function sendAsistianMappingProbe(formData: FormData) {
   await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
 
