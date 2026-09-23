@@ -159,7 +159,7 @@ export default async function TechnicalEvaluationDetailPage({
           ? null
           : Number(item.item_weight_percent),
       progressionRequired: Boolean(item.progression_required || item.mandatory),
-      attemptsAllowed: item.attempts_allowed ?? version.default_attempts_per_element,
+      attemptsAllowed:\n        item.item_kind === "criterion"\n          ? 0\n          : (item.attempts_allowed ?? version.default_attempts_per_element),
       resultStatus: result?.result_status ?? "not_evaluated",
       score: result?.score === null || result?.score === undefined ? null : Number(result.score),
       attemptCount: result?.attempt_count ?? 0,
