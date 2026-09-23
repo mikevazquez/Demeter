@@ -34,11 +34,13 @@ export async function GET(request: Request) {
   const slug = safeSlug(url.searchParams.get("slug"));
   const primary = safePrimary(url.searchParams.get("primary"));
   const logo = url.searchParams.get("logo")?.trim() ?? "";
+  const version = url.searchParams.get("v")?.trim() || "2";
 
   const iconQuery = new URLSearchParams({
     name,
     primary,
     logo,
+    v: version,
   }).toString();
 
   const manifest: MetadataRoute.Manifest = {
