@@ -88,7 +88,7 @@ async function browserClient() {
 
 export default function PushNotificationSettings({
   studioId,
-  studioName = "${studioName}",
+  studioName = "Studio Flow",
   onboardingMode = false,
 }: {
   studioId: string;
@@ -226,7 +226,7 @@ export default function PushNotificationSettings({
         setState(permission === "denied" ? "denied" : "available");
         setMessage(
           permission === "denied"
-            ? "iPhone tiene bloqueado el permiso de notificaciones para ${studioName}."
+            ? `iPhone tiene bloqueado el permiso de notificaciones para ${studioName}.`
             : "iPhone no concedió el permiso de notificaciones.",
         );
         return;
@@ -346,7 +346,7 @@ export default function PushNotificationSettings({
         throw error ?? new Error("push_test_failed");
       }
 
-      setMessage("Prueba enviada. Debes recibir una notificación de ${studioName}.");
+      setMessage(`Prueba enviada. Debes recibir una notificación de ${studioName}.`);
     } catch {
       setMessage("La prueba no pudo enviarse. Intenta nuevamente.");
     } finally {
@@ -379,7 +379,7 @@ export default function PushNotificationSettings({
     unsupported: {
       title: "Push no disponible aquí",
       description:
-        "Este navegador o contexto no admite Web Push. Puedes seguir usando ${studioName} normalmente.",
+        `Este navegador o contexto no admite Web Push. Puedes seguir usando ${studioName} normalmente.`,
     },
     error: {
       title: "No pudimos comprobar Push",
