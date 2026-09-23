@@ -16,7 +16,8 @@ import {
 export default async function RewardsControlCenterPage() {
   const ctx = await getAdminContext(CAPABILITIES.REWARDS_READ);
 
-  const [programsResult, rulesResult, rewardsResult, programEventsResult] = await Promise.all([
+  const [programsResult, rulesResult, rewardsResult, programEventsResult, onboardingResult] =
+    await Promise.all([
     ctx.supabase
       .from("reward_programs")
       .select("id,status,latest_version_number,published_version_number,updated_at")
@@ -39,6 +40,12 @@ export default async function RewardsControlCenterPage() {
       .eq("studio_id", ctx.studio.id)
       .order("occurred_at", { ascending: false })
       .limit(8),
+    ctx.supabase
+      .from("reward_onboarding")
+      .select(
+        "student_id,documents_completed_at,profile_completed_at,first_reservation_at,first_attendance_at,bronze_unlocked_at",
+      )
+      .eq("studio_id", ctx.studio.id),
   ]);
 
   const programs = programsResult.data ?? [];
@@ -72,6 +79,9 @@ export default async function RewardsControlCenterPage() {
   const availableRewards = (rewardsResult.data ?? []).filter(
     (reward) => reward.status === "available",
   );
+  const onboardingRows = onboardingResult.data ?? [];
+  const activatingStudents = onboardingRows.filter((item) => !item.bronze_unlocked_at);
+  const activatedStudents = onboardingRows.filter((item) => Boolean(item.bronze_unlocked_at));
 
   return (
     <RewardsShell>
@@ -94,7 +104,7 @@ export default async function RewardsControlCenterPage() {
         ) : null}
       </header>
 
-      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
         <MetricCard
           label="Programas activos"
           value={activePrograms.length}
@@ -115,13 +125,62 @@ export default async function RewardsControlCenterPage() {
           value={availableRewards.length}
           detail="listas para usar"
         />
+        <MetricCard
+          label="En activación"
+          value={activatingStudents.length}
+          detail={`${activatedStudents.length} con medalla activa`}
+        />
       </section>
+
+      <SectionCard eyebrow="ACTIVACIÓN" title="Activación de Medalla Bronce">
+        <div className="grid gap-4 lg:grid-cols-[1fr_.9fr]">
+          <div>
+            <p className="text-sm leading-6 text-zinc-400">
+              La Medalla Bronce ya no se entrega por crear una alumna. Se desbloquea cuando completa
+              los cuatro hitos del onboarding. Las alumnas que ya tenían una medalla conservan su
+              estado anterior.
+            </p>
+            <div className="mt-4 grid gap-2 sm:grid-cols-2">
+              {[
+                ["1", "Aceptar documentos obligatorios", "Se completa con evidencia de Documentos."],
+                ["2", "Completar perfil", "Foto, correo y fecha de nacimiento."],
+                ["3", "Realizar primera reserva", "La reserva queda como hito aunque después se cancele."],
+                ["4", "Asistir a primera clase", "Requiere una reserva con estado attended."],
+              ].map(([number, title, detail]) => (
+                <div
+                  key={number}
+                  className="rounded-2xl border border-white/10 bg-black/20 p-4"
+                >
+                  <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#FF0A8A]">
+                    Paso {number}
+                  </span>
+                  <strong className="mt-1 block text-sm text-white">{title}</strong>
+                  <p className="mt-1 text-xs leading-5 text-zinc-500">{detail}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="rounded-2xl border border-[#CD7F32]/30 bg-[#CD7F32]/[0.06] p-5">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#E6A56A]">
+              Resultado
+            </p>
+            <h3 className="mt-2 text-xl font-semibold text-white">Medalla Bronce</h3>
+            <p className="mt-2 text-sm leading-6 text-zinc-400">
+              Al completar los cuatro pasos se activa automáticamente la primera medalla y comienzan
+              sus beneficios. Rewards y los niveles técnicos permanecen separados.
+            </p>
+            <div className="mt-4 rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 text-xs text-zinc-400">
+              Requisitos fijos en v1 · no editables
+            </div>
+          </div>
+        </div>
+      </SectionCard>
 
       <section className="grid gap-4 lg:grid-cols-3">
         {[
           {
             title: "Programas",
-            copy: "Niveles permanentes, acumulativos o secuenciales.",
+            copy: "Programas permanentes, acumulativos o secuenciales.",
             href: "/admin/recompensas/programas",
           },
           {
