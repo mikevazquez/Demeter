@@ -103,6 +103,20 @@ create index notification_contact_decisions_notification_idx
   on public.notification_contact_decisions(notification_id, created_at desc)
   where notification_id is not null;
 
+create index notification_contact_decisions_event_tenant_idx
+  on public.notification_contact_decisions(studio_id, source_event_id);
+
+create index notification_contact_decisions_notification_tenant_idx
+  on public.notification_contact_decisions(studio_id, notification_id)
+  where notification_id is not null;
+
+create index notification_contact_decisions_recipient_user_fk_idx
+  on public.notification_contact_decisions(recipient_user_id)
+  where recipient_user_id is not null;
+
+create index notification_contact_decisions_rule_version_tenant_idx
+  on public.notification_contact_decisions(studio_id, rule_id, rule_version_number);
+
 create index notifications_contact_user_idx
   on public.notifications(studio_id, communication_class, recipient_user_id, scheduled_for)
   where recipient_user_id is not null
