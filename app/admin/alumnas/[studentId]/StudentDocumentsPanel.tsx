@@ -42,6 +42,7 @@ type AcceptanceHistory = {
   guardian_name?: string | null;
   guardian_relationship?: string | null;
   affirmation_text?: string | null;
+  document_id: string;
   version_number: number;
   file_name?: string | null;
   file_path?: string | null;
@@ -175,15 +176,11 @@ export default async function StudentDocumentsPanel({
         <div>
           <p className="eyebrow">DOCUMENTOS</p>
           <h2>Documentos de la alumna</h2>
-          <p>Estado actual, pendientes e historial exacto de aceptaciones de este expediente.</p>
+          <p>Documentos pendientes y completados de este expediente.</p>
         </div>
       </div>
 
       <div className="profile360-approved-indicators">
-        <article>
-          <span>Documentos actuales</span>
-          <strong>{current.length}</strong>
-        </article>
         <article>
           <span>Completados</span>
           <strong>{completed.length}</strong>
@@ -192,18 +189,15 @@ export default async function StudentDocumentsPanel({
           <span>Pendientes</span>
           <strong>{pending.length}</strong>
         </article>
-        <article>
-          <span>Bloquean reserva</span>
-          <strong>{bookingBlocked.length}</strong>
-        </article>
       </div>
 
-      {pending.length ? (
-        <div className="profile360-rewards-section">
-          <div className="profile360-package-group-heading">
-            <strong>Requieren atención</strong>
-            <span>{pending.length}</span>
-          </div>
+      <div className="profile360-rewards-section">
+        <div className="profile360-package-group-heading">
+          <strong>Pendientes</strong>
+          <span>{pending.length}</span>
+        </div>
+
+        {pending.length ? (
           <div className="profile360-reward-list">
             {pending.map((item) => (
               <article key={item.version_id}>
@@ -219,94 +213,259 @@ export default async function StudentDocumentsPanel({
                       ? "Bloquea nuevas reservas"
                       : item.enforcement_scope === "activity_booking"
                         ? "Se exige solo en actividades aplicables"
-                        : "Pendiente sin bloqueo global"}
+                        : "Requiere atención"}
                   </span>
                 </div>
                 <span className="status-pill">Pendiente</span>
               </article>
             ))}
           </div>
-        </div>
-      ) : (
-        <div className="rounded-2xl border border-emerald-400/20 bg-emerald-400/[0.05] p-4 text-sm text-emerald-100">
-          La alumna no tiene requisitos documentales pendientes.
-        </div>
-      )}
-
-      {current.length ? (
-        <div className="profile360-rewards-section">
-          <div className="profile360-package-group-heading">
-            <strong>Estado actual</strong>
-            <span>{current.length}</span>
+        ) : (
+          <div className="rounded-2xl border border-emerald-400/20 bg-emerald-400/[0.05] p-4 text-sm text-emerald-100">
+            La alumna no tiene documentos pendientes.
           </div>
+        )}
+      </div>
+
+      <div className="profile360-rewards-section">
+        <div className="profile360-package-group-heading">
+          <strong>Completados</strong>
+          <span>{completed.length}</span>
+        </div>
+
+        {completed.length ? (
           <div className="grid gap-3">
-            {current.map((item) => {
+            {completed.map((item) => {
+              const documentHistory = history.filter(
+                (entry) => entry.document_id === item.document_id,
+              );
+              const currentEvidence = documentHistory.filter(
+                (entry) =>
+                  entry.version_number === item.version_number && !entry.invalidated,
+              );
+              const previousEvidence = documentHistory.filter(
+                (entry) => entry.version_number !== item.version_number,
+              );
               const validByPrevious =
                 item.satisfied &&
                 !item.accepted_current_version_by_student &&
                 !item.accepted_current_version_by_guardian;
 
               return (
-                <article
+                <details
                   key={item.version_id}
                   className="rounded-2xl border border-white/10 bg-white/[0.03] p-4"
                 >
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                    <div>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <strong className="text-sm text-white">{item.name}</strong>
-                        <span className="text-xs text-zinc-500">
-                          {"v" + String(item.version_number)}
-                        </span>
+                  <summary className="cursor-pointer list-none">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <strong className="text-sm text-white">{item.name}</strong>
+                          <span className="text-xs text-zinc-500">
+                            {"v" + String(item.version_number)}
+                          </span>
+                        </div>
+                        <p className="mt-1 text-xs text-zinc-500">
+                          {documentTypeLabels[item.document_type] ?? item.document_type}
+                        </p>
+                        {item.current_student_acceptance ? (
+                          <p className="mt-2 text-xs text-zinc-400">
+                            {"Alumna: " +
+                              (item.current_student_acceptance.decision === "declined"
+                                ? "No autorizó"
+                                : "Aceptó") +
+                              " · " +
+                              formatDateTime(
+                                item.current_student_acceptance.accepted_at,
+                                timeZone,
+                              )}
+                          </p>
+                        ) : null}
+                        {item.current_guardian_acceptance ? (
+                          <p className="mt-1 text-xs text-zinc-400">
+                            {"Responsable: " +
+                              (item.current_guardian_acceptance.guardian_name || "Registrado") +
+                              " · " +
+                              formatDateTime(
+                                item.current_guardian_acceptance.accepted_at,
+                                timeZone,
+                              )}
+                          </p>
+                        ) : null}
+                        {validByPrevious ? (
+                          <p className="mt-2 text-xs leading-5 text-cyan-200">
+                            Vigente por una aceptación anterior.
+                          </p>
+                        ) : null}
                       </div>
-                      <p className="mt-1 text-xs text-zinc-500">
-                        {documentTypeLabels[item.document_type] ?? item.document_type}
-                      </p>
-
-                      {validByPrevious ? (
-                        <p className="mt-2 text-xs leading-5 text-cyan-200">
-                          Vigente por una aceptación anterior. Esta versión no se muestra falsamente
-                          como aceptada.
-                        </p>
-                      ) : null}
-
-                      {item.current_student_acceptance ? (
-                        <p className="mt-2 text-xs text-zinc-400">
-                          {"Alumna: " +
-                            (item.current_student_acceptance.decision === "declined"
-                              ? "No autorizó"
-                              : "Aceptó") +
-                            " · " +
-                            formatDateTime(item.current_student_acceptance.accepted_at, timeZone)}
-                        </p>
-                      ) : null}
-
-                      {item.current_guardian_acceptance ? (
-                        <p className="mt-1 text-xs text-zinc-400">
-                          {"Responsable: " +
-                            (item.current_guardian_acceptance.guardian_name || "Registrado") +
-                            " · " +
-                            formatDateTime(item.current_guardian_acceptance.accepted_at, timeZone)}
-                        </p>
-                      ) : null}
+                      <span className="rounded-full bg-emerald-400/10 px-2.5 py-1 text-xs font-semibold text-emerald-300">
+                        Completo
+                      </span>
                     </div>
+                  </summary>
 
-                    <span
-                      className={
-                        item.satisfied
-                          ? "rounded-full bg-emerald-400/10 px-2.5 py-1 text-xs font-semibold text-emerald-300"
-                          : "rounded-full bg-fuchsia-400/10 px-2.5 py-1 text-xs font-semibold text-fuchsia-200"
-                      }
-                    >
-                      {item.satisfied ? "Completo" : "Pendiente"}
-                    </span>
+                  <div className="mt-4 border-t border-white/10 pt-4">
+                    {currentEvidence.length ? (
+                      <div className="grid gap-3">
+                        {currentEvidence.map((entry) => (
+                          <div
+                            key={entry.acceptance_id}
+                            className="rounded-xl border border-white/10 bg-black/20 p-3"
+                          >
+                            <div className="flex flex-wrap items-start justify-between gap-3">
+                              <div>
+                                <p className="text-xs font-semibold text-white">
+                                  {entry.acceptor_kind === "guardian"
+                                    ? entry.guardian_name || "Responsable"
+                                    : "Alumna"}
+                                </p>
+                                <p className="mt-1 text-xs text-zinc-500">
+                                  {acceptanceMethodLabel(entry.method) +
+                                    " · " +
+                                    formatDateTime(entry.accepted_at, timeZone)}
+                                </p>
+                              </div>
+                              <span
+                                className={
+                                  entry.decision === "declined"
+                                    ? "rounded-full bg-amber-400/10 px-2.5 py-1 text-xs font-semibold text-amber-200"
+                                    : "rounded-full bg-emerald-400/10 px-2.5 py-1 text-xs font-semibold text-emerald-300"
+                                }
+                              >
+                                {entry.decision === "declined" ? "No autorizó" : "Aceptó"}
+                              </span>
+                            </div>
+
+                            {entry.affirmation_text ? (
+                              <div className="mt-3 rounded-xl border border-white/10 p-3">
+                                <p className="text-[10px] uppercase tracking-[0.14em] text-zinc-600">
+                                  Confirmación registrada
+                                </p>
+                                <p className="mt-2 text-xs leading-5 text-zinc-300">
+                                  {entry.affirmation_text}
+                                </p>
+                              </div>
+                            ) : null}
+
+                            <div className="mt-3 grid gap-2 text-xs text-zinc-500 sm:grid-cols-2">
+                              <div>
+                                <span>Archivo exacto</span>
+                                <p className="mt-1 break-words text-zinc-300">
+                                  {entry.file_name || "—"}
+                                </p>
+                              </div>
+                              <div>
+                                <span>Huella del archivo</span>
+                                <p className="mt-1 break-all text-zinc-300">
+                                  {entry.content_sha256 || "—"}
+                                </p>
+                              </div>
+                            </div>
+
+                            {signedUrls.get(entry.acceptance_id) ? (
+                              <a
+                                href={signedUrls.get(entry.acceptance_id)}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="mt-3 inline-flex rounded-xl border border-white/15 px-3 py-2 text-xs font-semibold text-white"
+                              >
+                                Ver PDF exacto
+                              </a>
+                            ) : null}
+
+                            {canManage ? (
+                              <form
+                                action={invalidateStudentDocumentAcceptanceAction}
+                                className="mt-3 rounded-xl border border-rose-400/15 p-3"
+                              >
+                                <input type="hidden" name="student_id" value={studentId} />
+                                <input
+                                  type="hidden"
+                                  name="acceptance_id"
+                                  value={entry.acceptance_id}
+                                />
+                                <textarea
+                                  name="reason"
+                                  required
+                                  minLength={3}
+                                  rows={2}
+                                  placeholder="Motivo para invalidar"
+                                  className="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-xs text-white"
+                                />
+                                <button className="mt-2 rounded-xl border border-rose-400/25 px-3 py-2 text-xs font-semibold text-rose-200">
+                                  Invalidar sin borrar evidencia
+                                </button>
+                              </form>
+                            ) : null}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-xs leading-5 text-cyan-200">
+                        Este documento sigue válido por una aceptación anterior.
+                      </p>
+                    )}
+
+                    {previousEvidence.length ? (
+                      <details className="mt-4 rounded-xl border border-white/10 bg-black/20 p-3">
+                        <summary className="cursor-pointer text-xs font-semibold text-zinc-300">
+                          {"Ver versiones anteriores (" +
+                            String(previousEvidence.length) +
+                            ")"}
+                        </summary>
+                        <div className="mt-3 grid gap-2">
+                          {previousEvidence.map((entry) => (
+                            <div
+                              key={entry.acceptance_id}
+                              className="rounded-xl border border-white/10 p-3"
+                            >
+                              <div className="flex items-start justify-between gap-3">
+                                <div>
+                                  <p className="text-xs font-semibold text-white">
+                                    {"v" + String(entry.version_number)}
+                                  </p>
+                                  <p className="mt-1 text-xs text-zinc-500">
+                                    {(entry.acceptor_kind === "guardian"
+                                      ? entry.guardian_name || "Responsable"
+                                      : "Alumna") +
+                                      " · " +
+                                      formatDateTime(entry.accepted_at, timeZone)}
+                                  </p>
+                                </div>
+                                <span
+                                  className={
+                                    entry.invalidated
+                                      ? "rounded-full bg-rose-400/10 px-2.5 py-1 text-xs font-semibold text-rose-200"
+                                      : "rounded-full bg-zinc-400/10 px-2.5 py-1 text-xs font-semibold text-zinc-300"
+                                  }
+                                >
+                                  {entry.invalidated ? "Invalidada" : "Anterior"}
+                                </span>
+                              </div>
+                              {signedUrls.get(entry.acceptance_id) ? (
+                                <a
+                                  href={signedUrls.get(entry.acceptance_id)}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="mt-3 inline-flex text-xs font-semibold text-fuchsia-300"
+                                >
+                                  Ver PDF exacto
+                                </a>
+                              ) : null}
+                            </div>
+                          ))}
+                        </div>
+                      </details>
+                    ) : null}
                   </div>
-                </article>
+                </details>
               );
             })}
           </div>
-        </div>
-      ) : null}
+        ) : (
+          <div className="empty-state">La alumna todavía no tiene documentos completados.</div>
+        )}
+      </div>
 
       {snapshot.is_minor === true ? (
         <div className="profile360-rewards-section">
@@ -338,139 +497,6 @@ export default async function StudentDocumentsPanel({
           )}
         </div>
       ) : null}
-
-      <div className="profile360-rewards-section">
-        <div className="profile360-package-group-heading">
-          <strong>Historial de aceptaciones</strong>
-          <span>{history.length}</span>
-        </div>
-
-        {history.length ? (
-          <div className="grid gap-3">
-            {history.map((item) => (
-              <details
-                key={item.acceptance_id}
-                className="rounded-2xl border border-white/10 bg-white/[0.03] p-4"
-              >
-                <summary className="cursor-pointer list-none">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <strong className="text-sm text-white">{item.document_name}</strong>
-                      <p className="mt-1 text-xs text-zinc-500">
-                        {"v" +
-                          String(item.version_number) +
-                          " · " +
-                          (item.acceptor_kind === "guardian"
-                            ? item.guardian_name || "Responsable"
-                            : "Alumna") +
-                          " · " +
-                          formatDateTime(item.accepted_at, timeZone)}
-                      </p>
-                    </div>
-                    <span
-                      className={
-                        item.invalidated
-                          ? "rounded-full bg-rose-400/10 px-2.5 py-1 text-xs font-semibold text-rose-200"
-                          : item.decision === "declined"
-                            ? "rounded-full bg-amber-400/10 px-2.5 py-1 text-xs font-semibold text-amber-200"
-                            : "rounded-full bg-emerald-400/10 px-2.5 py-1 text-xs font-semibold text-emerald-300"
-                      }
-                    >
-                      {item.invalidated
-                        ? "Invalidada"
-                        : item.decision === "declined"
-                          ? "No autorizó"
-                          : "Aceptó"}
-                    </span>
-                  </div>
-                </summary>
-
-                <div className="mt-4 grid gap-3 border-t border-white/10 pt-4 text-xs text-zinc-400 sm:grid-cols-2">
-                  <div>
-                    <span className="text-zinc-600">Método</span>
-                    <p className="mt-1 text-zinc-200">{acceptanceMethodLabel(item.method)}</p>
-                  </div>
-                  <div>
-                    <span className="text-zinc-600">Aceptante</span>
-                    <p className="mt-1 text-zinc-200">
-                      {item.acceptor_kind === "guardian"
-                        ? (item.guardian_name || "Responsable") +
-                          " · " +
-                          relationshipLabel(item.guardian_relationship || "legal_guardian")
-                        : "Alumna"}
-                    </p>
-                  </div>
-                  <div>
-                    <span className="text-zinc-600">Archivo exacto</span>
-                    <p className="mt-1 break-words text-zinc-200">{item.file_name || "—"}</p>
-                  </div>
-                  <div>
-                    <span className="text-zinc-600">Huella del archivo</span>
-                    <p className="mt-1 break-all text-zinc-200">{item.content_sha256 || "—"}</p>
-                  </div>
-                </div>
-
-                {item.affirmation_text ? (
-                  <div className="mt-3 rounded-xl border border-white/10 bg-black/20 p-3">
-                    <p className="text-[10px] uppercase tracking-[0.14em] text-zinc-600">
-                      Confirmación registrada
-                    </p>
-                    <p className="mt-2 text-xs leading-5 text-zinc-300">{item.affirmation_text}</p>
-                  </div>
-                ) : null}
-
-                {item.invalidated ? (
-                  <div className="mt-3 rounded-xl border border-rose-400/15 bg-rose-400/[0.04] p-3">
-                    <p className="text-xs font-semibold text-rose-200">Evidencia invalidada</p>
-                    <p className="mt-1 text-xs leading-5 text-rose-100/70">
-                      {item.invalidation_reason || "Sin motivo visible."}
-                    </p>
-                  </div>
-                ) : null}
-
-                {signedUrls.get(item.acceptance_id) ? (
-                  <a
-                    href={signedUrls.get(item.acceptance_id)}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="mt-4 inline-flex rounded-xl border border-white/15 px-3 py-2 text-xs font-semibold text-white"
-                  >
-                    Ver PDF exacto
-                  </a>
-                ) : null}
-
-                {canManage && !item.invalidated ? (
-                  <form
-                    action={invalidateStudentDocumentAcceptanceAction}
-                    className="mt-4 rounded-xl border border-rose-400/15 bg-black/20 p-3"
-                  >
-                    <input type="hidden" name="student_id" value={studentId} />
-                    <input type="hidden" name="acceptance_id" value={item.acceptance_id} />
-                    <label>
-                      <span className="mb-2 block text-xs font-semibold text-white">
-                        Invalidar aceptación
-                      </span>
-                      <textarea
-                        name="reason"
-                        required
-                        minLength={3}
-                        rows={2}
-                        placeholder="Motivo obligatorio"
-                        className="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-xs text-white"
-                      />
-                    </label>
-                    <button className="mt-2 rounded-xl border border-rose-400/25 px-3 py-2 text-xs font-semibold text-rose-200">
-                      Invalidar sin borrar evidencia
-                    </button>
-                  </form>
-                ) : null}
-              </details>
-            ))}
-          </div>
-        ) : (
-          <div className="empty-state">La alumna todavía no tiene aceptaciones registradas.</div>
-        )}
-      </div>
 
       <p className="mt-4 text-xs leading-5 text-zinc-600">
         La configuración de documentos se administra en{" "}
