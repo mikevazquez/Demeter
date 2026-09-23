@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 
+import QueryNotice from "@/app/components/QueryNotice";
 import { createClient } from "@/lib/supabase/server";
 
 import { verifyGuardianIdentityAction } from "../actions";
@@ -49,9 +50,12 @@ export default async function GuardianInvitationPage({
         </header>
 
         {query.error ? (
-          <div className="rounded-3xl border border-rose-400/25 bg-rose-400/[0.06] p-4 text-sm text-rose-100">
-            Confirma tu identidad para continuar.
-          </div>
+          <QueryNotice
+            eyebrow="Documentos"
+            title="Confirma tu identidad"
+            message="Necesitamos tu confirmación antes de mostrar los documentos pendientes."
+            tone="error"
+          />
         ) : null}
 
         <section className="rounded-[32px] border border-fuchsia-500/25 bg-[radial-gradient(circle_at_50%_0%,rgba(217,70,239,.14),transparent_40%),#0d0f16] p-6 shadow-[0_0_30px_rgba(217,70,239,.08)]">
