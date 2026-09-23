@@ -239,8 +239,7 @@ export default async function StudentDocumentsPanel({
                 (entry) => entry.document_id === item.document_id,
               );
               const currentEvidence = documentHistory.filter(
-                (entry) =>
-                  entry.version_number === item.version_number && !entry.invalidated,
+                (entry) => entry.version_number === item.version_number && !entry.invalidated,
               );
               const previousEvidence = documentHistory.filter(
                 (entry) => entry.version_number !== item.version_number,
@@ -274,10 +273,7 @@ export default async function StudentDocumentsPanel({
                                 ? "No autorizó"
                                 : "Aceptó") +
                               " · " +
-                              formatDateTime(
-                                item.current_student_acceptance.accepted_at,
-                                timeZone,
-                              )}
+                              formatDateTime(item.current_student_acceptance.accepted_at, timeZone)}
                           </p>
                         ) : null}
                         {item.current_guardian_acceptance ? (
@@ -408,9 +404,7 @@ export default async function StudentDocumentsPanel({
                     {previousEvidence.length ? (
                       <details className="mt-4 rounded-xl border border-white/10 bg-black/20 p-3">
                         <summary className="cursor-pointer text-xs font-semibold text-zinc-300">
-                          {"Ver versiones anteriores (" +
-                            String(previousEvidence.length) +
-                            ")"}
+                          {"Ver versiones anteriores (" + String(previousEvidence.length) + ")"}
                         </summary>
                         <div className="mt-3 grid gap-2">
                           {previousEvidence.map((entry) => (
