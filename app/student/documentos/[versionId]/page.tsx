@@ -6,6 +6,7 @@ import {
   documentTypeLabels,
   formatFileSize,
   responseModeLabels,
+  safeReservationReturnTo,
 } from "@/lib/documents";
 import { getStudentPortalContext } from "@/lib/student/portal";
 
@@ -33,10 +34,14 @@ type Detail = {
 
 export default async function StudentDocumentReadPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ versionId: string }>;
+  searchParams: Promise<{ returnTo?: string }>;
 }) {
   const { versionId } = await params;
+  const query = await searchParams;
+  const returnTo = safeReservationReturnTo(query.returnTo);
   const { supabase, studio } = await getStudentPortalContext();
   const { data, error } = await supabase.rpc("student_document_detail", {
     p_version_id: versionId,
@@ -70,10 +75,10 @@ export default async function StudentDocumentReadPage({
   return (
     <main className="space-y-5 pb-6">
       <Link
-        href="/student/documentos"
+        href={returnTo || "/student/documentos"}
         className="text-sm font-semibold text-zinc-400 hover:text-white"
       >
-        ← Mis documentos
+        {returnTo ? "← Volver a reservar" : "← Mis documentos"}
       </Link>
 
       <header>
@@ -170,7 +175,11 @@ export default async function StudentDocumentReadPage({
                   requerida.
                 </p>
                 <Link
-                  href="/student/documentos/responsable"
+                  href={
+                    returnTo
+                      ? `/student/documentos/responsable?returnTo=${encodeURIComponent(returnTo)}`
+                      : "/student/documentos/responsable"
+                  }
                   className="mt-3 inline-flex rounded-xl border border-cyan-400/25 px-3 py-2 text-xs font-semibold text-cyan-200"
                 >
                   Gestionar responsable
@@ -180,7 +189,11 @@ export default async function StudentDocumentReadPage({
 
             {studentMayAct ? (
               <Link
-                href={`/student/documentos/${detail.id}/confirmar`}
+                href={
+                  returnTo
+                    ? `/student/documentos/${detail.id}/confirmar?returnTo=${encodeURIComponent(returnTo)}`
+                    : `/student/documentos/${detail.id}/confirmar`
+                }
                 className="mt-4 inline-flex w-full justify-center rounded-2xl bg-fuchsia-600 px-5 py-3 text-sm font-semibold text-white shadow-[0_0_24px_rgba(217,70,239,.2)]"
               >
                 Continuar a la confirmación
