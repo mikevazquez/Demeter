@@ -219,7 +219,13 @@ Deno.serve(async (request) => {
   }
 
   const headerEventName = safeText(request.headers.get("x-webhook-event"));
-  const eventName = safeText(body.event) ?? headerEventName ?? "signed_test";
+  const nativeEventName = safeText(asRecord(body.data)?.event_type);
+  const eventName = (
+    nativeEventName ??
+    safeText(body.event) ??
+    headerEventName ??
+    "signed_test"
+  ).toLowerCase();
   const providerEventId =
     bodyEventId ?? headerEventId ?? `synthetic:${await sha256Hex(`${eventName}|${rawBody}`)}`;
 
