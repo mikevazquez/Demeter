@@ -41,6 +41,30 @@ export async function saveAsistianToStudioReceiverSecret(formData: FormData) {
   redirect("/admin/integraciones/asistian?receiver_saved=1");
 }
 
+export async function saveAsistianServiceMapping(formData: FormData) {
+  const { supabase, studio } = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
+  const serviceId = String(formData.get("service_id") ?? "").trim();
+  const serviceName = String(formData.get("service_name") ?? "").trim();
+  const classTemplateId = String(formData.get("class_template_id") ?? "").trim();
+
+  if (!serviceId || !classTemplateId) {
+    redirect("/admin/integraciones/asistian?error=service_mapping_invalid");
+  }
+
+  const { error } = await supabase.rpc("admin_upsert_asistian_service_mapping", {
+    target_studio_id: studio.id,
+    target_service_id: serviceId,
+    target_service_name: serviceName || null,
+    target_class_template_id: classTemplateId,
+  });
+
+  if (error) {
+    redirect("/admin/integraciones/asistian?error=service_mapping_save");
+  }
+
+  redirect("/admin/integraciones/asistian?service_mapping_saved=1");
+}
+
 export async function sendAsistianMappingProbe(formData: FormData) {
   await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
 
