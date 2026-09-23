@@ -30,7 +30,9 @@ describe("DOCUMENTOS-01 optional consent and document exceptions", () => {
   });
 
   it("stores a new immutable event when an optional decision changes", () => {
-    expect(migration).toContain("drop index if exists public.document_acceptances_identity_idx");
+    expect(migration).toContain(
+      "drop index if exists public.document_acceptances_identity_idx",
+    );
     expect(migration).toContain("v_existing_decision=p_decision");
     expect(migration).toContain("'previous_acceptance_id',v_existing");
     expect(migration).toContain("'previous_decision',v_existing_decision");
