@@ -69,6 +69,13 @@ async function hmacSha256Hex(secret: string, message: string) {
   return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
+async function sha256Hex(message: string) {
+  const bytes = new Uint8Array(
+    await crypto.subtle.digest("SHA-256", new TextEncoder().encode(message)),
+  );
+  return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
 function legacySignatureValue(value: string | null) {
   const normalized = value?.trim() ?? "";
   if (!normalized) return null;
@@ -196,11 +203,12 @@ Deno.serve(async (request) => {
     return jsonResponse({ error: "event_id_mismatch" }, 400);
   }
 
-  const providerEventId = bodyEventId ?? headerEventId;
-  const eventName = safeText(body.event) ?? safeText(request.headers.get("x-webhook-event"));
-  if (!providerEventId || !eventName) {
-    return jsonResponse({ error: "event_identity_missing" }, 400);
-  }
+  const headerEventName = safeText(request.headers.get("x-webhook-event"));
+  const eventName = safeText(body.event) ?? headerEventName ?? "signed_test";
+  const providerEventId =
+    bodyEventId ??
+    headerEventId ??
+    `synthetic:${await sha256Hex(`${eventName}|${rawBody}`)}`;
 
   const attemptRaw = safeText(request.headers.get("x-webhook-attempt"));
   const parsedAttempt = attemptRaw ? Number.parseInt(attemptRaw, 10) : null;
@@ -222,6 +230,14 @@ Deno.serve(async (request) => {
     attempt,
     payload: body,
     processing_status: "captured",
+    processing_result: {
+      capture_mode: bodyEventId || headerEventId ? "provider_event_id" : "signed_synthetic_id",
+      signature_scheme: verification.scheme,
+      header_event: headerEventName,
+      header_event_id: headerEventId,
+      header_timestamp: safeText(request.headers.get("x-webhook-timestamp")),
+      header_attempt: attemptRaw,
+    },
   });
 
   if (insertError?.code === "23505") {
