@@ -478,3 +478,40 @@ export async function setAcquisitionAvailableCredits(formData: FormData) {
   revalidateAcquisitionViews(studentId);
   redirect(`/admin/alumnas/${studentId}?saved=credits_adjusted`);
 }
+
+export async function invalidateStudentDocumentAcceptanceAction(formData: FormData) {
+  const studentId = String(formData.get("student_id") ?? "").trim();
+  const acceptanceId = String(formData.get("acceptance_id") ?? "").trim();
+  const reason = String(formData.get("reason") ?? "").trim();
+
+  if (!studentId || !acceptanceId || reason.length < 3) {
+    redirect(`/admin/alumnas/${studentId}?view=documents&document_error=invalidation_required`);
+  }
+
+  const { supabase, studio } = await getAdminContext(CAPABILITIES.DOCUMENTS_MANAGE);
+  const { data: acceptance } = await supabase
+    .from("document_acceptances")
+    .select("id,student_id,studio_id")
+    .eq("id", acceptanceId)
+    .eq("student_id", studentId)
+    .eq("studio_id", studio.id)
+    .maybeSingle();
+
+  if (!acceptance) {
+    redirect(`/admin/alumnas/${studentId}?view=documents&document_error=acceptance_not_found`);
+  }
+
+  const { error } = await supabase.rpc("admin_invalidate_document_acceptance", {
+    p_acceptance_id: acceptanceId,
+    p_reason: reason,
+  });
+
+  if (error) {
+    redirect(`/admin/alumnas/${studentId}?view=documents&document_error=invalidate`);
+  }
+
+  revalidatePath(`/admin/alumnas/${studentId}`);
+  revalidatePath("/student/documentos");
+  revalidatePath("/student/reservar");
+  redirect(`/admin/alumnas/${studentId}?view=documents&document_result=invalidated`);
+}
