@@ -34,12 +34,16 @@ export default async function AsistianIntegrationTestPage({
   const { supabase, studio } = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
   const query = await searchParams;
 
-  const receiverUrl =
-    `${env.supabaseUrl.replace(/\/+$/, "")}/functions/v1/receive-asistian-webhook?studio=${studio.id}`;
+  const receiverUrl = `${env.supabaseUrl.replace(
+    /\/+$/,
+    "",
+  )}/functions/v1/receive-asistian-webhook?studio=${studio.id}`;
 
   const { data: receivedEvents } = await supabase
     .from("asistian_webhook_events")
-    .select("id,event_name,provider_event_id,provider_timestamp,attempt,payload,processing_status,received_at")
+    .select(
+      "id,event_name,provider_event_id,provider_timestamp,attempt,payload,processing_status,received_at",
+    )
     .eq("studio_id", studio.id)
     .order("received_at", { ascending: false })
     .limit(10);
@@ -59,7 +63,8 @@ export default async function AsistianIntegrationTestPage({
 
       {query.receiver_saved === "1" ? (
         <div className="notice success">
-          Receptor Asistian → Studio Flow configurado. Ya puedes usar “Probar” en el webhook saliente de Asistian.
+          Receptor Asistian → Studio Flow configurado. Ya puedes usar “Probar” en el webhook
+          saliente de Asistian.
         </div>
       ) : null}
 
@@ -167,7 +172,13 @@ export default async function AsistianIntegrationTestPage({
         <form action={sendAsistianMappingProbe} className="compact-form">
           <label>
             URL de prueba de Asistian
-            <input type="url" name="test_webhook_url" placeholder="https://…" autoComplete="off" required />
+            <input
+              type="url"
+              name="test_webhook_url"
+              placeholder="https://…"
+              autoComplete="off"
+              required
+            />
           </label>
           <p className="text-sm text-zinc-400">
             Con Probar Webhook escuchando, esta prueba envía datos sintéticos con nombre,
@@ -190,11 +201,23 @@ export default async function AsistianIntegrationTestPage({
         <form action={sendAsistianHandshake} className="compact-form">
           <label>
             URL de Webhook de Producción
-            <input type="url" name="webhook_url" placeholder="https://…" autoComplete="off" required />
+            <input
+              type="url"
+              name="webhook_url"
+              placeholder="https://…"
+              autoComplete="off"
+              required
+            />
           </label>
           <label>
             Secreto de firma
-            <input type="password" name="signing_secret" placeholder="Pega aquí el secreto" autoComplete="off" required />
+            <input
+              type="password"
+              name="signing_secret"
+              placeholder="Pega aquí el secreto"
+              autoComplete="off"
+              required
+            />
           </label>
           <button className="primary-button" type="submit">
             Guardar y enviar prueba firmada
