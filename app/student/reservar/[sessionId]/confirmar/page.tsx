@@ -11,6 +11,7 @@ import {
 
 import { bookStudentSessionAction } from "../../../actions";
 import PendingActionButton from "../../../components/PendingActionButton";
+import { BookingRestrictionCard } from "../../BookingRestrictionCard";
 
 const errorCopy: Record<string, string> = {
   booking_failed: "No se pudo realizar la reserva. Intenta de nuevo.",
@@ -197,9 +198,13 @@ export default async function StudentBookingConfirmPage({
           </>
         ) : (
           <div className="mt-4 rounded-2xl border border-amber-400/20 bg-amber-400/[0.06] p-4">
-            <p className="text-sm font-semibold text-amber-100">
-              {bookingReasonCopy(session.eligibility?.reason_code)}
-            </p>
+            {session.eligibility?.restrictions?.length ? (
+              <BookingRestrictionCard restrictions={session.eligibility.restrictions} compact />
+            ) : (
+              <p className="text-sm font-semibold text-amber-100">
+                {bookingReasonCopy(session.eligibility?.reason_code)}
+              </p>
+            )}
             <p className="mt-1.5 text-xs leading-5 text-zinc-400">
               La disponibilidad o tus condiciones cambiaron antes de confirmar. No se realizó
               ninguna reserva.
