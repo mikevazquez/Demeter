@@ -850,6 +850,7 @@ declare
   v_new_acquisition_id uuid;
   v_new_unlimited boolean := false;
   v_new_credit_cost integer := 1;
+  v_has_reservation boolean := false;
 begin
   if target_studio_id is null
      or target_source_event_id is null
@@ -903,6 +904,7 @@ begin
     where r.id = v_link.reservation_id
       and r.studio_id = target_studio_id
     for update;
+    v_has_reservation := found;
   end if;
 
   if v_event = 'booking_rescheduled' then
@@ -990,7 +992,7 @@ begin
       );
     end if;
 
-    if v_link.reservation_id is null or not found then
+    if v_link.reservation_id is null or not v_has_reservation then
       update public.asistian_booking_links
       set session_id = v_target_session.id,
           service_name = v_service_name,
@@ -1139,7 +1141,7 @@ begin
        v_event = 'booking_status_changed'
        and v_external_status in ('cancelled', 'canceled')
      ) then
-    if v_link.reservation_id is not null and found and v_reservation.status = 'reserved' then
+    if v_link.reservation_id is not null and v_has_reservation and v_reservation.status = 'reserved' then
       select *
         into v_old_session
       from public.class_sessions cs
@@ -1230,7 +1232,7 @@ begin
        v_event = 'booking_status_changed'
        and v_external_status in ('no_show', 'noshow', 'completed', 'attended', 'done')
      ) then
-    if v_link.reservation_id is null or not found then
+    if v_link.reservation_id is null or not v_has_reservation then
       update public.asistian_booking_links
       set sync_status = 'requires_attention',
           last_error_code = 'local_reservation_missing'
