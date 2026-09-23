@@ -61,6 +61,14 @@ function NavIcon({ label }: { label: string }) {
       </svg>
     );
   }
+  if (label === "Documentos") {
+    return (
+      <svg {...common}>
+        <path d="M6 3h9l4 4v14H6z" />
+        <path d="M15 3v5h5M9 13h6M9 17h6" />
+      </svg>
+    );
+  }
   if (label === "Evaluaciones") {
     return (
       <svg {...common}>

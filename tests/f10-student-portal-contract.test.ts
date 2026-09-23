@@ -156,7 +156,7 @@ describe("F10 student portal contracts", () => {
     );
   });
 
-  it("uses the canonical F10 model and keeps documents as a future-state access", () => {
+  it("uses the canonical F10 model and exposes the live document center", () => {
     const studentFiles = [
       "app/student/page.tsx",
       "app/student/paquete/page.tsx",
@@ -171,7 +171,8 @@ describe("F10 student portal contracts", () => {
     expect(studentFiles).not.toContain("student_packages");
 
     const documents = source("app/student/documentos/page.tsx");
-    expect(documents).toContain("F12");
-    expect(documents).toMatch(/no\s+mostraremos\s+documentos\s+ficticios/i);
+    expect(documents).toContain('supabase.rpc("student_document_center")');
+    expect(documents).toContain("Mis documentos");
+    expect(documents).not.toContain("F12");
   });
 });

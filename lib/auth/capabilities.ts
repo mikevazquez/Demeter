@@ -15,6 +15,8 @@ export const CAPABILITIES = {
   REPORTS_READ: "reports.read",
   AUTOMATIONS_READ: "automations.read",
   AUTOMATIONS_MANAGE: "automations.manage",
+  DOCUMENTS_READ: "documents.read",
+  DOCUMENTS_MANAGE: "documents.manage",
   REWARDS_READ: "rewards.read",
   REWARDS_MANAGE: "rewards.manage",
   EVALUATIONS_READ: "evaluations.read",
