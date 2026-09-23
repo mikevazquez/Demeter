@@ -3,7 +3,7 @@ import { getStudentPortalContext } from "@/lib/student/portal";
 import PushNotificationSettings from "../components/PushNotificationSettings";
 
 export default async function StudentNotificationsPage() {
-  const { snapshot } = await getStudentPortalContext();
+  const { membership } = await getStudentPortalContext();
 
   return (
     <main className="space-y-4 pb-4 sm:space-y-5">
@@ -19,7 +19,7 @@ export default async function StudentNotificationsPage() {
         </p>
       </header>
 
-      <PushNotificationSettings studioId={snapshot.profile.studio_id} />
+      <PushNotificationSettings studioId={membership.studio_id} />
 
       <section className="rounded-2xl border border-white/10 bg-white/[0.025] p-4">
         <p className="text-xs font-semibold text-white">Qué enviaremos por Push</p>
