@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import QueryNotice from "@/app/components/QueryNotice";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getAdminContext } from "@/lib/auth/admin-context";
 import {
@@ -97,17 +98,29 @@ export default async function EditDocumentPage({
         </span>
       </header>
 
-      {query.saved ? <div className="notice success">Borrador guardado.</div> : null}
+      {query.saved ? (
+        <QueryNotice
+          eyebrow="Documentos"
+          title="Borrador guardado"
+          message="Los cambios quedaron guardados. Todavía no afectan a las alumnas."
+          tone="success"
+        />
+      ) : null}
       {query.error ? (
-        <div className="notice error">
-          {query.error === "upload"
-            ? "No pudimos subir el PDF privado."
-            : query.error === "target_required"
-              ? "Selecciona al menos un elemento para el alcance elegido."
-              : query.error === "informational_block"
-                ? "Un documento informativo no puede bloquear reservas."
-                : "No pudimos guardar el borrador."}
-        </div>
+        <QueryNotice
+          eyebrow="Documentos"
+          title="No pudimos guardar el borrador"
+          message={
+            query.error === "upload"
+              ? "No pudimos subir el PDF privado."
+              : query.error === "target_required"
+                ? "Selecciona al menos un elemento para el alcance elegido."
+                : query.error === "informational_block"
+                  ? "Un documento informativo no puede bloquear reservas."
+                  : "Revisa la configuración e inténtalo nuevamente."
+          }
+          tone="error"
+        />
       ) : null}
 
       <form
