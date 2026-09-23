@@ -11,10 +11,7 @@ const cleanup = readFileSync(
   join(process.cwd(), "supabase/migrations/20260923160500_rewards_bronze_onboarding_cleanup.sql"),
   "utf8",
 );
-const rewardsPage = readFileSync(
-  join(process.cwd(), "app/student/recompensas/page.tsx"),
-  "utf8",
-);
+const rewardsPage = readFileSync(join(process.cwd(), "app/student/recompensas/page.tsx"), "utf8");
 const onboardingUi = readFileSync(
   join(process.cwd(), "app/student/recompensas/OnboardingActivation.tsx"),
   "utf8",
@@ -30,10 +27,7 @@ const adminOverview = readFileSync(
   join(process.cwd(), "app/admin/alumnas/[studentId]/Profile360Overview.tsx"),
   "utf8",
 );
-const adminRewards = readFileSync(
-  join(process.cwd(), "app/admin/recompensas/page.tsx"),
-  "utf8",
-);
+const adminRewards = readFileSync(join(process.cwd(), "app/admin/recompensas/page.tsx"), "utf8");
 
 describe("REWARDS Bronze onboarding", () => {
   it("stops granting Bronze merely for creating a student", () => {

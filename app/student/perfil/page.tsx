@@ -234,22 +234,22 @@ export default async function StudentProfilePage({
               </label>
             </div>
             <div className="mt-4 flex gap-2">
-                <PendingActionButton
-                  pendingLabel="Guardando…"
-                  className="min-h-11 rounded-xl bg-fuchsia-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-fuchsia-500 disabled:cursor-wait disabled:opacity-60"
-                >
-                  Guardar cambios
-                </PendingActionButton>
-                <Link
-                  href="/student/perfil"
-                  className="inline-flex min-h-11 items-center justify-center rounded-xl border border-white/10 px-4 py-2.5 text-sm font-semibold text-zinc-300 transition hover:bg-white/[0.05] hover:text-white"
-                >
-                  Cancelar
-                </Link>
+              <PendingActionButton
+                pendingLabel="Guardando…"
+                className="min-h-11 rounded-xl bg-fuchsia-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-fuchsia-500 disabled:cursor-wait disabled:opacity-60"
+              >
+                Guardar cambios
+              </PendingActionButton>
+              <Link
+                href="/student/perfil"
+                className="inline-flex min-h-11 items-center justify-center rounded-xl border border-white/10 px-4 py-2.5 text-sm font-semibold text-zinc-300 transition hover:bg-white/[0.05] hover:text-white"
+              >
+                Cancelar
+              </Link>
             </div>
             <p className="mt-2 text-xs text-zinc-500">
-              Tu foto, correo y fecha de nacimiento forman parte de la activación de tu primera medalla.
-              Tu nombre y teléfono los administra el estudio.
+              Tu foto, correo y fecha de nacimiento forman parte de la activación de tu primera
+              medalla. Tu nombre y teléfono los administra el estudio.
             </p>
           </form>
         ) : null}

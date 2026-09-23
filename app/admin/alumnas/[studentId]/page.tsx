@@ -1238,12 +1238,14 @@ export default async function StudentProfilePage({
                       : "Desbloqueando primera medalla"}
                   </h3>
                   <p className="mt-1 text-xs text-zinc-400">
-                    {[
-                      rewardOnboarding.documentsCompletedAt,
-                      rewardOnboarding.profileCompletedAt,
-                      rewardOnboarding.firstReservationAt,
-                      rewardOnboarding.firstAttendanceAt,
-                    ].filter(Boolean).length}{" "}
+                    {
+                      [
+                        rewardOnboarding.documentsCompletedAt,
+                        rewardOnboarding.profileCompletedAt,
+                        rewardOnboarding.firstReservationAt,
+                        rewardOnboarding.firstAttendanceAt,
+                      ].filter(Boolean).length
+                    }{" "}
                     de 4 pasos completados
                   </p>
                 </div>
@@ -1282,7 +1284,10 @@ export default async function StudentProfilePage({
                   {rewardOnboarding.unlockReason ? " · " + rewardOnboarding.unlockReason : ""}
                 </p>
               ) : canManageRewards ? (
-                <form action={grantBronzeMedal} className="mt-4 rounded-2xl border border-white/10 bg-black/20 p-3.5">
+                <form
+                  action={grantBronzeMedal}
+                  className="mt-4 rounded-2xl border border-white/10 bg-black/20 p-3.5"
+                >
                   <input type="hidden" name="student_id" value={student.id} />
                   <label className="block text-xs font-medium text-zinc-300">
                     Otorgar Medalla Bronce manualmente

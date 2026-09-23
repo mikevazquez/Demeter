@@ -209,7 +209,8 @@ export function BronzeMedalUnlocked() {
           ¡Desbloqueaste tu primera medalla!
         </h1>
         <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-zinc-300">
-          Completaste tu activación en Demeter. Ya tienes acceso a los beneficios de tu Medalla Bronce.
+          Completaste tu activación en Demeter. Ya tienes acceso a los beneficios de tu Medalla
+          Bronce.
         </p>
 
         <div className="mx-auto mt-6 max-w-md rounded-3xl border border-white/10 bg-black/25 p-4 text-left">

@@ -18,35 +18,35 @@ export default async function RewardsControlCenterPage() {
 
   const [programsResult, rulesResult, rewardsResult, programEventsResult, onboardingResult] =
     await Promise.all([
-    ctx.supabase
-      .from("reward_programs")
-      .select("id,status,latest_version_number,published_version_number,updated_at")
-      .eq("studio_id", ctx.studio.id)
-      .order("updated_at", { ascending: false }),
-    ctx.supabase
-      .from("reward_rules")
-      .select("id,status,current_version_number,updated_at")
-      .eq("studio_id", ctx.studio.id)
-      .order("updated_at", { ascending: false }),
-    ctx.supabase
-      .from("reward_instances")
-      .select("id,status,kind,benefit_definition,student_id,expires_at,created_at")
-      .eq("studio_id", ctx.studio.id)
-      .order("created_at", { ascending: false })
-      .limit(100),
-    ctx.supabase
-      .from("reward_program_events")
-      .select("id,event_type,program_id,student_id,details,occurred_at")
-      .eq("studio_id", ctx.studio.id)
-      .order("occurred_at", { ascending: false })
-      .limit(8),
-    ctx.supabase
-      .from("reward_onboarding")
-      .select(
-        "student_id,documents_completed_at,profile_completed_at,first_reservation_at,first_attendance_at,bronze_unlocked_at",
-      )
-      .eq("studio_id", ctx.studio.id),
-  ]);
+      ctx.supabase
+        .from("reward_programs")
+        .select("id,status,latest_version_number,published_version_number,updated_at")
+        .eq("studio_id", ctx.studio.id)
+        .order("updated_at", { ascending: false }),
+      ctx.supabase
+        .from("reward_rules")
+        .select("id,status,current_version_number,updated_at")
+        .eq("studio_id", ctx.studio.id)
+        .order("updated_at", { ascending: false }),
+      ctx.supabase
+        .from("reward_instances")
+        .select("id,status,kind,benefit_definition,student_id,expires_at,created_at")
+        .eq("studio_id", ctx.studio.id)
+        .order("created_at", { ascending: false })
+        .limit(100),
+      ctx.supabase
+        .from("reward_program_events")
+        .select("id,event_type,program_id,student_id,details,occurred_at")
+        .eq("studio_id", ctx.studio.id)
+        .order("occurred_at", { ascending: false })
+        .limit(8),
+      ctx.supabase
+        .from("reward_onboarding")
+        .select(
+          "student_id,documents_completed_at,profile_completed_at,first_reservation_at,first_attendance_at,bronze_unlocked_at",
+        )
+        .eq("studio_id", ctx.studio.id),
+    ]);
 
   const programs = programsResult.data ?? [];
   const rules = rulesResult.data ?? [];
@@ -142,15 +142,20 @@ export default async function RewardsControlCenterPage() {
             </p>
             <div className="mt-4 grid gap-2 sm:grid-cols-2">
               {[
-                ["1", "Aceptar documentos obligatorios", "Se completa con evidencia de Documentos."],
+                [
+                  "1",
+                  "Aceptar documentos obligatorios",
+                  "Se completa con evidencia de Documentos.",
+                ],
                 ["2", "Completar perfil", "Foto, correo y fecha de nacimiento."],
-                ["3", "Realizar primera reserva", "La reserva queda como hito aunque después se cancele."],
+                [
+                  "3",
+                  "Realizar primera reserva",
+                  "La reserva queda como hito aunque después se cancele.",
+                ],
                 ["4", "Asistir a primera clase", "Requiere una reserva con estado attended."],
               ].map(([number, title, detail]) => (
-                <div
-                  key={number}
-                  className="rounded-2xl border border-white/10 bg-black/20 p-4"
-                >
+                <div key={number} className="rounded-2xl border border-white/10 bg-black/20 p-4">
                   <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#FF0A8A]">
                     Paso {number}
                   </span>
