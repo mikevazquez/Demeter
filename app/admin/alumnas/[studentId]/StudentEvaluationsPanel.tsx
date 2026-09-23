@@ -262,7 +262,9 @@ export default async function StudentEvaluationsPanel({ studentId, timeZone, err
             evaluation.evaluation_purpose === "placement") &&
           Boolean(evaluation.resulting_discipline_level_id),
       );
-      const cycle = cycles.find((item) => item.discipline_id === discipline.id && item.active);
+      const cycle = hasConfirmedDiagnostic
+        ? cycles.find((item) => item.discipline_id === discipline.id && item.active)
+        : undefined;
       const openInvitation = invitations.find(
         (item) => item.discipline_id === discipline.id && openStatuses.has(item.status),
       );
