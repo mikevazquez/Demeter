@@ -13,11 +13,13 @@ describe("Asistian -> Studio Flow receiver contract", () => {
     "supabase/migrations/20260923041000_asistian_inbound_receiver.sql",
   );
 
-  it("verifies Asistian's recommended signature over timestamp.rawBody", () => {
+  it("verifies both current and compatibility HMAC signatures", () => {
     expect(receiver).toContain('request.headers.get("x-asistian-signature")');
+    expect(receiver).toContain('request.headers.get("x-webhook-signature")');
     expect(receiver).toContain('parts.get("t")');
     expect(receiver).toContain('parts.get("v1")');
-    expect(receiver).toContain('hmacSha256Hex(secret, `${timestamp}.${rawBody}`)');
+    expect(receiver).toContain('hmacSha256Hex(secret, rawBody)');
+    expect(receiver).toContain('"x-webhook-signature-body"');
   });
 
   it("deduplicates the stable provider event id", () => {
