@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 
 import { signOut } from "@/app/auth/actions";
@@ -5,6 +6,70 @@ import { getStudentPortalContext } from "@/lib/student/portal";
 
 import PendingActionButton from "./components/PendingActionButton";
 import { StudentNav } from "./StudentNav";
+
+function pwaBrandQuery(brand: {
+  name: string;
+  slug: string;
+  primary_color: string;
+  logo_path: string | null;
+}) {
+  return new URLSearchParams({
+    name: brand.name,
+    slug: brand.slug,
+    primary: brand.primary_color,
+    logo: brand.logo_path ?? "",
+  }).toString();
+}
+
+export async function generateMetadata(): Promise<Metadata> {
+  const { membership, studio, supabase } = await getStudentPortalContext();
+  const { data: brand } = await supabase
+    .from("studios")
+    .select("name,slug,primary_color,logo_path")
+    .eq("id", membership.studio_id)
+    .maybeSingle();
+
+  const resolvedBrand = brand ?? {
+    name: studio.name,
+    slug: "studio",
+    primary_color: "#FF0A8A",
+    logo_path: null,
+  };
+
+  const query = pwaBrandQuery(resolvedBrand);
+
+  return {
+    applicationName: resolvedBrand.name,
+    title: resolvedBrand.name,
+    manifest: "/pwa/manifest?" + query,
+    appleWebApp: {
+      capable: true,
+      statusBarStyle: "black-translucent",
+      title: resolvedBrand.name,
+    },
+    icons: {
+      icon: [
+        {
+          url: "/pwa/studio-icon/192?" + query,
+          sizes: "192x192",
+          type: "image/png",
+        },
+        {
+          url: "/pwa/studio-icon/512?" + query,
+          sizes: "512x512",
+          type: "image/png",
+        },
+      ],
+      apple: [
+        {
+          url: "/pwa/studio-icon/180?" + query,
+          sizes: "180x180",
+          type: "image/png",
+        },
+      ],
+    },
+  };
+}
 
 export default async function StudentLayout({ children }: { children: React.ReactNode }) {
   const { snapshot, studio } = await getStudentPortalContext();
