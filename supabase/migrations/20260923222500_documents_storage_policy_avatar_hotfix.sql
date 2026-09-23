@@ -27,7 +27,15 @@ as $$
           where s.studio_id = dv.studio_id
             and s.user_id = (select auth.uid())
             and private.is_current_student(s.id, s.studio_id)
-            and private.document_version_applies_to_student(dv.id, s.id, null)
+            and (
+              private.document_version_applies_to_student(dv.id, s.id, null)
+              or exists (
+                select 1
+                from public.document_acceptances a
+                where a.version_id = dv.id
+                  and a.student_id = s.id
+              )
+            )
         )
       )
   );
