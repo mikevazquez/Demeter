@@ -1,0 +1,46 @@
+name: PR134 Sync Main and Format
+
+on:
+  push:
+    branches:
+      - feat/asistian-inbound-booking-sync
+
+permissions:
+  contents: write
+
+jobs:
+  sync-format:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/asistian-inbound-booking-sync
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Sync latest main
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin main
+          git merge origin/main --no-edit
+
+      - name: Install
+        run: npm ci
+
+      - name: Format evaluation files inherited from main
+        run: |
+          npx prettier --write             'app/admin/alumnas/[studentId]/StudentEvaluationsPanel.tsx'             'app/admin/evaluaciones/[id]/page.tsx'             'app/admin/evaluaciones/actions.ts'             'app/student/evaluaciones/EvaluationHeroCard.tsx'             'app/student/evaluaciones/page.tsx'             'app/student/evaluaciones/resultado/[evaluationId]/page.tsx'
+
+      - name: Commit and push
+        run: |
+          git add             'app/admin/alumnas/[studentId]/StudentEvaluationsPanel.tsx'             'app/admin/evaluaciones/[id]/page.tsx'             'app/admin/evaluaciones/actions.ts'             'app/student/evaluaciones/EvaluationHeroCard.tsx'             'app/student/evaluaciones/page.tsx'             'app/student/evaluaciones/resultado/[evaluationId]/page.tsx'
+          if ! git diff --cached --quiet; then
+            git commit -m "Format evaluation files inherited from main"
+          fi
+          git push origin HEAD:feat/asistian-inbound-booking-sync
