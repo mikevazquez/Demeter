@@ -16,10 +16,8 @@ const errorCopy: Record<string, string> = {
   invalid_secret: "El Signing Secret no parece válido.",
   receiver_secret_invalid: "El secreto del webhook saliente de Asistian no parece válido.",
   receiver_secret_save: "No se pudo guardar el secreto para recibir eventos de Asistian.",
-  service_mapping_invalid:
-    "Selecciona un servicio de Asistian y una actividad de Studio Flow.",
-  service_mapping_save:
-    "No se pudo guardar el mapeo del servicio de Asistian.",
+  service_mapping_invalid: "Selecciona un servicio de Asistian y una actividad de Studio Flow.",
+  service_mapping_save: "No se pudo guardar el mapeo del servicio de Asistian.",
   network: "No se pudo conectar con Asistian.",
   http: "Asistian rechazó el webhook.",
   save: "No se pudieron guardar las credenciales del webhook.",
@@ -71,29 +69,26 @@ export default async function AsistianIntegrationTestPage({
     { data: serviceMappings },
     { data: classTemplates },
   ] = await Promise.all([
-      supabase
-        .from("asistian_webhook_events")
-        .select("payload,received_at")
-        .eq("studio_id", studio.id)
-        .order("received_at", { ascending: false })
-        .limit(100),
-      supabase
-        .from("asistian_service_mappings")
-        .select("asistian_service_id,asistian_service_name,class_template_id,active")
-        .eq("studio_id", studio.id)
-        .eq("active", true),
-      supabase
-        .from("class_templates")
-        .select("id,name,active")
-        .eq("studio_id", studio.id)
-        .eq("active", true)
-        .order("name"),
-    ]);
+    supabase
+      .from("asistian_webhook_events")
+      .select("payload,received_at")
+      .eq("studio_id", studio.id)
+      .order("received_at", { ascending: false })
+      .limit(100),
+    supabase
+      .from("asistian_service_mappings")
+      .select("asistian_service_id,asistian_service_name,class_template_id,active")
+      .eq("studio_id", studio.id)
+      .eq("active", true),
+    supabase
+      .from("class_templates")
+      .select("id,name,active")
+      .eq("studio_id", studio.id)
+      .eq("active", true)
+      .order("name"),
+  ]);
 
-  const observedServices = new Map<
-    string,
-    { id: string; name: string | null }
-  >();
+  const observedServices = new Map<string, { id: string; name: string | null }>();
   for (const event of serviceEvents ?? []) {
     const payload = asRecord(event.payload);
     const data = asRecord(payload?.data);
