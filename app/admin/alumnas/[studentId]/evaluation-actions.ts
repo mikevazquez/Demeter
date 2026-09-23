@@ -18,7 +18,9 @@ function evaluationError(error: { message?: string } | null) {
     "evaluation_invitation_window_invalid",
     "evaluation_invitation_cadence_invalid",
     "evaluation_level_not_available",
-    "evaluation_placement_level_required",
+    "evaluation_diagnostic_level_selection_disabled",
+    "evaluation_diagnostic_next_level_not_configured",
+    "evaluation_confirmed_level_missing",
     "evaluation_level_mismatch",
     "evaluation_reservation_not_active",
     "evaluation_not_scheduled",
@@ -32,8 +34,6 @@ export async function inviteStudentToEvaluationAction(formData: FormData) {
   const disciplineId = value(formData, "discipline_id");
   const windowStart = value(formData, "window_start");
   const windowEnd = value(formData, "window_end");
-  const cadenceMonths = Number(value(formData, "cadence_months") || "3");
-  const disciplineLevelId = value(formData, "discipline_level_id") || null;
 
   const returnTo = `/admin/alumnas/${studentId}?view=evaluations`;
 
@@ -46,8 +46,8 @@ export async function inviteStudentToEvaluationAction(formData: FormData) {
     p_discipline_id: disciplineId,
     p_window_start: windowStart,
     p_window_end: windowEnd,
-    p_cadence_months: cadenceMonths,
-    p_discipline_level_id: disciplineLevelId,
+    p_cadence_months: 3,
+    p_discipline_level_id: null,
   });
 
   if (error) {
