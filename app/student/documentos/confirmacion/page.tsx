@@ -38,7 +38,7 @@ export default async function StudentDocumentConfirmationPage({
           ✓
         </div>
         <p className="mt-5 text-[10px] font-semibold uppercase tracking-[0.22em] text-emerald-300">
-          Aceptación registrada
+          Respuesta registrada
         </p>
         <h1 className="mt-2 text-2xl font-semibold text-white">{document.document_name}</h1>
         <p className="mt-2 text-sm leading-6 text-zinc-400">
@@ -47,13 +47,16 @@ export default async function StudentDocumentConfirmationPage({
         </p>
 
         <div className="mt-6 rounded-2xl border border-white/10 bg-black/20 p-4 text-left">
-          <p className="text-[10px] uppercase tracking-[0.14em] text-zinc-600">Estado actual</p>
+          <p className="text-[10px] uppercase tracking-[0.14em] text-zinc-600">Tu respuesta</p>
           <p className="mt-1 text-sm font-semibold text-white">
+            {acceptance.decision === "declined" ? "No autorizaste" : "Autorizaste / aceptaste"}
+          </p>
+          <p className="mt-2 text-xs leading-5 text-zinc-500">
             {document.satisfied
-              ? "Requisito completado"
+              ? "El requisito quedó resuelto."
               : document.acceptance_party === "student_and_guardian" && !document.guardian_completed
-                ? "Tu parte está completa · falta tu responsable"
-                : "Aceptación guardada"}
+                ? "Tu parte está completa; falta la respuesta de tu responsable."
+                : "Tu respuesta quedó guardada."}
           </p>
         </div>
 
