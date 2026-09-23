@@ -24,7 +24,7 @@ export default async function StudentLayout({ children }: { children: React.Reac
               href="/student/notificaciones"
               aria-label="Notificaciones"
               title="Notificaciones"
-              className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 text-zinc-300 transition hover:border-fuchsia-500/30 hover:bg-fuchsia-500/[0.08] hover:text-fuchsia-200"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[#D4AF37]/30 text-[#D4AF37] transition hover:border-[#D4AF37]/50 hover:bg-[#D4AF37]/10 hover:text-[#E6C85C]"
             >
               <svg
                 aria-hidden="true"
