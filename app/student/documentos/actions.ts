@@ -85,6 +85,7 @@ export async function registerGuardianAction(formData: FormData) {
   const phone = value(formData, "phone") || null;
   const relationship = value(formData, "relationship") || "legal_guardian";
   const relationshipDetail = value(formData, "relationship_detail") || null;
+  const returnTo = safeReservationReturnTo(value(formData, "return_to"));
 
   const { supabase } = await getStudentPortalContext();
   const { data, error } = await supabase.rpc("student_register_guardian", {
@@ -102,9 +103,13 @@ export async function registerGuardianAction(formData: FormData) {
       : error?.message.includes("guardian_contact_required")
         ? "contact_required"
         : "save";
-    redirect(`/student/documentos/responsable?error=${code}`);
+    redirect(
+      `/student/documentos/responsable?error=${code}${returnTo ? `&returnTo=${encodeURIComponent(returnTo)}` : ""}`,
+    );
   }
 
   revalidateDocumentSurfaces();
-  redirect(`/student/documentos/responsable?created=1&token=${encodeURIComponent(result.token)}`);
+  redirect(
+    `/student/documentos/responsable?created=1&token=${encodeURIComponent(result.token)}${returnTo ? `&returnTo=${encodeURIComponent(returnTo)}` : ""}`,
+  );
 }
