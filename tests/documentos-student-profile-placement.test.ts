@@ -21,7 +21,10 @@ describe("DOCUMENTOS-01 person-centric information architecture", () => {
     expect(profile).toContain('view === "documents"');
     expect(profile).toContain("<StudentDocumentsPanel");
     expect(panel).toContain('supabase.rpc("admin_student_document_profile"');
-    expect(panel).toContain("Historial de aceptaciones");
+    expect(panel).toContain("<strong>Pendientes</strong>");
+    expect(panel).toContain("<strong>Completados</strong>");
+    expect(panel).not.toContain("Historial de aceptaciones");
+    expect(panel).not.toContain("Estado actual");
   });
 
   it("keeps document configuration separate from individual tracking", () => {
