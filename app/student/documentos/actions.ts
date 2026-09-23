@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
+import { safeReservationReturnTo } from "@/lib/documents";
 import { getStudentPortalContext } from "@/lib/student/portal";
 
 function value(formData: FormData, key: string) {
@@ -19,6 +20,7 @@ function revalidateDocumentSurfaces() {
 export async function acceptStudentDocumentAction(formData: FormData) {
   const versionId = value(formData, "version_id");
   const decision = value(formData, "decision") || "accepted";
+  const returnTo = safeReservationReturnTo(value(formData, "return_to"));
   if (!versionId) redirect("/student/documentos?error=invalid");
 
   const { supabase } = await getStudentPortalContext();
@@ -44,10 +46,34 @@ export async function acceptStudentDocumentAction(formData: FormData) {
       : error?.message.includes("document_acceptance_required")
         ? "acceptance_required"
         : "accept";
-    redirect(`/student/documentos/${versionId}/confirmar?error=${code}`);
+    redirect(
+      `/student/documentos/${versionId}/confirmar?error=${code}${returnTo ? `&returnTo=${encodeURIComponent(returnTo)}` : ""}`,
+    );
   }
 
   revalidateDocumentSurfaces();
+
+  const remainingBlockers = Array.isArray(result.remaining_blockers)
+    ? (result.remaining_blockers as Array<{
+        action_kind?: string | null;
+        action_href?: string | null;
+      }>)
+    : [];
+  const nextDocument = remainingBlockers.find(
+    (item) => item.action_kind === "documents" && item.action_href,
+  );
+
+  if (nextDocument?.action_href) {
+    const nextHref = returnTo
+      ? `${nextDocument.action_href}${nextDocument.action_href.includes("?") ? "&" : "?"}returnTo=${encodeURIComponent(returnTo)}`
+      : nextDocument.action_href;
+    redirect(nextHref);
+  }
+
+  if (returnTo) {
+    redirect(returnTo);
+  }
+
   redirect(
     `/student/documentos/confirmacion?version=${encodeURIComponent(versionId)}&acceptance=${encodeURIComponent(result.acceptance_id)}`,
   );
