@@ -220,8 +220,15 @@ export async function recordExternalAcceptanceAction(formData: FormData) {
   const { supabase } = await getAdminContext(CAPABILITIES.DOCUMENTS_MANAGE);
   const studentId = text(formData, "student_id");
   const versionId = text(formData, "version_id");
-  const documentId = text(formData, "document_id");
-  if (!studentId || !versionId || !documentId) redirect("/admin/documentos/incidencias?error=invalid");
+  if (!studentId || !versionId) redirect("/admin/documentos/incidencias?error=invalid");
+
+  const { data: version } = await supabase
+    .from("document_versions")
+    .select("document_id")
+    .eq("id", versionId)
+    .maybeSingle();
+  const documentId = version?.document_id ?? "";
+  if (!documentId) redirect("/admin/documentos/incidencias?error=invalid");
 
   const guardianId = text(formData, "guardian_id") || null;
   const { data, error } = await supabase.rpc("admin_record_external_document_acceptance", {
