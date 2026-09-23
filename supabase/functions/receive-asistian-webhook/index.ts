@@ -75,9 +75,7 @@ async function hmacSha256Hex(secret: string, message: string) {
     false,
     ["sign"],
   );
-  const bytes = new Uint8Array(
-    await crypto.subtle.sign("HMAC", key, encoder.encode(message)),
-  );
+  const bytes = new Uint8Array(await crypto.subtle.sign("HMAC", key, encoder.encode(message)));
   return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
@@ -104,10 +102,7 @@ async function verifyAsistianSignature(
 ) {
   const modern = signatureParts(modernHeader);
   if (modern.timestamp && modern.signature) {
-    const expectedModern = await hmacSha256Hex(
-      secret,
-      `${modern.timestamp}.${rawBody}`,
-    );
+    const expectedModern = await hmacSha256Hex(secret, `${modern.timestamp}.${rawBody}`);
     if (constantTimeEqual(expectedModern, modern.signature)) {
       return { ok: true, timestamp: modern.timestamp, scheme: "x-asistian-signature" };
     }
@@ -172,9 +167,7 @@ Deno.serve(async (request) => {
   const studioId = safeText(url.searchParams.get("studio"));
   if (
     !studioId ||
-    !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
-      studioId,
-    )
+    !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(studioId)
   ) {
     return jsonResponse({ error: "studio_invalid" }, 400);
   }
@@ -228,9 +221,7 @@ Deno.serve(async (request) => {
   const headerEventName = safeText(request.headers.get("x-webhook-event"));
   const eventName = safeText(body.event) ?? headerEventName ?? "signed_test";
   const providerEventId =
-    bodyEventId ??
-    headerEventId ??
-    `synthetic:${await sha256Hex(`${eventName}|${rawBody}`)}`;
+    bodyEventId ?? headerEventId ?? `synthetic:${await sha256Hex(`${eventName}|${rawBody}`)}`;
 
   const attemptRaw = safeText(request.headers.get("x-webhook-attempt"));
   const parsedAttempt = attemptRaw ? Number.parseInt(attemptRaw, 10) : null;
@@ -327,13 +318,16 @@ Deno.serve(async (request) => {
 
   if (asRecord(body.data)?.test === true) {
     await markEvent("ignored", { ok: true, reason_code: "test_webhook" });
-    return jsonResponse({
-      ok: true,
-      accepted: true,
-      duplicate: existingStatus !== null,
-      event_id: providerEventId,
-      outcome: "test_ignored",
-    }, 202);
+    return jsonResponse(
+      {
+        ok: true,
+        accepted: true,
+        duplicate: existingStatus !== null,
+        event_id: providerEventId,
+        outcome: "test_ignored",
+      },
+      202,
+    );
   }
 
   const supportedEvents = new Set([
@@ -349,27 +343,25 @@ Deno.serve(async (request) => {
 
   if (!supportedEvents.has(eventName)) {
     await markEvent("ignored", { ok: true, reason_code: "unsupported_event" });
-    return jsonResponse({
-      ok: true,
-      accepted: true,
-      event_id: providerEventId,
-      outcome: "unsupported_event",
-    }, 202);
+    return jsonResponse(
+      {
+        ok: true,
+        accepted: true,
+        event_id: providerEventId,
+        outcome: "unsupported_event",
+      },
+      202,
+    );
   }
 
   const booking = asRecord(context.booking) ?? asRecord(context.events);
-  const client =
-    asRecord(context.client) ??
-    asRecord(context.clients) ??
-    asRecord(context.contact);
+  const client = asRecord(context.client) ?? asRecord(context.clients) ?? asRecord(context.contact);
   const service = asRecord(context.service);
 
   const bookingId = safeScalarText(booking?.id);
   const clientId = safeScalarText(client?.id);
   const fullName =
-    safeText(client?.full_name) ??
-    safeText(client?.name) ??
-    safeText(booking?.customer_name);
+    safeText(client?.full_name) ?? safeText(client?.name) ?? safeText(booking?.customer_name);
   const split = splitName(fullName);
   const firstName = safeText(client?.first_name) ?? split.firstName;
   const lastName = safeText(client?.last_name) ?? split.lastName;
@@ -385,12 +377,15 @@ Deno.serve(async (request) => {
       has_booking_id: false,
     };
     await markEvent("ignored", incomplete);
-    return jsonResponse({
-      ok: true,
-      accepted: true,
-      event_id: providerEventId,
-      outcome: "booking_context_incomplete",
-    }, 202);
+    return jsonResponse(
+      {
+        ok: true,
+        accepted: true,
+        event_id: providerEventId,
+        outcome: "booking_context_incomplete",
+      },
+      202,
+    );
   }
 
   let syncData: unknown = null;
@@ -408,12 +403,15 @@ Deno.serve(async (request) => {
         has_starts_at: Boolean(startsAt),
       };
       await markEvent("ignored", incomplete);
-      return jsonResponse({
-        ok: true,
-        accepted: true,
-        event_id: providerEventId,
-        outcome: "booking_context_incomplete",
-      }, 202);
+      return jsonResponse(
+        {
+          ok: true,
+          accepted: true,
+          event_id: providerEventId,
+          outcome: "booking_context_incomplete",
+        },
+        202,
+      );
     }
 
     const response = await supabase.rpc("service_sync_asistian_booking", {
@@ -455,24 +453,30 @@ Deno.serve(async (request) => {
 
   if (syncResult.ok === true) {
     await markEvent("processed", syncResult);
-    return jsonResponse({
-      ok: true,
-      accepted: true,
-      duplicate: existingStatus !== null,
-      event_id: providerEventId,
-      outcome: safeText(syncResult.sync_status) ?? "synced",
-      action: syncResult.action ?? null,
-      reservation_id: syncResult.reservation_id ?? null,
-      student_id: syncResult.student_id ?? null,
-      commercial_status: syncResult.commercial_status ?? null,
-    }, 202);
+    return jsonResponse(
+      {
+        ok: true,
+        accepted: true,
+        duplicate: existingStatus !== null,
+        event_id: providerEventId,
+        outcome: safeText(syncResult.sync_status) ?? "synced",
+        action: syncResult.action ?? null,
+        reservation_id: syncResult.reservation_id ?? null,
+        student_id: syncResult.student_id ?? null,
+        commercial_status: syncResult.commercial_status ?? null,
+      },
+      202,
+    );
   }
 
   await markEvent("ignored", syncResult);
-  return jsonResponse({
-    ok: true,
-    accepted: true,
-    event_id: providerEventId,
-    outcome: safeText(syncResult.reason_code) ?? "not_synced",
-  }, 202);
+  return jsonResponse(
+    {
+      ok: true,
+      accepted: true,
+      event_id: providerEventId,
+      outcome: safeText(syncResult.reason_code) ?? "not_synced",
+    },
+    202,
+  );
 });
