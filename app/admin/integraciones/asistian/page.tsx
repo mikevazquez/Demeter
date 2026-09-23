@@ -23,7 +23,6 @@ const errorCopy: Record<string, string> = {
   save: "No se pudieron guardar las credenciales del webhook.",
 };
 
-
 function asRecord(value: unknown) {
   return value && typeof value === "object" && !Array.isArray(value)
     ? (value as Record<string, unknown>)
@@ -210,7 +209,11 @@ export default async function AsistianIntegrationTestPage({
             {Array.from(observedServices.values()).map((service) => {
               const mapping = mappingByServiceId.get(service.id);
               return (
-                <form action={saveAsistianServiceMapping} className="compact-form" key={service.id}>
+                <form
+                  action={saveAsistianServiceMapping}
+                  className="compact-form"
+                  key={service.id}
+                >
                   <input type="hidden" name="service_id" value={service.id} />
                   <input type="hidden" name="service_name" value={service.name ?? ""} />
                   <div>
