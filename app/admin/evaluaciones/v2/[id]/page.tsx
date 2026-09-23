@@ -713,7 +713,7 @@ export default async function EvaluationV2EditorPage({
           </div>
 
           <div className="eval-simple-section-list">
-            <article className="eval-simple-section-card">
+            <article className="eval-simple-section-card eval-simple-section-card--summary">
               <span className="eval-simple-drag" aria-hidden="true">
                 ◆
               </span>
@@ -726,7 +726,7 @@ export default async function EvaluationV2EditorPage({
                     : "Secuencia técnica del nivel"}
                 </small>
               </span>
-              <strong>{comboWeightTotal}%</strong>
+              <span className="eval-simple-section-weight">{comboWeightTotal}%</span>
             </article>
 
             {comboBlocks.map((block, index) => (
@@ -783,7 +783,7 @@ export default async function EvaluationV2EditorPage({
 
             {nomenclatureBlock ? (
               <Link
-                className="eval-simple-section-card"
+                className="eval-simple-section-card eval-simple-section-card--weighted"
                 href={editorUrl(template.id, "apartados", nomenclatureBlock.id, "content")}
               >
                 <span className="eval-simple-drag" aria-hidden="true">
@@ -794,6 +794,7 @@ export default async function EvaluationV2EditorPage({
                   <strong>Nomenclatura</strong>
                   <small>Identificación de figuras del nivel</small>
                 </span>
+                <span className="eval-simple-section-weight">{nomenclatureBlock.weight_percent}%</span>
                 <span className="eval-simple-chevron">›</span>
               </Link>
             ) : null}
