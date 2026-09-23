@@ -8,17 +8,6 @@ type PushStatusSnapshot = {
   active_subscriptions?: number;
 };
 
-type PushDiagnostics = {
-  permission: string;
-  standalone: boolean;
-  secureContext: boolean;
-  serviceWorker: boolean;
-  pushManager: boolean;
-  requestPermission: boolean;
-  step: string;
-  errorName?: string;
-};
-
 function isIosDevice() {
   if (typeof navigator === "undefined") return false;
 
@@ -50,23 +39,6 @@ function supportsPush() {
     "PushManager" in window &&
     "Notification" in window
   );
-}
-
-function diagnostics(step: string, errorName?: string): PushDiagnostics {
-  const hasWindow = typeof window !== "undefined";
-  const hasNavigator = typeof navigator !== "undefined";
-  const hasNotification = hasWindow && "Notification" in window;
-
-  return {
-    permission: hasNotification ? Notification.permission : "unavailable",
-    standalone: isStandalone(),
-    secureContext: hasWindow ? window.isSecureContext : false,
-    serviceWorker: hasNavigator && "serviceWorker" in navigator,
-    pushManager: hasWindow && "PushManager" in window,
-    requestPermission: hasNotification && typeof Notification.requestPermission === "function",
-    step,
-    errorName,
-  };
 }
 
 function urlBase64ToUint8Array(value: string) {
@@ -113,28 +85,11 @@ async function browserClient() {
   return createClient();
 }
 
-function stepLabel(step: string) {
-  const labels: Record<string, string> = {
-    idle: "Sin iniciar",
-    sync: "Sincronización del dispositivo",
-    precheck: "Compatibilidad del dispositivo",
-    permission: "Permiso de iPhone",
-    vapid: "Clave Push",
-    service_worker: "Service Worker",
-    subscription: "Suscripción Push",
-    backend: "Registro del dispositivo",
-    complete: "Completado",
-  };
-
-  return labels[step] ?? step;
-}
-
 export default function PushNotificationSettings({ studioId }: { studioId: string }) {
   const [state, setState] = useState<PushState>("available");
   const [deviceCount, setDeviceCount] = useState(0);
   const [busy, setBusy] = useState<"activate" | "deactivate" | "test" | null>(null);
   const [message, setMessage] = useState<string | null>(null);
-  const [debug, setDebug] = useState<PushDiagnostics | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -191,7 +146,7 @@ export default function PushNotificationSettings({ studioId }: { studioId: strin
             p_expiration_time: subscription.expirationTime,
           });
 
-          if (registerError) throw new Error("push_sync_registration_failed");
+          if (registerError) throw registerError;
 
           const { data: statusData } = await supabase.rpc("get_my_push_notification_status", {
             p_studio_id: studioId,
@@ -202,21 +157,12 @@ export default function PushNotificationSettings({ studioId }: { studioId: strin
             setDeviceCount(snapshot.active_subscriptions ?? 1);
             setState("active");
             setMessage(null);
-            setDebug(null);
           }
-        } catch (error) {
-          if (cancelled) return;
-
-          const errorName =
-            error instanceof DOMException
-              ? error.name
-              : error instanceof Error
-                ? error.message
-                : "unknown_error";
-
-          setState("error");
-          setDebug(diagnostics("sync", errorName));
-          setMessage("No pudimos comprobar el estado Push de este dispositivo.");
+        } catch {
+          if (!cancelled) {
+            setState("error");
+            setMessage("No pudimos comprobar el estado Push de este dispositivo.");
+          }
         }
       })();
     }, 0);
@@ -246,34 +192,24 @@ export default function PushNotificationSettings({ studioId }: { studioId: strin
   async function activate() {
     setBusy("activate");
     setMessage(null);
-    setDebug(diagnostics("precheck"));
-
-    let step = "precheck";
 
     try {
       if (isIosDevice() && !isStandalone()) {
         setState("needs_install");
-        setDebug(diagnostics(step));
         return;
       }
 
       if (!supportsPush()) {
         setState("unsupported");
-        setDebug(diagnostics(step));
         return;
       }
 
-      step = "permission";
-      setDebug(diagnostics(step));
-
       if (typeof Notification.requestPermission !== "function") {
         setState("unsupported");
-        setDebug(diagnostics(step, "requestPermission_missing"));
         return;
       }
 
       const permission = await Notification.requestPermission();
-      setDebug(diagnostics(step));
 
       if (permission !== "granted") {
         setState(permission === "denied" ? "denied" : "available");
@@ -285,9 +221,6 @@ export default function PushNotificationSettings({ studioId }: { studioId: strin
         return;
       }
 
-      step = "vapid";
-      setDebug(diagnostics(step));
-
       const supabase = await browserClient();
       const { data: rawPublicKey, error: keyError } = await supabase.rpc(
         "get_push_vapid_public_key",
@@ -298,15 +231,7 @@ export default function PushNotificationSettings({ studioId }: { studioId: strin
       }
 
       const applicationServerKey = urlBase64ToUint8Array(rawPublicKey);
-
-      step = "service_worker";
-      setDebug(diagnostics(step));
-
       const registration = await serviceWorkerRegistration();
-
-      step = "subscription";
-      setDebug(diagnostics(step));
-
       let subscription = await registration.pushManager.getSubscription();
 
       if (
@@ -333,9 +258,6 @@ export default function PushNotificationSettings({ studioId }: { studioId: strin
         throw new Error("push_subscription_incomplete");
       }
 
-      step = "backend";
-      setDebug(diagnostics(step));
-
       const { error: registerError } = await supabase.rpc("register_my_push_subscription", {
         p_studio_id: studioId,
         p_endpoint: endpoint,
@@ -346,24 +268,14 @@ export default function PushNotificationSettings({ studioId }: { studioId: strin
         p_expiration_time: subscription.expirationTime,
       });
 
-      if (registerError) throw new Error("push_backend_registration_failed");
+      if (registerError) throw registerError;
 
-      step = "complete";
-      setDebug(diagnostics(step));
       setState("active");
       setMessage("Notificaciones activadas en este dispositivo.");
       await refreshServerStatus();
-    } catch (error) {
-      const errorName =
-        error instanceof DOMException
-          ? error.name
-          : error instanceof Error
-            ? error.message
-            : "unknown_error";
-
+    } catch {
       setState("error");
-      setDebug(diagnostics(step, errorName));
-      setMessage("No pudimos activar Push. El diagnóstico de abajo indica dónde falló.");
+      setMessage("No pudimos activar Push. Intenta de nuevo.");
     } finally {
       setBusy(null);
     }
@@ -393,9 +305,9 @@ export default function PushNotificationSettings({ studioId }: { studioId: strin
         await subscription.unsubscribe();
       }
 
+      setDeviceCount(0);
       setState(Notification.permission === "denied" ? "denied" : "available");
       setMessage("Push desactivado en este dispositivo.");
-      setDebug(diagnostics("idle"));
       await refreshServerStatus();
     } catch {
       setState("error");
@@ -424,7 +336,7 @@ export default function PushNotificationSettings({ studioId }: { studioId: strin
 
       setMessage("Prueba enviada. Debes recibir una notificación de Studio Flow.");
     } catch {
-      setMessage("La prueba no pudo enviarse. Revisaremos el registro técnico.");
+      setMessage("La prueba no pudo enviarse. Intenta nuevamente.");
     } finally {
       setBusy(null);
       await refreshServerStatus();
@@ -456,7 +368,7 @@ export default function PushNotificationSettings({ studioId }: { studioId: strin
         "Este navegador o contexto no admite Web Push. Puedes seguir usando Studio Flow normalmente.",
     },
     error: {
-      title: "No pudimos activar Push",
+      title: "No pudimos comprobar Push",
       description: "La configuración no quedó lista en este intento. Puedes volver a intentarlo.",
     },
   } satisfies Record<PushState, { title: string; description: string }>;
@@ -504,20 +416,6 @@ export default function PushNotificationSettings({ studioId }: { studioId: strin
         <p className="mt-3 rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 text-xs text-zinc-300">
           {message}
         </p>
-      ) : null}
-
-      {debug ? (
-        <div className="mt-3 rounded-xl border border-amber-400/20 bg-amber-400/[0.04] px-3 py-3 text-[11px] leading-5 text-zinc-300">
-          <p className="font-semibold text-amber-200">Diagnóstico UAT</p>
-          <p>Etapa: {stepLabel(debug.step)}</p>
-          <p>Permiso iPhone: {debug.permission}</p>
-          <p>PWA instalada: {debug.standalone ? "Sí" : "No"}</p>
-          <p>Contexto seguro: {debug.secureContext ? "Sí" : "No"}</p>
-          <p>Service Worker: {debug.serviceWorker ? "Sí" : "No"}</p>
-          <p>PushManager: {debug.pushManager ? "Sí" : "No"}</p>
-          <p>API de permiso: {debug.requestPermission ? "Sí" : "No"}</p>
-          {debug.errorName ? <p>Error: {debug.errorName}</p> : null}
-        </div>
       ) : null}
 
       <div className="mt-4 flex flex-wrap gap-2">
