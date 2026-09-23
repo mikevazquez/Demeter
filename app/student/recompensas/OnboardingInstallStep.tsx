@@ -92,9 +92,7 @@ export default function OnboardingInstallStep({
     }
 
     function installedHandler() {
-      setMessage(
-        `Listo. Ahora abre ${studioName} desde el nuevo icono para completar este paso.`,
-      );
+      setMessage(`Listo. Ahora abre ${studioName} desde el nuevo icono para completar este paso.`);
     }
 
     window.addEventListener("beforeinstallprompt", capturePrompt);

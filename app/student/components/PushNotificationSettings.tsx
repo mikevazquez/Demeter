@@ -368,8 +368,7 @@ export default function PushNotificationSettings({
     },
     needs_install: {
       title: `Instala ${studioName} en tu iPhone`,
-      description:
-        `En Safari toca Compartir → Agregar a pantalla de inicio. Después abre ${studioName} desde el nuevo icono y vuelve aquí.`,
+      description: `En Safari toca Compartir → Agregar a pantalla de inicio. Después abre ${studioName} desde el nuevo icono y vuelve aquí.`,
     },
     denied: {
       title: "Permiso bloqueado",
@@ -378,8 +377,7 @@ export default function PushNotificationSettings({
     },
     unsupported: {
       title: "Push no disponible aquí",
-      description:
-        `Este navegador o contexto no admite Web Push. Puedes seguir usando ${studioName} normalmente.`,
+      description: `Este navegador o contexto no admite Web Push. Puedes seguir usando ${studioName} normalmente.`,
     },
     error: {
       title: "No pudimos comprobar Push",

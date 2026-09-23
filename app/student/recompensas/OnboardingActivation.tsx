@@ -179,11 +179,7 @@ export function RewardsOnboardingActivation({
           <StepRow
             complete={appInstalled}
             title="Guarda la app en tu pantalla de inicio"
-            detail={
-              appInstalled
-                ? "Listo"
-                : `Instala ${studioName} y ábrela desde el nuevo icono`
-            }
+            detail={appInstalled ? "Listo" : `Instala ${studioName} y ábrela desde el nuevo icono`}
           />
           {!appInstalled ? (
             <OnboardingInstallStep complete={appInstalled} studioName={studioName} />
@@ -201,11 +197,7 @@ export function RewardsOnboardingActivation({
             }
           />
           {appInstalled && !notificationsComplete ? (
-            <PushNotificationSettings
-              studioId={studioId}
-              studioName={studioName}
-              onboardingMode
-            />
+            <PushNotificationSettings studioId={studioId} studioName={studioName} onboardingMode />
           ) : null}
 
           <StepRow
