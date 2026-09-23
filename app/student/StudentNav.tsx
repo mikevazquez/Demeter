@@ -7,6 +7,7 @@ const items = [
   { href: "/student", label: "Inicio", icon: "⌂" },
   { href: "/student/reservar", label: "Reservar", icon: "◫" },
   { href: "/student/mis-clases", label: "Mis clases", icon: "≡" },
+  { href: "/student/documentos", label: "Documentos", icon: "▤" },
   { href: "/student/perfil", label: "Perfil", icon: "○" },
 ];
 
@@ -45,7 +46,7 @@ export function StudentNav() {
       </nav>
 
       <nav
-        className="fixed inset-x-3 bottom-3 z-50 grid grid-cols-4 gap-1 rounded-3xl border border-white/10 bg-[#111218]/95 p-2 shadow-2xl backdrop-blur lg:hidden"
+        className="fixed inset-x-3 bottom-3 z-50 grid grid-cols-5 gap-1 rounded-3xl border border-white/10 bg-[#111218]/95 p-2 shadow-2xl backdrop-blur lg:hidden"
         style={{ paddingBottom: "max(0.5rem, env(safe-area-inset-bottom))" }}
         aria-label="Navegación de alumna"
       >
