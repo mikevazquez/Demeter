@@ -53,6 +53,12 @@ describe("Asistian lifecycle synchronization contract", () => {
     expect(lifecycle).toContain("'payment_pending'");
   });
 
+  it("prefers Asistian's native event_type over custom automation labels", () => {
+    expect(receiver).toContain("asRecord(body.data)?.event_type");
+    expect(receiver).toContain("nativeEventName ??");
+    expect(receiver).toContain(").toLowerCase()");
+  });
+
   it("processes the full Asistian booking lifecycle", () => {
     for (const event of [
       "booking_created",
