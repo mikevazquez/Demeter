@@ -5,7 +5,14 @@ type Alert = { title: string; detail: string };
 
 type Props = {
   activeView:
-    "summary" | "packages" | "rewards" | "evaluations" | "followup" | "history" | "profile";
+    | "summary"
+    | "packages"
+    | "rewards"
+    | "evaluations"
+    | "documents"
+    | "followup"
+    | "history"
+    | "profile";
   student: {
     id: string;
     userId: string | null;
@@ -20,6 +27,7 @@ type Props = {
   rewardsAvailable: number | null;
   technicalLevels: Array<{ disciplineName: string; levelTitle: string }>;
   showEvaluations: boolean;
+  showDocuments: boolean;
   currentPackage: {
     name: string;
     unlimited: boolean;
@@ -84,6 +92,7 @@ export default function Profile360Overview({
   rewardsAvailable,
   technicalLevels,
   showEvaluations,
+  showDocuments,
   currentPackage,
   nextClass,
   historicalValueMinor,
@@ -180,6 +189,14 @@ export default function Profile360Overview({
             href={href("evaluations")}
           >
             Evaluaciones
+          </Link>
+        ) : null}
+        {showDocuments ? (
+          <Link
+            className={activeView === "documents" ? "is-active" : ""}
+            href={href("documents")}
+          >
+            Documentos
           </Link>
         ) : null}
         <Link className={activeView === "followup" ? "is-active" : ""} href={href("followup")}>
