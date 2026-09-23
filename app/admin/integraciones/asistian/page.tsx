@@ -3,15 +3,14 @@ import Link from "next/link";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getAdminContext } from "@/lib/auth/admin-context";
 
-import { sendAsistianHandshake } from "./actions";
+import { sendAsistianHandshake, sendAsistianMappingProbe } from "./actions";
 
 const errorCopy: Record<string, string> = {
-  invalid_url: "La URL no es válida. Debe ser la URL HTTPS del Webhook entrante de Asistian.",
+  invalid_url: "La URL no es válida. Debe ser una URL HTTPS de Asistian.",
   invalid_secret: "El Signing Secret no parece válido.",
-  network:
-    "No se pudo conectar con Asistian. Verifica que Probar Webhook siga a la escucha e inténtalo de nuevo.",
-  http: "Asistian rechazó el webhook firmado.",
-  save: "No se pudieron guardar las credenciales del webhook en Supabase Vault.",
+  network: "No se pudo conectar con Asistian.",
+  http: "Asistian rechazó el webhook.",
+  save: "No se pudieron guardar las credenciales del webhook.",
 };
 
 export default async function AsistianIntegrationTestPage({
@@ -19,6 +18,7 @@ export default async function AsistianIntegrationTestPage({
 }: {
   searchParams: Promise<{
     sent?: string;
+    mapping_sent?: string;
     error?: string;
     status?: string;
   }>;
@@ -34,19 +34,22 @@ export default async function AsistianIntegrationTestPage({
             ← Inicio
           </Link>
           <p className="eyebrow">INTEGRACIONES · ASISTIAN</p>
-          <h1 className="dashboard-title">Recordatorio de clase · 3 horas</h1>
-          <p>
-            Configura aquí el Webhook entrante de Asistian. Studio Flow firma el cuerpo exacto con
-            HMAC-SHA256 y usa una clave de idempotencia para impedir ejecuciones duplicadas.
-          </p>
+          <h1 className="dashboard-title">Pruebas de Webhook</h1>
+          <p>Captura primero las variables y después configura la conexión firmada.</p>
         </div>
       </header>
 
+      {query.mapping_sent === "1" ? (
+        <div className="notice success">
+          Payload de mapeo enviado
+          {query.status ? ` · HTTP ${query.status}` : ""}. Revisa Asistian.
+        </div>
+      ) : null}
+
       {query.sent === "1" ? (
         <div className="notice success">
-          Webhook firmado enviado correctamente a Asistian
-          {query.status ? ` · HTTP ${query.status}` : ""}. Revisa los campos capturados en Probar
-          Webhook.
+          Webhook firmado enviado
+          {query.status ? ` · HTTP ${query.status}` : ""}.
         </div>
       ) : null}
 
@@ -60,40 +63,43 @@ export default async function AsistianIntegrationTestPage({
       <section className="panel">
         <div className="panel-heading">
           <div>
-            <p className="eyebrow">CLASS-REMINDER-01 · CONEXIÓN</p>
-            <h2>Webhook entrante de Asistian</h2>
+            <p className="eyebrow">PASO 1 · MAPEO</p>
+            <h2>Capturar variables de confirmación</h2>
+          </div>
+        </div>
+
+        <form action={sendAsistianMappingProbe} className="compact-form">
+          <label>
+            URL de prueba de Asistian
+            <input type="url" name="test_webhook_url" placeholder="https://…" autoComplete="off" required />
+          </label>
+          <p className="text-sm text-zinc-400">
+            Con Probar Webhook escuchando, esta prueba envía datos sintéticos con nombre,
+            disciplina, fecha, hora, coach y ubicación.
+          </p>
+          <button className="primary-button" type="submit">
+            Enviar las 6 variables
+          </button>
+        </form>
+      </section>
+
+      <section className="panel">
+        <div className="panel-heading">
+          <div>
+            <p className="eyebrow">PASO 2 · PRODUCCIÓN</p>
+            <h2>Conexión firmada</h2>
           </div>
         </div>
 
         <form action={sendAsistianHandshake} className="compact-form">
           <label>
             URL de Webhook de Producción
-            <input
-              type="url"
-              name="webhook_url"
-              placeholder="https://…"
-              autoComplete="off"
-              required
-            />
+            <input type="url" name="webhook_url" placeholder="https://…" autoComplete="off" required />
           </label>
-
           <label>
             Secreto de firma
-            <input
-              type="password"
-              name="signing_secret"
-              placeholder="Pega aquí el secreto de Asistian"
-              autoComplete="off"
-              required
-            />
+            <input type="password" name="signing_secret" placeholder="Pega aquí el secreto" autoComplete="off" required />
           </label>
-
-          <p className="text-sm text-zinc-400">
-            En Asistian abre la automatización y pulsa <strong>Probar Webhook</strong> antes de
-            enviar esta prueba. La URL y el secreto se guardan cifrados por automatización en
-            Supabase Vault. El secreto no vuelve a mostrarse.
-          </p>
-
           <button className="primary-button" type="submit">
             Guardar y enviar prueba firmada
           </button>
