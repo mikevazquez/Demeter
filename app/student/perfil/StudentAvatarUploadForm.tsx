@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import PendingActionButton from "../components/PendingActionButton";
 
@@ -11,18 +11,23 @@ type StudentAvatarUploadFormProps = {
 export default function StudentAvatarUploadForm({ action }: StudentAvatarUploadFormProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const previewUrlRef = useRef<string | null>(null);
 
-  useEffect(() => {
-    if (!selectedFile) {
-      setPreviewUrl(null);
-      return;
-    }
+  useEffect(
+    () => () => {
+      if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
+    },
+    [],
+  );
 
-    const nextPreviewUrl = URL.createObjectURL(selectedFile);
+  function handleFileChange(file: File | null) {
+    if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
+
+    const nextPreviewUrl = file ? URL.createObjectURL(file) : null;
+    previewUrlRef.current = nextPreviewUrl;
+    setSelectedFile(file);
     setPreviewUrl(nextPreviewUrl);
-
-    return () => URL.revokeObjectURL(nextPreviewUrl);
-  }, [selectedFile]);
+  }
 
   return (
     <form action={action} className="mt-2 space-y-2">
@@ -33,7 +38,7 @@ export default function StudentAvatarUploadForm({ action }: StudentAvatarUploadF
         accept="image/jpeg,image/png,image/webp"
         required
         className="sr-only"
-        onChange={(event) => setSelectedFile(event.currentTarget.files?.[0] ?? null)}
+        onChange={(event) => handleFileChange(event.currentTarget.files?.[0] ?? null)}
       />
 
       <label
