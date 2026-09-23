@@ -9,6 +9,7 @@ import {
 
 import PurchaseSingleClassButton from "./PurchaseSingleClassButton";
 import { QuickBookButton } from "./quick-book-button";
+import { BookingRestrictionCard } from "./BookingRestrictionCard";
 
 function safeDate(value: string | undefined, fallback: string) {
   return value && /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : fallback;
@@ -108,6 +109,14 @@ export default async function StudentReservePage({
 }) {
   const query = await searchParams;
   const { supabase, studio, membership } = await getStudentPortalContext();
+  const { data: globalRestrictionData } = await supabase.rpc(
+    "student_booking_restrictions_snapshot",
+    { p_session_id: null },
+  );
+  const globalRestrictions = (globalRestrictionData ?? []) as NonNullable<
+    StudentSession["eligibility"]["restrictions"]
+  >;
+
   const today = localDateKey(new Date(), studio.timezone);
   const requestedDate = safeDate(query.date, today);
   const selectedDate = requestedDate < today ? today : requestedDate;
@@ -185,6 +194,10 @@ export default async function StudentReservePage({
           Elige una fecha para ver todas las clases disponibles de ese día.
         </p>
       </header>
+
+      {globalRestrictions.length ? (
+        <BookingRestrictionCard restrictions={globalRestrictions} />
+      ) : null}
 
       <section
         aria-label="Seleccionar fecha"
