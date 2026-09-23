@@ -4,7 +4,7 @@ import Link from "next/link";
 import { formatDate, getStudentPortalContext } from "@/lib/student/portal";
 
 import { updateStudentAvatarAction, updateStudentProfileAction } from "../actions";
-import PendingActionButton from "../components/PendingActionButton";
+import PendingActionButton from "../components/PendingActionButton";\nimport PushNotificationSettings from "../components/PushNotificationSettings";
 import StudentNoticeDialog from "../components/StudentNoticeDialog";
 
 const errorCopy: Record<string, string> = {
