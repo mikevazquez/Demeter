@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import QueryNotice from "@/app/components/QueryNotice";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getAdminContext } from "@/lib/auth/admin-context";
 import {
@@ -74,11 +75,16 @@ export default async function ReviewDocumentPage({
       </header>
 
       {query.error ? (
-        <div className="notice error">
-          {query.error === "file_required"
-            ? "Carga el PDF del documento antes de publicarlo."
-            : "No pudimos publicar esta versión."}
-        </div>
+        <QueryNotice
+          eyebrow="Documentos"
+          title="No pudimos publicar esta versión"
+          message={
+            query.error === "file_required"
+              ? "Carga el PDF del documento antes de publicarlo."
+              : "Revisa la configuración e inténtalo nuevamente."
+          }
+          tone="error"
+        />
       ) : null}
 
       <div className="grid gap-5 xl:grid-cols-[1.15fr_.85fr]">
