@@ -195,9 +195,9 @@ describe("EVALUACIONES-01 operational cycle", () => {
   });
 
   it("renders both final student result states", () => {
-    expect(studentResult).toContain("¡Evaluación aprobada!");
-    expect(studentResult).toContain("Continúas en tu nivel");
-    expect(studentResult).toContain("Nivel todavía no confirmado");
+    expect(studentResult).toContain("¡Nuevo nivel confirmado!");
+    expect(studentResult).toContain("Se mantiene en su nivel");
+    expect(studentResult).toContain("Sin nivel confirmado");
     expect(studentResult).toContain("Desglose de puntaje");
     expect(studentResult).toContain("Feedback de tu coach");
     expect(studentResult).toContain("Siguiente evaluación");

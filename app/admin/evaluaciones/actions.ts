@@ -849,18 +849,15 @@ export async function openEvaluationFeedbackAction(formData: FormData) {
       : { data: null };
 
     if (nextLevel) {
-      const { error: publishError } = await ctx.supabase.rpc(
-        "admin_publish_technical_evaluation",
-        {
-          p_evaluation_id: evaluationId,
-          p_final_outcome: null,
-          p_override_reason: null,
-          p_strengths: [],
-          p_improvement_areas: [],
-          p_coach_message: null,
-          p_next_objective: null,
-        },
-      );
+      const { error: publishError } = await ctx.supabase.rpc("admin_publish_technical_evaluation", {
+        p_evaluation_id: evaluationId,
+        p_final_outcome: null,
+        p_override_reason: null,
+        p_strengths: [],
+        p_improvement_areas: [],
+        p_coach_message: null,
+        p_next_objective: null,
+      });
 
       if (publishError) {
         redirect(`/admin/evaluaciones/${evaluationId}?step=resumen&error=publish`);
@@ -920,10 +917,7 @@ export async function publishTechnicalEvaluationAction(formData: FormData) {
   const published = Array.isArray(data) ? data[0] : data;
   let nextDiagnosticEvaluationId: string | null = null;
 
-  if (
-    published?.evaluation_purpose === "diagnostic" &&
-    published?.evaluation_invitation_id
-  ) {
+  if (published?.evaluation_purpose === "diagnostic" && published?.evaluation_invitation_id) {
     const { data: nextDiagnostic } = await ctx.supabase
       .from("technical_evaluations")
       .select("id")
