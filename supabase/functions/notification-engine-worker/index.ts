@@ -151,7 +151,9 @@ function evaluateCondition(node: unknown, context: EventContext): boolean {
     case "neq":
       return !valuesEqual(actual, expected);
     case "exists":
-      return expected === false ? actual === undefined || actual === null : actual !== undefined && actual !== null;
+      return expected === false
+        ? actual === undefined || actual === null
+        : actual !== undefined && actual !== null;
     case "in":
       return Array.isArray(expected) && expected.some((item) => valuesEqual(actual, item));
     case "not_in":
@@ -266,7 +268,10 @@ async function loadReservationContext(
   };
 }
 
-async function buildContext(adminClient: SupabaseClient, event: DomainEvent): Promise<EventContext> {
+async function buildContext(
+  adminClient: SupabaseClient,
+  event: DomainEvent,
+): Promise<EventContext> {
   const reservationContext = await loadReservationContext(adminClient, event);
   return {
     event,
@@ -683,7 +688,11 @@ async function proactivelyInvalidate(adminClient: SupabaseClient, event: DomainE
   return Number(data ?? 0);
 }
 
-async function processClaim(adminClient: SupabaseClient, claim: ClaimedProcessing, workerId: string) {
+async function processClaim(
+  adminClient: SupabaseClient,
+  claim: ClaimedProcessing,
+  workerId: string,
+) {
   try {
     const event = await loadEvent(adminClient, claim.event_id);
     await proactivelyInvalidate(adminClient, event);
