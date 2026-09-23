@@ -96,7 +96,7 @@ export default async function TechnicalEvaluationDetailPage({
       ctx.supabase
         .from("evaluation_template_criteria")
         .select(
-          "id,label,description,weight_percent,min_percent,sort_order,block_type,progression_required,evaluator_instructions",
+          "id,criterion_key,label,description,weight_percent,min_percent,sort_order,block_type,progression_required,evaluator_instructions",
         )
         .eq("template_version_id", version.id)
         .order("sort_order"),
@@ -217,6 +217,7 @@ export default async function TechnicalEvaluationDetailPage({
     const result = criterionResultMap.get(criterion.id);
     return {
       id: criterion.id,
+      criterionKey: criterion.criterion_key,
       label: criterion.label,
       weightPercent: Number(criterion.weight_percent),
       minPercent: Number(criterion.min_percent ?? version.default_category_min),
