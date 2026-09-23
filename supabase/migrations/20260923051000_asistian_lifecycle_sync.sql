@@ -23,7 +23,7 @@ exception
 end
 $$;
 
-do $
+do $$
 begin
   if exists (
     select 1
@@ -44,7 +44,7 @@ begin
 exception
   when duplicate_object then null;
 end
-$;
+$$;
 
 do $$
 begin
@@ -69,7 +69,7 @@ alter table public.asistian_booking_links
   alter column session_id drop not null,
   alter column reservation_id drop not null;
 
-do $
+do $$
 declare
   v_sync_type text;
 begin
@@ -98,7 +98,7 @@ begin
       alter column sync_status set default 'synced';
   end if;
 end
-$;
+$$;
 
 alter table public.asistian_booking_links
   add column if not exists sync_status public.asistian_sync_status not null default 'synced',
