@@ -181,6 +181,24 @@ export type StudentRewardProgramEvent = {
   occurred_at: string;
 };
 
+export type StudentRewardOnboarding = {
+  id: string;
+  student_id: string;
+  documents_completed_at: string | null;
+  documents_evidence: unknown;
+  profile_completed_at: string | null;
+  profile_evidence: unknown;
+  first_reservation_at: string | null;
+  first_reservation_id: string | null;
+  first_attendance_at: string | null;
+  first_attendance_reservation_id: string | null;
+  completed_at: string | null;
+  bronze_unlocked_at: string | null;
+  bronze_acknowledged_at: string | null;
+  unlock_method: "onboarding" | "admin" | "legacy" | null;
+  unlock_reason: string | null;
+};
+
 export function rewardObject(value: unknown): JsonObject {
   if (!value || typeof value !== "object" || Array.isArray(value)) return {};
   return value as JsonObject;
@@ -351,6 +369,7 @@ export const getStudentRewardsContext = cache(async () => {
     programParticipationsResult,
     programUnlocksResult,
     programEventsResult,
+    onboardingResult,
   ] = await Promise.all([
     portal.supabase
       .from("reward_instances")
@@ -408,6 +427,14 @@ export const getStudentRewardsContext = cache(async () => {
       .eq("studio_id", studioId)
       .eq("student_id", studentId)
       .order("occurred_at", { ascending: false }),
+    portal.supabase
+      .from("reward_onboarding")
+      .select(
+        "id,student_id,documents_completed_at,documents_evidence,profile_completed_at,profile_evidence,first_reservation_at,first_reservation_id,first_attendance_at,first_attendance_reservation_id,completed_at,bronze_unlocked_at,bronze_acknowledged_at,unlock_method,unlock_reason",
+      )
+      .eq("studio_id", studioId)
+      .eq("student_id", studentId)
+      .maybeSingle(),
   ]);
 
   const firstError = [
@@ -418,6 +445,7 @@ export const getStudentRewardsContext = cache(async () => {
     programParticipationsResult.error,
     programUnlocksResult.error,
     programEventsResult.error,
+    onboardingResult.error,
   ].find(Boolean);
 
   if (firstError) throw new Error("student_rewards_load_failed");
@@ -430,6 +458,7 @@ export const getStudentRewardsContext = cache(async () => {
     []) as StudentRewardProgramParticipation[];
   const programUnlocks = (programUnlocksResult.data ?? []) as StudentRewardProgramUnlock[];
   const programEvents = (programEventsResult.data ?? []) as StudentRewardProgramEvent[];
+  const onboarding = (onboardingResult.data ?? null) as StudentRewardOnboarding | null;
 
   const programIds = [...new Set(programParticipations.map((item) => item.program_id))];
 
@@ -585,6 +614,7 @@ export const getStudentRewardsContext = cache(async () => {
     programParticipations,
     programUnlocks,
     programEvents,
+    onboarding,
     programs,
     programVersions,
     programLevels,
