@@ -39,6 +39,7 @@ describe("Asistian -> Studio Flow receiver contract", () => {
 describe("Asistian lifecycle synchronization contract", () => {
   const receiver = source("supabase/functions/receive-asistian-webhook/index.ts");
   const lifecycle = source("supabase/migrations/20260923051000_asistian_lifecycle_sync.sql");
+  const serviceMapping = source("supabase/migrations/20260923061000_asistian_service_mapping.sql");
 
   it("classifies new Asistian contacts as trial students", () => {
     expect(lifecycle).toContain("student_type public.student_type not null default 'regular'");
@@ -73,6 +74,14 @@ describe("Asistian lifecycle synchronization contract", () => {
       expect(receiver).toContain(`"${event}"`);
     }
     expect(receiver).toContain('"service_apply_asistian_booking_event"');
+  });
+
+  it("uses native Asistian service IDs for stable activity mapping", () => {
+    expect(receiver).toContain("safeScalarText(service?.id)");
+    expect(receiver).toContain("target_service_id: serviceId");
+    expect(serviceMapping).toContain("create table if not exists public.asistian_service_mappings");
+    expect(serviceMapping).toContain("admin_upsert_asistian_service_mapping");
+    expect(serviceMapping).toContain("private.asistian_mapped_service_name");
   });
 
   it("does not silently auto-book resource-required sessions", () => {
