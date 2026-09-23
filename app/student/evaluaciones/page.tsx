@@ -5,8 +5,8 @@ import { formatDate, formatDateTime, getStudentPortalContext } from "@/lib/stude
 type EvaluationDisciplineSnapshot = {
   discipline_id: string;
   discipline_name: string;
-  discipline_level_id: string;
-  current_level_title: string;
+  discipline_level_id: string | null;
+  current_level_title: string | null;
   cycle_id: string | null;
   cadence_months: number | null;
   next_due_on: string | null;
@@ -118,7 +118,9 @@ export default async function StudentEvaluationsPage() {
                   <h2 className="text-xl font-semibold text-white">{item.discipline_name}</h2>
                   <p className="mt-1 text-sm text-zinc-400">
                     Nivel actual:{" "}
-                    <strong className="text-zinc-200">{item.current_level_title}</strong>
+                    <strong className="text-zinc-200">
+                      {item.current_level_title ?? "Pendiente de diagnóstico"}
+                    </strong>
                   </p>
                 </div>
 
