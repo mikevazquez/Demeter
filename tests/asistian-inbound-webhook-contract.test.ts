@@ -9,22 +9,20 @@ function source(path: string) {
 
 describe("Asistian -> Studio Flow receiver contract", () => {
   const receiver = source("supabase/functions/receive-asistian-webhook/index.ts");
-  const migration = source(
-    "supabase/migrations/20260923041000_asistian_inbound_receiver.sql",
-  );
+  const migration = source("supabase/migrations/20260923041000_asistian_inbound_receiver.sql");
 
   it("verifies both current and compatibility HMAC signatures", () => {
     expect(receiver).toContain('request.headers.get("x-asistian-signature")');
     expect(receiver).toContain('request.headers.get("x-webhook-signature")');
     expect(receiver).toContain('parts.get("t")');
     expect(receiver).toContain('parts.get("v1")');
-    expect(receiver).toContain('hmacSha256Hex(secret, rawBody)');
+    expect(receiver).toContain("hmacSha256Hex(secret, rawBody)");
     expect(receiver).toContain('"x-webhook-signature-body"');
   });
 
   it("deduplicates the stable provider event id", () => {
     expect(receiver).toContain('request.headers.get("x-webhook-id")');
-    expect(receiver).toContain('body.event_id');
+    expect(receiver).toContain("body.event_id");
     expect(receiver).toContain('insertError?.code === "23505"');
     expect(migration).toContain("unique (studio_id, provider_event_id)");
   });
@@ -40,9 +38,7 @@ describe("Asistian -> Studio Flow receiver contract", () => {
 
 describe("Asistian lifecycle synchronization contract", () => {
   const receiver = source("supabase/functions/receive-asistian-webhook/index.ts");
-  const lifecycle = source(
-    "supabase/migrations/20260923051000_asistian_lifecycle_sync.sql",
-  );
+  const lifecycle = source("supabase/migrations/20260923051000_asistian_lifecycle_sync.sql");
 
   it("classifies new Asistian contacts as trial students", () => {
     expect(lifecycle).toContain("student_type public.student_type not null default 'regular'");
