@@ -45,6 +45,8 @@ export default async function StudentProgressPage() {
         onboarding={ctx.onboarding}
         upcomingClass={upcomingClass}
         timeZone={ctx.studio.timezone}
+        studioId={ctx.membership.studio_id}
+        studioName={ctx.studio.name}
       />
     );
   }
