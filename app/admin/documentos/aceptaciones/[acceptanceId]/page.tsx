@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import QueryNotice from "@/app/components/QueryNotice";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { formatFileSize } from "@/lib/documents";
@@ -92,12 +93,20 @@ export default async function AcceptanceEvidencePage({
       </header>
 
       {query.invalidated ? (
-        <div className="notice success">
-          La aceptación fue invalidada sin borrar la evidencia original.
-        </div>
+        <QueryNotice
+          eyebrow="Documentos"
+          title="Aceptación invalidada"
+          message="La evidencia original se conserva y el requisito volvió a quedar pendiente."
+          tone="success"
+        />
       ) : null}
       {query.error ? (
-        <div className="notice error">No pudimos invalidar esta aceptación.</div>
+        <QueryNotice
+          eyebrow="Documentos"
+          title="No pudimos invalidar esta aceptación"
+          message="Revisa el motivo e inténtalo nuevamente."
+          tone="error"
+        />
       ) : null}
 
       <section className="grid gap-4 xl:grid-cols-[1.15fr_.85fr]">
