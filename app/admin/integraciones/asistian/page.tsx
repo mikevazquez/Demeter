@@ -64,29 +64,26 @@ export default async function AsistianIntegrationTestPage({
     .order("received_at", { ascending: false })
     .limit(10);
 
-  const [
-    { data: serviceEvents },
-    { data: serviceMappings },
-    { data: classTemplates },
-  ] = await Promise.all([
-    supabase
-      .from("asistian_webhook_events")
-      .select("payload,received_at")
-      .eq("studio_id", studio.id)
-      .order("received_at", { ascending: false })
-      .limit(100),
-    supabase
-      .from("asistian_service_mappings")
-      .select("asistian_service_id,asistian_service_name,class_template_id,active")
-      .eq("studio_id", studio.id)
-      .eq("active", true),
-    supabase
-      .from("class_templates")
-      .select("id,name,active")
-      .eq("studio_id", studio.id)
-      .eq("active", true)
-      .order("name"),
-  ]);
+  const [{ data: serviceEvents }, { data: serviceMappings }, { data: classTemplates }] =
+    await Promise.all([
+      supabase
+        .from("asistian_webhook_events")
+        .select("payload,received_at")
+        .eq("studio_id", studio.id)
+        .order("received_at", { ascending: false })
+        .limit(100),
+      supabase
+        .from("asistian_service_mappings")
+        .select("asistian_service_id,asistian_service_name,class_template_id,active")
+        .eq("studio_id", studio.id)
+        .eq("active", true),
+      supabase
+        .from("class_templates")
+        .select("id,name,active")
+        .eq("studio_id", studio.id)
+        .eq("active", true)
+        .order("name"),
+    ]);
 
   const observedServices = new Map<string, { id: string; name: string | null }>();
   for (const event of serviceEvents ?? []) {
@@ -212,11 +209,7 @@ export default async function AsistianIntegrationTestPage({
             {Array.from(observedServices.values()).map((service) => {
               const mapping = mappingByServiceId.get(service.id);
               return (
-                <form
-                  action={saveAsistianServiceMapping}
-                  className="compact-form"
-                  key={service.id}
-                >
+                <form action={saveAsistianServiceMapping} className="compact-form" key={service.id}>
                   <input type="hidden" name="service_id" value={service.id} />
                   <input type="hidden" name="service_name" value={service.name ?? ""} />
                   <div>
