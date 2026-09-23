@@ -6,7 +6,7 @@ import { signOut } from "@/app/auth/actions";
 import { getStudentPortalContext } from "@/lib/student/portal";
 
 import PendingActionButton from "./components/PendingActionButton";
-import PwaBrandingSync from "./components/PwaBrandingSync";
+import PwaBrandingSync from "@/app/components/PwaBrandingSync";
 import { StudentNav } from "./StudentNav";
 
 type PwaBrand = {
