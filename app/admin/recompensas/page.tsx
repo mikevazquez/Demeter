@@ -43,7 +43,7 @@ export default async function RewardsControlCenterPage() {
       ctx.supabase
         .from("reward_onboarding")
         .select(
-          "student_id,documents_completed_at,profile_completed_at,first_reservation_at,first_attendance_at,bronze_unlocked_at",
+          "student_id,documents_completed_at,profile_completed_at,app_installed_at,notifications_enabled_at,first_reservation_at,first_attendance_at,bronze_unlocked_at",
         )
         .eq("studio_id", ctx.studio.id),
     ]);
@@ -137,7 +137,7 @@ export default async function RewardsControlCenterPage() {
           <div>
             <p className="text-sm leading-6 text-zinc-400">
               La Medalla Bronce ya no se entrega por crear una alumna. Se desbloquea cuando completa
-              los cuatro hitos del onboarding. Las alumnas que ya tenían una medalla conservan su
+              los seis hitos del onboarding. Las alumnas que ya tenían una medalla conservan su
               estado anterior.
             </p>
             <div className="mt-4 grid gap-2 sm:grid-cols-2">
@@ -150,10 +150,20 @@ export default async function RewardsControlCenterPage() {
                 ["2", "Completar perfil", "Foto, correo y fecha de nacimiento."],
                 [
                   "3",
+                  "Guardar la app",
+                  "Debe abrir Studio Flow desde el icono instalado para confirmar el hito.",
+                ],
+                [
+                  "4",
+                  "Activar notificaciones",
+                  "Se registra cuando existe una suscripción Push activa real.",
+                ],
+                [
+                  "5",
                   "Realizar primera reserva",
                   "La reserva queda como hito aunque después se cancele.",
                 ],
-                ["4", "Asistir a primera clase", "Requiere una reserva con estado attended."],
+                ["6", "Asistir a primera clase", "Requiere una reserva con estado attended."],
               ].map(([number, title, detail]) => (
                 <div key={number} className="rounded-2xl border border-white/10 bg-black/20 p-4">
                   <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#FF0A8A]">
@@ -171,7 +181,7 @@ export default async function RewardsControlCenterPage() {
             </p>
             <h3 className="mt-2 text-xl font-semibold text-white">Medalla Bronce</h3>
             <p className="mt-2 text-sm leading-6 text-zinc-400">
-              Al completar los cuatro pasos se activa automáticamente la primera medalla y comienzan
+              Al completar los seis pasos se activa automáticamente la primera medalla y comienzan
               sus beneficios. Rewards y los niveles técnicos permanecen separados.
             </p>
             <div className="mt-4 rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 text-xs text-zinc-400">
