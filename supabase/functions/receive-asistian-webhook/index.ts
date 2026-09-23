@@ -416,35 +416,29 @@ Deno.serve(async (request) => {
       }, 202);
     }
 
-    const response = await supabase.rpc(
-      "service_sync_asistian_booking",
-      {
-        target_studio_id: studioId,
-        target_source_event_id: eventRowId,
-        target_booking_id: bookingId,
-        target_client_id: clientId,
-        target_first_name: firstName,
-        target_last_name: lastName,
-        target_phone: phone,
-        target_service_name: serviceName,
-        target_starts_at: startsAt,
-      },
-    );
+    const response = await supabase.rpc("service_sync_asistian_booking", {
+      target_studio_id: studioId,
+      target_source_event_id: eventRowId,
+      target_booking_id: bookingId,
+      target_client_id: clientId,
+      target_first_name: firstName,
+      target_last_name: lastName,
+      target_phone: phone,
+      target_service_name: serviceName,
+      target_starts_at: startsAt,
+    });
     syncData = response.data;
     syncError = response.error;
   } else {
-    const response = await supabase.rpc(
-      "service_apply_asistian_booking_event",
-      {
-        target_studio_id: studioId,
-        target_source_event_id: eventRowId,
-        target_event_name: eventName,
-        target_booking_id: bookingId,
-        target_service_name: serviceName,
-        target_starts_at: startsAt,
-        target_external_status: externalStatus,
-      },
-    );
+    const response = await supabase.rpc("service_apply_asistian_booking_event", {
+      target_studio_id: studioId,
+      target_source_event_id: eventRowId,
+      target_event_name: eventName,
+      target_booking_id: bookingId,
+      target_service_name: serviceName,
+      target_starts_at: startsAt,
+      target_external_status: externalStatus,
+    });
     syncData = response.data;
     syncError = response.error;
   }
