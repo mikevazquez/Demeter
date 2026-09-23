@@ -6,6 +6,7 @@ import { formatDate, getStudentPortalContext } from "@/lib/student/portal";
 import { updateStudentAvatarAction, updateStudentProfileAction } from "../actions";
 import PendingActionButton from "../components/PendingActionButton";
 import StudentNoticeDialog from "../components/StudentNoticeDialog";
+import AvatarFilePicker from "./AvatarFilePicker";
 
 const errorCopy: Record<string, string> = {
   email_invalid: "Revisa el formato de tu correo.",
@@ -112,13 +113,7 @@ export default async function StudentProfilePage({
                 />
               </div>
               <form action={updateStudentAvatarAction} className="mt-2 space-y-1.5">
-                <input
-                  name="avatar"
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp"
-                  required
-                  className="block w-24 text-[9px] text-zinc-500 file:mr-1 file:rounded-md file:border-0 file:bg-white/10 file:px-2 file:py-1 file:text-[9px] file:font-semibold file:text-zinc-200"
-                />
+                <AvatarFilePicker />
                 <PendingActionButton
                   pendingLabel="Guardando…"
                   className="min-h-8 w-full rounded-lg border border-white/10 px-2 py-1 text-[10px] font-semibold text-zinc-300 transition hover:border-fuchsia-500/35 hover:text-white disabled:cursor-wait disabled:opacity-60"
