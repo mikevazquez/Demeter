@@ -7,9 +7,13 @@ import {
   type StudentSession,
 } from "@/lib/student/portal";
 
+import BookingEligibilityRefresh from "./BookingEligibilityRefresh";
 import PurchaseSingleClassButton from "./PurchaseSingleClassButton";
 import { QuickBookButton } from "./quick-book-button";
 import { BookingRestrictionCard } from "./BookingRestrictionCard";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 function safeDate(value: string | undefined, fallback: string) {
   return value && /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : fallback;
@@ -185,6 +189,7 @@ export default async function StudentReservePage({
 
   return (
     <main className="space-y-4 pb-4">
+      <BookingEligibilityRefresh />
       <header>
         <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-fuchsia-300">
           Portal alumna
