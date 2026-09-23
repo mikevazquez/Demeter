@@ -6,6 +6,7 @@ import Profile360Overview from "./Profile360Overview";
 import StudentPackageCard from "./StudentPackageCard";
 import StudentPortalAccessSection from "./StudentPortalAccessSection";
 import StudentEvaluationsPanel from "./StudentEvaluationsPanel";
+import StudentDocumentsPanel from "./StudentDocumentsPanel";
 import { notFound } from "next/navigation";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getAdminContext } from "@/lib/auth/admin-context";
@@ -146,6 +147,8 @@ export default async function StudentProfilePage({
     lifecycle?: string;
     lifecycle_error?: string;
     evaluation_error?: string;
+    document_result?: string;
+    document_error?: string;
     view?: string;
   }>;
 }) {
@@ -153,12 +156,27 @@ export default async function StudentProfilePage({
   const query = await searchParams;
   const requestedView = String(query.view ?? "summary");
   const view = (
-    ["summary", "packages", "rewards", "evaluations", "followup", "history", "profile"].includes(
-      requestedView,
-    )
+    [
+      "summary",
+      "packages",
+      "rewards",
+      "evaluations",
+      "documents",
+      "followup",
+      "history",
+      "profile",
+    ].includes(requestedView)
       ? requestedView
       : "summary"
-  ) as "summary" | "packages" | "rewards" | "evaluations" | "followup" | "history" | "profile";
+  ) as
+    | "summary"
+    | "packages"
+    | "rewards"
+    | "evaluations"
+    | "documents"
+    | "followup"
+    | "history"
+    | "profile";
   const { supabase, studio, can } = await getAdminContext(CAPABILITIES.STUDENTS_READ);
 
   const { data: student } = await supabase
@@ -290,6 +308,7 @@ export default async function StudentProfilePage({
   const canReadRewards = can(CAPABILITIES.REWARDS_READ);
   const canManageRewards = can(CAPABILITIES.REWARDS_MANAGE);
   const canReadEvaluations = can(CAPABILITIES.EVALUATIONS_READ);
+  const canReadDocuments = can(CAPABILITIES.DOCUMENTS_READ);
   const canArchive = can(CAPABILITIES.STUDENTS_ARCHIVE);
   const lifecycleEventsResult = canArchive
     ? await supabase
@@ -814,6 +833,7 @@ export default async function StudentProfilePage({
         rewardsAvailable={rewardsAvailable}
         technicalLevels={technicalLevels}
         showEvaluations={canReadEvaluations}
+        showDocuments={canReadDocuments}
         currentPackage={currentPackageView}
         nextClass={nextClass}
         historicalValueMinor={historicalValueMinor}
@@ -1417,6 +1437,15 @@ export default async function StudentProfilePage({
           studentId={student.id}
           timeZone={timeZone}
           error={query.evaluation_error}
+        />
+      ) : null}
+
+      {view === "documents" && canReadDocuments ? (
+        <StudentDocumentsPanel
+          studentId={student.id}
+          timeZone={timeZone}
+          result={query.document_result}
+          error={query.document_error}
         />
       ) : null}
 
