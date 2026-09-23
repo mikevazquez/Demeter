@@ -3,7 +3,11 @@ import Link from "next/link";
 
 import { formatDate, getStudentPortalContext } from "@/lib/student/portal";
 
-import { updateStudentAvatarAction, updateStudentProfileAction } from "../actions";
+import {
+  updateStudentAvatarAction,
+  updateStudentBirthDateAction,
+  updateStudentProfileAction,
+} from "../actions";
 import PendingActionButton from "../components/PendingActionButton";
 import StudentNoticeDialog from "../components/StudentNoticeDialog";
 
@@ -29,10 +33,23 @@ export default async function StudentProfilePage({
     edit?: string;
     avatar?: string;
     avatar_error?: string;
+    onboarding?: string;
+    birth?: string;
+    birth_error?: string;
   }>;
 }) {
   const query = await searchParams;
-  const { snapshot, studio } = await getStudentPortalContext();
+  const { snapshot, studio, supabase } = await getStudentPortalContext();
+  const { data: onboardingData } = await supabase.rpc("student_reward_onboarding_snapshot");
+  const onboarding = (onboardingData ?? {}) as {
+    profile?: {
+      completed?: boolean;
+      email?: boolean;
+      avatar?: boolean;
+      birth_date?: boolean;
+      birth_date_value?: string | null;
+    };
+  };
   const activePackage = snapshot.acquisitions.find((item) => item.active_now) ?? null;
   const fullName = [snapshot.profile.first_name, snapshot.profile.last_name]
     .filter(Boolean)
@@ -54,7 +71,24 @@ export default async function StudentProfilePage({
         </p>
       </header>
 
-      {query.avatar === "updated" ? (
+      {query.birth === "updated" ? (
+        <StudentNoticeDialog
+          eyebrow="Perfil actualizado"
+          title="Tu fecha de nacimiento está lista"
+          dismissHref="/student/perfil?onboarding=1"
+        >
+          Guardamos tu fecha de nacimiento y recalculamos tu activación de Rewards.
+        </StudentNoticeDialog>
+      ) : query.birth_error ? (
+        <StudentNoticeDialog
+          eyebrow="No pudimos guardar"
+          title="Revisa tu fecha de nacimiento"
+          dismissHref="/student/perfil?onboarding=1"
+          tone="error"
+        >
+          Usa una fecha válida y vuelve a intentarlo.
+        </StudentNoticeDialog>
+      ) : query.avatar === "updated" ? (
         <StudentNoticeDialog
           eyebrow="Foto actualizada"
           title="Tu foto de perfil está lista"
@@ -92,6 +126,35 @@ export default async function StudentProfilePage({
         >
           {errorCopy[query.error] ?? errorCopy.profile_update_failed}
         </StudentNoticeDialog>
+      ) : null}
+
+      {query.onboarding === "1" && !onboarding.profile?.completed ? (
+        <section className="rounded-[24px] border border-fuchsia-500/30 bg-[radial-gradient(circle_at_100%_0%,rgba(236,72,153,0.14),transparent_38%),rgba(255,255,255,0.025)] p-4">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-fuchsia-300">
+            Activación de Rewards
+          </p>
+          <h2 className="mt-1 text-lg font-semibold text-white">Completa tu perfil</h2>
+          <p className="mt-1 text-xs leading-5 text-zinc-400">
+            Necesitamos solo estos tres datos para completar este paso.
+          </p>
+          <div className="mt-3 grid gap-2 sm:grid-cols-3">
+            {[
+              ["Foto de perfil", onboarding.profile?.avatar === true],
+              ["Correo válido", onboarding.profile?.email === true],
+              ["Fecha de nacimiento", onboarding.profile?.birth_date === true],
+            ].map(([label, done]) => (
+              <div
+                key={String(label)}
+                className="flex items-center gap-2 rounded-xl border border-white/10 bg-black/20 px-3 py-2.5"
+              >
+                <span className={done ? "text-emerald-300" : "text-zinc-600"}>
+                  {done ? "✓" : "○"}
+                </span>
+                <span className="text-xs text-zinc-300">{label}</span>
+              </div>
+            ))}
+          </div>
+        </section>
       ) : null}
 
       <section
@@ -163,6 +226,28 @@ export default async function StudentProfilePage({
                 Editar correo
               </Link>
             ) : null}
+          </div>
+          <div className="grid gap-2 py-3.5 sm:grid-cols-[120px_1fr] sm:items-end sm:gap-4">
+            <div>
+              <p className="text-xs font-medium text-zinc-500">Fecha de nacimiento</p>
+              <p className="mt-1 text-[11px] text-zinc-600">Requerida para completar tu activación.</p>
+            </div>
+            <form action={updateStudentBirthDateAction} className="flex gap-2">
+              <input
+                name="birth_date"
+                type="date"
+                defaultValue={onboarding.profile?.birth_date_value ?? ""}
+                max={new Date().toISOString().slice(0, 10)}
+                required
+                className="min-h-11 min-w-0 flex-1 rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm text-white outline-none transition focus:border-fuchsia-500/60 focus:ring-2 focus:ring-fuchsia-500/15"
+              />
+              <PendingActionButton
+                pendingLabel="Guardando…"
+                className="min-h-11 rounded-xl border border-fuchsia-500/40 bg-fuchsia-500/[0.08] px-3 py-2 text-xs font-semibold text-fuchsia-200 transition hover:bg-fuchsia-500/[0.14] disabled:cursor-wait disabled:opacity-60"
+              >
+                Guardar
+              </PendingActionButton>
+            </form>
           </div>
         </div>
 
