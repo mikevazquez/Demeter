@@ -56,6 +56,18 @@ export default async function ConfigurationPage({
       ) : null}
 
       <section className="panel">
+        <p className="eyebrow">INTEGRACIONES</p>
+        <h2>Asistian</h2>
+        <p>
+          Configura y prueba los webhooks firmados que conectan Studio Flow con las automatizaciones
+          de WhatsApp en Asistian.
+        </p>
+        <Link className="primary-button" href="/admin/integraciones/asistian">
+          Configurar Asistian
+        </Link>
+      </section>
+
+      <section className="panel">
         <p className="eyebrow">RECURSOS</p>
         <h2>Recursos y mapa</h2>
         <p>
