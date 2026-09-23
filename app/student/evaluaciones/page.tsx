@@ -2,6 +2,8 @@ import Link from "next/link";
 
 import { formatDate, formatDateTime, getStudentPortalContext } from "@/lib/student/portal";
 
+import EvaluationHeroCard from "./EvaluationHeroCard";
+
 type EvaluationDisciplineSnapshot = {
   discipline_id: string;
   discipline_name: string;
@@ -113,6 +115,24 @@ export default async function StudentEvaluationsPage() {
                 aria-hidden="true"
                 className="absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-fuchsia-500 to-violet-500"
               />
+              {item.invitation_status === "scheduled" && item.scheduled_starts_at ? (
+                <div className="-mx-5 -mt-5 mb-5">
+                  <EvaluationHeroCard
+                    variant="scheduled"
+                    disciplineName={item.discipline_name}
+                    levelName={item.current_level_title}
+                    scheduledLabel={formatDateTime(item.scheduled_starts_at, studio.timezone)}
+                  />
+                  <div className="px-1 pt-5">
+                    <h3 className="text-2xl font-semibold tracking-tight text-white">
+                      Evaluación programada
+                    </h3>
+                    <p className="mt-1 text-sm text-zinc-400">
+                      Aquí están los detalles de tu próxima revisión técnica.
+                    </p>
+                  </div>
+                </div>
+              ) : null}
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <h2 className="text-xl font-semibold text-white">{item.discipline_name}</h2>
@@ -169,16 +189,26 @@ export default async function StudentEvaluationsPage() {
                   </Link>
                 </div>
               ) : item.invitation_status === "scheduled" && item.scheduled_starts_at ? (
-                <div className="mt-5 rounded-2xl border border-violet-400/25 bg-violet-400/[0.06] p-4">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-violet-300">
-                    Próxima evaluación
-                  </p>
-                  <strong className="mt-1 block text-sm text-white">
-                    {formatDateTime(item.scheduled_starts_at, studio.timezone)}
-                  </strong>
-                  <p className="mt-1 text-xs text-zinc-500">
-                    Tu reserva sigue las mismas políticas de cualquier clase.
-                  </p>
+                <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                  <div className="rounded-2xl border border-fuchsia-500/25 bg-fuchsia-500/[0.05] p-4">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-fuchsia-300">
+                      Tu próxima evaluación
+                    </p>
+                    <strong className="mt-1 block text-sm text-white">
+                      {formatDateTime(item.scheduled_starts_at, studio.timezone)}
+                    </strong>
+                    <p className="mt-1 text-xs leading-5 text-zinc-500">
+                      Ya está agendada. Prepárate para mostrar tu progreso y seguir avanzando.
+                    </p>
+                  </div>
+                  <div className="rounded-2xl border border-white/10 bg-black/10 p-4">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-zinc-500">
+                      Política de reserva
+                    </p>
+                    <p className="mt-1 text-xs leading-5 text-zinc-400">
+                      Tu evaluación utiliza la misma reserva, créditos y políticas de la clase elegida.
+                    </p>
+                  </div>
                 </div>
               ) : item.invitation_status === "in_progress" ? (
                 <div className="mt-5 rounded-2xl border border-fuchsia-500/25 bg-fuchsia-500/[0.06] p-4">
