@@ -3,16 +3,15 @@ import Link from "next/link";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getAdminContext } from "@/lib/auth/admin-context";
 
-import { saveAsistianSigningSecret, sendAsistianHandshake } from "./actions";
+import { sendAsistianHandshake } from "./actions";
 
 const errorCopy: Record<string, string> = {
   invalid_url: "La URL no es válida. Debe ser la URL HTTPS del Webhook entrante de Asistian.",
-  network:
-    "No se pudo conectar con Asistian. Verifica que siga en modo escucha e inténtalo de nuevo.",
-  http: "Asistian rechazó el webhook de prueba.",
-  save: "No se pudo guardar el webhook de Asistian en el Vault del entorno actual.",
   invalid_secret: "El Signing Secret no parece válido.",
-  secret_save: "No se pudo guardar el Signing Secret en Supabase Vault.",
+  network:
+    "No se pudo conectar con Asistian. Verifica que Probar Webhook siga a la escucha e inténtalo de nuevo.",
+  http: "Asistian rechazó el webhook firmado.",
+  save: "No se pudieron guardar las credenciales del webhook en Supabase Vault.",
 };
 
 export default async function AsistianIntegrationTestPage({
@@ -22,7 +21,6 @@ export default async function AsistianIntegrationTestPage({
     sent?: string;
     error?: string;
     status?: string;
-    secret_saved?: string;
   }>;
 }) {
   await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
@@ -36,24 +34,19 @@ export default async function AsistianIntegrationTestPage({
             ← Inicio
           </Link>
           <p className="eyebrow">INTEGRACIONES · ASISTIAN</p>
-          <h1 className="dashboard-title">Prueba de conexión</h1>
+          <h1 className="dashboard-title">Recordatorio de clase · 3 horas</h1>
           <p>
-            La URL y el Signing Secret se guardan cifrados en Supabase Vault y no se exponen en el
-            repositorio ni en la auditoría.
+            Configura aquí el Webhook entrante de Asistian. Studio Flow firma el cuerpo exacto con
+            HMAC-SHA256 y usa una clave de idempotencia para impedir ejecuciones duplicadas.
           </p>
         </div>
       </header>
 
       {query.sent === "1" ? (
         <div className="notice success">
-          Webhook enviado correctamente a Asistian
-          {query.status ? ` · HTTP ${query.status}` : ""}. Revisa la captura de campos en Asistian.
-        </div>
-      ) : null}
-
-      {query.secret_saved === "1" ? (
-        <div className="notice success">
-          Signing Secret guardado de forma segura en Supabase Vault.
+          Webhook firmado enviado correctamente a Asistian
+          {query.status ? ` · HTTP ${query.status}` : ""}. Revisa los campos capturados en Probar
+          Webhook.
         </div>
       ) : null}
 
@@ -67,14 +60,14 @@ export default async function AsistianIntegrationTestPage({
       <section className="panel">
         <div className="panel-heading">
           <div>
-            <p className="eyebrow">SF-174 · HANDSHAKE</p>
+            <p className="eyebrow">CLASS-REMINDER-01 · CONEXIÓN</p>
             <h2>Webhook entrante de Asistian</h2>
           </div>
         </div>
 
         <form action={sendAsistianHandshake} className="compact-form">
           <label>
-            URL del Webhook
+            URL de Webhook de Producción
             <input
               type="url"
               name="webhook_url"
@@ -84,44 +77,25 @@ export default async function AsistianIntegrationTestPage({
             />
           </label>
 
-          <p className="text-sm text-zinc-400">
-            Se guardará como el webhook de <strong>student_welcome</strong> en Supabase Vault y se
-            enviará un payload sintético. No contiene datos reales de alumnas ni contraseñas.
-          </p>
-
-          <button className="primary-button" type="submit">
-            Guardar webhook y enviar prueba
-          </button>
-        </form>
-      </section>
-
-      <section className="panel">
-        <div className="panel-heading">
-          <div>
-            <p className="eyebrow">SEGURIDAD · WEBHOOK ENTRANTE</p>
-            <h2>Signing Secret de Asistian</h2>
-          </div>
-        </div>
-
-        <form action={saveAsistianSigningSecret} className="compact-form">
           <label>
-            Signing Secret
+            Secreto de firma
             <input
               type="password"
               name="signing_secret"
-              placeholder="Pega aquí el secreto"
+              placeholder="Pega aquí el secreto de Asistian"
               autoComplete="off"
               required
             />
           </label>
 
           <p className="text-sm text-zinc-400">
-            El valor se envía directamente al servidor y se guarda cifrado en Supabase Vault. No se
-            vuelve a mostrar en esta pantalla.
+            En Asistian abre la automatización y pulsa <strong>Probar Webhook</strong> antes de
+            enviar esta prueba. La URL y el secreto se guardan cifrados por automatización en
+            Supabase Vault. El secreto no vuelve a mostrarse.
           </p>
 
           <button className="primary-button" type="submit">
-            Guardar Signing Secret
+            Guardar y enviar prueba firmada
           </button>
         </form>
       </section>
