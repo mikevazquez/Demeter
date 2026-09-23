@@ -35,3 +35,50 @@ describe("Asistian -> Studio Flow receiver contract", () => {
     expect(migration).toContain("grant select on table public.asistian_webhook_events to authenticated");
   });
 });
+
+
+describe("Asistian lifecycle synchronization contract", () => {
+  const receiver = source("supabase/functions/receive-asistian-webhook/index.ts");
+  const lifecycle = source(
+    "supabase/migrations/20260923051000_asistian_lifecycle_sync.sql",
+  );
+
+  it("classifies new Asistian contacts as trial students", () => {
+    expect(lifecycle).toContain("student_type public.student_type not null default 'regular'");
+    expect(lifecycle).toContain("'trial',");
+    expect(lifecycle).toContain("'pending'");
+  });
+
+  it("keeps reservation status separate from commercial coverage", () => {
+    expect(lifecycle).toContain("reservation_commercial_status");
+    expect(lifecycle).toContain("'package_covered'");
+    expect(lifecycle).toContain("'paid'");
+    expect(lifecycle).toContain("'payment_pending'");
+  });
+
+  it("processes the full Asistian booking lifecycle", () => {
+    for (const event of [
+      "booking_created",
+      "booking_confirmed",
+      "booking_rescheduled",
+      "booking_cancelled",
+      "booking_completed",
+      "booking_no_show",
+      "booking_status_changed",
+      "booking_updated",
+    ]) {
+      expect(receiver).toContain(`"${event}"`);
+    }
+    expect(receiver).toContain('"service_apply_asistian_booking_event"');
+  });
+
+  it("does not silently auto-book resource-required sessions", () => {
+    expect(lifecycle).toContain("'resource_selection_required'");
+    expect(lifecycle).toContain("'requires_attention'");
+  });
+
+  it("restricts service synchronization RPCs to service_role", () => {
+    expect(lifecycle).toContain("to service_role;");
+    expect(lifecycle).toContain("from public, anon, authenticated;");
+  });
+});
