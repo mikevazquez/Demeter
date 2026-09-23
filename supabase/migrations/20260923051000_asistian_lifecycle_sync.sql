@@ -23,8 +23,19 @@ exception
 end
 $$;
 
-do $$
+do $
 begin
+  if exists (
+    select 1
+    from pg_type t
+    join pg_enum e on e.enumtypid = t.oid
+    where t.typname = 'reservation_commercial_status'
+      and e.enumlabel = 'covered_by_package'
+  ) then
+    alter type public.reservation_commercial_status
+      rename value 'covered_by_package' to 'package_covered';
+  end if;
+
   create type public.reservation_commercial_status as enum (
     'package_covered',
     'paid',
@@ -33,7 +44,7 @@ begin
 exception
   when duplicate_object then null;
 end
-$$;
+$;
 
 do $$
 begin
@@ -56,7 +67,40 @@ alter table public.reservations
 
 alter table public.asistian_booking_links
   alter column session_id drop not null,
-  alter column reservation_id drop not null,
+  alter column reservation_id drop not null;
+
+do $
+declare
+  v_sync_type text;
+begin
+  select a.atttypid::regtype::text
+    into v_sync_type
+  from pg_attribute a
+  where a.attrelid = 'public.asistian_booking_links'::regclass
+    and a.attname = 'sync_status'
+    and not a.attisdropped;
+
+  if v_sync_type = 'asistian_booking_sync_status' then
+    alter table public.asistian_booking_links
+      alter column sync_status drop default;
+
+    alter table public.asistian_booking_links
+      alter column sync_status type public.asistian_sync_status
+      using (
+        case sync_status::text
+          when 'synchronized' then 'synced'
+          when 'requires_attention' then 'requires_attention'
+          else 'error'
+        end
+      )::public.asistian_sync_status;
+
+    alter table public.asistian_booking_links
+      alter column sync_status set default 'synced';
+  end if;
+end
+$;
+
+alter table public.asistian_booking_links
   add column if not exists sync_status public.asistian_sync_status not null default 'synced',
   add column if not exists external_status text,
   add column if not exists last_event_name text,
@@ -81,7 +125,14 @@ as $$
 begin
   if new.status = 'active'
      and not new.access_blocked
-     and new.student_id is not null then
+     and new.student_id is not null
+     and exists (
+       select 1
+       from public.product_templates pt
+       where pt.id = new.product_template_id
+         and pt.studio_id = new.studio_id
+         and pt.product_type::text in ('package', 'membership')
+     ) then
     update public.students
     set student_type = 'regular',
         trial_status = case
@@ -1025,6 +1076,28 @@ begin
       );
     end if;
 
+    if exists (
+      select 1
+      from public.reservations r
+      where r.session_id = v_target_session.id
+        and r.student_id = v_reservation.student_id
+        and r.status in ('reserved', 'attended')
+        and r.id <> v_reservation.id
+    ) then
+      update public.asistian_booking_links
+      set sync_status = 'requires_attention',
+          last_error_code = 'already_reserved_target_session'
+      where id = v_link.id;
+
+      return jsonb_build_object(
+        'ok', true,
+        'sync_status', 'requires_attention',
+        'reason_code', 'already_reserved_target_session',
+        'target_session_id', v_target_session.id,
+        'asistian_booking_id', v_booking_id
+      );
+    end if;
+
     select count(*)
       into v_occupied
     from public.reservations r
@@ -1059,7 +1132,9 @@ begin
         v_coverage := private.sf177_walkin_commercial_coverage(v_reservation.id);
 
         if not coalesce((v_coverage->>'covered')::boolean, false)
-           or (v_coverage->>'acquisition_id')::uuid <> v_reservation.acquisition_id then
+           or (v_coverage->>'acquisition_id')::uuid <> v_reservation.acquisition_id
+           or greatest(coalesce((v_coverage->>'credit_cost')::integer, 1), 1)
+              <> greatest(coalesce(v_reservation.credits_held, 1), 1) then
           update public.reservations
           set session_id = v_link.session_id,
               updated_at = now()
@@ -1067,13 +1142,23 @@ begin
 
           update public.asistian_booking_links
           set sync_status = 'requires_attention',
-              last_error_code = 'package_not_valid_for_reschedule'
+              last_error_code = case
+                when coalesce((v_coverage->>'covered')::boolean, false)
+                     and (v_coverage->>'acquisition_id')::uuid = v_reservation.acquisition_id
+                  then 'credit_cost_changed'
+                else 'package_not_valid_for_reschedule'
+              end
           where id = v_link.id;
 
           return jsonb_build_object(
             'ok', true,
             'sync_status', 'requires_attention',
-            'reason_code', 'package_not_valid_for_reschedule',
+            'reason_code', case
+              when coalesce((v_coverage->>'covered')::boolean, false)
+                   and (v_coverage->>'acquisition_id')::uuid = v_reservation.acquisition_id
+                then 'credit_cost_changed'
+              else 'package_not_valid_for_reschedule'
+            end,
             'reservation_id', v_reservation.id,
             'asistian_booking_id', v_booking_id
           );
@@ -1117,6 +1202,13 @@ begin
         end if;
       end if;
     end if;
+
+    update public.reservation_resource_assignments
+    set released_at = now(),
+        release_reason = 'asistian_rescheduled'
+    where reservation_id = v_reservation.id
+      and released_at is null
+      and session_id <> v_target_session.id;
 
     update public.asistian_booking_links
     set session_id = v_target_session.id,
