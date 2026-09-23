@@ -14,6 +14,7 @@ type InvitationDetail = {
   discipline_level_id: string;
   level_title: string;
   invitation_kind: "first" | "periodic";
+  evaluation_purpose: "diagnostic" | "placement" | "progression" | "exception";
   status: string;
   window_start: string;
   window_end: string;
@@ -67,7 +68,11 @@ export default async function EvaluationInvitationPage({
       <section className="overflow-hidden rounded-[28px] border border-fuchsia-500/30 bg-[radial-gradient(circle_at_80%_0%,rgba(236,72,153,0.22),transparent_34%),linear-gradient(150deg,#15101a,#0d1017)] shadow-[0_0_34px_rgba(236,72,153,0.08)]">
         <div className="p-5 sm:p-6">
           <span className="inline-flex rounded-full border border-fuchsia-500/35 bg-fuchsia-500/[0.1] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-fuchsia-300">
-            {invitation.invitation_kind === "first" ? "Primera evaluación" : "Evaluación periódica"}
+            {invitation.evaluation_purpose === "diagnostic"
+              ? "Diagnóstico inicial"
+              : invitation.invitation_kind === "first"
+                ? "Primera evaluación"
+                : "Evaluación periódica"}
           </span>
 
           <h1 className="mt-4 text-3xl font-semibold tracking-tight text-white">
@@ -82,9 +87,15 @@ export default async function EvaluationInvitationPage({
               </span>
               <div>
                 <p className="text-[10px] uppercase tracking-[0.14em] text-zinc-500">
-                  Nivel a evaluar
+                  {invitation.evaluation_purpose === "diagnostic"
+                    ? "Inicio del diagnóstico"
+                    : "Nivel a evaluar"}
                 </p>
-                <strong className="mt-1 block text-sm text-white">{invitation.level_title}</strong>
+                <strong className="mt-1 block text-sm text-white">
+                  {invitation.evaluation_purpose === "diagnostic"
+                    ? `Comienza en ${invitation.level_title}`
+                    : invitation.level_title}
+                </strong>
               </div>
             </div>
 
@@ -112,7 +123,9 @@ export default async function EvaluationInvitationPage({
                   ¿Qué se evalúa?
                 </p>
                 <strong className="mt-1 block text-sm leading-5 text-white">
-                  Ponderación técnica, figuras obligatorias y requisitos definidos para tu nivel.
+                  {invitation.evaluation_purpose === "diagnostic"
+                    ? "Comenzamos por Principiante y avanzamos nivel por nivel mientras cumplas cada evaluación."
+                    : "Ponderación técnica, figuras obligatorias y requisitos definidos para tu nivel."}
                 </strong>
               </div>
             </div>
@@ -126,7 +139,9 @@ export default async function EvaluationInvitationPage({
                   Cómo funciona
                 </p>
                 <strong className="mt-1 block text-sm text-white">
-                  Se realiza dentro de una clase regular que tú eliges.
+                  {invitation.evaluation_purpose === "diagnostic"
+                    ? "Se detiene en el primer nivel que no cumplas y se confirma el nivel más alto que hayas demostrado."
+                    : "Se realiza dentro de una clase regular que tú eliges."}
                 </strong>
               </div>
             </div>
@@ -148,7 +163,9 @@ export default async function EvaluationInvitationPage({
                 pendingLabel="Aceptando…"
                 className="min-h-12 w-full rounded-2xl bg-fuchsia-600 px-4 text-sm font-semibold text-white transition hover:bg-fuchsia-500"
               >
-                Aceptar evaluación
+                {invitation.evaluation_purpose === "diagnostic"
+                  ? "Aceptar diagnóstico"
+                  : "Aceptar evaluación"}
               </PendingActionButton>
             </form>
 
