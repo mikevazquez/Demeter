@@ -8,9 +8,7 @@ type StudentAvatarUploadFormProps = {
   action: (formData: FormData) => void | Promise<void>;
 };
 
-export default function StudentAvatarUploadForm({
-  action,
-}: StudentAvatarUploadFormProps) {
+export default function StudentAvatarUploadForm({ action }: StudentAvatarUploadFormProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
