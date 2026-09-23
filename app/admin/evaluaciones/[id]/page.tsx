@@ -548,7 +548,11 @@ export default async function TechnicalEvaluationDetailPage({
             <form action={openEvaluationFeedbackAction}>
               <input type="hidden" name="evaluation_id" value={evaluation.id} />
               <button className="eval-primary-button" type="submit">
-                Continuar con feedback →
+                {evaluation.evaluation_purpose === "diagnostic" &&
+                evaluation.automatic_outcome === "approved" &&
+                nextProgressionLink
+                  ? "Continuar diagnóstico →"
+                  : "Continuar con feedback →"}
               </button>
             </form>
           ) : (
