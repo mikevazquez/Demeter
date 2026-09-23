@@ -623,6 +623,7 @@ export async function updateStudentAvatarAction(formData: FormData) {
     redirect("/student/perfil?avatar_error=profile");
   }
 
+  revalidatePath("/student");
   revalidatePath("/student/perfil");
   redirect("/student/perfil?avatar=updated");
 }
