@@ -4,7 +4,9 @@ import type { StudentRewardOnboarding } from "@/lib/student/rewards";
 import type { StudentUpcomingClass } from "@/lib/student/portal";
 import { formatDateTime } from "@/lib/student/portal";
 
+import PushNotificationSettings from "../components/PushNotificationSettings";
 import { acknowledgeBronzeUnlockAction } from "./actions";
+import OnboardingInstallStep from "./OnboardingInstallStep";
 
 function evidenceFlag(value: unknown, key: string) {
   if (!value || typeof value !== "object" || Array.isArray(value)) return false;
@@ -69,22 +71,30 @@ export function RewardsOnboardingActivation({
   onboarding,
   upcomingClass,
   timeZone,
+  studioId,
+  studioName,
 }: {
   onboarding: StudentRewardOnboarding;
   upcomingClass: StudentUpcomingClass | null;
   timeZone: string;
+  studioId: string;
+  studioName: string;
 }) {
   const documentsComplete = Boolean(onboarding.documents_completed_at);
   const profileComplete = Boolean(onboarding.profile_completed_at);
+  const appInstalled = Boolean(onboarding.app_installed_at);
+  const notificationsComplete = Boolean(onboarding.notifications_enabled_at);
   const reservationComplete = Boolean(onboarding.first_reservation_at);
   const attendanceComplete = Boolean(onboarding.first_attendance_at);
   const completed = [
     documentsComplete,
     profileComplete,
+    appInstalled,
+    notificationsComplete,
     reservationComplete,
     attendanceComplete,
   ].filter(Boolean).length;
-  const percent = completed * 25;
+  const percent = Math.round((completed / 6) * 100);
 
   const emailReady = evidenceFlag(onboarding.profile_evidence, "email");
   const avatarReady = evidenceFlag(onboarding.profile_evidence, "avatar");
@@ -106,7 +116,7 @@ export function RewardsOnboardingActivation({
 
       <section className="rounded-[28px] border border-fuchsia-500/30 bg-[radial-gradient(circle_at_85%_0%,rgba(236,72,153,0.18),transparent_34%),linear-gradient(135deg,rgba(255,255,255,0.045),rgba(255,255,255,0.015))] p-4 shadow-[0_0_32px_rgba(236,72,153,0.07)] sm:p-5">
         <div className="flex items-center justify-between gap-3">
-          <strong className="text-sm text-white">{completed} de 4 completados</strong>
+          <strong className="text-sm text-white">{completed} de 6 completados</strong>
           <span className="text-xs font-semibold text-fuchsia-300">{percent}%</span>
         </div>
         <div
@@ -166,6 +176,38 @@ export function RewardsOnboardingActivation({
             }
             href="/student/perfil?edit=1"
           />
+          <StepRow
+            complete={appInstalled}
+            title="Guarda la app en tu pantalla de inicio"
+            detail={
+              appInstalled
+                ? "Listo"
+                : `Instala ${studioName} y ábrela desde el nuevo icono`
+            }
+          />
+          {!appInstalled ? (
+            <OnboardingInstallStep complete={appInstalled} studioName={studioName} />
+          ) : null}
+
+          <StepRow
+            complete={notificationsComplete}
+            title="Activa las notificaciones"
+            detail={
+              notificationsComplete
+                ? "Listo"
+                : appInstalled
+                  ? "Permite Push para recibir avisos importantes"
+                  : "Primero guarda y abre la app"
+            }
+          />
+          {appInstalled && !notificationsComplete ? (
+            <PushNotificationSettings
+              studioId={studioId}
+              studioName={studioName}
+              onboardingMode
+            />
+          ) : null}
+
           <StepRow
             complete={reservationComplete}
             title="Reserva tu primera clase"
