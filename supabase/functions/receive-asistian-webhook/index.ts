@@ -19,6 +19,18 @@ function safeText(value: unknown) {
   return typeof value === "string" && value.trim() ? value.trim() : null;
 }
 
+function safeScalarText(value: unknown) {
+  if (typeof value === "string" && value.trim()) return value.trim();
+  if (typeof value === "number" && Number.isFinite(value)) return String(value);
+  return null;
+}
+
+function asRecord(value: unknown) {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : null;
+}
+
 function signatureParts(value: string | null) {
   const parts = new Map<string, string>();
   for (const rawPart of value?.split(",") ?? []) {
@@ -135,6 +147,16 @@ async function verifyAsistianSignature(
   };
 }
 
+function splitName(fullName: string | null) {
+  const normalized = fullName?.trim().replace(/\s+/g, " ") ?? "";
+  if (!normalized) return { firstName: null, lastName: null };
+  const parts = normalized.split(" ");
+  return {
+    firstName: parts[0] ?? null,
+    lastName: parts.length > 1 ? parts.slice(1).join(" ") : null,
+  };
+}
+
 Deno.serve(async (request) => {
   if (request.method !== "POST") {
     return jsonResponse({ error: "method_not_allowed" }, 405);
@@ -222,44 +244,190 @@ Deno.serve(async (request) => {
     safeText(request.headers.get("x-webhook-timestamp")) ??
     verification.timestamp;
 
-  const { error: insertError } = await supabase.from("asistian_webhook_events").insert({
-    studio_id: studioId,
-    provider_event_id: providerEventId,
-    event_name: eventName,
-    provider_timestamp: providerTimestamp,
-    attempt,
-    payload: body,
-    processing_status: "captured",
-    processing_result: {
-      capture_mode: bodyEventId || headerEventId ? "provider_event_id" : "signed_synthetic_id",
-      signature_scheme: verification.scheme,
-      header_event: headerEventName,
-      header_event_id: headerEventId,
-      header_timestamp: safeText(request.headers.get("x-webhook-timestamp")),
-      header_attempt: attemptRaw,
-    },
-  });
+  const captureMetadata = {
+    capture_mode: bodyEventId || headerEventId ? "provider_event_id" : "signed_synthetic_id",
+    signature_scheme: verification.scheme,
+    header_event: headerEventName,
+    header_event_id: headerEventId,
+    header_timestamp: safeText(request.headers.get("x-webhook-timestamp")),
+    header_attempt: attemptRaw,
+  };
+
+  let eventRowId: string | null = null;
+  let existingStatus: string | null = null;
+
+  const { data: insertedEvent, error: insertError } = await supabase
+    .from("asistian_webhook_events")
+    .insert({
+      studio_id: studioId,
+      provider_event_id: providerEventId,
+      event_name: eventName,
+      provider_timestamp: providerTimestamp,
+      attempt,
+      payload: body,
+      processing_status: "captured",
+      processing_result: captureMetadata,
+    })
+    .select("id,processing_status")
+    .maybeSingle();
 
   if (insertError?.code === "23505") {
+    const { data: existingEvent, error: existingEventError } = await supabase
+      .from("asistian_webhook_events")
+      .select("id,processing_status")
+      .eq("studio_id", studioId)
+      .eq("provider_event_id", providerEventId)
+      .maybeSingle();
+
+    if (existingEventError || !existingEvent) {
+      return jsonResponse({ error: "capture_lookup_failed" }, 500);
+    }
+
+    eventRowId = existingEvent.id;
+    existingStatus = existingEvent.processing_status;
+
+    if (existingStatus === "processed" || existingStatus === "ignored") {
+      return jsonResponse({
+        ok: true,
+        accepted: true,
+        duplicate: true,
+        event_id: providerEventId,
+        outcome: existingStatus,
+      });
+    }
+  } else if (insertError) {
+    return jsonResponse({ error: "capture_failed" }, 500);
+  } else {
+    eventRowId = insertedEvent?.id ?? null;
+    existingStatus = insertedEvent?.processing_status ?? null;
+  }
+
+  if (!eventRowId) {
+    return jsonResponse({ error: "capture_identity_failed" }, 500);
+  }
+
+  const markEvent = async (
+    processingStatus: "processed" | "ignored" | "error",
+    syncResult: Record<string, unknown>,
+  ) => {
+    await supabase
+      .from("asistian_webhook_events")
+      .update({
+        processing_status: processingStatus,
+        processing_result: {
+          ...captureMetadata,
+          sync: syncResult,
+        },
+        processed_at: new Date().toISOString(),
+      })
+      .eq("id", eventRowId);
+  };
+
+  const context = asRecord(body.data) ?? (body as Record<string, unknown>);
+
+  if (asRecord(body.data)?.test === true) {
+    await markEvent("ignored", { ok: true, reason_code: "test_webhook" });
     return jsonResponse({
       ok: true,
       accepted: true,
-      duplicate: true,
+      duplicate: existingStatus !== null,
       event_id: providerEventId,
-    });
+      outcome: "test_ignored",
+    }, 202);
   }
 
-  if (insertError) {
-    return jsonResponse({ error: "capture_failed" }, 500);
-  }
-
-  return jsonResponse(
-    {
+  if (eventName !== "booking_created") {
+    await markEvent("ignored", { ok: true, reason_code: "unsupported_event" });
+    return jsonResponse({
       ok: true,
       accepted: true,
-      duplicate: false,
       event_id: providerEventId,
+      outcome: "unsupported_event",
+    }, 202);
+  }
+
+  const booking = asRecord(context.booking) ?? asRecord(context.events);
+  const client =
+    asRecord(context.client) ??
+    asRecord(context.clients) ??
+    asRecord(context.contact);
+  const service = asRecord(context.service);
+
+  const bookingId = safeScalarText(booking?.id);
+  const clientId = safeScalarText(client?.id);
+  const fullName =
+    safeText(client?.full_name) ??
+    safeText(client?.name) ??
+    safeText(booking?.customer_name);
+  const split = splitName(fullName);
+  const firstName = safeText(client?.first_name) ?? split.firstName;
+  const lastName = safeText(client?.last_name) ?? split.lastName;
+  const phone = safeText(client?.phone) ?? safeText(booking?.customer_phone);
+  const serviceName = safeText(service?.name) ?? safeText(booking?.title);
+  const startsAt = safeText(booking?.start_time);
+
+  if (!bookingId || !firstName || !phone || !serviceName || !startsAt) {
+    const incomplete = {
+      ok: false,
+      reason_code: "booking_context_incomplete",
+      has_booking_id: Boolean(bookingId),
+      has_first_name: Boolean(firstName),
+      has_phone: Boolean(phone),
+      has_service_name: Boolean(serviceName),
+      has_starts_at: Boolean(startsAt),
+    };
+    await markEvent("ignored", incomplete);
+    return jsonResponse({
+      ok: true,
+      accepted: true,
+      event_id: providerEventId,
+      outcome: "booking_context_incomplete",
+    }, 202);
+  }
+
+  const { data: syncData, error: syncError } = await supabase.rpc(
+    "service_sync_asistian_booking",
+    {
+      target_studio_id: studioId,
+      target_source_event_id: eventRowId,
+      target_booking_id: bookingId,
+      target_client_id: clientId,
+      target_first_name: firstName,
+      target_last_name: lastName,
+      target_phone: phone,
+      target_service_name: serviceName,
+      target_starts_at: startsAt,
     },
-    202,
   );
+
+  if (syncError) {
+    await markEvent("error", {
+      ok: false,
+      reason_code: "sync_rpc_failed",
+    });
+    return jsonResponse({ error: "sync_failed" }, 500);
+  }
+
+  const syncResult = asRecord(syncData) ?? { ok: false, reason_code: "sync_result_invalid" };
+
+  if (syncResult.ok === true) {
+    await markEvent("processed", syncResult);
+    return jsonResponse({
+      ok: true,
+      accepted: true,
+      duplicate: existingStatus !== null,
+      event_id: providerEventId,
+      outcome: "synced",
+      reservation_id: syncResult.reservation_id ?? null,
+      student_id: syncResult.student_id ?? null,
+    }, 202);
+  }
+
+  await markEvent("ignored", syncResult);
+  return jsonResponse({
+    ok: true,
+    accepted: true,
+    event_id: providerEventId,
+    outcome: safeText(syncResult.reason_code) ?? "not_synced",
+  }, 202);
 });
