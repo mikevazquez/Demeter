@@ -1,16 +1,10 @@
 export type DocumentStatus = "draft" | "scheduled" | "active" | "superseded" | "retired";
 export type DocumentResponseMode = "accept_required" | "decision_optional" | "informational";
 export type DocumentAcceptanceParty =
-  | "student"
-  | "guardian_if_minor"
-  | "student_and_guardian"
-  | "guardian_only";
+  "student" | "guardian_if_minor" | "student_and_guardian" | "guardian_only";
 export type DocumentAudience = "all" | "adults" | "minors" | "activity" | "event" | "student";
 export type DocumentEnforcement =
-  | "global_booking"
-  | "activity_booking"
-  | "event_registration"
-  | "none";
+  "global_booking" | "activity_booking" | "event_registration" | "none";
 
 export type DocumentCenterItem = {
   document_id: string;

@@ -30,7 +30,10 @@ export default async function StudentDocumentHistoryPage() {
 
   return (
     <main className="space-y-5 pb-6">
-      <Link href="/student/documentos" className="text-sm font-semibold text-zinc-400 hover:text-white">
+      <Link
+        href="/student/documentos"
+        className="text-sm font-semibold text-zinc-400 hover:text-white"
+      >
         ← Mis documentos
       </Link>
 

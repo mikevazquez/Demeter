@@ -21,12 +21,18 @@ const handler = {
 
     const userClient = context.supabase;
     const adminClient = context.supabaseAdmin;
-    const { data: { user }, error: userError } = await userClient.auth.getUser();
+    const {
+      data: { user },
+      error: userError,
+    } = await userClient.auth.getUser();
     if (userError || !user) return json({ error: "unauthenticated" }, 401);
 
     let form: FormData;
-    try { form = await request.formData(); }
-    catch { return json({ error: "invalid_form" }, 400); }
+    try {
+      form = await request.formData();
+    } catch {
+      return json({ error: "invalid_form" }, 400);
+    }
 
     const studioId = String(form.get("studio_id") ?? "").trim();
     const documentId = String(form.get("document_id") ?? "").trim();
@@ -40,20 +46,31 @@ const handler = {
     if (file.size <= 0 || file.size > MAX_BYTES) return json({ error: "file_size_invalid" }, 400);
 
     const { data: membership, error: membershipError } = await userClient
-      .from("studio_memberships").select("role,active")
-      .eq("studio_id", studioId).eq("user_id", user.id).eq("active", true).maybeSingle();
+      .from("studio_memberships")
+      .select("role,active")
+      .eq("studio_id", studioId)
+      .eq("user_id", user.id)
+      .eq("active", true)
+      .maybeSingle();
     if (membershipError) return json({ error: "authorization_failed" }, 500);
     if (!membership) return json({ error: "forbidden" }, 403);
 
     const { data: capability, error: capabilityError } = await userClient
-      .from("role_capabilities").select("capability_key")
-      .eq("role", membership.role).eq("capability_key", "documents.manage").maybeSingle();
+      .from("role_capabilities")
+      .select("capability_key")
+      .eq("role", membership.role)
+      .eq("capability_key", "documents.manage")
+      .maybeSingle();
     if (capabilityError) return json({ error: "authorization_failed" }, 500);
     if (!capability) return json({ error: "forbidden" }, 403);
 
     const { data: version, error: versionError } = await adminClient
-      .from("document_versions").select("id,document_id,studio_id,status")
-      .eq("id", versionId).eq("document_id", documentId).eq("studio_id", studioId).maybeSingle();
+      .from("document_versions")
+      .select("id,document_id,studio_id,status")
+      .eq("id", versionId)
+      .eq("document_id", documentId)
+      .eq("studio_id", studioId)
+      .maybeSingle();
     if (versionError) return json({ error: "version_lookup_failed" }, 500);
     if (!version) return json({ error: "document_version_not_found" }, 404);
     if (version.status !== "draft") return json({ error: "document_version_not_draft" }, 409);
@@ -70,20 +87,31 @@ const handler = {
       }
     }
 
-    const fileName = cleanFileName(file.name.toLowerCase().endsWith(".pdf") ? file.name : file.name + ".pdf");
-    const objectName = studioId + "/" + documentId + "/" + versionId + "/" + crypto.randomUUID() + "-" + fileName;
+    const fileName = cleanFileName(
+      file.name.toLowerCase().endsWith(".pdf") ? file.name : file.name + ".pdf",
+    );
+    const objectName =
+      studioId + "/" + documentId + "/" + versionId + "/" + crypto.randomUUID() + "-" + fileName;
     const bytes = new Uint8Array(await file.arrayBuffer());
 
     const { data: upload, error: uploadError } = await adminClient.storage
-      .from(BUCKET).upload(objectName, bytes, { contentType: "application/pdf", upsert: false });
+      .from(BUCKET)
+      .upload(objectName, bytes, { contentType: "application/pdf", upsert: false });
     if (uploadError || !upload?.path) return json({ error: "upload_failed" }, 500);
 
     const digest = await crypto.subtle.digest("SHA-256", bytes);
-    const hash = Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
+    const hash = Array.from(new Uint8Array(digest), (byte) =>
+      byte.toString(16).padStart(2, "0"),
+    ).join("");
 
     return json({
-      ok: true, bucket: BUCKET, path: upload.path, fileName,
-      mimeType: "application/pdf", size: file.size, sha256: hash,
+      ok: true,
+      bucket: BUCKET,
+      path: upload.path,
+      fileName,
+      mimeType: "application/pdf",
+      size: file.size,
+      sha256: hash,
     });
   }),
 };

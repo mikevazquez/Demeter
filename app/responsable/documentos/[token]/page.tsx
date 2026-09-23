@@ -65,16 +65,21 @@ export default async function GuardianInvitationPage({
             {invitation.student.full_name}
           </h2>
           <p className="mt-1 text-center text-sm text-zinc-500">
-            {invitation.items?.length ?? 0} documento{(invitation.items?.length ?? 0) === 1 ? "" : "s"} por revisar
+            {invitation.items?.length ?? 0} documento
+            {(invitation.items?.length ?? 0) === 1 ? "" : "s"} por revisar
           </p>
 
           <div className="mt-6 grid gap-3">
             <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
               <p className="text-[10px] uppercase tracking-[0.14em] text-zinc-600">Responsable</p>
-              <p className="mt-1 text-sm font-semibold text-white">{invitation.guardian.full_name}</p>
+              <p className="mt-1 text-sm font-semibold text-white">
+                {invitation.guardian.full_name}
+              </p>
             </div>
             <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
-              <p className="text-[10px] uppercase tracking-[0.14em] text-zinc-600">Relación declarada</p>
+              <p className="text-[10px] uppercase tracking-[0.14em] text-zinc-600">
+                Relación declarada
+              </p>
               <p className="mt-1 text-sm font-semibold text-white">
                 {invitation.guardian.relationship_detail || invitation.guardian.relationship}
               </p>

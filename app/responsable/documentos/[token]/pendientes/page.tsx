@@ -106,7 +106,10 @@ export default async function GuardianPendingDocumentsPage({
             </div>
             <div className="divide-y divide-white/10">
               {completed.map((item) => (
-                <div key={item.version_id} className="flex items-center justify-between gap-3 px-5 py-4">
+                <div
+                  key={item.version_id}
+                  className="flex items-center justify-between gap-3 px-5 py-4"
+                >
                   <div>
                     <p className="text-sm font-semibold text-white">{item.name}</p>
                     <p className="mt-1 text-xs text-zinc-500">v{item.version_number}</p>

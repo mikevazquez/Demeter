@@ -17,7 +17,9 @@ export default async function StudentGuardianPage({
   const [{ data: guardians }, { data: invitations }] = await Promise.all([
     supabase
       .from("student_guardians")
-      .select("id,full_name,email,phone,relationship,relationship_detail,verified_at,active,created_at")
+      .select(
+        "id,full_name,email,phone,relationship,relationship_detail,verified_at,active,created_at",
+      )
       .eq("studio_id", membership.studio_id)
       .eq("student_id", studentId)
       .eq("active", true)
@@ -41,7 +43,10 @@ export default async function StudentGuardianPage({
 
   return (
     <main className="mx-auto max-w-2xl space-y-5 pb-6">
-      <Link href="/student/documentos" className="text-sm font-semibold text-zinc-400 hover:text-white">
+      <Link
+        href="/student/documentos"
+        className="text-sm font-semibold text-zinc-400 hover:text-white"
+      >
         ← Mis documentos
       </Link>
 
@@ -72,7 +77,8 @@ export default async function StudentGuardianPage({
         <section className="rounded-3xl border border-emerald-400/20 bg-emerald-400/[0.05] p-5">
           <p className="text-sm font-semibold text-emerald-200">Invitación creada</p>
           <p className="mt-1 text-xs leading-5 text-emerald-100/65">
-            Comparte este enlace únicamente con tu responsable. Vence después del periodo configurado.
+            Comparte este enlace únicamente con tu responsable. Vence después del periodo
+            configurado.
           </p>
           <div className="mt-4 break-all rounded-2xl border border-white/10 bg-black/20 p-3 text-xs text-zinc-300">
             {invitationUrl}
@@ -94,18 +100,26 @@ export default async function StudentGuardianPage({
             Responsable actual
           </p>
           {guardians.map((guardian) => (
-            <div key={guardian.id} className="mt-4 rounded-2xl border border-white/10 bg-black/20 p-4">
+            <div
+              key={guardian.id}
+              className="mt-4 rounded-2xl border border-white/10 bg-black/20 p-4"
+            >
               <p className="text-base font-semibold text-white">{guardian.full_name}</p>
               <p className="mt-1 text-xs text-zinc-500">
                 {guardian.relationship_detail || guardian.relationship}
               </p>
-              <p className="mt-2 text-xs text-zinc-500">{guardian.email || guardian.phone || "Sin contacto"}</p>
+              <p className="mt-2 text-xs text-zinc-500">
+                {guardian.email || guardian.phone || "Sin contacto"}
+              </p>
             </div>
           ))}
         </section>
       ) : null}
 
-      <form action={registerGuardianAction} className="rounded-3xl border border-fuchsia-500/20 bg-[#0d0f16] p-5">
+      <form
+        action={registerGuardianAction}
+        className="rounded-3xl border border-fuchsia-500/20 bg-[#0d0f16] p-5"
+      >
         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-fuchsia-300">
           Crear / reemplazar invitación
         </p>
@@ -158,15 +172,22 @@ export default async function StudentGuardianPage({
           </p>
           <div className="mt-3 space-y-2">
             {invitations.map((invite) => (
-              <div key={invite.id} className="flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-black/20 p-3">
+              <div
+                key={invite.id}
+                className="flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-black/20 p-3"
+              >
                 <div>
-                  <p className="text-sm font-semibold text-white">{invite.destination_hint || "Invitación"}</p>
+                  <p className="text-sm font-semibold text-white">
+                    {invite.destination_hint || "Invitación"}
+                  </p>
                   <p className="mt-1 text-xs text-zinc-600">
                     {invite.completed_at ? "Completada" : invite.status}
                   </p>
                 </div>
                 <span className="text-xs text-zinc-500">
-                  {new Intl.DateTimeFormat("es-MX", { dateStyle: "medium" }).format(new Date(invite.sent_at))}
+                  {new Intl.DateTimeFormat("es-MX", { dateStyle: "medium" }).format(
+                    new Date(invite.sent_at),
+                  )}
                 </span>
               </div>
             ))}

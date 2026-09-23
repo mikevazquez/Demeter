@@ -93,7 +93,13 @@ export async function saveDocumentDraftAction(formData: FormData) {
 
   const audience = text(formData, "audience_scope") || "all";
   const targetType =
-    audience === "activity" ? "activity" : audience === "event" ? "event" : audience === "student" ? "student" : null;
+    audience === "activity"
+      ? "activity"
+      : audience === "event"
+        ? "event"
+        : audience === "student"
+          ? "student"
+          : null;
   const targets = targetType
     ? formData
         .getAll("target_id")
@@ -104,7 +110,9 @@ export async function saveDocumentDraftAction(formData: FormData) {
     : [];
 
   const effectiveValue = text(formData, "effective_at");
-  const effectiveAt = effectiveValue ? new Date(effectiveValue).toISOString() : new Date().toISOString();
+  const effectiveAt = effectiveValue
+    ? new Date(effectiveValue).toISOString()
+    : new Date().toISOString();
 
   const { error } = await supabase.rpc("admin_update_document_draft", {
     p_version_id: versionId,
@@ -140,7 +148,11 @@ export async function saveDocumentDraftAction(formData: FormData) {
   revalidatePath("/admin/documentos");
   revalidatePath(documentRoute(documentId));
   const intent = text(formData, "intent");
-  redirect(intent === "review" ? documentRoute(documentId, "/revisar") : documentRoute(documentId, "/editar?saved=1"));
+  redirect(
+    intent === "review"
+      ? documentRoute(documentId, "/revisar")
+      : documentRoute(documentId, "/editar?saved=1"),
+  );
 }
 
 export async function publishDocumentAction(formData: FormData) {
@@ -214,7 +226,6 @@ export async function invalidateAcceptanceAction(formData: FormData) {
   revalidatePath("/student/documentos");
   redirect(`/admin/documentos/aceptaciones/${acceptanceId}?invalidated=1`);
 }
-
 
 export async function recordExternalAcceptanceAction(formData: FormData) {
   const { supabase } = await getAdminContext(CAPABILITIES.DOCUMENTS_MANAGE);

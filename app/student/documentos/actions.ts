@@ -80,7 +80,5 @@ export async function registerGuardianAction(formData: FormData) {
   }
 
   revalidateDocumentSurfaces();
-  redirect(
-    `/student/documentos/responsable?created=1&token=${encodeURIComponent(result.token)}`,
-  );
+  redirect(`/student/documentos/responsable?created=1&token=${encodeURIComponent(result.token)}`);
 }

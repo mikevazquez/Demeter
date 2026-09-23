@@ -12,10 +12,7 @@ import {
   responseModeLabels,
 } from "@/lib/documents";
 
-import {
-  createDocumentVersionAction,
-  retireDocumentVersionAction,
-} from "../actions";
+import { createDocumentVersionAction, retireDocumentVersionAction } from "../actions";
 
 export default async function DocumentDetailPage({
   params,
@@ -81,12 +78,19 @@ export default async function DocumentDetailPage({
 
   return (
     <main className="dashboard-shell space-y-5">
-      <Link href="/admin/documentos" className="text-sm font-semibold text-zinc-400 hover:text-white">
+      <Link
+        href="/admin/documentos"
+        className="text-sm font-semibold text-zinc-400 hover:text-white"
+      >
         ← Documentos
       </Link>
 
-      {query.published ? <div className="notice success">Versión publicada correctamente.</div> : null}
-      {query.retired ? <div className="notice success">Versión retirada sin borrar su historial.</div> : null}
+      {query.published ? (
+        <div className="notice success">Versión publicada correctamente.</div>
+      ) : null}
+      {query.retired ? (
+        <div className="notice success">Versión retirada sin borrar su historial.</div>
+      ) : null}
       {query.error ? <div className="notice error">No pudimos completar esa acción.</div> : null}
 
       <header className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
@@ -103,7 +107,10 @@ export default async function DocumentDetailPage({
         </div>
         <div className="flex flex-wrap gap-2">
           {current.status === "draft" ? (
-            <Link href={`/admin/documentos/${document.id}/editar`} className="rounded-2xl bg-fuchsia-600 px-5 py-3 text-sm font-semibold text-white">
+            <Link
+              href={`/admin/documentos/${document.id}/editar`}
+              className="rounded-2xl bg-fuchsia-600 px-5 py-3 text-sm font-semibold text-white"
+            >
               Continuar borrador
             </Link>
           ) : can(CAPABILITIES.DOCUMENTS_MANAGE) ? (
@@ -118,37 +125,87 @@ export default async function DocumentDetailPage({
       </header>
 
       <nav className="flex flex-wrap gap-2 rounded-2xl border border-white/10 bg-white/[0.025] p-2 text-sm">
-        <span className="rounded-xl bg-fuchsia-600/20 px-4 py-2 font-semibold text-fuchsia-200">Resumen</span>
-        <Link href={`/admin/documentos/${document.id}/versiones`} className="rounded-xl px-4 py-2 text-zinc-400 hover:text-white">Versiones</Link>
-        <Link href={`/admin/documentos/${document.id}/aceptaciones`} className="rounded-xl px-4 py-2 text-zinc-400 hover:text-white">Aceptaciones</Link>
-        <Link href="/admin/documentos/incidencias" className="rounded-xl px-4 py-2 text-zinc-400 hover:text-white">Incidencias</Link>
+        <span className="rounded-xl bg-fuchsia-600/20 px-4 py-2 font-semibold text-fuchsia-200">
+          Resumen
+        </span>
+        <Link
+          href={`/admin/documentos/${document.id}/versiones`}
+          className="rounded-xl px-4 py-2 text-zinc-400 hover:text-white"
+        >
+          Versiones
+        </Link>
+        <Link
+          href={`/admin/documentos/${document.id}/aceptaciones`}
+          className="rounded-xl px-4 py-2 text-zinc-400 hover:text-white"
+        >
+          Aceptaciones
+        </Link>
+        <Link
+          href="/admin/documentos/incidencias"
+          className="rounded-xl px-4 py-2 text-zinc-400 hover:text-white"
+        >
+          Incidencias
+        </Link>
       </nav>
 
       <section className="grid gap-4 xl:grid-cols-3">
         <div className="rounded-3xl border border-white/10 bg-[#0d0f16] p-5">
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-fuchsia-300">Estado actual</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-fuchsia-300">
+            Estado actual
+          </p>
           <p className="mt-3 text-2xl font-semibold text-white">v{current.version_number}</p>
           <dl className="mt-4 space-y-3 text-sm">
-            <div><dt className="text-zinc-500">Respuesta</dt><dd className="mt-1 text-zinc-200">{responseModeLabels[current.response_mode]}</dd></div>
-            <div><dt className="text-zinc-500">Aceptante</dt><dd className="mt-1 text-zinc-200">{acceptancePartyLabels[current.acceptance_party]}</dd></div>
-            <div><dt className="text-zinc-500">Aplicación</dt><dd className="mt-1 text-zinc-200">{audienceLabels[current.audience_scope]}</dd></div>
-            <div><dt className="text-zinc-500">Exigencia</dt><dd className="mt-1 text-zinc-200">{enforcementLabels[current.enforcement_scope]}</dd></div>
+            <div>
+              <dt className="text-zinc-500">Respuesta</dt>
+              <dd className="mt-1 text-zinc-200">{responseModeLabels[current.response_mode]}</dd>
+            </div>
+            <div>
+              <dt className="text-zinc-500">Aceptante</dt>
+              <dd className="mt-1 text-zinc-200">
+                {acceptancePartyLabels[current.acceptance_party]}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-zinc-500">Aplicación</dt>
+              <dd className="mt-1 text-zinc-200">{audienceLabels[current.audience_scope]}</dd>
+            </div>
+            <div>
+              <dt className="text-zinc-500">Exigencia</dt>
+              <dd className="mt-1 text-zinc-200">{enforcementLabels[current.enforcement_scope]}</dd>
+            </div>
           </dl>
         </div>
 
         <div className="rounded-3xl border border-emerald-400/20 bg-[#0d0f16] p-5">
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-300">Aceptación</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-300">
+            Aceptación
+          </p>
           <p className="mt-3 text-4xl font-semibold text-white">{percent}%</p>
-          <p className="mt-1 text-sm text-zinc-500">{accepted} de {tracking.length} completadas</p>
+          <p className="mt-1 text-sm text-zinc-500">
+            {accepted} de {tracking.length} completadas
+          </p>
           <div className="mt-5 grid grid-cols-2 gap-3">
-            <div className="rounded-2xl border border-white/10 bg-black/20 p-3"><strong className="text-lg text-white">{accepted}</strong><p className="text-xs text-zinc-500">Aceptadas</p></div>
-            <div className="rounded-2xl border border-white/10 bg-black/20 p-3"><strong className="text-lg text-white">{pending}</strong><p className="text-xs text-zinc-500">Pendientes</p></div>
+            <div className="rounded-2xl border border-white/10 bg-black/20 p-3">
+              <strong className="text-lg text-white">{accepted}</strong>
+              <p className="text-xs text-zinc-500">Aceptadas</p>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-black/20 p-3">
+              <strong className="text-lg text-white">{pending}</strong>
+              <p className="text-xs text-zinc-500">Pendientes</p>
+            </div>
           </div>
-          <Link href={`/admin/documentos/${document.id}/aceptaciones`} className="mt-4 inline-flex text-sm font-semibold text-fuchsia-300">Ver seguimiento →</Link>
+          <Link
+            href={`/admin/documentos/${document.id}/aceptaciones`}
+            className="mt-4 inline-flex text-sm font-semibold text-fuchsia-300"
+          >
+            Ver seguimiento →
+          </Link>
         </div>
 
         <div className="rounded-3xl border border-fuchsia-400/20 bg-[#0d0f16] p-5">
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-fuchsia-300">Elegibilidad</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-fuchsia-300">
+            Elegibilidad
+          </p>
           <p className="mt-3 text-4xl font-semibold text-white">{blocked}</p>
           <p className="mt-1 text-sm text-zinc-500">personas restringidas por esta versión</p>
           <div className="mt-4 rounded-2xl border border-cyan-400/20 bg-cyan-400/[0.05] p-4 text-xs leading-5 text-cyan-100/70">
@@ -159,39 +216,65 @@ export default async function DocumentDetailPage({
 
       <section className="grid gap-4 xl:grid-cols-[1fr_.8fr]">
         <div className="rounded-3xl border border-white/10 bg-[#0d0f16] p-5">
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-fuchsia-300">Archivo actual</p>
-          <h2 className="mt-3 text-lg font-semibold text-white">{current.file_name || "Sin archivo"}</h2>
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-fuchsia-300">
+            Archivo actual
+          </p>
+          <h2 className="mt-3 text-lg font-semibold text-white">
+            {current.file_name || "Sin archivo"}
+          </h2>
           <p className="mt-1 text-xs text-zinc-500">{formatFileSize(current.file_size_bytes)}</p>
           {signedUrl ? (
-            <a href={signedUrl} target="_blank" rel="noreferrer" className="mt-4 inline-flex rounded-xl border border-white/15 px-4 py-2 text-sm font-semibold text-white">
+            <a
+              href={signedUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="mt-4 inline-flex rounded-xl border border-white/15 px-4 py-2 text-sm font-semibold text-white"
+            >
               Ver documento
             </a>
           ) : null}
         </div>
 
         <div className="rounded-3xl border border-white/10 bg-[#0d0f16] p-5">
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-fuchsia-300">Incidencias recientes</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-fuchsia-300">
+            Incidencias recientes
+          </p>
           <div className="mt-3 space-y-2">
-            {(incidents ?? []).length ? incidents?.map((item) => (
-              <div key={item.id} className="rounded-2xl border border-white/10 bg-black/20 p-3">
-                <div className="flex items-center justify-between gap-2">
-                  <strong className="text-sm text-white">{item.incident_type.replaceAll("_"," ")}</strong>
-                  <span className="text-xs text-zinc-500">{item.status}</span>
+            {(incidents ?? []).length ? (
+              incidents?.map((item) => (
+                <div key={item.id} className="rounded-2xl border border-white/10 bg-black/20 p-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <strong className="text-sm text-white">
+                      {item.incident_type.replaceAll("_", " ")}
+                    </strong>
+                    <span className="text-xs text-zinc-500">{item.status}</span>
+                  </div>
+                  <p className="mt-1 text-xs text-zinc-500">{item.reason}</p>
                 </div>
-                <p className="mt-1 text-xs text-zinc-500">{item.reason}</p>
-              </div>
-            )) : <p className="text-sm text-zinc-500">Sin incidencias en esta versión.</p>}
+              ))
+            ) : (
+              <p className="text-sm text-zinc-500">Sin incidencias en esta versión.</p>
+            )}
           </div>
         </div>
       </section>
 
-      {can(CAPABILITIES.DOCUMENTS_MANAGE) && current.status !== "draft" && current.status !== "retired" ? (
-        <form action={retireDocumentVersionAction} className="rounded-3xl border border-rose-400/15 bg-rose-400/[0.025] p-5">
+      {can(CAPABILITIES.DOCUMENTS_MANAGE) &&
+      current.status !== "draft" &&
+      current.status !== "retired" ? (
+        <form
+          action={retireDocumentVersionAction}
+          className="rounded-3xl border border-rose-400/15 bg-rose-400/[0.025] p-5"
+        >
           <input type="hidden" name="document_id" value={document.id} />
           <input type="hidden" name="version_id" value={current.id} />
           <label className="block max-w-xl">
             <span className="mb-2 block text-sm font-semibold text-white">Retirar versión</span>
-            <input name="reason" placeholder="Motivo administrativo" className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white" />
+            <input
+              name="reason"
+              placeholder="Motivo administrativo"
+              className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white"
+            />
           </label>
           <button className="mt-3 rounded-xl border border-rose-400/25 px-4 py-2 text-sm font-semibold text-rose-200">
             Retirar sin borrar historial

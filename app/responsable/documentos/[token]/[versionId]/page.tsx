@@ -52,7 +52,7 @@ export default async function GuardianDocumentPage({
     { body: { token, versionId } },
   );
   const access = accessData as { ok?: boolean; signedUrl?: string; fileName?: string } | null;
-  const signedUrl = !accessError && access?.ok ? access.signedUrl ?? null : null;
+  const signedUrl = !accessError && access?.ok ? (access.signedUrl ?? null) : null;
 
   return (
     <main className="min-h-screen bg-[#090a0f] px-4 py-8 text-white sm:px-6">
@@ -70,8 +70,8 @@ export default async function GuardianDocumentPage({
           </p>
           <h1 className="mt-2 text-2xl font-semibold sm:text-3xl">{item.name}</h1>
           <p className="mt-2 text-sm leading-6 text-zinc-400">
-            Actúas como responsable de {invitation.student.full_name}. Revisa esta versión completa antes
-            de registrar tu respuesta.
+            Actúas como responsable de {invitation.student.full_name}. Revisa esta versión completa
+            antes de registrar tu respuesta.
           </p>
         </header>
 
@@ -85,7 +85,9 @@ export default async function GuardianDocumentPage({
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 px-5 py-4">
             <div>
               <p className="text-sm font-semibold text-white">{item.file_name || item.name}</p>
-              <p className="mt-1 text-xs text-zinc-500">Versión {item.version_number} · acceso temporal</p>
+              <p className="mt-1 text-xs text-zinc-500">
+                Versión {item.version_number} · acceso temporal
+              </p>
             </div>
             {signedUrl ? (
               <a
@@ -99,7 +101,11 @@ export default async function GuardianDocumentPage({
             ) : null}
           </div>
           {signedUrl ? (
-            <iframe title={item.name} src={signedUrl} className="h-[65vh] min-h-[520px] w-full bg-white" />
+            <iframe
+              title={item.name}
+              src={signedUrl}
+              className="h-[65vh] min-h-[520px] w-full bg-white"
+            />
           ) : (
             <div className="px-6 py-16 text-center text-sm text-zinc-500">
               No pudimos abrir el archivo de esta invitación.
@@ -111,7 +117,9 @@ export default async function GuardianDocumentPage({
           <section className="rounded-3xl border border-fuchsia-500/25 bg-[#0d0f16] p-5">
             <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
               <p className="text-[10px] uppercase tracking-[0.14em] text-zinc-600">Responsable</p>
-              <p className="mt-1 text-sm font-semibold text-white">{invitation.guardian.full_name}</p>
+              <p className="mt-1 text-sm font-semibold text-white">
+                {invitation.guardian.full_name}
+              </p>
               <p className="mt-1 text-xs text-zinc-500">
                 {invitation.guardian.relationship_detail || invitation.guardian.relationship}
               </p>
@@ -135,8 +143,8 @@ export default async function GuardianDocumentPage({
                   required
                   className="mt-1 accent-fuchsia-500"
                 />
-                Confirmo que leí esta versión completa y que registro personalmente esta decisión como
-                responsable de la alumna.
+                Confirmo que leí esta versión completa y que registro personalmente esta decisión
+                como responsable de la alumna.
               </label>
 
               {item.response_mode === "decision_optional" ? (

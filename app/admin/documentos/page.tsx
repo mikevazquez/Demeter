@@ -36,16 +36,20 @@ export default async function AdminDocumentsPage() {
   type VersionRow = NonNullable<typeof versions>[number];
   const latestByDocument = new Map<string, VersionRow>();
   for (const version of versions ?? []) {
-    if (!latestByDocument.has(version.document_id)) latestByDocument.set(version.document_id, version);
+    if (!latestByDocument.has(version.document_id))
+      latestByDocument.set(version.document_id, version);
   }
   const acceptanceCount = new Map<string, number>();
   for (const acceptance of acceptances ?? []) {
-    acceptanceCount.set(acceptance.version_id, (acceptanceCount.get(acceptance.version_id) ?? 0) + 1);
+    acceptanceCount.set(
+      acceptance.version_id,
+      (acceptanceCount.get(acceptance.version_id) ?? 0) + 1,
+    );
   }
 
   const rows = (documents ?? []).map((document) => {
     const version = latestByDocument.get(document.id);
-    return { document, version, accepted: version ? acceptanceCount.get(version.id) ?? 0 : 0 };
+    return { document, version, accepted: version ? (acceptanceCount.get(version.id) ?? 0) : 0 };
   });
 
   const active = rows.filter((row) => row.version?.status === "active").length;
@@ -79,8 +83,13 @@ export default async function AdminDocumentsPage() {
           ["Programados", scheduled, "Entrarán en vigor después"],
           ["Borradores", drafts, "Todavía no afectan a alumnas"],
         ].map(([label, value, copy]) => (
-          <div key={String(label)} className="rounded-3xl border border-white/10 bg-white/[0.03] p-5">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-zinc-500">{label}</p>
+          <div
+            key={String(label)}
+            className="rounded-3xl border border-white/10 bg-white/[0.03] p-5"
+          >
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-zinc-500">
+              {label}
+            </p>
             <p className="mt-2 text-3xl font-semibold text-white">{value}</p>
             <p className="mt-1 text-xs text-zinc-500">{copy}</p>
           </div>
@@ -121,20 +130,28 @@ export default async function AdminDocumentsPage() {
                 <div>
                   <p className="text-[10px] uppercase tracking-[0.12em] text-zinc-600">Estado</p>
                   <p className="mt-1 text-sm font-semibold text-emerald-300">
-                    {version ? documentStatusLabels[version.status] ?? version.status : "Sin versión"}
+                    {version
+                      ? (documentStatusLabels[version.status] ?? version.status)
+                      : "Sin versión"}
                   </p>
                 </div>
                 <div>
-                  <p className="text-[10px] uppercase tracking-[0.12em] text-zinc-600">Aceptaciones</p>
+                  <p className="text-[10px] uppercase tracking-[0.12em] text-zinc-600">
+                    Aceptaciones
+                  </p>
                   <p className="mt-1 text-sm font-semibold text-zinc-200">{accepted}</p>
                 </div>
-                <span className="text-xl text-fuchsia-300" aria-hidden="true">›</span>
+                <span className="text-xl text-fuchsia-300" aria-hidden="true">
+                  ›
+                </span>
               </Link>
             ))}
           </div>
         ) : (
           <div className="px-6 py-14 text-center">
-            <p className="text-lg font-semibold text-white">Aún no tienes documentos configurados</p>
+            <p className="text-lg font-semibold text-white">
+              Aún no tienes documentos configurados
+            </p>
             <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-zinc-500">
               Crea el primer documento para empezar a gestionar responsivas, reglamentos y
               consentimientos desde Studio Flow.

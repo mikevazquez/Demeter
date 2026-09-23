@@ -44,8 +44,12 @@ export default async function GuardianConfirmationPage({
           </p>
 
           <div className="mt-6 rounded-2xl border border-white/10 bg-black/20 p-4 text-left">
-            <p className="text-[10px] uppercase tracking-[0.14em] text-zinc-600">Pendientes restantes</p>
-            <p className="mt-1 text-2xl font-semibold text-white">{Number.isFinite(remaining) ? remaining : 0}</p>
+            <p className="text-[10px] uppercase tracking-[0.14em] text-zinc-600">
+              Pendientes restantes
+            </p>
+            <p className="mt-1 text-2xl font-semibold text-white">
+              {Number.isFinite(remaining) ? remaining : 0}
+            </p>
           </div>
 
           <Link

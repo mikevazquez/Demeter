@@ -69,7 +69,10 @@ export default async function StudentDocumentReadPage({
 
   return (
     <main className="space-y-5 pb-6">
-      <Link href="/student/documentos" className="text-sm font-semibold text-zinc-400 hover:text-white">
+      <Link
+        href="/student/documentos"
+        className="text-sm font-semibold text-zinc-400 hover:text-white"
+      >
         ← Mis documentos
       </Link>
 
@@ -80,7 +83,9 @@ export default async function StudentDocumentReadPage({
           </span>
           <span className="text-xs text-zinc-600">Versión {detail.version_number}</span>
         </div>
-        <h1 className="mt-3 text-2xl font-semibold text-white sm:text-3xl">{detail.document_name}</h1>
+        <h1 className="mt-3 text-2xl font-semibold text-white sm:text-3xl">
+          {detail.document_name}
+        </h1>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-400">
           {detail.description || "Lee el documento completo antes de continuar."}
         </p>
@@ -108,7 +113,9 @@ export default async function StudentDocumentReadPage({
       <section className="overflow-hidden rounded-3xl border border-fuchsia-500/20 bg-[#0d0f16]">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 px-5 py-4">
           <div>
-            <p className="text-sm font-semibold text-white">{detail.file_name || detail.document_name}</p>
+            <p className="text-sm font-semibold text-white">
+              {detail.file_name || detail.document_name}
+            </p>
             <p className="mt-1 text-xs text-zinc-500">
               PDF privado · {formatFileSize(detail.file_size_bytes)}
             </p>
@@ -144,7 +151,9 @@ export default async function StudentDocumentReadPage({
 
         {detail.satisfied ? (
           <div className="mt-3 rounded-2xl border border-emerald-400/20 bg-emerald-400/[0.05] p-4">
-            <p className="text-sm font-semibold text-emerald-200">Este requisito ya está completado.</p>
+            <p className="text-sm font-semibold text-emerald-200">
+              Este requisito ya está completado.
+            </p>
             <p className="mt-1 text-xs leading-5 text-emerald-100/65">
               Puedes consultar esta versión nuevamente desde tu historial.
             </p>
@@ -157,7 +166,8 @@ export default async function StudentDocumentReadPage({
                   Tu responsable también debe completar este documento.
                 </p>
                 <p className="mt-1 text-xs leading-5 text-cyan-100/65">
-                  Tu propia aceptación no sustituye la autorización del responsable cuando ésta es requerida.
+                  Tu propia aceptación no sustituye la autorización del responsable cuando ésta es
+                  requerida.
                 </p>
                 <Link
                   href="/student/documentos/responsable"
@@ -187,7 +197,8 @@ export default async function StudentDocumentReadPage({
               dateStyle: "medium",
               timeZone: studio.timezone,
             }).format(new Date(detail.effective_at))
-          : "la fecha de publicación"}.
+          : "la fecha de publicación"}
+        .
       </p>
     </main>
   );

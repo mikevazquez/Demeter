@@ -61,7 +61,8 @@ export default async function StudentDocumentsPage({
                 {blockers.length === 1 ? "" : "s"}
               </h2>
               <p className="mt-1 text-sm leading-6 text-zinc-400">
-                Hasta resolverlos, algunas acciones —como nuevas reservas— pueden estar restringidas.
+                Hasta resolverlos, algunas acciones —como nuevas reservas— pueden estar
+                restringidas.
               </p>
             </div>
           </div>
@@ -81,7 +82,10 @@ export default async function StudentDocumentsPage({
           ["Completados", completed.length],
           ["Total", items.length],
         ].map(([label, value]) => (
-          <div key={String(label)} className="rounded-3xl border border-white/10 bg-white/[0.03] p-4">
+          <div
+            key={String(label)}
+            className="rounded-3xl border border-white/10 bg-white/[0.03] p-4"
+          >
             <p className="text-2xl font-semibold text-white">{value}</p>
             <p className="mt-1 text-xs text-zinc-500">{label}</p>
           </div>

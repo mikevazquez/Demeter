@@ -58,7 +58,10 @@ export default async function ReviewDocumentPage({
 
   return (
     <main className="dashboard-shell space-y-5">
-      <Link href={`/admin/documentos/${document.id}/editar`} className="text-sm font-semibold text-zinc-400 hover:text-white">
+      <Link
+        href={`/admin/documentos/${document.id}/editar`}
+        className="text-sm font-semibold text-zinc-400 hover:text-white"
+      >
         ← Volver a editar
       </Link>
 
@@ -81,9 +84,13 @@ export default async function ReviewDocumentPage({
       <div className="grid gap-5 xl:grid-cols-[1.15fr_.85fr]">
         <div className="space-y-4">
           <section className="rounded-3xl border border-fuchsia-500/20 bg-[#0d0f16] p-5">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-fuchsia-300">1 · Documento</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-fuchsia-300">
+              1 · Documento
+            </p>
             <h2 className="mt-3 text-xl font-semibold text-white">{document.name}</h2>
-            <p className="mt-1 text-sm text-zinc-500">Versión {version.version_number} · {document.description || "Sin descripción"}</p>
+            <p className="mt-1 text-sm text-zinc-500">
+              Versión {version.version_number} · {document.description || "Sin descripción"}
+            </p>
             <div className="mt-4 rounded-2xl border border-white/10 bg-black/20 p-4 text-sm text-zinc-300">
               {version.file_name ? (
                 <>
@@ -99,16 +106,31 @@ export default async function ReviewDocumentPage({
           </section>
 
           <section className="rounded-3xl border border-fuchsia-500/20 bg-[#0d0f16] p-5">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-fuchsia-300">2 · Configuración</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-fuchsia-300">
+              2 · Configuración
+            </p>
             <dl className="mt-4 grid gap-4 sm:grid-cols-2">
               {[
                 ["Respuesta", responseModeLabels[version.response_mode] ?? version.response_mode],
-                ["Debe aceptar", acceptancePartyLabels[version.acceptance_party] ?? version.acceptance_party],
+                [
+                  "Debe aceptar",
+                  acceptancePartyLabels[version.acceptance_party] ?? version.acceptance_party,
+                ],
                 ["Aplica a", audienceLabels[version.audience_scope] ?? version.audience_scope],
-                ["Se exige", enforcementLabels[version.enforcement_scope] ?? version.enforcement_scope],
-                ["Entrada en vigor", new Intl.DateTimeFormat("es-MX", { dateStyle: "medium", timeStyle: "short", timeZone: studio.timezone }).format(new Date(version.effective_at ?? Date.now()))],
+                [
+                  "Se exige",
+                  enforcementLabels[version.enforcement_scope] ?? version.enforcement_scope,
+                ],
+                [
+                  "Entrada en vigor",
+                  new Intl.DateTimeFormat("es-MX", {
+                    dateStyle: "medium",
+                    timeStyle: "short",
+                    timeZone: studio.timezone,
+                  }).format(new Date(version.effective_at ?? Date.now())),
+                ],
                 ["Nueva aceptación", version.requires_reacceptance ? "Sí" : "No"],
-              ].map(([label,value]) => (
+              ].map(([label, value]) => (
                 <div key={label} className="rounded-2xl border border-white/10 bg-black/20 p-4">
                   <dt className="text-[10px] uppercase tracking-[0.14em] text-zinc-600">{label}</dt>
                   <dd className="mt-1 text-sm font-semibold text-white">{value}</dd>
@@ -120,15 +142,20 @@ export default async function ReviewDocumentPage({
 
         <aside className="space-y-4">
           <section className="rounded-3xl border border-fuchsia-500/25 bg-[#0d0f16] p-5">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-fuchsia-300">Impacto estimado</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-fuchsia-300">
+              Impacto estimado
+            </p>
             <div className="mt-4 grid grid-cols-2 gap-3">
               {[
                 ["Afectadas", impact.total ?? 0],
                 ["Pendientes", impact.pending ?? 0],
                 ["Menores", impact.minors ?? 0],
                 ["Responsable pendiente", impact.guardian_pending ?? 0],
-              ].map(([label,value]) => (
-                <div key={String(label)} className="rounded-2xl border border-white/10 bg-black/20 p-4">
+              ].map(([label, value]) => (
+                <div
+                  key={String(label)}
+                  className="rounded-2xl border border-white/10 bg-black/20 p-4"
+                >
                   <p className="text-2xl font-semibold text-white">{value}</p>
                   <p className="mt-1 text-xs text-zinc-500">{label}</p>
                 </div>
@@ -151,7 +178,10 @@ export default async function ReviewDocumentPage({
             )}
           </section>
 
-          <form action={publishDocumentAction} className="rounded-3xl border border-white/10 bg-[#0d0f16] p-5">
+          <form
+            action={publishDocumentAction}
+            className="rounded-3xl border border-white/10 bg-[#0d0f16] p-5"
+          >
             <input type="hidden" name="document_id" value={document.id} />
             <input type="hidden" name="version_id" value={version.id} />
             <label className="flex items-start gap-3 text-sm leading-6 text-zinc-300">
@@ -159,7 +189,9 @@ export default async function ReviewDocumentPage({
               Confirmo que revisé el contenido, las personas afectadas y las reglas de aplicación.
             </label>
             <button className="mt-5 w-full rounded-2xl bg-fuchsia-600 px-5 py-3 text-sm font-semibold text-white shadow-[0_0_24px_rgba(217,70,239,.22)] hover:bg-fuchsia-500">
-              {new Date(version.effective_at ?? 0) > new Date() ? "Programar publicación" : "Publicar documento"}
+              {new Date(version.effective_at ?? 0) > new Date()
+                ? "Programar publicación"
+                : "Publicar documento"}
             </button>
           </form>
         </aside>

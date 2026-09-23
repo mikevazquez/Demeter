@@ -1,10 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import {
-  acceptancePartyLabels,
-  documentTypeLabels,
-} from "@/lib/documents";
+import { acceptancePartyLabels, documentTypeLabels } from "@/lib/documents";
 import { getStudentPortalContext } from "@/lib/student/portal";
 
 import { acceptStudentDocumentAction } from "../../actions";
@@ -61,7 +58,9 @@ export default async function StudentDocumentConfirmPage({
         <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-fuchsia-300">
           Confirmación de aceptación
         </p>
-        <h1 className="mt-1 text-2xl font-semibold text-white sm:text-3xl">{detail.document_name}</h1>
+        <h1 className="mt-1 text-2xl font-semibold text-white sm:text-3xl">
+          {detail.document_name}
+        </h1>
         <p className="mt-2 text-sm leading-6 text-zinc-400">
           Esta acción queda asociada a tu cuenta y a esta versión exacta del documento.
         </p>

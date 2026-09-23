@@ -22,7 +22,9 @@ export default async function DocumentVersionsPage({
       .maybeSingle(),
     supabase
       .from("document_versions")
-      .select("id,version_number,status,effective_at,published_at,superseded_at,retired_at,file_path,file_name,file_size_bytes,change_summary,created_at")
+      .select(
+        "id,version_number,status,effective_at,published_at,superseded_at,retired_at,file_path,file_name,file_size_bytes,change_summary,created_at",
+      )
       .eq("document_id", documentId)
       .eq("studio_id", studio.id)
       .order("version_number", { ascending: false }),
@@ -55,7 +57,10 @@ export default async function DocumentVersionsPage({
 
   return (
     <main className="dashboard-shell space-y-5">
-      <Link href={`/admin/documentos/${document.id}`} className="text-sm font-semibold text-zinc-400 hover:text-white">
+      <Link
+        href={`/admin/documentos/${document.id}`}
+        className="text-sm font-semibold text-zinc-400 hover:text-white"
+      >
         ← {document.name}
       </Link>
       <header>
@@ -68,41 +73,57 @@ export default async function DocumentVersionsPage({
 
       <section className="space-y-3">
         {versionRows.map(({ version, signedUrl }) => (
-            <article key={version.id} className="rounded-3xl border border-fuchsia-500/20 bg-[#0d0f16] p-5">
-              <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                <div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <h2 className="text-xl font-semibold text-white">v{version.version_number}</h2>
-                    <span className="rounded-full border border-white/10 bg-white/[0.05] px-3 py-1 text-xs font-semibold text-zinc-300">
-                      {documentStatusLabels[version.status] ?? version.status}
-                    </span>
-                  </div>
-                  <p className="mt-2 text-sm text-zinc-400">
-                    {version.change_summary || (version.version_number === 1 ? "Versión inicial." : "Sin resumen de cambios.")}
-                  </p>
-                  <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-xs text-zinc-500">
-                    <span>{counts.get(version.id) ?? 0} aceptaciones</span>
-                    <span>{version.file_name || "Sin archivo"}</span>
-                    <span>{formatFileSize(version.file_size_bytes)}</span>
-                    {version.effective_at ? (
-                      <span>
-                        Vigencia: {new Intl.DateTimeFormat("es-MX", { dateStyle: "medium", timeZone: studio.timezone }).format(new Date(version.effective_at))}
-                      </span>
-                    ) : null}
-                  </div>
+          <article
+            key={version.id}
+            className="rounded-3xl border border-fuchsia-500/20 bg-[#0d0f16] p-5"
+          >
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+              <div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <h2 className="text-xl font-semibold text-white">v{version.version_number}</h2>
+                  <span className="rounded-full border border-white/10 bg-white/[0.05] px-3 py-1 text-xs font-semibold text-zinc-300">
+                    {documentStatusLabels[version.status] ?? version.status}
+                  </span>
                 </div>
-                <div className="flex gap-2">
-                  {signedUrl ? (
-                    <a href={signedUrl} target="_blank" rel="noreferrer" className="rounded-xl border border-white/15 px-4 py-2 text-sm font-semibold text-white">
-                      Ver archivo
-                    </a>
+                <p className="mt-2 text-sm text-zinc-400">
+                  {version.change_summary ||
+                    (version.version_number === 1 ? "Versión inicial." : "Sin resumen de cambios.")}
+                </p>
+                <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-xs text-zinc-500">
+                  <span>{counts.get(version.id) ?? 0} aceptaciones</span>
+                  <span>{version.file_name || "Sin archivo"}</span>
+                  <span>{formatFileSize(version.file_size_bytes)}</span>
+                  {version.effective_at ? (
+                    <span>
+                      Vigencia:{" "}
+                      {new Intl.DateTimeFormat("es-MX", {
+                        dateStyle: "medium",
+                        timeZone: studio.timezone,
+                      }).format(new Date(version.effective_at))}
+                    </span>
                   ) : null}
-                  <Link href={`/admin/documentos/${document.id}/aceptaciones?version=${version.id}`} className="rounded-xl border border-fuchsia-400/25 px-4 py-2 text-sm font-semibold text-fuchsia-200">
-                    Aceptaciones
-                  </Link>
                 </div>
               </div>
-            </article>
+              <div className="flex gap-2">
+                {signedUrl ? (
+                  <a
+                    href={signedUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="rounded-xl border border-white/15 px-4 py-2 text-sm font-semibold text-white"
+                  >
+                    Ver archivo
+                  </a>
+                ) : null}
+                <Link
+                  href={`/admin/documentos/${document.id}/aceptaciones?version=${version.id}`}
+                  className="rounded-xl border border-fuchsia-400/25 px-4 py-2 text-sm font-semibold text-fuchsia-200"
+                >
+                  Aceptaciones
+                </Link>
+              </div>
+            </div>
+          </article>
         ))}
       </section>
 

@@ -42,8 +42,8 @@ export default async function StudentDocumentConfirmationPage({
         </p>
         <h1 className="mt-2 text-2xl font-semibold text-white">{document.document_name}</h1>
         <p className="mt-2 text-sm leading-6 text-zinc-400">
-          Guardamos tu respuesta vinculada a la versión {document.version_number}. Esta evidencia no se
-          modifica aunque el estudio publique una versión nueva después.
+          Guardamos tu respuesta vinculada a la versión {document.version_number}. Esta evidencia no
+          se modifica aunque el estudio publique una versión nueva después.
         </p>
 
         <div className="mt-6 rounded-2xl border border-white/10 bg-black/20 p-4 text-left">
