@@ -115,12 +115,6 @@ export default async function DocumentVersionsPage({
                     Ver archivo
                   </a>
                 ) : null}
-                <Link
-                  href={`/admin/documentos/${document.id}/aceptaciones?version=${version.id}`}
-                  className="rounded-xl border border-fuchsia-400/25 px-4 py-2 text-sm font-semibold text-fuchsia-200"
-                >
-                  Aceptaciones
-                </Link>
               </div>
             </div>
           </article>
