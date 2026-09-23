@@ -1,4 +1,8 @@
+import type { Metadata } from "next";
+import { cache } from "react";
+
 import { signOut } from "@/app/auth/actions";
+import PwaBrandingSync from "@/app/components/PwaBrandingSync";
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { AdminMobileNavigation, AdminNavigation } from "./admin-navigation";
@@ -15,6 +19,62 @@ import "./admin-ux-04-secondary.css";
 import "./admin-ux-04-secondary-detail.css";
 import "./evaluaciones/evaluaciones.css";
 
+type PwaBrand = {
+  name: string;
+  slug: string;
+  primary_color: string;
+  logo_path: string | null;
+};
+
+function pwaBrandQuery(brand: PwaBrand) {
+  return new URLSearchParams({
+    name: brand.name,
+    slug: brand.slug,
+    primary: brand.primary_color,
+    logo: brand.logo_path ?? "",
+    v: "4",
+  }).toString();
+}
+
+const getCachedAdminContext = cache(async () => getAdminContext());
+
+export async function generateMetadata(): Promise<Metadata> {
+  const { studio } = await getCachedAdminContext();
+  const query = pwaBrandQuery(studio);
+
+  return {
+    applicationName: studio.name,
+    title: studio.name,
+    manifest: "/pwa/manifest?" + query,
+    appleWebApp: {
+      capable: true,
+      statusBarStyle: "black-translucent",
+      title: studio.name,
+    },
+    icons: {
+      icon: [
+        {
+          url: "/pwa/studio-icon/192?" + query,
+          sizes: "192x192",
+          type: "image/png",
+        },
+        {
+          url: "/pwa/studio-icon/512?" + query,
+          sizes: "512x512",
+          type: "image/png",
+        },
+      ],
+      apple: [
+        {
+          url: "/pwa/studio-icon/180?" + query,
+          sizes: "180x180",
+          type: "image/png",
+        },
+      ],
+    },
+  };
+}
+
 const roleLabels: Record<string, string> = {
   owner: "Owner",
   admin: "Administración",
@@ -23,7 +83,8 @@ const roleLabels: Record<string, string> = {
 };
 
 export default async function AdminLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  const { supabase, studio, membership, can, user } = await getAdminContext();
+  const { supabase, studio, membership, can, user } = await getCachedAdminContext();
+  const pwaQuery = pwaBrandQuery(studio);
   const instructorOnly = can(CAPABILITIES.INSTRUCTOR_PORTAL) && !can(CAPABILITIES.ADMIN_PORTAL);
   const brandLogoUrl = studio.logo_path
     ? supabase.storage.from("studio-branding").getPublicUrl(studio.logo_path).data.publicUrl
@@ -129,6 +190,11 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
 
   return (
     <div className="admin-shell">
+      <PwaBrandingSync
+        name={studio.name}
+        manifestHref={"/pwa/manifest?" + pwaQuery}
+        appleTouchIconHref={"/pwa/studio-icon/180?" + pwaQuery}
+      />
       <aside className="admin-sidebar" aria-label="Navegación principal">
         <div className="brand-lockup">
           {brandLogoUrl ? (
