@@ -62,29 +62,31 @@ export default function OnboardingInstallStep({
   const [platform, setPlatform] = useState<"ios" | "android" | "other">("other");
 
   useEffect(() => {
-    const ios = isIosDevice();
-    const android = isAndroidDevice();
-    setPlatform(ios ? "ios" : android ? "android" : "other");
+    const timer = window.setTimeout(() => {
+      const ios = isIosDevice();
+      const android = isAndroidDevice();
+      setPlatform(ios ? "ios" : android ? "android" : "other");
 
-    const installed = isStandalone();
-    setStandalone(installed);
+      const installed = isStandalone();
+      setStandalone(installed);
 
-    if (!complete && installed) {
-      void (async () => {
-        try {
-          const supabase = await browserClient();
-          const { error } = await supabase.rpc("student_confirm_reward_app_installation", {
-            p_display_mode: ios ? "ios-standalone" : "standalone",
-            p_platform: platformLabel(),
-          });
+      if (!complete && installed) {
+        void (async () => {
+          try {
+            const supabase = await browserClient();
+            const { error } = await supabase.rpc("student_confirm_reward_app_installation", {
+              p_display_mode: ios ? "ios-standalone" : "standalone",
+              p_platform: platformLabel(),
+            });
 
-          if (error) throw error;
-          router.refresh();
-        } catch {
-          setMessage("Detectamos la app instalada, pero no pudimos registrar este paso.");
-        }
-      })();
-    }
+            if (error) throw error;
+            router.refresh();
+          } catch {
+            setMessage("Detectamos la app instalada, pero no pudimos registrar este paso.");
+          }
+        })();
+      }
+    }, 0);
 
     function capturePrompt(event: Event) {
       event.preventDefault();
@@ -99,6 +101,7 @@ export default function OnboardingInstallStep({
     window.addEventListener("appinstalled", installedHandler);
 
     return () => {
+      window.clearTimeout(timer);
       window.removeEventListener("beforeinstallprompt", capturePrompt);
       window.removeEventListener("appinstalled", installedHandler);
     };
