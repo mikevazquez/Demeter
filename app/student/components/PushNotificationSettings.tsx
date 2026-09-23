@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 type PushState = "available" | "active" | "needs_install" | "denied" | "unsupported" | "error";
 
@@ -85,7 +86,16 @@ async function browserClient() {
   return createClient();
 }
 
-export default function PushNotificationSettings({ studioId }: { studioId: string }) {
+export default function PushNotificationSettings({
+  studioId,
+  studioName = "${studioName}",
+  onboardingMode = false,
+}: {
+  studioId: string;
+  studioName?: string;
+  onboardingMode?: boolean;
+}) {
+  const router = useRouter();
   const [state, setState] = useState<PushState>("available");
   const [deviceCount, setDeviceCount] = useState(0);
   const [busy, setBusy] = useState<"activate" | "deactivate" | "test" | null>(null);
@@ -157,6 +167,7 @@ export default function PushNotificationSettings({ studioId }: { studioId: strin
             setDeviceCount(snapshot.active_subscriptions ?? 1);
             setState("active");
             setMessage(null);
+            if (onboardingMode) router.refresh();
           }
         } catch {
           if (!cancelled) {
@@ -171,7 +182,7 @@ export default function PushNotificationSettings({ studioId }: { studioId: strin
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [studioId]);
+  }, [onboardingMode, router, studioId]);
 
   async function refreshServerStatus() {
     try {
@@ -215,7 +226,7 @@ export default function PushNotificationSettings({ studioId }: { studioId: strin
         setState(permission === "denied" ? "denied" : "available");
         setMessage(
           permission === "denied"
-            ? "iPhone tiene bloqueado el permiso de notificaciones para Studio Flow."
+            ? "iPhone tiene bloqueado el permiso de notificaciones para ${studioName}."
             : "iPhone no concedió el permiso de notificaciones.",
         );
         return;
@@ -273,6 +284,7 @@ export default function PushNotificationSettings({ studioId }: { studioId: strin
       setState("active");
       setMessage("Notificaciones activadas en este dispositivo.");
       await refreshServerStatus();
+      if (onboardingMode) router.refresh();
     } catch {
       setState("error");
       setMessage("No pudimos activar Push. Intenta de nuevo.");
@@ -334,7 +346,7 @@ export default function PushNotificationSettings({ studioId }: { studioId: strin
         throw error ?? new Error("push_test_failed");
       }
 
-      setMessage("Prueba enviada. Debes recibir una notificación de Studio Flow.");
+      setMessage("Prueba enviada. Debes recibir una notificación de ${studioName}.");
     } catch {
       setMessage("La prueba no pudo enviarse. Intenta nuevamente.");
     } finally {
@@ -346,16 +358,18 @@ export default function PushNotificationSettings({ studioId }: { studioId: strin
   const stateCopy = {
     available: {
       title: "Push disponible",
-      description: "Actívalo para recibir cambios importantes de clases, evaluaciones y eventos.",
+      description: onboardingMode
+        ? "Toca Activar notificaciones y, cuando tu dispositivo lo pregunte, elige Permitir."
+        : "Actívalo para recibir cambios importantes de clases, evaluaciones y eventos.",
     },
     active: {
       title: "Push activo",
-      description: "Este dispositivo ya puede recibir avisos de Studio Flow.",
+      description: `Este dispositivo ya puede recibir avisos de ${studioName}.`,
     },
     needs_install: {
-      title: "Instala Studio Flow en tu iPhone",
+      title: `Instala ${studioName} en tu iPhone`,
       description:
-        "En Safari toca Compartir → Agregar a pantalla de inicio. Después abre Studio Flow desde el nuevo icono y vuelve aquí.",
+        `En Safari toca Compartir → Agregar a pantalla de inicio. Después abre ${studioName} desde el nuevo icono y vuelve aquí.`,
     },
     denied: {
       title: "Permiso bloqueado",
@@ -365,7 +379,7 @@ export default function PushNotificationSettings({ studioId }: { studioId: strin
     unsupported: {
       title: "Push no disponible aquí",
       description:
-        "Este navegador o contexto no admite Web Push. Puedes seguir usando Studio Flow normalmente.",
+        "Este navegador o contexto no admite Web Push. Puedes seguir usando ${studioName} normalmente.",
     },
     error: {
       title: "No pudimos comprobar Push",
@@ -384,7 +398,7 @@ export default function PushNotificationSettings({ studioId }: { studioId: strin
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-fuchsia-300">
-            Notificaciones Push
+            {onboardingMode ? "Paso 4 · Notificaciones" : "Notificaciones Push"}
           </p>
           <h2 className="mt-2 text-lg font-semibold text-white">{copy.title}</h2>
           <p className="mt-1 max-w-2xl text-xs leading-5 text-zinc-400">{copy.description}</p>
