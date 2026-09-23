@@ -36,6 +36,6 @@ describe("Asistian signed incoming webhook contract", () => {
     );
     expect(actions).toContain('"X-Webhook-Signature": signature');
     expect(actions).toContain('"Idempotency-Key": eventId');
-    expect(actions).toContain('const ASISTIAN_TEMPLATE = "class_reminder"');
+    expect(actions).toContain('const ASISTIAN_TEMPLATE = "reservation_confirmed"');
   });
 });
