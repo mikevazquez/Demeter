@@ -6,7 +6,7 @@ import { redirect } from "next/navigation";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getAdminContext } from "@/lib/auth/admin-context";
 
-const ASISTIAN_TEMPLATE = "class_reminder";
+const ASISTIAN_TEMPLATE = "reservation_confirmed";
 
 function safeWebhookUrl(value: string) {
   const normalized = value.trim();
@@ -115,8 +115,7 @@ export async function sendAsistianHandshake(formData: FormData) {
       ubicacion: "Demeter Fitness Studio",
     },
     metadata: {
-      source: "studio_flow_asistian_handshake",
-      hours_before: 3,
+      source: "studio_flow_reservation_confirmation_handshake",
       test: true,
     },
   };
