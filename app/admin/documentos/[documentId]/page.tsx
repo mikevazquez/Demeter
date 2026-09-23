@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import QueryNotice from "@/app/components/QueryNotice";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getAdminContext } from "@/lib/auth/admin-context";
 import {
@@ -86,12 +87,29 @@ export default async function DocumentDetailPage({
       </Link>
 
       {query.published ? (
-        <div className="notice success">Versión publicada correctamente.</div>
+        <QueryNotice
+          eyebrow="Documentos"
+          title="Versión publicada"
+          message="La versión quedó publicada correctamente y las reglas de elegibilidad ya pueden aplicarse."
+          tone="success"
+        />
       ) : null}
       {query.retired ? (
-        <div className="notice success">Versión retirada sin borrar su historial.</div>
+        <QueryNotice
+          eyebrow="Documentos"
+          title="Versión retirada"
+          message="La versión dejó de generar requisitos nuevos y su historial se conserva."
+          tone="success"
+        />
       ) : null}
-      {query.error ? <div className="notice error">No pudimos completar esa acción.</div> : null}
+      {query.error ? (
+        <QueryNotice
+          eyebrow="Documentos"
+          title="No pudimos completar la acción"
+          message="Revisa el estado del documento e inténtalo nuevamente."
+          tone="error"
+        />
+      ) : null}
 
       <header className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
         <div>
