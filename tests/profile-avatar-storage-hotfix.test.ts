@@ -27,14 +27,18 @@ describe("profile avatar storage regression hotfix", () => {
 
     expect(migration).toContain("private.can_read_studio_document_object");
     expect(migration).toContain("security definer");
-    expect(migration).toContain("grant execute on function private.can_read_studio_document_object(text)");
+    expect(migration).toContain(
+      "grant execute on function private.can_read_studio_document_object(text)",
+    );
     expect(migration).toContain("bucket_id = 'studio-documents'");
     expect(migration).toContain("private.can_read_studio_document_object(name)");
   });
 
   it("refreshes both profile and home after a successful avatar update", () => {
     const actions = source("app/student/actions.ts");
-    const avatarAction = actions.slice(actions.indexOf("export async function updateStudentAvatarAction"));
+    const avatarAction = actions.slice(
+      actions.indexOf("export async function updateStudentAvatarAction"),
+    );
 
     expect(avatarAction).toContain('revalidatePath("/student")');
     expect(avatarAction).toContain('revalidatePath("/student/perfil")');
