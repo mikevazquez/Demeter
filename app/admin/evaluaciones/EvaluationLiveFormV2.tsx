@@ -283,10 +283,46 @@ export function EvaluationLiveFormV2({
   evaluationId: string;
   blocks: EvaluationV2BlockLive[];
 }) {
-  const [activeBlockId, setActiveBlockId] = useState(blocks[0]?.id ?? null);
+  const comboLabels = new Set(["Ejecución", "Fuerza", "Líneas", "Flexibilidad"]);
+  const comboBlocks = blocks.filter((block) => comboLabels.has(block.label));
+  const requiredComboBlock = blocks.find((block) => block.label === "Cumplimiento del combo");
+  const requiredElementsBlock = blocks.find((block) => block.label === "Elementos obligatorios");
+  const nomenclatureBlock = blocks.find((block) => block.label === "Nomenclatura");
+  const specialIds = new Set([
+    ...comboBlocks.map((block) => block.id),
+    ...(requiredComboBlock ? [requiredComboBlock.id] : []),
+    ...(requiredElementsBlock ? [requiredElementsBlock.id] : []),
+    ...(nomenclatureBlock ? [nomenclatureBlock.id] : []),
+  ]);
+  const orderedBlocks = [
+    ...comboBlocks,
+    ...(requiredComboBlock ? [requiredComboBlock] : []),
+    ...(requiredElementsBlock ? [requiredElementsBlock] : []),
+    ...(nomenclatureBlock ? [nomenclatureBlock] : []),
+    ...blocks.filter((block) => !specialIds.has(block.id)),
+  ];
+  const comboSequence = requiredComboBlock?.items.map((item) => item.name).join(" · ") ?? "";
+  const [activeBlockId, setActiveBlockId] = useState(comboBlocks[0]?.id ?? blocks[0]?.id ?? null);
   const activeBlock = blocks.find((block) => block.id === activeBlockId) ?? blocks[0] ?? null;
 
   const completedCount = useMemo(() => blocks.filter(blockComplete).length, [blocks]);
+  function displayStep(block: EvaluationV2BlockLive) {
+    const comboIndex = comboBlocks.findIndex((item) => item.id === block.id);
+    if (comboIndex >= 0) return "1." + (comboIndex + 1);
+    if (requiredComboBlock?.id === block.id) return "1.5";
+    if (requiredElementsBlock?.id === block.id) return "2";
+    if (nomenclatureBlock?.id === block.id) return "3";
+    return "•";
+  }
+  const activePoint = activeBlock
+    ? comboLabels.has(activeBlock.label) || activeBlock.label === "Cumplimiento del combo"
+      ? "1. Combo técnico"
+      : activeBlock.label === "Elementos obligatorios"
+        ? "2. Elementos obligatorios"
+        : activeBlock.label === "Nomenclatura"
+          ? "3. Nomenclatura"
+          : typeCopy(activeBlock.blockType)
+    : "";
 
   return (
     <div className="eval-v2-live-layout">
@@ -297,7 +333,15 @@ export function EvaluationLiveFormV2({
           </strong>
           <span>bloques completados</span>
         </div>
-        {blocks.map((block, index) => (
+        <div style={{ padding: "10px 12px 6px", color: "#ffffff", fontSize: 12, fontWeight: 800 }}>
+          1 · Combo técnico
+          {comboSequence ? (
+            <small style={{ display: "block", marginTop: 4, color: "#8d98a8", fontWeight: 500 }}>
+              {comboSequence}
+            </small>
+          ) : null}
+        </div>
+        {orderedBlocks.map((block) => (
           <button
             type="button"
             key={block.id}
@@ -305,7 +349,7 @@ export function EvaluationLiveFormV2({
             onClick={() => setActiveBlockId(block.id)}
           >
             <span className={blockComplete(block) ? "is-complete" : ""}>
-              {blockComplete(block) ? "✓" : index + 1}
+              {blockComplete(block) ? "✓" : displayStep(block)}
             </span>
             <strong>{block.label}</strong>
           </button>
@@ -316,11 +360,16 @@ export function EvaluationLiveFormV2({
         <section className="eval-panel eval-config-section eval-v2-live-block">
           <header>
             <div>
-              <span className="eval-step-label">{typeCopy(activeBlock.blockType)}</span>
+              <span className="eval-step-label">{activePoint}</span>
               <h2>{activeBlock.label}</h2>
               <p>
+                {comboLabels.has(activeBlock.label) && comboSequence
+                  ? comboSequence + " · "
+                  : ""}
                 {activeBlock.weightPercent}% de la evaluación
-                {activeBlock.minPercent !== null ? ` · mínimo ${activeBlock.minPercent}%` : ""}
+                {activeBlock.minPercent !== null
+                  ? " · mínimo " + activeBlock.minPercent + "%"
+                  : ""}
               </p>
             </div>
             <span
