@@ -1,7 +1,11 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { acceptancePartyLabels, documentTypeLabels } from "@/lib/documents";
+import {
+  acceptancePartyLabels,
+  documentTypeLabels,
+  safeReservationReturnTo,
+} from "@/lib/documents";
 import QueryNotice from "@/app/components/QueryNotice";
 import { getStudentPortalContext } from "@/lib/student/portal";
 
@@ -25,10 +29,11 @@ export default async function StudentDocumentConfirmPage({
   searchParams,
 }: {
   params: Promise<{ versionId: string }>;
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; returnTo?: string }>;
 }) {
   const { versionId } = await params;
   const query = await searchParams;
+  const returnTo = safeReservationReturnTo(query.returnTo);
   const { supabase, snapshot } = await getStudentPortalContext();
   const { data, error } = await supabase.rpc("student_document_detail", {
     p_version_id: versionId,
@@ -49,7 +54,11 @@ export default async function StudentDocumentConfirmPage({
   return (
     <main className="mx-auto max-w-2xl space-y-5 pb-6">
       <Link
-        href={`/student/documentos/${detail.id}`}
+        href={
+          returnTo
+            ? `/student/documentos/${detail.id}?returnTo=${encodeURIComponent(returnTo)}`
+            : `/student/documentos/${detail.id}`
+        }
         className="text-sm font-semibold text-zinc-400 hover:text-white"
       >
         ← Volver al documento
@@ -109,6 +118,7 @@ export default async function StudentDocumentConfirmPage({
         <form action={acceptStudentDocumentAction} className="mt-5">
           <input type="hidden" name="version_id" value={detail.id} />
           <input type="hidden" name="decision" value="accepted" />
+          {returnTo ? <input type="hidden" name="return_to" value={returnTo} /> : null}
           <label className="flex items-start gap-3 rounded-2xl border border-fuchsia-400/20 bg-fuchsia-400/[0.05] p-4 text-sm leading-6 text-zinc-300">
             <input
               type="checkbox"
