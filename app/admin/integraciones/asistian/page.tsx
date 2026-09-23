@@ -18,7 +18,8 @@ const errorCopy: Record<string, string> = {
   receiver_secret_save: "No se pudo guardar el secreto para recibir eventos de Asistian.",
   service_mapping_invalid:
     "Selecciona un servicio de Asistian y una actividad de Studio Flow.",
-  service_mapping_save: "No se pudo guardar el mapeo del servicio de Asistian.",
+  service_mapping_save:
+    "No se pudo guardar el mapeo del servicio de Asistian.",
   network: "No se pudo conectar con Asistian.",
   http: "Asistian rechazó el webhook.",
   save: "No se pudieron guardar las credenciales del webhook.",
@@ -65,8 +66,11 @@ export default async function AsistianIntegrationTestPage({
     .order("received_at", { ascending: false })
     .limit(10);
 
-  const [{ data: serviceEvents }, { data: serviceMappings }, { data: classTemplates }] =
-    await Promise.all([
+  const [
+    { data: serviceEvents },
+    { data: serviceMappings },
+    { data: classTemplates },
+  ] = await Promise.all([
       supabase
         .from("asistian_webhook_events")
         .select("payload,received_at")
@@ -86,7 +90,10 @@ export default async function AsistianIntegrationTestPage({
         .order("name"),
     ]);
 
-  const observedServices = new Map<string, { id: string; name: string | null }>();
+  const observedServices = new Map<
+    string,
+    { id: string; name: string | null }
+  >();
   for (const event of serviceEvents ?? []) {
     const payload = asRecord(event.payload);
     const data = asRecord(payload?.data);
