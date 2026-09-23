@@ -69,18 +69,63 @@ async function hmacSha256Hex(secret: string, message: string) {
   return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
+function legacySignatureValue(value: string | null) {
+  const normalized = value?.trim() ?? "";
+  if (!normalized) return null;
+  if (/^sha256=[0-9a-f]{64}$/i.test(normalized)) return normalized.slice(7);
+  if (/^[0-9a-f]{64}$/i.test(normalized)) return normalized;
+  return null;
+}
+
 async function verifyAsistianSignature(
   secret: string,
   rawBody: string,
-  signatureHeader: string | null,
+  modernHeader: string | null,
+  legacyHeader: string | null,
 ) {
-  const { timestamp, signature } = signatureParts(signatureHeader);
-  if (!timestamp || !signature) {
-    return { ok: false, timestamp };
+  const modern = signatureParts(modernHeader);
+  if (modern.timestamp && modern.signature) {
+    const expectedModern = await hmacSha256Hex(
+      secret,
+      `${modern.timestamp}.${rawBody}`,
+    );
+    if (constantTimeEqual(expectedModern, modern.signature)) {
+      return { ok: true, timestamp: modern.timestamp, scheme: "x-asistian-signature" };
+    }
   }
 
-  const expected = await hmacSha256Hex(secret, `${timestamp}.${rawBody}`);
-  return { ok: constantTimeEqual(expected, signature), timestamp };
+  const legacyStructured = signatureParts(legacyHeader);
+  if (legacyStructured.timestamp && legacyStructured.signature) {
+    const expectedStructured = await hmacSha256Hex(
+      secret,
+      `${legacyStructured.timestamp}.${rawBody}`,
+    );
+    if (constantTimeEqual(expectedStructured, legacyStructured.signature)) {
+      return {
+        ok: true,
+        timestamp: legacyStructured.timestamp,
+        scheme: "x-webhook-signature-structured",
+      };
+    }
+  }
+
+  const legacySignature = legacySignatureValue(legacyHeader);
+  if (legacySignature) {
+    const expectedLegacy = await hmacSha256Hex(secret, rawBody);
+    if (constantTimeEqual(expectedLegacy, legacySignature)) {
+      return {
+        ok: true,
+        timestamp: null,
+        scheme: "x-webhook-signature-body",
+      };
+    }
+  }
+
+  return {
+    ok: false,
+    timestamp: modern.timestamp ?? legacyStructured.timestamp ?? null,
+    scheme: null,
+  };
 }
 
 Deno.serve(async (request) => {
@@ -132,6 +177,7 @@ Deno.serve(async (request) => {
     signingSecret,
     rawBody,
     request.headers.get("x-asistian-signature"),
+    request.headers.get("x-webhook-signature"),
   );
   if (!verification.ok) {
     return jsonResponse({ error: "invalid_signature" }, 401);
