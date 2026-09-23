@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { acceptancePartyLabels, documentTypeLabels } from "@/lib/documents";
+import QueryNotice from "@/app/components/QueryNotice";
 import { getStudentPortalContext } from "@/lib/student/portal";
 
 import { acceptStudentDocumentAction } from "../../actions";
@@ -67,9 +68,12 @@ export default async function StudentDocumentConfirmPage({
       </header>
 
       {query.error ? (
-        <div className="rounded-3xl border border-rose-500/25 bg-rose-500/[0.07] p-4 text-sm text-rose-100">
-          No pudimos registrar tu respuesta. Revisa la información e inténtalo otra vez.
-        </div>
+        <QueryNotice
+          eyebrow="Documentos"
+          title="No pudimos registrar tu respuesta"
+          message="Revisa la información e inténtalo otra vez."
+          tone="error"
+        />
       ) : null}
 
       <section className="rounded-3xl border border-fuchsia-500/20 bg-[#0d0f16] p-5">
