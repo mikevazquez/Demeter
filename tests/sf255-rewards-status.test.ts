@@ -135,7 +135,8 @@ describe("SF-255A monthly level and waitlist contracts", () => {
     expect(homePage).toContain("reward_status_level_definitions");
     expect(homePage).toContain("student_reward_invitation_balance");
     expect(homePage).toContain('data-home-block="identity-benefits-technical"');
-    expect(homePage).toContain("Mis beneficios");
+    expect(homePage).toContain("Mi medalla");
+    expect(homePage).toContain("En activación");
     expect(homePage).toContain("Ver mis beneficios");
     expect(homePage).toContain("Niveles técnicos");
     expect(homePage).toContain("resulting_level_title");
