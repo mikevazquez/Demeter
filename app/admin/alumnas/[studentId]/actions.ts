@@ -170,6 +170,34 @@ export async function resetStudentTemporaryPassword(
   return invokeStudentAccess(studentId, "temporary_password");
 }
 
+export async function grantBronzeMedalAction(formData: FormData) {
+  const studentId = String(formData.get("student_id") ?? "");
+  const reason = String(formData.get("reason") ?? "").trim();
+
+  if (!studentId || !reason) {
+    redirect(`/admin/alumnas/${studentId}?view=rewards&reward_error=grant_reason_required`);
+  }
+
+  const { supabase } = await getAdminContext(CAPABILITIES.REWARDS_MANAGE);
+  const { error } = await supabase.rpc("admin_grant_bronze_medal", {
+    p_student_id: studentId,
+    p_reason: reason,
+  });
+
+  if (error) {
+    const code = error.message.includes("reward_medal_already_unlocked")
+      ? "medal_already_unlocked"
+      : "grant_failed";
+    redirect(`/admin/alumnas/${studentId}?view=rewards&reward_error=${code}`);
+  }
+
+  revalidatePath(`/admin/alumnas/${studentId}`);
+  revalidatePath("/admin/alumnas");
+  revalidatePath("/student");
+  revalidatePath("/student/recompensas");
+  redirect(`/admin/alumnas/${studentId}?view=rewards&reward_saved=bronze_granted`);
+}
+
 async function getAcquisitionEditContext(studentId: string, acquisitionId: string) {
   const ctx = await getAdminContext();
   if (!ctx.can(CAPABILITIES.SALES_WRITE) && !ctx.can(CAPABILITIES.PRODUCTS_WRITE)) {
