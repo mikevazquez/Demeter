@@ -461,6 +461,8 @@ export default async function StudentProfilePage({
   let rewardOnboarding: {
     documentsCompletedAt: string | null;
     profileCompletedAt: string | null;
+    appInstalledAt: string | null;
+    notificationsEnabledAt: string | null;
     firstReservationAt: string | null;
     firstAttendanceAt: string | null;
     bronzeUnlockedAt: string | null;
@@ -502,7 +504,7 @@ export default async function StudentProfilePage({
       supabase
         .from("reward_onboarding")
         .select(
-          "documents_completed_at,profile_completed_at,first_reservation_at,first_attendance_at,bronze_unlocked_at,unlock_method,unlock_reason",
+          "documents_completed_at,profile_completed_at,app_installed_at,notifications_enabled_at,first_reservation_at,first_attendance_at,bronze_unlocked_at,unlock_method,unlock_reason",
         )
         .eq("studio_id", studio.id)
         .eq("student_id", student.id)
@@ -513,6 +515,8 @@ export default async function StudentProfilePage({
       ? {
           documentsCompletedAt: onboardingRow.documents_completed_at,
           profileCompletedAt: onboardingRow.profile_completed_at,
+          appInstalledAt: onboardingRow.app_installed_at,
+          notificationsEnabledAt: onboardingRow.notifications_enabled_at,
           firstReservationAt: onboardingRow.first_reservation_at,
           firstAttendanceAt: onboardingRow.first_attendance_at,
           bronzeUnlockedAt: onboardingRow.bronze_unlocked_at,
@@ -1242,11 +1246,13 @@ export default async function StudentProfilePage({
                       [
                         rewardOnboarding.documentsCompletedAt,
                         rewardOnboarding.profileCompletedAt,
+                        rewardOnboarding.appInstalledAt,
+                        rewardOnboarding.notificationsEnabledAt,
                         rewardOnboarding.firstReservationAt,
                         rewardOnboarding.firstAttendanceAt,
                       ].filter(Boolean).length
                     }{" "}
-                    de 4 pasos completados
+                    de 6 pasos completados
                   </p>
                 </div>
                 <span className="status-pill">
@@ -1258,6 +1264,8 @@ export default async function StudentProfilePage({
                 {[
                   ["Documentos", rewardOnboarding.documentsCompletedAt],
                   ["Perfil", rewardOnboarding.profileCompletedAt],
+                  ["App instalada", rewardOnboarding.appInstalledAt],
+                  ["Notificaciones Push", rewardOnboarding.notificationsEnabledAt],
                   ["Primera reserva", rewardOnboarding.firstReservationAt],
                   ["Primera asistencia", rewardOnboarding.firstAttendanceAt],
                 ].map(([label, value]) => (
