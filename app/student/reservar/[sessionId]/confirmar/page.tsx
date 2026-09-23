@@ -23,10 +23,10 @@ const errorCopy: Record<string, string> = {
   resource_not_available: "Ese recurso ya no está disponible.",
 };
 
-export default async export const dynamic = "force-dynamic";
+export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-function StudentBookingConfirmPage({
+export default async function StudentBookingConfirmPage({
   params,
   searchParams,
 }: {
