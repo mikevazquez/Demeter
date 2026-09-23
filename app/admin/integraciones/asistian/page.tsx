@@ -115,9 +115,9 @@ export default async function AsistianIntegrationTestPage({
               />
             </label>
             <p className="text-sm text-zinc-400">
-              En Asistian crea un Webhook Saliente, pega la URL anterior, marca “Reserva Creada”
-              y pega aquí el secreto que Asistian genera. El receptor valida HMAC, evita duplicados
-              y guarda el payload para cerrar el mapeo sin adivinar campos.
+              En Asistian crea un Webhook Saliente, pega la URL anterior, marca “Reserva Creada” y
+              pega aquí el secreto que Asistian genera. El receptor valida HMAC, evita duplicados y
+              guarda el payload para cerrar el mapeo sin adivinar campos.
             </p>
             <button className="primary-button" type="submit">
               Guardar secreto receptor
