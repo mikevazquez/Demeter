@@ -1,28 +1,32 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { cache } from "react";
 
 import { signOut } from "@/app/auth/actions";
 import { getStudentPortalContext } from "@/lib/student/portal";
 
 import PendingActionButton from "./components/PendingActionButton";
+import PwaBrandingSync from "./components/PwaBrandingSync";
 import { StudentNav } from "./StudentNav";
 
-function pwaBrandQuery(brand: {
+type PwaBrand = {
   name: string;
   slug: string;
   primary_color: string;
   logo_path: string | null;
-}) {
+};
+
+function pwaBrandQuery(brand: PwaBrand) {
   return new URLSearchParams({
     name: brand.name,
     slug: brand.slug,
     primary: brand.primary_color,
     logo: brand.logo_path ?? "",
-    v: "2",
+    v: "3",
   }).toString();
 }
 
-export async function generateMetadata(): Promise<Metadata> {
+const getPwaBrand = cache(async (): Promise<PwaBrand> => {
   const { membership, studio, supabase } = await getStudentPortalContext();
   const { data: brand } = await supabase
     .from("studios")
@@ -30,23 +34,28 @@ export async function generateMetadata(): Promise<Metadata> {
     .eq("id", membership.studio_id)
     .maybeSingle();
 
-  const resolvedBrand = brand ?? {
-    name: studio.name,
-    slug: "studio",
-    primary_color: "#FF0A8A",
-    logo_path: null,
-  };
+  return (
+    brand ?? {
+      name: studio.name,
+      slug: "studio",
+      primary_color: "#FF0A8A",
+      logo_path: null,
+    }
+  );
+});
 
-  const query = pwaBrandQuery(resolvedBrand);
+export async function generateMetadata(): Promise<Metadata> {
+  const brand = await getPwaBrand();
+  const query = pwaBrandQuery(brand);
 
   return {
-    applicationName: resolvedBrand.name,
-    title: resolvedBrand.name,
+    applicationName: brand.name,
+    title: brand.name,
     manifest: "/pwa/manifest?" + query,
     appleWebApp: {
       capable: true,
       statusBarStyle: "black-translucent",
-      title: resolvedBrand.name,
+      title: brand.name,
     },
     icons: {
       icon: [
@@ -73,10 +82,20 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function StudentLayout({ children }: { children: React.ReactNode }) {
-  const { snapshot, studio } = await getStudentPortalContext();
+  const [{ snapshot, studio }, brand] = await Promise.all([
+    getStudentPortalContext(),
+    getPwaBrand(),
+  ]);
+  const query = pwaBrandQuery(brand);
 
   return (
     <div className="min-h-screen bg-[#090a0f] text-white">
+      <PwaBrandingSync
+        name={brand.name}
+        manifestHref={"/pwa/manifest?" + query}
+        appleTouchIconHref={"/pwa/studio-icon/180?" + query}
+      />
+
       <header className="border-b border-white/10 bg-[#0d0e14]/95 backdrop-blur">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
           <Link href="/student" className="min-w-0">
