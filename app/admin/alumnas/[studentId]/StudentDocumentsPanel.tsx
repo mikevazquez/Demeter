@@ -129,7 +129,6 @@ export default async function StudentDocumentsPanel({
   const invitations = snapshot.invitations ?? [];
   const pending = current.filter((item) => !item.satisfied);
   const completed = current.filter((item) => item.satisfied);
-  const bookingBlocked = current.filter((item) => item.blocks_new_booking);
 
   const signedUrls = new Map<string, string>();
   await Promise.all(
