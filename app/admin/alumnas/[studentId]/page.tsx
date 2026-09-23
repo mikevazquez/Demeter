@@ -10,6 +10,7 @@ import { notFound } from "next/navigation";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getAdminContext } from "@/lib/auth/admin-context";
 import {
+  grantBronzeMedalAction,
   updateCommunicationPreferences,
   updateDynamicProfileFields,
   updateStudent,
@@ -145,6 +146,8 @@ export default async function StudentProfilePage({
     lifecycle?: string;
     lifecycle_error?: string;
     evaluation_error?: string;
+    reward_error?: string;
+    reward_saved?: string;
     view?: string;
   }>;
 }) {
@@ -456,6 +459,17 @@ export default async function StudentProfilePage({
     null;
 
   let levelTitle: string | null = null;
+  let rewardOnboarding: {
+    completed_count?: number;
+    total_steps?: number;
+    medal_unlocked?: boolean;
+    unlock_method?: string | null;
+    bronze_unlocked_at?: string | null;
+    documents?: { completed?: boolean; completed_at?: string | null };
+    profile?: { completed?: boolean; completed_at?: string | null };
+    first_booking?: { completed?: boolean; completed_at?: string | null };
+    first_attendance?: { completed?: boolean; completed_at?: string | null };
+  } | null = null;
   let rewardsAvailable: number | null = null;
   let technicalLevels: Array<{ disciplineName: string; levelTitle: string }> = [];
   let rewardAchievements: Array<{
@@ -481,6 +495,11 @@ export default async function StudentProfilePage({
     benefitDefinition: unknown;
   }> = [];
   if (canReadRewards) {
+    const { data: onboardingSnapshot } = await supabase.rpc("admin_reward_onboarding_snapshot", {
+      p_student_id: student.id,
+    });
+    rewardOnboarding = (onboardingSnapshot as typeof rewardOnboarding) ?? null;
+
     const { data: statusMembership } = await supabase
       .from("reward_status_memberships")
       .select("current_level_key")
@@ -539,7 +558,7 @@ export default async function StudentProfilePage({
     }));
     rewardLevelHistory = (levelUnlockRows ?? []).map((item) => ({
       id: item.id,
-      title: item.title_snapshot || "Nivel",
+      title: item.title_snapshot || "Medalla",
       levelOrder: item.level_order_snapshot,
       unlockedAt: item.unlocked_at,
     }));
@@ -1187,16 +1206,92 @@ export default async function StudentProfilePage({
               <p className="eyebrow">REWARDS</p>
               <h2>Progreso, logros y recompensas</h2>
               <p>
-                El nivel general forma parte del perfil de la alumna. Aquí se conserva el detalle de
-                su trayectoria Rewards.
+                Las medallas pertenecen a Rewards y son independientes de los niveles técnicos por disciplina.
               </p>
             </div>
           </div>
 
+          {rewardOnboarding ? (
+            <div className="profile360-rewards-section">
+              <div className="profile360-package-group-heading">
+                <strong>Activación de Rewards</strong>
+                <span>{rewardOnboarding.completed_count ?? 0} de {rewardOnboarding.total_steps ?? 4}</span>
+              </div>
+
+              <div className="profile360-history-list">
+                {[
+                  ["Documentos", rewardOnboarding.documents?.completed, rewardOnboarding.documents?.completed_at],
+                  ["Perfil", rewardOnboarding.profile?.completed, rewardOnboarding.profile?.completed_at],
+                  ["Primera reserva", rewardOnboarding.first_booking?.completed, rewardOnboarding.first_booking?.completed_at],
+                  ["Primera asistencia", rewardOnboarding.first_attendance?.completed, rewardOnboarding.first_attendance?.completed_at],
+                ].map(([label, done, completedAt]) => (
+                  <article key={String(label)}>
+                    <div className={"profile360-history-dot " + (done ? "is-reward" : "")} aria-hidden="true" />
+                    <div>
+                      <strong>{String(label)}</strong>
+                      <span>
+                        {done
+                          ? completedAt
+                            ? "Completado · " + formatDateTime(String(completedAt))
+                            : "Completado"
+                          : "Pendiente"}
+                      </span>
+                    </div>
+                  </article>
+                ))}
+              </div>
+
+              {!rewardOnboarding.medal_unlocked && can(CAPABILITIES.REWARDS_MANAGE) ? (
+                <form action={grantBronzeMedalAction} className="mt-4 rounded-2xl border border-fuchsia-500/20 bg-fuchsia-500/[0.04] p-4">
+                  <input type="hidden" name="student_id" value={student.id} />
+                  <label className="block text-xs font-semibold text-zinc-300">
+                    Otorgar Medalla Bronce por excepción
+                    <textarea
+                      name="reason"
+                      required
+                      rows={2}
+                      placeholder="Motivo obligatorio de la excepción"
+                      className="mt-2 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-sm text-white outline-none focus:border-fuchsia-500/50"
+                    />
+                  </label>
+                  <PendingActionButton
+                    pendingLabel="Otorgando…"
+                    className="mt-3 min-h-10 rounded-xl border border-fuchsia-500/40 bg-fuchsia-500/[0.08] px-4 py-2 text-xs font-semibold text-fuchsia-200"
+                  >
+                    Otorgar Medalla Bronce
+                  </PendingActionButton>
+                  <p className="mt-2 text-[11px] text-zinc-500">
+                    Esta acción no marcará como completados los requisitos pendientes y quedará registrada.
+                  </p>
+                </form>
+              ) : null}
+
+              {rewardOnboarding.unlock_method === "admin" ? (
+                <p className="mt-3 text-xs text-amber-300">Medalla otorgada manualmente por Administración.</p>
+              ) : rewardOnboarding.unlock_method === "legacy" ? (
+                <p className="mt-3 text-xs text-zinc-500">Medalla conservada del sistema anterior.</p>
+              ) : rewardOnboarding.unlock_method === "onboarding" ? (
+                <p className="mt-3 text-xs text-emerald-300">Medalla desbloqueada al completar el onboarding.</p>
+              ) : null}
+
+              {query.reward_saved === "bronze_granted" ? (
+                <p className="mt-3 text-xs font-semibold text-emerald-300">Medalla Bronce otorgada correctamente.</p>
+              ) : query.reward_error ? (
+                <p className="mt-3 text-xs font-semibold text-rose-300">
+                  {query.reward_error === "grant_reason_required"
+                    ? "Escribe el motivo de la excepción."
+                    : query.reward_error === "medal_already_unlocked"
+                      ? "La alumna ya tiene una medalla activa."
+                      : "No pudimos otorgar la medalla."}
+                </p>
+              ) : null}
+            </div>
+          ) : null}
+
           <div className="profile360-approved-indicators">
             <article>
-              <span>Nivel general actual</span>
-              <strong>{levelTitle ?? "Sin nivel"}</strong>
+              <span>Medalla actual</span>
+              <strong>{levelTitle ?? "Sin medalla"}</strong>
             </article>
             <article>
               <span>Recompensas disponibles</span>
@@ -1207,7 +1302,7 @@ export default async function StudentProfilePage({
               <strong>{rewardAchievements.length}</strong>
             </article>
             <article>
-              <span>Niveles alcanzados</span>
+              <span>Medallas obtenidas</span>
               <strong>{rewardLevelHistory.length}</strong>
             </article>
           </div>
@@ -1263,7 +1358,7 @@ export default async function StudentProfilePage({
           {rewardLevelHistory.length ? (
             <div className="profile360-rewards-section">
               <div className="profile360-package-group-heading">
-                <strong>Trayectoria de nivel</strong>
+                <strong>Trayectoria de medallas</strong>
                 <span>{rewardLevelHistory.length}</span>
               </div>
               <div className="profile360-history-list">
@@ -1273,7 +1368,7 @@ export default async function StudentProfilePage({
                     <div>
                       <strong>{level.title}</strong>
                       <span>
-                        Nivel {level.levelOrder} · {formatDateTime(level.unlockedAt)}
+                        Medalla · {formatDateTime(level.unlockedAt)}
                       </span>
                     </div>
                   </article>
