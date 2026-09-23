@@ -63,8 +63,7 @@ function diagnostics(step: string, errorName?: string): PushDiagnostics {
     secureContext: hasWindow ? window.isSecureContext : false,
     serviceWorker: hasNavigator && "serviceWorker" in navigator,
     pushManager: hasWindow && "PushManager" in window,
-    requestPermission:
-      hasNotification && typeof Notification.requestPermission === "function",
+    requestPermission: hasNotification && typeof Notification.requestPermission === "function",
     step,
     errorName,
   };
