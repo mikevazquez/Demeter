@@ -147,7 +147,7 @@ export default function Profile360Overview({
 
           <div className="profile360-approved-meta">
             <span className="profile360-level-pill">
-              {levelTitle ? "Nivel " + levelTitle : "Sin nivel general"}
+              {levelTitle ? "Medalla " + levelTitle : "En activación"}
             </span>
             <span
               className={
