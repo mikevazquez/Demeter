@@ -39,7 +39,19 @@ export default async function DocumentVersionsPage({
         .in("version_id", versionIds)
     : { data: [] };
   const counts = new Map<string, number>();
-  for (const item of acceptances ?? []) counts.set(item.version_id, (counts.get(item.version_id) ?? 0) + 1);
+  for (const item of acceptances ?? []) {
+    counts.set(item.version_id, (counts.get(item.version_id) ?? 0) + 1);
+  }
+
+  const versionRows = await Promise.all(
+    (versions ?? []).map(async (version) => {
+      if (!version.file_path) return { version, signedUrl: null as string | null };
+      const { data } = await supabase.storage
+        .from("studio-documents")
+        .createSignedUrl(version.file_path, 60 * 15);
+      return { version, signedUrl: data?.signedUrl ?? null };
+    }),
+  );
 
   return (
     <main className="dashboard-shell space-y-5">
@@ -55,16 +67,7 @@ export default async function DocumentVersionsPage({
       </header>
 
       <section className="space-y-3">
-        {(versions ?? []).map(async (version) => {
-          let signedUrl: string | null = null;
-          if (version.file_path) {
-            const { data } = await supabase.storage
-              .from("studio-documents")
-              .createSignedUrl(version.file_path, 60 * 15);
-            signedUrl = data?.signedUrl ?? null;
-          }
-
-          return (
+        {versionRows.map(({ version, signedUrl }) => (
             <article key={version.id} className="rounded-3xl border border-fuchsia-500/20 bg-[#0d0f16] p-5">
               <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                 <div>
@@ -100,8 +103,7 @@ export default async function DocumentVersionsPage({
                 </div>
               </div>
             </article>
-          );
-        })}
+        ))}
       </section>
 
       {!versions?.length ? (
