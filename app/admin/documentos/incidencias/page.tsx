@@ -112,7 +112,6 @@ export default async function DocumentIncidentsPage({
                 <option value="">Seleccionar documento</option>
                 {versionOptions.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}
               </select>
-              <input type="hidden" name="document_id" value="" />
               <select name="acceptor_kind" defaultValue="student" className="w-full rounded-xl border border-white/10 bg-[#11131b] px-3 py-2.5 text-sm text-white">
                 <option value="student">Aceptó la alumna</option>
                 <option value="guardian">Aceptó responsable</option>
