@@ -42,14 +42,20 @@ export default async function StudentDocumentConfirmPage({
   if (error || !data) notFound();
   const detail = data as Detail;
 
+  const studentPartyAllowed =
+    detail.acceptance_party === "student" ||
+    detail.acceptance_party === "student_and_guardian" ||
+    (detail.acceptance_party === "guardian_if_minor" && detail.minor === false);
+
+  const canChangeOptionalDecision =
+    detail.response_mode === "decision_optional" && studentPartyAllowed;
+
   const studentMayAct =
     detail.response_mode !== "informational" &&
-    !detail.student_completed &&
-    (detail.acceptance_party === "student" ||
-      detail.acceptance_party === "student_and_guardian" ||
-      (detail.acceptance_party === "guardian_if_minor" && detail.minor === false));
+    studentPartyAllowed &&
+    (canChangeOptionalDecision || !detail.student_completed);
 
-  if (detail.satisfied || !studentMayAct) notFound();
+  if ((detail.satisfied && !canChangeOptionalDecision) || !studentMayAct) notFound();
 
   return (
     <main className="mx-auto max-w-2xl space-y-5 pb-6">
@@ -66,7 +72,7 @@ export default async function StudentDocumentConfirmPage({
 
       <header>
         <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-fuchsia-300">
-          Confirmación de aceptación
+          {canChangeOptionalDecision ? "Confirmación de decisión" : "Confirmación de aceptación"}
         </p>
         <h1 className="mt-1 text-2xl font-semibold text-white sm:text-3xl">
           {detail.document_name}
@@ -117,7 +123,6 @@ export default async function StudentDocumentConfirmPage({
 
         <form action={acceptStudentDocumentAction} className="mt-5">
           <input type="hidden" name="version_id" value={detail.id} />
-          <input type="hidden" name="decision" value="accepted" />
           {returnTo ? <input type="hidden" name="return_to" value={returnTo} /> : null}
           <label className="flex items-start gap-3 rounded-2xl border border-fuchsia-400/20 bg-fuchsia-400/[0.05] p-4 text-sm leading-6 text-zinc-300">
             <input
@@ -129,9 +134,31 @@ export default async function StudentDocumentConfirmPage({
             />
             Confirmo que leí el documento completo y que esta aceptación corresponde a mi decisión.
           </label>
-          <button className="mt-4 w-full rounded-2xl bg-fuchsia-600 px-5 py-3 text-sm font-semibold text-white shadow-[0_0_24px_rgba(217,70,239,.2)]">
-            Aceptar documento
-          </button>
+          {canChangeOptionalDecision ? (
+            <div className="mt-4 grid gap-2 sm:grid-cols-2">
+              <button
+                name="decision"
+                value="accepted"
+                className="rounded-2xl bg-fuchsia-600 px-5 py-3 text-sm font-semibold text-white shadow-[0_0_24px_rgba(217,70,239,.2)]"
+              >
+                Autorizar
+              </button>
+              <button
+                name="decision"
+                value="declined"
+                className="rounded-2xl border border-white/15 px-5 py-3 text-sm font-semibold text-white"
+              >
+                No autorizar
+              </button>
+            </div>
+          ) : (
+            <>
+              <input type="hidden" name="decision" value="accepted" />
+              <button className="mt-4 w-full rounded-2xl bg-fuchsia-600 px-5 py-3 text-sm font-semibold text-white shadow-[0_0_24px_rgba(217,70,239,.2)]">
+                Aceptar documento
+              </button>
+            </>
+          )}
         </form>
       </section>
     </main>
