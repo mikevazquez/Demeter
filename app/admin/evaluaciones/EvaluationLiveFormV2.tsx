@@ -22,7 +22,6 @@ export type EvaluationV2ItemLive = {
 
 export type EvaluationV2BlockLive = {
   id: string;
-  criterionKey: string;
   label: string;
   description?: string | null;
   blockType: string;
@@ -284,34 +283,10 @@ export function EvaluationLiveFormV2({
   evaluationId: string;
   blocks: EvaluationV2BlockLive[];
 }) {
-  const comboCriterionKeys = new Set(["execution", "strength", "lines", "flexibility"]);
-  const comboBlocks = blocks.filter((block) => comboCriterionKeys.has(block.criterionKey));
-  const requiredComboBlock = blocks.find((block) => block.criterionKey === "required_combos");
-  const requiredElementsBlock = blocks.find((block) => block.criterionKey === "required_elements");
-  const nomenclatureBlock = blocks.find((block) => block.criterionKey === "nomenclature");
-  const groupedIds = new Set(
-    [...comboBlocks, requiredComboBlock, requiredElementsBlock, nomenclatureBlock]
-      .filter(Boolean)
-      .map((block) => block!.id),
-  );
-  const otherBlocks = blocks.filter((block) => !groupedIds.has(block.id));
-  const comboSequence = requiredComboBlock?.items.map((item) => item.name).join(" · ") ?? "";
-
-  const [activeBlockId, setActiveBlockId] = useState(
-    comboBlocks[0]?.id ?? blocks[0]?.id ?? null,
-  );
+  const [activeBlockId, setActiveBlockId] = useState(blocks[0]?.id ?? null);
   const activeBlock = blocks.find((block) => block.id === activeBlockId) ?? blocks[0] ?? null;
 
   const completedCount = useMemo(() => blocks.filter(blockComplete).length, [blocks]);
-  const activePointLabel = activeBlock
-    ? comboCriterionKeys.has(activeBlock.criterionKey) || activeBlock.criterionKey === "required_combos"
-      ? "1. Combo técnico"
-      : activeBlock.criterionKey === "required_elements"
-        ? "2. Elementos obligatorios"
-        : activeBlock.criterionKey === "nomenclature"
-          ? "3. Nomenclatura"
-          : null
-    : null;
 
   return (
     <div className="eval-v2-live-layout">
@@ -322,71 +297,7 @@ export function EvaluationLiveFormV2({
           </strong>
           <span>bloques completados</span>
         </div>
-        {comboBlocks.length ? (
-          <>
-            <div style={{ padding: "10px 12px 6px", color: "#ffffff", fontSize: 12, fontWeight: 800 }}>
-              1 · Combo técnico
-              {comboSequence ? (
-                <small style={{ display: "block", marginTop: 4, color: "#8d98a8", fontWeight: 500 }}>
-                  {comboSequence}
-                </small>
-              ) : null}
-            </div>
-            {comboBlocks.map((block, index) => (
-              <button
-                type="button"
-                key={block.id}
-                className={block.id === activeBlock?.id ? "is-active" : ""}
-                onClick={() => setActiveBlockId(block.id)}
-              >
-                <span className={blockComplete(block) ? "is-complete" : ""}>
-                  {blockComplete(block) ? "✓" : "1." + (index + 1)}
-                </span>
-                <strong>{block.label}</strong>
-              </button>
-            ))}
-            {requiredComboBlock ? (
-              <button
-                type="button"
-                className={requiredComboBlock.id === activeBlock?.id ? "is-active" : ""}
-                onClick={() => setActiveBlockId(requiredComboBlock.id)}
-              >
-                <span className={blockComplete(requiredComboBlock) ? "is-complete" : ""}>
-                  {blockComplete(requiredComboBlock) ? "✓" : "1.5"}
-                </span>
-                <strong>Cumplimiento del combo</strong>
-              </button>
-            ) : null}
-          </>
-        ) : null}
-
-        {requiredElementsBlock ? (
-          <button
-            type="button"
-            className={requiredElementsBlock.id === activeBlock?.id ? "is-active" : ""}
-            onClick={() => setActiveBlockId(requiredElementsBlock.id)}
-          >
-            <span className={blockComplete(requiredElementsBlock) ? "is-complete" : ""}>
-              {blockComplete(requiredElementsBlock) ? "✓" : "2"}
-            </span>
-            <strong>Elementos obligatorios</strong>
-          </button>
-        ) : null}
-
-        {nomenclatureBlock ? (
-          <button
-            type="button"
-            className={nomenclatureBlock.id === activeBlock?.id ? "is-active" : ""}
-            onClick={() => setActiveBlockId(nomenclatureBlock.id)}
-          >
-            <span className={blockComplete(nomenclatureBlock) ? "is-complete" : ""}>
-              {blockComplete(nomenclatureBlock) ? "✓" : "3"}
-            </span>
-            <strong>Nomenclatura</strong>
-          </button>
-        ) : null}
-
-        {otherBlocks.map((block, index) => (
+        {blocks.map((block, index) => (
           <button
             type="button"
             key={block.id}
@@ -394,7 +305,7 @@ export function EvaluationLiveFormV2({
             onClick={() => setActiveBlockId(block.id)}
           >
             <span className={blockComplete(block) ? "is-complete" : ""}>
-              {blockComplete(block) ? "✓" : index + 4}
+              {blockComplete(block) ? "✓" : index + 1}
             </span>
             <strong>{block.label}</strong>
           </button>
@@ -405,22 +316,11 @@ export function EvaluationLiveFormV2({
         <section className="eval-panel eval-config-section eval-v2-live-block">
           <header>
             <div>
-              <span className="eval-step-label">
-                {activePointLabel ?? typeCopy(activeBlock.blockType)}
-              </span>
-              <h2>
-                {activeBlock.criterionKey === "required_combos"
-                  ? "Cumplimiento del combo"
-                  : activeBlock.label}
-              </h2>
+              <span className="eval-step-label">{typeCopy(activeBlock.blockType)}</span>
+              <h2>{activeBlock.label}</h2>
               <p>
-                {comboCriterionKeys.has(activeBlock.criterionKey) && comboSequence
-                  ? comboSequence + " · "
-                  : ""}
                 {activeBlock.weightPercent}% de la evaluación
-                {activeBlock.minPercent !== null
-                  ? " · mínimo " + activeBlock.minPercent + "%"
-                  : ""}
+                {activeBlock.minPercent !== null ? ` · mínimo ${activeBlock.minPercent}%` : ""}
               </p>
             </div>
             <span
