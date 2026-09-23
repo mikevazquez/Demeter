@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 type PushState = "available" | "active" | "needs_install" | "denied" | "unsupported" | "error";
 
@@ -116,6 +116,7 @@ async function browserClient() {
 function stepLabel(step: string) {
   const labels: Record<string, string> = {
     idle: "Sin iniciar",
+    sync: "Sincronización del dispositivo",
     precheck: "Compatibilidad del dispositivo",
     permission: "Permiso de iPhone",
     vapid: "Clave Push",
@@ -134,6 +135,97 @@ export default function PushNotificationSettings({ studioId }: { studioId: strin
   const [busy, setBusy] = useState<"activate" | "deactivate" | "test" | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [debug, setDebug] = useState<PushDiagnostics | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const timer = window.setTimeout(() => {
+      void (async () => {
+        try {
+          if (isIosDevice() && !isStandalone()) {
+            if (!cancelled) setState("needs_install");
+            return;
+          }
+
+          if (!supportsPush()) {
+            if (!cancelled) setState("unsupported");
+            return;
+          }
+
+          if (Notification.permission === "denied") {
+            if (!cancelled) setState("denied");
+            return;
+          }
+
+          if (Notification.permission !== "granted") {
+            if (!cancelled) setState("available");
+            return;
+          }
+
+          const registration = await navigator.serviceWorker.getRegistration("/");
+          const subscription = await registration?.pushManager.getSubscription();
+
+          if (!subscription) {
+            if (!cancelled) setState("available");
+            return;
+          }
+
+          const serialized = subscription.toJSON();
+          const endpoint = serialized.endpoint;
+          const p256dh = serialized.keys?.p256dh;
+          const auth = serialized.keys?.auth;
+
+          if (!endpoint || !p256dh || !auth) {
+            if (!cancelled) setState("available");
+            return;
+          }
+
+          const supabase = await browserClient();
+          const { error: registerError } = await supabase.rpc("register_my_push_subscription", {
+            p_studio_id: studioId,
+            p_endpoint: endpoint,
+            p_p256dh: p256dh,
+            p_auth: auth,
+            p_user_agent: navigator.userAgent,
+            p_device_label: deviceLabel(),
+            p_expiration_time: subscription.expirationTime,
+          });
+
+          if (registerError) throw new Error("push_sync_registration_failed");
+
+          const { data: statusData } = await supabase.rpc("get_my_push_notification_status", {
+            p_studio_id: studioId,
+          });
+          const snapshot = (statusData ?? {}) as PushStatusSnapshot;
+
+          if (!cancelled) {
+            setDeviceCount(snapshot.active_subscriptions ?? 1);
+            setState("active");
+            setMessage(null);
+            setDebug(null);
+          }
+        } catch (error) {
+          if (cancelled) return;
+
+          const errorName =
+            error instanceof DOMException
+              ? error.name
+              : error instanceof Error
+                ? error.message
+                : "unknown_error";
+
+          setState("error");
+          setDebug(diagnostics("sync", errorName));
+          setMessage("No pudimos comprobar el estado Push de este dispositivo.");
+        }
+      })();
+    }, 0);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [studioId]);
 
   async function refreshServerStatus() {
     try {
