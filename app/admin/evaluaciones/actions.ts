@@ -797,7 +797,7 @@ export async function publishTechnicalEvaluationAction(formData: FormData) {
   const coachMessage = text(formData, "coach_message");
   const nextObjective = text(formData, "next_objective");
 
-  const { error } = await ctx.supabase.rpc("admin_publish_technical_evaluation", {
+  const { data, error } = await ctx.supabase.rpc("admin_publish_technical_evaluation", {
     p_evaluation_id: evaluationId,
     p_final_outcome: null,
     p_override_reason: null,
@@ -812,7 +812,32 @@ export async function publishTechnicalEvaluationAction(formData: FormData) {
   }
   if (error) redirect(`/admin/evaluaciones/${evaluationId}?step=feedback&error=publish`);
 
+  const published = Array.isArray(data) ? data[0] : data;
+  let nextDiagnosticEvaluationId: string | null = null;
+
+  if (
+    published?.evaluation_purpose === "diagnostic" &&
+    published?.evaluation_invitation_id
+  ) {
+    const { data: nextDiagnostic } = await ctx.supabase
+      .from("technical_evaluations")
+      .select("id")
+      .eq("evaluation_invitation_id", published.evaluation_invitation_id)
+      .eq("status", "draft")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    nextDiagnosticEvaluationId = nextDiagnostic?.id ?? null;
+  }
+
   revalidatePath("/admin/evaluaciones");
   revalidatePath(`/admin/evaluaciones/${evaluationId}`);
+  revalidatePath("/admin/alumnas");
+
+  if (nextDiagnosticEvaluationId) {
+    redirect(`/admin/evaluaciones/${nextDiagnosticEvaluationId}`);
+  }
+
   redirect(`/admin/evaluaciones/${evaluationId}`);
 }
