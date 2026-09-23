@@ -395,6 +395,31 @@ Deno.serve(async (request) => {
     );
   }
 
+  const attendanceStatuses = new Set(["no_show", "noshow", "completed", "attended", "done"]);
+  const attendanceOwnedByStudioFlow =
+    eventName === "booking_completed" ||
+    eventName === "booking_no_show" ||
+    (eventName === "booking_status_changed" &&
+      attendanceStatuses.has((externalStatus ?? "").toLowerCase()));
+
+  if (attendanceOwnedByStudioFlow) {
+    const ignored = {
+      ok: true,
+      reason_code: "attendance_owned_by_studio_flow",
+      booking_id: bookingId,
+    };
+    await markEvent("ignored", ignored);
+    return jsonResponse(
+      {
+        ok: true,
+        accepted: true,
+        event_id: providerEventId,
+        outcome: "attendance_owned_by_studio_flow",
+      },
+      202,
+    );
+  }
+
   let syncData: unknown = null;
   let syncError: { message?: string } | null = null;
 
