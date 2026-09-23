@@ -61,6 +61,19 @@ as $$
         and d.active = true
         and jsonb_typeof(v.value) = 'string'
         and trim(v.value #>> '{}') ~ '^\d{4}-\d{2}-\d{2}$'
+    ),
+    'birth_date_value', (
+      select v.value #>> '{}'
+      from public.profile_field_definitions d
+      join public.profile_field_values v
+        on v.definition_id = d.id
+       and v.person_id = s.person_id
+       and v.studio_id = s.studio_id
+      where d.studio_id = s.studio_id
+        and d.entity_type = 'student'
+        and d.key = 'birth_date'
+        and d.active = true
+      limit 1
     )
   )
   from public.students s
@@ -247,7 +260,8 @@ begin
       'completed_at', v_row.profile_completed_at,
       'email', coalesce((v_profile->>'email')::boolean,false),
       'avatar', coalesce((v_profile->>'avatar')::boolean,false),
-      'birth_date', coalesce((v_profile->>'birth_date')::boolean,false)
+      'birth_date', coalesce((v_profile->>'birth_date')::boolean,false),
+      'birth_date_value', v_profile->>'birth_date_value'
     ),
     'first_booking', jsonb_build_object(
       'completed', v_row.first_booking_at is not null,
