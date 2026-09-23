@@ -21,6 +21,61 @@ function safeWebhookUrl(value: string) {
   }
 }
 
+export async function sendAsistianMappingProbe(formData: FormData) {
+  await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
+
+  const webhookUrl = safeWebhookUrl(String(formData.get("test_webhook_url") ?? ""));
+  if (!webhookUrl) {
+    redirect("/admin/integraciones/asistian?error=invalid_url");
+  }
+
+  const eventId = crypto.randomUUID();
+  const payload = {
+    event: "reservation_confirmed",
+    event_id: eventId,
+    timestamp: new Date().toISOString(),
+    phone: "+5213300000000",
+    data: {
+      nombre: "Marco",
+      disciplina: "Pole Fitness",
+      fecha: "22/09/2026",
+      hora: "19:30",
+      coach: "Mike",
+      ubicacion: "Demeter Fitness Studio",
+    },
+    metadata: {
+      source: "studio_flow_mapping_probe",
+      test: true,
+    },
+  };
+
+  let response: Response;
+  try {
+    response = await fetch(webhookUrl, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "Idempotency-Key": eventId,
+      },
+      body: JSON.stringify(payload),
+      cache: "no-store",
+      signal: AbortSignal.timeout(10_000),
+    });
+  } catch {
+    redirect("/admin/integraciones/asistian?error=network");
+  }
+
+  if (!response.ok && response.status !== 403) {
+    redirect(
+      `/admin/integraciones/asistian?error=http&status=${encodeURIComponent(String(response.status))}`,
+    );
+  }
+
+  redirect(
+    `/admin/integraciones/asistian?mapping_sent=1&status=${encodeURIComponent(String(response.status))}`,
+  );
+}
+
 export async function sendAsistianHandshake(formData: FormData) {
   const { supabase, studio } = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
 
