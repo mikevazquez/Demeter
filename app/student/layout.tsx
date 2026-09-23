@@ -19,7 +19,14 @@ export default async function StudentLayout({ children }: { children: React.Reac
             </p>
             <p className="truncate text-sm font-semibold text-white">{studio.name}</p>
           </Link>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <Link
+              href="/student/notificaciones"
+              aria-label="Notificaciones"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 text-lg text-zinc-300 transition hover:border-fuchsia-500/30 hover:bg-fuchsia-500/[0.08] hover:text-fuchsia-200"
+            >
+              ◌
+            </Link>
             <div className="hidden text-right sm:block">
               <p className="text-sm font-medium text-white">{snapshot.profile.first_name}</p>
               <p className="text-xs text-zinc-500">Portal de alumna</p>
