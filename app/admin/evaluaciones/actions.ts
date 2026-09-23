@@ -662,6 +662,42 @@ export async function createTechnicalEvaluationAction(formData: FormData) {
 
   if (!template) redirect("/admin/evaluaciones/nueva?error=template");
 
+  const [{ data: confirmedDiagnostic }, { data: currentLevel }] = await Promise.all([
+    ctx.supabase
+      .from("technical_evaluations")
+      .select("id")
+      .eq("studio_id", ctx.studio.id)
+      .eq("student_id", studentId)
+      .eq("discipline_id", template.discipline_id)
+      .eq("status", "published")
+      .in("evaluation_purpose", ["diagnostic", "placement"])
+      .not("resulting_discipline_level_id", "is", null)
+      .limit(1)
+      .maybeSingle(),
+    ctx.supabase
+      .from("student_discipline_levels")
+      .select("discipline_technical_level_id")
+      .eq("studio_id", ctx.studio.id)
+      .eq("student_id", studentId)
+      .eq("discipline_id", template.discipline_id)
+      .maybeSingle(),
+  ]);
+
+  if (!confirmedDiagnostic) {
+    redirect(
+      `/admin/alumnas/${studentId}?view=evaluations&evaluation_error=evaluation_initial_diagnostic_invitation_required`,
+    );
+  }
+
+  if (
+    !currentLevel ||
+    currentLevel.discipline_technical_level_id !== template.discipline_technical_level_id
+  ) {
+    redirect(
+      `/admin/alumnas/${studentId}?view=evaluations&evaluation_error=evaluation_level_mismatch`,
+    );
+  }
+
   const { data: evaluationId, error } = await ctx.supabase.rpc(
     "admin_create_technical_evaluation",
     {
