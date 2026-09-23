@@ -33,9 +33,10 @@ export default async function AdminDocumentsPage() {
         .in("version_id", versionIds)
     : { data: [] };
 
-  const latestByDocument = new Map<string, (typeof versions extends Array<infer U> ? U : never)>();
+  type VersionRow = NonNullable<typeof versions>[number];
+  const latestByDocument = new Map<string, VersionRow>();
   for (const version of versions ?? []) {
-    if (!latestByDocument.has(version.document_id)) latestByDocument.set(version.document_id, version as never);
+    if (!latestByDocument.has(version.document_id)) latestByDocument.set(version.document_id, version);
   }
   const acceptanceCount = new Map<string, number>();
   for (const acceptance of acceptances ?? []) {
@@ -43,15 +44,7 @@ export default async function AdminDocumentsPage() {
   }
 
   const rows = (documents ?? []).map((document) => {
-    const version = latestByDocument.get(document.id) as
-      | {
-          id: string;
-          version_number: number;
-          status: string;
-          effective_at: string | null;
-          published_at: string | null;
-        }
-      | undefined;
+    const version = latestByDocument.get(document.id);
     return { document, version, accepted: version ? acceptanceCount.get(version.id) ?? 0 : 0 };
   });
 
