@@ -1,14 +1,10 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.116.0";
-import {
-  sendPushNotification,
-  WebPushError,
-} from "npm:@mmmike/web-push@1.3.0/send";
+import { sendPushNotification, WebPushError } from "npm:@mmmike/web-push@1.3.0/send";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
@@ -135,10 +131,8 @@ Deno.serve(async (request) => {
   }
 
   const vapid = (rawVapid ?? {}) as VapidConfig;
-  const publicKey =
-    typeof vapid.public_key === "string" ? vapid.public_key.trim() : "";
-  const privateKey =
-    typeof vapid.private_key === "string" ? vapid.private_key.trim() : "";
+  const publicKey = typeof vapid.public_key === "string" ? vapid.public_key.trim() : "";
+  const privateKey = typeof vapid.private_key === "string" ? vapid.private_key.trim() : "";
   const subject = typeof vapid.subject === "string" ? vapid.subject.trim() : "";
 
   if (!publicKey || !privateKey || !subject) {

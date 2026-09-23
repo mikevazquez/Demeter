@@ -13,8 +13,7 @@ function icon(size: number) {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        background:
-          "radial-gradient(circle at 30% 20%, #5a103d 0%, #17101b 38%, #090a0f 72%)",
+        background: "radial-gradient(circle at 30% 20%, #5a103d 0%, #17101b 38%, #090a0f 72%)",
         borderRadius: String(Math.round(size * 0.2)) + "px",
       },
     },
@@ -27,8 +26,7 @@ function icon(size: number) {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          border:
-            String(Math.max(3, Math.round(size * 0.018))) + "px solid #ff0a8a",
+          border: String(Math.max(3, Math.round(size * 0.018))) + "px solid #ff0a8a",
           borderRadius: "50%",
           color: "#ffffff",
           fontSize: String(Math.round(size * 0.28)) + "px",
@@ -42,10 +40,7 @@ function icon(size: number) {
   );
 }
 
-export async function GET(
-  _request: Request,
-  { params }: { params: Promise<{ size: string }> },
-) {
+export async function GET(_request: Request, { params }: { params: Promise<{ size: string }> }) {
   const { size: rawSize } = await params;
   const size = Number.parseInt(rawSize, 10);
 

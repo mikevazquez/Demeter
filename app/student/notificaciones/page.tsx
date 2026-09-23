@@ -15,8 +15,7 @@ export default async function StudentNotificationsPage() {
           Mantente al día
         </h1>
         <p className="mt-1.5 max-w-2xl text-sm text-zinc-400">
-          Configura Push para recibir cambios importantes aunque Studio Flow no
-          esté abierto.
+          Configura Push para recibir cambios importantes aunque Studio Flow no esté abierto.
         </p>
       </header>
 
@@ -25,9 +24,8 @@ export default async function StudentNotificationsPage() {
       <section className="rounded-2xl border border-white/10 bg-white/[0.025] p-4">
         <p className="text-xs font-semibold text-white">Qué enviaremos por Push</p>
         <p className="mt-1.5 text-xs leading-5 text-zinc-400">
-          Cambios operativos importantes, recordatorios y avisos de Studio Flow.
-          Cada tipo de evento se habilitará desde el motor central de
-          notificaciones, no desde esta pantalla.
+          Cambios operativos importantes, recordatorios y avisos de Studio Flow. Cada tipo de evento
+          se habilitará desde el motor central de notificaciones, no desde esta pantalla.
         </p>
       </section>
     </main>

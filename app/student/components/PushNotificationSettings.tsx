@@ -5,13 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 
 type PushState =
-  | "checking"
-  | "available"
-  | "active"
-  | "needs_install"
-  | "denied"
-  | "unsupported"
-  | "error";
+  "checking" | "available" | "active" | "needs_install" | "denied" | "unsupported" | "error";
 
 type PushStatusSnapshot = {
   configured?: boolean;
@@ -86,26 +80,17 @@ function deviceLabel() {
   return "Navegador";
 }
 
-export default function PushNotificationSettings({
-  studioId,
-}: {
-  studioId: string;
-}) {
+export default function PushNotificationSettings({ studioId }: { studioId: string }) {
   const supabase = useMemo(() => createClient(), []);
   const [state, setState] = useState<PushState>("checking");
   const [deviceCount, setDeviceCount] = useState(0);
-  const [busy, setBusy] = useState<"activate" | "deactivate" | "test" | null>(
-    null,
-  );
+  const [busy, setBusy] = useState<"activate" | "deactivate" | "test" | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
   const refreshServerStatus = useCallback(async () => {
-    const { data, error } = await supabase.rpc(
-      "get_my_push_notification_status",
-      {
-        p_studio_id: studioId,
-      },
-    );
+    const { data, error } = await supabase.rpc("get_my_push_notification_status", {
+      p_studio_id: studioId,
+    });
 
     if (error) return;
 
@@ -207,18 +192,15 @@ export default function PushNotificationSettings({
         throw new Error("push_subscription_incomplete");
       }
 
-      const { error: registerError } = await supabase.rpc(
-        "register_my_push_subscription",
-        {
-          p_studio_id: studioId,
-          p_endpoint: endpoint,
-          p_p256dh: p256dh,
-          p_auth: auth,
-          p_user_agent: navigator.userAgent,
-          p_device_label: deviceLabel(),
-          p_expiration_time: subscription.expirationTime,
-        },
-      );
+      const { error: registerError } = await supabase.rpc("register_my_push_subscription", {
+        p_studio_id: studioId,
+        p_endpoint: endpoint,
+        p_p256dh: p256dh,
+        p_auth: auth,
+        p_user_agent: navigator.userAgent,
+        p_device_label: deviceLabel(),
+        p_expiration_time: subscription.expirationTime,
+      });
 
       if (registerError) throw registerError;
 
@@ -247,13 +229,10 @@ export default function PushNotificationSettings({
       const subscription = await registration.pushManager.getSubscription();
 
       if (subscription) {
-        const { error } = await supabase.rpc(
-          "unregister_my_push_subscription",
-          {
-            p_studio_id: studioId,
-            p_endpoint: subscription.endpoint,
-          },
-        );
+        const { error } = await supabase.rpc("unregister_my_push_subscription", {
+          p_studio_id: studioId,
+          p_endpoint: subscription.endpoint,
+        });
 
         if (error) throw error;
         await subscription.unsubscribe();
@@ -275,23 +254,18 @@ export default function PushNotificationSettings({
     setMessage(null);
 
     try {
-      const { data, error } = await supabase.functions.invoke(
-        "send-push-notification",
-        {
-          body: {
-            mode: "self_test",
-            studio_id: studioId,
-          },
+      const { data, error } = await supabase.functions.invoke("send-push-notification", {
+        body: {
+          mode: "self_test",
+          studio_id: studioId,
         },
-      );
+      });
 
       if (error || !data?.ok || (data.delivered ?? 0) < 1) {
         throw error ?? new Error("push_test_failed");
       }
 
-      setMessage(
-        "Prueba enviada. Debes recibir una notificación de Studio Flow.",
-      );
+      setMessage("Prueba enviada. Debes recibir una notificación de Studio Flow.");
     } catch {
       setMessage("La prueba no pudo enviarse. Revisaremos el registro técnico.");
     } finally {
@@ -307,8 +281,7 @@ export default function PushNotificationSettings({
     },
     available: {
       title: "Push disponible",
-      description:
-        "Actívalo para recibir cambios importantes de clases, evaluaciones y eventos.",
+      description: "Actívalo para recibir cambios importantes de clases, evaluaciones y eventos.",
     },
     active: {
       title: "Push activo",
@@ -331,8 +304,7 @@ export default function PushNotificationSettings({
     },
     error: {
       title: "No pudimos comprobar Push",
-      description:
-        "La configuración no quedó lista en este intento. Puedes volver a intentarlo.",
+      description: "La configuración no quedó lista en este intento. Puedes volver a intentarlo.",
     },
   } satisfies Record<PushState, { title: string; description: string }>;
 
@@ -350,9 +322,7 @@ export default function PushNotificationSettings({
             Notificaciones Push
           </p>
           <h2 className="mt-2 text-lg font-semibold text-white">{copy.title}</h2>
-          <p className="mt-1 max-w-2xl text-xs leading-5 text-zinc-400">
-            {copy.description}
-          </p>
+          <p className="mt-1 max-w-2xl text-xs leading-5 text-zinc-400">{copy.description}</p>
         </div>
 
         <span
@@ -365,11 +335,7 @@ export default function PushNotificationSettings({
                 : "border-white/10 bg-white/[0.04] text-zinc-300")
           }
         >
-          {state === "active"
-            ? "Activo"
-            : state === "checking"
-              ? "Revisando"
-              : "No activo"}
+          {state === "active" ? "Activo" : state === "checking" ? "Revisando" : "No activo"}
         </span>
       </div>
 

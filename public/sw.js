@@ -52,9 +52,7 @@ self.addEventListener("push", (event) => {
       : "Tienes una nueva notificación.";
 
   const tag =
-    typeof payload.tag === "string" && payload.tag.trim()
-      ? payload.tag.trim()
-      : "studio-flow";
+    typeof payload.tag === "string" && payload.tag.trim() ? payload.tag.trim() : "studio-flow";
 
   event.waitUntil(
     self.registration.showNotification(title, {
@@ -76,19 +74,17 @@ self.addEventListener("notificationclick", (event) => {
   const targetUrl = new URL(targetPath, self.location.origin).href;
 
   event.waitUntil(
-    self.clients
-      .matchAll({ type: "window", includeUncontrolled: true })
-      .then((windows) => {
-        for (const client of windows) {
-          if ("focus" in client) {
-            if ("navigate" in client) {
-              return client.navigate(targetUrl).then(() => client.focus());
-            }
-            return client.focus();
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((windows) => {
+      for (const client of windows) {
+        if ("focus" in client) {
+          if ("navigate" in client) {
+            return client.navigate(targetUrl).then(() => client.focus());
           }
+          return client.focus();
         }
+      }
 
-        return self.clients.openWindow(targetUrl);
-      }),
+      return self.clients.openWindow(targetUrl);
+    }),
   );
 });
