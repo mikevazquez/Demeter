@@ -153,12 +153,6 @@ export default async function DocumentDetailPage({
           Versiones
         </Link>
         <Link
-          href={`/admin/documentos/${document.id}/aceptaciones`}
-          className="rounded-xl px-4 py-2 text-zinc-400 hover:text-white"
-        >
-          Aceptaciones
-        </Link>
-        <Link
           href="/admin/documentos/incidencias"
           className="rounded-xl px-4 py-2 text-zinc-400 hover:text-white"
         >
@@ -212,12 +206,9 @@ export default async function DocumentDetailPage({
               <p className="text-xs text-zinc-500">Pendientes</p>
             </div>
           </div>
-          <Link
-            href={`/admin/documentos/${document.id}/aceptaciones`}
-            className="mt-4 inline-flex text-sm font-semibold text-fuchsia-300"
-          >
-            Ver seguimiento →
-          </Link>
+          <p className="mt-4 text-xs leading-5 text-zinc-500">
+            El detalle por persona se consulta desde el perfil de cada alumna.
+          </p>
         </div>
 
         <div className="rounded-3xl border border-fuchsia-400/20 bg-[#0d0f16] p-5">
