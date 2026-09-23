@@ -11,9 +11,21 @@ const cleanup = readFileSync(
   join(process.cwd(), "supabase/migrations/20260923160500_rewards_bronze_onboarding_cleanup.sql"),
   "utf8",
 );
+const pwaPush = readFileSync(
+  join(process.cwd(), "supabase/migrations/20260923211000_rewards_onboarding_pwa_push.sql"),
+  "utf8",
+);
 const rewardsPage = readFileSync(join(process.cwd(), "app/student/recompensas/page.tsx"), "utf8");
 const onboardingUi = readFileSync(
   join(process.cwd(), "app/student/recompensas/OnboardingActivation.tsx"),
+  "utf8",
+);
+const installUi = readFileSync(
+  join(process.cwd(), "app/student/recompensas/OnboardingInstallStep.tsx"),
+  "utf8",
+);
+const pushUi = readFileSync(
+  join(process.cwd(), "app/student/components/PushNotificationSettings.tsx"),
   "utf8",
 );
 const homePage = readFileSync(join(process.cwd(), "app/student/page.tsx"), "utf8");
@@ -37,13 +49,15 @@ describe("REWARDS Bronze onboarding", () => {
     expect(onboarding).toContain("reward_onboarding_try_unlock");
   });
 
-  it("requires four persistent milestones before automatic Bronze unlock", () => {
-    expect(onboarding).toContain("documents_completed_at is null");
-    expect(onboarding).toContain("profile_completed_at is null");
-    expect(onboarding).toContain("first_reservation_at is null");
-    expect(onboarding).toContain("first_attendance_at is null");
-    expect(onboarding).toContain("'onboarding'");
-    expect(onboarding).toContain("'bronze'");
+  it("requires six persistent milestones before automatic Bronze unlock", () => {
+    expect(pwaPush).toContain("documents_completed_at is null");
+    expect(pwaPush).toContain("profile_completed_at is null");
+    expect(pwaPush).toContain("app_installed_at is null");
+    expect(pwaPush).toContain("notifications_enabled_at is null");
+    expect(pwaPush).toContain("first_reservation_at is null");
+    expect(pwaPush).toContain("first_attendance_at is null");
+    expect(pwaPush).toContain("'onboarding'");
+    expect(pwaPush).toContain("'bronze'");
   });
 
   it("preserves existing medal memberships and does not force legacy students through onboarding", () => {
@@ -52,7 +66,16 @@ describe("REWARDS Bronze onboarding", () => {
     expect(onboarding).toContain("left join public.reward_status_memberships");
   });
 
-  it("keeps reservation and attendance milestones auditable", () => {
+  it("keeps PWA, Push, reservation and attendance milestones auditable", () => {
+    expect(pwaPush).toContain("student_confirm_reward_app_installation");
+    expect(pwaPush).toContain("first_push_subscription_id");
+    expect(pwaPush).toContain("reward_onboarding_capture_push_subscription");
+    expect(pwaPush).toContain("push_subscriptions");
+    expect(installUi).toContain("Agregar a pantalla de inicio");
+    expect(installUi).toContain("display-mode: standalone");
+    expect(pushUi).toContain("Activar notificaciones");
+    expect(pushUi).toContain("elige Permitir");
+
     expect(onboarding).toContain("first_reservation_id");
     expect(onboarding).toContain("first_attendance_reservation_id");
     expect(onboarding).toContain("after insert on public.reservations");
@@ -103,6 +126,8 @@ describe("REWARDS Bronze onboarding", () => {
     expect(adminRewards).toContain("Activación de Medalla Bronce");
     expect(adminRewards).toContain("Aceptar documentos obligatorios");
     expect(adminRewards).toContain("Completar perfil");
+    expect(adminRewards).toContain("Guardar la app");
+    expect(adminRewards).toContain("Activar notificaciones");
     expect(adminRewards).toContain("Realizar primera reserva");
     expect(adminRewards).toContain("Asistir a primera clase");
     expect(adminRewards).toContain("Requisitos fijos en v1");
