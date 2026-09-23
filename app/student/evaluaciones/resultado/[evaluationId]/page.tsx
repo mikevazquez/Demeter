@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 
 import { formatDate, getStudentPortalContext } from "@/lib/student/portal";
 
+import EvaluationHeroCard from "../../EvaluationHeroCard";
 import { MarkEvaluationResultViewed } from "./MarkEvaluationResultViewed";
 
 type CriterionResult = {
@@ -69,25 +70,29 @@ export default async function StudentEvaluationResultPage({
       ? placement
         ? "Nivel confirmado"
         : progression
-          ? "Nuevo nivel"
+          ? "Nuevo nivel confirmado"
           : "Nivel confirmado"
-      : placement
-        ? "Nivel actual"
-        : "Nivel actual";
+      : "Nivel confirmado";
+  const heroVariant = diagnostic
+    ? "diagnostic_completed"
+    : progression && approved
+      ? "level_up"
+      : "level_maintained";
   const headline = diagnostic
     ? "Diagnóstico completado"
-    : approved
-      ? "¡Evaluación aprobada!"
-      : placement
-        ? "Nivel todavía no confirmado"
-        : "Continúas en tu nivel";
+    : progression && approved
+      ? "¡Nuevo nivel confirmado!"
+      : "Se mantiene en su nivel";
   const subheadline = diagnostic
     ? "Ya tienes un nivel técnico confirmado."
-    : approved
-      ? "Tu esfuerzo dio resultados."
-      : placement
-        ? "Esta evaluación aún no confirmó un nivel técnico."
-        : "Estás construyendo bases sólidas.";
+    : progression && approved
+      ? "Tu dedicación y esfuerzo dan resultados."
+      : "Tu nivel técnico se mantiene. ¡Vas por buen camino!";
+  const levelSupport = diagnostic
+    ? "Este es tu punto de partida técnico. A partir de aquí comienza tu ciclo de progresión."
+    : progression && approved
+      ? "Has superado con éxito la evaluación. Sigue explorando nuevos retos y perfeccionando tu técnica."
+      : "Mantienes un buen progreso en tu práctica. Sigue entrenando con constancia para consolidar tu técnica y ganar más seguridad.";
 
   return (
     <main className="mx-auto max-w-3xl space-y-3 pb-4">
@@ -106,50 +111,35 @@ export default async function StudentEvaluationResultPage({
         <span className="h-10 w-10" aria-hidden="true" />
       </div>
 
-      <section className="overflow-hidden rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_85%_0%,rgba(236,72,153,0.14),transparent_32%),linear-gradient(150deg,#131018,#0b1017)] p-4 sm:p-5">
-        <div className="grid gap-4 sm:grid-cols-[150px_1fr] sm:items-stretch">
-          <div className="relative min-h-40 overflow-hidden rounded-[22px] border border-fuchsia-500/40 bg-[radial-gradient(circle_at_50%_20%,rgba(236,72,153,0.34),transparent_26%),linear-gradient(145deg,#2a0a1d,#090c12_72%)] shadow-[0_0_28px_rgba(236,72,153,0.14)]">
-            <div className="absolute inset-0 bg-[linear-gradient(120deg,transparent_35%,rgba(236,72,153,0.14),transparent_70%)]" />
-            <div className="absolute inset-x-0 bottom-0 p-4">
-              <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-fuchsia-300">
-                {result.discipline_name}
-              </span>
-              <strong className="mt-1 block text-lg text-white">
-                {result.evaluated_level_title}
-              </strong>
-            </div>
-          </div>
+      <EvaluationHeroCard
+        variant={heroVariant}
+        disciplineName={result.discipline_name}
+        levelName={confirmedLevel}
+      />
 
-          <div className="flex min-w-0 flex-col justify-center">
-            <span
-              className={
-                "inline-flex w-fit rounded-xl border px-3 py-1.5 text-[10px] font-semibold " +
-                (approved
-                  ? "border-emerald-400/40 bg-emerald-400/[0.08] text-emerald-300"
-                  : "border-amber-400/40 bg-amber-400/[0.08] text-amber-300")
-              }
-            >
-              {diagnostic
-                ? "✓ Diagnóstico completado"
-                : approved
-                  ? "✓ Evaluación completada"
-                  : "− Evaluación completada"}
-            </span>
-            <h1 className="mt-3 text-3xl font-semibold tracking-tight text-white">{headline}</h1>
-            <p className="mt-1 text-sm text-zinc-400">{subheadline}</p>
-            <div className="mt-4 flex items-center justify-between gap-3 border-t border-white/[0.06] pt-4">
-              <div>
-                <strong className="text-lg text-white">{result.discipline_name}</strong>
-                <p className="text-xs text-zinc-400">
-                  Nivel evaluado: {result.evaluated_level_title}
-                </p>
-              </div>
-              <span aria-hidden="true" className="text-xl text-zinc-500">
-                ›
-              </span>
-            </div>
+      <section className="px-1 pt-2">
+        <h2 className="text-3xl font-semibold tracking-tight text-white">{headline}</h2>
+        <p className="mt-1 text-sm leading-6 text-zinc-400">{subheadline}</p>
+      </section>
+
+      <section className="flex items-center justify-between gap-3 rounded-[24px] border border-white/10 bg-white/[0.025] p-4">
+        <div className="flex min-w-0 items-center gap-3">
+          <span
+            aria-hidden="true"
+            className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-fuchsia-500/[0.12] text-xl text-fuchsia-400"
+          >
+            ✦
+          </span>
+          <div className="min-w-0">
+            <strong className="block truncate text-base text-white">{result.discipline_name}</strong>
+            <p className="mt-0.5 text-xs text-zinc-400">
+              Nivel evaluado: {result.evaluated_level_title}
+            </p>
           </div>
         </div>
+        <span aria-hidden="true" className="text-xl text-zinc-500">›</span>
+      </section>
+
       </section>
 
       <section
@@ -160,64 +150,72 @@ export default async function StudentEvaluationResultPage({
             : "border-fuchsia-500/35 bg-white/[0.02]")
         }
       >
-        <div className="flex items-center justify-between gap-4">
-          <div>
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0">
             <p className="text-xs text-zinc-400">{levelCardLabel}</p>
-            <strong className="mt-1 block text-2xl font-semibold text-fuchsia-400">
+            <strong className="mt-1 block text-3xl font-semibold tracking-tight text-fuchsia-400">
               {confirmedLevel}
             </strong>
+            <p className="mt-3 max-w-2xl text-xs leading-5 text-zinc-400">{levelSupport}</p>
           </div>
           <span
             aria-hidden="true"
-            className="grid h-11 w-11 place-items-center rounded-2xl bg-fuchsia-500/[0.12] text-2xl text-fuchsia-400"
+            className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-fuchsia-500/[0.12] text-2xl text-fuchsia-400"
           >
-            {diagnostic ? "✓" : approved ? "↗" : "="}
+            {diagnostic || approved ? "✓" : "="}
           </span>
         </div>
       </section>
 
-      <section className="grid grid-cols-2 overflow-hidden rounded-[24px] border border-white/10 bg-white/[0.025]">
-        <div className="border-r border-white/[0.06] p-4">
-          <p className="text-[10px] uppercase tracking-[0.14em] text-zinc-500">
-            Fecha de evaluación
-          </p>
-          <strong className="mt-1 block text-base text-white">
-            {formatDate(result.evaluation_date, studio.timezone)}
-          </strong>
+      <section className="grid grid-cols-2 gap-3">
+        <div className="rounded-[22px] border border-white/10 bg-white/[0.025] p-4">
+          <div className="flex items-center gap-3">
+            <span aria-hidden="true" className="text-xl text-fuchsia-400">▣</span>
+            <div>
+              <p className="text-[10px] text-zinc-500">Fecha de evaluación</p>
+              <strong className="mt-0.5 block text-base text-white">
+                {formatDate(result.evaluation_date, studio.timezone)}
+              </strong>
+            </div>
+          </div>
         </div>
-        <div className="p-4">
-          <p className="text-[10px] uppercase tracking-[0.14em] text-zinc-500">Puntuación total</p>
-          <strong className="mt-1 block text-base text-white">{percent(result.total_score)}</strong>
+        <div className="rounded-[22px] border border-white/10 bg-white/[0.025] p-4">
+          <div className="flex items-center gap-3">
+            <span aria-hidden="true" className="text-xl text-fuchsia-400">☆</span>
+            <div>
+              <p className="text-[10px] text-zinc-500">Puntuación total</p>
+              <strong className="mt-0.5 block text-base text-white">{percent(result.total_score)}</strong>
+            </div>
+          </div>
         </div>
       </section>
 
       {result.criteria.length ? (
         <section className="rounded-[24px] border border-fuchsia-500/30 bg-[radial-gradient(circle_at_90%_0%,rgba(236,72,153,0.08),transparent_36%),rgba(255,255,255,0.02)] p-4">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-fuchsia-300">
-                Desglose de puntaje
-              </p>
-              <h2 className="mt-1 text-lg font-semibold text-white">Tu evaluación</h2>
-            </div>
-            <span className="text-xs font-semibold text-fuchsia-300">Detalle</span>
-          </div>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-fuchsia-300">
+            Desglose de puntaje
+          </p>
+          <h2 className="mt-1 text-lg font-semibold text-white">Tu evaluación</h2>
 
-          <div className="mt-4 grid gap-3 sm:grid-cols-3">
-            {result.criteria.map((criterion) => (
-              <div
-                key={criterion.label}
-                className="rounded-2xl border border-white/[0.07] bg-black/15 p-3 text-center"
-              >
-                <div className="mx-auto grid h-16 w-16 place-items-center rounded-full border-[5px] border-fuchsia-500/80 bg-[#0b1016] text-sm font-semibold text-white">
-                  {percent(criterion.score_percent)}
+          <div className="mt-4 divide-y divide-white/[0.06]">
+            {result.criteria.map((criterion) => {
+              const score = Math.max(0, Math.min(100, Number(criterion.score_percent ?? 0)));
+              return (
+                <div
+                  key={criterion.label}
+                  className="grid grid-cols-[minmax(0,120px)_1fr_auto] items-center gap-3 py-3 first:pt-0 last:pb-0"
+                >
+                  <span className="truncate text-xs font-medium text-zinc-200">{criterion.label}</span>
+                  <span className="h-1.5 overflow-hidden rounded-full bg-white/[0.08]">
+                    <span
+                      className="block h-full rounded-full bg-fuchsia-500"
+                      style={{ width: `${score}%` }}
+                    />
+                  </span>
+                  <strong className="text-xs text-white">{percent(criterion.score_percent)}</strong>
                 </div>
-                <strong className="mt-3 block text-xs text-white">{criterion.label}</strong>
-                <span className="mt-1 block text-[10px] text-zinc-500">
-                  {percent(criterion.weight_percent)} del resultado
-                </span>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </section>
       ) : null}
@@ -270,21 +268,29 @@ export default async function StudentEvaluationResultPage({
         </section>
       ) : null}
 
-      <section className="rounded-[24px] border border-fuchsia-500/25 bg-fuchsia-500/[0.03] p-4">
-        <p className="text-sm font-semibold text-white">
-          {diagnostic
-            ? "Tu punto de partida ya está confirmado."
-            : approved
-              ? "Disciplina hoy, más movimiento mañana."
-              : "El progreso también se mide en constancia."}
-        </p>
-        <p className="mt-1 text-xs text-zinc-400">
-          {diagnostic
-            ? "A partir de aquí, tu siguiente evaluación llegará en 3 meses."
-            : approved
-              ? "Sigue explorando tu potencial."
-              : "Sigue entrenando, vas construyendo tu camino."}
-        </p>
+      <section className="rounded-[24px] border border-fuchsia-500/25 bg-[linear-gradient(110deg,rgba(112,26,75,0.35),rgba(236,72,153,0.04))] p-4">
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <span aria-hidden="true" className="text-lg text-fuchsia-400">“</span>
+            <p className="mt-1 text-sm italic text-zinc-200">
+              {diagnostic
+                ? "Tu punto de partida ya está confirmado."
+                : approved
+                  ? "Disciplina de hoy, resultados de mañana."
+                  : "La constancia también es progreso."}
+            </p>
+            <p className="mt-1 text-xs text-zinc-500">
+              {diagnostic
+                ? "Tu siguiente evaluación llegará dentro de tu ciclo trimestral."
+                : approved
+                  ? "Sigue explorando tu potencial."
+                  : "Sigue disfrutando tu proceso."}
+            </p>
+          </div>
+          <span className="shrink-0 text-[9px] font-semibold uppercase tracking-[0.24em] text-zinc-500">
+            Studio <span className="text-fuchsia-400">Flow</span>
+          </span>
+        </div>
       </section>
 
       <Link
