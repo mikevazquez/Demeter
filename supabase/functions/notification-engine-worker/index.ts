@@ -40,6 +40,7 @@ type NotificationRule = {
   event_type: string;
   version_number: number;
   notification_type: string;
+  communication_class: "P0" | "P1" | "P2";
   priority: "critical" | "normal" | "low";
   recipient_strategy_key: string;
   conditions: JsonObject;
@@ -594,26 +595,74 @@ async function processRule(
       key,
     ].join(":");
 
+    let contactOutcome: "allow" | "defer" | "suppress" = "allow";
+    let effectiveScheduledFor = timing.scheduledFor;
+    let suppressionReason = timing.reasonCode;
+    let suppressionDetail = timing.suppressed ? "Timing policy suppressed delivery." : null;
+
+    if (!timing.suppressed) {
+      const { data: contactData, error: contactError } = await adminClient.rpc(
+        "system_evaluate_notification_contact_candidate",
+        {
+          p_studio_id: event.studio_id,
+          p_source_event_id: event.event_id,
+          p_rule_id: rule.rule_id,
+          p_rule_version_number: rule.version_number,
+          p_recipient_type: recipient.recipientType,
+          p_recipient_entity_id: recipient.recipientEntityId,
+          p_recipient_user_id: recipient.recipientUserId,
+          p_communication_class: rule.communication_class,
+          p_scheduled_for: timing.scheduledFor,
+          p_expires_at: timing.expiresAt,
+        },
+      );
+
+      if (contactError) {
+        throw new Error(`contact_governor_failed:${contactError.message}`);
+      }
+
+      const contactResult = Array.isArray(contactData) ? contactData[0] : contactData;
+      const outcome = safeText(contactResult?.outcome);
+
+      if (outcome !== "allow" && outcome !== "defer" && outcome !== "suppress") {
+        throw new Error("contact_governor_invalid_outcome");
+      }
+
+      contactOutcome = outcome;
+      suppressionReason = safeText(contactResult?.reason_code);
+
+      if (outcome === "defer") {
+        const deferredUntil = safeText(contactResult?.effective_scheduled_for);
+        if (!deferredUntil) throw new Error("contact_governor_missing_deferred_time");
+        effectiveScheduledFor = deferredUntil;
+      } else if (outcome === "suppress") {
+        suppressionDetail = "Contact governor suppressed delivery.";
+      }
+    }
+
+    const finalSuppressed = timing.suppressed || contactOutcome === "suppress";
+
     const { data, error } = await adminClient.rpc("system_materialize_notification", {
       p_studio_id: event.studio_id,
       p_source_event_id: event.event_id,
       p_rule_id: rule.rule_id,
       p_rule_version_number: rule.version_number,
       p_notification_type: rule.notification_type,
+      p_communication_class: rule.communication_class,
       p_recipient_type: recipient.recipientType,
       p_recipient_entity_id: recipient.recipientEntityId,
       p_recipient_user_id: recipient.recipientUserId,
       p_recipient_snapshot: recipient.snapshot,
       p_priority: rule.priority,
-      p_scheduled_for: timing.scheduledFor,
+      p_scheduled_for: effectiveScheduledFor,
       p_expires_at: timing.expiresAt,
       p_template_key: rule.template_key,
       p_template_variables: buildTemplateVariables(context, recipient),
       p_deduplication_key: deduplicationKey,
-      p_channels: timing.suppressed ? [] : rule.channels,
-      p_suppressed: timing.suppressed,
-      p_reason_code: timing.reasonCode,
-      p_reason_detail: timing.suppressed ? "Timing policy suppressed delivery." : null,
+      p_channels: finalSuppressed ? [] : rule.channels,
+      p_suppressed: finalSuppressed,
+      p_reason_code: suppressionReason,
+      p_reason_detail: suppressionDetail,
     });
 
     if (error) throw new Error(`notification_materialization_failed:${error.message}`);
@@ -622,7 +671,7 @@ async function processRule(
     if (result?.created === true) {
       created += 1;
       jobs += Number(result.jobs_created ?? 0);
-      if (timing.suppressed) suppressed += 1;
+      if (finalSuppressed) suppressed += 1;
     } else {
       duplicates += 1;
     }
@@ -635,7 +684,12 @@ async function processRule(
     reasonCode: suppressed > 0 && jobs === 0 ? "timing_suppressed" : null,
     recipientCount: recipients.length,
     notificationsCreated: created,
-    details: { jobs_created: jobs, duplicates_skipped: duplicates, suppressed },
+    details: {
+      communication_class: rule.communication_class,
+      jobs_created: jobs,
+      duplicates_skipped: duplicates,
+      suppressed,
+    },
   });
 
   return { created, suppressed, jobs, duplicates };
