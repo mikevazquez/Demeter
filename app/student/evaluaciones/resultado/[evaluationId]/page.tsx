@@ -143,7 +143,7 @@ export default async function StudentEvaluationResultPage({
       <section
         className={
           "rounded-[24px] border p-4 " +
-          (approved
+          (approved || diagnostic
             ? "border-fuchsia-500/45 bg-fuchsia-500/[0.055]"
             : "border-fuchsia-500/35 bg-white/[0.02]")
         }
