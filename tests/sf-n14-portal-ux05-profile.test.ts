@@ -16,28 +16,30 @@ describe("SF-N14 PORTAL UX-05 Perfil", () => {
     expect(profile).toContain('data-profile-block="accesses"');
     expect(profile).toContain("Mi cuenta");
     expect(profile).toContain("bg-fuchsia-600");
-    expect(profile).toContain("Editar correo");
+    expect(profile).toContain("Editar perfil");
   });
 
-  it("keeps identity display-only and exposes only email editing", () => {
+  it("keeps identity display-only and exposes onboarding profile fields", () => {
     expect(profile.match(/Solo lectura/g)?.length).toBeGreaterThanOrEqual(3);
     expect(profile).not.toContain('name="first_name"');
     expect(profile).not.toContain('name="last_name"');
     expect(profile).not.toContain('name="phone"');
     expect(profile).toContain('name="email"');
     expect(profile).toContain('type="email"');
+    expect(profile).toContain('name="birth_date"');
+    expect(profile).toContain('type="date"');
   });
 
   it("preserves the approved pending, success and recovery feedback", () => {
     expect(profile).toContain('pendingLabel="Guardando…"');
-    expect(profile).toContain('title="Tu correo está actualizado"');
+    expect(profile).toContain('title="Tu perfil está actualizado"');
     expect(profile).toContain('title="Revisa tus datos"');
     expect(profile).toContain('dismissHref="/student/perfil"');
     expect(profile).toContain('query.edit === "1" || Boolean(query.error)');
   });
 
   it("keeps the canonical profile mutation and avoids direct frontend identity writes", () => {
-    expect(actions).toContain('supabase.rpc("student_update_own_profile"');
+    expect(actions).toContain('supabase.rpc("student_update_reward_onboarding_profile"');
     expect(actions).not.toContain('.from("persons")');
     expect(actions).not.toContain('.from("person_contacts")');
     expect(actions).not.toContain('formData.get("first_name")');
