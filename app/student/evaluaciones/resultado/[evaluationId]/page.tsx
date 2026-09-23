@@ -140,8 +140,6 @@ export default async function StudentEvaluationResultPage({
         <span aria-hidden="true" className="text-xl text-zinc-500">›</span>
       </section>
 
-      </section>
-
       <section
         className={
           "rounded-[24px] border p-4 " +
