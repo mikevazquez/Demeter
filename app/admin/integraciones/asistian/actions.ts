@@ -1,9 +1,12 @@
 "use server";
 
+import { createHmac } from "node:crypto";
 import { redirect } from "next/navigation";
 
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getAdminContext } from "@/lib/auth/admin-context";
+
+const ASISTIAN_TEMPLATE = "class_reminder";
 
 function safeWebhookUrl(value: string) {
   const normalized = value.trim();
@@ -26,10 +29,16 @@ export async function sendAsistianHandshake(formData: FormData) {
     redirect("/admin/integraciones/asistian?error=invalid_url");
   }
 
-  const { error: saveError } = await supabase.rpc("admin_set_asistian_webhook", {
+  const signingSecret = String(formData.get("signing_secret") ?? "").trim();
+  if (signingSecret.length < 12) {
+    redirect("/admin/integraciones/asistian?error=invalid_secret");
+  }
+
+  const { error: saveError } = await supabase.rpc("admin_set_asistian_webhook_credentials", {
     target_studio_id: studio.id,
-    target_template: "student_welcome",
+    target_template: ASISTIAN_TEMPLATE,
     target_url: webhookUrl,
+    target_secret: signingSecret,
   });
 
   if (saveError) {
@@ -38,20 +47,27 @@ export async function sendAsistianHandshake(formData: FormData) {
 
   const eventId = crypto.randomUUID();
   const payload = {
-    event: "sf174_handshake",
+    event: ASISTIAN_TEMPLATE,
     event_id: eventId,
     timestamp: new Date().toISOString(),
     phone: "+5213300000000",
     data: {
       nombre: "Prueba Studio Flow",
-      mensaje: "Handshake Studio Flow → Asistian",
-      prueba: true,
+      disciplina: "Pole Fitness",
+      fecha: "23/09/2026",
+      hora: "18:00",
+      coach: "Coach de prueba",
+      ubicacion: "Demeter Fitness Studio",
     },
     metadata: {
-      source: "studio_flow_preview",
-      sf_ticket: "SF-174",
+      source: "studio_flow_asistian_handshake",
+      hours_before: 3,
+      test: true,
     },
   };
+  const body = JSON.stringify(payload);
+  const signature =
+    "sha256=" + createHmac("sha256", signingSecret).update(body, "utf8").digest("hex");
 
   let response: Response;
 
@@ -60,9 +76,11 @@ export async function sendAsistianHandshake(formData: FormData) {
       method: "POST",
       headers: {
         "content-type": "application/json",
+        "X-Webhook-Signature": signature,
+        "Idempotency-Key": eventId,
         "x-studio-flow-event-id": eventId,
       },
-      body: JSON.stringify(payload),
+      body,
       cache: "no-store",
       signal: AbortSignal.timeout(10_000),
     });
@@ -79,24 +97,4 @@ export async function sendAsistianHandshake(formData: FormData) {
   redirect(
     `/admin/integraciones/asistian?sent=1&status=${encodeURIComponent(String(response.status))}`,
   );
-}
-
-export async function saveAsistianSigningSecret(formData: FormData) {
-  const { supabase, studio } = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
-
-  const signingSecret = String(formData.get("signing_secret") ?? "").trim();
-  if (signingSecret.length < 12) {
-    redirect("/admin/integraciones/asistian?error=invalid_secret");
-  }
-
-  const { error: saveError } = await supabase.rpc("admin_set_asistian_signing_secret", {
-    target_studio_id: studio.id,
-    target_secret: signingSecret,
-  });
-
-  if (saveError) {
-    redirect("/admin/integraciones/asistian?error=secret_save");
-  }
-
-  redirect("/admin/integraciones/asistian?secret_saved=1");
 }
