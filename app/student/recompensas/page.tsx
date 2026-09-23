@@ -16,6 +16,7 @@ import {
 } from "@/lib/student/reward-progress-ui";
 
 import { ProgressBar, RewardsEmpty, SectionHeading, StateChip, SummaryTile } from "./components";
+import { BronzeMedalUnlocked, RewardsOnboardingActivation } from "./OnboardingActivation";
 
 function rewardLabelFromDefinition(value: unknown) {
   const definition = rewardObject(value);
@@ -32,6 +33,29 @@ function plural(count: number, singular: string, pluralValue: string) {
 
 export default async function StudentProgressPage() {
   const ctx = await getStudentRewardsContext();
+
+  if (ctx.onboarding && !ctx.onboarding.bronze_unlocked_at) {
+    const upcomingClass =
+      [...ctx.snapshot.upcoming].sort(
+        (left, right) => Date.parse(left.starts_at) - Date.parse(right.starts_at),
+      )[0] ?? null;
+
+    return (
+      <RewardsOnboardingActivation
+        onboarding={ctx.onboarding}
+        upcomingClass={upcomingClass}
+        timeZone={ctx.studio.timezone}
+      />
+    );
+  }
+
+  if (
+    ctx.onboarding?.bronze_unlocked_at &&
+    !ctx.onboarding.bronze_acknowledged_at &&
+    ctx.onboarding.unlock_method !== "legacy"
+  ) {
+    return <BronzeMedalUnlocked />;
+  }
 
   const activePrograms = ctx.programParticipations
     .filter((participation) => {
