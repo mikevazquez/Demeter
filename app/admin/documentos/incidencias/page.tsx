@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import QueryNotice from "@/app/components/QueryNotice";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getAdminContext } from "@/lib/auth/admin-context";
 
@@ -101,8 +102,22 @@ export default async function DocumentIncidentsPage({
         </p>
       </header>
 
-      {query.saved ? <div className="notice success">Cambio registrado correctamente.</div> : null}
-      {query.error ? <div className="notice error">No pudimos completar esa operación.</div> : null}
+      {query.saved ? (
+        <QueryNotice
+          eyebrow="Documentos"
+          title="Cambio registrado"
+          message="La operación quedó registrada con su trazabilidad administrativa."
+          tone="success"
+        />
+      ) : null}
+      {query.error ? (
+        <QueryNotice
+          eyebrow="Documentos"
+          title="No pudimos completar la operación"
+          message="Revisa los datos del caso e inténtalo nuevamente."
+          tone="error"
+        />
+      ) : null}
 
       {can(CAPABILITIES.DOCUMENTS_MANAGE) ? (
         <section className="grid gap-4 xl:grid-cols-3">
