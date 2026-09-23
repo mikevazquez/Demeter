@@ -1,14 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useState } from "react";
 
-import { createClient } from "@/lib/supabase/client";
-
-type PushState =
-  "checking" | "available" | "active" | "needs_install" | "denied" | "unsupported" | "error";
+type PushState = "available" | "active" | "needs_install" | "denied" | "unsupported" | "error";
 
 type PushStatusSnapshot = {
-  configured?: boolean;
   active_subscriptions?: number;
 };
 
@@ -22,14 +18,14 @@ function isIosDevice() {
 }
 
 function isStandalone() {
-  if (typeof window === "undefined") return false;
+  if (typeof window === "undefined" || typeof navigator === "undefined") return false;
 
   const navigatorWithStandalone = navigator as Navigator & {
     standalone?: boolean;
   };
 
   return (
-    window.matchMedia("(display-mode: standalone)").matches ||
+    window.matchMedia?.("(display-mode: standalone)").matches === true ||
     navigatorWithStandalone.standalone === true
   );
 }
@@ -37,6 +33,7 @@ function isStandalone() {
 function supportsPush() {
   return (
     typeof window !== "undefined" &&
+    typeof navigator !== "undefined" &&
     window.isSecureContext &&
     "serviceWorker" in navigator &&
     "PushManager" in window &&
@@ -48,11 +45,13 @@ function urlBase64ToUint8Array(value: string) {
   const padding = "=".repeat((4 - (value.length % 4)) % 4);
   const base64 = (value + padding).replace(/-/g, "+").replace(/_/g, "/");
   const raw = window.atob(base64);
+
   return Uint8Array.from(raw, (character) => character.charCodeAt(0));
 }
 
 function equalKeys(left: ArrayBuffer | null, right: Uint8Array) {
   if (!left) return false;
+
   const leftBytes = new Uint8Array(left);
   if (leftBytes.length !== right.length) return false;
 
@@ -67,6 +66,7 @@ async function serviceWorkerRegistration() {
   const registration = await navigator.serviceWorker.register("/sw.js", {
     scope: "/",
   });
+
   await navigator.serviceWorker.ready;
   return registration;
 }
@@ -80,64 +80,32 @@ function deviceLabel() {
   return "Navegador";
 }
 
+async function browserClient() {
+  const { createClient } = await import("@/lib/supabase/client");
+  return createClient();
+}
+
 export default function PushNotificationSettings({ studioId }: { studioId: string }) {
-  const supabase = useMemo(() => createClient(), []);
-  const [state, setState] = useState<PushState>("checking");
+  const [state, setState] = useState<PushState>("available");
   const [deviceCount, setDeviceCount] = useState(0);
   const [busy, setBusy] = useState<"activate" | "deactivate" | "test" | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
-  const refreshServerStatus = useCallback(async () => {
-    const { data, error } = await supabase.rpc("get_my_push_notification_status", {
-      p_studio_id: studioId,
-    });
-
-    if (error) return;
-
-    const snapshot = (data ?? {}) as PushStatusSnapshot;
-    setDeviceCount(snapshot.active_subscriptions ?? 0);
-  }, [studioId, supabase]);
-
-  const refreshBrowserStatus = useCallback(async () => {
-    setMessage(null);
-
-    if (isIosDevice() && !isStandalone()) {
-      setState("needs_install");
-      await refreshServerStatus();
-      return;
-    }
-
-    if (!supportsPush()) {
-      setState("unsupported");
-      await refreshServerStatus();
-      return;
-    }
-
+  async function refreshServerStatus() {
     try {
-      const registration = await serviceWorkerRegistration();
-      const subscription = await registration.pushManager.getSubscription();
+      const supabase = await browserClient();
+      const { data, error } = await supabase.rpc("get_my_push_notification_status", {
+        p_studio_id: studioId,
+      });
 
-      if (Notification.permission === "denied") {
-        setState("denied");
-      } else if (subscription && Notification.permission === "granted") {
-        setState("active");
-      } else {
-        setState("available");
-      }
+      if (error) return;
+
+      const snapshot = (data ?? {}) as PushStatusSnapshot;
+      setDeviceCount(snapshot.active_subscriptions ?? 0);
     } catch {
-      setState("error");
+      // El estado del servidor es informativo y nunca debe impedir abrir esta pantalla.
     }
-
-    await refreshServerStatus();
-  }, [refreshServerStatus]);
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      void refreshBrowserStatus();
-    }, 0);
-
-    return () => window.clearTimeout(timer);
-  }, [refreshBrowserStatus]);
+  }
 
   async function activate() {
     setBusy("activate");
@@ -155,11 +123,13 @@ export default function PushNotificationSettings({ studioId }: { studioId: strin
       }
 
       const permission = await Notification.requestPermission();
+
       if (permission !== "granted") {
         setState(permission === "denied" ? "denied" : "available");
         return;
       }
 
+      const supabase = await browserClient();
       const { data: rawPublicKey, error: keyError } = await supabase.rpc(
         "get_push_vapid_public_key",
       );
@@ -229,6 +199,7 @@ export default function PushNotificationSettings({ studioId }: { studioId: strin
         return;
       }
 
+      const supabase = await browserClient();
       const registration = await serviceWorkerRegistration();
       const subscription = await registration.pushManager.getSubscription();
 
@@ -258,6 +229,7 @@ export default function PushNotificationSettings({ studioId }: { studioId: strin
     setMessage(null);
 
     try {
+      const supabase = await browserClient();
       const { data, error } = await supabase.functions.invoke("send-push-notification", {
         body: {
           mode: "self_test",
@@ -279,10 +251,6 @@ export default function PushNotificationSettings({ studioId }: { studioId: strin
   }
 
   const stateCopy = {
-    checking: {
-      title: "Revisando este dispositivo",
-      description: "Estamos comprobando si puede recibir notificaciones Push.",
-    },
     available: {
       title: "Push disponible",
       description: "Actívalo para recibir cambios importantes de clases, evaluaciones y eventos.",
@@ -307,7 +275,7 @@ export default function PushNotificationSettings({ studioId }: { studioId: strin
         "Este navegador o contexto no admite Web Push. Puedes seguir usando Studio Flow normalmente.",
     },
     error: {
-      title: "No pudimos comprobar Push",
+      title: "No pudimos activar Push",
       description: "La configuración no quedó lista en este intento. Puedes volver a intentarlo.",
     },
   } satisfies Record<PushState, { title: string; description: string }>;
@@ -339,7 +307,7 @@ export default function PushNotificationSettings({ studioId }: { studioId: strin
                 : "border-white/10 bg-white/[0.04] text-zinc-300")
           }
         >
-          {state === "active" ? "Activo" : state === "checking" ? "Revisando" : "No activo"}
+          {state === "active" ? "Activo" : "No activo"}
         </span>
       </div>
 
@@ -388,17 +356,6 @@ export default function PushNotificationSettings({ studioId }: { studioId: strin
               {busy === "deactivate" ? "Desactivando…" : "Desactivar aquí"}
             </button>
           </>
-        ) : null}
-
-        {state === "denied" ? (
-          <button
-            type="button"
-            onClick={() => void refreshBrowserStatus()}
-            disabled={busy !== null}
-            className="min-h-11 rounded-xl border border-white/10 px-4 py-2.5 text-sm font-semibold text-zinc-300 transition hover:bg-white/[0.05] hover:text-white disabled:opacity-60"
-          >
-            Volver a comprobar
-          </button>
         ) : null}
       </div>
     </section>
