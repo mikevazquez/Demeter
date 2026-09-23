@@ -5,7 +5,8 @@ import { formatDate, getStudentPortalContext } from "@/lib/student/portal";
 
 import { updateStudentAvatarAction, updateStudentProfileAction } from "../actions";
 import PendingActionButton from "../components/PendingActionButton";
-import StudentNoticeDialog from "../components/StudentNoticeDialog";\nimport StudentAvatarUploadForm from "./StudentAvatarUploadForm";
+import StudentNoticeDialog from "../components/StudentNoticeDialog";
+import StudentAvatarUploadForm from "./StudentAvatarUploadForm";
 
 const errorCopy: Record<string, string> = {
   email_invalid: "Revisa el formato de tu correo.",
