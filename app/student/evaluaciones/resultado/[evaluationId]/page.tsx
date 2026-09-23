@@ -18,7 +18,7 @@ type EvaluationResultDetail = {
   id: string;
   discipline_id: string;
   discipline_name: string;
-  evaluation_purpose: "placement" | "progression" | "exception";
+  evaluation_purpose: "diagnostic" | "placement" | "progression" | "exception";
   evaluated_level_title: string;
   resulting_level_title: string | null;
   evaluation_date: string;
@@ -55,31 +55,39 @@ export default async function StudentEvaluationResultPage({
 
   const result = data as EvaluationResultDetail;
   const approved = result.final_outcome === "approved";
+  const diagnostic = result.evaluation_purpose === "diagnostic";
   const placement = result.evaluation_purpose === "placement";
   const progression = result.evaluation_purpose === "progression";
-  const confirmedLevel =
-    placement && !approved
+  const confirmedLevel = diagnostic
+    ? (result.resulting_level_title ?? result.evaluated_level_title)
+    : placement && !approved
       ? "Sin nivel confirmado"
       : (result.resulting_level_title ?? result.evaluated_level_title);
-  const levelCardLabel = approved
-    ? placement
-      ? "Nivel confirmado"
-      : progression
-        ? "Nuevo nivel"
-        : "Nivel confirmado"
-    : placement
-      ? "Nivel actual"
-      : "Nivel actual";
-  const headline = approved
-    ? "¡Evaluación aprobada!"
-    : placement
-      ? "Nivel todavía no confirmado"
-      : "Continúas en tu nivel";
-  const subheadline = approved
-    ? "Tu esfuerzo dio resultados."
-    : placement
-      ? "Esta evaluación aún no confirmó un nivel técnico."
-      : "Estás construyendo bases sólidas.";
+  const levelCardLabel = diagnostic
+    ? "Nivel confirmado"
+    : approved
+      ? placement
+        ? "Nivel confirmado"
+        : progression
+          ? "Nuevo nivel"
+          : "Nivel confirmado"
+      : placement
+        ? "Nivel actual"
+        : "Nivel actual";
+  const headline = diagnostic
+    ? "Diagnóstico completado"
+    : approved
+      ? "¡Evaluación aprobada!"
+      : placement
+        ? "Nivel todavía no confirmado"
+        : "Continúas en tu nivel";
+  const subheadline = diagnostic
+    ? "Ya tienes un nivel técnico confirmado."
+    : approved
+      ? "Tu esfuerzo dio resultados."
+      : placement
+        ? "Esta evaluación aún no confirmó un nivel técnico."
+        : "Estás construyendo bases sólidas.";
 
   return (
     <main className="mx-auto max-w-3xl space-y-3 pb-4">
@@ -121,7 +129,11 @@ export default async function StudentEvaluationResultPage({
                   : "border-amber-400/40 bg-amber-400/[0.08] text-amber-300")
               }
             >
-              {approved ? "✓ Evaluación completada" : "− Evaluación completada"}
+              {diagnostic
+                ? "✓ Diagnóstico completado"
+                : approved
+                  ? "✓ Evaluación completada"
+                  : "− Evaluación completada"}
             </span>
             <h1 className="mt-3 text-3xl font-semibold tracking-tight text-white">{headline}</h1>
             <p className="mt-1 text-sm text-zinc-400">{subheadline}</p>
@@ -159,7 +171,7 @@ export default async function StudentEvaluationResultPage({
             aria-hidden="true"
             className="grid h-11 w-11 place-items-center rounded-2xl bg-fuchsia-500/[0.12] text-2xl text-fuchsia-400"
           >
-            {approved ? "↗" : "="}
+            {diagnostic ? "✓" : approved ? "↗" : "="}
           </span>
         </div>
       </section>
@@ -260,14 +272,18 @@ export default async function StudentEvaluationResultPage({
 
       <section className="rounded-[24px] border border-fuchsia-500/25 bg-fuchsia-500/[0.03] p-4">
         <p className="text-sm font-semibold text-white">
-          {approved
-            ? "Disciplina hoy, más movimiento mañana."
-            : "El progreso también se mide en constancia."}
+          {diagnostic
+            ? "Tu punto de partida ya está confirmado."
+            : approved
+              ? "Disciplina hoy, más movimiento mañana."
+              : "El progreso también se mide en constancia."}
         </p>
         <p className="mt-1 text-xs text-zinc-400">
-          {approved
-            ? "Sigue explorando tu potencial."
-            : "Sigue entrenando, vas construyendo tu camino."}
+          {diagnostic
+            ? "A partir de aquí, tu siguiente evaluación llegará en 3 meses."
+            : approved
+              ? "Sigue explorando tu potencial."
+              : "Sigue entrenando, vas construyendo tu camino."}
         </p>
       </section>
 
