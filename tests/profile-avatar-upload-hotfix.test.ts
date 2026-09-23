@@ -24,20 +24,15 @@ describe("profile avatar upload hotfix", () => {
     expect(picker).toContain('aria-live="polite"');
   });
 
-  it(
-    "keeps document storage authorization behind a narrow security-definer guard",
-    () => {
-      expect(migration).toContain(
-        "create or replace function public.can_read_studio_document_object",
-      );
-      expect(migration).toContain("security definer");
-      expect(migration).toContain("public.can_read_studio_document_object(name)");
-      expect(migration).toContain(
-        "private.document_version_applies_to_student(dv.id,s.id,null)",
-      );
-      expect(migration).not.toContain(
-        "grant execute on function private.document_version_applies_to_student",
-      );
-    },
-  );
+  it("keeps document storage authorization behind a narrow security-definer guard", () => {
+    expect(migration).toContain(
+      "create or replace function public.can_read_studio_document_object",
+    );
+    expect(migration).toContain("security definer");
+    expect(migration).toContain("public.can_read_studio_document_object(name)");
+    expect(migration).toContain("private.document_version_applies_to_student(dv.id,s.id,null)");
+    expect(migration).not.toContain(
+      "grant execute on function private.document_version_applies_to_student",
+    );
+  });
 });
