@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import QueryNotice from "@/app/components/QueryNotice";
 import {
   documentTypeLabels,
   type BookingRestriction,
@@ -41,9 +42,12 @@ export default async function StudentDocumentsPage({
       </header>
 
       {query.error || error ? (
-        <div className="rounded-3xl border border-rose-500/25 bg-rose-500/[0.07] p-4 text-sm text-rose-100">
-          No pudimos cargar todos tus documentos. Intenta nuevamente.
-        </div>
+        <QueryNotice
+          eyebrow="Documentos"
+          title="No pudimos cargar tus documentos"
+          message="Intenta nuevamente. Si el problema continúa, comunícate con tu estudio."
+          tone="error"
+        />
       ) : null}
 
       {blockers.length ? (
