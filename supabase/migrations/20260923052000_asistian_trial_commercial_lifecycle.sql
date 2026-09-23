@@ -698,7 +698,6 @@ declare
   v_occupied integer := 0;
   v_new_status public.reservation_status;
   v_acquisition public.product_acquisitions%rowtype;
-  v_existing_reserve integer := 0;
 begin
   if target_studio_id is null
      or target_source_event_id is null
@@ -965,8 +964,8 @@ begin
       );
     end if;
 
-    select cs.*, ct.discipline_id, greatest(coalesce(ct.credit_cost, 1), 1)
-      into v_new_session, v_new_discipline_id, v_new_credit_cost
+    select cs.*
+      into v_new_session
     from public.class_sessions cs
     join public.class_templates ct
       on ct.id = cs.template_id
@@ -985,6 +984,12 @@ begin
     for update of cs;
 
     v_new_session_id := v_new_session.id;
+
+    select ct.discipline_id, greatest(coalesce(ct.credit_cost, 1), 1)
+      into v_new_discipline_id, v_new_credit_cost
+    from public.class_templates ct
+    where ct.id = v_new_session.template_id
+      and ct.studio_id = target_studio_id;
 
     if coalesce(v_new_session.requires_resource, false) then
       update public.asistian_booking_links
