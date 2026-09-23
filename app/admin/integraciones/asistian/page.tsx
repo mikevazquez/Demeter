@@ -16,7 +16,8 @@ const errorCopy: Record<string, string> = {
   invalid_secret: "El Signing Secret no parece válido.",
   receiver_secret_invalid: "El secreto del webhook saliente de Asistian no parece válido.",
   receiver_secret_save: "No se pudo guardar el secreto para recibir eventos de Asistian.",
-  service_mapping_invalid: "Selecciona un servicio de Asistian y una actividad de Studio Flow.",
+  service_mapping_invalid:
+    "Selecciona un servicio de Asistian y una actividad de Studio Flow.",
   service_mapping_save: "No se pudo guardar el mapeo del servicio de Asistian.",
   network: "No se pudo conectar con Asistian.",
   http: "Asistian rechazó el webhook.",
