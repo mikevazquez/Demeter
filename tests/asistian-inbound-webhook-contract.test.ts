@@ -32,10 +32,11 @@ describe("Asistian -> Studio Flow receiver contract", () => {
   it("keeps captured customer payloads admin-only", () => {
     expect(migration).toContain("enable row level security");
     expect(migration).toContain("private.has_capability(studio_id, 'settings.write')");
-    expect(migration).toContain("grant select on table public.asistian_webhook_events to authenticated");
+    expect(migration).toContain(
+      "grant select on table public.asistian_webhook_events to authenticated",
+    );
   });
 });
-
 
 describe("Asistian lifecycle synchronization contract", () => {
   const receiver = source("supabase/functions/receive-asistian-webhook/index.ts");
