@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import QueryNotice from "@/app/components/QueryNotice";
 import { createClient } from "@/lib/supabase/server";
 
 import { acceptGuardianDocumentAction } from "../../actions";
@@ -76,9 +77,12 @@ export default async function GuardianDocumentPage({
         </header>
 
         {query.error ? (
-          <div className="rounded-3xl border border-rose-400/25 bg-rose-400/[0.06] p-4 text-sm text-rose-100">
-            No pudimos registrar tu respuesta. Revisa la confirmación e inténtalo de nuevo.
-          </div>
+          <QueryNotice
+            eyebrow="Documentos"
+            title="No pudimos registrar tu respuesta"
+            message="Revisa la confirmación e inténtalo de nuevo."
+            tone="error"
+          />
         ) : null}
 
         <section className="overflow-hidden rounded-3xl border border-fuchsia-500/20 bg-[#0d0f16]">
