@@ -295,7 +295,7 @@ export default async function StudentHomePage({
 
       {query.benefits === "1" && currentLevel ? (
         <StudentNoticeDialog
-          eyebrow={`Nivel ${currentLevel.title ?? rewardStatus?.level_title ?? ""}`}
+          eyebrow={`Medalla ${currentLevel.title ?? rewardStatus?.level_title ?? ""}`}
           title="Tus beneficios"
           dismissHref="/student"
           confirmLabel="Cerrar"
@@ -325,7 +325,7 @@ export default async function StudentHomePage({
             {nextLevel ? (
               <div className="rounded-2xl border border-fuchsia-500/20 bg-fuchsia-500/[0.055] p-4">
                 <p className="text-xs font-semibold uppercase tracking-[0.16em] text-fuchsia-300">
-                  Siguiente nivel · {nextLevel.title}
+                  Siguiente medalla · {nextLevel.title}
                 </p>
                 <p className="mt-2 text-sm text-zinc-300">
                   {nextLevel.private_discount_pct}% en privadas · {nextLevel.event_discount_pct}% en
@@ -337,7 +337,7 @@ export default async function StudentHomePage({
               </div>
             ) : (
               <p className="text-sm text-zinc-400">
-                Nivel máximo. Mantén tu constancia para conservar Diamante.
+                Medalla máxima. Mantén tu constancia para conservar Diamante.
               </p>
             )}
           </div>
@@ -514,40 +514,44 @@ export default async function StudentHomePage({
           </div>
 
           <Link
-            href="/student?benefits=1"
+            href={currentLevel ? "/student?benefits=1" : "/student/recompensas"}
             className="min-w-0 rounded-3xl border bg-black/20 p-3.5 transition hover:bg-white/[0.035] sm:p-4"
             style={{ borderColor: levelVisual.divider }}
           >
             <p
               className="text-[9px] font-semibold uppercase tracking-[0.22em]"
-              style={{ color: levelVisual.accent }}
+              style={{ color: currentLevel ? levelVisual.accent : "#f0abfc" }}
             >
-              Mis beneficios
+              {currentLevel ? "Mi medalla" : "Rewards"}
             </p>
             <div className="mt-3 flex items-center gap-3">
               <div
                 aria-hidden="true"
                 className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[16px] border text-xl"
                 style={{
-                  borderColor: levelVisual.border,
-                  background: `linear-gradient(135deg, ${levelVisual.wash}, rgba(0,0,0,0.18))`,
-                  boxShadow: `0 0 22px ${levelVisual.glow}`,
-                  color: levelVisual.accent,
+                  borderColor: currentLevel ? levelVisual.border : "rgba(236,72,153,0.35)",
+                  background: currentLevel
+                    ? `linear-gradient(135deg, ${levelVisual.wash}, rgba(0,0,0,0.18))`
+                    : "rgba(236,72,153,0.08)",
+                  boxShadow: currentLevel ? `0 0 22px ${levelVisual.glow}` : "none",
+                  color: currentLevel ? levelVisual.accent : "#f0abfc",
                 }}
               >
-                ♛
+                {currentLevel ? "♛" : "◇"}
               </div>
               <div className="min-w-0">
                 <h2 className="truncate text-xl font-semibold text-white">
-                  {currentLevel?.title ?? "Bronce"}
+                  {currentLevel ? `Medalla ${currentLevel.title ?? "Bronce"}` : "En activación"}
                 </h2>
                 <p className="mt-0.5 text-[11px] leading-4 text-zinc-400">
-                  Tu constancia te lleva más lejos
+                  {currentLevel
+                    ? "Tu constancia te lleva más lejos"
+                    : "Completa los pasos para desbloquear Bronce"}
                 </p>
               </div>
             </div>
             <div className="mt-4 flex items-center justify-between border-t border-white/10 pt-3 text-xs font-semibold text-white">
-              <span>Ver mis beneficios</span>
+              <span>{currentLevel ? "Ver mis beneficios" : "Continuar activación"}</span>
               <span aria-hidden="true" className="text-lg text-zinc-600">
                 ›
               </span>
