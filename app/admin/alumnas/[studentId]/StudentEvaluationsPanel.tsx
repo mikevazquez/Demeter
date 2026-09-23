@@ -98,6 +98,8 @@ function errorCopy(value?: string) {
     evaluation_reservation_not_active:
       "La reserva vinculada ya no está activa. La alumna debe volver a programar.",
     evaluation_not_scheduled: "La evaluación todavía no tiene una clase programada.",
+    evaluation_initial_diagnostic_invitation_required:
+      "La primera evaluación de esta disciplina debe iniciar desde una invitación de diagnóstico. No se puede asignar un nivel manualmente.",
     evaluation_action_failed: "No pudimos completar la acción.",
   };
   return value ? (copy[value] ?? copy.evaluation_action_failed) : null;
