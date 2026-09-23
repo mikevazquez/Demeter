@@ -12,7 +12,7 @@
     "start": "next start",
     "lint": "eslint .",
     "format": "prettier --write .",
-    "format:check": "prettier --write app/admin/integraciones/asistian/page.tsx supabase/functions/receive-asistian-webhook/index.ts tests/asistian-inbound-webhook-contract.test.ts && git diff -- app/admin/integraciones/asistian/page.tsx supabase/functions/receive-asistian-webhook/index.ts tests/asistian-inbound-webhook-contract.test.ts && exit 1",
+    "format:check": "prettier --check .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "ci": "npm run format:check && npm run lint && npm run typecheck && npm test && npm run build"
