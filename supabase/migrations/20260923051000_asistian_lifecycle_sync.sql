@@ -116,6 +116,17 @@ comment on column public.reservations.commercial_status is
 comment on column public.asistian_booking_links.sync_status is
   'Current synchronization health for the external Asistian booking.';
 
+create index if not exists asistian_booking_links_student_idx
+  on public.asistian_booking_links(student_id);
+
+create index if not exists asistian_booking_links_session_idx
+  on public.asistian_booking_links(session_id)
+  where session_id is not null;
+
+create index if not exists asistian_booking_links_source_event_idx
+  on public.asistian_booking_links(source_event_id)
+  where source_event_id is not null;
+
 create or replace function private.asistian_promote_trial_student()
 returns trigger
 language plpgsql
