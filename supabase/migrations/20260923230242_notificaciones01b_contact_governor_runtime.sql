@@ -882,3 +882,10 @@ revoke all on function public.system_claim_notification_jobs(text,integer,intege
 from public, anon, authenticated;
 grant execute on function public.system_claim_notification_jobs(text,integer,integer)
 to service_role;
+
+grant usage on schema private to service_role;
+grant execute on function private.evaluate_notification_contact(
+  uuid,text,uuid,uuid,text,timestamptz,timestamptz,uuid
+) to service_role;
+grant execute on function private.recalculate_notification_state(uuid)
+to service_role;
