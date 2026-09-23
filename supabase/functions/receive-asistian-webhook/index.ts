@@ -372,6 +372,7 @@ Deno.serve(async (request) => {
   const firstName = safeText(client?.first_name) ?? split.firstName;
   const lastName = safeText(client?.last_name) ?? split.lastName;
   const phone = safeText(client?.phone) ?? safeText(booking?.customer_phone);
+  const serviceId = safeScalarText(service?.id);
   const serviceName = safeText(service?.name) ?? safeText(booking?.title);
   const startsAt = safeText(booking?.start_time);
   const externalStatus = safeText(booking?.status) ?? safeText(booking?.status_label);
@@ -428,6 +429,7 @@ Deno.serve(async (request) => {
       target_first_name: firstName,
       target_last_name: lastName,
       target_phone: phone,
+      target_service_id: serviceId,
       target_service_name: serviceName,
       target_starts_at: startsAt,
     });
@@ -439,6 +441,7 @@ Deno.serve(async (request) => {
       target_source_event_id: eventRowId,
       target_event_name: eventName,
       target_booking_id: bookingId,
+      target_service_id: serviceId,
       target_service_name: serviceName,
       target_starts_at: startsAt,
       target_external_status: externalStatus,
