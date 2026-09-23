@@ -7,6 +7,14 @@ const core = readFileSync(
   join(process.cwd(), "supabase/migrations/20260921003000_sf255_reward_status_core.sql"),
   "utf8",
 );
+const medalOnboarding = readFileSync(
+  join(process.cwd(), "supabase/migrations/20260923153500_rewards_medal_onboarding.sql"),
+  "utf8",
+);
+const medalOnboardingPage = readFileSync(
+  join(process.cwd(), "app/student/recompensas/RewardOnboardingActivation.tsx"),
+  "utf8",
+);
 const waitlist = readFileSync(
   join(process.cwd(), "supabase/migrations/20260921004500_sf255_waitlist_priority.sql"),
   "utf8",
@@ -82,15 +90,38 @@ describe("SF-255A monthly level and waitlist contracts", () => {
     expect(core).toContain("promotion_attendance");
   });
 
-  it("seeds Bronze for existing and newly created students", () => {
-    expect(core).toContain("insert into public.reward_status_memberships");
-    expect(core).toContain("from public.students s");
-    expect(core).toContain(
-      "create or replace function private.seed_reward_status_for_new_student()",
-    );
-    expect(core).toContain("create trigger reward_status_seed_student");
-    expect(core).toContain("after insert on public.students");
-    expect(core).toContain("current_level_key text not null default 'bronze'");
+  it("preserves existing medals but requires activation before Bronze for new students", () => {
+    expect(medalOnboarding).toContain("private.reward_medal_onboarding");
+    expect(medalOnboarding).toContain("unlock_method in ('onboarding','admin','legacy')");
+    expect(medalOnboarding).toContain("documents_completed_at");
+    expect(medalOnboarding).toContain("profile_completed_at");
+    expect(medalOnboarding).toContain("first_booking_at");
+    expect(medalOnboarding).toContain("first_attendance_at");
+    expect(medalOnboarding).toContain("private.reward_onboarding_sync_student");
+    expect(medalOnboarding).toContain("'source', 'reward_onboarding'");
+    expect(medalOnboarding).toContain("'legacy'");
+    expect(medalOnboarding).toContain("New students no longer receive Bronze merely for being created");
+    expect(medalOnboarding).toContain("insert into private.reward_medal_onboarding (studio_id, student_id)");
+  });
+
+  it("keeps core access available before a medal without leaking Bronze benefits", () => {
+    expect(medalOnboarding).toContain("'discount_pct',v_pct");
+    expect(medalOnboarding).toContain("'total',0,'used',0,'remaining',0");
+    expect(medalOnboarding).toContain("coalesce(d.level_order,0) desc");
+    expect(medalOnboarding).toContain("'waitlist_priority', coalesce(v_level.waitlist_priority,0)");
+  });
+
+  it("uses the approved first-medal activation UI and keeps medal language separate", () => {
+    expect(medalOnboardingPage).toContain("Desbloquea tu primera");
+    expect(medalOnboardingPage).toContain("Medalla Bronce");
+    expect(medalOnboardingPage).toContain("Acepta tus documentos");
+    expect(medalOnboardingPage).toContain("Completa tu perfil");
+    expect(medalOnboardingPage).toContain("Reserva tu primera clase");
+    expect(medalOnboardingPage).toContain("Asiste a tu primera clase");
+    expect(medalOnboardingPage).toContain("Medallas y niveles técnicos son cosas distintas");
+    expect(adminStudentProfilePage).toContain("Medalla actual");
+    expect(adminStudentProfilePage).toContain("Sin medalla");
+    expect(adminStudentProfilePage).not.toContain("Nivel general actual");
   });
 
   it("uses the SF-255 status membership as Profile 360 general level source", () => {
