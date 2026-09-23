@@ -220,7 +220,11 @@ export default async function StudentSessionDetailPage({
       ) : (
         <section className="rounded-3xl border border-amber-400/20 bg-amber-400/[0.06] p-5">
           {session.eligibility?.restrictions?.length ? (
-            <BookingRestrictionCard restrictions={session.eligibility.restrictions} compact />
+            <BookingRestrictionCard
+              restrictions={session.eligibility.restrictions}
+              compact
+              returnTo={`/student/reservar/${session.session_id}?date=${returnDate}`}
+            />
           ) : (
             <p className="text-sm font-semibold text-amber-100">{bookingReasonCopy(reason)}</p>
           )}
