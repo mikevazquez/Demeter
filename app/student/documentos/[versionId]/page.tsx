@@ -58,12 +58,18 @@ export default async function StudentDocumentReadPage({
     signedUrl = signed?.signedUrl ?? null;
   }
 
+  const studentPartyAllowed =
+    detail.acceptance_party === "student" ||
+    detail.acceptance_party === "student_and_guardian" ||
+    (detail.acceptance_party === "guardian_if_minor" && detail.minor === false);
+
+  const canChangeOptionalDecision =
+    detail.response_mode === "decision_optional" && studentPartyAllowed;
+
   const studentMayAct =
     detail.response_mode !== "informational" &&
-    !detail.student_completed &&
-    (detail.acceptance_party === "student" ||
-      detail.acceptance_party === "student_and_guardian" ||
-      (detail.acceptance_party === "guardian_if_minor" && detail.minor === false));
+    studentPartyAllowed &&
+    (canChangeOptionalDecision || !detail.student_completed);
 
   const guardianRequired =
     detail.minor === true &&
@@ -155,14 +161,30 @@ export default async function StudentDocumentReadPage({
         </p>
 
         {detail.satisfied ? (
-          <div className="mt-3 rounded-2xl border border-emerald-400/20 bg-emerald-400/[0.05] p-4">
-            <p className="text-sm font-semibold text-emerald-200">
-              Este requisito ya está completado.
-            </p>
-            <p className="mt-1 text-xs leading-5 text-emerald-100/65">
-              Puedes consultar esta versión nuevamente desde tu historial.
-            </p>
-          </div>
+          <>
+            <div className="mt-3 rounded-2xl border border-emerald-400/20 bg-emerald-400/[0.05] p-4">
+              <p className="text-sm font-semibold text-emerald-200">
+                Este requisito ya está completado.
+              </p>
+              <p className="mt-1 text-xs leading-5 text-emerald-100/65">
+                {canChangeOptionalDecision
+                  ? "Puedes cambiar tu decisión cuando lo necesites; cada cambio quedará registrado en el historial."
+                  : "Puedes consultar esta versión nuevamente desde tu historial."}
+              </p>
+            </div>
+            {canChangeOptionalDecision ? (
+              <Link
+                href={
+                  returnTo
+                    ? `/student/documentos/${detail.id}/confirmar?returnTo=${encodeURIComponent(returnTo)}`
+                    : `/student/documentos/${detail.id}/confirmar`
+                }
+                className="mt-4 inline-flex w-full justify-center rounded-2xl border border-fuchsia-400/25 bg-fuchsia-400/[0.05] px-5 py-3 text-sm font-semibold text-fuchsia-100"
+              >
+                Cambiar decisión
+              </Link>
+            ) : null}
+          </>
         ) : (
           <>
             {guardianRequired ? (
