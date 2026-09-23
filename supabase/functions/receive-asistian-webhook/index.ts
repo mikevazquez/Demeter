@@ -336,7 +336,18 @@ Deno.serve(async (request) => {
     }, 202);
   }
 
-  if (eventName !== "booking_created") {
+  const supportedEvents = new Set([
+    "booking_created",
+    "booking_confirmed",
+    "booking_rescheduled",
+    "booking_cancelled",
+    "booking_completed",
+    "booking_no_show",
+    "booking_status_changed",
+    "booking_updated",
+  ]);
+
+  if (!supportedEvents.has(eventName)) {
     await markEvent("ignored", { ok: true, reason_code: "unsupported_event" });
     return jsonResponse({
       ok: true,
@@ -365,16 +376,13 @@ Deno.serve(async (request) => {
   const phone = safeText(client?.phone) ?? safeText(booking?.customer_phone);
   const serviceName = safeText(service?.name) ?? safeText(booking?.title);
   const startsAt = safeText(booking?.start_time);
+  const externalStatus = safeText(booking?.status) ?? safeText(booking?.status_label);
 
-  if (!bookingId || !firstName || !phone || !serviceName || !startsAt) {
+  if (!bookingId) {
     const incomplete = {
       ok: false,
       reason_code: "booking_context_incomplete",
-      has_booking_id: Boolean(bookingId),
-      has_first_name: Boolean(firstName),
-      has_phone: Boolean(phone),
-      has_service_name: Boolean(serviceName),
-      has_starts_at: Boolean(startsAt),
+      has_booking_id: false,
     };
     await markEvent("ignored", incomplete);
     return jsonResponse({
@@ -385,20 +393,61 @@ Deno.serve(async (request) => {
     }, 202);
   }
 
-  const { data: syncData, error: syncError } = await supabase.rpc(
-    "service_sync_asistian_booking",
-    {
-      target_studio_id: studioId,
-      target_source_event_id: eventRowId,
-      target_booking_id: bookingId,
-      target_client_id: clientId,
-      target_first_name: firstName,
-      target_last_name: lastName,
-      target_phone: phone,
-      target_service_name: serviceName,
-      target_starts_at: startsAt,
-    },
-  );
+  let syncData: unknown = null;
+  let syncError: { message?: string } | null = null;
+
+  if (eventName === "booking_created") {
+    if (!firstName || !phone || !serviceName || !startsAt) {
+      const incomplete = {
+        ok: false,
+        reason_code: "booking_context_incomplete",
+        has_booking_id: true,
+        has_first_name: Boolean(firstName),
+        has_phone: Boolean(phone),
+        has_service_name: Boolean(serviceName),
+        has_starts_at: Boolean(startsAt),
+      };
+      await markEvent("ignored", incomplete);
+      return jsonResponse({
+        ok: true,
+        accepted: true,
+        event_id: providerEventId,
+        outcome: "booking_context_incomplete",
+      }, 202);
+    }
+
+    const response = await supabase.rpc(
+      "service_sync_asistian_booking",
+      {
+        target_studio_id: studioId,
+        target_source_event_id: eventRowId,
+        target_booking_id: bookingId,
+        target_client_id: clientId,
+        target_first_name: firstName,
+        target_last_name: lastName,
+        target_phone: phone,
+        target_service_name: serviceName,
+        target_starts_at: startsAt,
+      },
+    );
+    syncData = response.data;
+    syncError = response.error;
+  } else {
+    const response = await supabase.rpc(
+      "service_apply_asistian_booking_event",
+      {
+        target_studio_id: studioId,
+        target_source_event_id: eventRowId,
+        target_event_name: eventName,
+        target_booking_id: bookingId,
+        target_service_name: serviceName,
+        target_starts_at: startsAt,
+        target_external_status: externalStatus,
+      },
+    );
+    syncData = response.data;
+    syncError = response.error;
+  }
 
   if (syncError) {
     await markEvent("error", {
@@ -417,9 +466,11 @@ Deno.serve(async (request) => {
       accepted: true,
       duplicate: existingStatus !== null,
       event_id: providerEventId,
-      outcome: "synced",
+      outcome: safeText(syncResult.sync_status) ?? "synced",
+      action: syncResult.action ?? null,
       reservation_id: syncResult.reservation_id ?? null,
       student_id: syncResult.student_id ?? null,
+      commercial_status: syncResult.commercial_status ?? null,
     }, 202);
   }
 
