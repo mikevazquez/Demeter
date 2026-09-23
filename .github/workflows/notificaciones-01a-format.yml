@@ -1,0 +1,55 @@
+name: NOTIFICACIONES-01A formatter
+
+on:
+  push:
+    branches: [feat/notificaciones-01a-pwa-push]
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: feat/notificaciones-01a-pwa-push
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Format NOTIFICACIONES-01A files
+        run: |
+          npx prettier --write \
+            app/apple-icon.tsx \
+            'app/pwa/icon/[size]/route.ts' \
+            app/student/components/PushNotificationSettings.tsx \
+            app/student/notificaciones/page.tsx \
+            public/sw.js \
+            supabase/functions/send-push-notification/index.ts
+
+      - name: Commit formatting
+        run: |
+          if git diff --quiet; then
+            echo "Nothing to format."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            app/apple-icon.tsx \
+            'app/pwa/icon/[size]/route.ts' \
+            app/student/components/PushNotificationSettings.tsx \
+            app/student/notificaciones/page.tsx \
+            public/sw.js \
+            supabase/functions/send-push-notification/index.ts
+          git commit -m "NOTIFICACIONES-01A · Aplicar formato Prettier"
+          git push origin HEAD:feat/notificaciones-01a-pwa-push
