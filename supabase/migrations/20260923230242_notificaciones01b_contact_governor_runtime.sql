@@ -889,3 +889,6 @@ grant execute on function private.evaluate_notification_contact(
 ) to service_role;
 grant execute on function private.recalculate_notification_state(uuid)
 to service_role;
+
+grant execute on function private.notification_class_rank(text)
+to service_role;
