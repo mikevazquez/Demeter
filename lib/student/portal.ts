@@ -150,6 +150,7 @@ export type StudentClassFeedItem = {
   credits_held: number;
   cancelled_at?: string | null;
   cancellation_reason?: string | null;
+  credit_restored?: boolean;
 };
 
 export const getStudentPortalContext = cache(async () => {
