@@ -3,7 +3,7 @@ import type { CSSProperties, ReactNode } from "react";
 import { getHolidayTheme } from "@/lib/holidays/theme";
 
 export type StudentHolidaySnapshot = {
-  holiday_id: string;
+  holiday_id: string | null;
   holiday_code: string;
   holiday_date: string;
   name: string;
@@ -13,7 +13,7 @@ export type StudentHolidaySnapshot = {
   message: string;
   configured: boolean;
   source_label: string;
-  source_url: string;
+  source_url: string | null;
   legal_basis: string | null;
   hero_image_path?: string | null;
   message_image_path?: string | null;
