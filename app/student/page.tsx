@@ -344,7 +344,9 @@ export default async function StudentHomePage({
               className="flex min-h-12 items-center justify-between rounded-2xl border border-fuchsia-500/25 bg-fuchsia-500/[0.06] px-4 text-sm font-semibold text-white transition hover:bg-fuchsia-500/[0.1]"
             >
               <span>Ver Medallero</span>
-              <span aria-hidden="true" className="text-lg text-fuchsia-300">›</span>
+              <span aria-hidden="true" className="text-lg text-fuchsia-300">
+                ›
+              </span>
             </Link>
           </div>
         </StudentNoticeDialog>
