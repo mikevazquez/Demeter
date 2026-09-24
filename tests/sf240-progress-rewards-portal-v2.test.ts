@@ -6,24 +6,25 @@ import { describe, expect, it } from "vitest";
 const read = (path: string) => readFileSync(join(process.cwd(), path), "utf8");
 
 describe("SF-240 Progress & Rewards Portal Alumna v2", () => {
-  it("preserves the approved student navigation and adds Retos", () => {
+  it("keeps the primary student navigation focused on four everyday destinations", () => {
     const nav = read("app/student/StudentNav.tsx");
 
     expect(nav).toContain('href: "/student"');
     expect(nav).toContain('href: "/student/reservar"');
     expect(nav).toContain('href: "/student/mis-clases"');
-    expect(nav).toContain('href: "/student/retos"');
+    expect(nav).not.toContain('href: "/student/retos"');
     expect(nav).toContain('href: "/student/perfil"');
     expect(nav).not.toContain('href: "/student/recompensas"');
-    expect(nav).toContain("grid-cols-5");
+    expect(nav).toContain("grid-cols-4");
   });
 
-  it("keeps Rewards in Perfil while Retos has its own primary destination", () => {
+  it("keeps progress and challenges discoverable without competing in primary navigation", () => {
     const home = read("app/student/page.tsx");
     const profile = read("app/student/perfil/page.tsx");
 
-    expect(home).not.toContain('data-home-block="progress"');
-    expect(home).not.toContain('href="/student/recompensas"');
+    expect(home).toContain('data-home-block="progress"');
+    expect(home).toContain('href="/student/recompensas"');
+    expect(home).toContain('href="/student/retos"');
     expect(profile).toContain('href="/student/recompensas"');
     expect(profile).toContain("Rewards");
     expect(profile).toContain("Medallas, beneficios y recompensas obtenidas");
