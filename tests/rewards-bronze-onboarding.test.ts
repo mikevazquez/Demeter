@@ -99,7 +99,7 @@ describe("REWARDS · onboarding access + monthly Medals", () => {
   it("lets the student complete the profile fields required by onboarding", () => {
     expect(profilePage).toContain("Fecha de nacimiento");
     expect(profilePage).toContain('name="birth_date"');
-    expect(profilePage).toContain("activación de Medallas");
+    expect(profilePage).toContain("Datos que puedes cambiar");
     expect(studentActions).toContain("student_update_reward_onboarding_profile");
     expect(onboarding).toContain("student_set_reward_onboarding_birth_date");
   });
