@@ -369,8 +369,7 @@ async function sendInbox(
   delivery: DeliveryRow,
   message: RenderedMessage,
 ): Promise<AdapterResult> {
-  const isStudent =
-    delivery.recipient_type === "student" && Boolean(delivery.recipient_entity_id);
+  const isStudent = delivery.recipient_type === "student" && Boolean(delivery.recipient_entity_id);
   const isInstructor =
     delivery.recipient_type === "instructor" && Boolean(delivery.recipient_entity_id);
 
