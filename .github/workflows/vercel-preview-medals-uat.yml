@@ -1,6 +1,9 @@
 name: Preview Medals UAT
 
 on:
+  push:
+    branches:
+      - "feat/rewards-bronze-onboarding"
   workflow_dispatch:
 
 permissions:
