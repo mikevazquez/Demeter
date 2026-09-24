@@ -12,6 +12,9 @@ type ChallengeCard = {
   competition_mode: "individual" | "leaderboard";
   scheduled_start_at: string | null;
   scheduled_end_at: string | null;
+  finished_at: string | null;
+  archived: boolean;
+  archived_at: string | null;
   reward_visibility: "visible" | "surprise";
   reward_definition: unknown;
   condition_definition: unknown;
@@ -52,7 +55,12 @@ export default async function StudentChallengesPage() {
   const all = cards(data);
   const active = all.filter((challenge) => challenge.status === "active");
   const upcoming = all.filter((challenge) => challenge.status === "scheduled");
-  const completed = all.filter((challenge) => challenge.status === "finished");
+  const finished = all.filter(
+    (challenge) => challenge.status === "finished" && !challenge.archived,
+  );
+  const history = all.filter(
+    (challenge) => challenge.status === "finished" && challenge.archived,
+  );
 
   return (
     <main className="space-y-6 pb-4">
@@ -152,17 +160,72 @@ export default async function StudentChallengesPage() {
         </section>
       ) : null}
 
-      {completed.length ? (
+      {finished.length ? (
         <section className="space-y-3">
-          <h2 className="text-sm font-semibold uppercase tracking-[0.16em] text-zinc-300">
-            Completados
-          </h2>
-          <div className="grid gap-2">
-            {completed.slice(0, 8).map((challenge) => (
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="text-sm font-semibold uppercase tracking-[0.16em] text-zinc-300">
+              Finalizados
+            </h2>
+            <span className="text-xs text-zinc-500">{finished.length}</span>
+          </div>
+          <div className="grid gap-3 md:grid-cols-2">
+            {finished.map((challenge) => (
               <Link
                 key={challenge.rule_id}
                 href={`/student/retos/${challenge.rule_id}`}
-                className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/[0.025] px-4 py-3"
+                className="rounded-3xl border border-emerald-400/20 bg-emerald-400/[0.035] p-5 transition hover:border-emerald-300/35"
+              >
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="rounded-full border border-emerald-400/25 bg-emerald-400/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-emerald-300">
+                    Finalizado
+                  </span>
+                  <span className="text-xs text-zinc-500">
+                    {challenge.competition_mode === "leaderboard" ? "Competencia" : "Individual"}
+                  </span>
+                </div>
+                <h3 className="mt-3 text-lg font-semibold text-white">{challenge.title}</h3>
+                {challenge.description ? (
+                  <p className="mt-1 line-clamp-2 text-sm leading-6 text-zinc-400">
+                    {challenge.description}
+                  </p>
+                ) : null}
+                <div className="mt-4 flex items-center justify-between gap-3">
+                  <span className="text-xs text-zinc-500">
+                    Finalizó{" "}
+                    {dateLabel(
+                      challenge.finished_at ?? challenge.scheduled_end_at,
+                      portal.studio.timezone,
+                    )}
+                  </span>
+                  <span className="text-xs font-semibold text-emerald-300">
+                    Ver resultado →
+                  </span>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      {history.length ? (
+        <details className="group rounded-3xl border border-white/10 bg-white/[0.02]">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-4">
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-[0.16em] text-zinc-300">
+                Historial
+              </p>
+              <p className="mt-1 text-xs text-zinc-500">
+                Retos archivados · {history.length}
+              </p>
+            </div>
+            <span className="text-xl text-zinc-500 transition group-open:rotate-90">›</span>
+          </summary>
+          <div className="grid gap-2 border-t border-white/10 p-3">
+            {history.map((challenge) => (
+              <Link
+                key={challenge.rule_id}
+                href={`/student/retos/${challenge.rule_id}`}
+                className="flex items-center justify-between rounded-2xl border border-white/10 bg-black/20 px-4 py-3"
               >
                 <div>
                   <p className="text-sm font-semibold text-white">{challenge.title}</p>
@@ -176,7 +239,7 @@ export default async function StudentChallengesPage() {
               </Link>
             ))}
           </div>
-        </section>
+        </details>
       ) : null}
 
       {!all.length ? (
