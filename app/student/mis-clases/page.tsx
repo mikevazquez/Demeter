@@ -14,7 +14,7 @@ const statusCopy: Record<string, string> = {
   no_show: "No asististe",
   cancelled_on_time: "Cancelada",
   cancelled_late: "Cancelada",
-  cancelled_by_studio: "Cancelada por el estudio",
+  cancelled_by_studio: "Cancelada por Demeter",
 };
 
 type StudentWaitlistItem = {
@@ -30,9 +30,6 @@ type StudentWaitlistItem = {
   coach: string | null;
 };
 
-type RewardStatusSnapshot = {
-  level_title?: string | null;
-};
 
 const errorCopy: Record<string, string> = {
   cancel_failed: "No pudimos cancelar la reserva. Intenta de nuevo.",
@@ -54,11 +51,9 @@ function statusClass(status: string) {
 function ClassRow({
   item,
   timezone,
-  showQuickCancel = false,
 }: {
   item: StudentClassFeedItem;
   timezone: string;
-  showQuickCancel?: boolean;
 }) {
   return (
     <article
@@ -100,25 +95,15 @@ function ClassRow({
           </div>
           {item.credit_restored ? (
             <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/[0.06] px-3 py-2.5">
-              <p className="text-xs font-semibold text-emerald-300">✓ Crédito restaurado</p>
-              <p className="mt-0.5 text-[10px] leading-4 text-zinc-500">
-                El crédito de esta reserva fue devuelto a tu paquete.
+              <p className="text-sm font-semibold text-emerald-300">✓ Clase devuelta</p>
+              <p className="mt-0.5 text-xs leading-5 text-zinc-500">
+                La clase de esta reserva fue devuelta a tu paquete.
               </p>
             </div>
           ) : null}
         </div>
       ) : null}
 
-      {showQuickCancel && item.status === "reserved" ? (
-        <div className="mt-3 flex justify-end border-t border-white/10 pt-3">
-          <Link
-            href={`/student/mis-clases/${item.reservation_id}/cancelar`}
-            className="inline-flex min-h-9 items-center justify-center rounded-xl border border-rose-500/30 bg-rose-500/[0.06] px-3 py-2 text-xs font-semibold text-rose-200 transition hover:bg-rose-500/[0.12]"
-          >
-            Cancelar
-          </Link>
-        </div>
-      ) : null}
     </article>
   );
 }
@@ -126,15 +111,10 @@ function ClassRow({
 function WaitlistRow({
   item,
   timezone,
-  levelTitle,
 }: {
   item: StudentWaitlistItem;
   timezone: string;
-  levelTitle: string | null;
 }) {
-  const priorityLabel =
-    levelTitle === "Oro" || levelTitle === "Diamante" ? `Prioridad ${levelTitle} aplicada` : null;
-
   return (
     <article className="rounded-2xl border border-amber-400/25 bg-amber-400/[0.055] px-4 py-3">
       <div className="flex items-start justify-between gap-3">
@@ -152,13 +132,9 @@ function WaitlistRow({
         </div>
       </div>
       <div className="mt-3 border-t border-white/10 pt-3">
-        {priorityLabel ? (
-          <p className="text-[11px] font-semibold text-amber-100">{priorityLabel}</p>
-        ) : null}
-        <p className="mt-1 text-[11px] leading-5 text-zinc-400">
+        <p className="mt-1 text-sm leading-6 text-zinc-400">
           Te avisaremos si se libera un lugar.
         </p>
-        <p className="mt-0.5 text-[10px] text-zinc-600">La prioridad no garantiza lugar.</p>
       </div>
     </article>
   );
@@ -177,14 +153,12 @@ export default async function StudentClassesPage({
   const query = await searchParams;
   const activeView = query.view === "history" ? "history" : "upcoming";
   const { supabase, studio } = await getStudentPortalContext();
-  const [classesResult, waitlistResult, rewardStatusResult] = await Promise.all([
+  const [classesResult, waitlistResult] = await Promise.all([
     supabase.rpc("student_classes_feed"),
     supabase.rpc("student_waitlist_feed"),
-    supabase.rpc("student_reward_status_snapshot"),
   ]);
   const { data, error } = classesResult;
   const waitlistItems = (waitlistResult.data ?? []) as StudentWaitlistItem[];
-  const levelTitle = (rewardStatusResult.data as RewardStatusSnapshot | null)?.level_title ?? null;
   const feed =
     (data as {
       upcoming?: StudentClassFeedItem[];
@@ -204,11 +178,11 @@ export default async function StudentClassesPage({
           dismissHref="/student/mis-clases"
         >
           {query.cancelled === "cancelled_late" && query.credit === "lost"
-            ? "La reserva se canceló fuera del horario permitido. El crédito no fue devuelto."
+            ? "La reserva se canceló tarde y la clase no fue devuelta a tu paquete."
             : query.cancelled === "cancelled_late"
               ? "La reserva se canceló fuera del horario permitido."
               : query.credit === "returned"
-                ? "La reserva se canceló correctamente y el crédito fue devuelto."
+                ? "La reserva se canceló correctamente y la clase fue devuelta a tu paquete."
                 : "La reserva se canceló correctamente."}
         </StudentNoticeDialog>
       ) : query.error ? (
@@ -228,10 +202,8 @@ export default async function StudentClassesPage({
 
       <header className="flex items-end justify-between gap-4">
         <div>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-fuchsia-300">
-            Portal alumna
-          </p>
-          <h1 className="mt-1 text-2xl font-semibold text-white sm:text-3xl">Mis clases</h1>
+          <p className="student-eyebrow">Mis clases</p>
+          <h1 className="student-page-title mt-1">Tu entrenamiento</h1>
         </div>
         <Link
           href="/student/reservar"
@@ -284,30 +256,10 @@ export default async function StudentClassesPage({
         </section>
       ) : activeView === "upcoming" ? (
         <section className="space-y-3">
-          {waitlistItems.length ? (
-            <div>
-              <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-500">
-                Lista de espera
-              </p>
-              <div className="space-y-2">
-                {waitlistItems.map((item) => (
-                  <WaitlistRow
-                    key={item.waitlist_entry_id}
-                    item={item}
-                    timezone={studio.timezone}
-                    levelTitle={levelTitle}
-                  />
-                ))}
-              </div>
-            </div>
-          ) : null}
-
           {nextClass ? (
             <>
               <div>
-                <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-500">
-                  Tu próxima clase
-                </p>
+                <p className="student-eyebrow mb-2">Tu próxima clase</p>
                 <article
                   data-density="compact"
                   className="rounded-3xl border border-fuchsia-500/20 bg-gradient-to-br from-fuchsia-500/[0.1] via-white/[0.035] to-transparent px-4 py-4"
@@ -321,17 +273,17 @@ export default async function StudentClassesPage({
                         <h2 className="truncate text-base font-semibold text-white">
                           {nextClass.activity}
                         </h2>
-                        <span className="rounded-full border border-emerald-500/25 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-300">
+                        <span className="rounded-full border border-emerald-500/25 bg-emerald-500/10 px-2.5 py-1 text-xs font-semibold text-emerald-300">
                           Confirmada
                         </span>
                       </div>
-                      <p className="mt-1 text-xs font-medium text-fuchsia-300">
+                      <p className="mt-1 text-sm font-medium text-fuchsia-300">
                         {nextClass.discipline}
                       </p>
-                      <p className="mt-1.5 text-xs text-zinc-300">
+                      <p className="mt-1.5 text-sm text-zinc-300">
                         {formatDateTime(nextClass.starts_at, studio.timezone)}
                       </p>
-                      <p className="mt-0.5 truncate text-[11px] text-zinc-500">
+                      <p className="mt-0.5 truncate text-xs text-zinc-500">
                         {[nextClass.coach, nextClass.space].filter(Boolean).join(" · ") ||
                           "Ver detalles de la clase"}
                       </p>
@@ -345,24 +297,14 @@ export default async function StudentClassesPage({
                     </Link>
                   </div>
 
-                  <div className="mt-3 flex justify-end border-t border-white/10 pt-3">
-                    <Link
-                      href={`/student/mis-clases/${nextClass.reservation_id}/cancelar`}
-                      className="inline-flex min-h-9 items-center justify-center rounded-xl border border-rose-500/30 bg-rose-500/[0.06] px-3 py-2 text-xs font-semibold text-rose-200 transition hover:bg-rose-500/[0.12]"
-                    >
-                      Cancelar
-                    </Link>
-                  </div>
                 </article>
               </div>
 
               {followingClasses.length ? (
                 <div>
                   <div className="mb-2 flex items-center justify-between gap-3">
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-500">
-                      Después
-                    </p>
-                    <span className="text-[10px] text-zinc-600">{followingClasses.length} más</span>
+                    <p className="student-eyebrow">Después</p>
+                    <span className="text-xs text-zinc-500">{followingClasses.length} más</span>
                   </div>
                   <div className="space-y-2">
                     {followingClasses.map((item) => (
@@ -370,14 +312,13 @@ export default async function StudentClassesPage({
                         key={item.reservation_id}
                         item={item}
                         timezone={studio.timezone}
-                        showQuickCancel
                       />
                     ))}
                   </div>
                 </div>
               ) : null}
             </>
-          ) : waitlistItems.length ? null : (
+          ) : (
             <div className="rounded-3xl border border-dashed border-white/10 bg-white/[0.02] px-5 py-8 text-center">
               <div
                 aria-hidden="true"
@@ -397,12 +338,25 @@ export default async function StudentClassesPage({
               </Link>
             </div>
           )}
+
+          {waitlistItems.length ? (
+            <div>
+              <p className="student-eyebrow mb-2">Lista de espera</p>
+              <div className="space-y-2">
+                {waitlistItems.map((item) => (
+                  <WaitlistRow
+                    key={item.waitlist_entry_id}
+                    item={item}
+                    timezone={studio.timezone}
+                  />
+                ))}
+              </div>
+            </div>
+          ) : null}
         </section>
       ) : (
         <section>
-          <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-500">
-            Clases anteriores
-          </p>
+          <p className="student-eyebrow mb-2">Clases anteriores</p>
           {history.length ? (
             <div className="space-y-2">
               {history.map((item) => (
