@@ -13,6 +13,17 @@ function safeNumber(value: unknown) {
   return null;
 }
 
+export function normalizeAsistianPhone(value: unknown) {
+  const raw = safeText(value);
+  if (!raw) return null;
+  if (/^\+[1-9][0-9]{7,14}$/.test(raw)) return raw;
+
+  const digits = raw.replace(/\D/g, "");
+  if (/^[1-9][0-9]{9}$/.test(digits)) return `+52${digits}`;
+  if (/^52[1-9][0-9]{9}$/.test(digits)) return `+${digits}`;
+  return null;
+}
+
 export function formatNotificationDateTimeParts(value: unknown, timezoneValue: unknown) {
   const raw = safeText(value);
   if (!raw) return { fecha: null, hora: null, label: null };
