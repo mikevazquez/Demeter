@@ -187,7 +187,11 @@ export default async function ChallengesPage({
                       {participants === null
                         ? presentation.reward_visibility === "surprise"
                           ? "Sorpresa"
-                          : rewardDefinitionLabel(version?.reward_definition)
+                          : rewardDefinitionLabel(
+                              competition === "Competencia"
+                                ? presentation.competition_reward_definition
+                                : version?.reward_definition,
+                            )
                         : participants}
                     </p>
                   </div>
