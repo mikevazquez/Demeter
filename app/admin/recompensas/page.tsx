@@ -43,7 +43,7 @@ export default async function RewardsControlCenterPage() {
       ctx.supabase
         .from("reward_onboarding")
         .select(
-          "student_id,documents_completed_at,profile_completed_at,app_installed_at,notifications_enabled_at,first_reservation_at,first_attendance_at,bronze_unlocked_at",
+          "student_id,documents_completed_at,profile_completed_at,app_installed_at,notifications_enabled_at,first_reservation_at,first_attendance_at,access_unlocked_at",
         )
         .eq("studio_id", ctx.studio.id),
     ]);
@@ -80,8 +80,8 @@ export default async function RewardsControlCenterPage() {
     (reward) => reward.status === "available",
   );
   const onboardingRows = onboardingResult.data ?? [];
-  const activatingStudents = onboardingRows.filter((item) => !item.bronze_unlocked_at);
-  const activatedStudents = onboardingRows.filter((item) => Boolean(item.bronze_unlocked_at));
+  const activatingStudents = onboardingRows.filter((item) => !item.access_unlocked_at);
+  const activatedStudents = onboardingRows.filter((item) => Boolean(item.access_unlocked_at));
 
   return (
     <RewardsShell>
@@ -128,17 +128,17 @@ export default async function RewardsControlCenterPage() {
         <MetricCard
           label="En activación"
           value={activatingStudents.length}
-          detail={`${activatedStudents.length} con medalla activa`}
+          detail={`${activatedStudents.length} con acceso a Medallas`}
         />
       </section>
 
-      <SectionCard eyebrow="ACTIVACIÓN" title="Activación de Medalla Bronce">
+      <SectionCard eyebrow="ACTIVACIÓN" title="Acceso al sistema de Medallas">
         <div className="grid gap-4 lg:grid-cols-[1fr_.9fr]">
           <div>
             <p className="text-sm leading-6 text-zinc-400">
-              La Medalla Bronce ya no se entrega por crear una alumna. Se desbloquea cuando completa
-              los seis hitos del onboarding. Las alumnas que ya tenían una medalla conservan su
-              estado anterior.
+              El onboarding no entrega una Medalla. Al completar los seis hitos, la alumna obtiene
+              acceso al sistema mensual de Medallas y comienza a ser evaluada por su constancia.
+              Las alumnas de legado conservan su Medalla vigente.
             </p>
             <div className="mt-4 grid gap-2 sm:grid-cols-2">
               {[
@@ -175,23 +175,27 @@ export default async function RewardsControlCenterPage() {
               ))}
             </div>
           </div>
-          <div className="rounded-2xl border border-[#CD7F32]/30 bg-[#CD7F32]/[0.06] p-5">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#E6A56A]">
+          <div className="rounded-2xl border border-fuchsia-500/25 bg-fuchsia-500/[0.05] p-5">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-fuchsia-300">
               Resultado
             </p>
-            <h3 className="mt-2 text-xl font-semibold text-white">Medalla Bronce</h3>
+            <h3 className="mt-2 text-xl font-semibold text-white">Medallas desbloqueadas</h3>
             <p className="mt-2 text-sm leading-6 text-zinc-400">
-              Al completar los seis pasos se activa automáticamente la primera medalla y comienzan
-              sus beneficios. Rewards y los niveles técnicos permanecen separados.
+              Una vez activada, cada mes la alumna puede obtener directamente Bronce, Plata, Oro o
+              Diamante según Días activos, No show, Continuidad y Renovación. No existe una escalera.
             </p>
-            <div className="mt-4 rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 text-xs text-zinc-400">
-              Requisitos fijos en v1 · no editables
-            </div>
+            <Link
+              href="/admin/recompensas/medallas"
+              className="mt-4 flex min-h-11 items-center justify-between rounded-xl border border-fuchsia-500/25 bg-black/20 px-3 text-xs font-semibold text-fuchsia-200"
+            >
+              <span>Ver reglas de Medallas</span>
+              <span aria-hidden="true">→</span>
+            </Link>
           </div>
         </div>
       </SectionCard>
 
-      <section className="grid gap-4 lg:grid-cols-3">
+            <section className="grid gap-4 lg:grid-cols-3">
         {[
           {
             title: "Programas",
@@ -205,7 +209,7 @@ export default async function RewardsControlCenterPage() {
           },
           {
             title: "Logros",
-            copy: "Medallas permanentes visibles o secretas.",
+            copy: "Insignias y logros permanentes visibles o secretos.",
             href: "/admin/recompensas/logros",
           },
         ].map((item) => (
