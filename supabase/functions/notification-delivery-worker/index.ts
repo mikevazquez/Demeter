@@ -138,9 +138,7 @@ function safeNumber(value: unknown) {
 function safeUuid(value: unknown) {
   const text = safeText(value);
   if (!text) return null;
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
-    text,
-  )
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(text)
     ? text
     : null;
 }
@@ -276,10 +274,7 @@ function renderMessage(delivery: DeliveryRow): RenderedMessage {
   }
 }
 
-async function loadDelivery(
-  adminClient: SupabaseClient,
-  deliveryId: string,
-): Promise<DeliveryRow> {
+async function loadDelivery(adminClient: SupabaseClient, deliveryId: string): Promise<DeliveryRow> {
   const { data, error } = await adminClient
     .from("notification_deliveries")
     .select(
@@ -406,18 +401,16 @@ async function sendPush(
     };
   }
 
-  const [
-    { data: subscriptions, error: subscriptionError },
-    { data: rawVapid, error: vapidError },
-  ] = await Promise.all([
-    adminClient
-      .from("push_subscriptions")
-      .select("id,endpoint,p256dh,auth_secret,expiration_time")
-      .eq("studio_id", delivery.studio_id)
-      .eq("user_id", delivery.recipient_user_id)
-      .is("revoked_at", null),
-    adminClient.rpc("service_get_push_vapid_config"),
-  ]);
+  const [{ data: subscriptions, error: subscriptionError }, { data: rawVapid, error: vapidError }] =
+    await Promise.all([
+      adminClient
+        .from("push_subscriptions")
+        .select("id,endpoint,p256dh,auth_secret,expiration_time")
+        .eq("studio_id", delivery.studio_id)
+        .eq("user_id", delivery.recipient_user_id)
+        .is("revoked_at", null),
+      adminClient.rpc("service_get_push_vapid_config"),
+    ]);
 
   if (subscriptionError) {
     return {
@@ -470,10 +463,7 @@ async function sendPush(
   const ttl = delivery.expires_at
     ? Math.max(
         60,
-        Math.min(
-          86400,
-          Math.floor((new Date(delivery.expires_at).getTime() - Date.now()) / 1000),
-        ),
+        Math.min(86400, Math.floor((new Date(delivery.expires_at).getTime() - Date.now()) / 1000)),
       )
     : 3600;
 
@@ -681,11 +671,7 @@ async function runAdapter(
   }
 }
 
-async function handoffJobs(
-  adminClient: SupabaseClient,
-  workerId: string,
-  batchSize: number,
-) {
+async function handoffJobs(adminClient: SupabaseClient, workerId: string, batchSize: number) {
   const { data: claims, error: claimError } = await adminClient.rpc(
     "system_claim_notification_jobs",
     {
@@ -702,13 +688,10 @@ async function handoffJobs(
 
   for (const claim of claimed) {
     try {
-      const { data, error } = await adminClient.rpc(
-        "system_accept_notification_delivery_handoff",
-        {
-          p_job_id: claim.job_id,
-          p_worker_id: workerId,
-        },
-      );
+      const { data, error } = await adminClient.rpc("system_accept_notification_delivery_handoff", {
+        p_job_id: claim.job_id,
+        p_worker_id: workerId,
+      });
 
       if (error) throw new Error(error.message);
 
@@ -878,11 +861,7 @@ async function processDelivery(
   }
 }
 
-async function deliver(
-  adminClient: SupabaseClient,
-  workerId: string,
-  batchSize: number,
-) {
+async function deliver(adminClient: SupabaseClient, workerId: string, batchSize: number) {
   const { data: claims, error: claimError } = await adminClient.rpc(
     "system_claim_notification_deliveries",
     {
