@@ -132,10 +132,7 @@ export async function joinStudentWaitlistInlineAction(sessionId: string) {
   };
 }
 
-export async function bookStudentSessionInlineAction(
-  sessionId: string,
-  useRewardCredits = false,
-) {
+export async function bookStudentSessionInlineAction(sessionId: string, useRewardCredits = false) {
   const normalizedSessionId = sessionId.trim();
   if (!normalizedSessionId) {
     return { ok: false as const, error: "session_required" };

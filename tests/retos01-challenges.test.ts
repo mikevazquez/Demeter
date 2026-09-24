@@ -87,7 +87,6 @@ describe("RETOS-01", () => {
     expect(detail).toContain("winner.score");
   });
 
-
   it("keeps finished challenges visible until the student archives them", () => {
     const home = read("app/student/retos/page.tsx");
     const detail = read("app/student/retos/[ruleId]/page.tsx");

@@ -63,9 +63,7 @@ export function QuickBookButton({
     if (!eligible || reserved || isPending) return;
 
     if (requiresResource) {
-      router.push(
-        `/student/reservar/${sessionId}${useRewardCredits ? "?credit=reward" : ""}`,
-      );
+      router.push(`/student/reservar/${sessionId}${useRewardCredits ? "?credit=reward" : ""}`);
       return;
     }
 

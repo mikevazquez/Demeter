@@ -58,9 +58,7 @@ export default async function StudentChallengesPage() {
   const finished = all.filter(
     (challenge) => challenge.status === "finished" && !challenge.archived,
   );
-  const history = all.filter(
-    (challenge) => challenge.status === "finished" && challenge.archived,
-  );
+  const history = all.filter((challenge) => challenge.status === "finished" && challenge.archived);
 
   return (
     <main className="space-y-6 pb-4">
@@ -197,9 +195,7 @@ export default async function StudentChallengesPage() {
                       portal.studio.timezone,
                     )}
                   </span>
-                  <span className="text-xs font-semibold text-emerald-300">
-                    Ver resultado →
-                  </span>
+                  <span className="text-xs font-semibold text-emerald-300">Ver resultado →</span>
                 </div>
               </Link>
             ))}
@@ -214,9 +210,7 @@ export default async function StudentChallengesPage() {
               <p className="text-sm font-semibold uppercase tracking-[0.16em] text-zinc-300">
                 Historial
               </p>
-              <p className="mt-1 text-xs text-zinc-500">
-                Retos archivados · {history.length}
-              </p>
+              <p className="mt-1 text-xs text-zinc-500">Retos archivados · {history.length}</p>
             </div>
             <span className="text-xl text-zinc-500 transition group-open:rotate-90">›</span>
           </summary>

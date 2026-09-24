@@ -23,7 +23,6 @@ export async function enrollChallengeAction(formData: FormData) {
   redirect(`/student/retos/${ruleId}?joined=1`);
 }
 
-
 export async function archiveChallengeAction(formData: FormData) {
   const ruleId = String(formData.get("rule_id") ?? "").trim();
   if (!ruleId) redirect("/student/retos?error=challenge_required");
@@ -41,7 +40,6 @@ export async function archiveChallengeAction(formData: FormData) {
   revalidatePath(`/student/retos/${ruleId}`);
   redirect("/student/retos?archived=1");
 }
-
 
 export async function claimChallengeCreditsAction(formData: FormData) {
   const ruleId = String(formData.get("rule_id") ?? "").trim();

@@ -141,9 +141,7 @@ export default async function ChallengeDetailPage({
   if (challenge.competition_mode === "leaderboard" && challenge.status === "finished") {
     const { data: rewardRows, error: rewardError } = await portal.supabase
       .from("reward_instances")
-      .select(
-        "id,kind,status,benefit_definition,available_from,expires_at,redemption_context",
-      )
+      .select("id,kind,status,benefit_definition,available_from,expires_at,redemption_context")
       .eq("studio_id", portal.membership.studio_id)
       .eq("student_id", portal.snapshot.profile.student_id)
       .eq("rule_id", challenge.rule_id)
@@ -163,8 +161,7 @@ export default async function ChallengeDetailPage({
         .limit(1);
 
       if (claimError) throw new Error("student_challenge_credit_claim_load_failed");
-      rewardCreditClaim =
-        ((claimRows ?? [])[0] as RewardCreditClaim | undefined) ?? null;
+      rewardCreditClaim = ((claimRows ?? [])[0] as RewardCreditClaim | undefined) ?? null;
     }
   }
 
@@ -362,8 +359,8 @@ export default async function ChallengeDetailPage({
             Premio: {winnerCredits} crédito{winnerCredits === 1 ? "" : "s"} de clase
           </h2>
           <p className="mt-2 text-sm leading-6 text-zinc-400">
-            Al reclamarlo se crea un saldo independiente. No se suma a tu paquete actual y tendrá
-            su propia vigencia de 30 días.
+            Al reclamarlo se crea un saldo independiente. No se suma a tu paquete actual y tendrá su
+            propia vigencia de 30 días.
           </p>
 
           {winnerReward.status === "available" ? (

@@ -267,7 +267,8 @@ export default async function StudentPackagePage() {
                           Progreso del paquete
                         </p>
                         <p className="mt-1 text-sm text-zinc-400">
-                          {activePackage.used_credits} de {activePackage.credit_limit} clases utilizadas
+                          {activePackage.used_credits} de {activePackage.credit_limit} clases
+                          utilizadas
                         </p>
                       </div>
                       <strong className="text-lg text-white">{activeProgress}%</strong>
@@ -403,7 +404,9 @@ export default async function StudentPackagePage() {
                       <span className="mt-1 block text-[10px] text-zinc-500">Disponibles</span>
                     </div>
                     <div className="border-x border-white/10">
-                      <strong className="block text-base text-white">{item.reserved_credits}</strong>
+                      <strong className="block text-base text-white">
+                        {item.reserved_credits}
+                      </strong>
                       <span className="mt-1 block text-[10px] text-zinc-500">Reservadas</span>
                     </div>
                     <div>

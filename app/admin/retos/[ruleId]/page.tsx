@@ -84,9 +84,9 @@ export default async function ChallengeDetailPage({
           } =>
             Boolean(
               item &&
-                typeof item === "object" &&
-                "student_id" in item &&
-                typeof item.student_id === "string",
+              typeof item === "object" &&
+              "student_id" in item &&
+              typeof item.student_id === "string",
             ),
         )
       : [];
@@ -140,9 +140,7 @@ export default async function ChallengeDetailPage({
                           {Number(winner.position) === 1 ? "🥇 " : ""}
                           {winnerNames.get(winner.student_id) ?? "Alumna"}
                         </p>
-                        <p className="mt-1 text-xs text-zinc-500">
-                          Posición #{winner.position}
-                        </p>
+                        <p className="mt-1 text-xs text-zinc-500">Posición #{winner.position}</p>
                       </div>
                       <div className="text-right">
                         <p className="text-sm font-semibold text-white">
@@ -150,9 +148,7 @@ export default async function ChallengeDetailPage({
                         </p>
                         <p className="mt-1 text-xs text-zinc-500">
                           Premio:{" "}
-                          {rewardDefinitionLabel(
-                            presentation.competition_reward_definition,
-                          )}
+                          {rewardDefinitionLabel(presentation.competition_reward_definition)}
                         </p>
                       </div>
                     </div>
@@ -160,9 +156,7 @@ export default async function ChallengeDetailPage({
               </div>
             </>
           ) : (
-            <p className="mt-2 text-sm text-zinc-400">
-              El reto cerró sin una ganadora elegible.
-            </p>
+            <p className="mt-2 text-sm text-zinc-400">El reto cerró sin una ganadora elegible.</p>
           )}
         </section>
       ) : null}
