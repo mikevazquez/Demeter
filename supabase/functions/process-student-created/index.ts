@@ -67,10 +67,7 @@ const handler = {
       return jsonResponse({ error: "student_event_not_found" }, 404);
     }
 
-    if (
-      event.event_type !== "student.created" ||
-      event.source_entity_type !== "student"
-    ) {
+    if (event.event_type !== "student.created" || event.source_entity_type !== "student") {
       return jsonResponse({ error: "student_event_invalid" }, 409);
     }
 
