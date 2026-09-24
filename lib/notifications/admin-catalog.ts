@@ -320,8 +320,8 @@ export const MARKETING_COMMUNICATIONS: readonly MarketingDefinition[] = [
     category: "promociones",
     planned: true,
     defaultAudience: "all_eligible",
-    defaultTitle: "Nuevo evento en el estudio",
-    defaultBody: "Conoce los detalles y reserva tu lugar en Studio Flow.",
+    defaultTitle: "Tenemos algo especial para ti",
+    defaultBody: "Consulta esta promoción disponible en Studio Flow.",
   },
   {
     key: "birthday",
@@ -350,8 +350,8 @@ export const MARKETING_COMMUNICATIONS: readonly MarketingDefinition[] = [
     category: "promociones",
     planned: true,
     defaultAudience: "all_eligible",
-    defaultTitle: "Mensaje de Demeter Fitness",
-    defaultBody: "Tenemos una novedad para ti. Consulta los detalles en Studio Flow.",
+    defaultTitle: "Nuevo evento en el estudio",
+    defaultBody: "Conoce los detalles y reserva tu lugar en Studio Flow.",
   },
   {
     key: "referrals",
@@ -369,6 +369,9 @@ export const MARKETING_COMMUNICATIONS: readonly MarketingDefinition[] = [
     description: "Envía una campaña puntual a un segmento elegido.",
     category: "promociones",
     planned: true,
+    defaultAudience: "all_eligible",
+    defaultTitle: "Mensaje de Demeter Fitness",
+    defaultBody: "Tenemos una novedad para ti. Consulta los detalles en Studio Flow.",
   },
 ];
 
