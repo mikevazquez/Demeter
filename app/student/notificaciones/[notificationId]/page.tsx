@@ -82,7 +82,9 @@ export default async function StudentNotificationDetailPage({
         <span className="inline-flex rounded-full border border-fuchsia-400/25 bg-fuchsia-400/[0.08] px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.16em] text-fuchsia-200">
           {notificationLabel(notification.notification_type)}
         </span>
-        <h1 className="mt-4 text-2xl font-semibold tracking-tight text-white">{notification.title}</h1>
+        <h1 className="mt-4 text-2xl font-semibold tracking-tight text-white">
+          {notification.title}
+        </h1>
         <p className="mt-2 text-sm leading-6 text-zinc-300">{notification.body}</p>
         <p className="mt-3 text-[10px] text-zinc-600">
           {formatDateTime(notification.created_at, studio.timezone)}
@@ -98,7 +100,9 @@ export default async function StudentNotificationDetailPage({
             ) : null}
             {startsAt ? (
               <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3">
-                <p className="text-[10px] uppercase tracking-[0.16em] text-zinc-500">Fecha y hora</p>
+                <p className="text-[10px] uppercase tracking-[0.16em] text-zinc-500">
+                  Fecha y hora
+                </p>
                 <p className="mt-1 text-sm font-semibold text-white">{startsAt}</p>
               </div>
             ) : null}
@@ -108,7 +112,9 @@ export default async function StudentNotificationDetailPage({
         {payload.credit_restored !== undefined ? (
           <div className="mt-5 rounded-2xl border border-emerald-400/25 bg-emerald-400/[0.06] p-4">
             <p className="text-sm font-semibold text-emerald-200">
-              {payload.credit_restored ? "Tu crédito fue restaurado." : "Tu reserva fue liberada."}
+              {payload.credit_restored
+                ? "Tu crédito fue restaurado."
+                : "Tu reserva fue liberada."}
             </p>
           </div>
         ) : null}
