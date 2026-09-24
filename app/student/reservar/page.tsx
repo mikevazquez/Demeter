@@ -11,6 +11,7 @@ import BookingEligibilityRefresh from "./BookingEligibilityRefresh";
 import PurchaseSingleClassButton from "./PurchaseSingleClassButton";
 import { QuickBookButton } from "./quick-book-button";
 import { BookingRestrictionCard } from "./BookingRestrictionCard";
+import { HolidayNotice, type StudentHolidaySnapshot } from "./HolidayNotice";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -83,6 +84,13 @@ type RewardStatusSnapshot = {
   level_title?: string | null;
 };
 
+type HolidayWeekItem = {
+  holiday_date: string;
+  name: string;
+  theme_key: string;
+  operation_mode: "normal" | "closed" | "special";
+};
+
 function statusClass(session: StudentSession, waitlisted = false) {
   if (session.is_reserved) {
     return "border-emerald-500/25 bg-emerald-500/10 text-emerald-300";
@@ -131,11 +139,28 @@ export default async function StudentReservePage({
   const previousWeekDate = addDays(selectedDate, -7);
   const nextWeekDate = addDays(selectedDate, 7);
 
-  const { data: sessions, error } = await supabase.rpc("student_schedule_feed", {
-    target_start: selectedDate,
-    target_end: selectedDate,
-    target_discipline_id: null,
-  });
+  const [
+    { data: sessions, error },
+    { data: selectedHolidayData },
+    { data: holidayWeekData },
+  ] = await Promise.all([
+    supabase.rpc("student_schedule_feed", {
+      target_start: selectedDate,
+      target_end: selectedDate,
+      target_discipline_id: null,
+    }),
+    supabase.rpc("student_holiday_snapshot", { target_date: selectedDate }),
+    supabase.rpc("student_holiday_week_snapshot", {
+      target_start: weekStart,
+      target_end: weekEnd,
+    }),
+  ]);
+
+  const selectedHoliday = (selectedHolidayData as StudentHolidaySnapshot | null) ?? null;
+  const holidayWeekItems = (holidayWeekData ?? []) as HolidayWeekItem[];
+  const holidayByDate = new Map(
+    holidayWeekItems.map((holiday) => [holiday.holiday_date, holiday]),
+  );
 
   const baseItems = (sessions ?? []) as StudentSession[];
   const sessionIds = baseItems.map((item) => item.session_id);
@@ -247,18 +272,31 @@ export default async function StudentReservePage({
             const chip = dateChip(day);
             const isPast = day < today;
             const isSelected = day === selectedDate;
-            const className = `rounded-2xl px-1 py-2.5 text-center transition ${
+            const holiday = holidayByDate.get(day);
+            const className = `relative rounded-2xl px-1 py-2.5 text-center transition ${
               isSelected
                 ? "bg-fuchsia-600 text-white shadow-[0_0_24px_rgba(255,10,138,0.18)]"
                 : isPast
                   ? "border border-white/5 bg-black/10 text-zinc-700"
                   : "border border-white/10 bg-black/20 text-zinc-400 hover:border-fuchsia-500/25 hover:text-white"
-            }`;
+            } ${holiday ? "ring-1 ring-inset ring-fuchsia-500/20" : ""}`;
 
             const dateContent = (
               <>
                 <span className="block text-[10px] capitalize">{chip.weekday}</span>
                 <strong className="mt-0.5 block text-sm">{chip.day}</strong>
+                {holiday ? (
+                  <span
+                    className={`mx-auto mt-1 block h-1.5 w-1.5 rounded-full ${
+                      holiday.operation_mode === "special"
+                        ? "bg-sky-400"
+                        : holiday.operation_mode === "closed"
+                          ? "bg-fuchsia-500"
+                          : "bg-emerald-400"
+                    }`}
+                    title={holiday.name}
+                  />
+                ) : null}
               </>
             );
 
@@ -280,7 +318,9 @@ export default async function StudentReservePage({
         </div>
       </section>
 
-      {query.error || error ? (
+      {selectedHoliday ? <HolidayNotice holiday={selectedHoliday} /> : null}
+
+      {selectedHoliday?.operation_mode === "closed" ? null : query.error || error ? (
         <section className="rounded-3xl border border-rose-500/25 bg-rose-500/[0.08] p-5 text-center">
           <h2 className="text-base font-semibold text-white">No pudimos cargar las clases</h2>
           <p className="mt-1.5 text-xs leading-5 text-zinc-400">
