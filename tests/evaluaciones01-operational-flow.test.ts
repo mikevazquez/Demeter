@@ -195,13 +195,15 @@ describe("EVALUACIONES-01 operational cycle", () => {
     expect(evaluationActions).toContain('automatic_outcome === "incomplete"');
   });
 
-  it("renders both final student result states", () => {
-    expect(studentResult).toContain("¡Nuevo nivel confirmado!");
-    expect(studentResult).toContain("Se mantiene en su nivel");
-    expect(studentResult).toContain("Sin nivel confirmado");
-    expect(studentResult).toContain("Desglose de puntaje");
-    expect(studentResult).toContain("Feedback de tu coach");
+  it("renders student results around the confirmed technical level", () => {
+    expect(studentResult).toContain("Tu nivel técnico es");
+    expect(studentResult).toContain("¡Subiste a");
+    expect(studentResult).toContain("Tu nivel sigue siendo");
+    expect(studentResult).toContain("Aún no hay un nivel confirmado");
+    expect(studentResult).toContain("Criterios técnicos");
+    expect(studentResult).toContain("Feedback de tu evaluación");
     expect(studentResult).toContain("Siguiente evaluación");
-    expect(studentResult).toContain("Ver historial de evaluaciones");
+    expect(studentResult).toContain("Volver a Nivel técnico");
+    expect(studentResult).not.toContain("Studio Flow");
   });
 });
