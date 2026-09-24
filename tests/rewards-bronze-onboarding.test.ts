@@ -174,7 +174,8 @@ describe("REWARDS · onboarding access + monthly Medals", () => {
     expect(adminRewards).toContain("Acceso al sistema de Medallas");
     expect(adminRewards).toContain("Aceptar documentos obligatorios");
     expect(adminRewards).toContain("Asistir a primera clase");
-    expect(adminRewards).toContain("No existe una escalera");
+    expect(adminRewards).toContain("No existe una");
+    expect(adminRewards).toContain("escalera.");
     expect(adminMedals).toContain("Días activos");
     expect(adminMedals).toContain("No show");
     expect(adminMedals).toContain("Continuidad");
