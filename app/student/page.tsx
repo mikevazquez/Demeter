@@ -492,7 +492,7 @@ export default async function StudentHomePage({
           backgroundImage: `radial-gradient(circle at 86% 8%, ${levelVisual.wash}, transparent 30%), linear-gradient(135deg, rgba(255,255,255,0.035), rgba(255,255,255,0.012))`,
         }}
       >
-        <div className="grid grid-cols-[0.92fr_1.08fr] items-start gap-4">
+        <div className="grid grid-cols-[112px_minmax(0,1fr)] items-start gap-2.5 sm:grid-cols-[128px_minmax(0,1fr)] sm:gap-4">
           <div className="min-w-0">
             <div
               className="relative h-28 w-28 overflow-hidden rounded-full border-2 bg-black/25 sm:h-32 sm:w-32"
@@ -554,7 +554,7 @@ export default async function StudentHomePage({
                 {currentLevel ? "♛" : "◇"}
               </div>
               <div className="min-w-0">
-                <h2 className="truncate text-xl font-semibold text-white">
+                <h2 className="text-lg font-semibold leading-tight text-white sm:text-xl">
                   {currentLevel
                     ? `Medalla ${currentLevel.title ?? "Bronce"}`
                     : rewardStatus?.access_unlocked
