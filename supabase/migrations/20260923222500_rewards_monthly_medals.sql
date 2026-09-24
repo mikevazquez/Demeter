@@ -1229,3 +1229,74 @@ $$;
 
 revoke all on function private.promote_waitlist_for_session(uuid)
 from public, anon, authenticated, service_role;
+
+
+-- Cierre automático de ciclos mensuales.
+-- Se ejecuta cada hora, pero solo procesa membresías cuyo mes anterior aún no
+-- ha sido cerrado. La fecha se calcula en la zona horaria de cada estudio, por
+-- lo que el cierre ocurre dentro de la primera hora del nuevo mes local.
+create or replace function private.reward_status_close_due_months()
+returns integer
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_member record;
+  v_count integer := 0;
+begin
+  for v_member in
+    select
+      m.student_id,
+      (clock_timestamp() at time zone coalesce(s.timezone,'America/Mexico_City'))::date as local_today
+    from public.reward_status_memberships m
+    join public.studios s on s.id=m.studio_id
+    where date_trunc('month',m.activated_on)::date
+          < date_trunc(
+              'month',
+              (clock_timestamp() at time zone coalesce(s.timezone,'America/Mexico_City'))::date
+            )::date
+      and (
+        m.last_closed_period_start is null
+        or m.last_closed_period_start
+           < (
+               date_trunc(
+                 'month',
+                 (clock_timestamp() at time zone coalesce(s.timezone,'America/Mexico_City'))::date
+               )::date - interval '1 month'
+             )::date
+      )
+    order by m.studio_id,m.student_id
+  loop
+    perform private.reward_status_sync_student(v_member.student_id,v_member.local_today);
+    v_count := v_count + 1;
+  end loop;
+
+  return v_count;
+end;
+$$;
+
+revoke all on function private.reward_status_close_due_months()
+from public, anon, authenticated, service_role;
+
+do $$
+declare
+  v_jobid bigint;
+begin
+  select jobid into v_jobid
+  from cron.job
+  where jobname='studio_flow_close_reward_medal_months'
+  order by jobid desc
+  limit 1;
+
+  if v_jobid is not null then
+    perform cron.unschedule(v_jobid);
+  end if;
+end;
+$$;
+
+select cron.schedule(
+  'studio_flow_close_reward_medal_months',
+  '12 * * * *',
+  'select private.reward_status_close_due_months();'
+);
