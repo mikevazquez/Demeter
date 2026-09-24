@@ -701,7 +701,7 @@ export default async function StudentHomePage({
         </section>
       ) : null}
 
-            <section
+      <section
         data-home-block="progress"
         className="rounded-[24px] border border-white/10 bg-white/[0.025] p-4"
       >
@@ -769,7 +769,6 @@ export default async function StudentHomePage({
           </Link>
         </div>
       </section>
-
     </main>
   );
 }
