@@ -23,7 +23,7 @@ export const NOTIFICATION_PROCESS_CATEGORIES = [
   { key: "cuenta", label: "Cuenta" },
 ] as const;
 
-export const NOTIFICATION_PROCESSES = [
+export const NOTIFICATION_PROCESSES: readonly NotificationProcessDefinition[] = [
   {
     key: "reservation-confirmed",
     name: "Reserva confirmada",
@@ -278,7 +278,7 @@ export const NOTIFICATION_PROCESSES = [
     essential: true,
     planned: true,
   },
-] as const satisfies readonly NotificationProcessDefinition[];
+];
 
 export type MarketingDefinition = {
   key: string;
@@ -289,7 +289,7 @@ export type MarketingDefinition = {
   planned?: boolean;
 };
 
-export const MARKETING_COMMUNICATIONS = [
+export const MARKETING_COMMUNICATIONS: readonly MarketingDefinition[] = [
   {
     key: "inactive-students",
     name: "Alumnas inactivas",
@@ -346,7 +346,7 @@ export const MARKETING_COMMUNICATIONS = [
     category: "promociones",
     planned: true,
   },
-] as const satisfies readonly MarketingDefinition[];
+];
 
 export function getNotificationProcess(key: string) {
   return NOTIFICATION_PROCESSES.find((process) => process.key === key) ?? null;
