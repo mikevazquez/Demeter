@@ -56,13 +56,7 @@ function ProfileRow({
   );
 }
 
-function ProfileGroup({
-  title,
-  children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}) {
+function ProfileGroup({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section>
       <h2 className="mb-2 px-1 text-xs font-semibold uppercase tracking-[0.14em] text-zinc-500">
@@ -183,20 +177,11 @@ export default async function StudentProfilePage({
         </StudentNoticeDialog>
       ) : null}
 
-      <section
-        data-profile-block="identity"
-        className="student-card overflow-hidden p-5 sm:p-6"
-      >
+      <section data-profile-block="identity" className="student-card overflow-hidden p-5 sm:p-6">
         <div className="flex items-center gap-4">
           <div className="relative flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-full border border-fuchsia-400/35 bg-fuchsia-500/10 text-xl font-semibold text-white">
             {initials}
-            <Image
-              src="/student/perfil/avatar"
-              alt=""
-              fill
-              unoptimized
-              className="object-cover"
-            />
+            <Image src="/student/perfil/avatar" alt="" fill unoptimized className="object-cover" />
           </div>
 
           <div className="min-w-0 flex-1">
@@ -262,10 +247,7 @@ export default async function StudentProfilePage({
               </p>
             </div>
 
-            <form
-              action={updateStudentProfileAction}
-              className="border-t border-white/10 pt-5"
-            >
+            <form action={updateStudentProfileAction} className="border-t border-white/10 pt-5">
               <h3 className="text-sm font-semibold text-white">Datos que puedes cambiar</h3>
               <div className="mt-3 grid gap-3 sm:grid-cols-2">
                 <label className="block min-w-0 text-sm text-zinc-300">
@@ -299,10 +281,7 @@ export default async function StudentProfilePage({
                 >
                   Guardar cambios
                 </PendingActionButton>
-                <Link
-                  href="/student/perfil"
-                  className="student-action-secondary w-full sm:w-auto"
-                >
+                <Link href="/student/perfil" className="student-action-secondary w-full sm:w-auto">
                   Cancelar
                 </Link>
               </div>
@@ -372,11 +351,7 @@ export default async function StudentProfilePage({
           title="Uso de mis clases"
           subtitle="Consulta cómo has utilizado y recuperado tus clases"
         />
-        <ProfileRow
-          href="/student/pagos"
-          title="Mis pagos"
-          subtitle="Compras y reembolsos"
-        />
+        <ProfileRow href="/student/pagos" title="Mis pagos" subtitle="Compras y reembolsos" />
       </ProfileGroup>
 
       <section className="rounded-2xl border border-white/10 bg-white/[0.02] p-4">
