@@ -38,10 +38,12 @@ export default async function StudentResourceSelectionPage({
   searchParams,
 }: {
   params: Promise<{ sessionId: string }>;
-  searchParams: Promise<{ date?: string; error?: string }>;
+  searchParams: Promise<{ date?: string; error?: string; credit?: string }>;
 }) {
   const { sessionId } = await params;
   const query = await searchParams;
+  const rewardMode = query.credit === "reward";
+  const rewardSuffix = rewardMode ? "&credit=reward" : "";
   const { supabase, studio } = await getStudentPortalContext();
 
   const [{ data: sessionData, error: sessionError }, { data: resourceData, error: resourceError }] =
@@ -58,7 +60,7 @@ export default async function StudentResourceSelectionPage({
   const resourceMap = resourceData as ResourceMapPayload;
 
   if (!session.requires_resource || !resourceMap.requires_resource) {
-    redirect(`/student/reservar/${sessionId}/confirmar`);
+    redirect(`/student/reservar/${sessionId}/confirmar${rewardMode ? "?credit=reward" : ""}`);
   }
 
   if (session.reservation_id) {
@@ -66,7 +68,7 @@ export default async function StudentResourceSelectionPage({
   }
 
   if (!session.eligibility?.eligible) {
-    redirect(`/student/reservar/${sessionId}`);
+    redirect(`/student/reservar/${sessionId}${rewardMode ? "?credit=reward" : ""}`);
   }
 
   const sessionDate = localDateKey(new Date(session.starts_at), studio.timezone);
@@ -79,7 +81,7 @@ export default async function StudentResourceSelectionPage({
   return (
     <main className="mx-auto max-w-2xl space-y-4 pb-4">
       <Link
-        href={`/student/reservar/${sessionId}?date=${returnDate}`}
+        href={`/student/reservar/${sessionId}?date=${returnDate}${rewardSuffix}`}
         className="inline-flex items-center gap-2 text-xs font-semibold text-fuchsia-300"
       >
         <span aria-hidden="true">←</span>
@@ -131,6 +133,7 @@ export default async function StudentResourceSelectionPage({
           returnDate={returnDate}
           resources={resourceMap.resources}
           elements={resourceMap.elements}
+          useRewardCredits={rewardMode}
         />
       )}
     </main>
