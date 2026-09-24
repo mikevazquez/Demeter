@@ -110,8 +110,8 @@ export default async function EvaluationInvitationPage({
             <div className="mt-5 rounded-2xl border border-cyan-400/20 bg-cyan-400/[0.04] p-4">
               <p className="text-sm font-semibold text-white">¿Cómo funciona?</p>
               <p className="mt-1 text-sm leading-6 text-zinc-400">
-                Avanzaremos nivel por nivel mientras cumplas cada evaluación y nos detendremos en
-                el primero que todavía necesites consolidar.
+                Avanzaremos nivel por nivel mientras cumplas cada evaluación y nos detendremos en el
+                primero que todavía necesites consolidar.
               </p>
             </div>
           ) : null}
