@@ -15,5 +15,5 @@ export async function acknowledgeMedalsAccessAction() {
 
   revalidatePath("/student");
   revalidatePath("/student/recompensas");
-  redirect("/student/recompensas");
+  redirect("/student/recompensas/medallero");
 }
