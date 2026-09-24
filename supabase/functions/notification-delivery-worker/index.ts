@@ -845,7 +845,39 @@ async function processDelivery(
       throw new Error("notification_delivery_message_snapshot_failed");
     }
 
-    const result = await runAdapter(adminClient, delivery, message);
+    let result: AdapterResult;
+    if (
+      delivery.recipient_type === "student" &&
+      delivery.recipient_entity_id &&
+      ["push", "whatsapp", "email"].includes(delivery.channel_key)
+    ) {
+      const { data: allowed, error: preferenceError } = await adminClient.rpc(
+        "service_notification_channel_allowed",
+        {
+          p_studio_id: delivery.studio_id,
+          p_recipient_type: delivery.recipient_type,
+          p_recipient_entity_id: delivery.recipient_entity_id,
+          p_channel_key: delivery.channel_key,
+        },
+      );
+
+      if (preferenceError) {
+        throw new Error("notification_channel_preference_lookup_failed");
+      }
+
+      if (allowed !== true) {
+        result = {
+          status: "skipped",
+          providerKey: delivery.provider_key ?? delivery.adapter_key,
+          errorCode: "recipient_channel_disabled",
+          response: { preference: "disabled" },
+        };
+      } else {
+        result = await runAdapter(adminClient, delivery, message);
+      }
+    } else {
+      result = await runAdapter(adminClient, delivery, message);
+    }
 
     if (result.status === "delivered") {
       const { data, error } = await adminClient.rpc(
