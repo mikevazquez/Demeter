@@ -573,11 +573,13 @@ export default async function StudentProfilePage({
           .order("unlocked_at", { ascending: false })
           .limit(20),
         supabase
-          .from("reward_program_level_unlocks")
-          .select("id,title_snapshot,level_order_snapshot,unlocked_at")
+          .from("reward_status_months")
+          .select("id,resulting_level_key,closed_at,period_start")
           .eq("studio_id", studio.id)
           .eq("student_id", student.id)
-          .order("unlocked_at", { ascending: false })
+          .eq("is_closed", true)
+          .not("resulting_level_key", "is", null)
+          .order("period_start", { ascending: false })
           .limit(20),
         supabase
           .from("reward_instances")
@@ -594,12 +596,24 @@ export default async function StudentProfilePage({
       levelKey: item.level_key,
       unlockedAt: item.unlocked_at,
     }));
-    rewardLevelHistory = (levelUnlockRows ?? []).map((item) => ({
-      id: item.id,
-      title: item.title_snapshot || "Nivel",
-      levelOrder: item.level_order_snapshot,
-      unlockedAt: item.unlocked_at,
-    }));
+    const medalTitles: Record<string, { title: string; order: number }> = {
+      bronze: { title: "Bronce", order: 1 },
+      silver: { title: "Plata", order: 2 },
+      gold: { title: "Oro", order: 3 },
+      diamond: { title: "Diamante", order: 4 },
+    };
+    rewardLevelHistory = (levelUnlockRows ?? []).flatMap((item) => {
+      const medal = item.resulting_level_key ? medalTitles[item.resulting_level_key] : null;
+      if (!medal) return [];
+      return [
+        {
+          id: item.id,
+          title: medal.title,
+          levelOrder: medal.order,
+          unlockedAt: item.closed_at ?? `${item.period_start}T12:00:00Z`,
+        },
+      ];
+    });
     rewardInstancesDetail = (rewardRows ?? []).map((item) => ({
       id: item.id,
       rewardKey: item.reward_key,
@@ -1361,7 +1375,7 @@ export default async function StudentProfilePage({
               <strong>{rewardAchievements.length}</strong>
             </article>
             <article>
-              <span>Medallas obtenidas</span>
+              <span>Ciclos con Medalla</span>
               <strong>{rewardLevelHistory.length}</strong>
             </article>
           </div>
@@ -1417,7 +1431,7 @@ export default async function StudentProfilePage({
           {rewardLevelHistory.length ? (
             <div className="profile360-rewards-section">
               <div className="profile360-package-group-heading">
-                <strong>Trayectoria de medallas</strong>
+                <strong>Historial de Medallas</strong>
                 <span>{rewardLevelHistory.length}</span>
               </div>
               <div className="profile360-history-list">
@@ -1427,7 +1441,7 @@ export default async function StudentProfilePage({
                     <div>
                       <strong>{level.title}</strong>
                       <span>
-                        Medalla {level.levelOrder} · {formatDateTime(level.unlockedAt)}
+                        Medalla {level.title} · {formatDateTime(level.unlockedAt)}
                       </span>
                     </div>
                   </article>
