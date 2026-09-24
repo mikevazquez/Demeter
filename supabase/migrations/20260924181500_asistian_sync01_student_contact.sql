@@ -2,57 +2,40 @@
 -- Contact sync is intentionally separated from student_welcome. The latter remains
 -- responsible for the portal activation message once an activation URL exists.
 
-create or replace function private.request_student_contact_sync(p_student_id uuid)
-returns uuid
+create or replace function private.emit_student_created_domain_event()
+returns trigger
 language plpgsql
 security definer
 set search_path = ''
 as $$
-declare
-  v_student public.students%rowtype;
-  v_event_id uuid;
 begin
-  if (select auth.uid()) is null then
-    raise exception 'unauthenticated';
-  end if;
-
-  select *
-    into v_student
-  from public.students s
-  where s.id = p_student_id
-  limit 1;
-
-  if not found then
-    raise exception 'student_not_found';
-  end if;
-
-  if not private.has_capability(v_student.studio_id, 'students.write') then
-    raise exception 'forbidden';
-  end if;
-
-  v_event_id := public.emit_domain_event(
-    p_studio_id => v_student.studio_id,
+  perform public.emit_domain_event(
+    p_studio_id => new.studio_id,
     p_event_type => 'student.created',
     p_source_entity_type => 'student',
-    p_source_entity_id => v_student.id,
-    p_deduplication_key => 'student.created:' || v_student.id::text,
-    p_occurred_at => clock_timestamp(),
+    p_source_entity_id => new.id,
+    p_deduplication_key => 'student.created:' || new.id::text,
+    p_occurred_at => coalesce(new.created_at, clock_timestamp()),
     p_actor_user_id => (select auth.uid()),
     p_payload => jsonb_build_object(
-      'student_id', v_student.id,
-      'source', 'admin_create_student',
+      'student_id', new.id,
+      'source', 'students.insert',
       'integration_intent', 'contact_upsert'
     )
   );
 
-  return v_event_id;
+  return new;
 end;
 $$;
 
-revoke all on function private.request_student_contact_sync(uuid)
-from public, anon, service_role;
-grant execute on function private.request_student_contact_sync(uuid)
-to authenticated;
+revoke all on function private.emit_student_created_domain_event()
+from public, anon, authenticated, service_role;
+
+drop trigger if exists asistian_sync01_emit_student_created on public.students;
+create trigger asistian_sync01_emit_student_created
+after insert on public.students
+for each row
+execute function private.emit_student_created_domain_event();
 
 create or replace function public.admin_create_student(
   p_first_name text,
@@ -181,8 +164,6 @@ begin
   )
   returning id into v_student_id;
 
-  perform private.request_student_contact_sync(v_student_id);
-
   return v_student_id;
 end;
 $$;
@@ -191,6 +172,8 @@ revoke all on function public.admin_create_student(text,text,text,text)
 from public, anon;
 grant execute on function public.admin_create_student(text,text,text,text)
 to authenticated;
+
+drop function if exists private.request_student_contact_sync(uuid);
 
 create or replace function public.admin_set_asistian_webhook_credentials(
   target_studio_id uuid,
