@@ -12,7 +12,6 @@ describe("FESTIVOS-02 configuration center", () => {
     "supabase/migrations/20260924070000_festivos02_configuration_center.sql",
   );
   const page = source("app/admin/configuracion/festivos/page.tsx");
-  const client = source("app/admin/configuracion/festivos/HolidayConfigurationClient.tsx");
   const actions = source("app/admin/configuracion/festivos/actions.ts");
   const studentNotice = source("app/student/reservar/HolidayNotice.tsx");
 
@@ -25,11 +24,11 @@ describe("FESTIVOS-02 configuration center", () => {
 
   it("creates a dedicated configuration center without replacing Agenda", () => {
     expect(page).toContain("Días festivos");
-    expect(page).toContain("HolidayConfigurationClient");
-    expect(client).toContain("Seleccionar todos");
-    expect(client).toContain("Agregar día especial");
-    expect(client).toContain("Cerrar seleccionados");
-    expect(client).toContain("Horario especial");
+    expect(page).toContain("Agregar día especial");
+    expect(page).toContain("Aplicar a seleccionados");
+    expect(page).toContain("Configurar este día");
+    expect(page).toContain("Horario especial");
+    expect(page).not.toContain("Editar Año Nuevo");
   });
 
   it("allows editorial artwork uploads for both holiday cards", () => {
@@ -37,8 +36,8 @@ describe("FESTIVOS-02 configuration center", () => {
     expect(migration).toContain("hero_image_path");
     expect(migration).toContain("message_image_path");
     expect(actions).toContain('from("holiday-artwork").upload');
-    expect(client).toContain('name="hero_image"');
-    expect(client).toContain('name="message_image"');
+    expect(page).toContain('name="hero_image"');
+    expect(page).toContain('name="message_image"');
   });
 
   it("uses uploaded artwork in the student experience and keeps text dynamic", () => {
@@ -51,8 +50,9 @@ describe("FESTIVOS-02 configuration center", () => {
 
   it("bulk special mode preserves currently published sessions by default", () => {
     expect(actions).toContain('mode === "special" ? await sessionIdsForDate(ctx, date) : []');
-    expect(client).toContain(
-      "Al aplicar Horario especial en bloque se conservan inicialmente las sesiones existentes.",
+    expect(page).toContain(
+      "En Horario especial se conservan inicialmente las sesiones ya publicadas",
     );
+    expect(page).toContain('form="holiday-bulk-form"');
   });
 });
