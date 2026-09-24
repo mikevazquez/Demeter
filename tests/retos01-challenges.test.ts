@@ -30,6 +30,20 @@ describe("RETOS-01", () => {
     expect(actions).toContain("ranking_places");
   });
 
+  it("keeps competitive configuration visible after the challenge is locked", () => {
+    const form = read("app/admin/recompensas/RuleEditorForm.tsx");
+    const detail = read("app/admin/retos/[ruleId]/page.tsx");
+
+    expect(form).toContain("Objetivo / métrica");
+    expect(form).toContain("Participantes");
+    expect(form).toContain("Ganadoras");
+    expect(form).toContain("Desempate");
+    expect(form).toContain("Voluntaria · ranking solo para inscritas");
+    expect(form).toContain("challengeMetricLabel(rankingMetric)");
+    expect(detail).toContain("reward_challenge_enrollments");
+    expect(detail).toContain("enrollmentCount={enrollmentCount}");
+  });
+
   it("keeps competitive prizes out of threshold-based automatic rewards", () => {
     const actions = read("app/admin/recompensas/actions.ts");
 
