@@ -50,18 +50,20 @@ export function HolidayConfigurator({
   const [keepIds, setKeepIds] = useState(() => new Set(defaultKeepSessionIds));
   const activeSessions = sessions.filter((session) => session.status === "scheduled");
   const totalReservations = sessions.reduce((sum, session) => sum + session.reservations, 0);
-  const affectedSessions = mode === "closed"
-    ? sessions.length
-    : mode === "special"
-      ? sessions.filter((session) => !keepIds.has(session.id)).length
-      : 0;
-  const affectedReservations = mode === "closed"
-    ? totalReservations
-    : mode === "special"
-      ? sessions
-          .filter((session) => !keepIds.has(session.id))
-          .reduce((sum, session) => sum + session.reservations, 0)
-      : 0;
+  const affectedSessions =
+    mode === "closed"
+      ? sessions.length
+      : mode === "special"
+        ? sessions.filter((session) => !keepIds.has(session.id)).length
+        : 0;
+  const affectedReservations =
+    mode === "closed"
+      ? totalReservations
+      : mode === "special"
+        ? sessions
+            .filter((session) => !keepIds.has(session.id))
+            .reduce((sum, session) => sum + session.reservations, 0)
+        : 0;
 
   const summary = useMemo(() => {
     if (mode === "closed") return "No habrá clases disponibles este día.";

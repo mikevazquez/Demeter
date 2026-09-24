@@ -139,28 +139,23 @@ export default async function StudentReservePage({
   const previousWeekDate = addDays(selectedDate, -7);
   const nextWeekDate = addDays(selectedDate, 7);
 
-  const [
-    { data: sessions, error },
-    { data: selectedHolidayData },
-    { data: holidayWeekData },
-  ] = await Promise.all([
-    supabase.rpc("student_schedule_feed", {
-      target_start: selectedDate,
-      target_end: selectedDate,
-      target_discipline_id: null,
-    }),
-    supabase.rpc("student_holiday_snapshot", { target_date: selectedDate }),
-    supabase.rpc("student_holiday_week_snapshot", {
-      target_start: weekStart,
-      target_end: weekEnd,
-    }),
-  ]);
+  const [{ data: sessions, error }, { data: selectedHolidayData }, { data: holidayWeekData }] =
+    await Promise.all([
+      supabase.rpc("student_schedule_feed", {
+        target_start: selectedDate,
+        target_end: selectedDate,
+        target_discipline_id: null,
+      }),
+      supabase.rpc("student_holiday_snapshot", { target_date: selectedDate }),
+      supabase.rpc("student_holiday_week_snapshot", {
+        target_start: weekStart,
+        target_end: weekEnd,
+      }),
+    ]);
 
   const selectedHoliday = (selectedHolidayData as StudentHolidaySnapshot | null) ?? null;
   const holidayWeekItems = (holidayWeekData ?? []) as HolidayWeekItem[];
-  const holidayByDate = new Map(
-    holidayWeekItems.map((holiday) => [holiday.holiday_date, holiday]),
-  );
+  const holidayByDate = new Map(holidayWeekItems.map((holiday) => [holiday.holiday_date, holiday]));
 
   const baseItems = (sessions ?? []) as StudentSession[];
   const sessionIds = baseItems.map((item) => item.session_id);

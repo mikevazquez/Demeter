@@ -96,9 +96,7 @@ function ClassRow({
             <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-rose-300">
               Motivo
             </p>
-            <p className="mt-1 text-xs leading-5 text-zinc-300">
-              {item.cancellation_reason}
-            </p>
+            <p className="mt-1 text-xs leading-5 text-zinc-300">{item.cancellation_reason}</p>
           </div>
           {item.credit_restored ? (
             <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/[0.06] px-3 py-2.5">

@@ -228,9 +228,7 @@ export default async function StudentReservationDetailPage({
             <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-rose-300">
               Motivo de cancelación
             </p>
-            <p className="mt-1.5 text-sm leading-6 text-zinc-200">
-              {item.cancellation_reason}
-            </p>
+            <p className="mt-1.5 text-sm leading-6 text-zinc-200">{item.cancellation_reason}</p>
           </div>
           {item.credit_restored ? (
             <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.07] px-3 py-2.5">

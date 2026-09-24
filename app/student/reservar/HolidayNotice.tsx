@@ -114,9 +114,7 @@ export function HolidayNotice({ holiday }: { holiday: StudentHolidaySnapshot }) 
           <p className="text-sm leading-6 text-zinc-100">{holiday.message}</p>
         </div>
 
-        <p className="mt-3 text-[9px] text-zinc-600">
-          Fuente oficial: {holiday.source_label}
-        </p>
+        <p className="mt-3 text-[9px] text-zinc-600">Fuente oficial: {holiday.source_label}</p>
       </div>
     </section>
   );

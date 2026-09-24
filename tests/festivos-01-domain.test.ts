@@ -8,9 +8,7 @@ function source(path: string) {
 }
 
 describe("FESTIVOS-01 official holidays domain", () => {
-  const migration = source(
-    "supabase/migrations/20260924050000_festivos01_official_holidays.sql",
-  );
+  const migration = source("supabase/migrations/20260924050000_festivos01_official_holidays.sql");
 
   it("stores official holidays separately from the studio operation decision", () => {
     expect(migration).toContain("create table if not exists public.official_holidays");
@@ -36,7 +34,9 @@ describe("FESTIVOS-01 official holidays domain", () => {
     expect(migration).toContain("coalesce(o.operation_mode, 'normal')");
     expect(migration).toContain("if v_operation_mode = 'closed'");
     expect(migration).toContain("v_operation_mode = 'special'");
-    expect(migration).not.toContain("official_holiday_id is not null then\n        update public.class_sessions");
+    expect(migration).not.toContain(
+      "official_holiday_id is not null then\n        update public.class_sessions",
+    );
   });
 
   it("prevents recurring materialization on closed days and filters special schedules", () => {

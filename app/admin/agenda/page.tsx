@@ -485,7 +485,11 @@ export default async function AgendaPage({
               <strong>{day.getUTCDate()}</strong>
               {holiday ? (
                 <small className="agenda-week-holiday" title={holiday.name}>
-                  {holidayMode === "closed" ? "Cerrado" : holidayMode === "special" ? "Especial" : "Festivo"}
+                  {holidayMode === "closed"
+                    ? "Cerrado"
+                    : holidayMode === "special"
+                      ? "Especial"
+                      : "Festivo"}
                 </small>
               ) : null}
             </Link>
