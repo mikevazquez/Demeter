@@ -165,13 +165,13 @@ export default async function StudentProgressPage() {
     <main className="space-y-5 pb-4">
       <header>
         <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-fuchsia-300">
-          Mi progreso
+          Rewards
         </p>
         <h1 className="mt-1 text-3xl font-semibold tracking-tight text-white sm:text-4xl">
-          Mi progreso
+          Rewards
         </h1>
         <p className="mt-1.5 text-sm text-zinc-400">
-          Sigue tus metas, rachas, logros y recompensas.
+          Consulta tus programas de fidelidad, logros y recompensas.
         </p>
       </header>
 
