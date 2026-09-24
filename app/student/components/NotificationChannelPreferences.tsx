@@ -19,6 +19,7 @@ type DeviceState =
 
 function isIosDevice() {
   if (typeof navigator === "undefined") return false;
+
   return (
     /iPad|iPhone|iPod/.test(navigator.userAgent) ||
     (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)
@@ -27,8 +28,13 @@ function isIosDevice() {
 
 function isStandalone() {
   if (typeof window === "undefined" || typeof navigator === "undefined") return false;
+
   const nav = navigator as Navigator & { standalone?: boolean };
-  return window.matchMedia?.("(display-mode: standalone)").matches === true || nav.standalone === true;
+
+  return (
+    window.matchMedia?.("(display-mode: standalone)").matches === true ||
+    nav.standalone === true
+  );
 }
 
 function supportsPush() {
@@ -46,16 +52,20 @@ function urlBase64ToUint8Array(value: string) {
   const padding = "=".repeat((4 - (value.length % 4)) % 4);
   const base64 = (value + padding).replace(/-/g, "+").replace(/_/g, "/");
   const raw = window.atob(base64);
+
   return Uint8Array.from(raw, (character) => character.charCodeAt(0));
 }
 
 function equalKeys(left: ArrayBuffer | null, right: Uint8Array) {
   if (!left) return false;
+
   const leftBytes = new Uint8Array(left);
   if (leftBytes.length !== right.length) return false;
+
   for (let index = 0; index < leftBytes.length; index += 1) {
     if (leftBytes[index] !== right[index]) return false;
   }
+
   return true;
 }
 
@@ -64,6 +74,7 @@ function deviceLabel() {
   if (/Android/i.test(navigator.userAgent)) return "Android";
   if (/Macintosh|Mac OS X/i.test(navigator.userAgent)) return "Mac";
   if (/Windows/i.test(navigator.userAgent)) return "Windows";
+
   return "Navegador";
 }
 
@@ -123,13 +134,21 @@ export default function NotificationChannelPreferences({
   const [busy, setBusy] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
-  async function setPreference(channel: "push" | "whatsapp" | "email", enabled: boolean) {
+  async function setPreference(
+    channel: "push" | "whatsapp" | "email",
+    enabled: boolean,
+  ) {
     const supabase = await browserClient();
-    const { data, error } = await supabase.rpc("student_set_notification_channel_preference", {
-      p_channel_key: channel,
-      p_enabled: enabled,
-    });
+    const { data, error } = await supabase.rpc(
+      "student_set_notification_channel_preference",
+      {
+        p_channel_key: channel,
+        p_enabled: enabled,
+      },
+    );
+
     if (error) throw error;
+
     const next = (data ?? {}) as Partial<Preferences>;
     setPreferences((current) => ({ ...current, ...next }));
   }
@@ -151,6 +170,7 @@ export default function NotificationChannelPreferences({
     }
 
     let permission = Notification.permission;
+
     if (permission === "default" && requestPermission) {
       permission = await Notification.requestPermission();
     }
@@ -166,17 +186,27 @@ export default function NotificationChannelPreferences({
     }
 
     const supabase = await browserClient();
-    const { data: rawPublicKey, error: keyError } = await supabase.rpc("get_push_vapid_public_key");
+    const { data: rawPublicKey, error: keyError } = await supabase.rpc(
+      "get_push_vapid_public_key",
+    );
+
     if (keyError || typeof rawPublicKey !== "string" || !rawPublicKey) {
       throw new Error("push_vapid_unavailable");
     }
 
     const applicationServerKey = urlBase64ToUint8Array(rawPublicKey);
-    const registration = await navigator.serviceWorker.register("/sw.js", { scope: "/" });
+    const registration = await navigator.serviceWorker.register("/sw.js", {
+      scope: "/",
+    });
+
     await navigator.serviceWorker.ready;
 
     let subscription = await registration.pushManager.getSubscription();
-    if (subscription && !equalKeys(subscription.options.applicationServerKey, applicationServerKey)) {
+
+    if (
+      subscription &&
+      !equalKeys(subscription.options.applicationServerKey, applicationServerKey)
+    ) {
       await subscription.unsubscribe();
       subscription = null;
     }
@@ -193,24 +223,31 @@ export default function NotificationChannelPreferences({
     const p256dh = serialized.keys?.p256dh;
     const auth = serialized.keys?.auth;
 
-    if (!endpoint || !p256dh || !auth) throw new Error("push_subscription_incomplete");
+    if (!endpoint || !p256dh || !auth) {
+      throw new Error("push_subscription_incomplete");
+    }
 
-    const { error: registerError } = await supabase.rpc("register_my_push_subscription", {
-      p_studio_id: studioId,
-      p_endpoint: endpoint,
-      p_p256dh: p256dh,
-      p_auth: auth,
-      p_user_agent: navigator.userAgent,
-      p_device_label: deviceLabel(),
-      p_expiration_time: subscription.expirationTime,
-    });
+    const { error: registerError } = await supabase.rpc(
+      "register_my_push_subscription",
+      {
+        p_studio_id: studioId,
+        p_endpoint: endpoint,
+        p_p256dh: p256dh,
+        p_auth: auth,
+        p_user_agent: navigator.userAgent,
+        p_device_label: deviceLabel(),
+        p_expiration_time: subscription.expirationTime,
+      },
+    );
 
     if (registerError) throw registerError;
+
     setDeviceState("connected");
   }
 
   useEffect(() => {
     let cancelled = false;
+
     if (!preferences.push_enabled) {
       setDeviceState("checking");
       return;
@@ -235,11 +272,13 @@ export default function NotificationChannelPreferences({
     const next = !preferences.push_enabled;
     setBusy("push");
     setMessage(null);
+
     try {
       await setPreference("push", next);
+
       if (next) {
         await ensurePushConnection(true);
-        setMessage("Push activado en Demeter.");
+        setMessage(`Push activado en ${studioName}.`);
       } else {
         setDeviceState("checking");
         setMessage("Push desactivado.");
@@ -255,6 +294,7 @@ export default function NotificationChannelPreferences({
     const key = channel + "_enabled" as "whatsapp_enabled" | "email_enabled";
     setBusy(channel);
     setMessage(null);
+
     try {
       await setPreference(channel, !preferences[key]);
     } catch {
@@ -331,7 +371,8 @@ export default function NotificationChannelPreferences({
           <div className="min-w-0 flex-1">
             <strong className="block text-sm font-semibold text-white">Correo</strong>
             <span className="mt-0.5 block text-xs text-zinc-500">
-              Guardaremos tu preferencia; el envío por correo se activará cuando el proveedor esté conectado.
+              Guardaremos tu preferencia; el envío por correo se activará cuando el proveedor esté
+              conectado.
             </span>
           </div>
           <Toggle
