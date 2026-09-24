@@ -98,7 +98,7 @@ export function StudentNav() {
                 href={item.href}
                 prefetch={item.href === "/student/reservar" ? false : undefined}
                 aria-current={active ? "page" : undefined}
-                className={`flex min-h-12 items-center gap-3 rounded-2xl px-3.5 text-sm font-semibold transition ${ 
+                className={`flex min-h-12 items-center gap-3 rounded-2xl px-3.5 text-sm font-semibold transition ${
                   active
                     ? "bg-fuchsia-600 text-white shadow-[0_10px_28px_rgba(236,72,153,0.18)]"
                     : "text-zinc-400 hover:bg-white/[0.05] hover:text-white"
@@ -128,7 +128,7 @@ export function StudentNav() {
               href={item.href}
               prefetch={item.href === "/student/reservar" ? false : undefined}
               aria-current={active ? "page" : undefined}
-              className={`flex min-h-14 flex-col items-center justify-center rounded-2xl px-2 py-2 text-center text-xs font-semibold transition sm:text-sm ${ 
+              className={`flex min-h-14 flex-col items-center justify-center rounded-2xl px-2 py-2 text-center text-xs font-semibold transition sm:text-sm ${
                 active ? "bg-fuchsia-600 text-white" : "text-zinc-400"
               }`}
             >
