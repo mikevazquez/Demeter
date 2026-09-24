@@ -48,7 +48,6 @@ export function HolidayConfigurator({
   const [mode, setMode] = useState(operationMode);
   const [message, setMessage] = useState(studentMessage);
   const [keepIds, setKeepIds] = useState(() => new Set(defaultKeepSessionIds));
-  const activeSessions = sessions.filter((session) => session.status === "scheduled");
   const totalReservations = sessions.reduce((sum, session) => sum + session.reservations, 0);
   const affectedSessions =
     mode === "closed"
