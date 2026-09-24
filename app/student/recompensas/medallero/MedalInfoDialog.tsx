@@ -7,23 +7,19 @@ type InfoKind = "activeDays" | "noShow" | "continuity" | "renewal";
 const copy: Record<InfoKind, { title: string; body: string }> = {
   activeDays: {
     title: "Días activos",
-    body:
-      "Son los días distintos en los que asististe al estudio. Si tomas varias clases el mismo día, ese día cuenta una sola vez para tu Medalla.",
+    body: "Son los días distintos en los que asististe al estudio. Si tomas varias clases el mismo día, ese día cuenta una sola vez para tu Medalla.",
   },
   noShow: {
     title: "No show",
-    body:
-      "Cada clase que reservas y no registras como asistida cuenta como un no show. Si tienes varias reservas el mismo día, cada una se evalúa por separado.",
+    body: "Cada clase que reservas y no registras como asistida cuenta como un no show. Si tienes varias reservas el mismo día, cada una se evalúa por separado.",
   },
   continuity: {
     title: "Continuidad",
-    body:
-      "Es el tiempo que llevas asistiendo de manera continua para Medallas. Si pasan 30 días consecutivos sin ninguna asistencia, tu continuidad vuelve a comenzar desde cero. Tu antigüedad histórica como alumna no se pierde.",
+    body: "Es el tiempo que llevas asistiendo de manera continua para Medallas. Si pasan 30 días consecutivos sin ninguna asistencia, tu continuidad vuelve a comenzar desde cero. Tu antigüedad histórica como alumna no se pierde.",
   },
   renewal: {
     title: "Renovación",
-    body:
-      "Mide cuántos días pasan entre el vencimiento de tu paquete anterior y tu siguiente renovación. Mientras menos tiempo pase, mayor puede ser la Medalla que obtengas.",
+    body: "Mide cuántos días pasan entre el vencimiento de tu paquete anterior y tu siguiente renovación. Mientras menos tiempo pase, mayor puede ser la Medalla que obtengas.",
   },
 };
 
