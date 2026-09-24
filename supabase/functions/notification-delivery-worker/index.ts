@@ -5,6 +5,7 @@ import { sendAsistianWebhook } from "../_shared/asistian-messaging.ts";
 import {
   buildAsistianVariables,
   formatNotificationDateTimeParts,
+  normalizeAsistianPhone,
 } from "../_shared/notification-asistian-variables.ts";
 
 const WORKER_ID_PREFIX = "notification-delivery-worker";
@@ -635,7 +636,7 @@ async function sendWhatsApp(
   delivery: DeliveryRow,
   message: RenderedMessage,
 ): Promise<AdapterResult> {
-  const phone = safeText(delivery.recipient_snapshot.phone);
+  const phone = normalizeAsistianPhone(delivery.recipient_snapshot.phone);
   if (!phone) {
     return {
       status: "skipped",
