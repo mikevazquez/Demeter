@@ -39,6 +39,7 @@ type RuleVersionValue = {
   cycle_definition: unknown;
   reward_definition: unknown;
   presentation_definition: unknown;
+  communication_definition?: unknown;
 };
 
 function datetimeLocal(value: string | null | undefined) {
@@ -62,7 +63,42 @@ function rewardValue(kind: string, definition: Record<string, unknown>) {
   if (kind === "fixed_discount") return Math.max(1, Number(definition.amount_minor ?? 100) / 100);
   if (kind === "percentage_discount") return Math.max(1, Number(definition.percent ?? 1));
   if (kind === "validity_extension") return Math.max(1, Number(definition.days ?? 1));
+  if (definition.benefit_type === "cash") {
+    return Math.max(1, Number(definition.amount_minor ?? 100) / 100);
+  }
+  if (definition.benefit_type === "class_package") {
+    return Math.max(1, Number(definition.class_credits ?? 1));
+  }
   return Math.max(1, Number(definition.credits ?? 1));
+}
+
+function challengeMetricLabel(metric: string) {
+  const labels: Record<string, string> = {
+    "attendance.count": "Clases asistidas",
+    "attendance.distinct_days": "Días distintos con asistencia",
+    "attendance.distinct_weeks": "Semanas con asistencia",
+    "attendance.distinct_months": "Meses con asistencia",
+    "attendance.discipline_count": "Disciplinas distintas",
+  };
+  return labels[metric] ?? metric;
+}
+
+function challengeAudienceLabel(scope: string) {
+  return scope === "all_students" ? "Todas las alumnas" : "Alumnas activas";
+}
+
+function challengeTieLabel(value: string) {
+  return value === "shared" ? "Premio compartido" : "Primera en alcanzar la marca";
+}
+
+function challengeDateLabel(value: string | null | undefined) {
+  if (!value) return "Sin fecha";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Sin fecha";
+  return new Intl.DateTimeFormat("es-MX", {
+    timeZone: "America/Mexico_City",
+    dateStyle: "medium",
+  }).format(date);
 }
 
 export function RuleEditorForm({
@@ -71,12 +107,14 @@ export function RuleEditorForm({
   version,
   canManage,
   copyOverride,
+  enrollmentCount,
 }: {
   mode: "achievement" | "challenge";
   rule?: RuleValue | null;
   version?: RuleVersionValue | null;
   canManage: boolean;
   copyOverride?: CopyOverrideValue | null;
+  enrollmentCount?: number | null;
 }) {
   const isAchievement = mode === "achievement";
   const locked = Boolean(
@@ -84,6 +122,8 @@ export function RuleEditorForm({
   );
   const audience = asObject(version?.audience_definition);
   const presentation = asObject(version?.presentation_definition);
+  const communication = asObject(version?.communication_definition);
+  const pushCommunication = asObject(communication.push);
   const cycle = asObject(version?.cycle_definition);
   const initialConditions: ConditionInput[] = conditionRows(version?.condition_definition).map(
     (condition, index) => ({
@@ -93,10 +133,22 @@ export function RuleEditorForm({
       target: Number(condition.target ?? 1),
     }),
   );
-  const outcomes = rewardItems(version?.reward_definition);
+  const rewardSource =
+    presentation.competition_mode === "leaderboard" && presentation.competition_reward_definition
+      ? presentation.competition_reward_definition
+      : version?.reward_definition;
+  const outcomes = rewardItems(rewardSource);
   const badge = outcomes.find((item) => String(item.kind ?? "") === "badge");
   const benefit = outcomes.find((item) => String(item.kind ?? "") !== "badge");
-  const kind = String(benefit?.kind ?? "credits");
+  const rawKind = String(benefit?.kind ?? "credits");
+  const kind =
+    benefit?.benefit_type === "cash"
+      ? "cash"
+      : benefit?.benefit_type === "class_package"
+        ? "package"
+        : benefit?.benefit_type === "custom"
+          ? "custom_manual"
+          : rawKind;
   const validity = Number(benefit?.validity_days ?? 30);
   const challengeMode =
     presentation.challenge_mode === "periods" || cycle.challenge_mode === "periods"
@@ -105,6 +157,14 @@ export function RuleEditorForm({
   const periodCadence = ["day", "week", "month"].includes(String(cycle.cadence))
     ? String(cycle.cadence)
     : "week";
+  const competitionMode =
+    String(presentation.competition_mode) === "leaderboard" ? "leaderboard" : "individual";
+  const tieBreaker = String(presentation.tie_breaker) === "shared" ? "shared" : "first_to_reach";
+  const winnerCount = Math.min(3, Math.max(1, Number(presentation.winner_count ?? 1)));
+  const rankingMetric = String(
+    presentation.ranking_metric ?? initialConditions[0]?.metric ?? "attendance.count",
+  );
+  const rewardVisibility = String(presentation.reward_visibility ?? "visible");
   const displayName = copyOverride?.title ?? version?.name ?? (isAchievement ? "Logro" : "Reto");
   const displayDescription = copyOverride?.description ?? version?.description ?? "";
   const coverUrl = copyOverride?.cover_url ?? String(presentation.cover_url ?? "");
@@ -127,20 +187,83 @@ export function RuleEditorForm({
           <p className="mt-4 text-sm leading-6 text-zinc-400">
             {displayDescription || "Sin descripción."}
           </p>
-          <div className="mt-5 grid gap-3 md:grid-cols-2">
-            <div className="rounded-xl border border-white/10 bg-black/20 p-4">
-              <p className="text-xs uppercase tracking-[0.14em] text-zinc-500">Condiciones</p>
-              <p className="mt-2 text-sm text-white">
-                {conditionsLabel(version?.condition_definition)}
-              </p>
+          {isAchievement ? (
+            <div className="mt-5 grid gap-3 md:grid-cols-2">
+              <div className="rounded-xl border border-white/10 bg-black/20 p-4">
+                <p className="text-xs uppercase tracking-[0.14em] text-zinc-500">Condiciones</p>
+                <p className="mt-2 text-sm text-white">
+                  {conditionsLabel(version?.condition_definition)}
+                </p>
+              </div>
+              <div className="rounded-xl border border-white/10 bg-black/20 p-4">
+                <p className="text-xs uppercase tracking-[0.14em] text-zinc-500">Resultado</p>
+                <p className="mt-2 text-sm text-white">
+                  {rewardDefinitionLabel(version?.reward_definition)}
+                </p>
+              </div>
             </div>
-            <div className="rounded-xl border border-white/10 bg-black/20 p-4">
-              <p className="text-xs uppercase tracking-[0.14em] text-zinc-500">Resultado</p>
-              <p className="mt-2 text-sm text-white">
-                {rewardDefinitionLabel(version?.reward_definition)}
-              </p>
+          ) : (
+            <div className="mt-5 grid gap-3 md:grid-cols-2">
+              <div className="rounded-xl border border-white/10 bg-black/20 p-4">
+                <p className="text-xs uppercase tracking-[0.14em] text-zinc-500">Modalidad</p>
+                <p className="mt-2 text-sm font-semibold text-white">
+                  {competitionMode === "leaderboard" ? "Competencia" : "Individual"}
+                </p>
+              </div>
+              <div className="rounded-xl border border-white/10 bg-black/20 p-4">
+                <p className="text-xs uppercase tracking-[0.14em] text-zinc-500">Participantes</p>
+                <p className="mt-2 text-sm font-semibold text-white">
+                  {competitionMode === "leaderboard"
+                    ? `${enrollmentCount ?? 0} inscritas`
+                    : challengeAudienceLabel(String(audience.scope ?? "all_active_students"))}
+                </p>
+              </div>
+              <div className="rounded-xl border border-white/10 bg-black/20 p-4">
+                <p className="text-xs uppercase tracking-[0.14em] text-zinc-500">
+                  Objetivo / métrica
+                </p>
+                <p className="mt-2 text-sm text-white">{challengeMetricLabel(rankingMetric)}</p>
+                <p className="mt-1 text-xs text-zinc-500">
+                  {conditionsLabel(version?.condition_definition)}
+                </p>
+              </div>
+              <div className="rounded-xl border border-white/10 bg-black/20 p-4">
+                <p className="text-xs uppercase tracking-[0.14em] text-zinc-500">Periodo</p>
+                <p className="mt-2 text-sm text-white">
+                  {challengeDateLabel(rule?.scheduled_start_at)} →{" "}
+                  {challengeDateLabel(rule?.scheduled_end_at)}
+                </p>
+              </div>
+              {competitionMode === "leaderboard" ? (
+                <>
+                  <div className="rounded-xl border border-white/10 bg-black/20 p-4">
+                    <p className="text-xs uppercase tracking-[0.14em] text-zinc-500">Ganadoras</p>
+                    <p className="mt-2 text-sm text-white">
+                      {winnerCount} {winnerCount === 1 ? "ganadora" : "ganadoras"}
+                    </p>
+                  </div>
+                  <div className="rounded-xl border border-white/10 bg-black/20 p-4">
+                    <p className="text-xs uppercase tracking-[0.14em] text-zinc-500">Desempate</p>
+                    <p className="mt-2 text-sm text-white">{challengeTieLabel(tieBreaker)}</p>
+                  </div>
+                  <div className="rounded-xl border border-white/10 bg-black/20 p-4">
+                    <p className="text-xs uppercase tracking-[0.14em] text-zinc-500">Inscripción</p>
+                    <p className="mt-2 text-sm text-white">
+                      Voluntaria · ranking solo para inscritas
+                    </p>
+                  </div>
+                </>
+              ) : null}
+              <div className="rounded-xl border border-white/10 bg-black/20 p-4">
+                <p className="text-xs uppercase tracking-[0.14em] text-zinc-500">Recompensa</p>
+                <p className="mt-2 text-sm text-white">
+                  {rewardVisibility === "surprise"
+                    ? "Sorpresa"
+                    : rewardDefinitionLabel(rewardSource)}
+                </p>
+              </div>
             </div>
-          </div>
+          )}
           {rule?.status === "active" ? (
             <p className="mt-4 text-xs text-zinc-500">
               La configuración estructural está bloqueada mientras está activa.
@@ -314,6 +437,45 @@ export function RuleEditorForm({
                     <option value="month">Mensual</option>
                   </select>
                 </label>
+                <label className="grid gap-1 text-sm text-zinc-300">
+                  Tipo de reto
+                  <select
+                    name="competition_mode"
+                    defaultValue={competitionMode}
+                    className="rounded-xl border border-white/10 bg-[#111114] px-3 py-2.5 text-white"
+                  >
+                    <option value="individual">Individual · todas pueden completar la meta</option>
+                    <option value="leaderboard">Competencia · ranking Top 3</option>
+                  </select>
+                </label>
+                <label className="grid gap-1 text-sm text-zinc-300">
+                  Empates en competencia
+                  <select
+                    name="tie_breaker"
+                    defaultValue={tieBreaker}
+                    className="rounded-xl border border-white/10 bg-[#111114] px-3 py-2.5 text-white"
+                  >
+                    <option value="first_to_reach">Primera en alcanzar la marca</option>
+                    <option value="shared">Premio compartido</option>
+                  </select>
+                </label>
+                <label className="grid gap-1 text-sm text-zinc-300">
+                  Número de ganadoras
+                  <select
+                    name="winner_count"
+                    defaultValue={String(winnerCount)}
+                    className="rounded-xl border border-white/10 bg-[#111114] px-3 py-2.5 text-white"
+                  >
+                    <option value="1">1 ganadora</option>
+                    <option value="2">2 ganadoras</option>
+                    <option value="3">3 ganadoras</option>
+                  </select>
+                </label>
+                <div className="rounded-xl border border-[#FF0A8A]/20 bg-[#FF0A8A]/[0.06] p-3 text-xs leading-5 text-zinc-300">
+                  En competencia, la inscripción es voluntaria y solo las inscritas entran al
+                  ranking. El portal muestra Top 3, posición personal y distancia al podio; nunca
+                  apellidos completos.
+                </div>
                 <label className="grid gap-1 text-sm text-zinc-300 md:col-span-2">
                   Portada (URL opcional)
                   <input
@@ -362,6 +524,57 @@ export function RuleEditorForm({
             </div>
           </section>
 
+          {!isAchievement ? (
+            <section>
+              <p className="text-xs font-semibold uppercase tracking-[0.15em] text-[#FF0A8A]">
+                NOTIFICACIONES
+              </p>
+              <h2 className="mt-1 text-lg font-semibold text-white">
+                Hitos que pueden generar push
+              </h2>
+              <p className="mt-2 text-sm text-zinc-400">
+                Guardamos solo eventos relevantes para evitar saturar a las alumnas.
+              </p>
+              <div className="mt-4 grid gap-2 md:grid-cols-2">
+                {[
+                  ["notify_started", "Inicio del reto", "challenge_started"],
+                  ["notify_progress", "Progreso significativo", "meaningful_progress"],
+                  ["notify_near_goal", "Cerca de completar", "near_goal"],
+                  ["notify_top3", "Entrada al Top 3", "entered_top3"],
+                  ["notify_position", "Cambio de posición", "position_changed"],
+                  ["notify_overtaken", "Fue superada", "overtaken"],
+                  ["notify_ending", "Cierre cercano", "ending_soon"],
+                  ["notify_completed", "Reto completado", "completed"],
+                  ["notify_results", "Resultados finales", "results"],
+                ].map(([name, label, key]) => (
+                  <label
+                    key={name}
+                    className="flex items-center gap-3 rounded-xl border border-white/10 bg-black/20 p-3 text-sm text-zinc-200"
+                  >
+                    <input
+                      type="checkbox"
+                      name={name}
+                      value="true"
+                      defaultChecked={
+                        pushCommunication[key] === undefined
+                          ? [
+                              "challenge_started",
+                              "near_goal",
+                              "entered_top3",
+                              "ending_soon",
+                              "completed",
+                              "results",
+                            ].includes(key)
+                          : Boolean(pushCommunication[key])
+                      }
+                    />
+                    {label}
+                  </label>
+                ))}
+              </div>
+            </section>
+          ) : null}
+
           <section>
             <p className="text-xs font-semibold uppercase tracking-[0.15em] text-[#FF0A8A]">
               RESULTADO
@@ -369,6 +582,7 @@ export function RuleEditorForm({
             <h2 className="mt-1 text-lg font-semibold text-white">¿Qué desbloquea?</h2>
             <div className="mt-4">
               <OutcomeFields
+                medalAllowed={isAchievement}
                 medalRequired={isAchievement}
                 defaultMedal={Boolean(badge)}
                 defaultBadgeTitle={String(badge?.title ?? version?.name ?? "")}
@@ -377,6 +591,7 @@ export function RuleEditorForm({
                 defaultRewardValue={benefit ? rewardValue(kind, benefit) : 1}
                 defaultValidityDays={Number.isFinite(validity) ? validity : 30}
                 defaultRewardVisibility={String(presentation.reward_visibility ?? "visible")}
+                defaultRewardLabel={String(benefit?.label ?? "")}
               />
             </div>
           </section>

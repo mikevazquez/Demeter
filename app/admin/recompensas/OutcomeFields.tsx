@@ -11,6 +11,7 @@ export function OutcomeFields({
   defaultRewardValue = 1,
   defaultValidityDays = 30,
   defaultRewardVisibility = "visible",
+  defaultRewardLabel = "",
   defaultBadgeTitle = "",
 }: {
   medalAllowed?: boolean;
@@ -21,6 +22,7 @@ export function OutcomeFields({
   defaultRewardValue?: number;
   defaultValidityDays?: number;
   defaultRewardVisibility?: string;
+  defaultRewardLabel?: string;
   defaultBadgeTitle?: string;
 }) {
   const [medal, setMedal] = useState(medalRequired || defaultMedal);
@@ -82,6 +84,9 @@ export function OutcomeFields({
                 <option value="percentage_discount">Descuento porcentual</option>
                 <option value="fixed_discount">Descuento fijo</option>
                 <option value="validity_extension">Extensión de vigencia</option>
+                <option value="package">Paquete de clases</option>
+                <option value="cash">Dinero</option>
+                <option value="custom_manual">Recompensa personalizada</option>
               </select>
             </label>
 
@@ -94,6 +99,16 @@ export function OutcomeFields({
                 step="1"
                 required
                 defaultValue={defaultRewardValue}
+                className="rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 text-white"
+              />
+            </label>
+
+            <label className="grid gap-1 text-sm text-zinc-300 md:col-span-2">
+              Nombre / detalle de la recompensa
+              <input
+                name="reward_label"
+                defaultValue={defaultRewardLabel}
+                placeholder="Ej. Taller gratis, paquete de 8 clases o $500 MXN"
                 className="rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 text-white"
               />
             </label>

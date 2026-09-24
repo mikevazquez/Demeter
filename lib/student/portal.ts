@@ -24,6 +24,7 @@ export type StudentAcquisition = {
   name: string;
   product_type: string;
   package_term: string | null;
+  reward_credit_wallet: boolean;
   status: string;
   starts_on: string;
   expires_on: string;
@@ -195,17 +196,21 @@ export const getStudentPortalContext = cache(async () => {
   const { data: productTerms } = productIds.length
     ? await supabase
         .from("product_templates")
-        .select("id,package_term")
+        .select("id,package_term,reward_credit_wallet")
         .eq("studio_id", membership.studio_id)
         .in("id", productIds)
     : { data: [] };
-  const termMap = new Map((productTerms ?? []).map((item) => [item.id, item.package_term]));
+  const productMetaMap = new Map((productTerms ?? []).map((item) => [item.id, item]));
   const enrichedSnapshot: StudentSnapshot = {
     ...baseSnapshot,
-    acquisitions: baseSnapshot.acquisitions.map((item) => ({
-      ...item,
-      package_term: termMap.get(item.product_id) ?? null,
-    })),
+    acquisitions: baseSnapshot.acquisitions.map((item) => {
+      const product = productMetaMap.get(item.product_id);
+      return {
+        ...item,
+        package_term: product?.package_term ?? null,
+        reward_credit_wallet: product?.reward_credit_wallet ?? false,
+      };
+    }),
   };
 
   return {

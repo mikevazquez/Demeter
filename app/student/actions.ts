@@ -132,16 +132,21 @@ export async function joinStudentWaitlistInlineAction(sessionId: string) {
   };
 }
 
-export async function bookStudentSessionInlineAction(sessionId: string) {
+export async function bookStudentSessionInlineAction(sessionId: string, useRewardCredits = false) {
   const normalizedSessionId = sessionId.trim();
   if (!normalizedSessionId) {
     return { ok: false as const, error: "session_required" };
   }
 
   const { supabase } = await getStudentPortalContext();
-  const { data, error } = await supabase.rpc("student_book_session", {
-    target_session_id: normalizedSessionId,
-  });
+  const { data, error } = useRewardCredits
+    ? await supabase.rpc("student_book_session_with_reward_credits", {
+        target_session_id: normalizedSessionId,
+        target_resource_id: null,
+      })
+    : await supabase.rpc("student_book_session", {
+        target_session_id: normalizedSessionId,
+      });
 
   if (error) {
     return { ok: false as const, error: errorCode(error, "booking_failed") };
@@ -167,20 +172,26 @@ export async function bookStudentSessionAction(formData: FormData) {
   const sessionId = String(formData.get("session_id") ?? "").trim();
   const rawDate = String(formData.get("date") ?? "").trim();
   const resourceId = String(formData.get("resource_id") ?? "").trim() || null;
+  const useRewardCredits = String(formData.get("credit_source") ?? "") === "reward";
   const selectedDate = /^\d{4}-\d{2}-\d{2}$/.test(rawDate) ? rawDate : "";
   const dateQuery = selectedDate ? `&date=${encodeURIComponent(selectedDate)}` : "";
 
   if (!sessionId) redirect("/student/reservar?error=session_required");
 
   const { supabase } = await getStudentPortalContext();
-  const { data, error } = resourceId
-    ? await supabase.rpc("student_book_session_with_resource", {
+  const { data, error } = useRewardCredits
+    ? await supabase.rpc("student_book_session_with_reward_credits", {
         target_session_id: sessionId,
         target_resource_id: resourceId,
       })
-    : await supabase.rpc("student_book_session", {
-        target_session_id: sessionId,
-      });
+    : resourceId
+      ? await supabase.rpc("student_book_session_with_resource", {
+          target_session_id: sessionId,
+          target_resource_id: resourceId,
+        })
+      : await supabase.rpc("student_book_session", {
+          target_session_id: sessionId,
+        });
 
   if (error) {
     redirect(

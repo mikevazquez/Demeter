@@ -23,6 +23,7 @@ const errorCopy: Record<string, string> = {
   resource_required: "Elige un recurso antes de confirmar tu reserva.",
   resource_full: "Ese recurso acaba de ocuparse. Elige otro lugar.",
   resource_not_available: "Ese recurso ya no está disponible. Elige otro lugar.",
+  reward_credits_unavailable: "Ya no tienes créditos extra suficientes para esta clase.",
 };
 
 type Props = {
@@ -36,6 +37,7 @@ type Props = {
   waitlisted?: boolean;
   levelTitle?: string | null;
   requiresResource?: boolean;
+  useRewardCredits?: boolean;
 };
 
 export function QuickBookButton({
@@ -49,6 +51,7 @@ export function QuickBookButton({
   waitlisted = false,
   levelTitle = null,
   requiresResource = false,
+  useRewardCredits = false,
 }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -60,12 +63,12 @@ export function QuickBookButton({
     if (!eligible || reserved || isPending) return;
 
     if (requiresResource) {
-      router.push(`/student/reservar/${sessionId}`);
+      router.push(`/student/reservar/${sessionId}${useRewardCredits ? "?credit=reward" : ""}`);
       return;
     }
 
     startTransition(async () => {
-      const result = await bookStudentSessionInlineAction(sessionId);
+      const result = await bookStudentSessionInlineAction(sessionId, useRewardCredits);
       if (!result.ok) {
         setModal({
           type: "error",
@@ -144,8 +147,9 @@ export function QuickBookButton({
                   <p className="mt-1 text-sm text-zinc-400">{timeLabel}</p>
                 </div>
                 <p className="mt-4 text-center text-sm leading-6 text-zinc-400">
-                  Puedes cerrar esta ventana y reservar otra clase del mismo día sin salir de la
-                  agenda.
+                  {useRewardCredits
+                    ? "Se utilizó tu saldo de créditos extra para esta reserva."
+                    : "Puedes cerrar esta ventana y reservar otra clase del mismo día sin salir de la agenda."}
                 </p>
               </>
             ) : (

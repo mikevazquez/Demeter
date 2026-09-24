@@ -23,12 +23,13 @@ describe("SF-N14 PORTAL UX-06 Mi paquete", () => {
   });
 
   it("shows finite-package progress without fabricating a percentage for unlimited packages", () => {
-    expect(page).toContain('data-package-block="progress"');
+    expect(page).toContain("Progreso del paquete");
+    expect(page).not.toContain('data-package-block="progress"');
     expect(page).toContain("progressPercent(activePackage)");
     expect(page).toContain("Acceso ilimitado");
     expect(page).toContain('role="progressbar"');
     expect(page).toContain("aria-valuenow={activeProgress}");
-    expect(page).toContain('className="text-3xl text-fuchsia-300">∞');
+    expect(page).toContain('className="text-2xl text-fuchsia-300">∞');
   });
 
   it("preserves booking, movement, history and enrollment access", () => {
