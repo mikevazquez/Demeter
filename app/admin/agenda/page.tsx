@@ -3,6 +3,7 @@ import Link from "next/link";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { cancelSession, updateSession } from "./[sessionId]/actions";
+import { HolidayConfigurator } from "./HolidayConfigurator";
 
 function formatMoney(minor: number) {
   return new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(minor / 100);
@@ -147,7 +148,13 @@ function statusLabel(status: string) {
 export default async function AgendaPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; created?: string; date?: string; session?: string }>;
+  searchParams: Promise<{
+    error?: string;
+    created?: string;
+    date?: string;
+    session?: string;
+    holiday?: string;
+  }>;
 }) {
   const params = await searchParams;
   const { supabase, studio, can, user } = await getAdminContext(CAPABILITIES.SCHEDULE_READ);
@@ -217,6 +224,27 @@ export default async function AgendaPage({
       .order("weekday"),
   ]);
 
+  const [{ data: officialHolidays }, { data: holidayOverrides }] = await Promise.all([
+    supabase
+      .from("official_holidays")
+      .select(
+        "id,holiday_code,holiday_date,name,theme_key,default_message,source_label,source_url,legal_basis",
+      )
+      .eq("country_code", "MX")
+      .eq("is_official", true)
+      .gte("holiday_date", weekStartKey)
+      .lte("holiday_date", utcDateKey(weekEnd))
+      .order("holiday_date"),
+    supabase
+      .from("studio_holiday_overrides")
+      .select(
+        "id,official_holiday_id,holiday_date,operation_mode,student_message,special_recurring_schedule_ids",
+      )
+      .eq("studio_id", studio.id)
+      .gte("holiday_date", weekStartKey)
+      .lte("holiday_date", utcDateKey(weekEnd)),
+  ]);
+
   if (canEdit) {
     for (const schedule of schedules ?? []) {
       await supabase.rpc("materialize_recurring_schedule", {
@@ -229,7 +257,7 @@ export default async function AgendaPage({
   const { data: sessions } = await supabase
     .from("class_sessions")
     .select(
-      "id,starts_at,ends_at,capacity,status,notes,template_id,space_id,instructor_id,recurring_schedule_id,is_schedule_exception",
+      "id,starts_at,ends_at,capacity,status,notes,template_id,space_id,instructor_id,recurring_schedule_id,is_schedule_exception,holiday_override_id,cancellation_reason",
     )
     .eq("studio_id", studio.id)
     .gte("starts_at", weekStartUtc.toISOString())
@@ -257,6 +285,12 @@ export default async function AgendaPage({
   const instructorMap = new Map(
     (instructors ?? []).map((item) => [item.id, personMap.get(item.person_id) ?? "Instructor"]),
   );
+  const holidayMap = new Map((officialHolidays ?? []).map((item) => [item.holiday_date, item]));
+  const holidayOverrideMap = new Map(
+    (holidayOverrides ?? []).map((item) => [item.holiday_date, item]),
+  );
+  const selectedHoliday = holidayMap.get(selectedKey) ?? null;
+  const selectedHolidayOverride = holidayOverrideMap.get(selectedKey) ?? null;
 
   const occupiedBySession = new Map<string, number>();
   for (const reservation of reservations ?? []) {
@@ -328,6 +362,36 @@ export default async function AgendaPage({
   const returnTo = selectedSession
     ? `/admin/agenda?date=${selectedKey}&session=${selectedSession.id}`
     : `/admin/agenda?date=${selectedKey}`;
+
+  const selectedHolidaySessions = calendarSessions.filter(
+    (session) => session.dateKey === selectedKey,
+  );
+  const activeReservationsBySession = new Map<string, number>();
+  for (const reservation of reservations ?? []) {
+    if (reservation.status !== "reserved") continue;
+    activeReservationsBySession.set(
+      reservation.session_id,
+      (activeReservationsBySession.get(reservation.session_id) ?? 0) + 1,
+    );
+  }
+  const selectedHolidaySessionItems = selectedHolidaySessions.map((session) => ({
+    id: session.id,
+    name: session.name,
+    time: formatTime(session.starts_at, timeZone),
+    instructor: session.instructor,
+    space: session.space,
+    status: session.status,
+    reservations: activeReservationsBySession.get(session.id) ?? 0,
+  }));
+  const selectedHolidayMode =
+    (selectedHolidayOverride?.operation_mode as "normal" | "closed" | "special" | undefined) ??
+    "normal";
+  const defaultKeepSessionIds =
+    selectedHolidayMode === "special"
+      ? selectedHolidaySessions
+          .filter((session) => session.status === "scheduled")
+          .map((session) => session.id)
+      : selectedHolidaySessions.map((session) => session.id);
 
   const errorCopy: Record<string, string> = {
     conflict: "El instructor o espacio ya está ocupado en ese horario.",
@@ -408,19 +472,46 @@ export default async function AgendaPage({
         {weekDays.map((day) => {
           const key = utcDateKey(day);
           const isSelected = key === selectedKey;
+          const holiday = holidayMap.get(key);
+          const holidayMode = holidayOverrideMap.get(key)?.operation_mode ?? "normal";
           return (
             <Link
               href={`/admin/agenda?date=${key}`}
               key={key}
-              className={`agenda-week-day${isSelected ? " is-selected" : ""}${key === todayKey ? " is-today" : ""}`}
+              className={`agenda-week-day${isSelected ? " is-selected" : ""}${key === todayKey ? " is-today" : ""}${holiday ? ` is-holiday is-holiday-${holidayMode}` : ""}`}
               aria-current={isSelected ? "date" : undefined}
             >
               <span>{shortWeekday(day)}</span>
               <strong>{day.getUTCDate()}</strong>
+              {holiday ? (
+                <small className="agenda-week-holiday" title={holiday.name}>
+                  {holidayMode === "closed" ? "Cerrado" : holidayMode === "special" ? "Especial" : "Festivo"}
+                </small>
+              ) : null}
             </Link>
           );
         })}
       </nav>
+
+      {params.holiday === "save-error" ? (
+        <div className="notice error">No se pudo guardar la operación del festivo.</div>
+      ) : params.holiday === "not-found" ? (
+        <div className="notice error">No encontramos ese festivo en el catálogo oficial.</div>
+      ) : null}
+
+      {selectedHoliday ? (
+        <HolidayConfigurator
+          holiday={selectedHoliday}
+          operationMode={selectedHolidayMode}
+          studentMessage={
+            selectedHolidayOverride?.student_message ?? selectedHoliday.default_message
+          }
+          sessions={selectedHolidaySessionItems}
+          defaultKeepSessionIds={defaultKeepSessionIds}
+          canEdit={canEdit}
+          saved={params.holiday === "saved"}
+        />
+      ) : null}
 
       <div className={`agenda-workspace${selectedSession ? " has-editor" : ""}`}>
         <section
