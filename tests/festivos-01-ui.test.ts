@@ -38,15 +38,17 @@ describe("FESTIVOS-01 calendar UX", () => {
     expect(holidayNotice).toContain("holiday.message");
   });
 
-  it("shows the approved closed-day mockup without the extra credit info box", () => {
+  it("shows the original compact student holiday view without the extra credit info box", () => {
     expect(studentCalendar).toContain("student_holiday_snapshot");
     expect(studentCalendar).toContain("student_holiday_week_snapshot");
     expect(studentCalendar).toContain("<HolidayNotice");
     expect(holidayNotice).toContain("El estudio permanecerá cerrado por");
     expect(holidayNotice).toContain("No habrá clases disponibles este día.");
     expect(holidayNotice).toContain("Festivo oficial");
-    expect(holidayNotice).toContain("HolidayArtwork");
-    expect(holidayNotice).toContain("MexicanRibbon");
+    expect(holidayNotice).toContain("holidayOperationLabel");
+    expect(holidayNotice).toContain("theme.motif");
+    expect(holidayNotice).not.toContain("HolidayArtwork");
+    expect(holidayNotice).not.toContain("MexicanRibbon");
     expect(holidayNotice).not.toContain(
       "Si tenías una reserva, tu crédito será restaurado automáticamente",
     );
