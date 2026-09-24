@@ -7,10 +7,7 @@ import {
   type StudentClassFeedItem,
 } from "@/lib/student/portal";
 
-import {
-  confirmExistingGuestInvitationAction,
-  createGuestInvitationAction,
-} from "../../actions";
+import { confirmExistingGuestInvitationAction, createGuestInvitationAction } from "../../actions";
 import { ReservationCheckInQr } from "./ReservationCheckInQr";
 
 const statusCopy: Record<string, string> = {
