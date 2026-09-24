@@ -1,6 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
 
+import { signOut } from "@/app/auth/actions";
+
 import { formatDate, getStudentPortalContext } from "@/lib/student/portal";
 
 import { updateStudentAvatarAction, updateStudentProfileAction } from "../actions";
@@ -323,7 +325,7 @@ export default async function StudentProfilePage({
               ✦
             </span>
             <span>
-              <strong className="block text-sm font-semibold text-white">Rewards</strong>
+              <strong className="block text-sm font-semibold text-white">Medallas y beneficios</strong>
               <span className="mt-0.5 block text-xs text-zinc-500">
                 Medallas, beneficios y recompensas obtenidas
               </span>
@@ -347,7 +349,7 @@ export default async function StudentProfilePage({
               ◎
             </span>
             <span>
-              <strong className="block text-sm font-semibold text-white">Evaluaciones</strong>
+              <strong className="block text-sm font-semibold text-white">Nivel técnico y evaluaciones</strong>
               <span className="mt-0.5 block text-xs text-zinc-500">
                 Nivel técnico, próximas evaluaciones y resultados
               </span>
@@ -395,8 +397,8 @@ export default async function StudentProfilePage({
               ↔
             </span>
             <span>
-              <strong className="block text-sm font-semibold text-white">Movimientos</strong>
-              <span className="mt-0.5 block text-xs text-zinc-500">Historial de créditos</span>
+              <strong className="block text-sm font-semibold text-white">Uso de mis clases</strong>
+              <span className="mt-0.5 block text-xs text-zinc-500">Consulta cómo has usado tus clases</span>
             </span>
             <span
               aria-hidden="true"
@@ -418,7 +420,7 @@ export default async function StudentProfilePage({
             </span>
             <span>
               <strong className="block text-sm font-semibold text-white">Pagos</strong>
-              <span className="mt-0.5 block text-xs text-zinc-500">Historial comercial</span>
+              <span className="mt-0.5 block text-xs text-zinc-500">Compras y reembolsos</span>
             </span>
             <span
               aria-hidden="true"
@@ -465,7 +467,7 @@ export default async function StudentProfilePage({
             <span>
               <strong className="block text-sm font-semibold text-white">Documentos</strong>
               <span className="mt-0.5 block text-xs text-zinc-500">
-                Versiones y aceptación · próxima fase
+                Reglamentos, responsivas y aceptaciones
               </span>
             </span>
             <span
@@ -476,6 +478,18 @@ export default async function StudentProfilePage({
             </span>
           </Link>
         </div>
+      </section>
+
+      <section className="rounded-2xl border border-white/10 bg-white/[0.02] p-4">
+        <h2 className="text-sm font-semibold text-white">Cuenta</h2>
+        <form action={signOut} className="mt-3">
+          <PendingActionButton
+            pendingLabel="Cerrando sesión…"
+            className="inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-white/10 px-4 py-2.5 text-sm font-semibold text-zinc-300 transition hover:bg-white/[0.05] hover:text-white disabled:cursor-wait disabled:opacity-60 sm:w-auto"
+          >
+            Cerrar sesión
+          </PendingActionButton>
+        </form>
       </section>
     </main>
   );
