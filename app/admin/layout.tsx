@@ -126,7 +126,10 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
           ? [{ href: "/admin/documentos", label: "Documentos", enabled: true }]
           : []),
         ...(can(CAPABILITIES.REWARDS_READ)
-          ? [{ href: "/admin/recompensas", label: "Progreso", enabled: true }]
+          ? [
+              { href: "/admin/retos", label: "Retos", enabled: true },
+              { href: "/admin/recompensas", label: "Rewards", enabled: true },
+            ]
           : []),
         ...(can(CAPABILITIES.EVALUATIONS_READ)
           ? [{ href: "/admin/evaluaciones", label: "Evaluaciones", enabled: true }]
@@ -181,6 +184,7 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
                 activeFor: [
                   "/admin/actividades",
                   "/admin/documentos",
+                  "/admin/retos",
                   "/admin/recompensas",
                   "/admin/evaluaciones",
                   "/admin/productos",
