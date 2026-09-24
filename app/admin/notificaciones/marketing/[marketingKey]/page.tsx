@@ -334,7 +334,9 @@ export default async function MarketingDetailPage({
           ) : (
             <div className="marketing-runtime-grid">
               {instanceRows.map((instance) => {
-                const template = getAutomationTemplate(instance.catalog_code as AutomationCatalogCode);
+                const template = getAutomationTemplate(
+                  instance.catalog_code as AutomationCatalogCode,
+                );
                 const configuration = configurationByInstance.get(instance.id) ?? {};
                 const editableKeys = template.configurableParameters;
                 return (
