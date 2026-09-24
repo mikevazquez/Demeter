@@ -4,7 +4,6 @@ import Link from "next/link";
 import { formatDate, getStudentPortalContext } from "@/lib/student/portal";
 
 import { updateStudentAvatarAction, updateStudentProfileAction } from "../actions";
-import AvatarFilePicker from "./AvatarFilePicker";
 import PendingActionButton from "../components/PendingActionButton";
 import StudentNoticeDialog from "../components/StudentNoticeDialog";
 import AvatarFilePicker from "./AvatarFilePicker";
