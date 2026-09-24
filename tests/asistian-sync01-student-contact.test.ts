@@ -15,12 +15,19 @@ describe("ASISTIAN-SYNC-01 student contact synchronization", () => {
   const shared = source("supabase/functions/_shared/asistian-messaging.ts");
   const provisioning = source("supabase/functions/provision-student-access/index.ts");
 
-  it("emits one idempotent student.created event from the explicit admin creation flow", () => {
-    expect(migration).toContain("perform private.request_student_contact_sync(v_student_id)");
+  it("emits one idempotent student.created event for every new student row", () => {
+    expect(migration).toContain("create trigger asistian_sync01_emit_student_created");
+    expect(migration).toContain("after insert on public.students");
     expect(migration).toContain("p_event_type => 'student.created'");
-    expect(migration).toContain("p_deduplication_key => 'student.created:' || v_student.id::text");
-    expect(migration).toContain("'source', 'admin_create_student'");
-    expect(migration).not.toContain("after insert on public.students");
+    expect(migration).toContain("p_deduplication_key => 'student.created:' || new.id::text");
+    expect(migration).toContain("'source', 'students.insert'");
+    expect(migration).not.toContain("request_student_contact_sync(v_student_id)");
+  });
+
+  it("covers admin, walk-in, and integration-created students through one database trigger", () => {
+    expect(migration).toContain("after insert on public.students");
+    expect(migration).toContain("execute function private.emit_student_created_domain_event()");
+    expect(migration).toContain("drop function if exists private.request_student_contact_sync(uuid)");
   });
 
   it("dispatches contact sync asynchronously without coupling student creation to Asistian", () => {
