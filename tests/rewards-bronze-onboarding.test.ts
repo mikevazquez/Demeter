@@ -63,9 +63,15 @@ describe("REWARDS · onboarding access + monthly Medals", () => {
     expect(existingActiveOnboarding).toContain("s.student_type = 'regular'");
     expect(existingActiveOnboarding).toContain("s.lifecycle_status = 'active'");
     expect(existingActiveOnboarding).toContain("access_unlocked_at = null");
-    expect(existingActiveOnboarding).toContain("perform private.reward_onboarding_refresh_profile");
-    expect(existingActiveOnboarding).toContain("perform private.document_refresh_rewards_onboarding");
-    expect(existingActiveOnboarding).toContain("'existing_membership_preserved',v_had_membership");
+    expect(existingActiveOnboarding).toContain(
+      "perform private.reward_onboarding_refresh_profile",
+    );
+    expect(existingActiveOnboarding).toContain(
+      "perform private.document_refresh_rewards_onboarding",
+    );
+    expect(existingActiveOnboarding).toContain(
+      "'existing_membership_preserved',v_had_membership",
+    );
     expect(existingActiveOnboarding).not.toContain("set current_level_key = null");
     expect(homePage).toContain("const currentLevel = rewardStatus?.access_unlocked");
   });
