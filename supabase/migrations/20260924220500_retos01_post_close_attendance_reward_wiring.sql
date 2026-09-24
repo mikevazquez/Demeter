@@ -278,4 +278,4 @@ begin
     'provenance', 'Agregada manualmente después del cierre'
   );
 end;
-$function$
+$function$;
