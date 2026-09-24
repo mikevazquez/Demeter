@@ -215,11 +215,18 @@ export default async function StudentProgressPage() {
               Consulta requisitos, recompensas y tu progreso hacia Bronce, Plata, Oro o Diamante.
             </p>
           </div>
-          <span aria-hidden="true" className="text-2xl text-fuchsia-300">✦</span>
+          <span aria-hidden="true" className="text-2xl text-fuchsia-300">
+            ✦
+          </span>
         </div>
         <div className="mt-4 flex items-center justify-between border-t border-white/10 pt-3 text-xs font-semibold text-white">
           <span>Ver Medallero</span>
-          <span aria-hidden="true" className="text-lg text-zinc-600 transition group-hover:text-fuchsia-300">›</span>
+          <span
+            aria-hidden="true"
+            className="text-lg text-zinc-600 transition group-hover:text-fuchsia-300"
+          >
+            ›
+          </span>
         </div>
       </Link>
 
