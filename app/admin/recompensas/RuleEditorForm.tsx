@@ -39,6 +39,7 @@ type RuleVersionValue = {
   cycle_definition: unknown;
   reward_definition: unknown;
   presentation_definition: unknown;
+  communication_definition?: unknown;
 };
 
 function datetimeLocal(value: string | null | undefined) {
@@ -84,6 +85,8 @@ export function RuleEditorForm({
   );
   const audience = asObject(version?.audience_definition);
   const presentation = asObject(version?.presentation_definition);
+  const communication = asObject(version?.communication_definition);
+  const pushCommunication = asObject(communication.push);
   const cycle = asObject(version?.cycle_definition);
   const initialConditions: ConditionInput[] = conditionRows(version?.condition_definition).map(
     (condition, index) => ({
@@ -105,6 +108,10 @@ export function RuleEditorForm({
   const periodCadence = ["day", "week", "month"].includes(String(cycle.cadence))
     ? String(cycle.cadence)
     : "week";
+  const competitionMode =
+    String(presentation.competition_mode) === "leaderboard" ? "leaderboard" : "individual";
+  const tieBreaker =
+    String(presentation.tie_breaker) === "shared" ? "shared" : "first_to_reach";
   const displayName = copyOverride?.title ?? version?.name ?? (isAchievement ? "Logro" : "Reto");
   const displayDescription = copyOverride?.description ?? version?.description ?? "";
   const coverUrl = copyOverride?.cover_url ?? String(presentation.cover_url ?? "");
@@ -314,6 +321,32 @@ export function RuleEditorForm({
                     <option value="month">Mensual</option>
                   </select>
                 </label>
+                <label className="grid gap-1 text-sm text-zinc-300">
+                  Tipo de reto
+                  <select
+                    name="competition_mode"
+                    defaultValue={competitionMode}
+                    className="rounded-xl border border-white/10 bg-[#111114] px-3 py-2.5 text-white"
+                  >
+                    <option value="individual">Individual · todas pueden completar la meta</option>
+                    <option value="leaderboard">Competencia · ranking Top 3</option>
+                  </select>
+                </label>
+                <label className="grid gap-1 text-sm text-zinc-300">
+                  Empates en competencia
+                  <select
+                    name="tie_breaker"
+                    defaultValue={tieBreaker}
+                    className="rounded-xl border border-white/10 bg-[#111114] px-3 py-2.5 text-white"
+                  >
+                    <option value="first_to_reach">Primera en alcanzar la marca</option>
+                    <option value="shared">Premio compartido</option>
+                  </select>
+                </label>
+                <div className="rounded-xl border border-[#FF0A8A]/20 bg-[#FF0A8A]/[0.06] p-3 text-xs leading-5 text-zinc-300 md:col-span-2">
+                  En competencia, la inscripción es voluntaria y solo las inscritas entran al ranking.
+                  El portal muestra Top 3, posición personal y distancia al podio; nunca apellidos completos.
+                </div>
                 <label className="grid gap-1 text-sm text-zinc-300 md:col-span-2">
                   Portada (URL opcional)
                   <input
@@ -362,6 +395,50 @@ export function RuleEditorForm({
             </div>
           </section>
 
+          {!isAchievement ? (
+            <section>
+              <p className="text-xs font-semibold uppercase tracking-[0.15em] text-[#FF0A8A]">
+                NOTIFICACIONES
+              </p>
+              <h2 className="mt-1 text-lg font-semibold text-white">
+                Hitos que pueden generar push
+              </h2>
+              <p className="mt-2 text-sm text-zinc-400">
+                Guardamos solo eventos relevantes para evitar saturar a las alumnas.
+              </p>
+              <div className="mt-4 grid gap-2 md:grid-cols-2">
+                {[
+                  ["notify_started", "Inicio del reto", "challenge_started"],
+                  ["notify_progress", "Progreso significativo", "meaningful_progress"],
+                  ["notify_near_goal", "Cerca de completar", "near_goal"],
+                  ["notify_top3", "Entrada al Top 3", "entered_top3"],
+                  ["notify_position", "Cambio de posición", "position_changed"],
+                  ["notify_overtaken", "Fue superada", "overtaken"],
+                  ["notify_ending", "Cierre cercano", "ending_soon"],
+                  ["notify_completed", "Reto completado", "completed"],
+                  ["notify_results", "Resultados finales", "results"],
+                ].map(([name, label, key]) => (
+                  <label
+                    key={name}
+                    className="flex items-center gap-3 rounded-xl border border-white/10 bg-black/20 p-3 text-sm text-zinc-200"
+                  >
+                    <input
+                      type="checkbox"
+                      name={name}
+                      value="true"
+                      defaultChecked={
+                        pushCommunication[key] === undefined
+                          ? ["challenge_started", "near_goal", "entered_top3", "ending_soon", "completed", "results"].includes(key)
+                          : Boolean(pushCommunication[key])
+                      }
+                    />
+                    {label}
+                  </label>
+                ))}
+              </div>
+            </section>
+          ) : null}
+
           <section>
             <p className="text-xs font-semibold uppercase tracking-[0.15em] text-[#FF0A8A]">
               RESULTADO
@@ -369,6 +446,7 @@ export function RuleEditorForm({
             <h2 className="mt-1 text-lg font-semibold text-white">¿Qué desbloquea?</h2>
             <div className="mt-4">
               <OutcomeFields
+                medalAllowed={isAchievement}
                 medalRequired={isAchievement}
                 defaultMedal={Boolean(badge)}
                 defaultBadgeTitle={String(badge?.title ?? version?.name ?? "")}
