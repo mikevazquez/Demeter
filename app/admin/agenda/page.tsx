@@ -238,7 +238,7 @@ export default async function AgendaPage({
     supabase
       .from("studio_holiday_overrides")
       .select(
-        "id,official_holiday_id,holiday_date,operation_mode,student_message,special_recurring_schedule_ids",
+        "id,official_holiday_id,holiday_date,operation_mode,student_message,special_recurring_schedule_ids,source_kind,custom_name,theme_key",
       )
       .eq("studio_id", studio.id)
       .gte("holiday_date", weekStartKey)
@@ -289,6 +289,22 @@ export default async function AgendaPage({
   const holidayOverrideMap = new Map(
     (holidayOverrides ?? []).map((item) => [item.holiday_date, item]),
   );
+  const calendarDayMap = new Map<
+    string,
+    { name: string; sourceKind: "official" | "manual" }
+  >(
+    (officialHolidays ?? []).map((item) => [
+      item.holiday_date,
+      { name: item.name, sourceKind: "official" as const },
+    ]),
+  );
+  for (const override of holidayOverrides ?? []) {
+    if (override.source_kind !== "manual") continue;
+    calendarDayMap.set(override.holiday_date, {
+      name: override.custom_name ?? "Día especial",
+      sourceKind: "manual",
+    });
+  }
   const selectedHoliday = holidayMap.get(selectedKey) ?? null;
   const selectedHolidayOverride = holidayOverrideMap.get(selectedKey) ?? null;
 
@@ -472,7 +488,7 @@ export default async function AgendaPage({
         {weekDays.map((day) => {
           const key = utcDateKey(day);
           const isSelected = key === selectedKey;
-          const holiday = holidayMap.get(key);
+          const holiday = calendarDayMap.get(key);
           const holidayMode = holidayOverrideMap.get(key)?.operation_mode ?? "normal";
           return (
             <Link
@@ -489,7 +505,9 @@ export default async function AgendaPage({
                     ? "Cerrado"
                     : holidayMode === "special"
                       ? "Especial"
-                      : "Festivo"}
+                      : holiday.sourceKind === "manual"
+                        ? "Especial"
+                        : "Festivo"}
                 </small>
               ) : null}
             </Link>
