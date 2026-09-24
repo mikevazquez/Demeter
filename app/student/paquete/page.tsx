@@ -91,8 +91,29 @@ function acquisitionTone(status: string) {
 
 export default async function StudentPackagePage() {
   const { snapshot, studio, supabase, membership } = await getStudentPortalContext();
-  const activePackage = snapshot.acquisitions.find((item) => item.active_now) ?? null;
-  const others = snapshot.acquisitions.filter((item) => item.id !== activePackage?.id);
+  const rewardCreditWallets = snapshot.acquisitions.filter(
+    (item) => item.reward_credit_wallet && item.status === "active" && item.active_now,
+  );
+  const packageAcquisitions = snapshot.acquisitions.filter((item) => !item.reward_credit_wallet);
+  const activePackage = packageAcquisitions.find((item) => item.active_now) ?? null;
+  const others = packageAcquisitions.filter((item) => item.id !== activePackage?.id);
+  const rewardCreditsAvailable = rewardCreditWallets.reduce(
+    (total, item) => total + (item.available_credits ?? 0),
+    0,
+  );
+  const rewardCreditsReserved = rewardCreditWallets.reduce(
+    (total, item) => total + item.reserved_credits,
+    0,
+  );
+  const rewardCreditsUsed = rewardCreditWallets.reduce(
+    (total, item) => total + item.used_credits,
+    0,
+  );
+  const nearestRewardCreditExpiry =
+    rewardCreditWallets
+      .map((item) => item.expires_on)
+      .filter(Boolean)
+      .sort()[0] ?? null;
   const activeProgress = activePackage ? progressPercent(activePackage) : null;
   const activeDaysRemaining = activePackage
     ? daysRemaining(activePackage.expires_on, studio.timezone)
@@ -349,6 +370,65 @@ export default async function StudentPackagePage() {
           ) : null}
         </section>
       )}
+
+      {rewardCreditWallets.length ? (
+        <section
+          data-package-block="reward-credits"
+          className="rounded-3xl border border-emerald-400/20 bg-[radial-gradient(circle_at_88%_12%,rgba(52,211,153,0.15),transparent_35%),rgba(255,255,255,0.03)] p-5 sm:p-6"
+        >
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-emerald-300">
+                Recompensas
+              </p>
+              <h2 className="mt-1 text-xl font-semibold text-white">Créditos extra</h2>
+              <p className="mt-1 text-sm text-zinc-400">
+                Saldo independiente de tu paquete actual.
+              </p>
+            </div>
+            <div className="rounded-2xl border border-emerald-300/20 bg-emerald-300/10 px-4 py-3 text-right">
+              <strong className="block text-3xl text-white">{rewardCreditsAvailable}</strong>
+              <span className="text-[11px] font-medium text-emerald-200">
+                disponibles
+              </span>
+            </div>
+          </div>
+
+          <div className="mt-5 grid grid-cols-3 overflow-hidden rounded-2xl border border-white/10 bg-black/20">
+            <div className="p-4 text-center">
+              <strong className="block text-xl text-white">{rewardCreditsAvailable}</strong>
+              <span className="mt-1 block text-[11px] text-zinc-500">Disponibles</span>
+            </div>
+            <div className="border-x border-white/10 p-4 text-center">
+              <strong className="block text-xl text-white">{rewardCreditsReserved}</strong>
+              <span className="mt-1 block text-[11px] text-zinc-500">Reservados</span>
+            </div>
+            <div className="p-4 text-center">
+              <strong className="block text-xl text-white">{rewardCreditsUsed}</strong>
+              <span className="mt-1 block text-[11px] text-zinc-500">Utilizados</span>
+            </div>
+          </div>
+
+          <div className="mt-4 rounded-2xl border border-white/10 bg-black/15 px-4 py-3">
+            <p className="text-xs font-medium text-zinc-300">
+              {nearestRewardCreditExpiry
+                ? `Vigentes hasta ${formatDate(nearestRewardCreditExpiry, studio.timezone)}`
+                : "Sin saldo vigente"}
+            </p>
+            <p className="mt-1 text-[11px] leading-5 text-zinc-500">
+              No se agregan a tu paquete ni modifican su vigencia. Al reservar, Demeter utiliza el
+              saldo elegible según la vigencia disponible.
+            </p>
+          </div>
+
+          <Link
+            href="/student/reservar"
+            className="mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-emerald-500/15 px-4 py-2.5 text-sm font-semibold text-emerald-200 transition hover:bg-emerald-500/20"
+          >
+            Usar mis créditos extra
+          </Link>
+        </section>
+      ) : null}
 
       {others.length ? (
         <section
