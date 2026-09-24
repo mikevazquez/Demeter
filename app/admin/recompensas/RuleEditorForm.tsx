@@ -72,18 +72,49 @@ function rewardValue(kind: string, definition: Record<string, unknown>) {
   return Math.max(1, Number(definition.credits ?? 1));
 }
 
+function challengeMetricLabel(metric: string) {
+  const labels: Record<string, string> = {
+    "attendance.count": "Clases asistidas",
+    "attendance.distinct_days": "Días distintos con asistencia",
+    "attendance.distinct_weeks": "Semanas con asistencia",
+    "attendance.distinct_months": "Meses con asistencia",
+    "attendance.discipline_count": "Disciplinas distintas",
+  };
+  return labels[metric] ?? metric;
+}
+
+function challengeAudienceLabel(scope: string) {
+  return scope === "all_students" ? "Todas las alumnas" : "Alumnas activas";
+}
+
+function challengeTieLabel(value: string) {
+  return value === "shared" ? "Premio compartido" : "Primera en alcanzar la marca";
+}
+
+function challengeDateLabel(value: string | null | undefined) {
+  if (!value) return "Sin fecha";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Sin fecha";
+  return new Intl.DateTimeFormat("es-MX", {
+    timeZone: "America/Mexico_City",
+    dateStyle: "medium",
+  }).format(date);
+}
+
 export function RuleEditorForm({
   mode,
   rule,
   version,
   canManage,
   copyOverride,
+  enrollmentCount,
 }: {
   mode: "achievement" | "challenge";
   rule?: RuleValue | null;
   version?: RuleVersionValue | null;
   canManage: boolean;
   copyOverride?: CopyOverrideValue | null;
+  enrollmentCount?: number | null;
 }) {
   const isAchievement = mode === "achievement";
   const locked = Boolean(
@@ -130,6 +161,10 @@ export function RuleEditorForm({
     String(presentation.competition_mode) === "leaderboard" ? "leaderboard" : "individual";
   const tieBreaker = String(presentation.tie_breaker) === "shared" ? "shared" : "first_to_reach";
   const winnerCount = Math.min(3, Math.max(1, Number(presentation.winner_count ?? 1)));
+  const rankingMetric = String(
+    presentation.ranking_metric ?? initialConditions[0]?.metric ?? "attendance.count",
+  );
+  const rewardVisibility = String(presentation.reward_visibility ?? "visible");
   const displayName = copyOverride?.title ?? version?.name ?? (isAchievement ? "Logro" : "Reto");
   const displayDescription = copyOverride?.description ?? version?.description ?? "";
   const coverUrl = copyOverride?.cover_url ?? String(presentation.cover_url ?? "");
@@ -152,20 +187,81 @@ export function RuleEditorForm({
           <p className="mt-4 text-sm leading-6 text-zinc-400">
             {displayDescription || "Sin descripción."}
           </p>
-          <div className="mt-5 grid gap-3 md:grid-cols-2">
-            <div className="rounded-xl border border-white/10 bg-black/20 p-4">
-              <p className="text-xs uppercase tracking-[0.14em] text-zinc-500">Condiciones</p>
-              <p className="mt-2 text-sm text-white">
-                {conditionsLabel(version?.condition_definition)}
-              </p>
+          {isAchievement ? (
+            <div className="mt-5 grid gap-3 md:grid-cols-2">
+              <div className="rounded-xl border border-white/10 bg-black/20 p-4">
+                <p className="text-xs uppercase tracking-[0.14em] text-zinc-500">Condiciones</p>
+                <p className="mt-2 text-sm text-white">
+                  {conditionsLabel(version?.condition_definition)}
+                </p>
+              </div>
+              <div className="rounded-xl border border-white/10 bg-black/20 p-4">
+                <p className="text-xs uppercase tracking-[0.14em] text-zinc-500">Resultado</p>
+                <p className="mt-2 text-sm text-white">
+                  {rewardDefinitionLabel(version?.reward_definition)}
+                </p>
+              </div>
             </div>
-            <div className="rounded-xl border border-white/10 bg-black/20 p-4">
-              <p className="text-xs uppercase tracking-[0.14em] text-zinc-500">Resultado</p>
-              <p className="mt-2 text-sm text-white">
-                {rewardDefinitionLabel(version?.reward_definition)}
-              </p>
+          ) : (
+            <div className="mt-5 grid gap-3 md:grid-cols-2">
+              <div className="rounded-xl border border-white/10 bg-black/20 p-4">
+                <p className="text-xs uppercase tracking-[0.14em] text-zinc-500">Modalidad</p>
+                <p className="mt-2 text-sm font-semibold text-white">
+                  {competitionMode === "leaderboard" ? "Competencia" : "Individual"}
+                </p>
+              </div>
+              <div className="rounded-xl border border-white/10 bg-black/20 p-4">
+                <p className="text-xs uppercase tracking-[0.14em] text-zinc-500">Participantes</p>
+                <p className="mt-2 text-sm font-semibold text-white">
+                  {competitionMode === "leaderboard"
+                    ? `${enrollmentCount ?? 0} inscritas`
+                    : challengeAudienceLabel(String(audience.scope ?? "all_active_students"))}
+                </p>
+              </div>
+              <div className="rounded-xl border border-white/10 bg-black/20 p-4">
+                <p className="text-xs uppercase tracking-[0.14em] text-zinc-500">Objetivo / métrica</p>
+                <p className="mt-2 text-sm text-white">
+                  {challengeMetricLabel(rankingMetric)}
+                </p>
+                <p className="mt-1 text-xs text-zinc-500">
+                  {conditionsLabel(version?.condition_definition)}
+                </p>
+              </div>
+              <div className="rounded-xl border border-white/10 bg-black/20 p-4">
+                <p className="text-xs uppercase tracking-[0.14em] text-zinc-500">Periodo</p>
+                <p className="mt-2 text-sm text-white">
+                  {challengeDateLabel(rule?.scheduled_start_at)} →{" "}
+                  {challengeDateLabel(rule?.scheduled_end_at)}
+                </p>
+              </div>
+              {competitionMode === "leaderboard" ? (
+                <>
+                  <div className="rounded-xl border border-white/10 bg-black/20 p-4">
+                    <p className="text-xs uppercase tracking-[0.14em] text-zinc-500">Ganadoras</p>
+                    <p className="mt-2 text-sm text-white">
+                      {winnerCount} {winnerCount === 1 ? "ganadora" : "ganadoras"}
+                    </p>
+                  </div>
+                  <div className="rounded-xl border border-white/10 bg-black/20 p-4">
+                    <p className="text-xs uppercase tracking-[0.14em] text-zinc-500">Desempate</p>
+                    <p className="mt-2 text-sm text-white">{challengeTieLabel(tieBreaker)}</p>
+                  </div>
+                  <div className="rounded-xl border border-white/10 bg-black/20 p-4">
+                    <p className="text-xs uppercase tracking-[0.14em] text-zinc-500">Inscripción</p>
+                    <p className="mt-2 text-sm text-white">Voluntaria · ranking solo para inscritas</p>
+                  </div>
+                </>
+              ) : null}
+              <div className="rounded-xl border border-white/10 bg-black/20 p-4">
+                <p className="text-xs uppercase tracking-[0.14em] text-zinc-500">Recompensa</p>
+                <p className="mt-2 text-sm text-white">
+                  {rewardVisibility === "surprise"
+                    ? "Sorpresa"
+                    : rewardDefinitionLabel(rewardSource)}
+                </p>
+              </div>
             </div>
-          </div>
+          )}
           {rule?.status === "active" ? (
             <p className="mt-4 text-xs text-zinc-500">
               La configuración estructural está bloqueada mientras está activa.
