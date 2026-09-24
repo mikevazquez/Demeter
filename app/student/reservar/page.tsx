@@ -78,7 +78,6 @@ type StudentWaitlistItem = {
   joined_at: string;
 };
 
-
 type HolidayWeekItem = {
   holiday_date: string;
   name: string;
@@ -424,7 +423,6 @@ export default async function StudentReservePage({
                       </span>
                     </Link>
                   </div>
-
                 </article>
               );
             })
