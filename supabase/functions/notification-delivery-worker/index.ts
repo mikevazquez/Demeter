@@ -748,6 +748,22 @@ async function processDelivery(
 
   try {
     const delivery = await loadDelivery(adminClient, claim.delivery_id);
+
+    const { data: startedAttempt, error: attemptError } = await adminClient.rpc(
+      "system_start_notification_delivery_attempt",
+      {
+        p_delivery_id: delivery.id,
+        p_worker_id: workerId,
+        p_provider_key: delivery.provider_key ?? delivery.adapter_key,
+      },
+    );
+
+    if (attemptError || !startedAttempt) {
+      throw new Error("notification_delivery_attempt_start_failed");
+    }
+
+    attemptId = String(startedAttempt);
+
     const message = renderMessage(delivery);
 
     const { data: snapshotSaved, error: snapshotError } = await adminClient.rpc(
@@ -769,20 +785,6 @@ async function processDelivery(
       throw new Error("notification_delivery_message_snapshot_failed");
     }
 
-    const { data: startedAttempt, error: attemptError } = await adminClient.rpc(
-      "system_start_notification_delivery_attempt",
-      {
-        p_delivery_id: delivery.id,
-        p_worker_id: workerId,
-        p_provider_key: delivery.provider_key ?? delivery.adapter_key,
-      },
-    );
-
-    if (attemptError || !startedAttempt) {
-      throw new Error("notification_delivery_attempt_start_failed");
-    }
-
-    attemptId = String(startedAttempt);
     const result = await runAdapter(adminClient, delivery, message);
 
     if (result.status === "delivered") {
@@ -849,11 +851,15 @@ async function processDelivery(
     const safeError = error instanceof Error ? error.message.slice(0, 1000) : "unknown_error";
 
     if (attemptId) {
+      const retryable = !safeError.startsWith("notification_template_unsupported:");
+
       await adminClient.rpc("system_mark_notification_delivery_attempt_failed", {
         p_attempt_id: attemptId,
-        p_retryable: true,
-        p_error_category: "worker",
-        p_error_code: "notification_delivery_worker_exception",
+        p_retryable: retryable,
+        p_error_category: retryable ? "worker" : "configuration",
+        p_error_code: retryable
+          ? "notification_delivery_worker_exception"
+          : "notification_template_unsupported",
         p_error_message_safe: safeError,
         p_http_status: null,
         p_response_snapshot: {},
