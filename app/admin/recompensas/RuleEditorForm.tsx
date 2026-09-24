@@ -63,6 +63,12 @@ function rewardValue(kind: string, definition: Record<string, unknown>) {
   if (kind === "fixed_discount") return Math.max(1, Number(definition.amount_minor ?? 100) / 100);
   if (kind === "percentage_discount") return Math.max(1, Number(definition.percent ?? 1));
   if (kind === "validity_extension") return Math.max(1, Number(definition.days ?? 1));
+  if (definition.benefit_type === "cash") {
+    return Math.max(1, Number(definition.amount_minor ?? 100) / 100);
+  }
+  if (definition.benefit_type === "class_package") {
+    return Math.max(1, Number(definition.class_credits ?? 1));
+  }
   return Math.max(1, Number(definition.credits ?? 1));
 }
 
@@ -96,10 +102,22 @@ export function RuleEditorForm({
       target: Number(condition.target ?? 1),
     }),
   );
-  const outcomes = rewardItems(version?.reward_definition);
+  const rewardSource =
+    presentation.competition_mode === "leaderboard" && presentation.competition_reward_definition
+      ? presentation.competition_reward_definition
+      : version?.reward_definition;
+  const outcomes = rewardItems(rewardSource);
   const badge = outcomes.find((item) => String(item.kind ?? "") === "badge");
   const benefit = outcomes.find((item) => String(item.kind ?? "") !== "badge");
-  const kind = String(benefit?.kind ?? "credits");
+  const rawKind = String(benefit?.kind ?? "credits");
+  const kind =
+    benefit?.benefit_type === "cash"
+      ? "cash"
+      : benefit?.benefit_type === "class_package"
+        ? "package"
+        : benefit?.benefit_type === "custom"
+          ? "custom_manual"
+          : rawKind;
   const validity = Number(benefit?.validity_days ?? 30);
   const challengeMode =
     presentation.challenge_mode === "periods" || cycle.challenge_mode === "periods"
