@@ -139,6 +139,7 @@ function Feedback({ error, saved }: { error?: string; saved?: string }) {
       "WhatsApp usa una plantilla administrada por Assistian y no se edita desde esta pantalla.",
     notification_message_title_body_required: "El título y el mensaje son obligatorios.",
     notification_timing_out_of_range: "La anticipación debe estar entre 0 minutos y 7 días.",
+    notification_process_essential: "Este proceso esencial debe permanecer activo.",
   };
 
   return (
