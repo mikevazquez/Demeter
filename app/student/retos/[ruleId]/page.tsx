@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { getStudentPortalContext } from "@/lib/student/portal";
 import { metricLabel, rewardDefinitionLabel, rewardObject } from "@/lib/student/rewards";
 
-import { enrollChallengeAction } from "../actions";
+import { archiveChallengeAction, enrollChallengeAction } from "../actions";
 
 type Challenge = {
   rule_id: string;
@@ -17,6 +17,9 @@ type Challenge = {
   ranking_metric: string;
   scheduled_start_at: string | null;
   scheduled_end_at: string | null;
+  finished_at: string | null;
+  archived: boolean;
+  archived_at: string | null;
   reward_visibility: "visible" | "surprise";
   reward_definition: unknown;
   condition_definition: unknown;
@@ -153,9 +156,16 @@ export default async function ChallengeDetailPage({
           <div className="h-28 bg-[radial-gradient(circle_at_75%_10%,rgba(255,10,138,.32),transparent_34%),linear-gradient(135deg,#17111d,#08090e)]" />
         )}
         <div className="space-y-4 p-5 sm:p-6">
-          <span className="inline-flex rounded-full border border-fuchsia-400/30 bg-fuchsia-500/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-fuchsia-300">
-            {challenge.competition_mode === "leaderboard" ? "Competencia" : "Individual"}
-          </span>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="inline-flex rounded-full border border-fuchsia-400/30 bg-fuchsia-500/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-fuchsia-300">
+              {challenge.competition_mode === "leaderboard" ? "Competencia" : "Individual"}
+            </span>
+            {challenge.status === "finished" ? (
+              <span className="inline-flex rounded-full border border-emerald-400/25 bg-emerald-400/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-emerald-300">
+                Finalizado
+              </span>
+            ) : null}
+          </div>
           <div>
             <h1 className="text-2xl font-semibold tracking-tight text-white">{challenge.title}</h1>
             {challenge.description ? (
@@ -167,7 +177,15 @@ export default async function ChallengeDetailPage({
               Inicio: {dateTimeLabel(challenge.scheduled_start_at, portal.studio.timezone)}
             </span>
             <span>•</span>
-            <span>Cierre: {dateTimeLabel(challenge.scheduled_end_at, portal.studio.timezone)}</span>
+            <span>
+              {challenge.status === "finished" ? "Finalizó" : "Cierre"}:{" "}
+              {dateTimeLabel(
+                challenge.status === "finished"
+                  ? (challenge.finished_at ?? challenge.scheduled_end_at)
+                  : challenge.scheduled_end_at,
+                portal.studio.timezone,
+              )}
+            </span>
           </div>
         </div>
       </section>
@@ -209,7 +227,7 @@ export default async function ChallengeDetailPage({
                   </p>
                 </div>
                 <span className="rounded-2xl bg-fuchsia-500/10 px-4 py-3 text-sm font-semibold text-fuchsia-200">
-                  Sigue sumando
+                  {challenge.status === "finished" ? "Posición final" : "Sigue sumando"}
                 </span>
               </div>
             </section>
@@ -219,7 +237,7 @@ export default async function ChallengeDetailPage({
             <div className="flex items-center justify-between gap-3">
               <div>
                 <p className="text-xs font-bold uppercase tracking-[0.16em] text-fuchsia-300">
-                  Ranking
+                  {challenge.status === "finished" ? "Resultado final" : "Ranking"}
                 </p>
                 <h2 className="mt-1 text-xl font-semibold text-white">Top 3</h2>
               </div>
@@ -292,6 +310,30 @@ export default async function ChallengeDetailPage({
                 ? `Te faltan ${target - challenge.current_value} para completar la meta.`
                 : "Sigue avanzando."}
           </p>
+        </section>
+      ) : null}
+
+      {challenge.status === "finished" ? (
+        <section className="rounded-3xl border border-emerald-400/20 bg-emerald-400/[0.055] p-5">
+          <p className="text-xs font-bold uppercase tracking-[0.16em] text-emerald-300">
+            Reto finalizado
+          </p>
+          <h2 className="mt-2 text-xl font-semibold text-white">
+            {challenge.archived ? "Guardado en tu historial" : "Resultado disponible"}
+          </h2>
+          <p className="mt-2 text-sm leading-6 text-zinc-400">
+            {challenge.archived
+              ? "Este reto ya está archivado. Puedes consultarlo cuando quieras desde Historial."
+              : "Revisa el resultado final y, cuando ya no necesites verlo en tu pantalla principal, archívalo."}
+          </p>
+          {!challenge.archived ? (
+            <form action={archiveChallengeAction} className="mt-5">
+              <input type="hidden" name="rule_id" value={challenge.rule_id} />
+              <button className="w-full rounded-2xl border border-emerald-300/25 bg-emerald-300/10 px-4 py-3 text-sm font-bold text-emerald-200 transition hover:bg-emerald-300/15">
+                Archivar reto
+              </button>
+            </form>
+          ) : null}
         </section>
       ) : null}
 
