@@ -289,10 +289,7 @@ export default async function AgendaPage({
   const holidayOverrideMap = new Map(
     (holidayOverrides ?? []).map((item) => [item.holiday_date, item]),
   );
-  const calendarDayMap = new Map<
-    string,
-    { name: string; sourceKind: "official" | "manual" }
-  >(
+  const calendarDayMap = new Map<string, { name: string; sourceKind: "official" | "manual" }>(
     (officialHolidays ?? []).map((item) => [
       item.holiday_date,
       { name: item.name, sourceKind: "official" as const },

@@ -33,20 +33,13 @@ function dateLabel(value: string) {
   return label.charAt(0).toUpperCase() + label.slice(1);
 }
 
-function MexicanRibbon({
-  className,
-  rotate = 0,
-}: {
-  className?: string;
-  rotate?: number;
-}) {
+function MexicanRibbon({ className, rotate = 0 }: { className?: string; rotate?: number }) {
   return (
     <span
       aria-hidden="true"
       className={`pointer-events-none absolute block h-5 w-56 rounded-full opacity-95 shadow-[0_6px_18px_rgba(0,0,0,.22)] ${className ?? ""}`}
       style={{
-        background:
-          "linear-gradient(90deg, #006847 0 31%, #f7f7f7 31% 65%, #ce1126 65% 100%)",
+        background: "linear-gradient(90deg, #006847 0 31%, #f7f7f7 31% 65%, #ce1126 65% 100%)",
         transform: `rotate(${rotate}deg)`,
       }}
     />
@@ -112,7 +105,10 @@ function HolidayArtwork({ themeKey }: { themeKey: string }) {
           <path d="M147 113c-8 7-13 16-17 28M157 121c8 11 12 24 12 39" strokeWidth="4" />
           <path d="M133 144c-20 2-37 12-51 30M151 146c13 5 24 15 33 30" strokeWidth="4" />
 
-          <path d="M154 54c18 0 34 5 42 13-11 7-26 10-42 10s-31-3-42-10c8-8 24-13 42-13Z" strokeWidth="4" />
+          <path
+            d="M154 54c18 0 34 5 42 13-11 7-26 10-42 10s-31-3-42-10c8-8 24-13 42-13Z"
+            strokeWidth="4"
+          />
           <path d="M132 63c4-18 13-29 23-29 12 0 21 11 25 29" strokeWidth="4" />
           <circle cx="154" cy="91" r="14" strokeWidth="4" />
           <path d="M143 105c-12 9-20 22-22 38M166 105c13 9 21 23 23 39" strokeWidth="5" />
@@ -144,7 +140,12 @@ function HolidayArtwork({ themeKey }: { themeKey: string }) {
   if (themeKey === "christmas") {
     return (
       <svg aria-hidden="true" viewBox="0 0 160 160" className={common} fill="none">
-        <path d="M80 20 52 59h17L43 96h25l-18 30h60l-18-30h25L91 59h17L80 20Z" stroke="currentColor" strokeWidth="4" strokeLinejoin="round" />
+        <path
+          d="M80 20 52 59h17L43 96h25l-18 30h60l-18-30h25L91 59h17L80 20Z"
+          stroke="currentColor"
+          strokeWidth="4"
+          strokeLinejoin="round"
+        />
         <path d="M80 126v18" stroke="currentColor" strokeWidth="5" strokeLinecap="round" />
         <circle cx="63" cy="80" r="3" fill="currentColor" />
         <circle cx="94" cy="92" r="3" fill="currentColor" />
@@ -156,8 +157,17 @@ function HolidayArtwork({ themeKey }: { themeKey: string }) {
   if (themeKey === "constitution") {
     return (
       <svg aria-hidden="true" viewBox="0 0 160 160" className={common} fill="none">
-        <path d="M47 28h57c7 0 13 6 13 13v90H47c-9 0-16-7-16-16V44c0-9 7-16 16-16Z" stroke="currentColor" strokeWidth="4" />
-        <path d="M48 58h49M48 76h49M48 94h38" stroke="currentColor" strokeWidth="4" strokeLinecap="round" />
+        <path
+          d="M47 28h57c7 0 13 6 13 13v90H47c-9 0-16-7-16-16V44c0-9 7-16 16-16Z"
+          stroke="currentColor"
+          strokeWidth="4"
+        />
+        <path
+          d="M48 58h49M48 76h49M48 94h38"
+          stroke="currentColor"
+          strokeWidth="4"
+          strokeLinecap="round"
+        />
         <path d="M117 42h13v89h-13" stroke="currentColor" strokeWidth="4" />
       </svg>
     );
@@ -166,7 +176,11 @@ function HolidayArtwork({ themeKey }: { themeKey: string }) {
   if (themeKey === "independence") {
     return (
       <svg aria-hidden="true" viewBox="0 0 160 160" className={common} fill="none">
-        <path d="M80 29c-20 0-34 16-34 37v24l-12 20h92l-12-20V66c0-21-14-37-34-37Z" stroke="currentColor" strokeWidth="4" />
+        <path
+          d="M80 29c-20 0-34 16-34 37v24l-12 20h92l-12-20V66c0-21-14-37-34-37Z"
+          stroke="currentColor"
+          strokeWidth="4"
+        />
         <path d="M67 111c2 11 7 18 13 18s11-7 13-18" stroke="currentColor" strokeWidth="4" />
         <path d="M80 17v12" stroke="currentColor" strokeWidth="4" strokeLinecap="round" />
       </svg>
@@ -178,7 +192,12 @@ function HolidayArtwork({ themeKey }: { themeKey: string }) {
       <svg aria-hidden="true" viewBox="0 0 160 160" className={common} fill="none">
         <path d="M28 67 80 31l52 36" stroke="currentColor" strokeWidth="4" strokeLinejoin="round" />
         <path d="M38 69h84v58H38z" stroke="currentColor" strokeWidth="4" />
-        <path d="M54 81v34M80 81v34M106 81v34M29 128h102" stroke="currentColor" strokeWidth="4" strokeLinecap="round" />
+        <path
+          d="M54 81v34M80 81v34M106 81v34M29 128h102"
+          stroke="currentColor"
+          strokeWidth="4"
+          strokeLinecap="round"
+        />
       </svg>
     );
   }
@@ -212,13 +231,7 @@ function ClosedCopy({ name }: { name: string }) {
   );
 }
 
-function OpenCopy({
-  special,
-  name,
-}: {
-  special: boolean;
-  name: string;
-}) {
+function OpenCopy({ special, name }: { special: boolean; name: string }) {
   return (
     <>
       <p className="text-[1.05rem] font-semibold leading-7 text-white sm:text-lg">

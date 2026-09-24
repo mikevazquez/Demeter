@@ -36,9 +36,7 @@ export default async function HolidaysConfigurationPage({
   const [{ data: official }, { data: overrides }] = await Promise.all([
     ctx.supabase
       .from("official_holidays")
-      .select(
-        "id,holiday_date,name,theme_key,default_message,source_label,source_url,legal_basis",
-      )
+      .select("id,holiday_date,name,theme_key,default_message,source_label,source_url,legal_basis")
       .eq("country_code", "MX")
       .eq("is_official", true)
       .gte("holiday_date", start)
@@ -73,8 +71,8 @@ export default async function HolidaysConfigurationPage({
             .publicUrl
         : null,
       messageUrl: override?.message_image_path
-        ? ctx.supabase.storage.from("holiday-artwork").getPublicUrl(override.message_image_path).data
-            .publicUrl
+        ? ctx.supabase.storage.from("holiday-artwork").getPublicUrl(override.message_image_path)
+            .data.publicUrl
         : null,
       configured: Boolean(override),
       sourceLabel: item.source_label,
@@ -95,8 +93,8 @@ export default async function HolidaysConfigurationPage({
             .publicUrl
         : null,
       messageUrl: override.message_image_path
-        ? ctx.supabase.storage.from("holiday-artwork").getPublicUrl(override.message_image_path).data
-            .publicUrl
+        ? ctx.supabase.storage.from("holiday-artwork").getPublicUrl(override.message_image_path)
+            .data.publicUrl
         : null,
       configured: true,
       sourceLabel: "Agregado manualmente por el estudio",

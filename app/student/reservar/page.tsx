@@ -158,8 +158,9 @@ export default async function StudentReservePage({
     ? {
         ...selectedHolidayBase,
         hero_image_url: selectedHolidayBase.hero_image_path
-          ? supabase.storage.from("holiday-artwork").getPublicUrl(selectedHolidayBase.hero_image_path)
-              .data.publicUrl
+          ? supabase.storage
+              .from("holiday-artwork")
+              .getPublicUrl(selectedHolidayBase.hero_image_path).data.publicUrl
           : null,
         message_image_url: selectedHolidayBase.message_image_path
           ? supabase.storage

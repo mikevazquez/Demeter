@@ -80,10 +80,7 @@ async function uploadArtwork(
   return path;
 }
 
-async function sessionIdsForDate(
-  ctx: Awaited<ReturnType<typeof getAdminContext>>,
-  date: string,
-) {
+async function sessionIdsForDate(ctx: Awaited<ReturnType<typeof getAdminContext>>, date: string) {
   const from = zonedDateTimeToUtc(`${date}T00:00`, ctx.studio.timezone);
   const next = new Date(from.getTime() + 36 * 60 * 60 * 1000);
   const { data } = await ctx.supabase
@@ -115,7 +112,11 @@ export async function saveCalendarDayAction(formData: FormData) {
   const message = String(formData.get("student_message") ?? "").trim();
   const themeKey = String(formData.get("theme_key") ?? "").trim() || null;
 
-  if (!date || !["official", "manual"].includes(sourceKind) || !["normal", "closed", "special"].includes(operationMode)) {
+  if (
+    !date ||
+    !["official", "manual"].includes(sourceKind) ||
+    !["normal", "closed", "special"].includes(operationMode)
+  ) {
     redirect(configPath(year, { error: "invalid" }));
   }
 
@@ -135,7 +136,13 @@ export async function saveCalendarDayAction(formData: FormData) {
   let uploadedMessage: string | null = null;
 
   try {
-    uploadedHero = await uploadArtwork(ctx.supabase, ctx.studio.id, date, "hero", formData.get("hero_image"));
+    uploadedHero = await uploadArtwork(
+      ctx.supabase,
+      ctx.studio.id,
+      date,
+      "hero",
+      formData.get("hero_image"),
+    );
     uploadedMessage = await uploadArtwork(
       ctx.supabase,
       ctx.studio.id,
@@ -173,12 +180,15 @@ export async function saveCalendarDayAction(formData: FormData) {
 
   if (error) {
     if (uploadedHero) await ctx.supabase.storage.from("holiday-artwork").remove([uploadedHero]);
-    if (uploadedMessage) await ctx.supabase.storage.from("holiday-artwork").remove([uploadedMessage]);
+    if (uploadedMessage)
+      await ctx.supabase.storage.from("holiday-artwork").remove([uploadedMessage]);
     redirect(configPath(year, { error: "save" }));
   }
 
   const stalePaths = [
-    existing?.hero_image_path && existing.hero_image_path !== heroPath ? existing.hero_image_path : null,
+    existing?.hero_image_path && existing.hero_image_path !== heroPath
+      ? existing.hero_image_path
+      : null,
     existing?.message_image_path && existing.message_image_path !== messagePath
       ? existing.message_image_path
       : null,
@@ -245,7 +255,9 @@ export async function bulkCalendarDayOperationAction(formData: FormData) {
   let dates: string[] = [];
 
   try {
-    dates = (JSON.parse(rawDates) as unknown[]).map(String).filter((value) => /^\d{4}-\d{2}-\d{2}$/.test(value));
+    dates = (JSON.parse(rawDates) as unknown[])
+      .map(String)
+      .filter((value) => /^\d{4}-\d{2}-\d{2}$/.test(value));
   } catch {
     redirect(configPath(year, { error: "bulk" }));
   }
@@ -268,7 +280,9 @@ export async function bulkCalendarDayOperationAction(formData: FormData) {
         .maybeSingle(),
       ctx.supabase
         .from("studio_holiday_overrides")
-        .select("source_kind,custom_name,theme_key,student_message,hero_image_path,message_image_path")
+        .select(
+          "source_kind,custom_name,theme_key,student_message,hero_image_path,message_image_path",
+        )
         .eq("studio_id", ctx.studio.id)
         .eq("holiday_date", date)
         .maybeSingle(),

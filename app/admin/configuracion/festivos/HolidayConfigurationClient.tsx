@@ -76,21 +76,40 @@ export function HolidayConfigurationClient({
               personalizar mensaje e imágenes por día.
             </p>
           </div>
-          <button className="ghost-button" type="button" onClick={() => setManualOpen((value) => !value)}>
+          <button
+            className="ghost-button"
+            type="button"
+            onClick={() => setManualOpen((value) => !value)}
+          >
             + Agregar día especial
           </button>
         </div>
 
         {manualOpen ? (
-          <form action={createManualCalendarDayAction} className="mt-4 grid gap-3 rounded-2xl border border-fuchsia-500/20 bg-fuchsia-500/[0.04] p-4 md:grid-cols-2">
+          <form
+            action={createManualCalendarDayAction}
+            className="mt-4 grid gap-3 rounded-2xl border border-fuchsia-500/20 bg-fuchsia-500/[0.04] p-4 md:grid-cols-2"
+          >
             <input type="hidden" name="year" value={year} />
             <label className="branding-field">
               <span>Fecha</span>
-              <input name="holiday_date" type="date" required min={`${year}-01-01`} max={`${year}-12-31`} />
+              <input
+                name="holiday_date"
+                type="date"
+                required
+                min={`${year}-01-01`}
+                max={`${year}-12-31`}
+              />
             </label>
             <label className="branding-field">
               <span>Nombre</span>
-              <input name="name" required minLength={2} maxLength={100} placeholder="Ej. Mantenimiento general" />
+              <input
+                name="name"
+                required
+                minLength={2}
+                maxLength={100}
+                placeholder="Ej. Mantenimiento general"
+              />
             </label>
             <label className="branding-field">
               <span>Operación</span>
@@ -116,12 +135,18 @@ export function HolidayConfigurationClient({
         <input type="hidden" name="selected_dates" value={JSON.stringify(selectedDates)} />
         <div className="flex flex-wrap items-center gap-3">
           <button type="button" className="ghost-button" onClick={selectAll}>
-            {selected.size === rows.length && rows.length ? "Quitar selección" : "Seleccionar todos"}
+            {selected.size === rows.length && rows.length
+              ? "Quitar selección"
+              : "Seleccionar todos"}
           </button>
           <span className="text-xs text-zinc-400">
             {selected.size} seleccionado{selected.size === 1 ? "" : "s"}
           </span>
-          <select name="operation_mode" defaultValue="closed" className="min-h-10 rounded-xl border border-white/10 bg-black/20 px-3 text-sm text-white">
+          <select
+            name="operation_mode"
+            defaultValue="closed"
+            className="min-h-10 rounded-xl border border-white/10 bg-black/20 px-3 text-sm text-white"
+          >
             <option value="closed">Cerrar seleccionados</option>
             <option value="normal">Horario normal</option>
             <option value="special">Horario especial</option>
@@ -260,7 +285,11 @@ export function HolidayConfigurationClient({
                       style={{ backgroundImage: `url("${row.messageUrl}")` }}
                     />
                   ) : null}
-                  <input name="message_image" type="file" accept="image/png,image/jpeg,image/webp" />
+                  <input
+                    name="message_image"
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp"
+                  />
                   {row.messageUrl ? (
                     <label className="mt-2 flex items-center gap-2 text-xs text-zinc-400">
                       <input type="checkbox" name="remove_message" value="1" />
