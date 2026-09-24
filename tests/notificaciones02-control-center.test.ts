@@ -87,6 +87,6 @@ describe("NOTIFICACIONES-02 control center", () => {
 
   it("keeps marketing drafts inert until their central-engine triggers exist", () => {
     expect(page).toContain("no se enviará nada por accidente");
-    expect(catalog).toContain('planned: true');
+    expect(catalog).toContain("planned: true");
   });
 });

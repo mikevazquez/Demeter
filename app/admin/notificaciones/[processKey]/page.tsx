@@ -92,10 +92,7 @@ function policyText(policy: Record<string, unknown>, key: string) {
   return typeof value === "string" ? value : "";
 }
 
-const fallbackMessages: Record<
-  string,
-  { title: string; body: string }
-> = {
+const fallbackMessages: Record<string, { title: string; body: string }> = {
   "reservation-confirmed": {
     title: "Reserva confirmada",
     body: "Tu lugar quedó reservado. Consulta los detalles en Studio Flow.",
@@ -140,17 +137,15 @@ function Feedback({ error, saved }: { error?: string; saved?: string }) {
   const errorCopy: Record<string, string> = {
     notification_whatsapp_provider_managed:
       "WhatsApp usa una plantilla administrada por Assistian y no se edita desde esta pantalla.",
-    notification_message_title_body_required:
-      "El título y el mensaje son obligatorios.",
-    notification_timing_out_of_range:
-      "La anticipación debe estar entre 0 minutos y 7 días.",
+    notification_message_title_body_required: "El título y el mensaje son obligatorios.",
+    notification_timing_out_of_range: "La anticipación debe estar entre 0 minutos y 7 días.",
   };
 
   return (
     <div className={error ? "notification-feedback is-error" : "notification-feedback is-success"}>
       {error
-        ? errorCopy[error] ??
-          "No se pudo guardar el cambio. La configuración anterior se conserva."
+        ? (errorCopy[error] ??
+          "No se pudo guardar el cambio. La configuración anterior se conserva.")
         : "Cambios guardados correctamente."}
     </div>
   );
@@ -286,7 +281,10 @@ export default async function NotificationProcessPage({
             const globalEnabled = globalChannels[channel];
 
             return (
-              <article key={channel} className={!globalEnabled ? "is-globally-disabled" : undefined}>
+              <article
+                key={channel}
+                className={!globalEnabled ? "is-globally-disabled" : undefined}
+              >
                 <div className="notification-detail-channel-head">
                   <span className="notification-channel-symbol" aria-hidden="true">
                     {channel === "push" ? "⌁" : channel === "whatsapp" ? "◉" : "✉"}
@@ -391,7 +389,10 @@ export default async function NotificationProcessPage({
                   </div>
 
                   {canManage && coverage !== "none" ? (
-                    <form action={saveNotificationMessageAction} className="notification-message-form">
+                    <form
+                      action={saveNotificationMessageAction}
+                      className="notification-message-form"
+                    >
                       <input type="hidden" name="process_key" value={process.key} />
                       <input type="hidden" name="channel" value={channel} />
                       <label>
@@ -400,7 +401,12 @@ export default async function NotificationProcessPage({
                       </label>
                       <label>
                         <span>Mensaje</span>
-                        <textarea name="body_template" defaultValue={body} rows={3} maxLength={500} />
+                        <textarea
+                          name="body_template"
+                          defaultValue={body}
+                          rows={3}
+                          maxLength={500}
+                        />
                       </label>
                       <div>
                         <button type="submit">Guardar mensaje</button>
@@ -441,9 +447,7 @@ export default async function NotificationProcessPage({
                 defaultValue={leadTime}
                 disabled={!canManage}
               />
-              <small>
-                300 minutos = 5 horas. El cambio se aplicará a futuras notificaciones.
-              </small>
+              <small>300 minutos = 5 horas. El cambio se aplicará a futuras notificaciones.</small>
             </label>
             {canManage ? <button type="submit">Guardar anticipación</button> : null}
           </form>

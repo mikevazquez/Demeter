@@ -1,10 +1,6 @@
 export type NotificationChannelKey = "push" | "whatsapp" | "email";
 export type NotificationProcessCategory =
-  | "reservas"
-  | "paquetes"
-  | "evaluaciones"
-  | "documentos"
-  | "cuenta";
+  "reservas" | "paquetes" | "evaluaciones" | "documentos" | "cuenta";
 
 export type NotificationProcessDefinition = {
   key: string;
@@ -60,10 +56,7 @@ export const NOTIFICATION_PROCESSES = [
     name: "Recordatorio de clase",
     description: "Ayuda a reducir inasistencias antes de la clase.",
     category: "reservas",
-    ruleKeys: [
-      "p0.booking.class_reminder_5h",
-      "p0.session.rescheduled_reminder_5h",
-    ],
+    ruleKeys: ["p0.booking.class_reminder_5h", "p0.session.rescheduled_reminder_5h"],
     timingLabel: "Antes de la clase · configurable",
     recipientLabel: "Alumna con reserva confirmada",
   },
@@ -72,10 +65,7 @@ export const NOTIFICATION_PROCESSES = [
     name: "Cancelación por mínimo de reservas",
     description: "Avisa a alumnas y coach cuando una clase no alcanza el mínimo.",
     category: "reservas",
-    ruleKeys: [
-      "p0.session.minimum_cancelled_students",
-      "p0.session.minimum_cancelled_coach",
-    ],
+    ruleKeys: ["p0.session.minimum_cancelled_students", "p0.session.minimum_cancelled_coach"],
     timingLabel: "Al cancelar la sesión · inmediata",
     recipientLabel: "Alumnas afectadas y coach",
     essential: true,

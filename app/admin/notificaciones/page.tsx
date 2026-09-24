@@ -78,9 +78,7 @@ function safeSnapshot(value: unknown): ControlSnapshot {
           ? settings.non_urgent_send_window
           : "08:00-21:00",
       marketing_weekly_limit:
-        typeof settings.marketing_weekly_limit === "number"
-          ? settings.marketing_weekly_limit
-          : 2,
+        typeof settings.marketing_weekly_limit === "number" ? settings.marketing_weekly_limit : 2,
     },
   };
 }
@@ -95,13 +93,7 @@ function channelState(rules: RuleSnapshot[], channel: NotificationChannelKey) {
   return "some" as const;
 }
 
-function Notice({
-  error,
-  saved,
-}: {
-  error?: string;
-  saved?: string;
-}) {
+function Notice({ error, saved }: { error?: string; saved?: string }) {
   if (!error && !saved) return null;
   return (
     <div className={error ? "notification-feedback is-error" : "notification-feedback is-success"}>
@@ -221,8 +213,8 @@ export default async function NotificationsPage({
             </div>
 
             <div className="notification-recommendation">
-              <strong>Recomendación:</strong> usa Push para avisos inmediatos y reserva
-              WhatsApp para confirmaciones o acciones que realmente requieren atención.
+              <strong>Recomendación:</strong> usa Push para avisos inmediatos y reserva WhatsApp
+              para confirmaciones o acciones que realmente requieren atención.
             </div>
           </section>
 
@@ -238,9 +230,8 @@ export default async function NotificationsPage({
               const count =
                 category.key === "all"
                   ? NOTIFICATION_PROCESSES.length
-                  : NOTIFICATION_PROCESSES.filter(
-                      (process) => process.category === category.key,
-                    ).length;
+                  : NOTIFICATION_PROCESSES.filter((process) => process.category === category.key)
+                      .length;
               return (
                 <Link
                   key={category.key}
@@ -289,11 +280,7 @@ export default async function NotificationsPage({
                         <span
                           key={channel}
                           className={
-                            state === "all"
-                              ? "is-on"
-                              : state === "some"
-                                ? "is-partial"
-                                : undefined
+                            state === "all" ? "is-on" : state === "some" ? "is-partial" : undefined
                           }
                         >
                           {channelLabels[channel]}

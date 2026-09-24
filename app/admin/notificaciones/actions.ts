@@ -5,7 +5,10 @@ import { redirect } from "next/navigation";
 
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
-import { getNotificationProcess, type NotificationChannelKey } from "@/lib/notifications/admin-catalog";
+import {
+  getNotificationProcess,
+  type NotificationChannelKey,
+} from "@/lib/notifications/admin-catalog";
 
 function processUrl(processKey: string, params: Record<string, string> = {}) {
   const search = new URLSearchParams(params);
@@ -171,10 +174,7 @@ export async function saveNotificationPreferencesAction(formData: FormData) {
   const window = String(formData.get("send_window") ?? "").trim();
   const weeklyLimit = Number(String(formData.get("marketing_weekly_limit") ?? "").trim());
 
-  if (
-    window &&
-    !/^([01]\d|2[0-3]):[0-5]\d-([01]\d|2[0-3]):[0-5]\d$/.test(window)
-  ) {
+  if (window && !/^([01]\d|2[0-3]):[0-5]\d-([01]\d|2[0-3]):[0-5]\d$/.test(window)) {
     redirect(listUrl("preferencias", { error: "notification_send_window_invalid" }));
   }
 
