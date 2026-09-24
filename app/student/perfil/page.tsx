@@ -325,7 +325,9 @@ export default async function StudentProfilePage({
               ✦
             </span>
             <span>
-              <strong className="block text-sm font-semibold text-white">Medallas y beneficios</strong>
+              <strong className="block text-sm font-semibold text-white">
+                Medallas y beneficios
+              </strong>
               <span className="mt-0.5 block text-xs text-zinc-500">
                 Medallas, beneficios y recompensas obtenidas
               </span>
@@ -349,7 +351,9 @@ export default async function StudentProfilePage({
               ◎
             </span>
             <span>
-              <strong className="block text-sm font-semibold text-white">Nivel técnico y evaluaciones</strong>
+              <strong className="block text-sm font-semibold text-white">
+                Nivel técnico y evaluaciones
+              </strong>
               <span className="mt-0.5 block text-xs text-zinc-500">
                 Nivel técnico, próximas evaluaciones y resultados
               </span>
@@ -398,7 +402,9 @@ export default async function StudentProfilePage({
             </span>
             <span>
               <strong className="block text-sm font-semibold text-white">Uso de mis clases</strong>
-              <span className="mt-0.5 block text-xs text-zinc-500">Consulta cómo has usado tus clases</span>
+              <span className="mt-0.5 block text-xs text-zinc-500">
+                Consulta cómo has usado tus clases
+              </span>
             </span>
             <span
               aria-hidden="true"
