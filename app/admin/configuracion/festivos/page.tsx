@@ -31,6 +31,20 @@ function operationLabel(mode: string) {
   return "Horario normal";
 }
 
+type CalendarDayRow = {
+  date: string;
+  name: string;
+  sourceKind: "official" | "manual";
+  operationMode: string;
+  message: string;
+  themeKey: string;
+  heroPath: string | null;
+  messagePath: string | null;
+  heroUrl: string | null;
+  messageUrl: string | null;
+  sourceLabel: string;
+};
+
 export default async function HolidaysConfigurationPage({
   searchParams,
 }: {
@@ -87,7 +101,7 @@ export default async function HolidaysConfigurationPage({
   const overrideByDate = new Map(overrides.map((item) => [item.holiday_date, item]));
   const officialDates = new Set(official.map((item) => item.holiday_date));
 
-  const rows = official.map((item) => {
+  const rows: CalendarDayRow[] = official.map((item) => {
     const override = overrideByDate.get(item.holiday_date);
     return {
       date: item.holiday_date,
