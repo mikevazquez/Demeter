@@ -71,14 +71,18 @@ export default async function StudentNotificationsPage() {
                 href={"/student/notificaciones/" + item.id}
                 className={
                   "group grid grid-cols-[auto_1fr_auto] items-start gap-3 px-4 py-4 transition sm:px-5 " +
-                  (item.read_at ? "hover:bg-white/[0.025]" : "bg-fuchsia-500/[0.035] hover:bg-fuchsia-500/[0.06]")
+                  (item.read_at
+                    ? "hover:bg-white/[0.025]"
+                    : "bg-fuchsia-500/[0.035] hover:bg-fuchsia-500/[0.06]")
                 }
               >
                 <span
                   aria-hidden="true"
                   className={
                     "mt-1 h-2.5 w-2.5 rounded-full " +
-                    (item.read_at ? "bg-zinc-700" : "bg-fuchsia-400 shadow-[0_0_14px_rgba(244,114,182,0.7)]")
+                    (item.read_at
+                      ? "bg-zinc-700"
+                      : "bg-fuchsia-400 shadow-[0_0_14px_rgba(244,114,182,0.7)]")
                   }
                 />
                 <span className="min-w-0">
@@ -95,7 +99,10 @@ export default async function StudentNotificationsPage() {
                     {formatDateTime(item.created_at, studio.timezone)}
                   </span>
                 </span>
-                <span aria-hidden="true" className="pt-1 text-xl text-zinc-600 transition group-hover:text-fuchsia-300">
+                <span
+                  aria-hidden="true"
+                  className="pt-1 text-xl text-zinc-600 transition group-hover:text-fuchsia-300"
+                >
                   ›
                 </span>
               </Link>
@@ -104,8 +111,12 @@ export default async function StudentNotificationsPage() {
         </section>
       ) : (
         <section className="rounded-3xl border border-white/10 bg-white/[0.025] px-5 py-12 text-center">
-          <span aria-hidden="true" className="text-3xl text-zinc-600">◇</span>
-          <h2 className="mt-3 text-base font-semibold text-white">Todavía no tienes notificaciones</h2>
+          <span aria-hidden="true" className="text-3xl text-zinc-600">
+            ◇
+          </span>
+          <h2 className="mt-3 text-base font-semibold text-white">
+            Todavía no tienes notificaciones
+          </h2>
           <p className="mx-auto mt-1.5 max-w-sm text-xs leading-5 text-zinc-400">
             Cuando Demeter te envíe una confirmación, recordatorio o aviso importante aparecerá aquí.
           </p>
