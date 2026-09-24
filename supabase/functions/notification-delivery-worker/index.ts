@@ -179,7 +179,9 @@ function formatSessionStart(variables: JsonObject) {
       month: "short",
       hour: "numeric",
       minute: "2-digit",
-    }).format(date);
+    })
+      .format(date)
+      .replace(/\.$/, "");
   } catch {
     return date.toISOString();
   }
