@@ -127,10 +127,12 @@ describe("SF-255A monthly level and waitlist contracts", () => {
     expect(creditFix).toContain("'source', 'waitlist'");
   });
 
-  it("uses the approved waitlist copy and visual states", () => {
+  it("uses the approved waitlist copy without exposing Medal ranking mechanics", () => {
     expect(reservePage).toContain("student_waitlist_feed");
     expect(detailPage).toContain("WaitlistControl");
     expect(waitlistControl).toContain("Unirme a lista de espera");
+    expect(waitlistControl).toContain("Te avisaremos si se libera un lugar.");
+    expect(waitlistControl).not.toContain("levelTitle");
     expect(classesPage).toContain("En lista de espera");
     expect(classesPage).toContain("Te avisaremos si se libera un lugar.");
     expect(classesPage).toContain("border-amber-400");
