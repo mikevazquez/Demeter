@@ -123,9 +123,7 @@ const handler = {
     } else if (personId) {
       const { data, error } = await adminClient
         .from("students")
-        .select(
-          "id,studio_id,person_id,full_name,phone,email,active,lifecycle_status,student_type",
-        )
+        .select("id,studio_id,person_id,full_name,phone,email,active,lifecycle_status,student_type")
         .eq("studio_id", event.studio_id)
         .eq("person_id", personId)
         .neq("lifecycle_status", "archived")
