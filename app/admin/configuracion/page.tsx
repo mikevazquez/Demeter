@@ -68,6 +68,18 @@ export default async function ConfigurationPage({
       </section>
 
       <section className="panel">
+        <p className="eyebrow">CALENDARIO</p>
+        <h2>Días festivos</h2>
+        <p>
+          Revisa todos los festivos del año, define cierres u horarios especiales, agrega días
+          manuales y personaliza las imágenes que verá la alumna.
+        </p>
+        <Link className="primary-button" href="/admin/configuracion/festivos">
+          Configurar días festivos
+        </Link>
+      </section>
+
+      <section className="panel">
         <p className="eyebrow">RECURSOS</p>
         <h2>Recursos y mapa</h2>
         <p>
