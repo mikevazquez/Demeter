@@ -6,32 +6,33 @@ import { describe, expect, it } from "vitest";
 const read = (path: string) => readFileSync(join(process.cwd(), path), "utf8");
 
 describe("SF-240 Progress & Rewards Portal Alumna v2", () => {
-  it("preserves the approved four-item student navigation", () => {
+  it("preserves the approved student navigation and adds Retos", () => {
     const nav = read("app/student/StudentNav.tsx");
 
     expect(nav).toContain('href: "/student"');
     expect(nav).toContain('href: "/student/reservar"');
     expect(nav).toContain('href: "/student/mis-clases"');
+    expect(nav).toContain('href: "/student/retos"');
     expect(nav).toContain('href: "/student/perfil"');
     expect(nav).not.toContain('href: "/student/recompensas"');
-    expect(nav).toContain("grid-cols-4");
-    expect(nav).not.toContain("grid-cols-5");
+    expect(nav).toContain("grid-cols-5");
   });
 
-  it("keeps Mi progreso in Perfil without duplicating it on Inicio", () => {
+  it("keeps Rewards in Perfil while Retos has its own primary destination", () => {
     const home = read("app/student/page.tsx");
     const profile = read("app/student/perfil/page.tsx");
 
     expect(home).not.toContain('data-home-block="progress"');
     expect(home).not.toContain('href="/student/recompensas"');
     expect(profile).toContain('href="/student/recompensas"');
-    expect(profile).toContain("Programas, retos, logros y recompensas");
+    expect(profile).toContain("Rewards");
+    expect(profile).toContain("Medallas, beneficios y recompensas obtenidas");
   });
 
-  it("implements S01 Mi progreso with the approved hierarchy", () => {
+  it("keeps the Rewards hub for loyalty history and benefits", () => {
     const page = read("app/student/recompensas/page.tsx");
 
-    expect(page).toContain("Sigue tus metas, rachas, logros y recompensas.");
+    expect(page).toContain("Consulta tus programas de fidelidad, logros y recompensas.");
     expect(page).toContain("Lo más cerca de conseguir");
     expect(page).toContain("Mis programas");
     expect(page).toContain("Retos activos");
