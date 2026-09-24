@@ -234,10 +234,7 @@ export default function NotificationChannelPreferences({
   useEffect(() => {
     let cancelled = false;
 
-    if (!preferences.push_enabled) {
-      setDeviceState("checking");
-      return;
-    }
+    if (!preferences.push_enabled) return;
 
     void (async () => {
       try {
