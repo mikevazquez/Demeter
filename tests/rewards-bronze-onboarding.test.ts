@@ -14,6 +14,9 @@ const monthlyMedals = source("supabase/migrations/20260923222500_rewards_monthly
 const medalsAcknowledgeFix = source(
   "supabase/migrations/20260924073000_rewards_medals_acknowledgement_fix.sql",
 );
+const existingActiveOnboarding = source(
+  "supabase/migrations/20260924143000_rewards_existing_active_onboarding.sql",
+);
 const documentosDomain = source("supabase/migrations/20260923180328_documentos01_domain.sql");
 const rewardsPage = source("app/student/recompensas/page.tsx");
 const onboardingUi = source("app/student/recompensas/OnboardingActivation.tsx");
@@ -54,6 +57,17 @@ describe("REWARDS · onboarding access + monthly Medals", () => {
     expect(monthlyMedals).toContain("current_level_key = null");
     expect(monthlyMedals).toContain("m.last_closed_period_start is null");
     expect(onboarding).toContain("'legacy'");
+  });
+
+  it("rolls existing active regular students into onboarding without erasing their Medal", () => {
+    expect(existingActiveOnboarding).toContain("s.student_type = 'regular'");
+    expect(existingActiveOnboarding).toContain("s.lifecycle_status = 'active'");
+    expect(existingActiveOnboarding).toContain("access_unlocked_at = null");
+    expect(existingActiveOnboarding).toContain("perform private.reward_onboarding_refresh_profile");
+    expect(existingActiveOnboarding).toContain("perform private.document_refresh_rewards_onboarding");
+    expect(existingActiveOnboarding).toContain("'existing_membership_preserved',v_had_membership");
+    expect(existingActiveOnboarding).not.toContain("set current_level_key = null");
+    expect(homePage).toContain("const currentLevel = rewardStatus?.access_unlocked");
   });
 
   it("keeps PWA, Push, reservation and attendance milestones auditable", () => {
