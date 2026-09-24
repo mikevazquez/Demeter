@@ -88,7 +88,7 @@ async function browserClient() {
 
 export default function PushNotificationSettings({
   studioId,
-  studioName = "Studio Flow",
+  studioName = "Demeter",
   onboardingMode = false,
 }: {
   studioId: string;
@@ -281,6 +281,15 @@ export default function PushNotificationSettings({
 
       if (registerError) throw registerError;
 
+      const { error: preferenceError } = await supabase.rpc(
+        "student_set_notification_channel_preference",
+        {
+          p_channel_key: "push",
+          p_enabled: true,
+        },
+      );
+      if (preferenceError) throw preferenceError;
+
       setState("active");
       setMessage("Notificaciones activadas en este dispositivo.");
       await refreshServerStatus();
@@ -306,6 +315,15 @@ export default function PushNotificationSettings({
       const supabase = await browserClient();
       const registration = await serviceWorkerRegistration();
       const subscription = await registration.pushManager.getSubscription();
+
+      const { error: preferenceError } = await supabase.rpc(
+        "student_set_notification_channel_preference",
+        {
+          p_channel_key: "push",
+          p_enabled: false,
+        },
+      );
+      if (preferenceError) throw preferenceError;
 
       if (subscription) {
         const { error } = await supabase.rpc("unregister_my_push_subscription", {
