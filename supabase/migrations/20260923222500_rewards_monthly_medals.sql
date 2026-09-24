@@ -1300,3 +1300,9 @@ select cron.schedule(
   '12 * * * *',
   'select private.reward_status_close_due_months();'
 );
+
+-- Índice del actor administrativo que habilitó acceso a Medallas.
+
+create index if not exists reward_onboarding_access_unlocked_by_idx
+  on public.reward_onboarding(access_unlocked_by)
+  where access_unlocked_by is not null;
