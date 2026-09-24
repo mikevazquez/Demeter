@@ -36,11 +36,13 @@ export default function ResourcePicker({
   returnDate,
   resources,
   elements,
+  useRewardCredits = false,
 }: {
   sessionId: string;
   returnDate: string;
   resources: StudentResourceChoice[];
   elements: StudentMapElement[];
+  useRewardCredits?: boolean;
 }) {
   const router = useRouter();
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -59,6 +61,7 @@ export default function ResourcePicker({
     const query = new URLSearchParams();
     query.set("resource", selectedId);
     if (returnDate) query.set("date", returnDate);
+    if (useRewardCredits) query.set("credit", "reward");
     router.push(`/student/reservar/${sessionId}/confirmar?${query.toString()}`);
   }
 
