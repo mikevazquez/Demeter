@@ -118,7 +118,8 @@ export default async function StudentNotificationsPage() {
             Todavía no tienes notificaciones
           </h2>
           <p className="mx-auto mt-1.5 max-w-sm text-xs leading-5 text-zinc-400">
-            Cuando Demeter te envíe una confirmación, recordatorio o aviso importante aparecerá aquí.
+            Cuando Demeter te envíe una confirmación, recordatorio o aviso importante aparecerá
+            aquí.
           </p>
         </section>
       )}
