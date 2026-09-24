@@ -389,7 +389,7 @@ export async function saveProgramLevelAction(formData: FormData) {
         program_id: programId,
         level_key: levelKey,
       },
-      p_communication_definition: communication,
+      p_communication_definition: {},
       p_human_summary: title,
       p_scheduled_start_at: null,
       p_scheduled_end_at: null,
