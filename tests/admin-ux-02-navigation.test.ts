@@ -20,7 +20,7 @@ describe("ADMIN-UX-02 navigation architecture", () => {
   const activitiesWizard = source("app/admin/actividades/ActivityWizard.tsx");
 
   it("uses durable entities as the desktop navigation architecture", () => {
-    for (const label of ["Hoy", "Agenda", "Alumnas", "Productos", "Equipo", "Automatizaciones"]) {
+    for (const label of ["Hoy", "Agenda", "Alumnas", "Productos", "Equipo", "Notificaciones"]) {
       expect(layout).toContain('label: "' + label + '"');
     }
     expect(layout).not.toContain('label: "Atención"');
@@ -43,7 +43,7 @@ describe("ADMIN-UX-02 navigation architecture", () => {
   it("uses Más only for secondary durable destinations", () => {
     expect(more).toContain('title: "Productos"');
     expect(more).toContain('title: "Equipo"');
-    expect(more).toContain('title: "Automatizaciones"');
+    expect(more).toContain('title: "Notificaciones"');
     expect(more).not.toContain('title: "Atención"');
     expect(more).not.toContain('title: "Ventas"');
     expect(more).not.toContain('title: "Empresa"');
