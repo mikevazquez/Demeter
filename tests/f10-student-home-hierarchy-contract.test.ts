@@ -10,16 +10,16 @@ function source(path: string) {
 describe("F10/N14 student home visual hierarchy", () => {
   const home = source("app/student/page.tsx");
 
-  it("prioritizes an active package before reserved classes", () => {
-    expect(home.indexOf('data-home-block="package"')).toBeLessThan(
-      home.indexOf('data-home-block="reserved-classes"'),
+  it("prioritizes the next-class context before package details", () => {
+    expect(home.indexOf('data-home-block="reserved-classes"')).toBeLessThan(
+      home.indexOf('data-home-block="package"'),
     );
     expect(home).toContain("Mi paquete");
     expect(home).toContain("Vence");
     expect(home).toContain('role="progressbar"');
   });
 
-  it("keeps reserved classes immediately after package context", () => {
+  it("keeps the next reservation as the first everyday task", () => {
     expect(home).toContain("Tus clases reservadas");
     expect(home).toContain("Confirmada");
     expect(home).toContain('href="/student/mis-clases"');
@@ -36,11 +36,11 @@ describe("F10/N14 student home visual hierarchy", () => {
     expect(home).not.toContain("Acciones rápidas");
     expect(home).not.toContain("Disciplina también es amor propio");
     expect(home).not.toContain('data-home-block="progress"');
-    expect(home).toContain("Mi medalla");
+    expect(home).toContain('data-home-block="progress"');
+    expect(home).toContain("Mi progreso");
     expect(home).toContain("Activando Medallas");
     expect(home).toContain("Sin medalla");
     expect(home).toContain("Niveles técnicos");
-    expect(home).toContain("grid-cols-[112px_minmax(0,1fr)]");
-    expect(home).not.toContain('className="truncate text-xl font-semibold text-white"');
+    expect(home).not.toContain('data-home-block="identity-benefits-technical"');
   });
 });

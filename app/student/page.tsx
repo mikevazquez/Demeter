@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 
 import {
@@ -244,9 +243,6 @@ export default async function StudentHomePage({
       ? currentLevel.key
       : "bronze";
   const levelVisual = levelVisuals[levelKey];
-  const fullName = [snapshot.profile.first_name, snapshot.profile.last_name]
-    .filter(Boolean)
-    .join(" ");
   const rewardCreditWallets = snapshot.acquisitions.filter(
     (item) => item.reward_credit_wallet && item.status === "active" && item.active_now,
   );
@@ -406,243 +402,74 @@ export default async function StudentHomePage({
         </section>
       ) : null}
 
-      {latestPublishedEvaluation ? (
-        <section
-          data-home-block="evaluation-result"
-          className="relative overflow-hidden rounded-[26px] border border-fuchsia-500/45 bg-[radial-gradient(circle_at_88%_0%,rgba(236,72,153,0.24),transparent_36%),linear-gradient(135deg,rgba(236,72,153,0.12),rgba(124,58,237,0.07))] p-4 shadow-[0_0_30px_rgba(236,72,153,0.1)] sm:p-5"
-        >
-          <span
-            aria-hidden="true"
-            className="absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-fuchsia-500 to-violet-500"
-          />
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <span
-                className={
-                  "inline-flex rounded-full border px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.16em] " +
-                  (latestPublishedEvaluation.final_outcome === "approved"
-                    ? "border-emerald-400/35 bg-emerald-400/[0.08] text-emerald-300"
-                    : "border-amber-400/35 bg-amber-400/[0.08] text-amber-300")
-                }
-              >
-                Resultado disponible
-              </span>
-              <h2 className="mt-3 text-lg font-semibold text-white">Resultado de tu evaluación</h2>
-              <p className="mt-1 text-xs leading-5 text-zinc-300">
-                {latestPublishedEvaluation.discipline_name}
-                {latestPublishedEvaluation.evaluated_level_title
-                  ? ` · ${latestPublishedEvaluation.evaluated_level_title}`
-                  : ""}
-                {latestPublishedEvaluation.total_score !== null
-                  ? ` · ${Math.round(latestPublishedEvaluation.total_score)}%`
-                  : ""}
-              </p>
-            </div>
-            <span aria-hidden="true" className="text-2xl text-fuchsia-300">
-              ✦
-            </span>
-          </div>
-
-          <Link
-            href={"/student/evaluaciones/resultado/" + latestPublishedEvaluation.id}
-            className="mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-2xl bg-fuchsia-600 px-4 text-sm font-semibold text-white transition hover:bg-fuchsia-500"
-          >
-            Ver resultado de tu evaluación
-          </Link>
-        </section>
-      ) : null}
-      {activeEvaluationInvitation?.invitation_id ? (
-        <section
-          data-home-block="evaluation-invitation"
-          className="relative overflow-hidden rounded-[26px] border border-fuchsia-500/40 bg-[radial-gradient(circle_at_88%_0%,rgba(236,72,153,0.22),transparent_36%),linear-gradient(135deg,rgba(236,72,153,0.11),rgba(124,58,237,0.06))] p-4 shadow-[0_0_28px_rgba(236,72,153,0.08)] sm:p-5"
-        >
-          <span
-            aria-hidden="true"
-            className="absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-fuchsia-500 to-violet-500"
-          />
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <span className="inline-flex rounded-full border border-fuchsia-500/30 bg-fuchsia-500/[0.08] px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.16em] text-fuchsia-300">
-                {activeEvaluationInvitation.invitation_status === "offered"
-                  ? "Evaluación disponible"
-                  : "Evaluación pendiente"}
-              </span>
-              <h2 className="mt-3 text-lg font-semibold text-white">
-                {activeEvaluationInvitation.discipline_name}
-              </h2>
-              <p className="mt-1 text-xs leading-5 text-zinc-300">
-                {activeEvaluationInvitation.invitation_status === "offered"
-                  ? `Tienes una invitación para evaluar tu nivel ${activeEvaluationInvitation.current_level_title}.`
-                  : "Ya aceptaste tu evaluación. Elige una clase para programarla."}
-              </p>
-              {activeEvaluationInvitation.window_start && activeEvaluationInvitation.window_end ? (
-                <p className="mt-1 text-[11px] text-zinc-500">
-                  Disponible del{" "}
-                  {formatDate(activeEvaluationInvitation.window_start, studio.timezone)} al{" "}
-                  {formatDate(activeEvaluationInvitation.window_end, studio.timezone)}
-                </p>
-              ) : null}
-            </div>
-            <span aria-hidden="true" className="text-2xl text-fuchsia-300">
-              ✦
-            </span>
-          </div>
-
-          <Link
-            href={
-              activeEvaluationInvitation.invitation_status === "offered"
-                ? "/student/evaluaciones/" + activeEvaluationInvitation.invitation_id
-                : "/student/evaluaciones/" + activeEvaluationInvitation.invitation_id + "/programar"
-            }
-            className="mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-2xl bg-fuchsia-600 px-4 text-sm font-semibold text-white transition hover:bg-fuchsia-500"
-          >
-            {activeEvaluationInvitation.invitation_status === "offered"
-              ? "Ver invitación"
-              : "Programar evaluación"}
-          </Link>
-        </section>
-      ) : null}
-
-      <header
-        data-home-block="identity-benefits-technical"
-        data-level={levelKey}
-        className="relative overflow-hidden rounded-[28px] border p-4 transition-colors sm:p-5"
-        style={{
-          borderColor: levelVisual.border,
-          boxShadow: `0 0 34px ${levelVisual.glow}, inset 0 0 0 1px rgba(255,255,255,0.025)`,
-          backgroundImage: `radial-gradient(circle at 86% 8%, ${levelVisual.wash}, transparent 30%), linear-gradient(135deg, rgba(255,255,255,0.035), rgba(255,255,255,0.012))`,
-        }}
+      <section
+        data-home-block="reserved-classes"
+        className="rounded-[24px] border border-fuchsia-500/25 bg-white/[0.025] p-4"
       >
-        <div className="grid grid-cols-[112px_minmax(0,1fr)] items-start gap-2.5 sm:grid-cols-[128px_minmax(0,1fr)] sm:gap-4">
-          <div className="min-w-0">
-            <div
-              className="relative h-28 w-28 overflow-hidden rounded-full border-2 bg-black/25 sm:h-32 sm:w-32"
-              style={{
-                borderColor: levelVisual.accent,
-                boxShadow: `0 0 28px ${levelVisual.glow}`,
-              }}
-            >
-              <div className="absolute inset-0 flex items-center justify-center text-2xl font-semibold text-fuchsia-200">
-                {snapshot.profile.first_name.trim().charAt(0).toUpperCase()}
-              </div>
-              <Image
-                src="/student/perfil/avatar"
-                alt="Foto de perfil"
-                fill
-                unoptimized
-                className="object-cover"
-              />
-            </div>
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-[9px] font-semibold uppercase tracking-[0.22em] text-zinc-400">
+            Tus clases reservadas
+          </p>
+          {nextClass ? (
+            <Link href="/student/mis-clases" className="text-xs font-semibold text-white">
+              Ver todas →
+            </Link>
+          ) : null}
+        </div>
 
-            <p className="mt-4 text-[9px] font-semibold uppercase tracking-[0.26em] text-zinc-500">
-              Mi perfil
-            </p>
-            <h1 className="mt-1.5 text-xl font-semibold leading-tight tracking-tight text-white sm:text-2xl">
-              {fullName}
-            </h1>
-          </div>
-
+        {nextClass ? (
           <Link
-            href={
-              currentLevel
-                ? "/student?benefits=1"
-                : rewardStatus?.access_unlocked
-                  ? "/student/recompensas/medallero"
-                  : "/student/recompensas"
-            }
-            className="min-w-0 rounded-3xl border bg-black/20 p-3.5 transition hover:bg-white/[0.035] sm:p-4"
-            style={{ borderColor: levelVisual.divider }}
+            href="/student/mis-clases"
+            className="mt-3 grid grid-cols-[68px_1fr_auto] items-center gap-3 rounded-2xl border border-white/10 bg-black/20 p-3 transition hover:bg-white/[0.04]"
           >
-            <p
-              className="text-[9px] font-semibold uppercase tracking-[0.22em]"
-              style={{ color: currentLevel ? levelVisual.accent : "#f0abfc" }}
-            >
-              {currentLevel ? "Mi medalla" : rewardStatus?.access_unlocked ? "Medallas" : "Rewards"}
-            </p>
-            <div className="mt-3 flex items-center gap-3">
-              <div
-                aria-hidden="true"
-                className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[16px] border text-xl"
-                style={{
-                  borderColor: currentLevel ? levelVisual.border : "rgba(236,72,153,0.35)",
-                  background: currentLevel
-                    ? `linear-gradient(135deg, ${levelVisual.wash}, rgba(0,0,0,0.18))`
-                    : "rgba(236,72,153,0.08)",
-                  boxShadow: currentLevel ? `0 0 22px ${levelVisual.glow}` : "none",
-                  color: currentLevel ? levelVisual.accent : "#f0abfc",
-                }}
-              >
-                {currentLevel ? "♛" : "◇"}
-              </div>
-              <div className="min-w-0">
-                <h2 className="text-lg font-semibold leading-tight text-white sm:text-xl">
-                  {currentLevel
-                    ? `Medalla ${currentLevel.title ?? "Bronce"}`
-                    : rewardStatus?.access_unlocked
-                      ? "Sin medalla"
-                      : "Activando Medallas"}
+            <div className="relative h-[76px] overflow-hidden rounded-xl border border-fuchsia-500/25 bg-[radial-gradient(circle_at_45%_25%,rgba(236,72,153,0.45),transparent_24%),linear-gradient(145deg,#2b0b22,#090c12_72%)]">
+              <span className="absolute inset-y-2 left-1/2 w-px -translate-x-1/2 bg-fuchsia-300/45" />
+              <span className="absolute inset-0 grid place-items-center text-lg text-fuchsia-200">
+                ✦
+              </span>
+            </div>
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <h2 className="truncate text-base font-semibold text-white">
+                  {nextClass.activity}
                 </h2>
-                <p className="mt-0.5 text-[11px] leading-4 text-zinc-400">
-                  {currentLevel
-                    ? "Tu constancia te lleva más lejos"
-                    : rewardStatus?.access_unlocked
-                      ? "Tu Medalla se evalúa cada mes"
-                      : "Completa tu activación para acceder al programa"}
-                </p>
-              </div>
-            </div>
-            <div className="mt-4 flex items-center justify-between border-t border-white/10 pt-3 text-xs font-semibold text-white">
-              <span>
-                {currentLevel
-                  ? "Ver mis recompensas"
-                  : rewardStatus?.access_unlocked
-                    ? "Ver Medallero"
-                    : "Continuar activación"}
-              </span>
-              <span aria-hidden="true" className="text-lg text-zinc-600">
-                ›
-              </span>
-            </div>
-          </Link>
-        </div>
-
-        <div className="mt-4 border-t border-white/10 pt-4">
-          <div className="flex items-center justify-between gap-3">
-            <p className="text-[9px] font-semibold uppercase tracking-[0.24em] text-zinc-400">
-              Niveles técnicos
-            </p>
-            {technicalLevels.length ? (
-              <Link
-                href="/student/evaluaciones"
-                className="text-[10px] font-semibold text-fuchsia-300"
-              >
-                Ver evaluaciones →
-              </Link>
-            ) : null}
-          </div>
-
-          {technicalLevels.length ? (
-            <div className="mt-3 flex flex-wrap gap-2">
-              {technicalLevels.map((item) => (
-                <span
-                  key={item.disciplineName}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-cyan-400/40 bg-cyan-400/[0.06] px-3 py-1.5 text-[11px] font-semibold text-cyan-200"
-                >
-                  <span>{item.disciplineName}</span>
-                  <span className="text-cyan-500">·</span>
-                  <strong>{item.levelTitle}</strong>
+                <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold text-emerald-300">
+                  Confirmada
                 </span>
-              ))}
+              </div>
+              <p className="mt-1 text-xs text-zinc-300">
+                {formatDateTime(nextClass.starts_at, studio.timezone)}
+              </p>
+              <p className="mt-1 truncate text-[11px] text-zinc-500">
+                {[nextClass.space, nextClass.coach].filter(Boolean).join(" · ") ||
+                  "Consulta los detalles de tu clase"}
+              </p>
             </div>
-          ) : (
-            <div className="mt-3 rounded-2xl border border-white/10 bg-black/15 px-3.5 py-3">
-              <p className="text-xs text-zinc-400">Aún no tienes niveles técnicos confirmados.</p>
-            </div>
-          )}
-        </div>
-      </header>
-
-      {activePackage ? (
+            <span aria-hidden="true" className="text-xl text-zinc-500">
+              ›
+            </span>
+          </Link>
+        ) : (
+          <div className="mt-3 rounded-2xl border border-white/10 bg-black/15 px-4 py-5 text-center">
+            <span aria-hidden="true" className="text-2xl text-zinc-500">
+              ▣
+            </span>
+            <h2 className="mt-3 text-sm font-semibold text-white">
+              Aún no tienes clases reservadas
+            </h2>
+            <p className="mx-auto mt-1.5 max-w-sm text-xs leading-5 text-zinc-400">
+              Reserva tu próxima clase y sigue avanzando en tu entrenamiento.
+            </p>
+            <Link
+              href="/student/reservar"
+              className="mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-2xl border border-fuchsia-500/70 px-4 text-sm font-semibold text-fuchsia-300 transition hover:bg-fuchsia-500/[0.08]"
+            >
+              Reservar clase
+            </Link>
+          </div>
+        )}
+      </section>
+{activePackage ? (
         <section
           data-home-block="package"
           className="rounded-[24px] border border-fuchsia-500/30 bg-[radial-gradient(circle_at_100%_0%,rgba(236,72,153,0.09),transparent_36%),rgba(255,255,255,0.025)] p-4"
@@ -777,72 +604,170 @@ export default async function StudentHomePage({
         </section>
       ) : null}
 
+      {latestPublishedEvaluation ? (
+        <section
+          data-home-block="evaluation-result"
+          className="relative overflow-hidden rounded-[26px] border border-fuchsia-500/45 bg-[radial-gradient(circle_at_88%_0%,rgba(236,72,153,0.24),transparent_36%),linear-gradient(135deg,rgba(236,72,153,0.12),rgba(124,58,237,0.07))] p-4 shadow-[0_0_30px_rgba(236,72,153,0.1)] sm:p-5"
+        >
+          <span
+            aria-hidden="true"
+            className="absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-fuchsia-500 to-violet-500"
+          />
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <span
+                className={
+                  "inline-flex rounded-full border px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.16em] " +
+                  (latestPublishedEvaluation.final_outcome === "approved"
+                    ? "border-emerald-400/35 bg-emerald-400/[0.08] text-emerald-300"
+                    : "border-amber-400/35 bg-amber-400/[0.08] text-amber-300")
+                }
+              >
+                Resultado disponible
+              </span>
+              <h2 className="mt-3 text-lg font-semibold text-white">Resultado de tu evaluación</h2>
+              <p className="mt-1 text-xs leading-5 text-zinc-300">
+                {latestPublishedEvaluation.discipline_name}
+                {latestPublishedEvaluation.evaluated_level_title
+                  ? ` · ${latestPublishedEvaluation.evaluated_level_title}`
+                  : ""}
+                {latestPublishedEvaluation.total_score !== null
+                  ? ` · ${Math.round(latestPublishedEvaluation.total_score)}%`
+                  : ""}
+              </p>
+            </div>
+            <span aria-hidden="true" className="text-2xl text-fuchsia-300">
+              ✦
+            </span>
+          </div>
+
+          <Link
+            href={"/student/evaluaciones/resultado/" + latestPublishedEvaluation.id}
+            className="mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-2xl bg-fuchsia-600 px-4 text-sm font-semibold text-white transition hover:bg-fuchsia-500"
+          >
+            Ver resultado de tu evaluación
+          </Link>
+        </section>
+      ) : null}
+      {activeEvaluationInvitation?.invitation_id ? (
+        <section
+          data-home-block="evaluation-invitation"
+          className="relative overflow-hidden rounded-[26px] border border-fuchsia-500/40 bg-[radial-gradient(circle_at_88%_0%,rgba(236,72,153,0.22),transparent_36%),linear-gradient(135deg,rgba(236,72,153,0.11),rgba(124,58,237,0.06))] p-4 shadow-[0_0_28px_rgba(236,72,153,0.08)] sm:p-5"
+        >
+          <span
+            aria-hidden="true"
+            className="absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-fuchsia-500 to-violet-500"
+          />
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <span className="inline-flex rounded-full border border-fuchsia-500/30 bg-fuchsia-500/[0.08] px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.16em] text-fuchsia-300">
+                {activeEvaluationInvitation.invitation_status === "offered"
+                  ? "Evaluación disponible"
+                  : "Evaluación pendiente"}
+              </span>
+              <h2 className="mt-3 text-lg font-semibold text-white">
+                {activeEvaluationInvitation.discipline_name}
+              </h2>
+              <p className="mt-1 text-xs leading-5 text-zinc-300">
+                {activeEvaluationInvitation.invitation_status === "offered"
+                  ? `Tienes una invitación para evaluar tu nivel ${activeEvaluationInvitation.current_level_title}.`
+                  : "Ya aceptaste tu evaluación. Elige una clase para programarla."}
+              </p>
+              {activeEvaluationInvitation.window_start && activeEvaluationInvitation.window_end ? (
+                <p className="mt-1 text-[11px] text-zinc-500">
+                  Disponible del{" "}
+                  {formatDate(activeEvaluationInvitation.window_start, studio.timezone)} al{" "}
+                  {formatDate(activeEvaluationInvitation.window_end, studio.timezone)}
+                </p>
+              ) : null}
+            </div>
+            <span aria-hidden="true" className="text-2xl text-fuchsia-300">
+              ✦
+            </span>
+          </div>
+
+          <Link
+            href={
+              activeEvaluationInvitation.invitation_status === "offered"
+                ? "/student/evaluaciones/" + activeEvaluationInvitation.invitation_id
+                : "/student/evaluaciones/" + activeEvaluationInvitation.invitation_id + "/programar"
+            }
+            className="mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-2xl bg-fuchsia-600 px-4 text-sm font-semibold text-white transition hover:bg-fuchsia-500"
+          >
+            {activeEvaluationInvitation.invitation_status === "offered"
+              ? "Ver invitación"
+              : "Programar evaluación"}
+          </Link>
+        </section>
+      ) : null}
+
       <section
-        data-home-block="reserved-classes"
-        className="rounded-[24px] border border-fuchsia-500/25 bg-white/[0.025] p-4"
+        data-home-block="progress"
+        className="rounded-[24px] border border-white/10 bg-white/[0.025] p-4"
       >
-        <div className="flex items-center justify-between gap-3">
-          <p className="text-[9px] font-semibold uppercase tracking-[0.22em] text-zinc-400">
-            Tus clases reservadas
-          </p>
-          {nextClass ? (
-            <Link href="/student/mis-clases" className="text-xs font-semibold text-white">
-              Ver todas →
-            </Link>
-          ) : null}
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-zinc-400">
+              Mi progreso
+            </p>
+            <h2 className="mt-1.5 text-lg font-semibold text-white">
+              {currentLevel
+                ? `Medalla ${currentLevel.title ?? "Bronce"}`
+                : rewardStatus?.access_unlocked
+                  ? "Sin medalla"
+                  : "Activando Medallas"}
+            </h2>
+            <p className="mt-1 text-sm leading-5 text-zinc-400">
+              {currentLevel
+                ? "Consulta tus beneficios, logros y avance."
+                : rewardStatus?.access_unlocked
+                  ? "Tus resultados del mes definirán tu Medalla."
+                  : "Completa tu activación para acceder a Medallas y beneficios."}
+            </p>
+          </div>
+          <span
+            aria-hidden="true"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border text-lg"
+            style={{
+              borderColor: currentLevel ? levelVisual.border : "rgba(236,72,153,0.28)",
+              color: currentLevel ? levelVisual.accent : "#f0abfc",
+              background: currentLevel ? levelVisual.wash : "rgba(236,72,153,0.07)",
+            }}
+          >
+            ✦
+          </span>
         </div>
 
-        {nextClass ? (
-          <Link
-            href="/student/mis-clases"
-            className="mt-3 grid grid-cols-[68px_1fr_auto] items-center gap-3 rounded-2xl border border-white/10 bg-black/20 p-3 transition hover:bg-white/[0.04]"
-          >
-            <div className="relative h-[76px] overflow-hidden rounded-xl border border-fuchsia-500/25 bg-[radial-gradient(circle_at_45%_25%,rgba(236,72,153,0.45),transparent_24%),linear-gradient(145deg,#2b0b22,#090c12_72%)]">
-              <span className="absolute inset-y-2 left-1/2 w-px -translate-x-1/2 bg-fuchsia-300/45" />
-              <span className="absolute inset-0 grid place-items-center text-lg text-fuchsia-200">
-                ✦
-              </span>
-            </div>
-            <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-2">
-                <h2 className="truncate text-base font-semibold text-white">
-                  {nextClass.activity}
-                </h2>
-                <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold text-emerald-300">
-                  Confirmada
+        {technicalLevels.length ? (
+          <div className="mt-4 border-t border-white/10 pt-4">
+            <p className="text-xs font-semibold text-zinc-300">Niveles técnicos</p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {technicalLevels.slice(0, 3).map((item) => (
+                <span
+                  key={item.disciplineName}
+                  className="rounded-full border border-cyan-400/25 bg-cyan-400/[0.05] px-3 py-1.5 text-xs font-medium text-cyan-100"
+                >
+                  {item.disciplineName} · {item.levelTitle}
                 </span>
-              </div>
-              <p className="mt-1 text-xs text-zinc-300">
-                {formatDateTime(nextClass.starts_at, studio.timezone)}
-              </p>
-              <p className="mt-1 truncate text-[11px] text-zinc-500">
-                {[nextClass.space, nextClass.coach].filter(Boolean).join(" · ") ||
-                  "Consulta los detalles de tu clase"}
-              </p>
+              ))}
             </div>
-            <span aria-hidden="true" className="text-xl text-zinc-500">
-              ›
-            </span>
-          </Link>
-        ) : (
-          <div className="mt-3 rounded-2xl border border-white/10 bg-black/15 px-4 py-5 text-center">
-            <span aria-hidden="true" className="text-2xl text-zinc-500">
-              ▣
-            </span>
-            <h2 className="mt-3 text-sm font-semibold text-white">
-              Aún no tienes clases reservadas
-            </h2>
-            <p className="mx-auto mt-1.5 max-w-sm text-xs leading-5 text-zinc-400">
-              Reserva tu próxima clase y sigue avanzando en tu entrenamiento.
-            </p>
-            <Link
-              href="/student/reservar"
-              className="mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-2xl border border-fuchsia-500/70 px-4 text-sm font-semibold text-fuchsia-300 transition hover:bg-fuchsia-500/[0.08]"
-            >
-              Reservar clase
-            </Link>
           </div>
-        )}
+        ) : null}
+
+        <div className="mt-4 grid grid-cols-2 gap-2">
+          <Link
+            href="/student/recompensas"
+            className="inline-flex min-h-11 items-center justify-center rounded-2xl bg-fuchsia-600 px-4 text-sm font-semibold text-white transition hover:bg-fuchsia-500"
+          >
+            Ver progreso
+          </Link>
+          <Link
+            href="/student/retos"
+            className="inline-flex min-h-11 items-center justify-center rounded-2xl border border-white/10 px-4 text-sm font-semibold text-zinc-200 transition hover:bg-white/[0.05]"
+          >
+            Ver retos
+          </Link>
+        </div>
       </section>
     </main>
   );
