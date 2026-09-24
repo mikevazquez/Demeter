@@ -28,7 +28,10 @@ describe("SF-240 Progress & Rewards Portal Alumna v2", () => {
     expect(home).not.toContain('href="/student/recompensas"');
     expect(profile).toContain('href="/student/recompensas"');
     expect(profile).toContain("Medallas y beneficios");
-    expect(profile).toContain("Medallas, beneficios y recompensas obtenidas");
+    expect(profile).toContain("Mi medalla y beneficios");
+    expect(profile).toContain('title="Retos"');
+    expect(profile).toContain('title="Logros"');
+    expect(profile).toContain('title="Recompensas"');
     expect(nav).not.toContain('label: "Retos"');
     expect(nav).toContain('"/student/retos"');
   });
