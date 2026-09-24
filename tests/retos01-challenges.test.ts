@@ -87,6 +87,25 @@ describe("RETOS-01", () => {
     expect(detail).toContain("winner.score");
   });
 
+
+  it("keeps finished challenges visible until the student archives them", () => {
+    const home = read("app/student/retos/page.tsx");
+    const detail = read("app/student/retos/[ruleId]/page.tsx");
+    const actions = read("app/student/retos/actions.ts");
+    const migration = read(
+      "supabase/migrations/20260924072218_retos01_competitive_reward_read.sql",
+    );
+
+    expect(home).toContain("Finalizados");
+    expect(home).toContain("Retos archivados");
+    expect(home).toContain("<details");
+    expect(detail).toContain("Finalizado");
+    expect(detail).toContain("Archivar reto");
+    expect(actions).toContain("student_archive_reward_challenge");
+    expect(migration).toContain("reward_challenge_student_archives");
+    expect(migration).toContain("student_archive_reward_challenge");
+  });
+
   it("stores only meaningful challenge notification switches", () => {
     const form = read("app/admin/recompensas/RuleEditorForm.tsx");
     const actions = read("app/admin/recompensas/actions.ts");
