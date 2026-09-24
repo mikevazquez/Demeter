@@ -2,8 +2,6 @@ import Link from "next/link";
 
 import { formatDate, formatDateTime, getStudentPortalContext } from "@/lib/student/portal";
 
-import EvaluationHeroCard from "./EvaluationHeroCard";
-
 type EvaluationDisciplineSnapshot = {
   discipline_id: string;
   discipline_name: string;
@@ -42,30 +40,43 @@ type StudentEvaluationsSnapshot = {
   history: EvaluationHistorySnapshot[];
 };
 
-function outcomeLabel(value: string | null) {
-  if (value === "approved") return "Aprobada";
-  if (value === "stays") return "Permanece";
-  return "Incompleta";
-}
-
-function outcomeTone(value: string | null) {
-  if (value === "approved") {
-    return "border-emerald-400/35 bg-emerald-400/[0.08] text-emerald-300";
+function evaluationState(item: EvaluationDisciplineSnapshot) {
+  if (item.invitation_status === "offered" || item.invitation_status === "pending_schedule") {
+    return {
+      label: "Evaluación disponible",
+      tone: "border-fuchsia-500/30 bg-fuchsia-500/[0.08] text-fuchsia-200",
+    };
   }
-  if (value === "stays") {
-    return "border-amber-400/35 bg-amber-400/[0.08] text-amber-300";
-  }
-  return "border-zinc-600 bg-white/[0.03] text-zinc-400";
-}
 
-function statusCopy(status: EvaluationDisciplineSnapshot["invitation_status"]) {
-  const labels: Record<string, string> = {
-    offered: "Evaluación disponible",
-    pending_schedule: "Pendiente de programar",
-    scheduled: "Programada",
-    in_progress: "Evaluación en curso",
+  if (item.invitation_status === "scheduled" || item.invitation_status === "in_progress") {
+    return {
+      label: "Evaluación programada",
+      tone: "border-cyan-400/30 bg-cyan-400/[0.07] text-cyan-200",
+    };
+  }
+
+  if (item.current_level_title) {
+    return {
+      label: "Nivel confirmado",
+      tone: "border-emerald-400/30 bg-emerald-400/[0.07] text-emerald-200",
+    };
+  }
+
+  return {
+    label: "Aún sin nivel",
+    tone: "border-white/10 bg-white/[0.03] text-zinc-400",
   };
-  return status ? (labels[status] ?? status) : "";
+}
+
+function historyLabel(item: EvaluationHistorySnapshot) {
+  const from = item.evaluated_level_title ?? null;
+  const to = item.resulting_level_title ?? null;
+
+  if (!from && to) return `Diagnóstico → ${to}`;
+  if (from && to && from !== to) return `${from} → ${to}`;
+  if (to) return `Nivel mantenido · ${to}`;
+  if (from) return `Nivel mantenido · ${from}`;
+  return "Evaluación completada";
 }
 
 export default async function StudentEvaluationsPage() {
@@ -82,235 +93,165 @@ export default async function StudentEvaluationsPage() {
 
   return (
     <main className="space-y-5 pb-4">
-      <header className="flex items-start justify-between gap-4">
-        <div>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-fuchsia-300">
-            Mi progreso
-          </p>
-          <h1 className="mt-1 text-3xl font-semibold tracking-tight text-white sm:text-4xl">
-            Evaluaciones
-          </h1>
-          <p className="mt-1.5 text-sm text-zinc-400">
-            Tu progreso técnico, disciplina por disciplina.
-          </p>
-        </div>
-
+      <header>
         <Link
           href="/student/perfil"
-          aria-label="Cerrar evaluaciones"
-          className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-white/10 bg-white/[0.035] text-xl text-zinc-300 transition hover:border-fuchsia-500/40 hover:bg-fuchsia-500/[0.08] hover:text-white"
+          className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-zinc-400 transition hover:text-white"
         >
-          ×
+          <span aria-hidden="true">←</span>
+          Perfil
         </Link>
+        <p className="student-eyebrow mt-3">Mi entrenamiento</p>
+        <h1 className="student-page-title mt-1">Nivel técnico</h1>
+        <p className="student-body mt-2">
+          Consulta tu nivel en cada disciplina y tus evaluaciones.
+        </p>
       </header>
 
-      <section className="space-y-3" aria-label="Estado de evaluaciones">
+      <section className="space-y-3" aria-label="Nivel técnico por disciplina">
         {cards.length ? (
-          cards.map((item) => (
-            <article
-              key={item.discipline_id}
-              className="relative overflow-hidden rounded-3xl border border-white/10 bg-[radial-gradient(circle_at_100%_0%,rgba(236,72,153,0.12),transparent_34%),rgba(255,255,255,0.025)] p-5"
-            >
-              <span
-                aria-hidden="true"
-                className="absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-fuchsia-500 to-violet-500"
-              />
-              {item.invitation_status === "scheduled" && item.scheduled_starts_at ? (
-                <div className="-mx-5 -mt-5 mb-5">
-                  <EvaluationHeroCard
-                    variant="scheduled"
-                    disciplineName={item.discipline_name}
-                    levelName={item.current_level_title}
-                    scheduledLabel={formatDateTime(item.scheduled_starts_at, studio.timezone)}
-                  />
-                  <div className="px-1 pt-5">
-                    <h3 className="text-2xl font-semibold tracking-tight text-white">
-                      Evaluación programada
+          cards.map((item) => {
+            const state = evaluationState(item);
+
+            return (
+              <article key={item.discipline_id} className="student-card p-5">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <h2 className="text-lg font-semibold text-white">{item.discipline_name}</h2>
+                    <p className="mt-1 text-xl font-semibold text-cyan-200">
+                      {item.current_level_title ?? "Aún sin nivel"}
+                    </p>
+                  </div>
+                  <span
+                    className={`shrink-0 rounded-full border px-2.5 py-1 text-xs font-semibold ${state.tone}`}
+                  >
+                    {state.label}
+                  </span>
+                </div>
+
+                {item.invitation_status === "offered" && item.invitation_id ? (
+                  <div className="mt-4 rounded-2xl border border-fuchsia-500/20 bg-fuchsia-500/[0.045] p-4">
+                    <h3 className="text-base font-semibold text-white">
+                      {item.current_level_title
+                        ? "Ya puedes realizar tu próxima evaluación"
+                        : "Descubre tu nivel técnico"}
                     </h3>
-                    <p className="mt-1 text-sm text-zinc-400">
-                      Aquí están los detalles de tu próxima revisión técnica.
+                    <p className="mt-1 text-sm leading-6 text-zinc-400">
+                      {item.window_start && item.window_end
+                        ? `Puedes realizarla entre el ${formatDate(
+                            item.window_start,
+                            studio.timezone,
+                          )} y el ${formatDate(item.window_end, studio.timezone)}.`
+                        : "Tu evaluación está lista cuando tú quieras comenzar."}
                     </p>
+                    <Link
+                      href={"/student/evaluaciones/" + item.invitation_id}
+                      className="student-action-primary mt-4 w-full sm:w-auto"
+                    >
+                      {item.current_level_title ? "Ver evaluación" : "Comenzar diagnóstico"}
+                    </Link>
                   </div>
-                </div>
-              ) : null}
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <h2 className="text-xl font-semibold text-white">{item.discipline_name}</h2>
-                  <p className="mt-1 text-sm text-zinc-400">
-                    Nivel actual:{" "}
-                    <strong className="text-zinc-200">
-                      {item.current_level_title ?? "Pendiente de diagnóstico"}
-                    </strong>
-                  </p>
-                </div>
-
-                {item.invitation_status ? (
-                  <span className="rounded-full border border-fuchsia-500/35 bg-fuchsia-500/[0.08] px-3 py-1 text-[10px] font-semibold text-fuchsia-300">
-                    {statusCopy(item.invitation_status)}
-                  </span>
-                ) : item.cycle_id ? (
-                  <span className="rounded-full border border-emerald-400/30 bg-emerald-400/[0.08] px-3 py-1 text-[10px] font-semibold text-emerald-300">
-                    Ciclo activo
-                  </span>
-                ) : (
-                  <span className="rounded-full border border-white/10 px-3 py-1 text-[10px] font-semibold text-zinc-500">
-                    Sin evaluaciones
-                  </span>
-                )}
-              </div>
-
-              {item.invitation_status === "offered" && item.invitation_id ? (
-                <div className="mt-5 rounded-2xl border border-fuchsia-500/25 bg-fuchsia-500/[0.06] p-4">
-                  <p className="text-sm font-semibold text-white">Tu evaluación está disponible</p>
-                  <p className="mt-1 text-xs leading-5 text-zinc-400">
-                    Puedes aceptarla y elegir una clase entre el{" "}
-                    {item.window_start ? formatDate(item.window_start, studio.timezone) : "—"} y el{" "}
-                    {item.window_end ? formatDate(item.window_end, studio.timezone) : "—"}.
-                  </p>
-                  <Link
-                    href={"/student/evaluaciones/" + item.invitation_id}
-                    className="mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-2xl bg-fuchsia-600 px-4 text-sm font-semibold text-white transition hover:bg-fuchsia-500"
-                  >
-                    Ver invitación
-                  </Link>
-                </div>
-              ) : item.invitation_status === "pending_schedule" && item.invitation_id ? (
-                <div className="mt-5">
-                  <p className="text-xs text-zinc-400">
-                    Disponible para programar del{" "}
-                    {item.window_start ? formatDate(item.window_start, studio.timezone) : "—"} al{" "}
-                    {item.window_end ? formatDate(item.window_end, studio.timezone) : "—"}.
-                  </p>
-                  <Link
-                    href={"/student/evaluaciones/" + item.invitation_id + "/programar"}
-                    className="mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-2xl bg-fuchsia-600 px-4 text-sm font-semibold text-white transition hover:bg-fuchsia-500"
-                  >
-                    Programar evaluación
-                  </Link>
-                </div>
-              ) : item.invitation_status === "scheduled" && item.scheduled_starts_at ? (
-                <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                  <div className="rounded-2xl border border-fuchsia-500/25 bg-fuchsia-500/[0.05] p-4">
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-fuchsia-300">
-                      Tu próxima evaluación
+                ) : item.invitation_status === "pending_schedule" && item.invitation_id ? (
+                  <div className="mt-4">
+                    <p className="text-sm leading-6 text-zinc-400">
+                      Elige una clase dentro del periodo disponible para realizar tu evaluación.
                     </p>
-                    <strong className="mt-1 block text-sm text-white">
+                    <Link
+                      href={"/student/evaluaciones/" + item.invitation_id + "/programar"}
+                      className="student-action-primary mt-4 w-full sm:w-auto"
+                    >
+                      Elegir mi clase
+                    </Link>
+                  </div>
+                ) : item.invitation_status === "scheduled" && item.scheduled_starts_at ? (
+                  <div className="mt-4 rounded-2xl border border-cyan-400/20 bg-cyan-400/[0.04] p-4">
+                    <p className="text-sm font-semibold text-cyan-100">Evaluación programada</p>
+                    <p className="mt-1 text-sm text-zinc-300">
                       {formatDateTime(item.scheduled_starts_at, studio.timezone)}
-                    </strong>
+                    </p>
                     <p className="mt-1 text-xs leading-5 text-zinc-500">
-                      Ya está agendada. Prepárate para mostrar tu progreso y seguir avanzando.
+                      Tu evaluación se realizará durante esta clase.
                     </p>
                   </div>
-                  <div className="rounded-2xl border border-white/10 bg-black/10 p-4">
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-zinc-500">
-                      Política de reserva
-                    </p>
-                    <p className="mt-1 text-xs leading-5 text-zinc-400">
-                      Tu evaluación utiliza la misma reserva, créditos y políticas de la clase
-                      elegida.
+                ) : item.invitation_status === "in_progress" ? (
+                  <div className="mt-4 rounded-2xl border border-cyan-400/20 bg-cyan-400/[0.04] p-4">
+                    <p className="text-sm font-semibold text-white">Evaluación en curso</p>
+                    <p className="mt-1 text-sm leading-6 text-zinc-400">
+                      Tu coach está registrando el resultado. Lo verás aquí cuando esté publicado.
                     </p>
                   </div>
-                </div>
-              ) : item.invitation_status === "in_progress" ? (
-                <div className="mt-5 rounded-2xl border border-fuchsia-500/25 bg-fuchsia-500/[0.06] p-4">
-                  <p className="text-sm font-semibold text-white">Evaluación en curso</p>
-                  <p className="mt-1 text-xs text-zinc-400">
-                    Tu coach está registrando la evaluación. El resultado aparecerá cuando esté
-                    finalizada.
-                  </p>
-                </div>
-              ) : item.next_due_on ? (
-                <div className="mt-5 flex items-center justify-between gap-4 rounded-2xl border border-white/10 bg-black/10 px-4 py-3">
-                  <div>
-                    <p className="text-[10px] uppercase tracking-[0.16em] text-zinc-500">
-                      Siguiente evaluación
-                    </p>
-                    <strong className="mt-1 block text-sm text-white">
+                ) : item.next_due_on ? (
+                  <p className="mt-4 text-sm text-zinc-400">
+                    Próxima evaluación a partir del{" "}
+                    <strong className="font-semibold text-white">
                       {formatDate(item.next_due_on, studio.timezone)}
                     </strong>
-                  </div>
-                  {item.cadence_months ? (
-                    <span className="text-xs text-zinc-500">Cada {item.cadence_months} meses</span>
-                  ) : null}
-                </div>
-              ) : (
-                <p className="mt-4 text-xs leading-5 text-zinc-500">
-                  {item.latest_evaluation_id
-                    ? "Aquí aparecerá tu siguiente evaluación cuando corresponda."
-                    : "Aún no formas parte del ciclo de evaluaciones de esta disciplina."}
-                </p>
-              )}
+                  </p>
+                ) : (
+                  <p className="mt-4 text-sm leading-6 text-zinc-500">
+                    {item.current_level_title
+                      ? "Te avisaremos cuando tu próxima evaluación esté disponible."
+                      : "Te avisaremos cuando puedas realizar tu diagnóstico."}
+                  </p>
+                )}
 
-              {item.latest_evaluation_id && !item.invitation_status ? (
-                <Link
-                  href={"/student/evaluaciones/resultado/" + item.latest_evaluation_id}
-                  className="mt-4 flex min-h-12 items-center justify-between rounded-2xl bg-fuchsia-600 px-4 text-sm font-semibold text-white transition hover:bg-fuchsia-500"
-                >
-                  <span>Ver resultado de tu evaluación</span>
-                  <span aria-hidden="true">→</span>
-                </Link>
-              ) : null}
-            </article>
-          ))
+                {item.latest_evaluation_id ? (
+                  <Link
+                    href={"/student/evaluaciones/resultado/" + item.latest_evaluation_id}
+                    className="mt-4 inline-flex min-h-11 items-center text-sm font-semibold text-fuchsia-300"
+                  >
+                    Ver último resultado →
+                  </Link>
+                ) : null}
+              </article>
+            );
+          })
         ) : (
-          <div className="rounded-3xl border border-white/10 bg-white/[0.025] p-6 text-center">
-            <p className="text-sm font-semibold text-white">Aún no hay disciplinas evaluables</p>
-            <p className="mt-1 text-xs text-zinc-500">
-              El estudio todavía no ha habilitado niveles técnicos para tu cuenta.
+          <div className="student-card p-6 text-center">
+            <p className="text-base font-semibold text-white">Aún no hay niveles técnicos</p>
+            <p className="mt-1 text-sm leading-6 text-zinc-500">
+              Cuando Demeter habilite una disciplina para evaluación, aparecerá aquí.
             </p>
           </div>
         )}
       </section>
 
       <section>
-        <div className="mb-2 flex items-center justify-between gap-3">
-          <div>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-fuchsia-300">
-              Historial
-            </p>
-            <h2 className="mt-1 text-xl font-semibold text-white">Evaluaciones realizadas</h2>
-          </div>
-          <span className="rounded-full border border-white/10 px-2.5 py-1 text-[10px] text-zinc-500">
-            {history.length}
-          </span>
+        <div className="mb-2">
+          <p className="student-eyebrow">Historial</p>
+          <h2 className="mt-1 text-xl font-semibold text-white">Evaluaciones realizadas</h2>
         </div>
 
         {history.length ? (
-          <div className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.025]">
+          <div className="divide-y divide-white/10 overflow-hidden rounded-2xl border border-white/10 bg-white/[0.025]">
             {history.map((evaluation) => (
               <Link
                 key={evaluation.id}
                 href={"/student/evaluaciones/resultado/" + evaluation.id}
-                className="grid min-h-16 grid-cols-[82px_1fr_auto_auto] items-center gap-3 border-t border-white/[0.06] px-4 py-3 first:border-t-0"
+                className="grid min-h-16 grid-cols-[1fr_auto] items-center gap-3 px-4 py-3 transition hover:bg-white/[0.035]"
               >
-                <span className="text-xs text-zinc-500">
-                  {formatDate(evaluation.evaluation_date, studio.timezone)}
-                </span>
                 <span className="min-w-0">
                   <strong className="block truncate text-sm text-white">
                     {evaluation.discipline_name}
                   </strong>
-                  <span className="mt-0.5 block text-[11px] text-zinc-500">
-                    {evaluation.evaluated_level_title ?? "Nivel técnico"}
+                  <span className="mt-0.5 block text-xs text-zinc-400">
+                    {historyLabel(evaluation)}
+                  </span>
+                  <span className="mt-1 block text-xs text-zinc-600">
+                    {formatDate(evaluation.evaluation_date, studio.timezone)}
                   </span>
                 </span>
-                <span
-                  className={
-                    "rounded-full border px-2.5 py-1 text-[10px] font-semibold " +
-                    outcomeTone(evaluation.final_outcome)
-                  }
-                >
-                  {outcomeLabel(evaluation.final_outcome)}
+                <span aria-hidden="true" className="text-xl text-zinc-600">
+                  ›
                 </span>
-                <strong className="text-sm text-white">{evaluation.total_score ?? "—"}%</strong>
               </Link>
             ))}
           </div>
         ) : (
-          <div className="rounded-3xl border border-white/10 bg-white/[0.025] p-6 text-center">
-            <p className="text-sm font-semibold text-white">Aún no hay evaluaciones</p>
-            <p className="mt-1 text-xs text-zinc-500">
-              Cuando completes una evaluación, tu resultado aparecerá aquí.
+          <div className="student-card p-6 text-center">
+            <p className="text-sm font-semibold text-white">Aún no hay evaluaciones realizadas</p>
+            <p className="mt-1 text-sm leading-6 text-zinc-500">
+              Tus resultados aparecerán aquí después de tu primera evaluación.
             </p>
           </div>
         )}
