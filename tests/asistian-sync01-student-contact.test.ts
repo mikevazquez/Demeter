@@ -49,9 +49,7 @@ describe("ASISTIAN-SYNC-01 contact synchronization", () => {
     expect(shared).toContain('"contact_upsert"');
     expect(processor).toContain('template: "contact_upsert"');
     expect(processor).toContain('operation: "upsert_contact"');
-    expect(processor).toContain(
-      'const CONSUMER_KEY = "integration.asistian.contact-upsert"',
-    );
+    expect(processor).toContain('const CONSUMER_KEY = "integration.asistian.contact-upsert"');
     expect(processor).not.toContain('template: "student_welcome"');
   });
 
