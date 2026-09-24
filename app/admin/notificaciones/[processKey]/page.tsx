@@ -233,7 +233,9 @@ export default async function NotificationProcessPage({
           ) : canManage ? (
             <div className="notification-essential-control">
               {process.essential ? (
-                <span className="notification-essential-badge">Esencial · pendiente de activar</span>
+                <span className="notification-essential-badge">
+                  Esencial · pendiente de activar
+                </span>
               ) : null}
               <form action={toggleNotificationProcessAction}>
                 <input type="hidden" name="process_key" value={process.key} />
