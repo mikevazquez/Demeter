@@ -28,9 +28,9 @@ type InvitationDetail = {
 const errorCopy: Record<string, string> = {
   evaluation_response_invalid: "No pudimos registrar tu respuesta.",
   evaluation_response_failed: "No pudimos registrar tu respuesta. Intenta de nuevo.",
-  evaluation_invitation_not_respondable: "Esta invitación ya no está pendiente de respuesta.",
-  evaluation_invitation_not_found: "Esta invitación ya no está disponible.",
-  forbidden: "Esta invitación no pertenece a tu cuenta.",
+  evaluation_invitation_not_respondable: "Esta evaluación ya no está pendiente de respuesta.",
+  evaluation_invitation_not_found: "Esta evaluación ya no está disponible.",
+  forbidden: "Esta evaluación no pertenece a tu cuenta.",
 };
 
 export default async function EvaluationInvitationPage({
@@ -51,158 +51,124 @@ export default async function EvaluationInvitationPage({
   if (error || !data) notFound();
 
   const invitation = data as InvitationDetail;
+  const diagnostic = invitation.evaluation_purpose === "diagnostic";
 
   if (invitation.status === "pending_schedule") {
     redirect("/student/evaluaciones/" + invitation.id + "/programar");
   }
 
   return (
-    <main className="space-y-5 pb-4">
+    <main className="mx-auto max-w-2xl space-y-4 pb-4">
       <Link
         href="/student/evaluaciones"
-        className="inline-flex items-center gap-2 text-sm font-semibold text-zinc-400 hover:text-white"
+        className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-zinc-400 transition hover:text-white"
       >
-        ← Evaluaciones
+        <span aria-hidden="true">←</span>
+        Nivel técnico
       </Link>
 
-      <section className="overflow-hidden rounded-[28px] border border-fuchsia-500/30 bg-[radial-gradient(circle_at_80%_0%,rgba(236,72,153,0.22),transparent_34%),linear-gradient(150deg,#15101a,#0d1017)] shadow-[0_0_34px_rgba(236,72,153,0.08)]">
+      <section className="student-card overflow-hidden">
         <div className="p-5 sm:p-6">
-          <span className="inline-flex rounded-full border border-fuchsia-500/35 bg-fuchsia-500/[0.1] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-fuchsia-300">
-            {invitation.evaluation_purpose === "diagnostic"
-              ? "Diagnóstico inicial"
-              : invitation.invitation_kind === "first"
-                ? "Primera evaluación"
-                : "Evaluación periódica"}
-          </span>
-
-          <h1 className="mt-4 text-3xl font-semibold tracking-tight text-white">
-            {invitation.discipline_name}
+          <p className="student-eyebrow">{invitation.discipline_name}</p>
+          <h1 className="mt-2 text-3xl font-semibold tracking-tight text-white">
+            {diagnostic ? "Descubre tu nivel técnico" : "Tu próxima evaluación está disponible"}
           </h1>
-          <p className="mt-1 text-sm text-zinc-400">Tu próxima evaluación está lista.</p>
 
-          <div className="mt-5 grid gap-3 rounded-3xl border border-white/10 bg-black/15 p-4">
-            <div className="grid grid-cols-[34px_1fr] gap-3">
-              <span className="text-xl text-fuchsia-300" aria-hidden="true">
-                ▥
-              </span>
-              <div>
-                <p className="text-[10px] uppercase tracking-[0.14em] text-zinc-500">
-                  {invitation.evaluation_purpose === "diagnostic"
-                    ? "Inicio del diagnóstico"
-                    : "Nivel a evaluar"}
-                </p>
-                <strong className="mt-1 block text-sm text-white">
-                  {invitation.evaluation_purpose === "diagnostic"
-                    ? `Comienza en ${invitation.level_title}`
-                    : invitation.level_title}
-                </strong>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-[34px_1fr] gap-3">
-              <span className="text-xl text-fuchsia-300" aria-hidden="true">
-                ◫
-              </span>
-              <div>
-                <p className="text-[10px] uppercase tracking-[0.14em] text-zinc-500">
-                  Ventana disponible
-                </p>
-                <strong className="mt-1 block text-sm text-white">
-                  Del {formatDate(invitation.window_start, studio.timezone)} al{" "}
+          {diagnostic ? (
+            <>
+              <p className="mt-3 text-sm leading-6 text-zinc-300">
+                Vamos a evaluar tus habilidades empezando desde {invitation.level_title}. Si
+                completas ese nivel, continuaremos con el siguiente.
+              </p>
+              <p className="mt-2 text-sm font-semibold leading-6 text-white">
+                Al terminar te asignaremos el nivel más alto que hayas demostrado.
+              </p>
+              <p className="mt-3 text-xs leading-5 text-zinc-500">
+                Tu nivel técnico es independiente de tus medallas y beneficios.
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="mt-3 text-sm leading-6 text-zinc-300">
+                Ya puedes realizar tu siguiente evaluación de {invitation.discipline_name}.
+              </p>
+              <p className="mt-2 text-sm text-zinc-400">
+                Puedes elegir una clase entre el{" "}
+                <strong className="font-semibold text-white">
+                  {formatDate(invitation.window_start, studio.timezone)}
+                </strong>{" "}
+                y el{" "}
+                <strong className="font-semibold text-white">
                   {formatDate(invitation.window_end, studio.timezone)}
                 </strong>
-              </div>
-            </div>
+                .
+              </p>
+            </>
+          )}
 
-            <div className="grid grid-cols-[34px_1fr] gap-3">
-              <span className="text-xl text-fuchsia-300" aria-hidden="true">
-                ✦
-              </span>
-              <div>
-                <p className="text-[10px] uppercase tracking-[0.14em] text-zinc-500">
-                  ¿Qué se evalúa?
-                </p>
-                <strong className="mt-1 block text-sm leading-5 text-white">
-                  {invitation.evaluation_purpose === "diagnostic"
-                    ? "Comenzamos por Principiante y avanzamos nivel por nivel mientras cumplas cada evaluación."
-                    : "Ponderación técnica, figuras obligatorias y requisitos definidos para tu nivel."}
-                </strong>
-              </div>
+          {diagnostic ? (
+            <div className="mt-5 rounded-2xl border border-cyan-400/20 bg-cyan-400/[0.04] p-4">
+              <p className="text-sm font-semibold text-white">¿Cómo funciona?</p>
+              <p className="mt-1 text-sm leading-6 text-zinc-400">
+                Avanzaremos nivel por nivel mientras cumplas cada evaluación y nos detendremos en
+                el primero que todavía necesites consolidar.
+              </p>
             </div>
+          ) : null}
 
-            <div className="grid grid-cols-[34px_1fr] gap-3">
-              <span className="text-xl text-fuchsia-300" aria-hidden="true">
-                ◷
-              </span>
-              <div>
-                <p className="text-[10px] uppercase tracking-[0.14em] text-zinc-500">
-                  Cómo funciona
-                </p>
-                <strong className="mt-1 block text-sm text-white">
-                  {invitation.evaluation_purpose === "diagnostic"
-                    ? "Se detiene en el primer nivel que no cumplas y se confirma el nivel más alto que hayas demostrado."
-                    : "Se realiza dentro de una clase regular que tú eliges."}
-                </strong>
-              </div>
+          {qs.error ? (
+            <div className="mt-4 rounded-2xl border border-rose-400/25 bg-rose-400/[0.06] px-4 py-3 text-sm leading-6 text-rose-200">
+              {errorCopy[qs.error] ?? errorCopy.evaluation_response_failed}
             </div>
-          </div>
+          ) : null}
         </div>
 
-        {qs.error ? (
-          <div className="mx-5 mb-4 rounded-2xl border border-rose-400/25 bg-rose-400/[0.06] px-4 py-3 text-xs leading-5 text-rose-200 sm:mx-6">
-            {errorCopy[qs.error] ?? errorCopy.evaluation_response_failed}
-          </div>
-        ) : null}
-
-        {invitation.status === "offered" && invitation.invitation_kind === "first" ? (
+        {invitation.status === "offered" ? (
           <div className="space-y-2 border-t border-white/10 p-5 sm:p-6">
             <form action={respondEvaluationInvitationAction}>
               <input type="hidden" name="invitation_id" value={invitation.id} />
               <input type="hidden" name="response" value="accept" />
               <PendingActionButton
-                pendingLabel="Aceptando…"
-                className="min-h-12 w-full rounded-2xl bg-fuchsia-600 px-4 text-sm font-semibold text-white transition hover:bg-fuchsia-500"
+                pendingLabel="Continuando…"
+                className="student-action-primary w-full"
               >
-                {invitation.evaluation_purpose === "diagnostic"
-                  ? "Aceptar diagnóstico"
-                  : "Aceptar evaluación"}
+                {diagnostic ? "Comenzar diagnóstico" : "Elegir mi clase"}
               </PendingActionButton>
             </form>
 
-            <form action={respondEvaluationInvitationAction}>
-              <input type="hidden" name="invitation_id" value={invitation.id} />
-              <input type="hidden" name="response" value="decline" />
-              <PendingActionButton
-                pendingLabel="Guardando…"
-                className="min-h-12 w-full rounded-2xl border border-fuchsia-500/35 bg-fuchsia-500/[0.03] px-4 text-sm font-semibold text-zinc-200 transition hover:bg-fuchsia-500/[0.08]"
-              >
-                No por ahora
-              </PendingActionButton>
-            </form>
+            {invitation.invitation_kind === "first" ? (
+              <form action={respondEvaluationInvitationAction}>
+                <input type="hidden" name="invitation_id" value={invitation.id} />
+                <input type="hidden" name="response" value="decline" />
+                <PendingActionButton
+                  pendingLabel="Guardando…"
+                  className="student-action-secondary w-full"
+                >
+                  No por ahora
+                </PendingActionButton>
+              </form>
+            ) : null}
           </div>
         ) : invitation.status === "scheduled" ? (
           <div className="border-t border-white/10 p-5 sm:p-6">
             <p className="text-sm font-semibold text-emerald-300">
               Tu evaluación ya está programada.
             </p>
-            <Link
-              href="/student/evaluaciones"
-              className="mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-2xl bg-fuchsia-600 px-4 text-sm font-semibold text-white"
-            >
-              Volver a Evaluaciones
+            <Link href="/student/evaluaciones" className="student-action-secondary mt-3 w-full">
+              Volver a Nivel técnico
             </Link>
           </div>
         ) : invitation.status === "declined" ? (
           <div className="border-t border-white/10 p-5 sm:p-6">
-            <p className="text-sm font-semibold text-white">Elegiste no realizarla por ahora.</p>
-            <p className="mt-1 text-xs leading-5 text-zinc-500">
-              No hay penalización. El estudio puede enviarte otra invitación más adelante.
+            <p className="text-sm font-semibold text-white">La dejaste para después.</p>
+            <p className="mt-1 text-sm leading-6 text-zinc-500">
+              No hay penalización. Demeter podrá ofrecerte otra evaluación más adelante.
             </p>
           </div>
         ) : (
           <div className="border-t border-white/10 p-5 sm:p-6">
             <p className="text-sm text-zinc-400">
-              Estado actual: <strong className="text-white">{invitation.status}</strong>
+              Esta evaluación ya no requiere una respuesta de tu parte.
             </p>
           </div>
         )}
