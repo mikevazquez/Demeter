@@ -15,13 +15,13 @@ describe("F10/N14 student home and profile UAT contracts", () => {
     "supabase/migrations/20260916040850_f10_profile_identity_readonly.sql",
   );
 
-  it("shows the active package before reserved classes as the primary home context", () => {
-    expect(homePage.indexOf('data-home-block="package"')).toBeLessThan(
-      homePage.indexOf('data-home-block="reserved-classes"'),
+  it("shows the next class before package context on Home", () => {
+    expect(homePage.indexOf('data-home-block="next-class"')).toBeLessThan(
+      homePage.indexOf('data-home-block="package"'),
     );
-    expect(homePage).toContain("Comprar paquete");
-    expect(homePage).toContain("Vence");
-    expect(homePage).toContain("used_credits");
+    expect(homePage).toContain("Reserva tu próxima clase");
+    expect(homePage).toContain("Ver paquetes");
+    expect(homePage).toContain("clases disponibles");
   });
 
   it("delegates class discovery to Reservar and class management to Mis clases", () => {
