@@ -4,15 +4,39 @@ import { notFound } from "next/navigation";
 import { formatDateTime, getStudentPortalContext } from "@/lib/student/portal";
 
 type NotificationPayload = {
-  session_id?: string;
   activity?: string;
+  class_name?: string;
   starts_at?: string;
-  minimum_required?: number;
-  reservations_at_review?: number;
+  session_starts_at?: string;
   credit_restored?: boolean;
   credits_returned_total?: number;
   reason?: string;
 };
+
+function notificationLabel(type: string) {
+  switch (type) {
+    case "reservation_confirmed":
+      return "Reserva confirmada";
+    case "reservation_cancelled":
+      return "Reserva cancelada";
+    case "class_reminder":
+      return "Recordatorio";
+    case "class_cancelled_student":
+      return "Clase cancelada";
+    case "class_rescheduled":
+      return "Cambio de horario";
+    case "waitlist_promoted":
+      return "Lugar disponible";
+    case "evaluation_invitation":
+      return "Evaluación";
+    case "evaluation_scheduled":
+      return "Evaluación programada";
+    case "evaluation_completed":
+      return "Resultado disponible";
+    default:
+      return "Notificación";
+  }
+}
 
 export default async function StudentNotificationDetailPage({
   params,
@@ -37,74 +61,57 @@ export default async function StudentNotificationDetailPage({
   });
 
   const payload = (notification.payload ?? {}) as NotificationPayload;
-  const startsAt = payload.starts_at ? formatDateTime(payload.starts_at, studio.timezone) : null;
+  const className = payload.activity ?? payload.class_name ?? null;
+  const rawStartsAt = payload.starts_at ?? payload.session_starts_at ?? null;
+  const startsAt = rawStartsAt ? formatDateTime(rawStartsAt, studio.timezone) : null;
 
   return (
     <main className="mx-auto max-w-xl space-y-4 pb-6">
       <Link
-        href="/student"
+        href="/student/notificaciones"
         className="inline-flex items-center text-xs font-semibold text-zinc-400 transition hover:text-white"
       >
-        ← Inicio
+        ← Notificaciones
       </Link>
 
-      <section className="relative overflow-hidden rounded-[28px] border border-rose-500/35 bg-[radial-gradient(circle_at_88%_0%,rgba(244,63,94,0.18),transparent_38%),rgba(255,255,255,0.025)] p-5 shadow-[0_0_32px_rgba(244,63,94,0.08)]">
+      <section className="relative overflow-hidden rounded-[28px] border border-fuchsia-500/30 bg-[radial-gradient(circle_at_88%_0%,rgba(236,72,153,0.17),transparent_38%),rgba(255,255,255,0.025)] p-5 shadow-[0_0_32px_rgba(236,72,153,0.07)]">
         <span
           aria-hidden="true"
-          className="absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-rose-500 to-fuchsia-500"
+          className="absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-fuchsia-500 to-violet-500"
         />
-        <span className="inline-flex rounded-full border border-rose-400/30 bg-rose-400/[0.08] px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.16em] text-rose-200">
-          Clase cancelada
+        <span className="inline-flex rounded-full border border-fuchsia-400/25 bg-fuchsia-400/[0.08] px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.16em] text-fuchsia-200">
+          {notificationLabel(notification.notification_type)}
         </span>
-        <h1 className="mt-4 text-2xl font-semibold tracking-tight text-white">
-          {notification.title}
-        </h1>
+        <h1 className="mt-4 text-2xl font-semibold tracking-tight text-white">{notification.title}</h1>
         <p className="mt-2 text-sm leading-6 text-zinc-300">{notification.body}</p>
+        <p className="mt-3 text-[10px] text-zinc-600">
+          {formatDateTime(notification.created_at, studio.timezone)}
+        </p>
 
-        <div className="mt-5 grid gap-2">
-          {payload.activity ? (
-            <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3">
-              <p className="text-[10px] uppercase tracking-[0.16em] text-zinc-500">Actividad</p>
-              <p className="mt-1 text-sm font-semibold text-white">{payload.activity}</p>
-            </div>
-          ) : null}
-          {startsAt ? (
-            <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3">
-              <p className="text-[10px] uppercase tracking-[0.16em] text-zinc-500">Fecha y hora</p>
-              <p className="mt-1 text-sm font-semibold text-white">{startsAt}</p>
-            </div>
-          ) : null}
-          <div className="grid grid-cols-2 gap-2">
-            <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3">
-              <p className="text-[10px] uppercase tracking-[0.16em] text-zinc-500">
-                Mínimo requerido
-              </p>
-              <p className="mt-1 text-lg font-semibold text-white">
-                {payload.minimum_required ?? "—"}
-              </p>
-            </div>
-            <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3">
-              <p className="text-[10px] uppercase tracking-[0.16em] text-zinc-500">
-                Reservas al revisar
-              </p>
-              <p className="mt-1 text-lg font-semibold text-white">
-                {payload.reservations_at_review ?? "—"}
-              </p>
-            </div>
+        {className || startsAt ? (
+          <div className="mt-5 grid gap-2">
+            {className ? (
+              <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3">
+                <p className="text-[10px] uppercase tracking-[0.16em] text-zinc-500">Clase</p>
+                <p className="mt-1 text-sm font-semibold text-white">{className}</p>
+              </div>
+            ) : null}
+            {startsAt ? (
+              <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3">
+                <p className="text-[10px] uppercase tracking-[0.16em] text-zinc-500">Fecha y hora</p>
+                <p className="mt-1 text-sm font-semibold text-white">{startsAt}</p>
+              </div>
+            ) : null}
           </div>
-        </div>
+        ) : null}
 
-        <div className="mt-5 rounded-2xl border border-emerald-400/25 bg-emerald-400/[0.06] p-4">
-          <p className="text-sm font-semibold text-emerald-200">
-            {payload.credit_restored === false
-              ? "Tu reserva fue liberada."
-              : "Tu crédito fue restaurado."}
-          </p>
-          <p className="mt-1 text-xs leading-5 text-emerald-100/70">
-            Esta cancelación fue realizada por el estudio y no cuenta como cancelación tardía ni
-            genera penalización.
-          </p>
-        </div>
+        {payload.credit_restored !== undefined ? (
+          <div className="mt-5 rounded-2xl border border-emerald-400/25 bg-emerald-400/[0.06] p-4">
+            <p className="text-sm font-semibold text-emerald-200">
+              {payload.credit_restored ? "Tu crédito fue restaurado." : "Tu reserva fue liberada."}
+            </p>
+          </div>
+        ) : null}
       </section>
     </main>
   );
