@@ -21,6 +21,7 @@ const errorCopy: Record<string, string> = {
   resource_required: "Selecciona un recurso antes de confirmar.",
   resource_full: "Ese recurso acaba de llenarse. Selecciona otro.",
   resource_not_available: "Ese recurso ya no está disponible.",
+  reward_credits_unavailable: "Ya no tienes créditos extra suficientes para esta clase.",
 };
 
 export const dynamic = "force-dynamic";
@@ -31,10 +32,12 @@ export default async function StudentBookingConfirmPage({
   searchParams,
 }: {
   params: Promise<{ sessionId: string }>;
-  searchParams: Promise<{ date?: string; error?: string; resource?: string }>;
+  searchParams: Promise<{ date?: string; error?: string; resource?: string; credit?: string }>;
 }) {
   const { sessionId } = await params;
   const query = await searchParams;
+  const rewardMode = query.credit === "reward";
+  const rewardSuffix = rewardMode ? "&credit=reward" : "";
   const { supabase, studio } = await getStudentPortalContext();
   const { data, error } = await supabase.rpc("student_session_detail", {
     target_session_id: sessionId,
@@ -99,14 +102,23 @@ export default async function StudentBookingConfirmPage({
       <Link
         href={
           session.requires_resource
-            ? `/student/reservar/${session.session_id}/recurso?date=${returnDate}`
-            : `/student/reservar/${session.session_id}?date=${returnDate}`
+            ? `/student/reservar/${session.session_id}/recurso?date=${returnDate}${rewardSuffix}`
+            : `/student/reservar/${session.session_id}?date=${returnDate}${rewardSuffix}`
         }
         className="inline-flex items-center gap-2 text-xs font-semibold text-fuchsia-300"
       >
         <span aria-hidden="true">←</span>
         {session.requires_resource ? "Cambiar recurso" : "Volver al detalle"}
       </Link>
+
+      {rewardMode ? (
+        <section className="rounded-2xl border border-emerald-400/35 bg-emerald-400/[0.07] px-4 py-3">
+          <p className="text-xs font-semibold text-emerald-200">Pago con créditos extra</p>
+          <p className="mt-1 text-[11px] leading-5 text-zinc-400">
+            Esta reserva se cobrará del saldo premio, aunque tengas otro paquete activo.
+          </p>
+        </section>
+      ) : null}
 
       <section className="rounded-3xl border border-white/10 bg-white/[0.03] p-5">
         <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-fuchsia-300">
@@ -169,15 +181,18 @@ export default async function StudentBookingConfirmPage({
           <>
             <div className="mt-4 rounded-2xl border border-amber-400/20 bg-amber-400/[0.06] p-4">
               <p className="text-xs leading-5 text-amber-100">
-                {session.eligibility?.unlimited
-                  ? "Esta clase está incluida en tu membresía ilimitada."
-                  : `Se utilizará ${session.credit_cost} crédito${session.credit_cost === 1 ? "" : "s"} de tu paquete activo.`}
+                {rewardMode
+                  ? `Se utilizará ${session.credit_cost} crédito${session.credit_cost === 1 ? "" : "s"} de tu saldo extra.`
+                  : session.eligibility?.unlimited
+                    ? "Esta clase está incluida en tu membresía ilimitada."
+                    : `Se utilizará ${session.credit_cost} crédito${session.credit_cost === 1 ? "" : "s"} de tu paquete activo.`}
               </p>
             </div>
 
             <form action={bookStudentSessionAction} className="mt-5 space-y-3">
               <input type="hidden" name="session_id" value={session.session_id} />
               <input type="hidden" name="date" value={returnDate} />
+              {rewardMode ? <input type="hidden" name="credit_source" value="reward" /> : null}
               {selectedResource ? (
                 <input type="hidden" name="resource_id" value={selectedResource.resource_id} />
               ) : null}
@@ -190,8 +205,8 @@ export default async function StudentBookingConfirmPage({
               <Link
                 href={
                   session.requires_resource && selectedResource
-                    ? `/student/reservar/${session.session_id}/recurso?date=${returnDate}`
-                    : `/student/reservar/${session.session_id}?date=${returnDate}`
+                    ? `/student/reservar/${session.session_id}/recurso?date=${returnDate}${rewardSuffix}`
+                    : `/student/reservar/${session.session_id}?date=${returnDate}${rewardSuffix}`
                 }
                 className="flex min-h-11 w-full items-center justify-center rounded-2xl border border-white/10 px-4 py-2.5 text-sm font-semibold text-zinc-300"
               >
@@ -205,7 +220,7 @@ export default async function StudentBookingConfirmPage({
               <BookingRestrictionCard
                 restrictions={session.eligibility.restrictions}
                 compact
-                returnTo={`/student/reservar/${session.session_id}/confirmar?date=${returnDate}${selectedResource ? `&resource=${encodeURIComponent(selectedResource.resource_id)}` : ""}`}
+                returnTo={`/student/reservar/${session.session_id}/confirmar?date=${returnDate}${selectedResource ? `&resource=${encodeURIComponent(selectedResource.resource_id)}` : ""}${rewardSuffix}`}
               />
             ) : (
               <p className="text-sm font-semibold text-amber-100">
@@ -217,7 +232,7 @@ export default async function StudentBookingConfirmPage({
               ninguna reserva.
             </p>
             <Link
-              href={`/student/reservar?date=${returnDate}`}
+              href={`/student/reservar?date=${returnDate}${rewardSuffix}`}
               className="mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-2xl border border-fuchsia-500/40 px-4 py-2.5 text-sm font-semibold text-fuchsia-200"
             >
               Volver a clases
