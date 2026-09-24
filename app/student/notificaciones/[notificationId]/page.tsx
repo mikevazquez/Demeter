@@ -112,9 +112,7 @@ export default async function StudentNotificationDetailPage({
         {payload.credit_restored !== undefined ? (
           <div className="mt-5 rounded-2xl border border-emerald-400/25 bg-emerald-400/[0.06] p-4">
             <p className="text-sm font-semibold text-emerald-200">
-              {payload.credit_restored
-                ? "Tu crédito fue restaurado."
-                : "Tu reserva fue liberada."}
+              {payload.credit_restored ? "Tu crédito fue restaurado." : "Tu reserva fue liberada."}
             </p>
           </div>
         ) : null}
