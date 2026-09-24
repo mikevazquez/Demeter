@@ -215,11 +215,15 @@ export function RuleEditorForm({
                 <p className="mt-2 text-sm font-semibold text-white">
                   {competitionMode === "leaderboard"
                     ? `${enrollmentCount ?? 0} inscritas`
-                    : challengeAudienceLabel(String(audience.scope ?? "all_active_students"))}
+                    : challengeAudienceLabel(
+                        String(audience.scope ?? "all_active_students"),
+                      )}
                 </p>
               </div>
               <div className="rounded-xl border border-white/10 bg-black/20 p-4">
-                <p className="text-xs uppercase tracking-[0.14em] text-zinc-500">Objetivo / métrica</p>
+                <p className="text-xs uppercase tracking-[0.14em] text-zinc-500">
+                  Objetivo / métrica
+                </p>
                 <p className="mt-2 text-sm text-white">
                   {challengeMetricLabel(rankingMetric)}
                 </p>
@@ -237,18 +241,26 @@ export function RuleEditorForm({
               {competitionMode === "leaderboard" ? (
                 <>
                   <div className="rounded-xl border border-white/10 bg-black/20 p-4">
-                    <p className="text-xs uppercase tracking-[0.14em] text-zinc-500">Ganadoras</p>
+                    <p className="text-xs uppercase tracking-[0.14em] text-zinc-500">
+                      Ganadoras
+                    </p>
                     <p className="mt-2 text-sm text-white">
                       {winnerCount} {winnerCount === 1 ? "ganadora" : "ganadoras"}
                     </p>
                   </div>
                   <div className="rounded-xl border border-white/10 bg-black/20 p-4">
-                    <p className="text-xs uppercase tracking-[0.14em] text-zinc-500">Desempate</p>
+                    <p className="text-xs uppercase tracking-[0.14em] text-zinc-500">
+                      Desempate
+                    </p>
                     <p className="mt-2 text-sm text-white">{challengeTieLabel(tieBreaker)}</p>
                   </div>
                   <div className="rounded-xl border border-white/10 bg-black/20 p-4">
-                    <p className="text-xs uppercase tracking-[0.14em] text-zinc-500">Inscripción</p>
-                    <p className="mt-2 text-sm text-white">Voluntaria · ranking solo para inscritas</p>
+                    <p className="text-xs uppercase tracking-[0.14em] text-zinc-500">
+                      Inscripción
+                    </p>
+                    <p className="mt-2 text-sm text-white">
+                      Voluntaria · ranking solo para inscritas
+                    </p>
                   </div>
                 </>
               ) : null}
