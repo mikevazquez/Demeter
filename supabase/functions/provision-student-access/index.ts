@@ -190,6 +190,20 @@ const handler = {
           return jsonResponse({ error: "auth_password_reset_failed" }, 500);
         }
 
+        await adminClient.rpc("emit_domain_event", {
+          p_studio_id: student.studio_id,
+          p_event_type: "account.password_reset",
+          p_source_entity_type: "student",
+          p_source_entity_id: student.id,
+          p_deduplication_key: `notification:account.password_reset:${student.id}:${crypto.randomUUID()}`,
+          p_actor_user_id: user.id,
+          p_payload: {
+            student_id: student.id,
+            user_id: student.user_id,
+            source: "temporary_password",
+          },
+        });
+
         return jsonResponse({
           ok: true,
           phone: student.phone,
@@ -227,23 +241,36 @@ const handler = {
 
       const activationLink = buildStudentActivationLink(activationUrl, tokenHash);
       const welcomeEventId = `student_welcome:${student.id}:${student.user_id}:${crypto.randomUUID()}`;
-      const welcomeDelivery = await sendAsistianWebhook({
-        adminClient,
-        studioId: student.studio_id,
-        template: "student_welcome",
-        eventId: welcomeEventId,
-        recipient: student.phone,
-        variables: {
-          nombre: student.full_name,
-          activation_url: activationLink,
-        },
-        metadata: {
-          source: "student_access_activation_resend",
-          student_id: student.id,
-          user_id: student.user_id,
-          must_change_password: true,
-        },
-      });
+      const { data: welcomeRule } = await adminClient
+        .from("notification_rules")
+        .select("enabled")
+        .eq("studio_id", student.studio_id)
+        .eq("rule_key", "p0.account.created")
+        .is("archived_at", null)
+        .maybeSingle();
+      const welcomeDelivery = welcomeRule?.enabled
+        ? await sendAsistianWebhook({
+            adminClient,
+            studioId: student.studio_id,
+            template: "student_welcome",
+            eventId: welcomeEventId,
+            recipient: student.phone,
+            variables: {
+              nombre: student.full_name,
+              activation_url: activationLink,
+            },
+            metadata: {
+              source: "student_access_activation_resend",
+              student_id: student.id,
+              user_id: student.user_id,
+              must_change_password: true,
+            },
+          })
+        : {
+            status: "skipped" as const,
+            errorCode: "notification_process_paused",
+            retryable: false,
+          };
 
       return jsonResponse({
         ok: true,
@@ -382,23 +409,36 @@ const handler = {
 
     const activationLink = buildStudentActivationLink(activationUrl, tokenHash);
     const welcomeEventId = `student_welcome:${student.id}:${provisionedUser.id}:${crypto.randomUUID()}`;
-    const welcomeDelivery = await sendAsistianWebhook({
-      adminClient,
-      studioId: student.studio_id,
-      template: "student_welcome",
-      eventId: welcomeEventId,
-      recipient: student.phone,
-      variables: {
-        nombre: student.full_name,
-        activation_url: activationLink,
-      },
-      metadata: {
-        source: "student_access_provisioning",
-        student_id: student.id,
-        user_id: provisionedUser.id,
-        must_change_password: true,
-      },
-    });
+    const { data: welcomeRule } = await adminClient
+      .from("notification_rules")
+      .select("enabled")
+      .eq("studio_id", student.studio_id)
+      .eq("rule_key", "p0.account.created")
+      .is("archived_at", null)
+      .maybeSingle();
+    const welcomeDelivery = welcomeRule?.enabled
+      ? await sendAsistianWebhook({
+          adminClient,
+          studioId: student.studio_id,
+          template: "student_welcome",
+          eventId: welcomeEventId,
+          recipient: student.phone,
+          variables: {
+            nombre: student.full_name,
+            activation_url: activationLink,
+          },
+          metadata: {
+            source: "student_access_provisioning",
+            student_id: student.id,
+            user_id: provisionedUser.id,
+            must_change_password: true,
+          },
+        })
+      : {
+          status: "skipped" as const,
+          errorCode: "notification_process_paused",
+          retryable: false,
+        };
 
     return jsonResponse({
       ok: true,

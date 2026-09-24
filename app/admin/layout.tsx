@@ -18,6 +18,7 @@ import "./actividades/actividades.css";
 import "./admin-ux-04-secondary.css";
 import "./admin-ux-04-secondary-detail.css";
 import "./evaluaciones/evaluaciones.css";
+import "./notificaciones/notificaciones.css";
 
 type PwaBrand = {
   name: string;
@@ -138,7 +139,14 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
           ? [{ href: "/admin/instructores", label: "Equipo", enabled: true }]
           : []),
         ...(can(CAPABILITIES.AUTOMATIONS_READ)
-          ? [{ href: "/admin/automatizaciones", label: "Automatizaciones", enabled: true }]
+          ? [
+              {
+                href: "/admin/notificaciones",
+                label: "Notificaciones",
+                enabled: true,
+                activeFor: ["/admin/automatizaciones"],
+              },
+            ]
           : []),
         ...(membership.role === "owner"
           ? [
@@ -185,6 +193,7 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
                   "/admin/evaluaciones",
                   "/admin/productos",
                   "/admin/instructores",
+                  "/admin/notificaciones",
                   "/admin/automatizaciones",
                   "/admin/configuracion",
                 ],
