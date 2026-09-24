@@ -248,8 +248,8 @@ export default async function StudentProfilePage({
               </Link>
             </div>
             <p className="mt-2 text-xs text-zinc-500">
-              Tu foto, correo y fecha de nacimiento forman parte de la activación de tu primera
-              medalla. Tu nombre y teléfono los administra el estudio.
+              Tu foto, correo y fecha de nacimiento forman parte de la activación de Medallas.
+              Tu nombre y teléfono los administra el estudio.
             </p>
           </form>
         ) : null}
