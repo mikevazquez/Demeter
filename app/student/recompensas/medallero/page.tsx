@@ -162,10 +162,7 @@ export default async function StudentMedalsPage() {
   return (
     <main className="space-y-5 pb-5">
       <header>
-        <Link
-          href="/student/recompensas"
-          className="text-xs font-semibold text-fuchsia-300"
-        >
+        <Link href="/student/recompensas" className="text-xs font-semibold text-fuchsia-300">
           ← Mi progreso
         </Link>
         <p className="mt-4 text-[10px] font-semibold uppercase tracking-[0.24em] text-fuchsia-300">
@@ -188,7 +185,8 @@ export default async function StudentMedalsPage() {
           </strong>
           {status.eligible_level_key ? (
             <span className="rounded-full border border-fuchsia-500/25 bg-fuchsia-500/[0.08] px-2.5 py-1 text-[10px] font-semibold text-fuchsia-300">
-              Proyección · {levels.find((level) => level.level_key === status.eligible_level_key)?.title}
+              Proyección ·{" "}
+              {levels.find((level) => level.level_key === status.eligible_level_key)?.title}
             </span>
           ) : null}
         </div>
@@ -239,9 +237,7 @@ export default async function StudentMedalsPage() {
                       </span>
                     ) : null}
                   </div>
-                  <p className="mt-0.5 text-xs text-zinc-500">
-                    Requisitos del ciclo mensual
-                  </p>
+                  <p className="mt-0.5 text-xs text-zinc-500">Requisitos del ciclo mensual</p>
                 </div>
               </div>
 
@@ -250,7 +246,9 @@ export default async function StudentMedalsPage() {
                   <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-zinc-500">
                     Días activos <MedalInfoDialog kind="activeDays" />
                   </div>
-                  <p className={`mt-1 text-sm font-semibold ${requirementState(progress.active_days_met)}`}>
+                  <p
+                    className={`mt-1 text-sm font-semibold ${requirementState(progress.active_days_met)}`}
+                  >
                     {progress.active_days ?? 0} / {level.required_active_days}
                   </p>
                 </div>
@@ -259,7 +257,9 @@ export default async function StudentMedalsPage() {
                   <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-zinc-500">
                     No show <MedalInfoDialog kind="noShow" />
                   </div>
-                  <p className={`mt-1 text-sm font-semibold ${requirementState(progress.no_show_met)}`}>
+                  <p
+                    className={`mt-1 text-sm font-semibold ${requirementState(progress.no_show_met)}`}
+                  >
                     {progress.no_show_count ?? 0} / máx. {level.max_no_shows}
                   </p>
                 </div>
@@ -268,7 +268,9 @@ export default async function StudentMedalsPage() {
                   <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-zinc-500">
                     Continuidad <MedalInfoDialog kind="continuity" />
                   </div>
-                  <p className={`mt-1 text-sm font-semibold ${requirementState(progress.continuity_met)}`}>
+                  <p
+                    className={`mt-1 text-sm font-semibold ${requirementState(progress.continuity_met)}`}
+                  >
                     {progress.continuity_months ?? 0} / {level.min_continuity_months} meses
                   </p>
                 </div>
@@ -277,7 +279,9 @@ export default async function StudentMedalsPage() {
                   <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-zinc-500">
                     Renovación <MedalInfoDialog kind="renewal" />
                   </div>
-                  <p className={`mt-1 text-sm font-semibold ${requirementState(progress.renewal_met)}`}>
+                  <p
+                    className={`mt-1 text-sm font-semibold ${requirementState(progress.renewal_met)}`}
+                  >
                     {progress.renewal_gap_days ?? 0} / máx. {level.max_renewal_gap_days} días
                   </p>
                 </div>
