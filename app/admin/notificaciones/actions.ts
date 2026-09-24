@@ -53,6 +53,10 @@ export async function toggleNotificationProcessAction(formData: FormData) {
   }
 
   const enabled = String(formData.get("next_enabled") ?? "") === "true";
+  if (process.essential && !enabled) {
+    redirect(processUrl(process.key, { error: "notification_process_essential" }));
+  }
+
   const { supabase, studio } = await getAdminContext(CAPABILITIES.AUTOMATIONS_MANAGE);
 
   const { error } = await supabase.rpc("admin_set_notification_rules_enabled", {
