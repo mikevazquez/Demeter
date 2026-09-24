@@ -402,7 +402,11 @@ export default async function HolidaysConfigurationPage({
                           style={{ backgroundImage: `url("${row.heroUrl}")` }}
                         />
                       ) : null}
-                      <input name="hero_image" type="file" accept="image/png,image/jpeg,image/webp" />
+                      <input
+                        name="hero_image"
+                        type="file"
+                        accept="image/png,image/jpeg,image/webp"
+                      />
                       {row.heroPath ? (
                         <label className="mt-2 flex items-center gap-2 text-xs text-zinc-400">
                           <input type="checkbox" name="remove_hero" value="1" />
