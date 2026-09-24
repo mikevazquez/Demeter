@@ -163,13 +163,15 @@ export default async function StudentCancelReservationPage({
           <div className="mt-4 rounded-2xl border border-amber-400/25 bg-amber-400/[0.08] p-4">
             <p className="text-sm font-semibold text-amber-100">Estás cancelando tarde</p>
             <p className="mt-1.5 text-sm leading-6 text-amber-100/80">
-              Si continúas, perderás {classesAffected}{" "}
-              {classesAffected === 1 ? "clase" : "clases"} de tu paquete.
+              Si continúas, perderás {classesAffected} {classesAffected === 1 ? "clase" : "clases"}{" "}
+              de tu paquete.
             </p>
           </div>
         ) : willReturnCredit ? (
           <div className="mt-4 rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.07] p-4">
-            <p className="text-sm font-semibold text-emerald-100">Puedes cancelar sin perder tu clase</p>
+            <p className="text-sm font-semibold text-emerald-100">
+              Puedes cancelar sin perder tu clase
+            </p>
             <p className="mt-1.5 text-sm leading-6 text-emerald-100/80">
               Se devolverán {classesAffected} {classesAffected === 1 ? "clase" : "clases"} a tu
               paquete.
@@ -179,8 +181,8 @@ export default async function StudentCancelReservationPage({
           <div className="mt-4 rounded-2xl border border-amber-400/25 bg-amber-400/[0.08] p-4">
             <p className="text-sm font-semibold text-amber-100">Estás cancelando tarde</p>
             <p className="mt-1.5 text-sm leading-6 text-amber-100/80">
-              Tu membresía es ilimitada. Antes de confirmar, considera las condiciones vigentes
-              para cancelaciones tardías.
+              Tu membresía es ilimitada. Antes de confirmar, considera las condiciones vigentes para
+              cancelaciones tardías.
             </p>
           </div>
         ) : null}
