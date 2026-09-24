@@ -1,0 +1,41 @@
+name: Format FESTIVOS-02
+
+on:
+  push:
+    branches:
+      - feat/festivos-01
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/festivos-01
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Format FESTIVOS-02 files
+        run: |
+          npx prettier --write \
+            app/admin/agenda/page.tsx \
+            app/admin/configuracion/festivos/actions.ts \
+            app/admin/configuracion/festivos/HolidayConfigurationClient.tsx \
+            app/admin/configuracion/festivos/page.tsx \
+            app/student/reservar/HolidayNotice.tsx \
+            app/student/reservar/page.tsx
+      - name: Commit formatting
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app
+          if ! git diff --cached --quiet; then
+            git commit -m "style: format FESTIVOS-02"
+            git push origin HEAD:feat/festivos-01
+          fi
