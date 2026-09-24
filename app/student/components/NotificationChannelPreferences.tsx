@@ -32,8 +32,7 @@ function isStandalone() {
   const nav = navigator as Navigator & { standalone?: boolean };
 
   return (
-    window.matchMedia?.("(display-mode: standalone)").matches === true ||
-    nav.standalone === true
+    window.matchMedia?.("(display-mode: standalone)").matches === true || nav.standalone === true
   );
 }
 
@@ -104,9 +103,7 @@ function Toggle({
       onClick={onChange}
       className={
         "relative h-7 w-12 shrink-0 rounded-full border transition " +
-        (checked
-          ? "border-fuchsia-400/50 bg-fuchsia-500"
-          : "border-white/15 bg-white/[0.06]") +
+        (checked ? "border-fuchsia-400/50 bg-fuchsia-500" : "border-white/15 bg-white/[0.06]") +
         (disabled ? " cursor-wait opacity-50" : "")
       }
     >
@@ -134,18 +131,12 @@ export default function NotificationChannelPreferences({
   const [busy, setBusy] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
-  async function setPreference(
-    channel: "push" | "whatsapp" | "email",
-    enabled: boolean,
-  ) {
+  async function setPreference(channel: "push" | "whatsapp" | "email", enabled: boolean) {
     const supabase = await browserClient();
-    const { data, error } = await supabase.rpc(
-      "student_set_notification_channel_preference",
-      {
-        p_channel_key: channel,
-        p_enabled: enabled,
-      },
-    );
+    const { data, error } = await supabase.rpc("student_set_notification_channel_preference", {
+      p_channel_key: channel,
+      p_enabled: enabled,
+    });
 
     if (error) throw error;
 
@@ -186,9 +177,7 @@ export default function NotificationChannelPreferences({
     }
 
     const supabase = await browserClient();
-    const { data: rawPublicKey, error: keyError } = await supabase.rpc(
-      "get_push_vapid_public_key",
-    );
+    const { data: rawPublicKey, error: keyError } = await supabase.rpc("get_push_vapid_public_key");
 
     if (keyError || typeof rawPublicKey !== "string" || !rawPublicKey) {
       throw new Error("push_vapid_unavailable");
@@ -227,18 +216,15 @@ export default function NotificationChannelPreferences({
       throw new Error("push_subscription_incomplete");
     }
 
-    const { error: registerError } = await supabase.rpc(
-      "register_my_push_subscription",
-      {
-        p_studio_id: studioId,
-        p_endpoint: endpoint,
-        p_p256dh: p256dh,
-        p_auth: auth,
-        p_user_agent: navigator.userAgent,
-        p_device_label: deviceLabel(),
-        p_expiration_time: subscription.expirationTime,
-      },
-    );
+    const { error: registerError } = await supabase.rpc("register_my_push_subscription", {
+      p_studio_id: studioId,
+      p_endpoint: endpoint,
+      p_p256dh: p256dh,
+      p_auth: auth,
+      p_user_agent: navigator.userAgent,
+      p_device_label: deviceLabel(),
+      p_expiration_time: subscription.expirationTime,
+    });
 
     if (registerError) throw registerError;
 
@@ -291,7 +277,7 @@ export default function NotificationChannelPreferences({
   }
 
   async function toggleChannel(channel: "whatsapp" | "email") {
-    const key = channel + "_enabled" as "whatsapp_enabled" | "email_enabled";
+    const key = (channel + "_enabled") as "whatsapp_enabled" | "email_enabled";
     setBusy(channel);
     setMessage(null);
 
