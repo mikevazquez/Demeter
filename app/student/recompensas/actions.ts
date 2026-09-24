@@ -5,12 +5,12 @@ import { redirect } from "next/navigation";
 
 import { getStudentPortalContext } from "@/lib/student/portal";
 
-export async function acknowledgeBronzeUnlockAction() {
+export async function acknowledgeMedalsAccessAction() {
   const { supabase } = await getStudentPortalContext();
-  const { error } = await supabase.rpc("student_acknowledge_bronze_unlock");
+  const { error } = await supabase.rpc("student_acknowledge_medals_access");
 
   if (error) {
-    redirect("/student/recompensas?error=bronze_acknowledge");
+    redirect("/student/recompensas?error=medals_access_acknowledge");
   }
 
   revalidatePath("/student");
