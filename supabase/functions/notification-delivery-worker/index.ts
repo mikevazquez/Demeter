@@ -185,6 +185,119 @@ function formatSessionStart(variables: JsonObject) {
   }
 }
 
+function formatDateTimeParts(value: unknown, timezoneValue: unknown) {
+  const raw = safeText(value);
+  if (!raw) return { fecha: null, hora: null, label: null };
+
+  const date = new Date(raw);
+  if (!Number.isFinite(date.getTime())) {
+    return { fecha: null, hora: null, label: raw };
+  }
+
+  const timezone = safeText(timezoneValue) ?? "UTC";
+
+  try {
+    const fecha = new Intl.DateTimeFormat("es-MX", {
+      timeZone: timezone,
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    }).format(date);
+
+    const hora = new Intl.DateTimeFormat("es-MX", {
+      timeZone: timezone,
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    }).format(date);
+
+    const label = new Intl.DateTimeFormat("es-MX", {
+      timeZone: timezone,
+      weekday: "short",
+      day: "numeric",
+      month: "short",
+      hour: "numeric",
+      minute: "2-digit",
+    })
+      .format(date)
+      .replace(/\.$/, "");
+
+    return { fecha, hora, label };
+  } catch {
+    return { fecha: null, hora: null, label: date.toISOString() };
+  }
+}
+
+function buildAsistianVariables(delivery: DeliveryRow, providerTemplateKey: string): JsonObject {
+  const variables = delivery.template_variables ?? {};
+  const starts = formatDateTimeParts(
+    variables.session_starts_at,
+    variables.studio_timezone,
+  );
+
+  const common = {
+    nombre: safeText(variables.recipient_name) ?? "Alumna",
+    disciplina:
+      safeText(variables.discipline_name) ??
+      safeText(variables.class_name) ??
+      "Clase",
+    fecha: starts.fecha,
+    hora: starts.hora,
+  };
+
+  switch (providerTemplateKey) {
+    case "reservation_confirmed":
+    case "waitlist_promoted":
+    case "class_reminder":
+      return {
+        ...common,
+        coach: safeText(variables.coach),
+        ubicacion: safeText(variables.location),
+        creditos_restantes: safeNumber(variables.credits_remaining),
+      };
+
+    case "reservation_cancelled": {
+      const status = safeText(variables.to_status);
+      const tipo =
+        status === "cancelled_on_time"
+          ? "A tiempo"
+          : status === "cancelled_late"
+            ? "Tardía"
+            : status === "cancelled_by_studio"
+              ? "Por el estudio"
+              : "Cancelada";
+
+      return {
+        clase: safeText(variables.class_name) ?? "Clase",
+        fecha: starts.fecha,
+        hora: starts.hora,
+        tipo_cancelacion: tipo,
+        credito_recuperado:
+          status === "cancelled_late"
+            ? false
+            : status === "cancelled_on_time" || status === "cancelled_by_studio"
+              ? true
+              : null,
+        creditos_restantes: safeNumber(variables.credits_remaining),
+      };
+    }
+
+    case "class_cancelled_coach":
+      return {
+        coach: safeText(variables.recipient_name) ?? "Coach",
+        clase: safeText(variables.class_name) ?? "Clase",
+        fecha: starts.fecha,
+        hora: starts.hora,
+        minimo_reservas: safeNumber(variables.minimum_required),
+        reservas_al_revisar: safeNumber(variables.reservations_at_review),
+        mensaje: "La clase fue cancelada. No necesitas asistir.",
+      };
+
+    default:
+      return variables;
+  }
+}
+
 function renderMessage(delivery: DeliveryRow): RenderedMessage {
   const variables = delivery.template_variables ?? {};
   const policy = delivery.channel_policy ?? {};
@@ -269,6 +382,71 @@ function renderMessage(delivery: DeliveryRow): RenderedMessage {
         providerTemplateKey: overrideProviderTemplate ?? "class_cancelled_coach",
       };
 
+    case "class_rescheduled": {
+      const oldLabel = formatDateTimeParts(
+        variables.old_starts_at,
+        variables.studio_timezone,
+      ).label;
+      return {
+        title: "Cambio de horario",
+        body:
+          oldLabel && startLabel
+            ? `${className} cambió de ${oldLabel} a ${startLabel}.`
+            : startLabel
+              ? `${className} ahora será ${startLabel}.`
+              : `El horario de ${className} cambió.`,
+        url: "/student",
+        tag: `notification-${delivery.id}`,
+        providerTemplateKey: overrideProviderTemplate ?? "class_rescheduled",
+      };
+    }
+
+    case "class_cancelled_student":
+      return {
+        title: "Tu clase fue cancelada",
+        body: startLabel
+          ? `${className} de ${startLabel} se canceló por no alcanzar el mínimo de reservas. Tu crédito fue restaurado cuando correspondía.`
+          : `${className} se canceló por no alcanzar el mínimo de reservas. Tu crédito fue restaurado cuando correspondía.`,
+        url: "/student",
+        tag: `notification-${delivery.id}`,
+        providerTemplateKey: overrideProviderTemplate ?? "class_cancelled_student",
+      };
+
+    case "evaluation_invitation": {
+      const discipline = safeText(variables.discipline_name) ?? "tu disciplina";
+      return {
+        title: "Tienes una evaluación disponible",
+        body: `Ya puedes agendar tu evaluación de ${discipline} desde Studio Flow.`,
+        url: "/student",
+        tag: `notification-${delivery.id}`,
+        providerTemplateKey: overrideProviderTemplate ?? "evaluation_invitation",
+      };
+    }
+
+    case "evaluation_scheduled": {
+      const discipline = safeText(variables.discipline_name) ?? "tu disciplina";
+      return {
+        title: "Evaluación programada",
+        body: startLabel
+          ? `Tu evaluación de ${discipline} quedó programada para ${startLabel}.`
+          : `Tu evaluación de ${discipline} quedó programada.`,
+        url: "/student",
+        tag: `notification-${delivery.id}`,
+        providerTemplateKey: overrideProviderTemplate ?? "evaluation_scheduled",
+      };
+    }
+
+    case "evaluation_completed": {
+      const discipline = safeText(variables.discipline_name) ?? "tu disciplina";
+      return {
+        title: "Resultados de evaluación disponibles",
+        body: `Ya puedes consultar los resultados de tu evaluación de ${discipline} en Studio Flow.`,
+        url: "/student",
+        tag: `notification-${delivery.id}`,
+        providerTemplateKey: overrideProviderTemplate ?? "evaluation_completed",
+      };
+    }
+
     default:
       throw new Error(`notification_template_unsupported:${delivery.template_key}`);
   }
@@ -299,7 +477,12 @@ async function sendInbox(
   delivery: DeliveryRow,
   message: RenderedMessage,
 ): Promise<AdapterResult> {
-  if (delivery.recipient_type !== "student" || !delivery.recipient_entity_id) {
+  const isStudent =
+    delivery.recipient_type === "student" && Boolean(delivery.recipient_entity_id);
+  const isInstructor =
+    delivery.recipient_type === "instructor" && Boolean(delivery.recipient_entity_id);
+
+  if (!isStudent && !isInstructor) {
     return {
       status: "skipped",
       providerKey: "studio_flow",
@@ -311,8 +494,9 @@ async function sendInbox(
   const deduplicationKey = `notification-delivery:${delivery.id}:inbox`;
   const newId = crypto.randomUUID();
   const sessionId = safeUuid(delivery.template_variables.session_id);
+  const href = isStudent ? `/student/notificaciones/${newId}` : "/admin/mis-clases";
   const payload = {
-    href: `/student/notificaciones/${newId}`,
+    href,
     delivery_id: delivery.id,
     notification_id: delivery.notification_id,
     communication_class: delivery.communication_class,
@@ -323,9 +507,9 @@ async function sendInbox(
       id: newId,
       studio_id: delivery.studio_id,
       recipient_user_id: delivery.recipient_user_id,
-      recipient_kind: "student",
-      student_id: delivery.recipient_entity_id,
-      instructor_id: null,
+      recipient_kind: isStudent ? "student" : "instructor",
+      student_id: isStudent ? delivery.recipient_entity_id : null,
+      instructor_id: isInstructor ? delivery.recipient_entity_id : null,
       session_id: sessionId,
       source_event_id: delivery.source_event_id,
       notification_type: delivery.notification_type,
@@ -367,7 +551,7 @@ async function sendInbox(
     };
   }
 
-  if (existing.id !== newId) {
+  if (isStudent && existing.id !== newId) {
     await adminClient
       .from("app_notifications")
       .update({
@@ -591,7 +775,7 @@ async function sendWhatsApp(
       | "class_cancelled_coach",
     eventId: delivery.id,
     recipient: phone,
-    variables: delivery.template_variables,
+    variables: buildAsistianVariables(delivery, message.providerTemplateKey),
     metadata: {
       notification_id: delivery.notification_id,
       delivery_id: delivery.id,
