@@ -14,7 +14,11 @@ export type StudentHolidaySnapshot = {
   configured: boolean;
   source_label: string;
   source_url: string;
-  legal_basis: string;
+  legal_basis: string | null;
+  hero_image_path?: string | null;
+  message_image_path?: string | null;
+  hero_image_url?: string | null;
+  message_image_url?: string | null;
 };
 
 function dateLabel(value: string) {
@@ -238,18 +242,22 @@ export function HolidayNotice({ holiday }: { holiday: StudentHolidaySnapshot }) 
   const heroStyle = {
     "--holiday-accent": theme.accent,
     "--holiday-secondary": theme.secondary,
-    background: `
-      radial-gradient(circle at 82% 18%, ${theme.accent}66, transparent 32%),
-      radial-gradient(circle at 12% 100%, ${theme.secondary}44, transparent 40%),
-      linear-gradient(145deg, rgba(123, 4, 63, .98), rgba(29, 6, 28, .98) 60%, rgba(8, 13, 23, .98))
-    `,
+    background: holiday.hero_image_url
+      ? `linear-gradient(180deg, rgba(9, 4, 11, .08) 0%, rgba(9, 4, 11, .14) 52%, rgba(9, 4, 11, .92) 100%), url("${holiday.hero_image_url}") center / cover no-repeat`
+      : `
+          radial-gradient(circle at 82% 18%, ${theme.accent}66, transparent 32%),
+          radial-gradient(circle at 12% 100%, ${theme.secondary}44, transparent 40%),
+          linear-gradient(145deg, rgba(123, 4, 63, .98), rgba(29, 6, 28, .98) 60%, rgba(8, 13, 23, .98))
+        `,
   } as CSSProperties;
 
   const messageStyle = {
-    background: `
-      radial-gradient(circle at 8% 50%, ${theme.accent}35, transparent 30%),
-      linear-gradient(135deg, rgba(37, 9, 32, .98), rgba(8, 13, 23, .98))
-    `,
+    background: holiday.message_image_url
+      ? `linear-gradient(90deg, rgba(12, 5, 15, .38), rgba(7, 9, 16, .92)), url("${holiday.message_image_url}") center / cover no-repeat`
+      : `
+          radial-gradient(circle at 8% 50%, ${theme.accent}35, transparent 30%),
+          linear-gradient(135deg, rgba(37, 9, 32, .98), rgba(8, 13, 23, .98))
+        `,
   } as CSSProperties;
 
   const icon: ReactNode = holiday.theme_key === "revolution" ? "⚑" : theme.icon;
@@ -264,17 +272,19 @@ export function HolidayNotice({ holiday }: { holiday: StudentHolidaySnapshot }) 
         className="relative isolate min-h-[445px] overflow-hidden rounded-3xl border border-fuchsia-500/45 px-4 pb-5 pt-4 shadow-[0_26px_78px_rgba(0,0,0,.4)] sm:min-h-[470px] sm:px-5 sm:pt-5"
         style={heroStyle}
       >
-        <div className="pointer-events-none absolute inset-x-0 top-[108px] z-0 h-[245px] sm:top-[116px] sm:h-[270px]">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_66%_45%,rgba(255,10,138,.20),transparent_42%)]" />
-          <MexicanRibbon className="-left-14 top-[86px] w-[285px] opacity-90" rotate={-11} />
-          <MexicanRibbon className="-right-20 top-[148px] w-[310px] opacity-85" rotate={10} />
-          <div className="absolute inset-x-2 bottom-0 top-0 text-fuchsia-300/70 sm:inset-x-4">
-            <HolidayArtwork themeKey={holiday.theme_key} />
+        {!holiday.hero_image_url ? (
+          <div className="pointer-events-none absolute inset-x-0 top-[108px] z-0 h-[245px] sm:top-[116px] sm:h-[270px]">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_66%_45%,rgba(255,10,138,.20),transparent_42%)]" />
+            <MexicanRibbon className="-left-14 top-[86px] w-[285px] opacity-90" rotate={-11} />
+            <MexicanRibbon className="-right-20 top-[148px] w-[310px] opacity-85" rotate={10} />
+            <div className="absolute inset-x-2 bottom-0 top-0 text-fuchsia-300/70 sm:inset-x-4">
+              <HolidayArtwork themeKey={holiday.theme_key} />
+            </div>
+            <Fireworks className="absolute right-1 top-0 h-28 w-28 text-fuchsia-300/55" />
           </div>
-          <Fireworks className="absolute right-1 top-0 h-28 w-28 text-fuchsia-300/55" />
-        </div>
+        ) : null}
 
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] h-[46%] bg-gradient-to-t from-[#09070d] via-[#140713]/95 to-transparent" />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] h-[48%] bg-gradient-to-t from-[#09070d] via-[#140713]/88 to-transparent" />
 
         <div className="relative z-10 flex min-h-[405px] flex-col sm:min-h-[428px]">
           <div className="flex items-start gap-3">
@@ -291,7 +301,7 @@ export function HolidayNotice({ holiday }: { holiday: StudentHolidaySnapshot }) 
               </h2>
               <p className="mt-1 text-sm text-zinc-200">{dateLabel(holiday.holiday_date)}</p>
               <span className="mt-2 inline-flex rounded-full bg-fuchsia-600/90 px-3 py-1 text-xs font-semibold text-white shadow-[0_8px_24px_rgba(255,10,138,.25)]">
-                Festivo oficial
+                {holiday.is_official ? "Festivo oficial" : "Día especial"}
               </span>
             </div>
           </div>
@@ -310,14 +320,26 @@ export function HolidayNotice({ holiday }: { holiday: StudentHolidaySnapshot }) 
         className="relative isolate min-h-[142px] overflow-hidden rounded-3xl border border-fuchsia-500/30 px-4 py-4 shadow-[0_18px_52px_rgba(0,0,0,.3)] sm:min-h-[150px]"
         style={messageStyle}
       >
-        <Fireworks className="absolute -left-1 top-1 h-20 w-20 text-fuchsia-400/35" />
-        <MexicanRibbon className="-left-20 -bottom-2 z-0 w-[255px]" rotate={10} />
-        <MexicanRibbon className="-right-24 -bottom-4 z-0 w-[285px]" rotate={-9} />
+        {!holiday.message_image_url ? (
+          <>
+            <Fireworks className="absolute -left-1 top-1 h-20 w-20 text-fuchsia-400/35" />
+            <MexicanRibbon className="-left-20 -bottom-2 z-0 w-[255px]" rotate={10} />
+            <MexicanRibbon className="-right-24 -bottom-4 z-0 w-[285px]" rotate={-9} />
+          </>
+        ) : null}
 
-        <div className="relative z-10 grid min-h-[110px] grid-cols-[96px_1fr] items-center gap-4 sm:grid-cols-[112px_1fr]">
-          <div className="relative h-[96px] w-[96px] text-fuchsia-300/85 sm:h-[108px] sm:w-[108px]">
-            <HolidayArtwork themeKey={holiday.theme_key} />
-          </div>
+        <div
+          className={`relative z-10 grid min-h-[110px] items-center gap-4 ${
+            holiday.message_image_url
+              ? "grid-cols-1 pl-[42%] sm:pl-[38%]"
+              : "grid-cols-[96px_1fr] sm:grid-cols-[112px_1fr]"
+          }`}
+        >
+          {!holiday.message_image_url ? (
+            <div className="relative h-[96px] w-[96px] text-fuchsia-300/85 sm:h-[108px] sm:w-[108px]">
+              <HolidayArtwork themeKey={holiday.theme_key} />
+            </div>
+          ) : null}
           <p className="pr-1 text-[0.95rem] leading-6 text-zinc-100 sm:text-base">
             {holiday.message}
           </p>
