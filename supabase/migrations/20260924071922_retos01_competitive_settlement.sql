@@ -117,7 +117,7 @@ begin
     m.reached_at,
     case
       when v_tie_breaker = 'shared'
-        then dense_rank() over (order by m.score desc)::integer
+        then rank() over (order by m.score desc)::integer
       else row_number() over (
         order by m.score desc, m.reached_at asc nulls last, m.enrolled_at asc, m.student_id
       )::integer
