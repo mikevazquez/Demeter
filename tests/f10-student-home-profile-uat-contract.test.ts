@@ -37,15 +37,28 @@ describe("F10/N14 student home and profile UAT contracts", () => {
     expect(actions).toContain('supabase.rpc("student_cancel_own_reservation"');
   });
 
-  it("keeps identity display-only while email remains the only editable profile field", () => {
-    expect(profilePage.match(/Solo lectura/g)?.length).toBeGreaterThanOrEqual(3);
+  it("separates Demeter-managed identity from student-editable profile data", () => {
+    expect(profilePage).not.toContain("Solo lectura");
+    expect(profilePage).toContain("Datos administrados por Demeter");
+    expect(profilePage).toContain("Datos que puedes cambiar");
     expect(profilePage).not.toContain('name="first_name"');
     expect(profilePage).not.toContain('name="last_name"');
     expect(profilePage).not.toContain('name="phone"');
     expect(profilePage).toContain('name="email"');
+    expect(profilePage).toContain('name="birth_date"');
     expect(actions).not.toContain('formData.get("first_name")');
     expect(actions).not.toContain('formData.get("last_name")');
     expect(actions).not.toContain('formData.get("phone")');
+  });
+
+  it("uses Profile as secondary navigation rather than a second dashboard", () => {
+    expect(profilePage).toContain('title="Mis datos"');
+    expect(profilePage).toContain('title="Nivel técnico y evaluaciones"');
+    expect(profilePage).toContain('title="Mi medalla y beneficios"');
+    expect(profilePage).toContain('title="Uso de mis clases"');
+    expect(profilePage).toContain('title="Mis pagos"');
+    expect(profilePage).not.toContain("Accesos rápidos");
+    expect(profilePage).not.toContain('title="Mis clases"');
   });
 
   it("enforces identity immutability in the database contract too", () => {
