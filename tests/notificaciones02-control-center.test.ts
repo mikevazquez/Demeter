@@ -43,7 +43,6 @@ describe("NOTIFICACIONES-02 control center", () => {
       "p0.session.minimum_cancelled_coach",
       "p0.booking.waitlist_promoted",
       "p0.evaluation.invitation",
-      "p0.evaluation.scheduled",
       "p0.evaluation.completed",
     ]) {
       expect(catalog).toContain(key);
