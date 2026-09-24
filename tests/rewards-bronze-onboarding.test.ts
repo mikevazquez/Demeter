@@ -24,6 +24,7 @@ const medalInfo = source("app/student/recompensas/medallero/MedalInfoDialog.tsx"
 const homePage = source("app/student/page.tsx");
 const profilePage = source("app/student/perfil/page.tsx");
 const studentActions = source("app/student/actions.ts");
+const rewardsActions = source("app/student/recompensas/actions.ts");
 const adminStudent = source("app/admin/alumnas/[studentId]/page.tsx");
 const adminActions = source("app/admin/alumnas/[studentId]/actions.ts");
 const adminOverview = source("app/admin/alumnas/[studentId]/Profile360Overview.tsx");
@@ -96,7 +97,7 @@ describe("REWARDS · onboarding access + monthly Medals", () => {
     expect(onboardingUi).toContain("Ir a mi Medallero");
     expect(medalsAcknowledgeFix).toContain("security definer");
     expect(medalsAcknowledgeFix).toContain("access_acknowledged_at");
-    expect(studentActions).toContain('redirect("/student/recompensas/medallero")');
+    expect(rewardsActions).toContain('redirect("/student/recompensas/medallero")');
     expect(onboardingUi).not.toContain("¡Desbloqueaste tu primera medalla!");
   });
 
