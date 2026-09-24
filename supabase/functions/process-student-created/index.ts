@@ -6,8 +6,7 @@ type ProcessStudentCreatedRequest = {
   eventId?: unknown;
 };
 
-const UUID_PATTERN =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 const CONSUMER_KEY = "integration.asistian.student-contact-upsert";
 
@@ -29,16 +28,16 @@ const handler = {
     }
 
     const adminClient = context.supabaseAdmin;
-    const dispatchToken = safeText(
-      request.headers.get("x-studio-flow-dispatch-token"),
-    );
+    const dispatchToken = safeText(request.headers.get("x-studio-flow-dispatch-token"));
 
     if (!dispatchToken) return jsonResponse({ error: "unauthenticated" }, 401);
 
-    const { data: dispatchAuthorized, error: dispatchAuthError } =
-      await adminClient.rpc("verify_automation_dispatch_token", {
+    const { data: dispatchAuthorized, error: dispatchAuthError } = await adminClient.rpc(
+      "verify_automation_dispatch_token",
+      {
         p_token: dispatchToken,
-      });
+      },
+    );
 
     if (dispatchAuthError || dispatchAuthorized !== true) {
       return jsonResponse({ error: "forbidden" }, 403);
@@ -99,9 +98,7 @@ const handler = {
 
     const { data: student, error: studentError } = await adminClient
       .from("students")
-      .select(
-        "id,studio_id,person_id,full_name,phone,email,active,lifecycle_status,student_type",
-      )
+      .select("id,studio_id,person_id,full_name,phone,email,active,lifecycle_status,student_type")
       .eq("id", studentId)
       .eq("studio_id", event.studio_id)
       .maybeSingle();
@@ -159,13 +156,10 @@ const handler = {
       });
     }
 
-    const { data: claimed, error: claimError } = await adminClient.rpc(
-      "claim_domain_event",
-      {
-        p_event_id: eventId,
-        p_consumer_key: CONSUMER_KEY,
-      },
-    );
+    const { data: claimed, error: claimError } = await adminClient.rpc("claim_domain_event", {
+      p_event_id: eventId,
+      p_consumer_key: CONSUMER_KEY,
+    });
 
     if (claimError) {
       return jsonResponse({ error: "domain_event_claim_failed" }, 500);
