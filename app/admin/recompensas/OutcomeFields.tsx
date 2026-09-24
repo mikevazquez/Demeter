@@ -11,6 +11,7 @@ export function OutcomeFields({
   defaultRewardValue = 1,
   defaultValidityDays = 30,
   defaultRewardVisibility = "visible",
+  defaultRewardLabel = "",
   defaultBadgeTitle = "",
 }: {
   medalAllowed?: boolean;
@@ -21,6 +22,7 @@ export function OutcomeFields({
   defaultRewardValue?: number;
   defaultValidityDays?: number;
   defaultRewardVisibility?: string;
+  defaultRewardLabel?: string;
   defaultBadgeTitle?: string;
 }) {
   const [medal, setMedal] = useState(medalRequired || defaultMedal);
@@ -105,6 +107,7 @@ export function OutcomeFields({
               Nombre / detalle de la recompensa
               <input
                 name="reward_label"
+                defaultValue={defaultRewardLabel}
                 placeholder="Ej. Taller gratis, paquete de 8 clases o $500 MXN"
                 className="rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 text-white"
               />
