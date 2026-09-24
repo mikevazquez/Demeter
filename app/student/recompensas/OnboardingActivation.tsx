@@ -260,7 +260,7 @@ export function MedalsAccessUnlocked() {
             type="submit"
             className="min-h-12 w-full rounded-2xl bg-fuchsia-600 px-5 text-sm font-semibold text-white transition hover:bg-fuchsia-500"
           >
-            Entrar a Medallas
+            Ir a mi Medallero
           </button>
         </form>
       </section>
