@@ -9,7 +9,7 @@ type PreferenceSnapshot = {
 };
 
 export default async function StudentNotificationPreferencesPage() {
-  const { supabase, studio } = await getStudentPortalContext();
+  const { supabase, studio, membership } = await getStudentPortalContext();
   const { data } = await supabase.rpc("student_get_notification_channel_preferences");
   const preferences = (data ?? {}) as PreferenceSnapshot;
 
@@ -28,7 +28,7 @@ export default async function StudentNotificationPreferencesPage() {
       </header>
 
       <NotificationChannelPreferences
-        studioId={studio.id}
+        studioId={membership.studio_id}
         studioName={studio.name}
         initialPreferences={{
           push_enabled: preferences.push_enabled ?? true,
