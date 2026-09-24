@@ -71,18 +71,56 @@ function HolidayArtwork({ themeKey }: { themeKey: string }) {
 
   if (themeKey === "revolution") {
     return (
-      <svg aria-hidden="true" viewBox="0 0 160 160" className={common} fill="none">
-        <g stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M100 46c18 0 33 5 39 12-9 6-23 9-39 9s-30-3-39-9c6-7 21-12 39-12Z" strokeWidth="3" />
-          <path d="M79 54c3-14 12-23 22-23 11 0 20 9 23 23" strokeWidth="3" />
-          <circle cx="101" cy="77" r="12" strokeWidth="3" />
-          <path d="M93 90c-10 8-17 20-18 34M109 90c11 7 18 20 20 35M88 101l-14 29M114 102l15 28" strokeWidth="4" />
-          <path d="M46 123c8-19 19-31 33-35 12-4 24-2 36 6M43 123c-7-13-17-20-29-20 6 13 14 22 24 27" strokeWidth="3" />
-          <path d="M30 116c10 0 18 5 25 14M56 131c14-1 28 1 42 6" strokeWidth="3" />
+      <svg aria-hidden="true" viewBox="0 0 360 220" className={common} fill="none">
+        <defs>
+          <linearGradient id="rev-cloud" x1="0" y1="0" x2="1" y2="1">
+            <stop stopColor="currentColor" stopOpacity=".18" />
+            <stop offset="1" stopColor="currentColor" stopOpacity=".03" />
+          </linearGradient>
+          <linearGradient id="rev-city" x1="0" y1="0" x2="0" y2="1">
+            <stop stopColor="currentColor" stopOpacity=".34" />
+            <stop offset="1" stopColor="currentColor" stopOpacity=".08" />
+          </linearGradient>
+        </defs>
+
+        <g fill="url(#rev-cloud)">
+          <ellipse cx="70" cy="104" rx="62" ry="24" />
+          <ellipse cx="124" cy="96" rx="54" ry="29" />
+          <ellipse cx="286" cy="83" rx="62" ry="24" />
+          <ellipse cx="320" cy="102" rx="48" ry="22" />
         </g>
-        <g stroke="currentColor" strokeWidth="2" strokeLinecap="round" opacity=".7">
-          <path d="M25 24v10M25 54v10M5 44h10M35 44h10M11 30l7 7M32 51l7 7M39 30l-7 7M18 51l-7 7" />
-          <path d="M139 18v7M139 40v7M126 33h7M146 33h7M130 24l5 5M148 42l5 5M152 24l-5 5M135 42l-5 5" />
+
+        <g fill="url(#rev-city)" stroke="currentColor" strokeOpacity=".42" strokeWidth="1.7">
+          <path d="M249 155v-50h17v50M270 155V91h24v64M299 155v-39h18v39M321 155v-62h24v62" />
+          <path d="M268 91h28l-14-18-14 18ZM318 93h30l-15-20-15 20Z" />
+          <path d="M280 72c0-14 6-24 14-24s14 10 14 24" />
+          <path d="M287 48V38h14v10M335 73V51h8v22" />
+          <path d="M239 155h116" />
+        </g>
+
+        <g stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
+          <path
+            d="M94 159c-17-11-30-28-31-47 14-17 34-27 56-27 30 0 54 17 67 42 10 20 11 43 1 60"
+            strokeWidth="4"
+          />
+          <path d="M76 112c-16 1-28-6-38-19 18-4 34 0 49 10" strokeWidth="4" />
+          <path d="M79 117c8 0 15 3 22 9M66 132c9 8 18 13 28 15" strokeWidth="3" />
+          <path d="M147 113c-8 7-13 16-17 28M157 121c8 11 12 24 12 39" strokeWidth="4" />
+          <path d="M133 144c-20 2-37 12-51 30M151 146c13 5 24 15 33 30" strokeWidth="4" />
+
+          <path d="M154 54c18 0 34 5 42 13-11 7-26 10-42 10s-31-3-42-10c8-8 24-13 42-13Z" strokeWidth="4" />
+          <path d="M132 63c4-18 13-29 23-29 12 0 21 11 25 29" strokeWidth="4" />
+          <circle cx="154" cy="91" r="14" strokeWidth="4" />
+          <path d="M143 105c-12 9-20 22-22 38M166 105c13 9 21 23 23 39" strokeWidth="5" />
+          <path d="M139 118l-18 42M170 118l21 42" strokeWidth="4" />
+          <path d="M126 126l-15 12M180 127l16 10" strokeWidth="4" />
+
+          <path d="M144 123l-8 20M164 123l9 20" strokeWidth="2.5" opacity=".75" />
+        </g>
+
+        <g stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" opacity=".8">
+          <path d="M45 34v12M45 66v12M23 56h12M56 56h12M29 40l8 8M54 64l8 8M61 40l-8 8M37 64l-8 8" />
+          <path d="M317 25v10M317 53v10M299 43h10M326 43h10M304 30l7 7M323 49l7 7M330 30l-7 7M311 49l-7 7" />
         </g>
       </svg>
     );
@@ -223,18 +261,22 @@ export function HolidayNotice({ holiday }: { holiday: StudentHolidaySnapshot }) 
       className="space-y-3"
     >
       <article
-        className="relative isolate overflow-hidden rounded-3xl border border-fuchsia-500/40 p-4 shadow-[0_24px_70px_rgba(0,0,0,.34)] sm:p-5"
+        className="relative isolate min-h-[445px] overflow-hidden rounded-3xl border border-fuchsia-500/45 px-4 pb-5 pt-4 shadow-[0_26px_78px_rgba(0,0,0,.4)] sm:min-h-[470px] sm:px-5 sm:pt-5"
         style={heroStyle}
       >
-        <MexicanRibbon className="-left-16 bottom-16 z-0" rotate={20} />
-        <MexicanRibbon className="-right-16 bottom-5 z-0" rotate={18} />
-
-        <div className="pointer-events-none absolute -right-2 bottom-3 z-0 h-40 w-40 text-fuchsia-300/55 sm:h-48 sm:w-48">
-          <HolidayArtwork themeKey={holiday.theme_key} />
+        <div className="pointer-events-none absolute inset-x-0 top-[108px] z-0 h-[245px] sm:top-[116px] sm:h-[270px]">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_66%_45%,rgba(255,10,138,.20),transparent_42%)]" />
+          <MexicanRibbon className="-left-14 top-[86px] w-[285px] opacity-90" rotate={-11} />
+          <MexicanRibbon className="-right-20 top-[148px] w-[310px] opacity-85" rotate={10} />
+          <div className="absolute inset-x-2 bottom-0 top-0 text-fuchsia-300/70 sm:inset-x-4">
+            <HolidayArtwork themeKey={holiday.theme_key} />
+          </div>
+          <Fireworks className="absolute right-1 top-0 h-28 w-28 text-fuchsia-300/55" />
         </div>
-        <Fireworks className="absolute right-0 top-3 z-0 h-24 w-24 text-fuchsia-400/45" />
 
-        <div className="relative z-10">
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] h-[46%] bg-gradient-to-t from-[#09070d] via-[#140713]/95 to-transparent" />
+
+        <div className="relative z-10 flex min-h-[405px] flex-col sm:min-h-[428px]">
           <div className="flex items-start gap-3">
             <span
               aria-hidden="true"
@@ -254,24 +296,31 @@ export function HolidayNotice({ holiday }: { holiday: StudentHolidaySnapshot }) 
             </div>
           </div>
 
-          <div className="mt-24 max-w-[78%] sm:mt-28">
-            {closed ? <ClosedCopy name={holiday.name} /> : <OpenCopy special={special} name={holiday.name} />}
+          <div className="mt-auto max-w-[88%] pb-1 sm:max-w-[82%]">
+            {closed ? (
+              <ClosedCopy name={holiday.name} />
+            ) : (
+              <OpenCopy special={special} name={holiday.name} />
+            )}
           </div>
         </div>
       </article>
 
       <article
-        className="relative isolate overflow-hidden rounded-3xl border border-fuchsia-500/25 px-4 py-4 shadow-[0_16px_44px_rgba(0,0,0,.24)]"
+        className="relative isolate min-h-[142px] overflow-hidden rounded-3xl border border-fuchsia-500/30 px-4 py-4 shadow-[0_18px_52px_rgba(0,0,0,.3)] sm:min-h-[150px]"
         style={messageStyle}
       >
-        <MexicanRibbon className="-left-20 -bottom-2 z-0" rotate={13} />
-        <MexicanRibbon className="-right-20 -bottom-3 z-0" rotate={-10} />
+        <Fireworks className="absolute -left-1 top-1 h-20 w-20 text-fuchsia-400/35" />
+        <MexicanRibbon className="-left-20 -bottom-2 z-0 w-[255px]" rotate={10} />
+        <MexicanRibbon className="-right-24 -bottom-4 z-0 w-[285px]" rotate={-9} />
 
-        <div className="relative z-10 grid grid-cols-[72px_1fr] items-center gap-4">
-          <div className="relative h-[72px] w-[72px] text-fuchsia-400">
+        <div className="relative z-10 grid min-h-[110px] grid-cols-[96px_1fr] items-center gap-4 sm:grid-cols-[112px_1fr]">
+          <div className="relative h-[96px] w-[96px] text-fuchsia-300/85 sm:h-[108px] sm:w-[108px]">
             <HolidayArtwork themeKey={holiday.theme_key} />
           </div>
-          <p className="text-sm leading-6 text-zinc-100">{holiday.message}</p>
+          <p className="pr-1 text-[0.95rem] leading-6 text-zinc-100 sm:text-base">
+            {holiday.message}
+          </p>
         </div>
       </article>
     </section>
