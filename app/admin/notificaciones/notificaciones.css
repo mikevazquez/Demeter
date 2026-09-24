@@ -885,3 +885,112 @@ a.notification-process-row:hover {
     gap: 6px;
   }
 }
+
+
+.marketing-editor-page .notification-detail-card {
+  scroll-margin-top: 24px;
+}
+
+.marketing-message-editor {
+  margin-top: 14px;
+}
+
+.marketing-cta-grid {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px !important;
+}
+
+.marketing-save-bar {
+  position: sticky;
+  bottom: 12px;
+  z-index: 3;
+  padding: 10px;
+  border: 1px solid rgba(255, 10, 138, 0.16);
+  border-radius: 14px;
+  background: rgba(8, 12, 18, 0.92);
+  backdrop-filter: blur(14px);
+}
+
+.marketing-runtime-grid {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.marketing-runtime-card {
+  padding: 14px;
+  border: 1px solid #2b3541;
+  border-radius: 15px;
+  background: #0b1118;
+}
+
+.marketing-runtime-card .notification-message-card-head {
+  align-items: flex-start;
+}
+
+.marketing-runtime-card .notification-message-card-head p {
+  margin: 4px 0 0;
+  color: #7f8997;
+  font-size: 8px;
+  line-height: 1.45;
+}
+
+.marketing-runtime-card .notification-message-card-head > span {
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: rgba(151, 160, 174, 0.08);
+  color: #9aa3b1;
+  font-size: 8px;
+  font-weight: 750;
+}
+
+.marketing-runtime-card .notification-message-card-head > span.is-live {
+  background: rgba(56, 217, 150, 0.1);
+  color: #67dca7;
+}
+
+.marketing-runtime-note {
+  margin: 12px 0 0;
+  color: #8d97a5;
+  font-size: 9px;
+  line-height: 1.55;
+}
+
+.marketing-runtime-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.marketing-runtime-actions button {
+  min-height: 36px;
+  padding: 0 13px;
+  border-radius: 10px;
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.marketing-runtime-actions button.is-activate {
+  border: 0;
+  background: rgba(56, 217, 150, 0.14);
+  color: #6de0ad;
+}
+
+.marketing-runtime-actions button.is-pause {
+  border: 1px solid rgba(245, 183, 79, 0.24);
+  background: rgba(245, 183, 79, 0.07);
+  color: #d9b776;
+}
+
+@media (max-width: 760px) {
+  .marketing-cta-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .marketing-save-bar {
+    bottom: 76px;
+  }
+}
