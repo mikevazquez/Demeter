@@ -7,6 +7,7 @@ import { updateStudentAvatarAction, updateStudentProfileAction } from "../action
 import AvatarFilePicker from "./AvatarFilePicker";
 import PendingActionButton from "../components/PendingActionButton";
 import StudentNoticeDialog from "../components/StudentNoticeDialog";
+import AvatarFilePicker from "./AvatarFilePicker";
 
 const errorCopy: Record<string, string> = {
   email_invalid: "Revisa el formato de tu correo.",
