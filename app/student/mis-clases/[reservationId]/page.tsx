@@ -7,11 +7,7 @@ import {
   type StudentClassFeedItem,
 } from "@/lib/student/portal";
 
-import {
-  cancelGuestInvitationAction,
-  confirmExistingGuestInvitationAction,
-  createGuestInvitationAction,
-} from "../../actions";
+import { confirmExistingGuestInvitationAction, createGuestInvitationAction } from "../../actions";
 import { ReservationCheckInQr } from "./ReservationCheckInQr";
 
 const statusCopy: Record<string, string> = {
@@ -20,7 +16,7 @@ const statusCopy: Record<string, string> = {
   no_show: "No asististe",
   cancelled_on_time: "Cancelada",
   cancelled_late: "Cancelada",
-  cancelled_by_studio: "Cancelada por el estudio",
+  cancelled_by_studio: "Cancelada por Demeter",
 };
 
 type InvitationGuest = {
@@ -232,9 +228,9 @@ export default async function StudentReservationDetailPage({
           </div>
           {item.credit_restored ? (
             <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.07] px-3 py-2.5">
-              <p className="text-xs font-semibold text-emerald-300">✓ Crédito restaurado</p>
-              <p className="mt-0.5 text-[10px] text-zinc-500">
-                El crédito fue devuelto automáticamente a tu paquete.
+              <p className="text-sm font-semibold text-emerald-300">✓ Clase devuelta</p>
+              <p className="mt-0.5 text-xs text-zinc-500">
+                La clase fue devuelta automáticamente a tu paquete.
               </p>
             </div>
           ) : null}
@@ -247,12 +243,10 @@ export default async function StudentReservationDetailPage({
           className="rounded-3xl border border-fuchsia-500/20 bg-gradient-to-b from-fuchsia-500/[0.07] to-white/[0.025] p-4"
         >
           <div className="text-center">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-fuchsia-300">
-              Check-in
-            </p>
-            <h2 className="mt-1 text-lg font-semibold text-white">Tu código de acceso</h2>
-            <p className="mx-auto mt-2 max-w-sm text-xs leading-5 text-zinc-400">
-              Muéstralo en el kiosco al llegar. Este código corresponde únicamente a esta reserva.
+            <p className="student-eyebrow">Check-in</p>
+            <h2 className="mt-1 text-lg font-semibold text-white">Haz tu check-in</h2>
+            <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-zinc-400">
+              Muéstralo al llegar. Este código corresponde únicamente a esta reserva.
             </p>
           </div>
 
@@ -350,12 +344,9 @@ export default async function StudentReservationDetailPage({
 
       {isActiveReservation ? (
         <section className="rounded-3xl border border-white/10 bg-white/[0.03] p-4">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-500">
-            Gestionar reserva
-          </p>
-          <p className="mt-2 text-xs leading-5 text-zinc-400">
-            Puedes cancelar esta reserva. El resultado se procesará con las políticas vigentes del
-            estudio.
+          <p className="student-eyebrow">Tu reserva</p>
+          <p className="mt-2 text-sm leading-6 text-zinc-400">
+            Si necesitas cancelar, primero te mostraremos exactamente qué ocurrirá con tu clase.
           </p>
           <Link
             href={`/student/mis-clases/${item.reservation_id}/cancelar`}

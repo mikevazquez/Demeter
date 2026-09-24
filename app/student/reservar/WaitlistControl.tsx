@@ -14,7 +14,7 @@ const errorCopy: Record<string, string> = {
   enrollment_required: "Necesitas una inscripción vigente para entrar a la lista.",
   no_active_product: "Necesitas un paquete vigente para entrar a la lista.",
   outside_product: "Tu paquete no incluye esta disciplina.",
-  no_credits: "Necesitas créditos disponibles para entrar a la lista.",
+  no_credits: "Necesitas clases disponibles para entrar a la lista.",
   payment_pending: "Tu paquete tiene un pago pendiente.",
   student_not_operable: "Tu perfil no está habilitado para reservar en este momento.",
 };
@@ -22,23 +22,18 @@ const errorCopy: Record<string, string> = {
 type Props = {
   sessionId: string;
   initialWaitlisted?: boolean;
-  levelTitle?: string | null;
   compact?: boolean;
 };
 
 export default function WaitlistControl({
   sessionId,
   initialWaitlisted = false,
-  levelTitle = null,
   compact = false,
 }: Props) {
   const router = useRouter();
   const [waitlisted, setWaitlisted] = useState(initialWaitlisted);
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
-
-  const priorityLabel =
-    levelTitle === "Oro" || levelTitle === "Diamante" ? `Prioridad ${levelTitle} aplicada` : null;
 
   function join() {
     if (waitlisted || isPending) return;
@@ -64,11 +59,7 @@ export default function WaitlistControl({
         <span className="inline-flex items-center rounded-full border border-amber-400/30 bg-amber-400/[0.09] px-3 py-1.5 text-xs font-semibold text-amber-200">
           En lista de espera
         </span>
-        {priorityLabel ? (
-          <p className="text-[11px] font-semibold text-amber-100">{priorityLabel}</p>
-        ) : null}
-        <p className="text-[11px] leading-5 text-zinc-400">Te avisaremos si se libera un lugar.</p>
-        <p className="text-[10px] text-zinc-600">La prioridad no garantiza lugar.</p>
+        <p className="text-sm leading-6 text-zinc-400">Te avisaremos si se libera un lugar.</p>
       </div>
     );
   }
