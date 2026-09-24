@@ -429,6 +429,30 @@ export default async function StudentProfilePage({
           </Link>
 
           <Link
+            href="/student/perfil/notificaciones"
+            className="group grid min-h-24 grid-cols-[auto_1fr_auto] items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 transition hover:border-fuchsia-500/25 hover:bg-white/[0.05]"
+          >
+            <span
+              aria-hidden="true"
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-fuchsia-500/10 text-lg text-fuchsia-300"
+            >
+              ◉
+            </span>
+            <span>
+              <strong className="block text-sm font-semibold text-white">Notificaciones</strong>
+              <span className="mt-0.5 block text-xs text-zinc-500">
+                Elige Push, WhatsApp y correo
+              </span>
+            </span>
+            <span
+              aria-hidden="true"
+              className="text-xl text-zinc-600 transition group-hover:text-fuchsia-300"
+            >
+              ›
+            </span>
+          </Link>
+
+          <Link
             href="/student/documentos"
             className="group grid min-h-24 grid-cols-[auto_1fr_auto] items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 transition hover:border-fuchsia-500/25 hover:bg-white/[0.05] sm:col-span-2"
           >
