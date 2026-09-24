@@ -256,7 +256,7 @@ export default async function StudentJourneyPage({
           href="/student/recompensas"
           className="text-xs font-semibold text-fuchsia-300 transition hover:text-fuchsia-200"
         >
-          ← Mi progreso
+          ← Medallas y beneficios
         </Link>
         <p className="mt-4 text-[10px] font-semibold uppercase tracking-[0.22em] text-fuchsia-300">
           Historial
