@@ -33,7 +33,9 @@ describe("NOTIFICACIONES-02 control center", () => {
   it("maps live business processes to the current central engine rules", () => {
     for (const key of [
       "p0.booking.confirmed",
-      "p0.booking.cancelled",
+      "p0.booking.cancelled_by_student",
+      "p0.booking.modified",
+      "p0.session.cancelled_by_studio",
       "p0.session.rescheduled_notice",
       "p0.booking.class_reminder_5h",
       "p0.session.rescheduled_reminder_5h",
