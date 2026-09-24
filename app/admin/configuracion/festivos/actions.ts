@@ -160,9 +160,12 @@ export async function saveCalendarDayAction(formData: FormData) {
   if (uploadedHero) heroPath = uploadedHero;
   if (uploadedMessage) messagePath = uploadedMessage;
 
+  const requestedKeepSessionIds = formData.getAll("keep_session_id").map(String).filter(Boolean);
   const keepSessionIds =
     operationMode === "special"
-      ? formData.getAll("keep_session_id").map(String).filter(Boolean)
+      ? requestedKeepSessionIds.length
+        ? requestedKeepSessionIds
+        : await sessionIdsForDate(ctx, date)
       : [];
 
   const { error } = await ctx.supabase.rpc("admin_save_calendar_day", {
