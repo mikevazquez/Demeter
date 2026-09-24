@@ -3,10 +3,7 @@ import { notFound } from "next/navigation";
 
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
-import {
-  getAutomationTemplate,
-  type AutomationCatalogCode,
-} from "@/lib/automations/catalog";
+import { getAutomationTemplate, type AutomationCatalogCode } from "@/lib/automations/catalog";
 import { getMarketingCommunication } from "@/lib/notifications/admin-catalog";
 import {
   saveMarketingAutomationConfigurationAction,
