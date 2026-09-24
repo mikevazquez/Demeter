@@ -49,8 +49,14 @@ const items: MoreItem[] = [
     capability: CAPABILITIES.AUTOMATIONS_READ,
   },
   {
-    title: "Progreso y recompensas",
-    description: "Programas, logros, retos, seguimiento y recompensas generadas.",
+    title: "Retos",
+    description: "Crea retos individuales y competencias con ranking, premios y progreso.",
+    href: "/admin/retos",
+    capability: CAPABILITIES.REWARDS_READ,
+  },
+  {
+    title: "Rewards",
+    description: "Programas, logros, medallas, seguimiento y recompensas generadas.",
     href: "/admin/recompensas",
     capability: CAPABILITIES.REWARDS_READ,
   },
