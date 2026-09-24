@@ -11,7 +11,7 @@ import { notFound } from "next/navigation";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getAdminContext } from "@/lib/auth/admin-context";
 import {
-  grantBronzeMedal,
+  unlockMedalsAccess,
   updateCommunicationPreferences,
   updateDynamicProfileFields,
   updateStudent,
@@ -484,9 +484,9 @@ export default async function StudentProfilePage({
     notificationsEnabledAt: string | null;
     firstReservationAt: string | null;
     firstAttendanceAt: string | null;
-    bronzeUnlockedAt: string | null;
-    unlockMethod: string | null;
-    unlockReason: string | null;
+    accessUnlockedAt: string | null;
+    accessMethod: string | null;
+    accessReason: string | null;
   } | null = null;
   let rewardsAvailable: number | null = null;
   let technicalLevels: Array<{ disciplineName: string; levelTitle: string }> = [];
@@ -523,7 +523,7 @@ export default async function StudentProfilePage({
       supabase
         .from("reward_onboarding")
         .select(
-          "documents_completed_at,profile_completed_at,app_installed_at,notifications_enabled_at,first_reservation_at,first_attendance_at,bronze_unlocked_at,unlock_method,unlock_reason",
+          "documents_completed_at,profile_completed_at,app_installed_at,notifications_enabled_at,first_reservation_at,first_attendance_at,access_unlocked_at,access_method,access_reason",
         )
         .eq("studio_id", studio.id)
         .eq("student_id", student.id)
@@ -538,9 +538,9 @@ export default async function StudentProfilePage({
           notificationsEnabledAt: onboardingRow.notifications_enabled_at,
           firstReservationAt: onboardingRow.first_reservation_at,
           firstAttendanceAt: onboardingRow.first_attendance_at,
-          bronzeUnlockedAt: onboardingRow.bronze_unlocked_at,
-          unlockMethod: onboardingRow.unlock_method,
-          unlockReason: onboardingRow.unlock_reason,
+          accessUnlockedAt: onboardingRow.access_unlocked_at,
+          accessMethod: onboardingRow.access_method,
+          accessReason: onboardingRow.access_reason,
         }
       : null;
 
@@ -1255,11 +1255,11 @@ export default async function StudentProfilePage({
             <div className="mb-5 rounded-3xl border border-fuchsia-500/20 bg-fuchsia-500/[0.04] p-4 sm:p-5">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                  <p className="eyebrow">ACTIVACIÓN DE REWARDS</p>
+                  <p className="eyebrow">ACTIVACIÓN DE MEDALLAS</p>
                   <h3 className="mt-1 text-lg font-semibold text-white">
-                    {rewardOnboarding.bronzeUnlockedAt
-                      ? "Medalla Bronce desbloqueada"
-                      : "Desbloqueando primera medalla"}
+                    {rewardOnboarding.accessUnlockedAt
+                      ? "Acceso a Medallas habilitado"
+                      : "Activando Medallas"}
                   </h3>
                   <p className="mt-1 text-xs text-zinc-400">
                     {
@@ -1276,7 +1276,7 @@ export default async function StudentProfilePage({
                   </p>
                 </div>
                 <span className="status-pill">
-                  {rewardOnboarding.bronzeUnlockedAt ? "Medalla activa" : "En activación"}
+                  {rewardOnboarding.accessUnlockedAt ? "Acceso activo" : "En activación"}
                 </span>
               </div>
 
@@ -1301,24 +1301,24 @@ export default async function StudentProfilePage({
                 ))}
               </div>
 
-              {rewardOnboarding.bronzeUnlockedAt ? (
+              {rewardOnboarding.accessUnlockedAt ? (
                 <p className="mt-3 text-xs text-zinc-500">
-                  Desbloqueada por{" "}
-                  {rewardOnboarding.unlockMethod === "admin"
+                  Acceso habilitado por{" "}
+                  {rewardOnboarding.accessMethod === "admin"
                     ? "excepción administrativa"
-                    : rewardOnboarding.unlockMethod === "legacy"
+                    : rewardOnboarding.accessMethod === "legacy"
                       ? "migración del sistema anterior"
                       : "onboarding"}
-                  {rewardOnboarding.unlockReason ? " · " + rewardOnboarding.unlockReason : ""}
+                  {rewardOnboarding.accessReason ? " · " + rewardOnboarding.accessReason : ""}
                 </p>
               ) : canManageRewards ? (
                 <form
-                  action={grantBronzeMedal}
+                  action={unlockMedalsAccess}
                   className="mt-4 rounded-2xl border border-white/10 bg-black/20 p-3.5"
                 >
                   <input type="hidden" name="student_id" value={student.id} />
                   <label className="block text-xs font-medium text-zinc-300">
-                    Otorgar Medalla Bronce manualmente
+                    Habilitar acceso a Medallas manualmente
                     <textarea
                       name="reason"
                       required
@@ -1328,10 +1328,10 @@ export default async function StudentProfilePage({
                     />
                   </label>
                   <PendingActionButton
-                    pendingLabel="Otorgando…"
+                    pendingLabel="Habilitando…"
                     className="mt-3 min-h-10 rounded-xl border border-fuchsia-500/40 bg-fuchsia-500/[0.08] px-4 text-xs font-semibold text-fuchsia-200"
                   >
-                    Otorgar Medalla Bronce
+                    Habilitar acceso a Medallas
                   </PendingActionButton>
                   <p className="mt-2 text-[11px] text-zinc-500">
                     Esta acción es excepcional y queda registrada con motivo y administrador.
@@ -1344,7 +1344,13 @@ export default async function StudentProfilePage({
           <div className="profile360-approved-indicators">
             <article>
               <span>Medalla actual</span>
-              <strong>{levelTitle ? "Medalla " + levelTitle : "En activación"}</strong>
+              <strong>
+                {levelTitle
+                  ? "Medalla " + levelTitle
+                  : rewardOnboarding?.accessUnlockedAt
+                    ? "Sin medalla"
+                    : "En activación"}
+              </strong>
             </article>
             <article>
               <span>Recompensas disponibles</span>
