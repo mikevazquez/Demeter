@@ -22,3 +22,22 @@ export async function enrollChallengeAction(formData: FormData) {
   revalidatePath(`/student/retos/${ruleId}`);
   redirect(`/student/retos/${ruleId}?joined=1`);
 }
+
+
+export async function archiveChallengeAction(formData: FormData) {
+  const ruleId = String(formData.get("rule_id") ?? "").trim();
+  if (!ruleId) redirect("/student/retos?error=challenge_required");
+
+  const portal = await getStudentPortalContext();
+  const { error } = await portal.supabase.rpc("student_archive_reward_challenge", {
+    p_rule_id: ruleId,
+  });
+
+  if (error) {
+    redirect(`/student/retos/${ruleId}?error=${encodeURIComponent(error.message)}`);
+  }
+
+  revalidatePath("/student/retos");
+  revalidatePath(`/student/retos/${ruleId}`);
+  redirect("/student/retos?archived=1");
+}
