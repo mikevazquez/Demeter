@@ -11,6 +11,9 @@ const onboarding = source("supabase/migrations/20260923160000_rewards_bronze_onb
 const cleanup = source("supabase/migrations/20260923160500_rewards_bronze_onboarding_cleanup.sql");
 const pwaPush = source("supabase/migrations/20260923211000_rewards_onboarding_pwa_push.sql");
 const monthlyMedals = source("supabase/migrations/20260923222500_rewards_monthly_medals.sql");
+const medalsAcknowledgeFix = source(
+  "supabase/migrations/20260924073000_rewards_medals_acknowledgement_fix.sql",
+);
 const documentosDomain = source("supabase/migrations/20260923180328_documentos01_domain.sql");
 const rewardsPage = source("app/student/recompensas/page.tsx");
 const onboardingUi = source("app/student/recompensas/OnboardingActivation.tsx");
@@ -90,7 +93,10 @@ describe("REWARDS · onboarding access + monthly Medals", () => {
     expect(rewardsPage).toContain("access_acknowledged_at");
     expect(onboardingUi).toContain("Activa tus");
     expect(onboardingUi).toContain("¡Medallas desbloqueadas!");
-    expect(onboardingUi).toContain("Entrar a Medallas");
+    expect(onboardingUi).toContain("Ir a mi Medallero");
+    expect(medalsAcknowledgeFix).toContain("security definer");
+    expect(medalsAcknowledgeFix).toContain("access_acknowledged_at");
+    expect(studentActions).toContain('redirect("/student/recompensas/medallero")');
     expect(onboardingUi).not.toContain("¡Desbloqueaste tu primera medalla!");
   });
 
