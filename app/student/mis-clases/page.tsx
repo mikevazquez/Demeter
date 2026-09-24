@@ -96,7 +96,6 @@ function ClassRow({ item, timezone }: { item: StudentClassFeedItem; timezone: st
           ) : null}
         </div>
       ) : null}
-
     </article>
   );
 }
