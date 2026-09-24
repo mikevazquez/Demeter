@@ -258,8 +258,7 @@ async function loadReservationContext(
 
   const template = (templateData ?? null) as JsonObject | null;
 
-  const disciplineId =
-    safeText(event.payload.discipline_id) ?? safeText(template?.discipline_id);
+  const disciplineId = safeText(event.payload.discipline_id) ?? safeText(template?.discipline_id);
 
   const { data: disciplineData, error: disciplineError } = disciplineId
     ? await adminClient
@@ -529,16 +528,11 @@ async function resolveRecipients(
         throw new Error("session_instructor_context_failed");
       }
 
-      const phone = safeText(
-        (contacts ?? []).find((contact) => contact.kind === "phone")?.value,
-      );
-      const email = safeText(
-        (contacts ?? []).find((contact) => contact.kind === "email")?.value,
-      );
+      const phone = safeText((contacts ?? []).find((contact) => contact.kind === "phone")?.value);
+      const email = safeText((contacts ?? []).find((contact) => contact.kind === "email")?.value);
       const fullName =
-        [safeText(person?.first_name), safeText(person?.last_name)]
-          .filter(Boolean)
-          .join(" ") || null;
+        [safeText(person?.first_name), safeText(person?.last_name)].filter(Boolean).join(" ") ||
+        null;
 
       return [
         {
@@ -689,9 +683,7 @@ function buildTemplateVariables(context: EventContext, recipient: Recipient): Js
       safeText(context.session?.starts_at) ??
       safeText(context.payload.starts_at) ??
       safeText(context.payload.new_starts_at),
-    session_ends_at:
-      safeText(context.session?.ends_at) ??
-      safeText(context.payload.new_ends_at),
+    session_ends_at: safeText(context.session?.ends_at) ?? safeText(context.payload.new_ends_at),
     class_name: safeText(context.template?.name),
     discipline_name: safeText(context.discipline?.name),
     studio_name: safeText(context.studio?.name),
