@@ -125,15 +125,29 @@ function buildRewardDefinition(
     const value = integerValue(formData, "reward_value", 1);
     const validityDays = integerValue(formData, "validity_days", 30);
     if (
-      !["credits", "percentage_discount", "fixed_discount", "validity_extension"].includes(kind)
+      ![
+        "credits",
+        "percentage_discount",
+        "fixed_discount",
+        "validity_extension",
+        "cash",
+        "package",
+        "custom_manual",
+      ].includes(kind)
     ) {
       throw new Error("reward_kind_invalid");
     }
     if (value < 1 || validityDays < 1) throw new Error("reward_value_invalid");
 
+    const label = textValue(formData, "reward_label");
     const benefit: Record<string, unknown> = {
       key: "benefit",
-      kind,
+      kind:
+        kind === "cash"
+          ? "custom_manual"
+          : kind === "package"
+            ? "special_benefit"
+            : kind,
       delivery: kind === "validity_extension" ? "auto_apply" : "redeem",
       validity_days: validityDays,
     };
@@ -141,6 +155,24 @@ function buildRewardDefinition(
     if (kind === "percentage_discount") benefit.percent = value;
     if (kind === "fixed_discount") benefit.amount_minor = value * 100;
     if (kind === "validity_extension") benefit.days = value;
+    if (kind === "cash") {
+      benefit.benefit_type = "cash";
+      benefit.amount_minor = value * 100;
+      benefit.currency = "MXN";
+      benefit.label = label || `${value.toLocaleString("es-MX")} MXN`;
+      benefit.fulfillment = "manual";
+    }
+    if (kind === "package") {
+      benefit.benefit_type = "class_package";
+      benefit.class_credits = value;
+      benefit.label = label || `Paquete de ${value} clases`;
+      benefit.fulfillment = "manual";
+    }
+    if (kind === "custom_manual") {
+      benefit.benefit_type = "custom";
+      benefit.label = label || "Recompensa personalizada";
+      benefit.fulfillment = "manual";
+    }
     rewards.push(benefit);
   }
 
@@ -580,8 +612,20 @@ async function saveStandaloneRule(formData: FormData, familyOverride: "achieveme
     ranking_places: familyOverride === "challenge" && competitionMode === "leaderboard" ? 3 : null,
     tie_breaker:
       familyOverride === "challenge" && competitionMode === "leaderboard" ? tieBreaker : null,
+    winner_count:
+      familyOverride === "challenge" && competitionMode === "leaderboard"
+        ? Math.min(3, Math.max(1, integerValue(formData, "winner_count", 1)))
+        : null,
+    competition_reward_definition:
+      familyOverride === "challenge" && competitionMode === "leaderboard"
+        ? outcome.definition
+        : null,
     cover_url: textValue(formData, "cover_url") || null,
   };
+  const ruleRewardDefinition =
+    familyOverride === "challenge" && competitionMode === "leaderboard"
+      ? { rewards: [] }
+      : outcome.definition;
   const evaluation = {
     allow_historical: false,
     attendance_max_one_per_day: true,
@@ -611,7 +655,7 @@ async function saveStandaloneRule(formData: FormData, familyOverride: "achieveme
       p_condition_definition: definition,
       p_evaluation_definition: evaluation,
       p_cycle_definition: cycle,
-      p_reward_definition: outcome.definition,
+      p_reward_definition: ruleRewardDefinition,
       p_presentation_definition: presentation,
       p_communication_definition: communication,
       p_human_summary: name,
@@ -631,9 +675,9 @@ async function saveStandaloneRule(formData: FormData, familyOverride: "achieveme
     p_condition_definition: definition,
     p_evaluation_definition: evaluation,
     p_cycle_definition: cycle,
-    p_reward_definition: outcome.definition,
+    p_reward_definition: ruleRewardDefinition,
     p_presentation_definition: presentation,
-    p_communication_definition: {},
+    p_communication_definition: communication,
     p_human_summary: name,
     p_scheduled_start_at: scheduledStartAt,
     p_scheduled_end_at: scheduledEndAt,
