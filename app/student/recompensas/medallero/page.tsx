@@ -163,7 +163,7 @@ export default async function StudentMedalsPage() {
     <main className="space-y-5 pb-5">
       <header>
         <Link href="/student/recompensas" className="text-xs font-semibold text-fuchsia-300">
-          ← Mi progreso
+          ← Medallas y beneficios
         </Link>
         <p className="mt-4 text-[10px] font-semibold uppercase tracking-[0.24em] text-fuchsia-300">
           Medallas
@@ -289,7 +289,7 @@ export default async function StudentMedalsPage() {
 
               <div className="mt-4 border-t border-white/10 pt-4">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-zinc-500">
-                  Recompensas
+                  Beneficios
                 </p>
                 <div className="mt-2 space-y-1.5">
                   {benefitLines(level).map((line) => (
