@@ -69,6 +69,24 @@ function NavIcon({ label }: { label: string }) {
       </svg>
     );
   }
+  if (label === "Retos") {
+    return (
+      <svg {...common}>
+        <path d="M8 4h8v3a4 4 0 0 1-8 0V4Z" />
+        <path d="M8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4" />
+        <path d="M12 11v5M9 20h6M10 16h4" />
+      </svg>
+    );
+  }
+  if (label === "Rewards") {
+    return (
+      <svg {...common}>
+        <rect x="4" y="9" width="16" height="11" rx="2" />
+        <path d="M12 9v11M3 9h18v-3H3z" />
+        <path d="M12 6c-1.7 0-4-.8-4-2.3C8 2.7 8.8 2 9.8 2 11.2 2 12 4 12 6Zm0 0c1.7 0 4-.8 4-2.3C16 2.7 15.2 2 14.2 2 12.8 2 12 4 12 6Z" />
+      </svg>
+    );
+  }
   if (label === "Evaluaciones") {
     return (
       <svg {...common}>
