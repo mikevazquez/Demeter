@@ -127,34 +127,34 @@ describe("SF-255A monthly level and waitlist contracts", () => {
     expect(creditFix).toContain("'source', 'waitlist'");
   });
 
-  it("uses the approved waitlist copy and visual states", () => {
+  it("uses the approved waitlist copy without exposing Medal ranking mechanics", () => {
     expect(reservePage).toContain("student_waitlist_feed");
     expect(detailPage).toContain("WaitlistControl");
     expect(waitlistControl).toContain("Unirme a lista de espera");
+    expect(waitlistControl).toContain("Te avisaremos si se libera un lugar.");
+    expect(waitlistControl).not.toContain("levelTitle");
     expect(classesPage).toContain("En lista de espera");
     expect(classesPage).toContain("Te avisaremos si se libera un lugar.");
     expect(classesPage).toContain("border-amber-400");
   });
 
-  it("integrates benefits and confirmed technical levels into Home while keeping Profile clean", () => {
+  it("keeps Medals and confirmed technical levels separate on Home while Profile stays clean", () => {
     expect(homePage).toContain("student_reward_status_snapshot");
     expect(homePage).toContain("reward_status_memberships");
     expect(homePage).toContain("reward_status_level_definitions");
-    expect(homePage).toContain("student_reward_invitation_balance");
-    expect(homePage).toContain('data-home-block="identity-benefits-technical"');
-    expect(homePage).toContain("Mi medalla");
-    expect(homePage).toContain("Activando Medallas");
-    expect(homePage).toContain("Ver mis recompensas");
-    expect(homePage).toContain("Sin medalla");
+    expect(homePage).toContain('data-home-block="technical-level"');
+    expect(homePage).toContain('data-home-block="medal"');
+    expect(homePage).toContain("Tu medalla");
+    expect(homePage).toContain("Activa tus Medallas");
+    expect(homePage).toContain("Ver medallas y beneficios");
+    expect(homePage).toContain("Sin medalla este mes");
     expect(homePage).toContain("Ver Medallero");
-    expect(homePage).toContain("Niveles técnicos");
+    expect(homePage).toContain("Nivel técnico");
     expect(homePage).toContain("resulting_level_title");
     expect(homePage).toContain("#CD7F32");
     expect(homePage).toContain("#C0C0C0");
     expect(homePage).toContain("#D4AF37");
     expect(homePage).toContain("#5EDFFF");
-    expect(homePage).toContain("h-28 w-28");
-    expect(homePage).toContain("rounded-[24px]");
     expect(homePage).not.toContain("Movimiento que transforma");
     expect(profilePage).toContain('data-profile-block="package"');
     expect(profilePage).not.toContain("student_reward_status_snapshot");
