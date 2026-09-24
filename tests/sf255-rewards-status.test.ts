@@ -106,7 +106,9 @@ describe("SF-255A monthly level and waitlist contracts", () => {
   it("assigns the highest eligible Medal directly instead of moving one step at a time", () => {
     expect(monthlyMedals).toContain("order by d.level_order desc");
     expect(monthlyMedals).toContain("v_to_level := nullif(v_metrics->>'eligible_level_key','')");
-    expect(monthlyMedals).toContain("case when v_to_level is null then 'no_medal' else 'awarded' end");
+    expect(monthlyMedals).toContain(
+      "case when v_to_level is null then 'no_medal' else 'awarded' end",
+    );
     expect(monthlyMedals).not.toContain("v_to_level := v_next_level");
   });
 
