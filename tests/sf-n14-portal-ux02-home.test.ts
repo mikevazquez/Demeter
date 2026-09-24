@@ -12,24 +12,25 @@ describe("SF-N14 PORTAL UX-02 home", () => {
   const errorBoundary = source("app/student/error.tsx");
   const nav = source("app/student/StudentNav.tsx");
 
-  it("covers the approved package and reservation states", () => {
-    expect(home).toContain("Tus clases reservadas");
-    expect(home).toContain("Aún no tienes clases reservadas");
-    expect(home).toContain("Aún no tienes un paquete activo");
-    expect(home).toContain("Comprar paquete");
-    expect(home).toContain("Reservar clase");
+  it("covers the approved package and next-class states", () => {
+    expect(home).toContain("Tu próxima clase");
+    expect(home).toContain("Reserva tu próxima clase");
+    expect(home).toContain("No tienes un paquete activo");
+    expect(home).toContain("Ver paquetes");
+    expect(home).toContain("Reservar una clase");
   });
 
-  it("keeps unlimited packages semantically distinct from credits", () => {
-    expect(home).toContain('activePackage.unlimited ? "Ilimitado"');
-    expect(home).toContain("Acceso durante tu vigencia");
+  it("keeps unlimited packages semantically distinct from class balances", () => {
+    expect(home).toContain('"Clases ilimitadas"');
+    expect(home).toContain("clases disponibles");
+    expect(home).not.toContain("Progreso del paquete");
   });
 
-  it("keeps an active package above reserved classes with mobile-first cards", () => {
-    expect(home.indexOf('data-home-block="package"')).toBeLessThan(
-      home.indexOf('data-home-block="reserved-classes"'),
+  it("keeps the next class above package context with mobile-first cards", () => {
+    expect(home.indexOf('data-home-block="next-class"')).toBeLessThan(
+      home.indexOf('data-home-block="package"'),
     );
-    expect(home).toContain("rounded-[24px]");
+    expect(home).toContain("student-card");
     expect(home).toContain("min-h-11");
   });
 
