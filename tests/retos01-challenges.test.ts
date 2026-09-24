@@ -77,6 +77,16 @@ describe("RETOS-01", () => {
     expect(fix).toContain("set status = 'available'");
   });
 
+  it("shows final competitive winners in admin detail", () => {
+    const detail = read("app/admin/retos/[ruleId]/page.tsx");
+
+    expect(detail).toContain("RESULTADO FINAL");
+    expect(detail).toContain("🥇 Ganadora");
+    expect(detail).toContain("reward_challenge_settlements");
+    expect(detail).toContain("competition_reward_definition");
+    expect(detail).toContain("winner.score");
+  });
+
   it("stores only meaningful challenge notification switches", () => {
     const form = read("app/admin/recompensas/RuleEditorForm.tsx");
     const actions = read("app/admin/recompensas/actions.ts");
