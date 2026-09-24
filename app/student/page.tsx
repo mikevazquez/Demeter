@@ -730,7 +730,7 @@ export default async function StudentHomePage({
 
             {rewardCreditsAvailable > 0 ? (
               <Link
-                href="/student/reservar"
+                href="/student/reservar?credit=reward"
                 className="inline-flex min-h-10 shrink-0 items-center justify-center rounded-full border border-emerald-400/60 bg-emerald-400/[0.08] px-3 text-xs font-semibold text-emerald-200 transition hover:bg-emerald-400/[0.14]"
               >
                 Usar créditos →
