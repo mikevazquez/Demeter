@@ -3,7 +3,10 @@ import { notFound } from "next/navigation";
 
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
-import { getAutomationTemplate } from "@/lib/automations/catalog";
+import {
+  getAutomationTemplate,
+  type AutomationCatalogCode,
+} from "@/lib/automations/catalog";
 import { getMarketingCommunication } from "@/lib/notifications/admin-catalog";
 import {
   saveMarketingAutomationConfigurationAction,
@@ -334,7 +337,7 @@ export default async function MarketingDetailPage({
           ) : (
             <div className="marketing-runtime-grid">
               {instanceRows.map((instance) => {
-                const template = getAutomationTemplate(instance.catalog_code);
+                const template = getAutomationTemplate(instance.catalog_code as AutomationCatalogCode);
                 const configuration = configurationByInstance.get(instance.id) ?? {};
                 const editableKeys = template.configurableParameters;
                 return (
