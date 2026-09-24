@@ -234,8 +234,9 @@ export default async function StudentHomePage({
           benefits_definition: row.benefits_definition,
         }
       : null;
-  const currentLevel =
-    rewardStatus?.current_medal ?? rewardStatus?.current_level ?? toLevelView(fallbackLevelRow);
+  const currentLevel = rewardStatus?.access_unlocked
+    ? (rewardStatus?.current_medal ?? rewardStatus?.current_level ?? toLevelView(fallbackLevelRow))
+    : null;
   const levelKey =
     currentLevel?.key === "silver" ||
     currentLevel?.key === "gold" ||
