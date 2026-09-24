@@ -25,9 +25,9 @@ describe("SF-N14 PORTAL UX-02 home", () => {
     expect(home).toContain("Acceso durante tu vigencia");
   });
 
-  it("keeps an active package above reserved classes with mobile-first cards", () => {
-    expect(home.indexOf('data-home-block="package"')).toBeLessThan(
-      home.indexOf('data-home-block="reserved-classes"'),
+  it("keeps the next-class context above the package with mobile-first cards", () => {
+    expect(home.indexOf('data-home-block="reserved-classes"')).toBeLessThan(
+      home.indexOf('data-home-block="package"'),
     );
     expect(home).toContain("rounded-[24px]");
     expect(home).toContain("min-h-11");
@@ -50,5 +50,7 @@ describe("SF-N14 PORTAL UX-02 home", () => {
     for (const label of ["Inicio", "Reservar", "Mis clases", "Perfil"]) {
       expect(nav).toContain(`label: "${label}"`);
     }
+    expect(nav).not.toContain('label: "Retos"');
+    expect(nav).toContain("grid-cols-4");
   });
 });
