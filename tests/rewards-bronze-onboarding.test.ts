@@ -123,6 +123,14 @@ describe("REWARDS · onboarding access + monthly Medals", () => {
     expect(monthlyMedals).toContain("'started_on'");
   });
 
+  it("closes due Medal months automatically in each studio timezone", () => {
+    expect(monthlyMedals).toContain("reward_status_close_due_months");
+    expect(monthlyMedals).toContain("studio_flow_close_reward_medal_months");
+    expect(monthlyMedals).toContain("'12 * * * *'");
+    expect(monthlyMedals).toContain("perform private.reward_status_sync_student");
+    expect(monthlyMedals).toContain("at time zone coalesce(s.timezone");
+  });
+
   it("keeps no-Medal students in the waitlist with base priority zero", () => {
     expect(monthlyMedals).toContain("left join public.reward_status_memberships");
     expect(monthlyMedals).toContain("left join public.reward_status_level_definitions");
