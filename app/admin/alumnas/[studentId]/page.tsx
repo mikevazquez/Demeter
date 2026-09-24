@@ -307,7 +307,6 @@ export default async function StudentProfilePage({
   const canReadSales = can(CAPABILITIES.SALES_READ);
   const canWriteSales = can(CAPABILITIES.SALES_WRITE);
   const canReadRewards = can(CAPABILITIES.REWARDS_READ);
-  const canWriteSales = can(CAPABILITIES.SALES_WRITE);
   const canManageRewards = can(CAPABILITIES.REWARDS_MANAGE);
   const canReadEvaluations = can(CAPABILITIES.EVALUATIONS_READ);
   const canReadDocuments = can(CAPABILITIES.DOCUMENTS_READ);
