@@ -259,7 +259,7 @@ async function loadReservationContext(
   const template = (templateData ?? null) as JsonObject | null;
 
   const disciplineId =
-    safeText(template?.discipline_id) ?? safeText(event.payload.discipline_id);
+    safeText(event.payload.discipline_id) ?? safeText(template?.discipline_id);
 
   const { data: disciplineData, error: disciplineError } = disciplineId
     ? await adminClient
