@@ -30,7 +30,6 @@ type StudentWaitlistItem = {
   coach: string | null;
 };
 
-
 const errorCopy: Record<string, string> = {
   cancel_failed: "No pudimos cancelar la reserva. Intenta de nuevo.",
   reservation_not_found: "La reserva ya no existe.",
@@ -48,13 +47,7 @@ function statusClass(status: string) {
   return "border-fuchsia-500/25 bg-fuchsia-500/10 text-fuchsia-200";
 }
 
-function ClassRow({
-  item,
-  timezone,
-}: {
-  item: StudentClassFeedItem;
-  timezone: string;
-}) {
+function ClassRow({ item, timezone }: { item: StudentClassFeedItem; timezone: string }) {
   return (
     <article
       data-density="compact"
@@ -108,13 +101,7 @@ function ClassRow({
   );
 }
 
-function WaitlistRow({
-  item,
-  timezone,
-}: {
-  item: StudentWaitlistItem;
-  timezone: string;
-}) {
+function WaitlistRow({ item, timezone }: { item: StudentWaitlistItem; timezone: string }) {
   return (
     <article className="rounded-2xl border border-amber-400/25 bg-amber-400/[0.055] px-4 py-3">
       <div className="flex items-start justify-between gap-3">
@@ -132,9 +119,7 @@ function WaitlistRow({
         </div>
       </div>
       <div className="mt-3 border-t border-white/10 pt-3">
-        <p className="mt-1 text-sm leading-6 text-zinc-400">
-          Te avisaremos si se libera un lugar.
-        </p>
+        <p className="mt-1 text-sm leading-6 text-zinc-400">Te avisaremos si se libera un lugar.</p>
       </div>
     </article>
   );
@@ -296,7 +281,6 @@ export default async function StudentClassesPage({
                       ›
                     </Link>
                   </div>
-
                 </article>
               </div>
 
@@ -308,11 +292,7 @@ export default async function StudentClassesPage({
                   </div>
                   <div className="space-y-2">
                     {followingClasses.map((item) => (
-                      <ClassRow
-                        key={item.reservation_id}
-                        item={item}
-                        timezone={studio.timezone}
-                      />
+                      <ClassRow key={item.reservation_id} item={item} timezone={studio.timezone} />
                     ))}
                   </div>
                 </div>
