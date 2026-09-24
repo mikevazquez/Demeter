@@ -51,11 +51,14 @@ export default async function StudentCancelReservationPage({
     uses_credits?: boolean;
     unlimited?: boolean;
     credit_will_return?: boolean | null;
+    credit_cost?: number | null;
   } | null;
   const willLoseCredit = Boolean(preview?.ok && preview.late && preview.uses_credits);
   const willReturnCredit = Boolean(
     preview?.ok && !preview.late && preview.credit_will_return === true,
   );
+  const lateUnlimited = Boolean(preview?.ok && preview.late && preview.unlimited);
+  const classesAffected = Math.max(preview?.credit_cost ?? 1, 1);
   const activeGuests =
     (
       invitationContextData as {
@@ -158,24 +161,29 @@ export default async function StudentCancelReservationPage({
 
         {willLoseCredit ? (
           <div className="mt-4 rounded-2xl border border-amber-400/25 bg-amber-400/[0.08] p-4">
-            <p className="text-sm font-semibold text-amber-100">
-              Estás fuera del horario de cancelación
-            </p>
-            <p className="mt-1.5 text-xs leading-5 text-amber-100/80">
-              Si cancelas ahora, el crédito utilizado para esta clase no será devuelto.
+            <p className="text-sm font-semibold text-amber-100">Estás cancelando tarde</p>
+            <p className="mt-1.5 text-sm leading-6 text-amber-100/80">
+              Si continúas, perderás {classesAffected}{" "}
+              {classesAffected === 1 ? "clase" : "clases"} de tu paquete.
             </p>
           </div>
         ) : willReturnCredit ? (
           <div className="mt-4 rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.07] p-4">
-            <p className="text-xs leading-5 text-emerald-100">
-              Si cancelas ahora, el crédito reservado para esta clase será devuelto.
+            <p className="text-sm font-semibold text-emerald-100">Puedes cancelar sin perder tu clase</p>
+            <p className="mt-1.5 text-sm leading-6 text-emerald-100/80">
+              Se devolverán {classesAffected} {classesAffected === 1 ? "clase" : "clases"} a tu
+              paquete.
             </p>
           </div>
-        ) : (
-          <p className="mt-4 text-xs leading-5 text-zinc-400">
-            Studio Flow aplicará automáticamente la política vigente de cancelación.
-          </p>
-        )}
+        ) : lateUnlimited ? (
+          <div className="mt-4 rounded-2xl border border-amber-400/25 bg-amber-400/[0.08] p-4">
+            <p className="text-sm font-semibold text-amber-100">Estás cancelando tarde</p>
+            <p className="mt-1.5 text-sm leading-6 text-amber-100/80">
+              Tu membresía es ilimitada. Antes de confirmar, considera las condiciones vigentes
+              para cancelaciones tardías.
+            </p>
+          </div>
+        ) : null}
 
         {query.error ? (
           <div
@@ -194,8 +202,8 @@ export default async function StudentCancelReservationPage({
         <form action={cancelStudentReservationAction} className="mt-5 space-y-3">
           <input type="hidden" name="reservation_id" value={item.reservation_id} />
           <input type="hidden" name="return_to" value="/student/mis-clases" />
-          <label className="block text-xs text-zinc-400">
-            Motivo
+          <label className="block text-sm text-zinc-400">
+            ¿Quieres contarnos por qué?
             <span className="ml-1 text-zinc-600">(opcional)</span>
             <input
               name="reason"
@@ -215,14 +223,16 @@ export default async function StudentCancelReservationPage({
                 ? activeGuests.length === 1
                   ? "Sí, cancelar mi reserva y la invitación"
                   : "Sí, cancelar mi reserva y las invitaciones"
-                : "Sí, cancelar"}
+                : willLoseCredit
+                  ? `Cancelar y perder ${classesAffected} ${classesAffected === 1 ? "clase" : "clases"}`
+                  : "Cancelar mi reserva"}
           </PendingActionButton>
 
           <Link
             href={`/student/mis-clases/${item.reservation_id}`}
             className="flex min-h-11 w-full items-center justify-center rounded-2xl border border-white/10 px-4 py-2.5 text-sm font-semibold text-zinc-300"
           >
-            No, mantener
+            Mantener mi reserva
           </Link>
         </form>
       </section>
