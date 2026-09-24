@@ -69,7 +69,7 @@ describe("REWARDS · onboarding access + monthly Medals", () => {
     );
     expect(existingActiveOnboarding).toContain("'existing_membership_preserved',v_had_membership");
     expect(existingActiveOnboarding).not.toContain("set current_level_key = null");
-    expect(homePage).toContain("const currentLevel = rewardStatus?.access_unlocked");
+    expect(homePage).toContain("const currentMedal = rewardStatus?.access_unlocked");
   });
 
   it("keeps PWA, Push, reservation and attendance milestones auditable", () => {
@@ -99,7 +99,7 @@ describe("REWARDS · onboarding access + monthly Medals", () => {
   it("lets the student complete the profile fields required by onboarding", () => {
     expect(profilePage).toContain("Fecha de nacimiento");
     expect(profilePage).toContain('name="birth_date"');
-    expect(profilePage).toContain("activación de Medallas");
+    expect(profilePage).toContain("Datos que puedes cambiar");
     expect(studentActions).toContain("student_update_reward_onboarding_profile");
     expect(onboarding).toContain("student_set_reward_onboarding_birth_date");
   });
@@ -160,12 +160,12 @@ describe("REWARDS · onboarding access + monthly Medals", () => {
     expect(monthlyMedals).toContain("coalesce(d.level_order,0) desc");
   });
 
-  it("shows current rewards only and links to the Medallero instead of a next Medal", () => {
-    expect(homePage).toContain("Mis recompensas");
+  it("shows the current Medal separately and links to the Medallero", () => {
+    expect(homePage).toContain("Tu medalla");
     expect(homePage).toContain("Ver Medallero");
     expect(homePage).not.toContain("Siguiente medalla");
-    expect(homePage).toContain("Sin medalla");
-    expect(homePage).toContain("Activando Medallas");
+    expect(homePage).toContain("Sin medalla este mes");
+    expect(homePage).toContain("Activa tus Medallas");
     expect(rewardsPage).toContain('href="/student/recompensas/medallero"');
   });
 
@@ -183,8 +183,8 @@ describe("REWARDS · onboarding access + monthly Medals", () => {
   });
 
   it("uses Medal language for Rewards and keeps technical levels distinct", () => {
-    expect(homePage).toContain("Mi medalla");
-    expect(homePage).toContain("Niveles técnicos");
+    expect(homePage).toContain("Tu medalla");
+    expect(homePage).toContain("Nivel técnico");
     expect(adminOverview).toContain('"Medalla " + levelTitle');
     expect(adminStudent).toContain("Medalla actual");
     expect(adminStudent).toContain("niveles técnicos por disciplina");

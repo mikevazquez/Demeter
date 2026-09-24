@@ -14,12 +14,12 @@ describe("profile avatar upload hotfix", () => {
     "supabase/migrations/20260923222000_profile_avatar_storage_rls_hotfix.sql",
   );
 
-  it("shows a clear selected-file state before saving", () => {
+  it("shows a visual preview and explicit confirmation before saving", () => {
     expect(profile).toContain("AvatarFilePicker");
-    expect(picker).toContain("Cargar foto");
-    expect(picker).toContain("event.target.files?.[0]?.name");
-    expect(picker).toContain("text-sky-400");
-    expect(picker).toContain("underline");
+    expect(profile).toContain("Usar esta foto");
+    expect(picker).toContain("URL.createObjectURL");
+    expect(picker).toContain("Vista previa lista");
+    expect(picker).toContain("Elegir otra foto");
     expect(picker).toContain("inputRef.current?.click()");
     expect(picker).toContain('aria-live="polite"');
   });

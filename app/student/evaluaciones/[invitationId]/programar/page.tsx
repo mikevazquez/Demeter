@@ -79,6 +79,12 @@ function productBenefit(product: PurchasableProduct) {
   return "Paquete de clases";
 }
 
+function availabilityCopy(spotsAvailable: number) {
+  if (spotsAvailable <= 0) return "Clase llena";
+  if (spotsAvailable === 1) return "Último lugar";
+  return `${spotsAvailable} lugares disponibles`;
+}
+
 export default async function ScheduleEvaluationPage({
   params,
   searchParams,
@@ -201,15 +207,11 @@ export default async function ScheduleEvaluationPage({
       </Link>
 
       <header>
-        <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-fuchsia-300">
-          {invitation.discipline_name}
-        </p>
-        <h1 className="mt-1 text-3xl font-semibold tracking-tight text-white">
-          Programar evaluación
-        </h1>
-        <p className="mt-1.5 text-sm leading-6 text-zinc-400">
-          Selecciona una clase real dentro de la ventana disponible. Tu reserva usa exactamente las
-          mismas reglas, créditos y políticas que cualquier otra clase.
+        <p className="student-eyebrow">{invitation.discipline_name}</p>
+        <h1 className="student-page-title mt-1">¿En qué clase quieres hacer tu evaluación?</h1>
+        <p className="student-body mt-2">
+          Elige una clase dentro del periodo disponible. Tu evaluación se realizará durante esa
+          clase.
         </p>
       </header>
 
@@ -234,7 +236,7 @@ export default async function ScheduleEvaluationPage({
           <h2 className="text-lg font-semibold text-white">
             {needsPurchase
               ? needsClassAccess
-                ? "No tienes créditos disponibles para esta clase"
+                ? "Necesitas una clase disponible para programar tu evaluación"
                 : enrollmentRequirement?.missing
                   ? "Necesitas una inscripción vigente"
                   : "Completa lo necesario para reservar"
@@ -244,10 +246,10 @@ export default async function ScheduleEvaluationPage({
             {needsPurchase
               ? needsClassAccess
                 ? selectedSession?.drop_in_price_minor != null
-                  ? "Puedes pagar sólo esta clase o comprar un paquete sin salir del flujo de tu evaluación."
-                  : "Compra un paquete válido para continuar sin salir del flujo de tu evaluación."
+                  ? "Puedes comprar esta clase o elegir un paquete para continuar."
+                  : "Elige un paquete que incluya esta disciplina para continuar."
                 : enrollmentRequirement?.missing
-                  ? "Tu paquete sí tiene créditos disponibles. La inscripción es el único requisito que está bloqueando esta reserva."
+                  ? "Tu paquete sí tiene clases disponibles. La inscripción es el único requisito pendiente."
                   : errorMessage
               : errorMessage}
           </p>
@@ -275,7 +277,7 @@ export default async function ScheduleEvaluationPage({
               <p className="mt-2 text-xs leading-5 text-zinc-500">
                 {needsClassAccess
                   ? "No necesitas hacer una compra separada: se agregará al mismo pago de la clase o paquete que elijas."
-                  : "Tu paquete y tus créditos se conservan. Paga únicamente la inscripción para completar esta reserva."}
+                  : "Tu paquete se conserva. Solo necesitas completar la inscripción para reservar."}
               </p>
 
               {!needsClassAccess && enrollmentRequirement.product_template_id ? (
@@ -299,7 +301,7 @@ export default async function ScheduleEvaluationPage({
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
                       <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-fuchsia-300">
-                        Opción 1
+                        Comprar esta clase
                       </p>
                       <h3 className="mt-1 text-base font-semibold text-white">Pagar esta clase</h3>
                       <p className="mt-1 text-xs text-zinc-500">
@@ -326,12 +328,14 @@ export default async function ScheduleEvaluationPage({
 
               <div className="rounded-2xl border border-white/10 bg-black/15 p-4">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-violet-300">
-                  {selectedSession.drop_in_price_minor != null ? "Opción 2" : "Comprar acceso"}
+                  {selectedSession.drop_in_price_minor != null
+                    ? "Otra opción"
+                    : "Paquetes disponibles"}
                 </p>
                 <h3 className="mt-1 text-base font-semibold text-white">Comprar un paquete</h3>
                 <p className="mt-1 text-xs text-zinc-500">
-                  Elige un paquete válido para {invitation.discipline_name}. Al confirmar el pago,
-                  Studio Flow intentará programar esta misma evaluación automáticamente.
+                  Elige un paquete válido para {invitation.discipline_name}. Después del pago,
+                  continuaremos con esta misma evaluación.
                 </p>
 
                 {eligiblePackages.length ? (
@@ -414,19 +418,18 @@ export default async function ScheduleEvaluationPage({
                   </p>
                   <h2 className="mt-1 text-base font-semibold text-white">{session.activity}</h2>
                   <p className="mt-1 text-xs text-zinc-500">
-                    {[session.coach, session.space].filter(Boolean).join(" · ") || "Studio Flow"}
+                    {[session.coach, session.space].filter(Boolean).join(" · ") || "Demeter"}
                   </p>
-                  <div className="mt-2 flex flex-wrap gap-2 text-[10px] text-zinc-500">
-                    <span>
-                      {session.spots_available}/{session.capacity} lugares
-                    </span>
+                  <div className="mt-2 flex flex-wrap gap-2 text-xs text-zinc-500">
+                    <span>{availabilityCopy(session.spots_available)}</span>
                     <span>·</span>
                     <span>
                       {session.eligibility?.unlimited
-                        ? "Incluida en ilimitado"
+                        ? "Incluida en tu paquete"
                         : String(session.credit_cost) +
-                          " crédito" +
-                          (session.credit_cost === 1 ? "" : "s")}
+                          " " +
+                          (session.credit_cost === 1 ? "clase" : "clases") +
+                          " de tu paquete"}
                     </span>
                   </div>
                 </div>
@@ -447,10 +450,10 @@ export default async function ScheduleEvaluationPage({
                       className="min-h-11 w-full rounded-2xl bg-fuchsia-600 px-4 text-sm font-semibold text-white transition hover:bg-fuchsia-500 sm:w-auto"
                     >
                       {alreadyReserved
-                        ? "Usar esta reserva"
+                        ? "Confirmar evaluación"
                         : reason && !purchaseReasons.has(reason)
-                          ? "Intentar reservar"
-                          : "Seleccionar"}
+                          ? "Revisar esta clase"
+                          : "Elegir"}
                     </PendingActionButton>
                   </form>
                 )}
@@ -460,9 +463,9 @@ export default async function ScheduleEvaluationPage({
         ) : (
           <div className="rounded-3xl border border-white/10 bg-white/[0.025] p-6 text-center">
             <p className="text-sm font-semibold text-white">No hay clases disponibles</p>
-            <p className="mt-1 text-xs leading-5 text-zinc-500">
-              No encontramos clases de {invitation.discipline_name} dentro de esta ventana. Tu
-              evaluación seguirá pendiente.
+            <p className="mt-1 text-sm leading-6 text-zinc-500">
+              No encontramos clases de {invitation.discipline_name} dentro de este periodo. Tu
+              evaluación seguirá pendiente y podrás volver a revisar después.
             </p>
           </div>
         )}
