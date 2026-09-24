@@ -222,6 +222,25 @@ export default async function StudentReservationDetailPage({
         </dl>
       </section>
 
+      {item.status === "cancelled_by_studio" && item.cancellation_reason ? (
+        <section className="space-y-2 rounded-3xl border border-rose-500/20 bg-rose-500/[0.055] p-4">
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-rose-300">
+              Motivo de cancelación
+            </p>
+            <p className="mt-1.5 text-sm leading-6 text-zinc-200">{item.cancellation_reason}</p>
+          </div>
+          {item.credit_restored ? (
+            <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.07] px-3 py-2.5">
+              <p className="text-xs font-semibold text-emerald-300">✓ Crédito restaurado</p>
+              <p className="mt-0.5 text-[10px] text-zinc-500">
+                El crédito fue devuelto automáticamente a tu paquete.
+              </p>
+            </div>
+          ) : null}
+        </section>
+      ) : null}
+
       {checkIn?.ok && checkIn.token ? (
         <section
           data-feature="kiosco-01-reservation-qr"

@@ -90,6 +90,25 @@ function ClassRow({
         </Link>
       </div>
 
+      {item.status === "cancelled_by_studio" && item.cancellation_reason ? (
+        <div className="mt-3 space-y-2 border-t border-white/10 pt-3">
+          <div className="rounded-xl border border-rose-500/20 bg-rose-500/[0.06] px-3 py-2.5">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-rose-300">
+              Motivo
+            </p>
+            <p className="mt-1 text-xs leading-5 text-zinc-300">{item.cancellation_reason}</p>
+          </div>
+          {item.credit_restored ? (
+            <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/[0.06] px-3 py-2.5">
+              <p className="text-xs font-semibold text-emerald-300">✓ Crédito restaurado</p>
+              <p className="mt-0.5 text-[10px] leading-4 text-zinc-500">
+                El crédito de esta reserva fue devuelto a tu paquete.
+              </p>
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+
       {showQuickCancel && item.status === "reserved" ? (
         <div className="mt-3 flex justify-end border-t border-white/10 pt-3">
           <Link
