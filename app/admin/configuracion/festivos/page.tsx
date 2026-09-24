@@ -273,24 +273,25 @@ export default async function HolidaysConfigurationPage({
         </details>
       </section>
 
-      <form action={bulkCalendarDayOperationAction} className="panel">
-        <input type="hidden" name="year" value={year} />
-
-        <div className="flex flex-wrap items-center gap-3 border-b border-white/10 pb-4">
-          <strong className="text-sm text-white">Acción en bloque</strong>
-          <select
-            name="operation_mode"
-            defaultValue="closed"
-            className="min-h-10 rounded-xl border border-white/10 bg-black/20 px-3 text-sm text-white"
-          >
-            <option value="closed">Cerrar seleccionados</option>
-            <option value="normal">Horario normal</option>
-            <option value="special">Horario especial</option>
-          </select>
-          <button className="primary-button" type="submit">
-            Aplicar a seleccionados
-          </button>
-        </div>
+      <section className="panel">
+        <form id="holiday-bulk-form" action={bulkCalendarDayOperationAction}>
+          <input type="hidden" name="year" value={year} />
+          <div className="flex flex-wrap items-center gap-3 border-b border-white/10 pb-4">
+            <strong className="text-sm text-white">Acción en bloque</strong>
+            <select
+              name="operation_mode"
+              defaultValue="closed"
+              className="min-h-10 rounded-xl border border-white/10 bg-black/20 px-3 text-sm text-white"
+            >
+              <option value="closed">Cerrar seleccionados</option>
+              <option value="normal">Horario normal</option>
+              <option value="special">Horario especial</option>
+            </select>
+            <button className="primary-button" type="submit">
+              Aplicar a seleccionados
+            </button>
+          </div>
+        </form>
 
         <p className="mt-3 text-[11px] leading-5 text-zinc-500">
           En Horario especial se conservan inicialmente las sesiones ya publicadas para evitar
@@ -307,6 +308,7 @@ export default async function HolidaysConfigurationPage({
                 <div className="grid gap-3 p-4 md:grid-cols-[auto_110px_minmax(0,1fr)_auto] md:items-center">
                   <label className="flex items-center">
                     <input
+                      form="holiday-bulk-form"
                       type="checkbox"
                       name="selected_date"
                       value={row.date}
@@ -356,53 +358,98 @@ export default async function HolidaysConfigurationPage({
 
                 <details className="border-t border-white/10">
                   <summary className="cursor-pointer px-4 py-3 text-xs font-semibold text-fuchsia-300">
-                    Personalizar operación, mensaje e imágenes
+                    Configurar este día
                   </summary>
 
-                  <div className="grid gap-4 border-t border-white/10 bg-black/15 p-4 lg:grid-cols-2">
+                  <form
+                    action={saveCalendarDayAction}
+                    className="grid gap-4 border-t border-white/10 bg-black/15 p-4 lg:grid-cols-2"
+                  >
+                    <input type="hidden" name="year" value={year} />
+                    <input type="hidden" name="holiday_date" value={row.date} />
+                    <input type="hidden" name="source_kind" value={row.sourceKind} />
+                    <input type="hidden" name="name" value={row.name} />
+                    <input type="hidden" name="theme_key" value={row.themeKey} />
+
                     <label className="branding-field">
                       <span>Operación</span>
-                      <select
-                        name={`preview-operation-${row.date}`}
-                        defaultValue={row.operationMode}
-                        disabled
-                      >
+                      <select name="operation_mode" defaultValue={row.operationMode}>
                         <option value="normal">Horario normal</option>
                         <option value="closed">Estudio cerrado</option>
                         <option value="special">Horario especial</option>
                       </select>
                       <small>
-                        Usa el formulario individual de abajo para guardar cambios en este día.
+                        Horario especial conserva inicialmente las sesiones ya publicadas.
                       </small>
                     </label>
 
-                    <div className="branding-field">
-                      <span>Mensaje actual</span>
-                      <p className="rounded-xl border border-white/10 bg-black/20 p-3 text-xs leading-5 text-zinc-300">
-                        {row.message}
-                      </p>
-                    </div>
+                    <label className="branding-field">
+                      <span>Mensaje temático</span>
+                      <textarea
+                        name="student_message"
+                        defaultValue={row.message}
+                        maxLength={500}
+                        rows={4}
+                      />
+                      <small>Este texto aparecerá en la vista de alumna.</small>
+                    </label>
 
-                    {row.heroUrl ? (
-                      <div className="branding-field">
-                        <span>Imagen principal actual</span>
+                    <div className="branding-field">
+                      <span>Imagen principal</span>
+                      {row.heroUrl ? (
                         <div
-                          className="aspect-[16/9] rounded-2xl border border-white/10 bg-cover bg-center"
+                          className="mb-2 aspect-[16/9] rounded-2xl border border-white/10 bg-cover bg-center"
                           style={{ backgroundImage: `url("${row.heroUrl}")` }}
                         />
-                      </div>
-                    ) : null}
+                      ) : null}
+                      <input name="hero_image" type="file" accept="image/png,image/jpeg,image/webp" />
+                      {row.heroPath ? (
+                        <label className="mt-2 flex items-center gap-2 text-xs text-zinc-400">
+                          <input type="checkbox" name="remove_hero" value="1" />
+                          Quitar imagen actual
+                        </label>
+                      ) : null}
+                      <small>Arte editorial de la tarjeta principal · máximo 6 MB.</small>
+                    </div>
 
-                    {row.messageUrl ? (
-                      <div className="branding-field">
-                        <span>Imagen temática actual</span>
+                    <div className="branding-field">
+                      <span>Imagen de tarjeta temática</span>
+                      {row.messageUrl ? (
                         <div
-                          className="aspect-[3/1] rounded-2xl border border-white/10 bg-cover bg-center"
+                          className="mb-2 aspect-[3/1] rounded-2xl border border-white/10 bg-cover bg-center"
                           style={{ backgroundImage: `url("${row.messageUrl}")` }}
                         />
-                      </div>
-                    ) : null}
-                  </div>
+                      ) : null}
+                      <input
+                        name="message_image"
+                        type="file"
+                        accept="image/png,image/jpeg,image/webp"
+                      />
+                      {row.messagePath ? (
+                        <label className="mt-2 flex items-center gap-2 text-xs text-zinc-400">
+                          <input type="checkbox" name="remove_message" value="1" />
+                          Quitar imagen actual
+                        </label>
+                      ) : null}
+                      <small>Opcional. Si no subes una, se usa el estilo base.</small>
+                    </div>
+
+                    <div className="lg:col-span-2 flex flex-wrap items-center justify-between gap-3">
+                      <button className="primary-button" type="submit">
+                        Guardar este día
+                      </button>
+
+                      {row.sourceKind === "manual" ? (
+                        <button
+                          type="submit"
+                          formAction={deleteManualCalendarDayAction}
+                          className="ghost-button text-rose-300"
+                        >
+                          Eliminar día especial
+                        </button>
+                      ) : null}
+                    </div>
+                  </form>
                 </details>
               </article>
             ))
@@ -412,100 +459,6 @@ export default async function HolidaysConfigurationPage({
             </div>
           )}
         </div>
-      </form>
-
-      <section className="space-y-3">
-        {rows.map((row) => (
-          <details
-            key={`edit-${row.date}`}
-            className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.02]"
-          >
-            <summary className="cursor-pointer px-4 py-3 text-xs font-semibold text-fuchsia-300">
-              Editar {row.name} · {row.date}
-            </summary>
-
-            <form
-              action={saveCalendarDayAction}
-              className="grid gap-4 border-t border-white/10 bg-black/15 p-4 lg:grid-cols-2"
-            >
-              <input type="hidden" name="year" value={year} />
-              <input type="hidden" name="holiday_date" value={row.date} />
-              <input type="hidden" name="source_kind" value={row.sourceKind} />
-              <input type="hidden" name="name" value={row.name} />
-              <input type="hidden" name="theme_key" value={row.themeKey} />
-
-              <label className="branding-field">
-                <span>Operación</span>
-                <select name="operation_mode" defaultValue={row.operationMode}>
-                  <option value="normal">Horario normal</option>
-                  <option value="closed">Estudio cerrado</option>
-                  <option value="special">Horario especial</option>
-                </select>
-              </label>
-
-              <label className="branding-field">
-                <span>Mensaje temático</span>
-                <textarea
-                  name="student_message"
-                  defaultValue={row.message}
-                  maxLength={500}
-                  rows={4}
-                />
-              </label>
-
-              <div className="branding-field">
-                <span>Imagen principal</span>
-                {row.heroUrl ? (
-                  <div
-                    className="mb-2 aspect-[16/9] rounded-2xl border border-white/10 bg-cover bg-center"
-                    style={{ backgroundImage: `url("${row.heroUrl}")` }}
-                  />
-                ) : null}
-                <input name="hero_image" type="file" accept="image/png,image/jpeg,image/webp" />
-                {row.heroPath ? (
-                  <label className="mt-2 flex items-center gap-2 text-xs text-zinc-400">
-                    <input type="checkbox" name="remove_hero" value="1" />
-                    Quitar imagen actual
-                  </label>
-                ) : null}
-                <small>Arte editorial de la tarjeta principal · máximo 6 MB.</small>
-              </div>
-
-              <div className="branding-field">
-                <span>Imagen de tarjeta temática</span>
-                {row.messageUrl ? (
-                  <div
-                    className="mb-2 aspect-[3/1] rounded-2xl border border-white/10 bg-cover bg-center"
-                    style={{ backgroundImage: `url("${row.messageUrl}")` }}
-                  />
-                ) : null}
-                <input name="message_image" type="file" accept="image/png,image/jpeg,image/webp" />
-                {row.messagePath ? (
-                  <label className="mt-2 flex items-center gap-2 text-xs text-zinc-400">
-                    <input type="checkbox" name="remove_message" value="1" />
-                    Quitar imagen actual
-                  </label>
-                ) : null}
-              </div>
-
-              <div className="lg:col-span-2 flex flex-wrap items-center justify-between gap-3">
-                <button className="primary-button" type="submit">
-                  Guardar este día
-                </button>
-
-                {row.sourceKind === "manual" ? (
-                  <button
-                    type="submit"
-                    formAction={deleteManualCalendarDayAction}
-                    className="ghost-button text-rose-300"
-                  >
-                    Eliminar día especial
-                  </button>
-                ) : null}
-              </div>
-            </form>
-          </details>
-        ))}
       </section>
     </main>
   );
