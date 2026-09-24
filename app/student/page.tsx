@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 
 import {
@@ -34,19 +33,8 @@ type RewardStatusSnapshot = {
   access_unlocked?: boolean;
   medal_key?: string | null;
   medal_title?: string | null;
-  active_days?: number;
-  no_show_count?: number;
-  continuity_months?: number;
-  renewal_gap_days?: number;
   current_medal?: RewardLevelView | null;
   current_level?: RewardLevelView | null;
-};
-
-type RewardInvitationBalance = {
-  total?: number;
-  used?: number;
-  remaining?: number;
-  level_title?: string | null;
 };
 
 type EvaluationHomeCard = {
@@ -85,36 +73,45 @@ type AppNotificationHomeItem = {
   payload: Record<string, unknown>;
 };
 
-const levelVisuals = {
+type BookingRestriction = {
+  code: string;
+  type?: string | null;
+  title: string;
+  detail?: string | null;
+  action_kind?: string | null;
+  action_href?: string | null;
+  action_label?: string | null;
+};
+
+const medalVisuals = {
   bronze: {
     accent: "#CD7F32",
-    border: "rgba(205,127,50,0.72)",
-    divider: "rgba(205,127,50,0.34)",
-    glow: "rgba(205,127,50,0.22)",
-    wash: "rgba(205,127,50,0.12)",
+    border: "rgba(205,127,50,0.58)",
+    wash: "rgba(205,127,50,0.1)",
   },
   silver: {
     accent: "#C0C0C0",
-    border: "rgba(192,192,192,0.72)",
-    divider: "rgba(192,192,192,0.32)",
-    glow: "rgba(192,192,192,0.18)",
-    wash: "rgba(192,192,192,0.10)",
+    border: "rgba(192,192,192,0.56)",
+    wash: "rgba(192,192,192,0.08)",
   },
   gold: {
     accent: "#D4AF37",
-    border: "rgba(212,175,55,0.76)",
-    divider: "rgba(212,175,55,0.34)",
-    glow: "rgba(212,175,55,0.22)",
-    wash: "rgba(212,175,55,0.12)",
+    border: "rgba(212,175,55,0.62)",
+    wash: "rgba(212,175,55,0.1)",
   },
   diamond: {
     accent: "#5EDFFF",
-    border: "rgba(94,223,255,0.78)",
-    divider: "rgba(94,223,255,0.36)",
-    glow: "rgba(94,223,255,0.24)",
-    wash: "rgba(94,223,255,0.12)",
+    border: "rgba(94,223,255,0.64)",
+    wash: "rgba(94,223,255,0.1)",
   },
 } as const;
+
+const urgentNotificationTypes = new Set([
+  "session_minimum_cancelled",
+  "class_cancelled_student",
+  "class_rescheduled",
+  "waitlist_promoted",
+]);
 
 function dateDistanceInDays(from: string, to: string) {
   const start = Date.parse(`${from}T12:00:00Z`);
@@ -122,42 +119,45 @@ function dateDistanceInDays(from: string, to: string) {
   return Math.round((end - start) / 86_400_000);
 }
 
-function availableCredits(activePackage: StudentAcquisition | null) {
+function availableClasses(activePackage: StudentAcquisition | null) {
   if (!activePackage || activePackage.unlimited) return null;
   return activePackage.available_credits ?? 0;
 }
 
-function unlimitedPackageLabel(activePackage: StudentAcquisition) {
-  return activePackage.unlimited ? "Ilimitado" : "";
-}
-
-function creditLimit(activePackage: StudentAcquisition) {
-  if (activePackage.credit_limit && activePackage.credit_limit > 0) {
-    return activePackage.credit_limit;
+function priorityNotificationTone(type: string) {
+  if (type === "class_rescheduled" || type === "waitlist_promoted") {
+    return {
+      border: "border-amber-400/30",
+      background: "bg-amber-400/[0.055]",
+      label: "text-amber-200",
+      button: "border-amber-400/30 text-amber-100",
+    };
   }
 
-  return (
-    (activePackage.available_credits ?? 0) +
-    activePackage.reserved_credits +
-    activePackage.used_credits
-  );
+  return {
+    border: "border-rose-400/30",
+    background: "bg-rose-400/[0.055]",
+    label: "text-rose-200",
+    button: "border-rose-400/30 text-rose-100",
+  };
 }
 
 export default async function StudentHomePage({
   searchParams,
 }: {
-  searchParams: Promise<{ cancelled?: string; error?: string; benefits?: string }>;
+  searchParams: Promise<{ cancelled?: string; error?: string }>;
 }) {
   const query = await searchParams;
   const { snapshot, studio, supabase, membership } = await getStudentPortalContext();
+
   const [
     rewardStatusResult,
     rewardMembershipResult,
     rewardLevelsResult,
-    invitationBalanceResult,
     evaluationsResult,
     unreadEvaluationResult,
-    appNotificationResult,
+    appNotificationsResult,
+    bookingRestrictionsResult,
   ] = await Promise.all([
     supabase.rpc("student_reward_status_snapshot"),
     supabase
@@ -173,7 +173,6 @@ export default async function StudentHomePage({
       )
       .eq("studio_id", membership.studio_id)
       .order("level_order"),
-    supabase.rpc("student_reward_invitation_balance"),
     supabase.rpc("student_evaluations_snapshot"),
     supabase.rpc("student_latest_unread_evaluation_result"),
     supabase
@@ -183,37 +182,43 @@ export default async function StudentHomePage({
       .eq("recipient_kind", "student")
       .is("read_at", null)
       .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle(),
+      .limit(12),
+    supabase.rpc("student_booking_restrictions_snapshot", { p_session_id: null }),
   ]);
 
   const rewardStatus = (rewardStatusResult.data as RewardStatusSnapshot | null) ?? null;
-  const invitationBalance =
-    (invitationBalanceResult.data as RewardInvitationBalance | null) ?? null;
   const evaluationsSnapshot =
     (evaluationsResult.data as StudentEvaluationsHomeSnapshot | null) ?? null;
+  const latestPublishedEvaluation =
+    (unreadEvaluationResult.data as EvaluationHomeHistoryItem | null) ?? null;
+  const unreadNotifications = (appNotificationsResult.data ?? []) as AppNotificationHomeItem[];
+  const priorityNotification =
+    unreadNotifications.find((item) => urgentNotificationTypes.has(item.notification_type)) ?? null;
+  const bookingRestrictions = (bookingRestrictionsResult.data ?? []) as BookingRestriction[];
+  const primaryRestriction = bookingRestrictions[0] ?? null;
+
   const activeEvaluationInvitation =
     evaluationsSnapshot?.disciplines?.find(
       (item) =>
         item.invitation_id &&
         (item.invitation_status === "offered" || item.invitation_status === "pending_schedule"),
     ) ?? null;
-  const latestPublishedEvaluation =
-    (unreadEvaluationResult.data as EvaluationHomeHistoryItem | null) ?? null;
-  const latestAppNotification =
-    (appNotificationResult.data as AppNotificationHomeItem | null) ?? null;
 
   const technicalLevelMap = new Map<string, { disciplineName: string; levelTitle: string }>();
   for (const evaluation of evaluationsSnapshot?.history ?? []) {
     if (!evaluation.resulting_level_title || technicalLevelMap.has(evaluation.discipline_name)) {
       continue;
     }
+
     technicalLevelMap.set(evaluation.discipline_name, {
       disciplineName: evaluation.discipline_name,
       levelTitle: evaluation.resulting_level_title,
     });
   }
   const technicalLevels = [...technicalLevelMap.values()];
+  const primaryTechnicalLevel = technicalLevels[0] ?? null;
+  const additionalTechnicalLevels = Math.max(0, technicalLevels.length - 1);
+
   const levelDefinitions = (rewardLevelsResult.data ?? []) as RewardLevelDefinitionRow[];
   const fallbackLevelKey = rewardMembershipResult.data?.current_level_key ?? null;
   const fallbackLevelRow =
@@ -234,41 +239,34 @@ export default async function StudentHomePage({
           benefits_definition: row.benefits_definition,
         }
       : null;
-  const currentLevel = rewardStatus?.access_unlocked
-    ? (rewardStatus?.current_medal ?? rewardStatus?.current_level ?? toLevelView(fallbackLevelRow))
+
+  const currentMedal = rewardStatus?.access_unlocked
+    ? (rewardStatus.current_medal ?? rewardStatus.current_level ?? toLevelView(fallbackLevelRow))
     : null;
-  const levelKey =
-    currentLevel?.key === "silver" ||
-    currentLevel?.key === "gold" ||
-    currentLevel?.key === "diamond"
-      ? currentLevel.key
+  const medalKey =
+    currentMedal?.key === "silver" ||
+    currentMedal?.key === "gold" ||
+    currentMedal?.key === "diamond"
+      ? currentMedal.key
       : "bronze";
-  const levelVisual = levelVisuals[levelKey];
-  const fullName = [snapshot.profile.first_name, snapshot.profile.last_name]
-    .filter(Boolean)
-    .join(" ");
-  const rewardCreditWallets = snapshot.acquisitions.filter(
+  const medalVisual = medalVisuals[medalKey];
+
+  const rewardClassWallets = snapshot.acquisitions.filter(
     (item) => item.reward_credit_wallet && item.status === "active" && item.active_now,
   );
   const packageAcquisitions = snapshot.acquisitions.filter((item) => !item.reward_credit_wallet);
   const activePackage = packageAcquisitions.find((item) => item.active_now) ?? null;
-  const rewardCreditsAvailable = rewardCreditWallets.reduce(
+  const classesAvailable = availableClasses(activePackage);
+  const extraClassesAvailable = rewardClassWallets.reduce(
     (total, item) => total + (item.available_credits ?? 0),
     0,
   );
-  const rewardCreditsTotal = rewardCreditWallets.reduce(
-    (total, item) =>
-      total +
-      (item.credit_limit ??
-        (item.available_credits ?? 0) + item.reserved_credits + item.used_credits),
-    0,
-  );
-  const nearestRewardCreditExpiry =
-    rewardCreditWallets
+  const nearestExtraClassExpiry =
+    rewardClassWallets
       .map((item) => item.expires_on)
       .filter(Boolean)
       .sort()[0] ?? null;
-  const credits = availableCredits(activePackage);
+
   const nextClass =
     [...snapshot.upcoming].sort(
       (left, right) => Date.parse(left.starts_at) - Date.parse(right.starts_at),
@@ -281,22 +279,29 @@ export default async function StudentHomePage({
   const expiresSoon =
     daysUntilExpiration !== null && daysUntilExpiration >= 0 && daysUntilExpiration <= 7;
 
-  const packageLimit = activePackage ? creditLimit(activePackage) : 0;
-  const usedProgress =
-    activePackage && !activePackage.unlimited && packageLimit > 0
-      ? Math.min(100, Math.round((activePackage.used_credits / packageLimit) * 100))
-      : 0;
-
-  const noCredits = Boolean(activePackage && !activePackage.unlimited && credits === 0);
-  const canReserve = Boolean(activePackage && (activePackage.unlimited || (credits ?? 0) > 0));
-  const compactPackageHeadline = activePackage
-    ? activePackage.unlimited
-      ? "Ilimitado"
-      : `${credits} clases disponibles`
-    : "";
+  const technicalAction = latestPublishedEvaluation
+    ? {
+        label: "Ver resultado",
+        href: `/student/evaluaciones/resultado/${latestPublishedEvaluation.id}`,
+      }
+    : activeEvaluationInvitation?.invitation_id
+      ? {
+          label:
+            activeEvaluationInvitation.invitation_status === "offered"
+              ? "Ver evaluación"
+              : "Elegir mi clase",
+          href:
+            activeEvaluationInvitation.invitation_status === "offered"
+              ? `/student/evaluaciones/${activeEvaluationInvitation.invitation_id}`
+              : `/student/evaluaciones/${activeEvaluationInvitation.invitation_id}/programar`,
+        }
+      : {
+          label: "Ver evaluaciones",
+          href: "/student/evaluaciones",
+        };
 
   return (
-    <main className="space-y-3 pb-4 sm:space-y-4">
+    <main className="space-y-4 pb-4">
       {query.cancelled ? (
         <StudentNoticeDialog
           eyebrow="Reserva actualizada"
@@ -316,533 +321,280 @@ export default async function StudentHomePage({
         </StudentNoticeDialog>
       ) : null}
 
-      {query.benefits === "1" && currentLevel ? (
-        <StudentNoticeDialog
-          eyebrow={`Medalla ${currentLevel.title ?? rewardStatus?.medal_title ?? ""}`}
-          title="Mis recompensas"
-          dismissHref="/student"
-          confirmLabel="Cerrar"
-        >
-          <div className="space-y-3">
-            <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-4">
-              <p className="font-semibold text-white">Beneficios activos este mes</p>
-              <div className="mt-3 space-y-2 text-sm text-zinc-300">
-                <p>
-                  Lista de espera ·{" "}
-                  {currentLevel.title === "Bronce"
-                    ? "prioridad básica"
-                    : currentLevel.title === "Plata"
-                      ? "prioridad mayor"
-                      : currentLevel.title === "Oro"
-                        ? "prioridad alta"
-                        : "prioridad máxima"}
-                </p>
-                {(currentLevel.event_discount_pct ?? 0) > 0 ? (
-                  <p>Eventos elegibles · {currentLevel.event_discount_pct}% de descuento</p>
-                ) : null}
-                {(currentLevel.private_discount_pct ?? 0) > 0 ? (
-                  <p>Clases privadas · {currentLevel.private_discount_pct}% de descuento</p>
-                ) : null}
-                {(currentLevel.monthly_guest_invites ?? 0) > 0 ? (
-                  <p>
-                    Invitaciones ·{" "}
-                    {`${invitationBalance?.remaining ?? currentLevel.monthly_guest_invites} de ${
-                      invitationBalance?.total ?? currentLevel.monthly_guest_invites
-                    } disponibles este mes`}
-                  </p>
-                ) : null}
-                {currentLevel.key !== "bronze" ? (
-                  <p>Acceso anticipado · inscripciones y promociones especiales</p>
-                ) : null}
-                {currentLevel.key === "diamond" ? (
-                  <p>Experiencias premium · beneficios exclusivos de Demeter</p>
-                ) : null}
-              </div>
-            </div>
-
-            <Link
-              href="/student/recompensas/medallero"
-              className="flex min-h-12 items-center justify-between rounded-2xl border border-fuchsia-500/25 bg-fuchsia-500/[0.06] px-4 text-sm font-semibold text-white transition hover:bg-fuchsia-500/[0.1]"
-            >
-              <span>Ver Medallero</span>
-              <span aria-hidden="true" className="text-lg text-fuchsia-300">
-                ›
-              </span>
-            </Link>
-          </div>
-        </StudentNoticeDialog>
-      ) : null}
-
-      {latestAppNotification?.notification_type === "session_minimum_cancelled" ? (
-        <section
-          data-home-block="minimum-cancellation-notification"
-          className="relative overflow-hidden rounded-[26px] border border-rose-500/35 bg-[radial-gradient(circle_at_88%_0%,rgba(244,63,94,0.18),transparent_38%),rgba(255,255,255,0.025)] p-4 shadow-[0_0_28px_rgba(244,63,94,0.08)] sm:p-5"
-        >
-          <span
-            aria-hidden="true"
-            className="absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-rose-500 to-fuchsia-500"
-          />
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <span className="inline-flex rounded-full border border-rose-400/30 bg-rose-400/[0.08] px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.16em] text-rose-200">
-                Clase cancelada
-              </span>
-              <h2 className="mt-3 text-lg font-semibold text-white">
-                {latestAppNotification.title}
-              </h2>
-              <p className="mt-1 text-xs leading-5 text-zinc-300">{latestAppNotification.body}</p>
-            </div>
-            <span aria-hidden="true" className="text-2xl text-rose-300">
-              ×
-            </span>
-          </div>
-
-          <Link
-            href={`/student/notificaciones/${latestAppNotification.id}`}
-            className="mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-2xl border border-rose-400/25 bg-rose-500/[0.1] px-4 text-sm font-semibold text-rose-100 transition hover:bg-rose-500/[0.16]"
-          >
-            Ver detalle
-          </Link>
-        </section>
-      ) : null}
-
-      {latestPublishedEvaluation ? (
-        <section
-          data-home-block="evaluation-result"
-          className="relative overflow-hidden rounded-[26px] border border-fuchsia-500/45 bg-[radial-gradient(circle_at_88%_0%,rgba(236,72,153,0.24),transparent_36%),linear-gradient(135deg,rgba(236,72,153,0.12),rgba(124,58,237,0.07))] p-4 shadow-[0_0_30px_rgba(236,72,153,0.1)] sm:p-5"
-        >
-          <span
-            aria-hidden="true"
-            className="absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-fuchsia-500 to-violet-500"
-          />
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <span
-                className={
-                  "inline-flex rounded-full border px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.16em] " +
-                  (latestPublishedEvaluation.final_outcome === "approved"
-                    ? "border-emerald-400/35 bg-emerald-400/[0.08] text-emerald-300"
-                    : "border-amber-400/35 bg-amber-400/[0.08] text-amber-300")
-                }
-              >
-                Resultado disponible
-              </span>
-              <h2 className="mt-3 text-lg font-semibold text-white">Resultado de tu evaluación</h2>
-              <p className="mt-1 text-xs leading-5 text-zinc-300">
-                {latestPublishedEvaluation.discipline_name}
-                {latestPublishedEvaluation.evaluated_level_title
-                  ? ` · ${latestPublishedEvaluation.evaluated_level_title}`
-                  : ""}
-                {latestPublishedEvaluation.total_score !== null
-                  ? ` · ${Math.round(latestPublishedEvaluation.total_score)}%`
-                  : ""}
-              </p>
-            </div>
-            <span aria-hidden="true" className="text-2xl text-fuchsia-300">
-              ✦
-            </span>
-          </div>
-
-          <Link
-            href={"/student/evaluaciones/resultado/" + latestPublishedEvaluation.id}
-            className="mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-2xl bg-fuchsia-600 px-4 text-sm font-semibold text-white transition hover:bg-fuchsia-500"
-          >
-            Ver resultado de tu evaluación
-          </Link>
-        </section>
-      ) : null}
-      {activeEvaluationInvitation?.invitation_id ? (
-        <section
-          data-home-block="evaluation-invitation"
-          className="relative overflow-hidden rounded-[26px] border border-fuchsia-500/40 bg-[radial-gradient(circle_at_88%_0%,rgba(236,72,153,0.22),transparent_36%),linear-gradient(135deg,rgba(236,72,153,0.11),rgba(124,58,237,0.06))] p-4 shadow-[0_0_28px_rgba(236,72,153,0.08)] sm:p-5"
-        >
-          <span
-            aria-hidden="true"
-            className="absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-fuchsia-500 to-violet-500"
-          />
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <span className="inline-flex rounded-full border border-fuchsia-500/30 bg-fuchsia-500/[0.08] px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.16em] text-fuchsia-300">
-                {activeEvaluationInvitation.invitation_status === "offered"
-                  ? "Evaluación disponible"
-                  : "Evaluación pendiente"}
-              </span>
-              <h2 className="mt-3 text-lg font-semibold text-white">
-                {activeEvaluationInvitation.discipline_name}
-              </h2>
-              <p className="mt-1 text-xs leading-5 text-zinc-300">
-                {activeEvaluationInvitation.invitation_status === "offered"
-                  ? `Tienes una invitación para evaluar tu nivel ${activeEvaluationInvitation.current_level_title}.`
-                  : "Ya aceptaste tu evaluación. Elige una clase para programarla."}
-              </p>
-              {activeEvaluationInvitation.window_start && activeEvaluationInvitation.window_end ? (
-                <p className="mt-1 text-[11px] text-zinc-500">
-                  Disponible del{" "}
-                  {formatDate(activeEvaluationInvitation.window_start, studio.timezone)} al{" "}
-                  {formatDate(activeEvaluationInvitation.window_end, studio.timezone)}
-                </p>
-              ) : null}
-            </div>
-            <span aria-hidden="true" className="text-2xl text-fuchsia-300">
-              ✦
-            </span>
-          </div>
-
-          <Link
-            href={
-              activeEvaluationInvitation.invitation_status === "offered"
-                ? "/student/evaluaciones/" + activeEvaluationInvitation.invitation_id
-                : "/student/evaluaciones/" + activeEvaluationInvitation.invitation_id + "/programar"
-            }
-            className="mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-2xl bg-fuchsia-600 px-4 text-sm font-semibold text-white transition hover:bg-fuchsia-500"
-          >
-            {activeEvaluationInvitation.invitation_status === "offered"
-              ? "Ver invitación"
-              : "Programar evaluación"}
-          </Link>
-        </section>
-      ) : null}
-
-      <header
-        data-home-block="identity-benefits-technical"
-        data-level={levelKey}
-        className="relative overflow-hidden rounded-[28px] border p-4 transition-colors sm:p-5"
-        style={{
-          borderColor: levelVisual.border,
-          boxShadow: `0 0 34px ${levelVisual.glow}, inset 0 0 0 1px rgba(255,255,255,0.025)`,
-          backgroundImage: `radial-gradient(circle at 86% 8%, ${levelVisual.wash}, transparent 30%), linear-gradient(135deg, rgba(255,255,255,0.035), rgba(255,255,255,0.012))`,
-        }}
-      >
-        <div className="grid grid-cols-[112px_minmax(0,1fr)] items-start gap-2.5 sm:grid-cols-[128px_minmax(0,1fr)] sm:gap-4">
-          <div className="min-w-0">
-            <div
-              className="relative h-28 w-28 overflow-hidden rounded-full border-2 bg-black/25 sm:h-32 sm:w-32"
-              style={{
-                borderColor: levelVisual.accent,
-                boxShadow: `0 0 28px ${levelVisual.glow}`,
-              }}
-            >
-              <div className="absolute inset-0 flex items-center justify-center text-2xl font-semibold text-fuchsia-200">
-                {snapshot.profile.first_name.trim().charAt(0).toUpperCase()}
-              </div>
-              <Image
-                src="/student/perfil/avatar"
-                alt="Foto de perfil"
-                fill
-                unoptimized
-                className="object-cover"
-              />
-            </div>
-
-            <p className="mt-4 text-[9px] font-semibold uppercase tracking-[0.26em] text-zinc-500">
-              Mi perfil
-            </p>
-            <h1 className="mt-1.5 text-xl font-semibold leading-tight tracking-tight text-white sm:text-2xl">
-              {fullName}
-            </h1>
-          </div>
-
-          <Link
-            href={
-              currentLevel
-                ? "/student?benefits=1"
-                : rewardStatus?.access_unlocked
-                  ? "/student/recompensas/medallero"
-                  : "/student/recompensas"
-            }
-            className="min-w-0 rounded-3xl border bg-black/20 p-3.5 transition hover:bg-white/[0.035] sm:p-4"
-            style={{ borderColor: levelVisual.divider }}
-          >
-            <p
-              className="text-[9px] font-semibold uppercase tracking-[0.22em]"
-              style={{ color: currentLevel ? levelVisual.accent : "#f0abfc" }}
-            >
-              {currentLevel ? "Mi medalla" : rewardStatus?.access_unlocked ? "Medallas" : "Rewards"}
-            </p>
-            <div className="mt-3 flex items-center gap-3">
-              <div
-                aria-hidden="true"
-                className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[16px] border text-xl"
-                style={{
-                  borderColor: currentLevel ? levelVisual.border : "rgba(236,72,153,0.35)",
-                  background: currentLevel
-                    ? `linear-gradient(135deg, ${levelVisual.wash}, rgba(0,0,0,0.18))`
-                    : "rgba(236,72,153,0.08)",
-                  boxShadow: currentLevel ? `0 0 22px ${levelVisual.glow}` : "none",
-                  color: currentLevel ? levelVisual.accent : "#f0abfc",
-                }}
-              >
-                {currentLevel ? "♛" : "◇"}
-              </div>
-              <div className="min-w-0">
-                <h2 className="text-lg font-semibold leading-tight text-white sm:text-xl">
-                  {currentLevel
-                    ? `Medalla ${currentLevel.title ?? "Bronce"}`
-                    : rewardStatus?.access_unlocked
-                      ? "Sin medalla"
-                      : "Activando Medallas"}
-                </h2>
-                <p className="mt-0.5 text-[11px] leading-4 text-zinc-400">
-                  {currentLevel
-                    ? "Tu constancia te lleva más lejos"
-                    : rewardStatus?.access_unlocked
-                      ? "Tu Medalla se evalúa cada mes"
-                      : "Completa tu activación para acceder al programa"}
-                </p>
-              </div>
-            </div>
-            <div className="mt-4 flex items-center justify-between border-t border-white/10 pt-3 text-xs font-semibold text-white">
-              <span>
-                {currentLevel
-                  ? "Ver mis recompensas"
-                  : rewardStatus?.access_unlocked
-                    ? "Ver Medallero"
-                    : "Continuar activación"}
-              </span>
-              <span aria-hidden="true" className="text-lg text-zinc-600">
-                ›
-              </span>
-            </div>
-          </Link>
-        </div>
-
-        <div className="mt-4 border-t border-white/10 pt-4">
-          <div className="flex items-center justify-between gap-3">
-            <p className="text-[9px] font-semibold uppercase tracking-[0.24em] text-zinc-400">
-              Niveles técnicos
-            </p>
-            {technicalLevels.length ? (
-              <Link
-                href="/student/evaluaciones"
-                className="text-[10px] font-semibold text-fuchsia-300"
-              >
-                Ver evaluaciones →
-              </Link>
-            ) : null}
-          </div>
-
-          {technicalLevels.length ? (
-            <div className="mt-3 flex flex-wrap gap-2">
-              {technicalLevels.map((item) => (
-                <span
-                  key={item.disciplineName}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-cyan-400/40 bg-cyan-400/[0.06] px-3 py-1.5 text-[11px] font-semibold text-cyan-200"
-                >
-                  <span>{item.disciplineName}</span>
-                  <span className="text-cyan-500">·</span>
-                  <strong>{item.levelTitle}</strong>
-                </span>
-              ))}
-            </div>
-          ) : (
-            <div className="mt-3 rounded-2xl border border-white/10 bg-black/15 px-3.5 py-3">
-              <p className="text-xs text-zinc-400">Aún no tienes niveles técnicos confirmados.</p>
-            </div>
-          )}
-        </div>
+      <header className="pb-1">
+        <p className="student-eyebrow">Inicio</p>
+        <h1 className="student-page-title mt-1">Hola, {snapshot.profile.first_name}</h1>
+        <p className="student-body mt-2">Aquí tienes lo importante para tu próximo entrenamiento.</p>
       </header>
 
-      {activePackage ? (
-        <section
-          data-home-block="package"
-          className="rounded-[24px] border border-fuchsia-500/30 bg-[radial-gradient(circle_at_100%_0%,rgba(236,72,153,0.09),transparent_36%),rgba(255,255,255,0.025)] p-4"
-        >
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <p className="text-[9px] font-semibold uppercase tracking-[0.22em] text-zinc-400">
-                Mi paquete
-              </p>
-              <h2 className="mt-2 truncate text-lg font-semibold text-white">
-                {activePackage.name}
+      {priorityNotification ? (
+        (() => {
+          const tone = priorityNotificationTone(priorityNotification.notification_type);
+
+          return (
+            <section
+              data-home-block="priority-action"
+              className={`student-card ${tone.border} ${tone.background} p-4`}
+            >
+              <p className={`text-xs font-semibold ${tone.label}`}>Importante</p>
+              <h2 className="mt-2 text-lg font-semibold text-white">
+                {priorityNotification.title}
               </h2>
-            </div>
-            <Link href="/student/paquete" className="shrink-0 text-xs font-semibold text-white">
-              Ver detalles →
-            </Link>
-          </div>
-
-          <div className="mt-4 flex items-end justify-between gap-4 border-t border-white/10 pt-4">
-            <div>
-              <strong className="block text-base font-semibold text-white">
-                {compactPackageHeadline}
-              </strong>
-              {activePackage.unlimited ? (
-                <span className="mt-1 block text-[11px] text-zinc-500">
-                  Acceso durante tu vigencia
-                </span>
-              ) : null}
-            </div>
-            <div className="text-right">
-              <span className="text-[9px] uppercase tracking-[0.14em] text-zinc-600">Vence</span>
-              <strong
-                className={`ml-2 text-sm ${expiresSoon ? "text-amber-200" : "text-zinc-300"}`}
-              >
-                {formatDate(activePackage.expires_on, studio.timezone)}
-              </strong>
-            </div>
-          </div>
-
-          {!activePackage.unlimited ? (
-            <div className="mt-3">
-              <div
-                className="h-1.5 overflow-hidden rounded-full bg-white/10"
-                role="progressbar"
-                aria-label="Clases utilizadas"
-                aria-valuemin={0}
-                aria-valuemax={packageLimit}
-                aria-valuenow={activePackage.used_credits}
-              >
-                <div
-                  className="h-full rounded-full bg-fuchsia-500"
-                  style={{ width: `${usedProgress}%` }}
-                />
-              </div>
-              <div className="mt-1.5 flex items-center justify-between text-[10px] text-zinc-600">
-                <span>{activePackage.used_credits} utilizadas</span>
-                <span>{packageLimit} total</span>
-              </div>
-            </div>
-          ) : null}
-        </section>
-      ) : (
-        <section
-          data-home-block="no-package"
-          className="rounded-[24px] border border-fuchsia-500/30 bg-[radial-gradient(circle_at_100%_0%,rgba(236,72,153,0.08),transparent_36%),rgba(255,255,255,0.025)] p-4"
-        >
-          <p className="text-[9px] font-semibold uppercase tracking-[0.22em] text-zinc-400">
-            Mi paquete
-          </p>
-          <div className="mt-5 text-center">
-            <span aria-hidden="true" className="text-3xl text-zinc-500">
-              ◇
-            </span>
-            <h2 className="mt-3 text-base font-semibold text-white">
-              Aún no tienes un paquete activo
-            </h2>
-            <p className="mx-auto mt-1.5 max-w-sm text-xs leading-5 text-zinc-400">
-              Explora las opciones disponibles y elige la que se adapte a ti.
-            </p>
-            <Link
-              href="/student/paquete"
-              className="mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-2xl bg-fuchsia-600 px-4 text-sm font-semibold text-white transition hover:bg-fuchsia-500"
-            >
-              Comprar paquete
-            </Link>
-          </div>
-        </section>
-      )}
-
-      {rewardCreditWallets.length ? (
-        <section
-          data-home-block="reward-credits"
-          className="rounded-[20px] border border-emerald-400/55 bg-[radial-gradient(circle_at_88%_12%,rgba(16,185,129,0.16),transparent_36%),rgba(5,20,15,0.72)] px-4 py-3 shadow-[0_0_26px_rgba(16,185,129,0.08)]"
-        >
-          <div className="flex items-center gap-3">
-            <div
-              aria-hidden="true"
-              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-emerald-400/40 bg-emerald-400/10 text-lg text-emerald-300"
-            >
-              ◇
-            </div>
-
-            <div className="min-w-0 flex-1">
-              <p className="text-[9px] font-semibold uppercase tracking-[0.22em] text-emerald-300">
-                Créditos extra
+              <p className="mt-1 text-sm leading-6 text-zinc-300">
+                {priorityNotification.body}
               </p>
-              <strong className="mt-0.5 block text-base font-semibold text-white">
-                {rewardCreditsAvailable} de {rewardCreditsTotal} disponibles
-              </strong>
-              {nearestRewardCreditExpiry ? (
-                <p className="mt-0.5 text-[11px] text-zinc-400">
-                  Vence {formatDate(nearestRewardCreditExpiry, studio.timezone)}
-                </p>
-              ) : null}
-            </div>
-
-            {rewardCreditsAvailable > 0 ? (
               <Link
-                href="/student/reservar?credit=reward"
-                className="inline-flex min-h-10 shrink-0 items-center justify-center rounded-full border border-emerald-400/60 bg-emerald-400/[0.08] px-3 text-xs font-semibold text-emerald-200 transition hover:bg-emerald-400/[0.14]"
+                href={`/student/notificaciones/${priorityNotification.id}`}
+                className={`mt-4 inline-flex min-h-11 items-center justify-center rounded-xl border px-4 text-sm font-semibold ${tone.button}`}
               >
-                Usar créditos →
+                Ver detalle
               </Link>
-            ) : (
-              <span className="shrink-0 text-xs font-semibold text-zinc-500">Agotados</span>
-            )}
-          </div>
-
-          <p className="mt-2 border-t border-emerald-400/10 pt-2 text-[10px] text-zinc-500">
-            Saldo independiente de tu paquete actual.
-          </p>
+            </section>
+          );
+        })()
+      ) : primaryRestriction ? (
+        <section
+          data-home-block="priority-action"
+          className="student-card border-amber-400/30 bg-amber-400/[0.055] p-4"
+        >
+          <p className="text-xs font-semibold text-amber-200">Necesitas resolver esto</p>
+          <h2 className="mt-2 text-lg font-semibold text-white">{primaryRestriction.title}</h2>
+          {primaryRestriction.detail ? (
+            <p className="mt-1 text-sm leading-6 text-zinc-300">{primaryRestriction.detail}</p>
+          ) : null}
+          {primaryRestriction.action_href ? (
+            <Link
+              href={primaryRestriction.action_href}
+              className="mt-4 inline-flex min-h-11 items-center justify-center rounded-xl bg-fuchsia-600 px-4 text-sm font-semibold text-white"
+            >
+              {primaryRestriction.action_label || "Resolver"}
+            </Link>
+          ) : null}
         </section>
       ) : null}
 
-      <section
-        data-home-block="reserved-classes"
-        className="rounded-[24px] border border-fuchsia-500/25 bg-white/[0.025] p-4"
-      >
+      <section data-home-block="next-class" className="student-card p-4 sm:p-5">
         <div className="flex items-center justify-between gap-3">
-          <p className="text-[9px] font-semibold uppercase tracking-[0.22em] text-zinc-400">
-            Tus clases reservadas
-          </p>
+          <div>
+            <p className="student-eyebrow">Tu próxima clase</p>
+            {nextClass ? (
+              <h2 className="mt-1 text-xl font-semibold text-white">{nextClass.activity}</h2>
+            ) : null}
+          </div>
           {nextClass ? (
-            <Link href="/student/mis-clases" className="text-xs font-semibold text-white">
-              Ver todas →
-            </Link>
+            <span className="rounded-full bg-emerald-500/12 px-2.5 py-1 text-xs font-semibold text-emerald-300">
+              Confirmada
+            </span>
           ) : null}
         </div>
 
         {nextClass ? (
-          <Link
-            href="/student/mis-clases"
-            className="mt-3 grid grid-cols-[68px_1fr_auto] items-center gap-3 rounded-2xl border border-white/10 bg-black/20 p-3 transition hover:bg-white/[0.04]"
-          >
-            <div className="relative h-[76px] overflow-hidden rounded-xl border border-fuchsia-500/25 bg-[radial-gradient(circle_at_45%_25%,rgba(236,72,153,0.45),transparent_24%),linear-gradient(145deg,#2b0b22,#090c12_72%)]">
-              <span className="absolute inset-y-2 left-1/2 w-px -translate-x-1/2 bg-fuchsia-300/45" />
-              <span className="absolute inset-0 grid place-items-center text-lg text-fuchsia-200">
-                ✦
-              </span>
-            </div>
-            <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-2">
-                <h2 className="truncate text-base font-semibold text-white">
-                  {nextClass.activity}
-                </h2>
-                <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold text-emerald-300">
-                  Confirmada
-                </span>
-              </div>
-              <p className="mt-1 text-xs text-zinc-300">
-                {formatDateTime(nextClass.starts_at, studio.timezone)}
-              </p>
-              <p className="mt-1 truncate text-[11px] text-zinc-500">
-                {[nextClass.space, nextClass.coach].filter(Boolean).join(" · ") ||
-                  "Consulta los detalles de tu clase"}
-              </p>
-            </div>
-            <span aria-hidden="true" className="text-xl text-zinc-500">
-              ›
-            </span>
-          </Link>
-        ) : (
-          <div className="mt-3 rounded-2xl border border-white/10 bg-black/15 px-4 py-5 text-center">
-            <span aria-hidden="true" className="text-2xl text-zinc-500">
-              ▣
-            </span>
-            <h2 className="mt-3 text-sm font-semibold text-white">
-              Aún no tienes clases reservadas
-            </h2>
-            <p className="mx-auto mt-1.5 max-w-sm text-xs leading-5 text-zinc-400">
-              Reserva tu próxima clase y sigue avanzando en tu entrenamiento.
+          <>
+            <p className="mt-3 text-base font-medium text-white">
+              {formatDateTime(nextClass.starts_at, studio.timezone)}
+            </p>
+            <p className="mt-1 text-sm text-zinc-400">
+              {[nextClass.coach, nextClass.space].filter(Boolean).join(" · ") ||
+                "Consulta los detalles de tu clase"}
             </p>
             <Link
-              href="/student/reservar"
-              className="mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-2xl border border-fuchsia-500/70 px-4 text-sm font-semibold text-fuchsia-300 transition hover:bg-fuchsia-500/[0.08]"
+              href="/student/mis-clases"
+              className="student-action-secondary mt-4 w-full sm:w-auto"
             >
-              Reservar clase
+              Ver mi clase
+            </Link>
+          </>
+        ) : (
+          <div className="mt-3">
+            <h2 className="text-lg font-semibold text-white">Reserva tu próxima clase</h2>
+            <p className="mt-1 text-sm leading-6 text-zinc-400">
+              Elige el día y la clase que quieres tomar.
+            </p>
+            <Link href="/student/reservar" className="student-action-primary mt-4 w-full sm:w-auto">
+              Reservar una clase
             </Link>
           </div>
         )}
+      </section>
+
+      <section
+        data-home-block="package"
+        className={`student-card p-4 sm:p-5 ${
+          expiresSoon ? "border-amber-400/30 bg-amber-400/[0.035]" : ""
+        }`}
+      >
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0">
+            <p className="student-eyebrow">Tu paquete</p>
+            {activePackage ? (
+              <>
+                <h2 className="mt-1 text-xl font-semibold text-white">
+                  {activePackage.unlimited
+                    ? "Clases ilimitadas"
+                    : `${classesAvailable ?? 0} clases disponibles`}
+                </h2>
+                <p className="mt-1 text-sm text-zinc-400">
+                  {activePackage.name} · vence {formatDate(activePackage.expires_on, studio.timezone)}
+                </p>
+              </>
+            ) : (
+              <>
+                <h2 className="mt-1 text-lg font-semibold text-white">No tienes un paquete activo</h2>
+                <p className="mt-1 text-sm text-zinc-400">
+                  Necesitas un paquete o clase disponible para seguir reservando.
+                </p>
+              </>
+            )}
+          </div>
+          {activePackage ? (
+            <Link href="/student/paquete" className="shrink-0 text-sm font-semibold text-fuchsia-300">
+              Ver →
+            </Link>
+          ) : null}
+        </div>
+
+        {activePackage && extraClassesAvailable > 0 ? (
+          <div className="mt-4 rounded-2xl border border-emerald-400/20 bg-emerald-400/[0.045] px-3.5 py-3">
+            <strong className="text-sm text-emerald-200">
+              +{extraClassesAvailable} {extraClassesAvailable === 1 ? "clase extra" : "clases extra"}
+            </strong>
+            {nearestExtraClassExpiry ? (
+              <p className="mt-0.5 text-xs text-zinc-400">
+                Disponibles hasta {formatDate(nearestExtraClassExpiry, studio.timezone)}
+              </p>
+            ) : null}
+          </div>
+        ) : null}
+
+        {!activePackage ? (
+          <Link href="/student/paquete" className="student-action-primary mt-4 w-full sm:w-auto">
+            Ver paquetes
+          </Link>
+        ) : null}
+      </section>
+
+      <section data-home-block="technical-level" className="student-card p-4 sm:p-5">
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0">
+            <p className="student-eyebrow">Nivel técnico</p>
+
+            {latestPublishedEvaluation ? (
+              <>
+                <h2 className="mt-1 text-lg font-semibold text-white">
+                  {latestPublishedEvaluation.discipline_name}
+                </h2>
+                <p className="mt-1 text-sm text-zinc-300">
+                  Resultado disponible
+                  {latestPublishedEvaluation.resulting_level_title
+                    ? ` · ${latestPublishedEvaluation.resulting_level_title}`
+                    : ""}
+                </p>
+              </>
+            ) : activeEvaluationInvitation ? (
+              <>
+                <h2 className="mt-1 text-lg font-semibold text-white">
+                  {activeEvaluationInvitation.discipline_name}
+                </h2>
+                <p className="mt-1 text-sm text-zinc-300">
+                  {activeEvaluationInvitation.invitation_status === "offered"
+                    ? "Tienes una evaluación disponible"
+                    : "Elige una clase para realizar tu evaluación"}
+                </p>
+              </>
+            ) : primaryTechnicalLevel ? (
+              <>
+                <h2 className="mt-1 text-lg font-semibold text-white">
+                  {primaryTechnicalLevel.disciplineName}
+                </h2>
+                <p className="mt-1 text-base font-semibold text-cyan-200">
+                  {primaryTechnicalLevel.levelTitle}
+                </p>
+                {additionalTechnicalLevels > 0 ? (
+                  <p className="mt-1 text-xs text-zinc-500">
+                    +{additionalTechnicalLevels}{" "}
+                    {additionalTechnicalLevels === 1 ? "disciplina" : "disciplinas"}
+                  </p>
+                ) : null}
+              </>
+            ) : (
+              <>
+                <h2 className="mt-1 text-lg font-semibold text-white">
+                  Aún sin nivel técnico confirmado
+                </h2>
+                <p className="mt-1 text-sm leading-6 text-zinc-400">
+                  Tu nivel se confirma por disciplina mediante Evaluaciones.
+                </p>
+              </>
+            )}
+          </div>
+
+          <span
+            aria-hidden="true"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-cyan-400/10 text-cyan-200"
+          >
+            ◎
+          </span>
+        </div>
+
+        <Link href={technicalAction.href} className="student-action-secondary mt-4 w-full sm:w-auto">
+          {technicalAction.label}
+        </Link>
+      </section>
+
+      <section
+        data-home-block="medal"
+        className="student-card p-4 sm:p-5"
+        style={
+          currentMedal
+            ? {
+                borderColor: medalVisual.border,
+                backgroundImage: `radial-gradient(circle at 92% 8%, ${medalVisual.wash}, transparent 34%)`,
+              }
+            : undefined
+        }
+      >
+        <div className="flex items-start gap-4">
+          <div
+            aria-hidden="true"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.035] text-xl"
+            style={currentMedal ? { color: medalVisual.accent, borderColor: medalVisual.border } : undefined}
+          >
+            ◇
+          </div>
+
+          <div className="min-w-0 flex-1">
+            <p className="student-eyebrow">Tu medalla</p>
+            <h2 className="mt-1 text-lg font-semibold text-white">
+              {currentMedal
+                ? `Medalla ${currentMedal.title ?? "Bronce"}`
+                : rewardStatus?.access_unlocked
+                  ? "Sin medalla este mes"
+                  : "Activa tus Medallas"}
+            </h2>
+            <p className="mt-1 text-sm leading-6 text-zinc-400">
+              {currentMedal
+                ? "Reconoce tu constancia y desbloquea beneficios en Demeter."
+                : rewardStatus?.access_unlocked
+                  ? "Tus requisitos de medalla se evalúan cada mes."
+                  : "Completa tu activación para empezar a obtener medallas y beneficios."}
+            </p>
+          </div>
+        </div>
+
+        <Link
+          href={
+            rewardStatus?.access_unlocked
+              ? "/student/recompensas/medallero"
+              : "/student/recompensas"
+          }
+          className="student-action-secondary mt-4 w-full sm:w-auto"
+        >
+          {currentMedal
+            ? "Ver medallas y beneficios"
+            : rewardStatus?.access_unlocked
+              ? "Ver Medallero"
+              : "Continuar activación"}
+        </Link>
       </section>
     </main>
   );
