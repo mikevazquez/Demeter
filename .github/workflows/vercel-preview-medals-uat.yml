@@ -41,7 +41,11 @@ jobs:
         id: deploy
         shell: bash
         run: |
-          URL="$(vercel deploy --yes --token="$VERCEL_TOKEN")"
+          URL="$(vercel deploy --yes --token="$VERCEL_TOKEN" \
+            --build-env NEXT_PUBLIC_SUPABASE_URL=https://hedouonyhynuvwbckdlg.supabase.co \
+            --build-env NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_pXzsmytzghwW-3QhLg11Qg_BFZT_kuW \
+            --env NEXT_PUBLIC_SUPABASE_URL=https://hedouonyhynuvwbckdlg.supabase.co \
+            --env NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_pXzsmytzghwW-3QhLg11Qg_BFZT_kuW)"
           echo "url=$URL" >> "$GITHUB_OUTPUT"
           echo "### Studio Flow · Medals UAT Preview" >> "$GITHUB_STEP_SUMMARY"
           echo "$URL" >> "$GITHUB_STEP_SUMMARY"
