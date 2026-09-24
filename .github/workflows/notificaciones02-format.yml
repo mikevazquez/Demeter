@@ -1,0 +1,43 @@
+name: NOTIFICACIONES-02 temporary formatter
+
+on:
+  push:
+    branches:
+      - feat/notificaciones-02-control-center
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: feat/notificaciones-02-control-center
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Format NOTIFICACIONES-02 files
+        run: |
+          npx prettier --write             app/admin/layout.tsx             'app/admin/notificaciones/[processKey]/page.tsx'             app/admin/notificaciones/actions.ts             app/admin/notificaciones/notificaciones.css             app/admin/notificaciones/page.tsx             lib/notifications/admin-catalog.ts             tests/notificaciones02-control-center.test.ts
+
+      - name: Commit formatting
+        run: |
+          if git diff --quiet; then
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/admin/layout.tsx app/admin/notificaciones lib/notifications/admin-catalog.ts tests/notificaciones02-control-center.test.ts
+          git commit -m "chore: format NOTIFICACIONES-02"
+          git push origin HEAD:feat/notificaciones-02-control-center
