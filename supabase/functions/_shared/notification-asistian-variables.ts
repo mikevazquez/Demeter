@@ -78,10 +78,7 @@ export function buildAsistianVariables(
 
   const common = {
     nombre: safeText(variables.recipient_name) ?? "Alumna",
-    disciplina:
-      safeText(variables.discipline_name) ??
-      safeText(variables.class_name) ??
-      "Clase",
+    disciplina: safeText(variables.discipline_name) ?? safeText(variables.class_name) ?? "Clase",
     fecha: starts.fecha,
     hora: starts.hora,
   };
