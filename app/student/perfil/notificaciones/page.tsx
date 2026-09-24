@@ -31,9 +31,9 @@ export default async function StudentNotificationPreferencesPage() {
         studioId={membership.studio_id}
         studioName={studio.name}
         initialPreferences={{
-          push_enabled: preferences.push_enabled ?? true,
+          push_enabled: preferences.push_enabled ?? false,
           whatsapp_enabled: preferences.whatsapp_enabled ?? true,
-          email_enabled: preferences.email_enabled ?? true,
+          email_enabled: preferences.email_enabled ?? false,
         }}
       />
     </main>
