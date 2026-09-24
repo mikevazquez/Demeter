@@ -55,7 +55,7 @@ describe("RETOS-01", () => {
   it("implements explicit enrollment and a privacy-safe Top 3", () => {
     const home = read("app/student/retos/page.tsx");
     const detail = read("app/student/retos/[ruleId]/page.tsx");
-    const migration = read("supabase/migrations/20260924071218_retos01_competitive_challenges.sql");
+    const migration = read("supabase/migrations/20260924220000_retos01_competitive_challenges.sql");
 
     expect(home).toContain("Objetivos temporales, competencias y recompensas");
     expect(detail).toContain("Inscribirme al reto");
@@ -67,8 +67,8 @@ describe("RETOS-01", () => {
   });
 
   it("settles competitive prizes only after ranking closes", () => {
-    const migration = read("supabase/migrations/20260924071922_retos01_competitive_settlement.sql");
-    const fix = read("supabase/migrations/20260924072632_retos01_settlement_state_fix.sql");
+    const migration = read("supabase/migrations/20260924220100_retos01_competitive_settlement.sql");
+    const fix = read("supabase/migrations/20260924220300_retos01_settlement_state_fix.sql");
 
     expect(migration).toContain("reward_challenge_settlements");
     expect(migration).toContain("system_settle_due_reward_challenges");
@@ -92,7 +92,7 @@ describe("RETOS-01", () => {
     const detail = read("app/student/retos/[ruleId]/page.tsx");
     const actions = read("app/student/retos/actions.ts");
     const migration = read(
-      "supabase/migrations/20260924072218_retos01_competitive_reward_read.sql",
+      "supabase/migrations/20260924220200_retos01_competitive_reward_read.sql",
     );
 
     expect(home).toContain("Finalizados");
