@@ -112,6 +112,7 @@ export function RuleEditorForm({
     String(presentation.competition_mode) === "leaderboard" ? "leaderboard" : "individual";
   const tieBreaker =
     String(presentation.tie_breaker) === "shared" ? "shared" : "first_to_reach";
+  const winnerCount = Math.min(3, Math.max(1, Number(presentation.winner_count ?? 1)));
   const displayName = copyOverride?.title ?? version?.name ?? (isAchievement ? "Logro" : "Reto");
   const displayDescription = copyOverride?.description ?? version?.description ?? "";
   const coverUrl = copyOverride?.cover_url ?? String(presentation.cover_url ?? "");
@@ -343,7 +344,19 @@ export function RuleEditorForm({
                     <option value="shared">Premio compartido</option>
                   </select>
                 </label>
-                <div className="rounded-xl border border-[#FF0A8A]/20 bg-[#FF0A8A]/[0.06] p-3 text-xs leading-5 text-zinc-300 md:col-span-2">
+                <label className="grid gap-1 text-sm text-zinc-300">
+                  Número de ganadoras
+                  <select
+                    name="winner_count"
+                    defaultValue={String(winnerCount)}
+                    className="rounded-xl border border-white/10 bg-[#111114] px-3 py-2.5 text-white"
+                  >
+                    <option value="1">1 ganadora</option>
+                    <option value="2">2 ganadoras</option>
+                    <option value="3">3 ganadoras</option>
+                  </select>
+                </label>
+                <div className="rounded-xl border border-[#FF0A8A]/20 bg-[#FF0A8A]/[0.06] p-3 text-xs leading-5 text-zinc-300">
                   En competencia, la inscripción es voluntaria y solo las inscritas entran al ranking.
                   El portal muestra Top 3, posición personal y distancia al podio; nunca apellidos completos.
                 </div>
