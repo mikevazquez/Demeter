@@ -79,6 +79,23 @@
   box-shadow: 0 0 12px rgba(53, 211, 155, 0.4);
 }
 
+.notification-operation-badge.is-paused {
+  border-color: #303947;
+  background: #151b24;
+  color: #a1a9b5;
+}
+
+.notification-operation-badge.is-paused > span {
+  background: #6f7885;
+  box-shadow: none;
+}
+
+.notification-essential-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .notification-essential-badge {
   border-color: rgba(255, 193, 92, 0.16);
   background: rgba(255, 193, 92, 0.07);
