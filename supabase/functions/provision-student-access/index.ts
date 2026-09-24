@@ -190,6 +190,20 @@ const handler = {
           return jsonResponse({ error: "auth_password_reset_failed" }, 500);
         }
 
+        await adminClient.rpc("emit_domain_event", {
+          p_studio_id: student.studio_id,
+          p_event_type: "account.password_reset",
+          p_source_entity_type: "student",
+          p_source_entity_id: student.id,
+          p_deduplication_key: `notification:account.password_reset:${student.id}:${crypto.randomUUID()}`,
+          p_actor_user_id: user.id,
+          p_payload: {
+            student_id: student.id,
+            user_id: student.user_id,
+            source: "temporary_password",
+          },
+        });
+
         return jsonResponse({
           ok: true,
           phone: student.phone,
