@@ -169,6 +169,7 @@ export default async function NotificationsPage({
   const activeProcesses = liveProcesses.filter((process) =>
     process.ruleKeys.every((ruleKey) => rulesByKey.get(ruleKey)?.enabled),
   );
+  const operationActive = activeProcesses.length > 0;
 
   return (
     <main className="dashboard-shell admin-module-page notification-admin-page admin-ux04-secondary">
@@ -178,9 +179,15 @@ export default async function NotificationsPage({
           <h1>Notificaciones</h1>
           <p>Decide qué comunicación se envía, por qué canal y cuándo.</p>
         </div>
-        <span className="notification-operation-badge">
+        <span
+          className={
+            operationActive
+              ? "notification-operation-badge"
+              : "notification-operation-badge is-paused"
+          }
+        >
           <span aria-hidden="true" />
-          Operación activa
+          {operationActive ? "Operación activa" : "Operación pausada"}
         </span>
       </header>
 
@@ -206,9 +213,15 @@ export default async function NotificationsPage({
                 <h2>Comunicación del estudio</h2>
                 <p>Estado general de tus avisos y canales configurados.</p>
               </div>
-              <span className="notification-operation-badge compact">
+              <span
+                className={
+                  operationActive
+                    ? "notification-operation-badge compact"
+                    : "notification-operation-badge compact is-paused"
+                }
+              >
                 <span aria-hidden="true" />
-                Operación activa
+                {operationActive ? "Operación activa" : "Operación pausada"}
               </span>
             </div>
 
