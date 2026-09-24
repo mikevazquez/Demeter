@@ -34,12 +34,7 @@ jobs:
         run: npm ci
 
       - name: Format check
-        run: |
-          if ! npm run format:check; then
-            npx prettier --write supabase/functions/process-contact-created/index.ts tests/asistian-sync01-student-contact.test.ts
-            git diff -- supabase/functions/process-contact-created/index.ts tests/asistian-sync01-student-contact.test.ts
-            exit 1
-          fi
+        run: npm run format:check
 
       - name: Lint
         run: npm run lint
