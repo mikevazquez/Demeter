@@ -137,8 +137,8 @@ export default async function RewardsControlCenterPage() {
           <div>
             <p className="text-sm leading-6 text-zinc-400">
               El onboarding no entrega una Medalla. Al completar los seis hitos, la alumna obtiene
-              acceso al sistema mensual de Medallas y comienza a ser evaluada por su constancia.
-              Las alumnas de legado conservan su Medalla vigente.
+              acceso al sistema mensual de Medallas y comienza a ser evaluada por su constancia. Las
+              alumnas de legado conservan su Medalla vigente.
             </p>
             <div className="mt-4 grid gap-2 sm:grid-cols-2">
               {[
@@ -182,7 +182,8 @@ export default async function RewardsControlCenterPage() {
             <h3 className="mt-2 text-xl font-semibold text-white">Medallas desbloqueadas</h3>
             <p className="mt-2 text-sm leading-6 text-zinc-400">
               Una vez activada, cada mes la alumna puede obtener directamente Bronce, Plata, Oro o
-              Diamante según Días activos, No show, Continuidad y Renovación. No existe una escalera.
+              Diamante según Días activos, No show, Continuidad y Renovación. No existe una
+              escalera.
             </p>
             <Link
               href="/admin/recompensas/medallas"
@@ -195,7 +196,7 @@ export default async function RewardsControlCenterPage() {
         </div>
       </SectionCard>
 
-            <section className="grid gap-4 lg:grid-cols-3">
+      <section className="grid gap-4 lg:grid-cols-3">
         {[
           {
             title: "Programas",
