@@ -228,20 +228,25 @@ export default async function NotificationProcessPage({
             <p>Qué ocurre y a quién se comunica.</p>
           </div>
 
-          {process.essential ? (
-            <span className="notification-essential-badge">🔒 Esencial · siempre activo</span>
+          {process.essential && enabled ? (
+            <span className="notification-essential-badge">🔒 Esencial · activo</span>
           ) : canManage ? (
-            <form action={toggleNotificationProcessAction}>
-              <input type="hidden" name="process_key" value={process.key} />
-              <input type="hidden" name="next_enabled" value={String(!enabled)} />
-              <button
-                type="submit"
-                className={enabled ? "notification-switch is-on" : "notification-switch"}
-                aria-label={enabled ? "Pausar proceso" : "Activar proceso"}
-              >
-                <span />
-              </button>
-            </form>
+            <div className="notification-essential-control">
+              {process.essential ? (
+                <span className="notification-essential-badge">Esencial · pendiente de activar</span>
+              ) : null}
+              <form action={toggleNotificationProcessAction}>
+                <input type="hidden" name="process_key" value={process.key} />
+                <input type="hidden" name="next_enabled" value={String(!enabled)} />
+                <button
+                  type="submit"
+                  className={enabled ? "notification-switch is-on" : "notification-switch"}
+                  aria-label={enabled ? "Pausar proceso" : "Activar proceso"}
+                >
+                  <span />
+                </button>
+              </form>
+            </div>
           ) : (
             <span className="notification-readonly-badge">Solo lectura</span>
           )}
