@@ -254,16 +254,10 @@ export async function createManualCalendarDayAction(formData: FormData) {
 export async function bulkCalendarDayOperationAction(formData: FormData) {
   const year = safeYear(formData.get("year"));
   const mode = String(formData.get("operation_mode") ?? "");
-  const rawDates = String(formData.get("selected_dates") ?? "[]");
-  let dates: string[] = [];
-
-  try {
-    dates = (JSON.parse(rawDates) as unknown[])
-      .map(String)
-      .filter((value) => /^\d{4}-\d{2}-\d{2}$/.test(value));
-  } catch {
-    redirect(configPath(year, { error: "bulk" }));
-  }
+  const dates = formData
+    .getAll("selected_date")
+    .map(String)
+    .filter((value) => /^\d{4}-\d{2}-\d{2}$/.test(value));
 
   if (!dates.length || !["normal", "closed", "special"].includes(mode)) {
     redirect(configPath(year, { error: "bulk" }));
