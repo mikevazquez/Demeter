@@ -189,83 +189,93 @@ async function loadReservationContext(
   const reservationId =
     event.source_entity_type === "reservation" ? event.source_entity_id : payloadReservationId;
 
-  if (!reservationId) {
-    return {
-      reservation: null,
-      student: null,
-      session: null,
-      studio: null,
-      template: null,
-      discipline: null,
-    };
+  let reservation: JsonObject | null = null;
+
+  if (reservationId) {
+    const { data, error } = await adminClient
+      .from("reservations")
+      .select("id,studio_id,session_id,student_id,student_user_id,status,booked_at,cancelled_at")
+      .eq("id", reservationId)
+      .eq("studio_id", event.studio_id)
+      .maybeSingle();
+
+    if (error) throw new Error("reservation_context_lookup_failed");
+    reservation = (data ?? null) as JsonObject | null;
   }
 
-  const { data: reservation, error: reservationError } = await adminClient
-    .from("reservations")
-    .select("id,studio_id,session_id,student_id,student_user_id,status,booked_at,cancelled_at")
-    .eq("id", reservationId)
-    .eq("studio_id", event.studio_id)
-    .maybeSingle();
+  const sessionId =
+    safeText(reservation?.session_id) ??
+    (event.source_entity_type === "class_session" ? event.source_entity_id : null) ??
+    safeText(event.payload.session_id);
 
-  if (reservationError) throw new Error("reservation_context_lookup_failed");
-  if (!reservation) {
-    return {
-      reservation: null,
-      student: null,
-      session: null,
-      studio: null,
-      template: null,
-      discipline: null,
-    };
+  let student: JsonObject | null = null;
+  const studentId = safeText(reservation?.student_id);
+
+  if (studentId) {
+    const { data, error } = await adminClient
+      .from("students")
+      .select("id,user_id,full_name,email,phone,active,lifecycle_status")
+      .eq("id", studentId)
+      .eq("studio_id", event.studio_id)
+      .maybeSingle();
+
+    if (error) throw new Error("student_context_lookup_failed");
+    student = (data ?? null) as JsonObject | null;
   }
 
-  const [{ data: student }, { data: session }, { data: studio }] = await Promise.all([
-    reservation.student_id
-      ? adminClient
-          .from("students")
-          .select("id,user_id,full_name,email,phone,active,lifecycle_status")
-          .eq("id", reservation.student_id)
-          .eq("studio_id", event.studio_id)
-          .maybeSingle()
-      : Promise.resolve({ data: null }),
-    adminClient
+  let session: JsonObject | null = null;
+
+  if (sessionId) {
+    const { data, error } = await adminClient
       .from("class_sessions")
       .select("id,template_id,starts_at,ends_at,status,coach_user_id,instructor_id")
-      .eq("id", reservation.session_id)
+      .eq("id", sessionId)
       .eq("studio_id", event.studio_id)
-      .maybeSingle(),
-    adminClient
-      .from("studios")
-      .select("id,name,timezone,locale")
-      .eq("id", event.studio_id)
-      .maybeSingle(),
-  ]);
+      .maybeSingle();
 
-  const { data: template } = session?.template_id
+    if (error) throw new Error("session_context_lookup_failed");
+    session = (data ?? null) as JsonObject | null;
+  }
+
+  const { data: studioData, error: studioError } = await adminClient
+    .from("studios")
+    .select("id,name,timezone,locale")
+    .eq("id", event.studio_id)
+    .maybeSingle();
+
+  if (studioError) throw new Error("studio_context_lookup_failed");
+
+  const { data: templateData, error: templateError } = session?.template_id
     ? await adminClient
         .from("class_templates")
         .select("id,name,discipline_id")
-        .eq("id", session.template_id)
+        .eq("id", safeText(session.template_id))
         .eq("studio_id", event.studio_id)
         .maybeSingle()
-    : { data: null };
+    : { data: null, error: null };
 
-  const { data: discipline } = template?.discipline_id
+  if (templateError) throw new Error("template_context_lookup_failed");
+
+  const template = (templateData ?? null) as JsonObject | null;
+
+  const { data: disciplineData, error: disciplineError } = template?.discipline_id
     ? await adminClient
         .from("disciplines")
         .select("id,name")
-        .eq("id", template.discipline_id)
+        .eq("id", safeText(template.discipline_id))
         .eq("studio_id", event.studio_id)
         .maybeSingle()
-    : { data: null };
+    : { data: null, error: null };
+
+  if (disciplineError) throw new Error("discipline_context_lookup_failed");
 
   return {
-    reservation: reservation as JsonObject,
-    student: (student ?? null) as JsonObject | null,
-    session: (session ?? null) as JsonObject | null,
-    studio: (studio ?? null) as JsonObject | null,
-    template: (template ?? null) as JsonObject | null,
-    discipline: (discipline ?? null) as JsonObject | null,
+    reservation,
+    student,
+    session,
+    studio: (studioData ?? null) as JsonObject | null,
+    template,
+    discipline: (disciplineData ?? null) as JsonObject | null,
   };
 }
 
@@ -310,6 +320,68 @@ async function resolveRecipients(
           },
         },
       ];
+    }
+
+    case "confirmed_session_students": {
+      const sessionId = safeText(context.session?.id) ?? safeText(context.payload.session_id);
+      if (!sessionId) return [];
+
+      const { data: reservations, error: reservationsError } = await adminClient
+        .from("reservations")
+        .select("id,student_id,student_user_id,status")
+        .eq("studio_id", context.event.studio_id)
+        .eq("session_id", sessionId)
+        .eq("status", "reserved");
+
+      if (reservationsError) throw new Error("session_recipient_reservations_lookup_failed");
+
+      const studentIds = Array.from(
+        new Set(
+          (reservations ?? [])
+            .map((reservation) => safeText(reservation.student_id))
+            .filter((value): value is string => Boolean(value)),
+        ),
+      );
+
+      if (studentIds.length === 0) return [];
+
+      const { data: students, error: studentsError } = await adminClient
+        .from("students")
+        .select("id,user_id,full_name,email,phone,active,lifecycle_status")
+        .eq("studio_id", context.event.studio_id)
+        .in("id", studentIds);
+
+      if (studentsError) throw new Error("session_recipient_students_lookup_failed");
+
+      const studentsById = new Map(
+        (students ?? []).map((student) => [String(student.id), student]),
+      );
+
+      return (reservations ?? []).flatMap((reservation) => {
+        const studentId = safeText(reservation.student_id);
+        if (!studentId) return [];
+
+        const student = studentsById.get(studentId);
+        if (!student) return [];
+
+        const userId = safeText(student.user_id) ?? safeText(reservation.student_user_id);
+
+        return [
+          {
+            recipientType: "student",
+            recipientEntityId: studentId,
+            recipientUserId: userId,
+            snapshot: {
+              reservation_id: safeText(reservation.id),
+              student_id: studentId,
+              user_id: userId,
+              full_name: safeText(student.full_name),
+              email: safeText(student.email),
+              phone: safeText(student.phone),
+            },
+          },
+        ];
+      });
     }
 
     case "event_actor_user": {
@@ -437,7 +509,8 @@ function resolveTiming(
 function buildTemplateVariables(context: EventContext, recipient: Recipient): JsonObject {
   return {
     recipient_name: safeText(recipient.snapshot.full_name),
-    reservation_id: safeText(context.reservation?.id),
+    reservation_id:
+      safeText(context.reservation?.id) ?? safeText(recipient.snapshot.reservation_id),
     session_id: safeText(context.session?.id) ?? safeText(context.payload.session_id),
     session_starts_at: safeText(context.session?.starts_at),
     session_ends_at: safeText(context.session?.ends_at),
@@ -726,20 +799,38 @@ async function loadRules(
 }
 
 async function proactivelyInvalidate(adminClient: SupabaseClient, event: DomainEvent) {
-  if (event.event_type !== "booking.cancelled" || event.source_entity_type !== "reservation") {
-    return 0;
+  if (event.event_type === "booking.cancelled" && event.source_entity_type === "reservation") {
+    const { data, error } = await adminClient.rpc(
+      "system_cancel_pending_notifications_for_source",
+      {
+        p_studio_id: event.studio_id,
+        p_source_entity_type: "reservation",
+        p_source_entity_id: event.source_entity_id,
+        p_reason_code: "reservation_cancelled",
+        p_reason_detail: "Reservation was cancelled before delivery.",
+      },
+    );
+
+    if (error) throw new Error("notification_invalidation_failed");
+    return Number(data ?? 0);
   }
 
-  const { data, error } = await adminClient.rpc("system_cancel_pending_notifications_for_source", {
-    p_studio_id: event.studio_id,
-    p_source_entity_type: "reservation",
-    p_source_entity_id: event.source_entity_id,
-    p_reason_code: "reservation_cancelled",
-    p_reason_detail: "Reservation was cancelled before delivery.",
-  });
+  if (event.event_type === "session.rescheduled" && event.source_entity_type === "class_session") {
+    const { data, error } = await adminClient.rpc(
+      "system_cancel_pending_notifications_for_session",
+      {
+        p_studio_id: event.studio_id,
+        p_session_id: event.source_entity_id,
+        p_reason_code: "session_rescheduled",
+        p_reason_detail: "Session start time changed before delivery.",
+      },
+    );
 
-  if (error) throw new Error("notification_invalidation_failed");
-  return Number(data ?? 0);
+    if (error) throw new Error("notification_session_invalidation_failed");
+    return Number(data ?? 0);
+  }
+
+  return 0;
 }
 
 async function processClaim(
