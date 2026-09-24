@@ -49,7 +49,9 @@ describe("SF-174 student welcome integration", () => {
   });
 
   it("keeps account provisioning independent from Asistian delivery success", () => {
-    expect(provision).toContain("const welcomeDelivery = await sendAsistianWebhook");
+    expect(provision).toContain("const welcomeDelivery = welcomeRule?.enabled");
+    expect(provision).toContain("sendAsistianWebhook");
+    expect(provision).toContain("notification_process_paused");
     expect(provision).toContain("ok: true");
     expect(provision).toContain("welcomeDelivery: {");
   });
