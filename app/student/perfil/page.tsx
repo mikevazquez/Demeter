@@ -273,9 +273,9 @@ export default async function StudentProfilePage({
               ✦
             </span>
             <span>
-              <strong className="block text-sm font-semibold text-white">Mi progreso</strong>
+              <strong className="block text-sm font-semibold text-white">Rewards</strong>
               <span className="mt-0.5 block text-xs text-zinc-500">
-                Programas, retos, logros y recompensas
+                Medallas, beneficios y recompensas obtenidas
               </span>
             </span>
             <span
