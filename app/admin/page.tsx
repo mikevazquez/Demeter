@@ -196,8 +196,6 @@ export default async function AdminPage({
       .find((item) => item.type === "timeZoneName")?.value ?? "GMT-06:00";
   const offset = offsetName.replace("GMT", "") || "+00:00";
 
-  const todayStart = new Date(`${todayKey}T00:00:00${offset}`);
-  const todayEnd = new Date(todayStart.getTime() + 86400000);
   const selectedStart = new Date(`${selectedKey}T00:00:00${offset}`);
   const selectedEnd = new Date(selectedStart.getTime() + 86400000);
 
@@ -210,7 +208,7 @@ export default async function AdminPage({
   const [
     { data: selectedSessions },
     { count: activeStudents },
-    { data: salesToday },
+    { data: selectedSales },
     { data: students },
   ] = await Promise.all([
     supabase
@@ -231,8 +229,8 @@ export default async function AdminPage({
       .from("sales")
       .select("total_minor,status")
       .eq("studio_id", studio.id)
-      .gte("created_at", todayStart.toISOString())
-      .lt("created_at", todayEnd.toISOString()),
+      .gte("created_at", selectedStart.toISOString())
+      .lt("created_at", selectedEnd.toISOString()),
     supabase
       .from("students")
       .select("id,full_name")
@@ -514,7 +512,7 @@ export default async function AdminPage({
   const dailyReservationPercentage =
     totalDailyCapacity > 0 ? Math.round((totalDailyReservations / totalDailyCapacity) * 100) : 0;
 
-  const visibleSales = (salesToday ?? []).filter((sale) => sale.status !== "voided");
+  const visibleSales = (selectedSales ?? []).filter((sale) => sale.status !== "voided");
   const salesTotalMinor = visibleSales.reduce((sum, sale) => sum + (sale.total_minor ?? 0), 0);
   const salesTotal = new Intl.NumberFormat("es-MX", {
     style: "currency",
@@ -620,7 +618,7 @@ export default async function AdminPage({
               <KpiIcon kind="sales" />
             </span>
             <span>
-              <small>Ventas hoy</small>
+              <small>{selectedKey === todayKey ? "Ventas hoy" : "Ventas del día"}</small>
               <strong>{salesTotal}</strong>
             </span>
             <b aria-hidden="true">›</b>
