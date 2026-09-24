@@ -24,11 +24,16 @@ describe("ASISTIAN-SYNC-01 student contact synchronization", () => {
     expect(migration).not.toContain("request_student_contact_sync(v_student_id)");
   });
 
-  it("covers admin, walk-in, and integration-created students through one database trigger", () => {
-    expect(migration).toContain("after insert on public.students");
-    expect(migration).toContain("execute function private.emit_student_created_domain_event()");
-    expect(migration).toContain("drop function if exists private.request_student_contact_sync(uuid)");
-  });
+  it(
+    "covers admin, walk-in, and integration-created students through one database trigger",
+    () => {
+      expect(migration).toContain("after insert on public.students");
+      expect(migration).toContain("execute function private.emit_student_created_domain_event()");
+      expect(migration).toContain(
+        "drop function if exists private.request_student_contact_sync(uuid)",
+      );
+    },
+  );
 
   it("dispatches contact sync asynchronously without coupling student creation to Asistian", () => {
     expect(migration).toContain("net.http_post(");
