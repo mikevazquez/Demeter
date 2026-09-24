@@ -1,4 +1,5 @@
 name: RETOS-01 Autoformat
+# Temporary branch-only formatter; removed after formatting.
 
 on:
   pull_request:
