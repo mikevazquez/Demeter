@@ -37,7 +37,8 @@ describe("F10/N14 student home visual hierarchy", () => {
     expect(home).not.toContain("Disciplina también es amor propio");
     expect(home).not.toContain('data-home-block="progress"');
     expect(home).toContain("Mi medalla");
-    expect(home).toContain("En activación");
+    expect(home).toContain("Activando Medallas");
+    expect(home).toContain("Sin medalla");
     expect(home).toContain("Niveles técnicos");
   });
 });
