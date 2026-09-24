@@ -1,24 +1,44 @@
--- ASISTIAN-SYNC-01 · Sync a newly created Studio Flow student to Asistian as a contact.
--- Contact sync is intentionally separated from student_welcome. The latter remains
--- responsible for the portal activation message once an activation URL exists.
+-- ASISTIAN-SYNC-01 · Sync every newly created Demeter CRM contact to Asistian.
+-- The canonical business event is contact.created, regardless of whether the person
+-- first appears as a student, trial, guest, walk-in, reservation-created contact, or CRM contact.
+-- Contact sync remains separate from student_welcome, which owns portal activation messaging.
 
-create or replace function private.emit_student_created_domain_event()
+drop trigger if exists asistian_sync01_emit_student_created on public.students;
+drop function if exists private.emit_student_created_domain_event();
+drop function if exists private.request_student_contact_sync(uuid);
+
+create or replace function private.emit_contact_created_from_student()
 returns trigger
 language plpgsql
 security definer
 set search_path = ''
 as $$
+declare
+  v_source_entity_type text;
+  v_source_entity_id uuid;
+  v_deduplication_key text;
 begin
+  if new.person_id is not null then
+    v_source_entity_type := 'person';
+    v_source_entity_id := new.person_id;
+    v_deduplication_key := 'contact.created:person:' || new.person_id::text;
+  else
+    v_source_entity_type := 'student';
+    v_source_entity_id := new.id;
+    v_deduplication_key := 'contact.created:student:' || new.id::text;
+  end if;
+
   perform public.emit_domain_event(
     p_studio_id => new.studio_id,
-    p_event_type => 'student.created',
-    p_source_entity_type => 'student',
-    p_source_entity_id => new.id,
-    p_deduplication_key => 'student.created:' || new.id::text,
+    p_event_type => 'contact.created',
+    p_source_entity_type => v_source_entity_type,
+    p_source_entity_id => v_source_entity_id,
+    p_deduplication_key => v_deduplication_key,
     p_occurred_at => coalesce(new.created_at, clock_timestamp()),
     p_actor_user_id => (select auth.uid()),
     p_payload => jsonb_build_object(
       'student_id', new.id,
+      'person_id', new.person_id,
       'source', 'students.insert',
       'integration_intent', 'contact_upsert'
     )
@@ -28,152 +48,50 @@ begin
 end;
 $$;
 
-revoke all on function private.emit_student_created_domain_event()
+revoke all on function private.emit_contact_created_from_student()
 from public, anon, authenticated, service_role;
 
-drop trigger if exists asistian_sync01_emit_student_created on public.students;
-create trigger asistian_sync01_emit_student_created
+drop trigger if exists asistian_sync01_emit_contact_from_student on public.students;
+create trigger asistian_sync01_emit_contact_from_student
 after insert on public.students
 for each row
-execute function private.emit_student_created_domain_event();
+execute function private.emit_contact_created_from_student();
 
-create or replace function public.admin_create_student(
-  p_first_name text,
-  p_last_name text,
-  p_phone text,
-  p_email text default null
-) returns uuid
+create or replace function private.emit_contact_created_from_crm()
+returns trigger
 language plpgsql
-security invoker
+security definer
 set search_path = ''
 as $$
-declare
-  v_studio_id uuid;
-  v_person_id uuid;
-  v_student_id uuid;
-  v_full_name text;
-  v_email text;
 begin
-  select m.studio_id into v_studio_id
-  from public.studio_memberships m
-  where m.user_id = (select auth.uid())
-    and m.active = true
-    and private.has_capability(m.studio_id, 'students.write')
-  limit 1;
-
-  if v_studio_id is null then raise exception 'students_write_denied'; end if;
-  if trim(coalesce(p_first_name, '')) = '' then raise exception 'first_name_required'; end if;
-  if p_phone !~ '^\\+[1-9][0-9]{7,14}$' then raise exception 'phone_invalid'; end if;
-
-  select pc.person_id into v_person_id
-  from public.person_contacts pc
-  where pc.studio_id = v_studio_id
-    and pc.kind = 'phone'
-    and pc.value = p_phone
-  limit 1;
-
-  if v_person_id is not null and exists (
-    select 1
-    from public.students s
-    where s.studio_id = v_studio_id
-      and s.person_id = v_person_id
-      and s.lifecycle_status <> 'archived'
-  ) then
-    raise exception 'phone_exists';
-  end if;
-
-  if exists (
-    select 1 from public.students s
-    where s.studio_id = v_studio_id
-      and s.phone = p_phone
-      and s.lifecycle_status <> 'archived'
-  ) then
-    raise exception 'phone_exists';
-  end if;
-
-  if v_person_id is null then
-    insert into public.persons(studio_id, first_name, last_name)
-    values(v_studio_id, trim(p_first_name), nullif(trim(coalesce(p_last_name, '')), ''))
-    returning id into v_person_id;
-
-    insert into public.person_contacts(person_id, studio_id, kind, value, is_primary)
-    values(v_person_id, v_studio_id, 'phone', p_phone, true);
-  else
-    update public.persons
-    set first_name = trim(p_first_name),
-        last_name = nullif(trim(coalesce(p_last_name, '')), ''),
-        updated_at = now()
-    where id = v_person_id;
-  end if;
-
-  v_email := nullif(lower(trim(coalesce(p_email, ''))), '');
-
-  if v_email is not null then
-    if exists (
-      select 1 from public.person_contacts pc
-      where pc.studio_id = v_studio_id
-        and pc.kind = 'email'
-        and lower(pc.value) = v_email
-        and pc.person_id <> v_person_id
-    ) then
-      raise exception 'email_exists';
-    end if;
-
-    update public.person_contacts
-    set value = v_email,
-        is_primary = true,
-        updated_at = now()
-    where person_id = v_person_id and kind = 'email';
-
-    if not found then
-      insert into public.person_contacts(person_id, studio_id, kind, value, is_primary)
-      values(v_person_id, v_studio_id, 'email', v_email, true);
-    end if;
-  else
-    select pc.value into v_email
-    from public.person_contacts pc
-    where pc.person_id = v_person_id and pc.kind = 'email'
-    order by pc.is_primary desc, pc.created_at asc
-    limit 1;
-  end if;
-
-  v_full_name := trim(
-    p_first_name ||
-    case
-      when nullif(trim(coalesce(p_last_name, '')), '') is not null
-      then ' ' || trim(p_last_name)
-      else ''
-    end
+  perform public.emit_domain_event(
+    p_studio_id => new.studio_id,
+    p_event_type => 'contact.created',
+    p_source_entity_type => 'person',
+    p_source_entity_id => new.person_id,
+    p_deduplication_key => 'contact.created:person:' || new.person_id::text,
+    p_occurred_at => coalesce(new.created_at, clock_timestamp()),
+    p_actor_user_id => (select auth.uid()),
+    p_payload => jsonb_build_object(
+      'crm_contact_id', new.id,
+      'person_id', new.person_id,
+      'source', 'crm_contacts.insert',
+      'integration_intent', 'contact_upsert'
+    )
   );
 
-  insert into public.students(
-    studio_id, person_id, full_name, phone, email, active, lifecycle_status, profile_status
-  ) values (
-    v_studio_id,
-    v_person_id,
-    v_full_name,
-    p_phone,
-    v_email,
-    true,
-    'active',
-    case
-      when nullif(trim(coalesce(p_last_name, '')), '') is not null and v_email is not null
-      then 'complete'::public.profile_completeness_status
-      else 'incomplete'::public.profile_completeness_status
-    end
-  )
-  returning id into v_student_id;
-
-  return v_student_id;
+  return new;
 end;
 $$;
 
-revoke all on function public.admin_create_student(text,text,text,text)
-from public, anon;
-grant execute on function public.admin_create_student(text,text,text,text)
-to authenticated;
+revoke all on function private.emit_contact_created_from_crm()
+from public, anon, authenticated, service_role;
 
-drop function if exists private.request_student_contact_sync(uuid);
+drop trigger if exists asistian_sync01_emit_contact_from_crm on public.crm_contacts;
+create trigger asistian_sync01_emit_contact_from_crm
+after insert on public.crm_contacts
+for each row
+execute function private.emit_contact_created_from_crm();
 
 create or replace function public.admin_set_asistian_webhook_credentials(
   target_studio_id uuid,
@@ -200,7 +118,7 @@ begin
   end if;
 
   if v_template not in (
-    'student_contact_upsert',
+    'contact_upsert',
     'student_welcome',
     'reservation_confirmed',
     'reservation_cancelled',
@@ -289,7 +207,7 @@ declare
   v_url text;
 begin
   if v_template not in (
-    'student_contact_upsert',
+    'contact_upsert',
     'student_welcome',
     'reservation_confirmed',
     'reservation_cancelled',
@@ -330,7 +248,7 @@ declare
   v_secret text;
 begin
   if v_template not in (
-    'student_contact_upsert',
+    'contact_upsert',
     'student_welcome',
     'reservation_confirmed',
     'reservation_cancelled',
@@ -358,7 +276,29 @@ from public, anon, authenticated;
 grant execute on function public.service_get_asistian_signing_secret(uuid,text)
 to service_role;
 
-create or replace function private.dispatch_student_created_event_id(p_event_id uuid)
+drop trigger if exists asistian_sync01_dispatch_student_created on public.domain_events;
+drop function if exists private.dispatch_student_created_event();
+drop function if exists private.dispatch_student_created_event_id(uuid);
+drop function if exists private.retry_pending_student_created_events();
+
+do $$
+begin
+  if exists (
+    select 1
+    from pg_namespace
+    where nspname = 'cron'
+  ) and exists (
+    select 1
+    from cron.job
+    where jobname = 'asistian-sync01-retry-student-contact'
+  ) then
+    perform cron.unschedule('asistian-sync01-retry-student-contact');
+  end if;
+exception
+  when others then null;
+end $$;
+
+create or replace function private.dispatch_contact_created_event_id(p_event_id uuid)
 returns bigint
 language plpgsql
 security definer
@@ -385,7 +325,7 @@ begin
   end if;
 
   select net.http_post(
-    url := rtrim(v_project_url, '/') || '/functions/v1/process-student-created',
+    url := rtrim(v_project_url, '/') || '/functions/v1/process-contact-created',
     headers := jsonb_build_object(
       'Content-Type', 'application/json',
       'x-studio-flow-dispatch-token', v_dispatch_token
@@ -398,19 +338,19 @@ begin
   return v_request_id;
 exception
   when others then
-    -- External delivery must never roll back a committed student creation event.
+    -- External delivery must never roll back the local contact creation.
     return null;
 end;
 $$;
 
-create or replace function private.dispatch_student_created_event()
+create or replace function private.dispatch_contact_created_event()
 returns trigger
 language plpgsql
 security definer
 set search_path = ''
 as $$
 begin
-  perform private.dispatch_student_created_event_id(new.event_id);
+  perform private.dispatch_contact_created_event_id(new.event_id);
   return new;
 exception
   when others then
@@ -418,14 +358,14 @@ exception
 end;
 $$;
 
-drop trigger if exists asistian_sync01_dispatch_student_created on public.domain_events;
-create trigger asistian_sync01_dispatch_student_created
+drop trigger if exists asistian_sync01_dispatch_contact_created on public.domain_events;
+create trigger asistian_sync01_dispatch_contact_created
 after insert on public.domain_events
 for each row
-when (new.event_type = 'student.created')
-execute function private.dispatch_student_created_event();
+when (new.event_type = 'contact.created')
+execute function private.dispatch_contact_created_event();
 
-create or replace function private.retry_pending_student_created_events()
+create or replace function private.retry_pending_contact_created_events()
 returns integer
 language plpgsql
 security definer
@@ -438,18 +378,18 @@ begin
   for v_event in
     select e.event_id
     from public.domain_events e
-    where e.event_type = 'student.created'
+    where e.event_type = 'contact.created'
       and not exists (
         select 1
         from public.domain_event_consumptions c
         where c.event_id = e.event_id
-          and c.consumer_key = 'integration.asistian.student-contact-upsert'
+          and c.consumer_key = 'integration.asistian.contact-upsert'
       )
       and e.occurred_at >= now() - interval '7 days'
     order by e.occurred_at asc
     limit 25
   loop
-    if private.dispatch_student_created_event_id(v_event.event_id) is not null then
+    if private.dispatch_contact_created_event_id(v_event.event_id) is not null then
       v_dispatched := v_dispatched + 1;
     end if;
   end loop;
@@ -462,9 +402,9 @@ do $$
 begin
   if exists (select 1 from pg_namespace where nspname = 'cron') then
     perform cron.schedule(
-      'asistian-sync01-retry-student-contact',
+      'asistian-sync01-retry-contact',
       '*/5 * * * *',
-      'select private.retry_pending_student_created_events();'
+      'select private.retry_pending_contact_created_events();'
     );
   end if;
 exception
