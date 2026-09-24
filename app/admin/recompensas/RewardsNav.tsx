@@ -7,7 +7,6 @@ const items = [
   { href: "/admin/recompensas", label: "Inicio", exact: true },
   { href: "/admin/recompensas/programas", label: "Programas" },
   { href: "/admin/recompensas/logros", label: "Logros" },
-  { href: "/admin/recompensas/retos", label: "Retos" },
   { href: "/admin/recompensas/seguimiento", label: "Seguimiento" },
   { href: "/admin/recompensas/generadas", label: "Recompensas" },
 ];
