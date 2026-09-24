@@ -16,7 +16,7 @@ import {
 } from "@/lib/student/reward-progress-ui";
 
 import { ProgressBar, RewardsEmpty, SectionHeading, StateChip, SummaryTile } from "./components";
-import { BronzeMedalUnlocked, RewardsOnboardingActivation } from "./OnboardingActivation";
+import { MedalsAccessUnlocked, RewardsOnboardingActivation } from "./OnboardingActivation";
 
 function rewardLabelFromDefinition(value: unknown) {
   const definition = rewardObject(value);
@@ -34,7 +34,7 @@ function plural(count: number, singular: string, pluralValue: string) {
 export default async function StudentProgressPage() {
   const ctx = await getStudentRewardsContext();
 
-  if (ctx.onboarding && !ctx.onboarding.bronze_unlocked_at) {
+  if (ctx.onboarding && !ctx.onboarding.access_unlocked_at) {
     const upcomingClass =
       [...ctx.snapshot.upcoming].sort(
         (left, right) => Date.parse(left.starts_at) - Date.parse(right.starts_at),
@@ -52,11 +52,11 @@ export default async function StudentProgressPage() {
   }
 
   if (
-    ctx.onboarding?.bronze_unlocked_at &&
-    !ctx.onboarding.bronze_acknowledged_at &&
-    ctx.onboarding.unlock_method !== "legacy"
+    ctx.onboarding?.access_unlocked_at &&
+    !ctx.onboarding.access_acknowledged_at &&
+    ctx.onboarding.access_method !== "legacy"
   ) {
-    return <BronzeMedalUnlocked />;
+    return <MedalsAccessUnlocked />;
   }
 
   const activePrograms = ctx.programParticipations
@@ -200,6 +200,28 @@ export default async function StudentProgressPage() {
           Sigue tus metas, rachas, logros y recompensas.
         </p>
       </header>
+
+      <Link
+        href="/student/recompensas/medallero"
+        className="group block overflow-hidden rounded-3xl border border-fuchsia-500/25 bg-[radial-gradient(circle_at_88%_8%,rgba(236,72,153,0.16),transparent_34%),linear-gradient(135deg,rgba(255,255,255,0.045),rgba(255,255,255,0.015))] p-4 transition hover:border-fuchsia-400/40 sm:p-5"
+      >
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-fuchsia-300">
+              Medallas
+            </p>
+            <h2 className="mt-1 text-lg font-semibold text-white">Tu Medallero</h2>
+            <p className="mt-1 text-xs leading-5 text-zinc-400">
+              Consulta requisitos, recompensas y tu progreso hacia Bronce, Plata, Oro o Diamante.
+            </p>
+          </div>
+          <span aria-hidden="true" className="text-2xl text-fuchsia-300">✦</span>
+        </div>
+        <div className="mt-4 flex items-center justify-between border-t border-white/10 pt-3 text-xs font-semibold text-white">
+          <span>Ver Medallero</span>
+          <span aria-hidden="true" className="text-lg text-zinc-600 transition group-hover:text-fuchsia-300">›</span>
+        </div>
+      </Link>
 
       <section aria-label="Resumen de progreso" className="grid grid-cols-2 gap-2 sm:grid-cols-4">
         <SummaryTile
