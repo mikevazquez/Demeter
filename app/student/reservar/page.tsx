@@ -153,7 +153,21 @@ export default async function StudentReservePage({
       }),
     ]);
 
-  const selectedHoliday = (selectedHolidayData as StudentHolidaySnapshot | null) ?? null;
+  const selectedHolidayBase = (selectedHolidayData as StudentHolidaySnapshot | null) ?? null;
+  const selectedHoliday = selectedHolidayBase
+    ? {
+        ...selectedHolidayBase,
+        hero_image_url: selectedHolidayBase.hero_image_path
+          ? supabase.storage.from("holiday-artwork").getPublicUrl(selectedHolidayBase.hero_image_path)
+              .data.publicUrl
+          : null,
+        message_image_url: selectedHolidayBase.message_image_path
+          ? supabase.storage
+              .from("holiday-artwork")
+              .getPublicUrl(selectedHolidayBase.message_image_path).data.publicUrl
+          : null,
+      }
+    : null;
   const holidayWeekItems = (holidayWeekData ?? []) as HolidayWeekItem[];
   const holidayByDate = new Map(holidayWeekItems.map((holiday) => [holiday.holiday_date, holiday]));
 
