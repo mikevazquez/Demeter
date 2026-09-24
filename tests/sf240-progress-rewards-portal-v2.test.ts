@@ -6,27 +6,34 @@ import { describe, expect, it } from "vitest";
 const read = (path: string) => readFileSync(join(process.cwd(), path), "utf8");
 
 describe("SF-240 Progress & Rewards Portal Alumna v2", () => {
-  it("preserves the approved student navigation and adds Retos", () => {
+  it("keeps the final four-destination student navigation", () => {
     const nav = read("app/student/StudentNav.tsx");
 
     expect(nav).toContain('href: "/student"');
     expect(nav).toContain('href: "/student/reservar"');
     expect(nav).toContain('href: "/student/mis-clases"');
-    expect(nav).toContain('href: "/student/retos"');
     expect(nav).toContain('href: "/student/perfil"');
+    expect(nav).not.toContain('label: "Retos"');
     expect(nav).not.toContain('href: "/student/recompensas"');
-    expect(nav).toContain("grid-cols-5");
+    expect(nav).toContain('"/student/retos"');
+    expect(nav).toContain("grid-cols-4");
   });
 
-  it("keeps Rewards in Perfil while Retos has its own primary destination", () => {
+  it("keeps Medallas y beneficios in Perfil while Retos stays inside that loyalty universe", () => {
     const home = read("app/student/page.tsx");
     const profile = read("app/student/perfil/page.tsx");
+    const nav = read("app/student/StudentNav.tsx");
 
     expect(home).not.toContain('data-home-block="progress"');
     expect(home).not.toContain('href="/student/recompensas"');
     expect(profile).toContain('href="/student/recompensas"');
-    expect(profile).toContain("Rewards");
-    expect(profile).toContain("Medallas, beneficios y recompensas obtenidas");
+    expect(profile).toContain("Medallas y beneficios");
+    expect(profile).toContain("Mi medalla y beneficios");
+    expect(profile).toContain('title="Retos"');
+    expect(profile).toContain('title="Logros"');
+    expect(profile).toContain('title="Recompensas"');
+    expect(nav).not.toContain('label: "Retos"');
+    expect(nav).toContain('"/student/retos"');
   });
 
   it("keeps the Rewards hub for loyalty history and benefits", () => {

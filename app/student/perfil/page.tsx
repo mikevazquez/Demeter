@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 
+import { signOut } from "@/app/auth/actions";
 import { formatDate, getStudentPortalContext } from "@/lib/student/portal";
 
 import { updateStudentAvatarAction, updateStudentProfileAction } from "../actions";
@@ -24,6 +25,50 @@ function profileInitials(firstName: string, lastName: string | null) {
   return (initials || firstName.slice(0, 2)).slice(0, 2).toUpperCase();
 }
 
+function ProfileRow({
+  href,
+  title,
+  subtitle,
+  dataBlock,
+}: {
+  href: string;
+  title: string;
+  subtitle: string;
+  dataBlock?: string;
+}) {
+  return (
+    <Link
+      href={href}
+      data-profile-block={dataBlock}
+      className="group grid min-h-16 grid-cols-[1fr_auto] items-center gap-4 px-4 py-3.5 transition hover:bg-white/[0.035] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-500"
+    >
+      <span className="min-w-0">
+        <strong className="block text-sm font-semibold text-white">{title}</strong>
+        <span className="mt-0.5 block text-xs leading-5 text-zinc-500">{subtitle}</span>
+      </span>
+      <span
+        aria-hidden="true"
+        className="text-xl text-zinc-600 transition group-hover:text-fuchsia-300"
+      >
+        ›
+      </span>
+    </Link>
+  );
+}
+
+function ProfileGroup({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <section>
+      <h2 className="mb-2 px-1 text-xs font-semibold uppercase tracking-[0.14em] text-zinc-500">
+        {title}
+      </h2>
+      <div className="divide-y divide-white/10 overflow-hidden rounded-2xl border border-white/10 bg-white/[0.025]">
+        {children}
+      </div>
+    </section>
+  );
+}
+
 export default async function StudentProfilePage({
   searchParams,
 }: {
@@ -37,7 +82,8 @@ export default async function StudentProfilePage({
 }) {
   const query = await searchParams;
   const { snapshot, studio, supabase } = await getStudentPortalContext();
-  const activePackage = snapshot.acquisitions.find((item) => item.active_now) ?? null;
+  const activePackage =
+    snapshot.acquisitions.find((item) => item.active_now && !item.reward_credit_wallet) ?? null;
   const fullName = [snapshot.profile.first_name, snapshot.profile.last_name]
     .filter(Boolean)
     .join(" ");
@@ -72,17 +118,22 @@ export default async function StudentProfilePage({
     birthDate = typeof birthDateValue?.value === "string" ? birthDateValue.value : "";
   }
 
+  const packageSummary = activePackage
+    ? activePackage.unlimited
+      ? `Ilimitado · vence ${formatDate(activePackage.expires_on, studio.timezone)}`
+      : `${activePackage.available_credits ?? 0} clases disponibles · vence ${formatDate(
+          activePackage.expires_on,
+          studio.timezone,
+        )}`
+    : "Sin paquete activo";
+
   return (
-    <main className="space-y-4 pb-4 sm:space-y-5">
+    <main className="space-y-5 pb-4">
       <header>
-        <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-fuchsia-300">
-          Perfil
-        </p>
-        <h1 className="mt-1 text-3xl font-semibold tracking-tight text-white sm:text-4xl">
-          Mi cuenta
-        </h1>
-        <p className="mt-1.5 text-sm text-zinc-400">
-          Consulta tu información y accede a los datos asociados a tu cuenta.
+        <p className="student-eyebrow">Perfil</p>
+        <h1 className="student-page-title mt-1">Mi cuenta</h1>
+        <p className="student-body mt-2">
+          Tus datos, entrenamiento, medallas y membresía en un solo lugar.
         </p>
       </header>
 
@@ -126,356 +177,193 @@ export default async function StudentProfilePage({
         </StudentNoticeDialog>
       ) : null}
 
-      <section
-        data-profile-block="identity"
-        className="overflow-hidden rounded-3xl border border-fuchsia-500/15 bg-[radial-gradient(circle_at_18%_0%,rgba(236,72,153,0.15),transparent_28%),linear-gradient(135deg,rgba(255,255,255,0.05),rgba(255,255,255,0.015))]"
-      >
-        <div className="border-b border-white/10 p-5 sm:p-6">
-          <div className="flex items-center gap-4">
-            <div className="shrink-0">
-              <div className="relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-full border border-fuchsia-400/50 bg-gradient-to-br from-fuchsia-500/70 to-fuchsia-950 text-xl font-semibold text-white shadow-[0_0_28px_rgba(236,72,153,0.22)] sm:h-20 sm:w-20 sm:text-2xl">
-                {initials}
-                <Image
-                  src="/student/perfil/avatar"
-                  alt=""
-                  fill
-                  unoptimized
-                  className="object-cover"
-                />
-              </div>
-              <form action={updateStudentAvatarAction} className="mt-2 space-y-1.5">
-                <AvatarFilePicker />
-                <PendingActionButton
-                  pendingLabel="Guardando…"
-                  className="min-h-8 w-full rounded-lg border border-white/10 px-2 py-1 text-[10px] font-semibold text-zinc-300 transition hover:border-fuchsia-500/35 hover:text-white disabled:cursor-wait disabled:opacity-60"
-                >
-                  Guardar foto
-                </PendingActionButton>
-              </form>
-            </div>
-            <div className="min-w-0">
-              <h2 className="truncate text-xl font-semibold text-white sm:text-2xl">{fullName}</h2>
-              <p className="mt-1 text-sm text-zinc-400">Alumna · {studio.name}</p>
-            </div>
+      <section data-profile-block="identity" className="student-card overflow-hidden p-5 sm:p-6">
+        <div className="flex items-center gap-4">
+          <div className="relative flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-full border border-fuchsia-400/35 bg-fuchsia-500/10 text-xl font-semibold text-white">
+            {initials}
+            <Image src="/student/perfil/avatar" alt="" fill unoptimized className="object-cover" />
           </div>
-        </div>
 
-        <div className="divide-y divide-white/10 px-5 sm:px-6">
-          <div className="grid gap-1 py-3.5 sm:grid-cols-[120px_1fr_auto] sm:items-center sm:gap-4">
-            <p className="text-xs font-medium text-zinc-500">Nombre</p>
-            <p className="text-sm text-white">{snapshot.profile.first_name}</p>
-            <span className="text-[11px] text-zinc-600">Solo lectura</span>
-          </div>
-          <div className="grid gap-1 py-3.5 sm:grid-cols-[120px_1fr_auto] sm:items-center sm:gap-4">
-            <p className="text-xs font-medium text-zinc-500">Apellidos</p>
-            <p className="text-sm text-white">{snapshot.profile.last_name || "—"}</p>
-            <span className="text-[11px] text-zinc-600">Solo lectura</span>
-          </div>
-          <div className="grid gap-1 py-3.5 sm:grid-cols-[120px_1fr_auto] sm:items-center sm:gap-4">
-            <p className="text-xs font-medium text-zinc-500">Teléfono</p>
-            <p className="text-sm text-white">{snapshot.profile.phone}</p>
-            <span className="text-[11px] text-zinc-600">Solo lectura</span>
-          </div>
-          <div className="grid gap-2 py-3.5 sm:grid-cols-[120px_1fr_auto] sm:items-center sm:gap-4">
-            <p className="text-xs font-medium text-zinc-500">Correo electrónico</p>
-            <p className="min-w-0 break-all text-sm text-white">
-              {snapshot.profile.email || "Sin correo registrado"}
-            </p>
+          <div className="min-w-0 flex-1">
+            <h2 className="truncate text-xl font-semibold text-white sm:text-2xl">{fullName}</h2>
+            <p className="mt-1 text-sm text-zinc-400">Alumna de Demeter</p>
             {!editingProfile ? (
               <Link
                 href="/student/perfil?edit=1"
-                className="inline-flex min-h-9 w-fit items-center justify-center rounded-xl border border-fuchsia-500/40 bg-fuchsia-500/[0.08] px-3 py-2 text-xs font-semibold text-fuchsia-200 transition hover:bg-fuchsia-500/[0.14]"
+                className="mt-3 inline-flex min-h-11 items-center justify-center rounded-xl border border-fuchsia-500/35 bg-fuchsia-500/[0.06] px-4 py-2.5 text-sm font-semibold text-fuchsia-200 transition hover:bg-fuchsia-500/[0.1]"
               >
-                Editar perfil
+                Editar mis datos
               </Link>
             ) : null}
           </div>
-          <div className="grid gap-1 py-3.5 sm:grid-cols-[120px_1fr_auto] sm:items-center sm:gap-4">
-            <p className="text-xs font-medium text-zinc-500">Fecha de nacimiento</p>
-            <p className="text-sm text-white">{birthDate || "Sin registrar"}</p>
-            <span className="text-[11px] text-zinc-600">
-              {birthDate ? "Registrada" : "Pendiente"}
-            </span>
-          </div>
         </div>
-
-        {editingProfile ? (
-          <form
-            action={updateStudentProfileAction}
-            className="border-t border-fuchsia-500/15 bg-black/20 p-5 sm:p-6"
-          >
-            <div className="grid gap-3 sm:grid-cols-2">
-              <label className="block min-w-0 text-sm text-zinc-300">
-                Correo electrónico
-                <input
-                  name="email"
-                  type="email"
-                  required
-                  defaultValue={snapshot.profile.email ?? ""}
-                  autoComplete="email"
-                  className="mt-2 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-3 text-white outline-none transition placeholder:text-zinc-600 focus:border-fuchsia-500/60 focus:ring-2 focus:ring-fuchsia-500/15"
-                  placeholder="tu@correo.com"
-                />
-              </label>
-              <label className="block min-w-0 text-sm text-zinc-300">
-                Fecha de nacimiento
-                <input
-                  name="birth_date"
-                  type="date"
-                  required
-                  defaultValue={birthDate}
-                  className="mt-2 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-3 text-white outline-none transition focus:border-fuchsia-500/60 focus:ring-2 focus:ring-fuchsia-500/15"
-                />
-              </label>
-            </div>
-            <div className="mt-4 flex gap-2">
-              <PendingActionButton
-                pendingLabel="Guardando…"
-                className="min-h-11 rounded-xl bg-fuchsia-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-fuchsia-500 disabled:cursor-wait disabled:opacity-60"
-              >
-                Guardar cambios
-              </PendingActionButton>
-              <Link
-                href="/student/perfil"
-                className="inline-flex min-h-11 items-center justify-center rounded-xl border border-white/10 px-4 py-2.5 text-sm font-semibold text-zinc-300 transition hover:bg-white/[0.05] hover:text-white"
-              >
-                Cancelar
-              </Link>
-            </div>
-            <p className="mt-2 text-xs text-zinc-500">
-              Tu foto, correo y fecha de nacimiento forman parte de la activación de Medallas. Tu
-              nombre y teléfono los administra el estudio.
-            </p>
-          </form>
-        ) : null}
       </section>
 
-      <Link
-        href="/student/paquete"
-        data-profile-block="package"
-        className="grid grid-cols-[1fr_auto] items-center gap-4 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 transition hover:border-fuchsia-500/25 hover:bg-white/[0.05]"
-      >
-        <div className="min-w-0">
-          <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-zinc-500">
-            Paquete vigente
-          </p>
-          <p className="mt-1 truncate text-sm font-semibold text-white">
-            {activePackage?.name ?? "Sin paquete activo"}
-          </p>
-          <p className="mt-0.5 text-xs text-zinc-400">
-            {activePackage
-              ? activePackage.unlimited
-                ? `Ilimitado · vence ${formatDate(activePackage.expires_on, studio.timezone)}`
-                : `${activePackage.available_credits ?? 0} clases disponibles · vence ${formatDate(activePackage.expires_on, studio.timezone)}`
-              : "Compra o activa un paquete para reservar clases."}
-          </p>
-        </div>
-        <span aria-hidden="true" className="text-xl text-zinc-600">
-          ›
-        </span>
-      </Link>
+      {editingProfile ? (
+        <section className="student-card overflow-hidden">
+          <div className="border-b border-white/10 p-5 sm:p-6">
+            <p className="student-eyebrow">Mis datos</p>
+            <h2 className="mt-1 text-xl font-semibold text-white">Edita tu información</h2>
+            <p className="mt-1 text-sm leading-6 text-zinc-400">
+              Puedes cambiar tu foto, correo y fecha de nacimiento.
+            </p>
+          </div>
 
-      <section data-profile-block="accesses">
-        <div className="mb-2">
-          <h2 className="text-lg font-semibold text-white">Accesos rápidos</h2>
-          <p className="mt-0.5 text-xs text-zinc-500">
-            Todo lo relacionado con tu cuenta, en un solo lugar.
-          </p>
-        </div>
+          <div className="space-y-5 p-5 sm:p-6">
+            <div>
+              <h3 className="text-sm font-semibold text-white">Foto de perfil</h3>
+              <p className="mt-1 text-xs leading-5 text-zinc-500">
+                Selecciona una imagen, revisa la vista previa y confírmala.
+              </p>
+              <form action={updateStudentAvatarAction} className="mt-3">
+                <AvatarFilePicker initials={initials} />
+                <PendingActionButton
+                  pendingLabel="Guardando foto…"
+                  className="student-action-primary mt-3 w-full sm:w-auto"
+                >
+                  Usar esta foto
+                </PendingActionButton>
+              </form>
+            </div>
 
-        <div className="grid gap-2 sm:grid-cols-2">
-          <Link
-            href="/student/paquete"
-            className="group grid min-h-24 grid-cols-[auto_1fr_auto] items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 transition hover:border-fuchsia-500/25 hover:bg-white/[0.05]"
+            <div className="border-t border-white/10 pt-5">
+              <h3 className="text-sm font-semibold text-white">Datos administrados por Demeter</h3>
+              <dl className="mt-3 divide-y divide-white/10 overflow-hidden rounded-2xl border border-white/10 bg-black/15">
+                <div className="grid gap-1 px-4 py-3 sm:grid-cols-[140px_1fr] sm:gap-4">
+                  <dt className="text-xs text-zinc-500">Nombre</dt>
+                  <dd className="text-sm text-white">{snapshot.profile.first_name}</dd>
+                </div>
+                <div className="grid gap-1 px-4 py-3 sm:grid-cols-[140px_1fr] sm:gap-4">
+                  <dt className="text-xs text-zinc-500">Apellidos</dt>
+                  <dd className="text-sm text-white">{snapshot.profile.last_name || "—"}</dd>
+                </div>
+                <div className="grid gap-1 px-4 py-3 sm:grid-cols-[140px_1fr] sm:gap-4">
+                  <dt className="text-xs text-zinc-500">Teléfono</dt>
+                  <dd className="text-sm text-white">{snapshot.profile.phone}</dd>
+                </div>
+              </dl>
+              <p className="mt-2 text-xs leading-5 text-zinc-500">
+                Si necesitas corregir tu nombre o teléfono, ponte en contacto con Demeter.
+              </p>
+            </div>
+
+            <form action={updateStudentProfileAction} className="border-t border-white/10 pt-5">
+              <h3 className="text-sm font-semibold text-white">Datos que puedes cambiar</h3>
+              <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                <label className="block min-w-0 text-sm text-zinc-300">
+                  Correo electrónico
+                  <input
+                    name="email"
+                    type="email"
+                    required
+                    defaultValue={snapshot.profile.email ?? ""}
+                    autoComplete="email"
+                    className="mt-2 min-h-11 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-3 text-white outline-none transition placeholder:text-zinc-600 focus:border-fuchsia-500/60 focus:ring-2 focus:ring-fuchsia-500/15"
+                    placeholder="tu@correo.com"
+                  />
+                </label>
+                <label className="block min-w-0 text-sm text-zinc-300">
+                  Fecha de nacimiento
+                  <input
+                    name="birth_date"
+                    type="date"
+                    required
+                    defaultValue={birthDate}
+                    className="mt-2 min-h-11 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-3 text-white outline-none transition focus:border-fuchsia-500/60 focus:ring-2 focus:ring-fuchsia-500/15"
+                  />
+                </label>
+              </div>
+
+              <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+                <PendingActionButton
+                  pendingLabel="Guardando…"
+                  className="student-action-primary w-full sm:w-auto"
+                >
+                  Guardar cambios
+                </PendingActionButton>
+                <Link href="/student/perfil" className="student-action-secondary w-full sm:w-auto">
+                  Cancelar
+                </Link>
+              </div>
+            </form>
+          </div>
+        </section>
+      ) : null}
+
+      <ProfileGroup title="Mi cuenta">
+        <ProfileRow
+          href="/student/perfil?edit=1"
+          title="Mis datos"
+          subtitle="Foto, correo, fecha de nacimiento y datos de contacto"
+        />
+        <ProfileRow
+          href="/student/perfil/notificaciones"
+          title="Notificaciones"
+          subtitle="Elige cómo quieres recibir los avisos de Demeter"
+        />
+        <ProfileRow
+          href="/student/documentos"
+          title="Documentos"
+          subtitle="Reglamentos, responsivas y aceptaciones"
+        />
+      </ProfileGroup>
+
+      <ProfileGroup title="Mi entrenamiento">
+        <ProfileRow
+          href="/student/evaluaciones"
+          title="Nivel técnico y evaluaciones"
+          subtitle="Consulta tu nivel por disciplina, evaluaciones y resultados"
+        />
+      </ProfileGroup>
+
+      <ProfileGroup title="Medallas y beneficios">
+        <ProfileRow
+          href="/student/recompensas"
+          title="Mi medalla y beneficios"
+          subtitle="Tu medalla actual y los beneficios disponibles"
+        />
+        <ProfileRow
+          href="/student/retos"
+          title="Retos"
+          subtitle="Objetivos temporales y competencias"
+        />
+        <ProfileRow
+          href="/student/recompensas/logros"
+          title="Logros"
+          subtitle="Consulta los logros que has conseguido"
+        />
+        <ProfileRow
+          href="/student/recompensas/mis-recompensas"
+          title="Recompensas"
+          subtitle="Premios que has ganado y puedes utilizar"
+        />
+      </ProfileGroup>
+
+      <ProfileGroup title="Mi membresía">
+        <ProfileRow
+          href="/student/paquete"
+          title="Mi paquete"
+          subtitle={packageSummary}
+          dataBlock="package"
+        />
+        <ProfileRow
+          href="/student/movimientos"
+          title="Uso de mis clases"
+          subtitle="Consulta cómo has utilizado y recuperado tus clases"
+        />
+        <ProfileRow href="/student/pagos" title="Mis pagos" subtitle="Compras y reembolsos" />
+      </ProfileGroup>
+
+      <section className="rounded-2xl border border-white/10 bg-white/[0.02] p-4">
+        <h2 className="text-sm font-semibold text-white">Cuenta</h2>
+        <form action={signOut} className="mt-3">
+          <PendingActionButton
+            pendingLabel="Cerrando sesión…"
+            className="student-action-secondary w-full sm:w-auto"
           >
-            <span
-              aria-hidden="true"
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-fuchsia-500/10 text-lg text-fuchsia-300"
-            >
-              ◇
-            </span>
-            <span className="min-w-0">
-              <strong className="block text-sm font-semibold text-white">Mi paquete</strong>
-              <span className="mt-0.5 block truncate text-xs text-zinc-500">
-                {activePackage
-                  ? activePackage.unlimited
-                    ? `Ilimitado · vence ${formatDate(activePackage.expires_on, studio.timezone)}`
-                    : `${activePackage.available_credits} clases disponibles`
-                  : "Sin paquete activo"}
-              </span>
-            </span>
-            <span
-              aria-hidden="true"
-              className="text-xl text-zinc-600 transition group-hover:text-fuchsia-300"
-            >
-              ›
-            </span>
-          </Link>
-
-          <Link
-            href="/student/recompensas"
-            className="group grid min-h-24 grid-cols-[auto_1fr_auto] items-center gap-3 rounded-2xl border border-fuchsia-500/20 bg-fuchsia-500/[0.055] px-4 py-3 transition hover:border-fuchsia-400/35 hover:bg-fuchsia-500/[0.08]"
-          >
-            <span
-              aria-hidden="true"
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-fuchsia-500/10 text-lg text-fuchsia-300"
-            >
-              ✦
-            </span>
-            <span>
-              <strong className="block text-sm font-semibold text-white">Rewards</strong>
-              <span className="mt-0.5 block text-xs text-zinc-500">
-                Medallas, beneficios y recompensas obtenidas
-              </span>
-            </span>
-            <span
-              aria-hidden="true"
-              className="text-xl text-zinc-600 transition group-hover:text-fuchsia-300"
-            >
-              ›
-            </span>
-          </Link>
-
-          <Link
-            href="/student/evaluaciones"
-            className="group grid min-h-24 grid-cols-[auto_1fr_auto] items-center gap-3 rounded-2xl border border-fuchsia-500/20 bg-fuchsia-500/[0.055] px-4 py-3 transition hover:border-fuchsia-400/35 hover:bg-fuchsia-500/[0.08]"
-          >
-            <span
-              aria-hidden="true"
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-fuchsia-500/10 text-lg text-fuchsia-300"
-            >
-              ◎
-            </span>
-            <span>
-              <strong className="block text-sm font-semibold text-white">Evaluaciones</strong>
-              <span className="mt-0.5 block text-xs text-zinc-500">
-                Nivel técnico, próximas evaluaciones y resultados
-              </span>
-            </span>
-            <span
-              aria-hidden="true"
-              className="text-xl text-zinc-600 transition group-hover:text-fuchsia-300"
-            >
-              ›
-            </span>
-          </Link>
-
-          <Link
-            href="/student/mis-clases"
-            className="group grid min-h-24 grid-cols-[auto_1fr_auto] items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 transition hover:border-fuchsia-500/25 hover:bg-white/[0.05]"
-          >
-            <span
-              aria-hidden="true"
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-fuchsia-500/10 text-lg text-fuchsia-300"
-            >
-              ≡
-            </span>
-            <span>
-              <strong className="block text-sm font-semibold text-white">Mis clases</strong>
-              <span className="mt-0.5 block text-xs text-zinc-500">
-                {snapshot.upcoming.length} próximas
-              </span>
-            </span>
-            <span
-              aria-hidden="true"
-              className="text-xl text-zinc-600 transition group-hover:text-fuchsia-300"
-            >
-              ›
-            </span>
-          </Link>
-
-          <Link
-            href="/student/movimientos"
-            className="group grid min-h-24 grid-cols-[auto_1fr_auto] items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 transition hover:border-fuchsia-500/25 hover:bg-white/[0.05]"
-          >
-            <span
-              aria-hidden="true"
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-fuchsia-500/10 text-lg text-fuchsia-300"
-            >
-              ↔
-            </span>
-            <span>
-              <strong className="block text-sm font-semibold text-white">Movimientos</strong>
-              <span className="mt-0.5 block text-xs text-zinc-500">Historial de créditos</span>
-            </span>
-            <span
-              aria-hidden="true"
-              className="text-xl text-zinc-600 transition group-hover:text-fuchsia-300"
-            >
-              ›
-            </span>
-          </Link>
-
-          <Link
-            href="/student/pagos"
-            className="group grid min-h-24 grid-cols-[auto_1fr_auto] items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 transition hover:border-fuchsia-500/25 hover:bg-white/[0.05]"
-          >
-            <span
-              aria-hidden="true"
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-fuchsia-500/10 text-lg text-fuchsia-300"
-            >
-              $
-            </span>
-            <span>
-              <strong className="block text-sm font-semibold text-white">Pagos</strong>
-              <span className="mt-0.5 block text-xs text-zinc-500">Historial comercial</span>
-            </span>
-            <span
-              aria-hidden="true"
-              className="text-xl text-zinc-600 transition group-hover:text-fuchsia-300"
-            >
-              ›
-            </span>
-          </Link>
-
-          <Link
-            href="/student/perfil/notificaciones"
-            className="group grid min-h-24 grid-cols-[auto_1fr_auto] items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 transition hover:border-fuchsia-500/25 hover:bg-white/[0.05]"
-          >
-            <span
-              aria-hidden="true"
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-fuchsia-500/10 text-lg text-fuchsia-300"
-            >
-              ◉
-            </span>
-            <span>
-              <strong className="block text-sm font-semibold text-white">Notificaciones</strong>
-              <span className="mt-0.5 block text-xs text-zinc-500">
-                Elige Push, WhatsApp y correo
-              </span>
-            </span>
-            <span
-              aria-hidden="true"
-              className="text-xl text-zinc-600 transition group-hover:text-fuchsia-300"
-            >
-              ›
-            </span>
-          </Link>
-
-          <Link
-            href="/student/documentos"
-            className="group grid min-h-24 grid-cols-[auto_1fr_auto] items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 transition hover:border-fuchsia-500/25 hover:bg-white/[0.05] sm:col-span-2"
-          >
-            <span
-              aria-hidden="true"
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-fuchsia-500/10 text-lg text-fuchsia-300"
-            >
-              □
-            </span>
-            <span>
-              <strong className="block text-sm font-semibold text-white">Documentos</strong>
-              <span className="mt-0.5 block text-xs text-zinc-500">
-                Versiones y aceptación · próxima fase
-              </span>
-            </span>
-            <span
-              aria-hidden="true"
-              className="text-xl text-zinc-600 transition group-hover:text-fuchsia-300"
-            >
-              ›
-            </span>
-          </Link>
-        </div>
+            Cerrar sesión
+          </PendingActionButton>
+        </form>
       </section>
     </main>
   );

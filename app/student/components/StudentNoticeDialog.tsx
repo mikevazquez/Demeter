@@ -19,9 +19,9 @@ const toneClasses: Record<
   { card: string; icon: string; eyebrow: string; symbol: string }
 > = {
   success: {
-    card: "border-fuchsia-300/25 bg-[#160d16]",
-    icon: "border-fuchsia-300/25 bg-fuchsia-400/10 text-fuchsia-200",
-    eyebrow: "text-fuchsia-300",
+    card: "border-emerald-300/25 bg-[#0d1713]",
+    icon: "border-emerald-300/25 bg-emerald-400/10 text-emerald-200",
+    eyebrow: "text-emerald-300",
     symbol: "✓",
   },
   warning: {
@@ -90,7 +90,7 @@ export default function StudentNoticeDialog({
 
         <button
           type="button"
-          className="mt-6 w-full rounded-2xl bg-fuchsia-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-fuchsia-500"
+          className="mt-6 min-h-11 w-full rounded-2xl bg-fuchsia-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-fuchsia-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-400"
           onClick={dismiss}
         >
           {confirmLabel}
