@@ -82,11 +82,17 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function StudentLayout({ children }: { children: React.ReactNode }) {
-  const [{ snapshot, studio }, brand] = await Promise.all([
+  const [{ snapshot, studio, supabase }, brand] = await Promise.all([
     getStudentPortalContext(),
     getPwaBrand(),
   ]);
   const query = pwaBrandQuery(brand);
+  const { count: unreadNotificationCount } = await supabase
+    .from("app_notifications")
+    .select("id", { count: "exact", head: true })
+    .eq("student_id", snapshot.profile.student_id)
+    .eq("recipient_kind", "student")
+    .is("read_at", null);
 
   return (
     <div className="min-h-screen bg-[#090a0f] text-white">
@@ -100,7 +106,7 @@ export default async function StudentLayout({ children }: { children: React.Reac
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
           <Link href="/student" className="min-w-0">
             <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-fuchsia-300">
-              Studio Flow
+              DEMETER
             </p>
             <p className="truncate text-sm font-semibold text-white">{studio.name}</p>
           </Link>
@@ -109,7 +115,7 @@ export default async function StudentLayout({ children }: { children: React.Reac
               href="/student/notificaciones"
               aria-label="Notificaciones"
               title="Notificaciones"
-              className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[#D4AF37]/30 text-[#D4AF37] transition hover:border-[#D4AF37]/50 hover:bg-[#D4AF37]/10 hover:text-[#E6C85C]"
+              className="relative inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[#D4AF37]/30 text-[#D4AF37] transition hover:border-[#D4AF37]/50 hover:bg-[#D4AF37]/10 hover:text-[#E6C85C]"
             >
               <svg
                 aria-hidden="true"
@@ -124,6 +130,11 @@ export default async function StudentLayout({ children }: { children: React.Reac
                 <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9" />
                 <path d="M13.7 21a2 2 0 0 1-3.4 0" />
               </svg>
+              {(unreadNotificationCount ?? 0) > 0 ? (
+                <span className="absolute -right-1.5 -top-1.5 min-w-5 rounded-full bg-fuchsia-500 px-1.5 py-0.5 text-center text-[9px] font-bold leading-4 text-white shadow-[0_0_12px_rgba(236,72,153,0.55)]">
+                  {(unreadNotificationCount ?? 0) > 9 ? "9+" : unreadNotificationCount}
+                </span>
+              ) : null}
             </Link>
             <div className="hidden text-right sm:block">
               <p className="text-sm font-medium text-white">{snapshot.profile.first_name}</p>
