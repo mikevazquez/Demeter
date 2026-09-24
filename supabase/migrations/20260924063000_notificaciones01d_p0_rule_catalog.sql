@@ -320,7 +320,7 @@ begin
     'session_instructor',
     jsonb_build_object(
       'all', jsonb_build_array(
-        jsonb_build_object('field','payload.instructor_id','operator','exists','value',true)
+        jsonb_build_object('field','session.instructor_id','operator','exists','value',true)
       )
     ),
     'immediate',
