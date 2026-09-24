@@ -1039,3 +1039,432 @@
     margin-top: 8px;
   }
 }
+
+
+/* FESTIVOS-01 · official holidays live inside the existing Agenda */
+.agenda-week-day.is-holiday {
+  position: relative;
+}
+
+.agenda-week-day.is-holiday::after {
+  content: "";
+  position: absolute;
+  top: 9px;
+  right: 9px;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: #ff0a8a;
+  box-shadow: 0 0 12px rgba(255, 10, 138, 0.55);
+}
+
+.agenda-week-day.is-holiday-closed {
+  background:
+    radial-gradient(circle at 50% 40%, rgba(255, 10, 138, 0.18), transparent 68%),
+    rgba(93, 11, 48, 0.12);
+}
+
+.agenda-week-day.is-holiday-special::after {
+  background: #42a5ff;
+  box-shadow: 0 0 12px rgba(66, 165, 255, 0.55);
+}
+
+.agenda-week-holiday {
+  max-width: calc(100% - 10px);
+  overflow: hidden;
+  color: #ff86c4;
+  font-size: 7px;
+  font-weight: 850;
+  letter-spacing: 0.06em;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.agenda-holiday-panel {
+  --holiday-accent: #ff0a8a;
+  --holiday-secondary: #8b5cf6;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--holiday-accent) 48%, #29323d);
+  border-radius: 22px;
+  background:
+    radial-gradient(circle at 92% 2%, color-mix(in srgb, var(--holiday-accent) 18%, transparent), transparent 32%),
+    radial-gradient(circle at 2% 100%, color-mix(in srgb, var(--holiday-secondary) 12%, transparent), transparent 34%),
+    linear-gradient(145deg, #101620, #0b1017 64%);
+  box-shadow:
+    0 20px 52px rgba(0, 0, 0, 0.24),
+    0 0 34px color-mix(in srgb, var(--holiday-accent) 6%, transparent);
+}
+
+.agenda-holiday-heading {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 13px;
+  padding: 18px 20px;
+  border-bottom: 1px solid #29323d;
+}
+
+.agenda-holiday-icon {
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--holiday-accent) 48%, #313a46);
+  border-radius: 15px;
+  background: color-mix(in srgb, var(--holiday-accent) 14%, #0d131b);
+  color: color-mix(in srgb, var(--holiday-accent) 88%, white);
+  font-size: 24px;
+  box-shadow: 0 0 28px color-mix(in srgb, var(--holiday-accent) 12%, transparent);
+}
+
+.agenda-holiday-heading small {
+  color: color-mix(in srgb, var(--holiday-accent) 74%, white);
+  font-size: 8px;
+  font-weight: 850;
+  letter-spacing: 0.14em;
+}
+
+.agenda-holiday-heading h2 {
+  margin: 4px 0 3px;
+  color: #f7f8fa;
+  font-size: 20px;
+}
+
+.agenda-holiday-heading p {
+  margin: 0;
+  color: #8f9bad;
+  font-size: 9px;
+}
+
+.agenda-holiday-mode {
+  padding: 6px 9px;
+  border: 1px solid #33404e;
+  border-radius: 999px;
+  color: #aab5c3;
+  font-size: 8px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.agenda-holiday-mode.is-closed {
+  border-color: rgba(255, 10, 138, 0.45);
+  background: rgba(255, 10, 138, 0.11);
+  color: #ff8bc7;
+}
+
+.agenda-holiday-mode.is-special {
+  border-color: rgba(66, 165, 255, 0.4);
+  background: rgba(66, 165, 255, 0.09);
+  color: #83c5ff;
+}
+
+.agenda-holiday-saved {
+  margin: 14px 20px 0;
+  padding: 10px 12px;
+  border: 1px solid rgba(41, 201, 139, 0.25);
+  border-radius: 12px;
+  background: rgba(41, 201, 139, 0.07);
+  color: #8de2bd;
+  font-size: 10px;
+}
+
+.agenda-holiday-form {
+  display: grid;
+  gap: 14px;
+  padding: 17px 20px 20px;
+}
+
+.agenda-holiday-options {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.agenda-holiday-options legend,
+.agenda-holiday-message > span {
+  margin-bottom: 8px;
+  color: #dfe4eb;
+  font-size: 11px;
+  font-weight: 780;
+}
+
+.agenda-holiday-option {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 10px;
+  min-height: 58px;
+  padding: 10px 12px;
+  border: 1px solid #2b3541;
+  border-radius: 14px;
+  background: #0f151d;
+  cursor: pointer;
+}
+
+.agenda-holiday-option.is-selected {
+  border-color: color-mix(in srgb, var(--holiday-accent) 72%, #333e4a);
+  background:
+    radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--holiday-accent) 13%, transparent), transparent 48%),
+    #111720;
+  box-shadow: inset 3px 0 0 var(--holiday-accent);
+}
+
+.agenda-holiday-option input {
+  accent-color: var(--holiday-accent);
+}
+
+.agenda-holiday-option span {
+  display: grid;
+  gap: 3px;
+}
+
+.agenda-holiday-option strong {
+  color: #eef1f5;
+  font-size: 11px;
+}
+
+.agenda-holiday-option small {
+  color: #8e9aaa;
+  font-size: 9px;
+}
+
+.agenda-holiday-special {
+  display: grid;
+  gap: 9px;
+  padding: 12px;
+  border: 1px solid rgba(66, 165, 255, 0.2);
+  border-radius: 15px;
+  background: rgba(66, 165, 255, 0.035);
+}
+
+.agenda-holiday-special-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.agenda-holiday-special-heading > div {
+  display: grid;
+  gap: 3px;
+}
+
+.agenda-holiday-special-heading strong {
+  color: #e9edf3;
+  font-size: 10px;
+}
+
+.agenda-holiday-special-heading small,
+.agenda-holiday-no-sessions {
+  margin: 0;
+  color: #8793a3;
+  font-size: 9px;
+  line-height: 1.5;
+}
+
+.agenda-holiday-special-heading button {
+  border: 0;
+  background: transparent;
+  color: #77beff;
+  font-size: 9px;
+  font-weight: 780;
+  cursor: pointer;
+}
+
+.agenda-holiday-session-list {
+  display: grid;
+  gap: 7px;
+}
+
+.agenda-holiday-session-list > label {
+  display: grid;
+  grid-template-columns: auto 56px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  padding: 9px;
+  border: 1px solid #2a3541;
+  border-radius: 12px;
+  background: #0d141c;
+  opacity: 0.64;
+}
+
+.agenda-holiday-session-list > label.is-kept {
+  border-color: rgba(66, 165, 255, 0.35);
+  opacity: 1;
+}
+
+.agenda-holiday-session-list input {
+  accent-color: #42a5ff;
+}
+
+.agenda-holiday-session-time {
+  color: #f3f5f8;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.agenda-holiday-session-copy {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.agenda-holiday-session-copy strong {
+  overflow: hidden;
+  color: #eef1f5;
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.agenda-holiday-session-copy small {
+  overflow: hidden;
+  color: #8793a3;
+  font-size: 8px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.agenda-holiday-session-reservations {
+  color: #9ca8b7;
+  font-size: 8px;
+  white-space: nowrap;
+}
+
+.agenda-holiday-impact {
+  display: grid;
+  gap: 10px;
+  padding: 13px;
+  border: 1px solid rgba(255, 75, 112, 0.24);
+  border-radius: 15px;
+  background: rgba(255, 75, 112, 0.055);
+}
+
+.agenda-holiday-impact > strong {
+  color: #ffb0c4;
+  font-size: 10px;
+}
+
+.agenda-holiday-impact > div {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.agenda-holiday-impact span {
+  display: grid;
+  gap: 2px;
+  padding: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 11px;
+  background: rgba(0, 0, 0, 0.16);
+}
+
+.agenda-holiday-impact b {
+  color: #f7f8fa;
+  font-size: 16px;
+}
+
+.agenda-holiday-impact small,
+.agenda-holiday-impact p {
+  color: #929eae;
+  font-size: 8px;
+  line-height: 1.5;
+}
+
+.agenda-holiday-impact p {
+  margin: 0;
+}
+
+.agenda-holiday-message {
+  position: relative;
+  display: grid;
+}
+
+.agenda-holiday-message textarea {
+  min-height: 82px;
+  resize: vertical;
+  padding: 11px 12px 23px;
+  border: 1px solid #2c3642;
+  border-radius: 13px;
+  outline: 0;
+  background: #0e151d;
+  color: #edf0f4;
+  font: inherit;
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.agenda-holiday-message textarea:focus {
+  border-color: color-mix(in srgb, var(--holiday-accent) 60%, #34404d);
+}
+
+.agenda-holiday-message > small {
+  position: absolute;
+  right: 10px;
+  bottom: 7px;
+  color: #6f7b8b;
+  font-size: 8px;
+}
+
+.agenda-holiday-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.agenda-holiday-footer a {
+  color: #8e9bac;
+  font-size: 9px;
+  text-decoration: none;
+}
+
+.agenda-holiday-footer button {
+  min-height: 42px;
+  padding: 0 15px;
+  border: 0;
+  border-radius: 13px;
+  background: linear-gradient(90deg, var(--holiday-accent), #ef0d78);
+  color: white;
+  font: inherit;
+  font-size: 10px;
+  font-weight: 820;
+  cursor: pointer;
+  box-shadow: 0 12px 28px color-mix(in srgb, var(--holiday-accent) 16%, transparent);
+}
+
+@media (max-width: 720px) {
+  .agenda-holiday-heading {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .agenda-holiday-mode {
+    grid-column: 1 / -1;
+    justify-self: start;
+  }
+
+  .agenda-holiday-impact > div {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .agenda-holiday-session-list > label {
+    grid-template-columns: auto 48px minmax(0, 1fr);
+  }
+
+  .agenda-holiday-session-reservations {
+    grid-column: 3;
+  }
+
+  .agenda-holiday-footer {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .agenda-holiday-footer button {
+    width: 100%;
+  }
+}
