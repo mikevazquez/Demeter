@@ -98,8 +98,7 @@ export default async function MarketingDetailPage({
   for (const instance of instanceRows) {
     const version = (versions ?? []).find(
       (row) =>
-        row.instance_id === instance.id &&
-        row.version_number === instance.current_version_number,
+        row.instance_id === instance.id && row.version_number === instance.current_version_number,
     );
     const configuration =
       version?.configuration &&
@@ -144,7 +143,11 @@ export default async function MarketingDetailPage({
       </header>
 
       {feedback ? (
-        <div className={query.error ? "notification-feedback is-error" : "notification-feedback is-success"}>
+        <div
+          className={
+            query.error ? "notification-feedback is-error" : "notification-feedback is-success"
+          }
+        >
           {feedback}
         </div>
       ) : null}
@@ -233,7 +236,10 @@ export default async function MarketingDetailPage({
           <div className="notification-detail-card-heading">
             <div>
               <h2>Mensaje</h2>
-              <p>Este contenido queda guardado como borrador hasta que el flujo esté listo para enviar.</p>
+              <p>
+                Este contenido queda guardado como borrador hasta que el flujo esté listo para
+                enviar.
+              </p>
             </div>
           </div>
 
@@ -322,7 +328,8 @@ export default async function MarketingDetailPage({
 
           {!instanceRows.length ? (
             <div className="notification-info-box">
-              Este mensaje ya tiene un disparador definido en Studio Flow, pero todavía no existe una configuración activa para el estudio.
+              Este mensaje ya tiene un disparador definido en Studio Flow, pero todavía no existe
+              una configuración activa para el estudio.
             </div>
           ) : (
             <div className="marketing-runtime-grid">
@@ -343,7 +350,10 @@ export default async function MarketingDetailPage({
                     </div>
 
                     {editableKeys.length ? (
-                      <form action={saveMarketingAutomationConfigurationAction} className="notification-message-form">
+                      <form
+                        action={saveMarketingAutomationConfigurationAction}
+                        className="notification-message-form"
+                      >
                         <input type="hidden" name="marketing_key" value={item.key} />
                         <input type="hidden" name="catalog_code" value={template.code} />
                         <input type="hidden" name="instance_id" value={instance.id} />
@@ -371,12 +381,16 @@ export default async function MarketingDetailPage({
                       </form>
                     ) : (
                       <p className="marketing-runtime-note">
-                        Este flujo no tiene parámetros manuales. Studio Flow evalúa automáticamente su elegibilidad.
+                        Este flujo no tiene parámetros manuales. Studio Flow evalúa automáticamente
+                        su elegibilidad.
                       </p>
                     )}
 
                     {canManage ? (
-                      <form action={transitionMarketingAutomationAction} className="marketing-runtime-actions">
+                      <form
+                        action={transitionMarketingAutomationAction}
+                        className="marketing-runtime-actions"
+                      >
                         <input type="hidden" name="marketing_key" value={item.key} />
                         <input type="hidden" name="catalog_code" value={template.code} />
                         <input type="hidden" name="instance_id" value={instance.id} />
@@ -389,7 +403,9 @@ export default async function MarketingDetailPage({
                           type="submit"
                           className={instance.status === "active" ? "is-pause" : "is-activate"}
                         >
-                          {instance.status === "active" ? "Pausar automatización" : "Activar automatización"}
+                          {instance.status === "active"
+                            ? "Pausar automatización"
+                            : "Activar automatización"}
                         </button>
                       </form>
                     ) : null}
@@ -401,7 +417,9 @@ export default async function MarketingDetailPage({
         </section>
       ) : (
         <div className="notification-info-box">
-          Puedes editar y guardar esta comunicación desde ahora. Como su disparador todavía no está conectado al motor, permanece en <strong>Borrador</strong> y no enviará mensajes accidentalmente.
+          Puedes editar y guardar esta comunicación desde ahora. Como su disparador todavía no está
+          conectado al motor, permanece en <strong>Borrador</strong> y no enviará mensajes
+          accidentalmente.
         </div>
       )}
     </main>

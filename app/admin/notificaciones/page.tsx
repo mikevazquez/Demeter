@@ -125,23 +125,20 @@ export default async function NotificationsPage({
   const ctx = await getAdminContext(CAPABILITIES.AUTOMATIONS_READ);
   const canManage = ctx.can(CAPABILITIES.AUTOMATIONS_MANAGE);
 
-  const [
-    { data: rawSnapshot },
-    { data: automationInstances },
-    { data: marketingConfigs },
-  ] = await Promise.all([
-    ctx.supabase.rpc("admin_notification_rules_snapshot", {
-      p_studio_id: ctx.studio.id,
-    }),
-    ctx.supabase
-      .from("automation_instances")
-      .select("catalog_code,status")
-      .eq("studio_id", ctx.studio.id)
-      .neq("status", "archived"),
-    ctx.supabase.rpc("admin_notification_marketing_snapshot", {
-      p_studio_id: ctx.studio.id,
-    }),
-  ]);
+  const [{ data: rawSnapshot }, { data: automationInstances }, { data: marketingConfigs }] =
+    await Promise.all([
+      ctx.supabase.rpc("admin_notification_rules_snapshot", {
+        p_studio_id: ctx.studio.id,
+      }),
+      ctx.supabase
+        .from("automation_instances")
+        .select("catalog_code,status")
+        .eq("studio_id", ctx.studio.id)
+        .neq("status", "archived"),
+      ctx.supabase.rpc("admin_notification_marketing_snapshot", {
+        p_studio_id: ctx.studio.id,
+      }),
+    ]);
 
   const snapshot = safeSnapshot(rawSnapshot);
   const rulesByKey = new Map(snapshot.rules.map((rule) => [rule.rule_key, rule]));
@@ -372,7 +369,9 @@ export default async function NotificationsPage({
                     <small>{item.description}</small>
                   </span>
                   <span className="notification-channel-chips">
-                    <span className={(draft?.push_enabled ?? active) ? "is-on" : undefined}>Push</span>
+                    <span className={(draft?.push_enabled ?? active) ? "is-on" : undefined}>
+                      Push
+                    </span>
                     <span className={(draft?.whatsapp_enabled ?? active) ? "is-on" : undefined}>
                       WhatsApp
                     </span>

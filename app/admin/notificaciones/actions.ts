@@ -200,7 +200,6 @@ export async function saveNotificationPreferencesAction(formData: FormData) {
   redirect(listUrl("preferencias", { saved: "preferences" }));
 }
 
-
 function marketingUrl(marketingKey: string, params: Record<string, string> = {}) {
   const search = new URLSearchParams(params);
   const suffix = search.toString() ? `?${search.toString()}` : "";
@@ -223,10 +222,7 @@ const marketingNumericKeys = new Set([
   "elapsed_since_expiration",
 ]);
 
-function parseMarketingAutomationConfiguration(
-  code: AutomationCatalogCode,
-  formData: FormData,
-) {
+function parseMarketingAutomationConfiguration(code: AutomationCatalogCode, formData: FormData) {
   const template = getAutomationTemplate(code);
   const configuration: Record<string, unknown> = {};
 

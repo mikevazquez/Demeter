@@ -287,7 +287,13 @@ export type MarketingDefinition = {
   category: "recuperacion" | "promociones" | "fidelizacion";
   automationCodes?: readonly string[];
   planned?: boolean;
-  defaultAudience: "all_eligible" | "active_students" | "inactive_students" | "package_expiring" | "package_expired" | "trial_no_purchase";
+  defaultAudience:
+    | "all_eligible"
+    | "active_students"
+    | "inactive_students"
+    | "package_expiring"
+    | "package_expired"
+    | "trial_no_purchase";
   defaultTitle: string;
   defaultBody: string;
 };
