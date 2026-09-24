@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { buildAsistianVariables } from "../supabase/functions/_shared/notification-asistian-variables";
+import {
+  buildAsistianVariables,
+  normalizeAsistianPhone,
+} from "../supabase/functions/_shared/notification-asistian-variables";
 
 const base = {
   recipient_name: "Mike",
@@ -64,6 +67,13 @@ describe("NOTIFICACIONES-01D Assistian variable mapping", () => {
       reservas_al_revisar: 1,
       mensaje: "La clase fue cancelada. No necesitas asistir.",
     });
+  });
+
+  it("normalizes Mexican phone formats before handing off to Assistian", () => {
+    expect(normalizeAsistianPhone("33 3638 6674")).toBe("+523336386674");
+    expect(normalizeAsistianPhone("523336386674")).toBe("+523336386674");
+    expect(normalizeAsistianPhone("+523336386674")).toBe("+523336386674");
+    expect(normalizeAsistianPhone("123")).toBeNull();
   });
 
   it("passes through unknown templates so future adapters can extend safely", () => {
