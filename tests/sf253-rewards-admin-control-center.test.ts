@@ -9,15 +9,16 @@ function read(path: string) {
 }
 
 const nav = read("app/admin/recompensas/RewardsNav.tsx");
+const adminNavigation = read("app/admin/admin-navigation.tsx");
 const actions = read("app/admin/recompensas/actions.ts");
-const challenges = read("app/admin/recompensas/retos/page.tsx");
+const challenges = read("app/admin/retos/page.tsx");
 const tracking = read("app/admin/recompensas/seguimiento/page.tsx");
 const studentProgress = read("app/admin/recompensas/seguimiento/[studentId]/page.tsx");
 const rewardDetail = read("app/admin/recompensas/generadas/[rewardId]/page.tsx");
 const rewardAdjustedNotice = read("app/admin/recompensas/generadas/RewardAdjustedNotice.tsx");
 const programDetail = read("app/admin/recompensas/programas/[programId]/page.tsx");
 const achievementDetail = read("app/admin/recompensas/logros/[ruleId]/page.tsx");
-const challengeDetail = read("app/admin/recompensas/retos/[ruleId]/page.tsx");
+const challengeDetail = read("app/admin/retos/[ruleId]/page.tsx");
 const challengeSavedNotice = read("app/admin/recompensas/retos/ChallengeSavedNotice.tsx");
 const achievementSavedNotice = read("app/admin/recompensas/logros/AchievementSavedNotice.tsx");
 const programSavedNotice = read(
@@ -34,11 +35,13 @@ const loyaltySupport = read(
 );
 
 describe("SF-253 Rewards admin control center", () => {
-  it("exposes the approved product navigation", () => {
-    for (const label of ["Inicio", "Programas", "Logros", "Retos", "Seguimiento", "Recompensas"]) {
+  it("keeps Rewards navigation focused and exposes Retos as a separate product area", () => {
+    for (const label of ["Inicio", "Programas", "Logros", "Seguimiento", "Recompensas"]) {
       expect(nav).toContain(label);
     }
-    expect(nav).not.toContain("Incidencias");
+    expect(nav).not.toContain('label: "Retos"');
+    expect(adminNavigation).toContain('label === "Retos"');
+    expect(adminNavigation).not.toContain("Incidencias");
   });
 
   it("keeps manual reward grants out of the new admin surface", () => {
