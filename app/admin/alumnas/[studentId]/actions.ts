@@ -250,6 +250,31 @@ export async function updateStudent(formData: FormData) {
   redirect(`/admin/alumnas/${studentId}?saved=1`);
 }
 
+export async function unlockMedalsAccess(formData: FormData) {
+  const studentId = String(formData.get("student_id") ?? "").trim();
+  const reason = String(formData.get("reason") ?? "").trim();
+
+  if (!studentId || !reason) {
+    redirect(`/admin/alumnas/${studentId}?view=rewards&error=medals_access_reason`);
+  }
+
+  const { supabase } = await getAdminContext(CAPABILITIES.REWARDS_MANAGE);
+  const { error } = await supabase.rpc("admin_unlock_medals_access", {
+    p_student_id: studentId,
+    p_reason: reason,
+  });
+
+  if (error) {
+    redirect(`/admin/alumnas/${studentId}?view=rewards&error=medals_access_unlock`);
+  }
+
+  revalidatePath(`/admin/alumnas/${studentId}`);
+  revalidatePath("/admin/alumnas");
+  revalidatePath("/student");
+  revalidatePath("/student/recompensas");
+  redirect(`/admin/alumnas/${studentId}?view=rewards&saved=medals_access_unlocked`);
+}
+
 export async function updateCommunicationPreferences(formData: FormData) {
   const studentId = String(formData.get("student_id") ?? "");
   const reason =

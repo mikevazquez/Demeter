@@ -14,14 +14,15 @@ import StudentNoticeDialog from "./components/StudentNoticeDialog";
 type RewardLevelView = {
   key?: string;
   title?: string;
-  maintenance_attendance?: number;
-  promotion_attendance?: number;
-  min_active_months?: number;
-  max_uncovered_days?: number;
+  required_active_days?: number;
+  max_no_shows?: number;
+  min_continuity_months?: number;
+  max_renewal_gap_days?: number;
   waitlist_priority?: number;
   private_discount_pct?: number;
   event_discount_pct?: number;
   monthly_guest_invites?: number;
+  benefits_definition?: Record<string, unknown> | null;
 };
 
 type RewardLevelDefinitionRow = RewardLevelView & {
@@ -30,11 +31,15 @@ type RewardLevelDefinitionRow = RewardLevelView & {
 };
 
 type RewardStatusSnapshot = {
-  level_title?: string | null;
-  attendance_count?: number;
-  maintenance_met?: boolean;
+  access_unlocked?: boolean;
+  medal_key?: string | null;
+  medal_title?: string | null;
+  active_days?: number;
+  no_show_count?: number;
+  continuity_months?: number;
+  renewal_gap_days?: number;
+  current_medal?: RewardLevelView | null;
   current_level?: RewardLevelView | null;
-  next_level?: RewardLevelView | null;
 };
 
 type RewardInvitationBalance = {
@@ -164,7 +169,7 @@ export default async function StudentHomePage({
     supabase
       .from("reward_status_level_definitions")
       .select(
-        "level_key,level_order,title,maintenance_attendance,promotion_attendance,min_active_months,max_uncovered_days,waitlist_priority,private_discount_pct,event_discount_pct,monthly_guest_invites",
+        "level_key,level_order,title,required_active_days,max_no_shows,min_continuity_months,max_renewal_gap_days,waitlist_priority,private_discount_pct,event_discount_pct,monthly_guest_invites,benefits_definition",
       )
       .eq("studio_id", membership.studio_id)
       .order("level_order"),
@@ -213,27 +218,25 @@ export default async function StudentHomePage({
   const fallbackLevelKey = rewardMembershipResult.data?.current_level_key ?? null;
   const fallbackLevelRow =
     levelDefinitions.find((level) => level.level_key === fallbackLevelKey) ?? null;
-  const fallbackNextRow = fallbackLevelRow
-    ? (levelDefinitions.find((level) => level.level_order === fallbackLevelRow.level_order + 1) ??
-      null)
-    : null;
   const toLevelView = (row: RewardLevelDefinitionRow | null): RewardLevelView | null =>
     row
       ? {
           key: row.level_key,
           title: row.title,
-          maintenance_attendance: row.maintenance_attendance,
-          promotion_attendance: row.promotion_attendance,
-          min_active_months: row.min_active_months,
-          max_uncovered_days: row.max_uncovered_days,
+          required_active_days: row.required_active_days,
+          max_no_shows: row.max_no_shows,
+          min_continuity_months: row.min_continuity_months,
+          max_renewal_gap_days: row.max_renewal_gap_days,
           waitlist_priority: row.waitlist_priority,
           private_discount_pct: row.private_discount_pct,
           event_discount_pct: row.event_discount_pct,
           monthly_guest_invites: row.monthly_guest_invites,
+          benefits_definition: row.benefits_definition,
         }
       : null;
-  const currentLevel = rewardStatus?.current_level ?? toLevelView(fallbackLevelRow);
-  const nextLevel = rewardStatus?.next_level ?? toLevelView(fallbackNextRow);
+  const currentLevel = rewardStatus?.access_unlocked
+    ? (rewardStatus?.current_medal ?? rewardStatus?.current_level ?? toLevelView(fallbackLevelRow))
+    : null;
   const levelKey =
     currentLevel?.key === "silver" ||
     currentLevel?.key === "gold" ||
@@ -295,8 +298,8 @@ export default async function StudentHomePage({
 
       {query.benefits === "1" && currentLevel ? (
         <StudentNoticeDialog
-          eyebrow={`Nivel ${currentLevel.title ?? rewardStatus?.level_title ?? ""}`}
-          title="Tus beneficios"
+          eyebrow={`Medalla ${currentLevel.title ?? rewardStatus?.medal_title ?? ""}`}
+          title="Mis recompensas"
           dismissHref="/student"
           confirmLabel="Cerrar"
         >
@@ -307,39 +310,45 @@ export default async function StudentHomePage({
                 <p>
                   Lista de espera ·{" "}
                   {currentLevel.title === "Bronce"
-                    ? "prioridad base"
-                    : `prioridad ${currentLevel.title}`}
+                    ? "prioridad básica"
+                    : currentLevel.title === "Plata"
+                      ? "prioridad mayor"
+                      : currentLevel.title === "Oro"
+                        ? "prioridad alta"
+                        : "prioridad máxima"}
                 </p>
-                <p>Clases privadas · {currentLevel.private_discount_pct ?? 0}% de descuento</p>
-                <p>Eventos elegibles · {currentLevel.event_discount_pct ?? 0}% de descuento</p>
-                <p>
-                  Invitaciones ·{" "}
-                  {(currentLevel.monthly_guest_invites ?? 0) > 0
-                    ? `${invitationBalance?.remaining ?? currentLevel.monthly_guest_invites} de ${
-                        invitationBalance?.total ?? currentLevel.monthly_guest_invites
-                      } disponibles este mes`
-                    : "sin invitaciones"}
-                </p>
+                {(currentLevel.event_discount_pct ?? 0) > 0 ? (
+                  <p>Eventos elegibles · {currentLevel.event_discount_pct}% de descuento</p>
+                ) : null}
+                {(currentLevel.private_discount_pct ?? 0) > 0 ? (
+                  <p>Clases privadas · {currentLevel.private_discount_pct}% de descuento</p>
+                ) : null}
+                {(currentLevel.monthly_guest_invites ?? 0) > 0 ? (
+                  <p>
+                    Invitaciones ·{" "}
+                    {`${invitationBalance?.remaining ?? currentLevel.monthly_guest_invites} de ${
+                      invitationBalance?.total ?? currentLevel.monthly_guest_invites
+                    } disponibles este mes`}
+                  </p>
+                ) : null}
+                {currentLevel.key !== "bronze" ? (
+                  <p>Acceso anticipado · inscripciones y promociones especiales</p>
+                ) : null}
+                {currentLevel.key === "diamond" ? (
+                  <p>Experiencias premium · beneficios exclusivos de Demeter</p>
+                ) : null}
               </div>
             </div>
-            {nextLevel ? (
-              <div className="rounded-2xl border border-fuchsia-500/20 bg-fuchsia-500/[0.055] p-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-fuchsia-300">
-                  Siguiente nivel · {nextLevel.title}
-                </p>
-                <p className="mt-2 text-sm text-zinc-300">
-                  {nextLevel.private_discount_pct}% en privadas · {nextLevel.event_discount_pct}% en
-                  eventos
-                  {(nextLevel.monthly_guest_invites ?? 0) > 0
-                    ? ` · ${nextLevel.monthly_guest_invites} invitación${nextLevel.monthly_guest_invites === 1 ? "" : "es"} al mes`
-                    : ""}
-                </p>
-              </div>
-            ) : (
-              <p className="text-sm text-zinc-400">
-                Nivel máximo. Mantén tu constancia para conservar Diamante.
-              </p>
-            )}
+
+            <Link
+              href="/student/recompensas/medallero"
+              className="flex min-h-12 items-center justify-between rounded-2xl border border-fuchsia-500/25 bg-fuchsia-500/[0.06] px-4 text-sm font-semibold text-white transition hover:bg-fuchsia-500/[0.1]"
+            >
+              <span>Ver Medallero</span>
+              <span aria-hidden="true" className="text-lg text-fuchsia-300">
+                ›
+              </span>
+            </Link>
           </div>
         </StudentNoticeDialog>
       ) : null}
@@ -484,7 +493,7 @@ export default async function StudentHomePage({
           backgroundImage: `radial-gradient(circle at 86% 8%, ${levelVisual.wash}, transparent 30%), linear-gradient(135deg, rgba(255,255,255,0.035), rgba(255,255,255,0.012))`,
         }}
       >
-        <div className="grid grid-cols-[0.92fr_1.08fr] items-start gap-4">
+        <div className="grid grid-cols-[112px_minmax(0,1fr)] items-start gap-2.5 sm:grid-cols-[128px_minmax(0,1fr)] sm:gap-4">
           <div className="min-w-0">
             <div
               className="relative h-28 w-28 overflow-hidden rounded-full border-2 bg-black/25 sm:h-32 sm:w-32"
@@ -514,40 +523,62 @@ export default async function StudentHomePage({
           </div>
 
           <Link
-            href="/student?benefits=1"
+            href={
+              currentLevel
+                ? "/student?benefits=1"
+                : rewardStatus?.access_unlocked
+                  ? "/student/recompensas/medallero"
+                  : "/student/recompensas"
+            }
             className="min-w-0 rounded-3xl border bg-black/20 p-3.5 transition hover:bg-white/[0.035] sm:p-4"
             style={{ borderColor: levelVisual.divider }}
           >
             <p
               className="text-[9px] font-semibold uppercase tracking-[0.22em]"
-              style={{ color: levelVisual.accent }}
+              style={{ color: currentLevel ? levelVisual.accent : "#f0abfc" }}
             >
-              Mis beneficios
+              {currentLevel ? "Mi medalla" : rewardStatus?.access_unlocked ? "Medallas" : "Rewards"}
             </p>
             <div className="mt-3 flex items-center gap-3">
               <div
                 aria-hidden="true"
                 className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[16px] border text-xl"
                 style={{
-                  borderColor: levelVisual.border,
-                  background: `linear-gradient(135deg, ${levelVisual.wash}, rgba(0,0,0,0.18))`,
-                  boxShadow: `0 0 22px ${levelVisual.glow}`,
-                  color: levelVisual.accent,
+                  borderColor: currentLevel ? levelVisual.border : "rgba(236,72,153,0.35)",
+                  background: currentLevel
+                    ? `linear-gradient(135deg, ${levelVisual.wash}, rgba(0,0,0,0.18))`
+                    : "rgba(236,72,153,0.08)",
+                  boxShadow: currentLevel ? `0 0 22px ${levelVisual.glow}` : "none",
+                  color: currentLevel ? levelVisual.accent : "#f0abfc",
                 }}
               >
-                ♛
+                {currentLevel ? "♛" : "◇"}
               </div>
               <div className="min-w-0">
-                <h2 className="truncate text-xl font-semibold text-white">
-                  {currentLevel?.title ?? "Bronce"}
+                <h2 className="text-lg font-semibold leading-tight text-white sm:text-xl">
+                  {currentLevel
+                    ? `Medalla ${currentLevel.title ?? "Bronce"}`
+                    : rewardStatus?.access_unlocked
+                      ? "Sin medalla"
+                      : "Activando Medallas"}
                 </h2>
                 <p className="mt-0.5 text-[11px] leading-4 text-zinc-400">
-                  Tu constancia te lleva más lejos
+                  {currentLevel
+                    ? "Tu constancia te lleva más lejos"
+                    : rewardStatus?.access_unlocked
+                      ? "Tu Medalla se evalúa cada mes"
+                      : "Completa tu activación para acceder al programa"}
                 </p>
               </div>
             </div>
             <div className="mt-4 flex items-center justify-between border-t border-white/10 pt-3 text-xs font-semibold text-white">
-              <span>Ver mis beneficios</span>
+              <span>
+                {currentLevel
+                  ? "Ver mis recompensas"
+                  : rewardStatus?.access_unlocked
+                    ? "Ver Medallero"
+                    : "Continuar activación"}
+              </span>
               <span aria-hidden="true" className="text-lg text-zinc-600">
                 ›
               </span>

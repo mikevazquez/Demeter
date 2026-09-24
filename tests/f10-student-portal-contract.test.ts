@@ -55,7 +55,7 @@ describe("F10 student portal contracts", () => {
 
   it("allows profile edits only through the own-profile wrapper", () => {
     const actions = source("app/student/actions.ts");
-    expect(actions).toContain('supabase.rpc("student_update_own_profile"');
+    expect(actions).toContain('supabase.rpc("student_update_reward_onboarding_profile"');
     expect(actions).not.toContain('.from("persons").update');
     expect(actions).not.toContain('.from("person_contacts").update');
     expect(portalMigration).toMatch(/s\.user_id\s*=\s*\(select auth\.uid\(\)\)/);

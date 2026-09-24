@@ -11,6 +11,10 @@ const waitlist = readFileSync(
   join(process.cwd(), "supabase/migrations/20260921004500_sf255_waitlist_priority.sql"),
   "utf8",
 );
+const monthlyMedals = readFileSync(
+  join(process.cwd(), "supabase/migrations/20260923222500_rewards_monthly_medals.sql"),
+  "utf8",
+);
 const creditFix = readFileSync(
   join(process.cwd(), "supabase/migrations/20260921005200_sf255_waitlist_credit_fix.sql"),
   "utf8",
@@ -73,24 +77,23 @@ const checkoutReturn = readFileSync(
 );
 
 describe("SF-255A monthly level and waitlist contracts", () => {
-  it("keeps the approved four deterministic levels", () => {
-    expect(core).toContain("('bronze', 1, 'Bronce', 4, null::integer, 0, 15, 1, 5, 5, 0)");
-    expect(core).toContain("('silver', 2, 'Plata', 6, 8, 2, 10, 2, 10, 10, 0)");
-    expect(core).toContain("('gold', 3, 'Oro', 8, 12, 4, 7, 3, 15, 15, 1)");
-    expect(core).toContain("('diamond', 4, 'Diamante', 10, 16, 6, 3, 4, 20, 20, 2)");
-    expect(core).toContain("maintenance_attendance");
-    expect(core).toContain("promotion_attendance");
+  it("keeps the four Medals but supersedes the old ladder with monthly requirements", () => {
+    expect(core).toContain("level_key in ('bronze','silver','gold','diamond')");
+    expect(monthlyMedals).toContain("required_active_days");
+    expect(monthlyMedals).toContain("max_no_shows");
+    expect(monthlyMedals).toContain("min_continuity_months");
+    expect(monthlyMedals).toContain("max_renewal_gap_days");
+    expect(monthlyMedals).toContain("when 'bronze' then 6");
+    expect(monthlyMedals).toContain("when 'silver' then 9");
+    expect(monthlyMedals).toContain("when 'gold' then 12");
+    expect(monthlyMedals).toContain("when 'diamond' then 16");
   });
 
-  it("seeds Bronze for existing and newly created students", () => {
-    expect(core).toContain("insert into public.reward_status_memberships");
-    expect(core).toContain("from public.students s");
-    expect(core).toContain(
-      "create or replace function private.seed_reward_status_for_new_student()",
-    );
-    expect(core).toContain("create trigger reward_status_seed_student");
-    expect(core).toContain("after insert on public.students");
-    expect(core).toContain("current_level_key text not null default 'bronze'");
+  it("uses onboarding as access and permits an activated student to have no Medal", () => {
+    expect(monthlyMedals).toContain("alter column current_level_key drop not null");
+    expect(monthlyMedals).toContain("access_unlocked_at");
+    expect(monthlyMedals).toContain("current_level_key = null");
+    expect(monthlyMedals).toContain("'no_medal'");
   });
 
   it("uses the SF-255 status membership as Profile 360 general level source", () => {
@@ -100,15 +103,19 @@ describe("SF-255A monthly level and waitlist contracts", () => {
     expect(adminStudentProfilePage).not.toContain("profileParticipation");
   });
 
-  it("limits monthly movement and preserves the Bronze floor", () => {
-    expect(core).toContain("v_to_level := v_next_level");
-    expect(core).toContain("elsif v_from_level = 'bronze' then");
-    expect(core).toContain("v_outcome := 'floor'");
-    expect(core).toContain("v_outcome := 'partial_month'");
+  it("assigns the highest eligible Medal directly instead of moving one step at a time", () => {
+    expect(monthlyMedals).toContain("order by d.level_order desc");
+    expect(monthlyMedals).toContain("v_to_level := nullif(v_metrics->>'eligible_level_key','')");
+    expect(monthlyMedals).toContain(
+      "case when v_to_level is null then 'no_medal' else 'awarded' end",
+    );
+    expect(monthlyMedals).not.toContain("v_to_level := v_next_level");
   });
 
-  it("orders waitlist by current level and FIFO without public position", () => {
+  it("orders waitlist by current Medal and FIFO while keeping no-Medal students eligible", () => {
     expect(waitlist).toContain("order by d.level_order desc, w.joined_at asc, w.id asc");
+    expect(monthlyMedals).toContain("left join public.reward_status_memberships");
+    expect(monthlyMedals).toContain("coalesce(d.level_order,0) desc");
     expect(waitlist).not.toContain("position_number");
     expect(waitlist).not.toContain("rank()");
   });
@@ -135,8 +142,11 @@ describe("SF-255A monthly level and waitlist contracts", () => {
     expect(homePage).toContain("reward_status_level_definitions");
     expect(homePage).toContain("student_reward_invitation_balance");
     expect(homePage).toContain('data-home-block="identity-benefits-technical"');
-    expect(homePage).toContain("Mis beneficios");
-    expect(homePage).toContain("Ver mis beneficios");
+    expect(homePage).toContain("Mi medalla");
+    expect(homePage).toContain("Activando Medallas");
+    expect(homePage).toContain("Ver mis recompensas");
+    expect(homePage).toContain("Sin medalla");
+    expect(homePage).toContain("Ver Medallero");
     expect(homePage).toContain("Niveles técnicos");
     expect(homePage).toContain("resulting_level_title");
     expect(homePage).toContain("#CD7F32");

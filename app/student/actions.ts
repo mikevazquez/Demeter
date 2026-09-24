@@ -629,19 +629,24 @@ export async function updateStudentAvatarAction(formData: FormData) {
 
 export async function updateStudentProfileAction(formData: FormData) {
   const email = String(formData.get("email") ?? "").trim() || null;
+  const birthDate = String(formData.get("birth_date") ?? "").trim();
 
-  const { supabase, snapshot } = await getStudentPortalContext();
-  const { error } = await supabase.rpc("student_update_own_profile", {
-    target_first_name: snapshot.profile.first_name,
-    target_last_name: snapshot.profile.last_name,
+  if (!birthDate) {
+    redirect("/student/perfil?edit=1&error=birth_date_required");
+  }
+
+  const { supabase } = await getStudentPortalContext();
+  const { error } = await supabase.rpc("student_update_reward_onboarding_profile", {
     target_email: email,
+    target_birth_date: birthDate,
   });
 
   if (error) {
-    redirect(`/student/perfil?error=${errorCode(error, "profile_update_failed")}`);
+    redirect(`/student/perfil?edit=1&error=${errorCode(error, "profile_update_failed")}`);
   }
 
   revalidatePath("/student");
   revalidatePath("/student/perfil");
+  revalidatePath("/student/recompensas");
   redirect("/student/perfil?updated=1");
 }

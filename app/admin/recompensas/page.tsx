@@ -16,30 +16,37 @@ import {
 export default async function RewardsControlCenterPage() {
   const ctx = await getAdminContext(CAPABILITIES.REWARDS_READ);
 
-  const [programsResult, rulesResult, rewardsResult, programEventsResult] = await Promise.all([
-    ctx.supabase
-      .from("reward_programs")
-      .select("id,status,latest_version_number,published_version_number,updated_at")
-      .eq("studio_id", ctx.studio.id)
-      .order("updated_at", { ascending: false }),
-    ctx.supabase
-      .from("reward_rules")
-      .select("id,status,current_version_number,updated_at")
-      .eq("studio_id", ctx.studio.id)
-      .order("updated_at", { ascending: false }),
-    ctx.supabase
-      .from("reward_instances")
-      .select("id,status,kind,benefit_definition,student_id,expires_at,created_at")
-      .eq("studio_id", ctx.studio.id)
-      .order("created_at", { ascending: false })
-      .limit(100),
-    ctx.supabase
-      .from("reward_program_events")
-      .select("id,event_type,program_id,student_id,details,occurred_at")
-      .eq("studio_id", ctx.studio.id)
-      .order("occurred_at", { ascending: false })
-      .limit(8),
-  ]);
+  const [programsResult, rulesResult, rewardsResult, programEventsResult, onboardingResult] =
+    await Promise.all([
+      ctx.supabase
+        .from("reward_programs")
+        .select("id,status,latest_version_number,published_version_number,updated_at")
+        .eq("studio_id", ctx.studio.id)
+        .order("updated_at", { ascending: false }),
+      ctx.supabase
+        .from("reward_rules")
+        .select("id,status,current_version_number,updated_at")
+        .eq("studio_id", ctx.studio.id)
+        .order("updated_at", { ascending: false }),
+      ctx.supabase
+        .from("reward_instances")
+        .select("id,status,kind,benefit_definition,student_id,expires_at,created_at")
+        .eq("studio_id", ctx.studio.id)
+        .order("created_at", { ascending: false })
+        .limit(100),
+      ctx.supabase
+        .from("reward_program_events")
+        .select("id,event_type,program_id,student_id,details,occurred_at")
+        .eq("studio_id", ctx.studio.id)
+        .order("occurred_at", { ascending: false })
+        .limit(8),
+      ctx.supabase
+        .from("reward_onboarding")
+        .select(
+          "student_id,documents_completed_at,profile_completed_at,app_installed_at,notifications_enabled_at,first_reservation_at,first_attendance_at,access_unlocked_at",
+        )
+        .eq("studio_id", ctx.studio.id),
+    ]);
 
   const programs = programsResult.data ?? [];
   const rules = rulesResult.data ?? [];
@@ -72,6 +79,9 @@ export default async function RewardsControlCenterPage() {
   const availableRewards = (rewardsResult.data ?? []).filter(
     (reward) => reward.status === "available",
   );
+  const onboardingRows = onboardingResult.data ?? [];
+  const activatingStudents = onboardingRows.filter((item) => !item.access_unlocked_at);
+  const activatedStudents = onboardingRows.filter((item) => Boolean(item.access_unlocked_at));
 
   return (
     <RewardsShell>
@@ -94,7 +104,7 @@ export default async function RewardsControlCenterPage() {
         ) : null}
       </header>
 
-      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
         <MetricCard
           label="Programas activos"
           value={activePrograms.length}
@@ -115,13 +125,82 @@ export default async function RewardsControlCenterPage() {
           value={availableRewards.length}
           detail="listas para usar"
         />
+        <MetricCard
+          label="En activación"
+          value={activatingStudents.length}
+          detail={`${activatedStudents.length} con acceso a Medallas`}
+        />
       </section>
+
+      <SectionCard eyebrow="ACTIVACIÓN" title="Acceso al sistema de Medallas">
+        <div className="grid gap-4 lg:grid-cols-[1fr_.9fr]">
+          <div>
+            <p className="text-sm leading-6 text-zinc-400">
+              El onboarding no entrega una Medalla. Al completar los seis hitos, la alumna obtiene
+              acceso al sistema mensual de Medallas y comienza a ser evaluada por su constancia. Las
+              alumnas de legado conservan su Medalla vigente.
+            </p>
+            <div className="mt-4 grid gap-2 sm:grid-cols-2">
+              {[
+                [
+                  "1",
+                  "Aceptar documentos obligatorios",
+                  "Se completa con evidencia de Documentos.",
+                ],
+                ["2", "Completar perfil", "Foto, correo y fecha de nacimiento."],
+                [
+                  "3",
+                  "Guardar la app",
+                  "Debe abrir Studio Flow desde el icono instalado para confirmar el hito.",
+                ],
+                [
+                  "4",
+                  "Activar notificaciones",
+                  "Se registra cuando existe una suscripción Push activa real.",
+                ],
+                [
+                  "5",
+                  "Realizar primera reserva",
+                  "La reserva queda como hito aunque después se cancele.",
+                ],
+                ["6", "Asistir a primera clase", "Requiere una reserva con estado attended."],
+              ].map(([number, title, detail]) => (
+                <div key={number} className="rounded-2xl border border-white/10 bg-black/20 p-4">
+                  <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#FF0A8A]">
+                    Paso {number}
+                  </span>
+                  <strong className="mt-1 block text-sm text-white">{title}</strong>
+                  <p className="mt-1 text-xs leading-5 text-zinc-500">{detail}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="rounded-2xl border border-fuchsia-500/25 bg-fuchsia-500/[0.05] p-5">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-fuchsia-300">
+              Resultado
+            </p>
+            <h3 className="mt-2 text-xl font-semibold text-white">Medallas desbloqueadas</h3>
+            <p className="mt-2 text-sm leading-6 text-zinc-400">
+              Una vez activada, cada mes la alumna puede obtener directamente Bronce, Plata, Oro o
+              Diamante según Días activos, No show, Continuidad y Renovación. No existe una
+              escalera.
+            </p>
+            <Link
+              href="/admin/recompensas/medallas"
+              className="mt-4 flex min-h-11 items-center justify-between rounded-xl border border-fuchsia-500/25 bg-black/20 px-3 text-xs font-semibold text-fuchsia-200"
+            >
+              <span>Ver reglas de Medallas</span>
+              <span aria-hidden="true">→</span>
+            </Link>
+          </div>
+        </div>
+      </SectionCard>
 
       <section className="grid gap-4 lg:grid-cols-3">
         {[
           {
             title: "Programas",
-            copy: "Niveles permanentes, acumulativos o secuenciales.",
+            copy: "Programas permanentes, acumulativos o secuenciales.",
             href: "/admin/recompensas/programas",
           },
           {
@@ -131,7 +210,7 @@ export default async function RewardsControlCenterPage() {
           },
           {
             title: "Logros",
-            copy: "Medallas permanentes visibles o secretas.",
+            copy: "Insignias y logros permanentes visibles o secretos.",
             href: "/admin/recompensas/logros",
           },
         ].map((item) => (

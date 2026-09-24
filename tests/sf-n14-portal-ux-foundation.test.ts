@@ -22,7 +22,7 @@ describe("SF-N14 portal UX foundation", () => {
 
   it("uses contextual dialogs for profile success and errors", () => {
     expect(profile).toContain("StudentNoticeDialog");
-    expect(profile).toContain('title="Tu correo está actualizado"');
+    expect(profile).toContain('title="Tu perfil está actualizado"');
     expect(profile).toContain('title="Revisa tus datos"');
     expect(profile).toContain('dismissHref="/student/perfil"');
     expect(profile).not.toContain("✓ Tus datos se actualizaron correctamente.");
