@@ -6,15 +6,18 @@ import { describe, expect, it } from "vitest";
 const read = (path: string) => readFileSync(join(process.cwd(), path), "utf8");
 
 describe("RETOS-01", () => {
-  it("exposes Retos as a separate admin and student module", () => {
+  it("keeps Retos as a separate domain without making it a primary student destination", () => {
     const adminLayout = read("app/admin/layout.tsx");
     const studentNav = read("app/student/StudentNav.tsx");
+    const studentChallenges = read("app/student/retos/page.tsx");
 
     expect(adminLayout).toContain('{ href: "/admin/retos", label: "Retos", enabled: true }');
     expect(adminLayout).toContain(
       '{ href: "/admin/recompensas", label: "Rewards", enabled: true }',
     );
-    expect(studentNav).toContain('href: "/student/retos"');
+    expect(studentNav).not.toContain('label: "Retos"');
+    expect(studentNav).toContain('"/student/retos"');
+    expect(studentChallenges).toContain("Retos");
   });
 
   it("configures individual and competitive challenge modes", () => {
