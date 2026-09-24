@@ -21,9 +21,6 @@ type StudentWaitlistItem = {
   status: string;
 };
 
-type RewardStatusSnapshot = {
-  level_title?: string | null;
-};
 
 type RewardPricePreview = {
   regular_amount_minor?: number;
@@ -35,6 +32,12 @@ type RewardPricePreview = {
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
+
+function availabilityCopy(spotsAvailable: number) {
+  if (spotsAvailable <= 0) return "Clase llena";
+  if (spotsAvailable === 1) return "Último lugar";
+  return `${spotsAvailable} lugares disponibles`;
+}
 
 export default async function StudentSessionDetailPage({
   params,
@@ -64,14 +67,10 @@ export default async function StudentSessionDetailPage({
     .limit(1)
     .maybeSingle();
   const activityColor = activityStyle?.color_hex ?? "#FF0A8A";
-  const [{ data: waitlistData }, { data: rewardStatusData }] = await Promise.all([
-    supabase.rpc("student_waitlist_feed"),
-    supabase.rpc("student_reward_status_snapshot"),
-  ]);
+  const { data: waitlistData } = await supabase.rpc("student_waitlist_feed");
   const waitlisted = ((waitlistData ?? []) as StudentWaitlistItem[]).some(
     (item) => item.session_id === session.session_id && item.status === "active",
   );
-  const levelTitle = (rewardStatusData as RewardStatusSnapshot | null)?.level_title ?? null;
   const eligible = Boolean(session.eligibility?.eligible);
   const alreadyReserved = Boolean(session.reservation_id);
   const reason = session.eligibility?.reason_code;
@@ -111,9 +110,9 @@ export default async function StudentSessionDetailPage({
 
       {rewardMode ? (
         <section className="rounded-2xl border border-emerald-400/35 bg-emerald-400/[0.07] px-4 py-3">
-          <p className="text-xs font-semibold text-emerald-200">Usar créditos extra</p>
-          <p className="mt-1 text-[11px] leading-5 text-zinc-400">
-            Si confirmas esta reserva, se utilizará tu saldo premio disponible.
+          <p className="text-sm font-semibold text-emerald-200">Usar una clase extra</p>
+          <p className="mt-1 text-sm leading-6 text-zinc-400">
+            Si confirmas esta reserva, utilizaremos una de tus clases extra disponibles.
           </p>
         </section>
       ) : null}
@@ -155,20 +154,17 @@ export default async function StudentSessionDetailPage({
             </dd>
           </div>
           <div className="bg-[#111218] px-4 py-3">
-            <dt className="text-[10px] uppercase tracking-[0.14em] text-zinc-500">
-              Disponibilidad
-            </dt>
-            <dd className="mt-1 text-xs font-semibold text-white">
-              {Math.max(session.capacity - session.spots_available, 0)} de {session.capacity}{" "}
-              reservados
+            <dt className="text-xs uppercase tracking-[0.12em] text-zinc-500">Disponibilidad</dt>
+            <dd className="mt-1 text-sm font-semibold text-white">
+              {availabilityCopy(session.spots_available)}
             </dd>
           </div>
           <div className="bg-[#111218] px-4 py-3">
-            <dt className="text-[10px] uppercase tracking-[0.14em] text-zinc-500">Reserva</dt>
-            <dd className="mt-1 text-xs font-semibold text-white">
+            <dt className="text-xs uppercase tracking-[0.12em] text-zinc-500">Tu acceso</dt>
+            <dd className="mt-1 text-sm font-semibold text-white">
               {session.eligibility?.unlimited
-                ? "Incluida en ilimitado"
-                : `${session.credit_cost} crédito${session.credit_cost === 1 ? "" : "s"}`}
+                ? "Incluida en tu paquete ilimitado"
+                : `${session.credit_cost} ${session.credit_cost === 1 ? "clase" : "clases"} de tu paquete`}
             </dd>
           </div>
         </dl>
@@ -201,26 +197,22 @@ export default async function StudentSessionDetailPage({
       ) : reason === "session_full" ? (
         <section className="rounded-3xl border border-amber-400/25 bg-amber-400/[0.06] p-5">
           <p className="text-sm font-semibold text-amber-100">Esta clase está llena</p>
-          <p className="mt-1.5 text-xs leading-5 text-zinc-400">
-            Puedes entrar a la lista de espera. La prioridad se aplica automáticamente según tu
-            nivel vigente.
+          <p className="mt-1.5 text-sm leading-6 text-zinc-400">
+            Puedes entrar a la lista de espera. Si se libera un lugar, te avisaremos según el orden
+            de prioridad.
           </p>
           <div className="mt-4">
-            <WaitlistControl
-              sessionId={session.session_id}
-              initialWaitlisted={waitlisted}
-              levelTitle={levelTitle}
-            />
+            <WaitlistControl sessionId={session.session_id} initialWaitlisted={waitlisted} />
           </div>
         </section>
       ) : eligible ? (
         <section className="rounded-3xl border border-white/10 bg-white/[0.03] p-4">
           <p className="text-xs leading-5 text-zinc-400">
             {rewardMode
-              ? `Esta reserva utilizará ${session.credit_cost} crédito${session.credit_cost === 1 ? "" : "s"} de tu saldo extra.`
+              ? `Esta reserva utilizará ${session.credit_cost} ${session.credit_cost === 1 ? "clase extra" : "clases extra"}.`
               : session.eligibility?.unlimited
-                ? "Esta clase está incluida en tu membresía ilimitada."
-                : `Tienes ${session.eligibility?.available_credits ?? 0} crédito(s) disponibles. Esta reserva utiliza ${session.credit_cost}.`}
+                ? "Esta clase está incluida en tu paquete ilimitado."
+                : `Tienes ${session.eligibility?.available_credits ?? 0} clases disponibles. Esta reserva utiliza ${session.credit_cost}.`}
           </p>
           <Link
             href={
@@ -230,7 +222,7 @@ export default async function StudentSessionDetailPage({
             }
             className="mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-2xl bg-fuchsia-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-fuchsia-500"
           >
-            {session.requires_resource ? "Seleccionar recurso" : "Reservar clase"}
+            {session.requires_resource ? "Elegir mi lugar" : "Reservar esta clase"}
           </Link>
         </section>
       ) : (
@@ -249,8 +241,8 @@ export default async function StudentSessionDetailPage({
               Clase suelta: {formatMoney(finalDropInMinor)} MXN.
             </p>
           ) : (
-            <p className="mt-2 text-xs leading-5 text-zinc-400">
-              Studio Flow está aplicando las condiciones vigentes de tu cuenta y paquete.
+            <p className="mt-2 text-sm leading-6 text-zinc-400">
+              Revisa la razón indicada arriba para saber qué necesitas resolver antes de reservar.
             </p>
           )}
           {showDropIn ? (
