@@ -46,9 +46,12 @@ describe("SF-N14 PORTAL UX-02 home", () => {
     expect(errorBoundary).toContain("reset");
   });
 
-  it("preserves canonical mobile navigation", () => {
+  it("preserves the four-destination student navigation", () => {
     for (const label of ["Inicio", "Reservar", "Mis clases", "Perfil"]) {
       expect(nav).toContain(`label: "${label}"`);
     }
+    expect(nav).not.toContain('label: "Retos"');
+    expect(nav).toContain("grid-cols-4");
+    expect(nav).toContain("<svg");
   });
 });
