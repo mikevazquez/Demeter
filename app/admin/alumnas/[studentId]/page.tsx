@@ -304,6 +304,7 @@ export default async function StudentProfilePage({
   const canEdit = can(CAPABILITIES.STUDENTS_WRITE);
   const canReadSchedule = can(CAPABILITIES.SCHEDULE_READ);
   const canReadSales = can(CAPABILITIES.SALES_READ);
+  const canWriteSales = can(CAPABILITIES.SALES_WRITE);
   const canReadRewards = can(CAPABILITIES.REWARDS_READ);
   const canReadEvaluations = can(CAPABILITIES.EVALUATIONS_READ);
   const canReadDocuments = can(CAPABILITIES.DOCUMENTS_READ);
@@ -1096,6 +1097,14 @@ export default async function StudentProfilePage({
                 permanecen en sólo lectura.
               </p>
             </div>
+            {canWriteSales ? (
+              <Link
+                href={`/admin/ventas/nueva?student_id=${student.id}`}
+                className="primary-button"
+              >
+                Vender paquete
+              </Link>
+            ) : null}
           </div>
 
           {currentAcquisition ? (
