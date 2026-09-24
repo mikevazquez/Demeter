@@ -543,7 +543,7 @@ begin
       m.*,
       case
         when v_tie_breaker = 'shared'
-          then dense_rank() over (order by m.score desc)
+          then rank() over (order by m.score desc)
         else row_number() over (
           order by m.score desc, m.reached_at asc nulls last, m.enrolled_at asc, m.student_id
         )
@@ -601,7 +601,7 @@ begin
       m.*,
       case
         when v_tie_breaker = 'shared'
-          then dense_rank() over (order by m.score desc)
+          then rank() over (order by m.score desc)
         else row_number() over (
           order by m.score desc, m.reached_at asc nulls last, m.enrolled_at asc, m.student_id
         )
