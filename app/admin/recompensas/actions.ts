@@ -730,28 +730,27 @@ export async function transitionStandaloneRuleAction(formData: FormData) {
     }
     const { supabase } = await getAdminContext(CAPABILITIES.REWARDS_MANAGE);
 
+    let settledCompetitive = false;
     if (!isAchievement && action === "finish") {
       const { error: settlementError } = await supabase.rpc("admin_settle_reward_challenge", {
         p_rule_id: ruleId,
       });
 
       if (!settlementError) {
-        revalidateRewards();
-        revalidatePath(path);
-        redirect(`${path}?saved=finish`);
-      }
-
-      if (!settlementError.message.includes("challenge_not_competitive")) {
+        settledCompetitive = true;
+      } else if (!settlementError.message.includes("challenge_not_competitive")) {
         throw new Error(settlementError.message);
       }
     }
 
-    const { error } = await supabase.rpc("admin_transition_reward_rule", {
-      p_rule_id: ruleId,
-      p_action: action,
-      p_note: textValue(formData, "note") || null,
-    });
-    if (error) throw new Error(error.message);
+    if (!settledCompetitive) {
+      const { error } = await supabase.rpc("admin_transition_reward_rule", {
+        p_rule_id: ruleId,
+        p_action: action,
+        p_note: textValue(formData, "note") || null,
+      });
+      if (error) throw new Error(error.message);
+    }
     revalidateRewards();
     revalidatePath(path);
   } catch (error) {
