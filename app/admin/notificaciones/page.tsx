@@ -125,7 +125,11 @@ export default async function NotificationsPage({
   const ctx = await getAdminContext(CAPABILITIES.AUTOMATIONS_READ);
   const canManage = ctx.can(CAPABILITIES.AUTOMATIONS_MANAGE);
 
-  const [{ data: rawSnapshot }, { data: automationInstances }] = await Promise.all([
+  const [
+    { data: rawSnapshot },
+    { data: automationInstances },
+    { data: marketingConfigs },
+  ] = await Promise.all([
     ctx.supabase.rpc("admin_notification_rules_snapshot", {
       p_studio_id: ctx.studio.id,
     }),
@@ -134,11 +138,25 @@ export default async function NotificationsPage({
       .select("catalog_code,status")
       .eq("studio_id", ctx.studio.id)
       .neq("status", "archived"),
+    ctx.supabase.rpc("admin_notification_marketing_snapshot", {
+      p_studio_id: ctx.studio.id,
+    }),
   ]);
 
   const snapshot = safeSnapshot(rawSnapshot);
   const rulesByKey = new Map(snapshot.rules.map((rule) => [rule.rule_key, rule]));
   const automationRows = automationInstances ?? [];
+  const marketingConfigRows = Array.isArray(marketingConfigs)
+    ? (marketingConfigs as Array<{
+        marketing_key: string;
+        push_enabled: boolean;
+        whatsapp_enabled: boolean;
+        email_enabled: boolean;
+      }>)
+    : [];
+  const marketingConfigByKey = new Map(
+    marketingConfigRows.map((config) => [config.marketing_key, config]),
+  );
 
   const filteredProcesses =
     activeCategory === "all"
@@ -339,8 +357,13 @@ export default async function NotificationsPage({
               const configured = rows.length > 0;
               const active = rows.some((row) => row.status === "active");
 
+              const draft = marketingConfigByKey.get(item.key);
               return (
-                <article key={item.key} className="notification-process-row marketing-row">
+                <Link
+                  key={item.key}
+                  href={`/admin/notificaciones/marketing/${item.key}`}
+                  className="notification-process-row marketing-row"
+                >
                   <span className="notification-process-icon marketing" aria-hidden="true">
                     {item.key === "birthday" ? "✦" : item.key === "special-promotions" ? "◇" : "↗"}
                   </span>
@@ -349,9 +372,11 @@ export default async function NotificationsPage({
                     <small>{item.description}</small>
                   </span>
                   <span className="notification-channel-chips">
-                    <span className={active ? "is-on" : undefined}>Push</span>
-                    <span className={active ? "is-on" : undefined}>WhatsApp</span>
-                    <span>Email</span>
+                    <span className={(draft?.push_enabled ?? active) ? "is-on" : undefined}>Push</span>
+                    <span className={(draft?.whatsapp_enabled ?? active) ? "is-on" : undefined}>
+                      WhatsApp
+                    </span>
+                    <span className={draft?.email_enabled ? "is-on" : undefined}>Email</span>
                   </span>
                   <span
                     className={
@@ -364,8 +389,10 @@ export default async function NotificationsPage({
                   >
                     {configured ? (active ? "Activo" : "Pausado") : "Borrador"}
                   </span>
-                  <span className="notification-row-chevron" />
-                </article>
+                  <span className="notification-row-chevron" aria-hidden="true">
+                    ›
+                  </span>
+                </Link>
               );
             })}
           </section>
