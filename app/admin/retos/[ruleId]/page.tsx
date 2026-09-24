@@ -46,6 +46,22 @@ export default async function ChallengeDetailPage({
 
   if (!version || version.family !== "challenge") notFound();
 
+  const presentation =
+    version.presentation_definition && typeof version.presentation_definition === "object"
+      ? (version.presentation_definition as Record<string, unknown>)
+      : {};
+  const isCompetitive = presentation.competition_mode === "leaderboard";
+  const enrollmentCount = isCompetitive
+    ? (
+        await ctx.supabase
+          .from("reward_challenge_enrollments")
+          .select("id", { count: "exact", head: true })
+          .eq("rule_id", rule.id)
+          .eq("studio_id", ctx.studio.id)
+          .eq("status", "active")
+      ).count
+    : null;
+
   return (
     <main className="dashboard-shell space-y-6 admin-ux04-secondary">
       <header>
@@ -65,6 +81,7 @@ export default async function ChallengeDetailPage({
         version={version}
         copyOverride={copyOverride}
         canManage={ctx.can(CAPABILITIES.REWARDS_MANAGE)}
+        enrollmentCount={enrollmentCount}
       />
     </main>
   );
