@@ -1,10 +1,14 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { getStudentPortalContext } from "@/lib/student/portal";
+import { formatDate, getStudentPortalContext } from "@/lib/student/portal";
 import { metricLabel, rewardDefinitionLabel, rewardObject } from "@/lib/student/rewards";
 
-import { archiveChallengeAction, enrollChallengeAction } from "../actions";
+import {
+  archiveChallengeAction,
+  claimChallengeCreditsAction,
+  enrollChallengeAction,
+} from "../actions";
 
 type Challenge = {
   rule_id: string;
@@ -51,6 +55,23 @@ type Leaderboard = {
   };
 };
 
+type WinnerReward = {
+  id: string;
+  kind: string;
+  status: string;
+  benefit_definition: unknown;
+  available_from: string | null;
+  expires_at: string | null;
+  redemption_context: unknown;
+};
+
+type RewardCreditClaim = {
+  acquisition_id: string;
+  credits: number;
+  claimed_at: string;
+  expires_on: string;
+};
+
 function list(value: unknown): Challenge[] {
   return Array.isArray(value) ? (value as Challenge[]) : [];
 }
@@ -89,7 +110,7 @@ export default async function ChallengeDetailPage({
   searchParams,
 }: {
   params: Promise<{ ruleId: string }>;
-  searchParams: Promise<{ joined?: string; error?: string }>;
+  searchParams: Promise<{ joined?: string; claimed?: string; error?: string }>;
 }) {
   const { ruleId } = await params;
   const query = await searchParams;
@@ -114,6 +135,43 @@ export default async function ChallengeDetailPage({
     }
   }
 
+  let winnerReward: WinnerReward | null = null;
+  let rewardCreditClaim: RewardCreditClaim | null = null;
+
+  if (challenge.competition_mode === "leaderboard" && challenge.status === "finished") {
+    const { data: rewardRows, error: rewardError } = await portal.supabase
+      .from("reward_instances")
+      .select(
+        "id,kind,status,benefit_definition,available_from,expires_at,redemption_context",
+      )
+      .eq("studio_id", portal.membership.studio_id)
+      .eq("student_id", portal.snapshot.profile.student_id)
+      .eq("rule_id", challenge.rule_id)
+      .eq("kind", "credits")
+      .order("created_at", { ascending: false })
+      .limit(1);
+
+    if (rewardError) throw new Error("student_challenge_reward_load_failed");
+
+    winnerReward = ((rewardRows ?? [])[0] as WinnerReward | undefined) ?? null;
+
+    if (winnerReward) {
+      const { data: claimRows, error: claimError } = await portal.supabase
+        .from("reward_credit_claims")
+        .select("acquisition_id,credits,claimed_at,expires_on")
+        .eq("reward_instance_id", winnerReward.id)
+        .limit(1);
+
+      if (claimError) throw new Error("student_challenge_credit_claim_load_failed");
+      rewardCreditClaim =
+        ((claimRows ?? [])[0] as RewardCreditClaim | undefined) ?? null;
+    }
+  }
+
+  const winnerCredits = winnerReward
+    ? Number(rewardObject(winnerReward.benefit_definition).credits ?? 0)
+    : 0;
+
   const target = conditionTarget(challenge.condition_definition);
   const percent =
     target > 0 ? Math.min(100, Math.round((challenge.current_value / target) * 100)) : 0;
@@ -136,6 +194,11 @@ export default async function ChallengeDetailPage({
       {query.joined ? (
         <div className="rounded-2xl border border-emerald-400/20 bg-emerald-400/10 px-4 py-3 text-sm text-emerald-200">
           Ya estás inscrita. Desde ahora tus resultados reales cuentan para el ranking.
+        </div>
+      ) : null}
+      {query.claimed ? (
+        <div className="rounded-2xl border border-emerald-400/20 bg-emerald-400/10 px-4 py-3 text-sm text-emerald-200">
+          Tus créditos extra ya están disponibles. No modificamos tu paquete actual.
         </div>
       ) : null}
       {query.error ? (
@@ -287,6 +350,50 @@ export default async function ChallengeDetailPage({
             </div>
           </section>
         </>
+      ) : null}
+
+      {challenge.status === "finished" && winnerReward ? (
+        <section className="rounded-3xl border border-amber-300/25 bg-[radial-gradient(circle_at_top_right,rgba(251,191,36,.16),transparent_38%),rgba(255,255,255,.03)] p-5">
+          <div className="text-4xl">🏆</div>
+          <p className="mt-3 text-xs font-bold uppercase tracking-[0.16em] text-amber-200">
+            Ganaste la competencia
+          </p>
+          <h2 className="mt-2 text-2xl font-semibold text-white">
+            Premio: {winnerCredits} crédito{winnerCredits === 1 ? "" : "s"} de clase
+          </h2>
+          <p className="mt-2 text-sm leading-6 text-zinc-400">
+            Al reclamarlo se crea un saldo independiente. No se suma a tu paquete actual y tendrá
+            su propia vigencia de 30 días.
+          </p>
+
+          {winnerReward.status === "available" ? (
+            <form action={claimChallengeCreditsAction} className="mt-5">
+              <input type="hidden" name="rule_id" value={challenge.rule_id} />
+              <input type="hidden" name="reward_instance_id" value={winnerReward.id} />
+              <button className="w-full rounded-2xl bg-[#FF0A8A] px-4 py-3 text-sm font-bold text-white shadow-[0_0_24px_rgba(255,10,138,.18)]">
+                Reclamar {winnerCredits} crédito{winnerCredits === 1 ? "" : "s"}
+              </button>
+            </form>
+          ) : winnerReward.status === "redeemed" && rewardCreditClaim ? (
+            <div className="mt-5 rounded-2xl border border-emerald-400/20 bg-emerald-400/[0.08] p-4">
+              <strong className="text-sm text-emerald-200">Créditos reclamados ✓</strong>
+              <p className="mt-1 text-xs leading-5 text-zinc-400">
+                Tienes {rewardCreditClaim.credits} créditos extra con vigencia hasta{" "}
+                {formatDate(rewardCreditClaim.expires_on, portal.studio.timezone)}.
+              </p>
+              <Link
+                href="/student/paquete"
+                className="mt-3 inline-flex text-xs font-semibold text-emerald-200"
+              >
+                Ver mis créditos extra →
+              </Link>
+            </div>
+          ) : winnerReward.status === "expired" ? (
+            <div className="mt-5 rounded-2xl border border-zinc-500/20 bg-white/[0.03] p-4 text-sm text-zinc-400">
+              El periodo para reclamar esta recompensa terminó.
+            </div>
+          ) : null}
+        </section>
       ) : null}
 
       {challenge.competition_mode === "individual" ? (
