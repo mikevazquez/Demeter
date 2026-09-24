@@ -163,6 +163,8 @@ function revalidateRewards() {
     "/admin/recompensas/programas",
     "/admin/recompensas/logros",
     "/admin/recompensas/retos",
+    "/admin/retos",
+    "/student/retos",
     "/admin/recompensas/seguimiento",
     "/admin/recompensas/generadas",
   ]) {
@@ -360,7 +362,7 @@ export async function saveProgramLevelAction(formData: FormData) {
         program_id: programId,
         level_key: levelKey,
       },
-      p_communication_definition: {},
+      p_communication_definition: communication,
       p_human_summary: title,
       p_scheduled_start_at: null,
       p_scheduled_end_at: null,
@@ -542,6 +544,29 @@ async function saveStandaloneRule(formData: FormData, familyOverride: "achieveme
     repeatable: false,
     challenge_mode: challengeMode,
   };
+  const competitionMode =
+    familyOverride === "challenge" && textValue(formData, "competition_mode") === "leaderboard"
+      ? "leaderboard"
+      : "individual";
+  const tieBreaker =
+    textValue(formData, "tie_breaker") === "shared" ? "shared" : "first_to_reach";
+  const rankingMetric = definition.conditions[0]?.metric ?? "attendance.count";
+  const communication =
+    familyOverride === "challenge"
+      ? {
+          push: {
+            challenge_started: boolValue(formData, "notify_started"),
+            meaningful_progress: boolValue(formData, "notify_progress"),
+            near_goal: boolValue(formData, "notify_near_goal"),
+            entered_top3: boolValue(formData, "notify_top3"),
+            position_changed: boolValue(formData, "notify_position"),
+            overtaken: boolValue(formData, "notify_overtaken"),
+            ending_soon: boolValue(formData, "notify_ending"),
+            completed: boolValue(formData, "notify_completed"),
+            results: boolValue(formData, "notify_results"),
+          },
+        }
+      : {};
   const presentation = {
     progress_visible: true,
     hidden_until_unlocked:
@@ -549,6 +574,12 @@ async function saveStandaloneRule(formData: FormData, familyOverride: "achieveme
     reward_visibility: outcome.visibility,
     condition_family: family,
     challenge_mode: challengeMode,
+    competition_mode: competitionMode,
+    enrollment_required: familyOverride === "challenge" && competitionMode === "leaderboard",
+    ranking_metric: familyOverride === "challenge" ? rankingMetric : null,
+    ranking_places: familyOverride === "challenge" && competitionMode === "leaderboard" ? 3 : null,
+    tie_breaker:
+      familyOverride === "challenge" && competitionMode === "leaderboard" ? tieBreaker : null,
     cover_url: textValue(formData, "cover_url") || null,
   };
   const evaluation = {
@@ -582,7 +613,7 @@ async function saveStandaloneRule(formData: FormData, familyOverride: "achieveme
       p_cycle_definition: cycle,
       p_reward_definition: outcome.definition,
       p_presentation_definition: presentation,
-      p_communication_definition: {},
+      p_communication_definition: communication,
       p_human_summary: name,
       p_scheduled_start_at: scheduledStartAt,
       p_scheduled_end_at: scheduledEndAt,
@@ -629,12 +660,12 @@ export async function saveAchievementAction(formData: FormData) {
 
 export async function saveChallengeAction(formData: FormData) {
   const ruleId = textValue(formData, "rule_id");
-  const base = ruleId ? `/admin/recompensas/retos/${ruleId}` : "/admin/recompensas/retos/nuevo";
+  const base = ruleId ? `/admin/retos/${ruleId}` : "/admin/retos/nuevo";
   let successPath = base;
   try {
     const id = await saveStandaloneRule(formData, "challenge");
     revalidateRewards();
-    successPath = `/admin/recompensas/retos/${id}?saved=rule`;
+    successPath = `/admin/retos/${id}?saved=rule`;
   } catch (error) {
     redirect(rewardErrorUrl(base, error));
   }
@@ -643,9 +674,12 @@ export async function saveChallengeAction(formData: FormData) {
 
 export async function transitionStandaloneRuleAction(formData: FormData) {
   const ruleId = textValue(formData, "rule_id");
-  const kind = textValue(formData, "kind") === "achievement" ? "logros" : "retos";
+  const isAchievement = textValue(formData, "kind") === "achievement";
+  const kind = isAchievement ? "logros" : "retos";
   const action = textValue(formData, "action");
-  const path = `/admin/recompensas/${kind}/${ruleId}`;
+  const path = isAchievement
+    ? `/admin/recompensas/${kind}/${ruleId}`
+    : `/admin/retos/${ruleId}`;
   try {
     if (!ruleId || !["schedule", "activate", "finish", "cancel"].includes(action)) {
       throw new Error("reward_rule_transition_invalid");
@@ -667,8 +701,11 @@ export async function transitionStandaloneRuleAction(formData: FormData) {
 
 export async function updateStandaloneCopyAction(formData: FormData) {
   const ruleId = textValue(formData, "rule_id");
-  const kind = textValue(formData, "kind") === "achievement" ? "logros" : "retos";
-  const path = `/admin/recompensas/${kind}/${ruleId}`;
+  const isAchievement = textValue(formData, "kind") === "achievement";
+  const kind = isAchievement ? "logros" : "retos";
+  const path = isAchievement
+    ? `/admin/recompensas/${kind}/${ruleId}`
+    : `/admin/retos/${ruleId}`;
   try {
     const title = textValue(formData, "name");
     if (!ruleId || !title) throw new Error("reward_rule_title_required");
