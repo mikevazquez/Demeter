@@ -300,7 +300,9 @@ export default async function ScheduleEvaluationPage({
                 <div className="rounded-2xl border border-fuchsia-500/25 bg-black/15 p-4">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
-                      <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-fuchsia-300">Comprar esta clase</p>
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-fuchsia-300">
+                        Comprar esta clase
+                      </p>
                       <h3 className="mt-1 text-base font-semibold text-white">Pagar esta clase</h3>
                       <p className="mt-1 text-xs text-zinc-500">
                         Compra únicamente el acceso para la clase que elegiste.
@@ -325,7 +327,11 @@ export default async function ScheduleEvaluationPage({
               ) : null}
 
               <div className="rounded-2xl border border-white/10 bg-black/15 p-4">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-violet-300">{selectedSession.drop_in_price_minor != null ? "Otra opción" : "Paquetes disponibles"}</p>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-violet-300">
+                  {selectedSession.drop_in_price_minor != null
+                    ? "Otra opción"
+                    : "Paquetes disponibles"}
+                </p>
                 <h3 className="mt-1 text-base font-semibold text-white">Comprar un paquete</h3>
                 <p className="mt-1 text-xs text-zinc-500">
                   Elige un paquete válido para {invitation.discipline_name}. Después del pago,
