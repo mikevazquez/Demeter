@@ -10,6 +10,13 @@ const migration = readFileSync(
   ),
   "utf8",
 );
+const denyMigration = readFileSync(
+  join(
+    process.cwd(),
+    "supabase/migrations/20260924080500_evaluaciones03_result_views_deny_policy.sql",
+  ),
+  "utf8",
+);
 
 describe("EVALUACIONES-03 · result views RLS hardening", () => {
   it("enables RLS on the internal result read-receipt table", () => {
@@ -22,6 +29,10 @@ describe("EVALUACIONES-03 · result views RLS hardening", () => {
     expect(migration).toContain(
       "revoke all on table public.student_evaluation_result_views\nfrom anon, authenticated",
     );
+    expect(denyMigration).toContain('create policy "result views deny direct client access"');
+    expect(denyMigration).toContain("to anon, authenticated");
+    expect(denyMigration).toContain("using (false)");
+    expect(denyMigration).toContain("with check (false)");
     expect(migration).not.toContain("grant select");
     expect(migration).not.toContain("grant insert");
   });
