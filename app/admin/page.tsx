@@ -629,7 +629,7 @@ export default async function AdminPage({
               <KpiIcon kind="sales" />
             </span>
             <span>
-              <small>Ventas hoy</small>
+              <small>{selectedKey === todayKey ? "Ventas hoy" : "Ventas del día"}</small>
               <strong>{salesTotal}</strong>
             </span>
           </article>
