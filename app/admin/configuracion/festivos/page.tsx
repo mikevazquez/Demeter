@@ -9,9 +9,7 @@ import { saveOfficialHolidayStatusAction } from "./actions";
 function safeYear(value?: string) {
   const year = Number(value);
   const current = new Date().getFullYear();
-  return Number.isInteger(year) && year >= 2026 && year <= 2042
-    ? year
-    : Math.max(current, 2026);
+  return Number.isInteger(year) && year >= 2026 && year <= 2042 ? year : Math.max(current, 2026);
 }
 
 function dateLabel(value: string) {

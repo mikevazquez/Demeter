@@ -8,9 +8,7 @@ import { getAdminContext } from "@/lib/auth/admin-context";
 
 function safeYear(value: FormDataEntryValue | null) {
   const year = Number(value);
-  return Number.isInteger(year) && year >= 2026 && year <= 2042
-    ? year
-    : new Date().getFullYear();
+  return Number.isInteger(year) && year >= 2026 && year <= 2042 ? year : new Date().getFullYear();
 }
 
 function safeDate(value: FormDataEntryValue | null) {
