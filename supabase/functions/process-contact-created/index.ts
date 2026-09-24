@@ -78,8 +78,7 @@ const handler = {
     }
 
     const eventPayload = safeRecord(event.payload);
-    let personId =
-      event.source_entity_type === "person" ? safeText(event.source_entity_id) : null;
+    let personId = event.source_entity_type === "person" ? safeText(event.source_entity_id) : null;
     let studentId = safeText(eventPayload.student_id);
 
     if (personId && !UUID_PATTERN.test(personId)) personId = null;
@@ -113,9 +112,7 @@ const handler = {
     if (studentId) {
       const { data, error } = await adminClient
         .from("students")
-        .select(
-          "id,studio_id,person_id,full_name,phone,email,active,lifecycle_status,student_type",
-        )
+        .select("id,studio_id,person_id,full_name,phone,email,active,lifecycle_status,student_type")
         .eq("id", studentId)
         .eq("studio_id", event.studio_id)
         .maybeSingle();
