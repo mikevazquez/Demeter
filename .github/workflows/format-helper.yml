@@ -1,0 +1,25 @@
+name: Format helper
+
+on:
+  push:
+    branches:
+      - feat/rewards-bronze-onboarding
+
+permissions:
+  contents: read
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Format targeted files
+        run: |
+          npx prettier --write             app/admin/recompensas/page.tsx             app/student/page.tsx             app/student/perfil/page.tsx             app/student/recompensas/medallero/MedalInfoDialog.tsx             app/student/recompensas/medallero/page.tsx             app/student/recompensas/page.tsx             tests/sf255-rewards-status.test.ts
+      - name: Print patch
+        run: git diff --no-color --           app/admin/recompensas/page.tsx           app/student/page.tsx           app/student/perfil/page.tsx           app/student/recompensas/medallero/MedalInfoDialog.tsx           app/student/recompensas/medallero/page.tsx           app/student/recompensas/page.tsx           tests/sf255-rewards-status.test.ts
