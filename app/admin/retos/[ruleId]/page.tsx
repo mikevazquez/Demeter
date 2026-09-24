@@ -117,7 +117,7 @@ export default async function ChallengeDetailPage({
       <ChallengeSavedNotice saved={query.saved} />
       {query.error ? <div className="notice error">{query.error}</div> : null}
 
-      {isCompetitive && settlement ? (
+      {isCompetitive && rule.status === "finished" && settlement ? (
         <section className="rounded-2xl border border-amber-400/20 bg-amber-400/[0.05] p-5">
           <p className="text-xs font-semibold uppercase tracking-[0.15em] text-amber-300">
             RESULTADO FINAL
