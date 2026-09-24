@@ -287,6 +287,9 @@ export type MarketingDefinition = {
   category: "recuperacion" | "promociones" | "fidelizacion";
   automationCodes?: readonly string[];
   planned?: boolean;
+  defaultAudience: "all_eligible" | "active_students" | "inactive_students" | "package_expiring" | "package_expired" | "trial_no_purchase";
+  defaultTitle: string;
+  defaultBody: string;
 };
 
 export const MARKETING_COMMUNICATIONS: readonly MarketingDefinition[] = [
@@ -296,6 +299,9 @@ export const MARKETING_COMMUNICATIONS: readonly MarketingDefinition[] = [
     description: "Reconecta con alumnas que llevan tiempo sin asistir.",
     category: "recuperacion",
     automationCodes: ["AUT-CAT-14"],
+    defaultAudience: "inactive_students",
+    defaultTitle: "Te extrañamos",
+    defaultBody: "Hace tiempo que no vienes. Revisa tus próximas opciones en Studio Flow.",
   },
   {
     key: "package-renewal",
@@ -303,6 +309,9 @@ export const MARKETING_COMMUNICATIONS: readonly MarketingDefinition[] = [
     description: "Invita a renovar al acercarse el fin del paquete.",
     category: "recuperacion",
     automationCodes: ["AUT-CAT-13", "AUT-CAT-15", "AUT-CAT-16"],
+    defaultAudience: "package_expiring",
+    defaultTitle: "Tu paquete está por vencer",
+    defaultBody: "Aprovecha tus créditos antes de que termine la vigencia.",
   },
   {
     key: "special-promotions",
@@ -310,6 +319,9 @@ export const MARKETING_COMMUNICATIONS: readonly MarketingDefinition[] = [
     description: "Comunica promociones activas a segmentos seleccionados.",
     category: "promociones",
     planned: true,
+    defaultAudience: "all_eligible",
+    defaultTitle: "Nuevo evento en el estudio",
+    defaultBody: "Conoce los detalles y reserva tu lugar en Studio Flow.",
   },
   {
     key: "birthday",
@@ -317,6 +329,9 @@ export const MARKETING_COMMUNICATIONS: readonly MarketingDefinition[] = [
     description: "Envía un mensaje especial en el cumpleaños de la alumna.",
     category: "fidelizacion",
     planned: true,
+    defaultAudience: "all_eligible",
+    defaultTitle: "¡Feliz cumpleaños!",
+    defaultBody: "Hoy celebramos contigo. Tenemos un mensaje especial para ti en Studio Flow.",
   },
   {
     key: "challenges",
@@ -324,6 +339,9 @@ export const MARKETING_COMMUNICATIONS: readonly MarketingDefinition[] = [
     description: "Invita a participar en retos activos del estudio.",
     category: "fidelizacion",
     planned: true,
+    defaultAudience: "active_students",
+    defaultTitle: "Nuevo reto disponible",
+    defaultBody: "Ya puedes participar en el nuevo reto de Studio Flow.",
   },
   {
     key: "events",
@@ -331,6 +349,9 @@ export const MARKETING_COMMUNICATIONS: readonly MarketingDefinition[] = [
     description: "Informa sobre talleres, workshops y clases especiales.",
     category: "promociones",
     planned: true,
+    defaultAudience: "all_eligible",
+    defaultTitle: "Mensaje de Demeter Fitness",
+    defaultBody: "Tenemos una novedad para ti. Consulta los detalles en Studio Flow.",
   },
   {
     key: "referrals",
@@ -338,6 +359,9 @@ export const MARKETING_COMMUNICATIONS: readonly MarketingDefinition[] = [
     description: "Activa comunicaciones de recomendación y beneficios.",
     category: "fidelizacion",
     planned: true,
+    defaultAudience: "active_students",
+    defaultTitle: "Invita a alguien a entrenar contigo",
+    defaultBody: "Comparte Studio Flow y consulta los beneficios disponibles para referidos.",
   },
   {
     key: "manual-campaigns",
@@ -350,4 +374,8 @@ export const MARKETING_COMMUNICATIONS: readonly MarketingDefinition[] = [
 
 export function getNotificationProcess(key: string) {
   return NOTIFICATION_PROCESSES.find((process) => process.key === key) ?? null;
+}
+
+export function getMarketingCommunication(key: string) {
+  return MARKETING_COMMUNICATIONS.find((item) => item.key === key) ?? null;
 }
