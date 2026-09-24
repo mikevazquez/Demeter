@@ -198,6 +198,10 @@ export type StudentRewardOnboarding = {
   first_attendance_at: string | null;
   first_attendance_reservation_id: string | null;
   completed_at: string | null;
+  access_unlocked_at: string | null;
+  access_acknowledged_at: string | null;
+  access_method: "onboarding" | "admin" | "legacy" | null;
+  access_reason: string | null;
   bronze_unlocked_at: string | null;
   bronze_acknowledged_at: string | null;
   unlock_method: "onboarding" | "admin" | "legacy" | null;
@@ -435,7 +439,7 @@ export const getStudentRewardsContext = cache(async () => {
     portal.supabase
       .from("reward_onboarding")
       .select(
-        "id,student_id,documents_completed_at,documents_evidence,profile_completed_at,profile_evidence,app_installed_at,app_install_evidence,notifications_enabled_at,first_push_subscription_id,notifications_evidence,first_reservation_at,first_reservation_id,first_attendance_at,first_attendance_reservation_id,completed_at,bronze_unlocked_at,bronze_acknowledged_at,unlock_method,unlock_reason",
+        "id,student_id,documents_completed_at,documents_evidence,profile_completed_at,profile_evidence,app_installed_at,app_install_evidence,notifications_enabled_at,first_push_subscription_id,notifications_evidence,first_reservation_at,first_reservation_id,first_attendance_at,first_attendance_reservation_id,completed_at,access_unlocked_at,access_acknowledged_at,access_method,access_reason,bronze_unlocked_at,bronze_acknowledged_at,unlock_method,unlock_reason",
       )
       .eq("studio_id", studioId)
       .eq("student_id", studentId)
