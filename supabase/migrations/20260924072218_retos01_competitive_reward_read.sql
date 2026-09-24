@@ -283,7 +283,7 @@ to authenticated;
 alter table public.product_templates
 add column if not exists reward_credit_wallet boolean not null default false;
 
-create unique index if not exists product_templates_reward_credit_wallet_unique
+create index if not exists product_templates_reward_credit_wallet_idx
 on public.product_templates(studio_id)
 where reward_credit_wallet;
 
@@ -371,6 +371,7 @@ declare
   v_student public.students%rowtype;
   v_existing public.reward_credit_claims%rowtype;
   v_template_id uuid;
+  v_template_name text;
   v_acquisition_id uuid;
   v_credits integer;
   v_validity_days integer;
@@ -466,6 +467,11 @@ begin
 
   v_starts_on := (v_now at time zone coalesce(v_timezone, 'America/Mexico_City'))::date;
   v_expires_on := v_starts_on + v_validity_days;
+  v_template_name := format(
+    'Créditos de recompensa · %s · %s días',
+    v_credits,
+    v_validity_days
+  );
 
   insert into public.product_templates(
     studio_id,
@@ -484,13 +490,13 @@ begin
     reward_credit_wallet
   ) values (
     v_reward.studio_id,
-    'Créditos de recompensa',
+    v_template_name,
     'Saldo independiente obtenido por retos y recompensas.',
     'other',
     0,
     'MXN',
-    null,
-    30,
+    v_credits,
+    v_validity_days,
     false,
     true,
     null,
@@ -498,14 +504,17 @@ begin
     false,
     true
   )
-  on conflict (studio_id) where reward_credit_wallet
+  on conflict (studio_id, name)
   do nothing;
 
   select id
     into v_template_id
   from public.product_templates
   where studio_id = v_reward.studio_id
+    and name = v_template_name
     and reward_credit_wallet
+    and credit_limit = v_credits
+    and validity_days = v_validity_days
   limit 1;
 
   if v_template_id is null then
