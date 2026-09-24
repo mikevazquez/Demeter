@@ -2,6 +2,11 @@ import { withSupabase } from "npm:@supabase/server@1.7.0";
 import type { SupabaseClient } from "npm:@supabase/supabase-js@2.116.0";
 import { sendPushNotification, WebPushError } from "npm:@mmmike/web-push@1.3.0/send";
 import { sendAsistianWebhook } from "../_shared/asistian-messaging.ts";
+import {
+  buildAsistianVariables,
+  formatNotificationDateTimeParts,
+  normalizeAsistianPhone,
+} from "../_shared/notification-asistian-variables.ts";
 
 const WORKER_ID_PREFIX = "notification-delivery-worker";
 const DEFAULT_BATCH_SIZE = 25;
@@ -269,6 +274,71 @@ function renderMessage(delivery: DeliveryRow): RenderedMessage {
         providerTemplateKey: overrideProviderTemplate ?? "class_cancelled_coach",
       };
 
+    case "class_rescheduled": {
+      const oldLabel = formatNotificationDateTimeParts(
+        variables.old_starts_at,
+        variables.studio_timezone,
+      ).label;
+      return {
+        title: "Cambio de horario",
+        body:
+          oldLabel && startLabel
+            ? `${className} cambió de ${oldLabel} a ${startLabel}.`
+            : startLabel
+              ? `${className} ahora será ${startLabel}.`
+              : `El horario de ${className} cambió.`,
+        url: "/student",
+        tag: `notification-${delivery.id}`,
+        providerTemplateKey: overrideProviderTemplate ?? "class_rescheduled",
+      };
+    }
+
+    case "class_cancelled_student":
+      return {
+        title: "Tu clase fue cancelada",
+        body: startLabel
+          ? `${className} de ${startLabel} se canceló por no alcanzar el mínimo de reservas. Tu crédito fue restaurado cuando correspondía.`
+          : `${className} se canceló por no alcanzar el mínimo de reservas. Tu crédito fue restaurado cuando correspondía.`,
+        url: "/student",
+        tag: `notification-${delivery.id}`,
+        providerTemplateKey: overrideProviderTemplate ?? "class_cancelled_student",
+      };
+
+    case "evaluation_invitation": {
+      const discipline = safeText(variables.discipline_name) ?? "tu disciplina";
+      return {
+        title: "Tienes una evaluación disponible",
+        body: `Ya puedes agendar tu evaluación de ${discipline} desde Studio Flow.`,
+        url: "/student",
+        tag: `notification-${delivery.id}`,
+        providerTemplateKey: overrideProviderTemplate ?? "evaluation_invitation",
+      };
+    }
+
+    case "evaluation_scheduled": {
+      const discipline = safeText(variables.discipline_name) ?? "tu disciplina";
+      return {
+        title: "Evaluación programada",
+        body: startLabel
+          ? `Tu evaluación de ${discipline} quedó programada para ${startLabel}.`
+          : `Tu evaluación de ${discipline} quedó programada.`,
+        url: "/student",
+        tag: `notification-${delivery.id}`,
+        providerTemplateKey: overrideProviderTemplate ?? "evaluation_scheduled",
+      };
+    }
+
+    case "evaluation_completed": {
+      const discipline = safeText(variables.discipline_name) ?? "tu disciplina";
+      return {
+        title: "Resultados de evaluación disponibles",
+        body: `Ya puedes consultar los resultados de tu evaluación de ${discipline} en Studio Flow.`,
+        url: "/student",
+        tag: `notification-${delivery.id}`,
+        providerTemplateKey: overrideProviderTemplate ?? "evaluation_completed",
+      };
+    }
+
     default:
       throw new Error(`notification_template_unsupported:${delivery.template_key}`);
   }
@@ -299,7 +369,11 @@ async function sendInbox(
   delivery: DeliveryRow,
   message: RenderedMessage,
 ): Promise<AdapterResult> {
-  if (delivery.recipient_type !== "student" || !delivery.recipient_entity_id) {
+  const isStudent = delivery.recipient_type === "student" && Boolean(delivery.recipient_entity_id);
+  const isInstructor =
+    delivery.recipient_type === "instructor" && Boolean(delivery.recipient_entity_id);
+
+  if (!isStudent && !isInstructor) {
     return {
       status: "skipped",
       providerKey: "studio_flow",
@@ -311,8 +385,9 @@ async function sendInbox(
   const deduplicationKey = `notification-delivery:${delivery.id}:inbox`;
   const newId = crypto.randomUUID();
   const sessionId = safeUuid(delivery.template_variables.session_id);
+  const href = isStudent ? `/student/notificaciones/${newId}` : "/admin/mis-clases";
   const payload = {
-    href: `/student/notificaciones/${newId}`,
+    href,
     delivery_id: delivery.id,
     notification_id: delivery.notification_id,
     communication_class: delivery.communication_class,
@@ -323,9 +398,9 @@ async function sendInbox(
       id: newId,
       studio_id: delivery.studio_id,
       recipient_user_id: delivery.recipient_user_id,
-      recipient_kind: "student",
-      student_id: delivery.recipient_entity_id,
-      instructor_id: null,
+      recipient_kind: isStudent ? "student" : "instructor",
+      student_id: isStudent ? delivery.recipient_entity_id : null,
+      instructor_id: isInstructor ? delivery.recipient_entity_id : null,
       session_id: sessionId,
       source_event_id: delivery.source_event_id,
       notification_type: delivery.notification_type,
@@ -367,7 +442,7 @@ async function sendInbox(
     };
   }
 
-  if (existing.id !== newId) {
+  if (isStudent && existing.id !== newId) {
     await adminClient
       .from("app_notifications")
       .update({
@@ -560,7 +635,7 @@ async function sendWhatsApp(
   delivery: DeliveryRow,
   message: RenderedMessage,
 ): Promise<AdapterResult> {
-  const phone = safeText(delivery.recipient_snapshot.phone);
+  const phone = normalizeAsistianPhone(delivery.recipient_snapshot.phone);
   if (!phone) {
     return {
       status: "skipped",
@@ -591,7 +666,7 @@ async function sendWhatsApp(
       | "class_cancelled_coach",
     eventId: delivery.id,
     recipient: phone,
-    variables: delivery.template_variables,
+    variables: buildAsistianVariables(message.providerTemplateKey, delivery.template_variables),
     metadata: {
       notification_id: delivery.notification_id,
       delivery_id: delivery.id,

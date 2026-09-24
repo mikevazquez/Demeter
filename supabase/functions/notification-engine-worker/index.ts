@@ -209,7 +209,7 @@ async function loadReservationContext(
     safeText(event.payload.session_id);
 
   let student: JsonObject | null = null;
-  const studentId = safeText(reservation?.student_id);
+  const studentId = safeText(reservation?.student_id) ?? safeText(event.payload.student_id);
 
   if (studentId) {
     const { data, error } = await adminClient
@@ -258,11 +258,13 @@ async function loadReservationContext(
 
   const template = (templateData ?? null) as JsonObject | null;
 
-  const { data: disciplineData, error: disciplineError } = template?.discipline_id
+  const disciplineId = safeText(event.payload.discipline_id) ?? safeText(template?.discipline_id);
+
+  const { data: disciplineData, error: disciplineError } = disciplineId
     ? await adminClient
         .from("disciplines")
         .select("id,name")
-        .eq("id", safeText(template.discipline_id))
+        .eq("id", disciplineId)
         .eq("studio_id", event.studio_id)
         .maybeSingle()
     : { data: null, error: null };
@@ -382,6 +384,170 @@ async function resolveRecipients(
           },
         ];
       });
+    }
+
+    case "payload_student": {
+      const student = context.student;
+      if (!student) return [];
+
+      const studentId = safeText(student.id);
+      const userId = safeText(student.user_id);
+      if (!studentId && !userId) return [];
+
+      return [
+        {
+          recipientType: "student",
+          recipientEntityId: studentId,
+          recipientUserId: userId,
+          snapshot: {
+            student_id: studentId,
+            user_id: userId,
+            full_name: safeText(student.full_name),
+            email: safeText(student.email),
+            phone: safeText(student.phone),
+          },
+        },
+      ];
+    }
+
+    case "minimum_cancelled_session_students": {
+      const sessionId = safeText(context.session?.id) ?? safeText(context.payload.session_id);
+      if (!sessionId) return [];
+
+      const { data: reservations, error: reservationsError } = await adminClient
+        .from("reservations")
+        .select("id,student_id,student_user_id,status,cancellation_reason")
+        .eq("studio_id", context.event.studio_id)
+        .eq("session_id", sessionId)
+        .eq("status", "cancelled_by_studio")
+        .eq(
+          "cancellation_reason",
+          "Clase cancelada automáticamente: mínimo de reservas no alcanzado",
+        );
+
+      if (reservationsError) {
+        throw new Error("minimum_cancelled_reservations_lookup_failed");
+      }
+
+      const studentIds = Array.from(
+        new Set(
+          (reservations ?? [])
+            .map((reservation) => safeText(reservation.student_id))
+            .filter((value): value is string => Boolean(value)),
+        ),
+      );
+
+      if (studentIds.length === 0) return [];
+
+      const { data: students, error: studentsError } = await adminClient
+        .from("students")
+        .select("id,user_id,full_name,email,phone,active,lifecycle_status")
+        .eq("studio_id", context.event.studio_id)
+        .in("id", studentIds);
+
+      if (studentsError) {
+        throw new Error("minimum_cancelled_students_lookup_failed");
+      }
+
+      const studentsById = new Map(
+        (students ?? []).map((student) => [String(student.id), student]),
+      );
+
+      return (reservations ?? []).flatMap((reservation) => {
+        const studentId = safeText(reservation.student_id);
+        if (!studentId) return [];
+
+        const student = studentsById.get(studentId);
+        if (!student) return [];
+
+        const userId = safeText(student.user_id) ?? safeText(reservation.student_user_id);
+
+        return [
+          {
+            recipientType: "student",
+            recipientEntityId: studentId,
+            recipientUserId: userId,
+            snapshot: {
+              reservation_id: safeText(reservation.id),
+              student_id: studentId,
+              user_id: userId,
+              full_name: safeText(student.full_name),
+              email: safeText(student.email),
+              phone: safeText(student.phone),
+            },
+          },
+        ];
+      });
+    }
+
+    case "session_instructor": {
+      const instructorId =
+        safeText(context.session?.instructor_id) ?? safeText(context.payload.instructor_id);
+      if (!instructorId) return [];
+
+      const { data: instructor, error: instructorError } = await adminClient
+        .from("instructors")
+        .select("id,person_id,status")
+        .eq("id", instructorId)
+        .eq("studio_id", context.event.studio_id)
+        .maybeSingle();
+
+      if (instructorError) throw new Error("session_instructor_lookup_failed");
+      if (!instructor || instructor.status !== "active") return [];
+
+      const [
+        { data: person, error: personError },
+        { data: membership, error: membershipError },
+        { data: contacts, error: contactsError },
+      ] = await Promise.all([
+        adminClient
+          .from("persons")
+          .select("id,first_name,last_name")
+          .eq("id", instructor.person_id)
+          .eq("studio_id", context.event.studio_id)
+          .maybeSingle(),
+        adminClient
+          .from("studio_memberships")
+          .select("user_id")
+          .eq("studio_id", context.event.studio_id)
+          .eq("person_id", instructor.person_id)
+          .eq("role", "instructor")
+          .eq("active", true)
+          .order("created_at", { ascending: true })
+          .limit(1)
+          .maybeSingle(),
+        adminClient
+          .from("person_contacts")
+          .select("kind,value,is_primary")
+          .eq("studio_id", context.event.studio_id)
+          .eq("person_id", instructor.person_id)
+          .order("is_primary", { ascending: false }),
+      ]);
+
+      if (personError || membershipError || contactsError) {
+        throw new Error("session_instructor_context_failed");
+      }
+
+      const phone = safeText((contacts ?? []).find((contact) => contact.kind === "phone")?.value);
+      const email = safeText((contacts ?? []).find((contact) => contact.kind === "email")?.value);
+      const fullName =
+        [safeText(person?.first_name), safeText(person?.last_name)].filter(Boolean).join(" ") ||
+        null;
+
+      return [
+        {
+          recipientType: "instructor",
+          recipientEntityId: instructor.id,
+          recipientUserId: safeText(membership?.user_id),
+          snapshot: {
+            instructor_id: instructor.id,
+            user_id: safeText(membership?.user_id),
+            full_name: fullName,
+            email,
+            phone,
+          },
+        },
+      ];
     }
 
     case "event_actor_user": {
@@ -508,12 +674,16 @@ function resolveTiming(
 
 function buildTemplateVariables(context: EventContext, recipient: Recipient): JsonObject {
   return {
+    ...context.payload,
     recipient_name: safeText(recipient.snapshot.full_name),
     reservation_id:
       safeText(context.reservation?.id) ?? safeText(recipient.snapshot.reservation_id),
     session_id: safeText(context.session?.id) ?? safeText(context.payload.session_id),
-    session_starts_at: safeText(context.session?.starts_at),
-    session_ends_at: safeText(context.session?.ends_at),
+    session_starts_at:
+      safeText(context.session?.starts_at) ??
+      safeText(context.payload.starts_at) ??
+      safeText(context.payload.new_starts_at),
+    session_ends_at: safeText(context.session?.ends_at) ?? safeText(context.payload.new_ends_at),
     class_name: safeText(context.template?.name),
     discipline_name: safeText(context.discipline?.name),
     studio_name: safeText(context.studio?.name),
