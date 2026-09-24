@@ -112,7 +112,8 @@ export default async function ChallengeDetailPage({
   }
 
   const target = conditionTarget(challenge.condition_definition);
-  const percent = target > 0 ? Math.min(100, Math.round((challenge.current_value / target) * 100)) : 0;
+  const percent =
+    target > 0 ? Math.min(100, Math.round((challenge.current_value / target) * 100)) : 0;
   const completed =
     challenge.participation_status === "fulfilled" ||
     challenge.cycle_status === "fulfilled" ||
@@ -121,7 +122,10 @@ export default async function ChallengeDetailPage({
   return (
     <main className="space-y-5 pb-6">
       <header>
-        <Link href="/student/retos" className="text-sm font-semibold text-zinc-400 hover:text-white">
+        <Link
+          href="/student/retos"
+          className="text-sm font-semibold text-zinc-400 hover:text-white"
+        >
           ← Retos
         </Link>
       </header>
@@ -141,7 +145,9 @@ export default async function ChallengeDetailPage({
         {challenge.cover_url ? (
           <div
             className="h-52 bg-cover bg-center"
-            style={{ backgroundImage: `linear-gradient(to top, rgba(6,7,10,.9), rgba(6,7,10,.05)), url("${challenge.cover_url}")` }}
+            style={{
+              backgroundImage: `linear-gradient(to top, rgba(6,7,10,.9), rgba(6,7,10,.05)), url("${challenge.cover_url}")`,
+            }}
           />
         ) : (
           <div className="h-28 bg-[radial-gradient(circle_at_75%_10%,rgba(255,10,138,.32),transparent_34%),linear-gradient(135deg,#17111d,#08090e)]" />
@@ -157,7 +163,9 @@ export default async function ChallengeDetailPage({
             ) : null}
           </div>
           <div className="flex flex-wrap gap-3 text-xs text-zinc-500">
-            <span>Inicio: {dateTimeLabel(challenge.scheduled_start_at, portal.studio.timezone)}</span>
+            <span>
+              Inicio: {dateTimeLabel(challenge.scheduled_start_at, portal.studio.timezone)}
+            </span>
             <span>•</span>
             <span>Cierre: {dateTimeLabel(challenge.scheduled_end_at, portal.studio.timezone)}</span>
           </div>
@@ -171,8 +179,8 @@ export default async function ChallengeDetailPage({
           </p>
           <h2 className="mt-2 text-xl font-semibold text-white">Entra a la competencia</h2>
           <p className="mt-2 text-sm leading-6 text-zinc-400">
-            Solo las alumnas inscritas aparecen en el ranking. Al entrar podrás ver el Top 3,
-            tu posición y cuánto te falta para alcanzar el podio.
+            Solo las alumnas inscritas aparecen en el ranking. Al entrar podrás ver el Top 3, tu
+            posición y cuánto te falta para alcanzar el podio.
           </p>
           <form action={enrollChallengeAction} className="mt-5">
             <input type="hidden" name="rule_id" value={challenge.rule_id} />
@@ -196,7 +204,8 @@ export default async function ChallengeDetailPage({
                     {positionMedal(leaderboard.you.position)}
                   </p>
                   <p className="mt-2 text-sm text-zinc-400">
-                    {leaderboard.you.value} {metricLabel(leaderboard.metric).toLocaleLowerCase("es-MX")}
+                    {leaderboard.you.value}{" "}
+                    {metricLabel(leaderboard.metric).toLocaleLowerCase("es-MX")}
                   </p>
                 </div>
                 <span className="rounded-2xl bg-fuchsia-500/10 px-4 py-3 text-sm font-semibold text-fuchsia-200">
@@ -230,7 +239,9 @@ export default async function ChallengeDetailPage({
                   }`}
                 >
                   <span className="text-xl">{positionMedal(row.position)}</span>
-                  <span className="text-sm font-semibold text-white">{row.is_you ? "Tú" : row.name}</span>
+                  <span className="text-sm font-semibold text-white">
+                    {row.is_you ? "Tú" : row.name}
+                  </span>
                   <span className="text-sm font-bold text-zinc-200">{row.value}</span>
                 </div>
               ))}
@@ -241,7 +252,9 @@ export default async function ChallengeDetailPage({
               <div className="mt-2 flex items-end justify-between gap-3">
                 <div className="flex items-baseline gap-3">
                   <strong className="text-3xl text-white">#{leaderboard.you.position}</strong>
-                  <span className="text-sm font-semibold text-zinc-300">{leaderboard.you.value}</span>
+                  <span className="text-sm font-semibold text-zinc-300">
+                    {leaderboard.you.value}
+                  </span>
                 </div>
                 {leaderboard.you.position > 3 ? (
                   <span className="max-w-44 text-right text-xs leading-5 text-zinc-400">
@@ -270,10 +283,7 @@ export default async function ChallengeDetailPage({
             <span className="text-sm font-semibold text-zinc-400">{percent}%</span>
           </div>
           <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/10">
-            <div
-              className="h-full rounded-full bg-[#FF0A8A]"
-              style={{ width: `${percent}%` }}
-            />
+            <div className="h-full rounded-full bg-[#FF0A8A]" style={{ width: `${percent}%` }} />
           </div>
           <p className="mt-3 text-sm text-zinc-400">
             {completed
@@ -286,9 +296,7 @@ export default async function ChallengeDetailPage({
       ) : null}
 
       <section className="rounded-3xl border border-white/10 bg-white/[0.03] p-5">
-        <p className="text-xs font-bold uppercase tracking-[0.16em] text-fuchsia-300">
-          Recompensa
-        </p>
+        <p className="text-xs font-bold uppercase tracking-[0.16em] text-fuchsia-300">Recompensa</p>
         <p className="mt-2 text-lg font-semibold text-white">{rewardLabel(challenge)}</p>
         {challenge.reward_visibility === "surprise" ? (
           <p className="mt-1 text-sm text-zinc-500">Se revelará cuando corresponda.</p>

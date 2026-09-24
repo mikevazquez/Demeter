@@ -3,7 +3,13 @@ import Link from "next/link";
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 
-import { EmptyState, StatusBadge, asObject, conditionsLabel, rewardDefinitionLabel } from "../recompensas/ui";
+import {
+  EmptyState,
+  StatusBadge,
+  asObject,
+  conditionsLabel,
+  rewardDefinitionLabel,
+} from "../recompensas/ui";
 
 const filterLabels: Record<string, string> = {
   all: "Todos",
@@ -20,7 +26,9 @@ export default async function ChallengesPage({
 }) {
   const query = await searchParams;
   const ctx = await getAdminContext(CAPABILITIES.REWARDS_READ);
-  const search = String(query.q ?? "").trim().toLocaleLowerCase("es-MX");
+  const search = String(query.q ?? "")
+    .trim()
+    .toLocaleLowerCase("es-MX");
   const status = ["active", "scheduled", "draft", "finished"].includes(String(query.status))
     ? String(query.status)
     : "all";
@@ -63,10 +71,7 @@ export default async function ChallengesPage({
   );
   const enrollmentCounts = new Map<string, number>();
   for (const enrollment of enrollmentsResult.data ?? []) {
-    enrollmentCounts.set(
-      enrollment.rule_id,
-      (enrollmentCounts.get(enrollment.rule_id) ?? 0) + 1,
-    );
+    enrollmentCounts.set(enrollment.rule_id, (enrollmentCounts.get(enrollment.rule_id) ?? 0) + 1);
   }
 
   const rows = (rulesResult.data ?? [])
@@ -123,7 +128,9 @@ export default async function ChallengesPage({
               key={value}
               href={`/admin/retos?status=${value}${query.q ? `&q=${encodeURIComponent(String(query.q))}` : ""}`}
               className={`whitespace-nowrap rounded-xl px-3 py-2 text-sm font-semibold ${
-                status === value ? "bg-[#FF0A8A] text-white" : "border border-white/10 text-zinc-400"
+                status === value
+                  ? "bg-[#FF0A8A] text-white"
+                  : "border border-white/10 text-zinc-400"
               }`}
             >
               {label}
@@ -141,7 +148,7 @@ export default async function ChallengesPage({
             const competition =
               presentation.competition_mode === "leaderboard" ? "Competencia" : "Individual";
             const participants =
-              competition === "Competencia" ? enrollmentCounts.get(rule.id) ?? 0 : null;
+              competition === "Competencia" ? (enrollmentCounts.get(rule.id) ?? 0) : null;
             return (
               <Link
                 key={rule.id}

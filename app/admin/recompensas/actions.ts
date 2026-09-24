@@ -142,12 +142,7 @@ function buildRewardDefinition(
     const label = textValue(formData, "reward_label");
     const benefit: Record<string, unknown> = {
       key: "benefit",
-      kind:
-        kind === "cash"
-          ? "custom_manual"
-          : kind === "package"
-            ? "special_benefit"
-            : kind,
+      kind: kind === "cash" ? "custom_manual" : kind === "package" ? "special_benefit" : kind,
       delivery: kind === "validity_extension" ? "auto_apply" : "redeem",
       validity_days: validityDays,
     };
@@ -580,8 +575,7 @@ async function saveStandaloneRule(formData: FormData, familyOverride: "achieveme
     familyOverride === "challenge" && textValue(formData, "competition_mode") === "leaderboard"
       ? "leaderboard"
       : "individual";
-  const tieBreaker =
-    textValue(formData, "tie_breaker") === "shared" ? "shared" : "first_to_reach";
+  const tieBreaker = textValue(formData, "tie_breaker") === "shared" ? "shared" : "first_to_reach";
   const rankingMetric = definition.conditions[0]?.metric ?? "attendance.count";
   const communication =
     familyOverride === "challenge"
@@ -721,9 +715,7 @@ export async function transitionStandaloneRuleAction(formData: FormData) {
   const isAchievement = textValue(formData, "kind") === "achievement";
   const kind = isAchievement ? "logros" : "retos";
   const action = textValue(formData, "action");
-  const path = isAchievement
-    ? `/admin/recompensas/${kind}/${ruleId}`
-    : `/admin/retos/${ruleId}`;
+  const path = isAchievement ? `/admin/recompensas/${kind}/${ruleId}` : `/admin/retos/${ruleId}`;
   try {
     if (!ruleId || !["schedule", "activate", "finish", "cancel"].includes(action)) {
       throw new Error("reward_rule_transition_invalid");
@@ -763,9 +755,7 @@ export async function updateStandaloneCopyAction(formData: FormData) {
   const ruleId = textValue(formData, "rule_id");
   const isAchievement = textValue(formData, "kind") === "achievement";
   const kind = isAchievement ? "logros" : "retos";
-  const path = isAchievement
-    ? `/admin/recompensas/${kind}/${ruleId}`
-    : `/admin/retos/${ruleId}`;
+  const path = isAchievement ? `/admin/recompensas/${kind}/${ruleId}` : `/admin/retos/${ruleId}`;
   try {
     const title = textValue(formData, "name");
     if (!ruleId || !title) throw new Error("reward_rule_title_required");

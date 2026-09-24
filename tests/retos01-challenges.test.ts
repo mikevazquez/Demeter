@@ -11,7 +11,9 @@ describe("RETOS-01", () => {
     const studentNav = read("app/student/StudentNav.tsx");
 
     expect(adminLayout).toContain('{ href: "/admin/retos", label: "Retos", enabled: true }');
-    expect(adminLayout).toContain('{ href: "/admin/recompensas", label: "Rewards", enabled: true }');
+    expect(adminLayout).toContain(
+      '{ href: "/admin/recompensas", label: "Rewards", enabled: true }',
+    );
     expect(studentNav).toContain('href: "/student/retos"');
   });
 

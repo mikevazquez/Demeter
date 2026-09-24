@@ -128,8 +128,7 @@ export function RuleEditorForm({
     : "week";
   const competitionMode =
     String(presentation.competition_mode) === "leaderboard" ? "leaderboard" : "individual";
-  const tieBreaker =
-    String(presentation.tie_breaker) === "shared" ? "shared" : "first_to_reach";
+  const tieBreaker = String(presentation.tie_breaker) === "shared" ? "shared" : "first_to_reach";
   const winnerCount = Math.min(3, Math.max(1, Number(presentation.winner_count ?? 1)));
   const displayName = copyOverride?.title ?? version?.name ?? (isAchievement ? "Logro" : "Reto");
   const displayDescription = copyOverride?.description ?? version?.description ?? "";
@@ -375,8 +374,9 @@ export function RuleEditorForm({
                   </select>
                 </label>
                 <div className="rounded-xl border border-[#FF0A8A]/20 bg-[#FF0A8A]/[0.06] p-3 text-xs leading-5 text-zinc-300">
-                  En competencia, la inscripción es voluntaria y solo las inscritas entran al ranking.
-                  El portal muestra Top 3, posición personal y distancia al podio; nunca apellidos completos.
+                  En competencia, la inscripción es voluntaria y solo las inscritas entran al
+                  ranking. El portal muestra Top 3, posición personal y distancia al podio; nunca
+                  apellidos completos.
                 </div>
                 <label className="grid gap-1 text-sm text-zinc-300 md:col-span-2">
                   Portada (URL opcional)
@@ -459,7 +459,14 @@ export function RuleEditorForm({
                       value="true"
                       defaultChecked={
                         pushCommunication[key] === undefined
-                          ? ["challenge_started", "near_goal", "entered_top3", "ending_soon", "completed", "results"].includes(key)
+                          ? [
+                              "challenge_started",
+                              "near_goal",
+                              "entered_top3",
+                              "ending_soon",
+                              "completed",
+                              "results",
+                            ].includes(key)
                           : Boolean(pushCommunication[key])
                       }
                     />

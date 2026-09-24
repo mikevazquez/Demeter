@@ -60,9 +60,7 @@ export default async function StudentChallengesPage() {
         <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-fuchsia-300">
           RETOS
         </p>
-        <h1 className="mt-1 text-3xl font-semibold tracking-tight text-white sm:text-4xl">
-          Retos
-        </h1>
+        <h1 className="mt-1 text-3xl font-semibold tracking-tight text-white sm:text-4xl">Retos</h1>
         <p className="mt-1.5 max-w-xl text-sm text-zinc-400">
           Objetivos temporales, competencias y recompensas. Tu avance se calcula con resultados
           reales, no con reservas futuras.
@@ -91,7 +89,9 @@ export default async function StudentChallengesPage() {
                 {challenge.cover_url ? (
                   <div
                     className="h-40 bg-cover bg-center md:h-48"
-                    style={{ backgroundImage: `linear-gradient(to top, rgba(7,8,12,.85), rgba(7,8,12,.08)), url("${challenge.cover_url}")` }}
+                    style={{
+                      backgroundImage: `linear-gradient(to top, rgba(7,8,12,.85), rgba(7,8,12,.08)), url("${challenge.cover_url}")`,
+                    }}
                   />
                 ) : (
                   <div className="h-24 bg-[radial-gradient(circle_at_80%_20%,rgba(255,10,138,.28),transparent_35%),linear-gradient(135deg,#12131a,#090a0f)]" />
@@ -167,7 +167,9 @@ export default async function StudentChallengesPage() {
                 <div>
                   <p className="text-sm font-semibold text-white">{challenge.title}</p>
                   <p className="mt-0.5 text-xs text-zinc-500">
-                    {challenge.competition_mode === "leaderboard" ? "Competencia finalizada" : "Reto finalizado"}
+                    {challenge.competition_mode === "leaderboard"
+                      ? "Competencia finalizada"
+                      : "Reto finalizado"}
                   </p>
                 </div>
                 <span className="text-zinc-600">›</span>
