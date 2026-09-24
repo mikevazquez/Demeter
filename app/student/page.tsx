@@ -324,7 +324,9 @@ export default async function StudentHomePage({
       <header className="pb-1">
         <p className="student-eyebrow">Inicio</p>
         <h1 className="student-page-title mt-1">Hola, {snapshot.profile.first_name}</h1>
-        <p className="student-body mt-2">Aquí tienes lo importante para tu próximo entrenamiento.</p>
+        <p className="student-body mt-2">
+          Aquí tienes lo importante para tu próximo entrenamiento.
+        </p>
       </header>
 
       {priorityNotification ? (
@@ -340,9 +342,7 @@ export default async function StudentHomePage({
               <h2 className="mt-2 text-lg font-semibold text-white">
                 {priorityNotification.title}
               </h2>
-              <p className="mt-1 text-sm leading-6 text-zinc-300">
-                {priorityNotification.body}
-              </p>
+              <p className="mt-1 text-sm leading-6 text-zinc-300">{priorityNotification.body}</p>
               <Link
                 href={`/student/notificaciones/${priorityNotification.id}`}
                 className={`mt-4 inline-flex min-h-11 items-center justify-center rounded-xl border px-4 text-sm font-semibold ${tone.button}`}
@@ -434,12 +434,15 @@ export default async function StudentHomePage({
                     : `${classesAvailable ?? 0} clases disponibles`}
                 </h2>
                 <p className="mt-1 text-sm text-zinc-400">
-                  {activePackage.name} · vence {formatDate(activePackage.expires_on, studio.timezone)}
+                  {activePackage.name} · vence{" "}
+                  {formatDate(activePackage.expires_on, studio.timezone)}
                 </p>
               </>
             ) : (
               <>
-                <h2 className="mt-1 text-lg font-semibold text-white">No tienes un paquete activo</h2>
+                <h2 className="mt-1 text-lg font-semibold text-white">
+                  No tienes un paquete activo
+                </h2>
                 <p className="mt-1 text-sm text-zinc-400">
                   Necesitas un paquete o clase disponible para seguir reservando.
                 </p>
@@ -447,7 +450,10 @@ export default async function StudentHomePage({
             )}
           </div>
           {activePackage ? (
-            <Link href="/student/paquete" className="shrink-0 text-sm font-semibold text-fuchsia-300">
+            <Link
+              href="/student/paquete"
+              className="shrink-0 text-sm font-semibold text-fuchsia-300"
+            >
               Ver →
             </Link>
           ) : null}
@@ -456,7 +462,8 @@ export default async function StudentHomePage({
         {activePackage && extraClassesAvailable > 0 ? (
           <div className="mt-4 rounded-2xl border border-emerald-400/20 bg-emerald-400/[0.045] px-3.5 py-3">
             <strong className="text-sm text-emerald-200">
-              +{extraClassesAvailable} {extraClassesAvailable === 1 ? "clase extra" : "clases extra"}
+              +{extraClassesAvailable}{" "}
+              {extraClassesAvailable === 1 ? "clase extra" : "clases extra"}
             </strong>
             {nearestExtraClassExpiry ? (
               <p className="mt-0.5 text-xs text-zinc-400">
@@ -536,7 +543,10 @@ export default async function StudentHomePage({
           </span>
         </div>
 
-        <Link href={technicalAction.href} className="student-action-secondary mt-4 w-full sm:w-auto">
+        <Link
+          href={technicalAction.href}
+          className="student-action-secondary mt-4 w-full sm:w-auto"
+        >
           {technicalAction.label}
         </Link>
       </section>
@@ -557,7 +567,11 @@ export default async function StudentHomePage({
           <div
             aria-hidden="true"
             className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.035] text-xl"
-            style={currentMedal ? { color: medalVisual.accent, borderColor: medalVisual.border } : undefined}
+            style={
+              currentMedal
+                ? { color: medalVisual.accent, borderColor: medalVisual.border }
+                : undefined
+            }
           >
             ◇
           </div>
