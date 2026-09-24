@@ -21,7 +21,6 @@ type StudentWaitlistItem = {
   status: string;
 };
 
-
 type RewardPricePreview = {
   regular_amount_minor?: number;
   final_amount_minor?: number;
