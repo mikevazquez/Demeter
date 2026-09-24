@@ -156,7 +156,7 @@ begin
     'credit_source', 'reward'
   );
 end;
-$function$
+$function$;
 
 
 CREATE OR REPLACE FUNCTION private.reward_credit_booking_eligibility_core(target_session_id uuid, target_student_id uuid)
@@ -254,7 +254,7 @@ begin
     'credit_source', 'reward'
   );
 end;
-$function$
+$function$;
 
 
 CREATE OR REPLACE FUNCTION public.student_book_session_with_reward_credits(target_session_id uuid, target_resource_id uuid DEFAULT NULL::uuid)
@@ -395,7 +395,7 @@ begin
     case when v_session.requires_resource then target_resource_id else null end
   );
 end;
-$function$
+$function$;
 
 
 CREATE OR REPLACE FUNCTION public.student_reward_credit_booking_eligibility(target_session_id uuid)
@@ -438,7 +438,7 @@ begin
     v_student_id
   );
 end;
-$function$
+$function$;
 
 
 revoke all on function public.student_reward_credit_booking_eligibility(uuid)
