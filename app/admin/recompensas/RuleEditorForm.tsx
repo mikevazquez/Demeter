@@ -486,6 +486,7 @@ export function RuleEditorForm({
                 defaultRewardValue={benefit ? rewardValue(kind, benefit) : 1}
                 defaultValidityDays={Number.isFinite(validity) ? validity : 30}
                 defaultRewardVisibility={String(presentation.reward_visibility ?? "visible")}
+                defaultRewardLabel={String(benefit?.label ?? "")}
               />
             </div>
           </section>
