@@ -8,8 +8,6 @@ import {
 } from "@/lib/student/portal";
 
 import BookingEligibilityRefresh from "./BookingEligibilityRefresh";
-import PurchaseSingleClassButton from "./PurchaseSingleClassButton";
-import { QuickBookButton } from "./quick-book-button";
 import { BookingRestrictionCard } from "./BookingRestrictionCard";
 import { HolidayNotice, type StudentHolidaySnapshot } from "./HolidayNotice";
 
@@ -80,9 +78,6 @@ type StudentWaitlistItem = {
   joined_at: string;
 };
 
-type RewardStatusSnapshot = {
-  level_title?: string | null;
-};
 
 type HolidayWeekItem = {
   holiday_date: string;
@@ -110,8 +105,15 @@ function statusClass(session: StudentSession, waitlisted = false) {
 function statusCopy(session: StudentSession, waitlisted = false) {
   if (session.is_reserved) return "Ya reservada";
   if (waitlisted) return "En lista de espera";
+  if (session.eligibility?.reason_code === "session_full") return "Clase llena";
   if (session.eligibility?.eligible) return "Disponible";
   return bookingReasonCopy(session.eligibility?.reason_code);
+}
+
+function availabilityCopy(spotsAvailable: number) {
+  if (spotsAvailable <= 0) return "Clase llena";
+  if (spotsAvailable === 1) return "Último lugar";
+  return `${spotsAvailable} lugares disponibles`;
 }
 
 export default async function StudentReservePage({
@@ -191,15 +193,11 @@ export default async function StudentReservePage({
     requires_resource: resourceRequirementMap.get(item.session_id) ?? false,
   }));
 
-  const [{ data: waitlistData }, { data: rewardStatusData }] = await Promise.all([
-    supabase.rpc("student_waitlist_feed"),
-    supabase.rpc("student_reward_status_snapshot"),
-  ]);
+  const { data: waitlistData } = await supabase.rpc("student_waitlist_feed");
   const waitlistItems = (waitlistData ?? []) as StudentWaitlistItem[];
   const waitlistedSessionIds = new Set(
     waitlistItems.filter((item) => item.status === "active").map((item) => item.session_id),
   );
-  const levelTitle = (rewardStatusData as RewardStatusSnapshot | null)?.level_title ?? null;
   const activityNames = [...new Set(items.map((item) => item.activity))];
   const { data: activityStyles } = activityNames.length
     ? await supabase
@@ -228,12 +226,10 @@ export default async function StudentReservePage({
     <main className="space-y-4 pb-4">
       <BookingEligibilityRefresh />
       <header>
-        <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-fuchsia-300">
-          Portal alumna
-        </p>
-        <h1 className="mt-1 text-2xl font-semibold text-white sm:text-3xl">Reservar clase</h1>
-        <p className="mt-1.5 text-xs leading-5 text-zinc-400">
-          Elige una fecha para ver todas las clases disponibles de ese día.
+        <p className="student-eyebrow">Reservar</p>
+        <h1 className="student-page-title mt-1">Elige tu próxima clase</h1>
+        <p className="student-body mt-2">
+          Primero elige el día y después la clase que quieres tomar.
         </p>
       </header>
 
@@ -246,9 +242,9 @@ export default async function StudentReservePage({
 
       {rewardMode ? (
         <section className="rounded-2xl border border-emerald-400/35 bg-emerald-400/[0.07] px-4 py-3">
-          <p className="text-xs font-semibold text-emerald-200">Usando créditos extra</p>
-          <p className="mt-1 text-[11px] leading-5 text-zinc-400">
-            Las reservas que confirmes desde este flujo se cobrarán del saldo premio disponible.
+          <p className="text-sm font-semibold text-emerald-200">Usando tus clases extra</p>
+          <p className="mt-1 text-sm leading-6 text-zinc-400">
+            La próxima reserva que confirmes utilizará una de tus clases extra disponibles.
           </p>
         </section>
       ) : null}
@@ -344,8 +340,8 @@ export default async function StudentReservePage({
       {selectedHoliday?.operation_mode === "closed" ? null : query.error || error ? (
         <section className="rounded-3xl border border-rose-500/25 bg-rose-500/[0.08] p-5 text-center">
           <h2 className="text-base font-semibold text-white">No pudimos cargar las clases</h2>
-          <p className="mt-1.5 text-xs leading-5 text-zinc-400">
-            Conservamos la fecha seleccionada. Intenta nuevamente.
+          <p className="mt-1.5 text-sm leading-6 text-zinc-400">
+            Conservamos el día que elegiste. Intenta nuevamente.
           </p>
           <Link
             href={`/student/reservar?date=${selectedDate}${rewardSuffix}`}
@@ -358,15 +354,13 @@ export default async function StudentReservePage({
         <section className="space-y-2.5">
           <div className="flex items-end justify-between gap-3">
             <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-500">
-                Clases del día
-              </p>
+              <p className="student-eyebrow">Clases del día</p>
               <h2 className="mt-0.5 text-base font-semibold capitalize text-white">
                 {longDate(selectedDate)}
               </h2>
             </div>
             {items.length ? (
-              <span className="text-[10px] text-zinc-600">
+              <span className="text-xs text-zinc-500">
                 {items.length} {items.length === 1 ? "clase" : "clases"}
               </span>
             ) : null}
@@ -375,21 +369,10 @@ export default async function StudentReservePage({
           {items.length ? (
             items.map((session) => {
               const timeLabel = timeOnly(session.starts_at, studio.timezone);
-              const eligible = Boolean(session.eligibility?.eligible);
               const reserved = Boolean(session.is_reserved);
               const waitlisted = waitlistedSessionIds.has(session.session_id);
-              const full = session.eligibility?.reason_code === "session_full";
               const style = activityStyleMap.get(session.activity);
               const activityColor = style?.color ?? "#FF0A8A";
-              const dropInPriceMinor = style?.dropInPriceMinor ?? null;
-              const canBuySingleClass =
-                !reserved &&
-                !eligible &&
-                session.spots_available > 0 &&
-                dropInPriceMinor != null &&
-                ["no_active_product", "outside_product", "no_credits"].includes(
-                  session.eligibility?.reason_code ?? "",
-                );
 
               return (
                 <article
@@ -401,9 +384,8 @@ export default async function StudentReservePage({
                   <div className="grid grid-cols-[4.25rem_1fr_auto] items-center gap-3">
                     <div>
                       <p className="text-sm font-semibold text-white">{timeLabel}</p>
-                      <p className="mt-0.5 text-[10px] text-zinc-600">
-                        {Math.max(session.capacity - session.spots_available, 0)}/{session.capacity}{" "}
-                        reservados
+                      <p className="mt-0.5 text-xs text-zinc-500">
+                        {availabilityCopy(session.spots_available)}
                       </p>
                     </div>
 
@@ -414,10 +396,10 @@ export default async function StudentReservePage({
                       <p className="truncate text-sm font-semibold text-white">
                         {session.activity}
                       </p>
-                      <p className="mt-0.5 truncate text-[11px]" style={{ color: activityColor }}>
+                      <p className="mt-0.5 truncate text-xs" style={{ color: activityColor }}>
                         {session.discipline}
                       </p>
-                      <p className="mt-0.5 truncate text-[11px] text-zinc-500">
+                      <p className="mt-0.5 truncate text-xs text-zinc-500">
                         {[session.coach, session.space || session.location]
                           .filter(Boolean)
                           .join(" · ") || "Ver detalle"}
@@ -430,7 +412,7 @@ export default async function StudentReservePage({
                       className="flex items-center gap-2"
                     >
                       <span
-                        className={`hidden rounded-full border px-2 py-1 text-[10px] font-semibold sm:inline-flex ${statusClass(
+                        className={`hidden rounded-full border px-2.5 py-1 text-xs font-semibold sm:inline-flex ${statusClass(
                           session,
                           waitlisted,
                         )}`}
@@ -443,57 +425,6 @@ export default async function StudentReservePage({
                     </Link>
                   </div>
 
-                  <div className="mt-3 border-t border-white/10 pt-3">
-                    {canBuySingleClass ? (
-                      <div>
-                        <div>
-                          <p className="text-[11px] font-semibold text-amber-100">
-                            Esta clase no está incluida en tu paquete
-                          </p>
-                          <p className="mt-0.5 text-[10px] text-zinc-500">
-                            Clase suelta ·{" "}
-                            {new Intl.NumberFormat("es-MX", {
-                              style: "currency",
-                              currency: "MXN",
-                              maximumFractionDigits: 0,
-                            }).format((dropInPriceMinor ?? 0) / 100)}
-                          </p>
-                        </div>
-                        <div className="mt-3 flex flex-wrap items-center justify-end gap-2">
-                          <Link
-                            href="/student/paquete"
-                            className="inline-flex min-h-10 items-center justify-center rounded-xl border border-white/10 px-3 py-2 text-xs font-semibold text-white"
-                          >
-                            Ver paquetes
-                          </Link>
-                          <PurchaseSingleClassButton
-                            sessionId={session.session_id}
-                            priceLabel={new Intl.NumberFormat("es-MX", {
-                              style: "currency",
-                              currency: "MXN",
-                              maximumFractionDigits: 0,
-                            }).format((dropInPriceMinor ?? 0) / 100)}
-                          />
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="flex justify-end">
-                        <QuickBookButton
-                          sessionId={session.session_id}
-                          activity={session.activity}
-                          discipline={session.discipline}
-                          timeLabel={timeLabel}
-                          eligible={eligible}
-                          reserved={reserved}
-                          full={full}
-                          waitlisted={waitlisted}
-                          levelTitle={levelTitle}
-                          requiresResource={session.requires_resource}
-                          useRewardCredits={rewardMode}
-                        />
-                      </div>
-                    )}
-                  </div>
                 </article>
               );
             })
