@@ -2,6 +2,10 @@ import { withSupabase } from "npm:@supabase/server@1.7.0";
 import type { SupabaseClient } from "npm:@supabase/supabase-js@2.116.0";
 import { sendPushNotification, WebPushError } from "npm:@mmmike/web-push@1.3.0/send";
 import { sendAsistianWebhook } from "../_shared/asistian-messaging.ts";
+import {
+  buildAsistianVariables,
+  formatNotificationDateTimeParts,
+} from "../_shared/notification-asistian-variables.ts";
 
 const WORKER_ID_PREFIX = "notification-delivery-worker";
 const DEFAULT_BATCH_SIZE = 25;
@@ -185,119 +189,6 @@ function formatSessionStart(variables: JsonObject) {
   }
 }
 
-function formatDateTimeParts(value: unknown, timezoneValue: unknown) {
-  const raw = safeText(value);
-  if (!raw) return { fecha: null, hora: null, label: null };
-
-  const date = new Date(raw);
-  if (!Number.isFinite(date.getTime())) {
-    return { fecha: null, hora: null, label: raw };
-  }
-
-  const timezone = safeText(timezoneValue) ?? "UTC";
-
-  try {
-    const fecha = new Intl.DateTimeFormat("es-MX", {
-      timeZone: timezone,
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    }).format(date);
-
-    const hora = new Intl.DateTimeFormat("es-MX", {
-      timeZone: timezone,
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false,
-    }).format(date);
-
-    const label = new Intl.DateTimeFormat("es-MX", {
-      timeZone: timezone,
-      weekday: "short",
-      day: "numeric",
-      month: "short",
-      hour: "numeric",
-      minute: "2-digit",
-    })
-      .format(date)
-      .replace(/\.$/, "");
-
-    return { fecha, hora, label };
-  } catch {
-    return { fecha: null, hora: null, label: date.toISOString() };
-  }
-}
-
-function buildAsistianVariables(delivery: DeliveryRow, providerTemplateKey: string): JsonObject {
-  const variables = delivery.template_variables ?? {};
-  const starts = formatDateTimeParts(
-    variables.session_starts_at,
-    variables.studio_timezone,
-  );
-
-  const common = {
-    nombre: safeText(variables.recipient_name) ?? "Alumna",
-    disciplina:
-      safeText(variables.discipline_name) ??
-      safeText(variables.class_name) ??
-      "Clase",
-    fecha: starts.fecha,
-    hora: starts.hora,
-  };
-
-  switch (providerTemplateKey) {
-    case "reservation_confirmed":
-    case "waitlist_promoted":
-    case "class_reminder":
-      return {
-        ...common,
-        coach: safeText(variables.coach),
-        ubicacion: safeText(variables.location),
-        creditos_restantes: safeNumber(variables.credits_remaining),
-      };
-
-    case "reservation_cancelled": {
-      const status = safeText(variables.to_status);
-      const tipo =
-        status === "cancelled_on_time"
-          ? "A tiempo"
-          : status === "cancelled_late"
-            ? "Tardía"
-            : status === "cancelled_by_studio"
-              ? "Por el estudio"
-              : "Cancelada";
-
-      return {
-        clase: safeText(variables.class_name) ?? "Clase",
-        fecha: starts.fecha,
-        hora: starts.hora,
-        tipo_cancelacion: tipo,
-        credito_recuperado:
-          status === "cancelled_late"
-            ? false
-            : status === "cancelled_on_time" || status === "cancelled_by_studio"
-              ? true
-              : null,
-        creditos_restantes: safeNumber(variables.credits_remaining),
-      };
-    }
-
-    case "class_cancelled_coach":
-      return {
-        coach: safeText(variables.recipient_name) ?? "Coach",
-        clase: safeText(variables.class_name) ?? "Clase",
-        fecha: starts.fecha,
-        hora: starts.hora,
-        minimo_reservas: safeNumber(variables.minimum_required),
-        reservas_al_revisar: safeNumber(variables.reservations_at_review),
-        mensaje: "La clase fue cancelada. No necesitas asistir.",
-      };
-
-    default:
-      return variables;
-  }
-}
-
 function renderMessage(delivery: DeliveryRow): RenderedMessage {
   const variables = delivery.template_variables ?? {};
   const policy = delivery.channel_policy ?? {};
@@ -383,7 +274,7 @@ function renderMessage(delivery: DeliveryRow): RenderedMessage {
       };
 
     case "class_rescheduled": {
-      const oldLabel = formatDateTimeParts(
+      const oldLabel = formatNotificationDateTimeParts(
         variables.old_starts_at,
         variables.studio_timezone,
       ).label;
@@ -775,7 +666,7 @@ async function sendWhatsApp(
       | "class_cancelled_coach",
     eventId: delivery.id,
     recipient: phone,
-    variables: buildAsistianVariables(delivery, message.providerTemplateKey),
+    variables: buildAsistianVariables(message.providerTemplateKey, delivery.template_variables),
     metadata: {
       notification_id: delivery.notification_id,
       delivery_id: delivery.id,
