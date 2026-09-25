@@ -162,10 +162,12 @@ export default async function StudentHomePage({
   const fallbackLevel =
     levelDefinitions.find((level) => level.level_key === fallbackLevelKey) ?? null;
   const currentMedal = rewardStatus?.access_unlocked
-    ? rewardStatus.current_medal ?? rewardStatus.current_level ?? fallbackLevel
+    ? (rewardStatus.current_medal ?? rewardStatus.current_level ?? fallbackLevel)
     : null;
   const currentMedalKey =
-    currentMedal?.key ?? fallbackLevel?.level_key ?? (rewardStatus?.access_unlocked ? "bronze" : null);
+    currentMedal?.key ??
+    fallbackLevel?.level_key ??
+    (rewardStatus?.access_unlocked ? "bronze" : null);
   const medalTitle = currentMedal?.title ?? fallbackLevel?.title ?? "Por activar";
 
   const unreadNotifications = (appNotificationsResult.data ?? []) as AppNotificationHomeItem[];
@@ -325,7 +327,13 @@ export default async function StudentHomePage({
       ) : null}
 
       <Link
-        href={nextClass ? "/student/mis-clases" : activePackage ? "/student/reservar" : "/student/paquete"}
+        href={
+          nextClass
+            ? "/student/mis-clases"
+            : activePackage
+              ? "/student/reservar"
+              : "/student/paquete"
+        }
         data-home-block="next-class"
         className="relative block min-h-[230px] overflow-hidden rounded-[1.65rem] border border-fuchsia-400/45 p-5 shadow-[0_22px_70px_rgba(255,10,138,0.12)] sm:min-h-[280px] sm:p-6"
         style={{
@@ -347,7 +355,11 @@ export default async function StudentHomePage({
 
         <div className="relative z-10 max-w-[78%]">
           <p className="text-xs font-semibold uppercase tracking-[0.28em] text-fuchsia-200">
-            {nextClass ? "Tu próxima clase" : activePackage ? "Tu próximo movimiento" : "Sigue entrenando"}
+            {nextClass
+              ? "Tu próxima clase"
+              : activePackage
+                ? "Tu próximo movimiento"
+                : "Sigue entrenando"}
           </p>
 
           {nextClass ? (
@@ -357,7 +369,9 @@ export default async function StudentHomePage({
               </h2>
               <p className="mt-2 text-lg font-semibold text-white">
                 {timeOnly(nextClass.starts_at, studio.timezone)}
-                {nextClass.space ? <span className="font-normal text-zinc-300"> · {nextClass.space}</span> : null}
+                {nextClass.space ? (
+                  <span className="font-normal text-zinc-300"> · {nextClass.space}</span>
+                ) : null}
               </p>
               <p className="mt-4 inline-flex items-center gap-2 text-sm text-zinc-200">
                 <span
@@ -394,7 +408,11 @@ export default async function StudentHomePage({
         </div>
       </Link>
 
-      <section data-home-block="week-calendar" aria-label="Esta semana" className="grid grid-cols-7 gap-1.5">
+      <section
+        data-home-block="week-calendar"
+        aria-label="Esta semana"
+        className="grid grid-cols-7 gap-1.5"
+      >
         {calendarDays.map((day) => {
           const selected = day.key === today;
 
@@ -521,7 +539,9 @@ export default async function StudentHomePage({
             <p className="text-sm font-semibold text-white">Medalla actual 🏅</p>
             <p className="mt-3 truncate text-2xl font-semibold text-white">{medalTitle}</p>
             <p className="mt-1 text-xs leading-5 text-zinc-500">
-              {rewardStatus?.access_unlocked ? "Por tu constancia" : "Actívala completando tu onboarding"}
+              {rewardStatus?.access_unlocked
+                ? "Por tu constancia"
+                : "Actívala completando tu onboarding"}
             </p>
             <span
               aria-hidden="true"
