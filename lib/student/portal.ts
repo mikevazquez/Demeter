@@ -155,7 +155,7 @@ export type StudentClassFeedItem = {
 };
 
 export const getStudentPortalContext = cache(async () => {
-  const supabase = await createClient();
+  const supabase = await createClient("student");
   const {
     data: { user },
     error: authError,

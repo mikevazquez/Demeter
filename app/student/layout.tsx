@@ -22,7 +22,8 @@ function pwaBrandQuery(brand: PwaBrand) {
     slug: brand.slug,
     primary: brand.primary_color,
     logo: brand.logo_path ?? "",
-    v: "3",
+    portal: "student",
+    v: "4",
   }).toString();
 }
 
@@ -141,6 +142,7 @@ export default async function StudentLayout({ children }: { children: React.Reac
               <p className="text-xs text-zinc-500">Portal de alumna</p>
             </div>
             <form action={signOut}>
+              <input type="hidden" name="mode" value="student" />
               <PendingActionButton
                 pendingLabel="Saliendo…"
                 className="rounded-xl border border-white/10 px-3 py-2 text-xs font-semibold text-zinc-300 transition hover:bg-white/[0.05] hover:text-white disabled:cursor-wait disabled:opacity-60"

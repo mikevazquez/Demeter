@@ -147,7 +147,8 @@ export async function signIn(formData: FormData) {
     redirect(`${loginPath(mode)}?error=missing`);
   }
 
-  const supabase = await createClient();
+  const authPortal = mode === "student" ? "student" : "admin";
+  const supabase = await createClient(authPortal);
   const credentials =
     mode === "student" ? { email: studentAuthEmail!, password } : { email, password };
   let { data, error } = await supabase.auth.signInWithPassword(credentials);
@@ -196,7 +197,7 @@ export async function signIn(formData: FormData) {
     redirect(`${loginPath(mode)}?error=auth`);
   }
 
-  const accessClient = await createClient();
+  const accessClient = await createClient(authPortal);
   const accountResult = await accessClient
     .from("user_accounts")
     .select("status, must_change_password")
@@ -314,7 +315,7 @@ export async function selectStudio(formData: FormData) {
   const studioId = String(formData.get("studio_id") ?? "").trim();
   if (!studioId) redirect("/login/studio/seleccionar?error=missing");
 
-  const accessClient = await createClient();
+  const accessClient = await createClient("admin");
   const {
     data: { user },
   } = await accessClient.auth.getUser();
@@ -355,7 +356,7 @@ export async function completeStudioPasswordActivation(formData: FormData) {
     redirect("/login/studio/activar?error=invalid");
   }
 
-  const supabase = await createClient();
+  const supabase = await createClient("admin");
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -416,7 +417,7 @@ export async function createInitialOwnerAccount(formData: FormData) {
     redirect("/setup?error=invalid");
   }
 
-  const supabase = await createClient();
+  const supabase = await createClient("admin");
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
@@ -431,9 +432,15 @@ export async function createInitialOwnerAccount(formData: FormData) {
   redirect("/setup?created=1");
 }
 
-export async function signOut() {
-  const supabase = await createClient();
+export async function signOut(formData?: FormData) {
+  const mode = String(formData?.get("mode") ?? "");
+  const portal = mode === "student" ? "student" : "admin";
+  const supabase = await createClient(portal);
   await supabase.auth.signOut();
-  await clearSelectedStudio();
-  redirect("/");
+
+  if (portal === "admin") {
+    await clearSelectedStudio();
+  }
+
+  redirect(portal === "student" ? "/login/student" : "/login/studio");
 }
