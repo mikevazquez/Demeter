@@ -1,8 +1,10 @@
 import "server-only";
 
 import { cache } from "react";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
+import { STUDIO_CONTEXT_COOKIE } from "@/lib/auth/studio-context-cookie";
 import { createClient } from "@/lib/supabase/server";
 
 export type StudentProfile = {
@@ -160,7 +162,7 @@ export const getStudentPortalContext = cache(async () => {
 
   if (!user) redirect("/login/student");
 
-  const [{ data: account }, { data: membership }] = await Promise.all([
+  const [{ data: account }, { data: memberships }] = await Promise.all([
     supabase
       .from("user_accounts")
       .select("status, must_change_password")
@@ -171,19 +173,43 @@ export const getStudentPortalContext = cache(async () => {
       .select("studio_id,role,active")
       .eq("user_id", user.id)
       .eq("role", "student")
-      .eq("active", true)
-      .limit(1)
-      .maybeSingle(),
+      .eq("active", true),
   ]);
 
-  if (!account || account.status !== "active" || !membership) {
+  if (!account || account.status !== "active" || !memberships?.length) {
     redirect("/login/student?error=access");
   }
 
   if (account.must_change_password) redirect("/login/student/activar");
 
+  const cookieStore = await cookies();
+  const selectedStudioId = cookieStore.get(STUDIO_CONTEXT_COOKIE)?.value;
+  const selectedMembership = selectedStudioId
+    ? memberships.find((item) => item.studio_id === selectedStudioId)
+    : null;
+  const membership = selectedMembership ?? (memberships.length === 1 ? memberships[0] : null);
+
+  if (!membership) {
+    redirect("/login/student/seleccionar");
+  }
+
+  const { data: studentRecord } = await supabase
+    .from("students")
+    .select("id")
+    .eq("user_id", user.id)
+    .eq("studio_id", membership.studio_id)
+    .eq("active", true)
+    .eq("lifecycle_status", "active")
+    .maybeSingle();
+
+  if (!studentRecord) {
+    redirect("/login/student/seleccionar?error=access");
+  }
+
   const [{ data: snapshot, error }, { data: studio }] = await Promise.all([
-    supabase.rpc("student_portal_snapshot"),
+    supabase.rpc("student_portal_snapshot_for_studio", {
+      p_studio_id: membership.studio_id,
+    }),
     supabase.from("studios").select("name,timezone").eq("id", membership.studio_id).maybeSingle(),
   ]);
 
