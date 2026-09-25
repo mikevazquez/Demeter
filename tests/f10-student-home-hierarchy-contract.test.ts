@@ -27,9 +27,9 @@ describe("F10/N14 student home visual hierarchy", () => {
     expect(home).toContain("urgentNotificationTypes");
   });
 
-  it("uses useful empty states without turning Home into a dashboard", () => {
+  it("uses useful hero states without turning Home into an admin dashboard", () => {
     expect(home).toContain("Reserva tu próxima clase");
-    expect(home).toContain("No tienes un paquete activo");
+    expect(home).toContain("Activa tu próximo paquete");
     expect(home).toContain("Ver paquetes");
     expect(home).not.toContain("Clases del día");
     expect(home).not.toContain("Semana anterior");
@@ -41,8 +41,8 @@ describe("F10/N14 student home visual hierarchy", () => {
     expect(home).toContain('data-home-block="technical-level"');
     expect(home).toContain('data-home-block="medal"');
     expect(home).toContain("Nivel técnico");
-    expect(home).toContain("Tu medalla");
-    expect(home).toContain("Activa tus Medallas");
+    expect(home).toContain("Medalla actual");
+    expect(home).toContain("Tu espacio");
     expect(home).not.toContain("Tu progreso");
   });
 });
