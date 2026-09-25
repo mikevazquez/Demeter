@@ -772,7 +772,9 @@ export function ActivityWizard({
             {coverImageUrl ? (
               <div
                 className="activities-image-preview"
-                style={{ backgroundImage: `linear-gradient(180deg, transparent, rgba(7,8,12,.38)), url("${coverImageUrl}")` }}
+                style={{
+                  backgroundImage: `linear-gradient(180deg, transparent, rgba(7,8,12,.38)), url("${coverImageUrl}")`,
+                }}
                 role="img"
                 aria-label="Imagen actual de la actividad"
               />
