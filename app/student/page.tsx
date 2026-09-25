@@ -40,6 +40,16 @@ type BookingRestriction = {
   action_label?: string | null;
 };
 
+type EvaluationHomeCard = {
+  invitation_id: string | null;
+  invitation_status: "offered" | "pending_schedule" | "scheduled" | "in_progress" | null;
+  discipline_name: string;
+};
+
+type StudentEvaluationsHomeSnapshot = {
+  disciplines?: EvaluationHomeCard[];
+};
+
 const urgentNotificationTypes = new Set([
   "session_minimum_cancelled",
   "class_cancelled_student",
@@ -132,6 +142,7 @@ export default async function StudentHomePage({
     rewardLevelsResult,
     appNotificationsResult,
     bookingRestrictionsResult,
+    evaluationsResult,
   ] = await Promise.all([
     supabase.rpc("student_reward_status_snapshot"),
     supabase
@@ -154,6 +165,7 @@ export default async function StudentHomePage({
       .order("created_at", { ascending: false })
       .limit(12),
     supabase.rpc("student_booking_restrictions_snapshot", { p_session_id: null }),
+    supabase.rpc("student_evaluations_snapshot"),
   ]);
 
   const rewardStatus = (rewardStatusResult.data as RewardStatusSnapshot | null) ?? null;
@@ -175,6 +187,14 @@ export default async function StudentHomePage({
     unreadNotifications.find((item) => urgentNotificationTypes.has(item.notification_type)) ?? null;
   const primaryRestriction =
     ((bookingRestrictionsResult.data ?? []) as BookingRestriction[])[0] ?? null;
+  const evaluationsSnapshot =
+    (evaluationsResult.data as StudentEvaluationsHomeSnapshot | null) ?? null;
+  const activeEvaluationInvitation =
+    evaluationsSnapshot?.disciplines?.find(
+      (item) =>
+        item.invitation_id &&
+        (item.invitation_status === "offered" || item.invitation_status === "pending_schedule"),
+    ) ?? null;
 
   const packageAcquisitions = snapshot.acquisitions.filter((item) => !item.reward_credit_wallet);
   const giftClassWallets = snapshot.acquisitions.filter(
@@ -323,6 +343,31 @@ export default async function StudentHomePage({
               {primaryRestriction.action_label || "Resolver"}
             </Link>
           ) : null}
+        </section>
+      ) : activeEvaluationInvitation?.invitation_id ? (
+        <section
+          data-home-block="priority-action"
+          className="rounded-2xl border border-violet-400/25 bg-violet-400/[0.055] p-4"
+        >
+          <p className="text-xs font-semibold text-violet-200">Evaluación disponible ✨</p>
+          <h2 className="mt-1 text-base font-semibold text-white">
+            {activeEvaluationInvitation.discipline_name}
+          </h2>
+          <p className="mt-1 text-sm leading-6 text-zinc-400">
+            Tienes una acción pendiente en tu nivel técnico.
+          </p>
+          <Link
+            href={
+              activeEvaluationInvitation.invitation_status === "offered"
+                ? `/student/evaluaciones/${activeEvaluationInvitation.invitation_id}`
+                : `/student/evaluaciones/${activeEvaluationInvitation.invitation_id}/programar`
+            }
+            className="mt-3 inline-flex min-h-11 items-center rounded-xl bg-fuchsia-600 px-4 text-sm font-semibold text-white"
+          >
+            {activeEvaluationInvitation.invitation_status === "offered"
+              ? "Ver evaluación"
+              : "Elegir mi clase"}
+          </Link>
         </section>
       ) : null}
 
