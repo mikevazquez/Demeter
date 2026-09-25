@@ -10,30 +10,30 @@ function source(path: string) {
 describe("ALUMNA UX FINAL K · Home V2", () => {
   const home = source("app/student/page.tsx");
 
-  it("uses one dominant dynamic hero instead of equal-weight cards", () => {
+  it("uses one dominant dynamic hero", () => {
     expect(home).toContain('data-home-block="next-class"');
-    expect(home).toContain("min-h-[330px]");
+    expect(home).toContain("min-h-[230px]");
     expect(home).toContain("Tu próxima clase");
     expect(home).toContain("Reserva tu próxima clase");
-    expect(home).toContain("Activa tu próximo paquete");
+    expect(home).toContain("Activa tu paquete");
     expect(home).toContain("Tu lugar está confirmado");
   });
 
-  it("matches the approved content hierarchy below the hero", () => {
-    expect(home).toContain('data-home-block="technical-level"');
-    expect(home).toContain('data-home-block="medal"');
+  it("matches the approved Home hierarchy", () => {
     expect(home).toContain('data-home-block="week-calendar"');
+    expect(home).toContain('data-home-block="space-next-class"');
     expect(home).toContain('data-home-block="package"');
-    expect(home).toContain('data-home-block="following-class"');
+    expect(home).toContain('data-home-block="medal"');
+    expect(home).toContain("Tu espacio");
   });
 
-  it("keeps technical level and medal semantically separate", () => {
-    expect(home).toContain("Nivel técnico");
+  it("keeps Medal visible without mixing it with technical level", () => {
     expect(home).toContain("Medalla actual");
+    expect(home).not.toContain('data-home-block="technical-level"');
     expect(home).not.toContain("Tu progreso");
   });
 
-  it("removes the notification card while keeping urgent alerts actionable", () => {
+  it("keeps urgent notices actionable without a notification card", () => {
     expect(home).toContain("urgentNotificationTypes");
     expect(home).toContain("Necesita tu atención");
     expect(home).not.toContain(">Avisos<");
@@ -47,15 +47,11 @@ describe("ALUMNA UX FINAL K · Home V2", () => {
     expect(home).toContain("clases de regalo");
   });
 
-  it("uses expressive emoji cues without changing the Demeter visual system", () => {
-    expect(home).toContain("¡Hola de nuevo! 👋");
-    expect(home).toContain("Tu próxima clase ✨");
-    expect(home).toContain("Nivel técnico 📈");
-    expect(home).toContain("Medalla actual 🏅");
+  it("uses the approved Demeter visual cues", () => {
+    expect(home).toContain("Hola, {snapshot.profile.first_name} 👋");
     expect(home).toContain("Mi paquete 🎁");
-    expect(home).toContain("Siguiente clase 💃");
-    expect(home).toContain("rounded-[2rem]");
-    expect(home).toContain("bg-fuchsia-600");
+    expect(home).toContain("Medalla actual 🏅");
+    expect(home).toContain("bg-fuchsia-500");
     expect(home).not.toContain("STUDIO FLOW");
   });
 });
