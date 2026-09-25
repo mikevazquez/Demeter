@@ -167,12 +167,12 @@ function HomeIcon({
   if (kind === "classes") {
     return (
       <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      className={className}
-      stroke="currentColor"
-      strokeWidth="1.7"
-    >
+        viewBox="0 0 24 24"
+        fill="none"
+        className={className}
+        stroke="currentColor"
+        strokeWidth="1.7"
+      >
         <rect x="4" y="4.5" width="16" height="16" rx="3" />
         <path d="M8 2.5v4M16 2.5v4M4 9h16M8 13h8M8 17h5" />
       </svg>
@@ -181,7 +181,13 @@ function HomeIcon({
 
   if (kind === "package") {
     return (
-      <svg viewBox="0 0 24 24" fill="none" className={className} stroke="currentColor" strokeWidth="1.7">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        className={className}
+        stroke="currentColor"
+        strokeWidth="1.7"
+      >
         <path d="M4.5 7.5h15v10h-15z" />
         <path d="M8 7.5a4 4 0 0 1 8 0M9 12h6M8 15h8" />
       </svg>
@@ -190,14 +196,26 @@ function HomeIcon({
 
   if (kind === "technical") {
     return (
-      <svg viewBox="0 0 24 24" fill="none" className={className} stroke="currentColor" strokeWidth="1.7">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        className={className}
+        stroke="currentColor"
+        strokeWidth="1.7"
+      >
         <path d="M5 18v-4M9.5 18V9M14 18v-7M18.5 18V5" />
       </svg>
     );
   }
 
   return (
-    <svg viewBox="0 0 24 24" fill="none" className={className} stroke="currentColor" strokeWidth="1.7">
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      className={className}
+      stroke="currentColor"
+      strokeWidth="1.7"
+    >
       <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9" />
       <path d="M13.7 21a2 2 0 0 1-3.4 0" />
     </svg>
