@@ -62,6 +62,29 @@ function availableClasses(activePackage: StudentAcquisition | null) {
   return activePackage.available_credits ?? 0;
 }
 
+function addDays(value: string, days: number) {
+  const date = new Date(value + "T12:00:00Z");
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString().slice(0, 10);
+}
+
+function calendarChip(value: string) {
+  const date = new Date(value + "T12:00:00Z");
+
+  return {
+    weekday: new Intl.DateTimeFormat("es-MX", {
+      weekday: "short",
+      timeZone: "UTC",
+    })
+      .format(date)
+      .replace(".", ""),
+    day: new Intl.DateTimeFormat("es-MX", {
+      day: "2-digit",
+      timeZone: "UTC",
+    }).format(date),
+  };
+}
+
 function todayLabel(dateKey: string) {
   return `Hoy ${new Intl.DateTimeFormat("es-MX", {
     day: "numeric",
@@ -242,6 +265,13 @@ export default async function StudentHomePage({
     : null;
 
   const today = localDateKey(new Date(), studio.timezone);
+  const calendarDays = Array.from({ length: 7 }, (_, index) => addDays(today, index));
+  const upcomingDates = new Set(
+    sortedUpcoming.map((item) => localDateKey(new Date(item.starts_at), studio.timezone)),
+  );
+  const nextClassDate = nextClass
+    ? localDateKey(new Date(nextClass.starts_at), studio.timezone)
+    : null;
   const packageSummary = activePackage
     ? activePackage.unlimited
       ? "Ilimitado"
@@ -288,20 +318,10 @@ export default async function StudentHomePage({
 
         <Link
           href="/student/reservar"
-          aria-label="Buscar clases"
-          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/[0.025] text-zinc-200 transition hover:border-fuchsia-400/35 hover:text-white"
+          aria-label="Reservar una clase"
+          className="flex h-12 shrink-0 items-center justify-center rounded-full border border-fuchsia-400/25 bg-fuchsia-500/[0.08] px-4 text-sm font-semibold text-fuchsia-200 transition hover:border-fuchsia-400/45 hover:bg-fuchsia-500/[0.12] hover:text-white"
         >
-          <svg
-            aria-hidden="true"
-            viewBox="0 0 24 24"
-            fill="none"
-            className="h-5 w-5"
-            stroke="currentColor"
-            strokeWidth="1.8"
-          >
-            <circle cx="11" cy="11" r="6.5" />
-            <path d="m16 16 4 4" />
-          </svg>
+          Reservar ✨
         </Link>
       </section>
 
@@ -445,9 +465,73 @@ export default async function StudentHomePage({
         </div>
       </Link>
 
+      <section
+        aria-label="Tu semana"
+        className="rounded-[1.55rem] border border-white/10 bg-white/[0.025] p-3"
+      >
+        <div className="mb-2 flex items-center justify-between gap-4 px-1">
+          <div>
+            <p className="text-sm font-semibold text-white">Tu semana 📅</p>
+            <p className="mt-0.5 text-xs text-zinc-500">Toca un día para ver sus clases.</p>
+          </div>
+          <Link
+            href="/student/reservar"
+            className="inline-flex min-h-10 items-center text-xs font-semibold text-fuchsia-300"
+          >
+            Ver agenda →
+          </Link>
+        </div>
+
+        <div className="-mx-1 overflow-x-auto px-1 pb-1">
+          <div className="grid min-w-[520px] grid-cols-7 gap-2">
+            {calendarDays.map((dateKey) => {
+              const chip = calendarChip(dateKey);
+              const isToday = dateKey === today;
+              const hasReservation = upcomingDates.has(dateKey);
+              const isNextClassDay = dateKey === nextClassDate;
+
+              return (
+                <Link
+                  key={dateKey}
+                  href={"/student/reservar?date=" + dateKey}
+                  aria-label={"Ver clases del " + dateKey}
+                  className={
+                    "relative flex min-h-[76px] flex-col items-center justify-center rounded-2xl border px-2 transition " +
+                    (isToday
+                      ? "border-fuchsia-400/70 bg-fuchsia-500 text-white shadow-[0_10px_28px_rgba(255,10,138,.18)]"
+                      : isNextClassDay
+                        ? "border-fuchsia-400/35 bg-fuchsia-500/[0.09] text-white"
+                        : "border-white/10 bg-[#101119] text-zinc-400 hover:border-fuchsia-400/30 hover:text-white")
+                  }
+                >
+                  <span className="text-[10px] font-semibold uppercase">{chip.weekday}</span>
+                  <strong className="mt-1 text-lg leading-none">{chip.day}</strong>
+                  <span
+                    aria-hidden="true"
+                    className={
+                      "mt-2 h-1.5 w-1.5 rounded-full " +
+                      (hasReservation
+                        ? isToday
+                          ? "bg-white"
+                          : "bg-fuchsia-400"
+                        : "bg-transparent")
+                    }
+                  />
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
       <section>
-        <div className="mb-3 flex items-center justify-between gap-4">
-          <h2 className="text-3xl font-semibold tracking-tight text-white">Tu espacio</h2>
+        <div className="mb-3 flex items-end justify-between gap-4">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-fuchsia-300/85">
+              Todo lo tuyo
+            </p>
+            <h2 className="mt-1 text-3xl font-semibold tracking-tight text-white">Tu espacio</h2>
+          </div>
           <Link
             href="/student/perfil"
             className="inline-flex min-h-11 items-center text-sm font-semibold text-zinc-300"
@@ -456,11 +540,11 @@ export default async function StudentHomePage({
           </Link>
         </div>
 
-        <div className="grid grid-cols-[1.08fr_.92fr] grid-rows-2 gap-3">
+        <div className="grid grid-cols-2 gap-3">
           <Link
             href={nextClass ? "/student/mis-clases" : "/student/reservar"}
             data-home-block="space-next-class"
-            className="group row-span-2 overflow-hidden rounded-[1.55rem] border border-fuchsia-400/35 bg-[#101119]"
+            className="group col-span-2 overflow-hidden rounded-[1.55rem] border border-fuchsia-400/35 bg-[#101119]"
           >
             <div
               className="relative min-h-[180px]"
@@ -531,12 +615,17 @@ export default async function StudentHomePage({
               </>
             ) : null}
 
-            {giftClassesAvailable > 0 ? (
-              <div className="mt-4 rounded-2xl bg-fuchsia-300/65 px-3 py-2.5 text-xs font-semibold text-fuchsia-950">
-                🎁 +{giftClassesAvailable}{" "}
-                {giftClassesAvailable === 1 ? "clase de regalo" : "clases de regalo"}
-              </div>
-            ) : null}
+            <div
+              className={
+                "mt-4 rounded-2xl px-3 py-2.5 text-xs font-semibold " +
+                (giftClassesAvailable > 0
+                  ? "bg-fuchsia-300/65 text-fuchsia-950"
+                  : "bg-white/35 text-[#675a75]")
+              }
+            >
+              🎁 {giftClassesAvailable}{" "}
+              {giftClassesAvailable === 1 ? "clase de regalo" : "clases de regalo"}
+            </div>
           </Link>
 
           <Link
