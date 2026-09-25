@@ -52,6 +52,20 @@ describe("WHATSAPP-META-01 direct Cloud API payloads", () => {
     });
   });
 
+  it("maps the welcome recipient name into the Meta template", () => {
+    const payload = buildMetaWhatsAppTemplatePayload({
+      recipient: "523336386674",
+      internalTemplate: "student_welcome",
+      metaTemplateName: "demeter_bienvenida",
+      languageCode: "es_MX",
+      variables: { recipient_name: "Ximena" },
+    });
+
+    expect(payload.template.components[0]?.parameters).toEqual([
+      { type: "text", text: "Ximena" },
+    ]);
+  });
+
   it("renders booleans and missing cancellation values as template-safe text", () => {
     const payload = buildMetaWhatsAppTemplatePayload({
       recipient: "523336386674",
