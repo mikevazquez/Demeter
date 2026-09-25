@@ -245,10 +245,7 @@ export function LoginCard({ mode, error }: LoginCardProps) {
           </label>
 
           <div className="auth-options">
-            <label className="auth-remember">
-              <input name="remember" type="checkbox" />
-              <span>Recordarme</span>
-            </label>
+            <span className="auth-remember">Sesión persistente en este dispositivo</span>
             <span className="auth-recovery-link">¿Olvidaste tu contraseña?</span>
           </div>
 
