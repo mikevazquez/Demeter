@@ -434,28 +434,36 @@ export default async function StudentHomePage({
               <h2 className="mt-2 max-w-[220px] truncate text-[30px] font-bold leading-9 tracking-[-0.035em] text-white">
                 {nextClass.activity} ✨
               </h2>
-              <p className="mt-2 max-w-[235px] truncate text-[15px] font-semibold text-white">
-                ◷ {timeOnly(nextClass.starts_at, studio.timezone)}–
-                {timeOnly(nextClass.ends_at, studio.timezone)}
-                {nextClass.space ? ` · ${nextClass.space}` : ""}
-              </p>
-              <div className="mt-[12px] flex max-w-[240px] items-center gap-2">
-                <span className="relative h-[34px] w-[34px] shrink-0 overflow-hidden rounded-full border border-[#ff55c0] bg-[#261424]">
-                  <Image src="/student/perfil/avatar" alt="" fill unoptimized className="object-cover" />
+              <div className="mt-2 flex max-w-[245px] items-center gap-2 text-[15px] font-semibold text-white">
+                <svg
+                  aria-hidden="true"
+                  viewBox="0 0 18 18"
+                  fill="none"
+                  className="h-[18px] w-[18px] shrink-0 text-[#ff5ab4]"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                >
+                  <rect x="2.5" y="4.5" width="13" height="11" rx="2" />
+                  <path d="M5.5 2.5v4M12.5 2.5v4M3 8h12" />
+                </svg>
+                <span className="truncate">
+                  {timeOnly(nextClass.starts_at, studio.timezone)}–
+                  {timeOnly(nextClass.ends_at, studio.timezone)}
+                  {nextClass.space ? ` · ${nextClass.space}` : ""}
                 </span>
-                <span className="min-w-0 text-[10px] leading-[13px] text-[#efe5f1]">
-                  <strong className="block truncate font-semibold">
-                    {nextClass.coach ? `Coach ${nextClass.coach}` : "Coach por confirmar"}
-                  </strong>
-                  <span className="mt-0.5 flex items-center gap-1">
-                    <span
-                      aria-hidden="true"
-                      className="inline-flex h-[15px] w-[15px] items-center justify-center rounded-full bg-[#ff43ae] text-[10px] font-bold text-[#090a0f]"
-                    >
-                      ✓
-                    </span>
-                    Tu lugar está confirmado
-                  </span>
+              </div>
+              <div className="mt-[14px] flex max-w-[250px] items-center gap-[10px] text-[11px] leading-[14px] text-[#f7f8fb]">
+                <span
+                  aria-hidden="true"
+                  className="inline-flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-full bg-[#ff40b3] text-[17px] font-bold text-[#090a0f]"
+                >
+                  ✓
+                </span>
+                <span className="min-w-0 truncate">
+                  {nextClass.coach ? `Coach ${nextClass.coach}` : "Coach por confirmar"}
+                  <span aria-hidden="true"> · </span>
+                  Tu lugar está confirmado
                 </span>
               </div>
             </>
@@ -488,14 +496,34 @@ export default async function StudentHomePage({
           href="/student/reservar"
           className="flex h-[50px] items-center justify-center gap-3 rounded-[25px] bg-[#ff3fb0] text-[15px] font-semibold text-[#090a0f]"
         >
-          <span aria-hidden="true" className="text-xl">▣</span>
+          <svg
+            aria-hidden="true"
+            viewBox="0 0 22 22"
+            fill="none"
+            className="h-[22px] w-[22px]"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+          >
+            <rect x="3" y="5" width="16" height="14" rx="2.5" />
+            <path d="M7 3v4M15 3v4M3 9h16" />
+          </svg>
           Reservar
         </Link>
         <Link
           href="/student/mis-clases"
           className="flex h-[50px] items-center justify-center gap-3 rounded-[25px] border border-[#a32b7d] bg-[#17131d] text-[14px] font-semibold text-white"
         >
-          <span aria-hidden="true" className="text-lg text-[#ff49b4]">▱</span>
+          <svg
+            aria-hidden="true"
+            viewBox="0 0 22 22"
+            fill="none"
+            className="h-[22px] w-[22px] text-[#ff49b4]"
+            stroke="currentColor"
+            strokeWidth="1.7"
+          >
+            <path d="M4 7a3 3 0 0 0 3 3 3 3 0 0 0-3 3v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4a3 3 0 0 0-3-3 3 3 0 0 0 3-3V5a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v2Z" />
+          </svg>
           <span>Ver mis clases</span>
           <span aria-hidden="true" className="text-xl">›</span>
         </Link>
@@ -629,7 +657,7 @@ export default async function StudentHomePage({
                   alt=""
                   width={80}
                   height={96}
-                  className="absolute bottom-0 right-0 h-[90px] w-[68px] object-cover"
+                  className="absolute bottom-0 right-0 h-[94px] w-[60px] object-cover"
                 />
                 <span aria-hidden="true" className="absolute right-4 top-3 text-xl text-white">
                   ›
