@@ -4,12 +4,7 @@ import { redirect } from "next/navigation";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { SessionOperations } from "../../hoy/SessionOperations";
-import {
-  cancelSession,
-  setMinimumOverride,
-  updateSession,
-  updateSessionArtwork,
-} from "./actions";
+import { cancelSession, setMinimumOverride, updateSession, updateSessionArtwork } from "./actions";
 
 type EligibilityResult = {
   eligible?: boolean;
@@ -94,11 +89,7 @@ export default async function SessionDetailPage({
     { data: students },
     { data: reservations },
   ] = await Promise.all([
-    supabase
-      .from("class_templates")
-      .select("*")
-      .eq("id", session.template_id)
-      .single(),
+    supabase.from("class_templates").select("*").eq("id", session.template_id).single(),
     supabase
       .from("spaces")
       .select("id,name,capacity")
@@ -442,7 +433,9 @@ export default async function SessionDetailPage({
 
           <div
             role={effectiveImageUrl ? "img" : undefined}
-            aria-label={effectiveImageUrl ? "Imagen visible actualmente para esta clase" : undefined}
+            aria-label={
+              effectiveImageUrl ? "Imagen visible actualmente para esta clase" : undefined
+            }
             style={{
               minHeight: 180,
               marginTop: 14,
@@ -473,12 +466,10 @@ export default async function SessionDetailPage({
             <input type="hidden" name="return_to" value={returnTo} />
 
             <label>
-              <span>{sessionImagePath ? "Reemplazar imagen de esta sesión" : "Subir imagen específica"}</span>
-              <input
-                name="cover_image"
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-              />
+              <span>
+                {sessionImagePath ? "Reemplazar imagen de esta sesión" : "Subir imagen específica"}
+              </span>
+              <input name="cover_image" type="file" accept="image/jpeg,image/png,image/webp" />
               <small>JPG, PNG o WebP · máximo 8 MB · recomendado horizontal.</small>
             </label>
 
