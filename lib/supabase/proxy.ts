@@ -1,11 +1,15 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { env } from "@/lib/env";
+import { AUTH_COOKIE_MAX_AGE_SECONDS } from "@/lib/supabase/session-policy";
 
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request });
 
   const supabase = createServerClient(env.supabaseUrl, env.supabasePublishableKey, {
+    cookieOptions: {
+      maxAge: AUTH_COOKIE_MAX_AGE_SECONDS,
+    },
     cookies: {
       getAll: () => request.cookies.getAll(),
       setAll(cookiesToSet) {
