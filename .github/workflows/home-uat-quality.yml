@@ -1,0 +1,63 @@
+name: Home UAT Quality
+
+on:
+  push:
+    branches: [ux-alumna-final-l-class-visuals]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: home-uat-quality
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: test-publishable-key
+
+    steps:
+      - name: Checkout feature branch
+        uses: actions/checkout@v4
+        with:
+          ref: ux-alumna-final-l-class-visuals
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Format UAT files
+        run: |
+          npx prettier --write             app/student/page.tsx             app/student/StudentNav.tsx             app/student/layout.tsx             lib/auth/admin-context.ts             lib/student/portal.ts
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+      - name: Persist formatting
+        shell: bash
+        run: |
+          if git diff --quiet; then
+            echo "No formatting changes to persist."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add             app/student/page.tsx             app/student/StudentNav.tsx             app/student/layout.tsx             lib/auth/admin-context.ts             lib/student/portal.ts
+          git commit -m "chore: format Home UAT files"
+          git push origin HEAD:ux-alumna-final-l-class-visuals
