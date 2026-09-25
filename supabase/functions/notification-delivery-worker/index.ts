@@ -631,6 +631,36 @@ async function sendPush(
   };
 }
 
+async function resolveDeliveryAdapter(
+  adminClient: SupabaseClient,
+  delivery: DeliveryRow,
+): Promise<DeliveryRow> {
+  if (delivery.channel_key !== "whatsapp") return delivery;
+
+  const requestedProvider = safeText(delivery.channel_policy.provider_key);
+  const { data, error } = await adminClient.rpc("service_resolve_whatsapp_provider", {
+    target_studio_id: delivery.studio_id,
+    requested_provider: requestedProvider,
+  });
+
+  if (error) throw new Error("whatsapp_provider_resolution_failed");
+
+  const provider = safeText(data) ?? "asistian";
+  if (provider === "meta_whatsapp") {
+    return {
+      ...delivery,
+      adapter_key: "meta_whatsapp",
+      provider_key: "meta_whatsapp",
+    };
+  }
+
+  return {
+    ...delivery,
+    adapter_key: "asistian",
+    provider_key: "asistian",
+  };
+}
+
 async function sendWhatsAppAsistian(
   adminClient: SupabaseClient,
   delivery: DeliveryRow,
@@ -853,7 +883,10 @@ async function processDelivery(
   let attemptId: string | null = null;
 
   try {
-    const delivery = await loadDelivery(adminClient, claim.delivery_id);
+    const delivery = await resolveDeliveryAdapter(
+      adminClient,
+      await loadDelivery(adminClient, claim.delivery_id),
+    );
 
     const { data: startedAttempt, error: attemptError } = await adminClient.rpc(
       "system_start_notification_delivery_attempt",
