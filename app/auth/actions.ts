@@ -133,6 +133,81 @@ async function getEligibleStudioAccess(
   };
 }
 
+async function getEligibleStudentAccess(
+  accessClient: Awaited<ReturnType<typeof createClient>>,
+  userId: string,
+) {
+  const membershipResult = await accessClient
+    .from("studio_memberships")
+    .select("studio_id, role, active, person_id")
+    .eq("user_id", userId)
+    .eq("role", "student")
+    .eq("active", true);
+
+  if (membershipResult.error) {
+    return {
+      error: membershipResult.error,
+      memberships: [] as StudioMembership[],
+    };
+  }
+
+  const memberships = (membershipResult.data ?? []) as StudioMembership[];
+  if (!memberships.length) {
+    return { error: null, memberships: [] as StudioMembership[] };
+  }
+
+  const capabilityResult = await accessClient
+    .from("role_capabilities")
+    .select("capability_key")
+    .eq("role", "student")
+    .eq("capability_key", CAPABILITIES.STUDENT_PORTAL)
+    .maybeSingle();
+
+  if (capabilityResult.error) {
+    return {
+      error: capabilityResult.error,
+      memberships: [] as StudioMembership[],
+    };
+  }
+
+  if (!capabilityResult.data) {
+    return { error: null, memberships: [] as StudioMembership[] };
+  }
+
+  const studioIds = [...new Set(memberships.map((item) => item.studio_id))];
+  const [studiosResult, studentsResult] = await Promise.all([
+    accessClient
+      .from("studios")
+      .select("id")
+      .in("id", studioIds)
+      .eq("status", "active"),
+    accessClient
+      .from("students")
+      .select("studio_id")
+      .eq("user_id", userId)
+      .eq("active", true)
+      .eq("lifecycle_status", "active")
+      .in("studio_id", studioIds),
+  ]);
+
+  if (studiosResult.error || studentsResult.error) {
+    return {
+      error: studiosResult.error ?? studentsResult.error,
+      memberships: [] as StudioMembership[],
+    };
+  }
+
+  const activeStudioIds = new Set((studiosResult.data ?? []).map((item) => item.id));
+  const studentStudioIds = new Set((studentsResult.data ?? []).map((item) => item.studio_id));
+
+  return {
+    error: null,
+    memberships: memberships.filter(
+      (item) => activeStudioIds.has(item.studio_id) && studentStudioIds.has(item.studio_id),
+    ),
+  };
+}
+
 export async function signIn(formData: FormData) {
   const password = String(formData.get("password") ?? "");
   const requestedMode = String(formData.get("mode") ?? "");
@@ -219,57 +294,33 @@ export async function signIn(formData: FormData) {
   }
 
   if (mode === "student") {
-    const membershipResult = await accessClient
-      .from("studio_memberships")
-      .select("studio_id, role, active")
-      .eq("user_id", data.user.id)
-      .eq("role", "student")
-      .eq("active", true)
-      .limit(1)
-      .maybeSingle();
+    const studentAccess = await getEligibleStudentAccess(accessClient, data.user.id);
 
-    if (membershipResult.error) {
-      console.error("[auth.signIn] Student membership lookup failed", {
-        membershipError: authErrorSummary(membershipResult.error),
+    if (studentAccess.error) {
+      console.error("[auth.signIn] Student access lookup failed", {
+        error: authErrorSummary(studentAccess.error),
       });
       await accessClient.auth.signOut();
       redirect("/login/student?error=auth");
     }
 
-    const membership = membershipResult.data;
-    if (!membership) {
+    if (!studentAccess.memberships.length) {
       await accessClient.auth.signOut();
       redirect("/login/student?error=pending");
     }
 
-    const [studioResult, capabilityResult] = await Promise.all([
-      accessClient.from("studios").select("status").eq("id", membership.studio_id).maybeSingle(),
-      accessClient
-        .from("role_capabilities")
-        .select("capability_key")
-        .eq("role", membership.role)
-        .eq("capability_key", CAPABILITIES.STUDENT_PORTAL)
-        .maybeSingle(),
-    ]);
-
-    if (studioResult.error || capabilityResult.error) {
-      console.error("[auth.signIn] Student portal capability lookup failed", {
-        studioError: authErrorSummary(studioResult.error),
-        capabilityError: authErrorSummary(capabilityResult.error),
-      });
-      await accessClient.auth.signOut();
-      redirect("/login/student?error=auth");
-    }
-
-    if (!studioResult.data || studioResult.data.status !== "active" || !capabilityResult.data) {
-      await accessClient.auth.signOut();
-      redirect("/login/student?error=access");
-    }
-
     if (account.must_change_password) {
+      await clearSelectedStudio();
       redirect("/login/student/activar");
     }
 
+    if (studentAccess.memberships.length > 1) {
+      await clearSelectedStudio();
+      redirect("/login/student/seleccionar");
+    }
+
+    const membership = studentAccess.memberships[0];
+    await setSelectedStudio(membership.studio_id);
     redirect("/student");
   }
 
@@ -345,6 +396,45 @@ export async function selectStudio(formData: FormData) {
 
   await setSelectedStudio(studioId);
   redirect(portalDestination(membership, studioAccess.capabilities));
+}
+
+
+export async function selectStudentStudio(formData: FormData) {
+  const studioId = String(formData.get("studio_id") ?? "").trim();
+  if (!studioId) redirect("/login/student/seleccionar?error=missing");
+
+  const accessClient = await createClient();
+  const {
+    data: { user },
+  } = await accessClient.auth.getUser();
+
+  if (!user) redirect("/login/student");
+
+  const accountResult = await accessClient
+    .from("user_accounts")
+    .select("status, must_change_password")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (!accountResult.data || accountResult.data.status !== "active") {
+    await accessClient.auth.signOut();
+    redirect("/login/student?error=access");
+  }
+
+  if (accountResult.data.must_change_password) {
+    await clearSelectedStudio();
+    redirect("/login/student/activar");
+  }
+
+  const studentAccess = await getEligibleStudentAccess(accessClient, user.id);
+  const membership = studentAccess.memberships.find((item) => item.studio_id === studioId);
+
+  if (studentAccess.error || !membership) {
+    redirect("/login/student/seleccionar?error=access");
+  }
+
+  await setSelectedStudio(studioId);
+  redirect("/student");
 }
 
 export async function completeStudioPasswordActivation(formData: FormData) {
