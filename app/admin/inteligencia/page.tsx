@@ -77,10 +77,27 @@ type ReservationRow = {
   booked_at: string;
 };
 
-type TemplateRow = {
+type ClassTemplateRow = {
   id: string;
   name: string;
   color_hex: string | null;
+};
+
+type ProductTemplateRow = {
+  id: string;
+  product_type: string;
+  name: string;
+};
+
+type OnboardingRow = {
+  student_id: string;
+  documents_completed_at: string | null;
+  profile_completed_at: string | null;
+  first_reservation_at: string | null;
+  first_attendance_at: string | null;
+  app_installed_at: string | null;
+  notifications_enabled_at: string | null;
+  completed_at: string | null;
 };
 
 const views: { key: ViewKey; label: string }[] = [
@@ -96,6 +113,14 @@ const views: { key: ViewKey; label: string }[] = [
 const DAY = 86_400_000;
 const userCancellationStatuses = new Set(["cancelled_on_time", "cancelled_late"]);
 const occupiedStatuses = new Set(["reserved", "attended", "no_show"]);
+const decisionReservationStatuses = new Set([
+  "reserved",
+  "attended",
+  "no_show",
+  "cancelled_on_time",
+  "cancelled_late",
+]);
+const commercialProductTypes = new Set(["package", "membership", "single_class"]);
 
 function clampDays(value: string | undefined) {
   const parsed = Number(value ?? "30");
@@ -318,6 +343,8 @@ export default async function IntelligencePage({
     linesResult,
     sessionsResult,
     templatesResult,
+    productTemplatesResult,
+    onboardingResult,
   ] = await Promise.all([
     supabase
       .from("students")
@@ -357,6 +384,16 @@ export default async function IntelligencePage({
       .from("class_templates")
       .select("id,name,color_hex")
       .eq("studio_id", studio.id),
+    supabase
+      .from("product_templates")
+      .select("id,product_type,name")
+      .eq("studio_id", studio.id),
+    supabase
+      .from("reward_onboarding")
+      .select(
+        "student_id,documents_completed_at,profile_completed_at,first_reservation_at,first_attendance_at,app_installed_at,notifications_enabled_at,completed_at",
+      )
+      .eq("studio_id", studio.id),
   ]);
 
   const students = (studentsResult.data ?? []) as StudentRow[];
@@ -365,7 +402,9 @@ export default async function IntelligencePage({
   const payments = (paymentsResult.data ?? []) as PaymentRow[];
   const saleLines = (linesResult.data ?? []) as SaleLineRow[];
   const sessions = (sessionsResult.data ?? []) as SessionRow[];
-  const templates = (templatesResult.data ?? []) as TemplateRow[];
+  const templates = (templatesResult.data ?? []) as ClassTemplateRow[];
+  const productTemplates = (productTemplatesResult.data ?? []) as ProductTemplateRow[];
+  const onboarding = (onboardingResult.data ?? []) as OnboardingRow[];
 
   const sessionIds = sessions.map((session) => session.id);
   const reservationsResult = sessionIds.length
@@ -377,6 +416,11 @@ export default async function IntelligencePage({
 
   const reservations = (reservationsResult.data ?? []) as ReservationRow[];
   const templateMap = new Map(templates.map((item) => [item.id, item]));
+  const productTemplateMap = new Map(productTemplates.map((item) => [item.id, item]));
+  const commercialAcquisitions = acquisitions.filter((item) => {
+    const productType = productTemplateMap.get(item.product_template_id)?.product_type;
+    return Boolean(productType && commercialProductTypes.has(productType));
+  });
 
   const currentStudents = students.filter((item) =>
     isBetween(item.created_at, currentStart, currentEnd),
@@ -447,13 +491,24 @@ export default async function IntelligencePage({
     return sum + Math.max(collectible - paid, 0);
   }, 0);
 
-  const activeStudents = students.filter(
-    (item) => item.active && item.lifecycle_status === "active",
-  ).length;
-  const previousActiveProxy = Math.max(activeStudents - currentStudents.length + previousStudents.length, 0);
+  function activeCommercialStudentCount(atDate: string) {
+    const studentIds = new Set<string>();
+    for (const item of commercialAcquisitions) {
+      if (item.refunded_at || item.status === "cancelled") continue;
+      const start = item.starts_on ?? item.created_at.slice(0, 10);
+      const end = item.expires_on;
+      if (start > atDate) continue;
+      if (end && end < atDate) continue;
+      studentIds.add(item.student_id);
+    }
+    return studentIds.size;
+  }
+
+  const activeStudents = activeCommercialStudentCount(todayDate);
+  const previousActiveStudents = activeCommercialStudentCount(currentStartDate);
 
   const acquisitionsByStudent = new Map<string, AcquisitionRow[]>();
-  for (const item of acquisitions) {
+  for (const item of commercialAcquisitions) {
     if (item.refunded_at || item.status === "cancelled") continue;
     const list = acquisitionsByStudent.get(item.student_id) ?? [];
     list.push(item);
@@ -462,9 +517,12 @@ export default async function IntelligencePage({
 
   const latestAcquisitionByStudent = new Map<string, AcquisitionRow>();
   for (const [studentId, list] of acquisitionsByStudent.entries()) {
-    const sorted = [...list].sort(
-      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
-    );
+    const sorted = [...list].sort((a, b) => {
+      const aExpiry = a.expires_on ?? "9999-12-31";
+      const bExpiry = b.expires_on ?? "9999-12-31";
+      if (aExpiry !== bExpiry) return bExpiry.localeCompare(aExpiry);
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    });
     if (sorted[0]) latestAcquisitionByStudent.set(studentId, sorted[0]);
   }
 
@@ -512,6 +570,7 @@ export default async function IntelligencePage({
       capacity += session.capacity ?? 0;
       const sessionReservations = reservationsBySession.get(session.id) ?? [];
       for (const reservation of sessionReservations) {
+        if (!decisionReservationStatuses.has(reservation.status)) continue;
         reservationEvents += 1;
         if (occupiedStatuses.has(reservation.status)) occupied += 1;
         if (reservation.status === "attended") attended += 1;
@@ -565,6 +624,7 @@ export default async function IntelligencePage({
       };
     current.capacity += session.capacity ?? 0;
     for (const reservation of reservationsBySession.get(session.id) ?? []) {
+      if (!decisionReservationStatuses.has(reservation.status)) continue;
       current.total += 1;
       if (occupiedStatuses.has(reservation.status)) current.occupied += 1;
       if (reservation.status === "attended") current.attended += 1;
@@ -632,13 +692,13 @@ export default async function IntelligencePage({
   const trialConversion = safeRate(trialConverted, trialAttended);
   const previousTrialConversion = safeRate(trialPreviousConverted, trialPreviousAttended);
 
-  const expiredCurrent = acquisitions.filter(
+  const expiredCurrent = commercialAcquisitions.filter(
     (item) =>
       !item.refunded_at &&
       item.status !== "cancelled" &&
       Boolean(item.expires_on && item.expires_on >= currentStartDate && item.expires_on <= todayDate),
   );
-  const expiredPrevious = acquisitions.filter(
+  const expiredPrevious = commercialAcquisitions.filter(
     (item) =>
       !item.refunded_at &&
       item.status !== "cancelled" &&
@@ -650,22 +710,38 @@ export default async function IntelligencePage({
   );
 
   function renewalStats(expiredRows: AcquisitionRow[]) {
+    const expiryByStudent = new Map<string, AcquisitionRow>();
+    for (const row of expiredRows) {
+      const previous = expiryByStudent.get(row.student_id);
+      if (
+        !previous ||
+        (row.expires_on ?? "") > (previous.expires_on ?? "") ||
+        ((row.expires_on ?? "") === (previous.expires_on ?? "") &&
+          new Date(row.created_at).getTime() > new Date(previous.created_at).getTime())
+      ) {
+        expiryByStudent.set(row.student_id, row);
+      }
+    }
+
     let renewed = 0;
-    for (const expired of expiredRows) {
-      const expiryTime = expired.expires_on
-        ? new Date(expired.expires_on + "T23:59:59Z").getTime()
-        : 0;
-      const later = (acquisitionsByStudent.get(expired.student_id) ?? []).some(
-        (candidate) =>
-          candidate.id !== expired.id && new Date(candidate.created_at).getTime() > expiryTime,
-      );
+    for (const expired of expiryByStudent.values()) {
+      const later = (acquisitionsByStudent.get(expired.student_id) ?? []).some((candidate) => {
+        if (candidate.id === expired.id) return false;
+        if (new Date(candidate.created_at).getTime() <= new Date(expired.created_at).getTime()) {
+          return false;
+        }
+        if (!candidate.expires_on || !expired.expires_on) return false;
+        return candidate.expires_on > expired.expires_on;
+      });
       if (later) renewed += 1;
     }
+
+    const expired = expiryByStudent.size;
     return {
-      expired: expiredRows.length,
+      expired,
       renewed,
-      notRenewed: Math.max(expiredRows.length - renewed, 0),
-      rate: safeRate(renewed, expiredRows.length),
+      notRenewed: Math.max(expired - renewed, 0),
+      rate: safeRate(renewed, expired),
     };
   }
 
@@ -676,9 +752,14 @@ export default async function IntelligencePage({
   const weeklyFrequency =
     activeStudents > 0 ? currentClassMetrics.attended / activeStudents / Math.max(days / 7, 1) : 0;
 
+  const currentSaleIds = new Set(currentSales.map((sale) => sale.id));
   const productRevenue = new Map<string, number>();
   for (const line of saleLines) {
-    if (line.refunded_at || !isBetween(line.created_at, currentStart, currentEnd)) continue;
+    if (
+      line.refunded_at ||
+      !currentSaleIds.has(line.sale_id) ||
+      !isBetween(line.created_at, currentStart, currentEnd)
+    ) continue;
     productRevenue.set(
       line.product_name,
       (productRevenue.get(line.product_name) ?? 0) + line.line_total_minor,
@@ -716,6 +797,31 @@ export default async function IntelligencePage({
   const highestCancellation = [...classRows].sort(
     (a, b) => b.cancellation - a.cancellation,
   )[0];
+
+  const onboardingRows = onboarding.filter((row) =>
+    students.some((student) => student.id === row.student_id),
+  );
+  const onboardingSteps = [
+    ["Documentos", "documents_completed_at"],
+    ["Perfil", "profile_completed_at"],
+    ["Primera reserva", "first_reservation_at"],
+    ["Primera asistencia", "first_attendance_at"],
+    ["PWA instalada", "app_installed_at"],
+    ["Push activado", "notifications_enabled_at"],
+  ] as const;
+  const onboardingComplete = onboardingRows.filter((row) => row.completed_at).length;
+  const onboardingPending = onboardingRows
+    .filter((row) => !row.completed_at)
+    .map((row) => {
+      const student = students.find((item) => item.id === row.student_id);
+      const completed = onboardingSteps.filter(([, key]) => Boolean(row[key])).length;
+      return {
+        studentId: row.student_id,
+        name: student?.full_name ?? "Alumna",
+        completed,
+      };
+    })
+    .sort((a, b) => a.completed - b.completed || a.name.localeCompare(b.name));
 
   const [pageTitle, pageDescription] = titleFor(view);
 
@@ -764,7 +870,7 @@ export default async function IntelligencePage({
             <MetricCard
               label="Alumnas activas"
               value={String(activeStudents)}
-              delta={deltaText(activeStudents, previousActiveProxy)}
+              delta={deltaText(activeStudents, previousActiveStudents)}
               tone="positive"
             />
             <MetricCard
@@ -1021,7 +1127,7 @@ export default async function IntelligencePage({
             <MetricCard
               label="Activas"
               value={String(activeStudents)}
-              delta={deltaText(activeStudents, previousActiveProxy)}
+              delta={deltaText(activeStudents, previousActiveStudents)}
               tone="positive"
             />
             <MetricCard
@@ -1080,6 +1186,34 @@ export default async function IntelligencePage({
               </Section>
 
               <Section
+                title="🚀 Onboarding"
+                description="Progreso real de los pasos necesarios para completar la activación."
+              >
+                <div className="intel-bars">
+                  {onboardingSteps.map(([label, key]) => {
+                    const completed = onboardingRows.filter((row) => Boolean(row[key])).length;
+                    return (
+                      <BarRow
+                        key={key}
+                        label={label}
+                        value={completed}
+                        max={Math.max(onboardingRows.length, 1)}
+                        display={completed + "/" + onboardingRows.length}
+                        tone={completed === onboardingRows.length && onboardingRows.length > 0 ? "success" : "info"}
+                      />
+                    );
+                  })}
+                  <BarRow
+                    label="Onboarding completo"
+                    value={onboardingComplete}
+                    max={Math.max(onboardingRows.length, 1)}
+                    display={onboardingComplete + "/" + onboardingRows.length}
+                    tone="success"
+                  />
+                </div>
+              </Section>
+
+              <Section
                 title="Frecuencia semanal"
                 description="Asistencias promedio por alumna activa durante el periodo."
               >
@@ -1116,6 +1250,30 @@ export default async function IntelligencePage({
                   !inactiveStudents.length &&
                   !abandonedStudents.length ? (
                     <p className="intel-empty">No hay alumnas dentro de estas ventanas de riesgo.</p>
+                  ) : null}
+                </div>
+              </Section>
+
+              <Section
+                title="Onboarding pendiente"
+                description="Ordenado por quienes tienen menos pasos completados."
+              >
+                <div className="intel-risk-list">
+                  {onboardingPending.slice(0, 8).map((item) => (
+                    <Link
+                      href={"/admin/alumnas/" + item.studentId}
+                      key={item.studentId}
+                      className="intel-risk-row"
+                    >
+                      <span>
+                        <strong>{item.name}</strong>
+                        <small>{item.completed}/6 pasos completados</small>
+                      </span>
+                      <b>Pendiente</b>
+                    </Link>
+                  ))}
+                  {!onboardingPending.length ? (
+                    <p className="intel-empty">No hay onboarding pendiente.</p>
                   ) : null}
                 </div>
               </Section>
