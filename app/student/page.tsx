@@ -195,8 +195,11 @@ export default async function StudentHomePage({
 
   const artworkSessionIds = nextClass ? [nextClass.session_id] : [];
   const artworkActivityNames = nextClass ? [nextClass.activity] : [];
-  const [{ data: artworkSessionRows }, { data: artworkTemplateRows }, { data: artworkDisciplineRows }] =
-    await Promise.all([
+  const [
+    { data: artworkSessionRows },
+    { data: artworkTemplateRows },
+    { data: artworkDisciplineRows },
+  ] = await Promise.all([
     artworkSessionIds.length
       ? supabase
           .from("class_sessions")
