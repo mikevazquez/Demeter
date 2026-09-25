@@ -15,7 +15,7 @@ describe("SF-N14 PORTAL UX-02 home", () => {
   it("covers the approved package and next-class states", () => {
     expect(home).toContain("Tu próxima clase");
     expect(home).toContain("Reserva tu próxima clase");
-    expect(home).toContain("No tienes un paquete activo");
+    expect(home).toContain("Activa tu próximo paquete");
     expect(home).toContain("Ver paquetes");
     expect(home).toContain("Reservar una clase");
   });
