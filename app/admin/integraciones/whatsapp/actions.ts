@@ -171,3 +171,46 @@ export async function saveMetaWhatsappConnection(formData: FormData) {
 
   redirect("/admin/integraciones/whatsapp?connected=1");
 }
+
+
+export async function saveMetaWhatsappTemplates(formData: FormData) {
+  const { supabase, studio } = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
+
+  const languageCode = fieldText(formData, "language_code") || "es_MX";
+  const countryCallingCode = fieldText(formData, "country_calling_code") || "52";
+
+  if (!/^[a-z]{2}_[A-Z]{2}$/.test(languageCode)) {
+    redirect("/admin/integraciones/whatsapp?error=language_invalid");
+  }
+
+  if (!/^[1-9][0-9]{0,2}$/.test(countryCallingCode)) {
+    redirect("/admin/integraciones/whatsapp?error=country_invalid");
+  }
+
+  const templates = Object.fromEntries(
+    TEMPLATE_FIELDS.map((key) => [key, fieldText(formData, `template_${key}`)]).filter(
+      ([, value]) => Boolean(value),
+    ),
+  );
+
+  if (
+    Object.values(templates).some(
+      (templateName) => typeof templateName !== "string" || !/^[a-z0-9_]+$/.test(templateName),
+    )
+  ) {
+    redirect("/admin/integraciones/whatsapp?error=template_invalid");
+  }
+
+  const { error } = await supabase.rpc("admin_update_meta_whatsapp_templates", {
+    target_studio_id: studio.id,
+    target_language_code: languageCode,
+    target_country_calling_code: countryCallingCode,
+    target_templates: templates,
+  });
+
+  if (error) {
+    redirect("/admin/integraciones/whatsapp?error=template_save_failed");
+  }
+
+  redirect("/admin/integraciones/whatsapp?templates_saved=1");
+}
