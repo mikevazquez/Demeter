@@ -66,7 +66,7 @@ export function StudentNav() {
       </nav>
 
       <nav
-        className="fixed inset-x-3 bottom-3 z-50 grid grid-cols-4 gap-1 rounded-3xl border border-white/10 bg-[#111218]/95 p-2 shadow-2xl backdrop-blur lg:hidden"
+        className="fixed bottom-3 left-1/2 z-50 grid h-[72px] w-[calc(100%-2rem)] max-w-[361px] -translate-x-1/2 grid-cols-4 gap-1 rounded-[24px] border border-white/[0.09] bg-[#0c0e14]/95 p-2 shadow-2xl backdrop-blur lg:hidden"
         style={{ paddingBottom: "max(0.5rem, env(safe-area-inset-bottom))" }}
         aria-label="Navegación de alumna"
       >
@@ -79,14 +79,19 @@ export function StudentNav() {
               href={item.href}
               prefetch={item.href === "/student/reservar" ? false : undefined}
               aria-current={active ? "page" : undefined}
-              className={`flex min-h-14 flex-col items-center justify-center rounded-2xl px-2 py-2 text-center text-xs font-semibold transition sm:text-sm ${
-                active ? "bg-fuchsia-600 text-white" : "text-zinc-400"
+              className={`flex h-[54px] flex-col items-center justify-center rounded-[17px] px-2 text-center text-[9px] transition ${
+                active
+                  ? "bg-fuchsia-500 font-semibold text-white"
+                  : "font-normal text-zinc-300"
               }`}
             >
-              <span aria-hidden="true" className="mb-1 text-xl leading-none">
+              <span
+                aria-hidden="true"
+                className={`mb-0.5 text-lg leading-6 ${active ? "text-white" : "text-zinc-400"}`}
+              >
                 {item.emoji}
               </span>
-              <span className="block">{item.label}</span>
+              <span className="block leading-3">{item.label}</span>
             </Link>
           );
         })}
