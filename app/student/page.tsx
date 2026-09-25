@@ -383,7 +383,7 @@ export default async function StudentHomePage({
 
   const packageSummary = activePackage
     ? activePackage.unlimited
-      ? "Ilimitado"
+      ? "Clases ilimitadas"
       : `${classesAvailable ?? 0} clases disponibles`
     : "Sin paquete activo";
 
