@@ -268,6 +268,7 @@ const handler = {
       user_metadata: { full_name: student.full_name, login_phone: student.phone },
     });
     let provisionedUser = createdUser.user;
+    let reusedExistingAccount = false;
 
     if (createError || !provisionedUser) {
       const message = createError?.message.toLowerCase() ?? "";
@@ -305,6 +306,7 @@ const handler = {
       if (existingAccount?.status === "active") {
         provisionedUser = staleUser;
         createError = null;
+        reusedExistingAccount = true;
       } else {
         const [
           { data: activeMemberships, error: activeMembershipError },
@@ -358,6 +360,20 @@ const handler = {
     if (linkError) {
       await adminClient.auth.admin.deleteUser(provisionedUser.id);
       return jsonResponse({ error: "link_failed" }, 500);
+    }
+
+    if (reusedExistingAccount) {
+      return jsonResponse({
+        ok: true,
+        phone: student.phone,
+        mustChangePassword: false,
+        activationLinkGenerated: false,
+        reusedExistingAccount: true,
+        welcomeDelivery: {
+          status: "skipped",
+          errorCode: null,
+        },
+      });
     }
 
     const { data: activationData, error: activationError } =
