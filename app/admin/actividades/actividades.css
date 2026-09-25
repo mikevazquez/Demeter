@@ -1233,3 +1233,88 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+
+/* CLASS-VISUALS · optional student-facing artwork */
+.activities-image-card {
+  display: grid;
+  gap: 12px;
+  padding: 15px;
+  border: 1px solid rgba(251, 3, 151, 0.32);
+  border-radius: 17px;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(251, 3, 151, 0.08), transparent 38%),
+    #09111a;
+}
+
+.activities-image-copy {
+  display: grid;
+  gap: 4px;
+}
+
+.activities-image-copy > span {
+  color: #ff58b6;
+  font-size: 7px;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+}
+
+.activities-image-copy strong {
+  color: #eef1f5;
+  font-size: 12px;
+}
+
+.activities-image-copy p {
+  max-width: 680px;
+  margin: 0;
+  color: #93a0af;
+  font-size: 8px;
+  line-height: 1.5;
+}
+
+.activities-image-preview {
+  min-height: 190px;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 16px;
+  background-position: center;
+  background-size: cover;
+  box-shadow: inset 0 -60px 80px rgba(0, 0, 0, 0.18);
+}
+
+.activities-image-preview.is-empty {
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 7px;
+  background:
+    radial-gradient(circle at 75% 28%, rgba(251, 3, 151, 0.18), transparent 34%),
+    linear-gradient(145deg, #141421, #0d1119);
+  color: #ff63bc;
+}
+
+.activities-image-preview.is-empty span {
+  font-size: 28px;
+}
+
+.activities-image-preview.is-empty small {
+  color: #818c99;
+  font-size: 8px;
+}
+
+.activities-image-remove {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #aab3bf;
+  font-size: 8px;
+}
+
+.activities-image-remove input {
+  accent-color: #fb0397;
+}
+
+@media (max-width: 480px) {
+  .activities-image-preview {
+    min-height: 150px;
+  }
+}
