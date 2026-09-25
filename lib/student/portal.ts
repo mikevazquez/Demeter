@@ -207,9 +207,7 @@ export const getStudentPortalContext = cache(async () => {
   }
 
   const [{ data: snapshot, error }, { data: studio }] = await Promise.all([
-    supabase.rpc("student_portal_snapshot_for_studio", {
-      p_studio_id: membership.studio_id,
-    }),
+    supabase.rpc("student_portal_snapshot"),
     supabase.from("studios").select("name,timezone").eq("id", membership.studio_id).maybeSingle(),
   ]);
 
