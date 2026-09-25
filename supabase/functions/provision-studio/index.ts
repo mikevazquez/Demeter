@@ -1,4 +1,5 @@
 import { withSupabase } from "npm:@supabase/server";
+import type { SupabaseClient } from "npm:@supabase/supabase-js";
 
 type ProvisionStudioRequest = {
   studioName?: unknown;
@@ -39,10 +40,7 @@ function validateActivationUrl(value: string) {
   }
 }
 
-async function findUserByEmail(
-  adminClient: Parameters<Parameters<typeof withSupabase>[1]>[1]["supabaseAdmin"],
-  email: string,
-) {
+async function findUserByEmail(adminClient: SupabaseClient, email: string) {
   for (let page = 1; page <= 50; page += 1) {
     const { data, error } = await adminClient.auth.admin.listUsers({
       page,
