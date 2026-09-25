@@ -95,6 +95,14 @@ function NavIcon({ label }: { label: string }) {
       </svg>
     );
   }
+  if (label === "Disciplinas") {
+    return (
+      <svg {...common}>
+        <circle cx="12" cy="12" r="7" />
+        <path d="M12 5v14M5 12h14" />
+      </svg>
+    );
+  }
   if (label === "Productos") {
     return (
       <svg {...common}>
