@@ -497,30 +497,6 @@ export async function completeStudioPasswordActivation(formData: FormData) {
   redirect(portalDestination(membership, studioAccess.capabilities));
 }
 
-export async function createInitialOwnerAccount(formData: FormData) {
-  const fullName = String(formData.get("full_name") ?? "").trim();
-  const email = String(formData.get("email") ?? "").trim();
-  const password = String(formData.get("password") ?? "");
-
-  if (!fullName || !email || password.length < 8) {
-    redirect("/setup?error=invalid");
-  }
-
-  const supabase = await createClient();
-  const { data, error } = await supabase.auth.signUp({
-    email,
-    password,
-    options: { data: { full_name: fullName } },
-  });
-
-  if (error || !data.user) {
-    redirect("/setup?error=signup");
-  }
-
-  await supabase.auth.signOut();
-  redirect("/setup?created=1");
-}
-
 export async function signOut() {
   const supabase = await createClient();
   await supabase.auth.signOut();
