@@ -14,6 +14,9 @@ describe("DEV-01 tenant ready", () => {
   const browserClient = source("lib/supabase/client.ts");
   const studentSelector = source("app/login/student/seleccionar/page.tsx");
   const activation = source("app/login/student/activar/actions.ts");
+  const provisionStudentAccess = source(
+    "supabase/functions/provision-student-access/index.ts",
+  );
   const contextMigration = source(
     "supabase/migrations/20260925230412_dev_01_tenant_ready_context.sql",
   );
@@ -142,6 +145,14 @@ describe("DEV-01 tenant ready", () => {
     );
     expect(hardeningMigration).toContain(
       "return private.has_studio_role",
+    );
+  });
+
+  it("never deletes a reused multi-studio auth account when linking fails", () => {
+    expect(provisionStudentAccess).toContain("if (linkError)");
+    expect(provisionStudentAccess).toContain("if (!reusedExistingAccount)");
+    expect(provisionStudentAccess).toContain(
+      "await adminClient.auth.admin.deleteUser(provisionedUser.id)",
     );
   });
 
