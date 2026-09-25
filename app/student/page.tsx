@@ -369,8 +369,15 @@ export default async function StudentHomePage({
   const medalVisual = medalVisuals[medalKey];
 
   const packageAcquisitions = snapshot.acquisitions.filter((item) => !item.reward_credit_wallet);
+  const giftClassWallets = snapshot.acquisitions.filter(
+    (item) => item.reward_credit_wallet && item.active_now && item.status === "active",
+  );
   const activePackage = packageAcquisitions.find((item) => item.active_now) ?? null;
   const classesAvailable = availableClasses(activePackage);
+  const giftClassesAvailable = giftClassWallets.reduce(
+    (total, item) => total + (item.available_credits ?? 0),
+    0,
+  );
 
   const sortedUpcoming = [...snapshot.upcoming].sort(
     (left, right) => Date.parse(left.starts_at) - Date.parse(right.starts_at),
@@ -466,7 +473,7 @@ export default async function StudentHomePage({
             <Image src="/student/perfil/avatar" alt="" fill unoptimized className="object-cover" />
           </Link>
           <div className="min-w-0">
-            <p className="text-sm text-zinc-400">¡Hola de nuevo!</p>
+            <p className="text-sm text-zinc-400">¡Hola de nuevo! 👋</p>
             <h1 className="truncate text-2xl font-semibold tracking-tight text-white sm:text-3xl">
               {snapshot.profile.first_name}
             </h1>
@@ -543,7 +550,7 @@ export default async function StudentHomePage({
           {nextClass ? (
             <>
               <p className="text-xs font-semibold uppercase tracking-[0.28em] text-fuchsia-100/85">
-                Tu próxima clase
+                Tu próxima clase ✨
               </p>
               <h2 className="mt-3 max-w-[80%] font-serif text-4xl font-semibold leading-[0.98] tracking-tight text-white sm:text-5xl">
                 {nextClass.activity}
@@ -589,7 +596,7 @@ export default async function StudentHomePage({
           ) : activePackage ? (
             <>
               <p className="text-xs font-semibold uppercase tracking-[0.28em] text-fuchsia-100/85">
-                Tu próximo movimiento
+                Tu próximo movimiento 💫
               </p>
               <h2 className="mt-3 max-w-md font-serif text-4xl font-semibold leading-[1.02] text-white sm:text-5xl">
                 Reserva tu próxima clase
@@ -611,7 +618,7 @@ export default async function StudentHomePage({
           ) : (
             <>
               <p className="text-xs font-semibold uppercase tracking-[0.28em] text-fuchsia-100/85">
-                Sigue entrenando
+                Sigue entrenando 🔥
               </p>
               <h2 className="mt-3 max-w-md font-serif text-4xl font-semibold leading-[1.02] text-white sm:text-5xl">
                 Activa tu próximo paquete
@@ -644,7 +651,7 @@ export default async function StudentHomePage({
             </span>
             <span className="text-xl text-zinc-600 transition group-hover:text-fuchsia-300">›</span>
           </div>
-          <p className="mt-4 text-xs text-zinc-500">Nivel técnico</p>
+          <p className="mt-4 text-xs text-zinc-500">Nivel técnico 📈</p>
           <h2 className="mt-1 truncate text-xl font-semibold text-white">{technicalSummary}</h2>
           {primaryTechnicalLevel ? (
             <p className="mt-1 truncate text-xs text-zinc-600">
@@ -684,7 +691,7 @@ export default async function StudentHomePage({
             </span>
             <span className="text-xl text-zinc-600 transition group-hover:text-fuchsia-300">›</span>
           </div>
-          <p className="mt-4 text-xs text-zinc-500">Medalla actual</p>
+          <p className="mt-4 text-xs text-zinc-500">Medalla actual 🏅</p>
           <h2 className="mt-1 truncate text-xl font-semibold text-white">{medalSummary}</h2>
           <p className="mt-1 text-xs text-zinc-600">Beneficios y constancia</p>
         </Link>
@@ -700,7 +707,7 @@ export default async function StudentHomePage({
             href="/student/reservar"
             className="inline-flex min-h-11 items-center gap-2 rounded-full border border-white/10 bg-white/[0.035] px-3 text-sm font-semibold text-zinc-300 transition hover:border-fuchsia-400/35 hover:text-white"
           >
-            Ver calendario <span aria-hidden="true">→</span>
+            📅 Ver calendario <span aria-hidden="true">→</span>
           </Link>
         </div>
 
@@ -746,8 +753,14 @@ export default async function StudentHomePage({
           <div className="min-w-0 flex-1">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="text-base font-semibold text-white">Mi paquete</p>
+                <p className="text-base font-semibold text-white">Mi paquete 🎁</p>
                 <p className="mt-0.5 text-sm text-zinc-400">{packageSummary}</p>
+                {giftClassesAvailable > 0 ? (
+                  <p className="mt-1.5 inline-flex items-center rounded-full border border-emerald-400/20 bg-emerald-400/[0.07] px-2.5 py-1 text-xs font-semibold text-emerald-200">
+                    🎁 {giftClassesAvailable}{" "}
+                    {giftClassesAvailable === 1 ? "clase de regalo" : "clases de regalo"}
+                  </p>
+                ) : null}
               </div>
               <span className="text-xl text-zinc-600 transition group-hover:text-fuchsia-300">
                 ›
@@ -782,7 +795,7 @@ export default async function StudentHomePage({
             <HomeIcon kind="classes" className="h-7 w-7" />
           </span>
           <span className="min-w-0 flex-1">
-            <span className="block text-xs text-zinc-500">Siguiente clase</span>
+            <span className="block text-xs text-zinc-500">Siguiente clase 💃</span>
             <strong className="mt-0.5 block truncate text-base font-semibold text-white">
               {followingClass.activity}
             </strong>
@@ -799,7 +812,7 @@ export default async function StudentHomePage({
           className="group flex min-h-20 items-center justify-between gap-4 rounded-[1.5rem] border border-white/10 bg-[linear-gradient(145deg,#12141d,#0d0f16)] p-4 transition hover:border-fuchsia-400/30"
         >
           <span>
-            <span className="block text-xs text-zinc-500">Siguiente clase</span>
+            <span className="block text-xs text-zinc-500">Siguiente clase 💃</span>
             <strong className="mt-1 block text-base font-semibold text-white">
               ¿Quieres agregar otra?
             </strong>
