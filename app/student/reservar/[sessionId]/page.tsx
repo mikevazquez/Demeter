@@ -64,27 +64,27 @@ export default async function StudentSessionDetailPage({
   const session = data as StudentSession;
   const [{ data: activityStyle }, { data: sessionMeta }, { data: disciplineMeta }] =
     await Promise.all([
-    supabase
-      .from("class_templates")
-      .select("*")
-      .eq("studio_id", membership.studio_id)
-      .eq("discipline_id", session.discipline_id)
-      .eq("name", session.activity)
-      .limit(1)
-      .maybeSingle(),
-    supabase
-      .from("class_sessions")
-      .select("*")
-      .eq("studio_id", membership.studio_id)
-      .eq("id", session.session_id)
-      .maybeSingle(),
-    supabase
-      .from("disciplines")
-      .select("*")
-      .eq("studio_id", membership.studio_id)
-      .eq("id", session.discipline_id)
-      .maybeSingle(),
-  ]);
+      supabase
+        .from("class_templates")
+        .select("*")
+        .eq("studio_id", membership.studio_id)
+        .eq("discipline_id", session.discipline_id)
+        .eq("name", session.activity)
+        .limit(1)
+        .maybeSingle(),
+      supabase
+        .from("class_sessions")
+        .select("*")
+        .eq("studio_id", membership.studio_id)
+        .eq("id", session.session_id)
+        .maybeSingle(),
+      supabase
+        .from("disciplines")
+        .select("*")
+        .eq("studio_id", membership.studio_id)
+        .eq("id", session.discipline_id)
+        .maybeSingle(),
+    ]);
   const activityColor = activityStyle?.color_hex ?? "#FF0A8A";
   const sessionImagePath =
     sessionMeta && typeof sessionMeta.cover_image_path === "string"
