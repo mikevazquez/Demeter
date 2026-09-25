@@ -41,9 +41,10 @@ export async function GET(request: Request) {
   const portal = safePortal(url.searchParams.get("portal"));
   const version = url.searchParams.get("v")?.trim() || "2";
   const startUrl = portal === "admin" ? "/admin" : "/student";
+  const appName = portal === "admin" ? name + " Admin" : name;
 
   const iconQuery = new URLSearchParams({
-    name,
+    name: appName,
     primary,
     logo,
     v: version,
@@ -51,8 +52,8 @@ export async function GET(request: Request) {
 
   const manifest: MetadataRoute.Manifest = {
     id: "/pwa/" + slug + "/" + portal,
-    name,
-    short_name: shortName(name),
+    name: appName,
+    short_name: shortName(appName),
     description:
       portal === "admin"
         ? "Administración y operación de " + name + "."
