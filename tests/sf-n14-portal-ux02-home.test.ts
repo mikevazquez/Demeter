@@ -35,9 +35,9 @@ describe("SF-N14 PORTAL UX-02 home", () => {
     expect(home).toContain("min-h-11");
   });
 
-  it("uses the approved calendar and Tu espacio blocks", () => {
-    expect(home).toContain('data-home-block="week-calendar"');
-    expect(home).toContain("href={`/student/reservar?date=${day.key}`}");
+  it("keeps the calendar in Reservar and leaves Home focused on Tu espacio", () => {
+    expect(home).not.toContain('data-home-block="week-calendar"');
+    expect(home).not.toContain("href={`/student/reservar?date=${day.key}`}");
     expect(home).toContain('data-home-block="space-next-class"');
     expect(home).toContain('data-home-block="package"');
     expect(home).toContain('data-home-block="medal"');
