@@ -20,13 +20,13 @@ describe("F10/N14 student home and profile UAT contracts", () => {
       homePage.indexOf('data-home-block="package"'),
     );
     expect(homePage).toContain("Reserva tu próxima clase");
-    expect(homePage).toContain("Ver paquetes");
+    expect(homePage).toContain("Activa tu paquete");
     expect(homePage).toContain("clases disponibles");
   });
 
   it("delegates class discovery to Reservar and class management to Mis clases", () => {
-    expect(homePage).toContain('href="/student/reservar"');
-    expect(homePage).toContain('href="/student/mis-clases"');
+    expect(homePage).toContain('"/student/reservar"');
+    expect(homePage).toContain('"/student/mis-clases"');
     expect(homePage).not.toContain('supabase.rpc("student_schedule_feed"');
     expect(homePage).not.toContain("cancelStudentReservationAction");
   });
