@@ -67,7 +67,9 @@ export default async function StudentNotificationsPage() {
                 href={`/student/notificaciones/${item.id}`}
                 className={
                   "group grid min-h-20 grid-cols-[auto_1fr_auto] items-start gap-3 px-4 py-4 transition sm:px-5 " +
-                  (item.read_at ? "hover:bg-white/[0.025]" : "bg-white/[0.035] hover:bg-white/[0.05]")
+                  (item.read_at
+                    ? "hover:bg-white/[0.025]"
+                    : "bg-white/[0.035] hover:bg-white/[0.05]")
                 }
               >
                 <span
@@ -82,8 +84,7 @@ export default async function StudentNotificationsPage() {
                   <span className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
                     <strong
                       className={
-                        "text-[15px] text-white " +
-                        (item.read_at ? "font-medium" : "font-semibold")
+                        "text-[15px] text-white " + (item.read_at ? "font-medium" : "font-semibold")
                       }
                     >
                       {item.title}
@@ -115,7 +116,9 @@ export default async function StudentNotificationsPage() {
           <span aria-hidden="true" className="text-3xl text-zinc-600">
             ◇
           </span>
-          <h2 className="mt-3 text-lg font-semibold text-white">Todavía no tienes notificaciones</h2>
+          <h2 className="mt-3 text-lg font-semibold text-white">
+            Todavía no tienes notificaciones
+          </h2>
           <p className="mx-auto mt-1.5 max-w-sm text-sm leading-6 text-zinc-400">
             Cuando Demeter te envíe una confirmación, recordatorio o aviso importante aparecerá
             aquí.
