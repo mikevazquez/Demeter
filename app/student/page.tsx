@@ -228,8 +228,7 @@ export default async function StudentHomePage({
   const fallbackLevelKey = rewardMembershipResult.data?.current_level_key ?? null;
   const fallbackLevel =
     levelDefinitions.find((level) => level.level_key === fallbackLevelKey) ?? null;
-  const rewardOnboarding =
-    (rewardOnboardingResult.data as RewardOnboardingHomeRow | null) ?? null;
+  const rewardOnboarding = (rewardOnboardingResult.data as RewardOnboardingHomeRow | null) ?? null;
   const onboardingSteps = [
     rewardOnboarding?.documents_completed_at,
     rewardOnboarding?.profile_completed_at,
@@ -279,10 +278,7 @@ export default async function StudentHomePage({
   );
   const packageAvailablePercent =
     activePackage && !activePackage.unlimited && activePackage.credit_limit
-      ? Math.min(
-          100,
-          Math.round(((classesAvailable ?? 0) / activePackage.credit_limit) * 100),
-        )
+      ? Math.min(100, Math.round(((classesAvailable ?? 0) / activePackage.credit_limit) * 100))
       : 0;
 
   const sortedUpcoming = [...snapshot.upcoming].sort(
@@ -521,7 +517,10 @@ export default async function StudentHomePage({
         </div>
       </Link>
 
-      <nav aria-label="Tu semana" className="mt-3 flex h-[70px] items-stretch justify-between gap-1.5">
+      <nav
+        aria-label="Tu semana"
+        className="mt-3 flex h-[70px] items-stretch justify-between gap-1.5"
+      >
         {calendarDays.map((dateKey) => {
           const chip = calendarChip(dateKey);
           const isToday = dateKey === today;
@@ -635,7 +634,9 @@ export default async function StudentHomePage({
               <p className="mt-2 text-[25px] font-semibold leading-8">Ilimitado</p>
             ) : activePackage ? (
               <div className="mt-[5px] flex items-end gap-2">
-                <strong className="text-[29px] font-semibold leading-[35px]">{classesAvailable ?? 0}</strong>
+                <strong className="text-[29px] font-semibold leading-[35px]">
+                  {classesAvailable ?? 0}
+                </strong>
                 <span className="pb-[3px] text-[16px] font-semibold leading-5">disponibles</span>
               </div>
             ) : (
@@ -676,7 +677,10 @@ export default async function StudentHomePage({
               }
             >
               <span className="truncate">
-                🎁 {giftClassesAvailable > 0 ? `+${giftClassesAvailable} clases de regalo` : "Sin clases de regalo"}
+                🎁{" "}
+                {giftClassesAvailable > 0
+                  ? `+${giftClassesAvailable} clases de regalo`
+                  : "Sin clases de regalo"}
               </span>
               <span aria-hidden="true" className="text-[16px] leading-none">
                 ›
@@ -717,13 +721,18 @@ export default async function StudentHomePage({
                   />
                 )}
 
-                <span aria-hidden="true" className="absolute bottom-[7px] right-[17px] text-[24px] leading-none text-white">
+                <span
+                  aria-hidden="true"
+                  className="absolute bottom-[7px] right-[17px] text-[24px] leading-none text-white"
+                >
                   ›
                 </span>
               </>
             ) : (
               <>
-                <p className="text-[11px] font-semibold leading-[15px] text-white">Tu primera medalla 🏅</p>
+                <p className="text-[11px] font-semibold leading-[15px] text-white">
+                  Tu primera medalla 🏅
+                </p>
                 <p className="mt-[5px] max-w-[110px] text-[17px] font-semibold leading-[19px] text-white">
                   Desbloquea Bronce
                 </p>
