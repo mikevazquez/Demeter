@@ -83,7 +83,7 @@ export default async function StudentMovementsPage() {
       ) : null}
 
       <section
-        data-movements-block="ledger"
+        data-movements-block="history"
         className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.025]"
       >
         {snapshot.movements.length ? (
