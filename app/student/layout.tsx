@@ -132,7 +132,6 @@ export default async function StudentLayout({ children }: { children: React.Reac
                 </span>
               ) : null}
             </Link>
-
           </div>
         </div>
       </header>
