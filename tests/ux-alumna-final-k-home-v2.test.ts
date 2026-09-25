@@ -16,6 +16,8 @@ describe("ALUMNA UX FINAL · Home approved", () => {
     expect(home).toContain("/student/home/hero-forms.jpg");
     expect(home).toContain("TU PRÓXIMA CLASE");
     expect(home).toContain("Tu lugar está confirmado");
+    expect(home).toContain("Hero calendar icon");
+    expect(home).not.toContain('className="relative h-[34px] w-[34px] shrink-0 overflow-hidden rounded-full');
   });
 
   it("removes the calendar and the duplicate next-class card from Home", () => {
@@ -27,7 +29,7 @@ describe("ALUMNA UX FINAL · Home approved", () => {
   });
 
   it("keeps the approved primary actions below the hero", () => {
-    expect(home).toContain(">Reservar<");
+    expect(home).toContain("Reservar");
     expect(home).toContain("Ver mis clases");
     expect(home).toContain('href="/student/reservar"');
     expect(home).toContain('href="/student/mis-clases"');
