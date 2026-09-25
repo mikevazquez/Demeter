@@ -2,6 +2,7 @@ import { withSupabase } from "npm:@supabase/server@1.7.0";
 import type { SupabaseClient } from "npm:@supabase/supabase-js@2.116.0";
 import { sendPushNotification, WebPushError } from "npm:@mmmike/web-push@1.3.0/send";
 import { sendAsistianWebhook } from "../_shared/asistian-messaging.ts";
+import { sendMetaWhatsAppTemplate } from "../_shared/meta-whatsapp.ts";
 import {
   buildAsistianVariables,
   formatNotificationDateTimeParts,
@@ -630,7 +631,7 @@ async function sendPush(
   };
 }
 
-async function sendWhatsApp(
+async function sendWhatsAppAsistian(
   adminClient: SupabaseClient,
   delivery: DeliveryRow,
   message: RenderedMessage,
@@ -703,6 +704,49 @@ async function sendWhatsApp(
   };
 }
 
+async function sendWhatsAppMeta(
+  adminClient: SupabaseClient,
+  delivery: DeliveryRow,
+  message: RenderedMessage,
+): Promise<AdapterResult> {
+  const result = await sendMetaWhatsAppTemplate({
+    adminClient,
+    studioId: delivery.studio_id,
+    template: message.providerTemplateKey,
+    eventId: delivery.id,
+    recipient: delivery.recipient_snapshot.phone,
+    variables: delivery.template_variables,
+  });
+
+  if (result.status === "accepted") {
+    return {
+      status: "accepted",
+      providerKey: "meta_whatsapp",
+      providerMessageId: result.providerMessageId,
+      httpStatus: result.httpStatus,
+      response: result.responseSnapshot,
+    };
+  }
+
+  if (result.status === "skipped") {
+    return {
+      status: "skipped",
+      providerKey: "meta_whatsapp",
+      errorCode: result.errorCode,
+      httpStatus: result.httpStatus ?? null,
+      response: result.responseSnapshot ?? {},
+    };
+  }
+
+  return {
+    status: result.retryable ? "retry" : "failed",
+    providerKey: "meta_whatsapp",
+    errorCode: result.errorCode,
+    httpStatus: result.httpStatus ?? null,
+    response: result.responseSnapshot ?? {},
+  };
+}
+
 async function sendEmail(): Promise<AdapterResult> {
   return {
     status: "skipped",
@@ -733,7 +777,9 @@ async function runAdapter(
     case "web_push":
       return sendPush(adminClient, delivery, message);
     case "asistian":
-      return sendWhatsApp(adminClient, delivery, message);
+      return sendWhatsAppAsistian(adminClient, delivery, message);
+    case "meta_whatsapp":
+      return sendWhatsAppMeta(adminClient, delivery, message);
     case "email_provider":
       return sendEmail();
     default:
