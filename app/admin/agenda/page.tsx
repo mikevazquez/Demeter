@@ -228,10 +228,9 @@ export default async function AgendaPage({
     supabase
       .from("official_holidays")
       .select(
-        "id,holiday_code,holiday_date,name,theme_key,default_message,source_label,source_url,legal_basis",
+        "id,holiday_code,holiday_date,name,theme_key,default_message,source_label,source_url,legal_basis,is_official",
       )
       .eq("country_code", "MX")
-      .eq("is_official", true)
       .gte("holiday_date", weekStartKey)
       .lte("holiday_date", utcDateKey(weekEnd))
       .order("holiday_date"),
@@ -285,16 +284,30 @@ export default async function AgendaPage({
   const instructorMap = new Map(
     (instructors ?? []).map((item) => [item.id, personMap.get(item.person_id) ?? "Instructor"]),
   );
-  const holidayMap = new Map((officialHolidays ?? []).map((item) => [item.holiday_date, item]));
+  const holidayMap = new Map<
+    string,
+    NonNullable<typeof officialHolidays>[number]
+  >();
+  for (const item of officialHolidays ?? []) {
+    const current = holidayMap.get(item.holiday_date);
+    if (!current || item.is_official) holidayMap.set(item.holiday_date, item);
+  }
   const holidayOverrideMap = new Map(
     (holidayOverrides ?? []).map((item) => [item.holiday_date, item]),
   );
-  const calendarDayMap = new Map<string, { name: string; sourceKind: "official" | "manual" }>(
-    (officialHolidays ?? []).map((item) => [
-      item.holiday_date,
-      { name: item.name, sourceKind: "official" as const },
-    ]),
-  );
+  const calendarDayMap = new Map<
+    string,
+    { name: string; sourceKind: "official" | "observance" | "manual" }
+  >();
+  for (const item of officialHolidays ?? []) {
+    const current = calendarDayMap.get(item.holiday_date);
+    if (!current || item.is_official) {
+      calendarDayMap.set(item.holiday_date, {
+        name: item.name,
+        sourceKind: item.is_official ? "official" : "observance",
+      });
+    }
+  }
   for (const override of holidayOverrides ?? []) {
     if (override.source_kind !== "manual") continue;
     calendarDayMap.set(override.holiday_date, {
@@ -504,7 +517,9 @@ export default async function AgendaPage({
                       ? "Especial"
                       : holiday.sourceKind === "manual"
                         ? "Especial"
-                        : "Festivo"}
+                        : holiday.sourceKind === "observance"
+                          ? "Fecha"
+                          : "Festivo"}
                 </small>
               ) : null}
             </Link>
@@ -518,7 +533,7 @@ export default async function AgendaPage({
         <div className="notice error">No encontramos ese festivo en el catálogo oficial.</div>
       ) : null}
 
-      {selectedHoliday ? (
+      {selectedHoliday?.is_official ? (
         <HolidayConfigurator
           holiday={selectedHoliday}
           operationMode={selectedHolidayMode}
