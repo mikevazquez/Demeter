@@ -158,11 +158,15 @@ export const getStudentPortalContext = cache(async () => {
   const supabase = await createClient();
   const {
     data: { user },
+    error: authError,
   } = await supabase.auth.getUser();
 
+  if (authError && (authError.status === 0 || authError.status >= 500)) {
+    throw new Error("student_auth_temporarily_unavailable");
+  }
   if (!user) redirect("/login/student");
 
-  const [{ data: account }, { data: membership }] = await Promise.all([
+  const [accountResult, membershipResult] = await Promise.all([
     supabase
       .from("user_accounts")
       .select("status, must_change_password")
@@ -178,18 +182,31 @@ export const getStudentPortalContext = cache(async () => {
       .maybeSingle(),
   ]);
 
+  if (accountResult.error || membershipResult.error) {
+    throw new Error("student_access_lookup_temporarily_unavailable");
+  }
+
+  const account = accountResult.data;
+  const membership = membershipResult.data;
+
   if (!account || account.status !== "active" || !membership) {
     redirect("/login/student?error=access");
   }
 
   if (account.must_change_password) redirect("/login/student/activar");
 
-  const [{ data: snapshot, error }, { data: studio }] = await Promise.all([
+  const [snapshotResult, studioResult] = await Promise.all([
     supabase.rpc("student_portal_snapshot"),
     supabase.from("studios").select("name,timezone").eq("id", membership.studio_id).maybeSingle(),
   ]);
 
-  if (error || !snapshot || !studio) redirect("/login/student?error=access");
+  if (snapshotResult.error || studioResult.error) {
+    throw new Error("student_portal_temporarily_unavailable");
+  }
+
+  const snapshot = snapshotResult.data;
+  const studio = studioResult.data;
+  if (!snapshot || !studio) redirect("/login/student?error=access");
 
   const baseSnapshot = snapshot as StudentSnapshot;
   const productIds = [...new Set(baseSnapshot.acquisitions.map((item) => item.product_id))];
