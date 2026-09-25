@@ -19,8 +19,9 @@ describe("ALUMNA UX FINAL K · Home V2", () => {
     expect(home).toContain("Tu lugar está confirmado");
   });
 
-  it("matches the approved Home hierarchy", () => {
-    expect(home).toContain('data-home-block="week-calendar"');
+  it("matches the approved Home hierarchy without duplicating the reservation calendar", () => {
+    expect(home).not.toContain('data-home-block="week-calendar"');
+    expect(home).not.toContain("weekDays(");
     expect(home).toContain('data-home-block="space-next-class"');
     expect(home).toContain('data-home-block="package"');
     expect(home).toContain('data-home-block="medal"');
