@@ -4,7 +4,12 @@ import { redirect } from "next/navigation";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { SessionOperations } from "../../hoy/SessionOperations";
-import { cancelSession, setMinimumOverride, updateSession } from "./actions";
+import {
+  cancelSession,
+  setMinimumOverride,
+  updateSession,
+  updateSessionArtwork,
+} from "./actions";
 
 type EligibilityResult = {
   eligible?: boolean;
@@ -70,9 +75,7 @@ export default async function SessionDetailPage({
 
   const { data: session } = await supabase
     .from("class_sessions")
-    .select(
-      "id,template_id,starts_at,ends_at,capacity,status,notes,space_id,instructor_id,recurring_schedule_id,is_schedule_exception,requires_resource,resource_uses_per_item,minimum_reservations_enabled,minimum_reservations,minimum_review_minutes_before,minimum_override_allowed,minimum_override,minimum_review_status,minimum_review_at,minimum_reviewed_at,minimum_reservations_at_review,minimum_cancelled_at,minimum_cancelled_reservations,minimum_credits_returned",
-    )
+    .select("*")
     .eq("id", sessionId)
     .eq("studio_id", studio.id)
     .single();
@@ -93,7 +96,7 @@ export default async function SessionDetailPage({
   ] = await Promise.all([
     supabase
       .from("class_templates")
-      .select("name,discipline_id,duration_minutes,credit_cost,color_hex")
+      .select("*")
       .eq("id", session.template_id)
       .single(),
     supabase
@@ -122,6 +125,15 @@ export default async function SessionDetailPage({
       .in("status", ["reserved", "attended", "no_show"])
       .order("booked_at"),
   ]);
+
+  const sessionImagePath =
+    typeof session.cover_image_path === "string" ? session.cover_image_path : null;
+  const activityImagePath =
+    template && typeof template.cover_image_path === "string" ? template.cover_image_path : null;
+  const effectiveImagePath = sessionImagePath ?? activityImagePath;
+  const effectiveImageUrl = effectiveImagePath
+    ? supabase.storage.from("class-artwork").getPublicUrl(effectiveImagePath).data.publicUrl
+    : null;
 
   const timeZone = studio.timezone ?? "America/Mexico_City";
   const personMap = new Map(
@@ -324,12 +336,17 @@ export default async function SessionDetailPage({
     minimum_review_already_completed: "La revisión automática de esta sesión ya terminó.",
     minimum_rule_disabled: "Esta sesión no tiene activa la regla de mínimo de reservas.",
     minimum_override_not_allowed: "La actividad no permite excepciones para esta regla.",
+    image_required: "Selecciona una imagen o marca la opción para quitar la imagen actual.",
+    image_type: "Usa una imagen JPG, PNG o WebP.",
+    image_size: "La imagen debe pesar máximo 8 MB.",
+    image_upload: "No pudimos guardar la imagen. Intenta nuevamente.",
   };
 
   const showManagementNotice =
     query.created === "edit" ||
     query.created === "cancel-session" ||
-    query.created === "minimum-override";
+    query.created === "minimum-override" ||
+    query.created === "image";
 
   const { data: sessionResourceRows } = session.requires_resource
     ? await supabase
@@ -413,6 +430,71 @@ export default async function SessionDetailPage({
           <small>Ausencias registradas</small>
         </article>
       </section>
+
+      {canEdit ? (
+        <section className="panel">
+          <p className="eyebrow">IMAGEN EN PORTAL</p>
+          <h2>Imagen de esta clase</h2>
+          <p>
+            Opcional. Si esta sesión no tiene una imagen propia, usará la imagen de la actividad y,
+            si tampoco existe, Demeter mostrará un fondo automático.
+          </p>
+
+          <div
+            role={effectiveImageUrl ? "img" : undefined}
+            aria-label={effectiveImageUrl ? "Imagen visible actualmente para esta clase" : undefined}
+            style={{
+              minHeight: 180,
+              marginTop: 14,
+              borderRadius: 18,
+              border: "1px solid rgba(255,255,255,.1)",
+              background: effectiveImageUrl
+                ? `linear-gradient(180deg, transparent, rgba(7,8,12,.45)), url("${effectiveImageUrl}") center / cover`
+                : `radial-gradient(circle at 75% 28%, rgba(255,10,138,.22), transparent 34%), linear-gradient(145deg,#171421,#0d1119)`,
+            }}
+          >
+            {!effectiveImageUrl ? (
+              <div
+                style={{
+                  minHeight: 180,
+                  display: "grid",
+                  placeItems: "center",
+                  color: "#ff69bd",
+                  fontWeight: 800,
+                }}
+              >
+                ✨ Fondo automático de Demeter
+              </div>
+            ) : null}
+          </div>
+
+          <form action={updateSessionArtwork} className="compact-form" style={{ marginTop: 14 }}>
+            <input type="hidden" name="session_id" value={sessionId} />
+            <input type="hidden" name="return_to" value={returnTo} />
+
+            <label>
+              <span>{sessionImagePath ? "Reemplazar imagen de esta sesión" : "Subir imagen específica"}</span>
+              <input
+                name="cover_image"
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+              />
+              <small>JPG, PNG o WebP · máximo 8 MB · recomendado horizontal.</small>
+            </label>
+
+            {sessionImagePath ? (
+              <label style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <input type="checkbox" name="remove_cover_image" value="true" />
+                <span>Quitar la imagen específica y volver a la imagen de la actividad</span>
+              </label>
+            ) : null}
+
+            <button className="secondary-button" type="submit">
+              Guardar imagen
+            </button>
+          </form>
+        </section>
+      ) : null}
 
       {session.minimum_reservations_enabled ? (
         <section
