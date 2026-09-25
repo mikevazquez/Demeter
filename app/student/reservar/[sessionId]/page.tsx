@@ -62,7 +62,8 @@ export default async function StudentSessionDetailPage({
   if (error || !data) notFound();
 
   const session = data as StudentSession;
-  const [{ data: activityStyle }, { data: sessionMeta }] = await Promise.all([
+  const [{ data: activityStyle }, { data: sessionMeta }, { data: disciplineMeta }] =
+    await Promise.all([
     supabase
       .from("class_templates")
       .select("*")
@@ -77,6 +78,12 @@ export default async function StudentSessionDetailPage({
       .eq("studio_id", membership.studio_id)
       .eq("id", session.session_id)
       .maybeSingle(),
+    supabase
+      .from("disciplines")
+      .select("*")
+      .eq("studio_id", membership.studio_id)
+      .eq("id", session.discipline_id)
+      .maybeSingle(),
   ]);
   const activityColor = activityStyle?.color_hex ?? "#FF0A8A";
   const sessionImagePath =
@@ -87,7 +94,11 @@ export default async function StudentSessionDetailPage({
     activityStyle && typeof activityStyle.cover_image_path === "string"
       ? activityStyle.cover_image_path
       : null;
-  const coverImagePath = sessionImagePath ?? activityImagePath;
+  const disciplineImagePath =
+    disciplineMeta && typeof disciplineMeta.cover_image_path === "string"
+      ? disciplineMeta.cover_image_path
+      : null;
+  const coverImagePath = sessionImagePath ?? activityImagePath ?? disciplineImagePath;
   const coverImageUrl = coverImagePath
     ? supabase.storage.from("class-artwork").getPublicUrl(coverImagePath).data.publicUrl
     : null;
