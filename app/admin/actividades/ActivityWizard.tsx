@@ -71,12 +71,14 @@ export function ActivityWizard({
   initial,
   mode,
   saveError = false,
+  coverImageUrl = null,
 }: {
   instructors: Option[];
   spaces: Option[];
   initial?: ActivityDraft;
   mode: "create" | "edit";
   saveError?: boolean;
+  coverImageUrl?: string | null;
 }) {
   const [step, setStep] = useState(saveError ? 3 : 0);
   const [message, setMessage] = useState("");
@@ -757,6 +759,54 @@ export function ActivityWizard({
             </article>
           </div>
 
+          <section className="activities-image-card">
+            <div className="activities-image-copy">
+              <span>IMAGEN DE LA ACTIVIDAD</span>
+              <strong>Imagen opcional para el portal de alumnas</strong>
+              <p>
+                Se usará en Reservar y en el detalle de la clase. Si no subes una imagen, Demeter
+                mostrará un fondo visual con el color de la actividad.
+              </p>
+            </div>
+
+            {coverImageUrl ? (
+              <div
+                className="activities-image-preview"
+                style={{ backgroundImage: `linear-gradient(180deg, transparent, rgba(7,8,12,.38)), url("${coverImageUrl}")` }}
+                role="img"
+                aria-label="Imagen actual de la actividad"
+              />
+            ) : (
+              <div className="activities-image-preview is-empty" aria-hidden="true">
+                <span>✨</span>
+                <small>Sin imagen personalizada</small>
+              </div>
+            )}
+
+            <label className="activities-field activities-field-wide">
+              <span>{coverImageUrl ? "Reemplazar imagen" : "Subir imagen"} (opcional)</span>
+              <input
+                form="activity-save-form"
+                name="cover_image"
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+              />
+              <small>JPG, PNG o WebP · máximo 8 MB. Recomendado: formato horizontal.</small>
+            </label>
+
+            {coverImageUrl ? (
+              <label className="activities-image-remove">
+                <input
+                  form="activity-save-form"
+                  type="checkbox"
+                  name="remove_cover_image"
+                  value="true"
+                />
+                <span>Quitar imagen actual y usar el fondo automático</span>
+              </label>
+            ) : null}
+          </section>
+
           <div className="activities-ready-card">
             <span>✓</span>
             <p>
@@ -788,7 +838,7 @@ export function ActivityWizard({
             Continuar
           </button>
         ) : (
-          <form action={saveActivity}>
+          <form id="activity-save-form" action={saveActivity}>
             <input type="hidden" name="payload" value={JSON.stringify(draft)} />
             <SaveActivityButton mode={mode} />
           </form>
