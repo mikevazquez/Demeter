@@ -7,50 +7,79 @@ function source(path: string) {
   return readFileSync(join(process.cwd(), path), "utf8");
 }
 
-describe("ALUMNA UX FINAL K · Home V2", () => {
+describe("ALUMNA UX FINAL · Home approved", () => {
   const home = source("app/student/page.tsx");
+  const nav = source("app/student/StudentNav.tsx");
 
-  it("uses one dominant dynamic hero", () => {
+  it("uses the approved dynamic hero with the fixed 3D forms artwork", () => {
     expect(home).toContain('data-home-block="next-class"');
-    expect(home).toContain("h-[174px]");
-    expect(home).toContain("Reserva tu próxima clase");
-    expect(home).toContain("Activa tu paquete");
+    expect(home).toContain("/student/home/hero-forms.jpg");
+    expect(home).toContain("TU PRÓXIMA CLASE");
     expect(home).toContain("Tu lugar está confirmado");
   });
 
-  it("matches the approved Home hierarchy without duplicating the reservation calendar", () => {
-    expect(home).not.toContain('data-home-block="week-calendar"');
-    expect(home).not.toContain("weekDays(");
-    expect(home).toContain('data-home-block="space-next-class"');
+  it("removes the calendar and the duplicate next-class card from Home", () => {
+    expect(home).not.toContain('aria-label="Tu semana"');
+    expect(home).not.toContain("calendarDays");
+    expect(home).not.toContain("calendarChip");
+    expect(home).not.toContain('data-home-block="space-next-class"');
+    expect(home).not.toContain("Tu espacio");
+  });
+
+  it("keeps the approved primary actions below the hero", () => {
+    expect(home).toContain(">Reservar<");
+    expect(home).toContain("Ver mis clases");
+    expect(home).toContain('href="/student/reservar"');
+    expect(home).toContain('href="/student/mis-clases"');
+  });
+
+  it("uses Lo importante para ti with the four approved cards", () => {
+    expect(home).toContain("Lo importante para ti");
     expect(home).toContain('data-home-block="package"');
     expect(home).toContain('data-home-block="medal"');
-    expect(home).toContain("Tu espacio");
+    expect(home).toContain('data-home-block="evaluation"');
+    expect(home).toContain('data-home-block="benefits"');
   });
 
-  it("keeps Medal visible without mixing it with technical level", () => {
-    expect(home).toContain("Medalla actual");
-    expect(home).not.toContain('data-home-block="technical-level"');
-    expect(home).not.toContain("Tu progreso");
-  });
-
-  it("keeps urgent notices actionable without a notification card", () => {
-    expect(home).toContain("urgentNotificationTypes");
-    expect(home).toContain("Necesita tu atención");
-    expect(home).not.toContain(">Avisos<");
-    expect(home).not.toContain("Notificaciones de Demeter");
-  });
-
-  it("surfaces gift classes directly on the package card", () => {
+  it("shows real package and gift-credit information", () => {
     expect(home).toContain("giftClassWallets");
     expect(home).toContain("giftClassesAvailable");
+    expect(home).toContain("packageAvailablePercent");
     expect(home).toContain("clases de regalo");
   });
 
-  it("uses the approved Demeter visual cues", () => {
+  it("uses the approved first-medal state with real onboarding progress", () => {
+    expect(home).toContain("Tu primera medalla 🏅");
+    expect(home).toContain("Desbloquea Bronce");
+    expect(home).toContain("onboardingCompleted");
+    expect(home).toContain("onboardingPercent");
+    expect(home).toContain("/student/home/bronze-medal.jpg");
+    expect(home).not.toContain('"Por activar"');
+  });
+
+  it("keeps technical evaluation separate from rewards", () => {
+    expect(home).toContain("Diagnóstico");
+    expect(home).toContain("evaluationHref");
+    expect(home).not.toContain('data-home-block="technical-level"');
+  });
+
+  it("surfaces benefits from reward-level data instead of hardcoding entitlement", () => {
+    expect(home).toContain("waitlist_priority");
+    expect(home).toContain("private_discount_pct");
+    expect(home).toContain("event_discount_pct");
+    expect(home).toContain("monthly_guest_invites");
+    expect(home).toContain("benefitItems");
+  });
+
+  it("lets the mobile shell use the wider approved composition", () => {
+    expect(home).toContain('sm:max-w-[430px]');
+    expect(nav).toContain('max-w-[406px]');
+    expect(nav).not.toContain('max-w-[365px]');
+  });
+
+  it("keeps Demeter branding and no public Studio Flow branding", () => {
+    expect(home).toContain("D E M E T E R");
     expect(home).toContain("Hola, {snapshot.profile.first_name} 👋");
-    expect(home).toContain("Mi paquete 🎁");
-    expect(home).toContain("Medalla actual 🏅");
-    expect(home).toContain("bg-[#ff0a8a]");
     expect(home).not.toContain("STUDIO FLOW");
   });
 });
