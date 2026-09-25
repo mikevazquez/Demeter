@@ -13,7 +13,7 @@ describe("SF-N14 PORTAL UX-02 home", () => {
   const nav = source("app/student/StudentNav.tsx");
 
   it("covers the approved package and next-class states", () => {
-    expect(home).toContain("Tu próxima clase");
+    expect(home).toContain('data-home-block="next-class"');
     expect(home).toContain("Reserva tu próxima clase");
     expect(home).toContain("Activa tu paquete");
     expect(home).toContain('"/student/paquete"');
@@ -21,7 +21,7 @@ describe("SF-N14 PORTAL UX-02 home", () => {
   });
 
   it("keeps unlimited packages distinct from class balances", () => {
-    expect(home).toContain('"Ilimitado"');
+    expect(home).toContain(">Ilimitado</p>");
     expect(home).toContain("clases disponibles");
     expect(home).not.toContain("Progreso del paquete");
   });
@@ -30,14 +30,14 @@ describe("SF-N14 PORTAL UX-02 home", () => {
     expect(home.indexOf('data-home-block="next-class"')).toBeLessThan(
       home.indexOf('data-home-block="package"'),
     );
-    expect(home).toContain("min-h-[230px]");
-    expect(home).toContain("shadow-[0_22px_70px_rgba(255,10,138,0.12)]");
-    expect(home).toContain("min-h-11");
+    expect(home).toContain("h-[174px]");
+    expect(home).toContain("rounded-[24px]");
+    expect(home).toContain("border-[rgba(247,103,220,.55)]");
   });
 
-  it("keeps the calendar in Reservar and leaves Home focused on Tu espacio", () => {
-    expect(home).not.toContain('data-home-block="week-calendar"');
-    expect(home).not.toContain("href={`/student/reservar?date=${day.key}`}");
+  it("keeps the compact Figma week strip above Tu espacio", () => {
+    expect(home).toContain('aria-label="Tu semana"');
+    expect(home).toContain('href={"/student/reservar?date=" + dateKey}');
     expect(home).toContain('data-home-block="space-next-class"');
     expect(home).toContain('data-home-block="package"');
     expect(home).toContain('data-home-block="medal"');
@@ -57,9 +57,10 @@ describe("SF-N14 PORTAL UX-02 home", () => {
     }
     expect(nav).not.toContain('label: "Retos"');
     expect(nav).toContain("grid-cols-4");
-    expect(nav).toContain('emoji: "🏠"');
-    expect(nav).toContain('emoji: "📅"');
-    expect(nav).toContain('emoji: "🎟️"');
-    expect(nav).toContain('emoji: "👤"');
+    expect(nav).toContain('icon: "home"');
+    expect(nav).toContain('icon: "calendar"');
+    expect(nav).toContain('icon: "ticket"');
+    expect(nav).toContain('icon: "profile"');
+    expect(nav).toContain("max-w-[365px]");
   });
 });
