@@ -49,7 +49,7 @@ export default async function StudentSessionDetailPage({
   const query = await searchParams;
   const rewardMode = query.credit === "reward";
   const rewardSuffix = rewardMode ? "&credit=reward" : "";
-  const { supabase, studio, membership } = await getStudentPortalContext();
+  const { supabase, studio, membership, snapshot } = await getStudentPortalContext();
   const { data, error } = await supabase.rpc("student_session_detail", {
     target_session_id: sessionId,
   });
@@ -57,15 +57,35 @@ export default async function StudentSessionDetailPage({
   if (error || !data) notFound();
 
   const session = data as StudentSession;
-  const { data: activityStyle } = await supabase
-    .from("class_templates")
-    .select("color_hex")
-    .eq("studio_id", membership.studio_id)
-    .eq("discipline_id", session.discipline_id)
-    .eq("name", session.activity)
-    .limit(1)
-    .maybeSingle();
+  const [{ data: activityStyle }, { data: sessionMeta }] = await Promise.all([
+    supabase
+      .from("class_templates")
+      .select("*")
+      .eq("studio_id", membership.studio_id)
+      .eq("discipline_id", session.discipline_id)
+      .eq("name", session.activity)
+      .limit(1)
+      .maybeSingle(),
+    supabase
+      .from("class_sessions")
+      .select("*")
+      .eq("studio_id", membership.studio_id)
+      .eq("id", session.session_id)
+      .maybeSingle(),
+  ]);
   const activityColor = activityStyle?.color_hex ?? "#FF0A8A";
+  const sessionImagePath =
+    sessionMeta && typeof sessionMeta.cover_image_path === "string"
+      ? sessionMeta.cover_image_path
+      : null;
+  const activityImagePath =
+    activityStyle && typeof activityStyle.cover_image_path === "string"
+      ? activityStyle.cover_image_path
+      : null;
+  const coverImagePath = sessionImagePath ?? activityImagePath;
+  const coverImageUrl = coverImagePath
+    ? supabase.storage.from("class-artwork").getPublicUrl(coverImagePath).data.publicUrl
+    : null;
   const { data: waitlistData } = await supabase.rpc("student_waitlist_feed");
   const waitlisted = ((waitlistData ?? []) as StudentWaitlistItem[]).some(
     (item) => item.session_id === session.session_id && item.status === "active",
@@ -96,6 +116,11 @@ export default async function StudentSessionDetailPage({
     ),
     0,
   );
+  const activePackage =
+    snapshot.acquisitions.find((item) => item.active_now && !item.reward_credit_wallet) ?? null;
+  const giftClassesAvailable = snapshot.acquisitions
+    .filter((item) => item.active_now && item.reward_credit_wallet && item.status === "active")
+    .reduce((total, item) => total + (item.available_credits ?? 0), 0);
 
   return (
     <main className="mx-auto max-w-2xl space-y-4 pb-4">
@@ -117,68 +142,99 @@ export default async function StudentSessionDetailPage({
       ) : null}
 
       <section
-        className="overflow-hidden rounded-3xl border bg-white/[0.03]"
-        style={{ borderColor: `${activityColor}55` }}
+        className="overflow-hidden rounded-[1.7rem] border bg-[#0f1118]"
+        style={{ borderColor: `${activityColor}66` }}
       >
         <div
-          className="p-5 sm:p-6"
+          className="relative min-h-[300px] p-5 sm:min-h-[360px] sm:p-6"
           style={{
-            background: `linear-gradient(135deg, ${activityColor}29 0%, rgba(255,255,255,0.035) 48%, transparent 100%)`,
+            background: coverImageUrl
+              ? `linear-gradient(180deg, rgba(7,8,12,.08) 10%, rgba(7,8,12,.78) 88%), url("${coverImageUrl}") center / cover`
+              : `radial-gradient(circle at 78% 24%, ${activityColor}77, transparent 30%), linear-gradient(145deg, ${activityColor}38, #0b0d13 68%)`,
           }}
         >
-          <p
-            className="text-[10px] font-semibold uppercase tracking-[0.22em]"
-            style={{ color: activityColor }}
-          >
-            {session.discipline}
-          </p>
-          <h1 className="mt-1 text-2xl font-semibold text-white sm:text-3xl">{session.activity}</h1>
-          <p className="mt-2 text-sm text-zinc-300">
-            {formatDateTime(session.starts_at, studio.timezone)}
-            {durationMinutes ? ` · ${durationMinutes} min` : ""}
-          </p>
+          <div className="absolute inset-x-0 bottom-0 p-5 sm:p-6">
+            <span
+              className="inline-flex rounded-full border px-3 py-1 text-xs font-semibold"
+              style={{
+                borderColor: `${activityColor}88`,
+                backgroundColor: `${activityColor}33`,
+                color: "#fff",
+              }}
+            >
+              {session.discipline}
+            </span>
+            <h1 className="mt-3 text-3xl font-semibold tracking-tight text-white sm:text-4xl">
+              {session.activity} ✨
+            </h1>
+            <p className="mt-2 text-sm text-zinc-200">
+              {formatDateTime(session.starts_at, studio.timezone)}
+            </p>
+          </div>
         </div>
 
-        <dl className="grid grid-cols-2 gap-px bg-white/10">
-          <div className="bg-[#111218] px-4 py-3">
-            <dt className="text-[10px] uppercase tracking-[0.14em] text-zinc-500">Coach</dt>
-            <dd className="mt-1 text-xs font-semibold text-white">
+        <div className="grid grid-cols-2 gap-2 p-3 sm:grid-cols-4 sm:p-4">
+          <div className="rounded-2xl border border-white/10 bg-white/[0.025] px-3 py-3">
+            <p className="text-xs text-zinc-500">Coach</p>
+            <p className="mt-1 truncate text-sm font-semibold text-white">
               {session.coach ?? "Por confirmar"}
-            </dd>
+            </p>
           </div>
-          <div className="bg-[#111218] px-4 py-3">
-            <dt className="text-[10px] uppercase tracking-[0.14em] text-zinc-500">Espacio</dt>
-            <dd className="mt-1 text-xs font-semibold text-white">
+          <div className="rounded-2xl border border-white/10 bg-white/[0.025] px-3 py-3">
+            <p className="text-xs text-zinc-500">Duración</p>
+            <p className="mt-1 text-sm font-semibold text-white">{durationMinutes} min</p>
+          </div>
+          <div className="rounded-2xl border border-white/10 bg-white/[0.025] px-3 py-3">
+            <p className="text-xs text-zinc-500">Espacio</p>
+            <p className="mt-1 truncate text-sm font-semibold text-white">
               {[session.location, session.space].filter(Boolean).join(" · ") || "Estudio"}
-            </dd>
+            </p>
           </div>
-          <div className="bg-[#111218] px-4 py-3">
-            <dt className="text-xs uppercase tracking-[0.12em] text-zinc-500">Disponibilidad</dt>
-            <dd className="mt-1 text-sm font-semibold text-white">
+          <div className="rounded-2xl border border-white/10 bg-white/[0.025] px-3 py-3">
+            <p className="text-xs text-zinc-500">Disponibilidad</p>
+            <p className="mt-1 text-sm font-semibold text-white">
               {availabilityCopy(session.spots_available)}
-            </dd>
+            </p>
           </div>
-          <div className="bg-[#111218] px-4 py-3">
-            <dt className="text-xs uppercase tracking-[0.12em] text-zinc-500">Tu acceso</dt>
-            <dd className="mt-1 text-sm font-semibold text-white">
-              {session.eligibility?.unlimited
-                ? "Incluida en tu paquete ilimitado"
-                : `${session.credit_cost} ${session.credit_cost === 1 ? "clase" : "clases"} de tu paquete`}
-            </dd>
-          </div>
-        </dl>
+        </div>
 
         {session.description ? (
           <div className="border-t border-white/10 px-5 py-4">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-zinc-500">
-              Sobre esta clase
-            </p>
-            <p className="mt-2 whitespace-pre-line text-xs leading-5 text-zinc-400">
+            <p className="text-xs font-semibold text-zinc-500">Sobre esta clase</p>
+            <p className="mt-2 whitespace-pre-line text-sm leading-6 text-zinc-300">
               {session.description}
             </p>
           </div>
         ) : null}
       </section>
+
+      {activePackage || giftClassesAvailable > 0 ? (
+        <section className="relative overflow-hidden rounded-[1.5rem] border border-fuchsia-400/30 bg-[radial-gradient(circle_at_85%_20%,rgba(255,10,138,.22),transparent_35%),linear-gradient(145deg,#261023,#121018)] p-5">
+          <div className="relative">
+            <p className="text-xs font-semibold text-fuchsia-200">Mi paquete 🎁</p>
+            <h2 className="mt-1 text-xl font-semibold text-white">
+              {activePackage?.unlimited
+                ? "Clases ilimitadas"
+                : activePackage
+                  ? `${activePackage.available_credits ?? 0} clases disponibles`
+                  : "Clases extra disponibles"}
+            </h2>
+            {giftClassesAvailable > 0 ? (
+              <p className="mt-2 inline-flex rounded-full border border-emerald-400/20 bg-emerald-400/[0.08] px-3 py-1 text-xs font-semibold text-emerald-200">
+                🎁 {giftClassesAvailable}{" "}
+                {giftClassesAvailable === 1 ? "clase de regalo" : "clases de regalo"}
+              </p>
+            ) : null}
+            <p className="mt-3 text-sm text-zinc-400">
+              {rewardMode
+                ? `Esta reserva usará ${session.credit_cost} ${session.credit_cost === 1 ? "clase extra" : "clases extra"}.`
+                : session.eligibility?.unlimited
+                  ? "Esta clase está incluida en tu paquete ilimitado."
+                  : `Esta reserva utiliza ${session.credit_cost} ${session.credit_cost === 1 ? "clase" : "clases"}.`}
+            </p>
+          </div>
+        </section>
+      ) : null}
 
       {alreadyReserved ? (
         <section className="rounded-3xl border border-emerald-500/20 bg-emerald-500/[0.07] p-5">
