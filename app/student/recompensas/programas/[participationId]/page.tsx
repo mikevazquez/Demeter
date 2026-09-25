@@ -98,7 +98,7 @@ export default async function StudentProgramProgressPage({
           href="/student/recompensas"
           className="text-xs font-semibold text-fuchsia-300 transition hover:text-fuchsia-200"
         >
-          ← Mi progreso
+          ← Medallas y beneficios
         </Link>
         <div className="mt-4 flex items-start justify-between gap-3">
           <div>

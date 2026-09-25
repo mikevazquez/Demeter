@@ -22,6 +22,7 @@ function notificationLabel(type: string) {
     case "class_reminder":
       return "Recordatorio";
     case "class_cancelled_student":
+    case "session_minimum_cancelled":
       return "Clase cancelada";
     case "class_rescheduled":
       return "Cambio de horario";
@@ -34,7 +35,27 @@ function notificationLabel(type: string) {
     case "evaluation_completed":
       return "Resultado disponible";
     default:
-      return "Notificación";
+      return "Aviso";
+  }
+}
+
+function notificationAction(type: string) {
+  switch (type) {
+    case "reservation_confirmed":
+    case "class_reminder":
+    case "class_rescheduled":
+    case "waitlist_promoted":
+      return { href: "/student/mis-clases", label: "Ver mis clases" };
+    case "reservation_cancelled":
+    case "class_cancelled_student":
+    case "session_minimum_cancelled":
+      return { href: "/student/reservar", label: "Buscar otra clase" };
+    case "evaluation_invitation":
+    case "evaluation_scheduled":
+    case "evaluation_completed":
+      return { href: "/student/evaluaciones", label: "Ver nivel técnico" };
+    default:
+      return null;
   }
 }
 
@@ -64,29 +85,28 @@ export default async function StudentNotificationDetailPage({
   const className = payload.activity ?? payload.class_name ?? null;
   const rawStartsAt = payload.starts_at ?? payload.session_starts_at ?? null;
   const startsAt = rawStartsAt ? formatDateTime(rawStartsAt, studio.timezone) : null;
+  const action = notificationAction(notification.notification_type);
 
   return (
     <main className="mx-auto max-w-xl space-y-4 pb-6">
       <Link
         href="/student/notificaciones"
-        className="inline-flex items-center text-xs font-semibold text-zinc-400 transition hover:text-white"
+        className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-zinc-400 transition hover:text-white"
       >
-        ← Notificaciones
+        <span aria-hidden="true">←</span>
+        Notificaciones
       </Link>
 
-      <section className="relative overflow-hidden rounded-[28px] border border-fuchsia-500/30 bg-[radial-gradient(circle_at_88%_0%,rgba(236,72,153,0.17),transparent_38%),rgba(255,255,255,0.025)] p-5 shadow-[0_0_32px_rgba(236,72,153,0.07)]">
-        <span
-          aria-hidden="true"
-          className="absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-fuchsia-500 to-violet-500"
-        />
-        <span className="inline-flex rounded-full border border-fuchsia-400/25 bg-fuchsia-400/[0.08] px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.16em] text-fuchsia-200">
+      <section className="student-card p-5 sm:p-6">
+        <span className="inline-flex rounded-full border border-white/10 bg-white/[0.035] px-2.5 py-1 text-xs font-semibold text-zinc-400">
           {notificationLabel(notification.notification_type)}
         </span>
+
         <h1 className="mt-4 text-2xl font-semibold tracking-tight text-white">
           {notification.title}
         </h1>
         <p className="mt-2 text-sm leading-6 text-zinc-300">{notification.body}</p>
-        <p className="mt-3 text-[10px] text-zinc-600">
+        <p className="mt-3 text-xs text-zinc-600">
           {formatDateTime(notification.created_at, studio.timezone)}
         </p>
 
@@ -94,15 +114,13 @@ export default async function StudentNotificationDetailPage({
           <div className="mt-5 grid gap-2">
             {className ? (
               <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3">
-                <p className="text-[10px] uppercase tracking-[0.16em] text-zinc-500">Clase</p>
+                <p className="text-xs font-medium text-zinc-500">Clase</p>
                 <p className="mt-1 text-sm font-semibold text-white">{className}</p>
               </div>
             ) : null}
             {startsAt ? (
               <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3">
-                <p className="text-[10px] uppercase tracking-[0.16em] text-zinc-500">
-                  Fecha y hora
-                </p>
+                <p className="text-xs font-medium text-zinc-500">Fecha y hora</p>
                 <p className="mt-1 text-sm font-semibold text-white">{startsAt}</p>
               </div>
             ) : null}
@@ -112,9 +130,17 @@ export default async function StudentNotificationDetailPage({
         {payload.credit_restored !== undefined ? (
           <div className="mt-5 rounded-2xl border border-emerald-400/25 bg-emerald-400/[0.06] p-4">
             <p className="text-sm font-semibold text-emerald-200">
-              {payload.credit_restored ? "Tu crédito fue restaurado." : "Tu reserva fue liberada."}
+              {payload.credit_restored
+                ? "✓ Tu clase fue devuelta a tu paquete."
+                : "Tu reserva fue liberada."}
             </p>
           </div>
+        ) : null}
+
+        {action ? (
+          <Link href={action.href} className="student-action-primary mt-5 w-full sm:w-auto">
+            {action.label}
+          </Link>
         ) : null}
       </section>
     </main>

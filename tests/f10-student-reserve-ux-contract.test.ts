@@ -18,12 +18,12 @@ describe("F10 student reserve UAT contracts", () => {
     expect(reservePage).toContain("addDays(weekStart, index)");
   });
 
-  it("shows every class for the selected day without discipline filters", () => {
+  it("keeps day primary while allowing a lightweight discipline filter", () => {
     expect(reservePage).toContain("target_start: selectedDate");
     expect(reservePage).toContain("target_end: selectedDate");
-    expect(reservePage).toContain("target_discipline_id: null");
-    expect(reservePage).not.toContain('name="discipline"');
-    expect(reservePage).not.toContain("disciplineId");
+    expect(reservePage).toContain("target_discipline_id: selectedDiscipline");
+    expect(reservePage).toContain('aria-label="Filtrar por disciplina"');
+    expect(reservePage).toContain("✨ Todas");
     expect(reservePage).not.toContain("Aplicar filtro");
   });
 });

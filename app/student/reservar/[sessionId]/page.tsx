@@ -21,10 +21,6 @@ type StudentWaitlistItem = {
   status: string;
 };
 
-type RewardStatusSnapshot = {
-  level_title?: string | null;
-};
-
 type RewardPricePreview = {
   regular_amount_minor?: number;
   final_amount_minor?: number;
@@ -36,18 +32,29 @@ type RewardPricePreview = {
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
+function availabilityCopy(spotsAvailable: number) {
+  if (spotsAvailable <= 0) return "Clase llena";
+  if (spotsAvailable === 1) return "Último lugar";
+  return `${spotsAvailable} lugares disponibles`;
+}
+
 export default async function StudentSessionDetailPage({
   params,
   searchParams,
 }: {
   params: Promise<{ sessionId: string }>;
-  searchParams: Promise<{ date?: string; credit?: string }>;
+  searchParams: Promise<{ date?: string; credit?: string; discipline?: string }>;
 }) {
   const { sessionId } = await params;
   const query = await searchParams;
   const rewardMode = query.credit === "reward";
   const rewardSuffix = rewardMode ? "&credit=reward" : "";
-  const { supabase, studio, membership } = await getStudentPortalContext();
+  const disciplineSuffix =
+    query.discipline && /^[0-9a-f-]{36}$/i.test(query.discipline)
+      ? `&discipline=${query.discipline}`
+      : "";
+  const returnSuffix = `${rewardSuffix}${disciplineSuffix}`;
+  const { supabase, studio, membership, snapshot } = await getStudentPortalContext();
   const { data, error } = await supabase.rpc("student_session_detail", {
     target_session_id: sessionId,
   });
@@ -55,23 +62,39 @@ export default async function StudentSessionDetailPage({
   if (error || !data) notFound();
 
   const session = data as StudentSession;
-  const { data: activityStyle } = await supabase
-    .from("class_templates")
-    .select("color_hex")
-    .eq("studio_id", membership.studio_id)
-    .eq("discipline_id", session.discipline_id)
-    .eq("name", session.activity)
-    .limit(1)
-    .maybeSingle();
-  const activityColor = activityStyle?.color_hex ?? "#FF0A8A";
-  const [{ data: waitlistData }, { data: rewardStatusData }] = await Promise.all([
-    supabase.rpc("student_waitlist_feed"),
-    supabase.rpc("student_reward_status_snapshot"),
+  const [{ data: activityStyle }, { data: sessionMeta }] = await Promise.all([
+    supabase
+      .from("class_templates")
+      .select("*")
+      .eq("studio_id", membership.studio_id)
+      .eq("discipline_id", session.discipline_id)
+      .eq("name", session.activity)
+      .limit(1)
+      .maybeSingle(),
+    supabase
+      .from("class_sessions")
+      .select("*")
+      .eq("studio_id", membership.studio_id)
+      .eq("id", session.session_id)
+      .maybeSingle(),
   ]);
+  const activityColor = activityStyle?.color_hex ?? "#FF0A8A";
+  const sessionImagePath =
+    sessionMeta && typeof sessionMeta.cover_image_path === "string"
+      ? sessionMeta.cover_image_path
+      : null;
+  const activityImagePath =
+    activityStyle && typeof activityStyle.cover_image_path === "string"
+      ? activityStyle.cover_image_path
+      : null;
+  const coverImagePath = sessionImagePath ?? activityImagePath;
+  const coverImageUrl = coverImagePath
+    ? supabase.storage.from("class-artwork").getPublicUrl(coverImagePath).data.publicUrl
+    : null;
+  const { data: waitlistData } = await supabase.rpc("student_waitlist_feed");
   const waitlisted = ((waitlistData ?? []) as StudentWaitlistItem[]).some(
     (item) => item.session_id === session.session_id && item.status === "active",
   );
-  const levelTitle = (rewardStatusData as RewardStatusSnapshot | null)?.level_title ?? null;
   const eligible = Boolean(session.eligibility?.eligible);
   const alreadyReserved = Boolean(session.reservation_id);
   const reason = session.eligibility?.reason_code;
@@ -98,11 +121,16 @@ export default async function StudentSessionDetailPage({
     ),
     0,
   );
+  const activePackage =
+    snapshot.acquisitions.find((item) => item.active_now && !item.reward_credit_wallet) ?? null;
+  const giftClassesAvailable = snapshot.acquisitions
+    .filter((item) => item.active_now && item.reward_credit_wallet && item.status === "active")
+    .reduce((total, item) => total + (item.available_credits ?? 0), 0);
 
   return (
     <main className="mx-auto max-w-2xl space-y-4 pb-4">
       <Link
-        href={`/student/reservar?date=${returnDate}${rewardSuffix}`}
+        href={`/student/reservar?date=${returnDate}${returnSuffix}`}
         className="inline-flex items-center gap-2 text-xs font-semibold text-fuchsia-300"
       >
         <span aria-hidden="true">←</span>
@@ -111,79 +139,107 @@ export default async function StudentSessionDetailPage({
 
       {rewardMode ? (
         <section className="rounded-2xl border border-emerald-400/35 bg-emerald-400/[0.07] px-4 py-3">
-          <p className="text-xs font-semibold text-emerald-200">Usar créditos extra</p>
-          <p className="mt-1 text-[11px] leading-5 text-zinc-400">
-            Si confirmas esta reserva, se utilizará tu saldo premio disponible.
+          <p className="text-sm font-semibold text-emerald-200">Usar una clase extra</p>
+          <p className="mt-1 text-sm leading-6 text-zinc-400">
+            Si confirmas esta reserva, utilizaremos una de tus clases extra disponibles.
           </p>
         </section>
       ) : null}
 
       <section
-        className="overflow-hidden rounded-3xl border bg-white/[0.03]"
-        style={{ borderColor: `${activityColor}55` }}
+        className="overflow-hidden rounded-[1.7rem] border bg-[#0f1118]"
+        style={{ borderColor: `${activityColor}66` }}
       >
         <div
-          className="p-5 sm:p-6"
+          className="relative min-h-[300px] p-5 sm:min-h-[360px] sm:p-6"
           style={{
-            background: `linear-gradient(135deg, ${activityColor}29 0%, rgba(255,255,255,0.035) 48%, transparent 100%)`,
+            background: coverImageUrl
+              ? `linear-gradient(180deg, rgba(7,8,12,.08) 10%, rgba(7,8,12,.78) 88%), url("${coverImageUrl}") center / cover`
+              : `radial-gradient(circle at 78% 24%, ${activityColor}77, transparent 30%), linear-gradient(145deg, ${activityColor}38, #0b0d13 68%)`,
           }}
         >
-          <p
-            className="text-[10px] font-semibold uppercase tracking-[0.22em]"
-            style={{ color: activityColor }}
-          >
-            {session.discipline}
-          </p>
-          <h1 className="mt-1 text-2xl font-semibold text-white sm:text-3xl">{session.activity}</h1>
-          <p className="mt-2 text-sm text-zinc-300">
-            {formatDateTime(session.starts_at, studio.timezone)}
-            {durationMinutes ? ` · ${durationMinutes} min` : ""}
-          </p>
+          <div className="absolute inset-x-0 bottom-0 p-5 sm:p-6">
+            <span
+              className="inline-flex rounded-full border px-3 py-1 text-xs font-semibold"
+              style={{
+                borderColor: `${activityColor}88`,
+                backgroundColor: `${activityColor}33`,
+                color: "#fff",
+              }}
+            >
+              {session.discipline}
+            </span>
+            <h1 className="mt-3 text-3xl font-semibold tracking-tight text-white sm:text-4xl">
+              {session.activity} ✨
+            </h1>
+            <p className="mt-2 text-sm text-zinc-200">
+              {formatDateTime(session.starts_at, studio.timezone)}
+            </p>
+          </div>
         </div>
 
-        <dl className="grid grid-cols-2 gap-px bg-white/10">
-          <div className="bg-[#111218] px-4 py-3">
-            <dt className="text-[10px] uppercase tracking-[0.14em] text-zinc-500">Coach</dt>
-            <dd className="mt-1 text-xs font-semibold text-white">
+        <div className="grid grid-cols-2 gap-2 p-3 sm:grid-cols-4 sm:p-4">
+          <div className="rounded-2xl border border-white/10 bg-white/[0.025] px-3 py-3">
+            <p className="text-xs text-zinc-500">Coach</p>
+            <p className="mt-1 truncate text-sm font-semibold text-white">
               {session.coach ?? "Por confirmar"}
-            </dd>
+            </p>
           </div>
-          <div className="bg-[#111218] px-4 py-3">
-            <dt className="text-[10px] uppercase tracking-[0.14em] text-zinc-500">Espacio</dt>
-            <dd className="mt-1 text-xs font-semibold text-white">
+          <div className="rounded-2xl border border-white/10 bg-white/[0.025] px-3 py-3">
+            <p className="text-xs text-zinc-500">Duración</p>
+            <p className="mt-1 text-sm font-semibold text-white">{durationMinutes} min</p>
+          </div>
+          <div className="rounded-2xl border border-white/10 bg-white/[0.025] px-3 py-3">
+            <p className="text-xs text-zinc-500">Espacio</p>
+            <p className="mt-1 truncate text-sm font-semibold text-white">
               {[session.location, session.space].filter(Boolean).join(" · ") || "Estudio"}
-            </dd>
+            </p>
           </div>
-          <div className="bg-[#111218] px-4 py-3">
-            <dt className="text-[10px] uppercase tracking-[0.14em] text-zinc-500">
-              Disponibilidad
-            </dt>
-            <dd className="mt-1 text-xs font-semibold text-white">
-              {Math.max(session.capacity - session.spots_available, 0)} de {session.capacity}{" "}
-              reservados
-            </dd>
+          <div className="rounded-2xl border border-white/10 bg-white/[0.025] px-3 py-3">
+            <p className="text-xs text-zinc-500">Disponibilidad</p>
+            <p className="mt-1 text-sm font-semibold text-white">
+              {availabilityCopy(session.spots_available)}
+            </p>
           </div>
-          <div className="bg-[#111218] px-4 py-3">
-            <dt className="text-[10px] uppercase tracking-[0.14em] text-zinc-500">Reserva</dt>
-            <dd className="mt-1 text-xs font-semibold text-white">
-              {session.eligibility?.unlimited
-                ? "Incluida en ilimitado"
-                : `${session.credit_cost} crédito${session.credit_cost === 1 ? "" : "s"}`}
-            </dd>
-          </div>
-        </dl>
+        </div>
 
         {session.description ? (
           <div className="border-t border-white/10 px-5 py-4">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-zinc-500">
-              Sobre esta clase
-            </p>
-            <p className="mt-2 whitespace-pre-line text-xs leading-5 text-zinc-400">
+            <p className="text-xs font-semibold text-zinc-500">Sobre esta clase</p>
+            <p className="mt-2 whitespace-pre-line text-sm leading-6 text-zinc-300">
               {session.description}
             </p>
           </div>
         ) : null}
       </section>
+
+      {activePackage || giftClassesAvailable > 0 ? (
+        <section className="relative overflow-hidden rounded-[1.5rem] border border-fuchsia-400/30 bg-[radial-gradient(circle_at_85%_20%,rgba(255,10,138,.22),transparent_35%),linear-gradient(145deg,#261023,#121018)] p-5">
+          <div className="relative">
+            <p className="text-xs font-semibold text-fuchsia-200">Mi paquete 🎁</p>
+            <h2 className="mt-1 text-xl font-semibold text-white">
+              {activePackage?.unlimited
+                ? "Clases ilimitadas"
+                : activePackage
+                  ? `${activePackage.available_credits ?? 0} clases disponibles`
+                  : "Clases extra disponibles"}
+            </h2>
+            {giftClassesAvailable > 0 ? (
+              <p className="mt-2 inline-flex rounded-full border border-emerald-400/20 bg-emerald-400/[0.08] px-3 py-1 text-xs font-semibold text-emerald-200">
+                🎁 {giftClassesAvailable}{" "}
+                {giftClassesAvailable === 1 ? "clase de regalo" : "clases de regalo"}
+              </p>
+            ) : null}
+            <p className="mt-3 text-sm text-zinc-400">
+              {rewardMode
+                ? `Esta reserva usará ${session.credit_cost} ${session.credit_cost === 1 ? "clase extra" : "clases extra"}.`
+                : session.eligibility?.unlimited
+                  ? "Esta clase está incluida en tu paquete ilimitado."
+                  : `Esta reserva utiliza ${session.credit_cost} ${session.credit_cost === 1 ? "clase" : "clases"}.`}
+            </p>
+          </div>
+        </section>
+      ) : null}
 
       {alreadyReserved ? (
         <section className="rounded-3xl border border-emerald-500/20 bg-emerald-500/[0.07] p-5">
@@ -201,26 +257,22 @@ export default async function StudentSessionDetailPage({
       ) : reason === "session_full" ? (
         <section className="rounded-3xl border border-amber-400/25 bg-amber-400/[0.06] p-5">
           <p className="text-sm font-semibold text-amber-100">Esta clase está llena</p>
-          <p className="mt-1.5 text-xs leading-5 text-zinc-400">
-            Puedes entrar a la lista de espera. La prioridad se aplica automáticamente según tu
-            nivel vigente.
+          <p className="mt-1.5 text-sm leading-6 text-zinc-400">
+            Puedes entrar a la lista de espera. Si se libera un lugar, te avisaremos según el orden
+            de prioridad.
           </p>
           <div className="mt-4">
-            <WaitlistControl
-              sessionId={session.session_id}
-              initialWaitlisted={waitlisted}
-              levelTitle={levelTitle}
-            />
+            <WaitlistControl sessionId={session.session_id} initialWaitlisted={waitlisted} />
           </div>
         </section>
       ) : eligible ? (
         <section className="rounded-3xl border border-white/10 bg-white/[0.03] p-4">
           <p className="text-xs leading-5 text-zinc-400">
             {rewardMode
-              ? `Esta reserva utilizará ${session.credit_cost} crédito${session.credit_cost === 1 ? "" : "s"} de tu saldo extra.`
+              ? `Esta reserva utilizará ${session.credit_cost} ${session.credit_cost === 1 ? "clase extra" : "clases extra"}.`
               : session.eligibility?.unlimited
-                ? "Esta clase está incluida en tu membresía ilimitada."
-                : `Tienes ${session.eligibility?.available_credits ?? 0} crédito(s) disponibles. Esta reserva utiliza ${session.credit_cost}.`}
+                ? "Esta clase está incluida en tu paquete ilimitado."
+                : `Tienes ${session.eligibility?.available_credits ?? 0} clases disponibles. Esta reserva utiliza ${session.credit_cost}.`}
           </p>
           <Link
             href={
@@ -230,7 +282,7 @@ export default async function StudentSessionDetailPage({
             }
             className="mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-2xl bg-fuchsia-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-fuchsia-500"
           >
-            {session.requires_resource ? "Seleccionar recurso" : "Reservar clase"}
+            {session.requires_resource ? "Elegir mi lugar" : "Reservar esta clase"}
           </Link>
         </section>
       ) : (
@@ -249,8 +301,8 @@ export default async function StudentSessionDetailPage({
               Clase suelta: {formatMoney(finalDropInMinor)} MXN.
             </p>
           ) : (
-            <p className="mt-2 text-xs leading-5 text-zinc-400">
-              Studio Flow está aplicando las condiciones vigentes de tu cuenta y paquete.
+            <p className="mt-2 text-sm leading-6 text-zinc-400">
+              Revisa la razón indicada arriba para saber qué necesitas resolver antes de reservar.
             </p>
           )}
           {showDropIn ? (

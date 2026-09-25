@@ -8,6 +8,37 @@ import { CAPABILITIES } from "@/lib/auth/capabilities";
 
 type AdminSupabaseClient = Awaited<ReturnType<typeof getAdminContext>>["supabase"];
 
+const CLASS_IMAGE_TYPES = new Map([
+  ["image/jpeg", "jpg"],
+  ["image/png", "png"],
+  ["image/webp", "webp"],
+]);
+
+function sessionArtworkFile(formData: FormData) {
+  const entry = formData.get("cover_image");
+  if (!(entry instanceof File) || entry.size === 0) return null;
+  return entry;
+}
+
+async function uploadSessionArtwork(
+  supabase: AdminSupabaseClient,
+  studioId: string,
+  sessionId: string,
+  file: File,
+) {
+  const extension = CLASS_IMAGE_TYPES.get(file.type);
+  if (!extension) return { path: null, error: "image_type" as const };
+  if (file.size > 8 * 1024 * 1024) return { path: null, error: "image_size" as const };
+
+  const path = `${studioId}/sessions/${sessionId}/${Date.now()}.${extension}`;
+  const { error } = await supabase.storage.from("class-artwork").upload(path, file, {
+    contentType: file.type,
+    upsert: false,
+  });
+
+  return error ? { path: null, error: "image_upload" as const } : { path, error: null };
+}
+
 function safeAdminReturn(value: string, fallback: string) {
   if (!value.startsWith("/admin") || value.startsWith("//")) return fallback;
   return value;
@@ -81,6 +112,59 @@ async function validateResources(
     if (!data || (data.capacity && capacity > data.capacity)) return "space";
   }
   return null;
+}
+
+export async function updateSessionArtwork(formData: FormData) {
+  const sessionId = String(formData.get("session_id") ?? "");
+  const returnUrl = sessionManagementReturn(formData, sessionId);
+  const file = sessionArtworkFile(formData);
+  const removeImage = String(formData.get("remove_cover_image") ?? "") === "true";
+
+  if (!sessionId || (!file && !removeImage)) {
+    redirect(withQuery(returnUrl, "error", "image_required"));
+  }
+
+  const { supabase, studio } = await getAdminContext(CAPABILITIES.SCHEDULE_WRITE);
+  const { data: session } = await supabase
+    .from("class_sessions")
+    .select("*")
+    .eq("id", sessionId)
+    .eq("studio_id", studio.id)
+    .maybeSingle();
+
+  if (!session) redirect("/admin/agenda");
+
+  const currentPath =
+    typeof session.cover_image_path === "string" ? session.cover_image_path : null;
+  let nextPath: string | null = removeImage ? null : currentPath;
+
+  if (file) {
+    const upload = await uploadSessionArtwork(supabase, studio.id, sessionId, file);
+    if (upload.error || !upload.path) {
+      redirect(withQuery(returnUrl, "error", upload.error ?? "image_upload"));
+    }
+    nextPath = upload.path;
+  }
+
+  const { error } = await supabase
+    .from("class_sessions")
+    .update({ cover_image_path: nextPath })
+    .eq("id", sessionId)
+    .eq("studio_id", studio.id);
+
+  if (error) {
+    if (file && nextPath) await supabase.storage.from("class-artwork").remove([nextPath]);
+    redirect(withQuery(returnUrl, "error", "image_upload"));
+  }
+
+  if (currentPath && currentPath !== nextPath) {
+    await supabase.storage.from("class-artwork").remove([currentPath]);
+  }
+
+  revalidatePath(`/admin/agenda/${sessionId}`);
+  revalidatePath("/student/reservar");
+  revalidatePath(`/student/reservar/${sessionId}`);
+  redirect(withQuery(returnUrl, "created", "image"));
 }
 
 export async function setMinimumOverride(formData: FormData) {

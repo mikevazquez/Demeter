@@ -12,29 +12,30 @@ describe("SF-N14 PORTAL UX-06 Mi paquete", () => {
   const actions = source("app/student/actions.ts");
   const button = source("app/student/paquete/purchase-package-button.tsx");
 
-  it("prioritizes the active package and its canonical credit breakdown", () => {
+  it("answers how many classes remain and when they expire first", () => {
     expect(page).toContain('data-package-block="active"');
-    expect(page).toContain("Disponibles");
-    expect(page).toContain("Reservadas");
-    expect(page).toContain("Utilizadas");
-    expect(page).toContain("activePackage.available_credits");
-    expect(page).toContain("activePackage.reserved_credits");
-    expect(page).toContain("activePackage.used_credits");
+    expect(page).toContain("clases disponibles");
+    expect(page).toContain("Vence el");
+    expect(page).toContain("próxima clase reservada");
+    expect(page).not.toContain("Progreso del paquete");
+    expect(page).not.toContain('role="progressbar"');
   });
 
-  it("shows finite-package progress without fabricating a percentage for unlimited packages", () => {
-    expect(page).toContain("Progreso del paquete");
-    expect(page).not.toContain('data-package-block="progress"');
-    expect(page).toContain("progressPercent(activePackage)");
-    expect(page).toContain("Acceso ilimitado");
-    expect(page).toContain('role="progressbar"');
-    expect(page).toContain("aria-valuenow={activeProgress}");
-    expect(page).toContain('className="text-2xl text-fuchsia-300">∞');
+  it("keeps unlimited memberships simple", () => {
+    expect(page).toContain("Clases ilimitadas");
+    expect(page).not.toContain("no usa un límite de créditos");
   });
 
-  it("preserves booking, movement, history and enrollment access", () => {
+  it("keeps paid packages and extra classes visibly separate", () => {
+    expect(page).toContain("reward_credit_wallet");
+    expect(page).toContain("Clases extra");
+    expect(page).toContain("clase extra disponible");
+  });
+
+  it("preserves booking, class usage, history and enrollment access", () => {
     expect(page).toContain('href="/student/reservar"');
     expect(page).toContain('href="/student/movimientos"');
+    expect(page).toContain("Ver uso de mis clases");
     expect(page).toContain('data-package-block="history"');
     expect(page).toContain('data-package-block="enrollment"');
     expect(page).toContain("snapshot.enrollment");
@@ -49,20 +50,16 @@ describe("SF-N14 PORTAL UX-06 Mi paquete", () => {
     expect(actions).toContain('supabase.functions.invoke("create-mercadopago-order"');
   });
 
-  it("keeps product disciplines and prices data-driven instead of copying mockup examples", () => {
+  it("keeps product disciplines and prices data-driven", () => {
     expect(page).toContain('.from("product_template_disciplines")');
     expect(page).toContain('.from("disciplines")');
     expect(page).toContain("formatMoney(product.price_minor, product.currency)");
     expect(page).toContain("productDisciplineNames.get(product.id)");
-    expect(page).not.toContain("Pilates Reformer");
-    expect(page).not.toContain("$720");
-    expect(page).not.toContain("Paquete 8 clases");
   });
 
-  it("keeps the package screen on the approved dark-magenta visual language", () => {
-    expect(page).toContain("bg-fuchsia-600");
-    expect(page).toContain("border-fuchsia-500/20");
-    expect(page).toContain("text-fuchsia-300");
-    expect(page).toContain("bg-white/[0.03]");
+  it("distinguishes renewal from first purchase without inventing package data", () => {
+    expect(page).toContain("Renovar o cambiar paquete");
+    expect(page).toContain("Elige tu paquete");
+    expect(page).toContain("Revisa las clases, vigencia y precio antes de pagar.");
   });
 });

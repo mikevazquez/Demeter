@@ -26,9 +26,7 @@ export default async function ActivityDetailPage({
   ] = await Promise.all([
     supabase
       .from("class_templates")
-      .select(
-        "id,name,description,duration_minutes,capacity,drop_in_price_minor,individual_purchase_notes,requires_resource,color_hex,active,minimum_reservations_enabled,minimum_reservations,minimum_review_minutes_before,allow_minimum_reservation_override",
-      )
+      .select("*")
       .eq("id", activityId)
       .eq("studio_id", studio.id)
       .maybeSingle(),
@@ -66,6 +64,11 @@ export default async function ActivityDetailPage({
   );
 
   const firstSchedule = schedules?.[0] ?? null;
+  const coverImagePath =
+    typeof activity.cover_image_path === "string" ? activity.cover_image_path : null;
+  const coverImageUrl = coverImagePath
+    ? supabase.storage.from("class-artwork").getPublicUrl(coverImagePath).data.publicUrl
+    : null;
 
   const initial: ActivityDraft = {
     activityId: activity.id,
@@ -131,6 +134,7 @@ export default async function ActivityDetailPage({
           id: item.id,
           label: item.capacity ? `${item.name} · máx. ${item.capacity}` : item.name,
         }))}
+        coverImageUrl={coverImageUrl}
       />
     </main>
   );

@@ -6,6 +6,46 @@ import { redirect } from "next/navigation";
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 
+type AdminSupabaseClient = Awaited<ReturnType<typeof getAdminContext>>["supabase"];
+
+const CLASS_IMAGE_TYPES = new Map([
+  ["image/jpeg", "jpg"],
+  ["image/png", "png"],
+  ["image/webp", "webp"],
+]);
+
+function imageFile(formData: FormData, key: string) {
+  const entry = formData.get(key);
+  if (!(entry instanceof File) || entry.size === 0) return null;
+  return entry;
+}
+
+async function uploadClassArtwork({
+  supabase,
+  studioId,
+  scope,
+  entityId,
+  file,
+}: {
+  supabase: AdminSupabaseClient;
+  studioId: string;
+  scope: "activities" | "sessions";
+  entityId: string;
+  file: File;
+}) {
+  const extension = CLASS_IMAGE_TYPES.get(file.type);
+  if (!extension) return { path: null, error: "image_type" as const };
+  if (file.size > 8 * 1024 * 1024) return { path: null, error: "image_size" as const };
+
+  const path = `${studioId}/${scope}/${entityId}/${Date.now()}.${extension}`;
+  const { error } = await supabase.storage.from("class-artwork").upload(path, file, {
+    contentType: file.type,
+    upsert: false,
+  });
+
+  return error ? { path: null, error: "image_upload" as const } : { path, error: null };
+}
+
 type SchedulePayload = {
   id?: string;
   weekday: number;
@@ -101,6 +141,15 @@ export async function saveActivity(formData: FormData) {
   const minimumReviewValue = Number(payload.minimumReviewValue);
   const minimumReviewMinutes =
     payload.minimumReviewUnit === "hours" ? minimumReviewValue * 60 : minimumReviewValue;
+  const coverImage = imageFile(formData, "cover_image");
+  const removeCoverImage = String(formData.get("remove_cover_image") ?? "") === "true";
+
+  if (coverImage && !CLASS_IMAGE_TYPES.has(coverImage.type)) {
+    redirect(routeForError(payload, "image_type"));
+  }
+  if (coverImage && coverImage.size > 8 * 1024 * 1024) {
+    redirect(routeForError(payload, "image_size"));
+  }
 
   if (
     !name ||
@@ -178,10 +227,62 @@ export async function saveActivity(formData: FormData) {
     redirect(routeForError(payload, normalizeRpcError(error?.message)));
   }
 
+  const activityId = String(data);
+
+  if (coverImage || removeCoverImage) {
+    const { data: currentActivity } = await supabase
+      .from("class_templates")
+      .select("*")
+      .eq("id", activityId)
+      .eq("studio_id", studio.id)
+      .maybeSingle();
+
+    const currentPath =
+      currentActivity && typeof currentActivity.cover_image_path === "string"
+        ? currentActivity.cover_image_path
+        : null;
+
+    let nextPath: string | null = removeCoverImage ? null : currentPath;
+
+    if (coverImage) {
+      const upload = await uploadClassArtwork({
+        supabase,
+        studioId: studio.id,
+        scope: "activities",
+        entityId: activityId,
+        file: coverImage,
+      });
+
+      if (upload.error || !upload.path) {
+        redirect(routeForError(payload, upload.error ?? "image_upload"));
+      }
+
+      nextPath = upload.path;
+    }
+
+    const { error: imageUpdateError } = await supabase
+      .from("class_templates")
+      .update({ cover_image_path: nextPath })
+      .eq("id", activityId)
+      .eq("studio_id", studio.id);
+
+    if (imageUpdateError) {
+      if (coverImage && nextPath) {
+        await supabase.storage.from("class-artwork").remove([nextPath]);
+      }
+      redirect(routeForError(payload, "image_upload"));
+    }
+
+    if (currentPath && currentPath !== nextPath) {
+      await supabase.storage.from("class-artwork").remove([currentPath]);
+    }
+  }
+
   revalidatePath("/admin/actividades");
   revalidatePath("/admin/agenda");
   revalidatePath("/admin");
   revalidatePath("/student/reservar");
+  revalidatePath("/student");
 
   redirect("/admin/actividades");
 }

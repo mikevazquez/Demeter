@@ -2,11 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { cache } from "react";
 
-import { signOut } from "@/app/auth/actions";
+import PwaBrandingSync from "@/app/components/PwaBrandingSync";
 import { getStudentPortalContext } from "@/lib/student/portal";
 
-import PendingActionButton from "./components/PendingActionButton";
-import PwaBrandingSync from "@/app/components/PwaBrandingSync";
 import { StudentNav } from "./StudentNav";
 
 type PwaBrand = {
@@ -82,7 +80,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function StudentLayout({ children }: { children: React.ReactNode }) {
-  const [{ snapshot, studio, supabase }, brand] = await Promise.all([
+  const [{ snapshot, supabase }, brand] = await Promise.all([
     getStudentPortalContext(),
     getPwaBrand(),
   ]);
@@ -95,27 +93,25 @@ export default async function StudentLayout({ children }: { children: React.Reac
     .is("read_at", null);
 
   return (
-    <div className="min-h-screen bg-[#090a0f] text-white">
+    <div className="student-shell min-h-screen bg-[#090a0f] text-white">
       <PwaBrandingSync
         name={brand.name}
         manifestHref={"/pwa/manifest?" + query}
         appleTouchIconHref={"/pwa/studio-icon/180?" + query}
       />
 
-      <header className="border-b border-white/10 bg-[#0d0e14]/95 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
-          <Link href="/student" className="min-w-0">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-fuchsia-300">
-              DEMETER
-            </p>
-            <p className="truncate text-sm font-semibold text-white">{studio.name}</p>
+      <header className="sticky top-0 z-40 border-b border-white/10 bg-[#0d0e14]/92 backdrop-blur-xl">
+        <div className="mx-auto flex min-h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+          <Link href="/student" className="min-w-0" aria-label="Ir a Inicio">
+            <p className="text-xs font-bold uppercase tracking-[0.28em] text-white">DEMETER</p>
           </Link>
-          <div className="flex items-center gap-2 sm:gap-3">
+
+          <div className="flex items-center gap-2">
             <Link
               href="/student/notificaciones"
               aria-label="Notificaciones"
               title="Notificaciones"
-              className="relative inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[#D4AF37]/30 text-[#D4AF37] transition hover:border-[#D4AF37]/50 hover:bg-[#D4AF37]/10 hover:text-[#E6C85C]"
+              className="relative inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-white/[0.025] text-zinc-300 transition hover:border-fuchsia-500/35 hover:bg-fuchsia-500/[0.07] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-500"
             >
               <svg
                 aria-hidden="true"
@@ -131,28 +127,16 @@ export default async function StudentLayout({ children }: { children: React.Reac
                 <path d="M13.7 21a2 2 0 0 1-3.4 0" />
               </svg>
               {(unreadNotificationCount ?? 0) > 0 ? (
-                <span className="absolute -right-1.5 -top-1.5 min-w-5 rounded-full bg-fuchsia-500 px-1.5 py-0.5 text-center text-[9px] font-bold leading-4 text-white shadow-[0_0_12px_rgba(236,72,153,0.55)]">
+                <span className="absolute -right-1 -top-1 min-w-5 rounded-full bg-fuchsia-500 px-1.5 py-0.5 text-center text-[10px] font-bold leading-4 text-white">
                   {(unreadNotificationCount ?? 0) > 9 ? "9+" : unreadNotificationCount}
                 </span>
               ) : null}
             </Link>
-            <div className="hidden text-right sm:block">
-              <p className="text-sm font-medium text-white">{snapshot.profile.first_name}</p>
-              <p className="text-xs text-zinc-500">Portal de alumna</p>
-            </div>
-            <form action={signOut}>
-              <PendingActionButton
-                pendingLabel="Saliendo…"
-                className="rounded-xl border border-white/10 px-3 py-2 text-xs font-semibold text-zinc-300 transition hover:bg-white/[0.05] hover:text-white disabled:cursor-wait disabled:opacity-60"
-              >
-                Salir
-              </PendingActionButton>
-            </form>
           </div>
         </div>
       </header>
 
-      <div className="mx-auto flex max-w-7xl gap-6 px-4 pb-32 pt-6 sm:px-6 lg:px-8 lg:pb-10">
+      <div className="mx-auto flex max-w-7xl gap-6 px-4 pb-32 pt-5 sm:px-6 lg:px-8 lg:pb-10 lg:pt-6">
         <StudentNav />
         <div className="min-w-0 flex-1">{children}</div>
       </div>

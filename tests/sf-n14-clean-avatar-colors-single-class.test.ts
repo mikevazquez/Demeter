@@ -9,6 +9,7 @@ function source(path: string) {
 
 describe("SF-N14 clean avatar, activity colors and single-class purchase", () => {
   const home = source("app/student/page.tsx");
+  const layout = source("app/student/layout.tsx");
   const profile = source("app/student/perfil/page.tsx");
   const studentActions = source("app/student/actions.ts");
   const avatarRoute = source("app/student/perfil/avatar/route.ts");
@@ -63,10 +64,11 @@ describe("SF-N14 clean avatar, activity colors and single-class purchase", () =>
     expect(activityActions).toContain("p_color_hex: colorHex");
     expect(atomicActivitySave).toContain("color_hex = upper(p_color_hex)");
     expect(agenda).toContain('"--agenda-session-color": session.color');
-    expect(reserve).toContain("borderLeftColor: activityColor");
-    expect(detail).toContain('select("color_hex")');
+    expect(reserve).toContain("style={{ color: activityColor }}");
+    expect(reserve).toContain("${activityColor}66");
     expect(detail).toContain("activityColor");
-    expect(detail).toContain("linear-gradient(135deg");
+    expect(detail).toContain("${activityColor}77");
+    expect(detail).toContain("linear-gradient(145deg");
   });
 
   it("seeds the requested reference colors", () => {
@@ -79,16 +81,13 @@ describe("SF-N14 clean avatar, activity colors and single-class purchase", () =>
     expect(colorMigration).toContain("when 'danza aérea' then '#07C0B3'");
   });
 
-  it("offers Danza Aérea outside the package as a $150 single-class purchase", () => {
+  it("offers Danza Aérea outside the package as a $150 single-class purchase from detail", () => {
     expect(singleMigration).toContain("set drop_in_price_minor = 15000");
     expect(singleMigration).toContain("'Clase suelta · Danza Aérea'");
     expect(singleMigration).toContain("'single_class'::public.product_type");
-    expect(reserve).toContain("Esta clase no está incluida en tu paquete");
-    expect(reserve).toContain("PurchaseSingleClassButton");
-    expect(reserve).toContain("justify-end");
-    expect(reserve).toContain("Ver paquetes");
+    expect(reserve).not.toContain("PurchaseSingleClassButton");
     expect(detail).toContain("PurchaseSingleClassButton");
-    expect(detail).toContain("justify-end");
+    expect(detail).toContain("Ver paquetes");
   });
 
   it("keeps single-class checkout server-priced and routed through Mercado Pago", () => {
@@ -98,10 +97,11 @@ describe("SF-N14 clean avatar, activity colors and single-class purchase", () =>
     expect(checkoutEdge).toContain("moneyFromMinor(attemptRow.amount_minor)");
   });
 
-  it("shows the same profile photo in the home greeting without coupling Home to avatar writes", () => {
+  it("shows the profile photo in Home without coupling the page to avatar writes", () => {
     expect(home).toContain('src="/student/perfil/avatar"');
-    expect(home).toContain('alt="Foto de perfil"');
+    expect(home).toContain('aria-label="Abrir mi perfil"');
     expect(home).not.toContain("updateStudentAvatarAction");
+    expect(layout).toContain('href="/student/notificaciones"');
   });
 
   it("does not touch the global stylesheet for these changes", () => {

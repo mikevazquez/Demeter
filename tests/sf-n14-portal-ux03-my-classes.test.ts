@@ -22,26 +22,42 @@ describe("SF-N14 PORTAL UX-03 Mis clases", () => {
     expect(list).toContain('data-density="compact"');
   });
 
+  it("prioritizes the next confirmed class before waitlist entries", () => {
+    expect(list.indexOf("Tu próxima clase")).toBeLessThan(list.indexOf("Lista de espera"));
+    expect(list).toContain("Después");
+    expect(list).toContain("Confirmada");
+    expect(list).not.toContain("showQuickCancel");
+    expect(list).not.toContain("Prioridad Oro aplicada");
+  });
+
   it("uses a dedicated reservation detail instead of the booking detail", () => {
     expect(list).toContain("/student/mis-clases/${item.reservation_id}");
-    expect(detail).toContain("Gestionar reserva");
+    expect(detail).toContain("Tu reserva");
     expect(detail).toContain("/student/mis-clases/${item.reservation_id}/cancelar");
     expect(detail).not.toContain("/student/reservar/${item.session_id}");
   });
 
-  it("requires confirmation and exposes pending cancellation feedback", () => {
-    expect(cancel).toContain("¿Seguro que quieres cancelar esta clase?");
-    expect(cancel).toContain("Sí, cancelar");
-    expect(cancel).toContain("No, mantener");
-    expect(cancel).toContain('pendingLabel="Cancelando…"');
-    expect(cancel).toContain("PendingActionButton");
+  it("shows check-in only from the reservation detail and keeps it contextual", () => {
+    expect(detail).toContain("student_reservation_checkin_token");
+    expect(detail).toContain("Haz tu check-in");
+    expect(detail).toContain("Muéstralo al llegar");
+    expect(list).not.toContain("ReservationCheckInQr");
   });
 
-  it("keeps quick cancellation access from upcoming reservations", () => {
-    expect(list).toContain("/student/mis-clases/${nextClass.reservation_id}/cancelar");
-    expect(list).toContain("showQuickCancel");
-    expect(list).toContain("/student/mis-clases/${item.reservation_id}/cancelar");
+  it("requires confirmation and explains cancellation consequences before action", () => {
     expect(cancel).toContain("¿Seguro que quieres cancelar esta clase?");
+    expect(cancel).toContain("Cancelar mi reserva");
+    expect(cancel).toContain("Cancelar y perder");
+    expect(cancel).toContain("Mantener mi reserva");
+    expect(cancel).toContain("Puedes cancelar sin perder tu clase");
+    expect(cancel).toContain("Estás cancelando tarde");
+    expect(cancel).toContain('pendingLabel="Cancelando…"');
+  });
+
+  it("keeps cancellation access inside reservation detail rather than list cards", () => {
+    expect(list).not.toContain("/student/mis-clases/${nextClass.reservation_id}/cancelar");
+    expect(list).not.toContain("showQuickCancel");
+    expect(detail).toContain("/student/mis-clases/${item.reservation_id}/cancelar");
     expect(cancel).toContain("student_cancellation_preview");
   });
 
@@ -52,16 +68,12 @@ describe("SF-N14 PORTAL UX-03 Mis clases", () => {
     expect(cancel).toContain("Intentar de nuevo");
   });
 
-  it("warns about credit loss only when the canonical preview marks the cancellation late", () => {
-    expect(cancel).toContain('supabase.rpc("student_cancellation_preview"');
-    expect(cancel).toContain("Estás fuera del horario de cancelación");
-    expect(cancel).toContain(
-      "Si cancelas ahora, el crédito utilizado para esta clase no será devuelto.",
-    );
-    expect(cancel).toContain(
-      "Si cancelas ahora, el crédito reservado para esta clase será devuelto.",
-    );
-    expect(list).toContain("El crédito no fue devuelto.");
+  it("uses class language instead of credit language in student cancellation UX", () => {
+    expect(cancel).toContain("perderás {classesAffected}");
+    expect(cancel).toContain("Se devolverán {classesAffected}");
+    expect(cancel).not.toContain("Studio Flow aplicará");
+    expect(list).toContain("la clase fue devuelta a tu paquete");
+    expect(detail).toContain("Clase devuelta");
   });
 
   it("does not duplicate the cancellation cutoff in the UX", () => {
