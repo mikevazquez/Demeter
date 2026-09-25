@@ -16,7 +16,7 @@ describe("F10/N14 student home visual hierarchy", () => {
     );
     expect(home).toContain("Tu próxima clase");
     expect(home).toContain("Tu lugar está confirmado");
-    expect(home).toContain('href="/student/mis-clases"');
+    expect(home).toContain('"/student/mis-clases"');
   });
 
   it("keeps one priority action above the training hierarchy", () => {
@@ -29,19 +29,18 @@ describe("F10/N14 student home visual hierarchy", () => {
 
   it("uses useful hero states without turning Home into an admin dashboard", () => {
     expect(home).toContain("Reserva tu próxima clase");
-    expect(home).toContain("Activa tu próximo paquete");
-    expect(home).toContain("Ver paquetes");
+    expect(home).toContain("Activa tu paquete");
     expect(home).not.toContain("Clases del día");
     expect(home).not.toContain("Semana anterior");
     expect(home).not.toContain('role="progressbar"');
   });
 
-  it("keeps technical level and Medal in separate blocks", () => {
+  it("keeps Medal and package separate from technical training concepts", () => {
     expect(home).not.toContain('data-home-block="progress"');
-    expect(home).toContain('data-home-block="technical-level"');
+    expect(home).not.toContain('data-home-block="technical-level"');
     expect(home).toContain('data-home-block="medal"');
-    expect(home).toContain("Nivel técnico");
     expect(home).toContain("Medalla actual");
+    expect(home).not.toContain("Nivel técnico");
     expect(home).not.toContain("Tu progreso");
   });
 });
