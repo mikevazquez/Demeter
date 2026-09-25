@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 
 import {
@@ -122,6 +123,41 @@ function dateDistanceInDays(from: string, to: string) {
 function availableClasses(activePackage: StudentAcquisition | null) {
   if (!activePackage || activePackage.unlimited) return null;
   return activePackage.available_credits ?? 0;
+}
+
+function weekDays(dateKey: string) {
+  const anchor = new Date(`${dateKey}T12:00:00Z`);
+  const mondayOffset = (anchor.getUTCDay() + 6) % 7;
+  const monday = new Date(anchor);
+  monday.setUTCDate(anchor.getUTCDate() - mondayOffset);
+
+  return Array.from({ length: 7 }, (_, index) => {
+    const day = new Date(monday);
+    day.setUTCDate(monday.getUTCDate() + index);
+    const key = day.toISOString().slice(0, 10);
+
+    return {
+      key,
+      label: new Intl.DateTimeFormat("es-MX", {
+        weekday: "narrow",
+        timeZone: "UTC",
+      })
+        .format(day)
+        .toUpperCase(),
+      day: day.getUTCDate(),
+    };
+  });
+}
+
+function monthLabel(dateKey: string) {
+  const date = new Date(`${dateKey}T12:00:00Z`);
+  const label = new Intl.DateTimeFormat("es-MX", {
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(date);
+
+  return label.charAt(0).toUpperCase() + label.slice(1);
 }
 
 function priorityNotificationTone(type: string) {
@@ -336,12 +372,15 @@ export default async function StudentHomePage({
   const activePackage = packageAcquisitions.find((item) => item.active_now) ?? null;
   const classesAvailable = availableClasses(activePackage);
 
-  const nextClass =
-    [...snapshot.upcoming].sort(
-      (left, right) => Date.parse(left.starts_at) - Date.parse(right.starts_at),
-    )[0] ?? null;
+  const sortedUpcoming = [...snapshot.upcoming].sort(
+    (left, right) => Date.parse(left.starts_at) - Date.parse(right.starts_at),
+  );
+  const nextClass = sortedUpcoming[0] ?? null;
+  const followingClass = sortedUpcoming[1] ?? null;
 
   const today = localDateKey(new Date(), studio.timezone);
+  const calendarDays = weekDays(today);
+  const currentMonthLabel = monthLabel(today);
   const daysUntilExpiration = activePackage
     ? dateDistanceInDays(today, activePackage.expires_on)
     : null;
@@ -386,6 +425,10 @@ export default async function StudentHomePage({
       ? "Clases ilimitadas"
       : `${classesAvailable ?? 0} clases disponibles`
     : "Sin paquete activo";
+  const packageUsagePercent =
+    activePackage && !activePackage.unlimited && activePackage.credit_limit
+      ? Math.min(100, Math.round((activePackage.used_credits / activePackage.credit_limit) * 100))
+      : 0;
 
   return (
     <main className="space-y-5 pb-5">
@@ -408,20 +451,32 @@ export default async function StudentHomePage({
         </StudentNoticeDialog>
       ) : null}
 
-      <header className="relative overflow-hidden rounded-[1.75rem] border border-fuchsia-500/15 bg-[radial-gradient(circle_at_78%_18%,rgba(255,10,138,0.23),transparent_34%),linear-gradient(135deg,#130a12,#0c0c12_55%,#0a0b10)] px-5 py-6 sm:px-7 sm:py-8">
+      <header className="relative overflow-hidden rounded-[1.75rem] border border-fuchsia-500/15 bg-[radial-gradient(circle_at_78%_18%,rgba(255,10,138,0.23),transparent_34%),linear-gradient(135deg,#130a12,#0c0c12_55%,#0a0b10)] px-5 py-5 sm:px-7 sm:py-6">
         <div
           aria-hidden="true"
           className="absolute -right-12 -top-20 h-56 w-56 rounded-full bg-fuchsia-500/10 blur-3xl"
         />
-        <div
-          aria-hidden="true"
-          className="absolute bottom-0 right-16 h-24 w-px bg-fuchsia-400/40"
-        />
-        <div className="relative">
-          <p className="text-sm text-zinc-400">Qué gusto verte de nuevo</p>
-          <h1 className="mt-1 text-3xl font-semibold tracking-tight text-white sm:text-4xl">
-            Hola, {snapshot.profile.first_name} <span aria-hidden="true">👋</span>
-          </h1>
+        <div className="relative flex items-center gap-3.5">
+          <Link
+            href="/student/perfil"
+            className="relative flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full border border-fuchsia-400/70 bg-fuchsia-500/10 text-lg font-semibold text-white shadow-[0_0_24px_rgba(255,10,138,0.22)]"
+            aria-label="Abrir mi perfil"
+          >
+            <span aria-hidden="true">{snapshot.profile.first_name.slice(0, 1).toUpperCase()}</span>
+            <Image
+              src="/student/perfil/avatar"
+              alt=""
+              fill
+              unoptimized
+              className="object-cover"
+            />
+          </Link>
+          <div className="min-w-0">
+            <p className="text-sm text-zinc-400">¡Hola de nuevo!</p>
+            <h1 className="truncate text-2xl font-semibold tracking-tight text-white sm:text-3xl">
+              {snapshot.profile.first_name}
+            </h1>
+          </div>
         </div>
       </header>
 
@@ -583,176 +638,180 @@ export default async function StudentHomePage({
         </div>
       </section>
 
-      <section aria-label="Acciones rápidas" className="grid grid-cols-3 gap-2.5 sm:gap-3">
+      <section className="grid grid-cols-2 gap-3">
         <Link
-          href="/student/reservar"
-          className="group min-w-0 rounded-[1.35rem] border border-white/10 bg-[linear-gradient(145deg,rgba(255,10,138,0.08),rgba(255,255,255,0.025))] p-3.5 transition hover:border-fuchsia-400/35 hover:bg-fuchsia-500/[0.08] sm:p-4"
+          href={technicalAction.href}
+          data-home-block="technical-level"
+          className="group relative overflow-hidden rounded-[1.5rem] border border-fuchsia-500/20 bg-[radial-gradient(circle_at_18%_16%,rgba(255,10,138,0.14),transparent_34%),linear-gradient(145deg,#171421,#0d0f17)] p-4 transition hover:border-fuchsia-400/40 sm:p-5"
         >
-          <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-fuchsia-500/15 text-fuchsia-200 shadow-[0_8px_24px_rgba(255,10,138,0.12)]">
-            <HomeIcon kind="reserve" />
-          </span>
-          <strong className="mt-4 block truncate font-serif text-lg font-semibold text-white sm:text-xl">
-            Reservar
-          </strong>
-          <span className="mt-1 hidden text-sm leading-5 text-zinc-500 sm:block">
-            Busca tu próxima clase
-          </span>
-        </Link>
-
-        <Link
-          href="/student/mis-clases"
-          className="group min-w-0 rounded-[1.35rem] border border-white/10 bg-[linear-gradient(145deg,rgba(139,92,246,0.08),rgba(255,255,255,0.025))] p-3.5 transition hover:border-violet-400/30 hover:bg-violet-500/[0.07] sm:p-4"
-        >
-          <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-violet-500/15 text-violet-200">
-            <HomeIcon kind="classes" />
-          </span>
-          <strong className="mt-4 block truncate font-serif text-lg font-semibold text-white sm:text-xl">
-            Mis clases
-          </strong>
-          <span className="mt-1 hidden text-sm leading-5 text-zinc-500 sm:block">
-            Consulta tus reservas
-          </span>
-        </Link>
-
-        <Link
-          href="/student/paquete"
-          data-home-block="package"
-          className={`group min-w-0 rounded-[1.35rem] border p-3.5 transition sm:p-4 ${
-            expiresSoon
-              ? "border-amber-400/25 bg-amber-400/[0.045] hover:border-amber-300/40"
-              : "border-white/10 bg-[linear-gradient(145deg,rgba(91,33,182,0.09),rgba(255,255,255,0.025))] hover:border-violet-400/30"
-          }`}
-        >
-          <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-violet-500/15 text-violet-200">
-            <HomeIcon kind="package" />
-          </span>
-          <strong className="mt-4 block truncate font-serif text-lg font-semibold text-white sm:text-xl">
-            Mi paquete
-          </strong>
-          <span className="mt-1 block truncate text-xs leading-5 text-zinc-500 sm:text-sm">
-            {packageSummary}
-          </span>
-          {activePackage ? (
-            <span className="hidden text-xs text-zinc-600 sm:block">
-              Vence {formatDate(activePackage.expires_on, studio.timezone)}
-            </span>
-          ) : null}
-        </Link>
-      </section>
-
-      <section>
-        <div className="mb-3 flex items-center justify-between gap-4 px-1">
-          <h2 className="font-serif text-2xl font-semibold text-white">Tu espacio</h2>
-          <Link
-            href="/student/perfil"
-            className="inline-flex min-h-11 items-center text-sm font-semibold text-fuchsia-300"
-          >
-            Ver todo →
-          </Link>
-        </div>
-
-        <div className="grid gap-2.5 sm:grid-cols-3 sm:gap-3">
-          <Link
-            href={technicalAction.href}
-            data-home-block="technical-level"
-            className="group flex min-h-28 items-center gap-3 rounded-[1.35rem] border border-fuchsia-500/15 bg-[radial-gradient(circle_at_14%_50%,rgba(255,10,138,0.13),transparent_35%),rgba(255,255,255,0.025)] p-4 transition hover:border-fuchsia-400/35"
-          >
-            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-fuchsia-500/10 text-fuchsia-300">
+          <div className="flex items-start justify-between gap-3">
+            <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-fuchsia-500/12 text-fuchsia-300">
               <HomeIcon kind="technical" />
             </span>
-            <span className="min-w-0">
-              <span className="block text-xs text-zinc-500">Nivel técnico</span>
-              <strong className="mt-1 block truncate text-base font-semibold text-white">
-                {technicalSummary}
-              </strong>
-              {primaryTechnicalLevel && additionalTechnicalLevels > 0 ? (
-                <span className="mt-0.5 block text-xs text-zinc-600">
-                  +{additionalTechnicalLevels}{" "}
-                  {additionalTechnicalLevels === 1 ? "disciplina" : "disciplinas"}
-                </span>
-              ) : null}
-            </span>
-          </Link>
+            <span className="text-xl text-zinc-600 transition group-hover:text-fuchsia-300">›</span>
+          </div>
+          <p className="mt-4 text-xs text-zinc-500">Nivel técnico</p>
+          <h2 className="mt-1 truncate text-xl font-semibold text-white">{technicalSummary}</h2>
+          {primaryTechnicalLevel ? (
+            <p className="mt-1 truncate text-xs text-zinc-600">
+              {primaryTechnicalLevel.disciplineName}
+              {additionalTechnicalLevels > 0 ? ` · +${additionalTechnicalLevels}` : ""}
+            </p>
+          ) : (
+            <p className="mt-1 text-xs text-zinc-600">{technicalAction.label}</p>
+          )}
+        </Link>
 
-          <Link
-            href={
-              rewardStatus?.access_unlocked
-                ? "/student/recompensas/medallero"
-                : "/student/recompensas"
-            }
-            data-home-block="medal"
-            className="group flex min-h-28 items-center gap-3 rounded-[1.35rem] border bg-white/[0.025] p-4 transition hover:bg-white/[0.04]"
-            style={{
-              borderColor: currentMedal ? medalVisual.border : "rgba(255,255,255,0.1)",
-              backgroundImage: currentMedal
-                ? `radial-gradient(circle at 18% 50%, ${medalVisual.wash}, transparent 38%)`
-                : undefined,
-            }}
-          >
+        <Link
+          href={
+            rewardStatus?.access_unlocked
+              ? "/student/recompensas/medallero"
+              : "/student/recompensas"
+          }
+          data-home-block="medal"
+          className="group relative overflow-hidden rounded-[1.5rem] border bg-[linear-gradient(145deg,#171421,#0d0f17)] p-4 transition hover:bg-white/[0.04] sm:p-5"
+          style={{
+            borderColor: currentMedal ? medalVisual.border : "rgba(255,255,255,0.1)",
+            backgroundImage: currentMedal
+              ? `radial-gradient(circle at 85% 82%, ${medalVisual.wash}, transparent 38%)`
+              : undefined,
+          }}
+        >
+          <div className="flex items-start justify-between gap-3">
             <span
               aria-hidden="true"
-              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border bg-black/20 text-xl"
+              className="flex h-10 w-10 items-center justify-center rounded-2xl border bg-black/20 text-lg"
               style={{
                 color: currentMedal ? medalVisual.accent : "#a1a1aa",
                 borderColor: currentMedal ? medalVisual.border : "rgba(255,255,255,0.1)",
-                boxShadow: currentMedal ? `0 0 24px ${medalVisual.wash}` : undefined,
               }}
             >
               ◆
             </span>
-            <span className="min-w-0">
-              <span className="block text-xs text-zinc-500">Medalla actual</span>
-              <strong className="mt-1 block truncate text-base font-semibold text-white">
-                {medalSummary}
-              </strong>
-              <span className="mt-0.5 block text-xs text-zinc-600">Beneficios y constancia</span>
-            </span>
-          </Link>
+            <span className="text-xl text-zinc-600 transition group-hover:text-fuchsia-300">›</span>
+          </div>
+          <p className="mt-4 text-xs text-zinc-500">Medalla actual</p>
+          <h2 className="mt-1 truncate text-xl font-semibold text-white">{medalSummary}</h2>
+          <p className="mt-1 text-xs text-zinc-600">Beneficios y constancia</p>
+        </Link>
+      </section>
 
+      <section
+        data-home-block="week-calendar"
+        className="rounded-[1.5rem] border border-white/10 bg-[linear-gradient(145deg,#11141d,#0c0e15)] p-4 sm:p-5"
+      >
+        <div className="flex items-center justify-between gap-4">
+          <h2 className="text-lg font-semibold text-white">{currentMonthLabel}</h2>
           <Link
-            href="/student/notificaciones"
-            className="group flex min-h-28 items-center gap-3 rounded-[1.35rem] border border-orange-400/10 bg-[radial-gradient(circle_at_14%_50%,rgba(251,146,60,0.10),transparent_35%),rgba(255,255,255,0.025)] p-4 transition hover:border-orange-400/25"
+            href="/student/reservar"
+            className="inline-flex min-h-11 items-center gap-2 rounded-full border border-white/10 bg-white/[0.035] px-3 text-sm font-semibold text-zinc-300 transition hover:border-fuchsia-400/35 hover:text-white"
           >
-            <span className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-orange-400/10 text-orange-300">
-              <HomeIcon kind="notice" />
-              {unreadNotifications.length > 0 ? (
-                <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full bg-fuchsia-500 ring-2 ring-[#111017]" />
-              ) : null}
-            </span>
-            <span className="min-w-0">
-              <span className="block text-xs text-zinc-500">Avisos</span>
-              <strong className="mt-1 block truncate text-base font-semibold text-white">
-                {unreadNotifications.length
-                  ? `${unreadNotifications.length} ${unreadNotifications.length === 1 ? "pendiente" : "pendientes"}`
-                  : "Todo al día"}
-              </strong>
-              <span className="mt-0.5 block text-xs text-zinc-600">Notificaciones de Demeter</span>
-            </span>
+            Ver calendario <span aria-hidden="true">→</span>
           </Link>
+        </div>
+
+        <div className="mt-4 grid grid-cols-7 gap-1.5">
+          {calendarDays.map((day) => {
+            const selected = day.key === today;
+
+            return (
+              <Link
+                key={day.key}
+                href={`/student/reservar?date=${day.key}`}
+                className={`flex min-h-16 flex-col items-center justify-center rounded-2xl border text-center transition ${
+                  selected
+                    ? "border-fuchsia-400/60 bg-fuchsia-500/20 text-white shadow-[0_0_24px_rgba(255,10,138,0.16)]"
+                    : "border-transparent text-zinc-400 hover:border-white/10 hover:bg-white/[0.03]"
+                }`}
+              >
+                <span className="text-[10px] font-semibold">{day.label}</span>
+                <strong className="mt-1 text-base">{day.day}</strong>
+                <span
+                  aria-hidden="true"
+                  className={`mt-1 h-1.5 w-1.5 rounded-full ${selected ? "bg-fuchsia-300" : "bg-zinc-700"}`}
+                />
+              </Link>
+            );
+          })}
         </div>
       </section>
 
-      <section className="relative overflow-hidden rounded-[1.5rem] border border-fuchsia-500/30 bg-[radial-gradient(circle_at_82%_50%,rgba(255,10,138,0.24),transparent_34%),linear-gradient(120deg,#160b14,#0d0d12_60%,#120914)] px-5 py-5 sm:px-6">
-        <div
-          aria-hidden="true"
-          className="absolute -right-8 top-1/2 h-28 w-28 -translate-y-1/2 rounded-full border border-fuchsia-300/20"
-        />
-        <div
-          aria-hidden="true"
-          className="absolute right-10 top-1/2 h-20 w-px -translate-y-1/2 bg-fuchsia-300/60"
-        />
-        <div className="relative flex items-center justify-between gap-5">
-          <p className="max-w-md font-serif text-2xl font-semibold leading-tight text-white sm:text-3xl">
-            Disciplina hoy, resultados <span className="text-fuchsia-400">mañana.</span>
-          </p>
-          <span
-            aria-hidden="true"
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-fuchsia-400/30 bg-fuchsia-500/10 text-xl text-fuchsia-200"
-          >
-            →
+      <Link
+        href="/student/paquete"
+        data-home-block="package"
+        className={`group block rounded-[1.5rem] border bg-[linear-gradient(145deg,#16131e,#0d0f16)] p-4 transition sm:p-5 ${
+          expiresSoon
+            ? "border-amber-400/25 hover:border-amber-300/40"
+            : "border-fuchsia-500/15 hover:border-fuchsia-400/35"
+        }`}
+      >
+        <div className="flex items-center gap-4">
+          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-fuchsia-400/25 bg-fuchsia-500/10 text-fuchsia-300">
+            <HomeIcon kind="package" />
           </span>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-base font-semibold text-white">Mi paquete</p>
+                <p className="mt-0.5 text-sm text-zinc-400">{packageSummary}</p>
+              </div>
+              <span className="text-xl text-zinc-600 transition group-hover:text-fuchsia-300">›</span>
+            </div>
+
+            {activePackage && !activePackage.unlimited && activePackage.credit_limit ? (
+              <div className="mt-3">
+                <div className="h-2 overflow-hidden rounded-full bg-white/10">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-fuchsia-500 to-pink-400"
+                    style={{ width: `${packageUsagePercent}%` }}
+                  />
+                </div>
+                <div className="mt-1.5 flex items-center justify-between gap-3 text-xs text-zinc-600">
+                  <span>{activePackage.used_credits} usadas</span>
+                  <span>{activePackage.credit_limit} en total</span>
+                </div>
+              </div>
+            ) : null}
+          </div>
         </div>
-      </section>
+      </Link>
+
+      {followingClass ? (
+        <Link
+          href="/student/mis-clases"
+          data-home-block="following-class"
+          className="group flex items-center gap-4 rounded-[1.5rem] border border-white/10 bg-[linear-gradient(145deg,#12141d,#0d0f16)] p-4 transition hover:border-fuchsia-400/30 sm:p-5"
+        >
+          <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-fuchsia-400/20 bg-[radial-gradient(circle,rgba(255,10,138,0.22),transparent_65%)] text-fuchsia-200">
+            <HomeIcon kind="classes" className="h-7 w-7" />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-xs text-zinc-500">Siguiente clase</span>
+            <strong className="mt-0.5 block truncate text-base font-semibold text-white">
+              {followingClass.activity}
+            </strong>
+            <span className="mt-1 block truncate text-sm text-zinc-500">
+              {formatDateTime(followingClass.starts_at, studio.timezone)}
+            </span>
+          </span>
+          <span className="text-xl text-zinc-600 transition group-hover:text-fuchsia-300">›</span>
+        </Link>
+      ) : (
+        <Link
+          href="/student/reservar"
+          data-home-block="following-class"
+          className="group flex min-h-20 items-center justify-between gap-4 rounded-[1.5rem] border border-white/10 bg-[linear-gradient(145deg,#12141d,#0d0f16)] p-4 transition hover:border-fuchsia-400/30"
+        >
+          <span>
+            <span className="block text-xs text-zinc-500">Siguiente clase</span>
+            <strong className="mt-1 block text-base font-semibold text-white">
+              ¿Quieres agregar otra?
+            </strong>
+          </span>
+          <span className="text-xl text-zinc-600 transition group-hover:text-fuchsia-300">›</span>
+        </Link>
+      )}
+
     </main>
   );
 }
