@@ -1,3 +1,4 @@
+
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
@@ -19,33 +20,31 @@ describe("ALUMNA UX FINAL K · Home V2", () => {
     expect(home).toContain("Tu lugar está confirmado");
   });
 
-  it("adds visual quick actions for the three most frequent student tasks", () => {
-    expect(home).toContain('aria-label="Acciones rápidas"');
-    expect(home).toContain("Reservar");
-    expect(home).toContain("Mis clases");
-    expect(home).toContain("Mi paquete");
+  it("matches the approved content hierarchy below the hero", () => {
+    expect(home).toContain('data-home-block="technical-level"');
+    expect(home).toContain('data-home-block="medal"');
+    expect(home).toContain('data-home-block="week-calendar"');
+    expect(home).toContain('data-home-block="package"');
+    expect(home).toContain('data-home-block="following-class"');
   });
 
   it("keeps technical level and medal semantically separate", () => {
-    expect(home).toContain('data-home-block="technical-level"');
-    expect(home).toContain('data-home-block="medal"');
     expect(home).toContain("Nivel técnico");
     expect(home).toContain("Medalla actual");
     expect(home).not.toContain("Tu progreso");
   });
 
-  it("keeps notifications compact and urgent notices actionable", () => {
+  it("removes the notification card while keeping urgent alerts actionable", () => {
     expect(home).toContain("urgentNotificationTypes");
     expect(home).toContain("Necesita tu atención");
-    expect(home).toContain("Avisos");
-    expect(home).toContain('href="/student/notificaciones"');
+    expect(home).not.toContain(">Avisos<");
+    expect(home).not.toContain("Notificaciones de Demeter");
   });
 
-  it("uses the approved Demeter editorial visual direction", () => {
-    expect(home).toContain("font-serif");
+  it("keeps the approved Studio Flow-inspired visual language under Demeter branding", () => {
     expect(home).toContain("rounded-[2rem]");
     expect(home).toContain("bg-fuchsia-600");
-    expect(home).toContain("Disciplina hoy, resultados");
-    expect(home).toContain("mañana.");
+    expect(home).toContain("shadow-[0_22px_70px_rgba(255,10,138,0.14)]");
+    expect(home).not.toContain("STUDIO FLOW");
   });
 });
