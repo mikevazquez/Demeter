@@ -5,7 +5,6 @@ import {
   formatDate,
   formatMoney,
   getStudentPortalContext,
-  localDateKey,
   type StudentAcquisition,
 } from "@/lib/student/portal";
 
@@ -23,12 +22,12 @@ const termCopy: Record<string, string> = {
   custom: "Otra vigencia",
 };
 
-const packageGroups: Array<{ key: string; title: string; description: string }> = [
-  { key: "monthly", title: "1 mes", description: "Paquetes con vigencia de 1 mes" },
-  { key: "quarterly", title: "3 meses", description: "Paquetes con vigencia de 3 meses" },
-  { key: "semiannual", title: "6 meses", description: "Paquetes con vigencia de 6 meses" },
-  { key: "annual", title: "12 meses", description: "Paquetes con vigencia de 12 meses" },
-  { key: "other", title: "Otros", description: "Otras vigencias y productos" },
+const packageGroups: Array<{ key: string; title: string }> = [
+  { key: "monthly", title: "1 mes" },
+  { key: "quarterly", title: "3 meses" },
+  { key: "semiannual", title: "6 meses" },
+  { key: "annual", title: "12 meses" },
+  { key: "other", title: "Otros" },
 ];
 
 type PurchasableProduct = {
@@ -58,29 +57,11 @@ function groupKey(item: StudentAcquisition | PurchasableProduct) {
 }
 
 function productBenefit(product: PurchasableProduct) {
-  if (product.unlimited) return "Acceso ilimitado";
-  if (product.credit_limit) return `${product.credit_limit} clases`;
+  if (product.unlimited) return "Clases ilimitadas";
+  if (product.credit_limit) {
+    return `${product.credit_limit} ${product.credit_limit === 1 ? "clase" : "clases"}`;
+  }
   return "Paquete de clases";
-}
-
-function progressPercent(item: StudentAcquisition) {
-  if (item.unlimited || !item.credit_limit || item.credit_limit <= 0) return null;
-  return Math.min(100, Math.max(0, Math.round((item.used_credits / item.credit_limit) * 100)));
-}
-
-function daysRemaining(expiresOn: string, timezone: string) {
-  const today = localDateKey(new Date(), timezone);
-  const oneDay = 24 * 60 * 60 * 1000;
-  const end = Date.parse(`${expiresOn}T12:00:00Z`);
-  const start = Date.parse(`${today}T12:00:00Z`);
-
-  return Math.max(0, Math.round((end - start) / oneDay));
-}
-
-function remainingCopy(days: number) {
-  if (days === 0) return "Vence hoy";
-  if (days === 1) return "Falta 1 día";
-  return `Faltan ${days} días`;
 }
 
 function acquisitionTone(status: string) {
@@ -91,15 +72,25 @@ function acquisitionTone(status: string) {
 
 export default async function StudentPackagePage() {
   const { snapshot, studio, supabase, membership } = await getStudentPortalContext();
+
   const packageAcquisitions = snapshot.acquisitions.filter((item) => !item.reward_credit_wallet);
+  const extraClassWallets = snapshot.acquisitions.filter(
+    (item) => item.reward_credit_wallet && item.active_now && item.status === "active",
+  );
   const activePackage = packageAcquisitions.find((item) => item.active_now) ?? null;
   const others = packageAcquisitions
     .filter((item) => item.id !== activePackage?.id)
     .sort((left, right) => right.expires_on.localeCompare(left.expires_on));
-  const activeProgress = activePackage ? progressPercent(activePackage) : null;
-  const activeDaysRemaining = activePackage
-    ? daysRemaining(activePackage.expires_on, studio.timezone)
-    : null;
+
+  const extraClassesAvailable = extraClassWallets.reduce(
+    (total, item) => total + (item.available_credits ?? 0),
+    0,
+  );
+  const extraClassesExpiry =
+    extraClassWallets
+      .map((item) => item.expires_on)
+      .filter(Boolean)
+      .sort()[0] ?? null;
 
   const { data: purchasableProductRows } = await supabase
     .from("product_templates")
@@ -160,7 +151,6 @@ export default async function StudentPackagePage() {
   }
 
   const purchasableGroups = new Map<string, PurchasableProduct[]>();
-
   for (const product of purchasableProducts) {
     const key = groupKey(product);
     purchasableGroups.set(key, [...(purchasableGroups.get(key) ?? []), product]);
@@ -169,272 +159,85 @@ export default async function StudentPackagePage() {
   return (
     <main className="space-y-5 pb-4">
       <header>
-        <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-fuchsia-300">
-          Mi paquete
-        </p>
-        <h1 className="mt-1 text-3xl font-semibold tracking-tight text-white sm:text-4xl">
-          Tus clases y vigencia
-        </h1>
-        <p className="mt-1.5 max-w-2xl text-sm text-zinc-400">
-          Revisa el estado de tu paquete, tus créditos y las opciones disponibles para continuar
-          entrenando.
+        <p className="student-eyebrow">Mi membresía</p>
+        <h1 className="student-page-title mt-1">Mi paquete</h1>
+        <p className="student-body mt-2">
+          Consulta cuántas clases tienes disponibles y hasta cuándo puedes usarlas.
         </p>
       </header>
 
       {activePackage ? (
-        <>
-          <section
-            data-package-block="active"
-            className="overflow-hidden rounded-3xl border border-fuchsia-500/20 bg-[radial-gradient(circle_at_14%_0%,rgba(255,10,138,0.20),transparent_30%),linear-gradient(135deg,rgba(255,255,255,0.055),rgba(255,255,255,0.018))]"
-          >
-            <div className="p-5 sm:p-6">
-              <div className="flex items-start gap-4">
-                <div
-                  aria-hidden="true"
-                  className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-fuchsia-400/30 bg-fuchsia-500/15 text-2xl text-fuchsia-300 shadow-[0_0_28px_rgba(255,10,138,0.15)]"
-                >
-                  ◈
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap gap-2">
-                    <span className="rounded-full bg-emerald-500/15 px-2.5 py-1 text-xs font-medium text-emerald-300">
-                      Activo
-                    </span>
-                    <span className="rounded-full bg-white/[0.07] px-2.5 py-1 text-xs font-medium text-zinc-300">
-                      {activePackage.package_term
-                        ? (termCopy[activePackage.package_term] ?? "Otra vigencia")
-                        : "Otra vigencia"}
-                    </span>
-                  </div>
-                  <h2 className="mt-3 text-xl font-semibold text-white sm:text-2xl">
-                    {activePackage.name}
-                  </h2>
-                  <p className="mt-1 text-sm text-zinc-400">
-                    {activePackage.unlimited
-                      ? "Acceso ilimitado"
-                      : activePackage.credit_limit
-                        ? `${activePackage.credit_limit} clases incluidas`
-                        : "Paquete de clases"}
-                  </p>
-                </div>
-              </div>
-
-              <div className="mt-5 grid gap-3 border-t border-white/10 pt-5 sm:grid-cols-[1fr_auto] sm:items-end">
-                <div>
-                  <p className="text-xs font-medium text-zinc-500">Vigencia</p>
-                  <p className="mt-1 text-sm text-white">
-                    {formatDate(activePackage.starts_on, studio.timezone)} →{" "}
-                    {formatDate(activePackage.expires_on, studio.timezone)}
-                  </p>
-                </div>
-                {activeDaysRemaining !== null ? (
-                  <div className="sm:text-right">
-                    <p className="text-xs text-zinc-500">Vencimiento</p>
-                    <strong className="mt-1 block text-sm text-white">
-                      {remainingCopy(activeDaysRemaining)}
-                    </strong>
-                  </div>
-                ) : null}
-              </div>
-
-              <div className="mt-5 grid grid-cols-3 overflow-hidden rounded-2xl border border-white/10 bg-black/25">
-                <div className="p-4 text-center">
-                  <strong className="block text-2xl text-white">
-                    {activePackage.unlimited ? "∞" : activePackage.available_credits}
-                  </strong>
-                  <span className="mt-1 block text-[11px] text-zinc-500">Disponibles</span>
-                </div>
-                <div className="border-x border-white/10 p-4 text-center">
-                  <strong className="block text-2xl text-white">
-                    {activePackage.reserved_credits}
-                  </strong>
-                  <span className="mt-1 block text-[11px] text-zinc-500">Reservadas</span>
-                </div>
-                <div className="p-4 text-center">
-                  <strong className="block text-2xl text-white">
-                    {activePackage.used_credits}
-                  </strong>
-                  <span className="mt-1 block text-[11px] text-zinc-500">Utilizadas</span>
-                </div>
-              </div>
-
-              <div className="mt-5 border-t border-white/10 pt-5">
-                {activeProgress !== null && activePackage.credit_limit ? (
-                  <>
-                    <div className="flex items-end justify-between gap-4">
-                      <div>
-                        <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-zinc-500">
-                          Progreso del paquete
-                        </p>
-                        <p className="mt-1 text-sm text-zinc-400">
-                          {activePackage.used_credits} de {activePackage.credit_limit} clases
-                          utilizadas
-                        </p>
-                      </div>
-                      <strong className="text-lg text-white">{activeProgress}%</strong>
-                    </div>
-                    <div
-                      role="progressbar"
-                      aria-label="Progreso de clases utilizadas"
-                      aria-valuemin={0}
-                      aria-valuemax={100}
-                      aria-valuenow={activeProgress}
-                      className="mt-3 h-2 overflow-hidden rounded-full bg-white/10"
-                    >
-                      <div
-                        className="h-full rounded-full bg-fuchsia-500"
-                        style={{ width: `${activeProgress}%` }}
-                      />
-                    </div>
-                  </>
-                ) : (
-                  <div className="flex items-center justify-between gap-4">
-                    <div>
-                      <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-zinc-500">
-                        Progreso del paquete
-                      </p>
-                      <p className="mt-1 text-sm text-zinc-400">
-                        Este paquete no usa un límite de créditos por clase.
-                      </p>
-                    </div>
-                    <strong className="text-2xl text-fuchsia-300">∞</strong>
-                  </div>
-                )}
-              </div>
-
-              <div className="mt-5 grid gap-2 sm:grid-cols-2">
-                <Link
-                  href="/student/reservar"
-                  className="inline-flex min-h-11 items-center justify-center rounded-xl bg-fuchsia-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-fuchsia-500"
-                >
-                  Reservar clase
-                </Link>
-                <Link
-                  href="/student/movimientos"
-                  className="inline-flex min-h-11 items-center justify-center rounded-xl border border-fuchsia-500/45 bg-fuchsia-500/[0.04] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-fuchsia-500/[0.09]"
-                >
-                  Ver movimientos
-                </Link>
-              </div>
+        <section data-package-block="active" className="student-card p-5 sm:p-6">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div className="min-w-0">
+              <span className="inline-flex rounded-full bg-emerald-500/15 px-2.5 py-1 text-xs font-semibold text-emerald-300">
+                Activo
+              </span>
+              <h2 className="mt-3 text-xl font-semibold text-white">{activePackage.name}</h2>
+              <p className="mt-2 text-3xl font-semibold tracking-tight text-white">
+                {activePackage.unlimited
+                  ? "Clases ilimitadas"
+                  : `${activePackage.available_credits ?? 0} clases disponibles`}
+              </p>
+              <p className="mt-2 text-sm text-zinc-400">
+                Vence el {formatDate(activePackage.expires_on, studio.timezone)}
+              </p>
+              {activePackage.reserved_credits > 0 ? (
+                <p className="mt-1 text-sm text-zinc-500">
+                  {activePackage.reserved_credits}{" "}
+                  {activePackage.reserved_credits === 1
+                    ? "próxima clase reservada"
+                    : "próximas clases reservadas"}
+                </p>
+              ) : null}
             </div>
-          </section>
-        </>
-      ) : (
-        <section
-          data-package-block="empty"
-          className="rounded-3xl border border-dashed border-white/10 bg-white/[0.02] p-7 text-center sm:p-9"
-        >
-          <div
-            aria-hidden="true"
-            className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-fuchsia-500/10 text-2xl text-fuchsia-300"
-          >
-            ◈
           </div>
-          <h2 className="mt-4 text-lg font-semibold text-white">No tienes un paquete activo</h2>
+
+          <div className="mt-5 flex flex-col gap-2 border-t border-white/10 pt-5 sm:flex-row">
+            <Link href="/student/reservar" className="student-action-primary w-full sm:w-auto">
+              Reservar clase
+            </Link>
+            <Link href="/student/movimientos" className="student-action-secondary w-full sm:w-auto">
+              Ver uso de mis clases
+            </Link>
+          </div>
+        </section>
+      ) : (
+        <section data-package-block="empty" className="student-card p-6 text-center sm:p-8">
+          <h2 className="text-lg font-semibold text-white">No tienes un paquete activo</h2>
           <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-zinc-400">
-            Tus paquetes anteriores seguirán visibles como historial. Si hay opciones disponibles
-            para compra online, podrás elegir una más abajo.
+            Elige un paquete para seguir reservando tus clases en Demeter.
           </p>
           {purchasableProducts.length ? (
-            <a
-              href="#catalogo-paquetes"
-              className="mt-5 inline-flex min-h-11 items-center justify-center rounded-xl bg-fuchsia-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-fuchsia-500"
-            >
-              Ver paquetes disponibles
+            <a href="#catalogo-paquetes" className="student-action-primary mt-5 w-full sm:w-auto">
+              Ver paquetes
             </a>
           ) : null}
         </section>
       )}
 
-      {others.length ? (
-        <details
-          data-package-block="history"
-          className="group rounded-3xl border border-white/10 bg-white/[0.03] p-5 sm:p-6"
-        >
-          <summary className="flex cursor-pointer list-none items-center justify-between gap-4">
-            <div>
-              <h2 className="text-lg font-semibold text-white">Historial de paquetes</h2>
-              <p className="mt-1 text-xs text-zinc-500">
-                {others.length} paquete{others.length === 1 ? "" : "s"} anterior
-                {others.length === 1 ? "" : "es"}
-              </p>
-            </div>
-            <span
-              aria-hidden="true"
-              className="text-xl text-zinc-500 transition group-open:rotate-180 group-open:text-fuchsia-300"
-            >
-              ⌄
-            </span>
-          </summary>
-
-          <div className="mt-4 divide-y divide-white/10 border-t border-white/10">
-            {others.map((item) => (
-              <details key={item.id} className="group/item py-1">
-                <summary className="flex cursor-pointer list-none items-center justify-between gap-3 py-3">
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-medium text-white">{item.name}</p>
-                    <p className="mt-1 text-[11px] text-zinc-500">
-                      {formatDate(item.starts_on, studio.timezone)} →{" "}
-                      {formatDate(item.expires_on, studio.timezone)}
-                    </p>
-                  </div>
-                  <div className="flex shrink-0 items-center gap-2">
-                    <span
-                      className={`rounded-full px-2 py-1 text-[10px] font-medium ${acquisitionTone(
-                        item.status,
-                      )}`}
-                    >
-                      {statusCopy[item.status] ?? item.status}
-                    </span>
-                    <span
-                      aria-hidden="true"
-                      className="text-sm text-zinc-600 transition group-open/item:rotate-180"
-                    >
-                      ⌄
-                    </span>
-                  </div>
-                </summary>
-
-                <div className="mb-3 rounded-2xl border border-white/10 bg-black/20 px-4 py-3">
-                  <div className="grid grid-cols-3 gap-3 text-center">
-                    <div>
-                      <strong className="block text-base text-white">
-                        {item.unlimited ? "∞" : (item.available_credits ?? 0)}
-                      </strong>
-                      <span className="mt-1 block text-[10px] text-zinc-500">Disponibles</span>
-                    </div>
-                    <div className="border-x border-white/10">
-                      <strong className="block text-base text-white">
-                        {item.reserved_credits}
-                      </strong>
-                      <span className="mt-1 block text-[10px] text-zinc-500">Reservadas</span>
-                    </div>
-                    <div>
-                      <strong className="block text-base text-white">{item.used_credits}</strong>
-                      <span className="mt-1 block text-[10px] text-zinc-500">Utilizadas</span>
-                    </div>
-                  </div>
-                </div>
-              </details>
-            ))}
-          </div>
-        </details>
+      {extraClassesAvailable > 0 ? (
+        <section className="rounded-2xl border border-emerald-400/20 bg-emerald-400/[0.045] p-4">
+          <p className="text-xs font-semibold text-emerald-300">Clases extra</p>
+          <h2 className="mt-1 text-lg font-semibold text-white">
+            {extraClassesAvailable} {extraClassesAvailable === 1 ? "clase extra disponible" : "clases extra disponibles"}
+          </h2>
+          {extraClassesExpiry ? (
+            <p className="mt-1 text-sm text-zinc-400">
+              Disponibles hasta {formatDate(extraClassesExpiry, studio.timezone)}
+            </p>
+          ) : null}
+        </section>
       ) : null}
 
       {purchasableProducts.length ? (
-        <section
-          id="catalogo-paquetes"
-          data-package-block="catalog"
-          className="scroll-mt-6 space-y-4"
-        >
+        <section id="catalogo-paquetes" data-package-block="catalog" className="scroll-mt-6 space-y-4">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-fuchsia-300">
-              Compra online
-            </p>
-            <h2 className="mt-1 text-xl font-semibold text-white">Adquirir o renovar paquete</h2>
-            <p className="mt-1 text-sm text-zinc-400">
-              Elige entre los productos habilitados por el estudio. El pago se completa de forma
-              segura en Mercado Pago.
+            <h2 className="text-xl font-semibold text-white">
+              {activePackage ? "Renovar o cambiar paquete" : "Elige tu paquete"}
+            </h2>
+            <p className="mt-1 text-sm leading-6 text-zinc-400">
+              Revisa las clases, vigencia y precio antes de pagar.
             </p>
           </div>
 
@@ -446,74 +249,59 @@ export default async function StudentPackagePage() {
               <details
                 key={group.key}
                 name="package-term-catalog"
-                className="group rounded-3xl border border-white/10 bg-white/[0.03] p-5 sm:p-6"
+                className="group rounded-2xl border border-white/10 bg-white/[0.025] p-4 sm:p-5"
               >
-                <summary className="flex cursor-pointer list-none flex-wrap items-end justify-between gap-3">
+                <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3">
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-fuchsia-300">
-                      {group.title}
+                    <h3 className="text-base font-semibold text-white">{group.title}</h3>
+                    <p className="mt-0.5 text-xs text-zinc-500">
+                      {products.length} {products.length === 1 ? "opción" : "opciones"}
                     </p>
-                    <p className="mt-1 text-xs text-zinc-500">{group.description}</p>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <span className="rounded-full bg-white/[0.07] px-2.5 py-1 text-xs text-zinc-400">
-                      {products.length}
-                    </span>
-                    <span
-                      aria-hidden="true"
-                      className="text-lg text-zinc-500 transition group-open:rotate-180 group-open:text-fuchsia-300"
-                    >
-                      ⌄
-                    </span>
-                  </div>
+                  <span
+                    aria-hidden="true"
+                    className="text-xl text-zinc-500 transition group-open:rotate-180"
+                  >
+                    ⌄
+                  </span>
                 </summary>
 
-                <div className="mt-4 grid gap-3 border-t border-white/10 pt-4 sm:grid-cols-2">
-                  {products.map((product) => (
-                    <article
-                      key={product.id}
-                      className="flex min-h-44 flex-col rounded-2xl border border-white/10 bg-black/20 p-4"
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <span className="rounded-full bg-white/[0.07] px-2.5 py-1 text-[11px] text-zinc-400">
-                            {product.package_term
-                              ? (termCopy[product.package_term] ?? "Otra vigencia")
-                              : "Otra vigencia"}
-                          </span>
-                          <h3 className="mt-3 text-base font-semibold text-white">
-                            {product.name}
-                          </h3>
-                          <p className="mt-1 text-sm text-zinc-400">{productBenefit(product)}</p>
+                <div className="mt-3 grid gap-3 border-t border-white/10 pt-4 sm:grid-cols-2">
+                  {products.map((product) => {
+                    const disciplines = productDisciplineNames.get(product.id) ?? [];
+
+                    return (
+                      <article
+                        key={product.id}
+                        className="flex flex-col rounded-2xl border border-white/10 bg-black/20 p-4"
+                      >
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="min-w-0">
+                            <h4 className="text-base font-semibold text-white">{product.name}</h4>
+                            <p className="mt-1 text-sm text-zinc-400">{productBenefit(product)}</p>
+                          </div>
+                          <strong className="shrink-0 text-base text-white">
+                            {formatMoney(product.price_minor, product.currency)}
+                          </strong>
                         </div>
-                        <strong className="shrink-0 text-base text-white">
-                          {formatMoney(product.price_minor, product.currency)}
-                        </strong>
-                      </div>
 
-                      <div className="mt-3 space-y-1 text-xs leading-5 text-zinc-500">
-                        {product.validity_days ? (
-                          <p>Vigencia: {product.validity_days} días desde la activación</p>
-                        ) : null}
-                        <p>
-                          Disciplinas:{" "}
-                          {(productDisciplineNames.get(product.id) ?? []).length
-                            ? (productDisciplineNames.get(product.id) ?? []).join(" · ")
-                            : "Sin disciplinas habilitadas"}
-                        </p>
-                      </div>
+                        <div className="mt-3 space-y-1 text-sm leading-5 text-zinc-500">
+                          {product.validity_days ? (
+                            <p>Vigencia: {product.validity_days} días</p>
+                          ) : null}
+                          {disciplines.length ? <p>{disciplines.join(" · ")}</p> : null}
+                        </div>
 
-                      <div className="mt-auto flex items-end justify-between gap-3 border-t border-white/10 pt-4">
-                        <p className="max-w-[13rem] text-[11px] leading-4 text-zinc-600">
-                          Serás enviado a Mercado Pago para completar el pago.
-                        </p>
-                        <PurchasePackageButton
-                          productTemplateId={product.id}
-                          productName={product.name}
-                        />
-                      </div>
-                    </article>
-                  ))}
+                        <div className="mt-4 border-t border-white/10 pt-4">
+                          <PurchasePackageButton
+                            productTemplateId={product.id}
+                            productName={product.name}
+                            buttonLabel={activePackage ? "Comprar" : "Elegir"}
+                          />
+                        </div>
+                      </article>
+                    );
+                  })}
                 </div>
               </details>
             );
@@ -522,47 +310,72 @@ export default async function StudentPackagePage() {
       ) : null}
 
       {snapshot.enrollment ? (
-        <section
-          data-package-block="enrollment"
-          className="rounded-3xl border border-white/10 bg-white/[0.03] p-5 sm:p-6"
-        >
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div className="flex min-w-0 items-center gap-3">
-              <div
-                aria-hidden="true"
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-fuchsia-500/10 text-fuchsia-300"
-              >
-                ✓
-              </div>
-              <div>
-                <p className="text-xs font-medium text-zinc-500">Estado de inscripción</p>
-                <h2 className="mt-0.5 text-base font-semibold text-white">
-                  {snapshot.enrollment.active_now ? "Vigente" : "Sin vigencia actual"}
-                </h2>
-                <p className="mt-1 text-xs text-zinc-500">
-                  {snapshot.enrollment.expires_on
-                    ? `Vence ${formatDate(snapshot.enrollment.expires_on, studio.timezone)}`
-                    : snapshot.enrollment.active_now
-                      ? "Vitalicia · sin vencimiento"
-                      : "Consulta el estado con el estudio"}
-                </p>
-              </div>
+        <section data-package-block="enrollment" className="student-card p-5">
+          <p className="student-eyebrow">Inscripción</p>
+          <div className="mt-2 flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h2 className="text-base font-semibold text-white">
+                {snapshot.enrollment.active_now ? "Inscripción vigente" : "Sin inscripción vigente"}
+              </h2>
+              <p className="mt-1 text-sm text-zinc-400">
+                {snapshot.enrollment.expires_on
+                  ? `Vence ${formatDate(snapshot.enrollment.expires_on, studio.timezone)}`
+                  : snapshot.enrollment.active_now
+                    ? "Sin fecha de vencimiento"
+                    : "Consulta con Demeter para regularizarla"}
+              </p>
             </div>
             <span
-              className={`rounded-full px-2.5 py-1 text-xs font-medium ${
+              className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
                 snapshot.enrollment.active_now
                   ? "bg-emerald-500/15 text-emerald-300"
-                  : "bg-zinc-500/15 text-zinc-400"
+                  : "bg-amber-500/15 text-amber-300"
               }`}
             >
-              {snapshot.enrollment.status}
+              {snapshot.enrollment.active_now ? "Vigente" : "Pendiente"}
             </span>
           </div>
-          <p className="mt-4 border-t border-white/10 pt-4 text-xs leading-5 text-zinc-500">
-            Aquí sólo se muestra el estado vigente. La gestión de inscripción y documentos
-            corresponde a su flujo específico.
-          </p>
         </section>
+      ) : null}
+
+      {others.length ? (
+        <details
+          data-package-block="history"
+          className="group rounded-2xl border border-white/10 bg-white/[0.025] p-4 sm:p-5"
+        >
+          <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-4">
+            <div>
+              <h2 className="text-base font-semibold text-white">Historial de paquetes</h2>
+              <p className="mt-0.5 text-xs text-zinc-500">
+                {others.length} {others.length === 1 ? "paquete anterior" : "paquetes anteriores"}
+              </p>
+            </div>
+            <span aria-hidden="true" className="text-xl text-zinc-500 transition group-open:rotate-180">
+              ⌄
+            </span>
+          </summary>
+
+          <div className="mt-3 divide-y divide-white/10 border-t border-white/10">
+            {others.map((item) => (
+              <div key={item.id} className="flex items-center justify-between gap-4 py-3">
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium text-white">{item.name}</p>
+                  <p className="mt-1 text-xs text-zinc-500">
+                    {formatDate(item.starts_on, studio.timezone)} →{" "}
+                    {formatDate(item.expires_on, studio.timezone)}
+                  </p>
+                </div>
+                <span
+                  className={`shrink-0 rounded-full px-2 py-1 text-xs font-medium ${acquisitionTone(
+                    item.status,
+                  )}`}
+                >
+                  {statusCopy[item.status] ?? item.status}
+                </span>
+              </div>
+            ))}
+          </div>
+        </details>
       ) : null}
     </main>
   );
