@@ -69,7 +69,16 @@ export function buildMetaWhatsAppTemplatePayload(input: {
   languageCode: string;
   variables: Record<string, unknown>;
 }) {
-  const mapped = buildAsistianVariables(input.internalTemplate, input.variables);
+  const mapped =
+    input.internalTemplate === "student_welcome"
+      ? {
+          nombre:
+            typeof input.variables.recipient_name === "string" &&
+            input.variables.recipient_name.trim()
+              ? input.variables.recipient_name.trim()
+              : "Alumna",
+        }
+      : buildAsistianVariables(input.internalTemplate, input.variables);
   const parameters = PARAMETER_ORDER[input.internalTemplate].map((key) => ({
     type: "text" as const,
     text: asTemplateText(mapped[key]),
