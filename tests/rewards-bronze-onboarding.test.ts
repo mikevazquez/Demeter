@@ -69,7 +69,8 @@ describe("REWARDS · onboarding access + monthly Medals", () => {
     );
     expect(existingActiveOnboarding).toContain("'existing_membership_preserved',v_had_membership");
     expect(existingActiveOnboarding).not.toContain("set current_level_key = null");
-    expect(homePage).toContain("const currentMedal = rewardsUnlocked");\n    expect(homePage).toContain("rewardOnboarding?.access_unlocked_at");
+    expect(homePage).toContain("const currentMedal = rewardsUnlocked");
+    expect(homePage).toContain("rewardOnboarding?.access_unlocked_at");
   });
 
   it("keeps PWA, Push, reservation and attendance milestones auditable", () => {
