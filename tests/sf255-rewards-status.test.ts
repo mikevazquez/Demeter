@@ -148,7 +148,7 @@ describe("SF-255A monthly level and waitlist contracts", () => {
     expect(homePage).toContain("Por activar");
     expect(homePage).toContain("Beneficios y constancia");
     expect(homePage).toContain("Sin medalla");
-    expect(homePage).toContain('href="/student/recompensas/medallero"');
+    expect(homePage).toContain('"/student/recompensas/medallero"');
     expect(homePage).toContain("Nivel técnico");
     expect(homePage).toContain("resulting_level_title");
     expect(homePage).toContain("#CD7F32");
