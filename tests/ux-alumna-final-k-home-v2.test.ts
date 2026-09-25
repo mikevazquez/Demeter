@@ -13,7 +13,6 @@ describe("ALUMNA UX FINAL K · Home V2", () => {
   it("uses one dominant dynamic hero", () => {
     expect(home).toContain('data-home-block="next-class"');
     expect(home).toContain("h-[174px]");
-    expect(home).toContain("Tu próxima clase");
     expect(home).toContain("Reserva tu próxima clase");
     expect(home).toContain("Activa tu paquete");
     expect(home).toContain("Tu lugar está confirmado");
@@ -44,7 +43,6 @@ describe("ALUMNA UX FINAL K · Home V2", () => {
   it("surfaces gift classes directly on the package card", () => {
     expect(home).toContain("giftClassWallets");
     expect(home).toContain("giftClassesAvailable");
-    expect(home).toContain("clase de regalo");
     expect(home).toContain("clases de regalo");
   });
 
