@@ -807,7 +807,6 @@ export default async function StudentHomePage({
           <span className="text-xl text-zinc-600 transition group-hover:text-fuchsia-300">›</span>
         </Link>
       )}
-
     </main>
   );
 }
