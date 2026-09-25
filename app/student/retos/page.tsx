@@ -102,66 +102,68 @@ export default async function StudentChallengesPage() {
               const remaining = Math.max(target - challenge.current_value, 0);
 
               return (
-              <Link
-                key={challenge.rule_id}
-                href={`/student/retos/${challenge.rule_id}`}
-                className={`group overflow-hidden rounded-3xl border bg-white/[0.035] transition hover:border-fuchsia-400/40 ${
-                  index === 0
-                    ? "border-fuchsia-500/35 shadow-[0_0_35px_rgba(255,10,138,0.08)] md:col-span-2"
-                    : "border-white/10"
-                }`}
-              >
-                {challenge.cover_url ? (
-                  <div
-                    className="h-40 bg-cover bg-center md:h-48"
-                    style={{
-                      backgroundImage: `linear-gradient(to top, rgba(7,8,12,.85), rgba(7,8,12,.08)), url("${challenge.cover_url}")`,
-                    }}
-                  />
-                ) : (
-                  <div className="h-24 bg-[radial-gradient(circle_at_80%_20%,rgba(255,10,138,.28),transparent_35%),linear-gradient(135deg,#12131a,#090a0f)]" />
-                )}
-                <div className="space-y-3 p-5">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="rounded-full border border-fuchsia-400/30 bg-fuchsia-500/10 px-2.5 py-1 text-xs font-bold uppercase tracking-[0.14em] text-fuchsia-300">
-                      {challenge.competition_mode === "leaderboard" ? "Competencia" : "Individual"}
-                    </span>
-                    {challenge.competition_mode === "leaderboard" ? (
-                      <span className="text-xs text-zinc-500">
-                        {challenge.participant_count ?? 0} inscritas
+                <Link
+                  key={challenge.rule_id}
+                  href={`/student/retos/${challenge.rule_id}`}
+                  className={`group overflow-hidden rounded-3xl border bg-white/[0.035] transition hover:border-fuchsia-400/40 ${
+                    index === 0
+                      ? "border-fuchsia-500/35 shadow-[0_0_35px_rgba(255,10,138,0.08)] md:col-span-2"
+                      : "border-white/10"
+                  }`}
+                >
+                  {challenge.cover_url ? (
+                    <div
+                      className="h-40 bg-cover bg-center md:h-48"
+                      style={{
+                        backgroundImage: `linear-gradient(to top, rgba(7,8,12,.85), rgba(7,8,12,.08)), url("${challenge.cover_url}")`,
+                      }}
+                    />
+                  ) : (
+                    <div className="h-24 bg-[radial-gradient(circle_at_80%_20%,rgba(255,10,138,.28),transparent_35%),linear-gradient(135deg,#12131a,#090a0f)]" />
+                  )}
+                  <div className="space-y-3 p-5">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="rounded-full border border-fuchsia-400/30 bg-fuchsia-500/10 px-2.5 py-1 text-xs font-bold uppercase tracking-[0.14em] text-fuchsia-300">
+                        {challenge.competition_mode === "leaderboard"
+                          ? "Competencia"
+                          : "Individual"}
                       </span>
-                    ) : null}
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-semibold text-white">{challenge.title}</h3>
-                    {challenge.description ? (
-                      <p className="mt-1 line-clamp-2 text-sm leading-6 text-zinc-400">
-                        {challenge.description}
-                      </p>
-                    ) : null}
-                  </div>
-                  {target > 0 ? (
-                    <div className="rounded-2xl border border-white/10 bg-black/15 px-3.5 py-3">
-                      <div className="flex items-center justify-between gap-3 text-sm">
-                        <strong className="text-white">
-                          {challenge.current_value} de {target}
-                        </strong>
-                        <span className="text-zinc-500">
-                          {remaining > 0 ? `Te faltan ${remaining}` : "Meta completada"}
+                      {challenge.competition_mode === "leaderboard" ? (
+                        <span className="text-xs text-zinc-500">
+                          {challenge.participant_count ?? 0} inscritas
                         </span>
-                      </div>
+                      ) : null}
                     </div>
-                  ) : null}
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <span className="text-xs text-zinc-500">
-                      Termina {dateLabel(challenge.scheduled_end_at, portal.studio.timezone)}
-                    </span>
-                    <span className="rounded-xl bg-fuchsia-500/10 px-3 py-2 text-xs font-semibold text-fuchsia-200">
-                      {rewardLabel(challenge)}
-                    </span>
+                    <div>
+                      <h3 className="text-xl font-semibold text-white">{challenge.title}</h3>
+                      {challenge.description ? (
+                        <p className="mt-1 line-clamp-2 text-sm leading-6 text-zinc-400">
+                          {challenge.description}
+                        </p>
+                      ) : null}
+                    </div>
+                    {target > 0 ? (
+                      <div className="rounded-2xl border border-white/10 bg-black/15 px-3.5 py-3">
+                        <div className="flex items-center justify-between gap-3 text-sm">
+                          <strong className="text-white">
+                            {challenge.current_value} de {target}
+                          </strong>
+                          <span className="text-zinc-500">
+                            {remaining > 0 ? `Te faltan ${remaining}` : "Meta completada"}
+                          </span>
+                        </div>
+                      </div>
+                    ) : null}
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <span className="text-xs text-zinc-500">
+                        Termina {dateLabel(challenge.scheduled_end_at, portal.studio.timezone)}
+                      </span>
+                      <span className="rounded-xl bg-fuchsia-500/10 px-3 py-2 text-xs font-semibold text-fuchsia-200">
+                        {rewardLabel(challenge)}
+                      </span>
+                    </div>
                   </div>
-                </div>
-              </Link>
+                </Link>
               );
             })}
           </div>
