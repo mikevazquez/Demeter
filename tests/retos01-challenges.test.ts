@@ -60,7 +60,9 @@ describe("RETOS-01", () => {
     const detail = read("app/student/retos/[ruleId]/page.tsx");
     const migration = read("supabase/migrations/20260924220000_retos01_competitive_challenges.sql");
 
-    expect(home).toContain("Objetivos temporales, competencias y recompensas");
+    expect(home).toContain("Objetivos temporales y competencias");
+    expect(home).toContain("Medallas y beneficios");
+    expect(home).toContain("{challenge.current_value} de {target}");
     expect(detail).toContain("Inscribirme al reto");
     expect(detail).toContain("Top 3");
     expect(detail).toContain("gap_to_top3");
