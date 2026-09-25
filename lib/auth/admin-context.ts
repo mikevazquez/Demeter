@@ -5,7 +5,7 @@ import { STUDIO_CONTEXT_COOKIE } from "@/lib/auth/studio-context-cookie";
 import { createClient } from "@/lib/supabase/server";
 
 export async function getAdminContext(requiredCapability?: Capability) {
-  const supabase = await createClient();
+  const supabase = await createClient("admin");
   const {
     data: { user },
     error: authError,
