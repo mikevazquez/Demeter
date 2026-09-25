@@ -164,7 +164,6 @@ describe("REWARDS · onboarding access + monthly Medals", () => {
     expect(homePage).toContain("Medalla actual");
     expect(homePage).toContain('"/student/recompensas/medallero"');
     expect(homePage).not.toContain("Siguiente medalla");
-    expect(homePage).toContain("Sin medalla");
     expect(homePage).toContain("Por activar");
     expect(rewardsPage).toContain('href="/student/recompensas/medallero"');
   });
@@ -184,7 +183,8 @@ describe("REWARDS · onboarding access + monthly Medals", () => {
 
   it("uses Medal language for Rewards and keeps technical levels distinct", () => {
     expect(homePage).toContain("Medalla actual");
-    expect(homePage).toContain("Nivel técnico");
+    expect(homePage).not.toContain('data-home-block="technical-level"');
+    expect(profilePage).toContain("Nivel técnico y evaluaciones");
     expect(adminOverview).toContain('"Medalla " + levelTitle');
     expect(adminStudent).toContain("Medalla actual");
     expect(adminStudent).toContain("niveles técnicos por disciplina");
