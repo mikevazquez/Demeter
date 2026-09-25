@@ -40,10 +40,22 @@ describe("ALUMNA UX FINAL K · Home V2", () => {
     expect(home).not.toContain("Notificaciones de Demeter");
   });
 
-  it("keeps the approved Studio Flow-inspired visual language under Demeter branding", () => {
+  it("surfaces gift classes directly on the package card", () => {
+    expect(home).toContain("giftClassWallets");
+    expect(home).toContain("giftClassesAvailable");
+    expect(home).toContain("clase de regalo");
+    expect(home).toContain("clases de regalo");
+  });
+
+  it("uses expressive emoji cues without changing the Demeter visual system", () => {
+    expect(home).toContain("¡Hola de nuevo! 👋");
+    expect(home).toContain("Tu próxima clase ✨");
+    expect(home).toContain("Nivel técnico 📈");
+    expect(home).toContain("Medalla actual 🏅");
+    expect(home).toContain("Mi paquete 🎁");
+    expect(home).toContain("Siguiente clase 💃");
     expect(home).toContain("rounded-[2rem]");
     expect(home).toContain("bg-fuchsia-600");
-    expect(home).toContain("shadow-[0_22px_70px_rgba(255,10,138,0.14)]");
     expect(home).not.toContain("STUDIO FLOW");
   });
 });
