@@ -12,7 +12,7 @@
     "start": "next start",
     "lint": "eslint .",
     "format": "prettier --write .",
-    "format:check": "prettier --write app/student/page.tsx tests/sf-n14-portal-ux02-home.test.ts tests/ux-alumna-final-k-home-v2.test.ts && git diff -- app/student/page.tsx tests/sf-n14-portal-ux02-home.test.ts tests/ux-alumna-final-k-home-v2.test.ts && exit 1",
+    "format:check": "prettier --check .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "ci": "npm run format:check && npm run lint && npm run typecheck && npm test && npm run build"
