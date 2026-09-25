@@ -64,10 +64,11 @@ describe("SF-N14 clean avatar, activity colors and single-class purchase", () =>
     expect(activityActions).toContain("p_color_hex: colorHex");
     expect(atomicActivitySave).toContain("color_hex = upper(p_color_hex)");
     expect(agenda).toContain('"--agenda-session-color": session.color');
-    expect(reserve).toContain("borderLeftColor: activityColor");
-    expect(detail).toContain('select("color_hex")');
+    expect(reserve).toContain("style={{ color: activityColor }}");
+    expect(reserve).toContain("${activityColor}66");
     expect(detail).toContain("activityColor");
-    expect(detail).toContain("linear-gradient(135deg");
+    expect(detail).toContain("${activityColor}77");
+    expect(detail).toContain("linear-gradient(145deg");
   });
 
   it("seeds the requested reference colors", () => {
