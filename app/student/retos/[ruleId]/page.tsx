@@ -376,8 +376,8 @@ export default async function ChallengeDetailPage({
               <strong className="text-sm text-emerald-200">Clases extra reclamadas ✓</strong>
               <p className="mt-1 text-xs leading-5 text-zinc-400">
                 Tienes {rewardCreditClaim.credits}{" "}
-                {rewardCreditClaim.credits === 1 ? "clase extra" : "clases extra"} con vigencia hasta{" "}
-                {formatDate(rewardCreditClaim.expires_on, portal.studio.timezone)}.
+                {rewardCreditClaim.credits === 1 ? "clase extra" : "clases extra"} con vigencia
+                hasta {formatDate(rewardCreditClaim.expires_on, portal.studio.timezone)}.
               </p>
               <Link
                 href="/student/paquete"
