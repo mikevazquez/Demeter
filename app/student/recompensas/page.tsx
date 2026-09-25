@@ -157,8 +157,7 @@ export default async function StudentRewardsPage() {
 
   const status = (statusData as MedalStatusSnapshot | null) ?? null;
   const levels = (levelsData ?? []) as MedalDefinition[];
-  const currentLevel =
-    levels.find((level) => level.level_key === status?.medal_key) ?? null;
+  const currentLevel = levels.find((level) => level.level_key === status?.medal_key) ?? null;
   const projectedLevel =
     levels.find((level) => level.level_key === status?.eligible_level_key) ?? null;
   const focusLevel = projectedLevel ?? levels.find((level) => level.level_key === "bronze") ?? null;
