@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 import { formatDateTime } from "@/lib/student/portal";
-import { getStudentRewardsContext, rewardBenefitLabel } from "@/lib/student/rewards";
+import { getStudentRewardsContext, rewardBenefitLabel, rewardObject } from "@/lib/student/rewards";
 
 import { MedalsAccessUnlocked, RewardsOnboardingActivation } from "./OnboardingActivation";
 
@@ -19,6 +19,7 @@ type MedalDefinition = {
   private_discount_pct: number;
   event_discount_pct: number;
   monthly_guest_invites: number;
+  benefits_definition: Record<string, unknown> | null;
 };
 
 type MedalProgress = {
@@ -43,10 +44,17 @@ type MedalStatusSnapshot = {
 function benefitLines(level: MedalDefinition | null) {
   if (!level) return [];
 
+  const definition = rewardObject(level.benefits_definition);
   const lines: string[] = [];
+  const priorityLabel =
+    typeof definition.waitlist_priority_label === "string"
+      ? definition.waitlist_priority_label
+      : level.waitlist_priority > 0
+        ? "Prioridad"
+        : null;
 
-  if (level.waitlist_priority > 0) {
-    lines.push("Prioridad en lista de espera");
+  if (priorityLabel) {
+    lines.push(`${priorityLabel} en lista de espera`);
   }
   if (level.event_discount_pct > 0) {
     lines.push(`${level.event_discount_pct}% en talleres y eventos elegibles`);
@@ -58,6 +66,15 @@ function benefitLines(level: MedalDefinition | null) {
     lines.push(
       `${level.monthly_guest_invites} pase${level.monthly_guest_invites === 1 ? "" : "s"} de invitada al mes`,
     );
+  }
+  if (definition.early_access === true) {
+    lines.push("Acceso anticipado a inscripciones");
+  }
+  if (definition.exclusive_promotions === true) {
+    lines.push("Promociones especiales de Medallas");
+  }
+  if (definition.premium_experiences === true) {
+    lines.push("Experiencias premium de Demeter");
   }
 
   return lines;
@@ -132,7 +149,7 @@ export default async function StudentRewardsPage() {
     ctx.supabase
       .from("reward_status_level_definitions")
       .select(
-        "level_key,level_order,title,required_active_days,max_no_shows,min_continuity_months,max_renewal_gap_days,waitlist_priority,private_discount_pct,event_discount_pct,monthly_guest_invites",
+        "level_key,level_order,title,required_active_days,max_no_shows,min_continuity_months,max_renewal_gap_days,waitlist_priority,private_discount_pct,event_discount_pct,monthly_guest_invites,benefits_definition",
       )
       .eq("studio_id", ctx.membership.studio_id)
       .order("level_order"),
@@ -142,11 +159,10 @@ export default async function StudentRewardsPage() {
   const levels = (levelsData ?? []) as MedalDefinition[];
   const currentLevel =
     levels.find((level) => level.level_key === status?.medal_key) ?? null;
-  const currentOrder = currentLevel?.level_order ?? 0;
-  const targetLevel =
-    levels.find((level) => level.level_order > currentOrder) ??
-    (currentLevel ? null : levels[0] ?? null);
-  const targetProgress = targetLevel ? (status?.levels?.[targetLevel.level_key] ?? {}) : null;
+  const projectedLevel =
+    levels.find((level) => level.level_key === status?.eligible_level_key) ?? null;
+  const focusLevel = projectedLevel ?? levels.find((level) => level.level_key === "bronze") ?? null;
+  const focusProgress = focusLevel ? (status?.levels?.[focusLevel.level_key] ?? {}) : null;
   const benefits = benefitLines(currentLevel);
   const availableRewards = ctx.rewards.filter((reward) => reward.status === "available");
 
@@ -210,12 +226,16 @@ export default async function StudentRewardsPage() {
         </Link>
       </section>
 
-      {targetLevel && targetProgress ? (
+      {focusLevel && focusProgress ? (
         <section className="student-card p-5">
-          <p className="student-eyebrow">Próxima medalla</p>
-          <h2 className="mt-1 text-lg font-semibold text-white">Medalla {targetLevel.title}</h2>
+          <p className="student-eyebrow">Tu avance de este mes</p>
+          <h2 className="mt-1 text-lg font-semibold text-white">
+            {projectedLevel
+              ? `Hoy cumples los requisitos de Medalla ${projectedLevel.title}`
+              : `Camino a Medalla ${focusLevel.title}`}
+          </h2>
           <div className="mt-4 space-y-2">
-            {requirementLines(targetLevel, targetProgress).map((item) => (
+            {requirementLines(focusLevel, focusProgress).map((item) => (
               <div
                 key={item.label}
                 className="flex items-start gap-2 rounded-xl border border-white/10 bg-black/15 px-3 py-2.5"
@@ -232,9 +252,9 @@ export default async function StudentRewardsPage() {
               </div>
             ))}
           </div>
-          <p className="mt-3 text-xs leading-5 text-zinc-500">
-            No necesitas obtener las medallas una por una. El Medallero muestra los requisitos de
-            cada una.
+          <p className="mt-3 text-sm leading-6 text-zinc-500">
+            La medalla del mes se asigna al cierre. Puedes obtener directamente cualquier medalla
+            cuyos requisitos cumplas.
           </p>
           <Link
             href="/student/recompensas/medallero"
