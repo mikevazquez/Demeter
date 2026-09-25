@@ -155,7 +155,7 @@ export type StudentClassFeedItem = {
 };
 
 export const getStudentPortalContext = cache(async () => {
-  const supabase = await createClient();
+  const supabase = await createClient("student");
   const {
     data: { user },
     error: authError,
@@ -189,15 +189,8 @@ export const getStudentPortalContext = cache(async () => {
   const account = accountResult.data;
   const membership = membershipResult.data;
 
-  if (!account || account.status !== "active") {
+  if (!account || account.status !== "active" || !membership) {
     redirect("/login/student?error=access");
-  }
-
-  // An installed admin PWA created before the portal-aware manifest fix can
-  // still reopen at /student. Keep the valid Supabase session and hand the
-  // authenticated user to the studio portal instead of making them sign in again.
-  if (!membership) {
-    redirect("/admin");
   }
 
   if (account.must_change_password) redirect("/login/student/activar");
