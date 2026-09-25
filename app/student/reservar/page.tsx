@@ -1,11 +1,6 @@
 import Link from "next/link";
 
-import {
-  bookingReasonCopy,
-  getStudentPortalContext,
-  localDateKey,
-  type StudentSession,
-} from "@/lib/student/portal";
+import { getStudentPortalContext, localDateKey, type StudentSession } from "@/lib/student/portal";
 
 import BookingEligibilityRefresh from "./BookingEligibilityRefresh";
 import { BookingRestrictionCard } from "./BookingRestrictionCard";
@@ -130,7 +125,7 @@ export default async function StudentReservePage({
     query.discipline && /^[0-9a-f-]{36}$/i.test(query.discipline) ? query.discipline : null;
   const rewardSuffix = rewardMode ? "&credit=reward" : "";
   const disciplineSuffix = selectedDiscipline ? `&discipline=${selectedDiscipline}` : "";
-  const querySuffix = `${querySuffix}${disciplineSuffix}`;
+  const querySuffix = `${rewardSuffix}${disciplineSuffix}`;
   const { supabase, studio, membership } = await getStudentPortalContext();
   const { data: globalRestrictionData } = await supabase.rpc(
     "student_booking_restrictions_snapshot",
@@ -235,7 +230,6 @@ export default async function StudentReservePage({
       item.name,
       {
         color: item.color_hex ?? "#FF0A8A",
-        dropInPriceMinor: item.drop_in_price_minor,
         coverImagePath:
           typeof item.cover_image_path === "string" ? item.cover_image_path : null,
       },
