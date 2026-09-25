@@ -17,18 +17,17 @@ describe("SF-N14 PORTAL UX-04 Reservar", () => {
   const actions = source("app/student/actions.ts");
   const portal = source("lib/student/portal.ts");
 
-  it("uses day as the only schedule selector", () => {
+  it("uses day plus an optional discipline chip as the schedule selectors", () => {
     expect(reserve).toContain('aria-label="Seleccionar fecha"');
+    expect(reserve).toContain('aria-label="Filtrar por disciplina"');
     expect(reserve).toContain("target_start: selectedDate");
     expect(reserve).toContain("target_end: selectedDate");
-    expect(reserve).toContain("target_discipline_id: null");
-    expect(reserve).not.toContain("Todas las disciplinas");
+    expect(reserve).toContain("target_discipline_id: selectedDiscipline");
     expect(reserve).not.toContain("Todo el día");
-    expect(reserve).not.toContain("target_discipline_id: query");
   });
 
-  it("renders a compact chronological schedule with student-centered availability", () => {
-    expect(reserve).toContain('data-density="compact"');
+  it("renders a visual chronological schedule with student-centered availability", () => {
+    expect(reserve).toContain('data-density="visual"');
     expect(reserve).toContain("Clases del día");
     expect(reserve).toContain("No hay clases disponibles para esta fecha");
     expect(reserve).toContain("lugares disponibles");
@@ -37,8 +36,8 @@ describe("SF-N14 PORTAL UX-04 Reservar", () => {
   });
 
   it("uses choose-class then detail instead of inline quick booking", () => {
-    expect(reserve).toContain("Ya reservada");
-    expect(reserve).toContain("Disponible");
+    expect(reserve).toContain("Reservada ✓");
+    expect(reserve).toContain("Reservar →");
     expect(reserve).not.toContain("QuickBookButton");
     expect(reserve).not.toContain("PurchaseSingleClassButton");
     expect(detail).toContain("Reservar esta clase");
