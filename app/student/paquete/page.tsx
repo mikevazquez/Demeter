@@ -220,7 +220,8 @@ export default async function StudentPackagePage() {
         <section className="rounded-2xl border border-emerald-400/20 bg-emerald-400/[0.045] p-4">
           <p className="text-xs font-semibold text-emerald-300">Clases extra</p>
           <h2 className="mt-1 text-lg font-semibold text-white">
-            {extraClassesAvailable} {extraClassesAvailable === 1 ? "clase extra disponible" : "clases extra disponibles"}
+            {extraClassesAvailable}{" "}
+            {extraClassesAvailable === 1 ? "clase extra disponible" : "clases extra disponibles"}
           </h2>
           {extraClassesExpiry ? (
             <p className="mt-1 text-sm text-zinc-400">
@@ -231,7 +232,11 @@ export default async function StudentPackagePage() {
       ) : null}
 
       {purchasableProducts.length ? (
-        <section id="catalogo-paquetes" data-package-block="catalog" className="scroll-mt-6 space-y-4">
+        <section
+          id="catalogo-paquetes"
+          data-package-block="catalog"
+          className="scroll-mt-6 space-y-4"
+        >
           <div>
             <h2 className="text-xl font-semibold text-white">
               {activePackage ? "Renovar o cambiar paquete" : "Elige tu paquete"}
@@ -350,7 +355,10 @@ export default async function StudentPackagePage() {
                 {others.length} {others.length === 1 ? "paquete anterior" : "paquetes anteriores"}
               </p>
             </div>
-            <span aria-hidden="true" className="text-xl text-zinc-500 transition group-open:rotate-180">
+            <span
+              aria-hidden="true"
+              className="text-xl text-zinc-500 transition group-open:rotate-180"
+            >
               ⌄
             </span>
           </summary>
