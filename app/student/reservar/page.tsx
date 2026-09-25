@@ -115,6 +115,18 @@ function availabilityCopy(spotsAvailable: number) {
   return `${spotsAvailable} lugares disponibles`;
 }
 
+function disciplineEmoji(name: string) {
+  const value = name.toLocaleLowerCase("es-MX");
+  if (value.includes("pole")) return "💗";
+  if (value.includes("heels")) return "👠";
+  if (value.includes("twerk")) return "🍑";
+  if (value.includes("yoga")) return "🧘";
+  if (value.includes("aro") || value.includes("lyra")) return "⭕";
+  if (value.includes("tela")) return "🎀";
+  if (value.includes("flex")) return "🤸";
+  return "✨";
+}
+
 export default async function StudentReservePage({
   searchParams,
 }: {
@@ -419,56 +431,86 @@ export default async function StudentReservePage({
               const waitlisted = waitlistedSessionIds.has(session.session_id);
               const style = activityStyleMap.get(session.activity);
               const activityColor = style?.color ?? "#FF0A8A";
+              const coverImagePath =
+                sessionMetaMap.get(session.session_id)?.coverImagePath ??
+                style?.coverImagePath ??
+                null;
+              const coverImageUrl = coverImagePath
+                ? supabase.storage.from("class-artwork").getPublicUrl(coverImagePath).data.publicUrl
+                : null;
+              const detailHref = `/student/reservar/${session.session_id}?date=${selectedDate}${querySuffix}`;
+              const actionLabel = reserved
+                ? "Reservada ✓"
+                : waitlisted
+                  ? "En espera"
+                  : session.eligibility?.eligible
+                    ? "Reservar →"
+                    : "Ver clase →";
 
               return (
                 <article
                   key={session.session_id}
-                  data-density="compact"
-                  className="rounded-2xl border border-white/10 bg-black/20 p-3 transition hover:bg-white/[0.045]"
-                  style={{ borderLeftColor: activityColor, borderLeftWidth: 3 }}
+                  data-density="visual"
+                  className="overflow-hidden rounded-[1.4rem] border border-white/10 bg-[linear-gradient(145deg,#12141d,#0d0f16)] transition hover:border-fuchsia-400/25"
                 >
-                  <div className="grid grid-cols-[4.25rem_1fr_auto] items-center gap-3">
-                    <div>
-                      <p className="text-sm font-semibold text-white">{timeLabel}</p>
-                      <p className="mt-0.5 text-xs text-zinc-500">
-                        {availabilityCopy(session.spots_available)}
-                      </p>
-                    </div>
-
+                  <div className="grid grid-cols-[5.25rem_1fr_auto] items-stretch gap-0 sm:grid-cols-[6.5rem_1fr_auto]">
                     <Link
-                      href={`/student/reservar/${session.session_id}?date=${selectedDate}${querySuffix}`}
-                      className="min-w-0 border-l border-white/10 pl-3"
+                      href={detailHref}
+                      aria-label={`Ver ${session.activity}`}
+                      className="relative min-h-24 overflow-hidden border-r border-white/10"
+                      style={{
+                        background: coverImageUrl
+                          ? `linear-gradient(180deg, transparent, rgba(8,9,13,.32)), url("${coverImageUrl}") center / cover`
+                          : `radial-gradient(circle at 75% 20%, ${activityColor}66, transparent 36%), linear-gradient(145deg, ${activityColor}30, #0d1119)`,
+                      }}
                     >
-                      <p className="truncate text-sm font-semibold text-white">
+                      {!coverImageUrl ? (
+                        <span
+                          aria-hidden="true"
+                          className="absolute inset-0 grid place-items-center text-3xl"
+                        >
+                          {disciplineEmoji(session.discipline)}
+                        </span>
+                      ) : null}
+                    </Link>
+
+                    <Link href={detailHref} className="min-w-0 px-3 py-3.5 sm:px-4">
+                      <p className="text-xs font-medium text-zinc-500">{timeLabel}</p>
+                      <h3 className="mt-0.5 truncate text-base font-semibold text-white">
                         {session.activity}
-                      </p>
+                      </h3>
                       <p className="mt-0.5 truncate text-xs" style={{ color: activityColor }}>
                         {session.discipline}
                       </p>
-                      <p className="mt-0.5 truncate text-xs text-zinc-500">
-                        {[session.coach, session.space || session.location]
+                      <p className="mt-1 truncate text-xs text-zinc-500">
+                        {[session.space || session.location, session.coach]
                           .filter(Boolean)
                           .join(" · ") || "Ver detalle"}
                       </p>
                     </Link>
 
-                    <Link
-                      href={`/student/reservar/${session.session_id}?date=${selectedDate}${querySuffix}`}
-                      aria-label={`Ver detalles de ${session.activity}`}
-                      className="flex items-center gap-2"
-                    >
+                    <div className="flex min-w-[6.5rem] flex-col items-end justify-between gap-2 px-3 py-3.5">
                       <span
-                        className={`hidden rounded-full border px-2.5 py-1 text-xs font-semibold sm:inline-flex ${statusClass(
+                        className={`rounded-full border px-2 py-1 text-[11px] font-semibold ${statusClass(
                           session,
                           waitlisted,
                         )}`}
                       >
-                        {statusCopy(session, waitlisted)}
+                        {availabilityCopy(session.spots_available)}
                       </span>
-                      <span aria-hidden="true" className="text-xl text-zinc-500">
-                        ›
-                      </span>
-                    </Link>
+                      <Link
+                        href={detailHref}
+                        className={`inline-flex min-h-10 items-center justify-center rounded-xl px-3 text-xs font-semibold transition ${
+                          reserved || waitlisted
+                            ? "border border-white/10 bg-white/[0.04] text-zinc-300"
+                            : session.eligibility?.eligible
+                              ? "bg-fuchsia-600 text-white hover:bg-fuchsia-500"
+                              : "border border-white/10 bg-white/[0.04] text-white"
+                        }`}
+                      >
+                        {actionLabel}
+                      </Link>
+                    </div>
                   </div>
                 </article>
               );
