@@ -97,10 +97,11 @@ describe("SF-N14 clean avatar, activity colors and single-class purchase", () =>
     expect(checkoutEdge).toContain("moneyFromMinor(attemptRow.amount_minor)");
   });
 
-  it("shows the profile photo in the global student shell without coupling Home to avatar writes", () => {
-    expect(layout).toContain('src="/student/perfil/avatar"');
-    expect(layout).toContain('aria-label="Abrir mi perfil"');
+  it("shows the profile photo in Home without coupling the page to avatar writes", () => {
+    expect(home).toContain('src="/student/perfil/avatar"');
+    expect(home).toContain('aria-label="Abrir mi perfil"');
     expect(home).not.toContain("updateStudentAvatarAction");
+    expect(layout).toContain('href="/student/notificaciones"');
   });
 
   it("does not touch the global stylesheet for these changes", () => {
