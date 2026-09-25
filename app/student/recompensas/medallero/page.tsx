@@ -158,7 +158,10 @@ export default async function StudentMedalsPage() {
   return (
     <main className="space-y-5 pb-5">
       <header>
-        <Link href="/student/recompensas" className="inline-flex min-h-11 items-center text-sm font-semibold text-fuchsia-300">
+        <Link
+          href="/student/recompensas"
+          className="inline-flex min-h-11 items-center text-sm font-semibold text-fuchsia-300"
+        >
           ← Medallas y beneficios
         </Link>
         <p className="mt-4 text-xs font-semibold uppercase tracking-[0.24em] text-fuchsia-300">
