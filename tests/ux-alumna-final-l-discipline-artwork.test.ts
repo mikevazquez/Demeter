@@ -7,7 +7,7 @@ function source(path: string) {
   return readFileSync(join(process.cwd(), path), "utf8");
 }
 
-describe("ALUMNA UX FINAL L · discipline artwork", () => {
+describe("ALUMNA UX FINAL L · optional class artwork", () => {
   const home = source("app/student/page.tsx");
   const reserve = source("app/student/reservar/page.tsx");
   const detail = source("app/student/reservar/[sessionId]/page.tsx");
@@ -15,12 +15,12 @@ describe("ALUMNA UX FINAL L · discipline artwork", () => {
   const action = source("app/admin/disciplinas/actions.ts");
   const layout = source("app/admin/layout.tsx");
 
-  it("keeps the week calendar only in Reservar", () => {
-    expect(home).not.toContain('data-home-block="week-calendar"');
+  it("keeps the full booking calendar in Reservar and a compact weekly strip on Home", () => {
+    expect(home).toContain('aria-label="Tu semana"');
     expect(reserve).toContain('aria-label="Seleccionar fecha"');
   });
 
-  it("lets admin upload optional discipline images", () => {
+  it("keeps optional visual configuration available in admin", () => {
     expect(admin).toContain("Imágenes de disciplinas");
     expect(admin).toContain('name="cover_image"');
     expect(admin).toContain('accept="image/jpeg,image/png,image/webp"');
@@ -29,9 +29,12 @@ describe("ALUMNA UX FINAL L · discipline artwork", () => {
     expect(layout).toContain('href: "/admin/disciplinas"');
   });
 
-  it("uses discipline artwork as the visual fallback after session and activity images", () => {
-    expect(reserve).toContain("disciplineImageMap.get(session.discipline_id)");
-    expect(detail).toContain("disciplineImagePath");
-    expect(home).toContain("disciplineArtworkPath");
+  it("uses session artwork, then activity artwork, then the automatic Demeter fallback", () => {
+    expect(home).toContain("sessionArtworkPath ?? activityArtworkPath");
+    expect(reserve).toContain("sessionMetaMap.get(session.session_id)?.coverImagePath");
+    expect(reserve).toContain("style?.coverImagePath ??");
+    expect(detail).toContain("sessionImagePath ?? activityImagePath");
+    expect(home).not.toContain("disciplineArtworkPath");
+    expect(detail).not.toContain("disciplineImagePath");
   });
 });
