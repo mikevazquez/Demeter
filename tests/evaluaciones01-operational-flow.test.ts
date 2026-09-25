@@ -133,14 +133,14 @@ describe("EVALUACIONES-01 operational cycle", () => {
     expect(adminProfile).toContain("Rechazada");
   });
 
-  it("surfaces evaluation actions inside the separate technical-level Home block", () => {
+  it("surfaces pending evaluation actions as Home priorities without adding a dashboard card", () => {
     expect(studentHome).toContain('supabase.rpc("student_evaluations_snapshot")');
-    expect(studentHome).toContain('data-home-block="technical-level"');
+    expect(studentHome).not.toContain('data-home-block="technical-level"');
     expect(studentHome).toContain("Evaluación disponible");
     expect(studentHome).toContain('"Ver evaluación"');
     expect(studentHome).toContain('"Elegir mi clase"');
     expect(studentHome).toContain("activeEvaluationInvitation?.invitation_id");
-    expect(studentHome).not.toContain('data-home-block="evaluation-invitation"');
+    expect(studentHome).toContain('data-home-block="priority-action"');
   });
 
   it("reuses the normal class feed and keeps checkout inside evaluation scheduling", () => {
