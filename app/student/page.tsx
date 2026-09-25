@@ -218,11 +218,7 @@ export default async function StudentHomePage({
 
   const artworkSessionIds = nextClass ? [nextClass.session_id] : [];
   const artworkActivityNames = nextClass ? [nextClass.activity] : [];
-  const [
-    { data: artworkSessionRows },
-    { data: artworkTemplateRows },
-    { data: artworkDisciplineRows },
-  ] = await Promise.all([
+  const [{ data: artworkSessionRows }, { data: artworkTemplateRows }] = await Promise.all([
     artworkSessionIds.length
       ? supabase
           .from("class_sessions")
@@ -237,14 +233,6 @@ export default async function StudentHomePage({
           .eq("studio_id", membership.studio_id)
           .in("name", artworkActivityNames)
       : Promise.resolve({ data: [] }),
-    nextClass?.discipline
-      ? supabase
-          .from("disciplines")
-          .select("*")
-          .eq("studio_id", membership.studio_id)
-          .eq("name", nextClass.discipline)
-          .limit(1)
-      : Promise.resolve({ data: [] }),
   ]);
 
   const sessionArtworkPath =
@@ -255,11 +243,7 @@ export default async function StudentHomePage({
     artworkTemplateRows?.[0] && typeof artworkTemplateRows[0].cover_image_path === "string"
       ? artworkTemplateRows[0].cover_image_path
       : null;
-  const disciplineArtworkPath =
-    artworkDisciplineRows?.[0] && typeof artworkDisciplineRows[0].cover_image_path === "string"
-      ? artworkDisciplineRows[0].cover_image_path
-      : null;
-  const nextClassArtworkPath = sessionArtworkPath ?? activityArtworkPath ?? disciplineArtworkPath;
+  const nextClassArtworkPath = sessionArtworkPath ?? activityArtworkPath;
   const nextClassArtworkUrl = nextClassArtworkPath
     ? supabase.storage.from("class-artwork").getPublicUrl(nextClassArtworkPath).data.publicUrl
     : null;
