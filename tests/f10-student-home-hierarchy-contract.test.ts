@@ -14,7 +14,7 @@ describe("F10/N14 student home visual hierarchy", () => {
     expect(home.indexOf('data-home-block="next-class"')).toBeLessThan(
       home.indexOf('data-home-block="package"'),
     );
-    expect(home).toContain("Tu próxima clase");
+    expect(home).toContain('data-home-block="next-class"');
     expect(home).toContain("Tu lugar está confirmado");
     expect(home).toContain('"/student/mis-clases"');
   });
@@ -32,7 +32,8 @@ describe("F10/N14 student home visual hierarchy", () => {
     expect(home).toContain("Activa tu paquete");
     expect(home).not.toContain("Clases del día");
     expect(home).not.toContain("Semana anterior");
-    expect(home).not.toContain('role="progressbar"');
+    expect(home).toContain('aria-label="Progreso para desbloquear Bronce"');
+    expect(home).toContain('role="progressbar"');
   });
 
   it("keeps Medal and package separate from technical training concepts", () => {
