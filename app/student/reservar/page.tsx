@@ -202,8 +202,7 @@ export default async function StudentReservePage({
       item.id,
       {
         requiresResource: Boolean(item.requires_resource),
-        coverImagePath:
-          typeof item.cover_image_path === "string" ? item.cover_image_path : null,
+        coverImagePath: typeof item.cover_image_path === "string" ? item.cover_image_path : null,
       },
     ]),
   );
