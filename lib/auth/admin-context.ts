@@ -8,11 +8,15 @@ export async function getAdminContext(requiredCapability?: Capability) {
   const supabase = await createClient();
   const {
     data: { user },
+    error: authError,
   } = await supabase.auth.getUser();
 
+  if (authError && (authError.status == null || authError.status === 0 || authError.status >= 500)) {
+    throw new Error("admin_auth_temporarily_unavailable");
+  }
   if (!user) redirect("/login/studio");
 
-  const [{ data: account }, { data: memberships }] = await Promise.all([
+  const [accountResult, membershipsResult] = await Promise.all([
     supabase.from("user_accounts").select("status").eq("id", user.id).maybeSingle(),
     supabase
       .from("studio_memberships")
@@ -20,6 +24,13 @@ export async function getAdminContext(requiredCapability?: Capability) {
       .eq("user_id", user.id)
       .eq("active", true),
   ]);
+
+  if (accountResult.error || membershipsResult.error) {
+    throw new Error("admin_access_lookup_temporarily_unavailable");
+  }
+
+  const account = accountResult.data;
+  const memberships = membershipsResult.data;
 
   if (!account || account.status !== "active" || !memberships?.length) {
     await supabase.auth.signOut();
