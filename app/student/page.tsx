@@ -50,6 +50,16 @@ type StudentEvaluationsHomeSnapshot = {
   disciplines?: EvaluationHomeCard[];
 };
 
+type RewardOnboardingHomeRow = {
+  documents_completed_at: string | null;
+  profile_completed_at: string | null;
+  app_installed_at: string | null;
+  notifications_enabled_at: string | null;
+  first_reservation_at: string | null;
+  first_attendance_at: string | null;
+  access_unlocked_at: string | null;
+};
+
 const urgentNotificationTypes = new Set([
   "session_minimum_cancelled",
   "class_cancelled_student",
@@ -144,6 +154,7 @@ export default async function StudentHomePage({
     appNotificationsResult,
     bookingRestrictionsResult,
     evaluationsResult,
+    rewardOnboardingResult,
   ] = await Promise.all([
     supabase.rpc("student_reward_status_snapshot"),
     supabase
@@ -167,6 +178,14 @@ export default async function StudentHomePage({
       .limit(12),
     supabase.rpc("student_booking_restrictions_snapshot", { p_session_id: null }),
     supabase.rpc("student_evaluations_snapshot"),
+    supabase
+      .from("reward_onboarding")
+      .select(
+        "documents_completed_at,profile_completed_at,app_installed_at,notifications_enabled_at,first_reservation_at,first_attendance_at,access_unlocked_at",
+      )
+      .eq("studio_id", membership.studio_id)
+      .eq("student_id", snapshot.profile.student_id)
+      .maybeSingle(),
   ]);
 
   const rewardStatus = (rewardStatusResult.data as RewardStatusSnapshot | null) ?? null;
@@ -174,7 +193,21 @@ export default async function StudentHomePage({
   const fallbackLevelKey = rewardMembershipResult.data?.current_level_key ?? null;
   const fallbackLevel =
     levelDefinitions.find((level) => level.level_key === fallbackLevelKey) ?? null;
-  const rewardsUnlocked = Boolean(rewardStatus?.access_unlocked);
+  const rewardOnboarding =
+    (rewardOnboardingResult.data as RewardOnboardingHomeRow | null) ?? null;
+  const onboardingSteps = [
+    rewardOnboarding?.documents_completed_at,
+    rewardOnboarding?.profile_completed_at,
+    rewardOnboarding?.app_installed_at,
+    rewardOnboarding?.notifications_enabled_at,
+    rewardOnboarding?.first_reservation_at,
+    rewardOnboarding?.first_attendance_at,
+  ];
+  const onboardingCompleted = onboardingSteps.filter(Boolean).length;
+  const onboardingPercent = Math.round((onboardingCompleted / onboardingSteps.length) * 100);
+  const rewardsUnlocked = Boolean(
+    rewardStatus?.access_unlocked || rewardOnboarding?.access_unlocked_at,
+  );
   const currentMedal = rewardsUnlocked
     ? (rewardStatus?.current_medal ?? rewardStatus?.current_level ?? fallbackLevel)
     : null;
@@ -620,23 +653,68 @@ export default async function StudentHomePage({
               rewardsUnlocked ? "/student/recompensas/medallero" : "/student/recompensas"
             }
             data-home-block="medal"
-            className="relative overflow-hidden rounded-[1.55rem] border border-white/10 bg-[radial-gradient(circle_at_82%_72%,rgba(168,115,255,.26),transparent_33%),linear-gradient(145deg,#171821,#0c0e14)] p-4"
+            className={
+              "relative flex min-h-[230px] flex-col overflow-hidden rounded-[1.55rem] border p-4 " +
+              (rewardsUnlocked
+                ? "border-amber-400/20 bg-[radial-gradient(circle_at_78%_62%,rgba(205,127,50,.22),transparent_30%),radial-gradient(circle_at_50%_110%,rgba(255,10,138,.18),transparent_38%),linear-gradient(145deg,#17141b,#0c0d13)]"
+                : "border-fuchsia-400/20 bg-[radial-gradient(circle_at_84%_38%,rgba(205,127,50,.14),transparent_24%),radial-gradient(circle_at_70%_105%,rgba(255,10,138,.16),transparent_34%),linear-gradient(145deg,#17131a,#0c0d13)]")
+            }
           >
-            <p className="text-sm font-semibold text-white">
-              {rewardsUnlocked ? "Medalla actual" : "Medalla"}
-            </p>
-            <p className="mt-3 truncate text-2xl font-semibold text-white">{medalTitle}</p>
-            <p className="mt-1 text-xs leading-5 text-zinc-500">
-              {rewardsUnlocked
-                ? "Por tu constancia"
-                : "Completa tu onboarding para desbloquear Bronce"}
-            </p>
-            <span
-              aria-hidden="true"
-              className="absolute bottom-2 right-3 text-5xl drop-shadow-[0_0_20px_rgba(168,115,255,.34)]"
-            >
-              {medalEmoji(currentMedalKey)}
-            </span>
+            {rewardsUnlocked ? (
+              <>
+                <p className="text-sm font-semibold text-white">Medalla actual 🏅</p>
+                <p className="mt-3 truncate text-2xl font-semibold text-white">{medalTitle}</p>
+                <p className="mt-1 text-xs leading-5 text-zinc-400">Por tu constancia</p>
+
+                <div className="mt-auto flex items-end justify-between gap-3 pt-5">
+                  <span
+                    aria-hidden="true"
+                    className="text-6xl drop-shadow-[0_0_24px_rgba(205,127,50,.3)]"
+                  >
+                    {medalEmoji(currentMedalKey)}
+                  </span>
+                  <span className="rounded-2xl border border-white/10 bg-white/[0.05] px-3 py-2 text-[11px] font-semibold text-zinc-200">
+                    Ver medallero →
+                  </span>
+                </div>
+              </>
+            ) : (
+              <>
+                <p className="text-sm font-semibold text-white">Tu primera medalla 🏅</p>
+                <h3 className="mt-3 text-2xl font-semibold leading-tight text-white">
+                  Desbloquea Bronce
+                </h3>
+                <p className="mt-1 text-xs leading-5 text-zinc-400">
+                  Completa tu onboarding para obtener tu primera medalla.
+                </p>
+
+                <div className="mt-4">
+                  <div className="flex items-center justify-between gap-2 text-[11px]">
+                    <span className="font-semibold text-zinc-300">
+                      {onboardingCompleted} de {onboardingSteps.length} pasos completados
+                    </span>
+                    <span className="font-semibold text-fuchsia-300">{onboardingPercent}%</span>
+                  </div>
+                  <div
+                    className="mt-2 h-2 overflow-hidden rounded-full bg-white/10"
+                    role="progressbar"
+                    aria-label="Progreso para desbloquear Bronce"
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-valuenow={onboardingPercent}
+                  >
+                    <div
+                      className="h-full rounded-full bg-gradient-to-r from-fuchsia-600 to-fuchsia-400"
+                      style={{ width: onboardingPercent + "%" }}
+                    />
+                  </div>
+                </div>
+
+                <span className="mt-auto rounded-2xl bg-fuchsia-600 px-3 py-2.5 text-center text-xs font-semibold text-white shadow-[0_8px_24px_rgba(255,10,138,.18)]">
+                  Continuar activación →
+                </span>
+              </>
+            )}
           </Link>
         </div>
       </section>
