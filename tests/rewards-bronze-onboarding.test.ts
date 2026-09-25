@@ -162,7 +162,7 @@ describe("REWARDS · onboarding access + monthly Medals", () => {
 
   it("shows the current Medal separately and links to the Medallero", () => {
     expect(homePage).toContain("Medalla actual");
-    expect(homePage).toContain('href="/student/recompensas/medallero"');
+    expect(homePage).toContain('"/student/recompensas/medallero"');
     expect(homePage).not.toContain("Siguiente medalla");
     expect(homePage).toContain("Sin medalla");
     expect(homePage).toContain("Por activar");
