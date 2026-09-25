@@ -19,6 +19,12 @@ const items: MoreItem[] = [
     capability: CAPABILITIES.SCHEDULE_READ,
   },
   {
+    title: "Disciplinas",
+    description: "Imágenes y presentación visual de cada disciplina en el portal.",
+    href: "/admin/disciplinas",
+    capability: CAPABILITIES.SCHEDULE_READ,
+  },
+  {
     title: "Documentos",
     description: "Contratos, responsivas, reglamentos y consentimientos.",
     href: "/admin/documentos",
