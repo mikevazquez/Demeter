@@ -68,8 +68,8 @@ const items: MoreItem[] = [
   },
   {
     title: "Integraciones",
-    description: "Conecta Studio Flow con Asistian y otros servicios externos.",
-    href: "/admin/integraciones/asistian",
+    description: "Conecta WhatsApp directo con Meta y administra servicios externos.",
+    href: "/admin/integraciones/whatsapp",
     ownerOnly: true,
   },
   {
