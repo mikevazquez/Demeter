@@ -100,7 +100,7 @@ export default async function StudentLayout({ children }: { children: React.Reac
         appleTouchIconHref={"/pwa/studio-icon/180?" + query}
       />
 
-      <header className="sticky top-0 z-40 border-b border-white/10 bg-[#0d0e14]/92 backdrop-blur-xl">
+      <header className="sticky top-0 z-40 hidden border-b border-white/10 bg-[#0d0e14]/92 backdrop-blur-xl lg:block">
         <div className="mx-auto flex min-h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
           <Link href="/student" className="min-w-0" aria-label="Ir a Inicio">
             <p className="text-xs font-bold uppercase tracking-[0.28em] text-white">DEMETER</p>
@@ -136,7 +136,7 @@ export default async function StudentLayout({ children }: { children: React.Reac
         </div>
       </header>
 
-      <div className="mx-auto flex max-w-7xl gap-6 px-4 pb-32 pt-5 sm:px-6 lg:px-8 lg:pb-10 lg:pt-6">
+      <div className="mx-auto flex max-w-7xl gap-6 px-0 pb-32 pt-0 sm:px-6 lg:px-8 lg:pb-10 lg:pt-6">
         <StudentNav />
         <div className="min-w-0 flex-1">{children}</div>
       </div>
