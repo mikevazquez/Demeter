@@ -95,3 +95,107 @@
     opacity: 1;
   }
 }
+
+/* ALUMNA-UX-FINAL-B · shared student experience contract */
+.student-shell {
+  --student-text-primary: #f7f8fb;
+  --student-text-secondary: #b5bdc9;
+  --student-text-muted: #8f98a6;
+  --student-surface: rgba(255, 255, 255, 0.03);
+  --student-line: rgba(255, 255, 255, 0.1);
+  --student-radius-card: 24px;
+  --student-touch-target: 44px;
+}
+
+.student-shell :where(a, button, input, select, textarea):focus-visible {
+  outline: 2px solid rgba(255, 10, 138, 0.92);
+  outline-offset: 2px;
+}
+
+.student-shell :where(button, [role="button"]) {
+  min-height: var(--student-touch-target);
+}
+
+.student-page-title {
+  color: var(--student-text-primary);
+  font-size: clamp(24px, 6vw, 32px);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.08;
+}
+
+.student-eyebrow {
+  color: #f0abfc;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.student-body {
+  color: var(--student-text-secondary);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.student-meta {
+  color: var(--student-text-muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.student-card {
+  border: 1px solid var(--student-line);
+  border-radius: var(--student-radius-card);
+  background: var(--student-surface);
+}
+
+.student-card-interactive {
+  transition:
+    border-color 160ms ease,
+    background 160ms ease,
+    transform 160ms ease;
+}
+
+.student-card-interactive:hover {
+  border-color: rgba(255, 10, 138, 0.26);
+  background: rgba(255, 255, 255, 0.045);
+}
+
+.student-action-primary,
+.student-action-secondary,
+.student-action-danger {
+  min-height: var(--student-touch-target);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 14px;
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.student-action-primary {
+  border: 1px solid transparent;
+  background: var(--accent);
+  color: white;
+}
+
+.student-action-secondary {
+  border: 1px solid var(--student-line);
+  background: transparent;
+  color: var(--student-text-primary);
+}
+
+.student-action-danger {
+  border: 1px solid rgba(255, 100, 116, 0.3);
+  background: rgba(255, 100, 116, 0.06);
+  color: #ffb2bc;
+}
+
+@media (max-width: 760px) {
+  .student-shell {
+    --student-radius-card: 20px;
+  }
+}

@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { getStudentPortalContext } from "@/lib/student/portal";
+import { rewardObject } from "@/lib/student/rewards";
 
 import MedalInfoDialog from "./MedalInfoDialog";
 
@@ -80,18 +81,16 @@ function requirementState(met: boolean | undefined) {
 }
 
 function benefitLines(level: MedalDefinition) {
+  const definition = rewardObject(level.benefits_definition);
   const lines: string[] = [];
+  const priorityLabel =
+    typeof definition.waitlist_priority_label === "string"
+      ? definition.waitlist_priority_label
+      : level.waitlist_priority > 0
+        ? "Prioridad"
+        : null;
 
-  lines.push(
-    level.waitlist_priority === 1
-      ? "Prioridad básica en lista de espera"
-      : level.waitlist_priority === 2
-        ? "Mayor prioridad en lista de espera"
-        : level.waitlist_priority === 3
-          ? "Prioridad alta en lista de espera"
-          : "Prioridad máxima en lista de espera",
-  );
-
+  if (priorityLabel) lines.push(`${priorityLabel} en lista de espera`);
   if (level.event_discount_pct > 0) {
     lines.push(`${level.event_discount_pct}% en talleres y eventos elegibles`);
   }
@@ -103,12 +102,9 @@ function benefitLines(level: MedalDefinition) {
       `${level.monthly_guest_invites} pase${level.monthly_guest_invites === 1 ? "" : "s"} de invitada al mes`,
     );
   }
-  if (level.level_key !== "bronze") {
-    lines.push("Acceso anticipado a inscripciones y promociones especiales");
-  }
-  if (level.level_key === "diamond") {
-    lines.push("Beneficios y experiencias premium de Demeter");
-  }
+  if (definition.early_access === true) lines.push("Acceso anticipado a inscripciones");
+  if (definition.exclusive_promotions === true) lines.push("Promociones especiales de Medallas");
+  if (definition.premium_experiences === true) lines.push("Experiencias premium de Demeter");
 
   return lines;
 }
@@ -134,7 +130,7 @@ export default async function StudentMedalsPage() {
     return (
       <main className="space-y-5 pb-5">
         <header>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-fuchsia-300">
+          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-fuchsia-300">
             Medallas
           </p>
           <h1 className="mt-1 text-3xl font-semibold tracking-tight text-white">Medallero</h1>
@@ -162,10 +158,13 @@ export default async function StudentMedalsPage() {
   return (
     <main className="space-y-5 pb-5">
       <header>
-        <Link href="/student/recompensas" className="text-xs font-semibold text-fuchsia-300">
-          ← Mi progreso
+        <Link
+          href="/student/recompensas"
+          className="inline-flex min-h-11 items-center text-sm font-semibold text-fuchsia-300"
+        >
+          ← Medallas y beneficios
         </Link>
-        <p className="mt-4 text-[10px] font-semibold uppercase tracking-[0.24em] text-fuchsia-300">
+        <p className="mt-4 text-xs font-semibold uppercase tracking-[0.24em] text-fuchsia-300">
           Medallas
         </p>
         <h1 className="mt-1 text-3xl font-semibold tracking-tight text-white">Medallero</h1>
@@ -176,15 +175,15 @@ export default async function StudentMedalsPage() {
       </header>
 
       <section className="rounded-3xl border border-white/10 bg-white/[0.025] p-4">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-zinc-500">
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">
           Tu Medalla actual
         </p>
         <div className="mt-2 flex items-center justify-between gap-3">
           <strong className="text-lg text-white">
-            {status.medal_title ? `Medalla ${status.medal_title}` : "Sin Medalla este ciclo"}
+            {status.medal_title ? `Medalla ${status.medal_title}` : "Sin medalla este mes"}
           </strong>
           {status.eligible_level_key ? (
-            <span className="rounded-full border border-fuchsia-500/25 bg-fuchsia-500/[0.08] px-2.5 py-1 text-[10px] font-semibold text-fuchsia-300">
+            <span className="rounded-full border border-fuchsia-500/25 bg-fuchsia-500/[0.08] px-2.5 py-1 text-xs font-semibold text-fuchsia-300">
               Proyección ·{" "}
               {levels.find((level) => level.level_key === status.eligible_level_key)?.title}
             </span>
@@ -228,11 +227,11 @@ export default async function StudentMedalsPage() {
                   <div className="flex flex-wrap items-center gap-2">
                     <h2 className="text-lg font-semibold text-white">Medalla {level.title}</h2>
                     {current ? (
-                      <span className="rounded-full border border-emerald-400/25 bg-emerald-400/[0.08] px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-emerald-300">
+                      <span className="rounded-full border border-emerald-400/25 bg-emerald-400/[0.08] px-2 py-0.5 text-xs font-semibold uppercase tracking-[0.12em] text-emerald-300">
                         Actual
                       </span>
                     ) : progress.eligible ? (
-                      <span className="rounded-full border border-fuchsia-400/25 bg-fuchsia-500/[0.08] px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-fuchsia-300">
+                      <span className="rounded-full border border-fuchsia-400/25 bg-fuchsia-500/[0.08] px-2 py-0.5 text-xs font-semibold uppercase tracking-[0.12em] text-fuchsia-300">
                         Cumples hoy
                       </span>
                     ) : null}
@@ -243,7 +242,7 @@ export default async function StudentMedalsPage() {
 
               <div className="mt-4 grid grid-cols-2 gap-2">
                 <div className="rounded-2xl border border-white/10 bg-black/20 p-3">
-                  <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-zinc-500">
+                  <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-zinc-500">
                     Días activos <MedalInfoDialog kind="activeDays" />
                   </div>
                   <p
@@ -254,7 +253,7 @@ export default async function StudentMedalsPage() {
                 </div>
 
                 <div className="rounded-2xl border border-white/10 bg-black/20 p-3">
-                  <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-zinc-500">
+                  <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-zinc-500">
                     No show <MedalInfoDialog kind="noShow" />
                   </div>
                   <p
@@ -265,7 +264,7 @@ export default async function StudentMedalsPage() {
                 </div>
 
                 <div className="rounded-2xl border border-white/10 bg-black/20 p-3">
-                  <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-zinc-500">
+                  <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-zinc-500">
                     Continuidad <MedalInfoDialog kind="continuity" />
                   </div>
                   <p
@@ -276,7 +275,7 @@ export default async function StudentMedalsPage() {
                 </div>
 
                 <div className="rounded-2xl border border-white/10 bg-black/20 p-3">
-                  <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-zinc-500">
+                  <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-zinc-500">
                     Renovación <MedalInfoDialog kind="renewal" />
                   </div>
                   <p
@@ -288,8 +287,8 @@ export default async function StudentMedalsPage() {
               </div>
 
               <div className="mt-4 border-t border-white/10 pt-4">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-zinc-500">
-                  Recompensas
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-zinc-500">
+                  Beneficios
                 </p>
                 <div className="mt-2 space-y-1.5">
                   {benefitLines(level).map((line) => (

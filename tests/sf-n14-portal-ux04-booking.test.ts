@@ -10,12 +10,14 @@ function source(path: string) {
 describe("SF-N14 PORTAL UX-04 Reservar", () => {
   const reserve = source("app/student/reservar/page.tsx");
   const detail = source("app/student/reservar/[sessionId]/page.tsx");
+  const resource = source("app/student/reservar/[sessionId]/recurso/page.tsx");
+  const resourcePicker = source("app/student/reservar/[sessionId]/recurso/ResourcePicker.tsx");
   const confirm = source("app/student/reservar/[sessionId]/confirmar/page.tsx");
   const success = source("app/student/reservar/confirmacion/page.tsx");
   const actions = source("app/student/actions.ts");
   const portal = source("lib/student/portal.ts");
 
-  it("uses date as the only reservation selector", () => {
+  it("uses day as the only schedule selector", () => {
     expect(reserve).toContain('aria-label="Seleccionar fecha"');
     expect(reserve).toContain("target_start: selectedDate");
     expect(reserve).toContain("target_end: selectedDate");
@@ -25,28 +27,41 @@ describe("SF-N14 PORTAL UX-04 Reservar", () => {
     expect(reserve).not.toContain("target_discipline_id: query");
   });
 
-  it("renders a compact chronological day schedule", () => {
+  it("renders a compact chronological schedule with student-centered availability", () => {
     expect(reserve).toContain('data-density="compact"');
     expect(reserve).toContain("Clases del día");
     expect(reserve).toContain("No hay clases disponibles para esta fecha");
-    expect(reserve).toContain("session.spots_available");
-    expect(reserve).toContain("session.capacity");
+    expect(reserve).toContain("lugares disponibles");
+    expect(reserve).toContain("Último lugar");
+    expect(reserve).toContain("Clase llena");
   });
 
-  it("shows canonical availability states and preserves quick booking", () => {
+  it("uses choose-class then detail instead of inline quick booking", () => {
     expect(reserve).toContain("Ya reservada");
     expect(reserve).toContain("Disponible");
-    expect(reserve).toContain('session.eligibility?.reason_code === "session_full"');
-    expect(reserve).toContain("QuickBookButton");
+    expect(reserve).not.toContain("QuickBookButton");
+    expect(reserve).not.toContain("PurchaseSingleClassButton");
+    expect(detail).toContain("Reservar esta clase");
+    expect(detail).toContain("/confirmar?date=");
   });
 
-  it("keeps detail, confirmation, pending and success as separate steps", () => {
-    expect(detail).toContain("Reservar clase");
-    expect(detail).toContain("/confirmar?date=");
-    expect(confirm).toContain("Revisa tu clase antes de confirmar");
+  it("keeps detail, optional place selection, confirmation and success as separate steps", () => {
+    expect(detail).toContain("Elegir mi lugar");
+    expect(resource).toContain("Elige tu lugar");
+    expect(resourcePicker).toContain("resourceNoun");
+    expect(confirm).toContain("Confirma tu clase");
     expect(confirm).toContain('pendingLabel="Reservando…"');
-    expect(success).toContain("¡Clase reservada!");
-    expect(success).toContain("Ver Mis clases");
+    expect(success).toContain("¡Listo! Tu lugar está reservado");
+    expect(success).toContain("Ver mi clase");
+  });
+
+  it("keeps waitlist mechanics hidden behind human copy", () => {
+    const waitlistControl = source("app/student/reservar/WaitlistControl.tsx");
+
+    expect(detail).toContain("Si se libera un lugar, te avisaremos según el orden");
+    expect(waitlistControl).toContain("Te avisaremos si se libera un lugar.");
+    expect(waitlistControl).not.toContain("Prioridad Oro aplicada");
+    expect(waitlistControl).not.toContain("levelTitle");
   });
 
   it("preserves booking context after a temporary error", () => {
@@ -56,16 +71,16 @@ describe("SF-N14 PORTAL UX-04 Reservar", () => {
     expect(confirm).toContain('name="date"');
   });
 
-  it("does not hardcode cancellation timing inside booking UX", () => {
-    expect(detail).not.toContain("8 horas");
-    expect(detail).not.toContain("5 horas");
-    expect(confirm).not.toContain("8 horas");
-    expect(confirm).not.toContain("5 horas");
+  it("does not expose internal product or Studio Flow language in booking UI", () => {
+    expect(reserve).not.toContain("saldo premio");
+    expect(detail).not.toContain("Studio Flow");
+    expect(success).not.toContain("Studio Flow");
+    expect(detail).not.toContain("crédito(s)");
+    expect(portal).toContain("No tienes clases suficientes para reservar esta clase");
   });
 
   it("covers the canonical non-eligible reasons surfaced by the booking engine", () => {
     expect(portal).toContain('payment_pending: "Tienes un pago pendiente que debes resolver"');
-    expect(portal).toContain("No tienes créditos suficientes para reservar esta clase");
     expect(portal).toContain("Clase llena");
     expect(portal).toContain("Ya reservaste esta clase");
     expect(portal).toContain('document_required: "Tienes un documento pendiente"');
