@@ -358,7 +358,9 @@ const handler = {
     });
 
     if (linkError) {
-      await adminClient.auth.admin.deleteUser(provisionedUser.id);
+      if (!reusedExistingAccount) {
+        await adminClient.auth.admin.deleteUser(provisionedUser.id);
+      }
       return jsonResponse({ error: "link_failed" }, 500);
     }
 
