@@ -463,13 +463,7 @@ export default async function StudentHomePage({
             aria-label="Abrir mi perfil"
           >
             <span aria-hidden="true">{snapshot.profile.first_name.slice(0, 1).toUpperCase()}</span>
-            <Image
-              src="/student/perfil/avatar"
-              alt=""
-              fill
-              unoptimized
-              className="object-cover"
-            />
+            <Image src="/student/perfil/avatar" alt="" fill unoptimized className="object-cover" />
           </Link>
           <div className="min-w-0">
             <p className="text-sm text-zinc-400">¡Hola de nuevo!</p>
@@ -755,7 +749,9 @@ export default async function StudentHomePage({
                 <p className="text-base font-semibold text-white">Mi paquete</p>
                 <p className="mt-0.5 text-sm text-zinc-400">{packageSummary}</p>
               </div>
-              <span className="text-xl text-zinc-600 transition group-hover:text-fuchsia-300">›</span>
+              <span className="text-xl text-zinc-600 transition group-hover:text-fuchsia-300">
+                ›
+              </span>
             </div>
 
             {activePackage && !activePackage.unlimited && activePackage.credit_limit ? (
