@@ -1,15 +1,21 @@
 import { createServerClient } from "@supabase/ssr";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { env } from "@/lib/env";
-import { AUTH_COOKIE_MAX_AGE_SECONDS } from "@/lib/supabase/session-policy";
+import {
+  AUTH_PORTAL_HEADER,
+  authCookieOptions,
+  type AuthPortal,
+} from "@/lib/supabase/session-policy";
 
-export async function createClient() {
+export async function createClient(explicitPortal?: AuthPortal) {
   const cookieStore = await cookies();
+  const headerStore = await headers();
+  const headerPortal = headerStore.get(AUTH_PORTAL_HEADER);
+  const portal: AuthPortal =
+    explicitPortal ?? (headerPortal === "student" ? "student" : "admin");
 
   return createServerClient(env.supabaseUrl, env.supabasePublishableKey, {
-    cookieOptions: {
-      maxAge: AUTH_COOKIE_MAX_AGE_SECONDS,
-    },
+    cookieOptions: authCookieOptions(portal),
     cookies: {
       getAll() {
         return cookieStore.getAll();
