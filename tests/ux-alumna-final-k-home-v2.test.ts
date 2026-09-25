@@ -12,7 +12,7 @@ describe("ALUMNA UX FINAL K · Home V2", () => {
 
   it("uses one dominant dynamic hero", () => {
     expect(home).toContain('data-home-block="next-class"');
-    expect(home).toContain("min-h-[230px]");
+    expect(home).toContain("h-[174px]");
     expect(home).toContain("Tu próxima clase");
     expect(home).toContain("Reserva tu próxima clase");
     expect(home).toContain("Activa tu paquete");
@@ -52,7 +52,7 @@ describe("ALUMNA UX FINAL K · Home V2", () => {
     expect(home).toContain("Hola, {snapshot.profile.first_name} 👋");
     expect(home).toContain("Mi paquete 🎁");
     expect(home).toContain("Medalla actual 🏅");
-    expect(home).toContain("bg-fuchsia-500");
+    expect(home).toContain("bg-[#ff0a8a]");
     expect(home).not.toContain("STUDIO FLOW");
   });
 });
