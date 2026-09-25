@@ -195,12 +195,18 @@ export const getStudentPortalContext = cache(async () => {
 
   if (account.must_change_password) redirect("/login/student/activar");
 
-  const [{ data: snapshot, error }, { data: studio }] = await Promise.all([
+  const [snapshotResult, studioResult] = await Promise.all([
     supabase.rpc("student_portal_snapshot"),
     supabase.from("studios").select("name,timezone").eq("id", membership.studio_id).maybeSingle(),
   ]);
 
-  if (error || !snapshot || !studio) redirect("/login/student?error=access");
+  if (snapshotResult.error || studioResult.error) {
+    throw new Error("student_portal_temporarily_unavailable");
+  }
+
+  const snapshot = snapshotResult.data;
+  const studio = studioResult.data;
+  if (!snapshot || !studio) redirect("/login/student?error=access");
 
   const baseSnapshot = snapshot as StudentSnapshot;
   const productIds = [...new Set(baseSnapshot.acquisitions.map((item) => item.product_id))];
