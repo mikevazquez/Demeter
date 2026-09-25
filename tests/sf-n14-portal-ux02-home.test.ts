@@ -15,13 +15,13 @@ describe("SF-N14 PORTAL UX-02 home", () => {
   it("covers the approved package and next-class states", () => {
     expect(home).toContain("Tu próxima clase");
     expect(home).toContain("Reserva tu próxima clase");
-    expect(home).toContain("Activa tu próximo paquete");
-    expect(home).toContain("Ver paquetes");
-    expect(home).toContain("Reservar clase");
+    expect(home).toContain("Activa tu paquete");
+    expect(home).toContain('"/student/paquete"');
+    expect(home).toContain('"/student/reservar"');
   });
 
-  it("keeps unlimited packages semantically distinct from class balances", () => {
-    expect(home).toContain('"Clases ilimitadas"');
+  it("keeps unlimited packages distinct from class balances", () => {
+    expect(home).toContain('"Ilimitado"');
     expect(home).toContain("clases disponibles");
     expect(home).not.toContain("Progreso del paquete");
   });
@@ -30,18 +30,19 @@ describe("SF-N14 PORTAL UX-02 home", () => {
     expect(home.indexOf('data-home-block="next-class"')).toBeLessThan(
       home.indexOf('data-home-block="package"'),
     );
-    expect(home).toContain("min-h-[330px]");
-    expect(home).toContain("shadow-[0_22px_70px_rgba(255,10,138,0.14)]");
+    expect(home).toContain("min-h-[230px]");
+    expect(home).toContain("shadow-[0_22px_70px_rgba(255,10,138,0.12)]");
     expect(home).toContain("min-h-11");
   });
 
-  it("uses the approved calendar, package and next-class secondary blocks", () => {
+  it("uses the approved calendar and Tu espacio blocks", () => {
     expect(home).toContain('data-home-block="week-calendar"');
-    expect(home).toContain("href={`/student/reservar?date=${day.key}`}");
+    expect(home).toContain('href={`/student/reservar?date=${day.key}`}');
+    expect(home).toContain('data-home-block="space-next-class"');
     expect(home).toContain('data-home-block="package"');
-    expect(home).toContain('data-home-block="following-class"');
+    expect(home).toContain('data-home-block="medal"');
     expect(home).toContain("Mi paquete");
-    expect(home).toContain("Siguiente clase");
+    expect(home).toContain("Tu espacio");
   });
 
   it("provides a recoverable temporary error state", () => {
