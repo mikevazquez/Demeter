@@ -35,14 +35,13 @@ describe("SF-N14 PORTAL UX-02 home", () => {
     expect(home).toContain("min-h-11");
   });
 
-  it("adds compact quick actions without changing the four-destination global navigation", () => {
-    expect(home).toContain('aria-label="Acciones rápidas"');
-    expect(home).toContain('href="/student/reservar"');
-    expect(home).toContain('href="/student/mis-clases"');
-    expect(home).toContain('href="/student/paquete"');
-    expect(home).toContain("Reservar");
-    expect(home).toContain("Mis clases");
+  it("uses the approved calendar, package and next-class secondary blocks", () => {
+    expect(home).toContain('data-home-block="week-calendar"');
+    expect(home).toContain('href={`/student/reservar?date=${day.key}`}');
+    expect(home).toContain('data-home-block="package"');
+    expect(home).toContain('data-home-block="following-class"');
     expect(home).toContain("Mi paquete");
+    expect(home).toContain("Siguiente clase");
   });
 
   it("provides a recoverable temporary error state", () => {
