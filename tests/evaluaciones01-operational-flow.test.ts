@@ -136,7 +136,7 @@ describe("EVALUACIONES-01 operational cycle", () => {
   it("surfaces evaluation actions inside the separate technical-level Home block", () => {
     expect(studentHome).toContain('supabase.rpc("student_evaluations_snapshot")');
     expect(studentHome).toContain('data-home-block="technical-level"');
-    expect(studentHome).toContain("Tienes una evaluación disponible");
+    expect(studentHome).toContain("Evaluación disponible");
     expect(studentHome).toContain('"Ver evaluación"');
     expect(studentHome).toContain('"Elegir mi clase"');
     expect(studentHome).toContain("activeEvaluationInvitation?.invitation_id");
