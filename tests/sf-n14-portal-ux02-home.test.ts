@@ -37,7 +37,7 @@ describe("SF-N14 PORTAL UX-02 home", () => {
 
   it("uses the approved calendar, package and next-class secondary blocks", () => {
     expect(home).toContain('data-home-block="week-calendar"');
-    expect(home).toContain('href={`/student/reservar?date=${day.key}`}');
+    expect(home).toContain("href={`/student/reservar?date=${day.key}`}");
     expect(home).toContain('data-home-block="package"');
     expect(home).toContain('data-home-block="following-class"');
     expect(home).toContain("Mi paquete");
