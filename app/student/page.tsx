@@ -616,7 +616,9 @@ export default async function StudentHomePage({
           </Link>
 
           <Link
-            href={rewardsUnlocked ? "/student/recompensas/medallero" : "/student/recompensas"}
+            href={
+              rewardsUnlocked ? "/student/recompensas/medallero" : "/student/recompensas"
+            }
             data-home-block="medal"
             className="relative overflow-hidden rounded-[1.55rem] border border-white/10 bg-[radial-gradient(circle_at_82%_72%,rgba(168,115,255,.26),transparent_33%),linear-gradient(145deg,#171821,#0c0e14)] p-4"
           >
