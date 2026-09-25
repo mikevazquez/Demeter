@@ -26,19 +26,23 @@ describe("SF-N14 PORTAL UX-02 home", () => {
     expect(home).not.toContain("Progreso del paquete");
   });
 
-  it("keeps the next class above package context with mobile-first cards", () => {
+  it("keeps the next class as the visual protagonist above package context", () => {
     expect(home.indexOf('data-home-block="next-class"')).toBeLessThan(
       home.indexOf('data-home-block="package"'),
     );
-    expect(home).toContain("student-card");
+    expect(home).toContain("min-h-[330px]");
+    expect(home).toContain("shadow-[0_22px_70px_rgba(255,10,138,0.14)]");
     expect(home).toContain("min-h-11");
   });
 
-  it("removes duplicate quick actions from home while preserving navigation destinations", () => {
-    expect(home).not.toContain("Acciones rápidas");
+  it("adds compact quick actions without changing the four-destination global navigation", () => {
+    expect(home).toContain('aria-label="Acciones rápidas"');
     expect(home).toContain('href="/student/reservar"');
     expect(home).toContain('href="/student/mis-clases"');
     expect(home).toContain('href="/student/paquete"');
+    expect(home).toContain("Reservar");
+    expect(home).toContain("Mis clases");
+    expect(home).toContain("Mi paquete");
   });
 
   it("provides a recoverable temporary error state", () => {
