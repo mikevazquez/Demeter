@@ -26,9 +26,7 @@ export default async function StudentNotificationPreferencesPage() {
           Perfil
         </Link>
         <h1 className="student-page-title mt-3">Notificaciones</h1>
-        <p className="student-body mt-2">
-          Elige cómo quieres recibir los avisos de {studio.name}.
-        </p>
+        <p className="student-body mt-2">Elige cómo quieres recibir los avisos de {studio.name}.</p>
       </header>
 
       <NotificationChannelPreferences
