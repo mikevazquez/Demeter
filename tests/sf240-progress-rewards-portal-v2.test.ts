@@ -75,8 +75,9 @@ describe("SF-240 Progress & Rewards Portal Alumna v2", () => {
     expect(home).toContain("Te faltan");
     expect(page).toContain("Top 3");
     expect(page).toContain("gap_to_top3");
-    expect(page).toContain("Recompensa sorpresa");
-    expect(page).toContain("Sin recompensa económica");
+    expect(page).toContain("Recompensa");
+    expect(page).toContain("clases extra");
+    expect(page).not.toContain("sección de Rewards");
   });
 
   it("implements S04 achievements with unlocked, progress and secret states", () => {
