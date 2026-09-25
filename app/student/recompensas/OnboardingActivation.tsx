@@ -182,7 +182,7 @@ export function RewardsOnboardingActivation({
             detail={appInstalled ? "Listo" : `Instala ${studioName} y ábrela desde el nuevo icono`}
           />
           {!appInstalled ? (
-            <OnboardingInstallStep complete={appInstalled} studioName={studioName} />
+            <OnboardingInstallStep complete={appInstalled} studioId={studioId} studioName={studioName} />
           ) : null}
 
           <StepRow
