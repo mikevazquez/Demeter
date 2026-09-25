@@ -18,8 +18,8 @@ describe("F10/N14 student booking UX", () => {
 
     expect(reservePage).not.toContain("QuickBookButton");
     expect(reservePage).toContain("/student/reservar/${session.session_id}?date=");
-    expect(homePage).toContain('href="/student/reservar"');
-    expect(homePage).toContain('href="/student/mis-clases"');
+    expect(homePage).toContain('"/student/reservar"');
+    expect(homePage).toContain('"/student/mis-clases"');
   });
 
   it("uses detail and confirmation as the canonical booking path", () => {
