@@ -35,7 +35,6 @@ type Props = {
   reserved: boolean;
   full?: boolean;
   waitlisted?: boolean;
-  levelTitle?: string | null;
   requiresResource?: boolean;
   useRewardCredits?: boolean;
 };
@@ -49,7 +48,6 @@ export function QuickBookButton({
   reserved,
   full = false,
   waitlisted = false,
-  levelTitle = null,
   requiresResource = false,
   useRewardCredits = false,
 }: Props) {
@@ -103,12 +101,7 @@ export function QuickBookButton({
           {isPending ? "Reservando…" : "Reservar"}
         </button>
       ) : full ? (
-        <WaitlistControl
-          sessionId={sessionId}
-          initialWaitlisted={waitlisted}
-          levelTitle={levelTitle}
-          compact
-        />
+        <WaitlistControl sessionId={sessionId} initialWaitlisted={waitlisted} compact />
       ) : null}
 
       {modal ? (

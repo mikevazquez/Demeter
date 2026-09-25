@@ -55,9 +55,9 @@ export default async function StudentReservationConfirmationPage({
         <p className="mt-4 text-[10px] font-semibold uppercase tracking-[0.2em] text-emerald-300">
           Reserva confirmada
         </p>
-        <h1 className="mt-1 text-2xl font-semibold text-white">¡Clase reservada!</h1>
+        <h1 className="mt-1 text-2xl font-semibold text-white">¡Listo! Tu lugar está reservado</h1>
         <p className="mt-1.5 text-xs leading-5 text-zinc-400">
-          Tu lugar quedó asegurado y Studio Flow actualizó tu reserva.
+          Tu reserva quedó confirmada en Demeter.
         </p>
 
         {session ? (
@@ -75,7 +75,7 @@ export default async function StudentReservationConfirmationPage({
             </p>
             {assignedResourceName ? (
               <p className="mt-2 text-[11px] font-semibold text-fuchsia-200">
-                Recurso: {assignedResourceName}
+                Lugar: {assignedResourceName}
               </p>
             ) : null}
           </div>
@@ -86,7 +86,7 @@ export default async function StudentReservationConfirmationPage({
             href="/student/mis-clases"
             className="flex min-h-11 w-full items-center justify-center rounded-2xl bg-fuchsia-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-fuchsia-500"
           >
-            Ver Mis clases
+            Ver mi clase
           </Link>
           <Link
             href={selectedDate ? `/student/reservar?date=${selectedDate}` : "/student/reservar"}

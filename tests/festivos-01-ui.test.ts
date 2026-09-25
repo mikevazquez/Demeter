@@ -55,9 +55,9 @@ describe("FESTIVOS-01 calendar UX", () => {
     expect(holidayNotice).not.toContain("Fuente oficial:");
   });
 
-  it("shows studio cancellation reason and restored credit in student history", () => {
+  it("shows studio cancellation reason and returned class in student history", () => {
     expect(studentClasses).toContain('item.status === "cancelled_by_studio"');
     expect(studentClasses).toContain("item.cancellation_reason");
-    expect(studentClasses).toContain("Crédito restaurado");
+    expect(studentClasses).toContain("Clase devuelta");
   });
 });

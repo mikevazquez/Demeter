@@ -17,7 +17,8 @@ describe("SF-N14 portal UX foundation", () => {
     expect(pending).toContain("useFormStatus");
     expect(pending).toContain("aria-busy={pending}");
     expect(profile).toContain('pendingLabel="Guardando…"');
-    expect(layout).toContain('pendingLabel="Saliendo…"');
+    expect(layout).not.toContain('pendingLabel="Saliendo…"');
+    expect(profile).toContain('pendingLabel="Cerrando sesión…"');
   });
 
   it("uses contextual dialogs for profile success and errors", () => {

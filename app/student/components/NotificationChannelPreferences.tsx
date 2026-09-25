@@ -102,7 +102,7 @@ function Toggle({
       disabled={disabled}
       onClick={onChange}
       className={
-        "relative h-7 w-12 shrink-0 rounded-full border transition " +
+        "relative h-7 w-12 shrink-0 rounded-full border transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-500 " +
         (checked ? "border-fuchsia-400/50 bg-fuchsia-500" : "border-white/15 bg-white/[0.06]") +
         (disabled ? " cursor-wait opacity-50" : "")
       }
@@ -131,7 +131,7 @@ export default function NotificationChannelPreferences({
   const [busy, setBusy] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
-  async function setPreference(channel: "push" | "whatsapp" | "email", enabled: boolean) {
+  async function setPreference(channel: "push" | "whatsapp", enabled: boolean) {
     const supabase = await browserClient();
     const { data, error } = await supabase.rpc("student_set_notification_channel_preference", {
       p_channel_key: channel,
@@ -144,20 +144,20 @@ export default function NotificationChannelPreferences({
     setPreferences((current) => ({ ...current, ...next }));
   }
 
-  async function ensurePushConnection(requestPermission: boolean) {
+  async function ensurePushConnection(requestPermission: boolean): Promise<DeviceState> {
     if (!preferences.push_enabled && !requestPermission) {
       setDeviceState("checking");
-      return;
+      return "checking";
     }
 
     if (isIosDevice() && !isStandalone()) {
       setDeviceState("needs_install");
-      return;
+      return "needs_install";
     }
 
     if (!supportsPush()) {
       setDeviceState("unsupported");
-      return;
+      return "unsupported";
     }
 
     let permission = Notification.permission;
@@ -168,12 +168,12 @@ export default function NotificationChannelPreferences({
 
     if (permission === "denied") {
       setDeviceState("blocked");
-      return;
+      return "blocked";
     }
 
     if (permission !== "granted") {
       setDeviceState("permission_needed");
-      return;
+      return "permission_needed";
     }
 
     const supabase = await browserClient();
@@ -229,6 +229,7 @@ export default function NotificationChannelPreferences({
     if (registerError) throw registerError;
 
     setDeviceState("connected");
+    return "connected";
   }
 
   useEffect(() => {
@@ -247,7 +248,7 @@ export default function NotificationChannelPreferences({
     return () => {
       cancelled = true;
     };
-    // Solo reintentamos cuando cambia la preferencia persistente.
+    // La conexión del dispositivo se revisa cuando cambia la preferencia persistente.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [preferences.push_enabled, studioId]);
 
@@ -260,8 +261,8 @@ export default function NotificationChannelPreferences({
       await setPreference("push", next);
 
       if (next) {
-        await ensurePushConnection(true);
-        setMessage(`Push activado en ${studioName}.`);
+        const state = await ensurePushConnection(true);
+        if (state === "connected") setMessage(`Push activado en ${studioName}.`);
       } else {
         setDeviceState("checking");
         setMessage("Push desactivado.");
@@ -273,53 +274,49 @@ export default function NotificationChannelPreferences({
     }
   }
 
-  async function toggleChannel(channel: "whatsapp" | "email") {
-    const key = (channel + "_enabled") as "whatsapp_enabled" | "email_enabled";
-    setBusy(channel);
+  async function toggleWhatsApp() {
+    setBusy("whatsapp");
     setMessage(null);
 
     try {
-      await setPreference(channel, !preferences[key]);
+      await setPreference("whatsapp", !preferences.whatsapp_enabled);
     } catch {
-      setMessage("No pudimos guardar esa preferencia.");
+      setMessage("No pudimos guardar tu preferencia de WhatsApp.");
     } finally {
       setBusy(null);
     }
   }
 
   const pushDetail = !preferences.push_enabled
-    ? "Desactivado"
+    ? "Push desactivado"
     : deviceState === "connected"
-      ? "Activo en este dispositivo"
+      ? "Push activado ✓"
       : deviceState === "blocked"
-        ? "Activo en Demeter · bloqueado por iPhone"
+        ? "Las notificaciones están bloqueadas en este dispositivo"
         : deviceState === "permission_needed"
-          ? "Activo en Demeter · falta permitirlo en este dispositivo"
+          ? "Push necesita permiso en este dispositivo"
           : deviceState === "needs_install"
-            ? "Activo en Demeter · abre la app instalada para conectarlo"
+            ? "Instala Demeter para recibir notificaciones Push"
             : deviceState === "unsupported"
-              ? "Activo en Demeter · este navegador no admite Push"
+              ? "Este navegador no admite notificaciones Push"
               : deviceState === "error"
-                ? "Activo en Demeter · reconexión pendiente"
-                : "Activo en Demeter";
+                ? "Push activado · falta reconectar este dispositivo"
+                : "Push activado";
 
   return (
-    <section className="overflow-hidden rounded-3xl border border-fuchsia-500/20 bg-[radial-gradient(circle_at_100%_0%,rgba(236,72,153,0.1),transparent_34%),rgba(255,255,255,0.025)]">
+    <section className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.025]">
       <div className="border-b border-white/10 px-5 py-4">
-        <h2 className="text-base font-semibold text-white">Canales</h2>
-        <p className="mt-1 text-xs leading-5 text-zinc-400">
-          Tu elección se mantiene hasta que tú la cambies.
+        <h2 className="text-base font-semibold text-white">Cómo recibir tus avisos</h2>
+        <p className="mt-1 text-sm leading-6 text-zinc-400">
+          Puedes cambiar estas preferencias cuando quieras.
         </p>
       </div>
 
       <div className="divide-y divide-white/10">
-        <div className="flex items-center gap-4 px-5 py-4">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-fuchsia-500/10 text-lg text-fuchsia-300">
-            ◉
-          </div>
+        <div className="flex min-h-20 items-center gap-4 px-5 py-4">
           <div className="min-w-0 flex-1">
             <strong className="block text-sm font-semibold text-white">Push</strong>
-            <span className="mt-0.5 block text-xs text-zinc-500">{pushDetail}</span>
+            <span className="mt-1 block text-sm leading-5 text-zinc-500">{pushDetail}</span>
           </div>
           <Toggle
             checked={preferences.push_enabled}
@@ -329,46 +326,38 @@ export default function NotificationChannelPreferences({
           />
         </div>
 
-        <div className="flex items-center gap-4 px-5 py-4">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-emerald-500/10 text-lg text-emerald-300">
-            ◌
-          </div>
+        <div className="flex min-h-20 items-center gap-4 px-5 py-4">
           <div className="min-w-0 flex-1">
             <strong className="block text-sm font-semibold text-white">WhatsApp</strong>
-            <span className="mt-0.5 block text-xs text-zinc-500">
-              Confirmaciones, recordatorios y avisos importantes.
+            <span className="mt-1 block text-sm leading-5 text-zinc-500">
+              Reservas, recordatorios y avisos importantes.
             </span>
           </div>
           <Toggle
             checked={preferences.whatsapp_enabled}
             disabled={busy !== null}
-            onChange={() => void toggleChannel("whatsapp")}
+            onChange={() => void toggleWhatsApp()}
             label="Notificaciones por WhatsApp"
           />
         </div>
 
-        <div className="flex items-center gap-4 px-5 py-4">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-sky-500/10 text-lg text-sky-300">
-            ✉
-          </div>
+        <div className="flex min-h-20 items-center gap-4 px-5 py-4">
           <div className="min-w-0 flex-1">
-            <strong className="block text-sm font-semibold text-white">Correo</strong>
-            <span className="mt-0.5 block text-xs text-zinc-500">
-              Guardaremos tu preferencia; el envío por correo se activará cuando el proveedor esté
-              conectado.
+            <div className="flex flex-wrap items-center gap-2">
+              <strong className="text-sm font-semibold text-zinc-300">Correo</strong>
+              <span className="rounded-full border border-white/10 bg-white/[0.035] px-2 py-0.5 text-xs font-semibold text-zinc-500">
+                Próximamente
+              </span>
+            </div>
+            <span className="mt-1 block text-sm leading-5 text-zinc-600">
+              Estará disponible cuando el envío por correo esté activo.
             </span>
           </div>
-          <Toggle
-            checked={preferences.email_enabled}
-            disabled={busy !== null}
-            onChange={() => void toggleChannel("email")}
-            label="Notificaciones por correo"
-          />
         </div>
       </div>
 
       {message ? (
-        <p className="border-t border-white/10 px-5 py-3 text-xs text-zinc-400">{message}</p>
+        <p className="border-t border-white/10 px-5 py-3 text-sm text-zinc-400">{message}</p>
       ) : null}
     </section>
   );
