@@ -292,46 +292,61 @@ const handler = {
 
       if (!staleUser) return jsonResponse({ error: "auth_login_exists" }, 409);
 
-      const [
-        { data: activeMemberships, error: activeMembershipError },
-        { data: linkedStudents, error: linkedStudentsError },
-      ] = await Promise.all([
-        adminClient
-          .from("studio_memberships")
-          .select("studio_id")
-          .eq("user_id", staleUser.id)
-          .eq("active", true)
-          .limit(1),
-        adminClient
-          .from("students")
-          .select("id")
-          .eq("user_id", staleUser.id)
-          .neq("lifecycle_status", "archived")
-          .limit(1),
-      ]);
+      const { data: existingAccount, error: existingAccountError } = await adminClient
+        .from("user_accounts")
+        .select("id,status")
+        .eq("id", staleUser.id)
+        .maybeSingle();
 
-      if (activeMembershipError || linkedStudentsError) {
+      if (existingAccountError) {
         return jsonResponse({ error: "auth_reuse_check_failed" }, 500);
       }
-      if ((activeMemberships?.length ?? 0) > 0 || (linkedStudents?.length ?? 0) > 0) {
-        return jsonResponse({ error: "auth_login_exists" }, 409);
-      }
 
-      const { error: cleanupError } = await adminClient.auth.admin.deleteUser(staleUser.id);
-      if (cleanupError) return jsonResponse({ error: "stale_auth_cleanup_failed" }, 500);
+      if (existingAccount?.status === "active") {
+        provisionedUser = staleUser;
+        createError = null;
+      } else {
+        const [
+          { data: activeMemberships, error: activeMembershipError },
+          { data: linkedStudents, error: linkedStudentsError },
+        ] = await Promise.all([
+          adminClient
+            .from("studio_memberships")
+            .select("studio_id")
+            .eq("user_id", staleUser.id)
+            .eq("active", true)
+            .limit(1),
+          adminClient
+            .from("students")
+            .select("id")
+            .eq("user_id", staleUser.id)
+            .neq("lifecycle_status", "archived")
+            .limit(1),
+        ]);
 
-      const retry = await adminClient.auth.admin.createUser({
-        email: authEmail,
-        password: internalPassword,
-        email_confirm: true,
-        user_metadata: { full_name: student.full_name, login_phone: student.phone },
-      });
-      createdUser = retry.data;
-      createError = retry.error;
-      provisionedUser = retry.data.user;
+        if (activeMembershipError || linkedStudentsError) {
+          return jsonResponse({ error: "auth_reuse_check_failed" }, 500);
+        }
+        if ((activeMemberships?.length ?? 0) > 0 || (linkedStudents?.length ?? 0) > 0) {
+          return jsonResponse({ error: "auth_login_exists" }, 409);
+        }
 
-      if (createError || !provisionedUser) {
-        return jsonResponse({ error: "auth_create_failed" }, 500);
+        const { error: cleanupError } = await adminClient.auth.admin.deleteUser(staleUser.id);
+        if (cleanupError) return jsonResponse({ error: "stale_auth_cleanup_failed" }, 500);
+
+        const retry = await adminClient.auth.admin.createUser({
+          email: authEmail,
+          password: internalPassword,
+          email_confirm: true,
+          user_metadata: { full_name: student.full_name, login_phone: student.phone },
+        });
+        createdUser = retry.data;
+        createError = retry.error;
+        provisionedUser = retry.data.user;
+
+        if (createError || !provisionedUser) {
+          return jsonResponse({ error: "auth_create_failed" }, 500);
+        }
       }
     }
 
