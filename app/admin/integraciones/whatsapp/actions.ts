@@ -38,6 +38,33 @@ async function parseResponse(response: Response) {
   }
 }
 
+export async function saveWhatsappProvider(formData: FormData) {
+  const { supabase, studio } = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
+  const provider = fieldText(formData, "provider");
+
+  if (!["asistian", "meta_whatsapp"].includes(provider)) {
+    redirect("/admin/integraciones/whatsapp?error=provider_invalid");
+  }
+
+  const { error } = await supabase.rpc("admin_set_whatsapp_provider", {
+    target_studio_id: studio.id,
+    target_provider_key: provider,
+  });
+
+  if (error) {
+    const code = String(error.message ?? "");
+    redirect(
+      code.includes("meta_whatsapp_not_configured")
+        ? "/admin/integraciones/whatsapp?error=meta_provider_not_configured"
+        : "/admin/integraciones/whatsapp?error=provider_save_failed",
+    );
+  }
+
+  redirect(
+    `/admin/integraciones/whatsapp?provider_saved=1&provider=${encodeURIComponent(provider)}`,
+  );
+}
+
 export async function saveMetaWhatsappConnection(formData: FormData) {
   const { supabase, studio } = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
 
