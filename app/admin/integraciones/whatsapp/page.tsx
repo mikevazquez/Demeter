@@ -6,6 +6,7 @@ import { getAdminContext } from "@/lib/auth/admin-context";
 import {
   saveMetaWhatsappConnection,
   saveMetaWhatsappTemplates,
+  saveWhatsappProvider,
 } from "./actions";
 
 type ConnectionSummary = {
@@ -32,6 +33,9 @@ const errorCopy: Record<string, string> = {
   test_network: "No se pudo conectar con Meta para enviar el mensaje de prueba.",
   test_http: "Meta rechazó el mensaje hello_world de prueba.",
   template_save_failed: "No se pudo guardar el mapeo de plantillas.",
+  provider_invalid: "El proveedor seleccionado no es válido.",
+  provider_save_failed: "No se pudo cambiar el proveedor de WhatsApp.",
+  meta_provider_not_configured: "Conecta Meta antes de seleccionarlo como proveedor.",
 };
 
 const templateFields = [
@@ -88,6 +92,8 @@ export default async function WhatsappIntegrationPage({
     saved?: string;
     test_sent?: string;
     templates_saved?: string;
+    provider_saved?: string;
+    provider?: string;
     error?: string;
     status?: string;
   }>;
@@ -95,12 +101,18 @@ export default async function WhatsappIntegrationPage({
   const { supabase, studio } = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
   const query = await searchParams;
 
-  const { data } = await supabase.rpc("admin_get_meta_whatsapp_connection_summary", {
-    target_studio_id: studio.id,
-  });
+  const [{ data }, { data: providerData }] = await Promise.all([
+    supabase.rpc("admin_get_meta_whatsapp_connection_summary", {
+      target_studio_id: studio.id,
+    }),
+    supabase.rpc("admin_get_whatsapp_provider", {
+      target_studio_id: studio.id,
+    }),
+  ]);
 
   const connection = asSummary(data);
   const templates = connection.templates ?? {};
+  const activeProvider = providerData === "meta_whatsapp" ? "meta_whatsapp" : "asistian";
 
   return (
     <main className="dashboard-shell">
@@ -110,10 +122,10 @@ export default async function WhatsappIntegrationPage({
             ← Más
           </Link>
           <p className="eyebrow">INTEGRACIONES · WHATSAPP</p>
-          <h1 className="dashboard-title">WhatsApp directo con Meta</h1>
+          <h1 className="dashboard-title">Proveedores de WhatsApp</h1>
           <p>
-            Studio Flow envía WhatsApp directamente por Cloud API. Asistian queda fuera de este
-            canal.
+            Mantén Asistian conectado y agrega Meta Cloud API. Puedes elegir cuál usa Studio Flow
+            para los envíos sin eliminar el otro.
           </p>
         </div>
       </header>
@@ -132,12 +144,61 @@ export default async function WhatsappIntegrationPage({
         <div className="notice success">Mapeo de plantillas actualizado.</div>
       ) : null}
 
+      {query.provider_saved === "1" ? (
+        <div className="notice success">
+          Proveedor de WhatsApp actualizado a{" "}
+          {query.provider === "meta_whatsapp" ? "Meta Cloud API" : "Asistian"}.
+        </div>
+      ) : null}
+
       {query.error ? (
         <div className="notice error">
           {errorCopy[query.error] ?? "No se pudo completar la operación."}
           {query.status ? ` · HTTP ${query.status}` : ""}
         </div>
       ) : null}
+
+      <section className="panel">
+        <div className="panel-heading">
+          <div>
+            <p className="eyebrow">PROVEEDOR ACTIVO</p>
+            <h2>{activeProvider === "meta_whatsapp" ? "Meta Cloud API" : "Asistian"}</h2>
+            <p className="text-sm text-zinc-400">
+              Ambos proveedores pueden permanecer configurados. Cambiar esta opción solo define
+              por cuál sale WhatsApp de forma predeterminada.
+            </p>
+          </div>
+        </div>
+
+        <div className="compact-form">
+          <form action={saveWhatsappProvider}>
+            <input type="hidden" name="provider" value="asistian" />
+            <button
+              className={activeProvider === "asistian" ? "primary-button" : "secondary-button"}
+              type="submit"
+            >
+              {activeProvider === "asistian" ? "✓ Usando Asistian" : "Usar Asistian"}
+            </button>
+          </form>
+
+          <form action={saveWhatsappProvider}>
+            <input type="hidden" name="provider" value="meta_whatsapp" />
+            <button
+              className={activeProvider === "meta_whatsapp" ? "primary-button" : "secondary-button"}
+              type="submit"
+              disabled={!connection.connected}
+            >
+              {activeProvider === "meta_whatsapp" ? "✓ Usando Meta" : "Usar Meta Cloud API"}
+            </button>
+          </form>
+
+          {!connection.connected ? (
+            <p className="text-sm text-zinc-400">
+              Meta todavía no puede seleccionarse porque falta conectar sus credenciales.
+            </p>
+          ) : null}
+        </div>
+      </section>
 
       <section className="panel">
         <div className="panel-heading">
@@ -164,8 +225,8 @@ export default async function WhatsappIntegrationPage({
           </div>
         ) : (
           <p className="text-sm text-zinc-400">
-            Conecta primero el número de prueba de Meta. No necesitas desconectar Asistian para
-            hacer esta prueba.
+            Conecta primero el número de prueba de Meta. Asistian seguirá disponible durante toda
+            la prueba.
           </p>
         )}
       </section>
@@ -328,15 +389,15 @@ export default async function WhatsappIntegrationPage({
         <div className="panel-heading">
           <div>
             <p className="eyebrow">ASISTIAN</p>
-            <h2>Compatibilidad temporal</h2>
+            <h2>Proveedor disponible</h2>
           </div>
         </div>
         <p className="text-sm text-zinc-400">
-          El adaptador anterior se conserva para entregas que ya estaban en cola. Las nuevas
-          entregas de WhatsApp en Sandbox usan Meta.
+          Asistian permanece conectado y puede seguir siendo el proveedor predeterminado de
+          WhatsApp. Su integración de reservas y automatizaciones no se elimina.
         </p>
         <Link className="secondary-button" href="/admin/integraciones/asistian">
-          Abrir integración anterior
+          Administrar Asistian
         </Link>
       </section>
     </main>
