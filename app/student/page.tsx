@@ -117,7 +117,8 @@ function medalEmoji(key: string | null) {
   if (key === "diamond") return "💎";
   if (key === "gold") return "🥇";
   if (key === "silver") return "🥈";
-  return "🥉";
+  if (key === "bronze") return "🥉";
+  return "🔒";
 }
 
 function priorityNotificationTone(type: string) {
@@ -173,14 +174,16 @@ export default async function StudentHomePage({
   const fallbackLevelKey = rewardMembershipResult.data?.current_level_key ?? null;
   const fallbackLevel =
     levelDefinitions.find((level) => level.level_key === fallbackLevelKey) ?? null;
-  const currentMedal = rewardStatus?.access_unlocked
-    ? (rewardStatus.current_medal ?? rewardStatus.current_level ?? fallbackLevel)
+  const rewardsUnlocked = Boolean(rewardStatus?.access_unlocked);
+  const currentMedal = rewardsUnlocked
+    ? (rewardStatus?.current_medal ?? rewardStatus?.current_level ?? fallbackLevel)
     : null;
-  const currentMedalKey =
-    currentMedal?.key ??
-    fallbackLevel?.level_key ??
-    (rewardStatus?.access_unlocked ? "bronze" : null);
-  const medalTitle = currentMedal?.title ?? fallbackLevel?.title ?? "Por activar";
+  const currentMedalKey = rewardsUnlocked
+    ? (currentMedal?.key ?? fallbackLevel?.level_key ?? "bronze")
+    : null;
+  const medalTitle = rewardsUnlocked
+    ? (currentMedal?.title ?? fallbackLevel?.title ?? "Bronce")
+    : "Por activar";
 
   const unreadNotifications = (appNotificationsResult.data ?? []) as AppNotificationHomeItem[];
   const priorityNotification =
@@ -613,20 +616,18 @@ export default async function StudentHomePage({
           </Link>
 
           <Link
-            href={
-              rewardStatus?.access_unlocked
-                ? "/student/recompensas/medallero"
-                : "/student/recompensas"
-            }
+            href={rewardsUnlocked ? "/student/recompensas/medallero" : "/student/recompensas"}
             data-home-block="medal"
             className="relative overflow-hidden rounded-[1.55rem] border border-white/10 bg-[radial-gradient(circle_at_82%_72%,rgba(168,115,255,.26),transparent_33%),linear-gradient(145deg,#171821,#0c0e14)] p-4"
           >
-            <p className="text-sm font-semibold text-white">Medalla actual 🏅</p>
+            <p className="text-sm font-semibold text-white">
+              {rewardsUnlocked ? "Medalla actual" : "Medalla"}
+            </p>
             <p className="mt-3 truncate text-2xl font-semibold text-white">{medalTitle}</p>
             <p className="mt-1 text-xs leading-5 text-zinc-500">
-              {rewardStatus?.access_unlocked
+              {rewardsUnlocked
                 ? "Por tu constancia"
-                : "Actívala completando tu onboarding"}
+                : "Completa tu onboarding para desbloquear Bronce"}
             </p>
             <span
               aria-hidden="true"
