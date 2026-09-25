@@ -19,6 +19,12 @@ const items: MoreItem[] = [
     capability: CAPABILITIES.SCHEDULE_READ,
   },
   {
+    title: "Inteligencia",
+    description: "Ingresos, conversión, clases, retención y señales para decidir.",
+    href: "/admin/inteligencia",
+    capability: CAPABILITIES.REPORTS_READ,
+  },
+  {
     title: "Documentos",
     description: "Contratos, responsivas, reglamentos y consentimientos.",
     href: "/admin/documentos",
