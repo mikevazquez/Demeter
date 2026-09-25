@@ -35,6 +35,17 @@ function rewardLabel(challenge: ChallengeCard) {
   return rewardDefinitionLabel(challenge.reward_definition);
 }
 
+function conditionTarget(value: unknown) {
+  const definition = value && typeof value === "object" ? (value as Record<string, unknown>) : {};
+  const conditions = Array.isArray(definition.conditions) ? definition.conditions : [];
+  const first =
+    conditions[0] && typeof conditions[0] === "object"
+      ? (conditions[0] as Record<string, unknown>)
+      : {};
+  const target = Number(first.target ?? 0);
+  return Number.isFinite(target) ? target : 0;
+}
+
 function dateLabel(value: string | null, timezone: string) {
   if (!value) return "Sin fecha";
   return new Intl.DateTimeFormat("es-MX", {
@@ -63,13 +74,17 @@ export default async function StudentChallengesPage() {
   return (
     <main className="space-y-6 pb-4">
       <header>
-        <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-fuchsia-300">
-          RETOS
-        </p>
-        <h1 className="mt-1 text-3xl font-semibold tracking-tight text-white sm:text-4xl">Retos</h1>
-        <p className="mt-1.5 max-w-xl text-sm text-zinc-400">
-          Objetivos temporales, competencias y recompensas. Tu avance se calcula con resultados
-          reales, no con reservas futuras.
+        <Link
+          href="/student/recompensas"
+          className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-zinc-400 transition hover:text-white"
+        >
+          <span aria-hidden="true">←</span>
+          Medallas y beneficios
+        </Link>
+        <p className="student-eyebrow mt-3">Retos</p>
+        <h1 className="student-page-title mt-1">Retos</h1>
+        <p className="student-body mt-2">
+          Objetivos temporales y competencias. Aquí sólo cuenta lo que realmente hayas completado.
         </p>
       </header>
 
@@ -82,7 +97,11 @@ export default async function StudentChallengesPage() {
             <span className="text-xs text-zinc-500">{active.length}</span>
           </div>
           <div className="grid gap-3 md:grid-cols-2">
-            {active.map((challenge, index) => (
+            {active.map((challenge, index) => {
+              const target = conditionTarget(challenge.condition_definition);
+              const remaining = Math.max(target - challenge.current_value, 0);
+
+              return (
               <Link
                 key={challenge.rule_id}
                 href={`/student/retos/${challenge.rule_id}`}
@@ -104,7 +123,7 @@ export default async function StudentChallengesPage() {
                 )}
                 <div className="space-y-3 p-5">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="rounded-full border border-fuchsia-400/30 bg-fuchsia-500/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-fuchsia-300">
+                    <span className="rounded-full border border-fuchsia-400/30 bg-fuchsia-500/10 px-2.5 py-1 text-xs font-bold uppercase tracking-[0.14em] text-fuchsia-300">
                       {challenge.competition_mode === "leaderboard" ? "Competencia" : "Individual"}
                     </span>
                     {challenge.competition_mode === "leaderboard" ? (
@@ -121,6 +140,18 @@ export default async function StudentChallengesPage() {
                       </p>
                     ) : null}
                   </div>
+                  {target > 0 ? (
+                    <div className="rounded-2xl border border-white/10 bg-black/15 px-3.5 py-3">
+                      <div className="flex items-center justify-between gap-3 text-sm">
+                        <strong className="text-white">
+                          {challenge.current_value} de {target}
+                        </strong>
+                        <span className="text-zinc-500">
+                          {remaining > 0 ? `Te faltan ${remaining}` : "Meta completada"}
+                        </span>
+                      </div>
+                    </div>
+                  ) : null}
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <span className="text-xs text-zinc-500">
                       Termina {dateLabel(challenge.scheduled_end_at, portal.studio.timezone)}
@@ -131,7 +162,8 @@ export default async function StudentChallengesPage() {
                   </div>
                 </div>
               </Link>
-            ))}
+              );
+            })}
           </div>
         </section>
       ) : null}
@@ -174,7 +206,7 @@ export default async function StudentChallengesPage() {
                 className="rounded-3xl border border-emerald-400/20 bg-emerald-400/[0.035] p-5 transition hover:border-emerald-300/35"
               >
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="rounded-full border border-emerald-400/25 bg-emerald-400/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-emerald-300">
+                  <span className="rounded-full border border-emerald-400/25 bg-emerald-400/10 px-2.5 py-1 text-xs font-bold uppercase tracking-[0.14em] text-emerald-300">
                     Finalizado
                   </span>
                   <span className="text-xs text-zinc-500">
