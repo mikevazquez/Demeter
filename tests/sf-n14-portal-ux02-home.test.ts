@@ -56,6 +56,9 @@ describe("SF-N14 PORTAL UX-02 home", () => {
     }
     expect(nav).not.toContain('label: "Retos"');
     expect(nav).toContain("grid-cols-4");
-    expect(nav).toContain("<svg");
+    expect(nav).toContain('emoji: "🏠"');
+    expect(nav).toContain('emoji: "📅"');
+    expect(nav).toContain('emoji: "🎟️"');
+    expect(nav).toContain('emoji: "👤"');
   });
 });
