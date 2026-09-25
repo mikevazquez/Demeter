@@ -57,7 +57,8 @@ function statePresentation(status: string, outcome: Outcome): Presentation {
       tone: "amber",
       eyebrow: "Verificación pendiente",
       title: "Todavía no podemos confirmar tu pago",
-      description: "No realices otro pago por ahora. Revisa el estado antes de volver a intentarlo.",
+      description:
+        "No realices otro pago por ahora. Revisa el estado antes de volver a intentarlo.",
     };
   }
 
@@ -137,7 +138,9 @@ export default async function StudentCheckoutReturnPage({
 
   return (
     <main className="mx-auto max-w-xl space-y-5 pb-6">
-      <section className={`rounded-3xl border ${tone.border} ${tone.background} p-6 text-center sm:p-8`}>
+      <section
+        className={`rounded-3xl border ${tone.border} ${tone.background} p-6 text-center sm:p-8`}
+      >
         <div
           className={`mx-auto flex h-16 w-16 items-center justify-center rounded-full ${tone.badge} text-3xl`}
         >
@@ -147,9 +150,7 @@ export default async function StudentCheckoutReturnPage({
         <p className={`mt-5 text-xs font-semibold uppercase tracking-[0.16em] ${tone.text}`}>
           {presentation.eyebrow}
         </p>
-        <h1 className="mt-2 text-2xl font-semibold text-white sm:text-3xl">
-          {presentation.title}
-        </h1>
+        <h1 className="mt-2 text-2xl font-semibold text-white sm:text-3xl">{presentation.title}</h1>
         <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-zinc-400">
           {presentation.description}
         </p>
