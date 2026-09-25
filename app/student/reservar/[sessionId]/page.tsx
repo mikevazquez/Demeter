@@ -43,12 +43,17 @@ export default async function StudentSessionDetailPage({
   searchParams,
 }: {
   params: Promise<{ sessionId: string }>;
-  searchParams: Promise<{ date?: string; credit?: string }>;
+  searchParams: Promise<{ date?: string; credit?: string; discipline?: string }>;
 }) {
   const { sessionId } = await params;
   const query = await searchParams;
   const rewardMode = query.credit === "reward";
   const rewardSuffix = rewardMode ? "&credit=reward" : "";
+  const disciplineSuffix =
+    query.discipline && /^[0-9a-f-]{36}$/i.test(query.discipline)
+      ? `&discipline=${query.discipline}`
+      : "";
+  const returnSuffix = `${rewardSuffix}${disciplineSuffix}`;
   const { supabase, studio, membership, snapshot } = await getStudentPortalContext();
   const { data, error } = await supabase.rpc("student_session_detail", {
     target_session_id: sessionId,
@@ -125,7 +130,7 @@ export default async function StudentSessionDetailPage({
   return (
     <main className="mx-auto max-w-2xl space-y-4 pb-4">
       <Link
-        href={`/student/reservar?date=${returnDate}${rewardSuffix}`}
+        href={`/student/reservar?date=${returnDate}${returnSuffix}`}
         className="inline-flex items-center gap-2 text-xs font-semibold text-fuchsia-300"
       >
         <span aria-hidden="true">←</span>
