@@ -15,7 +15,7 @@ describe("F10/N14 student home visual hierarchy", () => {
       home.indexOf('data-home-block="package"'),
     );
     expect(home).toContain("Tu próxima clase");
-    expect(home).toContain("Confirmada");
+    expect(home).toContain("Tu lugar está confirmado");
     expect(home).toContain('href="/student/mis-clases"');
   });
 
