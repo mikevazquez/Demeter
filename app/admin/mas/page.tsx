@@ -22,7 +22,7 @@ const items: MoreItem[] = [
     title: "Disciplinas",
     description: "Imágenes y presentación visual de cada disciplina en el portal.",
     href: "/admin/disciplinas",
-    capability: CAPABILITIES.SCHEDULE_READ,
+    capability: CAPABILITIES.SCHEDULE_WRITE,
   },
   {
     title: "Documentos",
