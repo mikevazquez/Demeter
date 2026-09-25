@@ -118,11 +118,15 @@ function availabilityCopy(spotsAvailable: number) {
 export default async function StudentReservePage({
   searchParams,
 }: {
-  searchParams: Promise<{ date?: string; error?: string; credit?: string }>;
+  searchParams: Promise<{ date?: string; error?: string; credit?: string; discipline?: string }>;
 }) {
   const query = await searchParams;
   const rewardMode = query.credit === "reward";
+  const selectedDiscipline =
+    query.discipline && /^[0-9a-f-]{36}$/i.test(query.discipline) ? query.discipline : null;
   const rewardSuffix = rewardMode ? "&credit=reward" : "";
+  const disciplineSuffix = selectedDiscipline ? `&discipline=${selectedDiscipline}` : "";
+  const querySuffix = `${querySuffix}${disciplineSuffix}`;
   const { supabase, studio, membership } = await getStudentPortalContext();
   const { data: globalRestrictionData } = await supabase.rpc(
     "student_booking_restrictions_snapshot",
@@ -142,19 +146,29 @@ export default async function StudentReservePage({
   const previousWeekDate = addDays(selectedDate, -7);
   const nextWeekDate = addDays(selectedDate, 7);
 
-  const [{ data: sessions, error }, { data: selectedHolidayData }, { data: holidayWeekData }] =
-    await Promise.all([
-      supabase.rpc("student_schedule_feed", {
-        target_start: selectedDate,
-        target_end: selectedDate,
-        target_discipline_id: null,
-      }),
-      supabase.rpc("student_holiday_snapshot", { target_date: selectedDate }),
-      supabase.rpc("student_holiday_week_snapshot", {
-        target_start: weekStart,
-        target_end: weekEnd,
-      }),
-    ]);
+  const [
+    { data: sessions, error },
+    { data: selectedHolidayData },
+    { data: holidayWeekData },
+    { data: disciplineRows },
+  ] = await Promise.all([
+    supabase.rpc("student_schedule_feed", {
+      target_start: selectedDate,
+      target_end: selectedDate,
+      target_discipline_id: selectedDiscipline,
+    }),
+    supabase.rpc("student_holiday_snapshot", { target_date: selectedDate }),
+    supabase.rpc("student_holiday_week_snapshot", {
+      target_start: weekStart,
+      target_end: weekEnd,
+    }),
+    supabase
+      .from("disciplines")
+      .select("id,name")
+      .eq("studio_id", membership.studio_id)
+      .eq("active", true)
+      .order("name"),
+  ]);
 
   const selectedHolidayBase = (selectedHolidayData as StudentHolidaySnapshot | null) ?? null;
   const selectedHoliday = selectedHolidayBase
@@ -177,19 +191,26 @@ export default async function StudentReservePage({
 
   const baseItems = (sessions ?? []) as StudentSession[];
   const sessionIds = baseItems.map((item) => item.session_id);
-  const { data: resourceRequirements } = sessionIds.length
+  const { data: sessionRows } = sessionIds.length
     ? await supabase
         .from("class_sessions")
-        .select("id,requires_resource")
+        .select("*")
         .eq("studio_id", membership.studio_id)
         .in("id", sessionIds)
-    : { data: [] as { id: string; requires_resource: boolean }[] };
-  const resourceRequirementMap = new Map(
-    (resourceRequirements ?? []).map((item) => [item.id, item.requires_resource]),
+    : { data: [] };
+  const sessionMetaMap = new Map(
+    (sessionRows ?? []).map((item) => [
+      item.id,
+      {
+        requiresResource: Boolean(item.requires_resource),
+        coverImagePath:
+          typeof item.cover_image_path === "string" ? item.cover_image_path : null,
+      },
+    ]),
   );
   const items = baseItems.map((item) => ({
     ...item,
-    requires_resource: resourceRequirementMap.get(item.session_id) ?? false,
+    requires_resource: sessionMetaMap.get(item.session_id)?.requiresResource ?? false,
   }));
 
   const { data: waitlistData } = await supabase.rpc("student_waitlist_feed");
@@ -201,22 +222,18 @@ export default async function StudentReservePage({
   const { data: activityStyles } = activityNames.length
     ? await supabase
         .from("class_templates")
-        .select("name,color_hex,drop_in_price_minor")
+        .select("*")
         .eq("studio_id", membership.studio_id)
         .in("name", activityNames)
-    : {
-        data: [] as {
-          name: string;
-          color_hex: string | null;
-          drop_in_price_minor: number | null;
-        }[],
-      };
+    : { data: [] };
   const activityStyleMap = new Map(
     (activityStyles ?? []).map((item) => [
       item.name,
       {
         color: item.color_hex ?? "#FF0A8A",
         dropInPriceMinor: item.drop_in_price_minor,
+        coverImagePath:
+          typeof item.cover_image_path === "string" ? item.cover_image_path : null,
       },
     ]),
   );
@@ -226,16 +243,46 @@ export default async function StudentReservePage({
       <BookingEligibilityRefresh />
       <header>
         <p className="student-eyebrow">Reservar</p>
-        <h1 className="student-page-title mt-1">Elige tu próxima clase</h1>
-        <p className="student-body mt-2">
-          Primero elige el día y después la clase que quieres tomar.
-        </p>
+        <h1 className="student-page-title mt-1">Reservar clases 📅</h1>
+        <p className="student-body mt-2">Elige tu disciplina y encuentra tu próxima clase.</p>
       </header>
+
+      <section aria-label="Filtrar por disciplina" className="-mx-1 overflow-x-auto px-1 pb-1">
+        <div className="flex min-w-max gap-2">
+          <Link
+            href={`/student/reservar?date=${selectedDate}${rewardSuffix}`}
+            className={`inline-flex min-h-11 items-center rounded-full border px-4 text-sm font-semibold transition ${
+              !selectedDiscipline
+                ? "border-fuchsia-400/50 bg-fuchsia-500/18 text-white"
+                : "border-white/10 bg-white/[0.025] text-zinc-400"
+            }`}
+          >
+            ✨ Todas
+          </Link>
+          {(disciplineRows ?? []).map((discipline) => {
+            const active = discipline.id === selectedDiscipline;
+
+            return (
+              <Link
+                key={discipline.id}
+                href={`/student/reservar?date=${selectedDate}&discipline=${discipline.id}${rewardSuffix}`}
+                className={`inline-flex min-h-11 items-center rounded-full border px-4 text-sm font-semibold transition ${
+                  active
+                    ? "border-fuchsia-400/50 bg-fuchsia-500/18 text-white"
+                    : "border-white/10 bg-white/[0.025] text-zinc-400"
+                }`}
+              >
+                {discipline.name}
+              </Link>
+            );
+          })}
+        </div>
+      </section>
 
       {globalRestrictions.length ? (
         <BookingRestrictionCard
           restrictions={globalRestrictions}
-          returnTo={`/student/reservar?date=${selectedDate}${rewardSuffix}`}
+          returnTo={`/student/reservar?date=${selectedDate}${querySuffix}`}
         />
       ) : null}
 
@@ -255,7 +302,7 @@ export default async function StudentReservePage({
         <div className="mb-3 flex items-center justify-between gap-3">
           {weekStart > currentWeekStart ? (
             <Link
-              href={`/student/reservar?date=${previousWeekDate < today ? today : previousWeekDate}${rewardSuffix}`}
+              href={`/student/reservar?date=${previousWeekDate < today ? today : previousWeekDate}${querySuffix}`}
               aria-label="Semana anterior"
               className="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-black/20 text-lg text-white transition hover:bg-white/[0.06]"
             >
@@ -275,7 +322,7 @@ export default async function StudentReservePage({
           </p>
 
           <Link
-            href={`/student/reservar?date=${nextWeekDate}${rewardSuffix}`}
+            href={`/student/reservar?date=${nextWeekDate}${querySuffix}`}
             aria-label="Semana siguiente"
             className="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-black/20 text-lg text-white transition hover:bg-white/[0.06]"
           >
@@ -323,7 +370,7 @@ export default async function StudentReservePage({
             ) : (
               <Link
                 key={day}
-                href={`/student/reservar?date=${day}${rewardSuffix}`}
+                href={`/student/reservar?date=${day}${querySuffix}`}
                 aria-current={isSelected ? "date" : undefined}
                 className={className}
               >
@@ -343,7 +390,7 @@ export default async function StudentReservePage({
             Conservamos el día que elegiste. Intenta nuevamente.
           </p>
           <Link
-            href={`/student/reservar?date=${selectedDate}${rewardSuffix}`}
+            href={`/student/reservar?date=${selectedDate}${querySuffix}`}
             className="mt-4 inline-flex min-h-10 items-center justify-center rounded-xl bg-fuchsia-600 px-4 py-2 text-xs font-semibold text-white"
           >
             Intentar de nuevo
@@ -389,7 +436,7 @@ export default async function StudentReservePage({
                     </div>
 
                     <Link
-                      href={`/student/reservar/${session.session_id}?date=${selectedDate}${rewardSuffix}`}
+                      href={`/student/reservar/${session.session_id}?date=${selectedDate}${querySuffix}`}
                       className="min-w-0 border-l border-white/10 pl-3"
                     >
                       <p className="truncate text-sm font-semibold text-white">
@@ -406,7 +453,7 @@ export default async function StudentReservePage({
                     </Link>
 
                     <Link
-                      href={`/student/reservar/${session.session_id}?date=${selectedDate}${rewardSuffix}`}
+                      href={`/student/reservar/${session.session_id}?date=${selectedDate}${querySuffix}`}
                       aria-label={`Ver detalles de ${session.activity}`}
                       className="flex items-center gap-2"
                     >
