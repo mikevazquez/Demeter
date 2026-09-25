@@ -1,5 +1,6 @@
 import type { CSSProperties } from "react";
 
+import { getHolidayAsset } from "@/lib/holidays/assets";
 import { getHolidayTheme, holidayOperationLabel } from "@/lib/holidays/theme";
 
 export type StudentHolidaySnapshot = {
@@ -35,6 +36,7 @@ function dateLabel(value: string) {
 
 export function HolidayNotice({ holiday }: { holiday: StudentHolidaySnapshot }) {
   const theme = getHolidayTheme(holiday.theme_key);
+  const artwork = holiday.hero_image_url ?? getHolidayAsset(holiday.theme_key);
   const closed = holiday.operation_mode === "closed";
   const special = holiday.operation_mode === "special";
 
@@ -68,6 +70,17 @@ export function HolidayNotice({ holiday }: { holiday: StudentHolidaySnapshot }) 
       className="relative overflow-hidden rounded-3xl border p-4 shadow-[0_20px_60px_rgba(0,0,0,.28)] sm:p-5"
       style={style}
     >
+      {artwork ? (
+        <div className="-mx-4 -mt-4 mb-4 h-36 overflow-hidden border-b border-white/10 sm:-mx-5 sm:-mt-5 sm:mb-5 sm:h-44">
+          <img
+            src={artwork}
+            alt=""
+            aria-hidden="true"
+            className="h-full w-full object-cover"
+          />
+        </div>
+      ) : null}
+
       <div className="pointer-events-none absolute right-4 top-2 select-none text-3xl font-black tracking-[0.4em] text-white/[0.06] sm:text-5xl">
         {theme.motif}
       </div>
@@ -95,7 +108,8 @@ export function HolidayNotice({ holiday }: { holiday: StudentHolidaySnapshot }) 
                 color: "#ffd5eb",
               }}
             >
-              Festivo oficial · {holidayOperationLabel(holiday.operation_mode)}
+              {holiday.is_official ? "Festivo oficial" : "Fecha especial"} ·{" "}
+              {holidayOperationLabel(holiday.operation_mode)}
             </span>
           </div>
         </div>
