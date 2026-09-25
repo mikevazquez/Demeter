@@ -384,6 +384,44 @@ export default async function StudentHomePage({
   );
   const nextClass = sortedUpcoming[0] ?? null;
   const followingClass = sortedUpcoming[1] ?? null;
+  const artworkCandidates = sortedUpcoming.slice(0, 2);
+  const artworkSessionIds = artworkCandidates.map((item) => item.session_id);
+  const artworkActivityNames = [...new Set(artworkCandidates.map((item) => item.activity))];
+  const [{ data: artworkSessionRows }, { data: artworkTemplateRows }] = await Promise.all([
+    artworkSessionIds.length
+      ? supabase
+          .from("class_sessions")
+          .select("*")
+          .eq("studio_id", membership.studio_id)
+          .in("id", artworkSessionIds)
+      : Promise.resolve({ data: [] }),
+    artworkActivityNames.length
+      ? supabase
+          .from("class_templates")
+          .select("*")
+          .eq("studio_id", membership.studio_id)
+          .in("name", artworkActivityNames)
+      : Promise.resolve({ data: [] }),
+  ]);
+  const artworkSessionMap = new Map(
+    (artworkSessionRows ?? []).map((item) => [
+      item.id,
+      typeof item.cover_image_path === "string" ? item.cover_image_path : null,
+    ]),
+  );
+  const artworkTemplateMap = new Map(
+    (artworkTemplateRows ?? []).map((item) => [
+      item.name,
+      typeof item.cover_image_path === "string" ? item.cover_image_path : null,
+    ]),
+  );
+  const classArtworkUrl = (item: (typeof sortedUpcoming)[number] | null) => {
+    if (!item) return null;
+    const path = artworkSessionMap.get(item.session_id) ?? artworkTemplateMap.get(item.activity);
+    return path ? supabase.storage.from("class-artwork").getPublicUrl(path).data.publicUrl : null;
+  };
+  const nextClassArtworkUrl = classArtworkUrl(nextClass);
+  const followingClassArtworkUrl = classArtworkUrl(followingClass);
 
   const today = localDateKey(new Date(), studio.timezone);
   const calendarDays = weekDays(today);
@@ -528,6 +566,15 @@ export default async function StudentHomePage({
       <section
         data-home-block="next-class"
         className="relative min-h-[330px] overflow-hidden rounded-[2rem] border border-fuchsia-400/50 bg-[radial-gradient(circle_at_78%_28%,rgba(255,10,138,0.42),transparent_28%),radial-gradient(circle_at_92%_86%,rgba(119,34,255,0.20),transparent_30%),linear-gradient(145deg,#241020_0%,#120b13_44%,#090a0f_100%)] p-5 shadow-[0_22px_70px_rgba(255,10,138,0.14)] sm:min-h-[360px] sm:p-7"
+        style={
+          nextClassArtworkUrl
+            ? {
+                backgroundImage: `linear-gradient(90deg, rgba(9,10,15,.96) 8%, rgba(9,10,15,.78) 48%, rgba(9,10,15,.28) 100%), url("${nextClassArtworkUrl}")`,
+                backgroundPosition: "center",
+                backgroundSize: "cover",
+              }
+            : undefined
+        }
       >
         <div
           aria-hidden="true"
@@ -791,8 +838,19 @@ export default async function StudentHomePage({
           data-home-block="following-class"
           className="group flex items-center gap-4 rounded-[1.5rem] border border-white/10 bg-[linear-gradient(145deg,#12141d,#0d0f16)] p-4 transition hover:border-fuchsia-400/30 sm:p-5"
         >
-          <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-fuchsia-400/20 bg-[radial-gradient(circle,rgba(255,10,138,0.22),transparent_65%)] text-fuchsia-200">
-            <HomeIcon kind="classes" className="h-7 w-7" />
+          <span
+            className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-fuchsia-400/20 bg-[radial-gradient(circle,rgba(255,10,138,0.22),transparent_65%)] text-fuchsia-200"
+            style={
+              followingClassArtworkUrl
+                ? {
+                    backgroundImage: `linear-gradient(rgba(7,8,12,.08),rgba(7,8,12,.25)), url("${followingClassArtworkUrl}")`,
+                    backgroundPosition: "center",
+                    backgroundSize: "cover",
+                  }
+                : undefined
+            }
+          >
+            {!followingClassArtworkUrl ? <HomeIcon kind="classes" className="h-7 w-7" /> : null}
           </span>
           <span className="min-w-0 flex-1">
             <span className="block text-xs text-zinc-500">Siguiente clase 💃</span>
