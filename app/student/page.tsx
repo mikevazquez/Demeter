@@ -1,8 +1,9 @@
+"use server";
+
 import Image from "next/image";
 import Link from "next/link";
 
 import {
-  formatDateTime,
   getStudentPortalContext,
   localDateKey,
   type StudentAcquisition,
@@ -18,6 +19,10 @@ type RewardLevelView = {
 type RewardLevelDefinitionRow = RewardLevelView & {
   level_key: string;
   level_order: number;
+  waitlist_priority?: number | null;
+  private_discount_pct?: number | null;
+  event_discount_pct?: number | null;
+  monthly_guest_invites?: number | null;
 };
 
 type RewardStatusSnapshot = {
@@ -72,29 +77,6 @@ function availableClasses(activePackage: StudentAcquisition | null) {
   return activePackage.available_credits ?? 0;
 }
 
-function addDays(value: string, days: number) {
-  const date = new Date(value + "T12:00:00Z");
-  date.setUTCDate(date.getUTCDate() + days);
-  return date.toISOString().slice(0, 10);
-}
-
-function calendarChip(value: string) {
-  const date = new Date(value + "T12:00:00Z");
-
-  return {
-    weekday: new Intl.DateTimeFormat("es-MX", {
-      weekday: "short",
-      timeZone: "UTC",
-    })
-      .format(date)
-      .replace(".", ""),
-    day: new Intl.DateTimeFormat("es-MX", {
-      day: "2-digit",
-      timeZone: "UTC",
-    }).format(date),
-  };
-}
-
 function todayLabel(dateKey: string) {
   const value = new Intl.DateTimeFormat("es-MX", {
     day: "numeric",
@@ -115,23 +97,11 @@ function timeOnly(value: string, timeZone: string) {
   }).format(new Date(value));
 }
 
-function dateOnly(value: string, timeZone: string) {
-  return new Intl.DateTimeFormat("es-MX", {
-    timeZone,
-    day: "numeric",
-    month: "short",
-  })
-    .format(new Date(value))
-    .replace(".", "");
-}
-
 function MedalArtwork({
   medalKey = "bronze",
-  dimmed = false,
   className = "",
 }: {
   medalKey?: string | null;
-  dimmed?: boolean;
   className?: string;
 }) {
   const palette =
@@ -139,17 +109,10 @@ function MedalArtwork({
       ? ["#ffe08a", "#d99a23", "#7c4511"]
       : medalKey === "silver"
         ? ["#f4f6fb", "#9ca5b3", "#505967"]
-        : medalKey === "diamond"
-          ? ["#c7f5ff", "#65cde7", "#28768c"]
-          : ["#ffc06d", "#cd7f32", "#6e3418"];
-  const center = medalKey === "diamond" ? "◆" : "★";
+        : ["#ffc06d", "#cd7f32", "#6e3418"];
 
   return (
-    <span
-      aria-hidden="true"
-      className={`relative block shrink-0 ${className}`}
-      style={{ opacity: dimmed ? 0.48 : 1 }}
-    >
+    <span aria-hidden="true" className={`relative block shrink-0 ${className}`}>
       <span className="absolute left-[34%] top-0 h-[31%] w-[20%] rounded bg-fuchsia-500" />
       <span className="absolute left-[50%] top-0 h-[31%] w-[20%] rounded bg-[#211421]" />
       <span
@@ -160,7 +123,7 @@ function MedalArtwork({
           background: `radial-gradient(circle at 38% 30%, ${palette[0]}, ${palette[1]} 56%, ${palette[2]})`,
         }}
       >
-        {center}
+        ★
       </span>
     </span>
   );
@@ -200,7 +163,9 @@ export default async function StudentHomePage({
       .maybeSingle(),
     supabase
       .from("reward_status_level_definitions")
-      .select("level_key,level_order,title")
+      .select(
+        "level_key,level_order,title,waitlist_priority,private_discount_pct,event_discount_pct,monthly_guest_invites",
+      )
       .eq("studio_id", membership.studio_id)
       .order("level_order"),
     supabase
@@ -250,13 +215,14 @@ export default async function StudentHomePage({
     : null;
   const medalTitle = rewardsUnlocked
     ? (currentMedal?.title ?? fallbackLevel?.title ?? "Bronce")
-    : "Por activar";
+    : "Bronce";
 
   const unreadNotifications = (appNotificationsResult.data ?? []) as AppNotificationHomeItem[];
   const priorityNotification =
     unreadNotifications.find((item) => urgentNotificationTypes.has(item.notification_type)) ?? null;
   const primaryRestriction =
     ((bookingRestrictionsResult.data ?? []) as BookingRestriction[])[0] ?? null;
+
   const evaluationsSnapshot =
     (evaluationsResult.data as StudentEvaluationsHomeSnapshot | null) ?? null;
   const activeEvaluationInvitation =
@@ -265,6 +231,11 @@ export default async function StudentHomePage({
         item.invitation_id &&
         (item.invitation_status === "offered" || item.invitation_status === "pending_schedule"),
     ) ?? null;
+  const evaluationHref = activeEvaluationInvitation?.invitation_id
+    ? activeEvaluationInvitation.invitation_status === "offered"
+      ? `/student/evaluaciones/${activeEvaluationInvitation.invitation_id}`
+      : `/student/evaluaciones/${activeEvaluationInvitation.invitation_id}/programar`
+    : "/student/evaluaciones";
 
   const packageAcquisitions = snapshot.acquisitions.filter((item) => !item.reward_credit_wallet);
   const giftClassWallets = snapshot.acquisitions.filter(
@@ -285,50 +256,55 @@ export default async function StudentHomePage({
     (left, right) => Date.parse(left.starts_at) - Date.parse(right.starts_at),
   );
   const nextClass = sortedUpcoming[0] ?? null;
-
-  const artworkSessionIds = nextClass ? [nextClass.session_id] : [];
-  const artworkActivityNames = nextClass ? [nextClass.activity] : [];
-  const [{ data: artworkSessionRows }, { data: artworkTemplateRows }] = await Promise.all([
-    artworkSessionIds.length
-      ? supabase
-          .from("class_sessions")
-          .select("*")
-          .eq("studio_id", membership.studio_id)
-          .in("id", artworkSessionIds)
-      : Promise.resolve({ data: [] }),
-    artworkActivityNames.length
-      ? supabase
-          .from("class_templates")
-          .select("*")
-          .eq("studio_id", membership.studio_id)
-          .in("name", artworkActivityNames)
-      : Promise.resolve({ data: [] }),
-  ]);
-
-  const sessionArtworkPath =
-    artworkSessionRows?.[0] && typeof artworkSessionRows[0].cover_image_path === "string"
-      ? artworkSessionRows[0].cover_image_path
-      : null;
-  const activityArtworkPath =
-    artworkTemplateRows?.[0] && typeof artworkTemplateRows[0].cover_image_path === "string"
-      ? artworkTemplateRows[0].cover_image_path
-      : null;
-  const nextClassArtworkPath = sessionArtworkPath ?? activityArtworkPath;
-  const nextClassArtworkUrl = nextClassArtworkPath
-    ? supabase.storage.from("class-artwork").getPublicUrl(nextClassArtworkPath).data.publicUrl
-    : null;
-
   const today = localDateKey(new Date(), studio.timezone);
-  const calendarDays = Array.from({ length: 7 }, (_, index) => addDays(today, index - 3));
-  const upcomingDates = new Set(
-    sortedUpcoming.map((item) => localDateKey(new Date(item.starts_at), studio.timezone)),
+
+  const activeLevelDefinition =
+    levelDefinitions.find((level) => level.level_key === currentMedalKey) ?? fallbackLevel;
+  const bronzeLevelDefinition =
+    levelDefinitions.find((level) => level.level_key === "bronze") ?? null;
+  const benefitLevel = rewardsUnlocked ? activeLevelDefinition : bronzeLevelDefinition;
+  const benefitItems = [
+    benefitLevel?.waitlist_priority
+      ? {
+          title: "Lista de espera",
+          detail: rewardsUnlocked ? "Prioridad activa en clases llenas." : "Disponible con Bronce.",
+          icon: "👥",
+        }
+      : null,
+    (benefitLevel?.private_discount_pct ?? 0) > 0
+      ? {
+          title: "Privados",
+          detail: `${benefitLevel?.private_discount_pct}% de descuento.`,
+          icon: "🏋️",
+        }
+      : null,
+    (benefitLevel?.event_discount_pct ?? 0) > 0
+      ? {
+          title: "Talleres",
+          detail: `${benefitLevel?.event_discount_pct}% de descuento.`,
+          icon: "★",
+        }
+      : null,
+    (benefitLevel?.monthly_guest_invites ?? 0) > 0
+      ? {
+          title: "Invitaciones",
+          detail: `${benefitLevel?.monthly_guest_invites} al mes.`,
+          icon: "✦",
+        }
+      : null,
+  ].filter(
+    (item): item is { title: string; detail: string; icon: string } => Boolean(item),
   );
-  const nextClassDate = nextClass
-    ? localDateKey(new Date(nextClass.starts_at), studio.timezone)
-    : null;
+
+  const medalImageSrc =
+    currentMedalKey === "diamond"
+      ? "/student/diamond-medal.jpg"
+      : currentMedalKey === "bronze"
+        ? "/student/home/bronze-medal.jpg"
+        : null;
 
   return (
-    <main className="mx-auto w-full max-w-[393px] px-4 pb-28 pt-[18px] lg:px-0 lg:pt-0">
+    <main className="w-full px-4 pb-28 pt-[18px] sm:mx-auto sm:max-w-[430px] lg:pt-0">
       {query.cancelled ? (
         <StudentNoticeDialog
           eyebrow="Reserva actualizada"
@@ -361,7 +337,7 @@ export default async function StudentHomePage({
         <Link
           href="/student/perfil"
           aria-label="Abrir mi perfil"
-          className="relative flex h-[50px] w-[50px] shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-[#583965] bg-[#261424] text-lg font-semibold text-white shadow-[0_0_0_3px_rgba(255,10,138,.08)]"
+          className="relative flex h-[50px] w-[50px] shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-[#ff55c0] bg-[#261424] text-lg font-semibold text-white shadow-[0_0_0_3px_rgba(255,10,138,.08)]"
         >
           <span aria-hidden="true">{snapshot.profile.first_name.slice(0, 1).toUpperCase()}</span>
           <Image src="/student/perfil/avatar" alt="" fill unoptimized className="object-cover" />
@@ -377,13 +353,13 @@ export default async function StudentHomePage({
         <Link
           href="/student/reservar"
           aria-label="Buscar una clase"
-          className="flex h-[44px] w-[44px] shrink-0 items-center justify-center rounded-full bg-[#171a24] text-[#f7f8fb]"
+          className="flex h-[46px] w-[46px] shrink-0 items-center justify-center rounded-full border border-[#5a405f] bg-[#171824] text-[#f7f8fb]"
         >
           <svg
             aria-hidden="true"
             viewBox="0 0 24 24"
             fill="none"
-            className="h-[22px] w-[22px]"
+            className="h-6 w-6"
             stroke="currentColor"
             strokeWidth="2"
             strokeLinecap="round"
@@ -425,80 +401,70 @@ export default async function StudentHomePage({
             </Link>
           ) : null}
         </section>
-      ) : activeEvaluationInvitation?.invitation_id ? (
-        <section
-          data-home-block="priority-action"
-          className="mt-3 rounded-2xl border border-violet-400/25 bg-violet-400/[0.055] p-4"
-        >
-          <p className="text-xs font-semibold text-violet-200">Evaluación disponible ✨</p>
-          <h2 className="mt-1 text-base font-semibold text-white">
-            {activeEvaluationInvitation.discipline_name}
-          </h2>
-          <p className="mt-1 text-sm leading-6 text-zinc-400">
-            Tienes una acción pendiente en tu nivel técnico.
-          </p>
-          <Link
-            href={
-              activeEvaluationInvitation.invitation_status === "offered"
-                ? `/student/evaluaciones/${activeEvaluationInvitation.invitation_id}`
-                : `/student/evaluaciones/${activeEvaluationInvitation.invitation_id}/programar`
-            }
-            className="mt-3 inline-flex min-h-11 items-center rounded-xl bg-fuchsia-600 px-4 text-sm font-semibold text-white"
-          >
-            {activeEvaluationInvitation.invitation_status === "offered"
-              ? "Ver evaluación"
-              : "Elegir mi clase"}
-          </Link>
-        </section>
       ) : null}
 
-      <Link
-        href={
-          nextClass
-            ? "/student/mis-clases"
-            : activePackage
-              ? "/student/reservar"
-              : "/student/paquete"
-        }
+      <section
         data-home-block="next-class"
-        className="relative mt-[19px] block h-[174px] overflow-hidden rounded-[24px] border border-[rgba(247,103,220,.55)] bg-[#371337]"
+        className="relative mt-[19px] h-[174px] overflow-hidden rounded-[24px] border border-[rgba(247,103,220,.55)] bg-[#351334] shadow-[0_14px_40px_rgba(255,10,138,.12)]"
       >
-        <span
-          aria-hidden="true"
-          className="absolute inset-y-0 right-0 w-[38%] bg-cover bg-center opacity-95"
-          style={{
-            backgroundImage: `url("${nextClassArtworkUrl ?? "/student/home-hero-fallback.jpg"}")`,
-          }}
+        <Image
+          src="/student/home/hero-forms.jpg"
+          alt=""
+          width={370}
+          height={355}
+          priority
+          className="absolute -right-2 -top-1 h-[178px] w-[184px] object-cover"
         />
         <span
           aria-hidden="true"
-          className="absolute inset-0 bg-[linear-gradient(90deg,rgba(30,11,31,.98)_0%,rgba(83,20,76,.72)_62%,rgba(255,10,138,.18)_100%)]"
+          className="absolute inset-y-0 left-[34%] w-[37%] bg-[linear-gradient(90deg,rgba(52,18,51,.96)_0%,rgba(74,18,69,.52)_58%,rgba(74,18,69,0)_100%)]"
+        />
+        <span
+          aria-hidden="true"
+          className="absolute inset-0 bg-[linear-gradient(90deg,rgba(31,10,31,.97)_0%,rgba(67,17,62,.74)_48%,rgba(255,10,138,.06)_100%)]"
         />
 
-        <div className="relative z-10 h-full">
-          <p className="absolute left-[18px] top-[18px] text-[11px] font-semibold leading-[13px] tracking-[0.28em] text-[#ff94e0]">
-            {nextClass ? "T U  P R Ó X I M A  C L A S E" : "T U  P R Ó X I M O  P A S O"}
+        <div className="relative z-10 h-full px-[18px] pt-[18px]">
+          <p className="text-[11px] font-semibold tracking-[0.26em] text-[#ffb2e4]">
+            {nextClass ? "TU PRÓXIMA CLASE" : "TU PRÓXIMO PASO"}
           </p>
 
           {nextClass ? (
             <>
-              <h2 className="absolute left-[18px] top-[48px] max-w-[245px] truncate text-[31px] font-bold leading-[38px] tracking-[-0.035em] text-[#f7f8fb]">
+              <h2 className="mt-2 max-w-[220px] truncate text-[30px] font-bold leading-9 tracking-[-0.035em] text-white">
                 {nextClass.activity} ✨
               </h2>
-              <p className="absolute left-[18px] top-[91px] max-w-[245px] truncate text-[17px] font-semibold leading-[21px] text-[#f7f8fb]">
-                {timeOnly(nextClass.starts_at, studio.timezone)}
+              <p className="mt-2 max-w-[235px] truncate text-[15px] font-semibold text-white">
+                ◷ {timeOnly(nextClass.starts_at, studio.timezone)}–
+                {timeOnly(nextClass.ends_at, studio.timezone)}
                 {nextClass.space ? ` · ${nextClass.space}` : ""}
               </p>
-              <p className="absolute left-[18px] top-[128px] max-w-[315px] truncate text-[11px] leading-[14px] text-[#ece0ef]">
-                ● {nextClass.coach ? `Coach ${nextClass.coach} · ` : ""}Tu lugar está confirmado
-              </p>
+              <div className="mt-[12px] flex max-w-[240px] items-center gap-2">
+                <span className="relative h-[34px] w-[34px] shrink-0 overflow-hidden rounded-full border border-[#ff55c0] bg-[#261424]">
+                  <Image src="/student/perfil/avatar" alt="" fill unoptimized className="object-cover" />
+                </span>
+                <span className="min-w-0 text-[10px] leading-[13px] text-[#efe5f1]">
+                  <strong className="block truncate font-semibold">
+                    {nextClass.coach ? `Coach ${nextClass.coach}` : "Coach por confirmar"}
+                  </strong>
+                  <span className="mt-0.5 flex items-center gap-1">
+                    <span
+                      aria-hidden="true"
+                      className="inline-flex h-[15px] w-[15px] items-center justify-center rounded-full bg-[#ff43ae] text-[10px] font-bold text-[#090a0f]"
+                    >
+                      ✓
+                    </span>
+                    Tu lugar está confirmado
+                  </span>
+                </span>
+              </div>
             </>
           ) : activePackage ? (
             <>
-              <h2 className="absolute left-[18px] top-[50px] max-w-[245px] text-[27px] font-bold leading-8 tracking-[-0.03em] text-[#f7f8fb]">
+              <h2 className="mt-2 max-w-[220px] text-[28px] font-bold leading-8 tracking-[-0.03em] text-white">
                 Reserva tu próxima clase ✨
               </h2>
-              <p className="absolute left-[18px] top-[125px] max-w-[255px] text-[11px] leading-[15px] text-[#ece0ef]">
+              <p className="mt-4 max-w-[220px] text-[11px] leading-[15px] text-[#ece0ef]">
                 {activePackage.unlimited
                   ? "Tu paquete ilimitado está listo."
                   : `Tienes ${classesAvailable ?? 0} clases disponibles.`}
@@ -506,175 +472,89 @@ export default async function StudentHomePage({
             </>
           ) : (
             <>
-              <h2 className="absolute left-[18px] top-[50px] max-w-[245px] text-[27px] font-bold leading-8 tracking-[-0.03em] text-[#f7f8fb]">
+              <h2 className="mt-2 max-w-[220px] text-[28px] font-bold leading-8 tracking-[-0.03em] text-white">
                 Activa tu paquete 🎁
               </h2>
-              <p className="absolute left-[18px] top-[125px] max-w-[255px] text-[11px] leading-[15px] text-[#ece0ef]">
+              <p className="mt-4 max-w-[220px] text-[11px] leading-[15px] text-[#ece0ef]">
                 Elige un paquete para comenzar a reservar.
               </p>
             </>
           )}
         </div>
-      </Link>
+      </section>
 
-      <nav
-        aria-label="Tu semana"
-        className="mt-3 flex h-[70px] items-stretch justify-between gap-1.5"
-      >
-        {calendarDays.map((dateKey) => {
-          const chip = calendarChip(dateKey);
-          const isToday = dateKey === today;
-          const weekday = chip.weekday.charAt(0).toUpperCase() + chip.weekday.slice(1, 3);
+      <div className="mt-3 grid grid-cols-2 gap-[10px]">
+        <Link
+          href="/student/reservar"
+          className="flex h-[50px] items-center justify-center gap-3 rounded-[25px] bg-[#ff3fb0] text-[15px] font-semibold text-[#090a0f]"
+        >
+          <span aria-hidden="true" className="text-xl">▣</span>
+          Reservar
+        </Link>
+        <Link
+          href="/student/mis-clases"
+          className="flex h-[50px] items-center justify-center gap-3 rounded-[25px] border border-[#a32b7d] bg-[#17131d] text-[14px] font-semibold text-white"
+        >
+          <span aria-hidden="true" className="text-lg text-[#ff49b4]">▱</span>
+          <span>Ver mis clases</span>
+          <span aria-hidden="true" className="text-xl">›</span>
+        </Link>
+      </div>
 
-          return (
-            <Link
-              key={dateKey}
-              href={"/student/reservar?date=" + dateKey}
-              aria-current={isToday ? "date" : undefined}
-              aria-label={"Ver clases del " + dateKey}
-              className={
-                "flex h-[70px] w-[45px] min-w-0 flex-col items-center justify-center rounded-[17px] border transition " +
-                (isToday
-                  ? "border-[#ff52bf] bg-[#ff2ea8] text-[#0d050d]"
-                  : "border-[#383d4c] bg-[#11131b] text-[#f7f8fb]")
-              }
-            >
-              <span
-                className={
-                  "text-[11px] leading-[13px] " +
-                  (isToday ? "font-semibold" : "font-normal text-[#9aa3b2]")
-                }
-              >
-                {weekday}
-              </span>
-              <strong className="mt-1 text-[18px] font-semibold leading-[22px]">{chip.day}</strong>
-            </Link>
-          );
-        })}
-      </nav>
+      <section className="mt-[17px]">
+        <h2 className="text-[27px] font-bold leading-[34px] tracking-[-0.035em] text-[#f7f8fb]">
+          Lo importante para ti
+        </h2>
 
-      <section className="mt-4">
-        <div className="flex h-[34px] items-center justify-between">
-          <h2 className="text-[28px] font-bold leading-[34px] tracking-[-0.035em] text-[#f7f8fb]">
-            Tu espacio
-          </h2>
-          <Link href="/student/perfil" className="pr-1 text-[13px] leading-4 text-[#dcd7e5]">
-            Ver todo →
-          </Link>
-        </div>
-
-        <div className="mt-[9px] grid grid-cols-[minmax(0,1.153fr)_minmax(0,1fr)] grid-rows-[143px_151px] gap-x-[10px] gap-y-[10px]">
-          <Link
-            href={nextClass ? "/student/mis-clases" : "/student/reservar"}
-            data-home-block="space-next-class"
-            className="row-span-2 overflow-hidden rounded-[24px] border border-[rgba(94,82,111,.7)] bg-[#12141c]"
-          >
-            <div
-              className="relative h-[152px] bg-cover bg-center"
-              style={{
-                backgroundImage: `url("${nextClassArtworkUrl ?? "/student/home-pole-fallback.jpg"}")`,
-              }}
-            >
-              {nextClassArtworkUrl ? (
-                <span className="absolute left-3 top-3 rounded-full bg-[#ff94c7] px-[9px] py-[5px] text-[9px] font-semibold leading-3 text-[#0b0d12]">
-                  ✓ Confirmada
-                </span>
-              ) : null}
-            </div>
-
-            <div className="relative h-[152px] px-[13px] pt-[12px]">
-              <h3 className="truncate text-[23px] font-bold leading-[28px] tracking-[-0.025em] text-[#f7f8fb]">
-                {nextClass?.activity ?? "Reserva tu clase"}
-              </h3>
-
-              {nextClass ? (
-                <div className="mt-[9px] space-y-[7px] text-[13px] leading-4 text-[#ded8e6]">
-                  <p>▣&nbsp;&nbsp;{dateOnly(nextClass.starts_at, studio.timezone)}</p>
-                  <p>
-                    ◷&nbsp;&nbsp;{timeOnly(nextClass.starts_at, studio.timezone)}–
-                    {timeOnly(nextClass.ends_at, studio.timezone)}
-                  </p>
-                  <p>●&nbsp;&nbsp;{nextClass.space ?? "Estudio"}</p>
-                </div>
-              ) : (
-                <p className="mt-3 text-[11px] leading-4 text-[#9aa3b2]">
-                  Encuentra una clase y reserva tu lugar.
-                </p>
-              )}
-
-              <div className="absolute inset-x-[13px] bottom-[6px] flex h-[38px] items-center border-t border-[#3f424f] pt-1">
-                <span
-                  aria-hidden="true"
-                  className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-full border border-fuchsia-500 bg-[#261424] text-[11px] font-semibold text-white"
-                >
-                  {(nextClass?.coach ?? "C").slice(0, 1).toUpperCase()}
-                </span>
-                <span className="ml-1 min-w-0 flex-1 text-[10px] leading-[12px] text-[#c4bccc]">
-                  <span className="block">Coach</span>
-                  <span className="block truncate">{nextClass?.coach ?? "Por confirmar"}</span>
-                </span>
-                <span
-                  aria-hidden="true"
-                  className="flex h-[28px] w-[28px] shrink-0 items-center justify-center rounded-full border border-[#4f5263] bg-[#22242d] text-[20px] leading-none text-white"
-                >
-                  ›
-                </span>
-              </div>
-            </div>
-          </Link>
-
+        <div className="mt-[10px] grid grid-cols-2 gap-[10px]">
           <Link
             href="/student/paquete"
             data-home-block="package"
-            className="relative overflow-hidden rounded-[24px] border border-[#e8d8ff] bg-[#ccbcfa] px-[13px] pt-[13px] text-[#0f0a14]"
+            className="relative h-[168px] overflow-hidden rounded-[24px] border border-[#eadfff] bg-[linear-gradient(145deg,#e4d8ff_0%,#c1aaf7_100%)] px-[14px] pt-[14px] text-[#140d19]"
           >
-            <p className="truncate pr-1 text-[18px] font-bold leading-[22px]">Mi paquete 🎁</p>
-
-            {activePackage?.unlimited ? (
-              <p className="mt-2 text-[25px] font-semibold leading-8">Ilimitado</p>
-            ) : activePackage ? (
-              <div className="mt-[5px] flex items-end gap-2">
-                <strong className="text-[29px] font-semibold leading-[35px]">
-                  {classesAvailable ?? 0}
-                </strong>
-                <span className="pb-[3px] text-[16px] font-semibold leading-5">disponibles</span>
-              </div>
-            ) : (
-              <p className="mt-2 text-[20px] font-semibold leading-6">Sin paquete</p>
-            )}
-
+            <p className="truncate pr-8 text-[16px] font-bold leading-5">Mi paquete 🎁</p>
             <span
               aria-hidden="true"
-              className="absolute right-[12px] top-[43px] flex h-[30px] w-[30px] items-center justify-center rounded-full bg-white/55 text-[22px] text-[#11121a]"
+              className="absolute right-[11px] top-[10px] flex h-7 w-7 items-center justify-center rounded-full bg-white/55 text-[22px]"
             >
               ›
             </span>
 
+            {activePackage?.unlimited ? (
+              <p className="mt-3 text-[25px] font-semibold">Ilimitado</p>
+            ) : activePackage ? (
+              <div className="mt-[7px] flex items-end gap-2">
+                <strong className="text-[31px] font-bold leading-8">{classesAvailable ?? 0}</strong>
+                <span className="pb-[2px] text-[14px] font-semibold">disponibles</span>
+              </div>
+            ) : (
+              <p className="mt-3 text-[19px] font-semibold">Sin paquete</p>
+            )}
+
             {activePackage && !activePackage.unlimited && activePackage.credit_limit ? (
               <>
-                <div className="mt-[7px] h-[9px] overflow-hidden rounded-full bg-[#e0d6f5]">
+                <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/55">
                   <div
-                    className="h-full rounded-full bg-[#ff0a8a]"
+                    className="h-full rounded-full bg-[#ff2da6]"
                     style={{ width: `${packageAvailablePercent}%` }}
                   />
                 </div>
-                <p className="mt-[4px] text-[11px] leading-[13px] text-[#4d4261]">
+                <p className="mt-1 text-[10px] text-[#615272]">
                   {classesAvailable ?? 0} de {activePackage.credit_limit} clases
                 </p>
               </>
             ) : (
-              <p className="mt-[7px] text-[10px] leading-[13px] text-[#4d4261]">
+              <p className="mt-3 text-[10px] text-[#615272]">
                 {activePackage ? "Sin límite de clases" : "Activa uno para reservar"}
               </p>
             )}
 
             <div
-              className={
-                "absolute inset-x-[11px] bottom-[6px] flex h-[20px] items-center justify-between rounded-[10px] px-2 text-[10px] " +
-                (giftClassesAvailable > 0
-                  ? "bg-[#ffa1d4] text-[#8a0a54]"
-                  : "bg-white/30 text-[#665b75]")
-              }
+              className={`absolute inset-x-[11px] bottom-[10px] flex h-9 items-center justify-between rounded-[14px] px-3 text-[10.5px] font-semibold ${
+                giftClassesAvailable > 0
+                  ? "bg-[#ff9ed2] text-[#a50d60]"
+                  : "bg-white/30 text-[#665b75]"
+              }`}
             >
               <span className="truncate">
                 🎁{" "}
@@ -682,86 +562,169 @@ export default async function StudentHomePage({
                   ? `+${giftClassesAvailable} clases de regalo`
                   : "Sin clases de regalo"}
               </span>
-              <span aria-hidden="true" className="text-[16px] leading-none">
-                ›
-              </span>
+              <span aria-hidden="true" className="text-lg">›</span>
             </div>
           </Link>
 
           <Link
             href={rewardsUnlocked ? "/student/recompensas/medallero" : "/student/recompensas"}
             data-home-block="medal"
-            className="relative overflow-hidden rounded-[24px] border border-[#4f495b] bg-[#12131b] px-[13px] pt-[13px]"
+            className="relative h-[168px] overflow-hidden rounded-[24px] border border-[#51475c] bg-[linear-gradient(145deg,#291629_0%,#15141d_58%,#0e0e14_100%)] px-[12px] pt-[13px]"
           >
             {rewardsUnlocked ? (
               <>
-                <p className="truncate pr-1 text-[13px] font-semibold leading-[17px] text-[#f7f8fb]">
-                  Medalla actual 🏅
-                </p>
-                <p className="mt-[12px] max-w-[96px] truncate text-[19px] font-semibold leading-6 text-[#f7f8fb]">
+                <p className="pr-8 text-[12px] font-semibold leading-4 text-white">Medalla actual 🏅</p>
+                <p className="mt-3 max-w-[102px] truncate text-[19px] font-semibold text-white">
                   {medalTitle}
                 </p>
-                <p className="mt-[7px] max-w-[94px] text-[10.5px] leading-[13px] text-[#9aa3b2]">
+                <p className="mt-2 max-w-[94px] text-[10px] leading-[13px] text-[#b7adbe]">
                   Por tu constancia
                   <br />y progreso
                 </p>
-
-                {currentMedalKey === "diamond" ? (
+                {medalImageSrc ? (
                   <Image
-                    src="/student/diamond-medal.jpg"
+                    src={medalImageSrc}
                     alt=""
-                    width={58}
-                    height={58}
-                    className="absolute right-[6px] top-[42px] h-[58px] w-[58px] rounded-full object-cover"
+                    width={80}
+                    height={94}
+                    className="absolute bottom-0 right-0 h-[88px] w-[72px] object-cover"
                   />
                 ) : (
                   <MedalArtwork
                     medalKey={currentMedalKey}
-                    className="absolute right-[6px] top-[42px] h-[58px] w-[58px]"
+                    className="absolute bottom-2 right-1 h-[72px] w-[72px]"
                   />
                 )}
-
-                <span
-                  aria-hidden="true"
-                  className="absolute bottom-[7px] right-[17px] text-[24px] leading-none text-white"
-                >
+                <span aria-hidden="true" className="absolute right-4 top-3 text-xl text-white">
                   ›
                 </span>
               </>
             ) : (
               <>
-                <p className="text-[11px] font-semibold leading-[15px] text-white">
+                <p className="pr-7 text-[11px] font-semibold leading-4 text-white">
                   Tu primera medalla 🏅
                 </p>
-                <p className="mt-[5px] max-w-[110px] text-[17px] font-semibold leading-[19px] text-white">
-                  Desbloquea Bronce
-                </p>
-                <p className="mt-[5px] text-[9px] leading-3 text-[#9aa3b2]">
-                  {onboardingCompleted} de {onboardingSteps.length} pasos completados
-                </p>
+                <p className="mt-[7px] text-[12px] leading-4 text-[#e7d8ec]">Desbloquea Bronce</p>
                 <div
-                  className="mt-[7px] grid grid-cols-6 gap-[3px]"
+                  className="mt-[10px] h-2 w-[104px] overflow-hidden rounded-full bg-white/15"
                   role="progressbar"
                   aria-label="Progreso para desbloquear Bronce"
                   aria-valuemin={0}
                   aria-valuemax={100}
                   aria-valuenow={onboardingPercent}
                 >
-                  {onboardingSteps.map((_, index) => (
-                    <span
-                      key={index}
-                      aria-hidden="true"
-                      className={
-                        "h-[6px] rounded-full " +
-                        (index < onboardingCompleted ? "bg-[#ff0a8a]" : "bg-white/10")
-                      }
-                    />
-                  ))}
+                  <div
+                    className="h-full rounded-full bg-[#ff36aa]"
+                    style={{ width: `${onboardingPercent}%` }}
+                  />
                 </div>
-                <span className="absolute inset-x-[13px] bottom-[8px] text-[10px] font-semibold text-[#ff78bd]">
-                  Continuar activación →
+                <p className="mt-1 max-w-[112px] whitespace-nowrap text-[9px] text-[#c7b8cf]">
+                  {onboardingCompleted} de {onboardingSteps.length} pasos completados
+                </p>
+                <span className="absolute bottom-[12px] left-[12px] inline-flex h-8 items-center rounded-full border border-[#ad2f87] bg-[#3d203b] px-4 text-[10px] font-semibold text-[#ffabe0]">
+                  Ver pasos&nbsp;&nbsp;›
+                </span>
+                <Image
+                  src="/student/home/bronze-medal.jpg"
+                  alt=""
+                  width={80}
+                  height={96}
+                  className="absolute bottom-0 right-0 h-[90px] w-[68px] object-cover"
+                />
+                <span aria-hidden="true" className="absolute right-4 top-3 text-xl text-white">
+                  ›
                 </span>
               </>
+            )}
+          </Link>
+
+          <Link
+            href={evaluationHref}
+            data-home-block="evaluation"
+            className="relative h-[168px] overflow-hidden rounded-[24px] border border-[#9f2b79] bg-[linear-gradient(145deg,#4a1843_0%,#251625_65%,#17141d_100%)] p-[14px]"
+          >
+            <p className="text-[17px] font-bold leading-5 text-white">Evaluación</p>
+            <span
+              aria-hidden="true"
+              className="absolute right-[10px] top-[10px] flex h-7 w-7 items-center justify-center rounded-full bg-white/10 text-xl"
+            >
+              ›
+            </span>
+            <div className="mt-[12px] flex items-start gap-[10px]">
+              <span
+                aria-hidden="true"
+                className="flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-[10px] border border-[#ff84d2]/50 bg-[#74366d]/60 text-[21px]"
+              >
+                ▤
+              </span>
+              <strong className="pt-1 text-[13px] leading-[15px] text-white">
+                {activeEvaluationInvitation ? (
+                  <>
+                    Diagnóstico
+                    <br />pendiente
+                  </>
+                ) : (
+                  <>
+                    Evaluaciones
+                    <br />al día
+                  </>
+                )}
+              </strong>
+            </div>
+            <p className="mt-[7px] text-[10px] leading-[13px] text-[#c8becd]">
+              {activeEvaluationInvitation
+                ? "Conoce tu progreso y recibe recomendaciones personalizadas."
+                : "Consulta tu nivel técnico y próximos ciclos."}
+            </p>
+            <span className="absolute inset-x-[14px] bottom-[10px] flex h-7 items-center justify-between rounded-full border border-[#dd3a9e] bg-[#43203f] px-4 text-[10px] font-semibold text-[#ffb1e1]">
+              {activeEvaluationInvitation ? "▣  Agendar" : "Ver progreso"}
+              <span aria-hidden="true">›</span>
+            </span>
+          </Link>
+
+          <Link
+            href="/student/recompensas/medallero"
+            data-home-block="benefits"
+            className="relative h-[168px] overflow-hidden rounded-[24px] border border-[#55445b] bg-[linear-gradient(145deg,#321b2c_0%,#19161f_70%,#12131a_100%)] p-[14px]"
+          >
+            <p className="text-[17px] font-bold leading-5 text-white">Beneficios</p>
+            <span
+              aria-hidden="true"
+              className="absolute right-[10px] top-[10px] flex h-7 w-7 items-center justify-center rounded-full bg-white/10 text-xl"
+            >
+              ›
+            </span>
+
+            {benefitItems.length ? (
+              <div className="mt-[11px] space-y-[8px]">
+                {benefitItems.slice(0, 3).map((benefit) => (
+                  <div key={benefit.title} className="flex items-start gap-2">
+                    <span
+                      aria-hidden="true"
+                      className="flex h-[23px] w-[23px] shrink-0 items-center justify-center rounded-full border border-[#ff40ad] text-[11px] text-[#ff55b8]"
+                    >
+                      {benefit.icon}
+                    </span>
+                    <span className="min-w-0">
+                      <strong className="block truncate text-[10px] font-semibold leading-3 text-white">
+                        {benefit.title}
+                      </strong>
+                      <span className="block truncate text-[7.5px] leading-[10px] text-[#b8adbe]">
+                        {benefit.detail}
+                      </span>
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="mt-8 pr-3">
+                <p className="text-[12px] font-semibold text-white">
+                  {rewardsUnlocked ? "Tus beneficios aparecerán aquí" : "Desbloquéalos con Bronce"}
+                </p>
+                <p className="mt-2 text-[9px] leading-3 text-[#b8adbe]">
+                  Tu medalla define los beneficios disponibles para ti.
+                </p>
+              </div>
             )}
           </Link>
         </div>
