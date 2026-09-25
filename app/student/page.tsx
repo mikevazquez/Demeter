@@ -86,23 +86,23 @@ type BookingRestriction = {
 const medalVisuals = {
   bronze: {
     accent: "#CD7F32",
-    border: "rgba(205,127,50,0.58)",
-    wash: "rgba(205,127,50,0.1)",
+    border: "rgba(205,127,50,0.52)",
+    wash: "rgba(205,127,50,0.12)",
   },
   silver: {
     accent: "#C0C0C0",
-    border: "rgba(192,192,192,0.56)",
-    wash: "rgba(192,192,192,0.08)",
+    border: "rgba(192,192,192,0.5)",
+    wash: "rgba(192,192,192,0.1)",
   },
   gold: {
     accent: "#D4AF37",
-    border: "rgba(212,175,55,0.62)",
-    wash: "rgba(212,175,55,0.1)",
+    border: "rgba(212,175,55,0.56)",
+    wash: "rgba(212,175,55,0.13)",
   },
   diamond: {
     accent: "#5EDFFF",
-    border: "rgba(94,223,255,0.64)",
-    wash: "rgba(94,223,255,0.1)",
+    border: "rgba(94,223,255,0.58)",
+    wash: "rgba(94,223,255,0.13)",
   },
 } as const;
 
@@ -140,6 +140,56 @@ function priorityNotificationTone(type: string) {
     label: "text-rose-200",
     button: "border-rose-400/30 text-rose-100",
   };
+}
+
+function HomeIcon({
+  kind,
+  className = "h-6 w-6",
+}: {
+  kind: "reserve" | "classes" | "package" | "technical" | "notice";
+  className?: string;
+}) {
+  if (kind === "reserve") {
+    return (
+      <svg viewBox="0 0 24 24" fill="none" className={className} stroke="currentColor" strokeWidth="1.7">
+        <rect x="3.5" y="5.5" width="17" height="15" rx="3" />
+        <path d="M8 3v5M16 3v5M3.5 10h17M12 13v5M9.5 15.5h5" />
+      </svg>
+    );
+  }
+
+  if (kind === "classes") {
+    return (
+      <svg viewBox="0 0 24 24" fill="none" className={className} stroke="currentColor" strokeWidth="1.7">
+        <rect x="4" y="4.5" width="16" height="16" rx="3" />
+        <path d="M8 2.5v4M16 2.5v4M4 9h16M8 13h8M8 17h5" />
+      </svg>
+    );
+  }
+
+  if (kind === "package") {
+    return (
+      <svg viewBox="0 0 24 24" fill="none" className={className} stroke="currentColor" strokeWidth="1.7">
+        <path d="M4.5 7.5h15v10h-15z" />
+        <path d="M8 7.5a4 4 0 0 1 8 0M9 12h6M8 15h8" />
+      </svg>
+    );
+  }
+
+  if (kind === "technical") {
+    return (
+      <svg viewBox="0 0 24 24" fill="none" className={className} stroke="currentColor" strokeWidth="1.7">
+        <path d="M5 18v-4M9.5 18V9M14 18v-7M18.5 18V5" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className} stroke="currentColor" strokeWidth="1.7">
+      <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9" />
+      <path d="M13.7 21a2 2 0 0 1-3.4 0" />
+    </svg>
+  );
 }
 
 export default async function StudentHomePage({
@@ -215,6 +265,7 @@ export default async function StudentHomePage({
       levelTitle: evaluation.resulting_level_title,
     });
   }
+
   const technicalLevels = [...technicalLevelMap.values()];
   const primaryTechnicalLevel = technicalLevels[0] ?? null;
   const additionalTechnicalLevels = Math.max(0, technicalLevels.length - 1);
@@ -251,21 +302,9 @@ export default async function StudentHomePage({
       : "bronze";
   const medalVisual = medalVisuals[medalKey];
 
-  const rewardClassWallets = snapshot.acquisitions.filter(
-    (item) => item.reward_credit_wallet && item.status === "active" && item.active_now,
-  );
   const packageAcquisitions = snapshot.acquisitions.filter((item) => !item.reward_credit_wallet);
   const activePackage = packageAcquisitions.find((item) => item.active_now) ?? null;
   const classesAvailable = availableClasses(activePackage);
-  const extraClassesAvailable = rewardClassWallets.reduce(
-    (total, item) => total + (item.available_credits ?? 0),
-    0,
-  );
-  const nearestExtraClassExpiry =
-    rewardClassWallets
-      .map((item) => item.expires_on)
-      .filter(Boolean)
-      .sort()[0] ?? null;
 
   const nextClass =
     [...snapshot.upcoming].sort(
@@ -296,12 +335,30 @@ export default async function StudentHomePage({
               : `/student/evaluaciones/${activeEvaluationInvitation.invitation_id}/programar`,
         }
       : {
-          label: "Ver evaluaciones",
+          label: "Ver nivel técnico",
           href: "/student/evaluaciones",
         };
 
+  const technicalSummary = latestPublishedEvaluation
+    ? latestPublishedEvaluation.resulting_level_title ?? "Resultado disponible"
+    : activeEvaluationInvitation
+      ? "Evaluación disponible"
+      : primaryTechnicalLevel?.levelTitle ?? "Aún sin nivel";
+
+  const medalSummary = currentMedal
+    ? currentMedal.title ?? "Bronce"
+    : rewardStatus?.access_unlocked
+      ? "Sin medalla"
+      : "Por activar";
+
+  const packageSummary = activePackage
+    ? activePackage.unlimited
+      ? "Ilimitado"
+      : `${classesAvailable ?? 0} clases disponibles`
+    : "Sin paquete activo";
+
   return (
-    <main className="space-y-4 pb-4">
+    <main className="space-y-5 pb-5">
       {query.cancelled ? (
         <StudentNoticeDialog
           eyebrow="Reserva actualizada"
@@ -321,12 +378,18 @@ export default async function StudentHomePage({
         </StudentNoticeDialog>
       ) : null}
 
-      <header className="pb-1">
-        <p className="student-eyebrow">Inicio</p>
-        <h1 className="student-page-title mt-1">Hola, {snapshot.profile.first_name}</h1>
-        <p className="student-body mt-2">
-          Aquí tienes lo importante para tu próximo entrenamiento.
-        </p>
+      <header className="relative overflow-hidden rounded-[1.75rem] border border-fuchsia-500/15 bg-[radial-gradient(circle_at_78%_18%,rgba(255,10,138,0.23),transparent_34%),linear-gradient(135deg,#130a12,#0c0c12_55%,#0a0b10)] px-5 py-6 sm:px-7 sm:py-8">
+        <div
+          aria-hidden="true"
+          className="absolute -right-12 -top-20 h-56 w-56 rounded-full bg-fuchsia-500/10 blur-3xl"
+        />
+        <div aria-hidden="true" className="absolute bottom-0 right-16 h-24 w-px bg-fuchsia-400/40" />
+        <div className="relative">
+          <p className="text-sm text-zinc-400">Qué gusto verte de nuevo</p>
+          <h1 className="mt-1 text-3xl font-semibold tracking-tight text-white sm:text-4xl">
+            Hola, {snapshot.profile.first_name} <span aria-hidden="true">👋</span>
+          </h1>
+        </div>
       </header>
 
       {priorityNotification ? (
@@ -336,16 +399,16 @@ export default async function StudentHomePage({
           return (
             <section
               data-home-block="priority-action"
-              className={`student-card ${tone.border} ${tone.background} p-4`}
+              className={`rounded-2xl border ${tone.border} ${tone.background} p-4`}
             >
-              <p className={`text-xs font-semibold ${tone.label}`}>Importante</p>
-              <h2 className="mt-2 text-lg font-semibold text-white">
+              <p className={`text-xs font-semibold ${tone.label}`}>Necesita tu atención</p>
+              <h2 className="mt-1.5 text-base font-semibold text-white">
                 {priorityNotification.title}
               </h2>
               <p className="mt-1 text-sm leading-6 text-zinc-300">{priorityNotification.body}</p>
               <Link
                 href={`/student/notificaciones/${priorityNotification.id}`}
-                className={`mt-4 inline-flex min-h-11 items-center justify-center rounded-xl border px-4 text-sm font-semibold ${tone.button}`}
+                className={`mt-3 inline-flex min-h-11 items-center justify-center rounded-xl border px-4 text-sm font-semibold ${tone.button}`}
               >
                 Ver detalle
               </Link>
@@ -355,17 +418,17 @@ export default async function StudentHomePage({
       ) : primaryRestriction ? (
         <section
           data-home-block="priority-action"
-          className="student-card border-amber-400/30 bg-amber-400/[0.055] p-4"
+          className="rounded-2xl border border-amber-400/30 bg-amber-400/[0.055] p-4"
         >
           <p className="text-xs font-semibold text-amber-200">Necesitas resolver esto</p>
-          <h2 className="mt-2 text-lg font-semibold text-white">{primaryRestriction.title}</h2>
+          <h2 className="mt-1.5 text-base font-semibold text-white">{primaryRestriction.title}</h2>
           {primaryRestriction.detail ? (
             <p className="mt-1 text-sm leading-6 text-zinc-300">{primaryRestriction.detail}</p>
           ) : null}
           {primaryRestriction.action_href ? (
             <Link
               href={primaryRestriction.action_href}
-              className="mt-4 inline-flex min-h-11 items-center justify-center rounded-xl bg-fuchsia-600 px-4 text-sm font-semibold text-white"
+              className="mt-3 inline-flex min-h-11 items-center justify-center rounded-xl bg-fuchsia-600 px-4 text-sm font-semibold text-white"
             >
               {primaryRestriction.action_label || "Resolver"}
             </Link>
@@ -373,242 +436,283 @@ export default async function StudentHomePage({
         </section>
       ) : null}
 
-      <section data-home-block="next-class" className="student-card p-4 sm:p-5">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <p className="student-eyebrow">Tu próxima clase</p>
-            {nextClass ? (
-              <h2 className="mt-1 text-xl font-semibold text-white">{nextClass.activity}</h2>
-            ) : null}
-          </div>
-          {nextClass ? (
-            <span className="rounded-full bg-emerald-500/12 px-2.5 py-1 text-xs font-semibold text-emerald-300">
-              Confirmada
-            </span>
-          ) : null}
-        </div>
-
-        {nextClass ? (
-          <>
-            <p className="mt-3 text-base font-medium text-white">
-              {formatDateTime(nextClass.starts_at, studio.timezone)}
-            </p>
-            <p className="mt-1 text-sm text-zinc-400">
-              {[nextClass.coach, nextClass.space].filter(Boolean).join(" · ") ||
-                "Consulta los detalles de tu clase"}
-            </p>
-            <Link
-              href="/student/mis-clases"
-              className="student-action-secondary mt-4 w-full sm:w-auto"
-            >
-              Ver mi clase
-            </Link>
-          </>
-        ) : (
-          <div className="mt-3">
-            <h2 className="text-lg font-semibold text-white">Reserva tu próxima clase</h2>
-            <p className="mt-1 text-sm leading-6 text-zinc-400">
-              Elige el día y la clase que quieres tomar.
-            </p>
-            <Link href="/student/reservar" className="student-action-primary mt-4 w-full sm:w-auto">
-              Reservar una clase
-            </Link>
-          </div>
-        )}
-      </section>
-
       <section
-        data-home-block="package"
-        className={`student-card p-4 sm:p-5 ${
-          expiresSoon ? "border-amber-400/30 bg-amber-400/[0.035]" : ""
-        }`}
+        data-home-block="next-class"
+        className="relative min-h-[330px] overflow-hidden rounded-[2rem] border border-fuchsia-400/50 bg-[radial-gradient(circle_at_78%_28%,rgba(255,10,138,0.42),transparent_28%),radial-gradient(circle_at_92%_86%,rgba(119,34,255,0.20),transparent_30%),linear-gradient(145deg,#241020_0%,#120b13_44%,#090a0f_100%)] p-5 shadow-[0_22px_70px_rgba(255,10,138,0.14)] sm:min-h-[360px] sm:p-7"
       >
-        <div className="flex items-start justify-between gap-4">
-          <div className="min-w-0">
-            <p className="student-eyebrow">Tu paquete</p>
-            {activePackage ? (
-              <>
-                <h2 className="mt-1 text-xl font-semibold text-white">
-                  {activePackage.unlimited
-                    ? "Clases ilimitadas"
-                    : `${classesAvailable ?? 0} clases disponibles`}
-                </h2>
-                <p className="mt-1 text-sm text-zinc-400">
-                  {activePackage.name} · vence{" "}
-                  {formatDate(activePackage.expires_on, studio.timezone)}
-                </p>
-              </>
-            ) : (
-              <>
-                <h2 className="mt-1 text-lg font-semibold text-white">
-                  No tienes un paquete activo
-                </h2>
-                <p className="mt-1 text-sm text-zinc-400">
-                  Necesitas un paquete o clase disponible para seguir reservando.
-                </p>
-              </>
-            )}
-          </div>
-          {activePackage ? (
-            <Link
-              href="/student/paquete"
-              className="shrink-0 text-sm font-semibold text-fuchsia-300"
-            >
-              Ver →
-            </Link>
-          ) : null}
-        </div>
+        <div
+          aria-hidden="true"
+          className="absolute inset-y-0 right-[22%] w-px bg-gradient-to-b from-transparent via-fuchsia-300/80 to-transparent shadow-[0_0_18px_rgba(255,10,138,0.9)]"
+        />
+        <div
+          aria-hidden="true"
+          className="absolute -right-16 top-12 h-52 w-52 rounded-full border border-fuchsia-300/15 bg-fuchsia-500/[0.08] blur-[1px]"
+        />
+        <div
+          aria-hidden="true"
+          className="absolute -right-6 top-28 h-36 w-36 rounded-full border border-white/10"
+        />
+        <div
+          aria-hidden="true"
+          className="absolute bottom-10 right-8 h-28 w-28 rotate-12 rounded-[55%_45%_58%_42%] bg-gradient-to-br from-fuchsia-300/20 via-fuchsia-500/5 to-transparent blur-xl"
+        />
 
-        {activePackage && extraClassesAvailable > 0 ? (
-          <div className="mt-4 rounded-2xl border border-emerald-400/20 bg-emerald-400/[0.045] px-3.5 py-3">
-            <strong className="text-sm text-emerald-200">
-              +{extraClassesAvailable}{" "}
-              {extraClassesAvailable === 1 ? "clase extra" : "clases extra"}
-            </strong>
-            {nearestExtraClassExpiry ? (
-              <p className="mt-0.5 text-xs text-zinc-400">
-                Disponibles hasta {formatDate(nearestExtraClassExpiry, studio.timezone)}
+        <div className="relative z-10 flex min-h-[288px] max-w-xl flex-col sm:min-h-[306px]">
+          {nextClass ? (
+            <>
+              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-fuchsia-100/85">
+                Tu próxima clase
               </p>
-            ) : null}
-          </div>
-        ) : null}
+              <h2 className="mt-3 max-w-[80%] font-serif text-4xl font-semibold leading-[0.98] tracking-tight text-white sm:text-5xl">
+                {nextClass.activity}
+              </h2>
 
-        {!activePackage ? (
-          <Link href="/student/paquete" className="student-action-primary mt-4 w-full sm:w-auto">
-            Ver paquetes
-          </Link>
-        ) : null}
-      </section>
-
-      <section data-home-block="technical-level" className="student-card p-4 sm:p-5">
-        <div className="flex items-start justify-between gap-4">
-          <div className="min-w-0">
-            <p className="student-eyebrow">Nivel técnico</p>
-
-            {latestPublishedEvaluation ? (
-              <>
-                <h2 className="mt-1 text-lg font-semibold text-white">
-                  {latestPublishedEvaluation.discipline_name}
-                </h2>
-                <p className="mt-1 text-sm text-zinc-300">
-                  Resultado disponible
-                  {latestPublishedEvaluation.resulting_level_title
-                    ? ` · ${latestPublishedEvaluation.resulting_level_title}`
-                    : ""}
+              <div className="mt-5 space-y-2.5 text-sm text-zinc-200 sm:text-base">
+                <p className="flex items-center gap-2">
+                  <span aria-hidden="true">◷</span>
+                  {formatDateTime(nextClass.starts_at, studio.timezone)}
                 </p>
-              </>
-            ) : activeEvaluationInvitation ? (
-              <>
-                <h2 className="mt-1 text-lg font-semibold text-white">
-                  {activeEvaluationInvitation.discipline_name}
-                </h2>
-                <p className="mt-1 text-sm text-zinc-300">
-                  {activeEvaluationInvitation.invitation_status === "offered"
-                    ? "Tienes una evaluación disponible"
-                    : "Elige una clase para realizar tu evaluación"}
-                </p>
-              </>
-            ) : primaryTechnicalLevel ? (
-              <>
-                <h2 className="mt-1 text-lg font-semibold text-white">
-                  {primaryTechnicalLevel.disciplineName}
-                </h2>
-                <p className="mt-1 text-base font-semibold text-cyan-200">
-                  {primaryTechnicalLevel.levelTitle}
-                </p>
-                {additionalTechnicalLevels > 0 ? (
-                  <p className="mt-1 text-xs text-zinc-500">
-                    +{additionalTechnicalLevels}{" "}
-                    {additionalTechnicalLevels === 1 ? "disciplina" : "disciplinas"}
+                {nextClass.coach ? (
+                  <p className="flex items-center gap-2">
+                    <span aria-hidden="true">◎</span>
+                    Coach {nextClass.coach}
                   </p>
                 ) : null}
-              </>
-            ) : (
-              <>
-                <h2 className="mt-1 text-lg font-semibold text-white">
-                  Aún sin nivel técnico confirmado
-                </h2>
-                <p className="mt-1 text-sm leading-6 text-zinc-400">
-                  Tu nivel se confirma por disciplina mediante Evaluaciones.
+                {nextClass.space ? (
+                  <p className="flex items-center gap-2">
+                    <span aria-hidden="true">⌖</span>
+                    {nextClass.space}
+                  </p>
+                ) : null}
+                <p className="flex items-center gap-2 font-medium text-emerald-200">
+                  <span
+                    aria-hidden="true"
+                    className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-emerald-300/40 bg-emerald-400/10 text-xs"
+                  >
+                    ✓
+                  </span>
+                  Tu lugar está confirmado
                 </p>
-              </>
-            )}
-          </div>
+              </div>
 
-          <span
-            aria-hidden="true"
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-cyan-400/10 text-cyan-200"
-          >
-            ◎
-          </span>
+              <div className="mt-auto pt-6">
+                <Link
+                  href="/student/mis-clases"
+                  className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-fuchsia-600 px-5 py-3 text-base font-semibold text-white shadow-[0_12px_34px_rgba(255,10,138,0.25)] transition hover:bg-fuchsia-500 sm:w-auto sm:min-w-52"
+                >
+                  Ver mi clase <span aria-hidden="true">→</span>
+                </Link>
+              </div>
+            </>
+          ) : activePackage ? (
+            <>
+              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-fuchsia-100/85">
+                Tu próximo movimiento
+              </p>
+              <h2 className="mt-3 max-w-md font-serif text-4xl font-semibold leading-[1.02] text-white sm:text-5xl">
+                Reserva tu próxima clase
+              </h2>
+              <p className="mt-4 max-w-sm text-base leading-7 text-zinc-300">
+                {activePackage.unlimited
+                  ? "Tu paquete ilimitado está listo para seguir entrenando."
+                  : `Tienes ${classesAvailable ?? 0} clases disponibles para usar.`}
+              </p>
+              <div className="mt-auto pt-6">
+                <Link
+                  href="/student/reservar"
+                  className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-fuchsia-600 px-5 py-3 text-base font-semibold text-white shadow-[0_12px_34px_rgba(255,10,138,0.25)] transition hover:bg-fuchsia-500 sm:w-auto sm:min-w-52"
+                >
+                  Reservar clase <span aria-hidden="true">→</span>
+                </Link>
+              </div>
+            </>
+          ) : (
+            <>
+              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-fuchsia-100/85">
+                Sigue entrenando
+              </p>
+              <h2 className="mt-3 max-w-md font-serif text-4xl font-semibold leading-[1.02] text-white sm:text-5xl">
+                Activa tu próximo paquete
+              </h2>
+              <p className="mt-4 max-w-sm text-base leading-7 text-zinc-300">
+                Elige la opción que mejor se adapte a tus clases en Demeter.
+              </p>
+              <div className="mt-auto pt-6">
+                <Link
+                  href="/student/paquete"
+                  className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-fuchsia-600 px-5 py-3 text-base font-semibold text-white shadow-[0_12px_34px_rgba(255,10,138,0.25)] transition hover:bg-fuchsia-500 sm:w-auto sm:min-w-52"
+                >
+                  Ver paquetes <span aria-hidden="true">→</span>
+                </Link>
+              </div>
+            </>
+          )}
         </div>
+      </section>
+
+      <section aria-label="Acciones rápidas" className="grid grid-cols-3 gap-2.5 sm:gap-3">
+        <Link
+          href="/student/reservar"
+          className="group min-w-0 rounded-[1.35rem] border border-white/10 bg-[linear-gradient(145deg,rgba(255,10,138,0.08),rgba(255,255,255,0.025))] p-3.5 transition hover:border-fuchsia-400/35 hover:bg-fuchsia-500/[0.08] sm:p-4"
+        >
+          <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-fuchsia-500/15 text-fuchsia-200 shadow-[0_8px_24px_rgba(255,10,138,0.12)]">
+            <HomeIcon kind="reserve" />
+          </span>
+          <strong className="mt-4 block truncate font-serif text-lg font-semibold text-white sm:text-xl">
+            Reservar
+          </strong>
+          <span className="mt-1 hidden text-sm leading-5 text-zinc-500 sm:block">
+            Busca tu próxima clase
+          </span>
+        </Link>
 
         <Link
-          href={technicalAction.href}
-          className="student-action-secondary mt-4 w-full sm:w-auto"
+          href="/student/mis-clases"
+          className="group min-w-0 rounded-[1.35rem] border border-white/10 bg-[linear-gradient(145deg,rgba(139,92,246,0.08),rgba(255,255,255,0.025))] p-3.5 transition hover:border-violet-400/30 hover:bg-violet-500/[0.07] sm:p-4"
         >
-          {technicalAction.label}
+          <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-violet-500/15 text-violet-200">
+            <HomeIcon kind="classes" />
+          </span>
+          <strong className="mt-4 block truncate font-serif text-lg font-semibold text-white sm:text-xl">
+            Mis clases
+          </strong>
+          <span className="mt-1 hidden text-sm leading-5 text-zinc-500 sm:block">
+            Consulta tus reservas
+          </span>
+        </Link>
+
+        <Link
+          href="/student/paquete"
+          data-home-block="package"
+          className={`group min-w-0 rounded-[1.35rem] border p-3.5 transition sm:p-4 ${
+            expiresSoon
+              ? "border-amber-400/25 bg-amber-400/[0.045] hover:border-amber-300/40"
+              : "border-white/10 bg-[linear-gradient(145deg,rgba(91,33,182,0.09),rgba(255,255,255,0.025))] hover:border-violet-400/30"
+          }`}
+        >
+          <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-violet-500/15 text-violet-200">
+            <HomeIcon kind="package" />
+          </span>
+          <strong className="mt-4 block truncate font-serif text-lg font-semibold text-white sm:text-xl">
+            Mi paquete
+          </strong>
+          <span className="mt-1 block truncate text-xs leading-5 text-zinc-500 sm:text-sm">
+            {packageSummary}
+          </span>
+          {activePackage ? (
+            <span className="hidden text-xs text-zinc-600 sm:block">
+              Vence {formatDate(activePackage.expires_on, studio.timezone)}
+            </span>
+          ) : null}
         </Link>
       </section>
 
-      <section
-        data-home-block="medal"
-        className="student-card p-4 sm:p-5"
-        style={
-          currentMedal
-            ? {
-                borderColor: medalVisual.border,
-                backgroundImage: `radial-gradient(circle at 92% 8%, ${medalVisual.wash}, transparent 34%)`,
-              }
-            : undefined
-        }
-      >
-        <div className="flex items-start gap-4">
-          <div
-            aria-hidden="true"
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.035] text-xl"
-            style={
-              currentMedal
-                ? { color: medalVisual.accent, borderColor: medalVisual.border }
-                : undefined
-            }
+      <section>
+        <div className="mb-3 flex items-center justify-between gap-4 px-1">
+          <h2 className="font-serif text-2xl font-semibold text-white">Tu espacio</h2>
+          <Link
+            href="/student/perfil"
+            className="inline-flex min-h-11 items-center text-sm font-semibold text-fuchsia-300"
           >
-            ◇
-          </div>
-
-          <div className="min-w-0 flex-1">
-            <p className="student-eyebrow">Tu medalla</p>
-            <h2 className="mt-1 text-lg font-semibold text-white">
-              {currentMedal
-                ? `Medalla ${currentMedal.title ?? "Bronce"}`
-                : rewardStatus?.access_unlocked
-                  ? "Sin medalla este mes"
-                  : "Activa tus Medallas"}
-            </h2>
-            <p className="mt-1 text-sm leading-6 text-zinc-400">
-              {currentMedal
-                ? "Reconoce tu constancia y desbloquea beneficios en Demeter."
-                : rewardStatus?.access_unlocked
-                  ? "Tus requisitos de medalla se evalúan cada mes."
-                  : "Completa tu activación para empezar a obtener medallas y beneficios."}
-            </p>
-          </div>
+            Ver todo →
+          </Link>
         </div>
 
-        <Link
-          href={
-            rewardStatus?.access_unlocked
-              ? "/student/recompensas/medallero"
-              : "/student/recompensas"
-          }
-          className="student-action-secondary mt-4 w-full sm:w-auto"
-        >
-          {currentMedal
-            ? "Ver medallas y beneficios"
-            : rewardStatus?.access_unlocked
-              ? "Ver Medallero"
-              : "Continuar activación"}
-        </Link>
+        <div className="grid gap-2.5 sm:grid-cols-3 sm:gap-3">
+          <Link
+            href={technicalAction.href}
+            data-home-block="technical-level"
+            className="group flex min-h-28 items-center gap-3 rounded-[1.35rem] border border-fuchsia-500/15 bg-[radial-gradient(circle_at_14%_50%,rgba(255,10,138,0.13),transparent_35%),rgba(255,255,255,0.025)] p-4 transition hover:border-fuchsia-400/35"
+          >
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-fuchsia-500/10 text-fuchsia-300">
+              <HomeIcon kind="technical" />
+            </span>
+            <span className="min-w-0">
+              <span className="block text-xs text-zinc-500">Nivel técnico</span>
+              <strong className="mt-1 block truncate text-base font-semibold text-white">
+                {technicalSummary}
+              </strong>
+              {primaryTechnicalLevel && additionalTechnicalLevels > 0 ? (
+                <span className="mt-0.5 block text-xs text-zinc-600">
+                  +{additionalTechnicalLevels}{" "}
+                  {additionalTechnicalLevels === 1 ? "disciplina" : "disciplinas"}
+                </span>
+              ) : null}
+            </span>
+          </Link>
+
+          <Link
+            href={
+              rewardStatus?.access_unlocked
+                ? "/student/recompensas/medallero"
+                : "/student/recompensas"
+            }
+            data-home-block="medal"
+            className="group flex min-h-28 items-center gap-3 rounded-[1.35rem] border bg-white/[0.025] p-4 transition hover:bg-white/[0.04]"
+            style={{
+              borderColor: currentMedal ? medalVisual.border : "rgba(255,255,255,0.1)",
+              backgroundImage: currentMedal
+                ? `radial-gradient(circle at 18% 50%, ${medalVisual.wash}, transparent 38%)`
+                : undefined,
+            }}
+          >
+            <span
+              aria-hidden="true"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border bg-black/20 text-xl"
+              style={{
+                color: currentMedal ? medalVisual.accent : "#a1a1aa",
+                borderColor: currentMedal ? medalVisual.border : "rgba(255,255,255,0.1)",
+                boxShadow: currentMedal ? `0 0 24px ${medalVisual.wash}` : undefined,
+              }}
+            >
+              ◆
+            </span>
+            <span className="min-w-0">
+              <span className="block text-xs text-zinc-500">Medalla actual</span>
+              <strong className="mt-1 block truncate text-base font-semibold text-white">
+                {medalSummary}
+              </strong>
+              <span className="mt-0.5 block text-xs text-zinc-600">Beneficios y constancia</span>
+            </span>
+          </Link>
+
+          <Link
+            href="/student/notificaciones"
+            className="group flex min-h-28 items-center gap-3 rounded-[1.35rem] border border-orange-400/10 bg-[radial-gradient(circle_at_14%_50%,rgba(251,146,60,0.10),transparent_35%),rgba(255,255,255,0.025)] p-4 transition hover:border-orange-400/25"
+          >
+            <span className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-orange-400/10 text-orange-300">
+              <HomeIcon kind="notice" />
+              {unreadNotifications.length > 0 ? (
+                <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full bg-fuchsia-500 ring-2 ring-[#111017]" />
+              ) : null}
+            </span>
+            <span className="min-w-0">
+              <span className="block text-xs text-zinc-500">Avisos</span>
+              <strong className="mt-1 block truncate text-base font-semibold text-white">
+                {unreadNotifications.length
+                  ? `${unreadNotifications.length} ${unreadNotifications.length === 1 ? "pendiente" : "pendientes"}`
+                  : "Todo al día"}
+              </strong>
+              <span className="mt-0.5 block text-xs text-zinc-600">Notificaciones de Demeter</span>
+            </span>
+          </Link>
+        </div>
+      </section>
+
+      <section className="relative overflow-hidden rounded-[1.5rem] border border-fuchsia-500/30 bg-[radial-gradient(circle_at_82%_50%,rgba(255,10,138,0.24),transparent_34%),linear-gradient(120deg,#160b14,#0d0d12_60%,#120914)] px-5 py-5 sm:px-6">
+        <div aria-hidden="true" className="absolute -right-8 top-1/2 h-28 w-28 -translate-y-1/2 rounded-full border border-fuchsia-300/20" />
+        <div aria-hidden="true" className="absolute right-10 top-1/2 h-20 w-px -translate-y-1/2 bg-fuchsia-300/60" />
+        <div className="relative flex items-center justify-between gap-5">
+          <p className="max-w-md font-serif text-2xl font-semibold leading-tight text-white sm:text-3xl">
+            Disciplina hoy, resultados <span className="text-fuchsia-400">mañana.</span>
+          </p>
+          <span
+            aria-hidden="true"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-fuchsia-400/30 bg-fuchsia-500/10 text-xl text-fuchsia-200"
+          >
+            →
+          </span>
+        </div>
       </section>
     </main>
   );
