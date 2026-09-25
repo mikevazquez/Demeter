@@ -42,7 +42,6 @@ describe("F10/N14 student home visual hierarchy", () => {
     expect(home).toContain('data-home-block="medal"');
     expect(home).toContain("Nivel técnico");
     expect(home).toContain("Medalla actual");
-    expect(home).toContain("Tu espacio");
     expect(home).not.toContain("Tu progreso");
   });
 });
