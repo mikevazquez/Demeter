@@ -62,29 +62,6 @@ function availableClasses(activePackage: StudentAcquisition | null) {
   return activePackage.available_credits ?? 0;
 }
 
-function weekDays(dateKey: string) {
-  const anchor = new Date(`${dateKey}T12:00:00Z`);
-  const sunday = new Date(anchor);
-  sunday.setUTCDate(anchor.getUTCDate() - anchor.getUTCDay());
-
-  return Array.from({ length: 7 }, (_, index) => {
-    const day = new Date(sunday);
-    day.setUTCDate(sunday.getUTCDate() + index);
-
-    return {
-      key: day.toISOString().slice(0, 10),
-      label: new Intl.DateTimeFormat("es-MX", {
-        weekday: "short",
-        timeZone: "UTC",
-      })
-        .format(day)
-        .replace(".", "")
-        .slice(0, 3),
-      day: day.getUTCDate(),
-    };
-  });
-}
-
 function todayLabel(dateKey: string) {
   return `Hoy ${new Intl.DateTimeFormat("es-MX", {
     day: "numeric",
@@ -218,7 +195,8 @@ export default async function StudentHomePage({
 
   const artworkSessionIds = nextClass ? [nextClass.session_id] : [];
   const artworkActivityNames = nextClass ? [nextClass.activity] : [];
-  const [{ data: artworkSessionRows }, { data: artworkTemplateRows }] = await Promise.all([
+  const [{ data: artworkSessionRows }, { data: artworkTemplateRows }, { data: artworkDisciplineRows }] =
+    await Promise.all([
     artworkSessionIds.length
       ? supabase
           .from("class_sessions")
@@ -233,6 +211,14 @@ export default async function StudentHomePage({
           .eq("studio_id", membership.studio_id)
           .in("name", artworkActivityNames)
       : Promise.resolve({ data: [] }),
+    nextClass?.discipline
+      ? supabase
+          .from("disciplines")
+          .select("*")
+          .eq("studio_id", membership.studio_id)
+          .eq("name", nextClass.discipline)
+          .limit(1)
+      : Promise.resolve({ data: [] }),
   ]);
 
   const sessionArtworkPath =
@@ -243,13 +229,16 @@ export default async function StudentHomePage({
     artworkTemplateRows?.[0] && typeof artworkTemplateRows[0].cover_image_path === "string"
       ? artworkTemplateRows[0].cover_image_path
       : null;
-  const nextClassArtworkPath = sessionArtworkPath ?? activityArtworkPath;
+  const disciplineArtworkPath =
+    artworkDisciplineRows?.[0] && typeof artworkDisciplineRows[0].cover_image_path === "string"
+      ? artworkDisciplineRows[0].cover_image_path
+      : null;
+  const nextClassArtworkPath = sessionArtworkPath ?? activityArtworkPath ?? disciplineArtworkPath;
   const nextClassArtworkUrl = nextClassArtworkPath
     ? supabase.storage.from("class-artwork").getPublicUrl(nextClassArtworkPath).data.publicUrl
     : null;
 
   const today = localDateKey(new Date(), studio.timezone);
-  const calendarDays = weekDays(today);
   const packageSummary = activePackage
     ? activePackage.unlimited
       ? "Ilimitado"
@@ -452,31 +441,6 @@ export default async function StudentHomePage({
           )}
         </div>
       </Link>
-
-      <section
-        data-home-block="week-calendar"
-        aria-label="Esta semana"
-        className="grid grid-cols-7 gap-1.5"
-      >
-        {calendarDays.map((day) => {
-          const selected = day.key === today;
-
-          return (
-            <Link
-              key={day.key}
-              href={`/student/reservar?date=${day.key}`}
-              className={`flex min-h-[78px] flex-col items-center justify-center rounded-[1.2rem] border text-center transition ${
-                selected
-                  ? "border-fuchsia-300/70 bg-gradient-to-b from-fuchsia-400 to-fuchsia-500 text-black shadow-[0_12px_30px_rgba(255,10,138,.22)]"
-                  : "border-white/10 bg-white/[0.02] text-zinc-400 hover:border-fuchsia-400/25 hover:text-white"
-              }`}
-            >
-              <span className="text-xs capitalize">{day.label}</span>
-              <strong className="mt-1 text-lg">{day.day}</strong>
-            </Link>
-          );
-        })}
-      </section>
 
       <section>
         <div className="mb-3 flex items-center justify-between gap-4">
