@@ -34,7 +34,8 @@ function pwaBrandQuery(brand: PwaBrand) {
     slug: brand.slug,
     primary: brand.primary_color,
     logo: brand.logo_path ?? "",
-    v: "4",
+    portal: "admin",
+    v: "5",
   }).toString();
 }
 
