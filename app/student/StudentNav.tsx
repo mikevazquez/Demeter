@@ -132,7 +132,7 @@ export function StudentNav() {
       </nav>
 
       <nav
-        className="fixed bottom-4 left-1/2 z-50 grid h-[78px] w-[calc(100%-1.75rem)] max-w-[365px] -translate-x-1/2 grid-cols-4 rounded-[28px] border border-[#282b37] bg-[#0c0e14]/95 px-[6px] py-[5px] shadow-2xl backdrop-blur lg:hidden"
+        className="fixed bottom-4 left-1/2 z-50 grid h-[78px] w-[calc(100%-1.5rem)] max-w-[406px] -translate-x-1/2 grid-cols-4 rounded-[28px] border border-[#282b37] bg-[#0c0e14]/95 px-[6px] py-[5px] shadow-2xl backdrop-blur lg:hidden"
         style={{ paddingBottom: "max(0.3rem, env(safe-area-inset-bottom))" }}
         aria-label="Navegación de alumna"
       >
