@@ -48,7 +48,7 @@ export async function getAdminContext(requiredCapability?: Capability) {
     redirect("/login/studio/seleccionar");
   }
 
-  const [{ data: studio }, { data: roleCapabilities }] = await Promise.all([
+  const [studioResult, roleCapabilitiesResult] = await Promise.all([
     supabase
       .from("studios")
       .select("id, name, slug, logo_path, timezone, locale, currency, primary_color, status")
@@ -56,6 +56,13 @@ export async function getAdminContext(requiredCapability?: Capability) {
       .single(),
     supabase.from("role_capabilities").select("capability_key").eq("role", membership.role),
   ]);
+
+  if (studioResult.error || roleCapabilitiesResult.error) {
+    throw new Error("admin_studio_lookup_temporarily_unavailable");
+  }
+
+  const studio = studioResult.data;
+  const roleCapabilities = roleCapabilitiesResult.data;
 
   if (!studio || studio.status !== "active") {
     await supabase.auth.signOut();
