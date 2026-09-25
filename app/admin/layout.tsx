@@ -18,6 +18,7 @@ import "./actividades/actividades.css";
 import "./admin-ux-04-secondary.css";
 import "./admin-ux-04-secondary-detail.css";
 import "./evaluaciones/evaluaciones.css";
+import "./inteligencia/inteligencia.css";
 
 type PwaBrand = {
   name: string;
@@ -122,6 +123,9 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
         ...(can(CAPABILITIES.STUDENTS_READ)
           ? [{ href: "/admin/alumnas", label: "Alumnas", enabled: true }]
           : []),
+        ...(can(CAPABILITIES.REPORTS_READ)
+          ? [{ href: "/admin/inteligencia", label: "Inteligencia", enabled: true }]
+          : []),
         ...(can(CAPABILITIES.DOCUMENTS_READ)
           ? [{ href: "/admin/documentos", label: "Documentos", enabled: true }]
           : []),
@@ -160,6 +164,7 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
     can(CAPABILITIES.PRODUCTS_READ) ||
     can(CAPABILITIES.INSTRUCTORS_READ) ||
     can(CAPABILITIES.AUTOMATIONS_READ) ||
+    can(CAPABILITIES.REPORTS_READ) ||
     membership.role === "owner";
 
   const mobileNavItems = instructorOnly
@@ -186,6 +191,7 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
                   "/admin/productos",
                   "/admin/instructores",
                   "/admin/automatizaciones",
+                  "/admin/inteligencia",
                   "/admin/configuracion",
                 ],
               },

@@ -61,6 +61,14 @@ function NavIcon({ label }: { label: string }) {
       </svg>
     );
   }
+  if (label === "Inteligencia") {
+    return (
+      <svg {...common}>
+        <path d="M4 20V11M10 20V6M16 20V9M22 20V3" />
+        <path d="M3 20h19" />
+      </svg>
+    );
+  }
   if (label === "Documentos") {
     return (
       <svg {...common}>
