@@ -178,10 +178,64 @@ export async function saveActivity(formData: FormData) {
     redirect(routeForError(payload, normalizeRpcError(error?.message)));
   }
 
+  const activityId = String(data);
+  const coverImage = imageFile(formData, "cover_image");
+  const removeCoverImage = String(formData.get("remove_cover_image") ?? "") === "true";
+
+  if (coverImage || removeCoverImage) {
+    const { data: currentActivity } = await supabase
+      .from("class_templates")
+      .select("*")
+      .eq("id", activityId)
+      .eq("studio_id", studio.id)
+      .maybeSingle();
+
+    const currentPath =
+      currentActivity && typeof currentActivity.cover_image_path === "string"
+        ? currentActivity.cover_image_path
+        : null;
+
+    let nextPath: string | null = removeCoverImage ? null : currentPath;
+
+    if (coverImage) {
+      const upload = await uploadClassArtwork({
+        supabase,
+        studioId: studio.id,
+        scope: "activities",
+        entityId: activityId,
+        file: coverImage,
+      });
+
+      if (upload.error || !upload.path) {
+        redirect(routeForError(payload, upload.error ?? "image_upload"));
+      }
+
+      nextPath = upload.path;
+    }
+
+    const { error: imageUpdateError } = await supabase
+      .from("class_templates")
+      .update({ cover_image_path: nextPath })
+      .eq("id", activityId)
+      .eq("studio_id", studio.id);
+
+    if (imageUpdateError) {
+      if (coverImage && nextPath) {
+        await supabase.storage.from("class-artwork").remove([nextPath]);
+      }
+      redirect(routeForError(payload, "image_upload"));
+    }
+
+    if (currentPath && currentPath !== nextPath) {
+      await supabase.storage.from("class-artwork").remove([currentPath]);
+    }
+  }
+
   revalidatePath("/admin/actividades");
   revalidatePath("/admin/agenda");
   revalidatePath("/admin");
   revalidatePath("/student/reservar");
+  revalidatePath("/student");
 
   redirect("/admin/actividades");
 }
