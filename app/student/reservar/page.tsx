@@ -229,8 +229,7 @@ export default async function StudentReservePage({
       item.name,
       {
         color: item.color_hex ?? "#FF0A8A",
-        coverImagePath:
-          typeof item.cover_image_path === "string" ? item.cover_image_path : null,
+        coverImagePath: typeof item.cover_image_path === "string" ? item.cover_image_path : null,
       },
     ]),
   );
