@@ -12,6 +12,7 @@ type ReconcileResult = {
 
 type Outcome = "success" | "failure" | "pending" | null;
 type Tone = "emerald" | "amber" | "rose";
+
 type Presentation = {
   tone: Tone;
   eyebrow: string;
@@ -28,39 +29,35 @@ function statePresentation(status: string, outcome: Outcome): Presentation {
     return {
       tone: "emerald",
       eyebrow: "Pago confirmado",
-      title: "¡Tu paquete ya está listo!",
-      description:
-        "Mercado Pago confirmó el cobro y Studio Flow activó tu paquete. Ya puedes reservar tus clases.",
+      title: "Tu paquete ya está activo",
+      description: "Ya puedes usar tus clases y hacer una nueva reserva.",
     };
   }
 
   if (status === "pending") {
     return {
       tone: "amber",
-      eyebrow: "Pago pendiente",
-      title: "Tu pago sigue en proceso",
-      description:
-        "No realices otro pago. Volveremos a consultar a Mercado Pago cuando verifiques de nuevo o recibamos una actualización.",
+      eyebrow: "Confirmando pago",
+      title: "Estamos confirmando tu pago",
+      description: "Normalmente tarda solo unos momentos. No necesitas volver a pagar.",
     };
   }
 
   if (status === "rejected" || status === "cancelled") {
     return {
       tone: "rose",
-      eyebrow: status === "rejected" ? "Pago rechazado" : "Pago cancelado",
-      title: "No se activó ningún paquete",
-      description:
-        "El cobro no fue confirmado por Mercado Pago. Puedes regresar a Mi paquete e iniciar un nuevo intento cuando quieras.",
+      eyebrow: "Pago no completado",
+      title: "El pago no se completó",
+      description: "No activamos un paquete. Puedes intentarlo nuevamente cuando quieras.",
     };
   }
 
   if (status === "order_created" && outcome === "failure") {
     return {
-      tone: "rose",
-      eyebrow: "Pago no completado",
-      title: "No se activó ningún paquete",
-      description:
-        "Mercado Pago te regresó desde un resultado no exitoso, pero todavía no publica un estado final verificable por API. Studio Flow no otorgará clases mientras eso ocurra.",
+      tone: "amber",
+      eyebrow: "Verificación pendiente",
+      title: "Todavía no podemos confirmar tu pago",
+      description: "No realices otro pago por ahora. Revisa el estado antes de volver a intentarlo.",
     };
   }
 
@@ -68,18 +65,16 @@ function statePresentation(status: string, outcome: Outcome): Presentation {
     return {
       tone: "amber",
       eyebrow: "Confirmando pago",
-      title: "Estamos verificando con Mercado Pago",
-      description:
-        "Tu regreso al portal no confirma por sí solo el pago. Studio Flow activará el paquete únicamente cuando Mercado Pago lo reporte como acreditado.",
+      title: "Estamos confirmando tu pago",
+      description: "No necesitas volver a pagar. Actualiza el estado en unos momentos.",
     };
   }
 
   return {
     tone: "amber",
     eyebrow: "Verificación pendiente",
-    title: "No pudimos confirmar el estado todavía",
-    description:
-      "No realices otro pago por ahora. Puedes verificar de nuevo o volver a Mi paquete; ningún crédito se activa sin confirmación del proveedor.",
+    title: "Todavía no podemos confirmar tu pago",
+    description: "No realices otro pago por ahora. Puedes revisar el estado nuevamente.",
   };
 }
 
@@ -107,6 +102,14 @@ const toneClasses = {
   },
 } as const;
 
+function statusCopy(status: string) {
+  if (status === "approved") return "Confirmado";
+  if (status === "pending" || status === "order_created") return "Pendiente";
+  if (status === "rejected") return "Rechazado";
+  if (status === "cancelled") return "Cancelado";
+  return "Por confirmar";
+}
+
 export default async function StudentCheckoutReturnPage({
   searchParams,
 }: {
@@ -133,75 +136,46 @@ export default async function StudentCheckoutReturnPage({
     : "/student/paquete";
 
   return (
-    <main className="mx-auto max-w-2xl space-y-6">
-      <section
-        className={`rounded-3xl border ${tone.border} ${tone.background} p-6 text-center sm:p-8`}
-      >
+    <main className="mx-auto max-w-xl space-y-5 pb-6">
+      <section className={`rounded-3xl border ${tone.border} ${tone.background} p-6 text-center sm:p-8`}>
         <div
           className={`mx-auto flex h-16 w-16 items-center justify-center rounded-full ${tone.badge} text-3xl`}
         >
           {tone.icon}
         </div>
-        <p className={`mt-5 text-sm font-semibold uppercase tracking-[0.2em] ${tone.text}`}>
+
+        <p className={`mt-5 text-xs font-semibold uppercase tracking-[0.16em] ${tone.text}`}>
           {presentation.eyebrow}
         </p>
-        <h1 className="mt-2 text-3xl font-semibold text-white">{presentation.title}</h1>
-        <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-zinc-400">
+        <h1 className="mt-2 text-2xl font-semibold text-white sm:text-3xl">
+          {presentation.title}
+        </h1>
+        <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-zinc-400">
           {presentation.description}
         </p>
 
-        <div className="mt-6 rounded-2xl border border-white/10 bg-black/20 p-4 text-left">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">
-            Estado verificado
-          </p>
-          <p className="mt-2 text-sm font-medium text-white">
-            {status === "approved"
-              ? "Aprobado"
-              : status === "pending"
-                ? "Pendiente"
-                : status === "rejected"
-                  ? "Rechazado"
-                  : status === "cancelled"
-                    ? "Cancelado"
-                    : status === "order_created"
-                      ? "Aún sin resolución final"
-                      : "Sin confirmación"}
-          </p>
-          <p className="mt-1 text-xs leading-5 text-zinc-500">
-            Este estado se obtiene consultando Mercado Pago desde el servidor. Los parámetros de la
-            URL nunca otorgan clases ni activan paquetes.
-          </p>
+        <div className="mx-auto mt-5 max-w-sm rounded-2xl border border-white/10 bg-black/20 px-4 py-3">
+          <p className="text-xs text-zinc-500">Estado del pago</p>
+          <p className="mt-1 text-sm font-semibold text-white">{statusCopy(status)}</p>
         </div>
 
-        <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-center">
+        <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:justify-center">
           {status === "approved" ? (
-            <Link
-              href="/student/reservar"
-              className="rounded-2xl bg-fuchsia-600 px-5 py-3 text-sm font-semibold text-white hover:bg-fuchsia-500"
-            >
+            <Link href="/student/reservar" className="student-action-primary w-full sm:w-auto">
               Reservar una clase
             </Link>
           ) : status === "rejected" || status === "cancelled" ? (
-            <Link
-              href="/student/paquete"
-              className="rounded-2xl bg-fuchsia-600 px-5 py-3 text-sm font-semibold text-white hover:bg-fuchsia-500"
-            >
-              Intentar de nuevo
+            <Link href="/student/paquete" className="student-action-primary w-full sm:w-auto">
+              Intentar nuevamente
             </Link>
           ) : (
-            <Link
-              href={refreshHref}
-              className="rounded-2xl bg-fuchsia-600 px-5 py-3 text-sm font-semibold text-white hover:bg-fuchsia-500"
-            >
-              Verificar de nuevo
+            <Link href={refreshHref} className="student-action-primary w-full sm:w-auto">
+              Actualizar estado
             </Link>
           )}
 
-          <Link
-            href="/student/paquete"
-            className="rounded-2xl border border-white/10 px-5 py-3 text-sm font-semibold text-white hover:bg-white/[0.05]"
-          >
-            Volver a Mi paquete
+          <Link href="/student/paquete" className="student-action-secondary w-full sm:w-auto">
+            Ver mi paquete
           </Link>
         </div>
       </section>
