@@ -9,18 +9,22 @@ function source(path: string) {
 
 describe("SF-N14 PORTAL UX-05 Perfil", () => {
   const profile = source("app/student/perfil/page.tsx");
+  const picker = source("app/student/perfil/AvatarFilePicker.tsx");
   const actions = source("app/student/actions.ts");
 
-  it("presents Perfil as a compact account surface with approved Studio Flow styling", () => {
+  it("presents Profile as account settings and secondary navigation", () => {
     expect(profile).toContain('data-profile-block="identity"');
-    expect(profile).toContain('data-profile-block="accesses"');
     expect(profile).toContain("Mi cuenta");
-    expect(profile).toContain("bg-fuchsia-600");
-    expect(profile).toContain("Editar perfil");
+    expect(profile).toContain("Alumna de Demeter");
+    expect(profile).toContain("Editar mis datos");
+    expect(profile).not.toContain("Accesos rápidos");
+    expect(profile).not.toContain("Studio Flow");
   });
 
-  it("keeps identity display-only and exposes onboarding profile fields", () => {
-    expect(profile.match(/Solo lectura/g)?.length).toBeGreaterThanOrEqual(3);
+  it("separates Demeter-managed identity from editable onboarding fields", () => {
+    expect(profile).toContain("Datos administrados por Demeter");
+    expect(profile).toContain("Datos que puedes cambiar");
+    expect(profile).not.toContain("Solo lectura");
     expect(profile).not.toContain('name="first_name"');
     expect(profile).not.toContain('name="last_name"');
     expect(profile).not.toContain('name="phone"');
@@ -28,6 +32,13 @@ describe("SF-N14 PORTAL UX-05 Perfil", () => {
     expect(profile).toContain('type="email"');
     expect(profile).toContain('name="birth_date"');
     expect(profile).toContain('type="date"');
+  });
+
+  it("previews a new avatar before explicit confirmation", () => {
+    expect(profile).toContain("AvatarFilePicker");
+    expect(profile).toContain("Usar esta foto");
+    expect(picker).toContain("URL.createObjectURL");
+    expect(picker).toContain("Vista previa lista");
   });
 
   it("preserves the approved pending, success and recovery feedback", () => {
@@ -47,11 +58,14 @@ describe("SF-N14 PORTAL UX-05 Perfil", () => {
     expect(actions).not.toContain('formData.get("phone")');
   });
 
-  it("links only to existing account surfaces in the approved portal", () => {
+  it("groups only secondary account surfaces and does not duplicate Mis clases", () => {
     expect(profile).toContain('href="/student/paquete"');
-    expect(profile).toContain('href="/student/mis-clases"');
     expect(profile).toContain('href="/student/movimientos"');
     expect(profile).toContain('href="/student/pagos"');
     expect(profile).toContain('href="/student/documentos"');
+    expect(profile).toContain('href="/student/perfil/notificaciones"');
+    expect(profile).toContain('href="/student/evaluaciones"');
+    expect(profile).toContain('href="/student/recompensas"');
+    expect(profile).not.toContain('href="/student/mis-clases"');
   });
 });

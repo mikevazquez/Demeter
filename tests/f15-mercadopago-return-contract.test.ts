@@ -31,7 +31,7 @@ describe("F15 Mercado Pago return and reconciliation", () => {
     const reconcile = source("supabase/functions/reconcile-mercadopago-order/index.ts");
 
     expect(page).toContain('supabase.functions.invoke("reconcile-mercadopago-order"');
-    expect(page).toContain("Los parámetros de la");
+    expect(page).toContain("const status = reconciliation?.ok");
     expect(page).not.toContain("service_confirm_online_checkout_approved");
     expect(reconcile).toContain("attemptId?: unknown");
     expect(reconcile).not.toContain("payload.outcome");

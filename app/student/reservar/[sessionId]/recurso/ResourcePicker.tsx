@@ -31,6 +31,14 @@ function percent(value: number) {
   return `${value * 100}%`;
 }
 
+function resourceNoun(resources: StudentResourceChoice[]) {
+  const names = resources.map((resource) => resource.type_name.toLowerCase()).join(" ");
+  if (names.includes("tubo") || names.includes("pole")) return "tubo";
+  if (names.includes("aro") || names.includes("lyra")) return "aro";
+  if (names.includes("tela")) return "tela";
+  return "espacio";
+}
+
 export default function ResourcePicker({
   sessionId,
   returnDate,
@@ -55,6 +63,7 @@ export default function ResourcePicker({
   const availableCount = resources.filter(
     (resource) => resource.enabled && resource.available > 0,
   ).length;
+  const noun = resourceNoun(resources);
 
   function continueToConfirmation() {
     if (!selectedId) return;
@@ -70,11 +79,9 @@ export default function ResourcePicker({
       <section className="rounded-3xl border border-white/10 bg-white/[0.03] p-4">
         <div className="mb-3 flex items-start justify-between gap-3">
           <div>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-fuchsia-300">
-              Elige tu recurso
-            </p>
-            <p className="mt-1 text-xs leading-5 text-zinc-400">
-              Toca el recurso que quieres usar. La distribución coincide con el espacio físico.
+            <p className="student-eyebrow">Elige tu {noun}</p>
+            <p className="mt-1 text-sm leading-6 text-zinc-400">
+              Toca el {noun} que quieres usar. El mapa coincide con la distribución del salón.
             </p>
           </div>
           <span className="shrink-0 rounded-full border border-white/10 bg-black/20 px-2.5 py-1 text-[10px] font-semibold text-zinc-300">
@@ -135,7 +142,7 @@ export default function ResourcePicker({
                 aria-label={
                   resource
                     ? `${resource.name}, ${resource.available} de ${resource.capacity} disponibles`
-                    : "Recurso no disponible"
+                    : "Lugar no disponible"
                 }
                 className={[
                   "absolute grid place-items-center rounded-full border px-1 text-center text-[9px] font-semibold transition",
@@ -165,7 +172,7 @@ export default function ResourcePicker({
 
           {!elements.length ? (
             <div className="absolute inset-0 grid place-items-center p-6 text-center text-xs text-zinc-500">
-              El mapa de esta clase todavía no está configurado.
+              El mapa de esta clase todavía no está disponible.
             </div>
           ) : null}
         </div>
@@ -194,11 +201,10 @@ export default function ResourcePicker({
                 Seleccionado
               </p>
               <p className="mt-1 text-sm font-semibold text-white">{selected.name}</p>
-              <p className="mt-0.5 text-[11px] text-zinc-500">
-                {selected.type_name}
+              <p className="mt-0.5 text-xs text-zinc-500">
                 {selected.capacity > 1
-                  ? ` · ${selected.used}/${selected.capacity} usos ocupados`
-                  : ""}
+                  ? `${selected.available} de ${selected.capacity} lugares disponibles`
+                  : `Tu ${noun} para esta clase`}
               </p>
             </div>
             <span className="rounded-full bg-fuchsia-500/10 px-2.5 py-1 text-[10px] font-semibold text-fuchsia-200">
@@ -206,8 +212,8 @@ export default function ResourcePicker({
             </span>
           </div>
         ) : (
-          <p className="text-center text-xs text-zinc-500">
-            Selecciona un recurso en el mapa para continuar.
+          <p className="text-center text-sm text-zinc-500">
+            Selecciona tu {noun} en el mapa para continuar.
           </p>
         )}
 

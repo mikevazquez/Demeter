@@ -101,8 +101,8 @@ describe("F15 Mercado Pago Orders API", () => {
 
     expect(page).toContain('.from("product_template_disciplines")');
     expect(page).toContain('.from("disciplines")');
-    expect(page).toContain("Disciplinas:");
-    expect(page).toContain("Sin disciplinas habilitadas");
+    expect(page).toContain("productDisciplineNames.get(product.id)");
+    expect(page).toContain("disciplines.join");
   });
 
   it("reuses one client request key through retries and redirects only to the backend checkout URL", () => {

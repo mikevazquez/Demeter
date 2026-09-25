@@ -116,7 +116,7 @@ export default async function StudentChallengeDetailPage({
           href="/student/recompensas"
           className="text-xs font-semibold text-fuchsia-300 transition hover:text-fuchsia-200"
         >
-          ← Mi progreso
+          ← Medallas y beneficios
         </Link>
 
         <div className="mt-4 overflow-hidden rounded-3xl border border-white/10 bg-[radial-gradient(circle_at_84%_10%,rgba(236,72,153,0.2),transparent_34%),linear-gradient(135deg,rgba(255,255,255,0.055),rgba(255,255,255,0.015))] p-5">

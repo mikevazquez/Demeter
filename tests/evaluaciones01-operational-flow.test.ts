@@ -133,13 +133,14 @@ describe("EVALUACIONES-01 operational cycle", () => {
     expect(adminProfile).toContain("Rechazada");
   });
 
-  it("surfaces an actionable invitation on the student landing screen only when present", () => {
+  it("surfaces evaluation actions inside the separate technical-level Home block", () => {
     expect(studentHome).toContain('supabase.rpc("student_evaluations_snapshot")');
-    expect(studentHome).toContain('data-home-block="evaluation-invitation"');
-    expect(studentHome).toContain('"Evaluación disponible"');
-    expect(studentHome).toContain('"Ver invitación"');
-    expect(studentHome).toContain('"Programar evaluación"');
+    expect(studentHome).toContain('data-home-block="technical-level"');
+    expect(studentHome).toContain("Evaluación disponible");
+    expect(studentHome).toContain('"Ver evaluación"');
+    expect(studentHome).toContain('"Elegir mi clase"');
     expect(studentHome).toContain("activeEvaluationInvitation?.invitation_id");
+    expect(studentHome).not.toContain('data-home-block="evaluation-invitation"');
   });
 
   it("reuses the normal class feed and keeps checkout inside evaluation scheduling", () => {
@@ -194,13 +195,15 @@ describe("EVALUACIONES-01 operational cycle", () => {
     expect(evaluationActions).toContain('automatic_outcome === "incomplete"');
   });
 
-  it("renders both final student result states", () => {
-    expect(studentResult).toContain("¡Nuevo nivel confirmado!");
-    expect(studentResult).toContain("Se mantiene en su nivel");
-    expect(studentResult).toContain("Sin nivel confirmado");
-    expect(studentResult).toContain("Desglose de puntaje");
-    expect(studentResult).toContain("Feedback de tu coach");
+  it("renders student results around the confirmed technical level", () => {
+    expect(studentResult).toContain("Tu nivel técnico es");
+    expect(studentResult).toContain("¡Subiste a");
+    expect(studentResult).toContain("Tu nivel sigue siendo");
+    expect(studentResult).toContain("Aún no hay un nivel confirmado");
+    expect(studentResult).toContain("Criterios técnicos");
+    expect(studentResult).toContain("Feedback de tu evaluación");
     expect(studentResult).toContain("Siguiente evaluación");
-    expect(studentResult).toContain("Ver historial de evaluaciones");
+    expect(studentResult).toContain("Volver a Nivel técnico");
+    expect(studentResult).not.toContain("Studio Flow");
   });
 });

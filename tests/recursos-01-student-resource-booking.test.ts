@@ -70,7 +70,7 @@ describe("RECURSOS-01 student resource selection", () => {
     expect(detailPage).toContain("session.requires_resource");
     expect(detailPage).toContain("/recurso?date=");
     expect(resourcePage).toContain('rpc("student_session_resource_map"');
-    expect(picker).toContain("Elige tu recurso");
+    expect(picker).toContain("Elige tu {noun}");
     expect(picker).toContain("resourceMap");
   });
 
@@ -102,6 +102,6 @@ describe("RECURSOS-01 student resource selection", () => {
   it("shows the assigned resource after a successful reservation", () => {
     expect(successPage).toContain('from("reservation_resource_assignments")');
     expect(successPage).toContain("assignedResourceName");
-    expect(successPage).toContain("Recurso:");
+    expect(successPage).toContain("Lugar:");
   });
 });

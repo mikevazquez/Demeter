@@ -6,40 +6,50 @@ import { describe, expect, it } from "vitest";
 const read = (path: string) => readFileSync(join(process.cwd(), path), "utf8");
 
 describe("SF-240 Progress & Rewards Portal Alumna v2", () => {
-  it("preserves the approved student navigation and adds Retos", () => {
+  it("keeps the final four-destination student navigation", () => {
     const nav = read("app/student/StudentNav.tsx");
 
     expect(nav).toContain('href: "/student"');
     expect(nav).toContain('href: "/student/reservar"');
     expect(nav).toContain('href: "/student/mis-clases"');
-    expect(nav).toContain('href: "/student/retos"');
     expect(nav).toContain('href: "/student/perfil"');
+    expect(nav).not.toContain('label: "Retos"');
     expect(nav).not.toContain('href: "/student/recompensas"');
-    expect(nav).toContain("grid-cols-5");
+    expect(nav).toContain('"/student/retos"');
+    expect(nav).toContain("grid-cols-4");
   });
 
-  it("keeps Rewards in Perfil while Retos has its own primary destination", () => {
+  it("keeps Medallas y beneficios in Perfil while Retos stays inside that loyalty universe", () => {
     const home = read("app/student/page.tsx");
     const profile = read("app/student/perfil/page.tsx");
+    const nav = read("app/student/StudentNav.tsx");
 
     expect(home).not.toContain('data-home-block="progress"');
     expect(home).not.toContain('href="/student/recompensas"');
     expect(profile).toContain('href="/student/recompensas"');
-    expect(profile).toContain("Rewards");
-    expect(profile).toContain("Medallas, beneficios y recompensas obtenidas");
+    expect(profile).toContain("Medallas y beneficios");
+    expect(profile).toContain("Mi medalla y beneficios");
+    expect(profile).toContain('title="Retos"');
+    expect(profile).toContain('title="Logros"');
+    expect(profile).toContain('title="Recompensas"');
+    expect(nav).not.toContain('label: "Retos"');
+    expect(nav).toContain('"/student/retos"');
   });
 
-  it("keeps the Rewards hub for loyalty history and benefits", () => {
+  it("keeps Medallas y beneficios as a simple loyalty landing", () => {
     const page = read("app/student/recompensas/page.tsx");
 
-    expect(page).toContain("Consulta tus programas de fidelidad, logros y recompensas.");
-    expect(page).toContain("Lo más cerca de conseguir");
-    expect(page).toContain("Mis programas");
-    expect(page).toContain("Retos activos");
-    expect(page).toContain("Rachas");
-    expect(page).toContain("Logros recientes");
-    expect(page).toContain("Recompensas disponibles");
-    expect(page).toContain('href="/student/recompensas/trayectoria"');
+    expect(page).toContain("Medallas y beneficios");
+    expect(page).toContain("Tu medalla");
+    expect(page).toContain("Tus beneficios");
+    expect(page).toContain("Tu avance de este mes");
+    expect(page).toContain("Puedes obtener directamente cualquier medalla");
+    expect(page).toContain('href="/student/retos"');
+    expect(page).toContain('href="/student/recompensas/logros"');
+    expect(page).toContain('href="/student/recompensas/mis-recompensas"');
+    expect(page).not.toContain("Lo más cerca de conseguir");
+    expect(page).not.toContain("Mis programas");
+    expect(page).not.toContain("Rachas");
   });
 
   it("implements S02 program-specific progress with secret levels protected", () => {
@@ -56,17 +66,18 @@ describe("SF-240 Progress & Rewards Portal Alumna v2", () => {
     expect(page).toContain("Bloqueado");
   });
 
-  it("implements S03 challenge states and automatic participation copy", () => {
-    const page = read("app/student/recompensas/retos/[participationId]/page.tsx");
+  it("uses the canonical Retos experience with exact progress and competitive states", () => {
+    const home = read("app/student/retos/page.tsx");
+    const page = read("app/student/retos/[ruleId]/page.tsx");
 
-    expect(page).toContain("Reto especial");
-    expect(page).toContain("Próximamente");
-    expect(page).toContain("Periodo no completado");
-    expect(page).toContain("Finalizado");
-    expect(page).toContain("¡Reto completado!");
-    expect(page).toContain("Recompensa sorpresa");
-    expect(page).toContain("Sin recompensa económica");
-    expect(page).toContain("no necesitas inscribirte manualmente");
+    expect(home).toContain("Medallas y beneficios");
+    expect(home).toContain("{challenge.current_value} de {target}");
+    expect(home).toContain("Te faltan");
+    expect(page).toContain("Top 3");
+    expect(page).toContain("gap_to_top3");
+    expect(page).toContain("Recompensa");
+    expect(page).toContain("clases extra");
+    expect(page).not.toContain("sección de Rewards");
   });
 
   it("implements S04 achievements with unlocked, progress and secret states", () => {

@@ -69,7 +69,7 @@ export default async function StudentRewardsPage({
           href="/student/recompensas"
           className="text-xs font-semibold text-fuchsia-300 transition hover:text-fuchsia-200"
         >
-          ← Mi progreso
+          ← Medallas y beneficios
         </Link>
         <p className="mt-4 text-[10px] font-semibold uppercase tracking-[0.22em] text-fuchsia-300">
           Beneficios
@@ -183,7 +183,7 @@ export default async function StudentRewardsPage({
           title="No tienes recompensas disponibles"
           detail="Cuando desbloquees un beneficio utilizable, aparecerá aquí."
           actionHref="/student/recompensas"
-          actionLabel="Volver a Mi progreso"
+          actionLabel="Volver a Medallas y beneficios"
         />
       )}
 

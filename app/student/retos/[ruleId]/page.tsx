@@ -356,11 +356,11 @@ export default async function ChallengeDetailPage({
             Ganaste la competencia
           </p>
           <h2 className="mt-2 text-2xl font-semibold text-white">
-            Premio: {winnerCredits} crédito{winnerCredits === 1 ? "" : "s"} de clase
+            Premio: {winnerCredits} {winnerCredits === 1 ? "clase extra" : "clases extra"}
           </h2>
           <p className="mt-2 text-sm leading-6 text-zinc-400">
-            Al reclamarlo se crea un saldo independiente. No se suma a tu paquete actual y tendrá su
-            propia vigencia de 30 días.
+            Al reclamarlo se agregan clases extra independientes de tu paquete, con vigencia propia
+            de 30 días.
           </p>
 
           {winnerReward.status === "available" ? (
@@ -368,21 +368,22 @@ export default async function ChallengeDetailPage({
               <input type="hidden" name="rule_id" value={challenge.rule_id} />
               <input type="hidden" name="reward_instance_id" value={winnerReward.id} />
               <button className="w-full rounded-2xl bg-[#FF0A8A] px-4 py-3 text-sm font-bold text-white shadow-[0_0_24px_rgba(255,10,138,.18)]">
-                Reclamar {winnerCredits} crédito{winnerCredits === 1 ? "" : "s"}
+                Reclamar {winnerCredits} {winnerCredits === 1 ? "clase extra" : "clases extra"}
               </button>
             </form>
           ) : winnerReward.status === "redeemed" && rewardCreditClaim ? (
             <div className="mt-5 rounded-2xl border border-emerald-400/20 bg-emerald-400/[0.08] p-4">
-              <strong className="text-sm text-emerald-200">Créditos reclamados ✓</strong>
+              <strong className="text-sm text-emerald-200">Clases extra reclamadas ✓</strong>
               <p className="mt-1 text-xs leading-5 text-zinc-400">
-                Tienes {rewardCreditClaim.credits} créditos extra con vigencia hasta{" "}
-                {formatDate(rewardCreditClaim.expires_on, portal.studio.timezone)}.
+                Tienes {rewardCreditClaim.credits}{" "}
+                {rewardCreditClaim.credits === 1 ? "clase extra" : "clases extra"} con vigencia
+                hasta {formatDate(rewardCreditClaim.expires_on, portal.studio.timezone)}.
               </p>
               <Link
                 href="/student/paquete"
                 className="mt-3 inline-flex text-xs font-semibold text-emerald-200"
               >
-                Ver mis créditos extra →
+                Ver mis clases extra →
               </Link>
             </div>
           ) : winnerReward.status === "expired" ? (
@@ -454,7 +455,7 @@ export default async function ChallengeDetailPage({
           <div className="text-4xl">🏆</div>
           <h2 className="mt-3 text-xl font-semibold text-white">¡Reto completado!</h2>
           <p className="mt-1 text-sm text-zinc-400">
-            La recompensa generada aparece en tu sección de Rewards.
+            La recompensa generada aparece en tu sección de Recompensas.
           </p>
           <Link
             href="/student/recompensas/mis-recompensas"
