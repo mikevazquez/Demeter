@@ -118,7 +118,11 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
           ? [
               { href: "/admin/agenda", label: "Agenda", enabled: true },
               { href: "/admin/actividades", label: "Actividades", enabled: true },
-              { href: "/admin/disciplinas", label: "Disciplinas", enabled: true },
+              {
+                href: "/admin/disciplinas",
+                label: "Disciplinas",
+                enabled: can(CAPABILITIES.SCHEDULE_WRITE),
+              },
             ]
           : []),
         ...(can(CAPABILITIES.STUDENTS_READ)
