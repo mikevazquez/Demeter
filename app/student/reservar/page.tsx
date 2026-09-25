@@ -163,11 +163,18 @@ export default async function StudentReservePage({
     }),
     supabase
       .from("disciplines")
-      .select("id,name")
+      .select("*")
       .eq("studio_id", membership.studio_id)
       .eq("active", true)
       .order("name"),
   ]);
+
+  const disciplineImageMap = new Map(
+    (disciplineRows ?? []).map((discipline) => [
+      discipline.id,
+      typeof discipline.cover_image_path === "string" ? discipline.cover_image_path : null,
+    ]),
+  );
 
   const selectedHolidayBase = (selectedHolidayData as StudentHolidaySnapshot | null) ?? null;
   const selectedHoliday = selectedHolidayBase
@@ -418,6 +425,7 @@ export default async function StudentReservePage({
               const coverImagePath =
                 sessionMetaMap.get(session.session_id)?.coverImagePath ??
                 style?.coverImagePath ??
+                disciplineImageMap.get(session.discipline_id) ??
                 null;
               const coverImageUrl = coverImagePath
                 ? supabase.storage.from("class-artwork").getPublicUrl(coverImagePath).data.publicUrl
