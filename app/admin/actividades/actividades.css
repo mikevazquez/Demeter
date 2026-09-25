@@ -1234,7 +1234,6 @@
   }
 }
 
-
 /* CLASS-VISUALS · optional student-facing artwork */
 .activities-image-card {
   display: grid;
@@ -1242,9 +1241,7 @@
   padding: 15px;
   border: 1px solid rgba(251, 3, 151, 0.32);
   border-radius: 17px;
-  background:
-    radial-gradient(circle at 100% 0%, rgba(251, 3, 151, 0.08), transparent 38%),
-    #09111a;
+  background: radial-gradient(circle at 100% 0%, rgba(251, 3, 151, 0.08), transparent 38%), #09111a;
 }
 
 .activities-image-copy {
