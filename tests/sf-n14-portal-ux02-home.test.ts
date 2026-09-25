@@ -17,7 +17,7 @@ describe("SF-N14 PORTAL UX-02 home", () => {
     expect(home).toContain("Reserva tu próxima clase");
     expect(home).toContain("Activa tu próximo paquete");
     expect(home).toContain("Ver paquetes");
-    expect(home).toContain("Reservar una clase");
+    expect(home).toContain("Reservar clase");
   });
 
   it("keeps unlimited packages semantically distinct from class balances", () => {
