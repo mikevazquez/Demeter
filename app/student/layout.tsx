@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import { cache } from "react";
 
@@ -93,8 +92,6 @@ export default async function StudentLayout({ children }: { children: React.Reac
     .eq("recipient_kind", "student")
     .is("read_at", null);
 
-  const profileInitial = snapshot.profile.first_name.trim().charAt(0).toUpperCase() || "D";
-
   return (
     <div className="student-shell min-h-screen bg-[#090a0f] text-white">
       <PwaBrandingSync
@@ -136,21 +133,6 @@ export default async function StudentLayout({ children }: { children: React.Reac
               ) : null}
             </Link>
 
-            <Link
-              href="/student/perfil"
-              aria-label="Abrir mi perfil"
-              title="Mi perfil"
-              className="relative flex h-11 w-11 items-center justify-center overflow-hidden rounded-full border border-white/10 bg-white/[0.05] text-sm font-semibold text-white transition hover:border-fuchsia-500/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-500"
-            >
-              <span aria-hidden="true">{profileInitial}</span>
-              <Image
-                src="/student/perfil/avatar"
-                alt=""
-                fill
-                unoptimized
-                className="object-cover"
-              />
-            </Link>
           </div>
         </div>
       </header>
