@@ -151,7 +151,13 @@ function HomeIcon({
 }) {
   if (kind === "reserve") {
     return (
-      <svg viewBox="0 0 24 24" fill="none" className={className} stroke="currentColor" strokeWidth="1.7">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        className={className}
+        stroke="currentColor"
+        strokeWidth="1.7"
+      >
         <rect x="3.5" y="5.5" width="17" height="15" rx="3" />
         <path d="M8 3v5M16 3v5M3.5 10h17M12 13v5M9.5 15.5h5" />
       </svg>
@@ -160,7 +166,13 @@ function HomeIcon({
 
   if (kind === "classes") {
     return (
-      <svg viewBox="0 0 24 24" fill="none" className={className} stroke="currentColor" strokeWidth="1.7">
+      <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      className={className}
+      stroke="currentColor"
+      strokeWidth="1.7"
+    >
         <rect x="4" y="4.5" width="16" height="16" rx="3" />
         <path d="M8 2.5v4M16 2.5v4M4 9h16M8 13h8M8 17h5" />
       </svg>
@@ -340,13 +352,13 @@ export default async function StudentHomePage({
         };
 
   const technicalSummary = latestPublishedEvaluation
-    ? latestPublishedEvaluation.resulting_level_title ?? "Resultado disponible"
+    ? (latestPublishedEvaluation.resulting_level_title ?? "Resultado disponible")
     : activeEvaluationInvitation
       ? "Evaluación disponible"
-      : primaryTechnicalLevel?.levelTitle ?? "Aún sin nivel";
+      : (primaryTechnicalLevel?.levelTitle ?? "Aún sin nivel");
 
   const medalSummary = currentMedal
-    ? currentMedal.title ?? "Bronce"
+    ? (currentMedal.title ?? "Bronce")
     : rewardStatus?.access_unlocked
       ? "Sin medalla"
       : "Por activar";
@@ -383,7 +395,10 @@ export default async function StudentHomePage({
           aria-hidden="true"
           className="absolute -right-12 -top-20 h-56 w-56 rounded-full bg-fuchsia-500/10 blur-3xl"
         />
-        <div aria-hidden="true" className="absolute bottom-0 right-16 h-24 w-px bg-fuchsia-400/40" />
+        <div
+          aria-hidden="true"
+          className="absolute bottom-0 right-16 h-24 w-px bg-fuchsia-400/40"
+        />
         <div className="relative">
           <p className="text-sm text-zinc-400">Qué gusto verte de nuevo</p>
           <h1 className="mt-1 text-3xl font-semibold tracking-tight text-white sm:text-4xl">
@@ -700,8 +715,14 @@ export default async function StudentHomePage({
       </section>
 
       <section className="relative overflow-hidden rounded-[1.5rem] border border-fuchsia-500/30 bg-[radial-gradient(circle_at_82%_50%,rgba(255,10,138,0.24),transparent_34%),linear-gradient(120deg,#160b14,#0d0d12_60%,#120914)] px-5 py-5 sm:px-6">
-        <div aria-hidden="true" className="absolute -right-8 top-1/2 h-28 w-28 -translate-y-1/2 rounded-full border border-fuchsia-300/20" />
-        <div aria-hidden="true" className="absolute right-10 top-1/2 h-20 w-px -translate-y-1/2 bg-fuchsia-300/60" />
+        <div
+          aria-hidden="true"
+          className="absolute -right-8 top-1/2 h-28 w-28 -translate-y-1/2 rounded-full border border-fuchsia-300/20"
+        />
+        <div
+          aria-hidden="true"
+          className="absolute right-10 top-1/2 h-20 w-px -translate-y-1/2 bg-fuchsia-300/60"
+        />
         <div className="relative flex items-center justify-between gap-5">
           <p className="max-w-md font-serif text-2xl font-semibold leading-tight text-white sm:text-3xl">
             Disciplina hoy, resultados <span className="text-fuchsia-400">mañana.</span>
