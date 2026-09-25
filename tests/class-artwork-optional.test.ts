@@ -48,8 +48,9 @@ describe("CLASS-VISUALS optional artwork", () => {
     expect(reserve).toContain("disciplineEmoji");
     expect(detail).toContain("sessionImagePath ?? activityImagePath");
     expect(detail).toContain("coverImageUrl");
-    expect(home).toContain("artworkSessionMap");
-    expect(home).toContain("artworkTemplateMap");
+    expect(home).toContain("sessionArtworkPath");
+    expect(home).toContain("activityArtworkPath");
+    expect(home).toContain("sessionArtworkPath ?? activityArtworkPath");
   });
 
   it("does not make an image mandatory anywhere", () => {
