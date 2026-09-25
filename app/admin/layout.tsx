@@ -45,14 +45,16 @@ export async function generateMetadata(): Promise<Metadata> {
   const { studio } = await getCachedAdminContext();
   const query = pwaBrandQuery(studio);
 
+  const appName = studio.name + " Admin";
+
   return {
-    applicationName: studio.name,
-    title: studio.name,
+    applicationName: appName,
+    title: appName,
     manifest: "/pwa/manifest?" + query,
     appleWebApp: {
       capable: true,
       statusBarStyle: "black-translucent",
-      title: studio.name,
+      title: appName,
     },
     icons: {
       icon: [
@@ -216,7 +218,7 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
   return (
     <div className="admin-shell">
       <PwaBrandingSync
-        name={studio.name}
+        name={studio.name + " Admin"}
         manifestHref={"/pwa/manifest?" + pwaQuery}
         appleTouchIconHref={"/pwa/studio-icon/180?" + pwaQuery}
       />
@@ -249,6 +251,7 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
             </span>
           </div>
           <form action={signOut}>
+            <input type="hidden" name="mode" value="studio" />
             <button type="submit" className="sidebar-signout">
               Cerrar sesión
             </button>
