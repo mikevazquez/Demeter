@@ -101,14 +101,6 @@ function statusClass(session: StudentSession, waitlisted = false) {
   return "border-amber-400/25 bg-amber-400/[0.08] text-amber-200";
 }
 
-function statusCopy(session: StudentSession, waitlisted = false) {
-  if (session.is_reserved) return "Ya reservada";
-  if (waitlisted) return "En lista de espera";
-  if (session.eligibility?.reason_code === "session_full") return "Clase llena";
-  if (session.eligibility?.eligible) return "Disponible";
-  return bookingReasonCopy(session.eligibility?.reason_code);
-}
-
 function availabilityCopy(spotsAvailable: number) {
   if (spotsAvailable <= 0) return "Clase llena";
   if (spotsAvailable === 1) return "Último lugar";
