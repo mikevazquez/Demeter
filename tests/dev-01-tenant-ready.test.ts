@@ -20,6 +20,12 @@ describe("DEV-01 tenant ready", () => {
   const anonMigration = source(
     "supabase/migrations/20260925230510_dev_01_revoke_unintended_anon_rpc.sql",
   );
+  const provisioningMigration = source(
+    "supabase/migrations/20260925232943_dev_01_multi_studio_student_provisioning.sql",
+  );
+  const hardeningMigration = source(
+    "supabase/migrations/20260925233039_dev_01b_cross_tenant_hardening.sql",
+  );
 
   it("allows one auth user to be a student in more than one studio without duplicate rows per studio", () => {
     expect(contextMigration).toContain("drop index if exists public.students_user_unique");
@@ -63,6 +69,80 @@ describe("DEV-01 tenant ready", () => {
     );
     expect(contextMigration).toContain("and s.studio_id=v_requested_studio");
     expect(contextMigration).toContain("and s.studio_id = v_requested_studio");
+  });
+
+  it("provisions student access per studio instead of assuming one global student account", () => {
+    expect(provisioningMigration).toContain("service_link_student_access");
+    expect(provisioningMigration).toContain(
+      "insert into public.studio_memberships(studio_id,user_id,role,active,person_id)",
+    );
+    expect(provisioningMigration).toContain("on conflict(studio_id,user_id)");
+  });
+
+  it("makes staff authorization honor the selected studio context", () => {
+    expect(hardeningMigration).toContain(
+      "private.requested_studio_id() is null",
+    );
+    expect(hardeningMigration).toContain(
+      "target_studio_id = private.requested_studio_id()",
+    );
+    expect(hardeningMigration).toContain(
+      "p_studio_id = private.requested_studio_id()",
+    );
+  });
+
+  it("prevents stale reservation ownership from leaking another studio", () => {
+    expect(hardeningMigration).toContain("drop policy if exists reservations_student_linked_self_read");
+    expect(hardeningMigration).toContain(
+      "and private.is_current_student(student_id, studio_id)",
+    );
+    expect(hardeningMigration).not.toContain(
+      "student_user_id = ( SELECT auth.uid() AS uid)",
+    );
+  });
+
+  it("scopes in-app notifications to the selected studio", () => {
+    expect(hardeningMigration).toContain("drop policy if exists app_notifications_select");
+    expect(hardeningMigration).toContain(
+      "recipient_user_id = (select auth.uid())",
+    );
+    expect(hardeningMigration).toContain(
+      "and private.is_studio_member(studio_id)",
+    );
+  });
+
+  it("keeps rewards and push operations inside the selected studio", () => {
+    expect(hardeningMigration).toContain(
+      "student_reward_challenge_leaderboard",
+    );
+    expect(hardeningMigration).toContain(
+      "student_claim_reward_credits",
+    );
+    expect(hardeningMigration).toContain(
+      "private.is_current_student(id, studio_id)",
+    );
+    expect(hardeningMigration).toContain(
+      "if not private.is_studio_member(p_studio_id) then",
+    );
+  });
+
+  it("keeps service-only notification checks out of the authenticated API", () => {
+    expect(hardeningMigration).toContain(
+      "revoke execute on function public.service_notification_channel_allowed(uuid,text,uuid,text)",
+    );
+    expect(hardeningMigration).toContain(
+      "from public, anon, authenticated",
+    );
+    expect(hardeningMigration).toContain("to service_role");
+  });
+
+  it("uses the hardened owner check for tenant-scoped storage paths", () => {
+    expect(hardeningMigration).toContain(
+      "private.is_current_user_studio_owner_path",
+    );
+    expect(hardeningMigration).toContain(
+      "return private.has_studio_role",
+    );
   });
 
   it("removes anonymous execution from privileged tenant RPCs", () => {
