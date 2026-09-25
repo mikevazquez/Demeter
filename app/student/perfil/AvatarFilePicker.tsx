@@ -1,14 +1,22 @@
 "use client";
 
-import { useId, useRef, useState } from "react";
+import Image from "next/image";
+import { useEffect, useId, useRef, useState } from "react";
 
-export default function AvatarFilePicker() {
+export default function AvatarFilePicker({ initials }: { initials: string }) {
   const inputId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
   const [fileName, setFileName] = useState<string | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+    };
+  }, [previewUrl]);
 
   return (
-    <div className="w-28 space-y-1.5">
+    <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
       <input
         ref={inputRef}
         id={inputId}
@@ -18,31 +26,48 @@ export default function AvatarFilePicker() {
         required
         className="sr-only"
         onChange={(event) => {
-          setFileName(event.target.files?.[0]?.name ?? null);
+          const file = event.target.files?.[0] ?? null;
+
+          if (previewUrl) URL.revokeObjectURL(previewUrl);
+          setFileName(file?.name ?? null);
+          setPreviewUrl(file ? URL.createObjectURL(file) : null);
         }}
       />
 
-      <label
-        htmlFor={inputId}
-        className="inline-flex min-h-8 w-full cursor-pointer items-center justify-center rounded-lg border border-white/10 bg-white/[0.035] px-2 py-1 text-[10px] font-semibold text-zinc-300 transition hover:border-fuchsia-500/35 hover:text-white"
+      <button
+        type="button"
+        onClick={() => inputRef.current?.click()}
+        className="relative flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-full border border-fuchsia-400/35 bg-fuchsia-500/10 text-lg font-semibold text-white transition hover:border-fuchsia-400/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-500"
+        aria-label={previewUrl ? "Cambiar foto seleccionada" : "Seleccionar foto de perfil"}
       >
-        Cargar foto
-      </label>
+        {initials}
+        <Image
+          src={previewUrl ?? "/student/perfil/avatar"}
+          alt=""
+          fill
+          unoptimized
+          className="object-cover"
+        />
+      </button>
 
-      <div aria-live="polite" className="min-h-4">
-        {fileName ? (
-          <button
-            type="button"
-            onClick={() => inputRef.current?.click()}
-            className="block max-w-28 truncate text-left text-[10px] font-medium text-sky-400 underline decoration-sky-400/70 underline-offset-2 hover:text-sky-300"
-            title={fileName}
-            aria-label={`Cambiar foto seleccionada: ${fileName}`}
-          >
-            {fileName}
-          </button>
-        ) : (
-          <p className="text-[9px] leading-4 text-zinc-500">JPG, PNG o WebP · máx. 5 MB</p>
-        )}
+      <div className="min-w-0">
+        <button
+          type="button"
+          onClick={() => inputRef.current?.click()}
+          className="inline-flex min-h-11 items-center justify-center rounded-xl border border-white/10 px-4 py-2.5 text-sm font-semibold text-zinc-200 transition hover:border-fuchsia-500/35 hover:bg-white/[0.04]"
+        >
+          {previewUrl ? "Elegir otra foto" : "Cambiar foto"}
+        </button>
+
+        <div aria-live="polite" className="mt-1.5 min-h-5">
+          {fileName ? (
+            <p className="max-w-xs truncate text-xs text-zinc-400" title={fileName}>
+              Vista previa lista · {fileName}
+            </p>
+          ) : (
+            <p className="text-xs leading-5 text-zinc-500">JPG, PNG o WebP · máximo 5 MB</p>
+          )}
+        </div>
       </div>
     </div>
   );
