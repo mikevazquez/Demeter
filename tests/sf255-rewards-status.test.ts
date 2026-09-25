@@ -138,24 +138,18 @@ describe("SF-255A monthly level and waitlist contracts", () => {
     expect(classesPage).toContain("border-amber-400");
   });
 
-  it("keeps Medals and confirmed technical levels separate on Home while Profile stays clean", () => {
+  it("keeps Medals on Home while technical levels stay in Profile", () => {
     expect(homePage).toContain("student_reward_status_snapshot");
     expect(homePage).toContain("reward_status_memberships");
     expect(homePage).toContain("reward_status_level_definitions");
-    expect(homePage).toContain('data-home-block="technical-level"');
+    expect(homePage).not.toContain('data-home-block="technical-level"');
     expect(homePage).toContain('data-home-block="medal"');
     expect(homePage).toContain("Medalla actual");
     expect(homePage).toContain("Por activar");
-    expect(homePage).toContain("Beneficios y constancia");
-    expect(homePage).toContain("Sin medalla");
     expect(homePage).toContain('"/student/recompensas/medallero"');
-    expect(homePage).toContain("Nivel técnico");
-    expect(homePage).toContain("resulting_level_title");
-    expect(homePage).toContain("#CD7F32");
-    expect(homePage).toContain("#C0C0C0");
-    expect(homePage).toContain("#D4AF37");
-    expect(homePage).toContain("#5EDFFF");
+    expect(homePage).not.toContain("Nivel técnico");
     expect(homePage).not.toContain("Movimiento que transforma");
+    expect(profilePage).toContain("Nivel técnico y evaluaciones");
     expect(profilePage).toContain('href="/student/paquete"');
     expect(profilePage).toContain('title="Mi paquete"');
     expect(profilePage).not.toContain("student_reward_status_snapshot");
