@@ -47,7 +47,7 @@ export async function completeStudentPasswordActivation(formData: FormData) {
 
   if (!user) redirect("/login/student");
 
-  const [{ data: account }, { data: membership }] = await Promise.all([
+  const [{ data: account }, { data: memberships }] = await Promise.all([
     supabase
       .from("user_accounts")
       .select("status, must_change_password")
@@ -58,17 +58,15 @@ export async function completeStudentPasswordActivation(formData: FormData) {
       .select("studio_id, role, active")
       .eq("user_id", user.id)
       .eq("role", "student")
-      .eq("active", true)
-      .limit(1)
-      .maybeSingle(),
+      .eq("active", true),
   ]);
 
-  if (!account || account.status !== "active" || !membership) {
+  if (!account || account.status !== "active" || !memberships?.length) {
     await supabase.auth.signOut();
     redirect("/login/student?error=access");
   }
 
-  if (!account.must_change_password) redirect("/student");
+  if (!account.must_change_password) redirect("/login/student/seleccionar");
 
   const { error: passwordError } = await supabase.auth.updateUser({ password });
   if (passwordError) {
@@ -80,5 +78,5 @@ export async function completeStudentPasswordActivation(formData: FormData) {
     redirect(activationErrorUrl(tokenHash, type, "save"));
   }
 
-  redirect("/student");
+  redirect("/login/student/seleccionar");
 }
