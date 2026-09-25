@@ -1,6 +1,16 @@
 import { createBrowserClient } from "@supabase/ssr";
 import { env } from "@/lib/env";
 
-export function createClient() {
-  return createBrowserClient(env.supabaseUrl, env.supabasePublishableKey);
+export function createClient(studioId?: string) {
+  const normalizedStudioId = studioId?.trim();
+
+  return createBrowserClient(env.supabaseUrl, env.supabasePublishableKey, {
+    global: normalizedStudioId
+      ? {
+          headers: {
+            "x-studio-id": normalizedStudioId,
+          },
+        }
+      : undefined,
+  });
 }
