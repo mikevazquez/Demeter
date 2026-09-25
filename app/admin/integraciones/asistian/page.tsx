@@ -313,8 +313,8 @@ export default async function AsistianIntegrationTestPage({
       <section className="panel">
         <div className="panel-heading">
           <div>
-            <p className="eyebrow">STUDIO FLOW → ASISTIAN · FIRMA</p>
-            <h2>Conexión firmada</h2>
+            <p className="eyebrow">DEMETER → ASISTIAN · CONTACTOS</p>
+            <h2>Alta automática de contactos</h2>
           </div>
         </div>
 
@@ -339,8 +339,12 @@ export default async function AsistianIntegrationTestPage({
               required
             />
           </label>
+          <p className="text-sm text-zinc-400">
+            Guarda estas credenciales solo para contact_upsert y envía un contacto sintético de
+            prueba. No dispara la bienvenida ni modifica reservas.
+          </p>
           <button className="primary-button" type="submit">
-            Guardar y enviar prueba firmada
+            Guardar y probar contacto
           </button>
         </form>
       </section>
