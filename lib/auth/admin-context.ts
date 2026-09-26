@@ -62,10 +62,14 @@ export async function getAdminContext(requiredCapability?: Capability) {
   }
 
   const capabilities = new Set(
-    (effectiveCapabilities ?? []).map((item) => item.capability_key as Capability),
+    (effectiveCapabilities ?? []).map(
+      (item: { capability_key: string }) => item.capability_key as Capability,
+    ),
   );
   const modules = new Set(
-    (effectiveModules ?? []).map((item) => item.module_key as StudioModule),
+    (effectiveModules ?? []).map(
+      (item: { module_key: string }) => item.module_key as StudioModule,
+    ),
   );
   const canUseStudioPortal =
     capabilities.has(CAPABILITIES.ADMIN_PORTAL) || capabilities.has(CAPABILITIES.INSTRUCTOR_PORTAL);
