@@ -45,6 +45,8 @@ type Props = {
   } | null;
   alerts: Alert[];
   timeZone: string;
+  locale: string;
+  currency: string;
 };
 
 function initials(name: string) {
@@ -56,17 +58,17 @@ function initials(name: string) {
     .join("");
 }
 
-function formatDate(value: string | null) {
+function formatDate(value: string | null, locale: string) {
   if (!value) return "Sin registrar";
-  return new Intl.DateTimeFormat("es-MX", {
+  return new Intl.DateTimeFormat(locale, {
     day: "numeric",
     month: "short",
     year: "numeric",
   }).format(new Date(value + "T12:00:00Z"));
 }
 
-function formatDateTime(value: string, timeZone: string) {
-  return new Intl.DateTimeFormat("es-MX", {
+function formatDateTime(value: string, timeZone: string, locale: string) {
+  return new Intl.DateTimeFormat(locale, {
     timeZone,
     day: "numeric",
     month: "short",
@@ -75,11 +77,11 @@ function formatDateTime(value: string, timeZone: string) {
   }).format(new Date(value));
 }
 
-function formatMoney(minor: number | null) {
+function formatMoney(minor: number | null, locale: string, currency: string) {
   if (minor === null) return "—";
-  return new Intl.NumberFormat("es-MX", {
+  return new Intl.NumberFormat(locale, {
     style: "currency",
-    currency: "MXN",
+    currency,
     maximumFractionDigits: 0,
   }).format(minor / 100);
 }
@@ -99,6 +101,8 @@ export default function Profile360Overview({
   enrollment,
   alerts,
   timeZone,
+  locale,
+  currency,
 }: Props) {
   const href = (view: string) => "/admin/alumnas/" + student.id + "?view=" + view;
   const usedCredits =
@@ -144,9 +148,9 @@ export default function Profile360Overview({
               <span>{student.phone}</span>
               {student.email ? <span>{student.email}</span> : null}
               <span>
-                {birthDate ? formatDate(birthDate) + " · " : ""}
+                {birthDate ? formatDate(birthDate, locale) + " · " : ""}
                 En el estudio desde{" "}
-                {new Intl.DateTimeFormat("es-MX", {
+                {new Intl.DateTimeFormat(locale, {
                   month: "short",
                   year: "numeric",
                 }).format(new Date(student.createdAt))}
@@ -231,7 +235,7 @@ export default function Profile360Overview({
                   <div className="profile360-approved-package-expiry">
                     <strong>
                       {currentPackage.expiresOn
-                        ? formatDate(currentPackage.expiresOn)
+                        ? formatDate(currentPackage.expiresOn, locale)
                         : "Sin fecha"}
                     </strong>
                     <span>vence</span>
@@ -248,7 +252,7 @@ export default function Profile360Overview({
                   <span>Próxima clase</span>
                   <strong>
                     {nextClass
-                      ? nextClass.name + " · " + formatDateTime(nextClass.startsAt, timeZone)
+                      ? nextClass.name + " · " + formatDateTime(nextClass.startsAt, timeZone, locale)
                       : "Sin próxima clase"}
                   </strong>
                 </div>
@@ -289,7 +293,7 @@ export default function Profile360Overview({
           <section className="profile360-approved-indicators" aria-label="Indicadores rápidos">
             <article>
               <span>Valor histórico</span>
-              <strong>{formatMoney(historicalValueMinor)}</strong>
+              <strong>{formatMoney(historicalValueMinor, locale, currency)}</strong>
             </article>
             <article>
               <span>Recompensas</span>
