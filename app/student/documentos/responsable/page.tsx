@@ -198,9 +198,10 @@ export default async function StudentGuardianPage({
                   </p>
                 </div>
                 <span className="text-xs text-zinc-500">
-                  {new Intl.DateTimeFormat("es-MX", { dateStyle: "medium" }).format(
-                    new Date(invite.sent_at),
-                  )}
+                  {new Intl.DateTimeFormat(studio.locale, {
+                    dateStyle: "medium",
+                    timeZone: studio.timezone,
+                  }).format(new Date(invite.sent_at))}
                 </span>
               </div>
             ))}
