@@ -78,7 +78,7 @@ export default async function ProductsPage({
               </span>
               <span className="module-row-meta">
                 <strong>
-                  {new Intl.NumberFormat("es-MX", {
+                  {new Intl.NumberFormat(ctx.studio.locale, {
                     style: "currency",
                     currency: product.currency,
                   }).format(product.price_minor / 100)}
