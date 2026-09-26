@@ -23,6 +23,16 @@ function checkboxValue(formData: FormData, key: string) {
   return formData.get(key) === "on";
 }
 
+function moneyToMinor(value: FormDataEntryValue | null) {
+  const normalized = String(value ?? "").trim().replace(",", ".");
+  if (!normalized) return null;
+
+  const amount = Number(normalized);
+  if (!Number.isFinite(amount) || amount < 0) return null;
+
+  return Math.round(amount * 100);
+}
+
 export async function saveStudioPortalIdentityAction(formData: FormData) {
   const ctx = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
 
@@ -133,13 +143,41 @@ export async function saveStudioOperatingPolicyAction(formData: FormData) {
   }
 
   const cutoffHours = Number(formData.get("cancellation_cutoff_hours"));
+  const defaultMinimumReservations = Number(formData.get("default_minimum_reservations"));
+  const defaultMinimumReviewHours = Number(formData.get("default_minimum_review_hours"));
+  const unlimitedLatePenaltyMinor = moneyToMinor(
+    formData.get("unlimited_late_cancellation_penalty"),
+  );
+  const unlimitedNoShowPenaltyMinor = moneyToMinor(
+    formData.get("unlimited_no_show_penalty"),
+  );
+
   if (!Number.isFinite(cutoffHours) || cutoffHours < 0 || cutoffHours > 168) {
     redirect(configurationPath({ error: "cutoff" }));
   }
 
-  const cutoffMinutes = Math.round(cutoffHours * 60);
+  if (
+    !Number.isInteger(defaultMinimumReservations) ||
+    defaultMinimumReservations < 1 ||
+    defaultMinimumReservations > 100 ||
+    !Number.isFinite(defaultMinimumReviewHours)
+  ) {
+    redirect(configurationPath({ error: "minimum_defaults" }));
+  }
 
-  const { error } = await ctx.supabase.rpc("owner_update_studio_operating_policy", {
+  const cutoffMinutes = Math.round(cutoffHours * 60);
+  const defaultMinimumReviewMinutes = Math.round(defaultMinimumReviewHours * 60);
+
+  if (
+    defaultMinimumReviewMinutes < 15 ||
+    defaultMinimumReviewMinutes > 10080 ||
+    unlimitedLatePenaltyMinor == null ||
+    unlimitedNoShowPenaltyMinor == null
+  ) {
+    redirect(configurationPath({ error: "minimum_defaults" }));
+  }
+
+  const { error } = await ctx.supabase.rpc("owner_update_studio_operating_policy_v2", {
     p_studio_id: ctx.studio.id,
     p_cancellation_cutoff_minutes: cutoffMinutes,
     p_late_cancellation_consumes_credit: checkboxValue(
@@ -147,6 +185,18 @@ export async function saveStudioOperatingPolicyAction(formData: FormData) {
       "late_cancellation_consumes_credit",
     ),
     p_no_show_consumes_credit: checkboxValue(formData, "no_show_consumes_credit"),
+    p_default_minimum_reservations_enabled: checkboxValue(
+      formData,
+      "default_minimum_reservations_enabled",
+    ),
+    p_default_minimum_reservations: defaultMinimumReservations,
+    p_default_minimum_review_minutes_before: defaultMinimumReviewMinutes,
+    p_default_minimum_override_allowed: checkboxValue(
+      formData,
+      "default_minimum_override_allowed",
+    ),
+    p_unlimited_late_cancellation_penalty_minor: unlimitedLatePenaltyMinor,
+    p_unlimited_no_show_penalty_minor: unlimitedNoShowPenaltyMinor,
   });
 
   if (error) {
@@ -158,6 +208,7 @@ export async function saveStudioOperatingPolicyAction(formData: FormData) {
   }
 
   revalidatePath("/admin/configuracion");
+  revalidatePath("/admin/actividades/nueva");
   redirect(configurationPath({ saved: "operating" }));
 }
 
