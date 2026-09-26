@@ -27,7 +27,7 @@ describe("profile avatar upload hotfix", () => {
     expect(picker).toContain("MAX_AVATAR_SIZE = 5 * 1024 * 1024");
     expect(picker).toContain("finalizeStudentAvatarAction(avatarPath)");
     expect(actions).toContain("export async function finalizeStudentAvatarAction");
-    expect(actions).not.toContain("formData.get(\"avatar\")");
+    expect(actions).not.toContain('formData.get("avatar")');
   });
 
   it("shows a clear selected-file state before saving", () => {
@@ -50,9 +50,7 @@ describe("profile avatar upload hotfix", () => {
     );
     expect(storageHotfix).toContain("security definer");
     expect(storageHotfix).toContain("public.can_read_studio_document_object(name)");
-    expect(storageHotfix).toContain(
-      "private.document_version_applies_to_student(dv.id,s.id,null)",
-    );
+    expect(storageHotfix).toContain("private.document_version_applies_to_student(dv.id,s.id,null)");
     expect(storageHotfix).not.toContain(
       "grant execute on function private.document_version_applies_to_student",
     );
