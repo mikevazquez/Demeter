@@ -539,13 +539,27 @@ export default async function IntelligencePage({
     return Boolean(productType && commercialProductTypes.has(productType));
   });
 
+  const firstCommercialAcquisitionByStudent = new Map<string, AcquisitionRow>();
+  for (const acquisition of commercialAcquisitions) {
+    if (acquisition.refunded_at || acquisition.status === "cancelled") continue;
+    const previous = firstCommercialAcquisitionByStudent.get(acquisition.student_id);
+    if (
+      !previous ||
+      new Date(acquisition.created_at).getTime() < new Date(previous.created_at).getTime()
+    ) {
+      firstCommercialAcquisitionByStudent.set(acquisition.student_id, acquisition);
+    }
+  }
+  const newCommercialStudentsCurrent = [...firstCommercialAcquisitionByStudent.values()].filter(
+    (item) => isBetween(item.created_at, currentStart, currentEnd),
+  );
+  const newCommercialStudentsPrevious = [...firstCommercialAcquisitionByStudent.values()].filter(
+    (item) => isBetween(item.created_at, previousStart, currentStart),
+  );
+
   const currentStudents = students.filter((item) =>
     isBetween(item.created_at, currentStart, currentEnd),
   );
-  const previousStudents = students.filter((item) =>
-    isBetween(item.created_at, previousStart, currentStart),
-  );
-
   const currentSales = sales.filter(
     (item) => item.status === "confirmed" && isBetween(item.created_at, currentStart, currentEnd),
   );
@@ -1565,9 +1579,12 @@ export default async function IntelligencePage({
               tone="positive"
             />
             <MetricCard
-              label="Nuevas"
-              value={String(currentStudents.length)}
-              delta={deltaText(currentStudents.length, previousStudents.length)}
+              label="Nuevas alumnas"
+              value={String(newCommercialStudentsCurrent.length)}
+              delta={deltaText(
+                newCommercialStudentsCurrent.length,
+                newCommercialStudentsPrevious.length,
+              )}
               tone="info"
             />
             <MetricCard
