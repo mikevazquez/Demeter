@@ -1,0 +1,39 @@
+name: DEV-03B tenant hardcode audit
+
+on:
+  push:
+    branches:
+      - dev-03-studio-config
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Scan tenant-specific literals
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          roots = [Path("app"), Path("lib"), Path("supabase/functions")]
+          needles = [
+              "Demeter",
+              "Movimiento que transforma",
+              "MXN",
+              "America/Mexico_City",
+              "#FF0A8A",
+              "es-MX",
+          ]
+          suffixes = {".ts", ".tsx", ".js", ".jsx", ".mjs", ".sql"}
+          for root in roots:
+              if not root.exists():
+                  continue
+              for path in sorted(root.rglob("*")):
+                  if not path.is_file() or path.suffix not in suffixes:
+                      continue
+                  text = path.read_text(encoding="utf-8", errors="ignore")
+                  for lineno, line in enumerate(text.splitlines(), 1):
+                      if any(needle in line for needle in needles):
+                          print(f"{path}:{lineno}:{line.strip()}")
+          PY
