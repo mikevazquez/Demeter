@@ -188,7 +188,7 @@ async function getAcquisitionEditContext(studentId: string, acquisitionId: strin
 
   if (!acquisition) redirect(`/admin/alumnas/${studentId}?error=acquisition_not_found`);
 
-  const timeZone = ctx.studio.timezone ?? "America/Mexico_City";
+  const timeZone = ctx.studio.timezone;
   const dateParts = Object.fromEntries(
     new Intl.DateTimeFormat("en-US", {
       timeZone,

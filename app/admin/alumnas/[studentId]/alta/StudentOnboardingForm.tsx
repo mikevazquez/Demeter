@@ -33,8 +33,8 @@ const termCopy: Record<string, string> = {
   custom: "Otra vigencia",
 };
 
-function money(minor: number, currency = "MXN") {
-  return new Intl.NumberFormat("es-MX", {
+function money(minor: number, currency: string, locale: string) {
+  return new Intl.NumberFormat(locale, {
     style: "currency",
     currency,
     maximumFractionDigits: 2,
@@ -50,6 +50,7 @@ export default function StudentOnboardingForm({
   studentId,
   studentName,
   studioName,
+  locale,
   packages,
   today,
   idempotencyKey,
@@ -63,6 +64,7 @@ export default function StudentOnboardingForm({
   studentId: string;
   studentName: string;
   studioName: string;
+  locale: string;
   packages: PackageOption[];
   today: string;
   idempotencyKey: string;
@@ -213,7 +215,7 @@ export default function StudentOnboardingForm({
                       {item.validityDays ? ` · ${item.validityDays} días` : ""}
                     </span>
                   </div>
-                  <strong>{money(item.priceMinor, item.currency)}</strong>
+                  <strong>{money(item.priceMinor, item.currency, locale)}</strong>
                 </div>
               </button>
             );
@@ -346,7 +348,7 @@ export default function StudentOnboardingForm({
                     <option key={item.id} value={item.id}>
                       {item.name} ·{" "}
                       {item.validityDays === null ? "Vitalicia" : `${item.validityDays} días`} ·{" "}
-                      {money(item.priceMinor, item.currency)}
+                      {money(item.priceMinor, item.currency, locale)}
                     </option>
                   ))}
                 </select>
@@ -359,7 +361,7 @@ export default function StudentOnboardingForm({
                 >
                   <option value="paid">
                     Cobrar inscripción ·{" "}
-                    {money(selectedEnrollment.priceMinor, selectedEnrollment.currency)}
+                    {money(selectedEnrollment.priceMinor, selectedEnrollment.currency, locale)}
                   </option>
                   <option value="promotion">Aplicar promoción</option>
                   <option value="exception">Aplicar excepción autorizada</option>
@@ -460,7 +462,7 @@ export default function StudentOnboardingForm({
               className="ghost-button"
               onClick={() => setPaymentAmount((totalMinor / 100).toFixed(2))}
             >
-              Usar total · {money(totalMinor, selectedPackage.currency)}
+              Usar total · {money(totalMinor, selectedPackage.currency, locale)}
             </button>
 
             {paidMinor > 0 ? (
@@ -554,31 +556,31 @@ export default function StudentOnboardingForm({
             <div className="mt-4 grid gap-3 text-sm">
               <div className="flex justify-between gap-3">
                 <span className="text-zinc-400">Precio de lista</span>
-                <strong>{money(selectedPackage.priceMinor, selectedPackage.currency)}</strong>
+                <strong>{money(selectedPackage.priceMinor, selectedPackage.currency, locale)}</strong>
               </div>
               {packageDiscountMinor > 0 ? (
                 <div className="flex justify-between gap-3">
                   <span className="text-zinc-400">Descuento</span>
-                  <strong>− {money(packageDiscountMinor, selectedPackage.currency)}</strong>
+                  <strong>− {money(packageDiscountMinor, selectedPackage.currency, locale)}</strong>
                 </div>
               ) : null}
               {enrollmentNetMinor > 0 ? (
                 <div className="flex justify-between gap-3">
                   <span className="text-zinc-400">Inscripción</span>
-                  <strong>{money(enrollmentNetMinor, selectedPackage.currency)}</strong>
+                  <strong>{money(enrollmentNetMinor, selectedPackage.currency, locale)}</strong>
                 </div>
               ) : null}
               <div className="border-t border-white/10 pt-3 flex justify-between gap-3 text-base">
                 <span>Total</span>
-                <strong>{money(totalMinor, selectedPackage.currency)}</strong>
+                <strong>{money(totalMinor, selectedPackage.currency, locale)}</strong>
               </div>
               <div className="flex justify-between gap-3">
                 <span className="text-zinc-400">Registrado ahora</span>
-                <strong>{money(paidMinor, selectedPackage.currency)}</strong>
+                <strong>{money(paidMinor, selectedPackage.currency, locale)}</strong>
               </div>
               <div className="flex justify-between gap-3">
                 <span className="text-zinc-400">Saldo pendiente</span>
-                <strong>{money(balanceMinor, selectedPackage.currency)}</strong>
+                <strong>{money(balanceMinor, selectedPackage.currency, locale)}</strong>
               </div>
             </div>
             {pendingWithoutPayment ? (
