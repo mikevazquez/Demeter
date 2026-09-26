@@ -232,7 +232,7 @@ export default async function AutomationDetailPage({
     eventsByExecution.set(event.execution_id, rows);
   }
 
-  const dateTime = new Intl.DateTimeFormat("es-MX", {
+  const dateTime = new Intl.DateTimeFormat(ctx.studio.locale, {
     dateStyle: "medium",
     timeStyle: "short",
     timeZone: ctx.studio.timezone,
