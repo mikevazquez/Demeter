@@ -51,11 +51,22 @@ export default async function StudentCancelReservationPage({
     uses_credits?: boolean;
     unlimited?: boolean;
     credit_will_return?: boolean | null;
+    unlimited_penalty_minor?: number;
+    currency?: string;
   } | null;
   const willLoseCredit = Boolean(preview?.ok && preview.late && preview.uses_credits);
   const willReturnCredit = Boolean(
     preview?.ok && !preview.late && preview.credit_will_return === true,
   );
+  const unlimitedPenaltyMinor = Number(preview?.unlimited_penalty_minor ?? 0);
+  const willChargeUnlimitedPenalty = Boolean(
+    preview?.ok && preview.unlimited && preview.late && unlimitedPenaltyMinor > 0,
+  );
+  const unlimitedPenaltyLabel = new Intl.NumberFormat(studio.locale ?? "es-MX", {
+    style: "currency",
+    currency: preview?.currency ?? studio.currency ?? "MXN",
+    maximumFractionDigits: 2,
+  }).format(unlimitedPenaltyMinor / 100);
   const activeGuests =
     (
       invitationContextData as {
@@ -163,6 +174,16 @@ export default async function StudentCancelReservationPage({
             </p>
             <p className="mt-1.5 text-xs leading-5 text-amber-100/80">
               Si cancelas ahora, el crédito utilizado para esta clase no será devuelto.
+            </p>
+          </div>
+        ) : willChargeUnlimitedPenalty ? (
+          <div className="mt-4 rounded-2xl border border-amber-400/25 bg-amber-400/[0.08] p-4">
+            <p className="text-sm font-semibold text-amber-100">
+              Esta cancelación genera una penalización
+            </p>
+            <p className="mt-1.5 text-xs leading-5 text-amber-100/80">
+              Tu paquete es ilimitado. Si cancelas ahora se registrará un cargo pendiente de{" "}
+              <strong>{unlimitedPenaltyLabel}</strong>.
             </p>
           </div>
         ) : willReturnCredit ? (
