@@ -2731,38 +2731,26 @@ export default async function IntelligencePage({
               tone="info"
             />
             <MetricCard
+              label="Reactivadas"
+              value={String(reactivatedStudentsCurrent.length)}
+              delta={deltaText(
+                reactivatedStudentsCurrent.length,
+                reactivatedStudentsPrevious.length,
+              )}
+              tone={reactivatedStudentsCurrent.length > 0 ? "positive" : "neutral"}
+            />
+            <MetricCard
               label="Crecimiento neto"
               value={(netStudentGrowth >= 0 ? "+" : "") + String(netStudentGrowth)}
               delta={
                 newCommercialStudentsCurrent.length +
-                " nuevas · " +
+                " nuevas + " +
+                reactivatedStudentsCurrent.length +
+                " reactivadas − " +
                 newlyConfirmedChurn.length +
-                " churn confirmado"
+                " churn"
               }
               tone={netStudentGrowth >= 0 ? "positive" : "danger"}
-            />
-            <MetricCard
-              label="Activación onboarding"
-              value={
-                newCommercialStudentsCurrent.length > 0
-                  ? pct(newStudentActivationRate)
-                  : "—"
-              }
-              delta={
-                newCommercialStudentsCurrent.length > 0
-                  ? newStudentOnboardingComplete +
-                    "/" +
-                    newCommercialStudentsCurrent.length +
-                    " nuevas completaron"
-                  : "Sin nuevas alumnas en el periodo"
-              }
-              tone={
-                newCommercialStudentsCurrent.length === 0
-                  ? "neutral"
-                  : newStudentActivationRate >= 70
-                    ? "positive"
-                    : "warning"
-              }
             />
           </section>
 
@@ -2811,6 +2799,71 @@ export default async function IntelligencePage({
                 </div>
                 <div className="intel-source-note">
                   Riesgo preventivo pertenece a la base activa; vencida/inactiva/churn son estados posteriores al vencimiento y no deben sumarse como un único embudo.
+                </div>
+              </Section>
+
+              <Section
+                title="↗ Movimientos del periodo"
+                description="Entradas y salidas reales de la base, sin contar simples registros como alumnas."
+              >
+                <div className="intel-bars">
+                  <BarRow
+                    label="Primera compra"
+                    value={newCommercialStudentsCurrent.length}
+                    max={Math.max(
+                      newCommercialStudentsCurrent.length,
+                      reactivatedStudentsCurrent.length,
+                      firstAttendanceCurrent.length,
+                      newlyConfirmedChurn.length,
+                      1,
+                    )}
+                    display={String(newCommercialStudentsCurrent.length)}
+                    tone="success"
+                  />
+                  <BarRow
+                    label="Reactivación después de 30+ días"
+                    value={reactivatedStudentsCurrent.length}
+                    max={Math.max(
+                      newCommercialStudentsCurrent.length,
+                      reactivatedStudentsCurrent.length,
+                      firstAttendanceCurrent.length,
+                      newlyConfirmedChurn.length,
+                      1,
+                    )}
+                    display={String(reactivatedStudentsCurrent.length)}
+                    tone="accent"
+                  />
+                  <BarRow
+                    label="Primera asistencia registrada"
+                    value={firstAttendanceCurrent.length}
+                    max={Math.max(
+                      newCommercialStudentsCurrent.length,
+                      reactivatedStudentsCurrent.length,
+                      firstAttendanceCurrent.length,
+                      newlyConfirmedChurn.length,
+                      1,
+                    )}
+                    display={String(firstAttendanceCurrent.length)}
+                    tone="info"
+                  />
+                  <BarRow
+                    label="Churn confirmado en el periodo"
+                    value={newlyConfirmedChurn.length}
+                    max={Math.max(
+                      newCommercialStudentsCurrent.length,
+                      reactivatedStudentsCurrent.length,
+                      firstAttendanceCurrent.length,
+                      newlyConfirmedChurn.length,
+                      1,
+                    )}
+                    display={String(newlyConfirmedChurn.length)}
+                    tone="danger"
+                  />
+                </div>
+                <div className="intel-source-note">
+                  Primera asistencia usa el historial de onboarding disponible: {onboardingRows.length}/
+                  {students.length} alumnas con seguimiento ({pct(onboardingHistoryCoverage)} de cobertura).
+                  No inferimos asistencias históricas faltantes.
                 </div>
               </Section>
 
@@ -2952,7 +3005,25 @@ export default async function IntelligencePage({
                   <Insight
                     tone="positive"
                     title="Reactivación ≠ nueva alumna"
-                    body="Si vuelve después de 30 días, se conserva como reactivación; no se vuelve a contar como adquisición nueva."
+                    body={
+                      "Regresaron " +
+                      reactivatedStudentsCurrent.length +
+                      " en este periodo después de 30+ días. Suman a crecimiento neto, pero no vuelven a contar como adquisición nueva."
+                    }
+                  />
+                  <Insight
+                    tone="info"
+                    title="Onboarding sigue siendo activación"
+                    body={
+                      newCommercialStudentsCurrent.length > 0
+                        ? pct(newStudentActivationRate) +
+                          " de las nuevas alumnas del periodo completaron onboarding (" +
+                          newStudentOnboardingComplete +
+                          "/" +
+                          newCommercialStudentsCurrent.length +
+                          ")."
+                        : "No hubo nuevas alumnas comerciales en este periodo para medir activación."
+                    }
                   />
                 </div>
               </Section>
