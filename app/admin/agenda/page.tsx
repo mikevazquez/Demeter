@@ -4,8 +4,8 @@ import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { cancelSession, updateSession } from "./[sessionId]/actions";
 
-function formatMoney(minor: number) {
-  return new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(minor / 100);
+function formatMoney(minor: number, locale: string, currency: string, locale, currency) {
+  return new Intl.NumberFormat(locale, { style: "currency", currency }).format(minor / 100);
 }
 
 function localDateKey(value: Date, timeZone: string) {
@@ -44,8 +44,8 @@ function weekStartMonday(value: Date) {
   return shiftUtcDays(value, weekday === 0 ? -6 : 1 - weekday);
 }
 
-function shortWeekday(value: Date) {
-  return new Intl.DateTimeFormat("es-MX", {
+function shortWeekday(value: Date, locale: string) {
+  return new Intl.DateTimeFormat(locale, {
     timeZone: "UTC",
     weekday: "short",
   })
@@ -54,8 +54,8 @@ function shortWeekday(value: Date) {
     .slice(0, 3);
 }
 
-function shortMonth(value: Date) {
-  return new Intl.DateTimeFormat("es-MX", {
+function shortMonth(value: Date, locale: string) {
+  return new Intl.DateTimeFormat(locale, {
     timeZone: "UTC",
     month: "short",
   })
@@ -63,8 +63,8 @@ function shortMonth(value: Date) {
     .replace(".", "");
 }
 
-function fullDateLabel(value: Date) {
-  return new Intl.DateTimeFormat("es-MX", {
+function fullDateLabel(value: Date, locale: string) {
+  return new Intl.DateTimeFormat(locale, {
     timeZone: "UTC",
     weekday: "long",
     day: "numeric",
@@ -120,18 +120,18 @@ function localClockParts(value: string, timeZone: string) {
   };
 }
 
-function formatTime(value: string, timeZone: string) {
-  return new Intl.DateTimeFormat("es-MX", {
+function formatTime(value: string, timeZone: string, locale: string) {
+  return new Intl.DateTimeFormat(locale, {
     timeZone,
     hour: "numeric",
     minute: "2-digit",
   }).format(new Date(value));
 }
 
-function formatHour(hour: number) {
+function formatHour(hour: number, locale: string) {
   const normalized = ((hour % 24) + 24) % 24;
   const date = new Date(Date.UTC(2026, 0, 1, normalized, 0, 0));
-  return new Intl.DateTimeFormat("es-MX", {
+  return new Intl.DateTimeFormat(locale, {
     timeZone: "UTC",
     hour: "numeric",
     minute: "2-digit",
@@ -152,7 +152,9 @@ export default async function AgendaPage({
   const params = await searchParams;
   const { supabase, studio, can, user } = await getAdminContext(CAPABILITIES.SCHEDULE_READ);
   const canEdit = can(CAPABILITIES.SCHEDULE_WRITE);
-  const timeZone = studio.timezone ?? "America/Mexico_City";
+  const timeZone = studio.timezone;
+  const locale = studio.locale;
+  const currency = studio.currency;
   const now = new Date();
   const todayKey = localDateKey(now, timeZone);
   const selectedDate = parseDateKey(params.date) ?? parseDateKey(todayKey)!;
@@ -368,8 +370,8 @@ export default async function AgendaPage({
             ‹
           </Link>
           <strong className="agenda-week-range">
-            {weekStart.getUTCDate()} {shortMonth(weekStart)} — {weekEnd.getUTCDate()}{" "}
-            {shortMonth(weekEnd)}
+            {weekStart.getUTCDate()} {shortMonth(weekStart, locale)} — {weekEnd.getUTCDate()}{" "}
+            {shortMonth(weekEnd, locale)}
           </strong>
           <Link
             className="agenda-icon-button"
@@ -415,7 +417,7 @@ export default async function AgendaPage({
               className={`agenda-week-day${isSelected ? " is-selected" : ""}${key === todayKey ? " is-today" : ""}`}
               aria-current={isSelected ? "date" : undefined}
             >
-              <span>{shortWeekday(day)}</span>
+              <span>{shortWeekday(day, locale)}</span>
               <strong>{day.getUTCDate()}</strong>
             </Link>
           );
@@ -429,7 +431,7 @@ export default async function AgendaPage({
           aria-label="Calendario semanal"
         >
           <div className="agenda-mobile-day-summary">
-            <strong>{fullDateLabel(selectedDate)}</strong>
+            <strong>{fullDateLabel(selectedDate, locale)}</strong>
             <span>
               {calendarSessions.filter((session) => session.dateKey === selectedKey).length} clases
             </span>
@@ -446,7 +448,7 @@ export default async function AgendaPage({
                   style={{ top: (hour - calendarStartHour) * 60 }}
                   className="agenda-time-label"
                 >
-                  {formatHour(hour)}
+                  {formatHour(hour, locale)}
                 </span>
               ))}
             </div>
@@ -484,8 +486,8 @@ export default async function AgendaPage({
                           }
                         >
                           <span className="agenda-session-time">
-                            {formatTime(session.starts_at, timeZone)} –{" "}
-                            {formatTime(session.ends_at, timeZone)}
+                            {formatTime(session.starts_at, timeZone, locale)} –{" "}
+                            {formatTime(session.ends_at, timeZone, locale)}
                           </span>
                           <strong>{session.name}</strong>
                           <small>
