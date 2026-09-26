@@ -45,6 +45,10 @@ type SaleRow = {
   created_at: string;
 };
 
+type CollectionSaleRow = SaleRow & {
+  payment_due_on: string | null;
+};
+
 type PaymentRow = {
   sale_id: string;
   kind: string;
@@ -388,6 +392,7 @@ export default async function IntelligencePage({
     productTemplatesResult,
     onboardingResult,
     domainEventsResult,
+    collectionSalesResult,
   ] = await Promise.all([
     supabase
       .from("students")
@@ -450,6 +455,13 @@ export default async function IntelligencePage({
       .gte("occurred_at", rangeStartIso)
       .lt("occurred_at", currentEnd.toISOString())
       .order("occurred_at", { ascending: true }),
+    supabase
+      .from("sales")
+      .select("id,student_id,folio,status,total_minor,currency,created_at,payment_due_on")
+      .eq("studio_id", studio.id)
+      .eq("status", "confirmed")
+      .not("payment_due_on", "is", null)
+      .order("payment_due_on", { ascending: true }),
   ]);
 
   const students = (studentsResult.data ?? []) as StudentRow[];
@@ -462,6 +474,28 @@ export default async function IntelligencePage({
   const productTemplates = (productTemplatesResult.data ?? []) as ProductTemplateRow[];
   const onboarding = (onboardingResult.data ?? []) as OnboardingRow[];
   const domainEvents = (domainEventsResult.data ?? []) as DomainEventRow[];
+  const collectionSales = (collectionSalesResult.data ?? []) as CollectionSaleRow[];
+
+  const collectionSaleIds = collectionSales.map((sale) => sale.id);
+  const [collectionPaymentsResult, collectionLinesResult] = collectionSaleIds.length
+    ? await Promise.all([
+        supabase
+          .from("payments")
+          .select("sale_id,kind,amount_minor,effective_on,created_at")
+          .eq("studio_id", studio.id)
+          .in("sale_id", collectionSaleIds),
+        supabase
+          .from("sale_lines")
+          .select("sale_id,product_template_id,product_name,line_total_minor,refunded_at,created_at")
+          .eq("studio_id", studio.id)
+          .in("sale_id", collectionSaleIds),
+      ])
+    : [
+        { data: [] as PaymentRow[] },
+        { data: [] as SaleLineRow[] },
+      ];
+  const collectionPayments = (collectionPaymentsResult.data ?? []) as PaymentRow[];
+  const collectionLines = (collectionLinesResult.data ?? []) as SaleLineRow[];
 
   const sessionIds = sessions.map((session) => session.id);
   const reservationsResult = sessionIds.length
@@ -547,6 +581,51 @@ export default async function IntelligencePage({
     const paid = paymentBySale.get(sale.id) ?? 0;
     return sum + Math.max(collectible - paid, 0);
   }, 0);
+
+  const collectionPaymentBySale = new Map<string, number>();
+  for (const payment of collectionPayments) {
+    collectionPaymentBySale.set(
+      payment.sale_id,
+      (collectionPaymentBySale.get(payment.sale_id) ?? 0) +
+        (payment.kind === "refund" ? -payment.amount_minor : payment.amount_minor),
+    );
+  }
+
+  const collectionCollectibleBySale = new Map<string, number>();
+  for (const line of collectionLines) {
+    if (line.refunded_at) continue;
+    collectionCollectibleBySale.set(
+      line.sale_id,
+      (collectionCollectibleBySale.get(line.sale_id) ?? 0) + line.line_total_minor,
+    );
+  }
+
+  const collectionOpenRows = collectionSales
+    .map((sale) => {
+      const collectible = collectionCollectibleBySale.get(sale.id) ?? sale.total_minor;
+      const paid = collectionPaymentBySale.get(sale.id) ?? 0;
+      return {
+        ...sale,
+        balance: Math.max(collectible - paid, 0),
+      };
+    })
+    .filter((sale) => sale.balance > 0);
+
+  const collectionPending = collectionOpenRows.reduce((sum, sale) => sum + sale.balance, 0);
+  const collectionOverdueRows = collectionOpenRows.filter(
+    (sale) => Boolean(sale.payment_due_on && sale.payment_due_on < todayDate),
+  );
+  const collectionDueTodayRows = collectionOpenRows.filter(
+    (sale) => sale.payment_due_on === todayDate,
+  );
+  const collectionOverdueAmount = collectionOverdueRows.reduce(
+    (sum, sale) => sum + sale.balance,
+    0,
+  );
+  const collectionDueTodayAmount = collectionDueTodayRows.reduce(
+    (sum, sale) => sum + sale.balance,
+    0,
+  );
 
   function activeCommercialStudentCount(atDate: string) {
     const studentIds = new Set<string>();
