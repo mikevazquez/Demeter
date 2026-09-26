@@ -536,6 +536,8 @@ export default async function SessionDetailPage({
           canAttendance={canAttendance && session.status !== "cancelled"}
           canBook={canEdit && session.status === "scheduled"}
           canCreateStudent={canCreateStudent && session.status === "scheduled"}
+          locale={locale}
+          timeZone={timeZone}
           returnTo={returnTo}
           initiallyOpen
           showToggle={false}
