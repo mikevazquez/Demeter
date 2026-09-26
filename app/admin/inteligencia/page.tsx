@@ -159,6 +159,7 @@ const decisionReservationStatuses = new Set([
   "cancelled_late",
 ]);
 const commercialProductTypes = new Set(["package", "membership", "single_class"]);
+const conversionProductTypes = new Set(["package", "membership"]);
 
 function clampDays(value: string | undefined) {
   const parsed = Number(value ?? "30");
@@ -539,21 +540,26 @@ export default async function IntelligencePage({
     return Boolean(productType && commercialProductTypes.has(productType));
   });
 
-  const firstCommercialAcquisitionByStudent = new Map<string, AcquisitionRow>();
-  for (const acquisition of commercialAcquisitions) {
+  const conversionAcquisitions = commercialAcquisitions.filter((item) => {
+    const productType = productTemplateMap.get(item.product_template_id)?.product_type;
+    return Boolean(productType && conversionProductTypes.has(productType));
+  });
+
+  const firstConversionAcquisitionByStudent = new Map<string, AcquisitionRow>();
+  for (const acquisition of conversionAcquisitions) {
     if (acquisition.refunded_at || acquisition.status === "cancelled") continue;
-    const previous = firstCommercialAcquisitionByStudent.get(acquisition.student_id);
+    const previous = firstConversionAcquisitionByStudent.get(acquisition.student_id);
     if (
       !previous ||
       new Date(acquisition.created_at).getTime() < new Date(previous.created_at).getTime()
     ) {
-      firstCommercialAcquisitionByStudent.set(acquisition.student_id, acquisition);
+      firstConversionAcquisitionByStudent.set(acquisition.student_id, acquisition);
     }
   }
-  const newCommercialStudentsCurrent = [...firstCommercialAcquisitionByStudent.values()].filter(
+  const newCommercialStudentsCurrent = [...firstConversionAcquisitionByStudent.values()].filter(
     (item) => isBetween(item.created_at, currentStart, currentEnd),
   );
-  const newCommercialStudentsPrevious = [...firstCommercialAcquisitionByStudent.values()].filter(
+  const newCommercialStudentsPrevious = [...firstConversionAcquisitionByStudent.values()].filter(
     (item) => isBetween(item.created_at, previousStart, currentStart),
   );
 
