@@ -10,6 +10,7 @@ import {
 } from "../actions";
 import { startScheduledEvaluationAction } from "../alumnas/[studentId]/evaluation-actions";
 import { ExistingStudentAddForm } from "./ExistingStudentAddForm";
+import { PendingClassPaymentDialog } from "./PendingClassPaymentDialog";
 
 type RosterItem = {
   id: string;
@@ -24,6 +25,9 @@ type RosterItem = {
   attendanceSource?: string | null;
   checkedInAt?: string | null;
   attendanceProvenance?: string | null;
+  paymentDueOnAttendance?: boolean;
+  individualPriceMinor?: number | null;
+  currency?: string;
 };
 
 type Candidate = {
@@ -86,6 +90,7 @@ export function SessionOperations({
   const [open, setOpen] = useState(initiallyOpen);
   const [showAddStudent, setShowAddStudent] = useState(false);
   const [newWalkin, setNewWalkin] = useState(false);
+  const [paymentItem, setPaymentItem] = useState<RosterItem | null>(null);
   const [feedback, setFeedback] = useState<{
     kind: "success" | "error";
     message: string;
@@ -138,7 +143,9 @@ export function SessionOperations({
                   ? "Corrección registrada correctamente."
                   : created === "post-close-attendee"
                     ? "Asistencia agregada después del cierre."
-                    : created === "walkin"
+                    : created === "paid-attendance"
+                      ? "Pago y asistencia registrados correctamente."
+                      : created === "walkin"
                       ? "Walk-in registrada y agregada a la clase."
                       : created === "walkin-existing"
                         ? "Alumna agregada a la clase."
@@ -155,7 +162,19 @@ export function SessionOperations({
               ? "La corrección requiere un motivo."
               : error === "attendance_not_persisted"
                 ? "La corrección no se guardó. Intenta nuevamente."
-                : error === "phone_exists"
+                : error === "attendance_payment_not_persisted"
+                  ? "El pago o la asistencia no se guardaron. Intenta nuevamente."
+                  : error === "asistian_payment_required"
+                    ? "Esta reserva de Asistian tiene pago pendiente. Registra el cobro antes de marcar asistencia."
+                    : error === "class_price_required"
+                      ? "Esta actividad no tiene precio individual configurado. Ingresa el monto cobrado."
+                      : error === "payment_method_required"
+                        ? "Selecciona cómo se pagó la clase."
+                        : error === "payment_not_pending"
+                          ? "Esta reserva ya no tiene un pago pendiente."
+                          : error === "reservation_not_asistian"
+                            ? "La reserva no corresponde a una entrada desde Asistian."
+                            : error === "phone_exists"
                   ? "Ese teléfono ya pertenece a una alumna. Agrégala como alumna existente."
                   : error === "session_full"
                     ? "La clase ya está llena."
@@ -239,6 +258,9 @@ export function SessionOperations({
                           {isInvitation ? (
                             <span className="today-invite-tag">Invitación</span>
                           ) : null}
+                          {item.paymentDueOnAttendance ? (
+                            <span className="today-payment-pending-tag">Pago pendiente</span>
+                          ) : null}
                           {item.evaluationStatus === "scheduled" ? (
                             <span className="today-evaluation-tag">Evaluación programada</span>
                           ) : item.evaluationStatus === "in_progress" ? (
@@ -292,26 +314,37 @@ export function SessionOperations({
                       canAttendance &&
                       ["reserved", "attended", "no_show"].includes(item.status) ? (
                         <div className="today-attendance-preview">
-                          <form action={setAttendanceFromToday}>
-                            <input type="hidden" name="session_id" value={sessionId} />
-                            <input type="hidden" name="reservation_id" value={item.id} />
-                            <input type="hidden" name="return_date" value={returnDate} />
-                            {returnTo ? (
-                              <input type="hidden" name="return_to" value={returnTo} />
-                            ) : null}
-                            <input type="hidden" name="status" value="attended" />
+                          {item.paymentDueOnAttendance && item.status !== "attended" ? (
                             <button
-                              className={
-                                item.status === "attended" ? "is-selected is-attended" : ""
-                              }
-                              type="submit"
-                              disabled={item.status === "attended"}
-                              aria-pressed={item.status === "attended"}
+                              type="button"
+                              className="today-payment-attendance-trigger"
+                              onClick={() => setPaymentItem(item)}
+                              aria-haspopup="dialog"
                             >
-                              {item.status === "attended" ? "✓ " : ""}
                               Asistió
                             </button>
-                          </form>
+                          ) : (
+                            <form action={setAttendanceFromToday}>
+                              <input type="hidden" name="session_id" value={sessionId} />
+                              <input type="hidden" name="reservation_id" value={item.id} />
+                              <input type="hidden" name="return_date" value={returnDate} />
+                              {returnTo ? (
+                                <input type="hidden" name="return_to" value={returnTo} />
+                              ) : null}
+                              <input type="hidden" name="status" value="attended" />
+                              <button
+                                className={
+                                  item.status === "attended" ? "is-selected is-attended" : ""
+                                }
+                                type="submit"
+                                disabled={item.status === "attended"}
+                                aria-pressed={item.status === "attended"}
+                              >
+                                {item.status === "attended" ? "✓ " : ""}
+                                Asistió
+                              </button>
+                            </form>
+                          )}
 
                           <form action={setAttendanceFromToday}>
                             <input type="hidden" name="session_id" value={sessionId} />
@@ -464,6 +497,19 @@ export function SessionOperations({
             </section>
           ) : null}
         </div>
+      ) : null}
+
+      {paymentItem ? (
+        <PendingClassPaymentDialog
+          reservationId={paymentItem.id}
+          sessionId={sessionId}
+          returnDate={returnDate}
+          returnTo={returnTo}
+          studentName={paymentItem.studentName}
+          amountMinor={paymentItem.individualPriceMinor ?? null}
+          currency={paymentItem.currency ?? "MXN"}
+          onClose={() => setPaymentItem(null)}
+        />
       ) : null}
     </div>
   );
