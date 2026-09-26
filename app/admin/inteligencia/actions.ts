@@ -30,6 +30,10 @@ export async function createStudioExpense(formData: FormData) {
   const description = String(formData.get("description") ?? "").trim();
   const vendor = String(formData.get("vendor") ?? "").trim() || null;
   const notes = String(formData.get("notes") ?? "").trim() || null;
+  const marketingSource =
+    String(formData.get("marketing_source") ?? "").trim() || null;
+  const marketingCampaign =
+    String(formData.get("marketing_campaign") ?? "").trim() || null;
   const effectiveOn = String(formData.get("effective_on") ?? "").trim();
   const amount = Number(String(formData.get("amount") ?? "").replace(",", "."));
 
@@ -53,6 +57,8 @@ export async function createStudioExpense(formData: FormData) {
     effective_on: effectiveOn,
     amount_minor: Math.round(amount * 100),
     currency: studio.currency,
+    marketing_source: category === "advertising" ? marketingSource : null,
+    marketing_campaign: category === "advertising" ? marketingCampaign : null,
     created_by: user.id,
   });
 
