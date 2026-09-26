@@ -11,7 +11,8 @@ begin
   where lower(name) like 'demeter%';
 
   if v_count <> 1 then
-    raise exception 'demeter_studio_resolution_failed';
+    raise notice 'Demeter studio not uniquely resolvable; leaving WhatsApp provider unchanged.';
+    return;
   end if;
 
   select id into v_studio_id
@@ -28,7 +29,8 @@ begin
   limit 1;
 
   if v_payload is null then
-    raise exception 'meta_whatsapp_not_configured';
+    raise notice 'Meta WhatsApp connection not configured; leaving Asistian as fallback.';
+    return;
   end if;
 
   if v_payload->'templates'->>'student_welcome' <> 'demeter_bienvenida'
@@ -38,7 +40,8 @@ begin
      or v_payload->'templates'->>'class_reminder' <> 'demeter_recordatorio_clase'
      or v_payload->'templates'->>'class_cancelled_coach' <> 'demeter_clase_cancelada_coach'
   then
-    raise exception 'meta_template_mapping_not_ready';
+    raise notice 'Meta template mapping incomplete; leaving WhatsApp provider unchanged.';
+    return;
   end if;
 
   update public.notification_studio_channel_providers
