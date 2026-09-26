@@ -95,7 +95,7 @@ export default async function NewSalePage({
           .order("price_minor"),
         supabase
           .from("enrollment_policies")
-          .select("enabled,required_for_booking,enrollment_product_template_id")
+          .select("enabled,required_for_package_purchase,enrollment_product_template_id")
           .eq("studio_id", studio.id)
           .maybeSingle(),
         supabase
@@ -114,7 +114,7 @@ export default async function NewSalePage({
       ])
     : [{ data: [] }, { data: null }, { data: [] }, { data: [] }];
 
-  const enrollmentRequired = Boolean(policy?.enabled && policy.required_for_booking);
+  const enrollmentRequired = Boolean(policy?.enabled && policy.required_for_package_purchase);
   const currentEnrollment = (activeEnrollments ?? []).some(
     (item) => item.starts_on <= today && (item.expires_on === null || item.expires_on >= today),
   );
