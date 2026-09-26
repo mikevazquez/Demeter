@@ -286,6 +286,7 @@ export default async function StudentDocumentsPanel({
                               formatDateTime(
                                 item.current_guardian_acceptance.accepted_at,
                                 timeZone,
+                                locale,
                               )}
                           </p>
                         ) : null}
