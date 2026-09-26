@@ -2651,10 +2651,14 @@ export default async function IntelligencePage({
         <>
           <section className="intel-kpi-grid">
             <MetricCard
-              label="Activas"
+              label="Alumnas activas"
               value={String(activeStudents)}
-              delta={deltaText(activeStudents, previousActiveStudents)}
-              tone="positive"
+              delta={
+                (activeStudents - previousActiveStudents >= 0 ? "↑ " : "↓ ") +
+                Math.abs(activeStudents - previousActiveStudents) +
+                " netas vs inicio del periodo"
+              }
+              tone={activeStudents >= previousActiveStudents ? "positive" : "warning"}
             />
             <MetricCard
               label="Nuevas alumnas"
@@ -2666,29 +2670,61 @@ export default async function IntelligencePage({
               tone="info"
             />
             <MetricCard
-              label="Riesgo preventivo"
-              value={String(preventiveRiskStudents.length)}
-              delta="Vencen ≤7 días · señales de desconexión"
-              tone={preventiveRiskStudents.length ? "warning" : "positive"}
+              label="Crecimiento neto"
+              value={(netStudentGrowth >= 0 ? "+" : "") + String(netStudentGrowth)}
+              delta={
+                newCommercialStudentsCurrent.length +
+                " nuevas · " +
+                newlyConfirmedChurn.length +
+                " churn confirmado"
+              }
+              tone={netStudentGrowth >= 0 ? "positive" : "danger"}
             />
             <MetricCard
-              label="Abandono"
-              value={String(abandonedStudents.length)}
-              delta="30+ días desde vencimiento"
-              tone={abandonedStudents.length ? "danger" : "neutral"}
+              label="Activación onboarding"
+              value={
+                newCommercialStudentsCurrent.length > 0
+                  ? pct(newStudentActivationRate)
+                  : "—"
+              }
+              delta={
+                newCommercialStudentsCurrent.length > 0
+                  ? newStudentOnboardingComplete +
+                    "/" +
+                    newCommercialStudentsCurrent.length +
+                    " nuevas completaron"
+                  : "Sin nuevas alumnas en el periodo"
+              }
+              tone={
+                newCommercialStudentsCurrent.length === 0
+                  ? "neutral"
+                  : newStudentActivationRate >= 70
+                    ? "positive"
+                    : "warning"
+              }
             />
           </section>
 
           <div className="intel-two-column">
             <div className="intel-stack">
-              <Section title="👥 Estado de la base">
+              <Section
+                title="👥 Salud de la base"
+                description="Separa crecimiento, prevención y recuperación para que los conteos no se mezclen."
+              >
                 <div className="intel-bars">
                   <BarRow
                     label="Activas"
                     value={activeStudents}
-                    max={Math.max(students.length, 1)}
+                    max={Math.max(students.length, activeStudents, 1)}
                     display={String(activeStudents)}
                     tone="success"
+                  />
+                  <BarRow
+                    label="Riesgo preventivo"
+                    value={preventiveRiskStudents.length}
+                    max={Math.max(activeStudents, 1)}
+                    display={String(preventiveRiskStudents.length)}
+                    tone="warning"
                   />
                   <BarRow
                     label="Vencidas 7–14 días"
@@ -2698,25 +2734,28 @@ export default async function IntelligencePage({
                     tone="warning"
                   />
                   <BarRow
-                    label="Inactivas"
+                    label="Inactivas 15–29 días"
                     value={inactiveStudents.length}
                     max={Math.max(students.length, 1)}
                     display={String(inactiveStudents.length)}
                     tone="info"
                   />
                   <BarRow
-                    label="Abandono"
+                    label="Churn confirmado 30+ días"
                     value={abandonedStudents.length}
                     max={Math.max(students.length, 1)}
                     display={String(abandonedStudents.length)}
                     tone="danger"
                   />
                 </div>
+                <div className="intel-source-note">
+                  Riesgo preventivo pertenece a la base activa; vencida/inactiva/churn son estados posteriores al vencimiento y no deben sumarse como un único embudo.
+                </div>
               </Section>
 
               <Section
-                title="🚀 Onboarding"
-                description="Progreso real de los pasos necesarios para completar la activación."
+                title="🚀 Onboarding por paso"
+                description="No sólo muestra cumplimiento acumulado: identifica qué paso está bloqueando la continuación."
               >
                 <div className="intel-bars">
                   {onboardingSteps.map(([label, key]) => {
@@ -2728,7 +2767,11 @@ export default async function IntelligencePage({
                         value={completed}
                         max={Math.max(onboardingRows.length, 1)}
                         display={completed + "/" + onboardingRows.length}
-                        tone={completed === onboardingRows.length && onboardingRows.length > 0 ? "success" : "info"}
+                        tone={
+                          completed === onboardingRows.length && onboardingRows.length > 0
+                            ? "success"
+                            : "info"
+                        }
                       />
                     );
                   })}
@@ -2743,29 +2786,45 @@ export default async function IntelligencePage({
               </Section>
 
               <Section
-                title="Frecuencia semanal"
-                description="Asistencias promedio por alumna activa durante el periodo."
+                title="🧩 Cuello de botella de onboarding"
+                description="Cuenta el primer paso pendiente de cada alumna; así sabemos dónde intervenir primero."
               >
-                <div className="intel-frequency-value">
-                  <strong>{weeklyFrequency.toFixed(1)}</strong>
-                  <span>clases / semana</span>
+                <div className="intel-bars">
+                  {onboardingBottleneckRows.length ? (
+                    onboardingBottleneckRows.map((item) => (
+                      <BarRow
+                        key={item.label}
+                        label={item.label}
+                        value={item.count}
+                        max={onboardingBottleneckRows[0]?.count ?? 1}
+                        display={String(item.count)}
+                        tone={
+                          item.label === topOnboardingBottleneck?.label
+                            ? "warning"
+                            : "info"
+                        }
+                      />
+                    ))
+                  ) : (
+                    <p className="intel-empty">No hay pasos de onboarding bloqueados.</p>
+                  )}
                 </div>
               </Section>
             </div>
 
             <div className="intel-stack">
               <Section
-                title="🚨 Requieren seguimiento"
-                description="Tocar una alumna abre directamente su perfil."
+                title="🚨 Alumnas a intervenir"
+                description="Primero prevención; después recuperación. Tocar una alumna abre su perfil."
               >
                 <div className="intel-risk-list">
                   {[
                     ...preventiveRiskStudents,
                     ...[...riskStudents, ...inactiveStudents, ...abandonedStudents].sort(
-                      (a, b) => b.days - a.days,
+                      (a, b) => a.days - b.days,
                     ),
                   ]
-                    .slice(0, 8)
+                    .slice(0, 10)
                     .map((item) => (
                       <Link
                         href={"/admin/alumnas/" + item.id}
@@ -2783,17 +2842,17 @@ export default async function IntelligencePage({
                   !riskStudents.length &&
                   !inactiveStudents.length &&
                   !abandonedStudents.length ? (
-                    <p className="intel-empty">No hay señales de retención que requieran seguimiento.</p>
+                    <p className="intel-empty">No hay señales que requieran seguimiento.</p>
                   ) : null}
                 </div>
               </Section>
 
               <Section
                 title="Onboarding pendiente"
-                description="Ordenado por quienes tienen menos pasos completados."
+                description="Ordenado por menor avance; se muestra el siguiente paso concreto."
               >
                 <div className="intel-risk-list">
-                  {onboardingPending.slice(0, 8).map((item) => (
+                  {onboardingPending.slice(0, 10).map((item) => (
                     <Link
                       href={"/admin/alumnas/" + item.studentId}
                       key={item.studentId}
@@ -2801,14 +2860,39 @@ export default async function IntelligencePage({
                     >
                       <span>
                         <strong>{item.name}</strong>
-                        <small>{item.completed}/6 pasos completados</small>
+                        <small>
+                          {item.completed}/6 · siguiente: {item.nextStep}
+                        </small>
                       </span>
-                      <b>Pendiente</b>
+                      <b>{item.nextStep}</b>
                     </Link>
                   ))}
                   {!onboardingPending.length ? (
                     <p className="intel-empty">No hay onboarding pendiente.</p>
                   ) : null}
+                </div>
+              </Section>
+
+              <Section
+                title="Cómo leer crecimiento"
+                description="No confundimos registros, prospectos y alumnas que realmente compraron."
+              >
+                <div className="intel-insight-list">
+                  <Insight
+                    tone="info"
+                    title="Nueva alumna = primera compra"
+                    body="Sólo cuenta cuando aparece su primera adquisición de paquete o membresía; crear un contacto o una reserva no infla este KPI."
+                  />
+                  <Insight
+                    tone="danger"
+                    title="Churn confirmado = 30 días"
+                    body="Sólo resta del crecimiento cuando transcurrieron 30 días desde vencimiento sin una compra posterior."
+                  />
+                  <Insight
+                    tone="positive"
+                    title="Reactivación ≠ nueva alumna"
+                    body="Si vuelve después de 30 días, se conserva como reactivación; no se vuelve a contar como adquisición nueva."
+                  />
                 </div>
               </Section>
             </div>
