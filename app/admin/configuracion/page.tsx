@@ -17,6 +17,7 @@ const errorCopy: Record<string, string> = {
   logo_upload: "No pudimos subir el logo. Inténtalo nuevamente.",
   identity_save: "No pudimos guardar la identidad del estudio.",
   cutoff: "El límite de cancelación debe estar entre 0 y 168 horas.",
+  minimum_defaults: "Revisa los defaults de mínimo de reservas y penalizaciones.",
   operating_save: "No pudimos guardar la política operativa.",
   regional: "Revisa zona horaria, moneda y locale.",
   regional_save: "No pudimos guardar la configuración regional.",
@@ -44,7 +45,7 @@ export default async function ConfigurationPage({
     ctx.supabase
       .from("studio_operating_policies")
       .select(
-        "cancellation_cutoff_minutes,late_cancellation_consumes_credit,no_show_consumes_credit",
+        "cancellation_cutoff_minutes,late_cancellation_consumes_credit,no_show_consumes_credit,default_minimum_reservations_enabled,default_minimum_reservations,default_minimum_review_minutes_before,default_minimum_override_allowed,unlimited_late_cancellation_penalty_minor,unlimited_no_show_penalty_minor",
       )
       .eq("studio_id", ctx.studio.id)
       .maybeSingle(),
@@ -95,6 +96,23 @@ export default async function ConfigurationPage({
           operatingPolicy?.late_cancellation_consumes_credit ?? true
         }
         noShowConsumesCredit={operatingPolicy?.no_show_consumes_credit ?? true}
+        defaultMinimumReservationsEnabled={
+          operatingPolicy?.default_minimum_reservations_enabled ?? false
+        }
+        defaultMinimumReservations={operatingPolicy?.default_minimum_reservations ?? 2}
+        defaultMinimumReviewMinutesBefore={
+          operatingPolicy?.default_minimum_review_minutes_before ?? 120
+        }
+        defaultMinimumOverrideAllowed={
+          operatingPolicy?.default_minimum_override_allowed ?? true
+        }
+        unlimitedLateCancellationPenaltyMinor={
+          operatingPolicy?.unlimited_late_cancellation_penalty_minor ?? 0
+        }
+        unlimitedNoShowPenaltyMinor={
+          operatingPolicy?.unlimited_no_show_penalty_minor ?? 0
+        }
+        currency={ctx.studio.currency}
       />
 
       <RegionalSettingsForm
