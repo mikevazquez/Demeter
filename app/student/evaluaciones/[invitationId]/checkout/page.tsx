@@ -190,6 +190,7 @@ export default async function EvaluationCheckoutReturnPage({
                   {formatMoney(
                     extraFulfillment.price_minor,
                     extraFulfillment.currency ?? attempt.currency,
+                    studio.locale,
                   )}
                 </span>
               </div>
