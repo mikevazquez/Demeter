@@ -54,10 +54,12 @@ function statusClass(status: string) {
 function ClassRow({
   item,
   timezone,
+  locale,
   showQuickCancel = false,
 }: {
   item: StudentClassFeedItem;
   timezone: string;
+  locale: string;
   showQuickCancel?: boolean;
 }) {
   return (
@@ -75,7 +77,7 @@ function ClassRow({
               {statusCopy[item.status] ?? item.status}
             </span>
           </div>
-          <p className="mt-1 text-xs text-zinc-300">{formatDateTime(item.starts_at, timezone)}</p>
+          <p className="mt-1 text-xs text-zinc-300">{formatDateTime(item.starts_at, timezone, locale)}</p>
           <p className="mt-0.5 truncate text-[11px] text-zinc-500">
             {[item.coach, item.space].filter(Boolean).join(" · ") || item.discipline}
           </p>
@@ -107,10 +109,12 @@ function ClassRow({
 function WaitlistRow({
   item,
   timezone,
+  locale,
   levelTitle,
 }: {
   item: StudentWaitlistItem;
   timezone: string;
+  locale: string;
   levelTitle: string | null;
 }) {
   const priorityLabel =
@@ -126,7 +130,7 @@ function WaitlistRow({
               En lista de espera
             </span>
           </div>
-          <p className="mt-1 text-xs text-zinc-300">{formatDateTime(item.starts_at, timezone)}</p>
+          <p className="mt-1 text-xs text-zinc-300">{formatDateTime(item.starts_at, timezone, locale)}</p>
           <p className="mt-0.5 truncate text-[11px] text-zinc-500">
             {[item.coach, item.space].filter(Boolean).join(" · ") || item.discipline}
           </p>
@@ -276,6 +280,7 @@ export default async function StudentClassesPage({
                     key={item.waitlist_entry_id}
                     item={item}
                     timezone={studio.timezone}
+                    locale={studio.locale}
                     levelTitle={levelTitle}
                   />
                 ))}
@@ -310,7 +315,7 @@ export default async function StudentClassesPage({
                         {nextClass.discipline}
                       </p>
                       <p className="mt-1.5 text-xs text-zinc-300">
-                        {formatDateTime(nextClass.starts_at, studio.timezone)}
+                        {formatDateTime(nextClass.starts_at, studio.timezone, studio.locale)}
                       </p>
                       <p className="mt-0.5 truncate text-[11px] text-zinc-500">
                         {[nextClass.coach, nextClass.space].filter(Boolean).join(" · ") ||
