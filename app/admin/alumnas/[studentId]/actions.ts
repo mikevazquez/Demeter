@@ -424,6 +424,32 @@ export async function deleteStudent(formData: FormData) {
   );
 }
 
+export async function resolveStudentOperatingCharge(formData: FormData) {
+  const studentId = String(formData.get("student_id") ?? "").trim();
+  const chargeId = String(formData.get("charge_id") ?? "").trim();
+  const resolution = String(formData.get("resolution") ?? "").trim();
+  const note = String(formData.get("note") ?? "").trim();
+
+  if (!studentId || !chargeId || !["paid", "waived"].includes(resolution)) {
+    redirect(`/admin/alumnas/${studentId}?view=packages&error=operating_charge`);
+  }
+
+  const { supabase } = await getAdminContext(CAPABILITIES.SALES_WRITE);
+  const { error } = await supabase.rpc("admin_resolve_student_operating_charge", {
+    p_charge_id: chargeId,
+    p_resolution: resolution,
+    p_note: note || null,
+  });
+
+  if (error) {
+    redirect(`/admin/alumnas/${studentId}?view=packages&error=operating_charge`);
+  }
+
+  revalidatePath(`/admin/alumnas/${studentId}`);
+  revalidatePath("/admin");
+  redirect(`/admin/alumnas/${studentId}?view=packages&saved=operating_charge`);
+}
+
 export async function setAcquisitionStartDate(formData: FormData) {
   const studentId = String(formData.get("student_id") ?? "");
   const acquisitionId = String(formData.get("acquisition_id") ?? "");
