@@ -215,7 +215,7 @@ export async function bookStudentSessionAction(formData: FormData) {
 }
 
 function normalizeGuestIdentityName(value: string) {
-  return value.trim().replace(/\s+/g, " ").toLocaleLowerCase("es-MX");
+  return value.trim().replace(/\s+/g, " ").toLowerCase();
 }
 
 function normalizeMexicanPhone(value: string) {
