@@ -803,20 +803,6 @@ export default async function IntelligencePage({
     if (sorted[0]) latestAcquisitionByStudent.set(studentId, sorted[0]);
   }
 
-  const sessionById = new Map(sessions.map((session) => [session.id, session]));
-  const recentAttendanceCutoff = now.getTime() - 14 * DAY;
-  const recentAttendanceStudentIds = new Set(
-    reservations
-      .filter((reservation) => {
-        if (reservation.status !== "attended" || !reservation.student_id) return false;
-        const session = sessionById.get(reservation.session_id);
-        return Boolean(
-          session && new Date(session.starts_at).getTime() >= recentAttendanceCutoff,
-        );
-      })
-      .map((reservation) => reservation.student_id)
-      .filter((value): value is string => Boolean(value)),
-  );
   const upcomingReservedStudentIds = new Set(
     upcomingReservations
       .map((reservation) => reservation.student_id)
@@ -839,12 +825,48 @@ export default async function IntelligencePage({
     if (active[0]) activeAcquisitionByStudent.set(studentId, active[0]);
   }
 
+  const retentionRecentStart = now.getTime() - 14 * DAY;
+  const retentionBaselineStart = now.getTime() - 42 * DAY;
+  const retentionBaselineEnd = retentionRecentStart;
+
+  const retentionAttendedEvents = domainEvents.filter(
+    (event) =>
+      event.event_type === "attendance.finalized" &&
+      eventPayloadText(event, "attendance_status") === "attended",
+  );
+  const retentionNoShowEvents = domainEvents.filter(
+    (event) =>
+      event.event_type === "attendance.finalized" &&
+      eventPayloadText(event, "attendance_status") === "no_show",
+  );
+  const retentionCancellationEvents = domainEvents.filter(
+    (event) =>
+      event.event_type === "booking.cancelled" &&
+      eventPayloadText(event, "to_status") !== "cancelled_by_studio",
+  );
+
+  function studentEventCount(
+    rows: DomainEventRow[],
+    studentId: string,
+    startTime: number,
+    endTime: number,
+  ) {
+    return rows.filter((event) => {
+      if (eventStudentId(event) !== studentId) return false;
+      const eventTime = new Date(event.occurred_at).getTime();
+      return eventTime >= startTime && eventTime < endTime;
+    }).length;
+  }
+
   type RetentionRiskRow = {
     id: string;
     name: string;
     days: number;
+    score: number;
     state: string;
     detail: string;
+    recentWeekly: number;
+    baselineWeekly: number;
   };
 
   const preventiveRiskStudents: RetentionRiskRow[] = [];
@@ -856,23 +878,93 @@ export default async function IntelligencePage({
     const activeAcquisition = activeAcquisitionByStudent.get(student.id);
     const untilExpiry = daysUntil(activeAcquisition?.expires_on ?? null, now);
 
-    if (untilExpiry !== null && untilExpiry >= 0 && untilExpiry <= 7) {
+    if (activeAcquisition) {
+      const recentAttendance = studentEventCount(
+        retentionAttendedEvents,
+        student.id,
+        retentionRecentStart,
+        now.getTime(),
+      );
+      const baselineAttendance = studentEventCount(
+        retentionAttendedEvents,
+        student.id,
+        retentionBaselineStart,
+        retentionBaselineEnd,
+      );
+      const recentWeekly = recentAttendance / 2;
+      const baselineWeekly = baselineAttendance / 4;
+      const frequencyDrop =
+        baselineAttendance >= 4 &&
+        baselineWeekly > 0 &&
+        recentWeekly <= baselineWeekly * 0.5;
+      const recentFriction =
+        studentEventCount(
+          retentionNoShowEvents,
+          student.id,
+          retentionRecentStart,
+          now.getTime(),
+        ) +
+        studentEventCount(
+          retentionCancellationEvents,
+          student.id,
+          retentionRecentStart,
+          now.getTime(),
+        );
+      const acquisitionAgeDays = Math.floor(
+        (now.getTime() - new Date(activeAcquisition.created_at).getTime()) / DAY,
+      );
+      const isNewAcquisition = acquisitionAgeDays < 7;
       const signals: string[] = [];
-      if (!upcomingReservedStudentIds.has(student.id)) signals.push("sin próxima reserva");
-      if (!recentAttendanceStudentIds.has(student.id)) signals.push("14 días sin asistir");
+      let score = 0;
 
-      if (signals.length) {
+      if (untilExpiry !== null && untilExpiry >= 0 && untilExpiry <= 7) {
+        score += 2;
+        signals.push(
+          untilExpiry === 0
+            ? "vence hoy"
+            : "vence en " + untilExpiry + (untilExpiry === 1 ? " día" : " días"),
+        );
+      }
+
+      if (!upcomingReservedStudentIds.has(student.id)) {
+        score += 1;
+        signals.push("sin próxima reserva");
+      }
+
+      if (!isNewAcquisition && recentAttendance === 0) {
+        score += 2;
+        signals.push("14 días sin asistir");
+      } else if (frequencyDrop) {
+        const drop = Math.max(
+          0,
+          Math.round((1 - recentWeekly / Math.max(baselineWeekly, 0.01)) * 100),
+        );
+        score += 2;
+        signals.push("frecuencia cayó " + drop + "%");
+      }
+
+      if (recentFriction >= 2) {
+        score += 1;
+        signals.push(recentFriction + " cancelaciones/no show recientes");
+      }
+
+      const meaningfulBehaviorSignal =
+        recentAttendance === 0 || frequencyDrop || recentFriction >= 2;
+      const shouldFlag =
+        score >= 3 &&
+        (meaningfulBehaviorSignal ||
+          (untilExpiry !== null && untilExpiry >= 0 && untilExpiry <= 7));
+
+      if (shouldFlag) {
         preventiveRiskStudents.push({
           id: student.id,
           name: student.full_name,
-          days: untilExpiry,
-          state: "Riesgo preventivo",
-          detail:
-            (untilExpiry === 0
-              ? "Vence hoy"
-              : "Vence en " + untilExpiry + (untilExpiry === 1 ? " día" : " días")) +
-            " · " +
-            signals.join(" · "),
+          days: untilExpiry ?? 999,
+          score,
+          state: score >= 5 ? "Alta prioridad" : "Vigilar",
+          detail: signals.join(" · "),
+          recentWeekly,
+          baselineWeekly,
         });
       }
     }
@@ -880,34 +972,38 @@ export default async function IntelligencePage({
     const latest = latestAcquisitionByStudent.get(student.id);
     const elapsed = daysSince(latest?.expires_on ?? null, now);
     if (elapsed === null || elapsed < 7) continue;
+    const recoveryRow = {
+      id: student.id,
+      name: student.full_name,
+      days: elapsed,
+      score: elapsed >= 30 ? 5 : elapsed >= 15 ? 4 : 3,
+      recentWeekly: 0,
+      baselineWeekly: 0,
+    };
     if (elapsed >= 30) {
       abandonedStudents.push({
-        id: student.id,
-        name: student.full_name,
-        days: elapsed,
+        ...recoveryRow,
         state: "Abandono",
         detail: elapsed + " días desde vencimiento",
       });
     } else if (elapsed >= 15) {
       inactiveStudents.push({
-        id: student.id,
-        name: student.full_name,
-        days: elapsed,
+        ...recoveryRow,
         state: "Inactiva",
         detail: elapsed + " días desde vencimiento",
       });
     } else {
       riskStudents.push({
-        id: student.id,
-        name: student.full_name,
-        days: elapsed,
+        ...recoveryRow,
         state: "Vencida reciente",
         detail: elapsed + " días desde vencimiento",
       });
     }
   }
 
-  preventiveRiskStudents.sort((a, b) => a.days - b.days || a.name.localeCompare(b.name));
+  preventiveRiskStudents.sort(
+    (a, b) => b.score - a.score || a.days - b.days || a.name.localeCompare(b.name),
+  );
 
   const currentSessions = sessions.filter((item) =>
     isBetween(item.starts_at, currentStart, currentEnd),
