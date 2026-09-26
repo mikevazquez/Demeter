@@ -1782,6 +1782,82 @@ export default async function IntelligencePage({
     });
   }
 
+  const paidCampaignWithoutConversion = [...currentMarketingRows]
+    .filter((row) => row.spend > 0 && row.contacts >= 5 && row.converted === 0)
+    .sort((a, b) => b.spend - a.spend)[0];
+  const efficientCampaign = [...currentMarketingRows]
+    .filter(
+      (row) =>
+        row.spend > 0 &&
+        row.contacts >= 5 &&
+        row.converted >= 2 &&
+        row.roas !== null &&
+        row.roas >= 1.5,
+    )
+    .sort((a, b) => (b.roas ?? 0) - (a.roas ?? 0))[0];
+
+  if (unattributedMarketingSpend > 0) {
+    decisions.push({
+      key: "marketing-spend-unattributed",
+      priority: 2,
+      tone: "warning",
+      title: "Asignar gasto publicitario a campaña",
+      evidence:
+        money(unattributedMarketingSpend, studio.currency) +
+        " de publicidad no tienen origen/campaña y no pueden calcular retorno.",
+      action: "Editar el registro del gasto usando los mismos nombres que llegan desde Asistian.",
+      href: viewHref("marketing", days),
+    });
+  }
+
+  if (unattributedMarketingContacts >= 3) {
+    decisions.push({
+      key: "marketing-contacts-unattributed",
+      priority: 3,
+      tone: "info",
+      title: "Mejorar atribución de prospectos",
+      evidence:
+        unattributedMarketingContacts +
+        " contactos del periodo llegaron sin origen/campaña identificable.",
+      action: "Enviar source y campaign en conversation_activity para no perder el origen del lead.",
+      href: viewHref("marketing", days),
+    });
+  }
+
+  if (paidCampaignWithoutConversion) {
+    decisions.push({
+      key: "marketing-paid-no-conversion-" + paidCampaignWithoutConversion.key,
+      priority: 2,
+      tone: "danger",
+      title: "Revisar " + paidCampaignWithoutConversion.label,
+      evidence:
+        money(paidCampaignWithoutConversion.spend, studio.currency) +
+        " de gasto, " +
+        paidCampaignWithoutConversion.contacts +
+        " contactos y ninguna alumna convertida al corte.",
+      action: "Revisar calidad del lead y el punto del embudo antes de aumentar presupuesto.",
+      href: viewHref("marketing", days),
+    });
+  }
+
+  if (efficientCampaign) {
+    decisions.push({
+      key: "marketing-efficient-" + efficientCampaign.key,
+      priority: 3,
+      tone: "positive",
+      title: "Señal positiva en " + efficientCampaign.label,
+      evidence:
+        efficientCampaign.converted +
+        " alumnas convertidas y ROAS atribuido de " +
+        (efficientCampaign.roas ?? 0).toFixed(1) +
+        "× con " +
+        efficientCampaign.contacts +
+        " contactos.",
+      action: "Validar que la calidad se sostenga antes de escalar presupuesto gradualmente.",
+      href: viewHref("marketing", days),
+    });
+  }
+
   if (attendanceDecisionSample >= 5 && showRateDrop >= 5) {
     decisions.push({
       key: "conversion-show-rate",
