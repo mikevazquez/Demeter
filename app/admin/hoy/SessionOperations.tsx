@@ -146,12 +146,12 @@ export function SessionOperations({
                     : created === "paid-attendance"
                       ? "Pago y asistencia registrados correctamente."
                       : created === "walkin"
-                      ? "Walk-in registrada y agregada a la clase."
-                      : created === "walkin-existing"
-                        ? "Alumna agregada a la clase."
-                        : created === "cancel"
-                          ? "Reserva cancelada correctamente."
-                          : "Reserva creada correctamente.",
+                        ? "Walk-in registrada y agregada a la clase."
+                        : created === "walkin-existing"
+                          ? "Alumna agregada a la clase."
+                          : created === "cancel"
+                            ? "Reserva cancelada correctamente."
+                            : "Reserva creada correctamente.",
           });
         }
       } else if (error) {
@@ -175,12 +175,12 @@ export function SessionOperations({
                           : error === "reservation_not_asistian"
                             ? "La reserva no corresponde a una entrada desde Asistian."
                             : error === "phone_exists"
-                  ? "Ese teléfono ya pertenece a una alumna. Agrégala como alumna existente."
-                  : error === "session_full"
-                    ? "La clase ya está llena."
-                    : error === "enrollment_required"
-                      ? "La alumna necesita una inscripción vigente para reservar esta clase."
-                      : "No se pudo completar la operación.",
+                              ? "Ese teléfono ya pertenece a una alumna. Agrégala como alumna existente."
+                              : error === "session_full"
+                                ? "La clase ya está llena."
+                                : error === "enrollment_required"
+                                  ? "La alumna necesita una inscripción vigente para reservar esta clase."
+                                  : "No se pudo completar la operación.",
         });
       }
     });

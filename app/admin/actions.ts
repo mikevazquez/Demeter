@@ -216,7 +216,9 @@ export async function recordPendingClassPaymentAndAttendanceFromToday(formData: 
   const sessionId = String(formData.get("session_id") ?? "");
   const reservationId = String(formData.get("reservation_id") ?? "");
   const returnDate = String(formData.get("return_date") ?? "");
-  const paymentMethod = String(formData.get("payment_method") ?? "").trim().toLowerCase();
+  const paymentMethod = String(formData.get("payment_method") ?? "")
+    .trim()
+    .toLowerCase();
   const paymentReference = String(formData.get("payment_reference") ?? "").trim();
   const paymentMinor = moneyToMinor(String(formData.get("payment_amount") ?? ""));
   const returnUrl = operationReturnUrl(formData, returnDate, sessionId);
@@ -258,11 +260,7 @@ export async function recordPendingClassPaymentAndAttendanceFromToday(formData: 
     commercial_status?: string;
   };
 
-  if (
-    result.ok !== true ||
-    result.status !== "attended" ||
-    result.commercial_status !== "paid"
-  ) {
+  if (result.ok !== true || result.status !== "attended" || result.commercial_status !== "paid") {
     redirect(withQuery(returnUrl, "error", "attendance_payment_not_persisted"));
   }
 

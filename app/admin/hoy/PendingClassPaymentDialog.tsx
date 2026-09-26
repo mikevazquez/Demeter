@@ -65,7 +65,12 @@ export function PendingClassPaymentDialog({
               guardarán juntos.
             </p>
           </div>
-          <button type="button" className="today-payment-close" onClick={onClose} aria-label="Cerrar">
+          <button
+            type="button"
+            className="today-payment-close"
+            onClick={onClose}
+            aria-label="Cerrar"
+          >
             ×
           </button>
         </header>

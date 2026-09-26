@@ -254,7 +254,9 @@ export default async function AdminPage({
       sessionIds.length
         ? supabase
             .from("reservations")
-            .select("id,session_id,student_id,guest_person_id,status,acquisition_id,booked_at,commercial_status")
+            .select(
+              "id,session_id,student_id,guest_person_id,status,acquisition_id,booked_at,commercial_status",
+            )
             .in("session_id", sessionIds)
             .in("status", ["reserved", "attended", "no_show"])
             .order("booked_at")

@@ -35,9 +35,7 @@ describe("Asistian pending payment attendance", () => {
   });
 
   it("records sale, payment and attendance atomically in the database", () => {
-    const migration = source(
-      "supabase/migrations/20260926002754_asistian_attendance_payment.sql",
-    );
+    const migration = source("supabase/migrations/20260926002754_asistian_attendance_payment.sql");
 
     expect(migration).toContain("record_asistian_class_payment_and_attendance");
     expect(migration).toContain("payments_reservation_direct_payment_unique");
@@ -50,9 +48,7 @@ describe("Asistian pending payment attendance", () => {
   });
 
   it("blocks bypassing the payment through another attendance path", () => {
-    const migration = source(
-      "supabase/migrations/20260926002754_asistian_attendance_payment.sql",
-    );
+    const migration = source("supabase/migrations/20260926002754_asistian_attendance_payment.sql");
     const actions = source("app/admin/actions.ts");
 
     expect(migration).toContain("enforce_asistian_payment_before_attendance");
