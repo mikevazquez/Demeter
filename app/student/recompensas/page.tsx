@@ -57,7 +57,7 @@ export default async function StudentProgressPage() {
     !ctx.onboarding.access_acknowledged_at &&
     ctx.onboarding.access_method !== "legacy"
   ) {
-    return <MedalsAccessUnlocked />;
+    return <MedalsAccessUnlocked studioName={ctx.studio.name} />;
   }
 
   const activePrograms = ctx.programParticipations
