@@ -1479,6 +1479,24 @@ export default async function IntelligencePage({
                       href={viewHref("conversion", days)}
                     />
                   ) : null}
+                  {previousConversationCohort.contacts >= 3 &&
+                  currentConversationCohort.contacts >= 3 &&
+                  currentConversationCohort.conversationToBookingRate + 5 <
+                    previousConversationCohort.conversationToBookingRate ? (
+                    <Insight
+                      tone="danger"
+                      title="📉 Cayó conversación → reserva"
+                      body={
+                        "Bajó " +
+                        (
+                          previousConversationCohort.conversationToBookingRate -
+                          currentConversationCohort.conversationToBookingRate
+                        ).toFixed(1) +
+                        " pp frente al periodo anterior. Revisa origen, horarios y seguimiento."
+                      }
+                      href={viewHref("conversion", days)}
+                    />
+                  ) : null}
                   {missingCancellationReasonCount > 0 ? (
                     <Insight
                       tone="warning"
@@ -1513,41 +1531,50 @@ export default async function IntelligencePage({
 
             <div className="intel-stack">
               <Section
-                title="🎯 Cohorte de adquisición"
-                description="Cada paso pertenece a las mismas personas registradas como prospectos de prueba en el periodo."
+                title="🎯 Adquisición desde conversación"
+                description="Las mismas personas avanzando desde conversación hasta compra."
               >
                 <div className="intel-bars">
                   <BarRow
-                    label="Prospectos de prueba"
-                    value={currentAcquisitionCohort.total}
-                    max={Math.max(currentAcquisitionCohort.total, 1)}
-                    display={String(currentAcquisitionCohort.total)}
+                    label="Conversaciones"
+                    value={currentConversationCohort.conversations}
+                    max={Math.max(currentConversationCohort.conversations, 1)}
+                    display={String(currentConversationCohort.conversations)}
+                    tone="info"
+                  />
+                  <BarRow
+                    label="Contactos únicos"
+                    value={currentConversationCohort.contacts}
+                    max={Math.max(currentConversationCohort.conversations, 1)}
+                    display={String(currentConversationCohort.contacts)}
                     tone="info"
                   />
                   <BarRow
                     label="Reservaron"
-                    value={currentAcquisitionCohort.booked}
-                    max={Math.max(currentAcquisitionCohort.total, 1)}
-                    display={String(currentAcquisitionCohort.booked)}
-                    tone="info"
-                  />
-                  <BarRow
-                    label="Asistieron"
-                    value={currentAcquisitionCohort.attended}
-                    max={Math.max(currentAcquisitionCohort.total, 1)}
-                    display={String(currentAcquisitionCohort.attended)}
-                    tone="info"
+                    value={currentConversationCohort.booked}
+                    max={Math.max(currentConversationCohort.contacts, 1)}
+                    display={String(currentConversationCohort.booked)}
+                    tone="accent"
                   />
                   <BarRow
                     label="Compraron paquete / membresía"
-                    value={currentAcquisitionCohort.converted}
-                    max={Math.max(currentAcquisitionCohort.total, 1)}
-                    display={String(currentAcquisitionCohort.converted)}
+                    value={currentConversationCohort.converted}
+                    max={Math.max(currentConversationCohort.contacts, 1)}
+                    display={
+                      currentConversationCohort.converted +
+                      " · " +
+                      pct(currentConversationCohort.conversationToConversionRate)
+                    }
                     tone="success"
                   />
                 </div>
                 <div className="intel-source-note">
-                  Falta anteponer conversaciones de Asistian para completar conversación → reserva.
+                  {currentConversationCohort.conversations > 0
+                    ? "Conversación → reserva: " +
+                      pct(currentConversationCohort.conversationToBookingRate) +
+                      " · Conversación → alumna: " +
+                      pct(currentConversationCohort.conversationToConversionRate)
+                    : "La integración está lista; falta que Asistian empiece a enviar conversation_activity."}
                 </div>
               </Section>
 
