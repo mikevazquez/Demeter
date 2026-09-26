@@ -5,11 +5,11 @@ import { CAPABILITIES } from "@/lib/auth/capabilities";
 
 const DAYS = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
 
-function formatMoney(minor: number | null) {
+function formatMoney(minor: number | null, locale: string, currency: string) {
   if (minor == null) return null;
-  return new Intl.NumberFormat("es-MX", {
+  return new Intl.NumberFormat(locale, {
     style: "currency",
-    currency: "MXN",
+    currency,
     maximumFractionDigits: 0,
   }).format(minor / 100);
 }
@@ -130,7 +130,7 @@ export default async function ActivitiesPage() {
                     <span>{activity.capacity} lugares</span>
                     {activity.requires_resource ? <b>Recurso</b> : null}
                     {activity.drop_in_price_minor != null ? (
-                      <b>{formatMoney(activity.drop_in_price_minor)} individual</b>
+                      <b>{formatMoney(activity.drop_in_price_minor, studio.locale, studio.currency)} individual</b>
                     ) : (
                       <b>Solo créditos</b>
                     )}
