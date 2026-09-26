@@ -27,6 +27,8 @@ export const CAPABILITIES = {
   WAITLIST_USE: "waitlist.use",
   INTEGRATIONS_READ: "integrations.read",
   INTEGRATIONS_MANAGE: "integrations.manage",
+  NOTIFICATIONS_READ: "notifications.read",
+  NOTIFICATIONS_MANAGE: "notifications.manage",
   SETTINGS_WRITE: "settings.write",
   STUDENT_PORTAL: "student.portal",
   STUDENT_PROFILE_SELF: "student.profile.self",
