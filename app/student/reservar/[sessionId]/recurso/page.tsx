@@ -7,6 +7,7 @@ import {
   localDateKey,
   type StudentSession,
 } from "@/lib/student/portal";
+import { STUDIO_MODULES } from "@/lib/auth/modules";
 
 import ResourcePicker, {
   type StudentMapElement,
@@ -42,7 +43,15 @@ export default async function StudentResourceSelectionPage({
 }) {
   const { sessionId } = await params;
   const query = await searchParams;
-  const { supabase, studio } = await getStudentPortalContext();
+  const { supabase, studio, hasModule } = await getStudentPortalContext();
+
+  if (!hasModule(STUDIO_MODULES.RESOURCES)) {
+    const dateQuery =
+      query.date && /^\d{4}-\d{2}-\d{2}$/.test(query.date)
+        ? `?date=${encodeURIComponent(query.date)}`
+        : "";
+    redirect(`/student/reservar/${sessionId}/confirmar${dateQuery}`);
+  }
 
   const [{ data: sessionData, error: sessionError }, { data: resourceData, error: resourceError }] =
     await Promise.all([

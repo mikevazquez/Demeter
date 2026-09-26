@@ -9,6 +9,7 @@ import {
   localDateKey,
   type StudentSession,
 } from "@/lib/student/portal";
+import { STUDIO_MODULES } from "@/lib/auth/modules";
 
 import PurchaseSingleClassButton from "../PurchaseSingleClassButton";
 import WaitlistControl from "../WaitlistControl";
@@ -45,7 +46,9 @@ export default async function StudentSessionDetailPage({
 }) {
   const { sessionId } = await params;
   const query = await searchParams;
-  const { supabase, studio, membership } = await getStudentPortalContext();
+  const { supabase, studio, membership, hasModule } = await getStudentPortalContext();
+  const resourcesEnabled = hasModule(STUDIO_MODULES.RESOURCES);
+  const waitlistEnabled = hasModule(STUDIO_MODULES.WAITLIST);
   const { data, error } = await supabase.rpc("student_session_detail", {
     target_session_id: sessionId,
   });
@@ -63,7 +66,9 @@ export default async function StudentSessionDetailPage({
     .maybeSingle();
   const activityColor = activityStyle?.color_hex ?? "#FF0A8A";
   const [{ data: waitlistData }, { data: rewardStatusData }] = await Promise.all([
-    supabase.rpc("student_waitlist_feed"),
+    waitlistEnabled
+      ? supabase.rpc("student_waitlist_feed")
+      : Promise.resolve({ data: [] }),
     supabase.rpc("student_reward_status_snapshot"),
   ]);
   const waitlisted = ((waitlistData ?? []) as StudentWaitlistItem[]).some(
@@ -191,16 +196,19 @@ export default async function StudentSessionDetailPage({
         <section className="rounded-3xl border border-amber-400/25 bg-amber-400/[0.06] p-5">
           <p className="text-sm font-semibold text-amber-100">Esta clase está llena</p>
           <p className="mt-1.5 text-xs leading-5 text-zinc-400">
-            Puedes entrar a la lista de espera. La prioridad se aplica automáticamente según tu
-            nivel vigente.
+            {waitlistEnabled
+              ? "Puedes entrar a la lista de espera. La prioridad se aplica automáticamente según tu nivel vigente."
+              : "No hay lugares disponibles en este momento."}
           </p>
-          <div className="mt-4">
-            <WaitlistControl
-              sessionId={session.session_id}
-              initialWaitlisted={waitlisted}
-              levelTitle={levelTitle}
-            />
-          </div>
+          {waitlistEnabled ? (
+            <div className="mt-4">
+              <WaitlistControl
+                sessionId={session.session_id}
+                initialWaitlisted={waitlisted}
+                levelTitle={levelTitle}
+              />
+            </div>
+          ) : null}
         </section>
       ) : eligible ? (
         <section className="rounded-3xl border border-white/10 bg-white/[0.03] p-4">
@@ -211,13 +219,13 @@ export default async function StudentSessionDetailPage({
           </p>
           <Link
             href={
-              session.requires_resource
+              resourcesEnabled && session.requires_resource
                 ? `/student/reservar/${session.session_id}/recurso?date=${returnDate}`
                 : `/student/reservar/${session.session_id}/confirmar?date=${returnDate}`
             }
             className="mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-2xl bg-fuchsia-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-fuchsia-500"
           >
-            {session.requires_resource ? "Seleccionar recurso" : "Reservar clase"}
+            {resourcesEnabled && session.requires_resource ? "Seleccionar recurso" : "Reservar clase"}
           </Link>
         </section>
       ) : (

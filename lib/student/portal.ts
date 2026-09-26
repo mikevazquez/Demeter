@@ -4,6 +4,7 @@ import { cache } from "react";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
+import { type StudioModule } from "@/lib/auth/modules";
 import { STUDIO_CONTEXT_COOKIE } from "@/lib/auth/studio-context-cookie";
 import { createClient } from "@/lib/supabase/server";
 
@@ -206,16 +207,31 @@ export const getStudentPortalContext = cache(async () => {
     redirect("/login/student/seleccionar?error=access");
   }
 
-  const [{ data: snapshot, error }, { data: studio }] = await Promise.all([
+  const [
+    { data: snapshot, error },
+    { data: studio },
+    { data: effectiveModules, error: modulesError },
+  ] = await Promise.all([
     supabase.rpc("student_portal_snapshot"),
     supabase
       .from("studios")
       .select("name,timezone,locale,currency,phone_country_calling_code")
       .eq("id", membership.studio_id)
       .maybeSingle(),
+    supabase.rpc("current_studio_modules", {
+      p_studio_id: membership.studio_id,
+    }),
   ]);
 
-  if (error || !snapshot || !studio) redirect("/login/student?error=access");
+  if (error || modulesError || !snapshot || !studio) {
+    redirect("/login/student?error=access");
+  }
+
+  const modules = new Set(
+    (effectiveModules ?? []).map(
+      (item: { module_key: string }) => item.module_key as StudioModule,
+    ),
+  );
 
   const baseSnapshot = snapshot as StudentSnapshot;
   const productIds = [...new Set(baseSnapshot.acquisitions.map((item) => item.product_id))];
@@ -241,6 +257,10 @@ export const getStudentPortalContext = cache(async () => {
     account,
     membership,
     studio,
+    modules,
+    hasModule(module: StudioModule) {
+      return modules.has(module);
+    },
     snapshot: enrichedSnapshot,
   };
 });
