@@ -14,7 +14,7 @@ export default async function StudentGuardianPage({
 }) {
   const query = await searchParams;
   const returnTo = safeReservationReturnTo(query.returnTo);
-  const { supabase, snapshot, membership } = await getStudentPortalContext();
+  const { supabase, snapshot, membership, studio } = await getStudentPortalContext();
   const studentId = snapshot.profile.student_id;
 
   const [{ data: guardians }, { data: invitations }] = await Promise.all([
