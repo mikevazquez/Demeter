@@ -68,6 +68,12 @@ const items: MoreItem[] = [
     ownerOnly: true,
   },
   {
+    title: "Suscripción",
+    description: "Plan, estado de acceso, trial, periodo y pagos pendientes.",
+    href: "/admin/suscripcion",
+    ownerOnly: true,
+  },
+  {
     title: "Configuración",
     description: "Identidad pública y preferencias del estudio.",
     href: "/admin/configuracion",
