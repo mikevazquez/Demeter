@@ -111,7 +111,7 @@ async function loadContext(adminClient: SupabaseClient, reservationId: string) {
       .maybeSingle(),
     adminClient
       .from("studios")
-      .select("id,name,timezone")
+      .select("id,name,timezone,locale")
       .eq("id", reservation.studio_id)
       .maybeSingle(),
   ]);
@@ -370,6 +370,7 @@ const handler = {
       discipline: contextData.discipline?.name ?? contextData.template?.name ?? "",
       startsAt: contextData.session?.starts_at ?? contextData.event.occurred_at,
       timeZone: contextData.studio?.timezone ?? "UTC",
+      locale: contextData.studio?.locale ?? "es-MX",
       coach: contextData.coach,
       location: contextData.location,
       creditsRemaining: contextData.creditsRemaining,
