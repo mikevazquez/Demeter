@@ -27,19 +27,20 @@ type Props = {
   classes: ClassEvent[];
   editable: boolean;
   timeZone: string;
+  locale: string;
 };
 
-function formatDate(value: string | null) {
+function formatDate(value: string | null, locale: string) {
   if (!value) return "Sin fecha";
-  return new Intl.DateTimeFormat("es-MX", {
+  return new Intl.DateTimeFormat(locale, {
     day: "numeric",
     month: "short",
     year: "numeric",
   }).format(new Date(value + "T12:00:00Z"));
 }
 
-function formatClassDate(value: string, timeZone: string) {
-  return new Intl.DateTimeFormat("es-MX", {
+function formatClassDate(value: string, timeZone: string, locale: string) {
+  return new Intl.DateTimeFormat(locale, {
     timeZone,
     day: "numeric",
     month: "short",
@@ -75,6 +76,7 @@ export default function StudentPackageCard({
   classes,
   editable,
   timeZone,
+  locale,
 }: Props) {
   const eyebrow =
     kind === "current"
@@ -92,9 +94,9 @@ export default function StudentPackageCard({
             <h3>{acquisition.name}</h3>
             <span>
               {acquisition.startsOn && acquisition.expiresOn
-                ? formatDate(acquisition.startsOn) + " → " + formatDate(acquisition.expiresOn)
+                ? formatDate(acquisition.startsOn, locale) + " → " + formatDate(acquisition.expiresOn, locale)
                 : acquisition.startsOn
-                  ? "Inicia " + formatDate(acquisition.startsOn)
+                  ? "Inicia " + formatDate(acquisition.startsOn, locale)
                   : kind === "scheduled"
                     ? "Inicio programado"
                     : "Sin vigencia registrada"}
@@ -120,11 +122,11 @@ export default function StudentPackageCard({
         <div className="profile360-package-facts">
           <div>
             <span>Inicio</span>
-            <strong>{formatDate(acquisition.startsOn)}</strong>
+            <strong>{formatDate(acquisition.startsOn, locale)}</strong>
           </div>
           <div>
             <span>Vencimiento</span>
-            <strong>{formatDate(acquisition.expiresOn)}</strong>
+            <strong>{formatDate(acquisition.expiresOn, locale)}</strong>
           </div>
           <div>
             <span>Créditos</span>
@@ -210,7 +212,7 @@ export default function StudentPackageCard({
                   <div key={event.id} className="profile360-package-class-row">
                     <div>
                       <strong>{event.className}</strong>
-                      <span>{formatClassDate(event.startsAt, timeZone)}</span>
+                      <span>{formatClassDate(event.startsAt, timeZone, locale)}</span>
                     </div>
                     <div>
                       <strong>{classStatusLabel(event.status)}</strong>
