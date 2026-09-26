@@ -546,9 +546,6 @@ export default async function IntelligencePage({
   const currentRefunds = currentPayments
     .filter((item) => item.kind === "refund")
     .reduce((sum, item) => sum + item.amount_minor, 0);
-  const previousRefunds = previousPayments
-    .filter((item) => item.kind === "refund")
-    .reduce((sum, item) => sum + item.amount_minor, 0);
   const ticketAverage =
     currentSales.length > 0
       ? currentSales.reduce((sum, item) => sum + item.total_minor, 0) / currentSales.length
@@ -557,30 +554,6 @@ export default async function IntelligencePage({
     previousSales.length > 0
       ? previousSales.reduce((sum, item) => sum + item.total_minor, 0) / previousSales.length
       : 0;
-
-  const paymentBySale = new Map<string, number>();
-  for (const payment of payments) {
-    paymentBySale.set(
-      payment.sale_id,
-      (paymentBySale.get(payment.sale_id) ?? 0) +
-        (payment.kind === "refund" ? -payment.amount_minor : payment.amount_minor),
-    );
-  }
-
-  const collectibleBySale = new Map<string, number>();
-  for (const line of saleLines) {
-    if (line.refunded_at) continue;
-    collectibleBySale.set(
-      line.sale_id,
-      (collectibleBySale.get(line.sale_id) ?? 0) + line.line_total_minor,
-    );
-  }
-
-  const pendingCurrent = currentSales.reduce((sum, sale) => {
-    const collectible = collectibleBySale.get(sale.id) ?? sale.total_minor;
-    const paid = paymentBySale.get(sale.id) ?? 0;
-    return sum + Math.max(collectible - paid, 0);
-  }, 0);
 
   const collectionPaymentBySale = new Map<string, number>();
   for (const payment of collectionPayments) {
@@ -824,8 +797,6 @@ export default async function IntelligencePage({
   const trialPreviousConverted = trialPrevious.filter(
     (item) => item.trial_status === "converted",
   ).length;
-  const trialConversion = safeRate(trialConverted, trialAttended);
-  const previousTrialConversion = safeRate(trialPreviousConverted, trialPreviousAttended);
 
   const currentDomainEvents = domainEvents.filter((event) =>
     isBetween(event.occurred_at, currentStart, currentEnd),
