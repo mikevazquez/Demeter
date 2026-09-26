@@ -3,8 +3,8 @@ import Link from "next/link";
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 
-function money(value: number, currency: string) {
-  return new Intl.NumberFormat("es-MX", { style: "currency", currency }).format(value / 100);
+function money(value: number, currency: string, locale: string) {
+  return new Intl.NumberFormat(locale, { style: "currency", currency }).format(value / 100);
 }
 
 function paymentState(
@@ -34,7 +34,7 @@ export default async function SalesPage({
 }) {
   const ctx = await getAdminContext(CAPABILITIES.SALES_READ);
   const params = await searchParams;
-  const query = (params.q ?? "").trim().toLocaleLowerCase("es-MX");
+  const query = (params.q ?? "").trim().toLocaleLowerCase(ctx.studio.locale);
   const statusFilter = params.status ?? "all";
 
   const { data: sales } = await ctx.supabase
@@ -96,12 +96,12 @@ export default async function SalesPage({
       grossPaid,
       refunded,
       sale.status,
-    ).label.toLocaleLowerCase("es-MX");
+    ).label.toLocaleLowerCase(ctx.studio.locale);
     const studentName = studentMap.get(sale.student_id) ?? "Alumna";
     const matchesQuery =
       !query ||
-      sale.folio.toLocaleLowerCase("es-MX").includes(query) ||
-      studentName.toLocaleLowerCase("es-MX").includes(query);
+      sale.folio.toLocaleLowerCase(ctx.studio.locale).includes(query) ||
+      studentName.toLocaleLowerCase(ctx.studio.locale).includes(query);
     const matchesStatus = statusFilter === "all" || state === statusFilter;
     return matchesQuery && matchesStatus;
   });
@@ -195,13 +195,13 @@ export default async function SalesPage({
                     {studentMap.get(sale.student_id) ?? "Alumna"}
                   </span>
                   <span className="text-sm text-zinc-300">
-                    {money(sale.total_minor, sale.currency)}
+                    {money(sale.total_minor, sale.currency, ctx.studio.locale)}
                   </span>
                   <span className="text-sm text-zinc-300">
-                    {money(netCollected, sale.currency)}
+                    {money(netCollected, sale.currency, ctx.studio.locale)}
                   </span>
                   <span className="text-sm font-medium text-white">
-                    {money(balance, sale.currency)}
+                    {money(balance, sale.currency, ctx.studio.locale)}
                   </span>
                   <span className={`w-fit rounded-full px-2.5 py-1 text-xs ${state.className}`}>
                     {state.label}
