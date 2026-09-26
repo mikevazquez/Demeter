@@ -477,8 +477,7 @@ export default async function IntelligencePage({
       .select("id,student_id,folio,status,total_minor,currency,created_at,payment_due_on")
       .eq("studio_id", studio.id)
       .eq("status", "confirmed")
-      .not("payment_due_on", "is", null)
-      .order("payment_due_on", { ascending: true }),
+      .order("payment_due_on", { ascending: true, nullsFirst: false }),
   ]);
 
   const students = (studentsResult.data ?? []) as StudentRow[];
@@ -1382,8 +1381,8 @@ export default async function IntelligencePage({
               value={money(collectionPending, studio.currency)}
               delta={
                 collectionOpenRows.length > 0
-                  ? collectionOpenRows.length + " promesas abiertas"
-                  : "Sin promesas pendientes"
+                  ? collectionOpenRows.length + " saldos abiertos"
+                  : "Sin saldos pendientes"
               }
               tone={collectionPending > 0 ? "warning" : "positive"}
             />
@@ -1398,7 +1397,7 @@ export default async function IntelligencePage({
               value={money(collectionOverdueAmount, studio.currency)}
               delta={
                 collectionOverdueRows.length > 0
-                  ? collectionOverdueRows.length + " promesas vencidas"
+                  ? collectionOverdueRows.length + " compromisos vencidos"
                   : "Sin vencidos"
               }
               tone={collectionOverdueAmount > 0 ? "danger" : "positive"}
@@ -1504,8 +1503,8 @@ export default async function IntelligencePage({
               </Section>
 
               <Section
-                title="Promesas de pago abiertas"
-                description="No dependen del filtro de 7/30/90 días."
+                title="Saldos de cobranza abiertos"
+                description="Incluye saldos con y sin fecha de promesa; no depende del filtro de 7/30/90 días."
               >
                 <div className="intel-risk-list">
                   {collectionOpenRows.slice(0, 8).map((sale) => {
@@ -1537,7 +1536,7 @@ export default async function IntelligencePage({
                     );
                   })}
                   {!collectionOpenRows.length ? (
-                    <p className="intel-empty">No hay promesas de pago con saldo abierto.</p>
+                    <p className="intel-empty">No hay saldos de cobranza abiertos.</p>
                   ) : null}
                 </div>
               </Section>
