@@ -208,7 +208,7 @@ export default async function AdminPage({
   const [
     { data: selectedSessions },
     { count: activeStudents },
-    { data: selectedSales },
+    { data: selectedPayments },
     { data: students },
   ] = await Promise.all([
     supabase
@@ -226,11 +226,10 @@ export default async function AdminPage({
       .eq("studio_id", studio.id)
       .eq("active", true),
     supabase
-      .from("sales")
-      .select("total_minor,status")
+      .from("payments")
+      .select("amount_minor,kind")
       .eq("studio_id", studio.id)
-      .gte("created_at", selectedStart.toISOString())
-      .lt("created_at", selectedEnd.toISOString()),
+      .eq("effective_on", selectedKey),
     supabase
       .from("students")
       .select("id,full_name")
@@ -526,13 +525,16 @@ export default async function AdminPage({
   const dailyReservationPercentage =
     totalDailyCapacity > 0 ? Math.round((totalDailyReservations / totalDailyCapacity) * 100) : 0;
 
-  const visibleSales = (selectedSales ?? []).filter((sale) => sale.status !== "voided");
-  const salesTotalMinor = visibleSales.reduce((sum, sale) => sum + (sale.total_minor ?? 0), 0);
-  const salesTotal = new Intl.NumberFormat("es-MX", {
+  const collectedTotalMinor = (selectedPayments ?? []).reduce(
+    (sum, payment) =>
+      sum + (payment.kind === "refund" ? -(payment.amount_minor ?? 0) : (payment.amount_minor ?? 0)),
+    0,
+  );
+  const collectedTotal = new Intl.NumberFormat("es-MX", {
     style: "currency",
     currency: studio.currency ?? "MXN",
     maximumFractionDigits: 0,
-  }).format(salesTotalMinor / 100);
+  }).format(collectedTotalMinor / 100);
 
   return (
     <main className="dashboard-shell hoy-dashboard hoy-approved">
@@ -632,8 +634,8 @@ export default async function AdminPage({
               <KpiIcon kind="sales" />
             </span>
             <span>
-              <small>{selectedKey === todayKey ? "Ventas hoy" : "Ventas del día"}</small>
-              <strong>{salesTotal}</strong>
+              <small>{selectedKey === todayKey ? "Cobros hoy" : "Cobros del día"}</small>
+              <strong>{collectedTotal}</strong>
             </span>
             <b aria-hidden="true">›</b>
           </Link>
@@ -643,8 +645,8 @@ export default async function AdminPage({
               <KpiIcon kind="sales" />
             </span>
             <span>
-              <small>{selectedKey === todayKey ? "Ventas hoy" : "Ventas del día"}</small>
-              <strong>{salesTotal}</strong>
+              <small>{selectedKey === todayKey ? "Cobros hoy" : "Cobros del día"}</small>
+              <strong>{collectedTotal}</strong>
             </span>
           </article>
         )}
