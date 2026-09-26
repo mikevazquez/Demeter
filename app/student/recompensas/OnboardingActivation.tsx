@@ -74,6 +74,7 @@ export function RewardsOnboardingActivation({
   locale,
   studioId,
   studioName,
+  notificationsEnabled,
 }: {
   onboarding: StudentRewardOnboarding;
   upcomingClass: StudentUpcomingClass | null;
@@ -81,6 +82,7 @@ export function RewardsOnboardingActivation({
   locale: string;
   studioId: string;
   studioName: string;
+  notificationsEnabled: boolean;
 }) {
   const documentsComplete = Boolean(onboarding.documents_completed_at);
   const profileComplete = Boolean(onboarding.profile_completed_at);
@@ -88,15 +90,17 @@ export function RewardsOnboardingActivation({
   const notificationsComplete = Boolean(onboarding.notifications_enabled_at);
   const reservationComplete = Boolean(onboarding.first_reservation_at);
   const attendanceComplete = Boolean(onboarding.first_attendance_at);
-  const completed = [
+  const steps = [
     documentsComplete,
     profileComplete,
     appInstalled,
-    notificationsComplete,
+    ...(notificationsEnabled ? [notificationsComplete] : []),
     reservationComplete,
     attendanceComplete,
-  ].filter(Boolean).length;
-  const percent = Math.round((completed / 6) * 100);
+  ];
+  const completed = steps.filter(Boolean).length;
+  const totalSteps = steps.length;
+  const percent = Math.round((completed / totalSteps) * 100);
 
   const emailReady = evidenceFlag(onboarding.profile_evidence, "email");
   const avatarReady = evidenceFlag(onboarding.profile_evidence, "avatar");
@@ -118,7 +122,7 @@ export function RewardsOnboardingActivation({
 
       <section className="rounded-[28px] border border-fuchsia-500/30 bg-[radial-gradient(circle_at_85%_0%,rgba(236,72,153,0.18),transparent_34%),linear-gradient(135deg,rgba(255,255,255,0.045),rgba(255,255,255,0.015))] p-4 shadow-[0_0_32px_rgba(236,72,153,0.07)] sm:p-5">
         <div className="flex items-center justify-between gap-3">
-          <strong className="text-sm text-white">{completed} de 6 completados</strong>
+          <strong className="text-sm text-white">{completed} de {totalSteps} completados</strong>
           <span className="text-xs font-semibold text-fuchsia-300">{percent}%</span>
         </div>
         <div
@@ -149,7 +153,7 @@ export function RewardsOnboardingActivation({
               </p>
               <h2 className="mt-1 text-lg font-semibold text-white">Sistema de Medallas</h2>
               <p className="mt-0.5 text-xs text-zinc-400">
-                Completa los 6 pasos para participar en la evaluación mensual.
+                Completa estos pasos para participar en la evaluación mensual.
               </p>
             </div>
           </div>
@@ -187,19 +191,23 @@ export function RewardsOnboardingActivation({
             <OnboardingInstallStep complete={appInstalled} studioId={studioId} studioName={studioName} />
           ) : null}
 
-          <StepRow
-            complete={notificationsComplete}
-            title="Activa las notificaciones"
-            detail={
-              notificationsComplete
-                ? "Listo"
-                : appInstalled
-                  ? "Permite Push para recibir avisos importantes"
-                  : "Primero guarda y abre la app"
-            }
-          />
-          {appInstalled && !notificationsComplete ? (
-            <PushNotificationSettings studioId={studioId} studioName={studioName} onboardingMode />
+          {notificationsEnabled ? (
+            <>
+              <StepRow
+                complete={notificationsComplete}
+                title="Activa las notificaciones"
+                detail={
+                  notificationsComplete
+                    ? "Listo"
+                    : appInstalled
+                      ? "Permite Push para recibir avisos importantes"
+                      : "Primero guarda y abre la app"
+                }
+              />
+              {appInstalled && !notificationsComplete ? (
+                <PushNotificationSettings studioId={studioId} studioName={studioName} onboardingMode />
+              ) : null}
+            </>
           ) : null}
 
           <StepRow
