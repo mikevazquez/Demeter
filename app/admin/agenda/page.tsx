@@ -4,7 +4,7 @@ import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { cancelSession, updateSession } from "./[sessionId]/actions";
 
-function formatMoney(minor: number, locale: string, currency: string, locale, currency) {
+function formatMoney(minor: number, locale: string, currency: string) {
   return new Intl.NumberFormat(locale, { style: "currency", currency }).format(minor / 100);
 }
 
