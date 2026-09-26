@@ -455,7 +455,10 @@ export default async function IntelligencePage({
   const previousStart = new Date(currentStart.getTime() - days * DAY);
   const rangeStartIso = previousStart.toISOString();
   const behaviorStart = new Date(now.getTime() - 42 * DAY);
-  const behaviorStartIso = behaviorStart.toISOString();
+  const eventStart = new Date(
+    Math.min(previousStart.getTime(), behaviorStart.getTime()),
+  );
+  const eventStartIso = eventStart.toISOString();
   const currentStartIso = currentStart.toISOString();
   const currentStartDate = isoDateKey(currentStart);
   const previousStartDate = isoDateKey(previousStart);
@@ -543,7 +546,7 @@ export default async function IntelligencePage({
         "booking.cancelled",
         "attendance.finalized",
       ])
-      .gte("occurred_at", behaviorStartIso)
+      .gte("occurred_at", eventStartIso)
       .lt("occurred_at", currentEnd.toISOString())
       .order("occurred_at", { ascending: true }),
     supabase
