@@ -10,6 +10,8 @@ const errorCopy: Record<string, string> = {
     "Selecciona un producto de tipo Inscripción antes de habilitar la política.",
   enrollment_product_not_found: "El producto seleccionado ya no existe en este estudio.",
   enrollment_product_type_required: "El producto seleccionado debe ser de tipo Inscripción.",
+  single_class_grace_invalid:
+    "La cantidad de clases sueltas iniciales sin inscripción debe estar entre 0 y 100.",
 };
 
 export default async function EnrollmentPolicyPage({
@@ -24,7 +26,9 @@ export default async function EnrollmentPolicyPage({
   const [{ data: policy }, { data: enrollmentProducts }] = await Promise.all([
     ctx.supabase
       .from("enrollment_policies")
-      .select("enabled,required_for_booking,enrollment_product_template_id,rules")
+      .select(
+        "enabled,required_for_booking,required_for_package_purchase,required_for_single_class,single_class_grace_count,enrollment_product_template_id,rules",
+      )
       .eq("studio_id", ctx.studio.id)
       .maybeSingle(),
     ctx.supabase
@@ -49,9 +53,8 @@ export default async function EnrollmentPolicyPage({
         <p className="mt-4 text-sm text-zinc-400">SF-093 · Política por estudio</p>
         <h1 className="text-3xl font-semibold text-white">Inscripción</h1>
         <p className="mt-1 text-sm leading-6 text-zinc-400">
-          Cada estudio define si utiliza inscripción, qué producto la cobra y su vigencia. Las
-          reglas avanzadas de elegibilidad se administrarán en Configuración/F12 sin hardcodear
-          reglas de un estudio concreto.
+          Cada estudio define si utiliza inscripción, qué producto la cobra y en qué momentos debe
+          exigirse. Las reglas se aplican por tenant, sin depender de la operación de Demeter.
         </p>
       </header>
 
@@ -66,7 +69,7 @@ export default async function EnrollmentPolicyPage({
         </div>
       ) : null}
 
-      <section className="grid gap-3 md:grid-cols-3">
+      <section className="grid gap-3 md:grid-cols-4">
         <article className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
           <p className="text-xs uppercase tracking-wide text-zinc-500">Estado</p>
           <strong className="mt-2 block text-lg text-white">
@@ -77,6 +80,14 @@ export default async function EnrollmentPolicyPage({
           <p className="text-xs uppercase tracking-wide text-zinc-500">Para reservar</p>
           <strong className="mt-2 block text-lg text-white">
             {policy?.required_for_booking ? "Requerida" : "No requerida"}
+          </strong>
+        </article>
+        <article className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+          <p className="text-xs uppercase tracking-wide text-zinc-500">Clases sueltas</p>
+          <strong className="mt-2 block text-lg text-white">
+            {policy?.required_for_single_class
+              ? `Después de ${policy.single_class_grace_count ?? 0}`
+              : "No requerida"}
           </strong>
         </article>
         <article className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
@@ -138,34 +149,83 @@ export default async function EnrollmentPolicyPage({
                     style: "currency",
                     currency: product.currency,
                   }).format(product.price_minor / 100)}{" "}
-                  · {product.validity_days} días
+                  · {product.validity_days == null ? "Vitalicia" : `${product.validity_days} días`}
                   {!product.active ? " · inactivo" : ""}
                 </option>
               ))}
             </select>
           </label>
 
-          <label className="flex items-start gap-3 rounded-xl border border-white/10 p-4 text-sm text-zinc-300">
-            <input
-              name="required_for_booking"
-              type="checkbox"
-              defaultChecked={policy?.required_for_booking ?? false}
-              className="mt-0.5"
-            />
-            <span>
-              <strong className="block text-white">Marcar como requisito para reservar</strong>
-              <span className="mt-1 block text-xs leading-5 text-zinc-500">
-                Cuando está activa, el motor de elegibilidad exige una inscripción vigente en la
-                fecha de la clase antes de permitir la reserva.
+          <div className="grid gap-3">
+            <label className="flex items-start gap-3 rounded-xl border border-white/10 p-4 text-sm text-zinc-300">
+              <input
+                name="required_for_package_purchase"
+                type="checkbox"
+                defaultChecked={policy?.required_for_package_purchase ?? false}
+                className="mt-0.5"
+              />
+              <span>
+                <strong className="block text-white">
+                  Exigir inscripción al comprar paquete o membresía
+                </strong>
+                <span className="mt-1 block text-xs leading-5 text-zinc-500">
+                  La venta no puede completarse sin resolver la inscripción vigente.
+                </span>
               </span>
-            </span>
-          </label>
+            </label>
 
-          <div className="rounded-xl border border-sky-500/20 bg-sky-500/[0.06] p-4 text-xs leading-5 text-sky-100/80">
-            Las excepciones, primera clase/primera compra, renovación y reglas por producto quedan
-            en
-            <code className="mx-1 rounded bg-black/20 px-1.5 py-0.5">rules</code> y tendrán editor
-            completo en F12. Esta pantalla no inventa valores por defecto.
+            <label className="flex items-start gap-3 rounded-xl border border-white/10 p-4 text-sm text-zinc-300">
+              <input
+                name="required_for_booking"
+                type="checkbox"
+                defaultChecked={policy?.required_for_booking ?? false}
+                className="mt-0.5"
+              />
+              <span>
+                <strong className="block text-white">
+                  Exigir inscripción al reservar con paquete o membresía
+                </strong>
+                <span className="mt-1 block text-xs leading-5 text-zinc-500">
+                  La inscripción debe seguir vigente en la fecha de la clase.
+                </span>
+              </span>
+            </label>
+
+            <div className="rounded-xl border border-white/10 p-4">
+              <label className="flex items-start gap-3 text-sm text-zinc-300">
+                <input
+                  name="required_for_single_class"
+                  type="checkbox"
+                  defaultChecked={policy?.required_for_single_class ?? false}
+                  className="mt-0.5"
+                />
+                <span>
+                  <strong className="block text-white">
+                    Exigir inscripción para clases sueltas
+                  </strong>
+                  <span className="mt-1 block text-xs leading-5 text-zinc-500">
+                    Puedes permitir algunas compras iniciales antes de exigirla.
+                  </span>
+                </span>
+              </label>
+
+              <label className="mt-4 block text-sm text-zinc-300">
+                Clases sueltas iniciales sin inscripción
+                <input
+                  name="single_class_grace_count"
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="1"
+                  defaultValue={policy?.single_class_grace_count ?? 0}
+                  className="mt-2 w-full rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 text-white"
+                />
+                <span className="mt-1 block text-xs leading-5 text-zinc-500">
+                  0 = exigir desde la primera. 1 = la primera clase suelta puede comprarse sin
+                  inscripción; la segunda ya la requiere.
+                </span>
+              </label>
+            </div>
           </div>
 
           <div className="text-right">
