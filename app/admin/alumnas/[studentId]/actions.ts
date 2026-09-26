@@ -96,11 +96,13 @@ async function invokeStudentAccess(
     const host = forwardedHost || requestHeaders.get("host")?.trim();
     if (!host) return { ok: false, error: "provision_unavailable" };
 
-    const activationUrl = new URL("/login/student/activar", `https://${host}`).toString();
+    const activationUrl = new URL("/login/student/activar", `https://${host}`);
+    activationUrl.searchParams.set("studio", studio.slug);
+    const activationUrlValue = activationUrl.toString();
     body =
       mode === "resend"
-        ? { studentId, mode: "resend", activationUrl }
-        : { studentId, activationUrl };
+        ? { studentId, mode: "resend", activationUrl: activationUrlValue }
+        : { studentId, activationUrl: activationUrlValue };
   }
 
   const { data, error } = await supabase.functions.invoke("provision-student-access", {
