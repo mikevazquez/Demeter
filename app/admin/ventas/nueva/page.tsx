@@ -187,6 +187,7 @@ export default async function NewSalePage({
           <StudentOnboardingForm
             studentId={selectedStudent.id}
             studentName={selectedStudent.full_name}
+            studioName={studio.name}
             packages={(packages ?? []).map((item) => ({
               id: item.id,
               name: item.name,
