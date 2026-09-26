@@ -8,6 +8,23 @@ import { type StudioModule } from "@/lib/auth/modules";
 import { STUDIO_CONTEXT_COOKIE } from "@/lib/auth/studio-context-cookie";
 import { createClient } from "@/lib/supabase/server";
 
+export type StudentPortalSubscription = {
+  plan_key: string;
+  plan_name: string;
+  status: string;
+  effective_status: string;
+  access_mode: "full" | "restricted";
+  trial_ends_at: string | null;
+  current_period_start: string | null;
+  current_period_end: string | null;
+  grace_ends_at: string | null;
+  cancel_at_period_end: boolean;
+  cancelled_at: string | null;
+  suspended_at: string | null;
+  last_payment_failure_at: string | null;
+  billing_provider: string | null;
+};
+
 export type StudentProfile = {
   student_id: string;
   studio_id: string;
@@ -207,6 +224,20 @@ export const getStudentPortalContext = cache(async () => {
     redirect("/login/student/seleccionar?error=access");
   }
 
+  const { data: subscriptionRows, error: subscriptionError } = await supabase.rpc(
+    "current_studio_subscription",
+    {
+      p_studio_id: membership.studio_id,
+    },
+  );
+  const subscription = ((subscriptionRows ?? [])[0] ?? null) as
+    | StudentPortalSubscription
+    | null;
+
+  if (subscriptionError || !subscription || subscription.access_mode !== "full") {
+    redirect("/login/student?error=studio_unavailable");
+  }
+
   const [
     { data: snapshot, error },
     { data: studio },
@@ -257,6 +288,7 @@ export const getStudentPortalContext = cache(async () => {
     account,
     membership,
     studio,
+    subscription,
     modules,
     hasModule(module: StudioModule) {
       return modules.has(module);
