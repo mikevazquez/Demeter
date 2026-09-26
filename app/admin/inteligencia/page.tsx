@@ -113,6 +113,20 @@ type DomainEventRow = {
   payload: Record<string, unknown> | null;
 };
 
+type ConversationRow = {
+  id: string;
+  provider: string;
+  provider_contact_id: string | null;
+  contact_phone: string | null;
+  student_id: string | null;
+  channel: string;
+  source: string | null;
+  campaign: string | null;
+  started_at: string;
+  last_activity_at: string;
+  activity_count: number;
+};
+
 const cancellationReasonLabels: Record<string, string> = {
   schedule_conflict: "Horario / cambio de planes",
   health: "Salud",
@@ -403,6 +417,7 @@ export default async function IntelligencePage({
     onboardingResult,
     domainEventsResult,
     collectionSalesResult,
+    conversationsResult,
   ] = await Promise.all([
     supabase
       .from("students")
@@ -478,6 +493,15 @@ export default async function IntelligencePage({
       .eq("studio_id", studio.id)
       .eq("status", "confirmed")
       .order("payment_due_on", { ascending: true, nullsFirst: false }),
+    supabase
+      .from("crm_conversations")
+      .select(
+        "id,provider,provider_contact_id,contact_phone,student_id,channel,source,campaign,started_at,last_activity_at,activity_count",
+      )
+      .eq("studio_id", studio.id)
+      .gte("started_at", rangeStartIso)
+      .lt("started_at", currentEnd.toISOString())
+      .order("started_at", { ascending: true }),
   ]);
 
   const students = (studentsResult.data ?? []) as StudentRow[];
@@ -492,6 +516,7 @@ export default async function IntelligencePage({
   const onboarding = (onboardingResult.data ?? []) as OnboardingRow[];
   const domainEvents = (domainEventsResult.data ?? []) as DomainEventRow[];
   const collectionSales = (collectionSalesResult.data ?? []) as CollectionSaleRow[];
+  const conversations = (conversationsResult.data ?? []) as ConversationRow[];
 
   const collectionSaleIds = collectionSales.map((sale) => sale.id);
   const [collectionPaymentsResult, collectionLinesResult] = collectionSaleIds.length
@@ -920,6 +945,84 @@ export default async function IntelligencePage({
     weekday.set(day, current);
   }
 
+  const currentConversations = conversations.filter((conversation) =>
+    isBetween(conversation.started_at, currentStart, currentEnd),
+  );
+  const previousConversations = conversations.filter((conversation) =>
+    isBetween(conversation.started_at, previousStart, currentStart),
+  );
+
+  function conversationIdentity(row: ConversationRow) {
+    if (row.provider_contact_id) return row.provider + ":contact:" + row.provider_contact_id;
+    if (row.contact_phone) return row.provider + ":phone:" + row.contact_phone;
+    return row.provider + ":conversation:" + row.id;
+  }
+
+  function conversationCohortStats(rows: ConversationRow[]) {
+    const contacts = new Map<
+      string,
+      {
+        startedAt: string;
+        studentId: string | null;
+        conversations: number;
+      }
+    >();
+
+    for (const row of rows) {
+      const key = conversationIdentity(row);
+      const current = contacts.get(key);
+      if (!current) {
+        contacts.set(key, {
+          startedAt: row.started_at,
+          studentId: row.student_id,
+          conversations: 1,
+        });
+        continue;
+      }
+
+      current.conversations += 1;
+      if (new Date(row.started_at).getTime() < new Date(current.startedAt).getTime()) {
+        current.startedAt = row.started_at;
+      }
+      current.studentId = current.studentId ?? row.student_id;
+    }
+
+    const booked = new Set<string>();
+    const attended = new Set<string>();
+    const converted = new Set<string>();
+    let linked = 0;
+
+    for (const [key, contact] of contacts.entries()) {
+      if (!contact.studentId) continue;
+      linked += 1;
+      const startTime = new Date(contact.startedAt).getTime();
+      const afterConversation = (event: DomainEventRow) =>
+        eventStudentId(event) === contact.studentId &&
+        new Date(event.occurred_at).getTime() >= startTime;
+
+      if (allBookingEvents.some(afterConversation)) booked.add(key);
+      if (allAttendedEvents.some(afterConversation)) attended.add(key);
+
+      const conversion = firstConversionAcquisitionByStudent.get(contact.studentId);
+      if (conversion && new Date(conversion.created_at).getTime() >= startTime) {
+        converted.add(key);
+      }
+    }
+
+    return {
+      conversations: rows.length,
+      contacts: contacts.size,
+      linked,
+      booked: booked.size,
+      attended: attended.size,
+      converted: converted.size,
+      conversationToBookingRate: safeRate(booked.size, contacts.size),
+      bookingToAttendanceRate: safeRate(attended.size, booked.size),
+      attendanceToConversionRate: safeRate(converted.size, attended.size),
+      conversationToConversionRate: safeRate(converted.size, contacts.size),
+    };
+  }
+
   const currentDomainEvents = domainEvents.filter((event) =>
     isBetween(event.occurred_at, currentStart, currentEnd),
   );
@@ -1005,6 +1108,28 @@ export default async function IntelligencePage({
   const allNoShowEvents = allAttendanceEvents.filter(
     (event) => eventPayloadText(event, "attendance_status") === "no_show",
   );
+
+  const currentConversationCohort = conversationCohortStats(currentConversations);
+  const previousConversationCohort = conversationCohortStats(previousConversations);
+
+  const conversationChannelCounts = new Map<string, number>();
+  for (const conversation of currentConversations) {
+    const label = conversation.channel || "unknown";
+    conversationChannelCounts.set(label, (conversationChannelCounts.get(label) ?? 0) + 1);
+  }
+  const conversationChannelRows = [...conversationChannelCounts.entries()]
+    .map(([label, count]) => ({ label, count }))
+    .sort((a, b) => b.count - a.count);
+
+  const conversationSourceCounts = new Map<string, number>();
+  for (const conversation of currentConversations) {
+    const label = conversation.campaign ?? conversation.source ?? "Sin atribución";
+    conversationSourceCounts.set(label, (conversationSourceCounts.get(label) ?? 0) + 1);
+  }
+  const conversationSourceRows = [...conversationSourceCounts.entries()]
+    .map(([label, count]) => ({ label, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 6);
 
   const currentTrialCohortRows = students.filter(
     (student) =>
