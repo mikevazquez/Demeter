@@ -340,7 +340,7 @@ export default async function StudentJourneyPage({
                           </span>
                         ) : null}
                         <span className="mt-1.5 block text-[11px] text-zinc-600">
-                          {formatDateTime(event.occurredAt, ctx.studio.timezone)}
+                          {formatDateTime(event.occurredAt, ctx.studio.timezone, ctx.studio.locale)}
                         </span>
                       </span>
                     </>
