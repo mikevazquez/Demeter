@@ -25,9 +25,9 @@ const eligibilityCopy: Record<string, string> = {
   no_credits: "sin créditos",
 };
 
-function formatExpiry(value: string | null) {
+function formatExpiry(value: string | null, locale: string) {
   if (!value) return "Sin vencimiento";
-  return `Vence ${new Intl.DateTimeFormat("es-MX", {
+  return `Vence ${new Intl.DateTimeFormat(locale, {
     day: "numeric",
     month: "short",
     timeZone: "UTC",
@@ -38,9 +38,9 @@ function validDateKey(value: string | undefined) {
   return Boolean(value && /^\d{4}-\d{2}-\d{2}$/.test(value));
 }
 
-function formatSessionDateTime(value: string | null, timeZone: string) {
+function formatSessionDateTime(value: string | null, timeZone: string, locale: string) {
   if (!value) return "—";
-  return new Intl.DateTimeFormat("es-MX", {
+  return new Intl.DateTimeFormat(locale, {
     timeZone,
     day: "numeric",
     month: "short",
@@ -123,7 +123,8 @@ export default async function SessionDetailPage({
       .order("booked_at"),
   ]);
 
-  const timeZone = studio.timezone ?? "America/Mexico_City";
+  const timeZone = studio.timezone;
+  const locale = studio.locale;
   const personMap = new Map(
     (persons ?? []).map((person) => [
       person.id,
@@ -139,7 +140,7 @@ export default async function SessionDetailPage({
   const spaceMap = new Map((spaces ?? []).map((space) => [space.id, space.name]));
   const studentMap = new Map((students ?? []).map((student) => [student.id, student.full_name]));
 
-  const dateLabel = new Intl.DateTimeFormat("es-MX", {
+  const dateLabel = new Intl.DateTimeFormat(locale, {
     timeZone,
     weekday: "long",
     day: "numeric",
@@ -259,7 +260,7 @@ export default async function SessionDetailPage({
           : acquisition
             ? `${balance ?? 0} créditos disponibles`
             : "—",
-      expiresLabel: isGuest ? "Misma clase" : formatExpiry(acquisition?.expires_on ?? null),
+      expiresLabel: isGuest ? "Misma clase" : formatExpiry(acquisition?.expires_on ?? null, locale),
       studentId: reservation.student_id,
       evaluationInvitationId: evaluationInvitation?.id ?? null,
       evaluationStatus: evaluationInvitation?.status ?? null,
@@ -443,7 +444,7 @@ export default async function SessionDetailPage({
             </div>
             <div>
               <span>Revisión automática</span>
-              <strong>{formatSessionDateTime(session.minimum_review_at, timeZone)}</strong>
+              <strong>{formatSessionDateTime(session.minimum_review_at, timeZone, locale)}</strong>
             </div>
             <div>
               <span>Estado</span>
@@ -455,7 +456,7 @@ export default async function SessionDetailPage({
             <div className="admin-minimum-cancelled-detail">
               <strong>Sesión cancelada por mínimo no alcanzado</strong>
               <p>
-                Cancelada {formatSessionDateTime(session.minimum_cancelled_at, timeZone)} · mínimo
+                Cancelada {formatSessionDateTime(session.minimum_cancelled_at, timeZone, locale)} · mínimo
                 requerido: {session.minimum_reservations} · reservas al revisar:{" "}
                 {session.minimum_reservations_at_review ?? 0}.
               </p>
@@ -481,7 +482,7 @@ export default async function SessionDetailPage({
               <span>✓</span>
               <p>
                 La revisión se completó{" "}
-                {formatSessionDateTime(session.minimum_reviewed_at, timeZone)} con{" "}
+                {formatSessionDateTime(session.minimum_reviewed_at, timeZone, locale)} con{" "}
                 {session.minimum_reservations_at_review ?? occupied} reservas. Esta sesión ya no
                 volverá a evaluarse automáticamente.
               </p>
