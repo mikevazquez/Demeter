@@ -1921,28 +1921,46 @@ export default async function IntelligencePage({
         <>
           <section className="intel-kpi-grid">
             <MetricCard
-              label="Prospectos de prueba"
-              value={String(currentAcquisitionCohort.total)}
+              label="Conversaciones"
+              value={String(currentConversationCohort.conversations)}
               delta={deltaText(
-                currentAcquisitionCohort.total,
-                previousAcquisitionCohort.total,
+                currentConversationCohort.conversations,
+                previousConversationCohort.conversations,
               )}
               tone="info"
             />
             <MetricCard
-              label="Reserva → asistencia"
+              label="Contacto → reserva"
               value={
-                currentAcquisitionCohort.booked > 0
-                  ? pct(currentAcquisitionCohort.attendanceFromBookingRate)
+                currentConversationCohort.contacts > 0
+                  ? pct(currentConversationCohort.conversationToBookingRate)
                   : "—"
               }
               delta={pointsDelta(
-                currentAcquisitionCohort.attendanceFromBookingRate,
-                previousAcquisitionCohort.attendanceFromBookingRate,
+                currentConversationCohort.conversationToBookingRate,
+                previousConversationCohort.conversationToBookingRate,
               )}
               tone={
-                currentAcquisitionCohort.attendanceFromBookingRate >=
-                previousAcquisitionCohort.attendanceFromBookingRate
+                currentConversationCohort.conversationToBookingRate >=
+                previousConversationCohort.conversationToBookingRate
+                  ? "positive"
+                  : "warning"
+              }
+            />
+            <MetricCard
+              label="Reserva → asistencia"
+              value={
+                currentConversationCohort.booked > 0
+                  ? pct(currentConversationCohort.bookingToAttendanceRate)
+                  : "—"
+              }
+              delta={pointsDelta(
+                currentConversationCohort.bookingToAttendanceRate,
+                previousConversationCohort.bookingToAttendanceRate,
+              )}
+              tone={
+                currentConversationCohort.bookingToAttendanceRate >=
+                previousConversationCohort.bookingToAttendanceRate
                   ? "positive"
                   : "warning"
               }
@@ -1950,34 +1968,17 @@ export default async function IntelligencePage({
             <MetricCard
               label="Asistencia → alumna"
               value={
-                currentAcquisitionCohort.attended > 0
-                  ? pct(currentAcquisitionCohort.conversionFromAttendanceRate)
+                currentConversationCohort.attended > 0
+                  ? pct(currentConversationCohort.attendanceToConversionRate)
                   : "—"
               }
               delta={pointsDelta(
-                currentAcquisitionCohort.conversionFromAttendanceRate,
-                previousAcquisitionCohort.conversionFromAttendanceRate,
+                currentConversationCohort.attendanceToConversionRate,
+                previousConversationCohort.attendanceToConversionRate,
               )}
               tone={
-                currentAcquisitionCohort.conversionFromAttendanceRate >=
-                previousAcquisitionCohort.conversionFromAttendanceRate
-                  ? "positive"
-                  : "warning"
-              }
-            />
-            <MetricCard
-              label="Prospecto → alumna"
-              value={
-                currentAcquisitionCohort.total > 0
-                  ? pct(currentAcquisitionCohort.conversionRate)
-                  : "—"
-              }
-              delta={pointsDelta(
-                currentAcquisitionCohort.conversionRate,
-                previousAcquisitionCohort.conversionRate,
-              )}
-              tone={
-                currentAcquisitionCohort.conversionRate >= previousAcquisitionCohort.conversionRate
+                currentConversationCohort.attendanceToConversionRate >=
+                previousConversationCohort.attendanceToConversionRate
                   ? "positive"
                   : "warning"
               }
@@ -1986,6 +1987,65 @@ export default async function IntelligencePage({
 
           <div className="intel-two-column">
             <div className="intel-stack">
+              <Section
+                title="💬 Embudo desde conversación"
+                description="Cohorte por contacto conversado en el periodo. Varias conversaciones de la misma persona no inflan la conversión."
+              >
+                <div className="intel-bars">
+                  <BarRow
+                    label="Conversaciones"
+                    value={currentConversationCohort.conversations}
+                    max={Math.max(currentConversationCohort.conversations, 1)}
+                    display={String(currentConversationCohort.conversations)}
+                    tone="info"
+                  />
+                  <BarRow
+                    label="Contactos únicos"
+                    value={currentConversationCohort.contacts}
+                    max={Math.max(currentConversationCohort.conversations, 1)}
+                    display={String(currentConversationCohort.contacts)}
+                    tone="info"
+                  />
+                  <BarRow
+                    label="Reservaron"
+                    value={currentConversationCohort.booked}
+                    max={Math.max(currentConversationCohort.contacts, 1)}
+                    display={
+                      currentConversationCohort.booked +
+                      " · " +
+                      pct(currentConversationCohort.conversationToBookingRate)
+                    }
+                    tone="accent"
+                  />
+                  <BarRow
+                    label="Asistieron"
+                    value={currentConversationCohort.attended}
+                    max={Math.max(currentConversationCohort.contacts, 1)}
+                    display={String(currentConversationCohort.attended)}
+                    tone="success"
+                  />
+                  <BarRow
+                    label="Compraron paquete / membresía"
+                    value={currentConversationCohort.converted}
+                    max={Math.max(currentConversationCohort.contacts, 1)}
+                    display={
+                      currentConversationCohort.converted +
+                      " · " +
+                      pct(currentConversationCohort.conversationToConversionRate)
+                    }
+                    tone="success"
+                  />
+                </div>
+                <div className="intel-source-note">
+                  {currentConversationCohort.conversations > 0
+                    ? currentConversationCohort.linked +
+                      "/" +
+                      currentConversationCohort.contacts +
+                      " contactos ya están enlazados con una alumna/prospecto de Studio Flow."
+                    : "Esperando el primer evento conversation_activity desde Asistian. El receptor y la cohorte ya están preparados."}
+                </div>
+              </Section>
+
               <Section
                 title="📍 Actividad operativa del periodo"
                 description="Volumen ocurrido en estas fechas. No se presenta como embudo porque las personas pueden venir de cohortes anteriores."
@@ -2121,6 +2181,18 @@ export default async function IntelligencePage({
             <div className="intel-stack">
               <Section title="🚨 Qué requiere atención">
                 <div className="intel-insight-list">
+                  {currentConversationCohort.conversations > 0 &&
+                  currentConversationCohort.linked < currentConversationCohort.contacts ? (
+                    <Insight
+                      tone="warning"
+                      title="🔗 Hay conversaciones aún sin identidad"
+                      body={
+                        currentConversationCohort.contacts -
+                        currentConversationCohort.linked +
+                        " contactos todavía no están vinculados a una alumna/prospecto. Se enlazarán automáticamente cuando reserven si Asistian conserva el mismo contacto."
+                      }
+                    />
+                  ) : null}
                   {topCancellationReason ? (
                     <Insight
                       tone={topCancellationReason.label === "Sin motivo registrado" ? "danger" : "warning"}
@@ -2169,8 +2241,49 @@ export default async function IntelligencePage({
               </Section>
 
               <Section
-                title="🧪 Cohorte de adquisición"
-                description="Prospectos de prueba creados en el periodo y su resultado al corte de hoy."
+                title="📣 Origen de conversaciones"
+                description="Primera atribución disponible para entender qué canal o campaña sí genera reservas."
+              >
+                <div className="intel-bars">
+                  {conversationSourceRows.length ? (
+                    conversationSourceRows.map((item) => (
+                      <BarRow
+                        key={item.label}
+                        label={item.label}
+                        value={item.count}
+                        max={conversationSourceRows[0]?.count ?? 1}
+                        display={String(item.count)}
+                        tone={item.label === "Sin atribución" ? "warning" : "info"}
+                      />
+                    ))
+                  ) : (
+                    <p className="intel-empty">Todavía no hay conversaciones con atribución.</p>
+                  )}
+                </div>
+              </Section>
+
+              <Section title="Canales">
+                <div className="intel-bars">
+                  {conversationChannelRows.length ? (
+                    conversationChannelRows.map((item) => (
+                      <BarRow
+                        key={item.label}
+                        label={item.label}
+                        value={item.count}
+                        max={conversationChannelRows[0]?.count ?? 1}
+                        display={String(item.count)}
+                        tone="info"
+                      />
+                    ))
+                  ) : (
+                    <p className="intel-empty">Todavía no hay conversaciones registradas.</p>
+                  )}
+                </div>
+              </Section>
+
+              <Section
+                title="🧪 Cohorte de prueba · respaldo"
+                description="Se conserva para comparar el historial previo mientras la nueva fuente de conversaciones acumula datos."
               >
                 <div className="intel-bars">
                   <BarRow
@@ -2209,9 +2322,6 @@ export default async function IntelligencePage({
                     }
                     tone="success"
                   />
-                </div>
-                <div className="intel-source-note">
-                  La cohorte puede seguir madurando después del cierre del periodo; por eso esto es resultado “al corte”, no churn definitivo.
                 </div>
               </Section>
             </div>
