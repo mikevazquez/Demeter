@@ -270,8 +270,8 @@ export default async function StudentProfilePage({
           <p className="mt-0.5 text-xs text-zinc-400">
             {activePackage
               ? activePackage.unlimited
-                ? `Ilimitado · vence ${formatDate(activePackage.expires_on, studio.timezone)}`
-                : `${activePackage.available_credits ?? 0} clases disponibles · vence ${formatDate(activePackage.expires_on, studio.timezone)}`
+                ? `Ilimitado · vence ${formatDate(activePackage.expires_on, studio.timezone, studio.locale)}`
+                : `${activePackage.available_credits ?? 0} clases disponibles · vence ${formatDate(activePackage.expires_on, studio.timezone, studio.locale)}`
               : "Compra o activa un paquete para reservar clases."}
           </p>
         </div>
@@ -304,7 +304,7 @@ export default async function StudentProfilePage({
               <span className="mt-0.5 block truncate text-xs text-zinc-500">
                 {activePackage
                   ? activePackage.unlimited
-                    ? `Ilimitado · vence ${formatDate(activePackage.expires_on, studio.timezone)}`
+                    ? `Ilimitado · vence ${formatDate(activePackage.expires_on, studio.timezone, studio.locale)}`
                     : `${activePackage.available_credits} clases disponibles`
                   : "Sin paquete activo"}
               </span>
