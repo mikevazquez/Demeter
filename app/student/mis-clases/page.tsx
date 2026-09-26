@@ -356,6 +356,7 @@ export default async function StudentClassesPage({
                         key={item.reservation_id}
                         item={item}
                         timezone={studio.timezone}
+                        locale={studio.locale}
                         showQuickCancel
                       />
                     ))}
@@ -392,7 +393,12 @@ export default async function StudentClassesPage({
           {history.length ? (
             <div className="space-y-2">
               {history.map((item) => (
-                <ClassRow key={item.reservation_id} item={item} timezone={studio.timezone} />
+                <ClassRow
+                  key={item.reservation_id}
+                  item={item}
+                  timezone={studio.timezone}
+                  locale={studio.locale}
+                />
               ))}
             </div>
           ) : (
