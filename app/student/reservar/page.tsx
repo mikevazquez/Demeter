@@ -33,30 +33,30 @@ function startOfWeek(value: string) {
   return date.toISOString().slice(0, 10);
 }
 
-function dateChip(value: string) {
+function dateChip(value: string, locale: string) {
   const date = new Date(`${value}T12:00:00Z`);
   return {
-    weekday: new Intl.DateTimeFormat("es-MX", {
+    weekday: new Intl.DateTimeFormat(locale, {
       weekday: "short",
       timeZone: "UTC",
     }).format(date),
-    day: new Intl.DateTimeFormat("es-MX", {
+    day: new Intl.DateTimeFormat(locale, {
       day: "numeric",
       timeZone: "UTC",
     }).format(date),
   };
 }
 
-function shortDate(value: string) {
-  return new Intl.DateTimeFormat("es-MX", {
+function shortDate(value: string, locale: string) {
+  return new Intl.DateTimeFormat(locale, {
     day: "numeric",
     month: "short",
     timeZone: "UTC",
   }).format(new Date(`${value}T12:00:00Z`));
 }
 
-function longDate(value: string) {
-  return new Intl.DateTimeFormat("es-MX", {
+function longDate(value: string, locale: string) {
+  return new Intl.DateTimeFormat(locale, {
     weekday: "long",
     day: "numeric",
     month: "long",
@@ -64,8 +64,8 @@ function longDate(value: string) {
   }).format(new Date(`${value}T12:00:00Z`));
 }
 
-function timeOnly(value: string, timeZone: string) {
-  return new Intl.DateTimeFormat("es-MX", {
+function timeOnly(value: string, timeZone: string, locale: string) {
+  return new Intl.DateTimeFormat(locale, {
     timeZone,
     hour: "numeric",
     minute: "2-digit",
@@ -230,7 +230,7 @@ export default async function StudentReservePage({
           )}
 
           <p className="text-center text-xs font-medium capitalize text-zinc-300">
-            {shortDate(weekStart)} – {shortDate(weekEnd)}
+            {shortDate(weekStart, studio.locale)} – {shortDate(weekEnd, studio.locale)}
           </p>
 
           <Link
@@ -244,7 +244,7 @@ export default async function StudentReservePage({
 
         <div className="grid grid-cols-7 gap-1.5">
           {days.map((day) => {
-            const chip = dateChip(day);
+            const chip = dateChip(day, studio.locale);
             const isPast = day < today;
             const isSelected = day === selectedDate;
             const className = `rounded-2xl px-1 py-2.5 text-center transition ${
@@ -301,7 +301,7 @@ export default async function StudentReservePage({
                 Clases del día
               </p>
               <h2 className="mt-0.5 text-base font-semibold capitalize text-white">
-                {longDate(selectedDate)}
+                {longDate(selectedDate, studio.locale)}
               </h2>
             </div>
             {items.length ? (
@@ -313,7 +313,7 @@ export default async function StudentReservePage({
 
           {items.length ? (
             items.map((session) => {
-              const timeLabel = timeOnly(session.starts_at, studio.timezone);
+              const timeLabel = timeOnly(session.starts_at, studio.timezone, studio.locale);
               const eligible = Boolean(session.eligibility?.eligible);
               const reserved = Boolean(session.is_reserved);
               const waitlisted = waitlistedSessionIds.has(session.session_id);
@@ -391,9 +391,9 @@ export default async function StudentReservePage({
                           </p>
                           <p className="mt-0.5 text-[10px] text-zinc-500">
                             Clase suelta ·{" "}
-                            {new Intl.NumberFormat("es-MX", {
+                            {new Intl.NumberFormat(studio.locale, {
                               style: "currency",
-                              currency: "MXN",
+                              currency: studio.currency,
                               maximumFractionDigits: 0,
                             }).format((dropInPriceMinor ?? 0) / 100)}
                           </p>
@@ -407,9 +407,9 @@ export default async function StudentReservePage({
                           </Link>
                           <PurchaseSingleClassButton
                             sessionId={session.session_id}
-                            priceLabel={new Intl.NumberFormat("es-MX", {
+                            priceLabel={new Intl.NumberFormat(studio.locale, {
                               style: "currency",
-                              currency: "MXN",
+                              currency: studio.currency,
                               maximumFractionDigits: 0,
                             }).format((dropInPriceMinor ?? 0) / 100)}
                           />
