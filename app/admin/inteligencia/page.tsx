@@ -1647,25 +1647,60 @@ export default async function IntelligencePage({
       }
     }
 
-    let renewed = 0;
+    let immediate = 0;
+    let within7 = 0;
+    let within30 = 0;
+    let reactivated = 0;
+    let churnConfirmed = 0;
+    let pendingMaturity = 0;
+
     for (const expired of expiryByStudent.values()) {
-      const later = (acquisitionsByStudent.get(expired.student_id) ?? []).some((candidate) => {
-        if (candidate.id === expired.id) return false;
-        if (new Date(candidate.created_at).getTime() <= new Date(expired.created_at).getTime()) {
-          return false;
-        }
-        if (!candidate.expires_on || !expired.expires_on) return false;
-        return candidate.expires_on > expired.expires_on;
-      });
-      if (later) renewed += 1;
+      if (!expired.expires_on) continue;
+      const later = (acquisitionsByStudent.get(expired.student_id) ?? [])
+        .filter((candidate) => {
+          if (candidate.id === expired.id) return false;
+          if (new Date(candidate.created_at).getTime() <= new Date(expired.created_at).getTime()) {
+            return false;
+          }
+          return Boolean(candidate.expires_on && candidate.expires_on > expired.expires_on!);
+        })
+        .sort(
+          (a, b) =>
+            new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
+        )[0];
+
+      if (later) {
+        const expiryTime = new Date(expired.expires_on + "T12:00:00Z").getTime();
+        const renewalTime = new Date(later.created_at).getTime();
+        const gapDays = Math.floor((renewalTime - expiryTime) / DAY);
+
+        if (gapDays <= 0) immediate += 1;
+        else if (gapDays <= 7) within7 += 1;
+        else if (gapDays <= 30) within30 += 1;
+        else reactivated += 1;
+        continue;
+      }
+
+      const age = daysSince(expired.expires_on, now) ?? 0;
+      if (age >= 30) churnConfirmed += 1;
+      else pendingMaturity += 1;
     }
 
     const expired = expiryByStudent.size;
+    const renewedWithin30 = immediate + within7 + within30;
+    const matured = renewedWithin30 + reactivated + churnConfirmed;
+
     return {
       expired,
-      renewed,
-      notRenewed: Math.max(expired - renewed, 0),
-      rate: safeRate(renewed, expired),
+      immediate,
+      within7,
+      within30,
+      renewedWithin30,
+      reactivated,
+      churnConfirmed,
+      pendingMaturity,
+      matured,
+      rate: safeRate(renewedWithin30, matured),
     };
   }
 
