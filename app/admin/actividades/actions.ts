@@ -32,6 +32,7 @@ type ActivityPayload = {
   minimumReservations: number;
   minimumReviewValue: number;
   minimumReviewUnit: "minutes" | "hours";
+  allowMinimumReservationOverride: boolean;
 };
 
 function moneyToMinor(value: string | undefined) {
@@ -171,7 +172,9 @@ export async function saveActivity(formData: FormData) {
       Number.isInteger(minimumReviewMinutes) && minimumReviewMinutes >= 15
         ? minimumReviewMinutes
         : 120,
-    p_allow_minimum_reservation_override: true,
+    p_allow_minimum_reservation_override: Boolean(
+      payload.allowMinimumReservationOverride,
+    ),
   });
 
   if (error || !data) {
