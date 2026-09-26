@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { STUDIO_MODULES } from "@/lib/auth/modules";
 import { formatDateTime, getStudentPortalContext } from "@/lib/student/portal";
 
 type NotificationPayload = {
@@ -20,7 +21,9 @@ export default async function StudentNotificationDetailPage({
   params: Promise<{ notificationId: string }>;
 }) {
   const { notificationId } = await params;
-  const { supabase, snapshot, studio } = await getStudentPortalContext();
+  const { supabase, snapshot, studio, hasModule } = await getStudentPortalContext();
+
+  if (!hasModule(STUDIO_MODULES.NOTIFICATIONS)) notFound();
 
   const { data: notification } = await supabase
     .from("app_notifications")
