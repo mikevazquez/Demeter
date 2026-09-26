@@ -26,7 +26,8 @@ export default async function CoachClassDetailPage({
   params: Promise<{ sessionId: string }>;
 }) {
   const { sessionId } = await params;
-  const { supabase, studio } = await getCoachContext(CAPABILITIES.SCHEDULE_READ);
+  const { supabase, studio, can } = await getCoachContext(CAPABILITIES.SCHEDULE_READ);
+  const resourcesEnabled = can(CAPABILITIES.RESOURCES_READ);
   const [
     { data: detailData, error: detailError },
     { data: resourceMapData, error: resourceMapError },
@@ -35,10 +36,22 @@ export default async function CoachClassDetailPage({
       target_studio_id: studio.id,
       target_session_id: sessionId,
     }),
-    supabase.rpc("coach_session_resource_map", {
-      target_studio_id: studio.id,
-      target_session_id: sessionId,
-    }),
+    resourcesEnabled
+      ? supabase.rpc("coach_session_resource_map", {
+          target_studio_id: studio.id,
+          target_session_id: sessionId,
+        })
+      : Promise.resolve({
+          data: {
+            session_id: sessionId,
+            requires_resource: false,
+            default_uses: 1,
+            map: null,
+            resources: [],
+            elements: [],
+          },
+          error: null,
+        }),
   ]);
 
   if (detailError || resourceMapError || !detailData || !resourceMapData) notFound();

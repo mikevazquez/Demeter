@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { CAPABILITIES, type Capability } from "@/lib/auth/capabilities";
+import { type StudioModule } from "@/lib/auth/modules";
 import { STUDIO_CONTEXT_COOKIE } from "@/lib/auth/studio-context-cookie";
 import { createClient } from "@/lib/supabase/server";
 
@@ -40,14 +41,24 @@ export async function getCoachContext(requiredCapability?: Capability) {
     redirect("/login/studio/seleccionar");
   }
 
-  const [{ data: studio }, { data: roleCapabilities }, { data: instructor }, { data: person }] =
-    await Promise.all([
+  const [
+    { data: studio },
+    { data: effectiveCapabilities, error: capabilitiesError },
+    { data: effectiveModules, error: modulesError },
+    { data: instructor },
+    { data: person },
+  ] = await Promise.all([
       supabase
         .from("studios")
         .select("id, name, timezone, locale, currency, primary_color, status")
         .eq("id", membership.studio_id)
         .single(),
-      supabase.from("role_capabilities").select("capability_key").eq("role", membership.role),
+      supabase.rpc("current_studio_capabilities", {
+        p_studio_id: membership.studio_id,
+      }),
+      supabase.rpc("current_studio_modules", {
+        p_studio_id: membership.studio_id,
+      }),
       supabase
         .from("instructors")
         .select("id, studio_id, person_id, status")
@@ -65,6 +76,8 @@ export async function getCoachContext(requiredCapability?: Capability) {
   if (
     !studio ||
     studio.status !== "active" ||
+    capabilitiesError ||
+    modulesError ||
     !instructor ||
     instructor.status !== "active" ||
     !person
@@ -74,7 +87,14 @@ export async function getCoachContext(requiredCapability?: Capability) {
   }
 
   const capabilities = new Set(
-    (roleCapabilities ?? []).map((item) => item.capability_key as Capability),
+    (effectiveCapabilities ?? []).map(
+      (item: { capability_key: string }) => item.capability_key as Capability,
+    ),
+  );
+  const modules = new Set(
+    (effectiveModules ?? []).map(
+      (item: { module_key: string }) => item.module_key as StudioModule,
+    ),
   );
 
   if (!capabilities.has(CAPABILITIES.INSTRUCTOR_PORTAL)) {
@@ -95,8 +115,12 @@ export async function getCoachContext(requiredCapability?: Capability) {
     instructor,
     person,
     capabilities,
+    modules,
     can(capability: Capability) {
       return capabilities.has(capability);
+    },
+    hasModule(module: StudioModule) {
+      return modules.has(module);
     },
   };
 }
