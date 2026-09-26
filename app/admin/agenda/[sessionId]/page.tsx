@@ -93,7 +93,7 @@ export default async function SessionDetailPage({
   ] = await Promise.all([
     supabase
       .from("class_templates")
-      .select("name,discipline_id,duration_minutes,credit_cost,color_hex")
+      .select("name,discipline_id,duration_minutes,credit_cost,color_hex,drop_in_price_minor")
       .eq("id", session.template_id)
       .single(),
     supabase
@@ -117,7 +117,7 @@ export default async function SessionDetailPage({
       .order("full_name"),
     supabase
       .from("reservations")
-      .select("id,student_id,guest_person_id,status,acquisition_id")
+      .select("id,student_id,guest_person_id,status,acquisition_id,commercial_status")
       .eq("session_id", sessionId)
       .in("status", ["reserved", "attended", "no_show"])
       .order("booked_at"),
@@ -263,6 +263,9 @@ export default async function SessionDetailPage({
       studentId: reservation.student_id,
       evaluationInvitationId: evaluationInvitation?.id ?? null,
       evaluationStatus: evaluationInvitation?.status ?? null,
+      paymentDueOnAttendance: reservation.commercial_status === "payment_pending",
+      individualPriceMinor: template?.drop_in_price_minor ?? null,
+      currency: studio.currency ?? "MXN",
     };
   });
 
