@@ -1,0 +1,64 @@
+name: Validate Asistian Attendance Payment
+
+on:
+  push:
+    branches:
+      - feat/asistian-attendance-payment
+
+permissions:
+  contents: write
+
+concurrency:
+  group: validate-asistian-attendance-payment
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: test-publishable-key
+
+    steps:
+      - name: Checkout feature branch
+        uses: actions/checkout@v4
+        with:
+          ref: feat/asistian-attendance-payment
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Format feature files
+        run: |
+          npx prettier --write             app/admin/actions.ts             app/admin/hoy/PendingClassPaymentDialog.tsx             app/admin/hoy/SessionOperations.tsx             app/admin/hoy/TodayClasses.tsx             app/admin/page.tsx             'app/admin/agenda/[sessionId]/page.tsx'             app/admin/roster-uat.css             tests/asistian-attendance-payment.test.ts
+
+      - name: Commit formatting if needed
+        run: |
+          if ! git diff --quiet; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add               app/admin/actions.ts               app/admin/hoy/PendingClassPaymentDialog.tsx               app/admin/hoy/SessionOperations.tsx               app/admin/hoy/TodayClasses.tsx               app/admin/page.tsx               'app/admin/agenda/[sessionId]/page.tsx'               app/admin/roster-uat.css               tests/asistian-attendance-payment.test.ts
+            git commit -m "chore: format Asistian attendance payment flow"
+            git push origin HEAD:feat/asistian-attendance-payment
+          fi
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Feature test
+        run: npx vitest run tests/asistian-attendance-payment.test.ts
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Build
+        run: npm run build
