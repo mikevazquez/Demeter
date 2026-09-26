@@ -1392,22 +1392,12 @@ export default async function IntelligencePage({
   const currentMarketingSpend = currentMarketingRows.reduce((sum, row) => sum + row.spend, 0);
   const previousMarketingSpend = previousMarketingRows.reduce((sum, row) => sum + row.spend, 0);
   const currentMarketingRevenue = currentMarketingRows.reduce((sum, row) => sum + row.revenue, 0);
-  const previousMarketingRevenue = previousMarketingRows.reduce((sum, row) => sum + row.revenue, 0);
   const currentMarketingBooked = currentMarketingRows.reduce((sum, row) => sum + row.booked, 0);
-  const previousMarketingBooked = previousMarketingRows.reduce((sum, row) => sum + row.booked, 0);
   const currentMarketingAttended = currentMarketingRows.reduce(
     (sum, row) => sum + row.attended,
     0,
   );
-  const previousMarketingAttended = previousMarketingRows.reduce(
-    (sum, row) => sum + row.attended,
-    0,
-  );
   const currentMarketingConverted = currentMarketingRows.reduce(
-    (sum, row) => sum + row.converted,
-    0,
-  );
-  const previousMarketingConverted = previousMarketingRows.reduce(
     (sum, row) => sum + row.converted,
     0,
   );
@@ -1417,30 +1407,16 @@ export default async function IntelligencePage({
     currentMarketingBooked,
     currentMarketingContacts,
   );
-  const previousMarketingBookingRate = safeRate(
-    previousMarketingBooked,
-    previousMarketingContacts,
-  );
   const currentMarketingAttendanceRate = safeRate(
     currentMarketingAttended,
     currentMarketingBooked,
-  );
-  const previousMarketingAttendanceRate = safeRate(
-    previousMarketingAttended,
-    previousMarketingBooked,
   );
   const currentMarketingConversionRate = safeRate(
     currentMarketingConverted,
     currentMarketingContacts,
   );
-  const previousMarketingConversionRate = safeRate(
-    previousMarketingConverted,
-    previousMarketingContacts,
-  );
   const currentMarketingRoas =
     currentMarketingSpend > 0 ? currentMarketingRevenue / currentMarketingSpend : null;
-  const previousMarketingRoas =
-    previousMarketingSpend > 0 ? previousMarketingRevenue / previousMarketingSpend : null;
   const unattributedMarketingContacts =
     currentMarketingRows.find((row) => row.key === "unattributed")?.contacts ?? 0;
   const unattributedMarketingSpend =
