@@ -9,6 +9,20 @@ import { OperatingPolicyForm } from "./OperatingPolicyForm";
 import { PortalIdentityForm } from "./PortalIdentityForm";
 import { RegionalSettingsForm } from "./RegionalSettingsForm";
 
+type PlanUsageRow = {
+  plan_key: string;
+  plan_name: string;
+  limit_key: string;
+  limit_name: string;
+  unit: string;
+  limit_value: number | null;
+  usage: number;
+  unlimited: boolean;
+  over_limit: boolean;
+  remaining: number | null;
+  note: string | null;
+};
+
 const errorCopy: Record<string, string> = {
   name: "El nombre del estudio debe tener entre 2 y 80 caracteres.",
   tagline: "La frase de marca debe tener máximo 120 caracteres.",
@@ -42,7 +56,7 @@ export default async function ConfigurationPage({
     redirect("/admin?error=access");
   }
 
-  const [{ data: operatingPolicy }, logoUrl] = await Promise.all([
+  const [{ data: operatingPolicy }, { data: planUsage }, logoUrl] = await Promise.all([
     ctx.supabase
       .from("studio_operating_policies")
       .select(
@@ -50,6 +64,9 @@ export default async function ConfigurationPage({
       )
       .eq("studio_id", ctx.studio.id)
       .maybeSingle(),
+    ctx.supabase.rpc("current_studio_plan_usage", {
+      p_studio_id: ctx.studio.id,
+    }),
     Promise.resolve(
       ctx.studio.logo_path
         ? ctx.supabase.storage.from("studio-branding").getPublicUrl(ctx.studio.logo_path).data
@@ -59,6 +76,8 @@ export default async function ConfigurationPage({
   ]);
 
   const portalPath = `/s/${ctx.studio.slug}`;
+  const usageRows = (planUsage ?? []) as PlanUsageRow[];
+  const planName = usageRows[0]?.plan_name ?? "Plan";
 
   return (
     <main className="dashboard-shell admin-ux04-secondary configuration-page">
@@ -82,6 +101,69 @@ export default async function ConfigurationPage({
           {errorCopy[params.error] ?? "No pudimos guardar los cambios."}
         </div>
       ) : null}
+
+      <section className="panel">
+        <div className="panel-heading">
+          <div>
+            <p className="eyebrow">PLAN Y USO</p>
+            <h2>{planName}</h2>
+            <p>
+              Consulta cuánto estás usando de cada capacidad incluida en tu plan.
+            </p>
+          </div>
+        </div>
+
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {usageRows.map((row) => {
+            const percent =
+              row.limit_value && row.limit_value > 0
+                ? Math.min(100, Math.round((row.usage / row.limit_value) * 100))
+                : null;
+
+            return (
+              <article
+                key={row.limit_key}
+                className={`rounded-2xl border p-4 ${
+                  row.over_limit
+                    ? "border-red-500/40 bg-red-500/5"
+                    : "border-white/10 bg-white/[0.025]"
+                }`}
+              >
+                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-zinc-500">
+                  {row.limit_name}
+                </p>
+                <div className="mt-2 flex items-end justify-between gap-2">
+                  <strong className="text-2xl text-white">{row.usage}</strong>
+                  <span
+                    className={`text-xs font-semibold ${
+                      row.over_limit ? "text-red-300" : "text-zinc-400"
+                    }`}
+                  >
+                    {row.unlimited ? "Ilimitado" : `de ${row.limit_value}`}
+                  </span>
+                </div>
+
+                {percent !== null ? (
+                  <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/10">
+                    <div
+                      className="h-full rounded-full bg-fuchsia-500"
+                      style={{ width: `${percent}%` }}
+                    />
+                  </div>
+                ) : null}
+
+                <p className="mt-2 text-[11px] leading-5 text-zinc-500">
+                  {row.over_limit
+                    ? "Sobre cuota. No se permitirán nuevas altas que incrementen este uso."
+                    : row.unlimited
+                      ? row.note ?? `${row.unit} ilimitados`
+                      : `${row.remaining ?? 0} disponibles`}
+                </p>
+              </article>
+            );
+          })}
+        </div>
+      </section>
 
       <PortalIdentityForm
         initialName={ctx.studio.name}
