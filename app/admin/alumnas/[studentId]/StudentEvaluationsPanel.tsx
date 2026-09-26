@@ -12,6 +12,7 @@ import {
 type Props = {
   studentId: string;
   timeZone: string;
+  locale: string;
   error?: string;
 };
 
@@ -30,17 +31,17 @@ function addDays(value: string, days: number) {
   return date.toISOString().slice(0, 10);
 }
 
-function formatDate(value: string | null) {
+function formatDate(value: string | null, locale: string) {
   if (!value) return "Sin fecha";
-  return new Intl.DateTimeFormat("es-MX", {
+  return new Intl.DateTimeFormat(locale, {
     day: "numeric",
     month: "short",
     year: "numeric",
   }).format(new Date(`${value}T12:00:00Z`));
 }
 
-function formatDateTime(value: string, timeZone: string) {
-  return new Intl.DateTimeFormat("es-MX", {
+function formatDateTime(value: string, timeZone: string, locale: string) {
+  return new Intl.DateTimeFormat(locale, {
     timeZone,
     day: "numeric",
     month: "short",
@@ -105,7 +106,12 @@ function errorCopy(value?: string) {
   return value ? (copy[value] ?? copy.evaluation_action_failed) : null;
 }
 
-export default async function StudentEvaluationsPanel({ studentId, timeZone, error }: Props) {
+export default async function StudentEvaluationsPanel({
+  studentId,
+  timeZone,
+  locale,
+  error,
+}: Props) {
   const ctx = await getAdminContext(CAPABILITIES.EVALUATIONS_READ);
 
   const [
@@ -408,7 +414,7 @@ export default async function StudentEvaluationsPanel({ studentId, timeZone, err
                       <strong>Próxima evaluación</strong>
                       <span>
                         {item.scheduledClassName} ·{" "}
-                        {formatDateTime(item.scheduledSession.starts_at, timeZone)}
+                        {formatDateTime(item.scheduledSession.starts_at, timeZone, locale)}
                       </span>
                     </div>
                     <form action={startScheduledEvaluationAction}>
@@ -426,8 +432,8 @@ export default async function StudentEvaluationsPanel({ studentId, timeZone, err
                   <div className="profile360-evaluation-copy">
                     <strong>Pendiente de programar</strong>
                     <span>
-                      Disponible del {formatDate(invite.window_start)} al{" "}
-                      {formatDate(invite.window_end)}.
+                      Disponible del {formatDate(invite.window_start, locale)} al{" "}
+                      {formatDate(invite.window_end, locale)}.
                     </span>
                     <small>La alumna debe elegir una clase válida desde su portal.</small>
                   </div>
@@ -435,8 +441,8 @@ export default async function StudentEvaluationsPanel({ studentId, timeZone, err
                   <div className="profile360-evaluation-copy">
                     <strong>Esperando respuesta de la alumna</strong>
                     <span>
-                      Invitación disponible del {formatDate(invite.window_start)} al{" "}
-                      {formatDate(invite.window_end)}.
+                      Invitación disponible del {formatDate(invite.window_start, locale)} al{" "}
+                      {formatDate(invite.window_end, locale)}.
                     </span>
                   </div>
                 ) : (
@@ -448,11 +454,11 @@ export default async function StudentEvaluationsPanel({ studentId, timeZone, err
                             Última evaluación · {outcomeCopy(item.latestPublished.final_outcome)}
                           </strong>
                           <span>
-                            {formatDate(item.latestPublished.evaluation_date)} ·{" "}
+                            {formatDate(item.latestPublished.evaluation_date, locale)} ·{" "}
                             {item.latestPublished.total_score ?? "—"}%
                           </span>
                           {item.cycle?.next_due_on ? (
-                            <small>Próxima disponible: {formatDate(item.cycle.next_due_on)}</small>
+                            <small>Próxima disponible: {formatDate(item.cycle.next_due_on, locale)}</small>
                           ) : null}
                         </>
                       ) : (
@@ -574,7 +580,7 @@ export default async function StudentEvaluationsPanel({ studentId, timeZone, err
                   className="profile360-evaluation-history-row"
                   key={evaluation.id}
                 >
-                  <span>{formatDate(evaluation.evaluation_date)}</span>
+                  <span>{formatDate(evaluation.evaluation_date, locale)}</span>
                   <strong>{discipline?.name ?? "Disciplina"}</strong>
                   <span>
                     {evaluation.evaluation_purpose === "diagnostic"
@@ -621,7 +627,7 @@ export default async function StudentEvaluationsPanel({ studentId, timeZone, err
 
               return (
                 <div className="profile360-invitation-history-row" key={invitation.id}>
-                  <span>{formatDateTime(eventDate, timeZone)}</span>
+                  <span>{formatDateTime(eventDate, timeZone, locale)}</span>
                   <strong>{discipline?.name ?? "Disciplina"}</strong>
                   <span>
                     {invitation.evaluation_purpose === "diagnostic"
@@ -640,7 +646,7 @@ export default async function StudentEvaluationsPanel({ studentId, timeZone, err
                     {invitationStatusCopy(invitation.status)}
                   </span>
                   <span>
-                    {formatDate(invitation.window_start)} – {formatDate(invitation.window_end)}
+                    {formatDate(invitation.window_start, locale)} – {formatDate(invitation.window_end, locale)}
                   </span>
                 </div>
               );
