@@ -6,6 +6,18 @@ import { redirect } from "next/navigation";
 
 import { getStudentPortalContext } from "@/lib/student/portal";
 
+const CANCELLATION_REASON_CODES = new Set([
+  "schedule_conflict",
+  "health",
+  "work_school",
+  "transport",
+  "price",
+  "lost_interest",
+  "booking_error",
+  "other",
+  "prefer_not_say",
+]);
+
 function errorCode(error: { message?: string } | null, fallback: string) {
   if (!error?.message) return fallback;
   const known = [
@@ -426,9 +438,12 @@ export async function cancelGuestInvitationAction(formData: FormData) {
 
 export async function cancelStudentReservationAction(formData: FormData) {
   const reservationId = String(formData.get("reservation_id") ?? "").trim();
-  const reason = String(formData.get("reason") ?? "").trim() || null;
+  const reason = String(formData.get("reason") ?? "").trim();
   const returnPath = cancellationReturnPath(formData);
   if (!reservationId) redirect(`${returnPath}?error=reservation_required`);
+  if (!CANCELLATION_REASON_CODES.has(reason)) {
+    redirect(`/student/mis-clases/${reservationId}/cancelar?error=cancel_reason_required`);
+  }
 
   const { supabase } = await getStudentPortalContext();
   const { data: previewData } = await supabase.rpc("student_cancellation_preview", {
