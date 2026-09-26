@@ -25,17 +25,17 @@ const eligibilityCopy: Record<string, string> = {
 
 const occupyingReservationStatuses = new Set(["reserved", "attended"]);
 
-function formatExpiry(value: string | null) {
+function formatExpiry(value: string | null, locale: string) {
   if (!value) return "Sin vencimiento";
-  return `Vence ${new Intl.DateTimeFormat("es-MX", {
+  return `Vence ${new Intl.DateTimeFormat(locale, {
     day: "numeric",
     month: "short",
     timeZone: "UTC",
   }).format(new Date(`${value}T12:00:00Z`))}`;
 }
 
-function formatTime(value: string, timeZone: string) {
-  return new Intl.DateTimeFormat("es-MX", {
+function formatTime(value: string, timeZone: string, locale: string) {
+  return new Intl.DateTimeFormat(locale, {
     timeZone,
     hour: "2-digit",
     minute: "2-digit",
@@ -78,8 +78,8 @@ function weekStartMonday(value: Date) {
   return shiftUtcDays(value, weekday === 0 ? -6 : 1 - weekday);
 }
 
-function shortWeekday(value: Date) {
-  return new Intl.DateTimeFormat("es-MX", {
+function shortWeekday(value: Date, locale: string) {
+  return new Intl.DateTimeFormat(locale, {
     timeZone: "UTC",
     weekday: "short",
   })
@@ -88,8 +88,8 @@ function shortWeekday(value: Date) {
     .slice(0, 3);
 }
 
-function shortMonth(value: Date) {
-  return new Intl.DateTimeFormat("es-MX", {
+function shortMonth(value: Date, locale: string) {
+  return new Intl.DateTimeFormat(locale, {
     timeZone: "UTC",
     month: "short",
   })
@@ -97,9 +97,9 @@ function shortMonth(value: Date) {
     .replace(".", "");
 }
 
-function selectedDayLabel(value: Date, isToday: boolean) {
+function selectedDayLabel(value: Date, isToday: boolean, locale: string) {
   if (isToday) return "Clases de hoy";
-  return `Clases del ${new Intl.DateTimeFormat("es-MX", {
+  return `Clases del ${new Intl.DateTimeFormat(locale, {
     timeZone: "UTC",
     weekday: "long",
     day: "numeric",
@@ -175,7 +175,8 @@ export default async function AdminPage({
       .slice(0, 2)
       .map((part: string) => part.slice(0, 1).toUpperCase())
       .join("") || "U";
-  const timeZone = studio.timezone ?? "America/Mexico_City";
+  const timeZone = studio.timezone;
+  const locale = studio.locale;
   const now = new Date();
   const todayKey = localDateKey(now, timeZone);
   const selectedDate = parseDateKey(params.date) ?? parseDateKey(todayKey)!;
@@ -425,7 +426,7 @@ export default async function AdminPage({
 
     classes.push({
       id: session.id,
-      time: formatTime(session.starts_at, timeZone),
+      time: formatTime(session.starts_at, timeZone, locale),
       startsAt: session.starts_at,
       endsAt: session.ends_at,
       name: template?.name ?? "Clase",
@@ -477,7 +478,7 @@ export default async function AdminPage({
               : acquisition
                 ? `${balance ?? 0} créditos`
                 : "—",
-          expiresLabel: isGuest ? "Misma clase" : formatExpiry(acquisition?.expires_on ?? null),
+          expiresLabel: isGuest ? "Misma clase" : formatExpiry(acquisition?.expires_on ?? null, locale),
           studentId: reservation.student_id,
           evaluationInvitationId: evaluationInvitation?.id ?? null,
           evaluationStatus: evaluationInvitation?.status ?? null,
@@ -516,9 +517,9 @@ export default async function AdminPage({
 
   const visibleSales = (salesToday ?? []).filter((sale) => sale.status !== "voided");
   const salesTotalMinor = visibleSales.reduce((sum, sale) => sum + (sale.total_minor ?? 0), 0);
-  const salesTotal = new Intl.NumberFormat("es-MX", {
+  const salesTotal = new Intl.NumberFormat(studio.locale, {
     style: "currency",
-    currency: studio.currency ?? "MXN",
+    currency: studio.currency,
     maximumFractionDigits: 0,
   }).format(salesTotalMinor / 100);
 
@@ -547,7 +548,7 @@ export default async function AdminPage({
       </header>
 
       <header className="hoy-title-block">
-        <h1>{selectedDayLabel(selectedDate, selectedKey === todayKey)}</h1>
+        <h1>{selectedDayLabel(selectedDate, selectedKey === todayKey, locale)}</h1>
         <p>Administra, conecta, haz fluir.</p>
       </header>
 
@@ -563,8 +564,8 @@ export default async function AdminPage({
             ‹
           </Link>
           <strong>
-            {weekStart.getUTCDate()} {shortMonth(weekStart)} — {weekEnd.getUTCDate()}{" "}
-            {shortMonth(weekEnd)}
+            {weekStart.getUTCDate()} {shortMonth(weekStart, locale)} — {weekEnd.getUTCDate()}{" "}
+            {shortMonth(weekEnd, locale)}
           </strong>
           <Link href={`/admin?date=${nextWeekKey}`} aria-label="Semana siguiente">
             ›
@@ -583,7 +584,7 @@ export default async function AdminPage({
                 className={`mock-week-day${isSelected ? " is-selected" : ""}${isToday ? " is-today" : ""}`}
                 aria-current={isSelected ? "date" : undefined}
               >
-                <span>{shortWeekday(day)}</span>
+                <span>{shortWeekday(day, locale)}</span>
                 <strong>{day.getUTCDate()}</strong>
               </Link>
             );
