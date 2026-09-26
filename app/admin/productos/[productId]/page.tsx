@@ -78,7 +78,7 @@ export default async function ProductDetailPage({
         <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
           <p className="text-xs text-zinc-500">Precio</p>
           <p className="mt-2 text-xl font-semibold text-white">
-            {new Intl.NumberFormat("es-MX", {
+            {new Intl.NumberFormat(ctx.studio.locale, {
               style: "currency",
               currency: product.currency,
             }).format(product.price_minor / 100)}
