@@ -659,6 +659,8 @@ export default async function AdminPage({
         canAttendance={canWriteAttendance}
         canBook={canWriteSchedule}
         canCreateStudent={canWriteStudents}
+        locale={locale}
+        timeZone={timeZone}
         canCorrectCompleted
       />
     </main>
