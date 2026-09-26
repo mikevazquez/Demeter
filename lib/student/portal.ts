@@ -208,7 +208,7 @@ export const getStudentPortalContext = cache(async () => {
 
   const [{ data: snapshot, error }, { data: studio }] = await Promise.all([
     supabase.rpc("student_portal_snapshot"),
-    supabase.from("studios").select("name,timezone").eq("id", membership.studio_id).maybeSingle(),
+    supabase.from("studios").select("name,timezone,locale,currency").eq("id", membership.studio_id).maybeSingle(),
   ]);
 
   if (error || !snapshot || !studio) redirect("/login/student?error=access");
@@ -250,8 +250,8 @@ export function localDateKey(date: Date, timeZone: string) {
   }).format(date);
 }
 
-export function formatDateTime(value: string, timeZone: string) {
-  return new Intl.DateTimeFormat("es-MX", {
+export function formatDateTime(value: string, timeZone: string, locale: string) {
+  return new Intl.DateTimeFormat(locale, {
     timeZone,
     weekday: "short",
     day: "numeric",
@@ -261,8 +261,8 @@ export function formatDateTime(value: string, timeZone: string) {
   }).format(new Date(value));
 }
 
-export function formatDate(value: string, timeZone: string) {
-  return new Intl.DateTimeFormat("es-MX", {
+export function formatDate(value: string, timeZone: string, locale: string) {
+  return new Intl.DateTimeFormat(locale, {
     timeZone,
     day: "numeric",
     month: "short",
@@ -270,8 +270,8 @@ export function formatDate(value: string, timeZone: string) {
   }).format(new Date(`${value}T12:00:00Z`));
 }
 
-export function formatMoney(minor: number, currency = "MXN") {
-  return new Intl.NumberFormat("es-MX", { style: "currency", currency }).format(minor / 100);
+export function formatMoney(minor: number, currency: string, locale: string) {
+  return new Intl.NumberFormat(locale, { style: "currency", currency }).format(minor / 100);
 }
 
 export function bookingReasonCopy(reason?: string | null) {
