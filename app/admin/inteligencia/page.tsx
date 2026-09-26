@@ -1393,6 +1393,16 @@ export default async function IntelligencePage({
   const previousMarketingSpend = previousMarketingRows.reduce((sum, row) => sum + row.spend, 0);
   const currentMarketingRevenue = currentMarketingRows.reduce((sum, row) => sum + row.revenue, 0);
   const previousMarketingRevenue = previousMarketingRows.reduce((sum, row) => sum + row.revenue, 0);
+  const currentMarketingBooked = currentMarketingRows.reduce((sum, row) => sum + row.booked, 0);
+  const previousMarketingBooked = previousMarketingRows.reduce((sum, row) => sum + row.booked, 0);
+  const currentMarketingAttended = currentMarketingRows.reduce(
+    (sum, row) => sum + row.attended,
+    0,
+  );
+  const previousMarketingAttended = previousMarketingRows.reduce(
+    (sum, row) => sum + row.attended,
+    0,
+  );
   const currentMarketingConverted = currentMarketingRows.reduce(
     (sum, row) => sum + row.converted,
     0,
@@ -1403,6 +1413,22 @@ export default async function IntelligencePage({
   );
   const currentMarketingContacts = currentMarketingRows.reduce((sum, row) => sum + row.contacts, 0);
   const previousMarketingContacts = previousMarketingRows.reduce((sum, row) => sum + row.contacts, 0);
+  const currentMarketingBookingRate = safeRate(
+    currentMarketingBooked,
+    currentMarketingContacts,
+  );
+  const previousMarketingBookingRate = safeRate(
+    previousMarketingBooked,
+    previousMarketingContacts,
+  );
+  const currentMarketingAttendanceRate = safeRate(
+    currentMarketingAttended,
+    currentMarketingBooked,
+  );
+  const previousMarketingAttendanceRate = safeRate(
+    previousMarketingAttended,
+    previousMarketingBooked,
+  );
   const currentMarketingConversionRate = safeRate(
     currentMarketingConverted,
     currentMarketingContacts,
