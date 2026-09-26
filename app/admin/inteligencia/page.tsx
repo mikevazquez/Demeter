@@ -10,6 +10,7 @@ type ViewKey =
   | "dinero"
   | "alumnas"
   | "conversion"
+  | "marketing"
   | "clases"
   | "retencion"
   | "finanzas";
@@ -150,6 +151,8 @@ type ExpenseRow = {
   currency: string;
   effective_on: string;
   notes: string | null;
+  marketing_source: string | null;
+  marketing_campaign: string | null;
   created_at: string;
 };
 
@@ -196,6 +199,7 @@ const views: { key: ViewKey; label: string }[] = [
   { key: "dinero", label: "Dinero" },
   { key: "alumnas", label: "Alumnas" },
   { key: "conversion", label: "Conversión" },
+  { key: "marketing", label: "Marketing" },
   { key: "clases", label: "Clases" },
   { key: "retencion", label: "Retención" },
   { key: "finanzas", label: "Finanzas" },
@@ -424,6 +428,7 @@ function titleFor(view: ViewKey) {
     dinero: ["Dinero", "Ingresos cobrados, ventas, productos y cobranza del periodo."],
     alumnas: ["Alumnas", "Crecimiento, actividad y señales tempranas de abandono."],
     conversion: ["Conversión", "Dónde se rompe el embudo, qué se recupera y qué información falta capturar."],
+    marketing: ["Marketing", "Qué origen y campaña generan contactos de calidad, alumnas e ingresos atribuibles."],
     clases: ["Clases", "Qué disciplinas y horarios están usando bien —o mal— la capacidad."],
     retencion: ["Retención", "Detectar señales antes del abandono y priorizar a quién intervenir."],
     finanzas: [
@@ -556,7 +561,7 @@ export default async function IntelligencePage({
       .order("started_at", { ascending: true }),
     supabase
       .from("studio_expenses")
-      .select("id,category,description,vendor,amount_minor,currency,effective_on,notes,created_at")
+      .select("id,category,description,vendor,amount_minor,currency,effective_on,notes,marketing_source,marketing_campaign,created_at")
       .eq("studio_id", studio.id)
       .gte("effective_on", previousStartDate)
       .lte("effective_on", todayDate)
@@ -3064,6 +3069,27 @@ export default async function IntelligencePage({
                       Proveedor
                       <input name="vendor" placeholder="Opcional" maxLength={120} />
                     </label>
+                    <div className="intel-expense-form-grid">
+                      <label>
+                        Origen de marketing
+                        <input
+                          name="marketing_source"
+                          placeholder="Ej. meta_ads"
+                          maxLength={120}
+                        />
+                      </label>
+                      <label>
+                        Campaña
+                        <input
+                          name="marketing_campaign"
+                          placeholder="Ej. pole_septiembre"
+                          maxLength={160}
+                        />
+                      </label>
+                    </div>
+                    <p className="intel-form-help">
+                      Si el gasto es Publicidad, usa los mismos nombres de origen/campaña que llegan desde Asistian para calcular costo y retorno.
+                    </p>
                     <label>
                       Nota
                       <textarea name="notes" placeholder="Opcional" maxLength={500} rows={3} />
