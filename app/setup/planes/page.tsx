@@ -3,7 +3,10 @@ import { redirect } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/server";
 
-import { changeStudioPlanAction } from "./actions";
+import {
+  changeStudioPlanAction,
+  changeStudioSubscriptionAction,
+} from "./actions";
 
 type PlanRow = {
   id: string;
@@ -12,6 +15,23 @@ type PlanRow = {
   description: string | null;
   internal_only: boolean;
   sort_order: number;
+};
+
+type SubscriptionRow = {
+  plan_key: string;
+  plan_name: string;
+  status: string;
+  effective_status: string;
+  access_mode: "full" | "restricted";
+  trial_ends_at: string | null;
+  current_period_start: string | null;
+  current_period_end: string | null;
+  grace_ends_at: string | null;
+  cancel_at_period_end: boolean;
+  cancelled_at: string | null;
+  suspended_at: string | null;
+  last_payment_failure_at: string | null;
+  billing_provider: string | null;
 };
 
 type PlanUsageRow = {
@@ -36,6 +56,8 @@ export default async function PlatformPlansPage({
     error?: string;
     studio?: string;
     plan?: string;
+    subscription_saved?: string;
+    subscription_status?: string;
   }>;
 }) {
   const params = await searchParams;
@@ -73,7 +95,9 @@ export default async function PlatformPlansPage({
       .order("name"),
     supabase
       .from("studio_plan_assignments")
-      .select("studio_id,plan_id,status,starts_at,metadata,updated_at"),
+      .select(
+        "studio_id,plan_id,status,starts_at,metadata,updated_at,trial_ends_at,current_period_start,current_period_end,grace_ends_at,cancel_at_period_end,cancelled_at,suspended_at,last_payment_failure_at,billing_provider",
+      ),
     supabase
       .from("studio_plan_assignment_events")
       .select(
@@ -84,15 +108,29 @@ export default async function PlatformPlansPage({
   ]);
 
   const planRows = (plans ?? []) as PlanRow[];
-  const usageEntries = await Promise.all(
-    (studios ?? []).map(async (studio) => {
-      const { data } = await supabase.rpc("current_studio_plan_usage", {
-        p_studio_id: studio.id,
-      });
-      return [studio.id, (data ?? []) as PlanUsageRow[]] as const;
-    }),
-  );
+  const [usageEntries, subscriptionEntries] = await Promise.all([
+    Promise.all(
+      (studios ?? []).map(async (studio) => {
+        const { data } = await supabase.rpc("current_studio_plan_usage", {
+          p_studio_id: studio.id,
+        });
+        return [studio.id, (data ?? []) as PlanUsageRow[]] as const;
+      }),
+    ),
+    Promise.all(
+      (studios ?? []).map(async (studio) => {
+        const { data } = await supabase.rpc("current_studio_subscription", {
+          p_studio_id: studio.id,
+        });
+        return [
+          studio.id,
+          (((data ?? [])[0] ?? null) as SubscriptionRow | null),
+        ] as const;
+      }),
+    ),
+  ]);
   const usageByStudio = new Map(usageEntries);
+  const subscriptionByStudio = new Map(subscriptionEntries);
   const planById = new Map(planRows.map((plan) => [plan.id, plan]));
   const assignmentByStudio = new Map(
     (assignments ?? []).map((assignment) => [assignment.studio_id, assignment]),
@@ -120,6 +158,13 @@ export default async function PlatformPlansPage({
         </div>
       ) : null}
 
+      {params.subscription_saved === "1" ? (
+        <div className="notice success">
+          Estado de suscripción actualizado
+          {params.subscription_status ? ` a ${params.subscription_status}` : ""}.
+        </div>
+      ) : null}
+
       {params.saved === "unchanged" ? (
         <div className="notice">
           Ese estudio ya tiene el plan seleccionado. No se realizaron cambios.
@@ -132,7 +177,15 @@ export default async function PlatformPlansPage({
             ? "Selecciona un plan válido."
             : params.error === "invalid_request"
               ? "Faltan datos para cambiar el plan."
-              : "No pudimos guardar el cambio de plan."}
+              : params.error === "invalid_subscription"
+                ? "Revisa el estado y las fechas de la suscripción."
+                : params.error === "cancel_period_required"
+                  ? "Para cancelar al final del periodo debes indicar cuándo termina."
+                  : params.error === "assignment_missing"
+                    ? "Ese estudio todavía no tiene una asignación de plan."
+                    : params.error === "subscription_save_failed"
+                      ? "No pudimos guardar el estado de suscripción."
+                      : "No pudimos guardar el cambio de plan."}
         </div>
       ) : null}
 
@@ -141,6 +194,10 @@ export default async function PlatformPlansPage({
           const assignment = assignmentByStudio.get(studio.id);
           const currentPlan = assignment ? planById.get(assignment.plan_id) : null;
           const usageRows = usageByStudio.get(studio.id) ?? [];
+          const subscription = subscriptionByStudio.get(studio.id);
+
+          const toDateTimeLocal = (value: string | null | undefined) =>
+            value ? value.slice(0, 16) : "";
 
           return (
             <article
@@ -195,6 +252,99 @@ export default async function PlatformPlansPage({
                   ))}
                 </div>
               ) : null}
+
+              <section className="mt-4 rounded-3xl border border-white/10 bg-black/20 p-4">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-zinc-500">
+                      Suscripción
+                    </p>
+                    <p className="mt-1 text-sm font-semibold text-white">
+                      {subscription?.effective_status ?? assignment?.status ?? "Sin estado"}
+                    </p>
+                  </div>
+                  <span
+                    className={`rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide ${
+                      subscription?.access_mode === "restricted"
+                        ? "border-red-500/40 text-red-300"
+                        : "border-emerald-500/30 text-emerald-300"
+                    }`}
+                  >
+                    {subscription?.access_mode === "restricted" ? "Restringido" : "Operativo"}
+                  </span>
+                </div>
+
+                <form action={changeStudioSubscriptionAction} className="mt-4 grid gap-3">
+                  <input type="hidden" name="studio_id" value={studio.id} />
+
+                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                    <label>
+                      Estado
+                      <select
+                        name="status"
+                        defaultValue={assignment?.status ?? "active"}
+                        required
+                      >
+                        <option value="trialing">Trial</option>
+                        <option value="active">Activo</option>
+                        <option value="past_due">Pago vencido</option>
+                        <option value="suspended">Suspendido</option>
+                        <option value="cancelled">Cancelado</option>
+                      </select>
+                    </label>
+
+                    <label>
+                      Fin de trial · UTC
+                      <input
+                        name="trial_ends_at"
+                        type="datetime-local"
+                        defaultValue={toDateTimeLocal(assignment?.trial_ends_at)}
+                      />
+                    </label>
+
+                    <label>
+                      Fin de gracia · UTC
+                      <input
+                        name="grace_ends_at"
+                        type="datetime-local"
+                        defaultValue={toDateTimeLocal(assignment?.grace_ends_at)}
+                      />
+                    </label>
+
+                    <label>
+                      Fin de periodo · UTC
+                      <input
+                        name="current_period_end"
+                        type="datetime-local"
+                        defaultValue={toDateTimeLocal(assignment?.current_period_end)}
+                      />
+                    </label>
+                  </div>
+
+                  <label className="flex items-center gap-2 text-sm text-zinc-300">
+                    <input
+                      name="cancel_at_period_end"
+                      type="checkbox"
+                      defaultChecked={assignment?.cancel_at_period_end === true}
+                    />
+                    Cancelar al finalizar el periodo actual
+                  </label>
+
+                  <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
+                    <label>
+                      Motivo
+                      <input
+                        name="billing_reason"
+                        placeholder="Pago fallido, reactivación, cancelación…"
+                        maxLength={240}
+                      />
+                    </label>
+                    <button className="primary-button self-end" type="submit">
+                      Guardar estado
+                    </button>
+                  </div>
+                </form>
+              </section>
 
               <form action={changeStudioPlanAction} className="mt-4 grid gap-3 sm:grid-cols-[1fr_1fr_auto]">
                 <input type="hidden" name="studio_id" value={studio.id} />
