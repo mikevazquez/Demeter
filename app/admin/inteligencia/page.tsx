@@ -132,16 +132,16 @@ function validView(value: string | undefined): ViewKey {
   return views.some((item) => item.key === value) ? (value as ViewKey) : "resumen";
 }
 
-function money(minor: number, currency = "MXN") {
-  return new Intl.NumberFormat("es-MX", {
+function money(minor: number, currency: string, locale: string) {
+  return new Intl.NumberFormat(locale, {
     style: "currency",
     currency,
     maximumFractionDigits: 0,
   }).format(minor / 100);
 }
 
-function pct(value: number) {
-  return new Intl.NumberFormat("es-MX", {
+function pct(value: number, locale: string) {
+  return new Intl.NumberFormat(locale, {
     maximumFractionDigits: 1,
   }).format(value) + "%";
 }
@@ -325,6 +325,8 @@ export default async function IntelligencePage({
   const view = validView(params.view);
   const days = clampDays(params.days);
   const { supabase, studio } = await getAdminContext(CAPABILITIES.REPORTS_READ);
+  const locale = studio.locale;
+  const timeZone = studio.timezone;
   const now = new Date();
   const currentEnd = now;
   const currentStart = new Date(now.getTime() - days * DAY);
@@ -654,7 +656,7 @@ export default async function IntelligencePage({
     const date = new Date(session.starts_at);
     const hour = Number(
       new Intl.DateTimeFormat("en-US", {
-        timeZone: studio.timezone ?? "America/Mexico_City",
+        timeZone,
         hour: "2-digit",
         hourCycle: "h23",
       }).format(date),
@@ -666,8 +668,8 @@ export default async function IntelligencePage({
     daypart[part][0] += used;
     daypart[part][1] += session.capacity ?? 0;
 
-    const day = new Intl.DateTimeFormat("es-MX", {
-      timeZone: studio.timezone ?? "America/Mexico_City",
+    const day = new Intl.DateTimeFormat(locale, {
+      timeZone,
       weekday: "long",
     }).format(date);
     const current = weekday.get(day) ?? [0, 0];
@@ -783,7 +785,7 @@ export default async function IntelligencePage({
       );
     return {
       key,
-      label: new Intl.DateTimeFormat("es-MX", {
+      label: new Intl.DateTimeFormat(locale, {
         day: "numeric",
         month: "short",
       }).format(bucketDate),
@@ -863,7 +865,7 @@ export default async function IntelligencePage({
           <section className="intel-kpi-grid">
             <MetricCard
               label="Ingresos cobrados"
-              value={money(currentRevenue, studio.currency)}
+              value={money(currentRevenue, studio.currency, locale)}
               delta={deltaText(currentRevenue, previousRevenue)}
               tone={currentRevenue >= previousRevenue ? "positive" : "danger"}
             />
@@ -875,13 +877,13 @@ export default async function IntelligencePage({
             />
             <MetricCard
               label="Conversión de prueba"
-              value={pct(trialConversion)}
+              value={pct(trialConversion, locale)}
               delta={pointsDelta(trialConversion, previousTrialConversion)}
               tone={trialConversion >= previousTrialConversion ? "positive" : "warning"}
             />
             <MetricCard
               label="Ocupación"
-              value={pct(currentClassMetrics.occupancy)}
+              value={pct(currentClassMetrics.occupancy, locale)}
               delta={pointsDelta(currentClassMetrics.occupancy, previousClassMetrics.occupancy)}
               tone={currentClassMetrics.occupancy >= 70 ? "positive" : "warning"}
             />
@@ -914,7 +916,7 @@ export default async function IntelligencePage({
                       title={"⚠️ " + highestCancellation.name}
                       body={
                         "Es la clase con mayor cancelación del periodo: " +
-                        pct(highestCancellation.cancellation) +
+                        pct(highestCancellation.cancellation, locale) +
                         "."
                       }
                       href={viewHref("clases", days)}
@@ -924,7 +926,7 @@ export default async function IntelligencePage({
                     <Insight
                       tone="warning"
                       title="💳 Cobranza pendiente"
-                      body={money(pendingCurrent, studio.currency) + " continúan sin cobrar en ventas del periodo."}
+                      body={money(pendingCurrent, studio.currency, locale) + " continúan sin cobrar en ventas del periodo."}
                       href={viewHref("dinero", days)}
                     />
                   ) : null}
@@ -942,7 +944,7 @@ export default async function IntelligencePage({
                       label={item.label}
                       value={Math.max(item.amount, 0)}
                       max={maxDailyRevenue}
-                      display={money(item.amount, studio.currency)}
+                      display={money(item.amount, studio.currency, locale)}
                     />
                   ))}
                 </div>
@@ -991,7 +993,7 @@ export default async function IntelligencePage({
                   {classRows.slice(0, 4).map((row) => (
                     <div className="intel-table-row" key={row.name}>
                       <span>{row.name}</span>
-                      <strong>{pct(row.occupancy)}</strong>
+                      <strong>{pct(row.occupancy, locale)}</strong>
                     </div>
                   ))}
                 </div>
@@ -1006,25 +1008,25 @@ export default async function IntelligencePage({
           <section className="intel-kpi-grid">
             <MetricCard
               label="Ingresos cobrados"
-              value={money(currentRevenue, studio.currency)}
+              value={money(currentRevenue, studio.currency, locale)}
               delta={deltaText(currentRevenue, previousRevenue)}
               tone={currentRevenue >= previousRevenue ? "positive" : "danger"}
             />
             <MetricCard
               label="Pendiente de cobro"
-              value={money(pendingCurrent, studio.currency)}
+              value={money(pendingCurrent, studio.currency, locale)}
               delta={pendingCurrent > 0 ? "Requiere seguimiento" : "Sin pendientes"}
               tone={pendingCurrent > 0 ? "warning" : "positive"}
             />
             <MetricCard
               label="Ticket promedio"
-              value={money(ticketAverage, studio.currency)}
+              value={money(ticketAverage, studio.currency, locale)}
               delta={deltaText(ticketAverage, previousTicketAverage)}
               tone="neutral"
             />
             <MetricCard
               label="Reembolsos"
-              value={money(currentRefunds, studio.currency)}
+              value={money(currentRefunds, studio.currency, locale)}
               delta={deltaText(currentRefunds, previousRefunds)}
               tone={currentRefunds > previousRefunds ? "danger" : "neutral"}
             />
@@ -1040,7 +1042,7 @@ export default async function IntelligencePage({
                       label={item.label}
                       value={Math.max(item.amount, 0)}
                       max={maxDailyRevenue}
-                      display={money(item.amount, studio.currency)}
+                      display={money(item.amount, studio.currency, locale)}
                     />
                   ))}
                 </div>
@@ -1063,7 +1065,7 @@ export default async function IntelligencePage({
                       >
                         <span>{sale.folio}</span>
                         <span>{student?.full_name ?? "Alumna"}</span>
-                        <strong>{money(sale.total_minor, sale.currency)}</strong>
+                        <strong>{money(sale.total_minor, sale.currency, locale)}</strong>
                       </Link>
                     );
                   })}
@@ -1081,7 +1083,7 @@ export default async function IntelligencePage({
                         label={item.name}
                         value={item.amount}
                         max={productRows[0]?.amount ?? 1}
-                        display={money(item.amount, studio.currency)}
+                        display={money(item.amount, studio.currency, locale)}
                         tone="success"
                       />
                     ))
@@ -1102,7 +1104,7 @@ export default async function IntelligencePage({
                     }
                     body={
                       pendingCurrent > 0
-                        ? money(pendingCurrent, studio.currency) +
+                        ? money(pendingCurrent, studio.currency, locale) +
                           " no han sido cobrados todavía."
                         : "No detectamos saldo abierto en las ventas del periodo."
                     }
@@ -1111,7 +1113,7 @@ export default async function IntelligencePage({
                   <Insight
                     tone={currentRefunds > 0 ? "danger" : "info"}
                     title="↩ Reembolsos"
-                    body={money(currentRefunds, studio.currency) + " registrados en el periodo."}
+                    body={money(currentRefunds, studio.currency, locale) + " registrados en el periodo."}
                     href="/admin/ventas"
                   />
                 </div>
@@ -1305,7 +1307,7 @@ export default async function IntelligencePage({
             />
             <MetricCard
               label="Conversión"
-              value={pct(trialConversion)}
+              value={pct(trialConversion, locale)}
               delta={pointsDelta(trialConversion, previousTrialConversion)}
               tone={trialConversion >= previousTrialConversion ? "positive" : "warning"}
             />
@@ -1379,7 +1381,7 @@ export default async function IntelligencePage({
           <section className="intel-kpi-grid">
             <MetricCard
               label="Ocupación"
-              value={pct(currentClassMetrics.occupancy)}
+              value={pct(currentClassMetrics.occupancy, locale)}
               delta={pointsDelta(currentClassMetrics.occupancy, previousClassMetrics.occupancy)}
               tone={currentClassMetrics.occupancy >= 70 ? "positive" : "warning"}
             />
@@ -1391,13 +1393,13 @@ export default async function IntelligencePage({
             />
             <MetricCard
               label="Cancelaciones"
-              value={pct(currentClassMetrics.cancellation)}
+              value={pct(currentClassMetrics.cancellation, locale)}
               delta={pointsDelta(currentClassMetrics.cancellation, previousClassMetrics.cancellation)}
               tone={currentClassMetrics.cancellation > 15 ? "danger" : "warning"}
             />
             <MetricCard
               label="No show"
-              value={pct(currentClassMetrics.noShow)}
+              value={pct(currentClassMetrics.noShow, locale)}
               delta={pointsDelta(currentClassMetrics.noShow, previousClassMetrics.noShow)}
               tone={currentClassMetrics.noShow > 10 ? "danger" : "neutral"}
             />
@@ -1419,9 +1421,9 @@ export default async function IntelligencePage({
                   {classRows.map((row) => (
                     <div className="intel-data-row intel-class-grid" key={row.name}>
                       <span>{row.name}</span>
-                      <strong>{pct(row.occupancy)}</strong>
-                      <span>{pct(row.attendance)}</span>
-                      <span>{pct(row.cancellation)}</span>
+                      <strong>{pct(row.occupancy, locale)}</strong>
+                      <span>{pct(row.attendance, locale)}</span>
+                      <span>{pct(row.cancellation, locale)}</span>
                     </div>
                   ))}
                 </div>
@@ -1437,7 +1439,7 @@ export default async function IntelligencePage({
                         label={label}
                         value={rate}
                         max={100}
-                        display={pct(rate)}
+                        display={pct(rate, locale)}
                         tone={rate >= 75 ? "success" : rate < 45 ? "warning" : "info"}
                       />
                     );
@@ -1455,7 +1457,7 @@ export default async function IntelligencePage({
                         label={label}
                         value={rate}
                         max={100}
-                        display={pct(rate)}
+                        display={pct(rate, locale)}
                       />
                     );
                   })}
@@ -1473,7 +1475,7 @@ export default async function IntelligencePage({
                       body={
                         highestDemand.name +
                         " está en " +
-                        pct(highestDemand.occupancy) +
+                        pct(highestDemand.occupancy, locale) +
                         " de ocupación."
                       }
                     />
@@ -1485,7 +1487,7 @@ export default async function IntelligencePage({
                       body={
                         lowestDemand.name +
                         " está en " +
-                        pct(lowestDemand.occupancy) +
+                        pct(lowestDemand.occupancy, locale) +
                         " de ocupación."
                       }
                     />
@@ -1497,7 +1499,7 @@ export default async function IntelligencePage({
                       body={
                         highestCancellation.name +
                         " concentra " +
-                        pct(highestCancellation.cancellation) +
+                        pct(highestCancellation.cancellation, locale) +
                         " de cancelaciones."
                       }
                     />
@@ -1522,13 +1524,13 @@ export default async function IntelligencePage({
           <section className="intel-kpi-grid">
             <MetricCard
               label="Renovación"
-              value={pct(renewal.rate)}
+              value={pct(renewal.rate, locale)}
               delta={pointsDelta(renewal.rate, previousRenewal.rate)}
               tone={renewal.rate >= previousRenewal.rate ? "positive" : "warning"}
             />
             <MetricCard
               label="Churn"
-              value={pct(churn)}
+              value={pct(churn, locale)}
               delta={pointsDelta(churn, previousChurn)}
               tone={churn > previousChurn ? "danger" : "positive"}
             />
@@ -1621,7 +1623,7 @@ export default async function IntelligencePage({
           <section className="intel-kpi-grid">
             <MetricCard
               label="Ingresos"
-              value={money(currentRevenue, studio.currency)}
+              value={money(currentRevenue, studio.currency, locale)}
               delta="Dato disponible"
               tone="positive"
             />
@@ -1640,7 +1642,7 @@ export default async function IntelligencePage({
                       label={item.label}
                       value={Math.max(item.amount, 0)}
                       max={maxDailyRevenue}
-                      display={money(item.amount, studio.currency)}
+                      display={money(item.amount, studio.currency, locale)}
                     />
                   ))}
                 </div>
@@ -1654,7 +1656,7 @@ export default async function IntelligencePage({
                       label={item.name}
                       value={item.amount}
                       max={productRows[0]?.amount ?? 1}
-                      display={money(item.amount, studio.currency)}
+                      display={money(item.amount, studio.currency, locale)}
                     />
                   ))}
                 </div>
