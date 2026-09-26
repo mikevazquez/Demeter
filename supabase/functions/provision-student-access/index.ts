@@ -31,7 +31,7 @@ function generateTemporaryPassword() {
   crypto.getRandomValues(randomValues);
   const suffix = Array.from(randomValues, (value) => String(value % 10)).join("");
 
-  return `Demeter${suffix}`;
+  return `Sf!${suffix}A9`;
 }
 
 function buildStudentActivationLink(baseUrl: string, tokenHash: string) {
