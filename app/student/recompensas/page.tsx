@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { STUDIO_MODULES } from "@/lib/auth/modules";
 import { formatDateTime } from "@/lib/student/portal";
 import {
   conditionProgress,
@@ -51,6 +52,7 @@ export default async function StudentProgressPage() {
         locale={ctx.studio.locale}
         studioId={ctx.membership.studio_id}
         studioName={ctx.studio.name}
+        notificationsEnabled={ctx.hasModule(STUDIO_MODULES.NOTIFICATIONS)}
       />
     );
   }
