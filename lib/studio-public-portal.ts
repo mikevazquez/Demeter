@@ -7,6 +7,7 @@ export type PublicStudioPortal = {
   primaryColor: string;
   logoPath: string | null;
   logoUrl: string | null;
+  tagline: string | null;
 };
 
 type PublicStudioPortalRow = {
@@ -15,6 +16,7 @@ type PublicStudioPortalRow = {
   slug: string;
   primary_color: string | null;
   logo_path: string | null;
+  tagline: string | null;
 };
 
 export async function getPublicStudioPortal(
@@ -47,5 +49,6 @@ export async function getPublicStudioPortal(
     primaryColor: row.primary_color ?? "#FF0A8A",
     logoPath: row.logo_path,
     logoUrl,
+    tagline: row.tagline?.trim() || null,
   };
 }
