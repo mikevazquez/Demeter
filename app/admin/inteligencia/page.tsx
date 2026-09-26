@@ -380,6 +380,7 @@ export default async function IntelligencePage({
   const currentStartDate = isoDateKey(currentStart);
   const previousStartDate = isoDateKey(previousStart);
   const todayDate = isoDateKey(now);
+  const upcomingEnd = new Date(now.getTime() + 14 * DAY);
 
   const [
     studentsResult,
@@ -388,6 +389,7 @@ export default async function IntelligencePage({
     paymentsResult,
     linesResult,
     sessionsResult,
+    upcomingSessionsResult,
     templatesResult,
     productTemplatesResult,
     onboardingResult,
@@ -427,6 +429,14 @@ export default async function IntelligencePage({
       .eq("studio_id", studio.id)
       .gte("starts_at", rangeStartIso)
       .lt("starts_at", currentEnd.toISOString())
+      .order("starts_at"),
+    supabase
+      .from("class_sessions")
+      .select("id,template_id,starts_at,capacity,status")
+      .eq("studio_id", studio.id)
+      .gte("starts_at", currentEnd.toISOString())
+      .lt("starts_at", upcomingEnd.toISOString())
+      .neq("status", "cancelled")
       .order("starts_at"),
     supabase
       .from("class_templates")
@@ -470,6 +480,7 @@ export default async function IntelligencePage({
   const payments = (paymentsResult.data ?? []) as PaymentRow[];
   const saleLines = (linesResult.data ?? []) as SaleLineRow[];
   const sessions = (sessionsResult.data ?? []) as SessionRow[];
+  const upcomingSessions = (upcomingSessionsResult.data ?? []) as SessionRow[];
   const templates = (templatesResult.data ?? []) as ClassTemplateRow[];
   const productTemplates = (productTemplatesResult.data ?? []) as ProductTemplateRow[];
   const onboarding = (onboardingResult.data ?? []) as OnboardingRow[];
@@ -506,6 +517,15 @@ export default async function IntelligencePage({
     : { data: [] as ReservationRow[] };
 
   const reservations = (reservationsResult.data ?? []) as ReservationRow[];
+  const upcomingSessionIds = upcomingSessions.map((session) => session.id);
+  const upcomingReservationsResult = upcomingSessionIds.length
+    ? await supabase
+        .from("reservations")
+        .select("id,session_id,student_id,status,booked_at")
+        .in("session_id", upcomingSessionIds)
+        .eq("status", "reserved")
+    : { data: [] as ReservationRow[] };
+  const upcomingReservations = (upcomingReservationsResult.data ?? []) as ReservationRow[];
   const templateMap = new Map(templates.map((item) => [item.id, item]));
   const productTemplateMap = new Map(productTemplates.map((item) => [item.id, item]));
   const commercialAcquisitions = acquisitions.filter((item) => {
