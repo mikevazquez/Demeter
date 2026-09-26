@@ -247,7 +247,7 @@ export default async function StudentAchievementsPage({
                       <StateChip tone="success">Conseguido</StateChip>
                     </div>
                     <p className="mt-2 text-xs text-zinc-500">
-                      {formatDateTime(item.achievement.unlocked_at, ctx.studio.timezone)}
+                      {formatDateTime(item.achievement.unlocked_at, ctx.studio.timezone, ctx.studio.locale)}
                     </p>
                     {item.version?.human_summary ? (
                       <p className="mt-2 text-xs leading-5 text-zinc-400">
