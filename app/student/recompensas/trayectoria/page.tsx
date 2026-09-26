@@ -30,8 +30,8 @@ const filters = [
   { key: "reward", label: "Recompensas" },
 ] as const;
 
-function monthKey(date: string, timeZone: string) {
-  return new Intl.DateTimeFormat("es-MX", {
+function monthKey(date: string, timeZone: string, locale: string) {
+  return new Intl.DateTimeFormat(locale, {
     month: "long",
     year: "numeric",
     timeZone,
@@ -160,7 +160,10 @@ export default async function StudentJourneyPage({
     events.push({
       id: `reward-earned-${reward.id}`,
       kind: "reward",
-      title: `Ganaste: ${rewardBenefitLabel(reward)}`,
+      title: `Ganaste: ${rewardBenefitLabel(reward, {
+          currency: ctx.studio.currency,
+          locale: ctx.studio.locale,
+        })}`,
       detail: "La recompensa se agregó a tu cuenta.",
       occurredAt: reward.created_at,
       href: `/student/recompensas/recompensa/${reward.id}`,
@@ -173,8 +176,14 @@ export default async function StudentJourneyPage({
         kind: "reward",
         title:
           reward.delivery_mode === "auto_apply"
-            ? `Se aplicó automáticamente: ${rewardBenefitLabel(reward)}`
-            : `Utilizaste: ${rewardBenefitLabel(reward)}`,
+            ? `Se aplicó automáticamente: ${rewardBenefitLabel(reward, {
+          currency: ctx.studio.currency,
+          locale: ctx.studio.locale,
+        })}`
+            : `Utilizaste: ${rewardBenefitLabel(reward, {
+          currency: ctx.studio.currency,
+          locale: ctx.studio.locale,
+        })}`,
         detail: null,
         occurredAt: reward.redeemed_at,
         href: `/student/recompensas/recompensa/${reward.id}`,
@@ -186,7 +195,10 @@ export default async function StudentJourneyPage({
       events.push({
         id: `reward-expired-${reward.id}`,
         kind: "reward",
-        title: `Venció: ${rewardBenefitLabel(reward)}`,
+        title: `Venció: ${rewardBenefitLabel(reward, {
+          currency: ctx.studio.currency,
+          locale: ctx.studio.locale,
+        })}`,
         detail: "La recompensa permanece en tu historial.",
         occurredAt: reward.expires_at,
         href: `/student/recompensas/recompensa/${reward.id}`,
@@ -198,7 +210,10 @@ export default async function StudentJourneyPage({
       events.push({
         id: `reward-adjusted-${reward.id}`,
         kind: "reward",
-        title: `Recompensa ajustada: ${rewardBenefitLabel(reward)}`,
+        title: `Recompensa ajustada: ${rewardBenefitLabel(reward, {
+          currency: ctx.studio.currency,
+          locale: ctx.studio.locale,
+        })}`,
         detail: "El ajuste quedó registrado en tu historial.",
         occurredAt: reward.revoked_at,
         href: `/student/recompensas/recompensa/${reward.id}`,
@@ -233,7 +248,7 @@ export default async function StudentJourneyPage({
 
   const groups = new Map<string, TimelineEvent[]>();
   for (const event of filtered) {
-    const key = monthKey(event.occurredAt, ctx.studio.timezone);
+    const key = monthKey(event.occurredAt, ctx.studio.timezone, ctx.studio.locale);
     const list = groups.get(key) ?? [];
     list.push(event);
     groups.set(key, list);

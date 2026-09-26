@@ -228,12 +228,22 @@ export function rewardStatusLabel(status: string) {
 
 export function rewardBenefitLabel(
   reward: Pick<StudentRewardInstance, "kind" | "benefit_definition">,
+  regional?: { currency?: string; locale?: string },
 ) {
   const definition = rewardObject(reward.benefit_definition);
 
   if (reward.kind === "fixed_discount") {
     const amount = Number(definition.amount_minor ?? 0) / 100;
-    return `$${amount.toLocaleString("es-MX")} de descuento`;
+    if (regional?.currency) {
+      return (
+        new Intl.NumberFormat(regional.locale, {
+          style: "currency",
+          currency: regional.currency,
+          maximumFractionDigits: 0,
+        }).format(amount) + " de descuento"
+      );
+    }
+    return `${amount.toLocaleString(regional?.locale)} de descuento`;
   }
   if (reward.kind === "percentage_discount") {
     return `${Number(definition.percentage ?? 0)}% de descuento`;
@@ -255,16 +265,22 @@ export function rewardBenefitLabel(
   return String(definition.label ?? definition.description ?? "Beneficio especial");
 }
 
-export function rewardDefinitionLabel(value: unknown) {
+export function rewardDefinitionLabel(
+  value: unknown,
+  regional?: { currency?: string; locale?: string },
+) {
   const definition = rewardObject(value);
   const rewards = Array.isArray(definition.rewards) ? definition.rewards : [];
   const primary = rewards.length ? rewardObject(rewards[0]) : definition;
   const kind = String(primary.kind ?? "custom_manual");
 
-  return rewardBenefitLabel({
-    kind,
-    benefit_definition: primary,
-  });
+  return rewardBenefitLabel(
+    {
+      kind,
+      benefit_definition: primary,
+    },
+    regional,
+  );
 }
 
 export function metricLabel(metric: string) {
