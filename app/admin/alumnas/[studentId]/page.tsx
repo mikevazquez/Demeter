@@ -1328,6 +1328,7 @@ export default async function StudentProfilePage({
                   classes={packageClassEvents.get(acquisition.id) ?? []}
                   editable={false}
                   timeZone={timeZone}
+                  locale={locale}
                 />
               ))}
             </div>
@@ -1368,6 +1369,7 @@ export default async function StudentProfilePage({
                     classes={packageClassEvents.get(acquisition.id) ?? []}
                     editable={false}
                     timeZone={timeZone}
+                    locale={locale}
                   />
                 );
               })
