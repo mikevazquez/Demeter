@@ -55,6 +55,8 @@ type TodayClassesProps = {
   canAttendance: boolean;
   canBook: boolean;
   canCreateStudent: boolean;
+  locale: string;
+  timeZone: string;
   canCorrectCompleted?: boolean;
   serverNow: string;
 };
@@ -65,6 +67,8 @@ export function TodayClasses({
   canAttendance,
   canBook,
   canCreateStudent,
+  locale,
+  timeZone,
   canCorrectCompleted = true,
   serverNow,
 }: TodayClassesProps) {
@@ -211,6 +215,8 @@ export function TodayClasses({
                 canAttendance={canAttendance}
                 canBook={canBook}
                 canCreateStudent={canCreateStudent}
+                locale={locale}
+                timeZone={timeZone}
                 canCorrectCompleted={canCorrectCompleted}
                 returnTo={item.returnTo}
                 initiallyOpen
