@@ -108,8 +108,8 @@ export default async function EvaluationInvitationPage({
                   Ventana disponible
                 </p>
                 <strong className="mt-1 block text-sm text-white">
-                  Del {formatDate(invitation.window_start, studio.timezone)} al{" "}
-                  {formatDate(invitation.window_end, studio.timezone)}
+                  Del {formatDate(invitation.window_start, studio.timezone, studio.locale)} al{" "}
+                  {formatDate(invitation.window_end, studio.timezone, studio.locale)}
                 </strong>
               </div>
             </div>
