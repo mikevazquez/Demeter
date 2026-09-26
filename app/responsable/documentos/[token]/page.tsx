@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import QueryNotice from "@/app/components/QueryNotice";
@@ -27,6 +28,30 @@ type Invitation = {
   student: { id: string; full_name: string };
   items?: unknown[];
 };
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ token: string }>;
+}): Promise<Metadata> {
+  const { token } = await params;
+  const supabase = await createClient();
+  const { data } = await supabase.rpc("guardian_document_invitation", {
+    p_token: token,
+  });
+
+  if (!data) {
+    return { title: "Documentos" };
+  }
+
+  const invitation = data as Invitation;
+  return {
+    title: `${invitation.studio.name} · Documentos`,
+    description:
+      invitation.studio.tagline ??
+      `Documentos de ${invitation.studio.name}`,
+  };
+}
 
 export default async function GuardianInvitationPage({
   params,
