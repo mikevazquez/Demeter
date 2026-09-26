@@ -358,9 +358,9 @@ function titleFor(view: ViewKey) {
     resumen: ["Resumen", "Qué está pasando en el negocio y qué necesita tu atención."],
     dinero: ["Dinero", "Ingresos cobrados, ventas, productos y cobranza del periodo."],
     alumnas: ["Alumnas", "Crecimiento, actividad y señales tempranas de abandono."],
-    conversion: ["Conversión", "Qué ocurre con las clases de prueba hasta convertirse en alumnas."],
+    conversion: ["Conversión", "Dónde se rompe el embudo, qué se recupera y qué información falta capturar."],
     clases: ["Clases", "Qué disciplinas y horarios están usando bien —o mal— la capacidad."],
-    retencion: ["Retención", "Quién renueva, quién se está alejando y cuándo debemos intervenir."],
+    retencion: ["Retención", "Detectar señales antes del abandono y priorizar a quién intervenir."],
     finanzas: [
       "Finanzas",
       "Ingresos y rentabilidad. La utilidad sólo existe cuando también registramos gastos.",
@@ -1341,34 +1341,34 @@ export default async function IntelligencePage({
 
             <div className="intel-stack">
               <Section
-                title="🎯 Conversión de prueba"
-                description="El sistema actual empieza a medir desde la clase de prueba registrada."
+                title="🎯 Embudo rápido"
+                description="Se basa en eventos históricos, así que una cancelación o no show no desaparece al reagendar."
               >
                 <div className="intel-bars">
                   <BarRow
-                    label="Pruebas registradas"
-                    value={trialCurrent.length}
-                    max={Math.max(trialCurrent.length, 1)}
-                    display={String(trialCurrent.length)}
+                    label="Personas que reservaron"
+                    value={currentBookingStudents.size}
+                    max={Math.max(currentBookingStudents.size, 1)}
+                    display={String(currentBookingStudents.size)}
                     tone="info"
                   />
                   <BarRow
                     label="Asistieron"
-                    value={trialAttended}
-                    max={Math.max(trialCurrent.length, 1)}
-                    display={String(trialAttended)}
+                    value={currentAttendedStudents.size}
+                    max={Math.max(currentBookingStudents.size, currentAttendedStudents.size, 1)}
+                    display={String(currentAttendedStudents.size)}
                     tone="info"
                   />
                   <BarRow
-                    label="Se convirtieron"
-                    value={trialConverted}
-                    max={Math.max(trialCurrent.length, 1)}
-                    display={String(trialConverted)}
+                    label="Registraron pago"
+                    value={currentPaidStudents.size}
+                    max={Math.max(currentBookingStudents.size, currentPaidStudents.size, 1)}
+                    display={String(currentPaidStudents.size)}
                     tone="success"
                   />
                 </div>
                 <div className="intel-source-note">
-                  Registro → reserva todavía no tiene una fuente de leads previa a la clase de prueba.
+                  Conversación → reserva sigue pendiente hasta que Asistian exponga un evento de inicio de conversación o primer mensaje entrante.
                 </div>
               </Section>
 
