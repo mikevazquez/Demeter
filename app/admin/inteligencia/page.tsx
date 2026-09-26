@@ -1008,6 +1008,13 @@ export default async function IntelligencePage({
     (a, b) => b.score - a.score || a.days - b.days || a.name.localeCompare(b.name),
   );
 
+  const urgentRetentionStudents = preventiveRiskStudents.filter(
+    (item) => item.score >= 5 || item.days <= 2,
+  );
+  const watchRetentionStudents = preventiveRiskStudents.filter(
+    (item) => !urgentRetentionStudents.some((urgent) => urgent.id === item.id),
+  );
+
   const currentSessions = sessions.filter((item) =>
     isBetween(item.starts_at, currentStart, currentEnd),
   );
@@ -1837,20 +1844,32 @@ export default async function IntelligencePage({
     });
   }
 
-  if (preventiveRiskStudents.length > 0) {
+  if (urgentRetentionStudents.length > 0) {
     decisions.push({
-      key: "retention-preventive",
-      priority: preventiveRiskStudents.length >= 3 ? 1 : 2,
+      key: "retention-preventive-urgent",
+      priority: 1,
+      tone: "danger",
+      title:
+        "Intervenir hoy a " +
+        urgentRetentionStudents.length +
+        (urgentRetentionStudents.length === 1 ? " alumna" : " alumnas"),
+      evidence:
+        "Tienen múltiples señales de desconexión y/o están a ≤2 días de vencer.",
+      action: "Abrir Retención y recuperar una próxima reserva antes de que se venza el paquete.",
+      href: viewHref("retencion", days),
+    });
+  } else if (watchRetentionStudents.length > 0) {
+    decisions.push({
+      key: "retention-preventive-watch",
+      priority: 2,
       tone: "warning",
       title:
-        "Intervenir " +
-        preventiveRiskStudents.length +
-        (preventiveRiskStudents.length === 1
-          ? " alumna antes de que venza"
-          : " alumnas antes de que venzan"),
+        "Vigilar " +
+        watchRetentionStudents.length +
+        (watchRetentionStudents.length === 1 ? " alumna" : " alumnas"),
       evidence:
-        "Vencen en ≤7 días y además no tienen próxima reserva y/o llevan 14 días sin asistir.",
-      action: "Abrir Retención, priorizar las que vencen primero y recuperar su próxima reserva.",
+        "Acumulan señales tempranas, pero todavía no alcanzan prioridad de intervención inmediata.",
+      action: "Revisar evolución de frecuencia, próxima reserva y fricción antes de contactar.",
       href: viewHref("retencion", days),
     });
   }
@@ -3598,11 +3617,11 @@ export default async function IntelligencePage({
 
             <div className="intel-stack">
               <Section
-                title="Alumnas a intervenir ahora"
-                description="Ordenadas por cantidad de señales y cercanía al vencimiento."
+                title="🔴 Alta prioridad"
+                description="Contactar ahora: múltiples señales y/o vencimiento inminente."
               >
                 <div className="intel-risk-list">
-                  {preventiveRiskStudents.slice(0, 10).map((item) => (
+                  {urgentRetentionStudents.slice(0, 8).map((item) => (
                     <Link
                       href={"/admin/alumnas/" + item.id}
                       key={item.id}
@@ -3612,11 +3631,35 @@ export default async function IntelligencePage({
                         <strong>{item.name}</strong>
                         <small>{item.detail}</small>
                       </span>
-                      <b>{item.state}</b>
+                      <b>Actuar hoy</b>
                     </Link>
                   ))}
-                  {!preventiveRiskStudents.length ? (
-                    <p className="intel-empty">No hay señales preventivas con suficiente evidencia hoy.</p>
+                  {!urgentRetentionStudents.length ? (
+                    <p className="intel-empty">No hay alumnas con prioridad inmediata hoy.</p>
+                  ) : null}
+                </div>
+              </Section>
+
+              <Section
+                title="🟡 Vigilar"
+                description="Señales tempranas que todavía no justifican contacto inmediato."
+              >
+                <div className="intel-risk-list">
+                  {watchRetentionStudents.slice(0, 10).map((item) => (
+                    <Link
+                      href={"/admin/alumnas/" + item.id}
+                      key={item.id}
+                      className="intel-risk-row"
+                    >
+                      <span>
+                        <strong>{item.name}</strong>
+                        <small>{item.detail}</small>
+                      </span>
+                      <b>Vigilar</b>
+                    </Link>
+                  ))}
+                  {!watchRetentionStudents.length ? (
+                    <p className="intel-empty">No hay alumnas en vigilancia preventiva.</p>
                   ) : null}
                 </div>
               </Section>
