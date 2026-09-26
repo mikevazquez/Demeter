@@ -45,9 +45,9 @@ function addDaysToDateKey(value: string, days: number) {
   ].join("-");
 }
 
-function shortDate(value: string | null) {
+function shortDate(value: string | null, locale: string) {
   if (!value) return "Sin vencimiento";
-  return new Intl.DateTimeFormat("es-MX", {
+  return new Intl.DateTimeFormat(locale, {
     day: "numeric",
     month: "short",
     year: "numeric",
@@ -86,7 +86,7 @@ export default async function StudentsPage({
   const { supabase, studio, membership, can } = await getAdminContext(CAPABILITIES.STUDENTS_READ);
   const canEdit = can(CAPABILITIES.STUDENTS_WRITE);
   const canReadProducts = can(CAPABILITIES.PRODUCTS_READ);
-  const timeZone = studio.timezone ?? "America/Mexico_City";
+  const timeZone = studio.timezone;
   const today = localDateKey(timeZone);
   const sevenDaysFromToday = addDaysToDateKey(today, 7);
 
@@ -475,7 +475,7 @@ export default async function StudentsPage({
                         <b>
                           {productNameMap.get(acquisition.product_template_id) ?? "Paquete activo"}
                         </b>
-                        <small>{shortDate(acquisition.expires_on)}</small>
+                        <small>{shortDate(acquisition.expires_on, studio.locale)}</small>
                       </span>
                     );
                   })()}
