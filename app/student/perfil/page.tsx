@@ -3,7 +3,7 @@ import Link from "next/link";
 
 import { formatDate, getStudentPortalContext } from "@/lib/student/portal";
 
-import { updateStudentAvatarAction, updateStudentProfileAction } from "../actions";
+import { updateStudentProfileAction } from "../actions";
 import PendingActionButton from "../components/PendingActionButton";
 import StudentNoticeDialog from "../components/StudentNoticeDialog";
 import AvatarFilePicker from "./AvatarFilePicker";
@@ -143,15 +143,9 @@ export default async function StudentProfilePage({
                   className="object-cover"
                 />
               </div>
-              <form action={updateStudentAvatarAction} className="mt-2 space-y-1.5">
+              <div className="mt-2">
                 <AvatarFilePicker />
-                <PendingActionButton
-                  pendingLabel="Guardando…"
-                  className="min-h-8 w-full rounded-lg border border-white/10 px-2 py-1 text-[10px] font-semibold text-zinc-300 transition hover:border-fuchsia-500/35 hover:text-white disabled:cursor-wait disabled:opacity-60"
-                >
-                  Guardar foto
-                </PendingActionButton>
-              </form>
+              </div>
             </div>
             <div className="min-w-0">
               <h2 className="truncate text-xl font-semibold text-white sm:text-2xl">{fullName}</h2>
