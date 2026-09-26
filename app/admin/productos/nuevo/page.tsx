@@ -35,7 +35,7 @@ export default async function NewProductPage() {
           />
         </label>
 
-        <ProductFormFields disciplines={disciplines ?? []} />
+        <ProductFormFields disciplines={disciplines ?? []} currency={ctx.studio.currency} />
 
         <label className="block text-sm text-zinc-300">
           Descripción
