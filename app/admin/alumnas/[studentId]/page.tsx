@@ -11,6 +11,7 @@ import { notFound } from "next/navigation";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getAdminContext } from "@/lib/auth/admin-context";
 import {
+  resolveStudentOperatingCharge,
   unlockMedalsAccess,
   updateCommunicationPreferences,
   updateDynamicProfileFields,
@@ -305,6 +306,7 @@ export default async function StudentProfilePage({
   const canEdit = can(CAPABILITIES.STUDENTS_WRITE);
   const canReadSchedule = can(CAPABILITIES.SCHEDULE_READ);
   const canReadSales = can(CAPABILITIES.SALES_READ);
+  const canManageOperatingCharges = can(CAPABILITIES.SALES_WRITE);
   const canReadRewards = can(CAPABILITIES.REWARDS_READ);
   const canManageRewards = can(CAPABILITIES.REWARDS_MANAGE);
   const canReadEvaluations = can(CAPABILITIES.EVALUATIONS_READ);
@@ -320,6 +322,20 @@ export default async function StudentProfilePage({
         .limit(12)
     : { data: [] };
   const lifecycleEvents = lifecycleEventsResult.data ?? [];
+  const { data: operatingCharges } = canReadSales
+    ? await supabase
+        .from("student_operating_charges")
+        .select(
+          "id,charge_type,amount_minor,currency,status,created_at,resolved_at,resolution_note,reservation_id",
+        )
+        .eq("studio_id", studio.id)
+        .eq("student_id", student.id)
+        .order("created_at", { ascending: false })
+        .limit(30)
+    : { data: [] };
+  const pendingOperatingCharges = (operatingCharges ?? []).filter(
+    (charge) => charge.status === "pending",
+  );
   const timeZone = studio.timezone ?? "America/Mexico_City";
   const today = localDateKey(timeZone);
   const liveAcquisitions = acquisitions.filter(
@@ -1149,6 +1165,100 @@ export default async function StudentProfilePage({
               </p>
             </div>
           </div>
+
+          {canReadSales ? (
+            <div className="profile360-package-group">
+              <div className="profile360-package-group-heading">
+                <strong>Penalizaciones operativas</strong>
+                <span>{pendingOperatingCharges.length} pendientes</span>
+              </div>
+
+              {(operatingCharges ?? []).length ? (
+                <div className="grid gap-3">
+                  {(operatingCharges ?? []).map((charge) => {
+                    const amount = new Intl.NumberFormat(studio.locale ?? "es-MX", {
+                      style: "currency",
+                      currency: charge.currency ?? studio.currency ?? "MXN",
+                    }).format(Number(charge.amount_minor ?? 0) / 100);
+                    const label =
+                      charge.charge_type === "late_cancellation"
+                        ? "Cancelación tardía"
+                        : "No-show";
+
+                    return (
+                      <article
+                        key={charge.id}
+                        className="rounded-2xl border border-white/10 bg-white/[0.03] p-4"
+                      >
+                        <div className="flex flex-wrap items-start justify-between gap-3">
+                          <div>
+                            <strong className="text-sm text-white">{label}</strong>
+                            <p className="mt-1 text-xs text-zinc-500">
+                              {formatDateTime(charge.created_at)}
+                            </p>
+                            {charge.resolution_note ? (
+                              <p className="mt-1 text-xs text-zinc-400">
+                                {charge.resolution_note}
+                              </p>
+                            ) : null}
+                          </div>
+                          <div className="text-right">
+                            <strong className="text-sm text-white">{amount}</strong>
+                            <p
+                              className={
+                                charge.status === "pending"
+                                  ? "mt-1 text-xs text-amber-300"
+                                  : charge.status === "paid"
+                                    ? "mt-1 text-xs text-emerald-300"
+                                    : "mt-1 text-xs text-zinc-500"
+                              }
+                            >
+                              {charge.status === "pending"
+                                ? "Pendiente"
+                                : charge.status === "paid"
+                                  ? "Pagada"
+                                  : charge.status === "waived"
+                                    ? "Condonada"
+                                    : "Anulada"}
+                            </p>
+                          </div>
+                        </div>
+
+                        {charge.status === "pending" && canManageOperatingCharges ? (
+                          <div className="mt-3 grid gap-2 border-t border-white/10 pt-3 sm:grid-cols-2">
+                            <form action={resolveStudentOperatingCharge}>
+                              <input type="hidden" name="student_id" value={student.id} />
+                              <input type="hidden" name="charge_id" value={charge.id} />
+                              <input type="hidden" name="resolution" value="paid" />
+                              <PendingActionButton
+                                pendingLabel="Registrando…"
+                                className="min-h-10 w-full rounded-xl bg-emerald-500/15 px-3 text-xs font-semibold text-emerald-200"
+                              >
+                                Marcar pagada
+                              </PendingActionButton>
+                            </form>
+                            <form action={resolveStudentOperatingCharge}>
+                              <input type="hidden" name="student_id" value={student.id} />
+                              <input type="hidden" name="charge_id" value={charge.id} />
+                              <input type="hidden" name="resolution" value="waived" />
+                              <PendingActionButton
+                                pendingLabel="Condonando…"
+                                className="min-h-10 w-full rounded-xl border border-white/10 px-3 text-xs font-semibold text-zinc-300"
+                              >
+                                Condonar
+                              </PendingActionButton>
+                            </form>
+                          </div>
+                        ) : null}
+                      </article>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="empty-state">No hay penalizaciones registradas.</div>
+              )}
+            </div>
+          ) : null}
 
           {currentAcquisition ? (
             <StudentPackageCard
