@@ -70,8 +70,8 @@ type Invitation = {
   sent_at: string;
 };
 
-function formatDateTime(value: string, timeZone: string) {
-  return new Intl.DateTimeFormat("es-MX", {
+function formatDateTime(value: string, timeZone: string, locale: string) {
+  return new Intl.DateTimeFormat(locale, {
     dateStyle: "medium",
     timeStyle: "short",
     timeZone,
@@ -102,11 +102,13 @@ function relationshipLabel(value: string) {
 export default async function StudentDocumentsPanel({
   studentId,
   timeZone,
+  locale,
   result,
   error,
 }: {
   studentId: string;
   timeZone: string;
+  locale: string;
   result?: string;
   error?: string;
 }) {
@@ -273,7 +275,7 @@ export default async function StudentDocumentsPanel({
                                 ? "No autorizó"
                                 : "Aceptó") +
                               " · " +
-                              formatDateTime(item.current_student_acceptance.accepted_at, timeZone)}
+                              formatDateTime(item.current_student_acceptance.accepted_at, timeZone, locale)}
                           </p>
                         ) : null}
                         {item.current_guardian_acceptance ? (
@@ -317,7 +319,7 @@ export default async function StudentDocumentsPanel({
                                 <p className="mt-1 text-xs text-zinc-500">
                                   {acceptanceMethodLabel(entry.method) +
                                     " · " +
-                                    formatDateTime(entry.accepted_at, timeZone)}
+                                    formatDateTime(entry.accepted_at, timeZone, locale)}
                                 </p>
                               </div>
                               <span
@@ -422,7 +424,7 @@ export default async function StudentDocumentsPanel({
                                       ? entry.guardian_name || "Responsable"
                                       : "Alumna") +
                                       " · " +
-                                      formatDateTime(entry.accepted_at, timeZone)}
+                                      formatDateTime(entry.accepted_at, timeZone, locale)}
                                   </p>
                                 </div>
                                 <span
@@ -481,7 +483,7 @@ export default async function StudentDocumentsPanel({
                   {"Invitación: " +
                     latestInvitation.status +
                     " · enviada " +
-                    formatDateTime(latestInvitation.sent_at, timeZone)}
+                    formatDateTime(latestInvitation.sent_at, timeZone, locale)}
                 </p>
               ) : null}
             </div>
