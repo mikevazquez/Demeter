@@ -10,6 +10,7 @@ export type ProvisionStudioState = {
   studioId?: string;
   studioSlug?: string;
   ownerEmail?: string;
+  planKey?: string;
   activationRequired?: boolean;
   activationLink?: string | null;
   reusedExistingAccount?: boolean;
@@ -29,6 +30,9 @@ function errorMessage(code?: string) {
       return "Ese slug ya está siendo usado por otro estudio.";
     case "owner_account_unavailable":
       return "Ese correo ya existe, pero la cuenta no está disponible para reutilizarse.";
+    case "saas_plan_invalid":
+    case "saas_plan_required":
+      return "Selecciona un plan comercial válido.";
     case "forbidden":
       return "Tu cuenta no tiene permiso de plataforma para crear estudios.";
     case "invalid_request":
@@ -74,8 +78,9 @@ export async function provisionStudioAction(
   const studioSlug = field(formData, "studio_slug").toLowerCase();
   const ownerName = field(formData, "owner_name");
   const ownerEmail = field(formData, "owner_email").toLowerCase();
+  const planKey = field(formData, "plan_key").toLowerCase();
 
-  if (!studioName || !studioSlug || !ownerName || !ownerEmail) {
+  if (!studioName || !studioSlug || !ownerName || !ownerEmail || !planKey) {
     return { status: "error", message: "Completa los campos obligatorios." };
   }
 
@@ -85,6 +90,7 @@ export async function provisionStudioAction(
       studioSlug,
       ownerName,
       ownerEmail,
+      planKey,
       timezone: field(formData, "timezone") || "America/Mexico_City",
       currency: field(formData, "currency") || "MXN",
       locale: field(formData, "locale") || "es-MX",
@@ -103,6 +109,7 @@ export async function provisionStudioAction(
     error?: string;
     studio?: {
       studio_id?: string;
+      plan_key?: string;
     };
     ownerEmail?: string;
     reusedExistingAccount?: boolean;
@@ -123,6 +130,7 @@ export async function provisionStudioAction(
     studioId: payload.studio?.studio_id,
     studioSlug,
     ownerEmail: payload.ownerEmail ?? ownerEmail,
+    planKey: payload.studio?.plan_key ?? planKey,
     activationRequired: payload.activationRequired === true,
     activationLink: payload.activationLink ?? null,
     reusedExistingAccount: payload.reusedExistingAccount === true,
