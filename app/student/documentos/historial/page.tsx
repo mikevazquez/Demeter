@@ -71,7 +71,7 @@ export default async function StudentDocumentHistoryPage() {
                       ? `Aceptó ${item.guardian_name ?? "responsable"}`
                       : "Aceptaste tú"}{" "}
                     ·{" "}
-                    {new Intl.DateTimeFormat("es-MX", {
+                    {new Intl.DateTimeFormat(studio.locale, {
                       dateStyle: "medium",
                       timeStyle: "short",
                       timeZone: studio.timezone,
