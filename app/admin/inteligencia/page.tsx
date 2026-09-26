@@ -657,6 +657,53 @@ export default async function IntelligencePage({
     (item) => isBetween(item.created_at, previousStart, currentStart),
   );
 
+  function reactivationPurchases(rows: AcquisitionRow[]) {
+    const byStudent = new Map<string, AcquisitionRow[]>();
+    for (const acquisition of rows) {
+      if (acquisition.refunded_at || acquisition.status === "cancelled") continue;
+      const list = byStudent.get(acquisition.student_id) ?? [];
+      list.push(acquisition);
+      byStudent.set(acquisition.student_id, list);
+    }
+
+    const reactivations: AcquisitionRow[] = [];
+    for (const list of byStudent.values()) {
+      const sorted = [...list].sort(
+        (a, b) =>
+          new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
+      );
+      let hasPrior = false;
+      let furthestPriorExpiry = Number.NEGATIVE_INFINITY;
+
+      for (const acquisition of sorted) {
+        const purchaseTime = new Date(acquisition.created_at).getTime();
+        if (
+          hasPrior &&
+          Number.isFinite(furthestPriorExpiry) &&
+          purchaseTime > furthestPriorExpiry + 30 * DAY
+        ) {
+          reactivations.push(acquisition);
+        }
+
+        if (acquisition.expires_on) {
+          const expiryTime = new Date(acquisition.expires_on + "T12:00:00Z").getTime();
+          furthestPriorExpiry = Math.max(furthestPriorExpiry, expiryTime);
+        }
+        hasPrior = true;
+      }
+    }
+
+    return reactivations;
+  }
+
+  const reactivationPurchaseRows = reactivationPurchases(conversionAcquisitions);
+  const reactivatedStudentsCurrent = reactivationPurchaseRows.filter((item) =>
+    isBetween(item.created_at, currentStart, currentEnd),
+  );
+  const reactivatedStudentsPrevious = reactivationPurchaseRows.filter((item) =>
+    isBetween(item.created_at, previousStart, currentStart),
+  );
+
   const currentSales = sales.filter(
     (item) => item.status === "confirmed" && isBetween(item.created_at, currentStart, currentEnd),
   );
@@ -1943,6 +1990,18 @@ export default async function IntelligencePage({
     newCommercialStudentsCurrent.length,
   );
 
+  const firstAttendanceCurrent = onboardingRows.filter(
+    (row) =>
+      Boolean(row.first_attendance_at) &&
+      isBetween(row.first_attendance_at!, currentStart, currentEnd),
+  );
+  const firstAttendancePrevious = onboardingRows.filter(
+    (row) =>
+      Boolean(row.first_attendance_at) &&
+      isBetween(row.first_attendance_at!, previousStart, currentStart),
+  );
+  const onboardingHistoryCoverage = safeRate(onboardingRows.length, students.length);
+
   const newlyConfirmedChurn = abandonedStudents.filter((item) => {
     const latest = latestAcquisitionByStudent.get(item.id);
     if (!latest?.expires_on) return false;
@@ -1950,7 +2009,9 @@ export default async function IntelligencePage({
     return confirmedAt >= currentStart.getTime() && confirmedAt < currentEnd.getTime();
   });
   const netStudentGrowth =
-    newCommercialStudentsCurrent.length - newlyConfirmedChurn.length;
+    newCommercialStudentsCurrent.length +
+    reactivatedStudentsCurrent.length -
+    newlyConfirmedChurn.length;
 
   const decisions: IntelligenceDecision[] = [];
   const attendanceDecisionSample =
