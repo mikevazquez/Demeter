@@ -87,7 +87,7 @@ export default async function InstructorProfilePage({
     (item) => item.kind === "email" && item.is_primary === true,
   )?.value;
   const email = primaryEmail ?? contacts?.find((item) => item.kind === "email")?.value;
-  const timeZone = studio.timezone ?? "America/Mexico_City";
+  const timeZone = studio.timezone;
   const accessState = !accessMembership
     ? "not_linked"
     : !accessMembership.active || !accessAccount || accessAccount.status !== "active"
@@ -228,7 +228,7 @@ export default async function InstructorProfilePage({
                 <div>
                   <strong>{templateMap.get(session.template_id) ?? "Clase"}</strong>
                   <span>
-                    {new Intl.DateTimeFormat("es-MX", {
+                    {new Intl.DateTimeFormat(studio.locale, {
                       timeZone,
                       weekday: "short",
                       day: "numeric",
