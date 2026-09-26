@@ -250,7 +250,7 @@ export function localDateKey(date: Date, timeZone: string) {
   }).format(date);
 }
 
-export function formatDateTime(value: string, timeZone: string, locale: string) {
+export function formatDateTime(value: string, timeZone: string, locale = "es-MX") {
   return new Intl.DateTimeFormat(locale, {
     timeZone,
     weekday: "short",
@@ -261,7 +261,7 @@ export function formatDateTime(value: string, timeZone: string, locale: string) 
   }).format(new Date(value));
 }
 
-export function formatDate(value: string, timeZone: string, locale: string) {
+export function formatDate(value: string, timeZone: string, locale = "es-MX") {
   return new Intl.DateTimeFormat(locale, {
     timeZone,
     day: "numeric",
@@ -270,7 +270,7 @@ export function formatDate(value: string, timeZone: string, locale: string) {
   }).format(new Date(`${value}T12:00:00Z`));
 }
 
-export function formatMoney(minor: number, currency: string, locale: string) {
+export function formatMoney(minor: number, currency = "MXN", locale = "es-MX") {
   return new Intl.NumberFormat(locale, { style: "currency", currency }).format(minor / 100);
 }
 
