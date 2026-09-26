@@ -110,7 +110,7 @@ export default async function StudentRewardDetailPage({
           <p className="text-[10px] uppercase tracking-[0.16em] text-zinc-500">Disponible desde</p>
           <strong className="mt-1 block text-sm text-white">
             {reward.available_from
-              ? formatDateTime(reward.available_from, ctx.studio.timezone)
+              ? formatDateTime(reward.available_from, ctx.studio.timezone, ctx.studio.locale)
               : "Desde que la desbloqueaste"}
           </strong>
         </div>
@@ -118,7 +118,7 @@ export default async function StudentRewardDetailPage({
           <p className="text-[10px] uppercase tracking-[0.16em] text-zinc-500">Vigencia</p>
           <strong className="mt-1 block text-sm text-white">
             {reward.expires_at
-              ? formatDateTime(reward.expires_at, ctx.studio.timezone)
+              ? formatDateTime(reward.expires_at, ctx.studio.timezone, ctx.studio.locale)
               : "Sin vencimiento configurado"}
           </strong>
         </div>
@@ -213,7 +213,7 @@ export default async function StudentRewardDetailPage({
           </strong>
           {reward.redeemed_at ? (
             <p className="mt-1 text-xs text-zinc-400">
-              {formatDateTime(reward.redeemed_at, ctx.studio.timezone)}
+              {formatDateTime(reward.redeemed_at, ctx.studio.timezone, ctx.studio.locale)}
             </p>
           ) : null}
         </section>
