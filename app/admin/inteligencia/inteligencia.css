@@ -607,6 +607,118 @@ a.intel-data-row:hover {
   font-size: 12px;
 }
 
+.intel-expense-form {
+  display: grid;
+  gap: 13px;
+}
+
+.intel-expense-form label {
+  display: grid;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.intel-expense-form input,
+.intel-expense-form select,
+.intel-expense-form textarea {
+  width: 100%;
+  min-height: 42px;
+  padding: 9px 11px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  color: white;
+  background: rgba(4, 6, 10, 0.72);
+  font: inherit;
+  outline: none;
+}
+
+.intel-expense-form textarea {
+  resize: vertical;
+  line-height: 1.45;
+}
+
+.intel-expense-form input:focus,
+.intel-expense-form select:focus,
+.intel-expense-form textarea:focus {
+  border-color: var(--accent);
+}
+
+.intel-expense-form-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 10px;
+}
+
+.intel-expense-list {
+  display: grid;
+}
+
+.intel-expense-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 12px 0;
+  border-top: 1px solid var(--line);
+}
+
+.intel-expense-row:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.intel-expense-row > div:first-child {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.intel-expense-row strong {
+  font-size: 12px;
+}
+
+.intel-expense-row small {
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+.intel-expense-amount {
+  flex: 0 0 auto;
+  display: grid;
+  justify-items: end;
+  gap: 5px;
+}
+
+.intel-expense-amount b {
+  font-size: 12px;
+}
+
+.intel-expense-amount button {
+  border: 0;
+  padding: 0;
+  color: var(--muted);
+  background: transparent;
+  font-size: 10px;
+  cursor: pointer;
+}
+
+.intel-expense-amount button:hover {
+  color: var(--danger);
+}
+
+@media (max-width: 600px) {
+  .intel-expense-form-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .intel-expense-row {
+    align-items: flex-start;
+  }
+}
+
 @media (max-width: 1180px) {
   .intel-kpi-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
