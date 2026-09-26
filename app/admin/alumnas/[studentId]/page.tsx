@@ -65,19 +65,19 @@ function scalarValue(value: unknown): string {
   return "";
 }
 
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat("es-MX", {
+function formatDate(value: string, locale: string) {
+  return new Intl.DateTimeFormat(locale, {
     day: "numeric",
     month: "short",
     year: "numeric",
   }).format(new Date(`${value}T12:00:00Z`));
 }
 
-function formatDateTime(value: string) {
-  return new Intl.DateTimeFormat("es-MX", {
+function formatDateTime(value: string, timeZone: string, locale: string) {
+  return new Intl.DateTimeFormat(locale, {
     dateStyle: "medium",
     timeStyle: "short",
-    timeZone: "America/Mexico_City",
+    timeZone,
   }).format(new Date(value));
 }
 
@@ -93,7 +93,12 @@ function rewardStatusLabel(status: string) {
   return labels[status] ?? status;
 }
 
-function rewardBenefitLabel(kind: string, benefit: unknown) {
+function rewardBenefitLabel(
+  kind: string,
+  benefit: unknown,
+  locale: string,
+  currency: string,
+) {
   const data = benefit && typeof benefit === "object" ? (benefit as Record<string, unknown>) : {};
   if (kind === "credits" && typeof data.credits === "number") {
     return String(data.credits) + (data.credits === 1 ? " crédito" : " créditos");
@@ -103,9 +108,9 @@ function rewardBenefitLabel(kind: string, benefit: unknown) {
   }
   if (kind === "fixed_discount" && typeof data.amount_minor === "number") {
     return (
-      new Intl.NumberFormat("es-MX", {
+      new Intl.NumberFormat(locale, {
         style: "currency",
-        currency: "MXN",
+        currency,
         maximumFractionDigits: 0,
       }).format(data.amount_minor / 100) + " de descuento"
     );
@@ -336,7 +341,9 @@ export default async function StudentProfilePage({
   const pendingOperatingCharges = (operatingCharges ?? []).filter(
     (charge) => charge.status === "pending",
   );
-  const timeZone = studio.timezone ?? "America/Mexico_City";
+  const timeZone = studio.timezone;
+  const locale = studio.locale;
+  const currency = studio.currency;
   const today = localDateKey(timeZone);
   const liveAcquisitions = acquisitions.filter(
     (item) => item.status === "active" && !item.refunded_at,
@@ -734,7 +741,7 @@ export default async function StudentProfilePage({
       kind: "class",
       title: classTitleMap[event.status] ?? "Actividad de clase",
       detail: isCancellation
-        ? `${event.className} · clase programada ${formatDateTime(event.startsAt)}`
+        ? `${event.className} · clase programada ${formatDateTime(event.startsAt, timeZone, locale)}`
         : event.className,
     });
   }
@@ -793,7 +800,7 @@ export default async function StudentProfilePage({
     alerts.push({
       title: latestRelevant?.expires_on ? "Paquete vencido" : "Sin paquete activo",
       detail: latestRelevant?.expires_on
-        ? "El último paquete venció " + formatDate(latestRelevant.expires_on) + "."
+        ? "El último paquete venció " + formatDate(latestRelevant.expires_on, locale) + "."
         : "No hay un paquete vigente o programado.",
     });
   }
@@ -818,7 +825,13 @@ export default async function StudentProfilePage({
       title: "Saldo pendiente",
       detail:
         pendingBalanceMinor > 0
-          ? "Quedan $" + (pendingBalanceMinor / 100).toLocaleString("es-MX") + " MXN por cobrar."
+          ? "Quedan " +
+            new Intl.NumberFormat(locale, {
+              style: "currency",
+              currency,
+              maximumFractionDigits: 2,
+            }).format(pendingBalanceMinor / 100) +
+            " por cobrar."
           : "El paquete está bloqueado por una condición de pago pendiente.",
     });
   }
@@ -826,7 +839,7 @@ export default async function StudentProfilePage({
     alerts.push({
       title: "Inscripción no vigente",
       detail: enrollment.expires_on
-        ? "La última inscripción terminó " + formatDate(enrollment.expires_on) + "."
+        ? "La última inscripción terminó " + formatDate(enrollment.expires_on, locale) + "."
         : "Revisa el estado de inscripción de la alumna.",
     });
   }
@@ -1137,7 +1150,7 @@ export default async function StudentProfilePage({
                               <strong>{changedFields}</strong>
                               <span>
                                 {communicationOriginCopy[event.origin] ?? event.origin} ·{" "}
-                                {formatDateTime(event.created_at)}
+                                {formatDateTime(event.created_at, timeZone, locale)}
                               </span>
                               {event.reason ? <span>{event.reason}</span> : null}
                             </div>
@@ -1176,9 +1189,9 @@ export default async function StudentProfilePage({
               {(operatingCharges ?? []).length ? (
                 <div className="grid gap-3">
                   {(operatingCharges ?? []).map((charge) => {
-                    const amount = new Intl.NumberFormat(studio.locale ?? "es-MX", {
+                    const amount = new Intl.NumberFormat(locale, {
                       style: "currency",
-                      currency: charge.currency ?? studio.currency ?? "MXN",
+                      currency: charge.currency ?? currency,
                     }).format(Number(charge.amount_minor ?? 0) / 100);
                     const label =
                       charge.charge_type === "late_cancellation"
@@ -1194,7 +1207,7 @@ export default async function StudentProfilePage({
                           <div>
                             <strong className="text-sm text-white">{label}</strong>
                             <p className="mt-1 text-xs text-zinc-500">
-                              {formatDateTime(charge.created_at)}
+                              {formatDateTime(charge.created_at, timeZone, locale)}
                             </p>
                             {charge.resolution_note ? (
                               <p className="mt-1 text-xs text-zinc-400">
@@ -1419,7 +1432,7 @@ export default async function StudentProfilePage({
                   >
                     <span className="text-sm font-medium text-white">{label}</span>
                     <span className={value ? "text-xs text-emerald-300" : "text-xs text-zinc-500"}>
-                      {value ? "✓ " + formatDateTime(String(value)) : "Pendiente"}
+                      {value ? "✓ " + formatDateTime(String(value), timeZone, locale) : "Pendiente"}
                     </span>
                   </div>
                 ))}
@@ -1500,10 +1513,10 @@ export default async function StudentProfilePage({
                 {rewardInstancesDetail.map((reward) => (
                   <article key={reward.id}>
                     <div>
-                      <strong>{rewardBenefitLabel(reward.kind, reward.benefitDefinition)}</strong>
+                      <strong>{rewardBenefitLabel(reward.kind, reward.benefitDefinition, locale, currency)}</strong>
                       <span>
                         {reward.expiresAt
-                          ? "Vence " + formatDateTime(reward.expiresAt)
+                          ? "Vence " + formatDateTime(reward.expiresAt, timeZone, locale)
                           : "Sin vencimiento registrado"}
                       </span>
                     </div>
@@ -1528,7 +1541,7 @@ export default async function StudentProfilePage({
                     <div className="profile360-history-dot is-reward" aria-hidden="true" />
                     <div>
                       <strong>{achievement.title}</strong>
-                      <span>{formatDateTime(achievement.unlockedAt)}</span>
+                      <span>{formatDateTime(achievement.unlockedAt, timeZone, locale)}</span>
                     </div>
                   </article>
                 ))}
@@ -1551,7 +1564,7 @@ export default async function StudentProfilePage({
                     <div>
                       <strong>{level.title}</strong>
                       <span>
-                        Medalla {level.title} · {formatDateTime(level.unlockedAt)}
+                        Medalla {level.title} · {formatDateTime(level.unlockedAt, timeZone, locale)}
                       </span>
                     </div>
                   </article>
@@ -1624,7 +1637,7 @@ export default async function StudentProfilePage({
                   <div>
                     <strong>{event.title}</strong>
                     <span>{event.detail}</span>
-                    <small>{formatDateTime(event.at)}</small>
+                    <small>{formatDateTime(event.at, timeZone, locale)}</small>
                   </div>
                 </article>
               ))}
@@ -1846,7 +1859,7 @@ export default async function StudentProfilePage({
                         {lifecycleCopy[event.to_status] ?? event.to_status}
                       </strong>
                       <span className="text-xs text-zinc-500">
-                        {formatDateTime(event.created_at)}
+                        {formatDateTime(event.created_at, timeZone, locale)}
                       </span>
                     </div>
                   ))}
