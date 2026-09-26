@@ -34,6 +34,10 @@ export default async function SessionResourcesPage({
   const query = await searchParams;
   const { supabase, studio, can } = await getAdminContext(CAPABILITIES.SCHEDULE_READ);
 
+  if (!can(CAPABILITIES.RESOURCES_READ)) {
+    redirect(`/admin/agenda/${sessionId}`);
+  }
+
   const { data: session } = await supabase
     .from("class_sessions")
     .select("id,template_id,space_id,starts_at,status,requires_resource,resource_uses_per_item")
@@ -49,7 +53,8 @@ export default async function SessionResourcesPage({
     redirect(`/admin/agenda/${sessionId}`);
   }
 
-  const canEdit = can(CAPABILITIES.SCHEDULE_WRITE);
+  const canEdit =
+    can(CAPABILITIES.SCHEDULE_WRITE) && can(CAPABILITIES.RESOURCES_MANAGE);
 
   const [
     { data: template },

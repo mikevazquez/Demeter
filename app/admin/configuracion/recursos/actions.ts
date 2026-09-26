@@ -22,6 +22,10 @@ function mapPath(spaceId: string, params?: Record<string, string>) {
 async function requireResourceAdmin() {
   const ctx = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
 
+  if (!ctx.can(CAPABILITIES.RESOURCES_MANAGE)) {
+    redirect("/admin/configuracion?error=access");
+  }
+
   if (ctx.membership.role !== "owner") {
     redirect("/admin?error=access");
   }

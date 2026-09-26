@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
+import { STUDIO_MODULES } from "@/lib/auth/modules";
 
 import { OperatingPolicyForm } from "./OperatingPolicyForm";
 import { PortalIdentityForm } from "./PortalIdentityForm";
@@ -134,17 +135,19 @@ export default async function ConfigurationPage({
         </Link>
       </section>
 
-      <section className="panel">
-        <p className="eyebrow">RECURSOS</p>
-        <h2>Recursos y mapa</h2>
-        <p>
-          Define qué recursos físicos existen y dónde están ubicados. Las sesiones administran
-          después su disponibilidad y capacidad.
-        </p>
-        <Link className="primary-button" href="/admin/configuracion/recursos">
-          Configurar recursos
-        </Link>
-      </section>
+      {ctx.hasModule(STUDIO_MODULES.RESOURCES) ? (
+        <section className="panel">
+          <p className="eyebrow">RECURSOS</p>
+          <h2>Recursos y mapa</h2>
+          <p>
+            Define qué recursos físicos existen y dónde están ubicados. Las sesiones administran
+            después su disponibilidad y capacidad.
+          </p>
+          <Link className="primary-button" href="/admin/configuracion/recursos">
+            Configurar recursos
+          </Link>
+        </section>
+      ) : null}
     </main>
   );
 }

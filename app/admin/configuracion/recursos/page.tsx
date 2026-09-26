@@ -32,6 +32,10 @@ export default async function ResourcesConfigurationPage({
   const params = await searchParams;
   const ctx = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
 
+  if (!ctx.can(CAPABILITIES.RESOURCES_MANAGE)) {
+    redirect("/admin/configuracion?error=access");
+  }
+
   if (ctx.membership.role !== "owner") {
     redirect("/admin?error=access");
   }

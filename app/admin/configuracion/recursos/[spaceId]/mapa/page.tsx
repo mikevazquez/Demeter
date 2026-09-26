@@ -18,6 +18,10 @@ export default async function ResourceMapPage({
   const query = await searchParams;
   const ctx = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
 
+  if (!ctx.can(CAPABILITIES.RESOURCES_MANAGE)) {
+    redirect("/admin/configuracion?error=access");
+  }
+
   if (ctx.membership.role !== "owner") {
     redirect("/admin?error=access");
   }
