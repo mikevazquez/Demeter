@@ -100,6 +100,39 @@ type OnboardingRow = {
   completed_at: string | null;
 };
 
+type DomainEventRow = {
+  event_id: string;
+  event_type: string;
+  occurred_at: string;
+  source_entity_id: string | null;
+  payload: Record<string, unknown> | null;
+};
+
+const cancellationReasonLabels: Record<string, string> = {
+  schedule_conflict: "Horario / cambio de planes",
+  health: "Salud",
+  work_school: "Trabajo / escuela",
+  transport: "Transporte / distancia",
+  price: "Precio",
+  lost_interest: "Ya no le interesa",
+  booking_error: "Error de reserva",
+  other: "Otro",
+  prefer_not_say: "Prefiere no decir",
+};
+
+function eventPayloadText(event: DomainEventRow, key: string) {
+  const value = event.payload?.[key];
+  return typeof value === "string" && value.trim() ? value.trim() : null;
+}
+
+function eventStudentId(event: DomainEventRow) {
+  return eventPayloadText(event, "student_id");
+}
+
+function uniqueEventStudents(rows: DomainEventRow[]) {
+  return new Set(rows.map(eventStudentId).filter((value): value is string => Boolean(value)));
+}
+
 const views: { key: ViewKey; label: string }[] = [
   { key: "resumen", label: "Resumen" },
   { key: "dinero", label: "Dinero" },
@@ -345,6 +378,7 @@ export default async function IntelligencePage({
     templatesResult,
     productTemplatesResult,
     onboardingResult,
+    domainEventsResult,
   ] = await Promise.all([
     supabase
       .from("students")
@@ -394,6 +428,19 @@ export default async function IntelligencePage({
         "student_id,documents_completed_at,profile_completed_at,first_reservation_at,first_attendance_at,app_installed_at,notifications_enabled_at,completed_at",
       )
       .eq("studio_id", studio.id),
+    supabase
+      .from("domain_events")
+      .select("event_id,event_type,occurred_at,source_entity_id,payload")
+      .eq("studio_id", studio.id)
+      .in("event_type", [
+        "booking.created",
+        "booking.cancelled",
+        "attendance.finalized",
+        "payment.confirmed",
+      ])
+      .gte("occurred_at", rangeStartIso)
+      .lt("occurred_at", currentEnd.toISOString())
+      .order("occurred_at", { ascending: true }),
   ]);
 
   const students = (studentsResult.data ?? []) as StudentRow[];
@@ -405,6 +452,7 @@ export default async function IntelligencePage({
   const templates = (templatesResult.data ?? []) as ClassTemplateRow[];
   const productTemplates = (productTemplatesResult.data ?? []) as ProductTemplateRow[];
   const onboarding = (onboardingResult.data ?? []) as OnboardingRow[];
+  const domainEvents = (domainEventsResult.data ?? []) as DomainEventRow[];
 
   const sessionIds = sessions.map((session) => session.id);
   const reservationsResult = sessionIds.length
@@ -691,6 +739,103 @@ export default async function IntelligencePage({
   const trialNoShow = trialCurrent.filter((item) => item.trial_status === "no_show").length;
   const trialConversion = safeRate(trialConverted, trialAttended);
   const previousTrialConversion = safeRate(trialPreviousConverted, trialPreviousAttended);
+
+  const currentDomainEvents = domainEvents.filter((event) =>
+    isBetween(event.occurred_at, currentStart, currentEnd),
+  );
+  const previousDomainEvents = domainEvents.filter((event) =>
+    isBetween(event.occurred_at, previousStart, currentStart),
+  );
+
+  function eventsOfType(rows: DomainEventRow[], type: string) {
+    return rows.filter((event) => event.event_type === type);
+  }
+
+  const currentBookingEvents = eventsOfType(currentDomainEvents, "booking.created");
+  const previousBookingEvents = eventsOfType(previousDomainEvents, "booking.created");
+  const currentCancellationEvents = eventsOfType(currentDomainEvents, "booking.cancelled");
+  const previousCancellationEvents = eventsOfType(previousDomainEvents, "booking.cancelled");
+  const currentAttendanceEvents = eventsOfType(currentDomainEvents, "attendance.finalized");
+  const previousAttendanceEvents = eventsOfType(previousDomainEvents, "attendance.finalized");
+  const currentPaymentEvents = eventsOfType(currentDomainEvents, "payment.confirmed");
+  const previousPaymentEvents = eventsOfType(previousDomainEvents, "payment.confirmed");
+
+  const currentAttendedEvents = currentAttendanceEvents.filter(
+    (event) => eventPayloadText(event, "attendance_status") === "attended",
+  );
+  const previousAttendedEvents = previousAttendanceEvents.filter(
+    (event) => eventPayloadText(event, "attendance_status") === "attended",
+  );
+  const currentNoShowEvents = currentAttendanceEvents.filter(
+    (event) => eventPayloadText(event, "attendance_status") === "no_show",
+  );
+  const previousNoShowEvents = previousAttendanceEvents.filter(
+    (event) => eventPayloadText(event, "attendance_status") === "no_show",
+  );
+
+  const currentBookingStudents = uniqueEventStudents(currentBookingEvents);
+  const previousBookingStudents = uniqueEventStudents(previousBookingEvents);
+  const currentCancelledStudents = uniqueEventStudents(currentCancellationEvents);
+  const currentNoShowStudents = uniqueEventStudents(currentNoShowEvents);
+  const currentAttendedStudents = uniqueEventStudents(currentAttendedEvents);
+  const currentPaidStudents = uniqueEventStudents(currentPaymentEvents);
+
+  const showRate = safeRate(
+    currentAttendedEvents.length,
+    currentAttendedEvents.length + currentNoShowEvents.length,
+  );
+  const previousShowRate = safeRate(
+    previousAttendedEvents.length,
+    previousAttendedEvents.length + previousNoShowEvents.length,
+  );
+
+  function recoveryStats(
+    sourceEvents: DomainEventRow[],
+    availableBookingEvents: DomainEventRow[],
+  ) {
+    const eligible = uniqueEventStudents(sourceEvents);
+    const recovered = new Set<string>();
+
+    for (const source of sourceEvents) {
+      const studentId = eventStudentId(source);
+      if (!studentId) continue;
+      const sourceTime = new Date(source.occurred_at).getTime();
+      const rebooked = availableBookingEvents.some(
+        (booking) =>
+          eventStudentId(booking) === studentId &&
+          new Date(booking.occurred_at).getTime() > sourceTime,
+      );
+      if (rebooked) recovered.add(studentId);
+    }
+
+    return {
+      eligible: eligible.size,
+      recovered: recovered.size,
+      rate: safeRate(recovered.size, eligible.size),
+    };
+  }
+
+  const allBookingEvents = eventsOfType(domainEvents, "booking.created");
+  const cancellationRecovery = recoveryStats(currentCancellationEvents, allBookingEvents);
+  const previousCancellationRecovery = recoveryStats(
+    previousCancellationEvents,
+    allBookingEvents,
+  );
+  const noShowRecovery = recoveryStats(currentNoShowEvents, allBookingEvents);
+  const previousNoShowRecovery = recoveryStats(previousNoShowEvents, allBookingEvents);
+
+  const cancellationReasonCounts = new Map<string, number>();
+  for (const event of currentCancellationEvents) {
+    const rawReason = eventPayloadText(event, "cancellation_reason");
+    const label = rawReason
+      ? cancellationReasonLabels[rawReason] ?? "Otro / histórico"
+      : "Sin motivo registrado";
+    cancellationReasonCounts.set(label, (cancellationReasonCounts.get(label) ?? 0) + 1);
+  }
+  const cancellationReasonRows = [...cancellationReasonCounts.entries()]
+    .map(([label, count]) => ({ label, count }))
+    .sort((a, b) => b.count - a.count);
+  const topCancellationReason = cancellationReasonRows[0] ?? null;
 
   const expiredCurrent = commercialAcquisitions.filter(
     (item) =>
@@ -1286,36 +1431,199 @@ export default async function IntelligencePage({
         <>
           <section className="intel-kpi-grid">
             <MetricCard
-              label="Pruebas registradas"
-              value={String(trialCurrent.length)}
-              delta={deltaText(trialCurrent.length, trialPrevious.length)}
+              label="Personas que reservaron"
+              value={String(currentBookingStudents.size)}
+              delta={deltaText(currentBookingStudents.size, previousBookingStudents.size)}
               tone="info"
             />
             <MetricCard
-              label="Asistieron"
-              value={String(trialAttended)}
-              delta={deltaText(trialAttended, trialPreviousAttended)}
-              tone="positive"
+              label="Show rate"
+              value={pct(showRate)}
+              delta={pointsDelta(showRate, previousShowRate)}
+              tone={showRate >= previousShowRate ? "positive" : "warning"}
             />
             <MetricCard
-              label="Se convirtieron"
-              value={String(trialConverted)}
-              delta={deltaText(trialConverted, trialPreviousConverted)}
-              tone="positive"
+              label="Recuperación cancelación"
+              value={pct(cancellationRecovery.rate)}
+              delta={pointsDelta(cancellationRecovery.rate, previousCancellationRecovery.rate)}
+              tone={cancellationRecovery.rate >= previousCancellationRecovery.rate ? "positive" : "warning"}
             />
             <MetricCard
-              label="Conversión"
-              value={pct(trialConversion)}
-              delta={pointsDelta(trialConversion, previousTrialConversion)}
-              tone={trialConversion >= previousTrialConversion ? "positive" : "warning"}
+              label="Recuperación no show"
+              value={pct(noShowRecovery.rate)}
+              delta={pointsDelta(noShowRecovery.rate, previousNoShowRecovery.rate)}
+              tone={noShowRecovery.rate >= previousNoShowRecovery.rate ? "positive" : "warning"}
             />
           </section>
 
           <div className="intel-two-column">
             <div className="intel-stack">
               <Section
-                title="🎯 Embudo medible hoy"
-                description="La cohorte se toma por la fecha en que se creó la clase de prueba."
+                title="🎯 Embudo operativo del periodo"
+                description="Actividad real registrada por eventos. Una persona puede tener más de un intento de reserva."
+              >
+                <div className="intel-bars">
+                  <BarRow
+                    label="Personas que reservaron"
+                    value={currentBookingStudents.size}
+                    max={Math.max(currentBookingStudents.size, 1)}
+                    display={String(currentBookingStudents.size)}
+                    tone="info"
+                  />
+                  <BarRow
+                    label="Asistieron"
+                    value={currentAttendedStudents.size}
+                    max={Math.max(currentBookingStudents.size, currentAttendedStudents.size, 1)}
+                    display={String(currentAttendedStudents.size)}
+                    tone="success"
+                  />
+                  <BarRow
+                    label="Pagaron"
+                    value={currentPaidStudents.size}
+                    max={Math.max(currentBookingStudents.size, currentPaidStudents.size, 1)}
+                    display={String(currentPaidStudents.size)}
+                    tone="success"
+                  />
+                </div>
+                <div className="intel-source-note">
+                  Conversación → reserva se incorporará cuando Asistian envíe el inicio de conversación o primer mensaje entrante.
+                </div>
+              </Section>
+
+              <Section
+                title="↻ Fugas y recuperación"
+                description="Las cancelaciones y no show ya no desaparecen aunque la persona vuelva a reservar."
+              >
+                <div className="intel-bars">
+                  <BarRow
+                    label="Cancelaciones"
+                    value={currentCancellationEvents.length}
+                    max={Math.max(currentCancellationEvents.length, currentNoShowEvents.length, 1)}
+                    display={
+                      currentCancellationEvents.length +
+                      " · " +
+                      currentCancelledStudents.size +
+                      " personas"
+                    }
+                    tone="warning"
+                  />
+                  <BarRow
+                    label="Cancelaron y volvieron a reservar"
+                    value={cancellationRecovery.recovered}
+                    max={Math.max(cancellationRecovery.eligible, 1)}
+                    display={
+                      cancellationRecovery.recovered +
+                      "/" +
+                      cancellationRecovery.eligible +
+                      " · " +
+                      pct(cancellationRecovery.rate)
+                    }
+                    tone="success"
+                  />
+                  <BarRow
+                    label="No show"
+                    value={currentNoShowEvents.length}
+                    max={Math.max(currentCancellationEvents.length, currentNoShowEvents.length, 1)}
+                    display={
+                      currentNoShowEvents.length +
+                      " · " +
+                      currentNoShowStudents.size +
+                      " personas"
+                    }
+                    tone="danger"
+                  />
+                  <BarRow
+                    label="No show y volvieron a reservar"
+                    value={noShowRecovery.recovered}
+                    max={Math.max(noShowRecovery.eligible, 1)}
+                    display={
+                      noShowRecovery.recovered +
+                      "/" +
+                      noShowRecovery.eligible +
+                      " · " +
+                      pct(noShowRecovery.rate)
+                    }
+                    tone="success"
+                  />
+                </div>
+              </Section>
+
+              <Section
+                title="Motivos de cancelación"
+                description="Solo usa motivos estructurados; los históricos sin clasificación permanecen visibles."
+              >
+                <div className="intel-bars">
+                  {cancellationReasonRows.length ? (
+                    cancellationReasonRows.map((item) => (
+                      <BarRow
+                        key={item.label}
+                        label={item.label}
+                        value={item.count}
+                        max={cancellationReasonRows[0]?.count ?? 1}
+                        display={String(item.count)}
+                        tone={item.label === "Sin motivo registrado" ? "danger" : "warning"}
+                      />
+                    ))
+                  ) : (
+                    <p className="intel-empty">No hubo cancelaciones en el periodo.</p>
+                  )}
+                </div>
+              </Section>
+            </div>
+
+            <div className="intel-stack">
+              <Section title="🚨 Qué requiere atención">
+                <div className="intel-insight-list">
+                  {topCancellationReason ? (
+                    <Insight
+                      tone={topCancellationReason.label === "Sin motivo registrado" ? "danger" : "warning"}
+                      title={
+                        topCancellationReason.label === "Sin motivo registrado"
+                          ? "Faltan motivos de cancelación"
+                          : "Principal motivo: " + topCancellationReason.label
+                      }
+                      body={
+                        topCancellationReason.count +
+                        " de " +
+                        currentCancellationEvents.length +
+                        " cancelaciones del periodo."
+                      }
+                    />
+                  ) : (
+                    <Insight
+                      tone="positive"
+                      title="✓ Sin cancelaciones registradas"
+                      body="No hay cancelaciones dentro del periodo seleccionado."
+                    />
+                  )}
+                  {currentNoShowEvents.length > 0 ? (
+                    <Insight
+                      tone="danger"
+                      title={"👻 " + currentNoShowEvents.length + " no show"}
+                      body={
+                        noShowRecovery.recovered +
+                        " de " +
+                        noShowRecovery.eligible +
+                        " personas volvieron a reservar después."
+                      }
+                    />
+                  ) : null}
+                  {cancellationRecovery.eligible > 0 ? (
+                    <Insight
+                      tone={cancellationRecovery.rate >= 50 ? "positive" : "warning"}
+                      title="↻ Recuperación después de cancelar"
+                      body={
+                        pct(cancellationRecovery.rate) +
+                        " volvió a generar una reserva posterior."
+                      }
+                    />
+                  ) : null}
+                </div>
+              </Section>
+
+              <Section
+                title="🧪 Cohorte de clase de prueba"
+                description="Se conserva como lectura complementaria mientras incorporamos conversaciones de Asistian."
               >
                 <div className="intel-bars">
                   <BarRow
@@ -1338,34 +1646,6 @@ export default async function IntelligencePage({
                     max={Math.max(trialCurrent.length, 1)}
                     display={String(trialConverted)}
                     tone="success"
-                  />
-                </div>
-              </Section>
-
-              <Section title="Fuente pendiente: leads">
-                <div className="intel-source-note is-large">
-                  Para medir <strong>registro → reserva</strong> necesitamos persistir el lead antes de
-                  que exista una clase de prueba. Hoy Studio Flow comienza a tener trazabilidad cuando
-                  la prueba ya fue creada.
-                </div>
-              </Section>
-            </div>
-
-            <div className="intel-stack">
-              <Section title="🧩 Fugas de la prueba">
-                <div className="intel-insight-list">
-                  <Insight
-                    tone="warning"
-                    title="⚠️ No show"
-                    body={trialNoShow + " clases de prueba terminaron en no show durante el periodo."}
-                  />
-                  <Insight
-                    tone="danger"
-                    title="🚨 Asistieron y no compraron"
-                    body={
-                      Math.max(trialAttended - trialConverted, 0) +
-                      " personas asistieron pero todavía no aparecen como convertidas."
-                    }
                   />
                 </div>
               </Section>
