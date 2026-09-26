@@ -24,12 +24,12 @@ const origins = [
   { key: "independent", label: "Independientes" },
 ] as const;
 
-function rewardLabel(value: unknown) {
+function rewardLabel(value: unknown, regional: { currency: string; locale: string }) {
   const definition = rewardObject(value);
   const rewards = Array.isArray(definition.rewards) ? definition.rewards : null;
   if (rewards && rewards.length === 0) return null;
   if (!rewards && Object.keys(definition).length === 0) return null;
-  return rewardDefinitionLabel(value);
+  return rewardDefinitionLabel(value, regional);
 }
 
 function originForRule(ruleId: string, presentationValue: unknown, programRuleIds: Set<string>) {
@@ -68,7 +68,10 @@ export default async function StudentAchievementsPage({
       achievement,
       version,
       origin,
-      reward: version ? rewardLabel(version.reward_definition) : null,
+      reward: version ? rewardLabel(version.reward_definition, {
+      currency: ctx.studio.currency,
+      locale: ctx.studio.locale,
+    }) : null,
     };
   });
 
@@ -105,7 +108,10 @@ export default async function StudentAchievementsPage({
         hidden,
         origin,
         percent: conditionCompletionPercent(conditions),
-        reward: rewardLabel(version.reward_definition),
+        reward: rewardLabel(version.reward_definition, {
+      currency: ctx.studio.currency,
+      locale: ctx.studio.locale,
+    }),
       };
     })
     .filter(Boolean) as Array<{

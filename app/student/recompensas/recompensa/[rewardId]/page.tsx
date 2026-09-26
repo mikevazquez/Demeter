@@ -72,7 +72,10 @@ export default async function StudentRewardDetailPage({
               Detalle de recompensa
             </p>
             <h1 className="mt-1 text-3xl font-semibold tracking-tight text-white sm:text-4xl">
-              {rewardBenefitLabel(reward)}
+              {rewardBenefitLabel(reward, {
+              currency: ctx.studio.currency,
+              locale: ctx.studio.locale,
+            })}
             </h1>
           </div>
           <StateChip tone={statusTone}>{rewardStatusLabel(reward.status)}</StateChip>

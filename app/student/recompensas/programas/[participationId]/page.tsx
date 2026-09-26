@@ -12,12 +12,12 @@ import { conditionCompletionPercent, exactMissingLabel } from "@/lib/student/rew
 
 import { ProgressBar, StateChip } from "../../components";
 
-function rewardLabel(value: unknown) {
+function rewardLabel(value: unknown, regional: { currency: string; locale: string }) {
   const definition = rewardObject(value);
   const rewards = Array.isArray(definition.rewards) ? definition.rewards : null;
   if (rewards && rewards.length === 0) return null;
   if (!rewards && Object.keys(definition).length === 0) return null;
-  return rewardDefinitionLabel(value);
+  return rewardDefinitionLabel(value, regional);
 }
 
 export default async function StudentProgramProgressPage({
@@ -62,7 +62,10 @@ export default async function StudentProgramProgressPage({
       .map((item) => [item.level_id, item]),
   );
 
-  const reward = ruleVersion ? rewardLabel(ruleVersion.reward_definition) : null;
+  const reward = ruleVersion ? rewardLabel(ruleVersion.reward_definition, {
+      currency: ctx.studio.currency,
+      locale: ctx.studio.locale,
+    }) : null;
   const currentReward = currentLevel
     ? (ctx.rewards.find((item) => item.rule_id === currentLevel.rule_id) ?? null)
     : null;

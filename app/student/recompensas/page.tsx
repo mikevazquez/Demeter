@@ -18,13 +18,16 @@ import {
 import { ProgressBar, RewardsEmpty, SectionHeading, StateChip, SummaryTile } from "./components";
 import { MedalsAccessUnlocked, RewardsOnboardingActivation } from "./OnboardingActivation";
 
-function rewardLabelFromDefinition(value: unknown) {
+function rewardLabelFromDefinition(
+  value: unknown,
+  regional: { currency: string; locale: string },
+) {
   const definition = rewardObject(value);
   const rewards = Array.isArray(definition.rewards) ? definition.rewards : null;
 
   if (rewards && rewards.length === 0) return null;
   if (!rewards && Object.keys(definition).length === 0) return null;
-  return rewardDefinitionLabel(value);
+  return rewardDefinitionLabel(value, regional);
 }
 
 function plural(count: number, singular: string, pluralValue: string) {
@@ -149,7 +152,10 @@ export default async function StudentProgressPage() {
         missing: exactMissingLabel(item.conditions),
         deadline: item.cycle?.window_end_at ?? null,
         reward: item.ruleVersion
-          ? rewardLabelFromDefinition(item.ruleVersion.reward_definition)
+          ? rewardLabelFromDefinition(item.ruleVersion.reward_definition, {
+          currency: ctx.studio.currency,
+          locale: ctx.studio.locale,
+        })
           : null,
       })),
     ...activeChallenges.map((item) => ({
@@ -160,7 +166,10 @@ export default async function StudentProgressPage() {
       percent: item.percent,
       missing: exactMissingLabel(item.conditions),
       deadline: item.cycle?.window_end_at ?? item.rule?.scheduled_end_at ?? null,
-      reward: item.version ? rewardLabelFromDefinition(item.version.reward_definition) : null,
+      reward: item.version ? rewardLabelFromDefinition(item.version.reward_definition, {
+          currency: ctx.studio.currency,
+          locale: ctx.studio.locale,
+        }) : null,
     })),
   ]
     .filter((item) => item.percent < 100)
@@ -370,7 +379,10 @@ export default async function StudentProgressPage() {
           <div className="space-y-2">
             {activeChallenges.map((item) => {
               const reward = item.version
-                ? rewardLabelFromDefinition(item.version.reward_definition)
+                ? rewardLabelFromDefinition(item.version.reward_definition, {
+          currency: ctx.studio.currency,
+          locale: ctx.studio.locale,
+        })
                 : null;
 
               return (
@@ -493,7 +505,10 @@ export default async function StudentProgressPage() {
                     Disponible
                   </p>
                   <strong className="mt-1 block truncate text-sm text-white">
-                    {rewardBenefitLabel(reward)}
+                    {rewardBenefitLabel(reward, {
+                    currency: ctx.studio.currency,
+                    locale: ctx.studio.locale,
+                  })}
                   </strong>
                   {reward.expires_at ? (
                     <span className="mt-1 block text-[11px] text-zinc-500">

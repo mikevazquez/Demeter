@@ -107,7 +107,10 @@ export default async function StudentRewardsPage({
                         {rewardOriginLabel(ctx, reward.rule_id)}
                       </p>
                       <h3 className="mt-1 text-lg font-semibold text-white">
-                        {rewardBenefitLabel(reward)}
+                        {rewardBenefitLabel(reward, {
+                  currency: ctx.studio.currency,
+                  locale: ctx.studio.locale,
+                })}
                       </h3>
                     </div>
                     <StateChip tone={reserved ? "warning" : "success"}>
@@ -229,7 +232,10 @@ export default async function StudentRewardsPage({
                 >
                   <div className="min-w-0">
                     <strong className="block truncate text-sm text-white">
-                      {rewardBenefitLabel(reward)}
+                      {rewardBenefitLabel(reward, {
+                  currency: ctx.studio.currency,
+                  locale: ctx.studio.locale,
+                })}
                     </strong>
                     <span className="mt-1 block text-[11px] text-zinc-500">
                       {autoApplied
