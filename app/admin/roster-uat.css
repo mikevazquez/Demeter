@@ -473,3 +473,234 @@
   background: rgba(126, 79, 255, 0.16);
   color: #f0e9ff;
 }
+
+.today-payment-pending-tag {
+  display: inline-flex;
+  align-items: center;
+  min-height: 20px;
+  padding: 3px 7px;
+  border: 1px solid rgba(250, 204, 21, 0.28);
+  border-radius: 999px;
+  background: rgba(250, 204, 21, 0.07);
+  color: #fde68a;
+  font-size: 9px;
+  font-weight: 850;
+  letter-spacing: 0.02em;
+}
+
+.today-payment-attendance-trigger {
+  width: 100%;
+}
+
+.today-payment-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(2, 6, 12, 0.78);
+  backdrop-filter: blur(10px);
+}
+
+.today-payment-dialog {
+  width: min(100%, 460px);
+  max-height: min(86vh, 720px);
+  overflow: auto;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 24px;
+  background: radial-gradient(circle at 85% 0%, rgba(255, 10, 138, 0.12), transparent 34%), #10151d;
+  box-shadow: 0 28px 90px rgba(0, 0, 0, 0.56);
+}
+
+.today-payment-dialog > header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 22px 22px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.today-payment-dialog h3 {
+  margin: 5px 0 0;
+  color: #fff;
+  font-size: 21px;
+  line-height: 1.15;
+}
+
+.today-payment-dialog header p {
+  margin: 8px 0 0;
+  color: #98a2b3;
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.today-payment-eyebrow {
+  color: #ff68b7;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.18em;
+}
+
+.today-payment-close {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.03);
+  color: #cbd5e1;
+  font: inherit;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.today-payment-dialog form {
+  display: grid;
+  gap: 14px;
+  padding: 20px 22px 22px;
+}
+
+.today-payment-amount {
+  display: grid;
+  gap: 6px;
+  padding: 16px;
+  border: 1px solid rgba(255, 10, 138, 0.18);
+  border-radius: 17px;
+  background: rgba(255, 10, 138, 0.05);
+}
+
+.today-payment-amount > span,
+.today-payment-field > span,
+.today-payment-amount label > span {
+  color: #aab2bf;
+  font-size: 10px;
+  font-weight: 750;
+}
+
+.today-payment-amount > strong {
+  color: #fff;
+  font-size: 26px;
+}
+
+.today-payment-amount label {
+  display: grid;
+  gap: 7px;
+}
+
+.today-payment-amount label > div {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 13px;
+  border: 1px solid #343e4b;
+  border-radius: 12px;
+  background: #0b1017;
+}
+
+.today-payment-amount b {
+  color: #ff75bc;
+}
+
+.today-payment-amount input,
+.today-payment-field input,
+.today-payment-field select {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  border: 1px solid #343e4b;
+  border-radius: 12px;
+  background: #0b1017;
+  color: #fff;
+  font: inherit;
+  font-size: 13px;
+  outline: none;
+}
+
+.today-payment-amount label input {
+  min-height: 40px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.today-payment-field {
+  display: grid;
+  gap: 7px;
+}
+
+.today-payment-field input,
+.today-payment-field select {
+  padding: 0 12px;
+}
+
+.today-payment-field input:focus,
+.today-payment-field select:focus,
+.today-payment-amount label > div:focus-within {
+  border-color: rgba(255, 10, 138, 0.62);
+  box-shadow: 0 0 0 3px rgba(255, 10, 138, 0.08);
+}
+
+.today-payment-actions {
+  display: grid;
+  grid-template-columns: 0.8fr 1.5fr;
+  gap: 9px;
+  margin-top: 4px;
+}
+
+.today-payment-actions button {
+  min-height: 44px;
+  border-radius: 13px;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.today-payment-cancel {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: transparent;
+  color: #cbd5e1;
+}
+
+.today-payment-confirm {
+  border: 0;
+  background: linear-gradient(180deg, #ff0a8a, #e9007b);
+  color: #fff;
+  box-shadow: 0 12px 30px rgba(255, 10, 138, 0.18);
+}
+
+.today-payment-confirm:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+@media (max-width: 520px) {
+  .today-payment-backdrop {
+    align-items: end;
+    padding: 0;
+  }
+
+  .today-payment-dialog {
+    width: 100%;
+    max-height: 90vh;
+    border-right: 0;
+    border-bottom: 0;
+    border-left: 0;
+    border-radius: 24px 24px 0 0;
+  }
+
+  .today-payment-dialog > header,
+  .today-payment-dialog form {
+    padding-inline: 18px;
+  }
+
+  .today-payment-actions {
+    grid-template-columns: 1fr;
+  }
+}
