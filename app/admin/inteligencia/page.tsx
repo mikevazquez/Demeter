@@ -845,6 +845,8 @@ export default async function IntelligencePage({
     .map(([label, count]) => ({ label, count }))
     .sort((a, b) => b.count - a.count);
   const topCancellationReason = cancellationReasonRows[0] ?? null;
+  const missingCancellationReasonCount =
+    cancellationReasonCounts.get("Sin motivo registrado") ?? 0;
 
   const expiredCurrent = commercialAcquisitions.filter(
     (item) =>
@@ -1028,10 +1030,10 @@ export default async function IntelligencePage({
               tone="positive"
             />
             <MetricCard
-              label="Conversión de prueba"
-              value={pct(trialConversion)}
-              delta={pointsDelta(trialConversion, previousTrialConversion)}
-              tone={trialConversion >= previousTrialConversion ? "positive" : "warning"}
+              label="Show rate"
+              value={pct(showRate)}
+              delta={pointsDelta(showRate, previousShowRate)}
+              tone={showRate >= previousShowRate ? "positive" : "warning"}
             />
             <MetricCard
               label="Ocupación"
@@ -1080,6 +1082,30 @@ export default async function IntelligencePage({
                       title="💳 Cobranza pendiente"
                       body={money(pendingCurrent, studio.currency) + " continúan sin cobrar en ventas del periodo."}
                       href={viewHref("dinero", days)}
+                    />
+                  ) : null}
+                  {currentNoShowEvents.length > 0 ? (
+                    <Insight
+                      tone={showRate < previousShowRate ? "danger" : "warning"}
+                      title={"👻 " + currentNoShowEvents.length + " no show en el periodo"}
+                      body={
+                        noShowRecovery.recovered +
+                        " de " +
+                        noShowRecovery.eligible +
+                        " personas volvieron a reservar después."
+                      }
+                      href={viewHref("conversion", days)}
+                    />
+                  ) : null}
+                  {missingCancellationReasonCount > 0 ? (
+                    <Insight
+                      tone="warning"
+                      title="🧩 Cancelaciones sin motivo"
+                      body={
+                        missingCancellationReasonCount +
+                        " cancelaciones no tienen una causa útil para análisis."
+                      }
+                      href={viewHref("conversion", days)}
                     />
                   ) : null}
                 </div>
