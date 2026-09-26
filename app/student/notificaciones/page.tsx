@@ -1,9 +1,14 @@
+import { notFound } from "next/navigation";
+
+import { STUDIO_MODULES } from "@/lib/auth/modules";
 import { getStudentPortalContext } from "@/lib/student/portal";
 
 import PushNotificationSettings from "../components/PushNotificationSettings";
 
 export default async function StudentNotificationsPage() {
-  const { membership } = await getStudentPortalContext();
+  const { membership, hasModule } = await getStudentPortalContext();
+
+  if (!hasModule(STUDIO_MODULES.NOTIFICATIONS)) notFound();
 
   return (
     <main className="space-y-4 pb-4 sm:space-y-5">
