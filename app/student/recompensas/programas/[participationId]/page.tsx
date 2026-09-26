@@ -143,7 +143,7 @@ export default async function StudentProgramProgressPage({
                       Periodo actual
                     </p>
                     <p className="mt-1 text-xs font-medium text-zinc-300">
-                      Hasta {formatDateTime(cycle.window_end_at, ctx.studio.timezone)}
+                      Hasta {formatDateTime(cycle.window_end_at, ctx.studio.timezone, ctx.studio.locale)}
                     </p>
                   </div>
                 ) : null}
