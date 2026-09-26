@@ -590,33 +590,23 @@ export async function createMercadoPagoOrderAction(
   };
 }
 
-export async function updateStudentAvatarAction(formData: FormData) {
-  const file = formData.get("avatar");
-  if (!(file instanceof File) || file.size <= 0) {
-    redirect("/student/perfil?avatar_error=missing");
-  }
-
-  if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
-    redirect("/student/perfil?avatar_error=type");
-  }
-
-  if (file.size > 5 * 1024 * 1024) {
-    redirect("/student/perfil?avatar_error=size");
-  }
-
+export async function finalizeStudentAvatarAction(avatarPath: string) {
   const { supabase, user, snapshot } = await getStudentPortalContext();
-  const avatarPath = `${user.id}/avatar`;
+  const expectedAvatarPath = `${user.id}/avatar`;
 
-  const { error: uploadError } = await supabase.storage
+  if (avatarPath.trim() !== expectedAvatarPath) {
+    return { ok: false as const, error: "invalid_avatar_path" };
+  }
+
+  const { data: uploadedObjects, error: storageError } = await supabase.storage
     .from("profile-avatars")
-    .upload(avatarPath, file, {
-      cacheControl: "3600",
-      contentType: file.type,
-      upsert: true,
+    .list(user.id, {
+      limit: 1,
+      search: "avatar",
     });
 
-  if (uploadError) {
-    redirect("/student/perfil?avatar_error=upload");
+  if (storageError || !uploadedObjects?.some((object) => object.name === "avatar")) {
+    return { ok: false as const, error: "avatar_upload_missing" };
   }
 
   const { error: profileError } = await supabase.from("profiles").upsert(
@@ -624,18 +614,21 @@ export async function updateStudentAvatarAction(formData: FormData) {
       id: user.id,
       full_name: snapshot.profile.full_name,
       phone: snapshot.profile.phone,
-      avatar_url: avatarPath,
+      avatar_url: expectedAvatarPath,
       updated_at: new Date().toISOString(),
     },
     { onConflict: "id" },
   );
 
   if (profileError) {
-    redirect("/student/perfil?avatar_error=profile");
+    return { ok: false as const, error: "avatar_profile_update_failed" };
   }
 
+  revalidatePath("/student");
   revalidatePath("/student/perfil");
-  redirect("/student/perfil?avatar=updated");
+  revalidatePath("/student/recompensas");
+
+  return { ok: true as const };
 }
 
 export async function updateStudentProfileAction(formData: FormData) {
