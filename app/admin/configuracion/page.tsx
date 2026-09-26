@@ -4,14 +4,28 @@ import { redirect } from "next/navigation";
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 
+import { OperatingPolicyForm } from "./OperatingPolicyForm";
 import { PortalIdentityForm } from "./PortalIdentityForm";
+import { RegionalSettingsForm } from "./RegionalSettingsForm";
 
 const errorCopy: Record<string, string> = {
   name: "El nombre del estudio debe tener entre 2 y 80 caracteres.",
+  tagline: "La frase de marca debe tener máximo 120 caracteres.",
+  primary_color: "Selecciona un color principal válido.",
   logo_type: "Usa un logo PNG, JPG o WebP.",
   logo_size: "El logo debe pesar máximo 2 MB.",
   logo_upload: "No pudimos subir el logo. Inténtalo nuevamente.",
-  save: "No pudimos guardar la identidad del estudio.",
+  identity_save: "No pudimos guardar la identidad del estudio.",
+  cutoff: "El límite de cancelación debe estar entre 0 y 168 horas.",
+  operating_save: "No pudimos guardar la política operativa.",
+  regional: "Revisa zona horaria, moneda y locale.",
+  regional_save: "No pudimos guardar la configuración regional.",
+};
+
+const savedCopy: Record<string, string> = {
+  identity: "Identidad del portal actualizada correctamente.",
+  operating: "Política operativa actualizada correctamente.",
+  regional: "Configuración regional actualizada correctamente.",
 };
 
 export default async function ConfigurationPage({
@@ -26,9 +40,21 @@ export default async function ConfigurationPage({
     redirect("/admin?error=access");
   }
 
-  const logoUrl = ctx.studio.logo_path
-    ? ctx.supabase.storage.from("studio-branding").getPublicUrl(ctx.studio.logo_path).data.publicUrl
-    : null;
+  const [{ data: operatingPolicy }, logoUrl] = await Promise.all([
+    ctx.supabase
+      .from("studio_operating_policies")
+      .select(
+        "cancellation_cutoff_minutes,late_cancellation_consumes_credit,no_show_consumes_credit",
+      )
+      .eq("studio_id", ctx.studio.id)
+      .maybeSingle(),
+    Promise.resolve(
+      ctx.studio.logo_path
+        ? ctx.supabase.storage.from("studio-branding").getPublicUrl(ctx.studio.logo_path).data
+            .publicUrl
+        : null,
+    ),
+  ]);
 
   const portalPath = `/s/${ctx.studio.slug}`;
 
@@ -41,12 +67,12 @@ export default async function ConfigurationPage({
           </Link>
           <p className="eyebrow">CONFIGURACIÓN · {ctx.studio.name}</p>
           <h1 className="dashboard-title">Configuración</h1>
-          <p>Define cómo se presenta tu estudio antes de iniciar sesión.</p>
+          <p>Ajusta la identidad, región y reglas operativas de este estudio.</p>
         </div>
       </header>
 
-      {params.saved === "1" ? (
-        <div className="notice success">Identidad del portal actualizada correctamente.</div>
+      {params.saved && savedCopy[params.saved] ? (
+        <div className="notice success">{savedCopy[params.saved]}</div>
       ) : null}
 
       {params.error ? (
@@ -54,6 +80,28 @@ export default async function ConfigurationPage({
           {errorCopy[params.error] ?? "No pudimos guardar los cambios."}
         </div>
       ) : null}
+
+      <PortalIdentityForm
+        initialName={ctx.studio.name}
+        initialLogoUrl={logoUrl}
+        portalPath={portalPath}
+        initialPrimaryColor={ctx.studio.primary_color ?? "#FF0A8A"}
+        initialTagline={ctx.studio.tagline ?? null}
+      />
+
+      <OperatingPolicyForm
+        cancellationCutoffMinutes={operatingPolicy?.cancellation_cutoff_minutes ?? 300}
+        lateCancellationConsumesCredit={
+          operatingPolicy?.late_cancellation_consumes_credit ?? true
+        }
+        noShowConsumesCredit={operatingPolicy?.no_show_consumes_credit ?? true}
+      />
+
+      <RegionalSettingsForm
+        timezone={ctx.studio.timezone}
+        currency={ctx.studio.currency}
+        locale={ctx.studio.locale}
+      />
 
       <section className="panel">
         <p className="eyebrow">INTEGRACIONES</p>
@@ -78,13 +126,6 @@ export default async function ConfigurationPage({
           Configurar recursos
         </Link>
       </section>
-
-      <PortalIdentityForm
-        initialName={ctx.studio.name}
-        initialLogoUrl={logoUrl}
-        portalPath={portalPath}
-        primaryColor={ctx.studio.primary_color ?? "#FF0A8A"}
-      />
     </main>
   );
 }
