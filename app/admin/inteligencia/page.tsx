@@ -1906,13 +1906,51 @@ export default async function IntelligencePage({
     .map((row) => {
       const student = students.find((item) => item.id === row.student_id);
       const completed = onboardingSteps.filter(([, key]) => Boolean(row[key])).length;
+      const nextStep =
+        onboardingSteps.find(([, key]) => !row[key])?.[0] ?? "Revisión manual";
       return {
         studentId: row.student_id,
         name: student?.full_name ?? "Alumna",
         completed,
+        nextStep,
       };
     })
     .sort((a, b) => a.completed - b.completed || a.name.localeCompare(b.name));
+
+  const onboardingBottleneckCounts = new Map<string, number>();
+  for (const item of onboardingPending) {
+    onboardingBottleneckCounts.set(
+      item.nextStep,
+      (onboardingBottleneckCounts.get(item.nextStep) ?? 0) + 1,
+    );
+  }
+  const onboardingBottleneckRows = [...onboardingBottleneckCounts.entries()]
+    .map(([label, count]) => ({ label, count }))
+    .sort((a, b) => b.count - a.count);
+  const topOnboardingBottleneck = onboardingBottleneckRows[0] ?? null;
+
+  const newCommercialStudentIds = new Set(
+    newCommercialStudentsCurrent.map((item) => item.student_id),
+  );
+  const newStudentOnboardingRows = onboardingRows.filter((row) =>
+    newCommercialStudentIds.has(row.student_id),
+  );
+  const newStudentOnboardingComplete = newStudentOnboardingRows.filter(
+    (row) => Boolean(row.completed_at),
+  ).length;
+  const newStudentActivationRate = safeRate(
+    newStudentOnboardingComplete,
+    newCommercialStudentsCurrent.length,
+  );
+
+  const newlyConfirmedChurn = abandonedStudents.filter((item) => {
+    const latest = latestAcquisitionByStudent.get(item.id);
+    if (!latest?.expires_on) return false;
+    const confirmedAt = new Date(latest.expires_on + "T12:00:00Z").getTime() + 30 * DAY;
+    return confirmedAt >= currentStart.getTime() && confirmedAt < currentEnd.getTime();
+  });
+  const netStudentGrowth =
+    newCommercialStudentsCurrent.length - newlyConfirmedChurn.length;
 
   const decisions: IntelligenceDecision[] = [];
   const attendanceDecisionSample =
@@ -1957,6 +1995,26 @@ export default async function IntelligencePage({
           : " promesas de pago vencen hoy."),
       action: "Confirmar el pago hoy y registrar el ingreso con su fecha efectiva real.",
       href: viewHref("dinero", days),
+    });
+  }
+
+  if (
+    topOnboardingBottleneck &&
+    onboardingPending.length >= 3 &&
+    topOnboardingBottleneck.count / onboardingPending.length >= 0.4
+  ) {
+    decisions.push({
+      key: "onboarding-bottleneck-" + topOnboardingBottleneck.label,
+      priority: 2,
+      tone: "warning",
+      title: "Destrabar onboarding · " + topOnboardingBottleneck.label,
+      evidence:
+        topOnboardingBottleneck.count +
+        " de " +
+        onboardingPending.length +
+        " onboardings pendientes tienen ese paso como siguiente bloqueo.",
+      action: "Abrir Alumnas y resolver primero ese paso común antes de perseguir casos individuales.",
+      href: viewHref("alumnas", days),
     });
   }
 
