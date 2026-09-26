@@ -410,17 +410,6 @@ function BarRow({
   );
 }
 
-function EmptyMetric({ label }: { label: string }) {
-  return (
-    <MetricCard
-      label={label}
-      value="—"
-      delta="Fuente pendiente"
-      tone="warning"
-    />
-  );
-}
-
 function viewHref(view: ViewKey, days: number) {
   return "/admin/inteligencia?view=" + view + "&days=" + days;
 }
@@ -2918,87 +2907,202 @@ export default async function IntelligencePage({
         <>
           <section className="intel-kpi-grid">
             <MetricCard
-              label="Ingresos"
+              label="Ingresos cobrados"
               value={money(currentRevenue, studio.currency)}
-              delta="Dato disponible"
-              tone="positive"
+              delta={deltaText(currentRevenue, previousRevenue)}
+              tone={currentRevenue >= previousRevenue ? "positive" : "danger"}
             />
-            <EmptyMetric label="Gastos" />
-            <EmptyMetric label="Utilidad" />
-            <EmptyMetric label="Margen" />
+            <MetricCard
+              label="Gastos registrados"
+              value={money(currentExpenseTotal, studio.currency)}
+              delta={deltaText(currentExpenseTotal, previousExpenseTotal)}
+              tone={currentExpenseTotal > previousExpenseTotal ? "warning" : "neutral"}
+            />
+            <MetricCard
+              label="Resultado operativo"
+              value={money(currentOperatingResult, studio.currency)}
+              delta={deltaText(currentOperatingResult, previousOperatingResult)}
+              tone={currentOperatingResult >= 0 ? "positive" : "danger"}
+            />
+            <MetricCard
+              label="Margen registrado"
+              value={currentRevenue > 0 ? pct(currentOperatingMargin) : "—"}
+              delta={pointsDelta(currentOperatingMargin, previousOperatingMargin)}
+              tone={currentOperatingResult >= 0 ? "positive" : "danger"}
+            />
           </section>
 
           <div className="intel-two-column">
             <div className="intel-stack">
-              <Section title="💰 Ingresos" description="Cobros netos de reembolsos.">
-                <div className="intel-bars">
-                  {periodBuckets.slice(-14).map((item) => (
-                    <BarRow
-                      key={item.key}
-                      label={item.label}
-                      value={Math.max(item.amount, 0)}
-                      max={maxDailyRevenue}
-                      display={money(item.amount, studio.currency)}
-                    />
-                  ))}
+              <Section
+                title="💰 Resultado operativo registrado"
+                description="Cobros netos menos gastos capturados con fecha efectiva dentro del periodo."
+              >
+                <div className="intel-rule-list">
+                  <div>
+                    <span>Ingresos cobrados</span>
+                    <strong>{money(currentRevenue, studio.currency)}</strong>
+                  </div>
+                  <div>
+                    <span>Gastos registrados</span>
+                    <strong>{money(currentExpenseTotal, studio.currency)}</strong>
+                  </div>
+                  <div>
+                    <span>Resultado</span>
+                    <strong>{money(currentOperatingResult, studio.currency)}</strong>
+                  </div>
+                  <div>
+                    <span>Margen</span>
+                    <strong>{currentRevenue > 0 ? pct(currentOperatingMargin) : "—"}</strong>
+                  </div>
+                </div>
+                <div className="intel-source-note">
+                  Esto es inteligencia operativa, no contabilidad fiscal. Si faltan gastos por registrar,
+                  el resultado estará sobreestimado.
                 </div>
               </Section>
 
-              <Section title="Ventas por producto" description="Importe vendido; no equivale necesariamente a cobrado.">
+              <Section title="Gastos por categoría">
                 <div className="intel-bars">
-                  {productRows.map((item) => (
-                    <BarRow
-                      key={item.name}
-                      label={item.name}
-                      value={item.amount}
-                      max={productRows[0]?.amount ?? 1}
-                      display={money(item.amount, studio.currency)}
-                    />
+                  {expenseCategoryRows.length ? (
+                    expenseCategoryRows.map((item) => (
+                      <BarRow
+                        key={item.category}
+                        label={item.label}
+                        value={item.amount}
+                        max={expenseCategoryRows[0]?.amount ?? 1}
+                        display={money(item.amount, studio.currency)}
+                        tone="warning"
+                      />
+                    ))
+                  ) : (
+                    <p className="intel-empty">No hay gastos registrados en este periodo.</p>
+                  )}
+                </div>
+              </Section>
+
+              <Section
+                title="Últimos gastos"
+                description="Usamos fecha efectiva para que cada gasto caiga en el periodo económico correcto."
+              >
+                <div className="intel-expense-list">
+                  {recentExpenses.map((expense) => (
+                    <article className="intel-expense-row" key={expense.id}>
+                      <div>
+                        <strong>{expense.description}</strong>
+                        <small>
+                          {(expenseCategoryLabels[expense.category] ?? expense.category) +
+                            " · " +
+                            expense.effective_on +
+                            (expense.vendor ? " · " + expense.vendor : "")}
+                        </small>
+                      </div>
+                      <div className="intel-expense-amount">
+                        <b>{money(expense.amount_minor, expense.currency)}</b>
+                        {canWriteFinance ? (
+                          <form action={deleteStudioExpense}>
+                            <input type="hidden" name="expense_id" value={expense.id} />
+                            <input type="hidden" name="days" value={String(days)} />
+                            <button type="submit">Eliminar</button>
+                          </form>
+                        ) : null}
+                      </div>
+                    </article>
                   ))}
+                  {!recentExpenses.length ? (
+                    <p className="intel-empty">Todavía no hay gastos en el periodo seleccionado.</p>
+                  ) : null}
                 </div>
               </Section>
             </div>
 
             <div className="intel-stack">
+              {canWriteFinance ? (
+                <Section
+                  title="＋ Registrar gasto"
+                  description="Captura el gasto cuando realmente corresponda al negocio, no según la fecha en que lo estás registrando."
+                >
+                  <form action={createStudioExpense} className="intel-expense-form">
+                    <input type="hidden" name="days" value={String(days)} />
+                    <label>
+                      Categoría
+                      <select name="category" defaultValue="" required>
+                        <option value="" disabled>Selecciona</option>
+                        {Object.entries(expenseCategoryLabels).map(([value, label]) => (
+                          <option key={value} value={value}>{label}</option>
+                        ))}
+                      </select>
+                    </label>
+                    <label>
+                      Concepto
+                      <input
+                        name="description"
+                        placeholder="Ej. Renta septiembre"
+                        maxLength={140}
+                        required
+                      />
+                    </label>
+                    <div className="intel-expense-form-grid">
+                      <label>
+                        Importe
+                        <input
+                          name="amount"
+                          type="number"
+                          min="0.01"
+                          step="0.01"
+                          inputMode="decimal"
+                          placeholder="0.00"
+                          required
+                        />
+                      </label>
+                      <label>
+                        Fecha efectiva
+                        <input name="effective_on" type="date" defaultValue={todayDate} required />
+                      </label>
+                    </div>
+                    <label>
+                      Proveedor
+                      <input name="vendor" placeholder="Opcional" maxLength={120} />
+                    </label>
+                    <label>
+                      Nota
+                      <textarea name="notes" placeholder="Opcional" maxLength={500} rows={3} />
+                    </label>
+                    <button type="submit" className="primary-button">Guardar gasto</button>
+                  </form>
+                </Section>
+              ) : null}
+
               <Section
-                title="⚙️ Fuente pendiente: gastos"
-                description="No mostramos rentabilidad falsa con información incompleta."
+                title={currentExpenses.length ? "✓ Fuente de gastos activa" : "⚠️ Cobertura de gastos"}
+                description="La calidad del resultado depende de que los gastos del periodo estén completos."
               >
                 <Insight
-                  tone="warning"
-                  title="⚠️ Gastos no instrumentados"
-                  body="Studio Flow registra ventas y pagos, pero todavía no una fuente estructurada de gastos."
+                  tone={currentExpenses.length ? "info" : "warning"}
+                  title={
+                    currentExpenses.length
+                      ? currentExpenses.length + " gastos registrados"
+                      : "No hay gastos registrados en el periodo"
+                  }
+                  body={
+                    currentExpenses.length
+                      ? "Resultado y margen ya usan estos movimientos. Revisa que no falten renta, nómina, servicios u otros costos."
+                      : "No interpretes el resultado operativo como utilidad real hasta capturar los gastos del periodo."
+                  }
                 />
               </Section>
 
-              <Section title="Gastos a incorporar">
-                <div className="intel-rule-list">
-                  {[
-                    "Renta",
-                    "Profesores / nómina",
-                    "Servicios",
-                    "Publicidad",
-                    "Mantenimiento",
-                    "Software",
-                    "Insumos",
-                    "Otros",
-                  ].map((item) => (
-                    <div key={item}>
-                      <span>{item}</span>
-                      <strong>—</strong>
-                    </div>
-                  ))}
-                </div>
-              </Section>
-
-              <Section title="Al registrar gastos podremos calcular">
+              <Section title="Siguiente nivel de rentabilidad">
                 <ul className="intel-unlock-list">
-                  <li>Utilidad neta</li>
-                  <li>Margen de utilidad</li>
-                  <li>Costo por clase</li>
+                  <li>Costo por clase y por hora</li>
                   <li>Rentabilidad por disciplina</li>
-                  <li>Ingreso neto por hora de agenda</li>
+                  <li>Rentabilidad por horario</li>
+                  <li>Retorno de publicidad por campaña</li>
                 </ul>
+                <div className="intel-source-note">
+                  Para esas métricas necesitamos asignar costos directos a clases/disciplinas y cerrar
+                  la atribución de campañas desde conversaciones.
+                </div>
               </Section>
             </div>
           </div>
