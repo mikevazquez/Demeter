@@ -71,7 +71,7 @@ export default async function CoachClassDetailPage({
                 {detail.activity}
               </h1>
               <p className="mt-3 capitalize text-zinc-300">
-                {formatSessionDate(detail.starts_at, studio.timezone)}
+                {formatSessionDate(detail.starts_at, studio.timezone, studio.locale)}
               </p>
             </div>
             <span className="self-start rounded-full border border-white/10 px-3 py-1 text-xs font-semibold text-zinc-300">
@@ -84,8 +84,8 @@ export default async function CoachClassDetailPage({
           <div className="rounded-2xl bg-black/20 p-4">
             <p className="text-xs text-zinc-500">Horario</p>
             <p className="mt-1 font-semibold text-white">
-              {formatTime(detail.starts_at, studio.timezone)} –{" "}
-              {formatTime(detail.ends_at, studio.timezone)}
+              {formatTime(detail.starts_at, studio.timezone, studio.locale)} –{" "}
+              {formatTime(detail.ends_at, studio.timezone, studio.locale)}
             </p>
           </div>
           <div className="rounded-2xl bg-black/20 p-4">
