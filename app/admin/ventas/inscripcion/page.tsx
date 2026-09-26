@@ -54,7 +54,7 @@ export default async function EnrollmentPolicyPage({
         <h1 className="text-3xl font-semibold text-white">Inscripción</h1>
         <p className="mt-1 text-sm leading-6 text-zinc-400">
           Cada estudio define si utiliza inscripción, qué producto la cobra y en qué momentos debe
-          exigirse. Las reglas se aplican por tenant, sin depender de la operación de Demeter.
+          exigirse. Las reglas se aplican por tenant, sin depender de reglas de un estudio concreto.
         </p>
       </header>
 
