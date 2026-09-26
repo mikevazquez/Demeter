@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
+import { STUDIO_MODULES } from "@/lib/auth/modules";
 
 type SchedulePayload = {
   id?: string;
@@ -73,7 +74,8 @@ function normalizeRpcError(message: string | undefined) {
 }
 
 export async function saveActivity(formData: FormData) {
-  const { supabase, studio } = await getAdminContext(CAPABILITIES.SCHEDULE_WRITE);
+  const ctx = await getAdminContext(CAPABILITIES.SCHEDULE_WRITE);
+  const { supabase, studio } = ctx;
 
   let payload: ActivityPayload | undefined;
   try {
@@ -103,6 +105,21 @@ export async function saveActivity(formData: FormData) {
   const minimumReviewMinutes =
     payload.minimumReviewUnit === "hours" ? minimumReviewValue * 60 : minimumReviewValue;
 
+  let requiresResource = Boolean(payload.requiresResource);
+  if (!ctx.hasModule(STUDIO_MODULES.RESOURCES)) {
+    if (payload.activityId) {
+      const { data: currentActivity } = await supabase
+        .from("class_templates")
+        .select("requires_resource")
+        .eq("id", payload.activityId)
+        .eq("studio_id", studio.id)
+        .maybeSingle();
+      requiresResource = currentActivity?.requires_resource ?? false;
+    } else {
+      requiresResource = false;
+    }
+  }
+
   if (
     !name ||
     name.length > 80 ||
@@ -116,7 +133,7 @@ export async function saveActivity(formData: FormData) {
     !schedules.length ||
     !/^\d{4}-\d{2}-\d{2}$/.test(startsOn) ||
     (endsOn && (!/^\d{4}-\d{2}-\d{2}$/.test(endsOn) || endsOn < startsOn)) ||
-    (payload.requiresResource && !defaultSpaceId) ||
+    (requiresResource && !defaultSpaceId) ||
     (notes?.length ?? 0) > 300 ||
     dropInPriceMinor === undefined ||
     (payload.allowIndividualPurchase && (dropInPriceMinor == null || dropInPriceMinor <= 0)) ||
@@ -158,7 +175,7 @@ export async function saveActivity(formData: FormData) {
     p_duration_minutes: durationMinutes,
     p_capacity: capacity,
     p_color_hex: colorHex,
-    p_requires_resource: Boolean(payload.requiresResource),
+    p_requires_resource: requiresResource,
     p_drop_in_price_minor: dropInPriceMinor,
     p_individual_purchase_notes: payload.allowIndividualPurchase ? notes : null,
     p_default_instructor_id: defaultInstructorId,

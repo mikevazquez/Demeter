@@ -75,6 +75,7 @@ export function ActivityWizard({
   operatingDefaults,
   locale,
   currency,
+  resourcesEnabled = true,
 }: {
   instructors: Option[];
   spaces: Option[];
@@ -83,6 +84,7 @@ export function ActivityWizard({
   saveError?: boolean;
   locale: string;
   currency: string;
+  resourcesEnabled?: boolean;
   operatingDefaults?: {
     minimumReservationsEnabled: boolean;
     minimumReservations: number;
@@ -379,6 +381,7 @@ export function ActivityWizard({
                   type="button"
                   className={draft.requiresResource ? "is-selected" : ""}
                   onClick={() => patch({ requiresResource: true })}
+                  disabled={!resourcesEnabled}
                 >
                   Sí
                 </button>
@@ -386,14 +389,17 @@ export function ActivityWizard({
                   type="button"
                   className={!draft.requiresResource ? "is-selected" : ""}
                   onClick={() => patch({ requiresResource: false })}
+                  disabled={!resourcesEnabled}
                 >
                   No
                 </button>
               </div>
               <small>
-                {draft.requiresResource
-                  ? "Esta actividad utiliza recursos del estudio."
-                  : "La reserva no pedirá seleccionar un recurso físico."}
+                {!resourcesEnabled
+                  ? "El módulo Recursos no está habilitado para este estudio."
+                  : draft.requiresResource
+                    ? "Esta actividad utiliza recursos del estudio."
+                    : "La reserva no pedirá seleccionar un recurso físico."}
               </small>
             </fieldset>
           </div>

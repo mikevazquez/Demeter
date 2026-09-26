@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { CAPABILITIES } from "@/lib/auth/capabilities";
+import { STUDIO_MODULES } from "@/lib/auth/modules";
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { SessionOperations } from "../../hoy/SessionOperations";
 import { cancelSession, setMinimumOverride, updateSession } from "./actions";
@@ -66,7 +67,8 @@ export default async function SessionDetailPage({
 }) {
   const { sessionId } = await params;
   const query = await searchParams;
-  const { supabase, studio, can } = await getAdminContext(CAPABILITIES.SCHEDULE_READ);
+  const { supabase, studio, can, hasModule } = await getAdminContext(CAPABILITIES.SCHEDULE_READ);
+  const resourcesEnabled = hasModule(STUDIO_MODULES.RESOURCES);
 
   const { data: session } = await supabase
     .from("class_sessions")
@@ -332,7 +334,7 @@ export default async function SessionDetailPage({
     query.created === "cancel-session" ||
     query.created === "minimum-override";
 
-  const { data: sessionResourceRows } = session.requires_resource
+  const { data: sessionResourceRows } = resourcesEnabled && session.requires_resource
     ? await supabase
         .from("session_resources")
         .select("id,enabled")
@@ -544,7 +546,7 @@ export default async function SessionDetailPage({
         />
       </section>
 
-      {session.requires_resource ? (
+      {resourcesEnabled && session.requires_resource ? (
         <section className="panel">
           <p className="eyebrow">RECURSOS</p>
           <h2>Recursos de esta sesión</h2>
