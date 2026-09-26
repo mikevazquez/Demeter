@@ -129,7 +129,7 @@ export default async function GeneratedRewardDetailPage({
             ← Recompensas generadas
           </Link>
           <p className="mt-4 eyebrow">DETALLE DE RECOMPENSA</p>
-          <h1 className="dashboard-title">{rewardDefinitionLabel(reward.benefit_definition)}</h1>
+          <h1 className="dashboard-title">{rewardDefinitionLabel(reward.benefit_definition, ctx.studio.locale, ctx.studio.currency)}</h1>
           <p className="mt-2 text-sm text-zinc-400">
             {student?.full_name ?? "Alumna"} · {originType}
           </p>
@@ -146,16 +146,16 @@ export default async function GeneratedRewardDetailPage({
             BENEFICIO
           </p>
           <h2 className="mt-2 text-xl font-semibold text-white">
-            {rewardDefinitionLabel(reward.benefit_definition)}
+            {rewardDefinitionLabel(reward.benefit_definition, ctx.studio.locale, ctx.studio.currency)}
           </h2>
           <dl className="mt-5 grid gap-3 text-sm">
             <div className="flex justify-between gap-4">
               <dt className="text-zinc-500">Obtenida</dt>
-              <dd className="text-right text-zinc-300">{formatDateTime(reward.created_at)}</dd>
+              <dd className="text-right text-zinc-300">{formatDateTime(reward.created_at, ctx.studio.locale, ctx.studio.timezone)}</dd>
             </div>
             <div className="flex justify-between gap-4">
               <dt className="text-zinc-500">Vence</dt>
-              <dd className="text-right text-zinc-300">{formatDateTime(reward.expires_at)}</dd>
+              <dd className="text-right text-zinc-300">{formatDateTime(reward.expires_at, ctx.studio.locale, ctx.studio.timezone)}</dd>
             </div>
             <div className="flex justify-between gap-4">
               <dt className="text-zinc-500">Entrega</dt>
@@ -174,7 +174,7 @@ export default async function GeneratedRewardDetailPage({
           </p>
           {evaluation ? (
             <p className="mt-3 text-xs text-zinc-500">
-              Validado {formatDateTime(evaluation.evaluated_at)}
+              Validado {formatDateTime(evaluation.evaluated_at, ctx.studio.locale, ctx.studio.timezone)}
             </p>
           ) : null}
         </article>
@@ -251,7 +251,7 @@ export default async function GeneratedRewardDetailPage({
               >
                 <div>
                   <strong className="text-sm text-white">{event.event_type}</strong>
-                  <p className="mt-1 text-xs text-zinc-500">{formatDateTime(event.occurred_at)}</p>
+                  <p className="mt-1 text-xs text-zinc-500">{formatDateTime(event.occurred_at, ctx.studio.locale, ctx.studio.timezone)}</p>
                 </div>
                 <StatusBadge status={event.to_status} />
               </div>

@@ -253,7 +253,7 @@ export default async function ProgramDetailPage({
                       <p className="mt-2 text-xs text-zinc-500">
                         {level.reward_visibility === "surprise"
                           ? "Recompensa sorpresa"
-                          : rewardDefinitionLabel(ruleVersion?.reward_definition)}
+                          : rewardDefinitionLabel(ruleVersion?.reward_definition, ctx.studio.locale, ctx.studio.currency)}
                       </p>
                     </div>
 
