@@ -1,0 +1,24 @@
+name: Debug avatar prettier
+
+on:
+  push:
+    branches:
+      - chore/profile-avatar-format
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Format avatar test and print base64
+        run: |
+          npx prettier --write tests/profile-avatar-upload-hotfix.test.ts
+          echo "FORMATTED_BASE64_BEGIN"
+          base64 -w0 tests/profile-avatar-upload-hotfix.test.ts
+          echo
+          echo "FORMATTED_BASE64_END"
