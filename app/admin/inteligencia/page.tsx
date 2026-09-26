@@ -697,11 +697,24 @@ export default async function IntelligencePage({
   }
 
   const reactivationPurchaseRows = reactivationPurchases(conversionAcquisitions);
-  const reactivatedStudentsCurrent = reactivationPurchaseRows.filter((item) =>
-    isBetween(item.created_at, currentStart, currentEnd),
+
+  function uniqueStudentAcquisitions(rows: AcquisitionRow[]) {
+    const byStudent = new Map<string, AcquisitionRow>();
+    for (const row of rows) {
+      if (!byStudent.has(row.student_id)) byStudent.set(row.student_id, row);
+    }
+    return [...byStudent.values()];
+  }
+
+  const reactivatedStudentsCurrent = uniqueStudentAcquisitions(
+    reactivationPurchaseRows.filter((item) =>
+      isBetween(item.created_at, currentStart, currentEnd),
+    ),
   );
-  const reactivatedStudentsPrevious = reactivationPurchaseRows.filter((item) =>
-    isBetween(item.created_at, previousStart, currentStart),
+  const reactivatedStudentsPrevious = uniqueStudentAcquisitions(
+    reactivationPurchaseRows.filter((item) =>
+      isBetween(item.created_at, previousStart, currentStart),
+    ),
   );
 
   const currentSales = sales.filter(
