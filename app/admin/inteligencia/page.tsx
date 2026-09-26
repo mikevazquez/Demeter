@@ -1218,18 +1218,25 @@ export default async function IntelligencePage({
                 description="Sólo aparecen señales que justifican una acción concreta."
               >
                 <div className="intel-insight-list">
-                  {riskStudents.length ? (
+                  {preventiveRiskStudents.length ? (
                     <Insight
                       tone="danger"
-                      title={"🚨 " + riskStudents.length + " alumnas en riesgo"}
-                      body="Su paquete venció hace 7–14 días y todavía no registran una nueva compra."
-                      href="/admin/alumnas"
+                      title={"🚨 " + preventiveRiskStudents.length + " alumnas en riesgo preventivo"}
+                      body="Su paquete vence en ≤7 días y además no tienen próxima reserva y/o llevan 14 días sin asistir."
+                      href={viewHref("retencion", days)}
+                    />
+                  ) : riskStudents.length ? (
+                    <Insight
+                      tone="warning"
+                      title={"⚠️ " + riskStudents.length + " paquetes ya vencieron"}
+                      body="Llevan entre 7 y 14 días sin una nueva compra. La intervención ya es de recuperación."
+                      href={viewHref("retencion", days)}
                     />
                   ) : (
                     <Insight
                       tone="positive"
-                      title="✓ Sin alumnas en riesgo inmediato"
-                      body="No hay paquetes vencidos dentro de la ventana de 7–14 días."
+                      title="✓ Sin señales críticas de retención"
+                      body="No detectamos alumnas próximas a vencer con señales de desconexión."
                     />
                   )}
                   {highestCancellation && highestCancellation.cancellation >= 15 ? (
@@ -1555,10 +1562,10 @@ export default async function IntelligencePage({
               tone="info"
             />
             <MetricCard
-              label="En riesgo"
-              value={String(riskStudents.length)}
-              delta="7–14 días desde vencimiento"
-              tone={riskStudents.length ? "warning" : "positive"}
+              label="Riesgo preventivo"
+              value={String(preventiveRiskStudents.length)}
+              delta="Vencen ≤7 días · señales de desconexión"
+              tone={preventiveRiskStudents.length ? "warning" : "positive"}
             />
             <MetricCard
               label="Abandono"
@@ -1580,7 +1587,7 @@ export default async function IntelligencePage({
                     tone="success"
                   />
                   <BarRow
-                    label="En riesgo"
+                    label="Vencidas 7–14 días"
                     value={riskStudents.length}
                     max={Math.max(students.length, 1)}
                     display={String(riskStudents.length)}
@@ -1648,26 +1655,31 @@ export default async function IntelligencePage({
                 description="Tocar una alumna abre directamente su perfil."
               >
                 <div className="intel-risk-list">
-                  {[...riskStudents, ...inactiveStudents, ...abandonedStudents]
-                    .sort((a, b) => b.days - a.days)
+                  {[
+                    ...preventiveRiskStudents,
+                    ...[...riskStudents, ...inactiveStudents, ...abandonedStudents].sort(
+                      (a, b) => b.days - a.days,
+                    ),
+                  ]
                     .slice(0, 8)
                     .map((item) => (
                       <Link
                         href={"/admin/alumnas/" + item.id}
-                        key={item.id}
+                        key={item.id + ":" + item.state}
                         className="intel-risk-row"
                       >
                         <span>
                           <strong>{item.name}</strong>
-                          <small>{item.days} días desde vencimiento</small>
+                          <small>{item.detail}</small>
                         </span>
                         <b>{item.state}</b>
                       </Link>
                     ))}
-                  {!riskStudents.length &&
+                  {!preventiveRiskStudents.length &&
+                  !riskStudents.length &&
                   !inactiveStudents.length &&
                   !abandonedStudents.length ? (
-                    <p className="intel-empty">No hay alumnas dentro de estas ventanas de riesgo.</p>
+                    <p className="intel-empty">No hay señales de retención que requieran seguimiento.</p>
                   ) : null}
                 </div>
               </Section>
@@ -2100,10 +2112,10 @@ export default async function IntelligencePage({
               tone={churn > previousChurn ? "danger" : "positive"}
             />
             <MetricCard
-              label="En riesgo"
-              value={String(riskStudents.length)}
-              delta="7–14 días desde vencimiento"
-              tone={riskStudents.length ? "warning" : "positive"}
+              label="Riesgo preventivo"
+              value={String(preventiveRiskStudents.length)}
+              delta="Antes del vencimiento"
+              tone={preventiveRiskStudents.length ? "warning" : "positive"}
             />
             <MetricCard
               label="Frecuencia"
@@ -2157,25 +2169,54 @@ export default async function IntelligencePage({
 
             <div className="intel-stack">
               <Section
-                title="🧭 Definición de abandono"
-                description="Primera versión con umbrales fijos; después podrán ser configurables por estudio."
+                title="🧭 Señales de retención"
+                description="Distingue prevención de recuperación para intervenir antes de perder a la alumna."
               >
                 <div className="intel-insight-list">
                   <Insight
+                    tone={preventiveRiskStudents.length ? "warning" : "positive"}
+                    title="🟡 Riesgo preventivo"
+                    body="Paquete vence en ≤7 días y no tiene próxima reserva y/o lleva 14 días sin asistir."
+                  />
+                  <Insight
                     tone="warning"
-                    title="🟡 En riesgo"
-                    body="7 días desde vencimiento sin una nueva compra."
+                    title="🟠 Vencida reciente"
+                    body="7–14 días desde vencimiento sin una nueva compra. Ya requiere recuperación."
                   />
                   <Insight
                     tone="info"
                     title="🟠 Inactiva"
-                    body="15 días desde vencimiento sin renovación."
+                    body="15–29 días desde vencimiento sin renovación."
                   />
                   <Insight
                     tone="danger"
                     title="🔴 Abandono"
-                    body="30 días desde vencimiento sin una nueva compra."
+                    body="30+ días desde vencimiento sin una nueva compra."
                   />
+                </div>
+              </Section>
+
+              <Section
+                title="Alumnas a intervenir ahora"
+                description="Primero las que todavía podemos recuperar antes del vencimiento."
+              >
+                <div className="intel-risk-list">
+                  {preventiveRiskStudents.slice(0, 8).map((item) => (
+                    <Link
+                      href={"/admin/alumnas/" + item.id}
+                      key={item.id}
+                      className="intel-risk-row"
+                    >
+                      <span>
+                        <strong>{item.name}</strong>
+                        <small>{item.detail}</small>
+                      </span>
+                      <b>Actuar ahora</b>
+                    </Link>
+                  ))}
+                  {!preventiveRiskStudents.length ? (
+                    <p className="intel-empty">No hay riesgo preventivo detectado hoy.</p>
+                  ) : null}
                 </div>
               </Section>
             </div>
