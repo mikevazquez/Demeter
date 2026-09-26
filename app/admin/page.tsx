@@ -254,7 +254,7 @@ export default async function AdminPage({
       sessionIds.length
         ? supabase
             .from("reservations")
-            .select("id,session_id,student_id,guest_person_id,status,acquisition_id,booked_at")
+            .select("id,session_id,student_id,guest_person_id,status,acquisition_id,booked_at,commercial_status")
             .in("session_id", sessionIds)
             .in("status", ["reserved", "attended", "no_show"])
             .order("booked_at")
@@ -267,12 +267,21 @@ export default async function AdminPage({
               status: string;
               acquisition_id: string | null;
               booked_at: string;
+              commercial_status: string | null;
             }[],
           }),
       templateIds.length
-        ? supabase.from("class_templates").select("id,name,color_hex").in("id", templateIds)
+        ? supabase
+            .from("class_templates")
+            .select("id,name,color_hex,drop_in_price_minor")
+            .in("id", templateIds)
         : Promise.resolve({
-            data: [] as { id: string; name: string; color_hex: string | null }[],
+            data: [] as {
+              id: string;
+              name: string;
+              color_hex: string | null;
+              drop_in_price_minor: number | null;
+            }[],
           }),
       instructorIds.length
         ? supabase.from("instructors").select("id,person_id").in("id", instructorIds)
@@ -486,6 +495,9 @@ export default async function AdminPage({
             new Date(reservation.booked_at).getTime() >= new Date(session.ends_at).getTime()
               ? "Agregada manualmente después del cierre"
               : null,
+          paymentDueOnAttendance: reservation.commercial_status === "payment_pending",
+          individualPriceMinor: template?.drop_in_price_minor ?? null,
+          currency: studio.currency ?? "MXN",
         };
       }),
       candidates: candidates.map((student) => {
