@@ -49,6 +49,7 @@ type PaymentRow = {
   sale_id: string;
   kind: string;
   amount_minor: number;
+  effective_on: string | null;
   created_at: string;
 };
 
@@ -210,6 +211,14 @@ function daysSince(dateKey: string | null, now: Date) {
 function isBetween(value: string, start: Date, end: Date) {
   const time = new Date(value).getTime();
   return time >= start.getTime() && time < end.getTime();
+}
+
+function paymentEffectiveDateTime(payment: PaymentRow) {
+  return payment.effective_on ? payment.effective_on + "T12:00:00Z" : payment.created_at;
+}
+
+function paymentDateKey(payment: PaymentRow) {
+  return payment.effective_on ?? payment.created_at.slice(0, 10);
 }
 
 function MetricCard({
@@ -399,7 +408,7 @@ export default async function IntelligencePage({
       .order("created_at", { ascending: false }),
     supabase
       .from("payments")
-      .select("sale_id,kind,amount_minor,created_at")
+      .select("sale_id,kind,amount_minor,effective_on,created_at")
       .eq("studio_id", studio.id)
       .gte("created_at", rangeStartIso),
     supabase
@@ -485,10 +494,10 @@ export default async function IntelligencePage({
   );
 
   const currentPayments = payments.filter((item) =>
-    isBetween(item.created_at, currentStart, currentEnd),
+    isBetween(paymentEffectiveDateTime(item), currentStart, currentEnd),
   );
   const previousPayments = payments.filter((item) =>
-    isBetween(item.created_at, previousStart, currentStart),
+    isBetween(paymentEffectiveDateTime(item), previousStart, currentStart),
   );
 
   function netPayments(rows: PaymentRow[]) {
@@ -932,7 +941,7 @@ export default async function IntelligencePage({
     const bucketDate = new Date(currentStart.getTime() + index * DAY);
     const key = isoDateKey(bucketDate);
     const amount = currentPayments
-      .filter((item) => item.created_at.slice(0, 10) === key)
+      .filter((item) => paymentDateKey(item) === key)
       .reduce(
         (sum, item) => sum + (item.kind === "refund" ? -item.amount_minor : item.amount_minor),
         0,
@@ -1252,7 +1261,7 @@ export default async function IntelligencePage({
             </div>
 
             <div className="intel-stack">
-              <Section title="Por producto">
+              <Section title="Vendido por producto" description="Importe vendido; puede diferir del efectivo cobrado.">
                 <div className="intel-bars">
                   {productRows.length ? (
                     productRows.map((item) => (
@@ -1975,7 +1984,7 @@ export default async function IntelligencePage({
                 </div>
               </Section>
 
-              <Section title="Fuente de ingresos">
+              <Section title="Ventas por producto" description="Importe vendido; no equivale necesariamente a cobrado.">
                 <div className="intel-bars">
                   {productRows.map((item) => (
                     <BarRow
