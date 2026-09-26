@@ -51,7 +51,7 @@ export default async function CoachNotificationDetailPage({
   const payload = (notification.payload ?? {}) as NotificationPayload;
   const startsAt = payload.starts_at ? new Date(payload.starts_at) : null;
   const dateLabel = startsAt
-    ? new Intl.DateTimeFormat("es-MX", {
+    ? new Intl.DateTimeFormat(studio.locale, {
         timeZone: studio.timezone,
         weekday: "long",
         day: "numeric",
