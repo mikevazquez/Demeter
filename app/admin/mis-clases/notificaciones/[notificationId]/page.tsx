@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getAdminContext } from "@/lib/auth/admin-context";
+import { STUDIO_MODULES } from "@/lib/auth/modules";
 import { formatTime } from "@/lib/coach/portal";
 
 type NotificationPayload = {
@@ -20,9 +21,11 @@ export default async function CoachNotificationDetailPage({
   params: Promise<{ notificationId: string }>;
 }) {
   const { notificationId } = await params;
-  const { supabase, studio, membership } = await getAdminContext(CAPABILITIES.SCHEDULE_READ);
+  const { supabase, studio, membership, hasModule } = await getAdminContext(
+    CAPABILITIES.SCHEDULE_READ,
+  );
 
-  if (membership.role !== "instructor") notFound();
+  if (membership.role !== "instructor" || !hasModule(STUDIO_MODULES.NOTIFICATIONS)) notFound();
 
   const { data: currentInstructor } = await supabase
     .from("instructors")
