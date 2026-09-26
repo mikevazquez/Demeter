@@ -33,6 +33,7 @@ export type ActivityDraft = {
   minimumReservations: number;
   minimumReviewValue: number;
   minimumReviewUnit: "minutes" | "hours";
+  allowMinimumReservationOverride: boolean;
 };
 
 const DAYS = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
@@ -71,12 +72,19 @@ export function ActivityWizard({
   initial,
   mode,
   saveError = false,
+  operatingDefaults,
 }: {
   instructors: Option[];
   spaces: Option[];
   initial?: ActivityDraft;
   mode: "create" | "edit";
   saveError?: boolean;
+  operatingDefaults?: {
+    minimumReservationsEnabled: boolean;
+    minimumReservations: number;
+    minimumReviewMinutesBefore: number;
+    allowMinimumReservationOverride: boolean;
+  };
 }) {
   const [step, setStep] = useState(saveError ? 3 : 0);
   const [message, setMessage] = useState("");
@@ -97,10 +105,18 @@ export function ActivityWizard({
       allowIndividualPurchase: false,
       individualPrice: "",
       individualPurchaseNotes: "",
-      minimumReservationsEnabled: false,
-      minimumReservations: 2,
-      minimumReviewValue: 2,
-      minimumReviewUnit: "hours",
+      minimumReservationsEnabled: operatingDefaults?.minimumReservationsEnabled ?? false,
+      minimumReservations: operatingDefaults?.minimumReservations ?? 2,
+      minimumReviewValue:
+        (operatingDefaults?.minimumReviewMinutesBefore ?? 120) % 60 === 0
+          ? (operatingDefaults?.minimumReviewMinutesBefore ?? 120) / 60
+          : (operatingDefaults?.minimumReviewMinutesBefore ?? 120),
+      minimumReviewUnit:
+        (operatingDefaults?.minimumReviewMinutesBefore ?? 120) % 60 === 0
+          ? "hours"
+          : "minutes",
+      allowMinimumReservationOverride:
+        operatingDefaults?.allowMinimumReservationOverride ?? true,
     },
   );
 
@@ -510,6 +526,22 @@ export function ActivityWizard({
                     <small>La revisión se ejecuta una sola vez por sesión.</small>
                   </label>
                 </div>
+
+                <label className="activities-toggle-row">
+                  <span>
+                    <strong>Permitir “Impartir aunque no alcance”</strong>
+                    <small>
+                      Administración podrá conservar una sesión aunque no llegue al mínimo.
+                    </small>
+                  </span>
+                  <input
+                    type="checkbox"
+                    checked={draft.allowMinimumReservationOverride}
+                    onChange={(event) =>
+                      patch({ allowMinimumReservationOverride: event.target.checked })
+                    }
+                  />
+                </label>
 
                 <div className="activities-minimum-example">
                   <span>✓</span>
