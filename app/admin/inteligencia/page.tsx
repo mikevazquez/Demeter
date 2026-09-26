@@ -1208,6 +1208,218 @@ export default async function IntelligencePage({
     (event) => eventPayloadText(event, "attendance_status") === "no_show",
   );
 
+  function marketingAttributionKey(source: string | null, campaign: string | null) {
+    const normalizedCampaign = campaign?.trim().toLowerCase();
+    if (normalizedCampaign) return "campaign:" + normalizedCampaign;
+    const normalizedSource = source?.trim().toLowerCase();
+    if (normalizedSource) return "source:" + normalizedSource;
+    return "unattributed";
+  }
+
+  const confirmedSalesByStudent = new Map<string, SaleRow[]>();
+  for (const sale of sales) {
+    if (sale.status !== "confirmed") continue;
+    const list = confirmedSalesByStudent.get(sale.student_id) ?? [];
+    list.push(sale);
+    confirmedSalesByStudent.set(sale.student_id, list);
+  }
+
+  const paymentsBySale = new Map<string, PaymentRow[]>();
+  for (const payment of payments) {
+    const list = paymentsBySale.get(payment.sale_id) ?? [];
+    list.push(payment);
+    paymentsBySale.set(payment.sale_id, list);
+  }
+
+  function collectedRevenueAfter(studentId: string, startedAt: string) {
+    const startTime = new Date(startedAt).getTime();
+    let total = 0;
+
+    for (const sale of confirmedSalesByStudent.get(studentId) ?? []) {
+      if (new Date(sale.created_at).getTime() < startTime) continue;
+      for (const payment of paymentsBySale.get(sale.id) ?? []) {
+        if (new Date(paymentEffectiveDateTime(payment)).getTime() < startTime) continue;
+        total += payment.kind === "refund" ? -payment.amount_minor : payment.amount_minor;
+      }
+    }
+
+    return total;
+  }
+
+  type MarketingTouch = {
+    key: string;
+    startedAt: string;
+    studentId: string | null;
+    source: string | null;
+    campaign: string | null;
+  };
+
+  function firstMarketingTouches(rows: ConversationRow[]) {
+    const touches = new Map<string, MarketingTouch>();
+
+    for (const row of rows) {
+      const identity = row.student_id
+        ? "student:" + row.student_id
+        : conversationIdentity(row);
+      const existing = touches.get(identity);
+
+      if (!existing) {
+        touches.set(identity, {
+          key: identity,
+          startedAt: row.started_at,
+          studentId: row.student_id,
+          source: row.source,
+          campaign: row.campaign,
+        });
+        continue;
+      }
+
+      if (new Date(row.started_at).getTime() < new Date(existing.startedAt).getTime()) {
+        existing.startedAt = row.started_at;
+      }
+      existing.studentId = existing.studentId ?? row.student_id;
+      existing.source = existing.source ?? row.source;
+      existing.campaign = existing.campaign ?? row.campaign;
+    }
+
+    return [...touches.values()].sort(
+      (a, b) => new Date(a.startedAt).getTime() - new Date(b.startedAt).getTime(),
+    );
+  }
+
+  const currentMarketingTouches = firstMarketingTouches(currentConversations);
+  const previousMarketingTouches = firstMarketingTouches(previousConversations);
+
+  function marketingRows(touches: MarketingTouch[], expenseRows: ExpenseRow[]) {
+    const rows = new Map<
+      string,
+      {
+        key: string;
+        label: string;
+        source: string | null;
+        campaign: string | null;
+        contacts: number;
+        linked: number;
+        booked: number;
+        attended: number;
+        converted: number;
+        revenue: number;
+        spend: number;
+      }
+    >();
+
+    for (const touch of touches) {
+      const attributionKey = marketingAttributionKey(touch.source, touch.campaign);
+      const row =
+        rows.get(attributionKey) ?? {
+          key: attributionKey,
+          label: touch.campaign ?? touch.source ?? "Sin atribución",
+          source: touch.source,
+          campaign: touch.campaign,
+          contacts: 0,
+          linked: 0,
+          booked: 0,
+          attended: 0,
+          converted: 0,
+          revenue: 0,
+          spend: 0,
+        };
+
+      row.contacts += 1;
+
+      if (touch.studentId) {
+        row.linked += 1;
+        const startTime = new Date(touch.startedAt).getTime();
+        const afterTouch = (event: DomainEventRow) =>
+          eventStudentId(event) === touch.studentId &&
+          new Date(event.occurred_at).getTime() >= startTime;
+
+        if (allBookingEvents.some(afterTouch)) row.booked += 1;
+        if (allAttendedEvents.some(afterTouch)) row.attended += 1;
+
+        const conversion = firstConversionAcquisitionByStudent.get(touch.studentId);
+        if (conversion && new Date(conversion.created_at).getTime() >= startTime) {
+          row.converted += 1;
+          row.revenue += collectedRevenueAfter(touch.studentId, touch.startedAt);
+        }
+      }
+
+      rows.set(attributionKey, row);
+    }
+
+    for (const expense of expenseRows) {
+      if (expense.category !== "advertising") continue;
+      const attributionKey = marketingAttributionKey(
+        expense.marketing_source,
+        expense.marketing_campaign,
+      );
+      const row =
+        rows.get(attributionKey) ?? {
+          key: attributionKey,
+          label:
+            expense.marketing_campaign ??
+            expense.marketing_source ??
+            "Publicidad sin atribución",
+          source: expense.marketing_source,
+          campaign: expense.marketing_campaign,
+          contacts: 0,
+          linked: 0,
+          booked: 0,
+          attended: 0,
+          converted: 0,
+          revenue: 0,
+          spend: 0,
+        };
+      row.spend += expense.amount_minor;
+      rows.set(attributionKey, row);
+    }
+
+    return [...rows.values()]
+      .map((row) => ({
+        ...row,
+        bookingRate: safeRate(row.booked, row.contacts),
+        attendanceRate: safeRate(row.attended, row.booked),
+        conversionRate: safeRate(row.converted, row.contacts),
+        costPerContact: row.contacts > 0 ? row.spend / row.contacts : null,
+        costPerStudent: row.converted > 0 ? row.spend / row.converted : null,
+        roas: row.spend > 0 ? row.revenue / row.spend : null,
+      }))
+      .sort((a, b) => b.contacts - a.contacts || b.revenue - a.revenue);
+  }
+
+  const currentMarketingRows = marketingRows(currentMarketingTouches, currentExpenses);
+  const previousMarketingRows = marketingRows(previousMarketingTouches, previousExpenses);
+  const currentMarketingSpend = currentMarketingRows.reduce((sum, row) => sum + row.spend, 0);
+  const previousMarketingSpend = previousMarketingRows.reduce((sum, row) => sum + row.spend, 0);
+  const currentMarketingRevenue = currentMarketingRows.reduce((sum, row) => sum + row.revenue, 0);
+  const previousMarketingRevenue = previousMarketingRows.reduce((sum, row) => sum + row.revenue, 0);
+  const currentMarketingConverted = currentMarketingRows.reduce(
+    (sum, row) => sum + row.converted,
+    0,
+  );
+  const previousMarketingConverted = previousMarketingRows.reduce(
+    (sum, row) => sum + row.converted,
+    0,
+  );
+  const currentMarketingContacts = currentMarketingRows.reduce((sum, row) => sum + row.contacts, 0);
+  const previousMarketingContacts = previousMarketingRows.reduce((sum, row) => sum + row.contacts, 0);
+  const currentMarketingConversionRate = safeRate(
+    currentMarketingConverted,
+    currentMarketingContacts,
+  );
+  const previousMarketingConversionRate = safeRate(
+    previousMarketingConverted,
+    previousMarketingContacts,
+  );
+  const currentMarketingRoas =
+    currentMarketingSpend > 0 ? currentMarketingRevenue / currentMarketingSpend : null;
+  const previousMarketingRoas =
+    previousMarketingSpend > 0 ? previousMarketingRevenue / previousMarketingSpend : null;
+  const unattributedMarketingContacts =
+    currentMarketingRows.find((row) => row.key === "unattributed")?.contacts ?? 0;
+  const unattributedMarketingSpend =
+    currentMarketingRows.find((row) => row.key === "unattributed")?.spend ?? 0;
+
   const currentConversationCohort = conversationCohortStats(currentConversations);
   const previousConversationCohort = conversationCohortStats(previousConversations);
 
