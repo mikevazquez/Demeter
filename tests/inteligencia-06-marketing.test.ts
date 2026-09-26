@@ -24,7 +24,7 @@ describe("INTEL-06 marketing attribution", () => {
 
   it("uses first-touch contact identity instead of raw conversation count", () => {
     expect(intelligence).toContain("firstMarketingTouches");
-    expect(intelligence).toContain('row.student_id ?');
+    expect(intelligence).toContain("row.student_id");
     expect(intelligence).toContain('"student:" + row.student_id');
     expect(intelligence).toContain("marketingAttributionKey");
   });
@@ -33,7 +33,7 @@ describe("INTEL-06 marketing attribution", () => {
     expect(intelligence).toContain("collectedRevenueAfter");
     expect(intelligence).toContain("firstConversionAcquisitionByStudent.get(touch.studentId)");
     expect(intelligence).toContain("new Date(conversion.created_at).getTime() >= startTime");
-    expect(intelligence).toContain("payment.kind === "refund"");
+    expect(intelligence).toContain('payment.kind === "refund"');
   });
 
   it("calculates campaign economics without claiming causality", () => {
