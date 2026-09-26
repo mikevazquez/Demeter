@@ -29,7 +29,7 @@ describe("profile avatar upload hotfix", () => {
       expect(picker).toContain("MAX_AVATAR_SIZE = 5 * 1024 * 1024");
       expect(picker).toContain("finalizeStudentAvatarAction(avatarPath)");
       expect(actions).toContain("export async function finalizeStudentAvatarAction");
-      expect(actions).not.toContain("formData.get(\"avatar\")");
+      expect(actions).not.toContain('formData.get("avatar")');
     },
   );
 
