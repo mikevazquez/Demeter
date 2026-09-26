@@ -3,6 +3,8 @@ import Link from "next/link";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getAdminContext } from "@/lib/auth/admin-context";
 
+import { createStudioExpense, deleteStudioExpense } from "./actions";
+
 type ViewKey =
   | "resumen"
   | "dinero"
@@ -137,6 +139,31 @@ type ConversationRow = {
   started_at: string;
   last_activity_at: string;
   activity_count: number;
+};
+
+type ExpenseRow = {
+  id: string;
+  category: string;
+  description: string;
+  vendor: string | null;
+  amount_minor: number;
+  currency: string;
+  effective_on: string;
+  notes: string | null;
+  created_at: string;
+};
+
+const expenseCategoryLabels: Record<string, string> = {
+  rent: "Renta",
+  payroll: "Profesores / nómina",
+  utilities: "Servicios",
+  advertising: "Publicidad",
+  maintenance: "Mantenimiento",
+  software: "Software",
+  supplies: "Insumos",
+  fees: "Comisiones",
+  taxes: "Impuestos",
+  other: "Otros",
 };
 
 const cancellationReasonLabels: Record<string, string> = {
@@ -426,7 +453,8 @@ export default async function IntelligencePage({
   const params = await searchParams;
   const view = validView(params.view);
   const days = clampDays(params.days);
-  const { supabase, studio } = await getAdminContext(CAPABILITIES.REPORTS_READ);
+  const { supabase, studio, can } = await getAdminContext(CAPABILITIES.REPORTS_READ);
+  const canWriteFinance = can(CAPABILITIES.SALES_WRITE);
   const now = new Date();
   const currentEnd = now;
   const currentStart = new Date(now.getTime() - days * DAY);
@@ -452,6 +480,7 @@ export default async function IntelligencePage({
     domainEventsResult,
     collectionSalesResult,
     conversationsResult,
+    expensesResult,
   ] = await Promise.all([
     supabase
       .from("students")
@@ -536,6 +565,13 @@ export default async function IntelligencePage({
       .gte("started_at", rangeStartIso)
       .lt("started_at", currentEnd.toISOString())
       .order("started_at", { ascending: true }),
+    supabase
+      .from("studio_expenses")
+      .select("id,category,description,vendor,amount_minor,currency,effective_on,notes,created_at")
+      .eq("studio_id", studio.id)
+      .gte("effective_on", previousStartDate)
+      .lte("effective_on", todayDate)
+      .order("effective_on", { ascending: false }),
   ]);
 
   const students = (studentsResult.data ?? []) as StudentRow[];
@@ -551,6 +587,7 @@ export default async function IntelligencePage({
   const domainEvents = (domainEventsResult.data ?? []) as DomainEventRow[];
   const collectionSales = (collectionSalesResult.data ?? []) as CollectionSaleRow[];
   const conversations = (conversationsResult.data ?? []) as ConversationRow[];
+  const expenses = (expensesResult.data ?? []) as ExpenseRow[];
 
   const collectionSaleIds = collectionSales.map((sale) => sale.id);
   const [collectionPaymentsResult, collectionLinesResult] = collectionSaleIds.length
