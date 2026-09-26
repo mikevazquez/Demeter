@@ -2922,6 +2922,278 @@ export default async function IntelligencePage({
         </>
       ) : null}
 
+      {view === "marketing" ? (
+        <>
+          <section className="intel-kpi-grid">
+            <MetricCard
+              label="Gasto publicitario"
+              value={money(currentMarketingSpend, studio.currency)}
+              delta={deltaText(currentMarketingSpend, previousMarketingSpend)}
+              tone={currentMarketingSpend > 0 ? "neutral" : "warning"}
+            />
+            <MetricCard
+              label="Contactos atribuidos"
+              value={String(currentMarketingContacts)}
+              delta={deltaText(currentMarketingContacts, previousMarketingContacts)}
+              tone="info"
+            />
+            <MetricCard
+              label="Contacto → alumna"
+              value={
+                currentMarketingContacts > 0
+                  ? pct(currentMarketingConversionRate)
+                  : "—"
+              }
+              delta={pointsDelta(
+                currentMarketingConversionRate,
+                previousMarketingConversionRate,
+              )}
+              tone={
+                currentMarketingConversionRate >= previousMarketingConversionRate
+                  ? "positive"
+                  : "warning"
+              }
+            />
+            <MetricCard
+              label="ROAS atribuido"
+              value={
+                currentMarketingRoas === null
+                  ? "—"
+                  : currentMarketingRoas.toFixed(2) + "×"
+              }
+              delta={
+                currentMarketingRoas === null
+                  ? "Falta gasto atribuido"
+                  : previousMarketingRoas === null
+                    ? "Sin comparación anterior"
+                    : (currentMarketingRoas >= previousMarketingRoas ? "↑ " : "↓ ") +
+                      Math.abs(currentMarketingRoas - previousMarketingRoas).toFixed(2) +
+                      "×"
+              }
+              tone={
+                currentMarketingRoas === null
+                  ? "warning"
+                  : currentMarketingRoas >= 1
+                    ? "positive"
+                    : "danger"
+              }
+            />
+          </section>
+
+          <div className="intel-two-column">
+            <div className="intel-stack">
+              <Section
+                title="📣 Embudo de marketing"
+                description="First-touch por contacto: cada persona se atribuye una sola vez al primer origen/campaña disponible del periodo."
+              >
+                <div className="intel-bars">
+                  <BarRow
+                    label="Contactos"
+                    value={currentMarketingContacts}
+                    max={Math.max(currentMarketingContacts, 1)}
+                    display={String(currentMarketingContacts)}
+                    tone="info"
+                  />
+                  <BarRow
+                    label="Reservaron"
+                    value={currentMarketingBooked}
+                    max={Math.max(currentMarketingContacts, 1)}
+                    display={
+                      currentMarketingBooked +
+                      " · " +
+                      pct(currentMarketingBookingRate)
+                    }
+                    tone="accent"
+                  />
+                  <BarRow
+                    label="Asistieron"
+                    value={currentMarketingAttended}
+                    max={Math.max(currentMarketingContacts, 1)}
+                    display={
+                      currentMarketingAttended +
+                      " · " +
+                      pct(currentMarketingAttendanceRate) +
+                      " desde reserva"
+                    }
+                    tone="success"
+                  />
+                  <BarRow
+                    label="Se convirtieron en alumnas"
+                    value={currentMarketingConverted}
+                    max={Math.max(currentMarketingContacts, 1)}
+                    display={
+                      currentMarketingConverted +
+                      " · " +
+                      pct(currentMarketingConversionRate)
+                    }
+                    tone="success"
+                  />
+                </div>
+                <div className="intel-source-note">
+                  Los ingresos son cobros posteriores al primer contacto únicamente para personas cuya primera compra de paquete/membresía ocurrió después de ese contacto.
+                </div>
+              </Section>
+
+              <Section
+                title="Campañas y orígenes"
+                description="Compara volumen, calidad del embudo y economía. No se recomienda escalar con muestras pequeñas."
+              >
+                <div className="intel-campaign-list">
+                  {currentMarketingRows.length ? (
+                    currentMarketingRows.map((row) => (
+                      <article className="intel-campaign-card" key={row.key}>
+                        <div className="intel-campaign-heading">
+                          <div>
+                            <strong>{row.label}</strong>
+                            <small>
+                              {row.campaign && row.source
+                                ? row.source + " · " + row.campaign
+                                : row.source ?? (row.key === "unattributed" ? "Sin atribución" : "Campaña")}
+                            </small>
+                          </div>
+                          <span>{row.contacts} contactos</span>
+                        </div>
+                        <div className="intel-campaign-metrics">
+                          <div>
+                            <small>Reserva</small>
+                            <b>{pct(row.bookingRate)}</b>
+                          </div>
+                          <div>
+                            <small>Alumna</small>
+                            <b>{pct(row.conversionRate)}</b>
+                          </div>
+                          <div>
+                            <small>Gasto</small>
+                            <b>{money(row.spend, studio.currency)}</b>
+                          </div>
+                          <div>
+                            <small>Costo/alumna</small>
+                            <b>
+                              {row.costPerStudent === null
+                                ? "—"
+                                : money(row.costPerStudent, studio.currency)}
+                            </b>
+                          </div>
+                          <div>
+                            <small>Cobros atribuidos</small>
+                            <b>{money(row.revenue, studio.currency)}</b>
+                          </div>
+                          <div>
+                            <small>ROAS</small>
+                            <b>{row.roas === null ? "—" : row.roas.toFixed(2) + "×"}</b>
+                          </div>
+                        </div>
+                        {row.contacts < 5 ? (
+                          <p className="intel-campaign-note">
+                            Muestra pequeña: todavía no usar esta fila para escalar o cortar presupuesto.
+                          </p>
+                        ) : null}
+                      </article>
+                    ))
+                  ) : (
+                    <div className="intel-decision-empty">
+                      <strong>Todavía no hay atribución de marketing</strong>
+                      <p>
+                        Configura conversation_activity en Asistian y registra los gastos de publicidad con el mismo origen/campaña.
+                      </p>
+                      <Link href="/admin/integraciones/asistian">Configurar Asistian →</Link>
+                    </div>
+                  )}
+                </div>
+              </Section>
+            </div>
+
+            <div className="intel-stack">
+              <Section title="💵 Economía atribuida">
+                <div className="intel-rule-list">
+                  <div>
+                    <span>Gasto publicitario</span>
+                    <strong>{money(currentMarketingSpend, studio.currency)}</strong>
+                  </div>
+                  <div>
+                    <span>Cobros atribuidos</span>
+                    <strong>{money(currentMarketingRevenue, studio.currency)}</strong>
+                  </div>
+                  <div>
+                    <span>Costo por contacto</span>
+                    <strong>
+                      {currentMarketingContacts > 0
+                        ? money(currentMarketingSpend / currentMarketingContacts, studio.currency)
+                        : "—"}
+                    </strong>
+                  </div>
+                  <div>
+                    <span>Costo por alumna</span>
+                    <strong>
+                      {currentMarketingConverted > 0
+                        ? money(currentMarketingSpend / currentMarketingConverted, studio.currency)
+                        : "—"}
+                    </strong>
+                  </div>
+                  <div>
+                    <span>ROAS atribuido</span>
+                    <strong>
+                      {currentMarketingRoas === null
+                        ? "—"
+                        : currentMarketingRoas.toFixed(2) + "×"}
+                    </strong>
+                  </div>
+                </div>
+              </Section>
+
+              <Section
+                title="🧩 Calidad de atribución"
+                description="La decisión es tan buena como la identidad y campaña que llegan desde la fuente."
+              >
+                <div className="intel-insight-list">
+                  <Insight
+                    tone={unattributedMarketingContacts > 0 ? "warning" : "positive"}
+                    title={
+                      unattributedMarketingContacts > 0
+                        ? unattributedMarketingContacts + " contactos sin atribución"
+                        : "✓ Contactos con origen identificado"
+                    }
+                    body={
+                      unattributedMarketingContacts > 0
+                        ? "No sabemos qué campaña originó esos contactos."
+                        : "Los contactos del periodo tienen origen/campaña disponible."
+                    }
+                    href="/admin/integraciones/asistian"
+                  />
+                  <Insight
+                    tone={unattributedMarketingSpend > 0 ? "warning" : "positive"}
+                    title={
+                      unattributedMarketingSpend > 0
+                        ? money(unattributedMarketingSpend, studio.currency) +
+                          " de gasto sin campaña"
+                        : "✓ Gasto publicitario atribuido"
+                    }
+                    body={
+                      unattributedMarketingSpend > 0
+                        ? "Ese gasto no puede entrar a costo por alumna ni ROAS por campaña."
+                        : "El gasto publicitario registrado tiene una llave de atribución."
+                    }
+                    href={viewHref("finanzas", days)}
+                  />
+                </div>
+              </Section>
+
+              <Section
+                title="Cómo leer esta pantalla"
+                description="Atribución no significa causalidad."
+              >
+                <ul className="intel-unlock-list">
+                  <li>First-touch evita que varias conversaciones cuenten como varios leads.</li>
+                  <li>Una campaña necesita al menos 5 contactos antes de generar una señal de decisión.</li>
+                  <li>ROAS compara cobros atribuidos contra gasto registrado, no utilidad.</li>
+                  <li>La rentabilidad final también depende de costos operativos y retención posterior.</li>
+                </ul>
+              </Section>
+            </div>
+          </div>
+        </>
+      ) : null}
+
       {view === "clases" ? (
         <>
           <section className="intel-kpi-grid">
