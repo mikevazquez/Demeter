@@ -231,7 +231,7 @@ export function RewardsOnboardingActivation({
   );
 }
 
-export function MedalsAccessUnlocked() {
+export function MedalsAccessUnlocked({ studioName }: { studioName: string }) {
   return (
     <main className="pb-5">
       <section className="relative overflow-hidden rounded-[30px] border border-fuchsia-500/40 bg-[radial-gradient(circle_at_50%_18%,rgba(236,72,153,0.28),transparent_30%),radial-gradient(circle_at_50%_22%,rgba(205,127,50,0.2),transparent_42%),rgba(255,255,255,0.025)] px-5 py-9 text-center shadow-[0_0_36px_rgba(236,72,153,0.1)]">
@@ -245,7 +245,7 @@ export function MedalsAccessUnlocked() {
           ¡Medallas desbloqueadas!
         </h1>
         <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-zinc-300">
-          Completaste tu activación en Demeter. Desde ahora puedes ganar Bronce, Plata, Oro o
+          Completaste tu activación en {studioName}. Desde ahora puedes ganar Bronce, Plata, Oro o
           Diamante en cada evaluación mensual.
         </p>
 
