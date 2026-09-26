@@ -912,7 +912,7 @@ export default async function StudentProfilePage({
 
       {query.alta === "reserva_realizada" ? (
         <div className="notice success">
-          Primera reserva registrada. Demeter mantuvo la misma alumna y aplicó las reglas reales de
+          Primera reserva registrada. {studio.name} mantuvo la misma alumna y aplicó las reglas reales de
           paquete, inscripción, créditos y cupo.
         </div>
       ) : null}
