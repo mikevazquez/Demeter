@@ -212,6 +212,13 @@ function daysSince(dateKey: string | null, now: Date) {
   return Math.floor((now.getTime() - value.getTime()) / DAY);
 }
 
+function daysUntil(dateKey: string | null, now: Date) {
+  if (!dateKey) return null;
+  const value = new Date(dateKey + "T12:00:00Z");
+  if (Number.isNaN(value.getTime())) return null;
+  return Math.ceil((value.getTime() - now.getTime()) / DAY);
+}
+
 function isBetween(value: string, start: Date, end: Date) {
   const time = new Date(value).getTime();
   return time >= start.getTime() && time < end.getTime();
@@ -655,22 +662,111 @@ export default async function IntelligencePage({
     if (sorted[0]) latestAcquisitionByStudent.set(studentId, sorted[0]);
   }
 
-  const riskStudents: { id: string; name: string; days: number; state: string }[] = [];
-  const inactiveStudents: { id: string; name: string; days: number; state: string }[] = [];
-  const abandonedStudents: { id: string; name: string; days: number; state: string }[] = [];
+  const sessionById = new Map(sessions.map((session) => [session.id, session]));
+  const recentAttendanceCutoff = now.getTime() - 14 * DAY;
+  const recentAttendanceStudentIds = new Set(
+    reservations
+      .filter((reservation) => {
+        if (reservation.status !== "attended" || !reservation.student_id) return false;
+        const session = sessionById.get(reservation.session_id);
+        return Boolean(
+          session && new Date(session.starts_at).getTime() >= recentAttendanceCutoff,
+        );
+      })
+      .map((reservation) => reservation.student_id)
+      .filter((value): value is string => Boolean(value)),
+  );
+  const upcomingReservedStudentIds = new Set(
+    upcomingReservations
+      .map((reservation) => reservation.student_id)
+      .filter((value): value is string => Boolean(value)),
+  );
+
+  const activeAcquisitionByStudent = new Map<string, AcquisitionRow>();
+  for (const [studentId, list] of acquisitionsByStudent.entries()) {
+    const active = list
+      .filter((item) => {
+        const start = item.starts_on ?? item.created_at.slice(0, 10);
+        if (start > todayDate) return false;
+        return !item.expires_on || item.expires_on >= todayDate;
+      })
+      .sort((a, b) => {
+        const aExpiry = a.expires_on ?? "9999-12-31";
+        const bExpiry = b.expires_on ?? "9999-12-31";
+        return aExpiry.localeCompare(bExpiry);
+      });
+    if (active[0]) activeAcquisitionByStudent.set(studentId, active[0]);
+  }
+
+  type RetentionRiskRow = {
+    id: string;
+    name: string;
+    days: number;
+    state: string;
+    detail: string;
+  };
+
+  const preventiveRiskStudents: RetentionRiskRow[] = [];
+  const riskStudents: RetentionRiskRow[] = [];
+  const inactiveStudents: RetentionRiskRow[] = [];
+  const abandonedStudents: RetentionRiskRow[] = [];
 
   for (const student of students) {
+    const activeAcquisition = activeAcquisitionByStudent.get(student.id);
+    const untilExpiry = daysUntil(activeAcquisition?.expires_on ?? null, now);
+
+    if (untilExpiry !== null && untilExpiry >= 0 && untilExpiry <= 7) {
+      const signals: string[] = [];
+      if (!upcomingReservedStudentIds.has(student.id)) signals.push("sin próxima reserva");
+      if (!recentAttendanceStudentIds.has(student.id)) signals.push("14 días sin asistir");
+
+      if (signals.length) {
+        preventiveRiskStudents.push({
+          id: student.id,
+          name: student.full_name,
+          days: untilExpiry,
+          state: "Riesgo preventivo",
+          detail:
+            (untilExpiry === 0
+              ? "Vence hoy"
+              : "Vence en " + untilExpiry + (untilExpiry === 1 ? " día" : " días")) +
+            " · " +
+            signals.join(" · "),
+        });
+      }
+    }
+
     const latest = latestAcquisitionByStudent.get(student.id);
     const elapsed = daysSince(latest?.expires_on ?? null, now);
     if (elapsed === null || elapsed < 7) continue;
     if (elapsed >= 30) {
-      abandonedStudents.push({ id: student.id, name: student.full_name, days: elapsed, state: "Abandono" });
+      abandonedStudents.push({
+        id: student.id,
+        name: student.full_name,
+        days: elapsed,
+        state: "Abandono",
+        detail: elapsed + " días desde vencimiento",
+      });
     } else if (elapsed >= 15) {
-      inactiveStudents.push({ id: student.id, name: student.full_name, days: elapsed, state: "Inactiva" });
+      inactiveStudents.push({
+        id: student.id,
+        name: student.full_name,
+        days: elapsed,
+        state: "Inactiva",
+        detail: elapsed + " días desde vencimiento",
+      });
     } else {
-      riskStudents.push({ id: student.id, name: student.full_name, days: elapsed, state: "En riesgo" });
+      riskStudents.push({
+        id: student.id,
+        name: student.full_name,
+        days: elapsed,
+        state: "Vencida reciente",
+        detail: elapsed + " días desde vencimiento",
+      });
     }
   }
+
+  preventiveRiskStudents.sort((a, b) => a.days - b.days || a.name.localeCompare(b.name));
 
   const currentSessions = sessions.filter((item) =>
     isBetween(item.starts_at, currentStart, currentEnd),
