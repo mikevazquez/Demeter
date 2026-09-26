@@ -1877,10 +1877,10 @@ export default async function IntelligencePage({
 
   const actionableClassRows = classRows.filter((row) => row.sessionCount >= 3);
   const highestDemand = [...actionableClassRows].sort(
-    (a, b) => b.occupancy - a.occupancy,
+    (a, b) => b.peakOccupancy - a.peakOccupancy,
   )[0];
   const lowestDemand = [...actionableClassRows].sort(
-    (a, b) => a.occupancy - b.occupancy,
+    (a, b) => a.peakOccupancy - b.peakOccupancy,
   )[0];
   const highestCancellation = [...actionableClassRows]
     .filter((row) => row.total >= 5)
@@ -2150,48 +2150,61 @@ export default async function IntelligencePage({
     });
   }
 
-  if (highestDemand && highestDemand.occupancy >= 90) {
+  if (
+    highestDemand &&
+    highestDemand.peakOccupancy >= 90 &&
+    highestDemand.attendanceCapacity >= 70
+  ) {
     decisions.push({
       key: "class-capacity-" + highestDemand.name,
       priority: 3,
       tone: "positive",
       title: "Evaluar más capacidad en " + highestDemand.name,
       evidence:
-        pct(highestDemand.occupancy) +
-        " de ocupación en " +
+        pct(highestDemand.peakOccupancy) +
+        " de demanda pico y " +
+        pct(highestDemand.attendanceCapacity) +
+        " de capacidad terminó asistiendo en " +
         highestDemand.sessionCount +
-        " sesiones del periodo.",
-      action: "Revisar si conviene abrir otro horario o aumentar capacidad sin canibalizar otra clase.",
+        " sesiones.",
+      action: "Revisar presión repetida y abrir capacidad/horario sólo si la asistencia sostiene la demanda.",
       href: viewHref("clases", days),
     });
   }
 
-  if (lowestDemand && lowestDemand.occupancy < 40) {
+  if (lowestDemand && lowestDemand.peakOccupancy < 40) {
     decisions.push({
       key: "class-low-demand-" + lowestDemand.name,
       priority: 2,
       tone: "warning",
       title: "Revisar " + lowestDemand.name,
       evidence:
-        pct(lowestDemand.occupancy) +
-        " de ocupación en " +
+        pct(lowestDemand.peakOccupancy) +
+        " de demanda pico en " +
         lowestDemand.sessionCount +
-        " sesiones; ya hay muestra suficiente para no tratarlo como un día aislado.",
+        " sesiones; ni antes de cancelaciones alcanza presión suficiente.",
       action: "Comparar día/franja y probar cambio de horario o promoción antes de eliminarla.",
       href: viewHref("clases", days),
     });
   }
 
   if (highestCancellation && highestCancellation.cancellation >= 20) {
+    const refillLow = highestCancellation.cancellationRefill < 50;
     decisions.push({
       key: "class-cancellation-" + highestCancellation.name,
-      priority: 2,
-      tone: "warning",
-      title: "Investigar cancelaciones en " + highestCancellation.name,
+      priority: refillLow ? 2 : 3,
+      tone: refillLow ? "warning" : "info",
+      title:
+        (refillLow ? "Recuperar lugares perdidos · " : "Cancelación alta, impacto contenido · ") +
+        highestCancellation.name,
       evidence:
         pct(highestCancellation.cancellation) +
-        " de cancelación con al menos 5 decisiones de reserva.",
-      action: "Cruzar motivos de cancelación con horario antes de cambiar la clase.",
+        " de cancelación y " +
+        pct(highestCancellation.cancellationRefill) +
+        " de lugares cancelados se recuperaron.",
+      action: refillLow
+        ? "Cruzar motivos con horario y mejorar reagenda/ocupación del lugar liberado."
+        : "Vigilar motivos, pero no cambiar horario sólo por la tasa de cancelación: los lugares se están recuperando.",
       href: viewHref("clases", days),
     });
   }
