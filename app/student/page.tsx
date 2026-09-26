@@ -334,7 +334,7 @@ export default async function StudentHomePage({
                   <p>Acceso anticipado · inscripciones y promociones especiales</p>
                 ) : null}
                 {currentLevel.key === "diamond" ? (
-                  <p>Experiencias premium · beneficios exclusivos de Demeter</p>
+                  <p>Experiencias premium · beneficios exclusivos de {studio.name}</p>
                 ) : null}
               </div>
             </div>
