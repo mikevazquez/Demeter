@@ -13,7 +13,12 @@ export default async function NewActivityPage({
   const params = await searchParams;
   const { supabase, studio } = await getAdminContext(CAPABILITIES.SCHEDULE_WRITE);
 
-  const [{ data: instructors }, { data: persons }, { data: spaces }] = await Promise.all([
+  const [
+    { data: instructors },
+    { data: persons },
+    { data: spaces },
+    { data: operatingPolicy },
+  ] = await Promise.all([
     supabase
       .from("instructors")
       .select("id,person_id,status")
@@ -26,6 +31,13 @@ export default async function NewActivityPage({
       .eq("studio_id", studio.id)
       .eq("active", true)
       .order("name"),
+    supabase
+      .from("studio_operating_policies")
+      .select(
+        "default_minimum_reservations_enabled,default_minimum_reservations,default_minimum_review_minutes_before,default_minimum_override_allowed",
+      )
+      .eq("studio_id", studio.id)
+      .maybeSingle(),
   ]);
 
   const personMap = new Map(
@@ -59,6 +71,15 @@ export default async function NewActivityPage({
           id: item.id,
           label: item.capacity ? `${item.name} · máx. ${item.capacity}` : item.name,
         }))}
+        operatingDefaults={{
+          minimumReservationsEnabled:
+            operatingPolicy?.default_minimum_reservations_enabled ?? false,
+          minimumReservations: operatingPolicy?.default_minimum_reservations ?? 2,
+          minimumReviewMinutesBefore:
+            operatingPolicy?.default_minimum_review_minutes_before ?? 120,
+          allowMinimumReservationOverride:
+            operatingPolicy?.default_minimum_override_allowed ?? true,
+        }}
       />
     </main>
   );
