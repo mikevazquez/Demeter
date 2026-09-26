@@ -40,7 +40,7 @@ export async function getAdminContext(requiredCapability?: Capability) {
   const [{ data: studio }, { data: roleCapabilities }] = await Promise.all([
     supabase
       .from("studios")
-      .select("id, name, slug, logo_path, timezone, locale, currency, primary_color, status")
+      .select("id, name, slug, logo_path, tagline, timezone, locale, currency, primary_color, status")
       .eq("id", membership.studio_id)
       .single(),
     supabase.from("role_capabilities").select("capability_key").eq("role", membership.role),
