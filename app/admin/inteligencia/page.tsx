@@ -924,12 +924,6 @@ export default async function IntelligencePage({
     weekday.set(day, current);
   }
 
-  const trialCurrent = currentStudents.filter((item) => item.trial_status);
-  const trialAttended = trialCurrent.filter(
-    (item) => item.trial_status === "attended" || item.trial_status === "converted",
-  ).length;
-  const trialConverted = trialCurrent.filter((item) => item.trial_status === "converted").length;
-
   const currentDomainEvents = domainEvents.filter((event) =>
     isBetween(event.occurred_at, currentStart, currentEnd),
   );
@@ -1014,6 +1008,71 @@ export default async function IntelligencePage({
   }
 
   const allBookingEvents = eventsOfType(domainEvents, "booking.created");
+  const allCancellationEvents = eventsOfType(domainEvents, "booking.cancelled").filter(
+    (event) => eventPayloadText(event, "to_status") !== "cancelled_by_studio",
+  );
+  const allAttendanceEvents = eventsOfType(domainEvents, "attendance.finalized");
+  const allAttendedEvents = allAttendanceEvents.filter(
+    (event) => eventPayloadText(event, "attendance_status") === "attended",
+  );
+  const allNoShowEvents = allAttendanceEvents.filter(
+    (event) => eventPayloadText(event, "attendance_status") === "no_show",
+  );
+
+  const currentTrialCohortRows = students.filter(
+    (student) =>
+      isBetween(student.created_at, currentStart, currentEnd) &&
+      (student.student_type === "trial" || Boolean(student.trial_status)),
+  );
+  const previousTrialCohortRows = students.filter(
+    (student) =>
+      isBetween(student.created_at, previousStart, currentStart) &&
+      (student.student_type === "trial" || Boolean(student.trial_status)),
+  );
+
+  function acquisitionCohortStats(rows: StudentRow[]) {
+    const booked = new Set<string>();
+    const cancelled = new Set<string>();
+    const noShow = new Set<string>();
+    const attended = new Set<string>();
+    const converted = new Set<string>();
+
+    for (const student of rows) {
+      const createdAt = new Date(student.created_at).getTime();
+      const eventAfterCreation = (event: DomainEventRow) =>
+        eventStudentId(event) === student.id &&
+        new Date(event.occurred_at).getTime() >= createdAt;
+
+      if (allBookingEvents.some(eventAfterCreation)) booked.add(student.id);
+      if (allCancellationEvents.some(eventAfterCreation)) cancelled.add(student.id);
+      if (allNoShowEvents.some(eventAfterCreation)) noShow.add(student.id);
+      if (allAttendedEvents.some(eventAfterCreation)) attended.add(student.id);
+
+      const conversion = firstConversionAcquisitionByStudent.get(student.id);
+      if (
+        conversion &&
+        new Date(conversion.created_at).getTime() >= createdAt
+      ) {
+        converted.add(student.id);
+      }
+    }
+
+    return {
+      total: rows.length,
+      booked: booked.size,
+      cancelled: cancelled.size,
+      noShow: noShow.size,
+      attended: attended.size,
+      converted: converted.size,
+      bookingRate: safeRate(booked.size, rows.length),
+      attendanceFromBookingRate: safeRate(attended.size, booked.size),
+      conversionFromAttendanceRate: safeRate(converted.size, attended.size),
+      conversionRate: safeRate(converted.size, rows.length),
+    };
+  }
+
+  const currentAcquisitionCohort = acquisitionCohortStats(currentTrialCohortRows);
+  const previousAcquisitionCohort = acquisitionCohortStats(previousTrialCohortRows);
   const cancellationRecovery = recoveryStats(currentCancellationEvents, allBookingEvents);
   const previousCancellationRecovery = recoveryStats(
     previousCancellationEvents,
