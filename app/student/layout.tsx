@@ -3,6 +3,7 @@ import Link from "next/link";
 import { cache } from "react";
 
 import { signOut } from "@/app/auth/actions";
+import { STUDIO_MODULES } from "@/lib/auth/modules";
 import { getStudentPortalContext } from "@/lib/student/portal";
 
 import PendingActionButton from "./components/PendingActionButton";
@@ -82,7 +83,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function StudentLayout({ children }: { children: React.ReactNode }) {
-  const [{ snapshot, studio }, brand] = await Promise.all([
+  const [{ snapshot, studio, hasModule }, brand] = await Promise.all([
     getStudentPortalContext(),
     getPwaBrand(),
   ]);
@@ -105,26 +106,28 @@ export default async function StudentLayout({ children }: { children: React.Reac
             <p className="truncate text-sm font-semibold text-white">{studio.name}</p>
           </Link>
           <div className="flex items-center gap-2 sm:gap-3">
-            <Link
-              href="/student/notificaciones"
-              aria-label="Notificaciones"
-              title="Notificaciones"
-              className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[#D4AF37]/30 text-[#D4AF37] transition hover:border-[#D4AF37]/50 hover:bg-[#D4AF37]/10 hover:text-[#E6C85C]"
-            >
-              <svg
-                aria-hidden="true"
-                viewBox="0 0 24 24"
-                fill="none"
-                className="h-5 w-5"
-                stroke="currentColor"
-                strokeWidth="1.8"
-                strokeLinecap="round"
-                strokeLinejoin="round"
+            {hasModule(STUDIO_MODULES.NOTIFICATIONS) ? (
+              <Link
+                href="/student/notificaciones"
+                aria-label="Notificaciones"
+                title="Notificaciones"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[#D4AF37]/30 text-[#D4AF37] transition hover:border-[#D4AF37]/50 hover:bg-[#D4AF37]/10 hover:text-[#E6C85C]"
               >
-                <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9" />
-                <path d="M13.7 21a2 2 0 0 1-3.4 0" />
-              </svg>
-            </Link>
+                <svg
+                  aria-hidden="true"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  className="h-5 w-5"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9" />
+                  <path d="M13.7 21a2 2 0 0 1-3.4 0" />
+                </svg>
+              </Link>
+            ) : null}
             <div className="hidden text-right sm:block">
               <p className="text-sm font-medium text-white">{snapshot.profile.first_name}</p>
               <p className="text-xs text-zinc-500">Portal de alumna</p>
