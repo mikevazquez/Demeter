@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { CAPABILITIES, type Capability } from "@/lib/auth/capabilities";
+import { type StudioModule } from "@/lib/auth/modules";
 import { STUDIO_CONTEXT_COOKIE } from "@/lib/auth/studio-context-cookie";
 import { createClient } from "@/lib/supabase/server";
 
@@ -37,22 +38,34 @@ export async function getAdminContext(requiredCapability?: Capability) {
     redirect("/login/studio/seleccionar");
   }
 
-  const [{ data: studio }, { data: roleCapabilities }] = await Promise.all([
+  const [
+    { data: studio },
+    { data: effectiveCapabilities, error: capabilitiesError },
+    { data: effectiveModules, error: modulesError },
+  ] = await Promise.all([
     supabase
       .from("studios")
       .select("id, name, slug, logo_path, tagline, timezone, locale, currency, phone_country_calling_code, primary_color, status")
       .eq("id", membership.studio_id)
       .single(),
-    supabase.from("role_capabilities").select("capability_key").eq("role", membership.role),
+    supabase.rpc("current_studio_capabilities", {
+      p_studio_id: membership.studio_id,
+    }),
+    supabase.rpc("current_studio_modules", {
+      p_studio_id: membership.studio_id,
+    }),
   ]);
 
-  if (!studio || studio.status !== "active") {
+  if (!studio || studio.status !== "active" || capabilitiesError || modulesError) {
     await supabase.auth.signOut();
     redirect("/login/studio?error=access");
   }
 
   const capabilities = new Set(
-    (roleCapabilities ?? []).map((item) => item.capability_key as Capability),
+    (effectiveCapabilities ?? []).map((item) => item.capability_key as Capability),
+  );
+  const modules = new Set(
+    (effectiveModules ?? []).map((item) => item.module_key as StudioModule),
   );
   const canUseStudioPortal =
     capabilities.has(CAPABILITIES.ADMIN_PORTAL) || capabilities.has(CAPABILITIES.INSTRUCTOR_PORTAL);
@@ -77,8 +90,12 @@ export async function getAdminContext(requiredCapability?: Capability) {
     membership,
     studio,
     capabilities,
+    modules,
     can(capability: Capability) {
       return capabilities.has(capability);
+    },
+    hasModule(module: StudioModule) {
+      return modules.has(module);
     },
   };
 }
