@@ -138,8 +138,8 @@ export default async function StudentChallengeDetailPage({
 
           {startAt || endAt ? (
             <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-white/10 pt-3 text-xs text-zinc-400">
-              {startAt ? <span>Inicio: {formatDateTime(startAt, ctx.studio.timezone)}</span> : null}
-              {endAt ? <span>Fin: {formatDateTime(endAt, ctx.studio.timezone)}</span> : null}
+              {startAt ? <span>Inicio: {formatDateTime(startAt, ctx.studio.timezone, ctx.studio.locale)}</span> : null}
+              {endAt ? <span>Fin: {formatDateTime(endAt, ctx.studio.timezone, ctx.studio.locale)}</span> : null}
             </div>
           ) : null}
 
