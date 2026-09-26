@@ -136,7 +136,7 @@ export default async function StudentRewardsPage({
 
                   {reward.expires_at ? (
                     <p className="mt-3 text-xs text-zinc-500">
-                      Vence {formatDateTime(reward.expires_at, ctx.studio.timezone)}
+                      Vence {formatDateTime(reward.expires_at, ctx.studio.timezone, ctx.studio.locale)}
                     </p>
                   ) : null}
 
@@ -235,7 +235,7 @@ export default async function StudentRewardsPage({
                       {autoApplied
                         ? "Aplicada automáticamente"
                         : rewardOriginLabel(ctx, reward.rule_id)}
-                      {occurredAt ? ` · ${formatDateTime(occurredAt, ctx.studio.timezone)}` : ""}
+                      {occurredAt ? ` · ${formatDateTime(occurredAt, ctx.studio.timezone, ctx.studio.locale)}` : ""}
                     </span>
                   </div>
                   <StateChip
