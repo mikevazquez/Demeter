@@ -681,6 +681,40 @@ export default async function IntelligencePage({
 
   const currentRevenue = netPayments(currentPayments);
   const previousRevenue = netPayments(previousPayments);
+
+  const currentExpenses = expenses.filter(
+    (item) => item.effective_on >= currentStartDate && item.effective_on <= todayDate,
+  );
+  const previousExpenses = expenses.filter(
+    (item) => item.effective_on >= previousStartDate && item.effective_on < currentStartDate,
+  );
+  const currentExpenseTotal = currentExpenses.reduce(
+    (sum, item) => sum + item.amount_minor,
+    0,
+  );
+  const previousExpenseTotal = previousExpenses.reduce(
+    (sum, item) => sum + item.amount_minor,
+    0,
+  );
+  const currentOperatingResult = currentRevenue - currentExpenseTotal;
+  const previousOperatingResult = previousRevenue - previousExpenseTotal;
+  const currentOperatingMargin = safeRate(currentOperatingResult, currentRevenue);
+  const previousOperatingMargin = safeRate(previousOperatingResult, previousRevenue);
+  const expenseCategoryTotals = new Map<string, number>();
+  for (const expense of currentExpenses) {
+    expenseCategoryTotals.set(
+      expense.category,
+      (expenseCategoryTotals.get(expense.category) ?? 0) + expense.amount_minor,
+    );
+  }
+  const expenseCategoryRows = [...expenseCategoryTotals.entries()]
+    .map(([category, amount]) => ({
+      category,
+      label: expenseCategoryLabels[category] ?? category,
+      amount,
+    }))
+    .sort((a, b) => b.amount - a.amount);
+  const recentExpenses = currentExpenses.slice(0, 8);
   const currentRefunds = currentPayments
     .filter((item) => item.kind === "refund")
     .reduce((sum, item) => sum + item.amount_minor, 0);
