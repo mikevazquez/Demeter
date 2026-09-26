@@ -125,7 +125,7 @@ export default async function StudentSessionDetailPage({
           </p>
           <h1 className="mt-1 text-2xl font-semibold text-white sm:text-3xl">{session.activity}</h1>
           <p className="mt-2 text-sm text-zinc-300">
-            {formatDateTime(session.starts_at, studio.timezone)}
+            {formatDateTime(session.starts_at, studio.timezone, studio.locale)}
             {durationMinutes ? ` · ${durationMinutes} min` : ""}
           </p>
         </div>
@@ -233,7 +233,7 @@ export default async function StudentSessionDetailPage({
           )}
           {showDropIn ? (
             <p className="mt-2 text-xs leading-5 text-zinc-400">
-              Clase suelta: {formatMoney(finalDropInMinor)} MXN.
+              Clase suelta: {formatMoney(finalDropInMinor, studio.currency, studio.locale)}.
             </p>
           ) : (
             <p className="mt-2 text-xs leading-5 text-zinc-400">
@@ -250,8 +250,8 @@ export default async function StudentSessionDetailPage({
               </Link>
               <PurchaseSingleClassButton
                 sessionId={session.session_id}
-                priceLabel={formatMoney(finalDropInMinor).replace(".00", "")}
-                regularPriceLabel={formatMoney(regularDropInMinor).replace(".00", "")}
+                priceLabel={formatMoney(finalDropInMinor, studio.currency, studio.locale)}
+                regularPriceLabel={formatMoney(regularDropInMinor, studio.currency, studio.locale)}
                 discountPct={rewardDiscountPct}
                 levelTitle={rewardPriceLevelTitle}
               />
