@@ -2944,15 +2944,8 @@ export default async function IntelligencePage({
                   ? pct(currentMarketingConversionRate)
                   : "—"
               }
-              delta={pointsDelta(
-                currentMarketingConversionRate,
-                previousMarketingConversionRate,
-              )}
-              tone={
-                currentMarketingConversionRate >= previousMarketingConversionRate
-                  ? "positive"
-                  : "warning"
-              }
+              delta="Cohorte first-touch al corte"
+              tone={currentMarketingConversionRate > 0 ? "positive" : "neutral"}
             />
             <MetricCard
               label="ROAS atribuido"
@@ -2964,11 +2957,7 @@ export default async function IntelligencePage({
               delta={
                 currentMarketingRoas === null
                   ? "Falta gasto atribuido"
-                  : previousMarketingRoas === null
-                    ? "Sin comparación anterior"
-                    : (currentMarketingRoas >= previousMarketingRoas ? "↑ " : "↓ ") +
-                      Math.abs(currentMarketingRoas - previousMarketingRoas).toFixed(2) +
-                      "×"
+                  : "Cobros atribuidos / gasto"
               }
               tone={
                 currentMarketingRoas === null
