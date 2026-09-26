@@ -71,8 +71,9 @@ describe("DEV-03 studio configuration", () => {
     expect(configActions).toContain("owner_update_studio_portal_branding");
   });
 
-  it("keeps minimum reservation rules activity-specific instead of global", () => {
+  it("keeps minimum reservation rules activity-specific while allowing tenant defaults", () => {
     expect(migration).not.toContain("minimum_reservations integer");
-    expect(configPage).not.toContain("minimum_reservations");
+    expect(configPage).toContain("default_minimum_reservations");
+    expect(configPage).toContain("OperatingPolicyForm");
   });
 });
