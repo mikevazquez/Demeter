@@ -24,6 +24,7 @@ export interface ReservationCancelledVariableInput {
   className: string;
   startsAt: string;
   timeZone: string;
+  locale?: string;
   cancellationStatus: CancellationStatus;
   unlimited: boolean | null;
   hasRelease: boolean;
