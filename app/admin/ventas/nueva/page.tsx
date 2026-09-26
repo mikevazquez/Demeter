@@ -66,7 +66,7 @@ export default async function NewSalePage({
   const query = await searchParams;
   const { supabase, studio } = await getAdminContext(CAPABILITIES.SALES_WRITE);
   const selectedStudentId = String(query.student_id ?? "").trim();
-  const today = localDate(studio.timezone ?? "America/Mexico_City");
+  const today = localDate(studio.timezone);
 
   const { data: students } = await supabase
     .from("students")
@@ -188,6 +188,7 @@ export default async function NewSalePage({
             studentId={selectedStudent.id}
             studentName={selectedStudent.full_name}
             studioName={studio.name}
+            locale={studio.locale}
             packages={(packages ?? []).map((item) => ({
               id: item.id,
               name: item.name,
