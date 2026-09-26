@@ -6,10 +6,6 @@ import { CAPABILITIES } from "@/lib/auth/capabilities";
 
 import { refundSaleLineAction, registerSalePaymentAction, voidSaleAction } from "../actions";
 
-function money(value: number, currency: string) {
-  return new Intl.NumberFormat("es-MX", { style: "currency", currency }).format(value / 100);
-}
-
 function statusLabel(status: string) {
   const labels: Record<string, string> = {
     active: "Activo",
@@ -158,6 +154,9 @@ export default async function SaleDetailPage({
             ? "Parcial"
             : "Pendiente";
   const canWrite = ctx.can(CAPABILITIES.SALES_WRITE);
+
+  const money = (value: number, currency: string) =>
+    new Intl.NumberFormat(ctx.studio.locale, { style: "currency", currency }).format(value / 100);
 
   const successCopy: Record<string, string> = {
     sale: "Venta confirmada y derecho comercial creado correctamente.",
@@ -389,7 +388,7 @@ export default async function SaleDetailPage({
                     <p className="mt-0.5 text-xs text-zinc-400">Motivo: {payment.reason}</p>
                   ) : null}
                   <p className="text-xs text-zinc-500">
-                    {new Intl.DateTimeFormat("es-MX", {
+                    {new Intl.DateTimeFormat(ctx.studio.locale, {
                       dateStyle: "medium",
                       timeStyle: "short",
                       timeZone: ctx.studio.timezone,
