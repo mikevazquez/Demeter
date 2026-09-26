@@ -62,9 +62,9 @@ export default async function StudentCancelReservationPage({
   const willChargeUnlimitedPenalty = Boolean(
     preview?.ok && preview.unlimited && preview.late && unlimitedPenaltyMinor > 0,
   );
-  const unlimitedPenaltyLabel = new Intl.NumberFormat(studio.locale ?? "es-MX", {
+  const unlimitedPenaltyLabel = new Intl.NumberFormat(studio.locale, {
     style: "currency",
-    currency: preview?.currency ?? studio.currency ?? "MXN",
+    currency: preview?.currency ?? studio.currency,
     maximumFractionDigits: 2,
   }).format(unlimitedPenaltyMinor / 100);
   const activeGuests =
