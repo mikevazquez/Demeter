@@ -827,6 +827,7 @@ export default async function IntelligencePage({
       noShow: number;
       cancelled: number;
       total: number;
+      sessionCount: number;
       color: string;
     }
   >();
@@ -844,9 +845,11 @@ export default async function IntelligencePage({
         noShow: 0,
         cancelled: 0,
         total: 0,
+        sessionCount: 0,
         color: template?.color_hex ?? "#FF0A8A",
       };
     current.capacity += session.capacity ?? 0;
+    current.sessionCount += 1;
     for (const reservation of reservationsBySession.get(session.id) ?? []) {
       if (!decisionReservationStatuses.has(reservation.status)) continue;
       current.total += 1;
@@ -864,6 +867,7 @@ export default async function IntelligencePage({
       occupancy: safeRate(item.occupied, item.capacity),
       attendance: safeRate(item.attended, item.attended + item.noShow),
       cancellation: safeRate(item.cancelled, item.total),
+      noShowRate: safeRate(item.noShow, item.attended + item.noShow),
     }))
     .sort((a, b) => b.occupancy - a.occupancy);
 
@@ -1113,11 +1117,19 @@ export default async function IntelligencePage({
   });
   const maxDailyRevenue = Math.max(...periodBuckets.map((item) => item.amount), 1);
 
-  const highestDemand = classRows[0];
-  const lowestDemand = [...classRows].sort((a, b) => a.occupancy - b.occupancy)[0];
-  const highestCancellation = [...classRows].sort(
-    (a, b) => b.cancellation - a.cancellation,
+  const actionableClassRows = classRows.filter((row) => row.sessionCount >= 3);
+  const highestDemand = [...actionableClassRows].sort(
+    (a, b) => b.occupancy - a.occupancy,
   )[0];
+  const lowestDemand = [...actionableClassRows].sort(
+    (a, b) => a.occupancy - b.occupancy,
+  )[0];
+  const highestCancellation = [...actionableClassRows]
+    .filter((row) => row.total >= 5)
+    .sort((a, b) => b.cancellation - a.cancellation)[0];
+  const highestNoShow = [...actionableClassRows]
+    .filter((row) => row.attended + row.noShow >= 5)
+    .sort((a, b) => b.noShowRate - a.noShowRate)[0];
 
   const onboardingRows = onboarding.filter((row) =>
     students.some((student) => student.id === row.student_id),
