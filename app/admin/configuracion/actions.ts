@@ -222,16 +222,26 @@ export async function saveStudioRegionalSettingsAction(formData: FormData) {
   const timezone = String(formData.get("timezone") ?? "").trim();
   const currency = String(formData.get("currency") ?? "").trim().toUpperCase();
   const locale = String(formData.get("locale") ?? "").trim();
+  const phoneCountryCallingCode = String(
+    formData.get("phone_country_calling_code") ?? "",
+  ).trim();
 
-  if (!timezone || !/^[A-Z]{3}$/.test(currency) || locale.length < 2 || locale.length > 20) {
+  if (
+    !timezone ||
+    !/^[A-Z]{3}$/.test(currency) ||
+    locale.length < 2 ||
+    locale.length > 20 ||
+    !/^\+[1-9][0-9]{0,3}$/.test(phoneCountryCallingCode)
+  ) {
     redirect(configurationPath({ error: "regional" }));
   }
 
-  const { error } = await ctx.supabase.rpc("owner_update_studio_regional_settings", {
+  const { error } = await ctx.supabase.rpc("owner_update_studio_regional_settings_v2", {
     p_studio_id: ctx.studio.id,
     p_timezone: timezone,
     p_currency: currency,
     p_locale: locale,
+    p_phone_country_calling_code: phoneCountryCallingCode,
   });
 
   if (error) {

@@ -19,7 +19,7 @@ const errorCopy: Record<string, string> = {
   cutoff: "El límite de cancelación debe estar entre 0 y 168 horas.",
   minimum_defaults: "Revisa los defaults de mínimo de reservas y penalizaciones.",
   operating_save: "No pudimos guardar la política operativa.",
-  regional: "Revisa zona horaria, moneda y locale.",
+  regional: "Revisa zona horaria, moneda, locale y prefijo telefónico.",
   regional_save: "No pudimos guardar la configuración regional.",
 };
 
@@ -119,6 +119,7 @@ export default async function ConfigurationPage({
         timezone={ctx.studio.timezone}
         currency={ctx.studio.currency}
         locale={ctx.studio.locale}
+        phoneCountryCallingCode={ctx.studio.phone_country_calling_code}
       />
 
       <section className="panel">
