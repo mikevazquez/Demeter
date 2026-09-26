@@ -122,6 +122,8 @@ export default async function ActivityDetailPage({
       </header>
 
       <ActivityWizard
+        locale={studio.locale}
+        currency={studio.currency}
         mode="edit"
         saveError={Boolean(query.error)}
         initial={initial}
