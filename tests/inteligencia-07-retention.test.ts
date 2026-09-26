@@ -36,6 +36,15 @@ describe("INTEL-07 retention intelligence", () => {
     expect(intelligence).toContain("!isNewAcquisition && recentAttendance === 0");
   });
 
+  it("separates urgent intervention from preventive watchlist", () => {
+    expect(intelligence).toContain("urgentRetentionStudents");
+    expect(intelligence).toContain("watchRetentionStudents");
+    expect(intelligence).toContain('title="🔴 Alta prioridad"');
+    expect(intelligence).toContain('title="🟡 Vigilar"');
+    expect(intelligence).toContain('key: "retention-preventive-urgent"');
+    expect(intelligence).toContain('key: "retention-preventive-watch"');
+  });
+
   it("waits 30 days before confirming churn", () => {
     expect(intelligence).toContain("pendingMaturity");
     expect(intelligence).toContain("churnConfirmed");
