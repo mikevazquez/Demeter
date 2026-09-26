@@ -38,6 +38,8 @@ export default async function AutomationsPage({
   const params = await searchParams;
   const ctx = await getAdminContext(CAPABILITIES.AUTOMATIONS_READ);
   const canManage = ctx.can(CAPABILITIES.AUTOMATIONS_MANAGE);
+  const canReadNotifications = ctx.can(CAPABILITIES.NOTIFICATIONS_READ);
+  const canManageNotifications = ctx.can(CAPABILITIES.NOTIFICATIONS_MANAGE);
 
   const [{ data: instances }, { data: executions }, { data: communicationSettings }] =
     await Promise.all([
@@ -93,52 +95,54 @@ export default async function AutomationsPage({
 
       <AutomationNotice error={params.error} saved={params.saved} />
 
-      <section className="panel automation-settings-panel">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-fuchsia-300">
-              Comunicaciones
-            </p>
-            <h2 className="mt-1 text-lg font-semibold text-white">
-              Horario global de comunicaciones
-            </h2>
-            <p className="mt-1 max-w-2xl text-sm leading-6 text-zinc-400">
-              Se aplica a las comunicaciones de alumnas y prospectos. Cada automatización puede
-              tener además su propia ventana. La zona horaria del estudio es {ctx.studio.timezone}.
-            </p>
+      {canReadNotifications ? (
+        <section className="panel automation-settings-panel">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-fuchsia-300">
+                Comunicaciones
+              </p>
+              <h2 className="mt-1 text-lg font-semibold text-white">
+                Horario global de comunicaciones
+              </h2>
+              <p className="mt-1 max-w-2xl text-sm leading-6 text-zinc-400">
+                Se aplica a las comunicaciones de alumnas y prospectos. Cada automatización puede
+                tener además su propia ventana. La zona horaria del estudio es {ctx.studio.timezone}.
+              </p>
+            </div>
+            <span className="rounded-full bg-zinc-500/15 px-3 py-1 text-xs text-zinc-300">
+              {communicationSettings?.global_send_window ?? "Sin restricción global"}
+            </span>
           </div>
-          <span className="rounded-full bg-zinc-500/15 px-3 py-1 text-xs text-zinc-300">
-            {communicationSettings?.global_send_window ?? "Sin restricción global"}
-          </span>
-        </div>
 
-        <form action={saveGlobalCommunicationWindowAction} className="mt-5 flex flex-wrap gap-3">
-          <label className="min-w-[220px] flex-1">
-            <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-zinc-500">
-              Ventana global
-            </span>
-            <input
-              name="global_send_window"
-              defaultValue={communicationSettings?.global_send_window ?? ""}
-              placeholder="09:00-20:00"
-              pattern="([01][0-9]|2[0-3]):[0-5][0-9]-([01][0-9]|2[0-3]):[0-5][0-9]"
-              disabled={!canManage}
-              className="w-full rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 text-sm text-white outline-none focus:border-fuchsia-500/60 disabled:opacity-50"
-            />
-            <span className="mt-1.5 block text-xs text-zinc-500">
-              Formato 24 h, por ejemplo 09:00-20:00. Vacío = sin restricción global.
-            </span>
-          </label>
-          {canManage ? (
-            <button
-              type="submit"
-              className="self-start rounded-xl bg-fuchsia-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-fuchsia-500 sm:mt-6"
-            >
-              Guardar horario
-            </button>
-          ) : null}
-        </form>
-      </section>
+          <form action={saveGlobalCommunicationWindowAction} className="mt-5 flex flex-wrap gap-3">
+            <label className="min-w-[220px] flex-1">
+              <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                Ventana global
+              </span>
+              <input
+                name="global_send_window"
+                defaultValue={communicationSettings?.global_send_window ?? ""}
+                placeholder="09:00-20:00"
+                pattern="([01][0-9]|2[0-3]):[0-5][0-9]-([01][0-9]|2[0-3]):[0-5][0-9]"
+                disabled={!canManageNotifications}
+                className="w-full rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 text-sm text-white outline-none focus:border-fuchsia-500/60 disabled:opacity-50"
+              />
+              <span className="mt-1.5 block text-xs text-zinc-500">
+                Formato 24 h, por ejemplo 09:00-20:00. Vacío = sin restricción global.
+              </span>
+            </label>
+            {canManageNotifications ? (
+              <button
+                type="submit"
+                className="self-start rounded-xl bg-fuchsia-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-fuchsia-500 sm:mt-6"
+              >
+                Guardar horario
+              </button>
+            ) : null}
+          </form>
+        </section>
+      ) : null}
 
       <section className="automation-summary-grid">
         <article className="automation-summary-card">
