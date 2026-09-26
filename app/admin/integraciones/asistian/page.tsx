@@ -264,8 +264,8 @@ export default async function AsistianIntegrationTestPage({
               <details key={event.id}>
                 <summary>
                   {event.event_name} · {event.processing_status} ·{" "}
-                  {new Date(event.received_at).toLocaleString("es-MX", {
-                    timeZone: studio.timezone ?? "America/Mexico_City",
+                  {new Date(event.received_at).toLocaleString(studio.locale, {
+                    timeZone: studio.timezone,
                   })}
                 </summary>
                 <p className="text-sm text-zinc-400">
