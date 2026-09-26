@@ -314,7 +314,7 @@ export default function Profile360Overview({
             <article>
               <span>Antigüedad</span>
               <strong>
-                {new Intl.DateTimeFormat("es-MX", {
+                {new Intl.DateTimeFormat(locale, {
                   month: "short",
                   year: "numeric",
                 }).format(new Date(student.createdAt))}
