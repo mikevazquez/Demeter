@@ -122,7 +122,7 @@ export default async function StudentBookingConfirmPage({
           </p>
           <p className="mt-1 text-base font-semibold text-white">{session.activity}</p>
           <p className="mt-2 text-xs text-zinc-300">
-            {formatDateTime(session.starts_at, studio.timezone)}
+            {formatDateTime(session.starts_at, studio.timezone, studio.locale)}
           </p>
           <p className="mt-0.5 text-[11px] text-zinc-500">
             {[session.coach, session.space || session.location].filter(Boolean).join(" · ") ||
