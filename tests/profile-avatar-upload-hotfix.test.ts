@@ -50,9 +50,7 @@ describe("profile avatar upload hotfix", () => {
     );
     expect(storageHotfix).toContain("security definer");
     expect(storageHotfix).toContain("public.can_read_studio_document_object(name)");
-    expect(storageHotfix).toContain(
-      "private.document_version_applies_to_student(dv.id,s.id,null)",
-    );
+    expect(storageHotfix).toContain("private.document_version_applies_to_student(dv.id,s.id,null)");
     expect(storageHotfix).not.toContain(
       "grant execute on function private.document_version_applies_to_student",
     );
