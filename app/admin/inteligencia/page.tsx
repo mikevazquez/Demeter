@@ -2003,13 +2003,17 @@ export default async function IntelligencePage({
                     <span>Ocup.</span>
                     <span>Asist.</span>
                     <span>Canc.</span>
+                    <span>No show</span>
                   </div>
                   {classRows.map((row) => (
                     <div className="intel-data-row intel-class-grid" key={row.name}>
-                      <span>{row.name}</span>
+                      <span>
+                        {row.name} · {row.sessionCount} {row.sessionCount === 1 ? "sesión" : "sesiones"}
+                      </span>
                       <strong>{pct(row.occupancy)}</strong>
                       <span>{pct(row.attendance)}</span>
                       <span>{pct(row.cancellation)}</span>
+                      <span>{pct(row.noShowRate)}</span>
                     </div>
                   ))}
                 </div>
@@ -2052,52 +2056,73 @@ export default async function IntelligencePage({
             </div>
 
             <div className="intel-stack">
-              <Section title="🚨 Decisiones sugeridas">
+              <Section
+                title="🚨 Decisiones sugeridas"
+                description="Solo se generan con al menos 3 sesiones de muestra; cancelación/no show requieren además volumen suficiente."
+              >
                 <div className="intel-insight-list">
-                  {highestDemand ? (
+                  {highestDemand && highestDemand.occupancy >= 90 ? (
                     <Insight
                       tone="positive"
-                      title="🔥 Mayor demanda"
+                      title={"🔥 Evaluar expansión · " + highestDemand.name}
                       body={
-                        highestDemand.name +
-                        " está en " +
                         pct(highestDemand.occupancy) +
-                        " de ocupación."
+                        " de ocupación en " +
+                        highestDemand.sessionCount +
+                        " sesiones. Revisar lista de espera y, si la presión se repite, probar más capacidad u otro horario."
                       }
                     />
                   ) : null}
-                  {lowestDemand ? (
+                  {lowestDemand && lowestDemand.occupancy < 40 ? (
                     <Insight
-                      tone={lowestDemand.occupancy < 40 ? "danger" : "info"}
-                      title="❄️ Menor demanda"
+                      tone="danger"
+                      title={"❄️ Revisar horario · " + lowestDemand.name}
                       body={
-                        lowestDemand.name +
-                        " está en " +
                         pct(lowestDemand.occupancy) +
-                        " de ocupación."
+                        " de ocupación en " +
+                        lowestDemand.sessionCount +
+                        " sesiones. Antes de eliminarla, probar horario/promoción y comparar el siguiente periodo."
                       }
                     />
                   ) : null}
-                  {highestCancellation ? (
+                  {highestCancellation && highestCancellation.cancellation >= 15 ? (
                     <Insight
-                      tone={highestCancellation.cancellation >= 15 ? "warning" : "info"}
-                      title="⚠️ Mayor cancelación"
+                      tone="warning"
+                      title={"⚠️ Investigar cancelaciones · " + highestCancellation.name}
                       body={
-                        highestCancellation.name +
-                        " concentra " +
                         pct(highestCancellation.cancellation) +
-                        " de cancelaciones."
+                        " de cancelación sobre " +
+                        highestCancellation.total +
+                        " reservas. Revisar motivos antes de asumir que el problema es el horario."
                       }
+                    />
+                  ) : null}
+                  {highestNoShow && highestNoShow.noShowRate >= 10 ? (
+                    <Insight
+                      tone="danger"
+                      title={"👻 Reducir no show · " + highestNoShow.name}
+                      body={
+                        pct(highestNoShow.noShowRate) +
+                        " de no show. Revisar recordatorios, confirmación y cumplimiento de la política de no asistencia."
+                      }
+                    />
+                  ) : null}
+                  {!highestDemand && !lowestDemand && !highestCancellation && !highestNoShow ? (
+                    <Insight
+                      tone="info"
+                      title="Muestra todavía insuficiente"
+                      body="Necesitamos al menos 3 sesiones por clase antes de sugerir cambios operativos."
                     />
                   ) : null}
                 </div>
               </Section>
 
-              <Section title="Qué revisar">
+              <Section title="Cómo se decide">
                 <div className="intel-rule-list">
-                  <div><span>&lt;40% por 4+ semanas</span><strong>Mover o promover</strong></div>
-                  <div><span>&gt;15% cancelación</span><strong>Revisar horario</strong></div>
-                  <div><span>&gt;90% ocupación</span><strong>Agregar capacidad</strong></div>
+                  <div><span>≥90% ocupación · 3+ sesiones</span><strong>Evaluar expansión</strong></div>
+                  <div><span>&lt;40% ocupación · 3+ sesiones</span><strong>Probar ajuste antes de eliminar</strong></div>
+                  <div><span>≥15% cancelación · 5+ reservas</span><strong>Investigar motivos</strong></div>
+                  <div><span>≥10% no show · 5+ cierres</span><strong>Reforzar recuperación</strong></div>
                 </div>
               </Section>
             </div>
