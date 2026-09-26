@@ -468,7 +468,6 @@ export default async function IntelligencePage({
         "booking.created",
         "booking.cancelled",
         "attendance.finalized",
-        "payment.confirmed",
       ])
       .gte("occurred_at", rangeStartIso)
       .lt("occurred_at", currentEnd.toISOString())
@@ -563,9 +562,6 @@ export default async function IntelligencePage({
     (item) => isBetween(item.created_at, previousStart, currentStart),
   );
 
-  const currentStudents = students.filter((item) =>
-    isBetween(item.created_at, currentStart, currentEnd),
-  );
   const currentSales = sales.filter(
     (item) => item.status === "confirmed" && isBetween(item.created_at, currentStart, currentEnd),
   );
@@ -936,13 +932,8 @@ export default async function IntelligencePage({
   }
 
   const currentBookingEvents = eventsOfType(currentDomainEvents, "booking.created");
-  const previousBookingEvents = eventsOfType(previousDomainEvents, "booking.created");
   const currentCancellationEventsAll = eventsOfType(currentDomainEvents, "booking.cancelled");
-  const previousCancellationEventsAll = eventsOfType(previousDomainEvents, "booking.cancelled");
   const currentCancellationEvents = currentCancellationEventsAll.filter(
-    (event) => eventPayloadText(event, "to_status") !== "cancelled_by_studio",
-  );
-  const previousCancellationEvents = previousCancellationEventsAll.filter(
     (event) => eventPayloadText(event, "to_status") !== "cancelled_by_studio",
   );
   const currentStudioCancellationEvents = currentCancellationEventsAll.filter(
@@ -950,7 +941,6 @@ export default async function IntelligencePage({
   );
   const currentAttendanceEvents = eventsOfType(currentDomainEvents, "attendance.finalized");
   const previousAttendanceEvents = eventsOfType(previousDomainEvents, "attendance.finalized");
-  const currentPaymentEvents = eventsOfType(currentDomainEvents, "payment.confirmed");
 
   const currentAttendedEvents = currentAttendanceEvents.filter(
     (event) => eventPayloadText(event, "attendance_status") === "attended",
@@ -966,11 +956,8 @@ export default async function IntelligencePage({
   );
 
   const currentBookingStudents = uniqueEventStudents(currentBookingEvents);
-  const previousBookingStudents = uniqueEventStudents(previousBookingEvents);
   const currentCancelledStudents = uniqueEventStudents(currentCancellationEvents);
   const currentNoShowStudents = uniqueEventStudents(currentNoShowEvents);
-  const currentAttendedStudents = uniqueEventStudents(currentAttendedEvents);
-  const currentPaidStudents = uniqueEventStudents(currentPaymentEvents);
 
   const showRate = safeRate(
     currentAttendedEvents.length,
@@ -1074,12 +1061,7 @@ export default async function IntelligencePage({
   const currentAcquisitionCohort = acquisitionCohortStats(currentTrialCohortRows);
   const previousAcquisitionCohort = acquisitionCohortStats(previousTrialCohortRows);
   const cancellationRecovery = recoveryStats(currentCancellationEvents, allBookingEvents);
-  const previousCancellationRecovery = recoveryStats(
-    previousCancellationEvents,
-    allBookingEvents,
-  );
   const noShowRecovery = recoveryStats(currentNoShowEvents, allBookingEvents);
-  const previousNoShowRecovery = recoveryStats(previousNoShowEvents, allBookingEvents);
 
   const cancellationReasonCounts = new Map<string, number>();
   for (const event of currentCancellationEvents) {
