@@ -418,7 +418,7 @@ export default async function SaleDetailPage({
           <form action={registerSalePaymentAction} className="mt-4 grid gap-3 md:grid-cols-2">
             <input type="hidden" name="sale_id" value={sale.id} />
             <label className="grid gap-1.5 text-sm text-zinc-300">
-              Monto en MXN
+              Monto en {sale.currency}
               <input
                 name="payment_amount"
                 required
