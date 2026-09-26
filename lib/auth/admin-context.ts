@@ -5,7 +5,31 @@ import { type StudioModule } from "@/lib/auth/modules";
 import { STUDIO_CONTEXT_COOKIE } from "@/lib/auth/studio-context-cookie";
 import { createClient } from "@/lib/supabase/server";
 
-export async function getAdminContext(requiredCapability?: Capability) {
+export type StudioSubscriptionSnapshot = {
+  plan_key: string;
+  plan_name: string;
+  status: string;
+  effective_status: string;
+  access_mode: "full" | "restricted";
+  trial_ends_at: string | null;
+  current_period_start: string | null;
+  current_period_end: string | null;
+  grace_ends_at: string | null;
+  cancel_at_period_end: boolean;
+  cancelled_at: string | null;
+  suspended_at: string | null;
+  last_payment_failure_at: string | null;
+  billing_provider: string | null;
+};
+
+type AdminContextOptions = {
+  allowRestricted?: boolean;
+};
+
+export async function getAdminContext(
+  requiredCapability?: Capability,
+  options: AdminContextOptions = {},
+) {
   const supabase = await createClient();
   const {
     data: { user },
@@ -42,6 +66,7 @@ export async function getAdminContext(requiredCapability?: Capability) {
     { data: studio },
     { data: effectiveCapabilities, error: capabilitiesError },
     { data: effectiveModules, error: modulesError },
+    { data: subscriptionRows, error: subscriptionError },
   ] = await Promise.all([
     supabase
       .from("studios")
@@ -54,9 +79,23 @@ export async function getAdminContext(requiredCapability?: Capability) {
     supabase.rpc("current_studio_modules", {
       p_studio_id: membership.studio_id,
     }),
+    supabase.rpc("current_studio_subscription", {
+      p_studio_id: membership.studio_id,
+    }),
   ]);
 
-  if (!studio || studio.status !== "active" || capabilitiesError || modulesError) {
+  const subscription = ((subscriptionRows ?? [])[0] ?? null) as
+    | StudioSubscriptionSnapshot
+    | null;
+
+  if (
+    !studio ||
+    studio.status !== "active" ||
+    capabilitiesError ||
+    modulesError ||
+    subscriptionError ||
+    !subscription
+  ) {
     await supabase.auth.signOut();
     redirect("/login/studio?error=access");
   }
@@ -79,6 +118,10 @@ export async function getAdminContext(requiredCapability?: Capability) {
     redirect("/login/studio?error=access");
   }
 
+  if (subscription.access_mode === "restricted" && !options.allowRestricted) {
+    redirect("/admin/suscripcion");
+  }
+
   if (requiredCapability && !capabilities.has(requiredCapability)) {
     redirect(
       capabilities.has(CAPABILITIES.ADMIN_PORTAL)
@@ -93,6 +136,7 @@ export async function getAdminContext(requiredCapability?: Capability) {
     account,
     membership,
     studio,
+    subscription,
     capabilities,
     modules,
     can(capability: Capability) {
