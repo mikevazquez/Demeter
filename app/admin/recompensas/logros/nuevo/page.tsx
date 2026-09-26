@@ -7,7 +7,7 @@ import { RewardsShell } from "../../RewardsNav";
 import { RuleEditorForm } from "../../RuleEditorForm";
 
 export default async function NewAchievementPage() {
-  await getAdminContext(CAPABILITIES.REWARDS_MANAGE);
+  const ctx = await getAdminContext(CAPABILITIES.REWARDS_MANAGE);
   return (
     <RewardsShell>
       <header>
@@ -20,7 +20,13 @@ export default async function NewAchievementPage() {
         <p className="mt-4 eyebrow">CONFIGURAR LOGRO</p>
         <h1 className="dashboard-title">Nuevo logro</h1>
       </header>
-      <RuleEditorForm mode="achievement" canManage />
+      <RuleEditorForm
+        mode="achievement"
+        canManage
+        locale={ctx.studio.locale}
+        currency={ctx.studio.currency}
+        timeZone={ctx.studio.timezone}
+      />
     </RewardsShell>
   );
 }

@@ -7,7 +7,7 @@ import { RewardsShell } from "../../RewardsNav";
 import { RuleEditorForm } from "../../RuleEditorForm";
 
 export default async function NewChallengePage() {
-  await getAdminContext(CAPABILITIES.REWARDS_MANAGE);
+  const ctx = await getAdminContext(CAPABILITIES.REWARDS_MANAGE);
   return (
     <RewardsShell>
       <header>
@@ -20,7 +20,13 @@ export default async function NewChallengePage() {
         <p className="mt-4 eyebrow">CONSTRUCTOR DE RETO</p>
         <h1 className="dashboard-title">Nuevo reto especial</h1>
       </header>
-      <RuleEditorForm mode="challenge" canManage />
+      <RuleEditorForm
+        mode="challenge"
+        canManage
+        locale={ctx.studio.locale}
+        currency={ctx.studio.currency}
+        timeZone={ctx.studio.timezone}
+      />
     </RewardsShell>
   );
 }

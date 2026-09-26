@@ -57,6 +57,9 @@ export default async function AchievementDetailPage({
         rule={rule}
         version={version}
         canManage={ctx.can(CAPABILITIES.REWARDS_MANAGE)}
+        locale={ctx.studio.locale}
+        currency={ctx.studio.currency}
+        timeZone={ctx.studio.timezone}
       />
     </RewardsShell>
   );

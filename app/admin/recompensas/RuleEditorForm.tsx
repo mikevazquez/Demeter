@@ -41,12 +41,12 @@ type RuleVersionValue = {
   presentation_definition: unknown;
 };
 
-function datetimeLocal(value: string | null | undefined) {
+function datetimeLocal(value: string | null | undefined, timeZone: string) {
   if (!value) return "";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "";
   return new Intl.DateTimeFormat("sv-SE", {
-    timeZone: "America/Mexico_City",
+    timeZone,
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
@@ -71,12 +71,18 @@ export function RuleEditorForm({
   version,
   canManage,
   copyOverride,
+  locale,
+  currency,
+  timeZone,
 }: {
   mode: "achievement" | "challenge";
   rule?: RuleValue | null;
   version?: RuleVersionValue | null;
   canManage: boolean;
   copyOverride?: CopyOverrideValue | null;
+  locale: string;
+  currency: string;
+  timeZone: string;
 }) {
   const isAchievement = mode === "achievement";
   const locked = Boolean(
@@ -137,7 +143,7 @@ export function RuleEditorForm({
             <div className="rounded-xl border border-white/10 bg-black/20 p-4">
               <p className="text-xs uppercase tracking-[0.14em] text-zinc-500">Resultado</p>
               <p className="mt-2 text-sm text-white">
-                {rewardDefinitionLabel(version?.reward_definition)}
+                {rewardDefinitionLabel(version?.reward_definition, locale, currency)}
               </p>
             </div>
           </div>
@@ -330,7 +336,7 @@ export function RuleEditorForm({
                     type="datetime-local"
                     name="scheduled_start_at"
                     required
-                    defaultValue={datetimeLocal(rule?.scheduled_start_at)}
+                    defaultValue={datetimeLocal(rule?.scheduled_start_at, timeZone)}
                     className="rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 text-white"
                   />
                 </label>
@@ -340,7 +346,7 @@ export function RuleEditorForm({
                     type="datetime-local"
                     name="scheduled_end_at"
                     required
-                    defaultValue={datetimeLocal(rule?.scheduled_end_at)}
+                    defaultValue={datetimeLocal(rule?.scheduled_end_at, timeZone)}
                     className="rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 text-white"
                   />
                 </label>

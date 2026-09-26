@@ -58,24 +58,32 @@ export function asArray(value: unknown): unknown[] {
   return Array.isArray(value) ? value : [];
 }
 
-export function formatDateTime(value: string | null | undefined) {
+export function formatDateTime(
+  value: string | null | undefined,
+  locale: string,
+  timeZone: string,
+) {
   if (!value) return "—";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "—";
-  return new Intl.DateTimeFormat("es-MX", {
+  return new Intl.DateTimeFormat(locale, {
     dateStyle: "medium",
     timeStyle: "short",
-    timeZone: "America/Mexico_City",
+    timeZone,
   }).format(date);
 }
 
-export function formatDate(value: string | null | undefined) {
+export function formatDate(
+  value: string | null | undefined,
+  locale: string,
+  timeZone: string,
+) {
   if (!value) return "—";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "—";
-  return new Intl.DateTimeFormat("es-MX", {
+  return new Intl.DateTimeFormat(locale, {
     dateStyle: "medium",
-    timeZone: "America/Mexico_City",
+    timeZone,
   }).format(date);
 }
 
@@ -162,15 +170,20 @@ export function SectionCard({
   );
 }
 
-export function rewardBenefitLabel(kind: string, value: unknown) {
+export function rewardBenefitLabel(
+  kind: string,
+  value: unknown,
+  locale: string,
+  currency: string,
+) {
   const definition = asObject(value);
   if (kind === "percentage_discount") {
     return `${Number(definition.percent ?? 0)}% de descuento`;
   }
   if (kind === "fixed_discount") {
-    return new Intl.NumberFormat("es-MX", {
+    return new Intl.NumberFormat(locale, {
       style: "currency",
-      currency: "MXN",
+      currency,
       maximumFractionDigits: 0,
     }).format(Number(definition.amount_minor ?? 0) / 100);
   }
@@ -196,12 +209,12 @@ export function rewardItems(value: unknown) {
   return [];
 }
 
-export function rewardDefinitionLabel(value: unknown) {
+export function rewardDefinitionLabel(value: unknown, locale: string, currency: string) {
   const items = rewardItems(value);
   const benefit = items.find((item) => String(item.kind ?? "") !== "badge");
   const badge = items.find((item) => String(item.kind ?? "") === "badge");
-  if (benefit) return rewardBenefitLabel(String(benefit.kind ?? ""), benefit);
-  if (badge) return rewardBenefitLabel("badge", badge);
+  if (benefit) return rewardBenefitLabel(String(benefit.kind ?? ""), benefit, locale, currency);
+  if (badge) return rewardBenefitLabel("badge", badge, locale, currency);
   return "Sin recompensa económica";
 }
 

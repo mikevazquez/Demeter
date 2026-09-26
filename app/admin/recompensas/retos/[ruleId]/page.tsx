@@ -69,6 +69,9 @@ export default async function ChallengeDetailPage({
         version={version}
         copyOverride={copyOverride}
         canManage={ctx.can(CAPABILITIES.REWARDS_MANAGE)}
+        locale={ctx.studio.locale}
+        currency={ctx.studio.currency}
+        timeZone={ctx.studio.timezone}
       />
     </RewardsShell>
   );
