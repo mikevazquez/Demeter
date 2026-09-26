@@ -343,13 +343,33 @@ export function SessionOperations({
                         <details className="today-student-more">
                           <summary aria-label={`Más acciones para ${item.studentName}`}>⋮</summary>
                           <div>
-                            <form action={cancelReservationFromToday}>
+                            <form action={cancelReservationFromToday} className="space-y-2">
                               <input type="hidden" name="session_id" value={sessionId} />
                               <input type="hidden" name="reservation_id" value={item.id} />
                               <input type="hidden" name="return_date" value={returnDate} />
                               {returnTo ? (
                                 <input type="hidden" name="return_to" value={returnTo} />
                               ) : null}
+                              <label className="block text-[11px] text-zinc-400">
+                                Motivo de cancelación
+                                <select
+                                  name="reason"
+                                  required
+                                  defaultValue=""
+                                  className="mt-1 w-full rounded-lg border border-white/10 bg-zinc-950 px-2 py-2 text-xs text-white"
+                                >
+                                  <option value="" disabled>Selecciona un motivo</option>
+                                  <option value="schedule_conflict">Horario / cambio de planes</option>
+                                  <option value="health">Salud</option>
+                                  <option value="work_school">Trabajo / escuela</option>
+                                  <option value="transport">Transporte / distancia</option>
+                                  <option value="price">Precio</option>
+                                  <option value="lost_interest">Ya no le interesa</option>
+                                  <option value="booking_error">Error de reserva</option>
+                                  <option value="other">Otro</option>
+                                  <option value="prefer_not_say">Prefiere no decir</option>
+                                </select>
+                              </label>
                               <button type="submit">Cancelar reserva</button>
                             </form>
                           </div>
