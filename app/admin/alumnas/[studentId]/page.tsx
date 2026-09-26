@@ -891,6 +891,8 @@ export default async function StudentProfilePage({
         }
         alerts={alerts}
         timeZone={timeZone}
+        locale={locale}
+        currency={currency}
       />
 
       <StudentLifecycleNoticeDialog
@@ -1293,6 +1295,7 @@ export default async function StudentProfilePage({
               classes={packageClassEvents.get(currentAcquisition.id) ?? []}
               editable={canEditAcquisitions && !currentAcquisition.refunded_at}
               timeZone={timeZone}
+              locale={locale}
             />
           ) : (
             <div className="empty-state">No hay paquete actual.</div>
@@ -1579,6 +1582,7 @@ export default async function StudentProfilePage({
         <StudentEvaluationsPanel
           studentId={student.id}
           timeZone={timeZone}
+          locale={locale}
           error={query.evaluation_error}
         />
       ) : null}
@@ -1587,6 +1591,7 @@ export default async function StudentProfilePage({
         <StudentDocumentsPanel
           studentId={student.id}
           timeZone={timeZone}
+          locale={locale}
           result={query.document_result}
           error={query.document_error}
         />
