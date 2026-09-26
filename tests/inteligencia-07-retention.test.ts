@@ -12,7 +12,7 @@ describe("INTEL-07 retention intelligence", () => {
 
   it("loads enough behavioral history for early retention signals", () => {
     expect(intelligence).toContain("now.getTime() - 42 * DAY");
-    expect(intelligence).toContain('.gte("occurred_at", behaviorStartIso)');
+    expect(intelligence).toContain('.gte("occurred_at", eventStartIso)');
   });
 
   it("compares each student against recent and baseline attendance", () => {
