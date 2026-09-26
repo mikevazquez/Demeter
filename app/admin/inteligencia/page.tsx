@@ -1070,8 +1070,6 @@ export default async function IntelligencePage({
 
   const renewal = renewalStats(expiredCurrent);
   const previousRenewal = renewalStats(expiredPrevious);
-  const churn = renewal.expired > 0 ? 100 - renewal.rate : 0;
-  const previousChurn = previousRenewal.expired > 0 ? 100 - previousRenewal.rate : 0;
   const weeklyFrequency =
     activeStudents > 0 ? currentClassMetrics.attended / activeStudents / Math.max(days / 7, 1) : 0;
 
@@ -2105,10 +2103,14 @@ export default async function IntelligencePage({
               tone={renewal.rate >= previousRenewal.rate ? "positive" : "warning"}
             />
             <MetricCard
-              label="Churn"
-              value={pct(churn)}
-              delta={pointsDelta(churn, previousChurn)}
-              tone={churn > previousChurn ? "danger" : "positive"}
+              label="Sin renovar al corte"
+              value={String(renewal.notRenewed)}
+              delta={
+                renewal.expired > 0
+                  ? pct(safeRate(renewal.notRenewed, renewal.expired)) + " de los vencimientos"
+                  : "Sin vencimientos en el periodo"
+              }
+              tone={renewal.notRenewed > 0 ? "warning" : "positive"}
             />
             <MetricCard
               label="Riesgo preventivo"
@@ -2146,7 +2148,7 @@ export default async function IntelligencePage({
                     tone="success"
                   />
                   <BarRow
-                    label="No renovaron"
+                    label="Sin renovar al corte"
                     value={renewal.notRenewed}
                     max={Math.max(renewal.expired, 1)}
                     display={String(renewal.notRenewed)}
