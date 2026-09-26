@@ -1164,11 +1164,23 @@ export default async function IntelligencePage({
                       href={viewHref("clases", days)}
                     />
                   ) : null}
-                  {pendingCurrent > 0 ? (
+                  {collectionOverdueAmount > 0 ? (
+                    <Insight
+                      tone="danger"
+                      title="💳 Cobranza vencida"
+                      body={
+                        money(collectionOverdueAmount, studio.currency) +
+                        " están vencidos en " +
+                        collectionOverdueRows.length +
+                        " promesas de pago."
+                      }
+                      href={viewHref("dinero", days)}
+                    />
+                  ) : collectionDueTodayAmount > 0 ? (
                     <Insight
                       tone="warning"
-                      title="💳 Cobranza pendiente"
-                      body={money(pendingCurrent, studio.currency) + " continúan sin cobrar en ventas del periodo."}
+                      title="⏰ Cobranza que vence hoy"
+                      body={money(collectionDueTodayAmount, studio.currency) + " deben cobrarse hoy."}
                       href={viewHref("dinero", days)}
                     />
                   ) : null}
@@ -1279,10 +1291,14 @@ export default async function IntelligencePage({
               tone={currentRevenue >= previousRevenue ? "positive" : "danger"}
             />
             <MetricCard
-              label="Pendiente de cobro"
-              value={money(pendingCurrent, studio.currency)}
-              delta={pendingCurrent > 0 ? "Requiere seguimiento" : "Sin pendientes"}
-              tone={pendingCurrent > 0 ? "warning" : "positive"}
+              label="Cartera pendiente"
+              value={money(collectionPending, studio.currency)}
+              delta={
+                collectionOpenRows.length > 0
+                  ? collectionOpenRows.length + " promesas abiertas"
+                  : "Sin promesas pendientes"
+              }
+              tone={collectionPending > 0 ? "warning" : "positive"}
             />
             <MetricCard
               label="Ticket promedio"
@@ -1291,10 +1307,14 @@ export default async function IntelligencePage({
               tone="neutral"
             />
             <MetricCard
-              label="Reembolsos"
-              value={money(currentRefunds, studio.currency)}
-              delta={deltaText(currentRefunds, previousRefunds)}
-              tone={currentRefunds > previousRefunds ? "danger" : "neutral"}
+              label="Cobranza vencida"
+              value={money(collectionOverdueAmount, studio.currency)}
+              delta={
+                collectionOverdueRows.length > 0
+                  ? collectionOverdueRows.length + " promesas vencidas"
+                  : "Sin vencidos"
+              }
+              tone={collectionOverdueAmount > 0 ? "danger" : "positive"}
             />
           </section>
 
@@ -1362,26 +1382,76 @@ export default async function IntelligencePage({
               <Section title="Cobranza">
                 <div className="intel-insight-list">
                   <Insight
-                    tone={pendingCurrent > 0 ? "warning" : "positive"}
+                    tone={collectionOverdueAmount > 0 ? "danger" : "positive"}
                     title={
-                      pendingCurrent > 0
-                        ? "⚠️ Hay saldo pendiente"
-                        : "✓ Ventas del periodo sin saldo pendiente"
+                      collectionOverdueAmount > 0
+                        ? "🚨 Hay cobranza vencida"
+                        : "✓ Sin promesas vencidas"
                     }
                     body={
-                      pendingCurrent > 0
-                        ? money(pendingCurrent, studio.currency) +
-                          " no han sido cobrados todavía."
-                        : "No detectamos saldo abierto en las ventas del periodo."
+                      collectionOverdueAmount > 0
+                        ? money(collectionOverdueAmount, studio.currency) +
+                          " debieron cobrarse antes de hoy."
+                        : "No hay promesas de pago vencidas con saldo abierto."
                     }
                     href="/admin/ventas"
                   />
+                  {collectionDueTodayAmount > 0 ? (
+                    <Insight
+                      tone="warning"
+                      title="⏰ Vence hoy"
+                      body={
+                        money(collectionDueTodayAmount, studio.currency) +
+                        " tienen promesa de pago para hoy."
+                      }
+                      href="/admin/ventas"
+                    />
+                  ) : null}
                   <Insight
                     tone={currentRefunds > 0 ? "danger" : "info"}
                     title="↩ Reembolsos"
                     body={money(currentRefunds, studio.currency) + " registrados en el periodo."}
                     href="/admin/ventas"
                   />
+                </div>
+              </Section>
+
+              <Section
+                title="Promesas de pago abiertas"
+                description="No dependen del filtro de 7/30/90 días."
+              >
+                <div className="intel-risk-list">
+                  {collectionOpenRows.slice(0, 8).map((sale) => {
+                    const student = students.find((item) => item.id === sale.student_id);
+                    const overdue = Boolean(
+                      sale.payment_due_on && sale.payment_due_on < todayDate,
+                    );
+                    const dueToday = sale.payment_due_on === todayDate;
+                    return (
+                      <Link
+                        href={"/admin/ventas/" + sale.id}
+                        key={sale.id}
+                        className="intel-risk-row"
+                      >
+                        <span>
+                          <strong>{student?.full_name ?? "Alumna"}</strong>
+                          <small>
+                            {sale.payment_due_on
+                              ? overdue
+                                ? "Venció " + sale.payment_due_on
+                                : dueToday
+                                  ? "Vence hoy"
+                                  : "Vence " + sale.payment_due_on
+                              : "Sin fecha de promesa"}
+                          </small>
+                        </span>
+                        <b>{money(sale.balance, sale.currency)}</b>
+                      </Link>
+                    );
+                  })}
+                  {!collectionOpenRows.length ? (
+                    <p className="intel-empty">No hay promesas de pago con saldo abierto.</p>
+                  ) : null}
                 </div>
               </Section>
             </div>
