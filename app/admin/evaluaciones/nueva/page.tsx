@@ -88,7 +88,7 @@ export default async function NewTechnicalEvaluationPage({
   );
 
   const today = new Intl.DateTimeFormat("en-CA", {
-    timeZone: ctx.studio.timezone || "America/Mexico_City",
+    timeZone: ctx.studio.timezone,
   }).format(new Date());
 
   return (
