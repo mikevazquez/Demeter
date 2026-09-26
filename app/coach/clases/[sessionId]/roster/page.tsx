@@ -73,9 +73,9 @@ export default async function CoachRosterPage({
             </p>
             <h1 className="mt-2 text-2xl font-semibold text-white">{detail.activity}</h1>
             <p className="mt-2 capitalize text-sm text-zinc-400">
-              {formatSessionDate(detail.starts_at, studio.timezone)} ·{" "}
-              {formatTime(detail.starts_at, studio.timezone)} –{" "}
-              {formatTime(detail.ends_at, studio.timezone)}
+              {formatSessionDate(detail.starts_at, studio.timezone, studio.locale)} ·{" "}
+              {formatTime(detail.starts_at, studio.timezone, studio.locale)} –{" "}
+              {formatTime(detail.ends_at, studio.timezone, studio.locale)}
             </p>
           </div>
           <div className="rounded-2xl bg-black/20 px-4 py-3 text-right">
