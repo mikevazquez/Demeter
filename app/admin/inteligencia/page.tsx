@@ -3435,43 +3435,70 @@ export default async function IntelligencePage({
         <>
           <section className="intel-kpi-grid">
             <MetricCard
-              label="Ocupación"
-              value={pct(currentClassMetrics.occupancy)}
-              delta={pointsDelta(currentClassMetrics.occupancy, previousClassMetrics.occupancy)}
-              tone={currentClassMetrics.occupancy >= 70 ? "positive" : "warning"}
+              label="Demanda pico"
+              value={pct(currentClassMetrics.peakOccupancy)}
+              delta={pointsDelta(
+                currentClassMetrics.peakOccupancy,
+                previousClassMetrics.peakOccupancy,
+              )}
+              tone={currentClassMetrics.peakOccupancy >= 80 ? "positive" : "neutral"}
             />
             <MetricCard
-              label="Asistencias"
-              value={String(currentClassMetrics.attended)}
-              delta={deltaText(currentClassMetrics.attended, previousClassMetrics.attended)}
-              tone="neutral"
+              label="Asistencia / capacidad"
+              value={pct(currentClassMetrics.attendanceCapacity)}
+              delta={pointsDelta(
+                currentClassMetrics.attendanceCapacity,
+                previousClassMetrics.attendanceCapacity,
+              )}
+              tone={currentClassMetrics.attendanceCapacity >= 70 ? "positive" : "warning"}
             />
             <MetricCard
               label="Cancelaciones"
               value={pct(currentClassMetrics.cancellation)}
-              delta={pointsDelta(currentClassMetrics.cancellation, previousClassMetrics.cancellation)}
-              tone={currentClassMetrics.cancellation > 15 ? "danger" : "warning"}
+              delta={pointsDelta(
+                currentClassMetrics.cancellation,
+                previousClassMetrics.cancellation,
+              )}
+              tone={currentClassMetrics.cancellation > 15 ? "danger" : "neutral"}
             />
             <MetricCard
-              label="No show"
-              value={pct(currentClassMetrics.noShow)}
-              delta={pointsDelta(currentClassMetrics.noShow, previousClassMetrics.noShow)}
-              tone={currentClassMetrics.noShow > 10 ? "danger" : "neutral"}
+              label="Lugares recuperados"
+              value={
+                currentClassMetrics.lifecycleCancellations > 0
+                  ? pct(currentClassMetrics.cancellationRefill)
+                  : "—"
+              }
+              delta={
+                currentClassMetrics.lifecycleCancellations > 0
+                  ? currentClassMetrics.refilledSeats +
+                    "/" +
+                    currentClassMetrics.lifecycleCancellations +
+                    " cancelaciones"
+                  : "Sin cancelaciones reconstruibles"
+              }
+              tone={
+                currentClassMetrics.lifecycleCancellations === 0
+                  ? "neutral"
+                  : currentClassMetrics.cancellationRefill >= 60
+                    ? "positive"
+                    : "warning"
+              }
             />
           </section>
 
           <div className="intel-two-column">
             <div className="intel-stack">
               <Section
-                title="🪑 Rendimiento por clase"
-                description="Demanda, asistencia real y pérdida de capacidad."
+                title="🪑 Demanda real por clase"
+                description="El pico reconstruye cuántos lugares estuvieron ocupados antes de cancelaciones; la asistencia muestra cuánto de esa demanda llegó realmente al estudio."
               >
                 <div className="intel-data-table">
                   <div className="intel-data-head intel-class-grid">
                     <span>Clase</span>
-                    <span>Ocup.</span>
-                    <span>Asist.</span>
+                    <span>Pico</span>
+                    <span>Asist./cap.</span>
                     <span>Canc.</span>
+                    <span>Recup.</span>
                     <span>No show</span>
                   </div>
                   {classRows.map((row) => (
@@ -3479,16 +3506,27 @@ export default async function IntelligencePage({
                       <span>
                         {row.name} · {row.sessionCount} {row.sessionCount === 1 ? "sesión" : "sesiones"}
                       </span>
-                      <strong>{pct(row.occupancy)}</strong>
-                      <span>{pct(row.attendance)}</span>
+                      <strong>{pct(row.peakOccupancy)}</strong>
+                      <span>{pct(row.attendanceCapacity)}</span>
                       <span>{pct(row.cancellation)}</span>
+                      <span>
+                        {row.lifecycleCancellations > 0
+                          ? pct(row.cancellationRefill)
+                          : "—"}
+                      </span>
                       <span>{pct(row.noShowRate)}</span>
                     </div>
                   ))}
                 </div>
+                <div className="intel-source-note">
+                  “Pico” es ocupación simultánea máxima observada por eventos. “Presión de reserva” puede superar 100% si un mismo lugar se vendió, canceló y volvió a ocuparse; por eso no la usamos sola para decidir expansión.
+                </div>
               </Section>
 
-              <Section title="🕒 Demanda por franja">
+              <Section
+                title="🕒 Demanda pico por franja"
+                description="Usa el máximo de reservas observado antes de cancelaciones, no el aforo final."
+              >
                 <div className="intel-bars">
                   {Object.entries(daypart).map(([label, values]) => {
                     const rate = safeRate(values[0], values[1]);
@@ -3506,7 +3544,7 @@ export default async function IntelligencePage({
                 </div>
               </Section>
 
-              <Section title="Demanda por día">
+              <Section title="Demanda pico por día">
                 <div className="intel-bars">
                   {[...weekday.entries()].map(([label, values]) => {
                     const rate = safeRate(values[0], values[1]);
@@ -3517,6 +3555,7 @@ export default async function IntelligencePage({
                         value={rate}
                         max={100}
                         display={pct(rate)}
+                        tone={rate >= 75 ? "success" : rate < 45 ? "warning" : "info"}
                       />
                     );
                   })}
@@ -3527,42 +3566,54 @@ export default async function IntelligencePage({
             <div className="intel-stack">
               <Section
                 title="🚨 Decisiones sugeridas"
-                description="Solo se generan con al menos 3 sesiones de muestra; cancelación/no show requieren además volumen suficiente."
+                description="La demanda debe sostenerse por varias sesiones; una clase llena que luego tiene mucho no-show no se interpreta igual que una clase realmente saturada."
               >
                 <div className="intel-insight-list">
-                  {highestDemand && highestDemand.occupancy >= 90 ? (
+                  {highestDemand &&
+                  highestDemand.peakOccupancy >= 90 &&
+                  highestDemand.attendanceCapacity >= 70 ? (
                     <Insight
                       tone="positive"
                       title={"🔥 Evaluar expansión · " + highestDemand.name}
                       body={
-                        pct(highestDemand.occupancy) +
-                        " de ocupación en " +
+                        pct(highestDemand.peakOccupancy) +
+                        " de demanda pico y " +
+                        pct(highestDemand.attendanceCapacity) +
+                        " de capacidad terminó asistiendo en " +
                         highestDemand.sessionCount +
-                        " sesiones. Revisar lista de espera y, si la presión se repite, probar más capacidad u otro horario."
+                        " sesiones."
                       }
                     />
                   ) : null}
-                  {lowestDemand && lowestDemand.occupancy < 40 ? (
+                  {lowestDemand && lowestDemand.peakOccupancy < 40 ? (
                     <Insight
                       tone="danger"
                       title={"❄️ Revisar horario · " + lowestDemand.name}
                       body={
-                        pct(lowestDemand.occupancy) +
-                        " de ocupación en " +
+                        pct(lowestDemand.peakOccupancy) +
+                        " de demanda pico en " +
                         lowestDemand.sessionCount +
-                        " sesiones. Antes de eliminarla, probar horario/promoción y comparar el siguiente periodo."
+                        " sesiones. La baja ocupación no se explica sólo por cancelaciones posteriores."
                       }
                     />
                   ) : null}
                   {highestCancellation && highestCancellation.cancellation >= 15 ? (
                     <Insight
-                      tone="warning"
-                      title={"⚠️ Investigar cancelaciones · " + highestCancellation.name}
+                      tone={
+                        highestCancellation.cancellationRefill >= 60
+                          ? "info"
+                          : "warning"
+                      }
+                      title={
+                        highestCancellation.cancellationRefill >= 60
+                          ? "↻ Cancelaciones con recuperación · " + highestCancellation.name
+                          : "⚠️ Lugares perdidos por cancelación · " + highestCancellation.name
+                      }
                       body={
                         pct(highestCancellation.cancellation) +
-                        " de cancelación sobre " +
-                        highestCancellation.total +
-                        " reservas. Revisar motivos antes de asumir que el problema es el horario."
+                        " de cancelación; " +
+                        pct(highestCancellation.cancellationRefill) +
+                        " de lugares liberados se recuperaron con otra reserva."
                       }
                     />
                   ) : null}
@@ -3572,26 +3623,58 @@ export default async function IntelligencePage({
                       title={"👻 Reducir no show · " + highestNoShow.name}
                       body={
                         pct(highestNoShow.noShowRate) +
-                        " de no show. Revisar recordatorios, confirmación y cumplimiento de la política de no asistencia."
+                        " de no show. Esa demanda sí ocupó lugar y no terminó en asistencia."
                       }
                     />
                   ) : null}
-                  {!highestDemand && !lowestDemand && !highestCancellation && !highestNoShow ? (
+                  {!actionableClassRows.length ? (
                     <Insight
                       tone="info"
                       title="Muestra todavía insuficiente"
-                      body="Necesitamos al menos 3 sesiones por clase antes de sugerir cambios operativos."
+                      body="Necesitamos al menos 3 sesiones por clase antes de sugerir cambios de capacidad u horario."
                     />
                   ) : null}
                 </div>
               </Section>
 
+              <Section
+                title="Dónde se pierde la capacidad"
+                description="Separa tres fenómenos distintos para no tomar la misma acción ante problemas diferentes."
+              >
+                <div className="intel-rule-list">
+                  <div>
+                    <span>Reserva → cancelación → otra reserva</span>
+                    <strong>Lugar recuperado</strong>
+                  </div>
+                  <div>
+                    <span>Reserva → cancelación → queda vacío</span>
+                    <strong>Lugar perdido</strong>
+                  </div>
+                  <div>
+                    <span>Reserva vigente → no show</span>
+                    <strong>Capacidad bloqueada</strong>
+                  </div>
+                </div>
+              </Section>
+
               <Section title="Cómo se decide">
                 <div className="intel-rule-list">
-                  <div><span>≥90% ocupación · 3+ sesiones</span><strong>Evaluar expansión</strong></div>
-                  <div><span>&lt;40% ocupación · 3+ sesiones</span><strong>Probar ajuste antes de eliminar</strong></div>
-                  <div><span>≥15% cancelación · 5+ reservas</span><strong>Investigar motivos</strong></div>
-                  <div><span>≥10% no show · 5+ cierres</span><strong>Reforzar recuperación</strong></div>
+                  <div>
+                    <span>≥90% pico + ≥70% asistencia/cap. · 3+ sesiones</span>
+                    <strong>Evaluar expansión</strong>
+                  </div>
+                  <div>
+                    <span>&lt;40% demanda pico · 3+ sesiones</span>
+                    <strong>Probar ajuste antes de eliminar</strong>
+                  </div>
+                  <div>
+                    <span>≥15% cancelación · 5+ reservas</span>
+                    <strong>Medir recuperación antes de culpar al horario</strong>
+                  </div>
+                  <div>
+                    <span>≥10% no show · 5+ cierres</span>
+                    <strong>Reforzar confirmación / recuperación</strong>
+                  </div>
                 </div>
               </Section>
             </div>
