@@ -21,15 +21,15 @@ describe("profile avatar upload hotfix", () => {
   it(
     "uploads avatars directly from the browser instead of sending file bytes through a Server Action",
     () => {
-    expect(profile).toContain("AvatarFilePicker");
-    expect(profile).not.toContain("action={updateStudentAvatarAction}");
-    expect(picker).toContain('createClient("student")');
-    expect(picker).toContain('.from("profile-avatars")');
-    expect(picker).toContain(".upload(avatarPath, file");
-    expect(picker).toContain("MAX_AVATAR_SIZE = 5 * 1024 * 1024");
-    expect(picker).toContain("finalizeStudentAvatarAction(avatarPath)");
-    expect(actions).toContain("export async function finalizeStudentAvatarAction");
-    expect(actions).not.toContain("formData.get(\"avatar\")");
+      expect(profile).toContain("AvatarFilePicker");
+      expect(profile).not.toContain("action={updateStudentAvatarAction}");
+      expect(picker).toContain('createClient("student")');
+      expect(picker).toContain('.from("profile-avatars")');
+      expect(picker).toContain(".upload(avatarPath, file");
+      expect(picker).toContain("MAX_AVATAR_SIZE = 5 * 1024 * 1024");
+      expect(picker).toContain("finalizeStudentAvatarAction(avatarPath)");
+      expect(actions).toContain("export async function finalizeStudentAvatarAction");
+      expect(actions).not.toContain("formData.get(\"avatar\")");
     },
   );
 
