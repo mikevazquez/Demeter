@@ -134,7 +134,7 @@ export default async function EnrollmentPolicyPage({
               {enrollmentProducts.map((product) => (
                 <option key={product.id} value={product.id} disabled={!product.active}>
                   {product.name} ·{" "}
-                  {new Intl.NumberFormat("es-MX", {
+                  {new Intl.NumberFormat(ctx.studio.locale, {
                     style: "currency",
                     currency: product.currency,
                   }).format(product.price_minor / 100)}{" "}
