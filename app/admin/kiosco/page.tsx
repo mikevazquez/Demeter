@@ -6,5 +6,11 @@ import { KioskScanner } from "./KioskScanner";
 export default async function AdminKioskPage() {
   const { studio } = await getAdminContext(CAPABILITIES.ATTENDANCE_WRITE);
 
-  return <KioskScanner studioName={studio.name} />;
+  return (
+    <KioskScanner
+      studioName={studio.name}
+      locale={studio.locale}
+      timeZone={studio.timezone}
+    />
+  );
 }

@@ -20,9 +20,10 @@ type Feedback =
   | { kind: "error"; title: string; detail: string; meta?: string }
   | null;
 
-function formatTime(value?: string) {
+function formatTime(value: string | undefined, locale: string, timeZone: string) {
   if (!value) return "";
-  return new Intl.DateTimeFormat("es-MX", {
+  return new Intl.DateTimeFormat(locale, {
+    timeZone,
     hour: "2-digit",
     minute: "2-digit",
   }).format(new Date(value));
@@ -34,8 +35,10 @@ function feedbackForDuration(kind: Exclude<Feedback, null>["kind"] | undefined) 
   return 3800;
 }
 
-function feedbackFor(result: CheckInResponse): Feedback {
-  const classLine = [result.activity, formatTime(result.starts_at)].filter(Boolean).join(" · ");
+function feedbackFor(result: CheckInResponse, locale: string, timeZone: string): Feedback {
+  const classLine = [result.activity, formatTime(result.starts_at, locale, timeZone)]
+    .filter(Boolean)
+    .join(" · ");
 
   if (result.status === "success") {
     return {
@@ -60,7 +63,7 @@ function feedbackFor(result: CheckInResponse): Feedback {
       kind: "error",
       title: "Tu check-in todavía no está disponible",
       detail: result.available_at
-        ? `Podrás registrarlo a partir de las ${formatTime(result.available_at)}.`
+        ? `Podrás registrarlo a partir de las ${formatTime(result.available_at, locale, timeZone)}.`
         : "Intenta de nuevo más cerca del inicio de tu clase.",
     };
   }
@@ -96,7 +99,15 @@ function feedbackFor(result: CheckInResponse): Feedback {
   };
 }
 
-export function KioskScanner({ studioName }: { studioName: string }) {
+export function KioskScanner({
+  studioName,
+  locale,
+  timeZone,
+}: {
+  studioName: string;
+  locale: string;
+  timeZone: string;
+}) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const controlsRef = useRef<{ stop: () => void } | null>(null);
   const busyRef = useRef(false);
@@ -124,7 +135,7 @@ export function KioskScanner({ studioName }: { studioName: string }) {
           cache: "no-store",
         });
         const result = (await response.json()) as CheckInResponse;
-        nextFeedback = feedbackFor(result);
+        nextFeedback = feedbackFor(result, locale, timeZone);
         setFeedback(nextFeedback);
       } catch {
         nextFeedback = {
@@ -140,7 +151,7 @@ export function KioskScanner({ studioName }: { studioName: string }) {
 
       resetTimerRef.current = setTimeout(resetReader, feedbackDurationMs);
     },
-    [resetReader],
+    [locale, resetReader, timeZone],
   );
 
   useEffect(() => {
