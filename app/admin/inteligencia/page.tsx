@@ -1406,34 +1406,41 @@ export default async function IntelligencePage({
 
             <div className="intel-stack">
               <Section
-                title="🎯 Embudo rápido"
-                description="Se basa en eventos históricos, así que una cancelación o no show no desaparece al reagendar."
+                title="🎯 Cohorte de adquisición"
+                description="Cada paso pertenece a las mismas personas registradas como prospectos de prueba en el periodo."
               >
                 <div className="intel-bars">
                   <BarRow
-                    label="Personas que reservaron"
-                    value={currentBookingStudents.size}
-                    max={Math.max(currentBookingStudents.size, 1)}
-                    display={String(currentBookingStudents.size)}
+                    label="Prospectos de prueba"
+                    value={currentAcquisitionCohort.total}
+                    max={Math.max(currentAcquisitionCohort.total, 1)}
+                    display={String(currentAcquisitionCohort.total)}
+                    tone="info"
+                  />
+                  <BarRow
+                    label="Reservaron"
+                    value={currentAcquisitionCohort.booked}
+                    max={Math.max(currentAcquisitionCohort.total, 1)}
+                    display={String(currentAcquisitionCohort.booked)}
                     tone="info"
                   />
                   <BarRow
                     label="Asistieron"
-                    value={currentAttendedStudents.size}
-                    max={Math.max(currentBookingStudents.size, currentAttendedStudents.size, 1)}
-                    display={String(currentAttendedStudents.size)}
+                    value={currentAcquisitionCohort.attended}
+                    max={Math.max(currentAcquisitionCohort.total, 1)}
+                    display={String(currentAcquisitionCohort.attended)}
                     tone="info"
                   />
                   <BarRow
-                    label="Registraron pago"
-                    value={currentPaidStudents.size}
-                    max={Math.max(currentBookingStudents.size, currentPaidStudents.size, 1)}
-                    display={String(currentPaidStudents.size)}
+                    label="Compraron paquete / membresía"
+                    value={currentAcquisitionCohort.converted}
+                    max={Math.max(currentAcquisitionCohort.total, 1)}
+                    display={String(currentAcquisitionCohort.converted)}
                     tone="success"
                   />
                 </div>
                 <div className="intel-source-note">
-                  Conversación → reserva sigue pendiente hasta que Asistian exponga un evento de inicio de conversación o primer mensaje entrante.
+                  Falta anteponer conversaciones de Asistian para completar conversación → reserva.
                 </div>
               </Section>
 
@@ -1807,62 +1814,105 @@ export default async function IntelligencePage({
         <>
           <section className="intel-kpi-grid">
             <MetricCard
-              label="Personas que reservaron"
-              value={String(currentBookingStudents.size)}
-              delta={deltaText(currentBookingStudents.size, previousBookingStudents.size)}
+              label="Prospectos de prueba"
+              value={String(currentAcquisitionCohort.total)}
+              delta={deltaText(
+                currentAcquisitionCohort.total,
+                previousAcquisitionCohort.total,
+              )}
               tone="info"
             />
             <MetricCard
-              label="Show rate"
-              value={pct(showRate)}
-              delta={pointsDelta(showRate, previousShowRate)}
-              tone={showRate >= previousShowRate ? "positive" : "warning"}
+              label="Reserva → asistencia"
+              value={
+                currentAcquisitionCohort.booked > 0
+                  ? pct(currentAcquisitionCohort.attendanceFromBookingRate)
+                  : "—"
+              }
+              delta={pointsDelta(
+                currentAcquisitionCohort.attendanceFromBookingRate,
+                previousAcquisitionCohort.attendanceFromBookingRate,
+              )}
+              tone={
+                currentAcquisitionCohort.attendanceFromBookingRate >=
+                previousAcquisitionCohort.attendanceFromBookingRate
+                  ? "positive"
+                  : "warning"
+              }
             />
             <MetricCard
-              label="Recuperación cancelación"
-              value={pct(cancellationRecovery.rate)}
-              delta={pointsDelta(cancellationRecovery.rate, previousCancellationRecovery.rate)}
-              tone={cancellationRecovery.rate >= previousCancellationRecovery.rate ? "positive" : "warning"}
+              label="Asistencia → alumna"
+              value={
+                currentAcquisitionCohort.attended > 0
+                  ? pct(currentAcquisitionCohort.conversionFromAttendanceRate)
+                  : "—"
+              }
+              delta={pointsDelta(
+                currentAcquisitionCohort.conversionFromAttendanceRate,
+                previousAcquisitionCohort.conversionFromAttendanceRate,
+              )}
+              tone={
+                currentAcquisitionCohort.conversionFromAttendanceRate >=
+                previousAcquisitionCohort.conversionFromAttendanceRate
+                  ? "positive"
+                  : "warning"
+              }
             />
             <MetricCard
-              label="Recuperación no show"
-              value={pct(noShowRecovery.rate)}
-              delta={pointsDelta(noShowRecovery.rate, previousNoShowRecovery.rate)}
-              tone={noShowRecovery.rate >= previousNoShowRecovery.rate ? "positive" : "warning"}
+              label="Prospecto → alumna"
+              value={
+                currentAcquisitionCohort.total > 0
+                  ? pct(currentAcquisitionCohort.conversionRate)
+                  : "—"
+              }
+              delta={pointsDelta(
+                currentAcquisitionCohort.conversionRate,
+                previousAcquisitionCohort.conversionRate,
+              )}
+              tone={
+                currentAcquisitionCohort.conversionRate >= previousAcquisitionCohort.conversionRate
+                  ? "positive"
+                  : "warning"
+              }
             />
           </section>
 
           <div className="intel-two-column">
             <div className="intel-stack">
               <Section
-                title="🎯 Embudo operativo del periodo"
-                description="Actividad real registrada por eventos. Una persona puede tener más de un intento de reserva."
+                title="📍 Actividad operativa del periodo"
+                description="Volumen ocurrido en estas fechas. No se presenta como embudo porque las personas pueden venir de cohortes anteriores."
               >
                 <div className="intel-bars">
                   <BarRow
-                    label="Personas que reservaron"
-                    value={currentBookingStudents.size}
-                    max={Math.max(currentBookingStudents.size, 1)}
-                    display={String(currentBookingStudents.size)}
+                    label="Intentos de reserva"
+                    value={currentBookingEvents.length}
+                    max={Math.max(currentBookingEvents.length, 1)}
+                    display={
+                      currentBookingEvents.length +
+                      " · " +
+                      currentBookingStudents.size +
+                      " personas"
+                    }
                     tone="info"
                   />
                   <BarRow
-                    label="Asistieron"
-                    value={currentAttendedStudents.size}
-                    max={Math.max(currentBookingStudents.size, currentAttendedStudents.size, 1)}
-                    display={String(currentAttendedStudents.size)}
+                    label="Asistencias"
+                    value={currentAttendedEvents.length}
+                    max={Math.max(currentBookingEvents.length, currentAttendedEvents.length, 1)}
+                    display={String(currentAttendedEvents.length)}
                     tone="success"
                   />
                   <BarRow
-                    label="Pagaron"
-                    value={currentPaidStudents.size}
-                    max={Math.max(currentBookingStudents.size, currentPaidStudents.size, 1)}
-                    display={String(currentPaidStudents.size)}
-                    tone="success"
+                    label="No show"
+                    value={currentNoShowEvents.length}
+                    max={Math.max(currentBookingEvents.length, currentNoShowEvents.length, 1)}
+                    display={String(currentNoShowEvents.length)}
+                    tone="danger"
                   />
                 </div>
                 <div className="intel-source-note">
-                  Conversación → reserva se incorporará cuando Asistian envíe el inicio de conversación o primer mensaje entrante.
+                  Actividad sirve para operación; cohorte sirve para medir conversión.
                 </div>
               </Section>
 
@@ -2012,31 +2062,49 @@ export default async function IntelligencePage({
               </Section>
 
               <Section
-                title="🧪 Cohorte de clase de prueba"
-                description="Se conserva como lectura complementaria mientras incorporamos conversaciones de Asistian."
+                title="🧪 Cohorte de adquisición"
+                description="Prospectos de prueba creados en el periodo y su resultado al corte de hoy."
               >
                 <div className="intel-bars">
                   <BarRow
-                    label="Pruebas registradas"
-                    value={trialCurrent.length}
-                    max={Math.max(trialCurrent.length, 1)}
-                    display={String(trialCurrent.length)}
+                    label="Prospectos registrados"
+                    value={currentAcquisitionCohort.total}
+                    max={Math.max(currentAcquisitionCohort.total, 1)}
+                    display={String(currentAcquisitionCohort.total)}
+                    tone="info"
+                  />
+                  <BarRow
+                    label="Reservaron"
+                    value={currentAcquisitionCohort.booked}
+                    max={Math.max(currentAcquisitionCohort.total, 1)}
+                    display={
+                      currentAcquisitionCohort.booked +
+                      " · " +
+                      pct(currentAcquisitionCohort.bookingRate)
+                    }
                     tone="info"
                   />
                   <BarRow
                     label="Asistieron"
-                    value={trialAttended}
-                    max={Math.max(trialCurrent.length, 1)}
-                    display={String(trialAttended)}
+                    value={currentAcquisitionCohort.attended}
+                    max={Math.max(currentAcquisitionCohort.total, 1)}
+                    display={String(currentAcquisitionCohort.attended)}
                     tone="accent"
                   />
                   <BarRow
-                    label="Se convirtieron"
-                    value={trialConverted}
-                    max={Math.max(trialCurrent.length, 1)}
-                    display={String(trialConverted)}
+                    label="Compraron paquete / membresía"
+                    value={currentAcquisitionCohort.converted}
+                    max={Math.max(currentAcquisitionCohort.total, 1)}
+                    display={
+                      currentAcquisitionCohort.converted +
+                      " · " +
+                      pct(currentAcquisitionCohort.conversionRate)
+                    }
                     tone="success"
                   />
+                </div>
+                <div className="intel-source-note">
+                  La cohorte puede seguir madurando después del cierre del periodo; por eso esto es resultado “al corte”, no churn definitivo.
                 </div>
               </Section>
             </div>
