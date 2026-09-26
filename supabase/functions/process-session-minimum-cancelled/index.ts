@@ -131,7 +131,7 @@ const handler = {
         .maybeSingle(),
       adminClient
         .from("studios")
-        .select("id,name,timezone")
+        .select("id,name,timezone,locale")
         .eq("id", event.studio_id)
         .maybeSingle(),
       adminClient
@@ -170,7 +170,8 @@ const handler = {
     }
 
     const startsAt = new Date(session.starts_at);
-    const timeZone = studio.timezone ?? "America/Mexico_City";
+    const timeZone = studio.timezone ?? "UTC";
+    const locale = studio.locale ?? "es-MX";
     const payload = (event.payload ?? {}) as Record<string, unknown>;
     const minimum = Number(payload.minimum_required ?? session.minimum_reservations ?? 0) || 0;
     const reservationsAtReview =
@@ -181,13 +182,13 @@ const handler = {
     const variables = {
       coach: coachName,
       clase: template.name,
-      fecha: new Intl.DateTimeFormat("es-MX", {
+      fecha: new Intl.DateTimeFormat(locale, {
         timeZone,
         day: "2-digit",
         month: "2-digit",
         year: "numeric",
       }).format(startsAt),
-      hora: new Intl.DateTimeFormat("es-MX", {
+      hora: new Intl.DateTimeFormat(locale, {
         timeZone,
         hour: "2-digit",
         minute: "2-digit",
