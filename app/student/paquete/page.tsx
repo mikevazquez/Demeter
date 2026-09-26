@@ -220,8 +220,8 @@ export default async function StudentPackagePage() {
                 <div>
                   <p className="text-xs font-medium text-zinc-500">Vigencia</p>
                   <p className="mt-1 text-sm text-white">
-                    {formatDate(activePackage.starts_on, studio.timezone)} →{" "}
-                    {formatDate(activePackage.expires_on, studio.timezone)}
+                    {formatDate(activePackage.starts_on, studio.timezone, studio.locale)} →{" "}
+                    {formatDate(activePackage.expires_on, studio.timezone, studio.locale)}
                   </p>
                 </div>
                 {activeDaysRemaining !== null ? (
@@ -371,8 +371,8 @@ export default async function StudentPackagePage() {
                 <div className="min-w-0">
                   <p className="font-medium text-white">{item.name}</p>
                   <p className="mt-1 text-xs text-zinc-500">
-                    {formatDate(item.starts_on, studio.timezone)} →{" "}
-                    {formatDate(item.expires_on, studio.timezone)}
+                    {formatDate(item.starts_on, studio.timezone, studio.locale)} →{" "}
+                    {formatDate(item.expires_on, studio.timezone, studio.locale)}
                   </p>
                   <p className="mt-1 text-xs text-zinc-500">
                     {item.unlimited
@@ -459,7 +459,7 @@ export default async function StudentPackagePage() {
                           <p className="mt-1 text-sm text-zinc-400">{productBenefit(product)}</p>
                         </div>
                         <strong className="shrink-0 text-base text-white">
-                          {formatMoney(product.price_minor, product.currency)}
+                          {formatMoney(product.price_minor, product.currency, studio.locale)}
                         </strong>
                       </div>
 
@@ -513,7 +513,7 @@ export default async function StudentPackagePage() {
                 </h2>
                 <p className="mt-1 text-xs text-zinc-500">
                   {snapshot.enrollment.expires_on
-                    ? `Vence ${formatDate(snapshot.enrollment.expires_on, studio.timezone)}`
+                    ? `Vence ${formatDate(snapshot.enrollment.expires_on, studio.timezone, studio.locale)}`
                     : snapshot.enrollment.active_now
                       ? "Vitalicia · sin vencimiento"
                       : "Consulta el estado con el estudio"}
