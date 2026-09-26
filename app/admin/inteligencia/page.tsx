@@ -736,7 +736,6 @@ export default async function IntelligencePage({
   const trialPreviousConverted = trialPrevious.filter(
     (item) => item.trial_status === "converted",
   ).length;
-  const trialNoShow = trialCurrent.filter((item) => item.trial_status === "no_show").length;
   const trialConversion = safeRate(trialConverted, trialAttended);
   const previousTrialConversion = safeRate(trialPreviousConverted, trialPreviousAttended);
 
@@ -758,7 +757,6 @@ export default async function IntelligencePage({
   const currentAttendanceEvents = eventsOfType(currentDomainEvents, "attendance.finalized");
   const previousAttendanceEvents = eventsOfType(previousDomainEvents, "attendance.finalized");
   const currentPaymentEvents = eventsOfType(currentDomainEvents, "payment.confirmed");
-  const previousPaymentEvents = eventsOfType(previousDomainEvents, "payment.confirmed");
 
   const currentAttendedEvents = currentAttendanceEvents.filter(
     (event) => eventPayloadText(event, "attendance_status") === "attended",
