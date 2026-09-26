@@ -204,7 +204,7 @@ export default async function StudentReservationDetailPage({
           </div>
 
           <p className="mt-3 text-sm font-medium text-zinc-200">
-            {formatDateTime(item.starts_at, studio.timezone)}
+            {formatDateTime(item.starts_at, studio.timezone, studio.locale)}
           </p>
         </div>
 
@@ -389,7 +389,7 @@ export default async function StudentReservationDetailPage({
             <div className="mt-4 rounded-2xl border border-white/10 bg-black/20 p-3">
               <p className="text-sm font-semibold text-white">{item.activity}</p>
               <p className="mt-1 text-xs text-zinc-400">
-                {formatDateTime(item.starts_at, studio.timezone)}
+                {formatDateTime(item.starts_at, studio.timezone, studio.locale)}
               </p>
               <p className="mt-0.5 text-[11px] text-zinc-500">{item.space ?? "Estudio"}</p>
             </div>
