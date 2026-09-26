@@ -7,6 +7,18 @@ import { getAdminContext } from "@/lib/auth/admin-context";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { normalizeMexicanPhone } from "@/lib/phone";
 
+const CANCELLATION_REASON_CODES = new Set([
+  "schedule_conflict",
+  "health",
+  "work_school",
+  "transport",
+  "price",
+  "lost_interest",
+  "booking_error",
+  "other",
+  "prefer_not_say",
+]);
+
 function todayReturnUrl(returnDate: string) {
   return returnDate ? `/admin?date=${encodeURIComponent(returnDate)}` : "/admin";
 }
@@ -139,21 +151,25 @@ export async function cancelReservationFromToday(formData: FormData) {
   const reservationId = String(formData.get("reservation_id") ?? "");
   const returnDate = String(formData.get("return_date") ?? "");
   const returnUrl = operationReturnUrl(formData, returnDate, sessionId);
+  const reason = String(formData.get("reason") ?? "").trim();
 
-  if (!sessionId || !reservationId) {
-    redirect(withQuery(returnUrl, "error", "cancel"));
+  if (!sessionId || !reservationId || !CANCELLATION_REASON_CODES.has(reason)) {
+    redirect(withQuery(returnUrl, "error", "cancel_reason_required"));
   }
 
   const { supabase } = await getAdminContext(CAPABILITIES.SCHEDULE_WRITE);
-  const { error } = await supabase.rpc("admin_cancel_reservation", {
+  const { data, error } = await supabase.rpc("cancel_reservation", {
     target_reservation_id: reservationId,
+    target_reason: reason,
   });
+  const result = data as { ok?: boolean; reason_code?: string | null } | null;
 
-  if (error) {
-    redirect(withQuery(returnUrl, "error", "cancel"));
+  if (error || result?.ok !== true) {
+    redirect(withQuery(returnUrl, "error", result?.reason_code ?? "cancel"));
   }
 
   refreshSession(sessionId);
+  revalidatePath("/admin/inteligencia");
   redirect(withQuery(returnUrl, "created", "cancel"));
 }
 
