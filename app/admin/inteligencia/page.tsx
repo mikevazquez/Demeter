@@ -3464,25 +3464,37 @@ export default async function IntelligencePage({
         <>
           <section className="intel-kpi-grid">
             <MetricCard
-              label="Renovación"
-              value={pct(renewal.rate)}
-              delta={pointsDelta(renewal.rate, previousRenewal.rate)}
-              tone={renewal.rate >= previousRenewal.rate ? "positive" : "warning"}
+              label="Renovación ≤30 días"
+              value={renewal.matured > 0 ? pct(renewal.rate) : "—"}
+              delta={
+                renewal.matured === 0
+                  ? "Cohorte todavía sin resultados maduros"
+                  : previousRenewal.matured > 0
+                    ? pointsDelta(renewal.rate, previousRenewal.rate)
+                    : renewal.matured + " casos con resultado conocido"
+              }
+              tone={
+                renewal.matured === 0
+                  ? "neutral"
+                  : renewal.rate >= previousRenewal.rate
+                    ? "positive"
+                    : "warning"
+              }
             />
             <MetricCard
-              label="Sin renovar al corte"
-              value={String(renewal.notRenewed)}
+              label="Churn confirmado"
+              value={String(renewal.churnConfirmed)}
               delta={
-                renewal.expired > 0
-                  ? pct(safeRate(renewal.notRenewed, renewal.expired)) + " de los vencimientos"
-                  : "Sin vencimientos en el periodo"
+                renewal.pendingMaturity > 0
+                  ? renewal.pendingMaturity + " vencimientos aún madurando"
+                  : "No incluye cohortes de menos de 30 días"
               }
-              tone={renewal.notRenewed > 0 ? "warning" : "positive"}
+              tone={renewal.churnConfirmed > 0 ? "danger" : "positive"}
             />
             <MetricCard
               label="Riesgo preventivo"
               value={String(preventiveRiskStudents.length)}
-              delta="Antes del vencimiento"
+              delta="Señales de comportamiento explicables"
               tone={preventiveRiskStudents.length ? "warning" : "positive"}
             />
             <MetricCard
@@ -3496,8 +3508,8 @@ export default async function IntelligencePage({
           <div className="intel-two-column">
             <div className="intel-stack">
               <Section
-                title="📈 Renovación del periodo"
-                description="Paquetes que vencieron dentro del periodo y registraron una compra posterior."
+                title="📈 Qué pasó después del vencimiento"
+                description="Separa renovación, reactivación y churn. Una alumna no se declara perdida mientras su ventana de 30 días siga abierta."
               >
                 <div className="intel-bars">
                   <BarRow
@@ -3508,25 +3520,71 @@ export default async function IntelligencePage({
                     tone="info"
                   />
                   <BarRow
-                    label="Renovaron"
-                    value={renewal.renewed}
+                    label="Renovaron antes / al vencer"
+                    value={renewal.immediate}
                     max={Math.max(renewal.expired, 1)}
-                    display={String(renewal.renewed)}
+                    display={String(renewal.immediate)}
                     tone="success"
                   />
                   <BarRow
-                    label="Sin renovar al corte"
-                    value={renewal.notRenewed}
+                    label="Renovaron ≤7 días"
+                    value={renewal.within7}
                     max={Math.max(renewal.expired, 1)}
-                    display={String(renewal.notRenewed)}
+                    display={String(renewal.within7)}
+                    tone="success"
+                  />
+                  <BarRow
+                    label="Renovaron 8–30 días"
+                    value={renewal.within30}
+                    max={Math.max(renewal.expired, 1)}
+                    display={String(renewal.within30)}
+                    tone="accent"
+                  />
+                  <BarRow
+                    label="Reactivaron >30 días"
+                    value={renewal.reactivated}
+                    max={Math.max(renewal.expired, 1)}
+                    display={String(renewal.reactivated)}
+                    tone="info"
+                  />
+                  <BarRow
+                    label="Churn confirmado"
+                    value={renewal.churnConfirmed}
+                    max={Math.max(renewal.expired, 1)}
+                    display={String(renewal.churnConfirmed)}
                     tone="danger"
                   />
+                  {renewal.pendingMaturity > 0 ? (
+                    <BarRow
+                      label="Todavía madurando"
+                      value={renewal.pendingMaturity}
+                      max={Math.max(renewal.expired, 1)}
+                      display={String(renewal.pendingMaturity)}
+                      tone="warning"
+                    />
+                  ) : null}
                 </div>
               </Section>
 
               <Section
-                title="Frecuencia"
-                description="Una frecuencia baja puede ser una señal previa a la no renovación."
+                title="🧠 Señales preventivas"
+                description="No es una probabilidad opaca: cada alumna aparece por señales concretas observables."
+              >
+                <div className="intel-rule-list">
+                  <div><span>Paquete vence ≤7 días</span><strong>+2 señales</strong></div>
+                  <div><span>14 días sin asistir</span><strong>+2 señales</strong></div>
+                  <div><span>Frecuencia cae ≥50% vs 28 días previos</span><strong>+2 señales</strong></div>
+                  <div><span>Sin próxima reserva</span><strong>+1 señal</strong></div>
+                  <div><span>2+ cancelaciones/no-show recientes</span><strong>+1 señal</strong></div>
+                </div>
+                <div className="intel-source-note">
+                  Se necesita una combinación relevante de señales; una alumna nueva no se penaliza por no tener historial suficiente.
+                </div>
+              </Section>
+
+              <Section
+                title="Frecuencia general"
+                description="Sirve como contexto del estudio; las alertas individuales comparan a cada alumna contra su propio comportamiento."
               >
                 <div className="intel-frequency-value">
                   <strong>{weeklyFrequency.toFixed(1)}</strong>
@@ -3537,39 +3595,11 @@ export default async function IntelligencePage({
 
             <div className="intel-stack">
               <Section
-                title="🧭 Señales de retención"
-                description="Distingue prevención de recuperación para intervenir antes de perder a la alumna."
-              >
-                <div className="intel-insight-list">
-                  <Insight
-                    tone={preventiveRiskStudents.length ? "warning" : "positive"}
-                    title="🟡 Riesgo preventivo"
-                    body="Paquete vence en ≤7 días y no tiene próxima reserva y/o lleva 14 días sin asistir."
-                  />
-                  <Insight
-                    tone="warning"
-                    title="🟠 Vencida reciente"
-                    body="7–14 días desde vencimiento sin una nueva compra. Ya requiere recuperación."
-                  />
-                  <Insight
-                    tone="info"
-                    title="🟠 Inactiva"
-                    body="15–29 días desde vencimiento sin renovación."
-                  />
-                  <Insight
-                    tone="danger"
-                    title="🔴 Abandono"
-                    body="30+ días desde vencimiento sin una nueva compra."
-                  />
-                </div>
-              </Section>
-
-              <Section
                 title="Alumnas a intervenir ahora"
-                description="Primero las que todavía podemos recuperar antes del vencimiento."
+                description="Ordenadas por cantidad de señales y cercanía al vencimiento."
               >
                 <div className="intel-risk-list">
-                  {preventiveRiskStudents.slice(0, 8).map((item) => (
+                  {preventiveRiskStudents.slice(0, 10).map((item) => (
                     <Link
                       href={"/admin/alumnas/" + item.id}
                       key={item.id}
@@ -3579,12 +3609,62 @@ export default async function IntelligencePage({
                         <strong>{item.name}</strong>
                         <small>{item.detail}</small>
                       </span>
-                      <b>Actuar ahora</b>
+                      <b>{item.state}</b>
                     </Link>
                   ))}
                   {!preventiveRiskStudents.length ? (
-                    <p className="intel-empty">No hay riesgo preventivo detectado hoy.</p>
+                    <p className="intel-empty">No hay señales preventivas con suficiente evidencia hoy.</p>
                   ) : null}
+                </div>
+              </Section>
+
+              <Section
+                title="Recuperación después del vencimiento"
+                description="Estas alumnas ya requieren recuperación, no prevención."
+              >
+                <div className="intel-risk-list">
+                  {[...riskStudents, ...inactiveStudents, ...abandonedStudents]
+                    .sort((a, b) => a.days - b.days)
+                    .slice(0, 10)
+                    .map((item) => (
+                      <Link
+                        href={"/admin/alumnas/" + item.id}
+                        key={item.id + ":" + item.state}
+                        className="intel-risk-row"
+                      >
+                        <span>
+                          <strong>{item.name}</strong>
+                          <small>{item.detail}</small>
+                        </span>
+                        <b>{item.state}</b>
+                      </Link>
+                    ))}
+                  {!riskStudents.length && !inactiveStudents.length && !abandonedStudents.length ? (
+                    <p className="intel-empty">No hay alumnas vencidas que requieran recuperación.</p>
+                  ) : null}
+                </div>
+              </Section>
+
+              <Section
+                title="Cómo se clasifica el vencimiento"
+                description="La etiqueta cambia con el tiempo sin borrar el historial de una eventual reactivación."
+              >
+                <div className="intel-insight-list">
+                  <Insight
+                    tone="warning"
+                    title="🟠 Vencida reciente"
+                    body="7–14 días desde vencimiento sin una nueva compra."
+                  />
+                  <Insight
+                    tone="info"
+                    title="🟠 Inactiva"
+                    body="15–29 días desde vencimiento sin renovación."
+                  />
+                  <Insight
+                    tone="danger"
+                    title="🔴 Churn confirmado"
+                    body="30+ días desde vencimiento sin una nueva compra. Si regresa después, se registra como reactivación."
+                  />
                 </div>
               </Section>
             </div>
