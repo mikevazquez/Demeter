@@ -14,6 +14,18 @@ type ViewKey =
 
 type Tone = "neutral" | "positive" | "warning" | "danger" | "info";
 
+type DecisionPriority = 1 | 2 | 3;
+
+type IntelligenceDecision = {
+  key: string;
+  priority: DecisionPriority;
+  tone: Tone;
+  title: string;
+  evidence: string;
+  action: string;
+  href: string;
+};
+
 type StudentRow = {
   id: string;
   full_name: string;
@@ -298,6 +310,28 @@ function Insight({
   }
 
   return <div className={"intel-insight is-" + tone}>{content}</div>;
+}
+
+function DecisionCard({ decision }: { decision: IntelligenceDecision }) {
+  const priorityLabel =
+    decision.priority === 1 ? "Ahora" : decision.priority === 2 ? "Esta semana" : "Optimizar";
+
+  return (
+    <Link
+      href={decision.href}
+      className={"intel-decision is-" + decision.tone}
+    >
+      <div className="intel-decision-topline">
+        <span className="intel-decision-priority">{priorityLabel}</span>
+        <span className="intel-chevron" aria-hidden="true">›</span>
+      </div>
+      <strong>{decision.title}</strong>
+      <p>{decision.evidence}</p>
+      <small>
+        <b>Acción:</b> {decision.action}
+      </small>
+    </Link>
+  );
 }
 
 function Section({
@@ -1341,6 +1375,207 @@ export default async function IntelligencePage({
       };
     })
     .sort((a, b) => a.completed - b.completed || a.name.localeCompare(b.name));
+
+  const decisions: IntelligenceDecision[] = [];
+  const attendanceDecisionSample =
+    currentAttendedEvents.length + currentNoShowEvents.length;
+  const showRateDrop = previousShowRate - showRate;
+  const conversationBookingDrop =
+    previousConversationCohort.conversationToBookingRate -
+    currentConversationCohort.conversationToBookingRate;
+
+  if (collectionOverdueAmount > 0) {
+    decisions.push({
+      key: "collections-overdue",
+      priority: 1,
+      tone: "danger",
+      title:
+        "Cobrar " +
+        money(collectionOverdueAmount, studio.currency) +
+        " vencidos",
+      evidence:
+        collectionOverdueRows.length +
+        (collectionOverdueRows.length === 1
+          ? " saldo ya pasó su promesa de pago."
+          : " saldos ya pasaron su promesa de pago."),
+      action: "Abrir cobranza y contactar primero los saldos vencidos.",
+      href: viewHref("dinero", days),
+    });
+  }
+
+  if (preventiveRiskStudents.length > 0) {
+    decisions.push({
+      key: "retention-preventive",
+      priority: preventiveRiskStudents.length >= 3 ? 1 : 2,
+      tone: "warning",
+      title:
+        "Intervenir " +
+        preventiveRiskStudents.length +
+        (preventiveRiskStudents.length === 1
+          ? " alumna antes de que venza"
+          : " alumnas antes de que venzan"),
+      evidence:
+        "Vencen en ≤7 días y además no tienen próxima reserva y/o llevan 14 días sin asistir.",
+      action: "Abrir Retención, priorizar las que vencen primero y recuperar su próxima reserva.",
+      href: viewHref("retencion", days),
+    });
+  }
+
+  if (
+    currentConversationCohort.contacts >= 3 &&
+    previousConversationCohort.contacts >= 3 &&
+    conversationBookingDrop >= 5
+  ) {
+    decisions.push({
+      key: "conversion-conversation-booking",
+      priority: conversationBookingDrop >= 10 ? 1 : 2,
+      tone: "danger",
+      title: "Recuperar conversación → reserva",
+      evidence:
+        "La tasa cayó " +
+        conversationBookingDrop.toFixed(1) +
+        " pp: " +
+        pct(previousConversationCohort.conversationToBookingRate) +
+        " → " +
+        pct(currentConversationCohort.conversationToBookingRate) +
+        ".",
+      action: "Comparar origen/campaña y revisar seguimiento, horarios ofrecidos y objeciones.",
+      href: viewHref("conversion", days),
+    });
+  }
+
+  if (attendanceDecisionSample >= 5 && showRateDrop >= 5) {
+    decisions.push({
+      key: "conversion-show-rate",
+      priority: showRateDrop >= 10 ? 1 : 2,
+      tone: "danger",
+      title: "Reducir no show",
+      evidence:
+        "El show rate cayó " +
+        showRateDrop.toFixed(1) +
+        " pp: " +
+        pct(previousShowRate) +
+        " → " +
+        pct(showRate) +
+        " con " +
+        attendanceDecisionSample +
+        " resultados de asistencia.",
+      action: "Revisar recordatorios y concentrar recuperación en quienes faltaron.",
+      href: viewHref("conversion", days),
+    });
+  }
+
+  if (noShowRecovery.eligible >= 3 && noShowRecovery.rate < 50) {
+    decisions.push({
+      key: "no-show-recovery",
+      priority: 2,
+      tone: "warning",
+      title: "Mejorar recuperación de no show",
+      evidence:
+        noShowRecovery.recovered +
+        " de " +
+        noShowRecovery.eligible +
+        " personas con no show volvieron a reservar (" +
+        pct(noShowRecovery.rate) +
+        ").",
+      action: "Contactar no-shows sin nueva reserva y medir cuántos regresan después del seguimiento.",
+      href: viewHref("conversion", days),
+    });
+  }
+
+  if (cancellationRecovery.eligible >= 3 && cancellationRecovery.rate < 50) {
+    decisions.push({
+      key: "cancellation-recovery",
+      priority: 2,
+      tone: "warning",
+      title: "Recuperar cancelaciones",
+      evidence:
+        cancellationRecovery.recovered +
+        " de " +
+        cancellationRecovery.eligible +
+        " personas que cancelaron volvieron a reservar (" +
+        pct(cancellationRecovery.rate) +
+        ").",
+      action: "Separar por motivo y ofrecer una nueva reserva a quienes aún no regresan.",
+      href: viewHref("conversion", days),
+    });
+  }
+
+  if (highestDemand && highestDemand.occupancy >= 90) {
+    decisions.push({
+      key: "class-capacity-" + highestDemand.name,
+      priority: 3,
+      tone: "positive",
+      title: "Evaluar más capacidad en " + highestDemand.name,
+      evidence:
+        pct(highestDemand.occupancy) +
+        " de ocupación en " +
+        highestDemand.sessionCount +
+        " sesiones del periodo.",
+      action: "Revisar si conviene abrir otro horario o aumentar capacidad sin canibalizar otra clase.",
+      href: viewHref("clases", days),
+    });
+  }
+
+  if (lowestDemand && lowestDemand.occupancy < 40) {
+    decisions.push({
+      key: "class-low-demand-" + lowestDemand.name,
+      priority: 2,
+      tone: "warning",
+      title: "Revisar " + lowestDemand.name,
+      evidence:
+        pct(lowestDemand.occupancy) +
+        " de ocupación en " +
+        lowestDemand.sessionCount +
+        " sesiones; ya hay muestra suficiente para no tratarlo como un día aislado.",
+      action: "Comparar día/franja y probar cambio de horario o promoción antes de eliminarla.",
+      href: viewHref("clases", days),
+    });
+  }
+
+  if (highestCancellation && highestCancellation.cancellation >= 20) {
+    decisions.push({
+      key: "class-cancellation-" + highestCancellation.name,
+      priority: 2,
+      tone: "warning",
+      title: "Investigar cancelaciones en " + highestCancellation.name,
+      evidence:
+        pct(highestCancellation.cancellation) +
+        " de cancelación con al menos 5 decisiones de reserva.",
+      action: "Cruzar motivos de cancelación con horario antes de cambiar la clase.",
+      href: viewHref("clases", days),
+    });
+  }
+
+  if (missingCancellationReasonCount >= 2) {
+    decisions.push({
+      key: "data-cancellation-reasons",
+      priority: 3,
+      tone: "info",
+      title: "Completar causas de cancelación",
+      evidence:
+        missingCancellationReasonCount +
+        " cancelaciones del periodo siguen sin un motivo analizable.",
+      action: "Usar el nuevo selector estructurado y evitar cancelaciones administrativas sin causa.",
+      href: viewHref("conversion", days),
+    });
+  }
+
+  if (currentConversationCohort.conversations === 0) {
+    decisions.push({
+      key: "data-asistian-conversations",
+      priority: 3,
+      tone: "info",
+      title: "Activar conversaciones de Asistian",
+      evidence:
+        "El receptor y el embudo ya están preparados, pero todavía no hay conversation_activity en este estudio.",
+      action: "Configurar la automatización de Asistian para enviar actividad entrante al receptor de Studio Flow.",
+      href: "/admin/integraciones/asistian",
+    });
+  }
+
+  decisions.sort((a, b) => a.priority - b.priority);
+  const topDecisions = decisions.slice(0, 5);
 
   const [pageTitle, pageDescription] = titleFor(view);
 
