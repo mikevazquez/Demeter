@@ -45,6 +45,8 @@ type SessionOperationsProps = {
   canAttendance: boolean;
   canBook: boolean;
   canCreateStudent: boolean;
+  locale: string;
+  timeZone: string;
   canCorrectCompleted?: boolean;
   returnTo?: string;
   initiallyOpen?: boolean;
@@ -78,6 +80,8 @@ export function SessionOperations({
   canAttendance,
   canBook,
   canCreateStudent,
+  locale,
+  timeZone,
   canCorrectCompleted = true,
   returnTo = "",
   initiallyOpen = false,
@@ -257,7 +261,8 @@ export function SessionOperations({
                             <span className="today-attendance-origin">
                               {item.attendanceSource === "KIOSK" ? "Check-in" : "Manual"}
                               {item.checkedInAt
-                                ? ` · ${new Intl.DateTimeFormat("es-MX", {
+                                ? ` · ${new Intl.DateTimeFormat(locale, {
+                                    timeZone,
                                     hour: "2-digit",
                                     minute: "2-digit",
                                   }).format(new Date(item.checkedInAt))}`
