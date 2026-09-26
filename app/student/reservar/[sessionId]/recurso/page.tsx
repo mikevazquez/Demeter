@@ -92,7 +92,7 @@ export default async function StudentResourceSelectionPage({
         </p>
         <h1 className="mt-1 text-xl font-semibold text-white">{session.activity}</h1>
         <p className="mt-1.5 text-xs text-zinc-400">
-          {formatDateTime(session.starts_at, studio.timezone)}
+          {formatDateTime(session.starts_at, studio.timezone, studio.locale)}
           {session.space ? ` · ${session.space}` : ""}
         </p>
       </section>
