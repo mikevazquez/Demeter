@@ -61,6 +61,8 @@ export default async function NewActivityPage({
       </header>
 
       <ActivityWizard
+        locale={studio.locale}
+        currency={studio.currency}
         mode="create"
         saveError={Boolean(params.error)}
         instructors={(instructors ?? []).map((item) => ({
