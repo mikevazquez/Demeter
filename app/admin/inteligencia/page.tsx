@@ -786,17 +786,10 @@ export default async function IntelligencePage({
   }
 
   const trialCurrent = currentStudents.filter((item) => item.trial_status);
-  const trialPrevious = previousStudents.filter((item) => item.trial_status);
   const trialAttended = trialCurrent.filter(
     (item) => item.trial_status === "attended" || item.trial_status === "converted",
   ).length;
-  const trialPreviousAttended = trialPrevious.filter(
-    (item) => item.trial_status === "attended" || item.trial_status === "converted",
-  ).length;
   const trialConverted = trialCurrent.filter((item) => item.trial_status === "converted").length;
-  const trialPreviousConverted = trialPrevious.filter(
-    (item) => item.trial_status === "converted",
-  ).length;
 
   const currentDomainEvents = domainEvents.filter((event) =>
     isBetween(event.occurred_at, currentStart, currentEnd),
