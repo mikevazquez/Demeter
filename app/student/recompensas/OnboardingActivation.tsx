@@ -71,12 +71,14 @@ export function RewardsOnboardingActivation({
   onboarding,
   upcomingClass,
   timeZone,
+  locale,
   studioId,
   studioName,
 }: {
   onboarding: StudentRewardOnboarding;
   upcomingClass: StudentUpcomingClass | null;
   timeZone: string;
+  locale: string;
   studioId: string;
   studioName: string;
 }) {
@@ -213,7 +215,7 @@ export function RewardsOnboardingActivation({
               attendanceComplete
                 ? "Listo"
                 : upcomingClass
-                  ? `${upcomingClass.activity} · ${formatDateTime(upcomingClass.starts_at, timeZone)}`
+                  ? `${upcomingClass.activity} · ${formatDateTime(upcomingClass.starts_at, timeZone, locale)}`
                   : reservationComplete
                     ? "Tu primera asistencia desbloqueará este paso"
                     : "Primero reserva una clase"
