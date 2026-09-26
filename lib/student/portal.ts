@@ -208,7 +208,11 @@ export const getStudentPortalContext = cache(async () => {
 
   const [{ data: snapshot, error }, { data: studio }] = await Promise.all([
     supabase.rpc("student_portal_snapshot"),
-    supabase.from("studios").select("name,timezone,locale,currency").eq("id", membership.studio_id).maybeSingle(),
+    supabase
+      .from("studios")
+      .select("name,timezone,locale,currency,phone_country_calling_code")
+      .eq("id", membership.studio_id)
+      .maybeSingle(),
   ]);
 
   if (error || !snapshot || !studio) redirect("/login/student?error=access");

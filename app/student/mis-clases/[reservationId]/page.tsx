@@ -60,7 +60,7 @@ type CheckInTokenData = {
 
 const inviteErrorCopy: Record<string, string> = {
   guest_name_required: "Escribe el nombre completo de tu invitado.",
-  guest_phone_invalid: "Escribe un número de teléfono de 10 dígitos.",
+  guest_phone_invalid: "Escribe un teléfono válido en formato local o internacional.",
   no_invites_remaining: "Ya utilizaste las invitaciones disponibles de este mes.",
   session_full: "Ya no hay un cupo adicional disponible para tu invitado.",
   session_not_bookable: "Esta clase ya no admite invitaciones.",
@@ -466,12 +466,10 @@ export default async function StudentReservationDetailPage({
                     name="guest_phone"
                     type="tel"
                     required
-                    inputMode="numeric"
-                    pattern="[0-9]{10}"
-                    minLength={10}
-                    maxLength={10}
+                    inputMode="tel"
+                    maxLength={20}
                     className="mt-1.5 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-3 text-sm text-white outline-none focus:border-fuchsia-500/60"
-                    placeholder="3312345678"
+                    placeholder="3312345678 o +523312345678"
                   />
                   <span className="mt-1 block text-[10px] text-zinc-600">
                     Escribe los 10 dígitos. Agregamos el código de país automáticamente.

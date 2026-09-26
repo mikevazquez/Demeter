@@ -218,9 +218,18 @@ function normalizeGuestIdentityName(value: string) {
   return value.trim().replace(/\s+/g, " ").toLowerCase();
 }
 
-function normalizeMexicanPhone(value: string) {
-  const digits = value.replace(/\D/g, "");
-  return digits.length === 10 ? `+52${digits}` : null;
+function normalizeGuestPhone(value: string, countryCallingCode: string) {
+  const trimmed = value.trim();
+
+  if (trimmed.startsWith("+")) {
+    const digits = trimmed.replace(/\D/g, "");
+    const international = `+${digits}`;
+    return /^\+[1-9][0-9]{7,14}$/.test(international) ? international : null;
+  }
+
+  const nationalDigits = trimmed.replace(/\D/g, "");
+  const candidate = `${countryCallingCode}${nationalDigits}`;
+  return /^\+[1-9][0-9]{7,14}$/.test(candidate) ? candidate : null;
 }
 
 export async function createGuestInvitationAction(formData: FormData) {
@@ -231,11 +240,14 @@ export async function createGuestInvitationAction(formData: FormData) {
   if (!reservationId) redirect("/student/mis-clases?error=reservation_required");
 
   const detailPath = `/student/mis-clases/${reservationId}`;
-  const guestPhone = normalizeMexicanPhone(guestPhoneInput);
+  const { supabase, studio } = await getStudentPortalContext();
+  const guestPhone = normalizeGuestPhone(
+    guestPhoneInput,
+    studio.phone_country_calling_code,
+  );
   if (!guestPhone) {
     redirect(`${detailPath}?invite=1&invite_error=guest_phone_invalid`);
   }
-  const { supabase } = await getStudentPortalContext();
   const { data: lookupData, error: lookupError } = await supabase.rpc(
     "student_guest_invitation_contact_lookup",
     { target_guest_phone: guestPhone },
