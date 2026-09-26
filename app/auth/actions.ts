@@ -437,12 +437,7 @@ export async function selectStudio(formData: FormData) {
     data: { user },
   } = await accessClient.auth.getUser();
 
-  if (!user) {
-    const login = requestedStudioSlug
-      ? `/login/studio?studio=${encodeURIComponent(requestedStudioSlug)}`
-      : "/login/studio";
-    redirect(login);
-  }
+  if (!user) redirect("/login/studio");
 
   const accountResult = await accessClient
     .from("user_accounts")
@@ -523,7 +518,12 @@ export async function completeStudioPasswordActivation(formData: FormData) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) redirect("/login/studio");
+  if (!user) {
+    const login = requestedStudioSlug
+      ? `/login/studio?studio=${encodeURIComponent(requestedStudioSlug)}`
+      : "/login/studio";
+    redirect(login);
+  }
 
   const accountResult = await supabase
     .from("user_accounts")
