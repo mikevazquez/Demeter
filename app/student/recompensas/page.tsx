@@ -45,6 +45,7 @@ export default async function StudentProgressPage() {
         onboarding={ctx.onboarding}
         upcomingClass={upcomingClass}
         timeZone={ctx.studio.timezone}
+        locale={ctx.studio.locale}
         studioId={ctx.membership.studio_id}
         studioName={ctx.studio.name}
       />
