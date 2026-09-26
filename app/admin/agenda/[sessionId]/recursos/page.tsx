@@ -175,8 +175,8 @@ export default async function SessionResourcesPage({
     reassign: "No pudimos reasignar el recurso.",
   };
 
-  const dateLabel = new Intl.DateTimeFormat("es-MX", {
-    timeZone: studio.timezone ?? "America/Mexico_City",
+  const dateLabel = new Intl.DateTimeFormat(studio.locale, {
+    timeZone: studio.timezone,
     weekday: "long",
     day: "numeric",
     month: "long",
