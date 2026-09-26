@@ -41,7 +41,7 @@ export default async function EvaluationCheckoutReturnPage({
   const attemptId = query.attempt?.trim() ?? "";
   const sessionId = query.session?.trim() ?? "";
   const outcome = safeOutcome(query.outcome);
-  const { supabase } = await getStudentPortalContext();
+  const { supabase, studio } = await getStudentPortalContext();
 
   const { data: invitationData, error: invitationError } = await supabase.rpc(
     "student_evaluation_invitation_detail",
@@ -197,7 +197,7 @@ export default async function EvaluationCheckoutReturnPage({
             <div className="flex items-center justify-between gap-4 border-t border-white/10 pt-2">
               <strong className="text-xs uppercase tracking-[0.12em] text-zinc-500">Total</strong>
               <strong className="text-sm text-white">
-                {formatMoney(attempt.amount_minor, attempt.currency)}
+                {formatMoney(attempt.amount_minor, attempt.currency, studio.locale)}
               </strong>
             </div>
           </div>
