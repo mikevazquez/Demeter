@@ -1022,6 +1022,95 @@ export default async function IntelligencePage({
     reservationsBySession.set(reservation.session_id, list);
   }
 
+  const bookingLifecycleEventsBySession = new Map<string, DomainEventRow[]>();
+  for (const event of domainEvents) {
+    if (event.event_type !== "booking.created" && event.event_type !== "booking.cancelled") {
+      continue;
+    }
+    if (
+      event.event_type === "booking.cancelled" &&
+      eventPayloadText(event, "to_status") === "cancelled_by_studio"
+    ) {
+      continue;
+    }
+    const sessionId = eventPayloadText(event, "session_id");
+    if (!sessionId) continue;
+    const list = bookingLifecycleEventsBySession.get(sessionId) ?? [];
+    list.push(event);
+    bookingLifecycleEventsBySession.set(sessionId, list);
+  }
+
+  function sessionDemandLifecycle(session: SessionRow) {
+    const finalReservations = (reservationsBySession.get(session.id) ?? []).filter((reservation) =>
+      decisionReservationStatuses.has(reservation.status),
+    );
+    const finalOccupied = finalReservations.filter((reservation) =>
+      occupiedStatuses.has(reservation.status),
+    ).length;
+    const finalCancelled = finalReservations.filter((reservation) =>
+      userCancellationStatuses.has(reservation.status),
+    ).length;
+
+    const events = [...(bookingLifecycleEventsBySession.get(session.id) ?? [])].sort(
+      (a, b) =>
+        new Date(a.occurred_at).getTime() - new Date(b.occurred_at).getTime(),
+    );
+    const activeReservationIds = new Set<string>();
+    const createdReservationIds = new Set<string>();
+    const cancelledReservationIds = new Set<string>();
+    let peakReserved = 0;
+    let pendingCancelledSeats = 0;
+    let refilledSeats = 0;
+
+    for (const event of events) {
+      const reservationId =
+        eventPayloadText(event, "reservation_id") ?? "event:" + event.event_id;
+
+      if (event.event_type === "booking.created") {
+        createdReservationIds.add(reservationId);
+        if (!activeReservationIds.has(reservationId)) {
+          activeReservationIds.add(reservationId);
+          if (pendingCancelledSeats > 0) {
+            pendingCancelledSeats -= 1;
+            refilledSeats += 1;
+          }
+        }
+        peakReserved = Math.max(peakReserved, activeReservationIds.size);
+        continue;
+      }
+
+      if (!cancelledReservationIds.has(reservationId)) {
+        cancelledReservationIds.add(reservationId);
+        if (activeReservationIds.delete(reservationId)) {
+          pendingCancelledSeats += 1;
+        }
+      }
+    }
+
+    const bookingAttempts = Math.max(
+      finalReservations.length,
+      createdReservationIds.size,
+    );
+    const cancellations = Math.max(
+      finalCancelled,
+      cancelledReservationIds.size,
+    );
+    const boundedRefilledSeats = Math.min(refilledSeats, cancellations);
+    const recordedPeak = Math.max(peakReserved, finalOccupied);
+
+    return {
+      bookingAttempts,
+      cancellations,
+      peakReserved: recordedPeak,
+      refilledSeats: boundedRefilledSeats,
+      unrecoveredCancellations: Math.max(cancellations - boundedRefilledSeats, 0),
+    };
+  }
+
+  const sessionLifecycleMap = new Map(
+    sessions.map((session) => [session.id, sessionDemandLifecycle(session)]),
+  );
+
   function classMetrics(rows: SessionRow[]) {
     let capacity = 0;
     let occupied = 0;
@@ -1029,10 +1118,20 @@ export default async function IntelligencePage({
     let noShow = 0;
     let cancelled = 0;
     let reservationEvents = 0;
+    let bookingAttempts = 0;
+    let peakReserved = 0;
+    let refilledSeats = 0;
+    let lifecycleCancellations = 0;
 
     for (const session of rows) {
       if (session.status === "cancelled") continue;
       capacity += session.capacity ?? 0;
+      const lifecycle = sessionLifecycleMap.get(session.id);
+      bookingAttempts += lifecycle?.bookingAttempts ?? 0;
+      peakReserved += lifecycle?.peakReserved ?? 0;
+      refilledSeats += lifecycle?.refilledSeats ?? 0;
+      lifecycleCancellations += lifecycle?.cancellations ?? 0;
+
       const sessionReservations = reservationsBySession.get(session.id) ?? [];
       for (const reservation of sessionReservations) {
         if (!decisionReservationStatuses.has(reservation.status)) continue;
@@ -1046,12 +1145,20 @@ export default async function IntelligencePage({
 
     return {
       occupancy: safeRate(occupied, capacity),
+      peakOccupancy: safeRate(peakReserved, capacity),
+      bookingPressure: safeRate(bookingAttempts, capacity),
       attendance: safeRate(attended, attended + noShow),
+      attendanceCapacity: safeRate(attended, capacity),
       cancellation: safeRate(cancelled, reservationEvents),
+      cancellationRefill: safeRate(refilledSeats, lifecycleCancellations),
       noShow: safeRate(noShow, attended + noShow),
       attended,
       occupied,
       capacity,
+      bookingAttempts,
+      peakReserved,
+      refilledSeats,
+      lifecycleCancellations,
     };
   }
 
@@ -1068,6 +1175,10 @@ export default async function IntelligencePage({
       noShow: number;
       cancelled: number;
       total: number;
+      bookingAttempts: number;
+      peakReserved: number;
+      refilledSeats: number;
+      lifecycleCancellations: number;
       sessionCount: number;
       color: string;
     }
@@ -1077,6 +1188,7 @@ export default async function IntelligencePage({
     if (session.status === "cancelled") continue;
     const template = templateMap.get(session.template_id);
     const key = session.template_id;
+    const lifecycle = sessionLifecycleMap.get(session.id);
     const current =
       classAggregate.get(key) ?? {
         name: template?.name ?? "Clase",
@@ -1086,11 +1198,20 @@ export default async function IntelligencePage({
         noShow: 0,
         cancelled: 0,
         total: 0,
+        bookingAttempts: 0,
+        peakReserved: 0,
+        refilledSeats: 0,
+        lifecycleCancellations: 0,
         sessionCount: 0,
         color: template?.color_hex ?? "#FF0A8A",
       };
     current.capacity += session.capacity ?? 0;
     current.sessionCount += 1;
+    current.bookingAttempts += lifecycle?.bookingAttempts ?? 0;
+    current.peakReserved += lifecycle?.peakReserved ?? 0;
+    current.refilledSeats += lifecycle?.refilledSeats ?? 0;
+    current.lifecycleCancellations += lifecycle?.cancellations ?? 0;
+
     for (const reservation of reservationsBySession.get(session.id) ?? []) {
       if (!decisionReservationStatuses.has(reservation.status)) continue;
       current.total += 1;
@@ -1106,11 +1227,15 @@ export default async function IntelligencePage({
     .map((item) => ({
       ...item,
       occupancy: safeRate(item.occupied, item.capacity),
+      peakOccupancy: safeRate(item.peakReserved, item.capacity),
+      bookingPressure: safeRate(item.bookingAttempts, item.capacity),
       attendance: safeRate(item.attended, item.attended + item.noShow),
+      attendanceCapacity: safeRate(item.attended, item.capacity),
       cancellation: safeRate(item.cancelled, item.total),
+      cancellationRefill: safeRate(item.refilledSeats, item.lifecycleCancellations),
       noShowRate: safeRate(item.noShow, item.attended + item.noShow),
     }))
-    .sort((a, b) => b.occupancy - a.occupancy);
+    .sort((a, b) => b.peakOccupancy - a.peakOccupancy);
 
   const daypart = { Mañana: [0, 0], Tarde: [0, 0], Noche: [0, 0] } as Record<
     string,
@@ -1129,9 +1254,7 @@ export default async function IntelligencePage({
       }).format(date),
     );
     const part = hour < 12 ? "Mañana" : hour < 17 ? "Tarde" : "Noche";
-    const used = (reservationsBySession.get(session.id) ?? []).filter((item) =>
-      occupiedStatuses.has(item.status),
-    ).length;
+    const used = sessionLifecycleMap.get(session.id)?.peakReserved ?? 0;
     daypart[part][0] += used;
     daypart[part][1] += session.capacity ?? 0;
 
