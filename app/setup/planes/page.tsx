@@ -14,6 +14,20 @@ type PlanRow = {
   sort_order: number;
 };
 
+type PlanUsageRow = {
+  plan_key: string;
+  plan_name: string;
+  limit_key: string;
+  limit_name: string;
+  unit: string;
+  limit_value: number | null;
+  usage: number;
+  unlimited: boolean;
+  over_limit: boolean;
+  remaining: number | null;
+  note: string | null;
+};
+
 export default async function PlatformPlansPage({
   searchParams,
 }: {
@@ -70,6 +84,15 @@ export default async function PlatformPlansPage({
   ]);
 
   const planRows = (plans ?? []) as PlanRow[];
+  const usageEntries = await Promise.all(
+    (studios ?? []).map(async (studio) => {
+      const { data } = await supabase.rpc("current_studio_plan_usage", {
+        p_studio_id: studio.id,
+      });
+      return [studio.id, (data ?? []) as PlanUsageRow[]] as const;
+    }),
+  );
+  const usageByStudio = new Map(usageEntries);
   const planById = new Map(planRows.map((plan) => [plan.id, plan]));
   const assignmentByStudio = new Map(
     (assignments ?? []).map((assignment) => [assignment.studio_id, assignment]),
@@ -117,6 +140,7 @@ export default async function PlatformPlansPage({
         {(studios ?? []).map((studio) => {
           const assignment = assignmentByStudio.get(studio.id);
           const currentPlan = assignment ? planById.get(assignment.plan_id) : null;
+          const usageRows = usageByStudio.get(studio.id) ?? [];
 
           return (
             <article
@@ -141,6 +165,36 @@ export default async function PlatformPlansPage({
                   {assignment?.status ?? studio.status}
                 </span>
               </div>
+
+              {usageRows.length ? (
+                <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+                  {usageRows.map((row) => (
+                    <div
+                      key={row.limit_key}
+                      className={`rounded-2xl border px-3 py-2.5 ${
+                        row.over_limit
+                          ? "border-red-500/40 bg-red-500/5"
+                          : "border-white/10 bg-black/20"
+                      }`}
+                    >
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-500">
+                        {row.limit_name}
+                      </p>
+                      <p className="mt-1 text-sm font-semibold text-white">
+                        {row.usage}{" "}
+                        <span className="text-xs font-normal text-zinc-500">
+                          / {row.unlimited ? "∞" : row.limit_value}
+                        </span>
+                      </p>
+                      {row.over_limit ? (
+                        <p className="mt-1 text-[10px] font-semibold text-red-300">
+                          Sobre cuota
+                        </p>
+                      ) : null}
+                    </div>
+                  ))}
+                </div>
+              ) : null}
 
               <form action={changeStudioPlanAction} className="mt-4 grid gap-3 sm:grid-cols-[1fr_1fr_auto]">
                 <input type="hidden" name="studio_id" value={studio.id} />
