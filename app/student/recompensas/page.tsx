@@ -291,7 +291,7 @@ export default async function StudentProgressPage() {
 
             {nearest.deadline ? (
               <p className="mt-3 text-xs text-zinc-400">
-                Límite: {formatDateTime(nearest.deadline, ctx.studio.timezone)}
+                Límite: {formatDateTime(nearest.deadline, ctx.studio.timezone, ctx.studio.locale)}
               </p>
             ) : null}
 
@@ -398,7 +398,7 @@ export default async function StudentProgressPage() {
                   </div>
                   {item.cycle?.window_end_at ? (
                     <p className="mt-2 text-[11px] text-zinc-500">
-                      Termina {formatDateTime(item.cycle.window_end_at, ctx.studio.timezone)}
+                      Termina {formatDateTime(item.cycle.window_end_at, ctx.studio.timezone, ctx.studio.locale)}
                     </p>
                   ) : null}
                   {reward ? (
@@ -496,7 +496,7 @@ export default async function StudentProgressPage() {
                   </strong>
                   {reward.expires_at ? (
                     <span className="mt-1 block text-[11px] text-zinc-500">
-                      Vence {formatDateTime(reward.expires_at, ctx.studio.timezone)}
+                      Vence {formatDateTime(reward.expires_at, ctx.studio.timezone, ctx.studio.locale)}
                     </span>
                   ) : null}
                 </div>
