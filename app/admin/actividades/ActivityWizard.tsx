@@ -73,12 +73,16 @@ export function ActivityWizard({
   mode,
   saveError = false,
   operatingDefaults,
+  locale,
+  currency,
 }: {
   instructors: Option[];
   spaces: Option[];
   initial?: ActivityDraft;
   mode: "create" | "edit";
   saveError?: boolean;
+  locale: string;
+  currency: string;
   operatingDefaults?: {
     minimumReservationsEnabled: boolean;
     minimumReservations: number;
@@ -89,6 +93,18 @@ export function ActivityWizard({
   const [step, setStep] = useState(saveError ? 3 : 0);
   const [message, setMessage] = useState("");
   const [serverSaveError, setServerSaveError] = useState(saveError);
+  const currencyFormatter = useMemo(
+    () =>
+      new Intl.NumberFormat(locale, {
+        style: "currency",
+        currency,
+        maximumFractionDigits: 2,
+      }),
+    [locale, currency],
+  );
+  const currencySymbol =
+    currencyFormatter.formatToParts(0).find((part) => part.type === "currency")?.value ?? currency;
+
   const [draft, setDraft] = useState<ActivityDraft>(
     initial ?? {
       name: "",
@@ -647,7 +663,7 @@ export function ActivityWizard({
               <label className="activities-field">
                 <span>Precio de compra individual *</span>
                 <div className="activities-price-field">
-                  <b>$</b>
+                  <b>{currencySymbol}</b>
                   <input
                     type="number"
                     min="1"
@@ -657,7 +673,7 @@ export function ActivityWizard({
                     placeholder="150"
                     onChange={(event) => patch({ individualPrice: event.target.value })}
                   />
-                  <em>MXN</em>
+                  <em>{currency}</em>
                 </div>
                 <small>
                   Este precio aplica a todas las sesiones compradas individualmente desde el portal
@@ -782,7 +798,7 @@ export function ActivityWizard({
                 {draft.allowIndividualPurchase ? (
                   <div>
                     <dt>Precio individual</dt>
-                    <dd>${Number(draft.individualPrice || 0).toLocaleString("es-MX")} MXN</dd>
+                    <dd>{currencyFormatter.format(Number(draft.individualPrice || 0))}</dd>
                   </div>
                 ) : null}
               </dl>
