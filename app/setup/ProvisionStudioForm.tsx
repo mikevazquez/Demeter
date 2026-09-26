@@ -7,7 +7,14 @@ import {
   provisionStudioAction,
 } from "./actions";
 
-export function ProvisionStudioForm() {
+export type ProvisionPlanOption = {
+  planKey: string;
+  name: string;
+  description: string | null;
+  moduleNames: string[];
+};
+
+export function ProvisionStudioForm({ plans }: { plans: ProvisionPlanOption[] }) {
   const [state, formAction, pending] = useActionState(
     provisionStudioAction,
     initialProvisionStudioState,
@@ -21,6 +28,7 @@ export function ProvisionStudioForm() {
           <div style={{ marginTop: 10, display: "grid", gap: 6 }}>
             <span>Slug: {state.studioSlug}</span>
             <span>Owner: {state.ownerEmail}</span>
+            <span>Plan: {state.planKey}</span>
             <span>
               Cuenta: {state.reusedExistingAccount ? "reutilizada" : "nueva"}
             </span>
@@ -56,6 +64,37 @@ export function ProvisionStudioForm() {
             placeholder="nombre-del-estudio"
           />
         </label>
+
+        <label>
+          Plan inicial
+          <select name="plan_key" required defaultValue="">
+            <option value="" disabled>
+              Selecciona un plan
+            </option>
+            {plans.map((plan) => (
+              <option key={plan.planKey} value={plan.planKey}>
+                {plan.name}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <div className="grid gap-2">
+          {plans.map((plan) => (
+            <div
+              key={plan.planKey}
+              className="rounded-2xl border border-white/10 bg-white/[0.025] p-3"
+            >
+              <strong className="text-sm text-white">{plan.name}</strong>
+              {plan.description ? (
+                <p className="mt-1 text-xs leading-5 text-zinc-400">{plan.description}</p>
+              ) : null}
+              <p className="mt-2 text-[11px] leading-5 text-zinc-500">
+                {plan.moduleNames.join(" · ")}
+              </p>
+            </div>
+          ))}
+        </div>
 
         <label>
           Nombre del owner
@@ -108,7 +147,7 @@ export function ProvisionStudioForm() {
           <input
             name="phone_country_calling_code"
             defaultValue="+52"
-            pattern="\+[1-9][0-9]{0,3}"
+            pattern="\\+[1-9][0-9]{0,3}"
             maxLength={5}
             required
           />
