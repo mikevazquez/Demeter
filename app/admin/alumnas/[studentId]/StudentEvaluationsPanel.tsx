@@ -489,6 +489,7 @@ export default async function StudentEvaluationsPanel({
                                     item.lastDeclinedInvitation.offered_at ??
                                     item.lastDeclinedInvitation.created_at,
                                   timeZone,
+                                  locale,
                                 )}
                               </span>
                               <small>
