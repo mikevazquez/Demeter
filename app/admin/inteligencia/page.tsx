@@ -752,8 +752,17 @@ export default async function IntelligencePage({
 
   const currentBookingEvents = eventsOfType(currentDomainEvents, "booking.created");
   const previousBookingEvents = eventsOfType(previousDomainEvents, "booking.created");
-  const currentCancellationEvents = eventsOfType(currentDomainEvents, "booking.cancelled");
-  const previousCancellationEvents = eventsOfType(previousDomainEvents, "booking.cancelled");
+  const currentCancellationEventsAll = eventsOfType(currentDomainEvents, "booking.cancelled");
+  const previousCancellationEventsAll = eventsOfType(previousDomainEvents, "booking.cancelled");
+  const currentCancellationEvents = currentCancellationEventsAll.filter(
+    (event) => eventPayloadText(event, "to_status") !== "cancelled_by_studio",
+  );
+  const previousCancellationEvents = previousCancellationEventsAll.filter(
+    (event) => eventPayloadText(event, "to_status") !== "cancelled_by_studio",
+  );
+  const currentStudioCancellationEvents = currentCancellationEventsAll.filter(
+    (event) => eventPayloadText(event, "to_status") === "cancelled_by_studio",
+  );
   const currentAttendanceEvents = eventsOfType(currentDomainEvents, "attendance.finalized");
   const previousAttendanceEvents = eventsOfType(previousDomainEvents, "attendance.finalized");
   const currentPaymentEvents = eventsOfType(currentDomainEvents, "payment.confirmed");
@@ -825,9 +834,11 @@ export default async function IntelligencePage({
   const cancellationReasonCounts = new Map<string, number>();
   for (const event of currentCancellationEvents) {
     const rawReason = eventPayloadText(event, "cancellation_reason");
-    const label = rawReason
-      ? cancellationReasonLabels[rawReason] ?? "Otro / histórico"
-      : "Sin motivo registrado";
+    const label = !rawReason
+      ? "Sin motivo registrado"
+      : rawReason.startsWith("asistian:")
+        ? "Sin motivo informado · Asistian"
+        : cancellationReasonLabels[rawReason] ?? "Otro / histórico";
     cancellationReasonCounts.set(label, (cancellationReasonCounts.get(label) ?? 0) + 1);
   }
   const cancellationReasonRows = [...cancellationReasonCounts.entries()]
@@ -1518,6 +1529,20 @@ export default async function IntelligencePage({
                     }
                     tone="success"
                   />
+                  {currentStudioCancellationEvents.length > 0 ? (
+                    <BarRow
+                      label="Canceladas por el estudio"
+                      value={currentStudioCancellationEvents.length}
+                      max={Math.max(
+                        currentCancellationEvents.length,
+                        currentStudioCancellationEvents.length,
+                        currentNoShowEvents.length,
+                        1,
+                      )}
+                      display={String(currentStudioCancellationEvents.length)}
+                      tone="info"
+                    />
+                  ) : null}
                   <BarRow
                     label="No show"
                     value={currentNoShowEvents.length}
