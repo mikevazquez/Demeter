@@ -121,7 +121,7 @@ export default async function StudentEvaluationsPage() {
                     variant="scheduled"
                     disciplineName={item.discipline_name}
                     levelName={item.current_level_title}
-                    scheduledLabel={formatDateTime(item.scheduled_starts_at, studio.timezone)}
+                    scheduledLabel={formatDateTime(item.scheduled_starts_at, studio.timezone, studio.locale)}
                   />
                   <div className="px-1 pt-5">
                     <h3 className="text-2xl font-semibold tracking-tight text-white">
@@ -164,8 +164,8 @@ export default async function StudentEvaluationsPage() {
                   <p className="text-sm font-semibold text-white">Tu evaluación está disponible</p>
                   <p className="mt-1 text-xs leading-5 text-zinc-400">
                     Puedes aceptarla y elegir una clase entre el{" "}
-                    {item.window_start ? formatDate(item.window_start, studio.timezone) : "—"} y el{" "}
-                    {item.window_end ? formatDate(item.window_end, studio.timezone) : "—"}.
+                    {item.window_start ? formatDate(item.window_start, studio.timezone, studio.locale) : "—"} y el{" "}
+                    {item.window_end ? formatDate(item.window_end, studio.timezone, studio.locale) : "—"}.
                   </p>
                   <Link
                     href={"/student/evaluaciones/" + item.invitation_id}
@@ -178,8 +178,8 @@ export default async function StudentEvaluationsPage() {
                 <div className="mt-5">
                   <p className="text-xs text-zinc-400">
                     Disponible para programar del{" "}
-                    {item.window_start ? formatDate(item.window_start, studio.timezone) : "—"} al{" "}
-                    {item.window_end ? formatDate(item.window_end, studio.timezone) : "—"}.
+                    {item.window_start ? formatDate(item.window_start, studio.timezone, studio.locale) : "—"} al{" "}
+                    {item.window_end ? formatDate(item.window_end, studio.timezone, studio.locale) : "—"}.
                   </p>
                   <Link
                     href={"/student/evaluaciones/" + item.invitation_id + "/programar"}
@@ -195,7 +195,7 @@ export default async function StudentEvaluationsPage() {
                       Tu próxima evaluación
                     </p>
                     <strong className="mt-1 block text-sm text-white">
-                      {formatDateTime(item.scheduled_starts_at, studio.timezone)}
+                      {formatDateTime(item.scheduled_starts_at, studio.timezone, studio.locale)}
                     </strong>
                     <p className="mt-1 text-xs leading-5 text-zinc-500">
                       Ya está agendada. Prepárate para mostrar tu progreso y seguir avanzando.
@@ -226,7 +226,7 @@ export default async function StudentEvaluationsPage() {
                       Siguiente evaluación
                     </p>
                     <strong className="mt-1 block text-sm text-white">
-                      {formatDate(item.next_due_on, studio.timezone)}
+                      {formatDate(item.next_due_on, studio.timezone, studio.locale)}
                     </strong>
                   </div>
                   {item.cadence_months ? (
@@ -284,7 +284,7 @@ export default async function StudentEvaluationsPage() {
                 className="grid min-h-16 grid-cols-[82px_1fr_auto_auto] items-center gap-3 border-t border-white/[0.06] px-4 py-3 first:border-t-0"
               >
                 <span className="text-xs text-zinc-500">
-                  {formatDate(evaluation.evaluation_date, studio.timezone)}
+                  {formatDate(evaluation.evaluation_date, studio.timezone, studio.locale)}
                 </span>
                 <span className="min-w-0">
                   <strong className="block truncate text-sm text-white">
