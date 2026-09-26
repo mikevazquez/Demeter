@@ -88,6 +88,8 @@ export async function provisionStudioAction(
       timezone: field(formData, "timezone") || "America/Mexico_City",
       currency: field(formData, "currency") || "MXN",
       locale: field(formData, "locale") || "es-MX",
+      phoneCountryCallingCode:
+        field(formData, "phone_country_calling_code") || "+52",
       primaryColor: field(formData, "primary_color") || "#FF0A8A",
       siteName: field(formData, "site_name") || "Principal",
       address: field(formData, "address"),

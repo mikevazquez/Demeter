@@ -7,6 +7,7 @@ type ProvisionStudioRequest = {
   timezone?: unknown;
   currency?: unknown;
   locale?: unknown;
+  phoneCountryCallingCode?: unknown;
   primaryColor?: unknown;
   ownerName?: unknown;
   ownerEmail?: unknown;
@@ -101,6 +102,8 @@ const handler = {
     const timezone = stringValue(payload.timezone) || "America/Mexico_City";
     const currency = (stringValue(payload.currency) || "MXN").toUpperCase();
     const locale = stringValue(payload.locale) || "es-MX";
+    const phoneCountryCallingCode =
+      stringValue(payload.phoneCountryCallingCode) || "+52";
     const primaryColor = (stringValue(payload.primaryColor) || "#FF0A8A").toUpperCase();
     const ownerName = stringValue(payload.ownerName);
     const ownerEmail = stringValue(payload.ownerEmail).toLowerCase();
@@ -117,6 +120,7 @@ const handler = {
       !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(studioSlug) ||
       !/^#[0-9A-F]{6}$/.test(primaryColor) ||
       !/^[A-Z]{3}$/.test(currency) ||
+      !/^\+[1-9][0-9]{0,3}$/.test(phoneCountryCallingCode) ||
       !validateActivationUrl(activationUrl)
     ) {
       return jsonResponse({ error: "invalid_request" }, 400);
@@ -177,13 +181,14 @@ const handler = {
       }
 
       const { data: provisioned, error: provisionError } = await adminClient.rpc(
-        "service_provision_studio",
+        "service_provision_studio_v2",
         {
           p_name: studioName,
           p_slug: studioSlug,
           p_timezone: timezone,
           p_currency: currency,
           p_locale: locale,
+          p_phone_country_calling_code: phoneCountryCallingCode,
           p_primary_color: primaryColor,
           p_owner_user_id: ownerUser.id,
           p_owner_full_name: ownerName,

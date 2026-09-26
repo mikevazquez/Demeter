@@ -104,6 +104,17 @@ export function ProvisionStudioForm() {
         </label>
 
         <label>
+          Prefijo telefónico internacional
+          <input
+            name="phone_country_calling_code"
+            defaultValue="+52"
+            pattern="\+[1-9][0-9]{0,3}"
+            maxLength={5}
+            required
+          />
+        </label>
+
+        <label>
           Color principal
           <input name="primary_color" defaultValue="#FF0A8A" pattern="#[0-9A-Fa-f]{6}" required />
         </label>
