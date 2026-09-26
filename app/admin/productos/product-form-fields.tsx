@@ -16,6 +16,7 @@ type ProductFormFieldsProps = {
   initialCreditLimit?: number | null;
   initialUnlimited?: boolean;
   selectedDisciplineIds?: string[];
+  currency?: string;
 };
 
 type EnrollmentValidity = "30" | "90" | "180" | "365" | "lifetime" | "custom";
@@ -64,6 +65,7 @@ export function ProductFormFields({
   initialCreditLimit = 8,
   initialUnlimited = false,
   selectedDisciplineIds = [],
+  currency = "MXN",
 }: ProductFormFieldsProps) {
   const [productType, setProductType] = useState(initialProductType);
   const [enrollmentValidity, setEnrollmentValidity] = useState<EnrollmentValidity>(() =>
@@ -99,7 +101,7 @@ export function ProductFormFields({
         </label>
 
         <label className="text-sm text-zinc-300">
-          Precio MXN
+          Precio {currency}
           <input
             name="price"
             type="number"
