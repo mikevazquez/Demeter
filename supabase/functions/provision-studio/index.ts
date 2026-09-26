@@ -11,6 +11,7 @@ type ProvisionStudioRequest = {
   primaryColor?: unknown;
   ownerName?: unknown;
   ownerEmail?: unknown;
+  planKey?: unknown;
   siteName?: unknown;
   address?: unknown;
   spaceName?: unknown;
@@ -107,6 +108,7 @@ const handler = {
     const primaryColor = (stringValue(payload.primaryColor) || "#FF0A8A").toUpperCase();
     const ownerName = stringValue(payload.ownerName);
     const ownerEmail = stringValue(payload.ownerEmail).toLowerCase();
+    const planKey = (stringValue(payload.planKey) || "all_access").toLowerCase();
     const siteName = stringValue(payload.siteName) || "Principal";
     const address = stringValue(payload.address);
     const spaceName = stringValue(payload.spaceName) || "Sala principal";
@@ -116,6 +118,8 @@ const handler = {
       !studioName ||
       !ownerName ||
       !ownerEmail ||
+      !planKey ||
+      !/^[a-z][a-z0-9_]*$/.test(planKey) ||
       !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(ownerEmail) ||
       !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(studioSlug) ||
       !/^#[0-9A-F]{6}$/.test(primaryColor) ||
@@ -181,7 +185,7 @@ const handler = {
       }
 
       const { data: provisioned, error: provisionError } = await adminClient.rpc(
-        "service_provision_studio_v2",
+        "service_provision_studio_v3",
         {
           p_name: studioName,
           p_slug: studioSlug,
@@ -196,6 +200,7 @@ const handler = {
           p_site_name: siteName,
           p_address: address || null,
           p_space_name: spaceName,
+          p_plan_key: planKey,
         },
       );
 
@@ -206,6 +211,12 @@ const handler = {
 
         if (provisionError.message.includes("studio_slug_exists")) {
           return jsonResponse({ error: "studio_slug_exists" }, 409);
+        }
+        if (
+          provisionError.message.includes("saas_plan_invalid") ||
+          provisionError.message.includes("saas_plan_required")
+        ) {
+          return jsonResponse({ error: "saas_plan_invalid" }, 400);
         }
 
         return jsonResponse({ error: "studio_provision_failed" }, 500);
