@@ -1403,6 +1403,25 @@ export default async function IntelligencePage({
     });
   }
 
+  if (collectionOverdueAmount === 0 && collectionDueTodayAmount > 0) {
+    decisions.push({
+      key: "collections-due-today",
+      priority: 1,
+      tone: "warning",
+      title:
+        "Cobrar " +
+        money(collectionDueTodayAmount, studio.currency) +
+        " hoy",
+      evidence:
+        collectionDueTodayRows.length +
+        (collectionDueTodayRows.length === 1
+          ? " promesa de pago vence hoy."
+          : " promesas de pago vencen hoy."),
+      action: "Confirmar el pago hoy y registrar el ingreso con su fecha efectiva real.",
+      href: viewHref("dinero", days),
+    });
+  }
+
   if (preventiveRiskStudents.length > 0) {
     decisions.push({
       key: "retention-preventive",
@@ -1417,6 +1436,22 @@ export default async function IntelligencePage({
       evidence:
         "Vencen en ≤7 días y además no tienen próxima reserva y/o llevan 14 días sin asistir.",
       action: "Abrir Retención, priorizar las que vencen primero y recuperar su próxima reserva.",
+      href: viewHref("retencion", days),
+    });
+  }
+
+  if (preventiveRiskStudents.length === 0 && riskStudents.length > 0) {
+    decisions.push({
+      key: "retention-recovery",
+      priority: 2,
+      tone: "warning",
+      title:
+        "Recuperar " +
+        riskStudents.length +
+        (riskStudents.length === 1 ? " paquete vencido" : " paquetes vencidos"),
+      evidence:
+        "Llevan entre 7 y 14 días desde vencimiento sin una nueva compra.",
+      action: "Contactar primero a las alumnas con vencimiento más reciente y medir renovación posterior.",
       href: viewHref("retencion", days),
     });
   }
@@ -1644,105 +1679,22 @@ export default async function IntelligencePage({
           <div className="intel-two-column">
             <div className="intel-stack">
               <Section
-                title="🚨 Requiere atención"
-                description="Sólo aparecen señales que justifican una acción concreta."
+                title="🧭 Centro de decisiones"
+                description="Prioriza sólo señales con evidencia suficiente. Cada tarjeta explica qué pasó y qué hacer."
               >
-                <div className="intel-insight-list">
-                  {preventiveRiskStudents.length ? (
-                    <Insight
-                      tone="danger"
-                      title={"🚨 " + preventiveRiskStudents.length + " alumnas en riesgo preventivo"}
-                      body="Su paquete vence en ≤7 días y además no tienen próxima reserva y/o llevan 14 días sin asistir."
-                      href={viewHref("retencion", days)}
-                    />
-                  ) : riskStudents.length ? (
-                    <Insight
-                      tone="warning"
-                      title={"⚠️ " + riskStudents.length + " paquetes ya vencieron"}
-                      body="Llevan entre 7 y 14 días sin una nueva compra. La intervención ya es de recuperación."
-                      href={viewHref("retencion", days)}
-                    />
+                <div className="intel-decision-list">
+                  {topDecisions.length ? (
+                    topDecisions.map((decision) => (
+                      <DecisionCard key={decision.key} decision={decision} />
+                    ))
                   ) : (
-                    <Insight
-                      tone="positive"
-                      title="✓ Sin señales críticas de retención"
-                      body="No detectamos alumnas próximas a vencer con señales de desconexión."
-                    />
+                    <div className="intel-decision-empty">
+                      <strong>✓ Sin decisiones críticas detectadas</strong>
+                      <p>
+                        Las señales con muestra suficiente están dentro de los umbrales operativos.
+                      </p>
+                    </div>
                   )}
-                  {highestCancellation && highestCancellation.cancellation >= 15 ? (
-                    <Insight
-                      tone="warning"
-                      title={"⚠️ " + highestCancellation.name}
-                      body={
-                        "Es la clase con mayor cancelación del periodo: " +
-                        pct(highestCancellation.cancellation) +
-                        "."
-                      }
-                      href={viewHref("clases", days)}
-                    />
-                  ) : null}
-                  {collectionOverdueAmount > 0 ? (
-                    <Insight
-                      tone="danger"
-                      title="💳 Cobranza vencida"
-                      body={
-                        money(collectionOverdueAmount, studio.currency) +
-                        " están vencidos en " +
-                        collectionOverdueRows.length +
-                        " promesas de pago."
-                      }
-                      href={viewHref("dinero", days)}
-                    />
-                  ) : collectionDueTodayAmount > 0 ? (
-                    <Insight
-                      tone="warning"
-                      title="⏰ Cobranza que vence hoy"
-                      body={money(collectionDueTodayAmount, studio.currency) + " deben cobrarse hoy."}
-                      href={viewHref("dinero", days)}
-                    />
-                  ) : null}
-                  {currentNoShowEvents.length > 0 ? (
-                    <Insight
-                      tone={showRate < previousShowRate ? "danger" : "warning"}
-                      title={"👻 " + currentNoShowEvents.length + " no show en el periodo"}
-                      body={
-                        noShowRecovery.recovered +
-                        " de " +
-                        noShowRecovery.eligible +
-                        " personas volvieron a reservar después."
-                      }
-                      href={viewHref("conversion", days)}
-                    />
-                  ) : null}
-                  {previousConversationCohort.contacts >= 3 &&
-                  currentConversationCohort.contacts >= 3 &&
-                  currentConversationCohort.conversationToBookingRate + 5 <
-                    previousConversationCohort.conversationToBookingRate ? (
-                    <Insight
-                      tone="danger"
-                      title="📉 Cayó conversación → reserva"
-                      body={
-                        "Bajó " +
-                        (
-                          previousConversationCohort.conversationToBookingRate -
-                          currentConversationCohort.conversationToBookingRate
-                        ).toFixed(1) +
-                        " pp frente al periodo anterior. Revisa origen, horarios y seguimiento."
-                      }
-                      href={viewHref("conversion", days)}
-                    />
-                  ) : null}
-                  {missingCancellationReasonCount > 0 ? (
-                    <Insight
-                      tone="warning"
-                      title="🧩 Cancelaciones sin motivo"
-                      body={
-                        missingCancellationReasonCount +
-                        " cancelaciones no tienen una causa útil para análisis."
-                      }
-                      href={viewHref("conversion", days)}
-                    />
-                  ) : null}
                 </div>
               </Section>
 
