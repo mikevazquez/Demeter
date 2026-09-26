@@ -64,6 +64,7 @@ const items: MoreItem[] = [
     title: "Integraciones",
     description: "Conecta Studio Flow con Asistian y otros servicios externos.",
     href: "/admin/integraciones/asistian",
+    capability: CAPABILITIES.INTEGRATIONS_READ,
     ownerOnly: true,
   },
   {
@@ -77,8 +78,8 @@ const items: MoreItem[] = [
 export default async function MorePage() {
   const ctx = await getAdminContext();
   const visibleItems = items.filter((item) => {
-    if (item.ownerOnly) return ctx.membership.role === "owner";
-    return item.capability ? ctx.can(item.capability) : false;
+    if (item.ownerOnly && ctx.membership.role !== "owner") return false;
+    return item.capability ? ctx.can(item.capability) : true;
   });
 
   return (

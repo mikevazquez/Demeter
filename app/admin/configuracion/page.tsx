@@ -123,17 +123,19 @@ export default async function ConfigurationPage({
         phoneCountryCallingCode={ctx.studio.phone_country_calling_code}
       />
 
-      <section className="panel">
-        <p className="eyebrow">INTEGRACIONES</p>
-        <h2>Asistian</h2>
-        <p>
-          Configura y prueba los webhooks firmados que conectan Studio Flow con las automatizaciones
-          de WhatsApp en Asistian.
-        </p>
-        <Link className="primary-button" href="/admin/integraciones/asistian">
-          Configurar Asistian
-        </Link>
-      </section>
+      {ctx.can(CAPABILITIES.INTEGRATIONS_READ) ? (
+        <section className="panel">
+          <p className="eyebrow">INTEGRACIONES</p>
+          <h2>Asistian</h2>
+          <p>
+            Configura y prueba los webhooks firmados que conectan Studio Flow con las automatizaciones
+            de WhatsApp en Asistian.
+          </p>
+          <Link className="primary-button" href="/admin/integraciones/asistian">
+            Configurar Asistian
+          </Link>
+        </section>
+      ) : null}
 
       {ctx.hasModule(STUDIO_MODULES.RESOURCES) ? (
         <section className="panel">
