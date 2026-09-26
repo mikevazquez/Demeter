@@ -457,8 +457,8 @@ export default async function StudentHomePage({
               {activeEvaluationInvitation.window_start && activeEvaluationInvitation.window_end ? (
                 <p className="mt-1 text-[11px] text-zinc-500">
                   Disponible del{" "}
-                  {formatDate(activeEvaluationInvitation.window_start, studio.timezone)} al{" "}
-                  {formatDate(activeEvaluationInvitation.window_end, studio.timezone)}
+                  {formatDate(activeEvaluationInvitation.window_start, studio.timezone, studio.locale)} al{" "}
+                  {formatDate(activeEvaluationInvitation.window_end, studio.timezone, studio.locale)}
                 </p>
               ) : null}
             </div>
@@ -656,7 +656,7 @@ export default async function StudentHomePage({
               <strong
                 className={`ml-2 text-sm ${expiresSoon ? "text-amber-200" : "text-zinc-300"}`}
               >
-                {formatDate(activePackage.expires_on, studio.timezone)}
+                {formatDate(activePackage.expires_on, studio.timezone, studio.locale)}
               </strong>
             </div>
           </div>
@@ -747,7 +747,7 @@ export default async function StudentHomePage({
                 </span>
               </div>
               <p className="mt-1 text-xs text-zinc-300">
-                {formatDateTime(nextClass.starts_at, studio.timezone)}
+                {formatDateTime(nextClass.starts_at, studio.timezone, studio.locale)}
               </p>
               <p className="mt-1 truncate text-[11px] text-zinc-500">
                 {[nextClass.space, nextClass.coach].filter(Boolean).join(" · ") ||
