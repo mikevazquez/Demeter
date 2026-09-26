@@ -404,7 +404,7 @@ a.intel-data-row:hover {
 }
 
 .intel-class-grid {
-  grid-template-columns: minmax(180px, 1.6fr) 0.7fr 0.7fr 0.7fr;
+  grid-template-columns: minmax(220px, 1.8fr) 0.65fr 0.65fr 0.65fr 0.65fr;
 }
 
 .intel-risk-list {
