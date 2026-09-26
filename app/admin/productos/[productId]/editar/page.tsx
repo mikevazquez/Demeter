@@ -68,6 +68,7 @@ export default async function EditProductPage({
           initialCreditLimit={product.credit_limit}
           initialUnlimited={product.unlimited}
           selectedDisciplineIds={selectedDisciplineIds}
+          currency={ctx.studio.currency}
         />
 
         <label className="block text-sm text-zinc-300">
