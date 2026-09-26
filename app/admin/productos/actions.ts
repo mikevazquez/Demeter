@@ -102,7 +102,7 @@ export async function createProduct(formData: FormData) {
       product_type: values.productType,
       package_term: values.packageTerm,
       price_minor: values.priceMinor,
-      currency: "MXN",
+      currency: ctx.studio.currency,
       credit_limit: values.creditLimit,
       validity_days: values.validityDays,
       unlimited: values.unlimited,
