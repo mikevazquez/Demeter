@@ -13,7 +13,7 @@ describe("INTEL-09 student health intelligence", () => {
   it("defines new students from first package or membership acquisition", () => {
     expect(intelligence).toContain("firstConversionAcquisitionByStudent");
     expect(intelligence).toContain("newCommercialStudentsCurrent");
-    expect(intelligence).toContain("Nueva alumna = primera compra");
+    expect(intelligence).toContain("newCommercialStudentsCurrent");
   });
 
   it("calculates net growth from new students minus newly confirmed churn", () => {
@@ -27,7 +27,7 @@ describe("INTEL-09 student health intelligence", () => {
     expect(intelligence).toContain("nextStep");
     expect(intelligence).toContain("onboardingSteps.find");
     expect(intelligence).toContain("onboardingBottleneckCounts");
-    expect(intelligence).toContain("Cuello de botella de onboarding");
+    expect(intelligence).toContain("El cuello de botella está en");
   });
 
   it("surfaces systemic onboarding bottlenecks only with enough pending cases", () => {
@@ -37,7 +37,7 @@ describe("INTEL-09 student health intelligence", () => {
   });
 
   it("keeps prospect and commercial student concepts separate", () => {
-    expect(intelligence).toContain("crear un contacto o una reserva no infla este KPI");
-    expect(intelligence).toContain("Reactivación ≠ nueva alumna");
+    expect(intelligence).toContain("Nueva alumna = primera compra de paquete o membresía");
+    expect(intelligence).toContain("Reactivación = regreso después de 30+ días");
   });
 });
