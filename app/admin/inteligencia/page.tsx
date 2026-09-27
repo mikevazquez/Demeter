@@ -967,6 +967,37 @@ export default async function IntelligencePage({
     0,
   );
 
+  const moneyDecisionTitle =
+    collectionOverdueAmount > 0
+      ? "Hay cobranza vencida"
+      : collectionDueTodayAmount > 0
+        ? "Hay cobros que vencen hoy"
+        : previousRevenue > 0 && currentRevenue < previousRevenue * 0.85
+          ? "Los ingresos cobrados bajaron"
+          : "No hay una alerta crítica de dinero";
+
+  const moneyDecisionBody =
+    collectionOverdueAmount > 0
+      ? money(collectionOverdueAmount, studio.currency) +
+        " ya pasaron su promesa de pago."
+      : collectionDueTodayAmount > 0
+        ? money(collectionDueTodayAmount, studio.currency) +
+          " tienen promesa de pago para hoy."
+        : previousRevenue > 0 && currentRevenue < previousRevenue * 0.85
+          ? "Los cobros del periodo están " +
+            Math.abs(((currentRevenue - previousRevenue) / previousRevenue) * 100).toFixed(0) +
+            "% por debajo del periodo anterior."
+          : "Cobranza e ingresos no muestran una desviación que requiera una acción prioritaria.";
+
+  const moneyDecisionAction =
+    collectionOverdueAmount > 0
+      ? "Contactar primero los saldos vencidos y registrar el pago con su fecha efectiva real."
+      : collectionDueTodayAmount > 0
+        ? "Confirmar los pagos de hoy antes de que pasen a vencidos."
+        : previousRevenue > 0 && currentRevenue < previousRevenue * 0.85
+          ? "Separar si la baja viene de menos ventas, menor ticket o pagos todavía pendientes antes de lanzar una promoción."
+          : "Mantener cobranza y seguimiento; no intervenir por variaciones pequeñas.";
+
   function activeCommercialStudentCount(atDate: string) {
     const studentIds = new Set<string>();
     for (const item of conversionAcquisitions) {
@@ -3220,143 +3251,65 @@ export default async function IntelligencePage({
 
       {view === "dinero" ? (
         <>
-          <section className="intel-kpi-grid">
-            <MetricCard
-              label="Ingresos cobrados"
-              value={money(currentRevenue, studio.currency)}
-              delta={deltaText(currentRevenue, previousRevenue)}
-              tone={currentRevenue >= previousRevenue ? "positive" : "danger"}
-            />
-            <MetricCard
-              label="Cartera pendiente"
-              value={money(collectionPending, studio.currency)}
-              delta={
-                collectionOpenRows.length > 0
-                  ? collectionOpenRows.length + " saldos abiertos"
-                  : "Sin saldos pendientes"
-              }
-              tone={collectionPending > 0 ? "warning" : "positive"}
-            />
-            <MetricCard
-              label="Ticket promedio vendido"
-              value={money(ticketAverage, studio.currency)}
-              delta={deltaText(ticketAverage, previousTicketAverage)}
-              tone="neutral"
-            />
-            <MetricCard
-              label="Cobranza vencida"
-              value={money(collectionOverdueAmount, studio.currency)}
-              delta={
-                collectionOverdueRows.length > 0
-                  ? collectionOverdueRows.length + " compromisos vencidos"
-                  : "Sin vencidos"
-              }
-              tone={collectionOverdueAmount > 0 ? "danger" : "positive"}
-            />
-          </section>
-
-          <div className="intel-two-column">
-            <div className="intel-stack">
-              <Section title="💰 Ingresos cobrados" description="Cobros netos por día.">
-                <div className="intel-bars">
-                  {periodBuckets.slice(-14).map((item) => (
-                    <BarRow
-                      key={item.key}
-                      label={item.label}
-                      value={Math.max(item.amount, 0)}
-                      max={maxDailyRevenue}
-                      display={money(item.amount, studio.currency)}
-                    />
-                  ))}
+          <div className="intel-decision-layout">
+            <Section
+              title="💵 Dinero del periodo"
+              description="Cobros efectivos y saldos que todavía necesitan seguimiento."
+            >
+              <div className="intel-finance-strip">
+                <div>
+                  <small>Ingresos cobrados</small>
+                  <strong>{money(currentRevenue, studio.currency)}</strong>
+                  <span>{deltaText(currentRevenue, previousRevenue)}</span>
                 </div>
-              </Section>
-
-              <Section title="Ventas recientes">
-                <div className="intel-data-table">
-                  <div className="intel-data-head intel-sales-grid">
-                    <span>Folio</span>
-                    <span>Alumna</span>
-                    <span>Total</span>
-                  </div>
-                  {recentSales.map((sale) => {
-                    const student = students.find((item) => item.id === sale.student_id);
-                    return (
-                      <Link
-                        href={"/admin/ventas/" + sale.id}
-                        className="intel-data-row intel-sales-grid"
-                        key={sale.id}
-                      >
-                        <span>{sale.folio}</span>
-                        <span>{student?.full_name ?? "Alumna"}</span>
-                        <strong>{money(sale.total_minor, sale.currency)}</strong>
-                      </Link>
-                    );
-                  })}
+                <div>
+                  <small>Por cobrar</small>
+                  <strong>{money(collectionPending, studio.currency)}</strong>
+                  <span>{collectionOpenRows.length} saldos abiertos</span>
                 </div>
-              </Section>
-            </div>
-
-            <div className="intel-stack">
-              <Section title="Vendido por producto" description="Importe vendido; puede diferir del efectivo cobrado.">
-                <div className="intel-bars">
-                  {productRows.length ? (
-                    productRows.map((item) => (
-                      <BarRow
-                        key={item.name}
-                        label={item.name}
-                        value={item.amount}
-                        max={productRows[0]?.amount ?? 1}
-                        display={money(item.amount, studio.currency)}
-                        tone="success"
-                      />
-                    ))
-                  ) : (
-                    <p className="intel-empty">No hubo líneas de venta en el periodo.</p>
-                  )}
+                <div>
+                  <small>Vencido</small>
+                  <strong>{money(collectionOverdueAmount, studio.currency)}</strong>
+                  <span>{collectionOverdueRows.length} compromisos vencidos</span>
                 </div>
-              </Section>
+              </div>
+            </Section>
 
-              <Section title="Cobranza">
-                <div className="intel-insight-list">
-                  <Insight
-                    tone={collectionOverdueAmount > 0 ? "danger" : "positive"}
-                    title={
-                      collectionOverdueAmount > 0
-                        ? "🚨 Hay cobranza vencida"
-                        : "✓ Sin promesas vencidas"
-                    }
-                    body={
-                      collectionOverdueAmount > 0
-                        ? money(collectionOverdueAmount, studio.currency) +
-                          " debieron cobrarse antes de hoy."
-                        : "No hay promesas de pago vencidas con saldo abierto."
-                    }
-                    href="/admin/ventas"
-                  />
-                  {collectionDueTodayAmount > 0 ? (
-                    <Insight
-                      tone="warning"
-                      title="⏰ Vence hoy"
-                      body={
-                        money(collectionDueTodayAmount, studio.currency) +
-                        " tienen promesa de pago para hoy."
-                      }
-                      href="/admin/ventas"
-                    />
-                  ) : null}
-                  <Insight
-                    tone={currentRefunds > 0 ? "danger" : "info"}
-                    title="↩ Reembolsos"
-                    body={money(currentRefunds, studio.currency) + " registrados en el periodo."}
-                    href="/admin/ventas"
-                  />
-                </div>
-              </Section>
-
-              <Section
-                title="Saldos de cobranza abiertos"
-                description="Incluye saldos con y sin fecha de promesa; no depende del filtro de 7/30/90 días."
+            <Section
+              title="🧠 Qué está pasando"
+              description="Primero prioriza cobranza; después cambios relevantes en ingresos."
+            >
+              <article
+                className={
+                  "intel-decision-summary " +
+                  (collectionOverdueAmount > 0
+                    ? "is-warning"
+                    : collectionDueTodayAmount > 0 ||
+                        (previousRevenue > 0 && currentRevenue < previousRevenue * 0.85)
+                      ? "is-warning"
+                      : "is-positive")
+                }
               >
+                <strong>{moneyDecisionTitle}</strong>
+                <p>{moneyDecisionBody}</p>
+                <div>
+                  <small>Recomendación</small>
+                  <b>{moneyDecisionAction}</b>
+                </div>
+              </article>
+
+              <div className="intel-context-callout">
+                <small>Ticket promedio vendido</small>
+                <strong>{money(ticketAverage, studio.currency)}</strong>
+                <span>{deltaText(ticketAverage, previousTicketAverage)}</span>
+              </div>
+            </Section>
+          </div>
+
+          <details className="intel-analysis-details">
+            <summary>Ver ventas y cobranza detallada</summary>
+            <div className="intel-analysis-details-body">
+              <Section title="Cobranza abierta">
                 <div className="intel-risk-list">
                   {collectionOpenRows.slice(0, 8).map((sale) => {
                     const student = students.find((item) => item.id === sale.student_id);
@@ -3391,8 +3344,32 @@ export default async function IntelligencePage({
                   ) : null}
                 </div>
               </Section>
+
+              <Section title="Ventas recientes">
+                <div className="intel-data-table">
+                  <div className="intel-data-head intel-sales-grid">
+                    <span>Folio</span>
+                    <span>Alumna</span>
+                    <span>Total</span>
+                  </div>
+                  {recentSales.map((sale) => {
+                    const student = students.find((item) => item.id === sale.student_id);
+                    return (
+                      <Link
+                        href={"/admin/ventas/" + sale.id}
+                        className="intel-data-row intel-sales-grid"
+                        key={sale.id}
+                      >
+                        <span>{sale.folio}</span>
+                        <span>{student?.full_name ?? "Alumna"}</span>
+                        <strong>{money(sale.total_minor, sale.currency)}</strong>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </Section>
             </div>
-          </div>
+          </details>
         </>
       ) : null}
 
