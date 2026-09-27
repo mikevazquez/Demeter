@@ -1978,6 +1978,12 @@ export default async function IntelligencePage({
 
     for (const expired of expiryByStudent.values()) {
       if (!expired.expires_on) continue;
+      const age = daysSince(expired.expires_on, now) ?? 0;
+      if (age < 30) {
+        pendingMaturity += 1;
+        continue;
+      }
+
       const later = (acquisitionsByStudent.get(expired.student_id) ?? [])
         .filter((candidate) => {
           if (candidate.id === expired.id) return false;
@@ -2003,9 +2009,7 @@ export default async function IntelligencePage({
         continue;
       }
 
-      const age = daysSince(expired.expires_on, now) ?? 0;
-      if (age >= 30) churnConfirmed += 1;
-      else pendingMaturity += 1;
+      churnConfirmed += 1;
     }
 
     const expired = expiryByStudent.size;
@@ -2564,7 +2568,8 @@ export default async function IntelligencePage({
         ))}
       </nav>
 
-      {!eventHistoryCoversComparison ? (
+      {(["resumen", "alumnas", "conversion", "marketing", "clases", "retencion"] as ViewKey[]).includes(view) &&
+      !eventHistoryCoversComparison ? (
         <div className="intel-source-note">
           Cobertura histórica limitada:{" "}
           {eventCoverageStartLabel
