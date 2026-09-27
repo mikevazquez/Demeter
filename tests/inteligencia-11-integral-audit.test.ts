@@ -38,6 +38,13 @@ describe("INTEL-11 integral consistency audit", () => {
     expect(intelligence).toContain("shiftDateKey(todayDate, -(days - 1))");
   });
 
+  it("excludes explicit UAT domain events from intelligence metrics", () => {
+    expect(intelligence).toContain("isSyntheticDomainEvent");
+    expect(intelligence).toContain('eventPayloadText(event, "uat_case")');
+    expect(intelligence).toContain('source?.startsWith("uat_")');
+    expect(intelligence).toContain("syntheticDomainEventCount");
+  });
+
   it("never infers immutable event history before coverage starts", () => {
     expect(intelligence).toContain("earliestDomainEventTime");
     expect(intelligence).toContain("eventHistoryCoversCurrentPeriod");
