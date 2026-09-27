@@ -55,7 +55,44 @@ Motivo: existen propuestas históricas distintas y no hay importes Core/Growth/P
 
 Cuando se aprueben, crear precios recurrentes en Stripe Sandbox y registrar sus `provider_product_id` / `provider_price_id` en `saas_plan_prices`.
 
-## Integración existente en Sandbox
+## Stripe Sandbox · objetos de integración
+
+### Webhook
+
+- Stripe Webhook Endpoint ID: `we_1UK8EN6zvrymwOJvdffqS0Gr`
+- Destino: `https://hedouonyhynuvwbckdlg.supabase.co/functions/v1/saas-stripe-webhook`
+- API version: `2026-08-26.dahlia`
+- Estado: enabled
+- Eventos habilitados:
+  - `checkout.session.completed`
+  - `checkout.session.expired`
+  - `customer.subscription.created`
+  - `customer.subscription.updated`
+  - `customer.subscription.deleted`
+  - `customer.subscription.paused`
+  - `customer.subscription.resumed`
+  - `customer.subscription.trial_will_end`
+  - `invoice.paid`
+  - `invoice.payment_failed`
+  - `invoice.payment_action_required`
+
+El signing secret fue generado por Stripe, pero **no se registra en Git ni en esta documentación**. Debe cargarse exclusivamente como secreto de Supabase Sandbox.
+
+### Customer Portal
+
+- Stripe Billing Portal Configuration ID: `bpc_1UK8Ej6zvrymwOJvydvJmLMx`
+- Nombre: `Studio Flow Sandbox`
+- Estado: active / default
+- Retorno: preview de `/admin/suscripcion`
+- Permite:
+  - actualizar nombre, correo, dirección, teléfono y tax ID;
+  - actualizar método de pago;
+  - consultar historial de facturación;
+  - cancelar al final del periodo;
+  - capturar motivo de cancelación.
+- Cambio de plan desde Portal: desactivado hasta que existan Prices oficiales Core/Growth/Pro.
+
+## Integración existente en Supabase Sandbox
 
 Ya están desarrollados y desplegados en Supabase Sandbox:
 
@@ -83,10 +120,13 @@ El motor de billing contempla:
 4. Configurar `STRIPE_SECRET_KEY` del Sandbox en Supabase Sandbox.
 5. Configurar `STRIPE_WEBHOOK_SIGNING_SECRET`.
 6. Configurar `SAAS_BILLING_RETURN_ORIGINS` con el origen permitido de Preview.
-7. Crear/configurar el endpoint webhook de Stripe Sandbox.
-8. Ejecutar Checkout real de prueba.
-9. Validar pago exitoso, pago fallido, recuperación, cancelación, duplicados y Customer Portal.
-10. Mantener producción intacta hasta aprobación explícita.
+
+> Limitación operativa actual: el conector de Supabase disponible en esta sesión permite operar DB y Edge Functions, pero no expone gestión de secretos de Edge Functions. No se debe sustituir esto por guardar secretos en código o tablas públicas.
+7. ~~Crear/configurar el endpoint webhook de Stripe Sandbox.~~ Completado.
+8. ~~Crear configuración base de Customer Portal.~~ Completado.
+9. Ejecutar Checkout real de prueba.
+10. Validar pago exitoso, pago fallido, recuperación, cancelación, duplicados y Customer Portal.
+11. Mantener producción intacta hasta aprobación explícita.
 
 ## Regla de seguridad
 
