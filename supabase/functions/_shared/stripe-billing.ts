@@ -1,8 +1,6 @@
 import Stripe from "npm:stripe@22.6.2";
 import { createClient, type SupabaseClient, type User } from "npm:@supabase/supabase-js@2";
 
-export const stripe = new Stripe((Deno.env.get("STRIPE_SECRET_KEY") ?? "").trim());
-
 export function jsonResponse(body: Record<string, unknown>, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
@@ -26,6 +24,11 @@ export function isUuid(value: string | null) {
 function requiredEnv(name: string) {
   const value = Deno.env.get(name)?.trim();
   return value || null;
+}
+
+export function getStripeClient() {
+  const secretKey = requiredEnv("STRIPE_SECRET_KEY");
+  return secretKey ? new Stripe(secretKey) : null;
 }
 
 export function getAdminClient() {
