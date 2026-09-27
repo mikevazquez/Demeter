@@ -190,10 +190,6 @@ Deno.serve(async (request) => {
         .update({
           billing_provider: "stripe",
           provider_customer_id: customerId,
-          metadata: {
-            billing_source: "stripe_checkout",
-            billing_reason: "Stripe customer created for subscription checkout",
-          },
           updated_at: new Date().toISOString(),
         })
         .eq("studio_id", owner.studio.id);
