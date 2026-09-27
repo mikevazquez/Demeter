@@ -30,10 +30,15 @@ describe("INTEL-06 marketing attribution", () => {
     expect(intelligence).toContain("marketingAttributionKey");
   });
 
-  it("attributes downstream conversion and collected revenue only after the touch", () => {
-    expect(intelligence).toContain("collectedRevenueAfter");
-    expect(intelligence).toContain("firstConversionAcquisitionByStudent.get(touch.studentId)");
-    expect(intelligence).toContain("new Date(conversion.created_at).getTime() >= startTime");
+  it("attributes outcomes inside the same fixed maturity window", () => {
+    expect(intelligence).toContain("collectedRevenueWithinConversionWindow");
+    expect(intelligence).toContain("windowEndTime");
+    expect(intelligence).toContain(
+      "firstConversionAcquisitionByStudent.get(touch.studentId)",
+    );
+    expect(intelligence).toContain(
+      "conversionTime >= startTime && conversionTime <= windowEndTime",
+    );
     expect(intelligence).toContain('payment.kind === "refund"');
   });
 
@@ -56,6 +61,8 @@ describe("INTEL-06 marketing attribution", () => {
     expect(intelligence).toContain('{ key: "marketing", label: "Marketing" }');
     expect(intelligence).toContain('{view === "marketing" ? (');
     expect(intelligence).toContain('title="📣 Embudo de marketing"');
-    expect(intelligence).toContain('title="💵 Economía atribuida"');
+    expect(intelligence).toContain(
+      'title="💵 Economía atribuida · cohorte madura"',
+    );
   });
 });
