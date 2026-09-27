@@ -191,6 +191,41 @@ export default async function AsistianIntegrationTestPage({
       <section className="panel">
         <div className="panel-heading">
           <div>
+            <p className="eyebrow">ASISTIAN → STUDIO FLOW · INTELIGENCIA</p>
+            <h2>Capturar conversaciones entrantes</h2>
+            <p className="text-sm text-zinc-400">
+              Usa la misma URL receptora y el mismo secreto. En Asistian crea una automatización
+              para mensajes o conversaciones entrantes y envía el evento
+              <strong> conversation_activity</strong>. Studio Flow agrupa automáticamente la
+              actividad del mismo contacto en ventanas de 24 horas.
+            </p>
+          </div>
+        </div>
+
+        <div className="compact-form">
+          <label>
+            URL receptora
+            <input type="text" readOnly value={receiverUrl} />
+          </label>
+          <div>
+            <p className="text-sm text-zinc-400">
+              Payload mínimo recomendado. Si Asistian entrega campaña/origen, inclúyelos para medir
+              qué fuente sí genera reservas y alumnas.
+            </p>
+            <pre style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>
+              {"{\\n  \"event\": \"conversation_activity\",\\n  \"event_id\": \"{{event_id}}\",\\n  \"timestamp\": \"{{timestamp}}\",\\n  \"data\": {\\n    \"contact\": {\\n      \"id\": \"{{contact.id}}\",\\n      \"name\": \"{{contact.name}}\",\\n      \"phone\": \"{{contact.phone}}\"\\n    },\\n    \"channel\": \"{{channel}}\",\\n    \"occurred_at\": \"{{timestamp}}\",\\n    \"source\": \"{{source}}\",\\n    \"campaign\": \"{{campaign}}\"\\n  }\\n}"}
+            </pre>
+          </div>
+          <p className="text-sm text-zinc-400">
+            No crea una alumna al recibir un mensaje. La conversación queda como prospecto anónimo
+            y se enlaza automáticamente cuando ese mismo contacto reserve en Asistian.
+          </p>
+        </div>
+      </section>
+
+      <section className="panel">
+        <div className="panel-heading">
+          <div>
             <p className="eyebrow">ASISTIAN → STUDIO FLOW · SERVICIOS</p>
             <h2>Mapeo estable de actividades</h2>
             <p className="text-sm text-zinc-400">
