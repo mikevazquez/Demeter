@@ -3443,7 +3443,7 @@ export default async function IntelligencePage({
                       currentConversationCohort.conversationToBookingRate,
                       previousConversationCohort.conversationToBookingRate,
                     )
-                  : "Cohorte/comparación aún no madura"
+                  : "Muestra o cobertura histórica insuficiente"
               }
               tone={
                 !conversationCohortCurrentCovered
@@ -3468,7 +3468,7 @@ export default async function IntelligencePage({
                       currentConversationCohort.bookingToAttendanceRate,
                       previousConversationCohort.bookingToAttendanceRate,
                     )
-                  : "Cohorte/comparación aún no madura"
+                  : "Muestra o cobertura histórica insuficiente"
               }
               tone={
                 !conversationCohortCurrentCovered
@@ -3493,7 +3493,7 @@ export default async function IntelligencePage({
                       currentConversationCohort.attendanceToConversionRate,
                       previousConversationCohort.attendanceToConversionRate,
                     )
-                  : "Cohorte/comparación aún no madura"
+                  : "Muestra o cobertura histórica insuficiente"
               }
               tone={
                 !conversationCohortCurrentCovered
@@ -3537,20 +3537,34 @@ export default async function IntelligencePage({
                   />
                   <BarRow
                     label="Reservaron"
-                    value={currentConversationCohort.booked}
+                    value={
+                      conversationCohortCurrentCovered
+                        ? currentConversationCohort.booked
+                        : 0
+                    }
                     max={Math.max(currentConversationCohort.contacts, 1)}
                     display={
-                      currentConversationCohort.booked +
-                      " · " +
-                      pct(currentConversationCohort.conversationToBookingRate)
+                      conversationCohortCurrentCovered
+                        ? currentConversationCohort.booked +
+                          " · " +
+                          pct(currentConversationCohort.conversationToBookingRate)
+                        : "—"
                     }
                     tone="accent"
                   />
                   <BarRow
                     label="Asistieron"
-                    value={currentConversationCohort.attended}
+                    value={
+                      conversationCohortCurrentCovered
+                        ? currentConversationCohort.attended
+                        : 0
+                    }
                     max={Math.max(currentConversationCohort.contacts, 1)}
-                    display={String(currentConversationCohort.attended)}
+                    display={
+                      conversationCohortCurrentCovered
+                        ? String(currentConversationCohort.attended)
+                        : "—"
+                    }
                     tone="success"
                   />
                   <BarRow
@@ -3566,15 +3580,26 @@ export default async function IntelligencePage({
                   />
                 </div>
                 <div className="intel-source-note">
-                  {currentConversationCohortAll.conversations > 0
+                  {currentConversationCohort.contacts > 0
                     ? currentConversationCohort.linked +
                       "/" +
                       currentConversationCohort.contacts +
-                      " contactos maduros ya están enlazados con una alumna/prospecto de Studio Flow." +
+                      " contactos de la cohorte están enlazados." +
+                      (!conversationHistoryCoversCurrentCohort
+                        ? " La cobertura histórica de conversaciones no alcanza el inicio de la cohorte."
+                        : !eventHistoryCoversCurrentCohort
+                          ? " Reservas y asistencias aparecen como no disponibles porque el historial de eventos no cubre toda la cohorte."
+                          : "") +
                       (pendingConversationContacts > 0
-                        ? " " + pendingConversationContacts + " contactos recientes siguen madurando y no entran en comparaciones."
+                        ? " " +
+                          pendingConversationContacts +
+                          " primeros contactos de los últimos " +
+                          CONVERSION_MATURITY_DAYS +
+                          " días siguen madurando."
                         : "")
-                    : "Esperando el primer evento conversation_activity desde Asistian. El receptor y la cohorte ya están preparados."}
+                    : conversations.length > 0
+                      ? "No hubo primeros contactos dentro de la cohorte madura seleccionada."
+                      : "Esperando el primer evento conversation_activity desde Asistian. El receptor y la cohorte ya están preparados."}
                 </div>
               </Section>
 
