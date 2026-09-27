@@ -97,10 +97,8 @@ begin
     return jsonb_build_object('ok', false, 'reason_code', 'invalid_input');
   end if;
 
-  if not private.studio_has_module(target_studio_id, 'integrations') then
-    return jsonb_build_object('ok', false, 'reason_code', 'module_disabled');
-  end if;
-
+  -- Production has not yet promoted the SaaS module-entitlement layer.
+  -- Access remains restricted to service_role and the signed Asistian receiver.
   if v_client_id is null and v_phone is null then
     return jsonb_build_object('ok', false, 'reason_code', 'contact_identity_missing');
   end if;
