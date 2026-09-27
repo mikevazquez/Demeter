@@ -481,22 +481,34 @@ export default async function IntelligencePage({
   const currentEnd = now;
   const currentStart = new Date(now.getTime() - days * DAY);
   const previousStart = new Date(currentStart.getTime() - days * DAY);
-  const rangeStartIso = previousStart.toISOString();
+  const cohortLag = CONVERSION_MATURITY_DAYS * DAY;
+  const currentCohortEnd = new Date(currentEnd.getTime() - cohortLag);
+  const currentCohortStart = new Date(currentStart.getTime() - cohortLag);
+  const previousCohortStart = new Date(previousStart.getTime() - cohortLag);
+  const rangeStartIso = previousCohortStart.toISOString();
   const behaviorStart = new Date(now.getTime() - 42 * DAY);
   const eventStart = new Date(
-    Math.min(previousStart.getTime(), behaviorStart.getTime()),
+    Math.min(previousCohortStart.getTime(), behaviorStart.getTime()),
   );
   const eventStartIso = eventStart.toISOString();
-  const currentStartIso = currentStart.toISOString();
   const timeZone = studio.timezone ?? "America/Mexico_City";
   const todayDate = dateKeyInTimeZone(now, timeZone);
   const currentStartDate = shiftDateKey(todayDate, -(days - 1));
   const previousStartDate = shiftDateKey(currentStartDate, -days);
-  const upcomingEnd = new Date(now.getTime() + 14 * DAY);
-  const cohortMaturityCutoff = new Date(
-    now.getTime() - CONVERSION_MATURITY_DAYS * DAY,
+  const currentCohortStartDate = shiftDateKey(
+    currentStartDate,
+    -CONVERSION_MATURITY_DAYS,
   );
-  const cohortMaturityCutoffDate = isoDateKey(cohortMaturityCutoff);
+  const currentCohortEndDate = shiftDateKey(
+    todayDate,
+    -CONVERSION_MATURITY_DAYS,
+  );
+  const previousCohortStartDate = shiftDateKey(
+    previousStartDate,
+    -CONVERSION_MATURITY_DAYS,
+  );
+  const previousCohortEndDate = shiftDateKey(currentCohortStartDate, -1);
+  const upcomingEnd = new Date(now.getTime() + 14 * DAY);
 
   const [
     studentsResult,
@@ -536,7 +548,7 @@ export default async function IntelligencePage({
       .select("sale_id,kind,amount_minor,effective_on,created_at")
       .eq("studio_id", studio.id)
       .or(
-        `effective_on.gte.${previousStartDate},and(effective_on.is.null,created_at.gte.${rangeStartIso})`,
+        `effective_on.gte.${previousCohortStartDate},and(effective_on.is.null,created_at.gte.${rangeStartIso})`,
       ),
     supabase
       .from("sale_lines")
@@ -602,7 +614,7 @@ export default async function IntelligencePage({
       .from("studio_expenses")
       .select("id,category,description,vendor,amount_minor,currency,effective_on,notes,marketing_source,marketing_campaign,created_at")
       .eq("studio_id", studio.id)
-      .gte("effective_on", previousStartDate)
+      .gte("effective_on", previousCohortStartDate)
       .lte("effective_on", todayDate)
       .order("effective_on", { ascending: false }),
   ]);
