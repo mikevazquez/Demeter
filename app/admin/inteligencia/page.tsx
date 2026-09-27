@@ -1392,20 +1392,30 @@ export default async function IntelligencePage({
     }
   }
 
-  function conversationIdentity(row: ConversationRow) {
-    if (row.student_id) return "student:" + row.student_id;
+  function resolvedConversationStudentId(row: ConversationRow) {
+    if (row.student_id) return row.student_id;
     if (row.provider_contact_id) {
       const linkedStudent = conversationStudentByProviderContact.get(
         row.provider + ":" + row.provider_contact_id,
       );
-      if (linkedStudent) return "student:" + linkedStudent;
-      return row.provider + ":contact:" + row.provider_contact_id;
+      if (linkedStudent) return linkedStudent;
     }
     if (row.contact_phone) {
       const linkedStudent = conversationStudentByPhone.get(
         row.provider + ":" + row.contact_phone,
       );
-      if (linkedStudent) return "student:" + linkedStudent;
+      if (linkedStudent) return linkedStudent;
+    }
+    return null;
+  }
+
+  function conversationIdentity(row: ConversationRow) {
+    const linkedStudent = resolvedConversationStudentId(row);
+    if (linkedStudent) return "student:" + linkedStudent;
+    if (row.provider_contact_id) {
+      return row.provider + ":contact:" + row.provider_contact_id;
+    }
+    if (row.contact_phone) {
       return row.provider + ":phone:" + row.contact_phone;
     }
     return row.provider + ":conversation:" + row.id;
@@ -1427,7 +1437,7 @@ export default async function IntelligencePage({
       if (!current) {
         contacts.set(key, {
           startedAt: row.started_at,
-          studentId: row.student_id,
+          studentId: resolvedConversationStudentId(row),
           conversations: 1,
         });
         continue;
@@ -1437,7 +1447,8 @@ export default async function IntelligencePage({
       if (new Date(row.started_at).getTime() < new Date(current.startedAt).getTime()) {
         current.startedAt = row.started_at;
       }
-      current.studentId = current.studentId ?? row.student_id;
+      current.studentId =
+        current.studentId ?? resolvedConversationStudentId(row);
     }
 
     const booked = new Set<string>();
@@ -1619,7 +1630,7 @@ export default async function IntelligencePage({
         touches.set(identity, {
           key: identity,
           startedAt: row.started_at,
-          studentId: row.student_id,
+          studentId: resolvedConversationStudentId(row),
           source: row.source,
           campaign: row.campaign,
         });
