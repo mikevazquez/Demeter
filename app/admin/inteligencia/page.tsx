@@ -4093,8 +4093,15 @@ export default async function IntelligencePage({
                 description="Compara cohortes con la misma ventana temporal y de observación. No se recomienda escalar con muestras pequeñas."
               >
                 <div className="intel-campaign-list">
-                  {currentMarketingRows.length ? (
-                    currentMarketingRows.map((row) => (
+                  {!conversationHistoryCoversCurrentCohort ? (
+                    <div className="intel-decision-empty">
+                      <strong>Cobertura histórica insuficiente</strong>
+                      <p>
+                        No comparamos campañas hasta que el historial de conversaciones cubra el inicio completo de la cohorte.
+                      </p>
+                    </div>
+                  ) : currentMarketingDecisionRows.length ? (
+                    currentMarketingDecisionRows.map((row) => (
                       <article className="intel-campaign-card" key={row.key}>
                         <div className="intel-campaign-heading">
                           <div>
@@ -4110,7 +4117,11 @@ export default async function IntelligencePage({
                         <div className="intel-campaign-metrics">
                           <div>
                             <small>Reserva</small>
-                            <b>{pct(row.bookingRate)}</b>
+                            <b>
+                              {eventHistoryCoversCurrentCohort
+                                ? pct(row.bookingRate)
+                                : "—"}
+                            </b>
                           </div>
                           <div>
                             <small>Alumna</small>
@@ -4158,7 +4169,7 @@ export default async function IntelligencePage({
             </div>
 
             <div className="intel-stack">
-              <Section title="💵 Economía atribuida">
+              <Section title="💵 Economía atribuida · cohorte madura">
                 <div className="intel-rule-list">
                   <div>
                     <span>Gasto publicitario</span>
@@ -4166,28 +4177,41 @@ export default async function IntelligencePage({
                   </div>
                   <div>
                     <span>Cobros atribuidos</span>
-                    <strong>{money(currentMarketingRevenue, studio.currency)}</strong>
+                    <strong>
+                      {conversationHistoryCoversCurrentCohort
+                        ? money(currentMarketingRevenue, studio.currency)
+                        : "—"}
+                    </strong>
                   </div>
                   <div>
                     <span>Costo por contacto</span>
                     <strong>
-                      {currentMarketingContacts > 0
-                        ? money(currentMarketingSpend / currentMarketingContacts, studio.currency)
+                      {conversationHistoryCoversCurrentCohort &&
+                      currentMarketingContacts > 0
+                        ? money(
+                            currentMarketingSpend / currentMarketingContacts,
+                            studio.currency,
+                          )
                         : "—"}
                     </strong>
                   </div>
                   <div>
                     <span>Costo por alumna</span>
                     <strong>
-                      {currentMarketingConverted > 0
-                        ? money(currentMarketingSpend / currentMarketingConverted, studio.currency)
+                      {conversationHistoryCoversCurrentCohort &&
+                      currentMarketingConverted > 0
+                        ? money(
+                            currentMarketingSpend / currentMarketingConverted,
+                            studio.currency,
+                          )
                         : "—"}
                     </strong>
                   </div>
                   <div>
                     <span>ROAS atribuido</span>
                     <strong>
-                      {currentMarketingRoas === null
+                      {!conversationHistoryCoversCurrentCohort ||
+                      currentMarketingRoas === null
                         ? "—"
                         : currentMarketingRoas.toFixed(2) + "×"}
                     </strong>
@@ -4196,8 +4220,8 @@ export default async function IntelligencePage({
               </Section>
 
               <Section
-                title="🧩 Calidad de atribución"
-                description="La decisión es tan buena como la identidad y campaña que llegan desde la fuente."
+                title="🧩 Calidad de atribución · periodo actual"
+                description="Esta sección sí observa actividad del periodo seleccionado; no se mezcla con las tasas de la cohorte madura."
               >
                 <div className="intel-insight-list">
                   <Insight
