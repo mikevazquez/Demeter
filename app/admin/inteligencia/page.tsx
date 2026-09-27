@@ -753,10 +753,14 @@ export default async function IntelligencePage({
   );
 
   const currentPayments = payments.filter((item) =>
-    isBetween(paymentEffectiveDateTime(item), currentStart, currentEnd),
+    item.effective_on
+      ? item.effective_on >= currentStartDate && item.effective_on <= todayDate
+      : isBetween(item.created_at, currentStart, currentEnd),
   );
   const previousPayments = payments.filter((item) =>
-    isBetween(paymentEffectiveDateTime(item), previousStart, currentStart),
+    item.effective_on
+      ? item.effective_on >= previousStartDate && item.effective_on < currentStartDate
+      : isBetween(item.created_at, previousStart, currentStart),
   );
 
   function netPayments(rows: PaymentRow[]) {
@@ -1376,9 +1380,40 @@ export default async function IntelligencePage({
       new Date(conversation.started_at).getTime() <= cohortMaturityCutoff.getTime(),
   );
 
+  const conversationStudentByProviderContact = new Map<string, string>();
+  const conversationStudentByPhone = new Map<string, string>();
+  for (const conversation of conversations) {
+    if (!conversation.student_id) continue;
+    if (conversation.provider_contact_id) {
+      conversationStudentByProviderContact.set(
+        conversation.provider + ":" + conversation.provider_contact_id,
+        conversation.student_id,
+      );
+    }
+    if (conversation.contact_phone) {
+      conversationStudentByPhone.set(
+        conversation.provider + ":" + conversation.contact_phone,
+        conversation.student_id,
+      );
+    }
+  }
+
   function conversationIdentity(row: ConversationRow) {
-    if (row.provider_contact_id) return row.provider + ":contact:" + row.provider_contact_id;
-    if (row.contact_phone) return row.provider + ":phone:" + row.contact_phone;
+    if (row.student_id) return "student:" + row.student_id;
+    if (row.provider_contact_id) {
+      const linkedStudent = conversationStudentByProviderContact.get(
+        row.provider + ":" + row.provider_contact_id,
+      );
+      if (linkedStudent) return "student:" + linkedStudent;
+      return row.provider + ":contact:" + row.provider_contact_id;
+    }
+    if (row.contact_phone) {
+      const linkedStudent = conversationStudentByPhone.get(
+        row.provider + ":" + row.contact_phone,
+      );
+      if (linkedStudent) return "student:" + linkedStudent;
+      return row.provider + ":phone:" + row.contact_phone;
+    }
     return row.provider + ":conversation:" + row.id;
   }
 
@@ -1583,13 +1618,7 @@ export default async function IntelligencePage({
     const touches = new Map<string, MarketingTouch>();
 
     for (const row of rows) {
-      const providerIdentity = conversationIdentity(row);
-      const hasProviderIdentity = Boolean(row.provider_contact_id || row.contact_phone);
-      const identity = hasProviderIdentity
-        ? providerIdentity
-        : row.student_id
-          ? "student:" + row.student_id
-          : providerIdentity;
+      const identity = conversationIdentity(row);
       const existing = touches.get(identity);
 
       if (!existing) {
@@ -1733,6 +1762,30 @@ export default async function IntelligencePage({
     currentMatureMarketingTouches,
     currentMatureMarketingExpenses,
   );
+  const currentMarketingDecisionSpend = currentMarketingDecisionRows.reduce(
+    (sum, row) => sum + row.spend,
+    0,
+  );
+  const currentMarketingDecisionRevenue = currentMarketingDecisionRows.reduce(
+    (sum, row) => sum + row.revenue,
+    0,
+  );
+  const currentMarketingDecisionContacts = currentMarketingDecisionRows.reduce(
+    (sum, row) => sum + row.contacts,
+    0,
+  );
+  const currentMarketingDecisionConverted = currentMarketingDecisionRows.reduce(
+    (sum, row) => sum + row.converted,
+    0,
+  );
+  const currentMarketingDecisionConversionRate = safeRate(
+    currentMarketingDecisionConverted,
+    currentMarketingDecisionContacts,
+  );
+  const currentMarketingDecisionRoas =
+    currentMarketingDecisionSpend > 0
+      ? currentMarketingDecisionRevenue / currentMarketingDecisionSpend
+      : null;
   const pendingMarketingContacts = Math.max(
     currentMarketingTouches.length - currentMatureMarketingTouches.length,
     0,
@@ -1771,7 +1824,6 @@ export default async function IntelligencePage({
     currentMarketingRows.find((row) => row.key === "unattributed")?.spend ?? 0;
 
   const currentConversationCohortAll = conversationCohortStats(currentConversations);
-  const previousConversationCohortAll = conversationCohortStats(previousConversations);
   const currentConversationCohort = conversationCohortStats(currentMatureConversations);
   const previousConversationCohort = conversationCohortStats(previousMatureConversations);
   const pendingConversationContacts = Math.max(
@@ -3180,12 +3232,18 @@ export default async function IntelligencePage({
         <>
           <section className="intel-kpi-grid">
             <MetricCard
-              label="Conversaciones"
-              value={String(currentConversationCohort.conversations)}
-              delta={deltaText(
-                currentConversationCohort.conversations,
-                previousConversationCohort.conversations,
-              )}
+              label="Contactos maduros"
+              value={String(currentConversationCohort.contacts)}
+              delta={
+                conversationCohortComparable
+                  ? deltaText(
+                      currentConversationCohort.contacts,
+                      previousConversationCohort.contacts,
+                    )
+                  : pendingConversationContacts > 0
+                    ? pendingConversationContacts + " contactos aún madurando"
+                    : "Comparación no disponible"
+              }
               tone="info"
             />
             <MetricCard
@@ -3195,10 +3253,14 @@ export default async function IntelligencePage({
                   ? pct(currentConversationCohort.conversationToBookingRate)
                   : "—"
               }
-              delta={pointsDelta(
-                currentConversationCohort.conversationToBookingRate,
-                previousConversationCohort.conversationToBookingRate,
-              )}
+              delta={
+                conversationCohortComparable
+                  ? pointsDelta(
+                      currentConversationCohort.conversationToBookingRate,
+                      previousConversationCohort.conversationToBookingRate,
+                    )
+                  : "Cohorte/comparación aún no madura"
+              }
               tone={
                 currentConversationCohort.conversationToBookingRate >=
                 previousConversationCohort.conversationToBookingRate
@@ -3213,10 +3275,14 @@ export default async function IntelligencePage({
                   ? pct(currentConversationCohort.bookingToAttendanceRate)
                   : "—"
               }
-              delta={pointsDelta(
-                currentConversationCohort.bookingToAttendanceRate,
-                previousConversationCohort.bookingToAttendanceRate,
-              )}
+              delta={
+                conversationCohortComparable
+                  ? pointsDelta(
+                      currentConversationCohort.bookingToAttendanceRate,
+                      previousConversationCohort.bookingToAttendanceRate,
+                    )
+                  : "Cohorte/comparación aún no madura"
+              }
               tone={
                 currentConversationCohort.bookingToAttendanceRate >=
                 previousConversationCohort.bookingToAttendanceRate
@@ -3231,10 +3297,14 @@ export default async function IntelligencePage({
                   ? pct(currentConversationCohort.attendanceToConversionRate)
                   : "—"
               }
-              delta={pointsDelta(
-                currentConversationCohort.attendanceToConversionRate,
-                previousConversationCohort.attendanceToConversionRate,
-              )}
+              delta={
+                conversationCohortComparable
+                  ? pointsDelta(
+                      currentConversationCohort.attendanceToConversionRate,
+                      previousConversationCohort.attendanceToConversionRate,
+                    )
+                  : "Cohorte/comparación aún no madura"
+              }
               tone={
                 currentConversationCohort.attendanceToConversionRate >=
                 previousConversationCohort.attendanceToConversionRate
@@ -3313,6 +3383,18 @@ export default async function IntelligencePage({
                 description="Volumen ocurrido en estas fechas. No se presenta como embudo porque las personas pueden venir de cohortes anteriores."
               >
                 <div className="intel-bars">
+                  <BarRow
+                    label="Conversaciones"
+                    value={currentConversationCohortAll.conversations}
+                    max={Math.max(currentConversationCohortAll.conversations, 1)}
+                    display={
+                      currentConversationCohortAll.conversations +
+                      " · " +
+                      currentConversationCohortAll.contacts +
+                      " contactos"
+                    }
+                    tone="info"
+                  />
                   <BarRow
                     label="Intentos de reserva"
                     value={currentBookingEvents.length}
@@ -3585,6 +3667,12 @@ export default async function IntelligencePage({
                     tone="success"
                   />
                 </div>
+                <div className="intel-source-note">
+                  Cohorte madura: prospectos registrados hace al menos {CONVERSION_MATURITY_DAYS} días.
+                  {pendingTrialCohort > 0
+                    ? " " + pendingTrialCohort + " prospectos recientes todavía no entran en estas tasas."
+                    : ""}
+                </div>
               </Section>
             </div>
           </div>
@@ -3607,31 +3695,37 @@ export default async function IntelligencePage({
               tone="info"
             />
             <MetricCard
-              label="Contacto → alumna"
+              label="Contacto → alumna · madura"
               value={
-                currentMarketingContacts > 0
-                  ? pct(currentMarketingConversionRate)
+                currentMarketingDecisionContacts > 0
+                  ? pct(currentMarketingDecisionConversionRate)
                   : "—"
               }
-              delta="Cohorte first-touch al corte"
-              tone={currentMarketingConversionRate > 0 ? "positive" : "neutral"}
-            />
-            <MetricCard
-              label="ROAS atribuido"
-              value={
-                currentMarketingRoas === null
-                  ? "—"
-                  : currentMarketingRoas.toFixed(2) + "×"
-              }
               delta={
-                currentMarketingRoas === null
-                  ? "Falta gasto atribuido"
-                  : "Cobros atribuidos / gasto"
+                pendingMarketingContacts > 0
+                  ? pendingMarketingContacts + " contactos aún madurando"
+                  : "Cohorte ≥" + CONVERSION_MATURITY_DAYS + " días"
               }
               tone={
-                currentMarketingRoas === null
+                currentMarketingDecisionConversionRate > 0 ? "positive" : "neutral"
+              }
+            />
+            <MetricCard
+              label="ROAS atribuido · maduro"
+              value={
+                currentMarketingDecisionRoas === null
+                  ? "—"
+                  : currentMarketingDecisionRoas.toFixed(2) + "×"
+              }
+              delta={
+                currentMarketingDecisionRoas === null
+                  ? "Falta gasto atribuible en cohorte madura"
+                  : "Cobros atribuidos / gasto hasta corte de maduración"
+              }
+              tone={
+                currentMarketingDecisionRoas === null
                   ? "warning"
-                  : currentMarketingRoas >= 1
+                  : currentMarketingDecisionRoas >= 1
                     ? "positive"
                     : "danger"
               }
@@ -3642,7 +3736,7 @@ export default async function IntelligencePage({
             <div className="intel-stack">
               <Section
                 title="📣 Embudo de marketing"
-                description="First-touch histórico por contacto: la cohorte del periodo sólo incluye personas cuyo primer contacto real ocurrió en estas fechas."
+                description="First-touch registrado por contacto: la cohorte del periodo sólo incluye personas cuyo primer contacto disponible ocurrió en estas fechas."
               >
                 <div className="intel-bars">
                   <BarRow
