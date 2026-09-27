@@ -646,6 +646,12 @@ export default async function IntelligencePage({
   const eventHistoryCoversComparison =
     earliestDomainEventTime !== null &&
     earliestDomainEventTime <= previousStart.getTime();
+  const eventHistoryCoversCurrentCohort =
+    earliestDomainEventTime !== null &&
+    earliestDomainEventTime <= currentCohortStart.getTime();
+  const eventHistoryCoversCohortComparison =
+    earliestDomainEventTime !== null &&
+    earliestDomainEventTime <= previousCohortStart.getTime();
   const eventCoverageStartLabel =
     earliestDomainEventTime === null
       ? null
@@ -1409,13 +1415,14 @@ export default async function IntelligencePage({
   const previousConversations = conversations.filter((conversation) =>
     isBetween(conversation.started_at, previousStart, currentStart),
   );
-  const currentMatureConversations = currentConversations.filter(
-    (conversation) =>
-      new Date(conversation.started_at).getTime() <= cohortMaturityCutoff.getTime(),
+  const currentCohortConversations = conversations.filter((conversation) =>
+    isBetween(conversation.started_at, currentCohortStart, currentCohortEnd),
   );
-  const previousMatureConversations = previousConversations.filter(
-    (conversation) =>
-      new Date(conversation.started_at).getTime() <= cohortMaturityCutoff.getTime(),
+  const previousCohortConversations = conversations.filter((conversation) =>
+    isBetween(conversation.started_at, previousCohortStart, currentCohortStart),
+  );
+  const pendingConversationRows = conversations.filter((conversation) =>
+    isBetween(conversation.started_at, currentCohortEnd, currentEnd),
   );
 
   const conversationStudentByProviderContact = new Map<string, string>();
@@ -1873,14 +1880,16 @@ export default async function IntelligencePage({
     currentMarketingRows.find((row) => row.key === "unattributed")?.spend ?? 0;
 
   const currentConversationCohortAll = conversationCohortStats(currentConversations);
-  const currentConversationCohort = conversationCohortStats(currentMatureConversations);
-  const previousConversationCohort = conversationCohortStats(previousMatureConversations);
-  const pendingConversationContacts = Math.max(
-    currentConversationCohortAll.contacts - currentConversationCohort.contacts,
-    0,
+  const currentConversationCohort = conversationCohortStats(
+    currentCohortConversations,
   );
+  const previousConversationCohort = conversationCohortStats(
+    previousCohortConversations,
+  );
+  const pendingConversationContacts =
+    conversationCohortStats(pendingConversationRows).contacts;
   const conversationCohortComparable =
-    eventHistoryCoversComparison &&
+    eventHistoryCoversCohortComparison &&
     currentConversationCohort.contacts >= 3 &&
     previousConversationCohort.contacts >= 3;
 
