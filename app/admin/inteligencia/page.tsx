@@ -1321,6 +1321,7 @@ export default async function IntelligencePage({
   const classAggregate = new Map<
     string,
     {
+      templateId: string;
       name: string;
       capacity: number;
       occupied: number;
@@ -1344,6 +1345,7 @@ export default async function IntelligencePage({
     const lifecycle = sessionLifecycleMap.get(session.id);
     const current =
       classAggregate.get(key) ?? {
+        templateId: key,
         name: template?.name ?? "Clase",
         capacity: 0,
         occupied: 0,
@@ -1389,6 +1391,120 @@ export default async function IntelligencePage({
       noShowRate: safeRate(item.noShow, item.attended + item.noShow),
     }))
     .sort((a, b) => b.peakOccupancy - a.peakOccupancy);
+
+  const previousClassAttendance = new Map<
+    string,
+    { attended: number; capacity: number; sessionCount: number }
+  >();
+  for (const session of previousSessions) {
+    if (session.status === "cancelled") continue;
+    const previous =
+      previousClassAttendance.get(session.template_id) ?? {
+        attended: 0,
+        capacity: 0,
+        sessionCount: 0,
+      };
+    previous.capacity += session.capacity ?? 0;
+    previous.sessionCount += 1;
+    for (const reservation of reservationsBySession.get(session.id) ?? []) {
+      if (reservation.status === "attended") previous.attended += 1;
+    }
+    previousClassAttendance.set(session.template_id, previous);
+  }
+
+  const classComparisonRows = classRows
+    .map((row) => {
+      const previous = previousClassAttendance.get(row.templateId);
+      const currentAverage =
+        row.sessionCount > 0 ? row.attended / row.sessionCount : 0;
+      const previousAverage =
+        previous && previous.sessionCount > 0
+          ? previous.attended / previous.sessionCount
+          : 0;
+      const changePct =
+        previousAverage > 0
+          ? ((currentAverage - previousAverage) / previousAverage) * 100
+          : null;
+      return {
+        ...row,
+        currentAverage,
+        previousAverage,
+        previousSessionCount: previous?.sessionCount ?? 0,
+        changePct,
+      };
+    })
+    .filter(
+      (row) =>
+        row.sessionCount >= 3 &&
+        row.previousSessionCount >= 3 &&
+        row.changePct !== null,
+    );
+
+  const classLargestDrop = [...classComparisonRows].sort(
+    (a, b) => (a.changePct ?? 0) - (b.changePct ?? 0),
+  )[0];
+  const classLargestGrowth = [...classComparisonRows].sort(
+    (a, b) => (b.changePct ?? 0) - (a.changePct ?? 0),
+  )[0];
+
+  const currentStudyAttendancePerSession =
+    currentSessions.filter((session) => session.status !== "cancelled").length > 0
+      ? currentClassMetrics.attended /
+        currentSessions.filter((session) => session.status !== "cancelled").length
+      : 0;
+  const previousStudyAttendancePerSession =
+    previousSessions.filter((session) => session.status !== "cancelled").length > 0
+      ? previousClassMetrics.attended /
+        previousSessions.filter((session) => session.status !== "cancelled").length
+      : 0;
+  const studyAttendanceChangePct =
+    previousStudyAttendancePerSession > 0
+      ? ((currentStudyAttendancePerSession - previousStudyAttendancePerSession) /
+          previousStudyAttendancePerSession) *
+        100
+      : null;
+
+  const classDecisionTitle =
+    !eventHistoryCoversComparison || !classComparisonRows.length
+      ? "Todavía no hay una comparación suficiente"
+      : classLargestDrop && (classLargestDrop.changePct ?? 0) <= -15
+        ? "La mayor caída está en " + classLargestDrop.name
+        : classLargestGrowth && (classLargestGrowth.changePct ?? 0) >= 15
+          ? "La señal más fuerte es el crecimiento de " + classLargestGrowth.name
+          : "La ocupación está relativamente estable";
+
+  const classDecisionBody =
+    !eventHistoryCoversComparison || !classComparisonRows.length
+      ? "Necesitamos al menos 3 sesiones comparables por clase en ambos periodos y cobertura completa antes de recomendar cambios."
+      : classLargestDrop && (classLargestDrop.changePct ?? 0) <= -15
+        ? classLargestDrop.name +
+          " promedia " +
+          classLargestDrop.currentAverage.toFixed(1) +
+          " asistencias por sesión frente a " +
+          classLargestDrop.previousAverage.toFixed(1) +
+          " en el periodo anterior (" +
+          Math.abs(classLargestDrop.changePct ?? 0).toFixed(0) +
+          "% menos)."
+        : classLargestGrowth && (classLargestGrowth.changePct ?? 0) >= 15
+          ? classLargestGrowth.name +
+            " promedia " +
+            classLargestGrowth.currentAverage.toFixed(1) +
+            " asistencias por sesión, " +
+            (classLargestGrowth.changePct ?? 0).toFixed(0) +
+            "% más que el periodo anterior."
+          : "Ninguna clase con muestra suficiente se movió más de 15% en asistencia promedio por sesión.";
+
+  const classDecisionAction =
+    !eventHistoryCoversComparison || !classComparisonRows.length
+      ? "No cambiar horarios todavía; seguir acumulando historial comparable."
+      : classLargestDrop && (classLargestDrop.changePct ?? 0) <= -15
+        ? studyAttendanceChangePct !== null &&
+          studyAttendanceChangePct <= -10
+          ? "La caída también se observa a nivel estudio. Antes de cambiar esta clase, revisar calendario, temporada y otros factores comunes."
+          : "La caída parece más concentrada en esta clase. Revisar horario, coach, propuesta/coreografía, cancelaciones y no show antes de hacer una promoción."
+        : classLargestGrowth && (classLargestGrowth.changePct ?? 0) >= 15
+          ? "Validar que el crecimiento se sostenga antes de ampliar capacidad o agregar horario."
+          : "Mantener la programación y vigilar cambios relevantes, no reaccionar a variaciones pequeñas.";
 
   const daypart = { Mañana: [0, 0], Tarde: [0, 0], Noche: [0, 0] } as Record<
     string,
