@@ -17,6 +17,9 @@ describe("DEV-04G subscription lifecycle", () => {
   const recoveryUsage = source(
     "supabase/migrations/20260927011454_dev_04g_plan_usage_recovery_visibility.sql",
   );
+  const trialMetadata = source(
+    "supabase/migrations/20260927011933_dev_04g_trial_start_metadata.sql",
+  );
   const adminContext = source("lib/auth/admin-context.ts");
   const studentPortal = source("lib/student/portal.ts");
   const adminLayout = source("app/admin/layout.tsx");
@@ -71,10 +74,14 @@ describe("DEV-04G subscription lifecycle", () => {
     expect(platformActions).toContain("grace_ends_at");
     expect(platformActions).toContain("cancel_at_period_end");
     expect(platformActions).toContain("trial_end_required");
+    expect(platformActions).toContain("trial_started_at");
+    expect(platformActions).toContain("invalid_trial_window");
+    expect(platformActions).toContain('currentAssignment?.status ?? "active"');
     expect(platformActions).toContain("next_billing_at");
     expect(platformActions).toContain("provider_customer_id");
     expect(platformActions).toContain("provider_subscription_id");
     expect(platformPage).toContain("Guardar estado");
+    expect(platformPage).toContain("Inicio de trial · UTC");
     expect(platformPage).toContain("Fin de gracia · UTC");
     expect(platformPage).toContain("Próximo cobro · UTC");
     expect(platformPage).toContain("HISTORIAL DE SUSCRIPCIÓN");
@@ -97,6 +104,14 @@ describe("DEV-04G subscription lifecycle", () => {
     expect(hardening).toContain("studio_plan_assignments_cancel_period_requires_end");
     expect(hardening).toContain("then 'cancelled_period_end'");
     expect(hardening).toContain("spa.current_period_end <= now()");
+  });
+
+  it("tracks an explicit configurable trial window", () => {
+    expect(trialMetadata).toContain("trial_started_at");
+    expect(trialMetadata).toContain("studio_plan_assignments_trial_window");
+    expect(trialMetadata).toContain("trial_ends_at > trial_started_at");
+    expect(trialMetadata).toContain("'trial_started_at',new.trial_started_at");
+    expect(subscriptionPage).toContain("Trial inicia");
   });
 
   it("keeps quota usage observable while operational access is restricted", () => {
