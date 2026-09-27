@@ -195,14 +195,24 @@ export default async function StudentCancelReservationPage({
           <input type="hidden" name="reservation_id" value={item.reservation_id} />
           <input type="hidden" name="return_to" value="/student/mis-clases" />
           <label className="block text-xs text-zinc-400">
-            Motivo
-            <span className="ml-1 text-zinc-600">(opcional)</span>
-            <input
+            Motivo de cancelación
+            <select
               name="reason"
-              maxLength={250}
-              placeholder="Cuéntanos si quieres"
+              required
+              defaultValue=""
               className="mt-2 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-sm text-white outline-none transition focus:border-fuchsia-500/60"
-            />
+            >
+              <option value="" disabled>Selecciona un motivo</option>
+              <option value="schedule_conflict">Horario / cambio de planes</option>
+              <option value="health">Salud</option>
+              <option value="work_school">Trabajo / escuela</option>
+              <option value="transport">Transporte / distancia</option>
+              <option value="price">Precio</option>
+              <option value="lost_interest">Ya no me interesa</option>
+              <option value="booking_error">Error de reserva</option>
+              <option value="other">Otro</option>
+              <option value="prefer_not_say">Prefiero no decir</option>
+            </select>
           </label>
 
           <PendingActionButton
