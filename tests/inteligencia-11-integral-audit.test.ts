@@ -49,7 +49,8 @@ describe("INTEL-11 integral consistency audit", () => {
   it("uses canonical identities so linked conversations do not inflate people", () => {
     expect(intelligence).toContain("conversationStudentByProviderContact");
     expect(intelligence).toContain("conversationStudentByPhone");
-    expect(intelligence).toContain('return "student:" + row.student_id');
+    expect(intelligence).toContain("resolvedConversationStudentId");
+    expect(intelligence).toContain('return "student:" + linkedStudent');
     expect(intelligence).toContain("conversationIdentity(row)");
   });
 
