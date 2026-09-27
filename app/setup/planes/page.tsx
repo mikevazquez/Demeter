@@ -97,7 +97,7 @@ export default async function PlatformPlansPage({
     supabase
       .from("studio_plan_assignments")
       .select(
-        "studio_id,plan_id,status,starts_at,metadata,updated_at,trial_ends_at,current_period_start,current_period_end,grace_ends_at,next_billing_at,cancel_at_period_end,cancelled_at,suspended_at,last_payment_failure_at,billing_provider,provider_customer_id,provider_subscription_id",
+        "studio_id,plan_id,status,starts_at,metadata,updated_at,trial_started_at,trial_ends_at,current_period_start,current_period_end,grace_ends_at,next_billing_at,cancel_at_period_end,cancelled_at,suspended_at,last_payment_failure_at,billing_provider,provider_customer_id,provider_subscription_id",
       ),
     supabase
       .from("studio_plan_assignment_events")
@@ -190,8 +190,10 @@ export default async function PlatformPlansPage({
                 : params.error === "cancel_period_required"
                   ? "Para cancelar al final del periodo debes indicar cuándo termina."
                   : params.error === "trial_end_required"
-                    ? "Un trial debe tener una fecha de finalización."
-                    : params.error === "invalid_period"
+                    ? "Un trial debe tener fecha de inicio y finalización."
+                    : params.error === "invalid_trial_window"
+                      ? "El fin del trial debe ser posterior a su inicio."
+                      : params.error === "invalid_period"
                       ? "El fin del periodo debe ser posterior al inicio."
                       : params.error === "assignment_missing"
                     ? "Ese estudio todavía no tiene una asignación de plan."
@@ -303,6 +305,15 @@ export default async function PlatformPlansPage({
                         <option value="suspended">Suspendido</option>
                         <option value="cancelled">Cancelado</option>
                       </select>
+                    </label>
+
+                    <label>
+                      Inicio de trial · UTC
+                      <input
+                        name="trial_started_at"
+                        type="datetime-local"
+                        defaultValue={toDateTimeLocal(assignment?.trial_started_at)}
+                      />
                     </label>
 
                     <label>
