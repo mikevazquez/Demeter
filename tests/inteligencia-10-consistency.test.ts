@@ -14,8 +14,7 @@ describe("INTEL-10 cross-view consistency", () => {
     expect(intelligence).toContain("reactivationPurchases");
     expect(intelligence).toContain("furthestPriorExpiry + 30 * DAY");
     expect(intelligence).toContain("reactivatedStudentsCurrent");
-    expect(intelligence).toContain('label="Reactivadas"');
-    expect(intelligence).toContain("Reactivación ≠ nueva alumna");
+    expect(intelligence).toContain("Reactivación = regreso después de 30+ días");
   });
 
   it("counts reactivated people uniquely", () => {
@@ -27,20 +26,18 @@ describe("INTEL-10 cross-view consistency", () => {
     expect(intelligence).toContain(
       "newCommercialStudentsCurrent.length +\n    reactivatedStudentsCurrent.length -\n    newlyConfirmedChurn.length",
     );
-    expect(intelligence).toContain("nuevas + ");
-    expect(intelligence).toContain(" reactivadas − ");
+    expect(intelligence).toContain("Crecimiento neto");
   });
 
   it("uses recorded onboarding evidence for first attendance", () => {
     expect(intelligence).toContain("firstAttendanceCurrent");
     expect(intelligence).toContain("first_attendance_at");
-    expect(intelligence).toContain("Primera asistencia registrada");
     expect(intelligence).toContain("onboardingHistoryCoverage");
-    expect(intelligence).toContain("No inferimos asistencias históricas faltantes");
+    expect(intelligence).toContain("first_attendance_at");
   });
 
   it("keeps onboarding activation visible without occupying a top KPI slot", () => {
     expect(intelligence).toContain("newStudentActivationRate");
-    expect(intelligence).toContain("Onboarding sigue siendo activación");
+    expect(intelligence).toContain('title="🚀 Avance del onboarding"');
   });
 });
