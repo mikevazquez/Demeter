@@ -82,6 +82,7 @@ export default async function PlatformPlansPage({
     { data: plans },
     { data: assignments },
     { data: events },
+    { data: subscriptionEvents },
   ] = await Promise.all([
     supabase
       .from("studios")
@@ -96,7 +97,7 @@ export default async function PlatformPlansPage({
     supabase
       .from("studio_plan_assignments")
       .select(
-        "studio_id,plan_id,status,starts_at,metadata,updated_at,trial_ends_at,current_period_start,current_period_end,grace_ends_at,cancel_at_period_end,cancelled_at,suspended_at,last_payment_failure_at,billing_provider",
+        "studio_id,plan_id,status,starts_at,metadata,updated_at,trial_ends_at,current_period_start,current_period_end,grace_ends_at,next_billing_at,cancel_at_period_end,cancelled_at,suspended_at,last_payment_failure_at,billing_provider,provider_customer_id,provider_subscription_id",
       ),
     supabase
       .from("studio_plan_assignment_events")
@@ -105,6 +106,13 @@ export default async function PlatformPlansPage({
       )
       .order("occurred_at", { ascending: false })
       .limit(30),
+    supabase
+      .from("studio_subscription_events")
+      .select(
+        "id,studio_id,from_status,to_status,actor_user_id,source,reason,effective_access,snapshot,occurred_at",
+      )
+      .order("occurred_at", { ascending: false })
+      .limit(50),
   ]);
 
   const planRows = (plans ?? []) as PlanRow[];
@@ -181,7 +189,11 @@ export default async function PlatformPlansPage({
                 ? "Revisa el estado y las fechas de la suscripción."
                 : params.error === "cancel_period_required"
                   ? "Para cancelar al final del periodo debes indicar cuándo termina."
-                  : params.error === "assignment_missing"
+                  : params.error === "trial_end_required"
+                    ? "Un trial debe tener una fecha de finalización."
+                    : params.error === "invalid_period"
+                      ? "El fin del periodo debe ser posterior al inicio."
+                      : params.error === "assignment_missing"
                     ? "Ese estudio todavía no tiene una asignación de plan."
                     : params.error === "subscription_save_failed"
                       ? "No pudimos guardar el estado de suscripción."
@@ -312,11 +324,59 @@ export default async function PlatformPlansPage({
                     </label>
 
                     <label>
+                      Próximo cobro · UTC
+                      <input
+                        name="next_billing_at"
+                        type="datetime-local"
+                        defaultValue={toDateTimeLocal(assignment?.next_billing_at)}
+                      />
+                    </label>
+
+                    <label>
+                      Inicio de periodo · UTC
+                      <input
+                        name="current_period_start"
+                        type="datetime-local"
+                        defaultValue={toDateTimeLocal(assignment?.current_period_start)}
+                      />
+                    </label>
+
+                    <label>
                       Fin de periodo · UTC
                       <input
                         name="current_period_end"
                         type="datetime-local"
                         defaultValue={toDateTimeLocal(assignment?.current_period_end)}
+                      />
+                    </label>
+
+                    <label>
+                      Proveedor
+                      <input
+                        name="billing_provider"
+                        placeholder="stripe, manual…"
+                        defaultValue={assignment?.billing_provider ?? ""}
+                        maxLength={80}
+                      />
+                    </label>
+
+                    <label>
+                      Customer ID
+                      <input
+                        name="provider_customer_id"
+                        placeholder="ID externo del cliente"
+                        defaultValue={assignment?.provider_customer_id ?? ""}
+                        maxLength={180}
+                      />
+                    </label>
+
+                    <label>
+                      Subscription ID
+                      <input
+                        name="provider_subscription_id"
+                        placeholder="ID externo de la suscripción"
+                        defaultValue={assignment?.provider_subscription_id ?? ""}
+                        maxLength={180}
                       />
                     </label>
                   </div>
@@ -434,6 +494,56 @@ export default async function PlatformPlansPage({
           <p className="text-sm text-zinc-500">Todavía no hay cambios registrados.</p>
         )}
       </section>
+
+      <section className="panel mt-5">
+        <div className="panel-heading">
+          <div>
+            <p className="eyebrow">HISTORIAL DE SUSCRIPCIÓN</p>
+            <h2>Últimos cambios de estado y facturación</h2>
+          </div>
+        </div>
+
+        {(subscriptionEvents ?? []).length ? (
+          <div className="grid gap-2">
+            {(subscriptionEvents ?? []).map((event) => {
+              const studio = studioById.get(event.studio_id);
+
+              return (
+                <div
+                  key={event.id}
+                  className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3"
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <strong className="text-sm text-white">
+                      {studio?.name ?? event.studio_id}
+                    </strong>
+                    <span className="text-[11px] text-zinc-500">
+                      {new Intl.DateTimeFormat("es-MX", {
+                        dateStyle: "medium",
+                        timeStyle: "short",
+                        timeZone: "America/Mexico_City",
+                      }).format(new Date(event.occurred_at))}
+                    </span>
+                  </div>
+                  <p className="mt-1 text-xs text-zinc-400">
+                    {event.from_status ?? "Sin estado"} → {event.to_status}
+                    {event.reason ? ` · ${event.reason}` : ""}
+                  </p>
+                  <p className="mt-1 text-[10px] uppercase tracking-wide text-zinc-600">
+                    {event.source} · acceso {event.effective_access}
+                    {event.actor_user_id ? ` · actor ${event.actor_user_id}` : " · sistema"}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <p className="text-sm text-zinc-500">
+            Todavía no hay cambios de suscripción registrados.
+          </p>
+        )}
+      </section>
+
     </main>
   );
 }
