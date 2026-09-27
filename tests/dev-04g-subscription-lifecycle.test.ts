@@ -22,6 +22,7 @@ describe("DEV-04G subscription lifecycle", () => {
   );
   const adminContext = source("lib/auth/admin-context.ts");
   const studentPortal = source("lib/student/portal.ts");
+  const loginCard = source("app/login/login-card.tsx");
   const adminLayout = source("app/admin/layout.tsx");
   const subscriptionPage = source("app/admin/suscripcion/page.tsx");
   const platformActions = source("app/setup/planes/actions.ts");
@@ -60,9 +61,9 @@ describe("DEV-04G subscription lifecycle", () => {
   it("blocks the student portal when the studio subscription is restricted", () => {
     expect(studentPortal).toContain('"current_studio_subscription"');
     expect(studentPortal).toContain('subscription.access_mode !== "full"');
-    expect(studentPortal).toContain(
-      'redirect("/login/student?error=studio_unavailable")',
-    );
+    expect(studentPortal).toContain("studio_unavailable");
+    expect(studentPortal).toContain("encodeURIComponent(restrictedStudio.slug)");
+    expect(loginCard).toContain("El portal del estudio está temporalmente pausado");
   });
 
   it("lets platform admins manage subscription lifecycle without hardcoded grace days", () => {
