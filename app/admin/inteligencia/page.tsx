@@ -663,6 +663,18 @@ export default async function IntelligencePage({
         }).format(new Date(earliestDomainEventTime));
   const collectionSales = (collectionSalesResult.data ?? []) as CollectionSaleRow[];
   const conversations = (conversationsResult.data ?? []) as ConversationRow[];
+  const conversationTimes = conversations
+    .map((conversation) => new Date(conversation.started_at).getTime())
+    .filter((value) => Number.isFinite(value));
+  const earliestConversationTime = conversationTimes.length
+    ? Math.min(...conversationTimes)
+    : null;
+  const conversationHistoryCoversCurrentCohort =
+    earliestConversationTime !== null &&
+    earliestConversationTime <= currentCohortStart.getTime();
+  const conversationHistoryCoversComparison =
+    earliestConversationTime !== null &&
+    earliestConversationTime <= previousCohortStart.getTime();
   const expenses = (expensesResult.data ?? []) as ExpenseRow[];
 
   const collectionSaleIds = collectionSales.map((sale) => sale.id);
@@ -1861,7 +1873,9 @@ export default async function IntelligencePage({
     currentPeriodMarketingTouches,
     currentExpenses,
   );
-  const currentMarketingDecisionRows = currentMarketingRows;
+  const currentMarketingDecisionRows = conversationHistoryCoversCurrentCohort
+    ? currentMarketingRows
+    : [];
   const currentMarketingDecisionSpend = currentMarketingDecisionRows.reduce(
     (sum, row) => sum + row.spend,
     0,
@@ -1930,6 +1944,7 @@ export default async function IntelligencePage({
   const pendingConversationContacts =
     conversationCohortStats(pendingConversationRows).contacts;
   const conversationCohortComparable =
+    conversationHistoryCoversComparison &&
     eventHistoryCoversCohortComparison &&
     currentConversationCohort.contacts >= 3 &&
     previousConversationCohort.contacts >= 3;
