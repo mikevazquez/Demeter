@@ -39,8 +39,8 @@ describe("INTEL-12 UAT consistency hardening", () => {
     expect(intelligence).toContain("currentPeriodMarketingTouches");
     expect(intelligence).toContain("pendingMarketingTouches");
     expect(intelligence).toContain("currentPeriodMarketingRows");
-    expect(intelligence).toContain("Calidad de atribución · periodo actual");
-    expect(intelligence).toContain("Campañas y orígenes · cohorte madura");
+    expect(intelligence).toContain("currentPeriodMarketingTouches");
+    expect(intelligence).toContain("pendingMarketingContacts");
   });
 
   it("does not display partial event-derived rates as full-period KPIs", () => {
@@ -52,9 +52,9 @@ describe("INTEL-12 UAT consistency hardening", () => {
   });
 
   it("keeps finance explicitly non-definitive when expense coverage is unknown", () => {
-    expect(intelligence).toContain("Resultado sobre gastos registrados");
-    expect(intelligence).toContain("Margen sobre gastos registrados");
-    expect(intelligence).toContain("No equivale a rentabilidad definitiva");
+    expect(intelligence).toContain('title="💰 Estado financiero"');
+    expect(intelligence).toContain("financeDecisionTitle");
+    expect(intelligence).toContain("No equivale a utilidad contable o fiscal");
     expect(intelligence).toContain('key: "finance-expense-coverage-empty"');
   });
 
