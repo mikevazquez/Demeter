@@ -73,12 +73,15 @@ Mapeo confirmado en Supabase Sandbox `saas_plan_prices`:
 
 ## Stripe Sandbox · objetos de integración
 
-### Webhook
+### Webhook / Workbench Event Destination
 
-- Stripe Webhook Endpoint ID: `we_1UK8EN6zvrymwOJvdffqS0Gr`
+- Event Destination activo: `we_1UKBoX6zvrymwOJvT7vVfqjh`
+- Nombre: `Studio Flow DEV-04H Sandbox`
 - Destino: `https://hedouonyhynuvwbckdlg.supabase.co/functions/v1/saas-stripe-webhook`
-- API version: `2026-08-26.dahlia`
+- API version snapshot: `2026-08-26.dahlia`
 - Estado: enabled
+- Entorno: Stripe Sandbox / `livemode=false`
+- Endpoint v1 anterior `we_1UK8EN6zvrymwOJvdffqS0Gr`: **disabled** para evitar entregas duplicadas
 - Eventos habilitados:
   - `checkout.session.completed`
   - `checkout.session.expired`
@@ -92,7 +95,7 @@ Mapeo confirmado en Supabase Sandbox `saas_plan_prices`:
   - `invoice.payment_failed`
   - `invoice.payment_action_required`
 
-El signing secret fue generado por Stripe, pero **no se registra en Git ni en esta documentación**. Debe cargarse exclusivamente como secreto de Supabase Sandbox.
+El signing secret fue generado por Stripe y cargado exclusivamente como `STRIPE_WEBHOOK_SIGNING_SECRET` en Supabase Sandbox. **No se registra en Git ni en esta documentación**. La presencia y funcionamiento del secreto fueron verificados mediante un evento firmado real procesado con estado `completed`.
 
 ### Customer Portal
 
@@ -133,15 +136,15 @@ El motor de billing contempla:
 1. ~~Definir importes comerciales Core/Growth/Pro.~~ Completado.
 2. ~~Crear Stripe Prices en MXN.~~ Completado.
 3. ~~Registrar los Price IDs en `saas_plan_prices`.~~ Completado.
-4. Configurar `STRIPE_SECRET_KEY` del Sandbox en Supabase Sandbox.
-5. Configurar `STRIPE_WEBHOOK_SIGNING_SECRET`.
-6. Configurar `SAAS_BILLING_RETURN_ORIGINS` con el origen permitido de Preview.
+4. ~~Configurar `STRIPE_SECRET_KEY` del Sandbox en Supabase Sandbox.~~ Completado.
+5. ~~Configurar `STRIPE_WEBHOOK_SIGNING_SECRET`.~~ Completado.
+6. ~~Configurar `SAAS_BILLING_RETURN_ORIGINS` con el origen permitido de Preview.~~ Completado.
 
 > Limitación operativa actual: el conector de Supabase disponible en esta sesión permite operar DB y Edge Functions, pero no expone gestión de secretos de Edge Functions. No se debe sustituir esto por guardar secretos en código o tablas públicas.
 7. ~~Crear/configurar el endpoint webhook de Stripe Sandbox.~~ Completado.
 8. ~~Crear configuración base de Customer Portal.~~ Completado.
-9. Ejecutar Checkout real de prueba.
-10. Validar pago exitoso, pago fallido, recuperación, cancelación, duplicados y Customer Portal.
+9. Ejecutar Checkout real de prueba desde la UI autenticada del owner.
+10. Validar pago fallido + recuperación mediante checkout/renovación controlada si se desea cerrar ese caso con Stripe real de Sandbox.
 11. Mantener producción intacta hasta aprobación explícita.
 
 
@@ -178,19 +181,31 @@ Objetos de prueba:
 - Stripe subscription status: `active`
 - `livemode=false`
 
-Resultado inicial:
+Resultado inicial y resolución:
 
 - Stripe entregó eventos al endpoint de Supabase correctamente.
-- La Edge Function respondió `503 billing_not_configured`.
+- La primera entrega respondió `503 billing_not_configured`.
 - Diagnóstico temporal en Sandbox confirmó:
   - `STRIPE_SECRET_KEY`: presente
-  - `STRIPE_WEBHOOK_SIGNING_SECRET`: **ausente**
+  - `STRIPE_WEBHOOK_SIGNING_SECRET`: inicialmente ausente
   - `SUPABASE_URL`: presente
   - `SUPABASE_SERVICE_ROLE_KEY`: presente
   - `SAAS_BILLING_RETURN_ORIGINS`: presente
 - La versión diagnóstica temporal fue retirada inmediatamente y `saas-stripe-webhook` fue restaurada al código canónico del repositorio.
-
-Stripe conserva la suscripción UAT pagada y puede reintentar los eventos pendientes una vez que el signing secret quede disponible.
+- Se creó un Event Destination v2 visible en Workbench y se deshabilitó el endpoint v1 anterior.
+- Después de cargar el signing secret correcto, se generó un evento real `customer.subscription.updated`:
+  - webhook ledger status: `completed`
+  - error_code: null
+  - tenant UAT sincronizado con customer, subscription, price y periodos de Stripe.
+- Se probó `cancel_at_period_end=true` y posterior reversión a `false`; ambos eventos quedaron `completed` y Studio Flow reflejó correctamente el estado.
+- La suscripción UAT quedó finalmente:
+  - plan: Core
+  - status: active
+  - provider_status: active
+  - cancel_at_period_end: false
+  - billing_provider: stripe
+- Se creó una sesión válida de Customer Portal en Sandbox con la configuración `bpc_1UK8Ej6zvrymwOJvydvJmLMx`.
+- Se creó una invoice técnica de $20 MXN para explorar `invoice.paid`; como la API conectada no expone una acción para forzar el pago inmediato, la invoice fue anulada y no dejó deuda UAT.
 
 ## Regla de seguridad
 
