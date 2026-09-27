@@ -46,9 +46,9 @@ describe("INTEL-03 conversation intelligence", () => {
     expect(intelligence).toContain('.from("crm_conversations")');
     expect(intelligence).toContain("conversationIdentity");
     expect(intelligence).toContain("conversationCohortStats");
-    expect(intelligence).toContain('label="Contacto → reserva"');
-    expect(intelligence).toContain('title="💬 Embudo desde conversación"');
-    expect(intelligence).toContain('title="📣 Origen de conversaciones"');
+    expect(intelligence).toContain("conversionBottleneck");
+    expect(intelligence).toContain('title="💬 Embudo de conversión"');
+    expect(intelligence).toContain("conversionFunnelRebooked");
   });
 
   it("documents the webhook contract in Asistian settings", () => {
