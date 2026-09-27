@@ -47,7 +47,7 @@ export async function changeStudioPlanAction(formData: FormData) {
       .maybeSingle(),
     supabase
       .from("studio_plan_assignments")
-      .select("plan_id,metadata")
+      .select("plan_id,status,metadata")
       .eq("studio_id", studioId)
       .maybeSingle(),
   ]);
@@ -71,7 +71,7 @@ export async function changeStudioPlanAction(formData: FormData) {
     {
       studio_id: studioId,
       plan_id: targetPlan.id,
-      status: "active",
+      status: currentAssignment?.status ?? "active",
       starts_at: now,
       ends_at: null,
       metadata: {
@@ -134,6 +134,7 @@ export async function changeStudioSubscriptionAction(formData: FormData) {
   const studioId = field(formData, "studio_id");
   const status = field(formData, "status");
   const reason = field(formData, "billing_reason");
+  const trialStartedAt = utcDateTimeField(formData, "trial_started_at");
   const trialEndsAt = utcDateTimeField(formData, "trial_ends_at");
   const graceEndsAt = utcDateTimeField(formData, "grace_ends_at");
   const currentPeriodStart = utcDateTimeField(formData, "current_period_start");
@@ -147,6 +148,7 @@ export async function changeStudioSubscriptionAction(formData: FormData) {
   if (
     !studioId ||
     !subscriptionStatuses.has(status) ||
+    trialStartedAt === "invalid" ||
     trialEndsAt === "invalid" ||
     graceEndsAt === "invalid" ||
     currentPeriodStart === "invalid" ||
@@ -160,8 +162,17 @@ export async function changeStudioSubscriptionAction(formData: FormData) {
     redirect("/setup/planes?error=cancel_period_required");
   }
 
-  if (status === "trialing" && !trialEndsAt) {
+  if (status === "trialing" && (!trialStartedAt || !trialEndsAt)) {
     redirect("/setup/planes?error=trial_end_required");
+  }
+
+  if (
+    status === "trialing" &&
+    trialStartedAt &&
+    trialEndsAt &&
+    new Date(trialEndsAt).getTime() <= new Date(trialStartedAt).getTime()
+  ) {
+    redirect("/setup/planes?error=invalid_trial_window");
   }
 
   if (
@@ -208,6 +219,7 @@ export async function changeStudioSubscriptionAction(formData: FormData) {
 
   if (status === "active") {
     Object.assign(payload, {
+      trial_started_at: null,
       trial_ends_at: null,
       grace_ends_at: null,
       suspended_at: null,
@@ -216,6 +228,7 @@ export async function changeStudioSubscriptionAction(formData: FormData) {
     });
   } else if (status === "trialing") {
     Object.assign(payload, {
+      trial_started_at: trialStartedAt,
       trial_ends_at: trialEndsAt,
       grace_ends_at: null,
       suspended_at: null,
@@ -225,6 +238,7 @@ export async function changeStudioSubscriptionAction(formData: FormData) {
     });
   } else if (status === "past_due") {
     Object.assign(payload, {
+      trial_started_at: null,
       trial_ends_at: null,
       grace_ends_at: graceEndsAt,
       suspended_at: null,
@@ -234,6 +248,8 @@ export async function changeStudioSubscriptionAction(formData: FormData) {
     });
   } else if (status === "suspended") {
     Object.assign(payload, {
+      trial_started_at: null,
+      trial_ends_at: null,
       grace_ends_at: null,
       suspended_at: now,
       cancelled_at: null,
@@ -241,6 +257,8 @@ export async function changeStudioSubscriptionAction(formData: FormData) {
     });
   } else if (status === "cancelled") {
     Object.assign(payload, {
+      trial_started_at: null,
+      trial_ends_at: null,
       grace_ends_at: null,
       suspended_at: null,
       cancelled_at: now,
