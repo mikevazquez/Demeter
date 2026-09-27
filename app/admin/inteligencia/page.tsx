@@ -22,6 +22,7 @@ type DecisionPriority = 1 | 2 | 3;
 type IntelligenceDecision = {
   key: string;
   priority: DecisionPriority;
+  impact?: number;
   tone: Tone;
   title: string;
   evidence: string;
@@ -217,6 +218,7 @@ const decisionReservationStatuses = new Set([
 ]);
 const commercialProductTypes = new Set(["package", "membership", "single_class"]);
 const conversionProductTypes = new Set(["package", "membership"]);
+const CONVERSION_MATURITY_DAYS = 7;
 
 function clampDays(value: string | undefined) {
   const parsed = Number(value ?? "30");
@@ -433,7 +435,7 @@ function titleFor(view: ViewKey) {
     retencion: ["Retención", "Detectar señales antes del abandono y priorizar a quién intervenir."],
     finanzas: [
       "Finanzas",
-      "Ingresos y rentabilidad. La utilidad sólo existe cuando también registramos gastos.",
+      "Ingresos, gastos registrados y resultado operativo. La cobertura de gastos debe validarse antes de interpretar rentabilidad.",
     ],
   };
   return map[view];
@@ -464,6 +466,10 @@ export default async function IntelligencePage({
   const previousStartDate = isoDateKey(previousStart);
   const todayDate = isoDateKey(now);
   const upcomingEnd = new Date(now.getTime() + 14 * DAY);
+  const cohortMaturityCutoff = new Date(
+    now.getTime() - CONVERSION_MATURITY_DAYS * DAY,
+  );
+  const cohortMaturityCutoffDate = isoDateKey(cohortMaturityCutoff);
 
   const [
     studentsResult,
@@ -502,7 +508,9 @@ export default async function IntelligencePage({
       .from("payments")
       .select("sale_id,kind,amount_minor,effective_on,created_at")
       .eq("studio_id", studio.id)
-      .gte("created_at", rangeStartIso),
+      .or(
+        `effective_on.gte.${previousStartDate},and(effective_on.is.null,created_at.gte.${rangeStartIso})`,
+      ),
     supabase
       .from("sale_lines")
       .select("sale_id,product_template_id,product_name,line_total_minor,refunded_at,created_at")
@@ -561,7 +569,6 @@ export default async function IntelligencePage({
         "id,provider,provider_contact_id,contact_phone,student_id,channel,source,campaign,started_at,last_activity_at,activity_count",
       )
       .eq("studio_id", studio.id)
-      .gte("started_at", rangeStartIso)
       .lt("started_at", currentEnd.toISOString())
       .order("started_at", { ascending: true }),
     supabase
@@ -584,6 +591,27 @@ export default async function IntelligencePage({
   const productTemplates = (productTemplatesResult.data ?? []) as ProductTemplateRow[];
   const onboarding = (onboardingResult.data ?? []) as OnboardingRow[];
   const domainEvents = (domainEventsResult.data ?? []) as DomainEventRow[];
+  const domainEventTimes = domainEvents
+    .map((event) => new Date(event.occurred_at).getTime())
+    .filter((value) => Number.isFinite(value));
+  const earliestDomainEventTime = domainEventTimes.length
+    ? Math.min(...domainEventTimes)
+    : null;
+  const eventHistoryCoversCurrentPeriod =
+    earliestDomainEventTime !== null &&
+    earliestDomainEventTime <= currentStart.getTime();
+  const eventHistoryCoversComparison =
+    earliestDomainEventTime !== null &&
+    earliestDomainEventTime <= previousStart.getTime();
+  const eventCoverageStartLabel =
+    earliestDomainEventTime === null
+      ? null
+      : new Intl.DateTimeFormat("es-MX", {
+          timeZone: studio.timezone ?? "America/Mexico_City",
+          day: "numeric",
+          month: "short",
+          year: "numeric",
+        }).format(new Date(earliestDomainEventTime));
   const collectionSales = (collectionSalesResult.data ?? []) as CollectionSaleRow[];
   const conversations = (conversationsResult.data ?? []) as ConversationRow[];
   const expenses = (expensesResult.data ?? []) as ExpenseRow[];
@@ -833,7 +861,7 @@ export default async function IntelligencePage({
 
   function activeCommercialStudentCount(atDate: string) {
     const studentIds = new Set<string>();
-    for (const item of commercialAcquisitions) {
+    for (const item of conversionAcquisitions) {
       if (item.refunded_at || item.status === "cancelled") continue;
       const start = item.starts_on ?? item.created_at.slice(0, 10);
       const end = item.expires_on;
@@ -848,7 +876,7 @@ export default async function IntelligencePage({
   const previousActiveStudents = activeCommercialStudentCount(currentStartDate);
 
   const acquisitionsByStudent = new Map<string, AcquisitionRow[]>();
-  for (const item of commercialAcquisitions) {
+  for (const item of conversionAcquisitions) {
     if (item.refunded_at || item.status === "cancelled") continue;
     const list = acquisitionsByStudent.get(item.student_id) ?? [];
     list.push(item);
@@ -891,6 +919,9 @@ export default async function IntelligencePage({
   const retentionRecentStart = now.getTime() - 14 * DAY;
   const retentionBaselineStart = now.getTime() - 42 * DAY;
   const retentionBaselineEnd = retentionRecentStart;
+  const retentionHistoryCovered =
+    earliestDomainEventTime !== null &&
+    earliestDomainEventTime <= retentionBaselineStart;
 
   const retentionAttendedEvents = domainEvents.filter(
     (event) =>
@@ -960,19 +991,20 @@ export default async function IntelligencePage({
         baselineAttendance >= 4 &&
         baselineWeekly > 0 &&
         recentWeekly <= baselineWeekly * 0.5;
-      const recentFriction =
-        studentEventCount(
-          retentionNoShowEvents,
-          student.id,
-          retentionRecentStart,
-          now.getTime(),
-        ) +
-        studentEventCount(
-          retentionCancellationEvents,
-          student.id,
-          retentionRecentStart,
-          now.getTime(),
-        );
+      const recentFriction = retentionHistoryCovered
+        ? studentEventCount(
+            retentionNoShowEvents,
+            student.id,
+            retentionRecentStart,
+            now.getTime(),
+          ) +
+          studentEventCount(
+            retentionCancellationEvents,
+            student.id,
+            retentionRecentStart,
+            now.getTime(),
+          )
+        : 0;
       const acquisitionAgeDays = Math.floor(
         (now.getTime() - new Date(activeAcquisition.created_at).getTime()) / DAY,
       );
@@ -994,10 +1026,10 @@ export default async function IntelligencePage({
         signals.push("sin próxima reserva");
       }
 
-      if (!isNewAcquisition && recentAttendance === 0) {
+      if (retentionHistoryCovered && !isNewAcquisition && recentAttendance === 0) {
         score += 2;
         signals.push("14 días sin asistir");
-      } else if (frequencyDrop) {
+      } else if (retentionHistoryCovered && frequencyDrop) {
         const drop = Math.max(
           0,
           Math.round((1 - recentWeekly / Math.max(baselineWeekly, 0.01)) * 100),
@@ -1006,13 +1038,14 @@ export default async function IntelligencePage({
         signals.push("frecuencia cayó " + drop + "%");
       }
 
-      if (recentFriction >= 2) {
+      if (retentionHistoryCovered && recentFriction >= 2) {
         score += 1;
         signals.push(recentFriction + " cancelaciones/no show recientes");
       }
 
       const meaningfulBehaviorSignal =
-        recentAttendance === 0 || frequencyDrop || recentFriction >= 2;
+        retentionHistoryCovered &&
+        (recentAttendance === 0 || frequencyDrop || recentFriction >= 2);
       const shouldFlag =
         score >= 3 &&
         (meaningfulBehaviorSignal ||
@@ -1334,6 +1367,14 @@ export default async function IntelligencePage({
   const previousConversations = conversations.filter((conversation) =>
     isBetween(conversation.started_at, previousStart, currentStart),
   );
+  const currentMatureConversations = currentConversations.filter(
+    (conversation) =>
+      new Date(conversation.started_at).getTime() <= cohortMaturityCutoff.getTime(),
+  );
+  const previousMatureConversations = previousConversations.filter(
+    (conversation) =>
+      new Date(conversation.started_at).getTime() <= cohortMaturityCutoff.getTime(),
+  );
 
   function conversationIdentity(row: ConversationRow) {
     if (row.provider_contact_id) return row.provider + ":contact:" + row.provider_contact_id;
@@ -1542,9 +1583,13 @@ export default async function IntelligencePage({
     const touches = new Map<string, MarketingTouch>();
 
     for (const row of rows) {
-      const identity = row.student_id
-        ? "student:" + row.student_id
-        : conversationIdentity(row);
+      const providerIdentity = conversationIdentity(row);
+      const hasProviderIdentity = Boolean(row.provider_contact_id || row.contact_phone);
+      const identity = hasProviderIdentity
+        ? providerIdentity
+        : row.student_id
+          ? "student:" + row.student_id
+          : providerIdentity;
       const existing = touches.get(identity);
 
       if (!existing) {
@@ -1571,8 +1616,19 @@ export default async function IntelligencePage({
     );
   }
 
-  const currentMarketingTouches = firstMarketingTouches(currentConversations);
-  const previousMarketingTouches = firstMarketingTouches(previousConversations);
+  const allMarketingTouches = firstMarketingTouches(conversations);
+  const currentMarketingTouches = allMarketingTouches.filter((touch) =>
+    isBetween(touch.startedAt, currentStart, currentEnd),
+  );
+  const previousMarketingTouches = allMarketingTouches.filter((touch) =>
+    isBetween(touch.startedAt, previousStart, currentStart),
+  );
+  const currentMatureMarketingTouches = currentMarketingTouches.filter(
+    (touch) => new Date(touch.startedAt).getTime() <= cohortMaturityCutoff.getTime(),
+  );
+  const currentMatureMarketingExpenses = currentExpenses.filter(
+    (expense) => expense.effective_on <= cohortMaturityCutoffDate,
+  );
 
   function marketingRows(touches: MarketingTouch[], expenseRows: ExpenseRow[]) {
     const rows = new Map<
@@ -1673,6 +1729,14 @@ export default async function IntelligencePage({
 
   const currentMarketingRows = marketingRows(currentMarketingTouches, currentExpenses);
   const previousMarketingRows = marketingRows(previousMarketingTouches, previousExpenses);
+  const currentMarketingDecisionRows = marketingRows(
+    currentMatureMarketingTouches,
+    currentMatureMarketingExpenses,
+  );
+  const pendingMarketingContacts = Math.max(
+    currentMarketingTouches.length - currentMatureMarketingTouches.length,
+    0,
+  );
   const currentMarketingSpend = currentMarketingRows.reduce((sum, row) => sum + row.spend, 0);
   const previousMarketingSpend = previousMarketingRows.reduce((sum, row) => sum + row.spend, 0);
   const currentMarketingRevenue = currentMarketingRows.reduce((sum, row) => sum + row.revenue, 0);
@@ -1706,8 +1770,18 @@ export default async function IntelligencePage({
   const unattributedMarketingSpend =
     currentMarketingRows.find((row) => row.key === "unattributed")?.spend ?? 0;
 
-  const currentConversationCohort = conversationCohortStats(currentConversations);
-  const previousConversationCohort = conversationCohortStats(previousConversations);
+  const currentConversationCohortAll = conversationCohortStats(currentConversations);
+  const previousConversationCohortAll = conversationCohortStats(previousConversations);
+  const currentConversationCohort = conversationCohortStats(currentMatureConversations);
+  const previousConversationCohort = conversationCohortStats(previousMatureConversations);
+  const pendingConversationContacts = Math.max(
+    currentConversationCohortAll.contacts - currentConversationCohort.contacts,
+    0,
+  );
+  const conversationCohortComparable =
+    eventHistoryCoversComparison &&
+    currentConversationCohort.contacts >= 3 &&
+    previousConversationCohort.contacts >= 3;
 
   const conversationChannelCounts = new Map<string, number>();
   for (const conversation of currentConversations) {
@@ -1780,8 +1854,18 @@ export default async function IntelligencePage({
     };
   }
 
-  const currentAcquisitionCohort = acquisitionCohortStats(currentTrialCohortRows);
-  const previousAcquisitionCohort = acquisitionCohortStats(previousTrialCohortRows);
+  const currentMatureTrialCohortRows = currentTrialCohortRows.filter(
+    (student) => new Date(student.created_at).getTime() <= cohortMaturityCutoff.getTime(),
+  );
+  const previousMatureTrialCohortRows = previousTrialCohortRows.filter(
+    (student) => new Date(student.created_at).getTime() <= cohortMaturityCutoff.getTime(),
+  );
+  const currentAcquisitionCohort = acquisitionCohortStats(currentMatureTrialCohortRows);
+  const previousAcquisitionCohort = acquisitionCohortStats(previousMatureTrialCohortRows);
+  const pendingTrialCohort = Math.max(
+    currentTrialCohortRows.length - currentMatureTrialCohortRows.length,
+    0,
+  );
   const cancellationRecovery = recoveryStats(currentCancellationEvents, allBookingEvents);
   const noShowRecovery = recoveryStats(currentNoShowEvents, allBookingEvents);
 
@@ -1802,13 +1886,13 @@ export default async function IntelligencePage({
   const missingCancellationReasonCount =
     cancellationReasonCounts.get("Sin motivo registrado") ?? 0;
 
-  const expiredCurrent = commercialAcquisitions.filter(
+  const expiredCurrent = conversionAcquisitions.filter(
     (item) =>
       !item.refunded_at &&
       item.status !== "cancelled" &&
       Boolean(item.expires_on && item.expires_on >= currentStartDate && item.expires_on <= todayDate),
   );
-  const expiredPrevious = commercialAcquisitions.filter(
+  const expiredPrevious = conversionAcquisitions.filter(
     (item) =>
       !item.refunded_at &&
       item.status !== "cancelled" &&
@@ -1935,7 +2019,9 @@ export default async function IntelligencePage({
   });
   const maxDailyRevenue = Math.max(...periodBuckets.map((item) => item.amount), 1);
 
-  const actionableClassRows = classRows.filter((row) => row.sessionCount >= 3);
+  const actionableClassRows = eventHistoryCoversCurrentPeriod
+    ? classRows.filter((row) => row.sessionCount >= 3)
+    : [];
   const highestDemand = [...actionableClassRows].sort(
     (a, b) => b.peakOccupancy - a.peakOccupancy,
   )[0];
@@ -2038,6 +2124,7 @@ export default async function IntelligencePage({
     decisions.push({
       key: "collections-overdue",
       priority: 1,
+      impact: 100,
       tone: "danger",
       title:
         "Cobrar " +
@@ -2057,6 +2144,7 @@ export default async function IntelligencePage({
     decisions.push({
       key: "collections-due-today",
       priority: 1,
+      impact: 90,
       tone: "warning",
       title:
         "Cobrar " +
@@ -2096,6 +2184,7 @@ export default async function IntelligencePage({
     decisions.push({
       key: "retention-preventive",
       priority: preventiveRiskStudents.length >= 3 ? 1 : 2,
+      impact: 80,
       tone: "warning",
       title:
         "Intervenir " +
@@ -2127,13 +2216,13 @@ export default async function IntelligencePage({
   }
 
   if (
-    currentConversationCohort.contacts >= 3 &&
-    previousConversationCohort.contacts >= 3 &&
+    conversationCohortComparable &&
     conversationBookingDrop >= 5
   ) {
     decisions.push({
       key: "conversion-conversation-booking",
       priority: conversationBookingDrop >= 10 ? 1 : 2,
+      impact: 70,
       tone: "danger",
       title: "Recuperar conversación → reserva",
       evidence:
@@ -2149,10 +2238,10 @@ export default async function IntelligencePage({
     });
   }
 
-  const paidCampaignWithoutConversion = [...currentMarketingRows]
+  const paidCampaignWithoutConversion = [...currentMarketingDecisionRows]
     .filter((row) => row.spend > 0 && row.contacts >= 5 && row.converted === 0)
     .sort((a, b) => b.spend - a.spend)[0];
-  const efficientCampaign = [...currentMarketingRows]
+  const efficientCampaign = [...currentMarketingDecisionRows]
     .filter(
       (row) =>
         row.spend > 0 &&
@@ -2225,10 +2314,15 @@ export default async function IntelligencePage({
     });
   }
 
-  if (attendanceDecisionSample >= 5 && showRateDrop >= 5) {
+  if (
+    eventHistoryCoversComparison &&
+    attendanceDecisionSample >= 5 &&
+    showRateDrop >= 5
+  ) {
     decisions.push({
       key: "conversion-show-rate",
       priority: showRateDrop >= 10 ? 1 : 2,
+      impact: 65,
       tone: "danger",
       title: "Reducir no show",
       evidence:
@@ -2246,7 +2340,11 @@ export default async function IntelligencePage({
     });
   }
 
-  if (noShowRecovery.eligible >= 3 && noShowRecovery.rate < 50) {
+  if (
+    eventHistoryCoversCurrentPeriod &&
+    noShowRecovery.eligible >= 3 &&
+    noShowRecovery.rate < 50
+  ) {
     decisions.push({
       key: "no-show-recovery",
       priority: 2,
@@ -2264,7 +2362,11 @@ export default async function IntelligencePage({
     });
   }
 
-  if (cancellationRecovery.eligible >= 3 && cancellationRecovery.rate < 50) {
+  if (
+    eventHistoryCoversCurrentPeriod &&
+    cancellationRecovery.eligible >= 3 &&
+    cancellationRecovery.rate < 50
+  ) {
     decisions.push({
       key: "cancellation-recovery",
       priority: 2,
@@ -2355,7 +2457,7 @@ export default async function IntelligencePage({
     });
   }
 
-  if (currentConversationCohort.conversations === 0) {
+  if (conversations.length === 0) {
     decisions.push({
       key: "data-asistian-conversations",
       priority: 3,
@@ -2368,7 +2470,11 @@ export default async function IntelligencePage({
     });
   }
 
-  decisions.sort((a, b) => a.priority - b.priority);
+  decisions.sort(
+    (a, b) =>
+      a.priority - b.priority ||
+      (b.impact ?? 0) - (a.impact ?? 0),
+  );
   const topDecisions = decisions.slice(0, 5);
 
   const [pageTitle, pageDescription] = titleFor(view);
@@ -2406,6 +2512,16 @@ export default async function IntelligencePage({
         ))}
       </nav>
 
+      {!eventHistoryCoversComparison ? (
+        <div className="intel-source-note">
+          Cobertura histórica limitada:{" "}
+          {eventCoverageStartLabel
+            ? "los eventos inmutables observados comienzan el " + eventCoverageStartLabel
+            : "todavía no hay eventos inmutables registrados"}
+          . No inferimos actividad anterior faltante; las comparaciones y decisiones que dependen de eventos se desactivan cuando el periodo no tiene cobertura suficiente.
+        </div>
+      ) : null}
+
       {view === "resumen" ? (
         <>
           <section className="intel-kpi-grid">
@@ -2424,8 +2540,18 @@ export default async function IntelligencePage({
             <MetricCard
               label="Show rate"
               value={pct(showRate)}
-              delta={pointsDelta(showRate, previousShowRate)}
-              tone={showRate >= previousShowRate ? "positive" : "warning"}
+              delta={
+                eventHistoryCoversComparison
+                  ? pointsDelta(showRate, previousShowRate)
+                  : "Cobertura histórica limitada"
+              }
+              tone={
+                eventHistoryCoversComparison
+                  ? showRate >= previousShowRate
+                    ? "positive"
+                    : "warning"
+                  : "neutral"
+              }
             />
             <MetricCard
               label="Ocupación"
@@ -2515,11 +2641,16 @@ export default async function IntelligencePage({
                   />
                 </div>
                 <div className="intel-source-note">
-                  {currentConversationCohort.conversations > 0
-                    ? "Conversación → reserva: " +
+                  {currentConversationCohortAll.conversations > 0
+                    ? "Cohorte madura (≥" +
+                      CONVERSION_MATURITY_DAYS +
+                      " días): conversación → reserva " +
                       pct(currentConversationCohort.conversationToBookingRate) +
-                      " · Conversación → alumna: " +
-                      pct(currentConversationCohort.conversationToConversionRate)
+                      " · conversación → alumna " +
+                      pct(currentConversationCohort.conversationToConversionRate) +
+                      (pendingConversationContacts > 0
+                        ? " · " + pendingConversationContacts + " contactos aún madurando"
+                        : "")
                     : "La integración está lista; falta que Asistian empiece a enviar conversation_activity."}
                 </div>
               </Section>
@@ -3165,11 +3296,14 @@ export default async function IntelligencePage({
                   />
                 </div>
                 <div className="intel-source-note">
-                  {currentConversationCohort.conversations > 0
+                  {currentConversationCohortAll.conversations > 0
                     ? currentConversationCohort.linked +
                       "/" +
                       currentConversationCohort.contacts +
-                      " contactos ya están enlazados con una alumna/prospecto de Studio Flow."
+                      " contactos maduros ya están enlazados con una alumna/prospecto de Studio Flow." +
+                      (pendingConversationContacts > 0
+                        ? " " + pendingConversationContacts + " contactos recientes siguen madurando y no entran en comparaciones."
+                        : "")
                     : "Esperando el primer evento conversation_activity desde Asistian. El receptor y la cohorte ya están preparados."}
                 </div>
               </Section>
@@ -3508,7 +3642,7 @@ export default async function IntelligencePage({
             <div className="intel-stack">
               <Section
                 title="📣 Embudo de marketing"
-                description="First-touch por contacto: cada persona se atribuye una sola vez al primer origen/campaña disponible del periodo."
+                description="First-touch histórico por contacto: la cohorte del periodo sólo incluye personas cuyo primer contacto real ocurrió en estas fechas."
               >
                 <div className="intel-bars">
                   <BarRow
@@ -3554,7 +3688,11 @@ export default async function IntelligencePage({
                   />
                 </div>
                 <div className="intel-source-note">
-                  Los ingresos son cobros posteriores al primer contacto únicamente para personas cuya primera compra de paquete/membresía ocurrió después de ese contacto.
+                  Los ingresos son cobros posteriores al primer contacto únicamente para personas cuya primera compra de paquete/membresía ocurrió después de ese contacto.{" "}
+                  {pendingMarketingContacts > 0
+                    ? pendingMarketingContacts +
+                      " contactos recientes siguen madurando; no generan decisiones de campaña todavía."
+                    : "La cohorte actual ya superó la ventana mínima de maduración."}
                 </div>
               </Section>
 
@@ -3724,10 +3862,14 @@ export default async function IntelligencePage({
             <MetricCard
               label="Demanda pico"
               value={pct(currentClassMetrics.peakOccupancy)}
-              delta={pointsDelta(
-                currentClassMetrics.peakOccupancy,
-                previousClassMetrics.peakOccupancy,
-              )}
+              delta={
+                eventHistoryCoversComparison
+                  ? pointsDelta(
+                      currentClassMetrics.peakOccupancy,
+                      previousClassMetrics.peakOccupancy,
+                    )
+                  : "Cobertura histórica limitada"
+              }
               tone={currentClassMetrics.peakOccupancy >= 80 ? "positive" : "neutral"}
             />
             <MetricCard
@@ -3806,7 +3948,10 @@ export default async function IntelligencePage({
                   ))}
                 </div>
                 <div className="intel-source-note">
-                  “Pico” es ocupación simultánea máxima observada por eventos. “Presión de reserva” puede superar 100% si un mismo lugar se vendió, canceló y volvió a ocuparse; por eso no la usamos sola para decidir expansión.
+                  “Pico” es ocupación simultánea máxima observada por eventos. “Presión de reserva” puede superar 100% si un mismo lugar se vendió, canceló y volvió a ocuparse; por eso no la usamos sola para decidir expansión.{" "}
+                  {eventHistoryCoversCurrentPeriod
+                    ? "El periodo actual tiene cobertura suficiente para decisiones de demanda."
+                    : "Cobertura limitada: mostramos evidencia registrada, pero no generamos decisiones de demanda para periodos anteriores al inicio del historial de eventos."}
                 </div>
               </Section>
 
@@ -4087,7 +4232,10 @@ export default async function IntelligencePage({
                   <div><span>2+ cancelaciones/no-show recientes</span><strong>+1 señal</strong></div>
                 </div>
                 <div className="intel-source-note">
-                  Se necesita una combinación relevante de señales; una alumna nueva no se penaliza por no tener historial suficiente.
+                  Se necesita una combinación relevante de señales; una alumna nueva no se penaliza por no tener historial suficiente.{" "}
+                  {retentionHistoryCovered
+                    ? "La ventana conductual de 42 días tiene cobertura."
+                    : "Cobertura conductual limitada: no inferimos ausencia, caídas de frecuencia ni fricción antes del historial disponible; sólo usamos señales independientes como vencimiento y próxima reserva."}
                 </div>
               </Section>
 
@@ -4373,20 +4521,20 @@ export default async function IntelligencePage({
               ) : null}
 
               <Section
-                title={currentExpenses.length ? "✓ Fuente de gastos activa" : "⚠️ Cobertura de gastos"}
-                description="La calidad del resultado depende de que los gastos del periodo estén completos."
+                title="⚠️ Cobertura de gastos no verificada"
+                description="Tener movimientos registrados no demuestra que estén todos los costos del periodo."
               >
                 <Insight
-                  tone={currentExpenses.length ? "info" : "warning"}
+                  tone="warning"
                   title={
                     currentExpenses.length
-                      ? currentExpenses.length + " gastos registrados"
+                      ? currentExpenses.length + " gastos registrados · cobertura no verificada"
                       : "No hay gastos registrados en el periodo"
                   }
                   body={
                     currentExpenses.length
-                      ? "Resultado y margen ya usan estos movimientos. Revisa que no falten renta, nómina, servicios u otros costos."
-                      : "No interpretes el resultado operativo como utilidad real hasta capturar los gastos del periodo."
+                      ? "Resultado y margen usan sólo los movimientos capturados. No los interpretes como rentabilidad definitiva hasta validar renta, nómina, servicios, comisiones y demás costos."
+                      : "No interpretes el resultado operativo como utilidad real hasta capturar y validar los gastos del periodo."
                   }
                 />
               </Section>
