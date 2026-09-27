@@ -1511,16 +1511,26 @@ export default async function IntelligencePage({
       if (!contact.studentId) continue;
       linked += 1;
       const startTime = new Date(contact.startedAt).getTime();
-      const afterConversation = (event: DomainEventRow) =>
-        eventStudentId(event) === contact.studentId &&
-        new Date(event.occurred_at).getTime() >= startTime;
+      const windowEndTime =
+        startTime + CONVERSION_MATURITY_DAYS * DAY;
+      const withinConversionWindow = (event: DomainEventRow) => {
+        const eventTime = new Date(event.occurred_at).getTime();
+        return (
+          eventStudentId(event) === contact.studentId &&
+          eventTime >= startTime &&
+          eventTime <= windowEndTime
+        );
+      };
 
-      if (allBookingEvents.some(afterConversation)) booked.add(key);
-      if (allAttendedEvents.some(afterConversation)) attended.add(key);
+      if (allBookingEvents.some(withinConversionWindow)) booked.add(key);
+      if (allAttendedEvents.some(withinConversionWindow)) attended.add(key);
 
       const conversion = firstConversionAcquisitionByStudent.get(contact.studentId);
-      if (conversion && new Date(conversion.created_at).getTime() >= startTime) {
-        converted.add(key);
+      if (conversion) {
+        const conversionTime = new Date(conversion.created_at).getTime();
+        if (conversionTime >= startTime && conversionTime <= windowEndTime) {
+          converted.add(key);
+        }
       }
     }
 
@@ -1647,14 +1657,21 @@ export default async function IntelligencePage({
     paymentsBySale.set(payment.sale_id, list);
   }
 
-  function collectedRevenueAfter(studentId: string, startedAt: string) {
+  function collectedRevenueWithinConversionWindow(
+    studentId: string,
+    startedAt: string,
+  ) {
     const startTime = new Date(startedAt).getTime();
+    const windowEndTime =
+      startTime + CONVERSION_MATURITY_DAYS * DAY;
     let total = 0;
 
     for (const sale of confirmedSalesByStudent.get(studentId) ?? []) {
-      if (new Date(sale.created_at).getTime() < startTime) continue;
+      const saleTime = new Date(sale.created_at).getTime();
+      if (saleTime < startTime || saleTime > windowEndTime) continue;
       for (const payment of paymentsBySale.get(sale.id) ?? []) {
-        if (new Date(paymentEffectiveDateTime(payment)).getTime() < startTime) continue;
+        const paymentTime = new Date(paymentEffectiveDateTime(payment)).getTime();
+        if (paymentTime < startTime || paymentTime > windowEndTime) continue;
         total += payment.kind === "refund" ? -payment.amount_minor : payment.amount_minor;
       }
     }
@@ -1755,17 +1772,30 @@ export default async function IntelligencePage({
       if (touch.studentId) {
         row.linked += 1;
         const startTime = new Date(touch.startedAt).getTime();
-        const afterTouch = (event: DomainEventRow) =>
-          eventStudentId(event) === touch.studentId &&
-          new Date(event.occurred_at).getTime() >= startTime;
+        const windowEndTime =
+          startTime + CONVERSION_MATURITY_DAYS * DAY;
+        const withinTouchWindow = (event: DomainEventRow) => {
+          const eventTime = new Date(event.occurred_at).getTime();
+          return (
+            eventStudentId(event) === touch.studentId &&
+            eventTime >= startTime &&
+            eventTime <= windowEndTime
+          );
+        };
 
-        if (allBookingEvents.some(afterTouch)) row.booked += 1;
-        if (allAttendedEvents.some(afterTouch)) row.attended += 1;
+        if (allBookingEvents.some(withinTouchWindow)) row.booked += 1;
+        if (allAttendedEvents.some(withinTouchWindow)) row.attended += 1;
 
         const conversion = firstConversionAcquisitionByStudent.get(touch.studentId);
-        if (conversion && new Date(conversion.created_at).getTime() >= startTime) {
-          row.converted += 1;
-          row.revenue += collectedRevenueAfter(touch.studentId, touch.startedAt);
+        if (conversion) {
+          const conversionTime = new Date(conversion.created_at).getTime();
+          if (conversionTime >= startTime && conversionTime <= windowEndTime) {
+            row.converted += 1;
+            row.revenue += collectedRevenueWithinConversionWindow(
+              touch.studentId,
+              touch.startedAt,
+            );
+          }
         }
       }
 
