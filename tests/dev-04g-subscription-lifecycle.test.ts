@@ -11,6 +11,9 @@ describe("DEV-04G subscription lifecycle", () => {
   const migration = source(
     "supabase/migrations/20260926201951_dev_04g_subscription_lifecycle.sql",
   );
+  const hardening = source(
+    "supabase/migrations/20260927010931_dev_04g_subscription_lifecycle_hardening.sql",
+  );
   const adminContext = source("lib/auth/admin-context.ts");
   const studentPortal = source("lib/student/portal.ts");
   const adminLayout = source("app/admin/layout.tsx");
@@ -44,6 +47,8 @@ describe("DEV-04G subscription lifecycle", () => {
     expect(adminLayout).toContain('href: "/admin/suscripcion"');
     expect(subscriptionPage).toContain("Plan y suscripción");
     expect(subscriptionPage).toContain("La operación está pausada");
+    expect(subscriptionPage).toContain("Próximo cobro");
+    expect(subscriptionPage).toContain("cancelled_period_end");
   });
 
   it("blocks the student portal when the studio subscription is restricted", () => {
@@ -62,8 +67,14 @@ describe("DEV-04G subscription lifecycle", () => {
     expect(platformActions).toContain('"cancelled"');
     expect(platformActions).toContain("grace_ends_at");
     expect(platformActions).toContain("cancel_at_period_end");
+    expect(platformActions).toContain("trial_end_required");
+    expect(platformActions).toContain("next_billing_at");
+    expect(platformActions).toContain("provider_customer_id");
+    expect(platformActions).toContain("provider_subscription_id");
     expect(platformPage).toContain("Guardar estado");
     expect(platformPage).toContain("Fin de gracia · UTC");
+    expect(platformPage).toContain("Próximo cobro · UTC");
+    expect(platformPage).toContain("HISTORIAL DE SUSCRIPCIÓN");
     expect(migration).not.toMatch(/interval\s+'\d+\s+day/i);
   });
 
@@ -72,5 +83,25 @@ describe("DEV-04G subscription lifecycle", () => {
     expect(migration).toContain("log_studio_subscription_event");
     expect(migration).toContain("billing_reason");
     expect(migration).toContain("effective_access");
+    expect(hardening).toContain("next_billing_at");
+    expect(hardening).toContain("provider_customer_id");
+    expect(hardening).toContain("provider_subscription_id");
+  });
+
+  it("requires finite trials and enforces period-end cancellation", () => {
+    expect(hardening).toContain("studio_plan_assignments_trial_requires_end");
+    expect(hardening).toContain("status <> 'trialing' or trial_ends_at is not null");
+    expect(hardening).toContain("studio_plan_assignments_cancel_period_requires_end");
+    expect(hardening).toContain("then 'cancelled_period_end'");
+    expect(hardening).toContain("spa.current_period_end <= now()");
+  });
+
+  it("blocks service-role automation work when subscription access is restricted", () => {
+    expect(hardening).toContain("enforce_automation_entitlement_on_insert");
+    expect(hardening).toContain("automation_instances_entitlement_insert_trg");
+    expect(hardening).toContain("automation_eligibility_entitlement_insert_trg");
+    expect(hardening).toContain("automation_executions_entitlement_insert_trg");
+    expect(hardening).toContain("automation_attempts_entitlement_insert_trg");
+    expect(hardening).toContain("automations_entitlement_disabled");
   });
 });
