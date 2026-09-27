@@ -27,7 +27,7 @@ describe("INTEL-07 retention intelligence", () => {
     expect(intelligence).toContain("sin próxima reserva");
     expect(intelligence).toContain("cancelaciones/no show recientes");
     expect(intelligence).toContain("score >= 3");
-    expect(intelligence).toContain("Señales preventivas");
+    expect(intelligence).toContain("retentionDecisionTitle");
   });
 
   it("does not penalize brand-new acquisitions for missing history", () => {
