@@ -2803,7 +2803,15 @@ export default async function IntelligencePage({
             <div className="intel-stack">
               <Section
                 title="🎯 Adquisición desde conversación"
-                description="Las mismas personas avanzando desde conversación hasta compra."
+                description={
+                  "Cohorte cerrada " +
+                  currentCohortStartDate +
+                  " → " +
+                  currentCohortEndDate +
+                  ". Cada contacto tiene una ventana fija de " +
+                  CONVERSION_MATURITY_DAYS +
+                  " días para medir el resultado."
+                }
               >
                 <div className="intel-bars">
                   <BarRow
@@ -2822,9 +2830,17 @@ export default async function IntelligencePage({
                   />
                   <BarRow
                     label="Reservaron"
-                    value={currentConversationCohort.booked}
+                    value={
+                      conversationCohortCurrentCovered
+                        ? currentConversationCohort.booked
+                        : 0
+                    }
                     max={Math.max(currentConversationCohort.contacts, 1)}
-                    display={String(currentConversationCohort.booked)}
+                    display={
+                      conversationCohortCurrentCovered
+                        ? String(currentConversationCohort.booked)
+                        : "—"
+                    }
                     tone="accent"
                   />
                   <BarRow
@@ -2840,17 +2856,28 @@ export default async function IntelligencePage({
                   />
                 </div>
                 <div className="intel-source-note">
-                  {currentConversationCohortAll.conversations > 0
-                    ? "Cohorte madura (≥" +
-                      CONVERSION_MATURITY_DAYS +
-                      " días): conversación → reserva " +
-                      pct(currentConversationCohort.conversationToBookingRate) +
+                  {currentConversationCohort.contacts > 0
+                    ? "Cohorte madura de " +
+                      currentConversationCohort.contacts +
+                      " contactos: conversación → reserva " +
+                      (conversationCohortCurrentCovered
+                        ? pct(currentConversationCohort.conversationToBookingRate)
+                        : "— por cobertura histórica") +
                       " · conversación → alumna " +
                       pct(currentConversationCohort.conversationToConversionRate) +
                       (pendingConversationContacts > 0
-                        ? " · " + pendingConversationContacts + " contactos aún madurando"
+                        ? " · " +
+                          pendingConversationContacts +
+                          " primeros contactos recientes aún madurando"
                         : "")
-                    : "La integración está lista; falta que Asistian empiece a enviar conversation_activity."}
+                    : conversations.length > 0
+                      ? "No hubo primeros contactos dentro de la cohorte madura seleccionada." +
+                        (pendingConversationContacts > 0
+                          ? " " +
+                            pendingConversationContacts +
+                            " primeros contactos recientes aún madurando."
+                          : "")
+                      : "La integración está lista; falta que Asistian empiece a enviar conversation_activity."}
                 </div>
               </Section>
 
