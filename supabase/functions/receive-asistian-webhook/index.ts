@@ -345,6 +345,7 @@ Deno.serve(async (request) => {
     "booking_no_show",
     "booking_status_changed",
     "booking_updated",
+    "conversation_activity",
   ]);
 
   if (!supportedEvents.has(eventName)) {
@@ -376,6 +377,104 @@ Deno.serve(async (request) => {
   const serviceName = safeText(service?.name) ?? safeText(booking?.title);
   const startsAt = safeText(booking?.start_time);
   const externalStatus = safeText(booking?.status) ?? safeText(booking?.status_label);
+
+  if (eventName === "conversation_activity") {
+    const attribution = asRecord(context.attribution);
+    const message = asRecord(context.message);
+    const channel =
+      safeText(context.channel) ??
+      safeText(message?.channel) ??
+      safeText(client?.channel) ??
+      "unknown";
+    const source =
+      safeText(context.source) ??
+      safeText(attribution?.source) ??
+      safeText(attribution?.utm_source);
+    const campaign =
+      safeText(context.campaign) ??
+      safeText(attribution?.campaign) ??
+      safeText(attribution?.utm_campaign);
+    const activityAt =
+      safeText(context.occurred_at) ??
+      safeText(context.message_at) ??
+      safeText(message?.created_at) ??
+      providerTimestamp ??
+      new Date().toISOString();
+
+    if (!clientId && !phone) {
+      const incomplete = {
+        ok: false,
+        reason_code: "conversation_identity_missing",
+      };
+      await markEvent("ignored", incomplete);
+      return jsonResponse(
+        {
+          ok: true,
+          accepted: true,
+          event_id: providerEventId,
+          outcome: "conversation_identity_missing",
+        },
+        202,
+      );
+    }
+
+    const response = await supabase.rpc("service_record_asistian_conversation_activity", {
+      target_studio_id: studioId,
+      target_source_event_id: eventRowId,
+      target_client_id: clientId,
+      target_contact_name: fullName,
+      target_phone: phone,
+      target_channel: channel,
+      target_activity_at: activityAt,
+      target_source: source,
+      target_campaign: campaign,
+      target_metadata: {
+        provider_event_id: providerEventId,
+        header_event: headerEventName,
+      },
+    });
+
+    if (response.error) {
+      await markEvent("error", {
+        ok: false,
+        reason_code: "conversation_sync_rpc_failed",
+      });
+      return jsonResponse({ error: "conversation_sync_failed" }, 500);
+    }
+
+    const conversationResult =
+      asRecord(response.data) ?? { ok: false, reason_code: "conversation_sync_result_invalid" };
+
+    if (conversationResult.ok === true) {
+      await markEvent("processed", conversationResult);
+      return jsonResponse(
+        {
+          ok: true,
+          accepted: true,
+          duplicate: existingStatus !== null,
+          event_id: providerEventId,
+          outcome:
+            conversationResult.new_conversation === true
+              ? "conversation_created"
+              : "conversation_updated",
+          conversation_id: conversationResult.conversation_id ?? null,
+          student_id: conversationResult.student_id ?? null,
+        },
+        202,
+      );
+    }
+
+    await markEvent("ignored", conversationResult);
+    return jsonResponse(
+      {
+        ok: true,
+        accepted: true,
+        event_id: providerEventId,
+        outcome: safeText(conversationResult.reason_code) ?? "conversation_not_synced",
+      },
+      202,
+    );
+  }
 
   if (!bookingId) {
     const incomplete = {
