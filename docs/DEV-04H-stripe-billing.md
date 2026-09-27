@@ -162,6 +162,36 @@ Para evitar que la primera compra de prueba modifique Demeter/All Access, se cre
 
 El tenant se usará únicamente para DEV-04H/UAT y evita conectar una suscripción Stripe de prueba al tenant Demeter.
 
+
+## UAT funcional · primera suscripción de prueba
+
+Se ejecutó una compra técnica de prueba directamente en Stripe Sandbox para validar el canal Stripe → webhook → Studio Flow sin tocar Demeter.
+
+Objetos de prueba:
+
+- Customer: `cus_VKr7xXGBMFuPeO`
+- Subscription: `sub_1UKBPn6zvrymwOJvcWzrbcNe`
+- Invoice: `in_1UKBPn6zvrymwOJvDRANTvHX`
+- Plan: Core
+- Importe: **$899 MXN**
+- Invoice status: `paid`
+- Stripe subscription status: `active`
+- `livemode=false`
+
+Resultado inicial:
+
+- Stripe entregó eventos al endpoint de Supabase correctamente.
+- La Edge Function respondió `503 billing_not_configured`.
+- Diagnóstico temporal en Sandbox confirmó:
+  - `STRIPE_SECRET_KEY`: presente
+  - `STRIPE_WEBHOOK_SIGNING_SECRET`: **ausente**
+  - `SUPABASE_URL`: presente
+  - `SUPABASE_SERVICE_ROLE_KEY`: presente
+  - `SAAS_BILLING_RETURN_ORIGINS`: presente
+- La versión diagnóstica temporal fue retirada inmediatamente y `saas-stripe-webhook` fue restaurada al código canónico del repositorio.
+
+Stripe conserva la suscripción UAT pagada y puede reintentar los eventos pendientes una vez que el signing secret quede disponible.
+
 ## Regla de seguridad
 
 No registrar claves secretas de Stripe en Git, documentación, tablas públicas o código cliente.
