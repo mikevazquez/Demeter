@@ -1943,6 +1943,9 @@ export default async function IntelligencePage({
   );
   const pendingConversationContacts =
     conversationCohortStats(pendingConversationRows).contacts;
+  const conversationCohortCurrentCovered =
+    conversationHistoryCoversCurrentCohort &&
+    eventHistoryCoversCurrentCohort;
   const conversationCohortComparable =
     conversationHistoryCoversComparison &&
     eventHistoryCoversCohortComparison &&
