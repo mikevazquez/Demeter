@@ -3385,261 +3385,109 @@ export default async function IntelligencePage({
 
       {view === "alumnas" ? (
         <>
-          <section className="intel-kpi-grid">
-            <MetricCard
-              label="Alumnas activas"
-              value={String(activeStudents)}
-              delta={
-                (activeStudents - previousActiveStudents >= 0 ? "↑ " : "↓ ") +
-                Math.abs(activeStudents - previousActiveStudents) +
-                " netas vs inicio del periodo"
-              }
-              tone={activeStudents >= previousActiveStudents ? "positive" : "warning"}
-            />
-            <MetricCard
-              label="Nuevas alumnas"
-              value={String(newCommercialStudentsCurrent.length)}
-              delta={deltaText(
-                newCommercialStudentsCurrent.length,
-                newCommercialStudentsPrevious.length,
-              )}
-              tone="info"
-            />
-            <MetricCard
-              label="Reactivadas"
-              value={String(reactivatedStudentsCurrent.length)}
-              delta={deltaText(
-                reactivatedStudentsCurrent.length,
-                reactivatedStudentsPrevious.length,
-              )}
-              tone={reactivatedStudentsCurrent.length > 0 ? "positive" : "neutral"}
-            />
-            <MetricCard
-              label="Crecimiento neto"
-              value={(netStudentGrowth >= 0 ? "+" : "") + String(netStudentGrowth)}
-              delta={
-                newCommercialStudentsCurrent.length +
-                " nuevas + " +
-                reactivatedStudentsCurrent.length +
-                " reactivadas − " +
-                newlyConfirmedChurn.length +
-                " churn"
-              }
-              tone={netStudentGrowth >= 0 ? "positive" : "danger"}
-            />
-          </section>
+          <div className="intel-decision-layout">
+            <Section
+              title="👥 Movimiento de alumnas"
+              description="Sólo los movimientos que cambian realmente la base del estudio."
+            >
+              <div className="intel-funnel-leaks">
+                <div>
+                  <small>Nuevas</small>
+                  <strong>+{newCommercialStudentsCurrent.length}</strong>
+                </div>
+                <div>
+                  <small>Reactivadas</small>
+                  <strong>+{reactivatedStudentsCurrent.length}</strong>
+                </div>
+                <div>
+                  <small>Churn confirmado</small>
+                  <strong>-{newlyConfirmedChurn.length}</strong>
+                </div>
+              </div>
+              <div className="intel-base-balance">
+                <small>Crecimiento neto</small>
+                <strong>
+                  {netStudentGrowth >= 0 ? "+" : ""}
+                  {netStudentGrowth}
+                </strong>
+                <span>{activeStudents} alumnas activas hoy</span>
+              </div>
+            </Section>
 
-          <div className="intel-two-column">
-            <div className="intel-stack">
-              <Section
-                title="👥 Salud de la base"
-                description="Separa crecimiento, prevención y recuperación para que los conteos no se mezclen."
+            <Section
+              title="🧠 Qué está pasando con onboarding"
+              description="Detecta el primer paso que está frenando a más alumnas."
+            >
+              <article
+                className={
+                  "intel-decision-summary " +
+                  (topOnboardingBottleneck &&
+                  onboardingPending.length >= 3 &&
+                  topOnboardingBottleneck.count / onboardingPending.length >= 0.4
+                    ? "is-warning"
+                    : "is-positive")
+                }
               >
-                <div className="intel-bars">
-                  <BarRow
-                    label="Activas"
-                    value={activeStudents}
-                    max={Math.max(students.length, activeStudents, 1)}
-                    display={String(activeStudents)}
-                    tone="success"
-                  />
-                  <BarRow
-                    label="Riesgo preventivo"
-                    value={preventiveRiskStudents.length}
-                    max={Math.max(activeStudents, 1)}
-                    display={String(preventiveRiskStudents.length)}
-                    tone="warning"
-                  />
-                  <BarRow
-                    label="Vencidas 7–14 días"
-                    value={riskStudents.length}
-                    max={Math.max(students.length, 1)}
-                    display={String(riskStudents.length)}
-                    tone="warning"
-                  />
-                  <BarRow
-                    label="Inactivas 15–29 días"
-                    value={inactiveStudents.length}
-                    max={Math.max(students.length, 1)}
-                    display={String(inactiveStudents.length)}
-                    tone="info"
-                  />
-                  <BarRow
-                    label="Churn confirmado 30+ días"
-                    value={abandonedStudents.length}
-                    max={Math.max(students.length, 1)}
-                    display={String(abandonedStudents.length)}
-                    tone="danger"
-                  />
+                <strong>
+                  {topOnboardingBottleneck &&
+                  onboardingPending.length >= 3 &&
+                  topOnboardingBottleneck.count / onboardingPending.length >= 0.4
+                    ? "El cuello de botella está en " + topOnboardingBottleneck.label
+                    : onboardingPending.length > 0
+                      ? "No hay un bloqueo dominante"
+                      : "Onboarding sin bloqueos pendientes"}
+                </strong>
+                <p>
+                  {topOnboardingBottleneck &&
+                  onboardingPending.length >= 3 &&
+                  topOnboardingBottleneck.count / onboardingPending.length >= 0.4
+                    ? topOnboardingBottleneck.count +
+                      " de " +
+                      onboardingPending.length +
+                      " onboardings pendientes se detienen primero en este paso."
+                    : onboardingPending.length > 0
+                      ? "Los casos pendientes están repartidos entre distintos pasos; no conviene rediseñar uno solo todavía."
+                      : "No hay alumnas detenidas en el flujo de onboarding."}
+                </p>
+                <div>
+                  <small>Recomendación</small>
+                  <b>
+                    {topOnboardingBottleneck &&
+                    onboardingPending.length >= 3 &&
+                    topOnboardingBottleneck.count / onboardingPending.length >= 0.4
+                      ? "Resolver primero este paso común y después medir si aumenta la llegada a primera reserva y primera asistencia."
+                      : onboardingPending.length > 0
+                        ? "Atender casos individuales y seguir observando antes de cambiar el flujo completo."
+                        : "Mantener el flujo actual y vigilar si aparece un nuevo punto de fricción."}
+                  </b>
                 </div>
-                <div className="intel-source-note">
-                  Riesgo preventivo pertenece a la base activa; vencida/inactiva/churn son estados posteriores al vencimiento y no deben sumarse como un único embudo.
-                </div>
-              </Section>
+              </article>
+            </Section>
+          </div>
 
-              <Section
-                title="↗ Movimientos del periodo"
-                description="Entradas y salidas reales de la base, sin contar simples registros como alumnas."
-              >
-                <div className="intel-bars">
-                  <BarRow
-                    label="Primera compra"
-                    value={newCommercialStudentsCurrent.length}
-                    max={Math.max(
-                      newCommercialStudentsCurrent.length,
-                      reactivatedStudentsCurrent.length,
-                      firstAttendanceCurrent.length,
-                      newlyConfirmedChurn.length,
-                      1,
-                    )}
-                    display={String(newCommercialStudentsCurrent.length)}
-                    tone="success"
-                  />
-                  <BarRow
-                    label="Reactivación después de 30+ días"
-                    value={reactivatedStudentsCurrent.length}
-                    max={Math.max(
-                      newCommercialStudentsCurrent.length,
-                      reactivatedStudentsCurrent.length,
-                      firstAttendanceCurrent.length,
-                      newlyConfirmedChurn.length,
-                      1,
-                    )}
-                    display={String(reactivatedStudentsCurrent.length)}
-                    tone="accent"
-                  />
-                  <BarRow
-                    label="Primera asistencia registrada"
-                    value={firstAttendanceCurrent.length}
-                    max={Math.max(
-                      newCommercialStudentsCurrent.length,
-                      reactivatedStudentsCurrent.length,
-                      firstAttendanceCurrent.length,
-                      newlyConfirmedChurn.length,
-                      1,
-                    )}
-                    display={String(firstAttendanceCurrent.length)}
-                    tone="info"
-                  />
-                  <BarRow
-                    label="Churn confirmado en el periodo"
-                    value={newlyConfirmedChurn.length}
-                    max={Math.max(
-                      newCommercialStudentsCurrent.length,
-                      reactivatedStudentsCurrent.length,
-                      firstAttendanceCurrent.length,
-                      newlyConfirmedChurn.length,
-                      1,
-                    )}
-                    display={String(newlyConfirmedChurn.length)}
-                    tone="danger"
-                  />
-                </div>
-                <div className="intel-source-note">
-                  Primera asistencia usa el historial de onboarding disponible: {onboardingRows.length}/
-                  {students.length} alumnas con seguimiento ({pct(onboardingHistoryCoverage)} de cobertura).
-                  No inferimos asistencias históricas faltantes.
-                </div>
-              </Section>
-
-              <Section
-                title="🚀 Onboarding por paso"
-                description="No sólo muestra cumplimiento acumulado: identifica qué paso está bloqueando la continuación."
-              >
-                <div className="intel-bars">
-                  {onboardingSteps.map(([label, key]) => {
-                    const completed = onboardingRows.filter((row) => Boolean(row[key])).length;
-                    return (
-                      <BarRow
-                        key={key}
-                        label={label}
-                        value={completed}
-                        max={Math.max(onboardingRows.length, 1)}
-                        display={completed + "/" + onboardingRows.length}
-                        tone={
-                          completed === onboardingRows.length && onboardingRows.length > 0
-                            ? "success"
-                            : "info"
-                        }
-                      />
-                    );
-                  })}
-                  <BarRow
-                    label="Onboarding completo"
-                    value={onboardingComplete}
-                    max={Math.max(onboardingRows.length, 1)}
-                    display={onboardingComplete + "/" + onboardingRows.length}
-                    tone="success"
-                  />
-                </div>
-              </Section>
-
-              <Section
-                title="🧩 Cuello de botella de onboarding"
-                description="Cuenta el primer paso pendiente de cada alumna; así sabemos dónde intervenir primero."
-              >
-                <div className="intel-bars">
-                  {onboardingBottleneckRows.length ? (
-                    onboardingBottleneckRows.map((item) => (
-                      <BarRow
-                        key={item.label}
-                        label={item.label}
-                        value={item.count}
-                        max={onboardingBottleneckRows[0]?.count ?? 1}
-                        display={String(item.count)}
-                        tone={
-                          item.label === topOnboardingBottleneck?.label
-                            ? "warning"
-                            : "info"
-                        }
-                      />
-                    ))
-                  ) : (
-                    <p className="intel-empty">No hay pasos de onboarding bloqueados.</p>
-                  )}
-                </div>
-              </Section>
+          <Section
+            title="🚀 Avance del onboarding"
+            description="Una lectura rápida del porcentaje que llegó a cada paso."
+          >
+            <div className="intel-onboarding-steps">
+              {onboardingSteps.map(([label, key]) => {
+                const completed = onboardingRows.filter((row) => Boolean(row[key])).length;
+                const rate = safeRate(completed, onboardingRows.length);
+                return (
+                  <div className="intel-onboarding-step" key={key}>
+                    <span>{label}</span>
+                    <strong>{onboardingRows.length > 0 ? pct(rate) : "—"}</strong>
+                    <small>{completed}/{onboardingRows.length}</small>
+                  </div>
+                );
+              })}
             </div>
+          </Section>
 
-            <div className="intel-stack">
-              <Section
-                title="🚨 Alumnas a intervenir"
-                description="Primero prevención; después recuperación. Tocar una alumna abre su perfil."
-              >
-                <div className="intel-risk-list">
-                  {[
-                    ...preventiveRiskStudents,
-                    ...[...riskStudents, ...inactiveStudents, ...abandonedStudents].sort(
-                      (a, b) => a.days - b.days,
-                    ),
-                  ]
-                    .slice(0, 10)
-                    .map((item) => (
-                      <Link
-                        href={"/admin/alumnas/" + item.id}
-                        key={item.id + ":" + item.state}
-                        className="intel-risk-row"
-                      >
-                        <span>
-                          <strong>{item.name}</strong>
-                          <small>{item.detail}</small>
-                        </span>
-                        <b>{item.state}</b>
-                      </Link>
-                    ))}
-                  {!preventiveRiskStudents.length &&
-                  !riskStudents.length &&
-                  !inactiveStudents.length &&
-                  !abandonedStudents.length ? (
-                    <p className="intel-empty">No hay señales que requieran seguimiento.</p>
-                  ) : null}
-                </div>
-              </Section>
-
-              <Section
-                title="Onboarding pendiente"
-                description="Ordenado por menor avance; se muestra el siguiente paso concreto."
-              >
+          <details className="intel-analysis-details">
+            <summary>Ver análisis detallado</summary>
+            <div className="intel-analysis-details-body">
+              <Section title="Onboarding pendiente">
                 <div className="intel-risk-list">
                   {onboardingPending.slice(0, 10).map((item) => (
                     <Link
@@ -3662,48 +3510,36 @@ export default async function IntelligencePage({
                 </div>
               </Section>
 
-              <Section
-                title="Cómo leer crecimiento"
-                description="No confundimos registros, prospectos y alumnas que realmente compraron."
-              >
-                <div className="intel-insight-list">
-                  <Insight
-                    tone="info"
-                    title="Nueva alumna = primera compra"
-                    body="Sólo cuenta cuando aparece su primera adquisición de paquete o membresía; crear un contacto o una reserva no infla este KPI."
-                  />
-                  <Insight
-                    tone="danger"
-                    title="Churn confirmado = 30 días"
-                    body="Sólo resta del crecimiento cuando transcurrieron 30 días desde vencimiento sin una compra posterior."
-                  />
-                  <Insight
-                    tone="positive"
-                    title="Reactivación ≠ nueva alumna"
-                    body={
-                      "Regresaron " +
-                      reactivatedStudentsCurrent.length +
-                      " en este periodo después de 30+ días. Suman a crecimiento neto, pero no vuelven a contar como adquisición nueva."
-                    }
-                  />
-                  <Insight
-                    tone="info"
-                    title="Onboarding sigue siendo activación"
-                    body={
-                      newCommercialStudentsCurrent.length > 0
-                        ? pct(newStudentActivationRate) +
-                          " de las nuevas alumnas del periodo completaron onboarding (" +
-                          newStudentOnboardingComplete +
-                          "/" +
-                          newCommercialStudentsCurrent.length +
-                          ")."
-                        : "No hubo nuevas alumnas comerciales en este periodo para medir activación."
-                    }
-                  />
+              <Section title="Alumnas a intervenir">
+                <div className="intel-risk-list">
+                  {[
+                    ...preventiveRiskStudents,
+                    ...[...riskStudents, ...inactiveStudents, ...abandonedStudents].sort(
+                      (a, b) => a.days - b.days,
+                    ),
+                  ]
+                    .slice(0, 10)
+                    .map((item) => (
+                      <Link
+                        href={"/admin/alumnas/" + item.id}
+                        key={item.id + ":" + item.state}
+                        className="intel-risk-row"
+                      >
+                        <span>
+                          <strong>{item.name}</strong>
+                          <small>{item.detail}</small>
+                        </span>
+                        <b>{item.state}</b>
+                      </Link>
+                    ))}
                 </div>
               </Section>
+
+              <div className="intel-source-note">
+                Nueva alumna = primera compra de paquete o membresía. Reactivación = regreso después de 30+ días. Churn sólo se confirma después de 30 días sin nueva compra.
+              </div>
             </div>
-          </div>
+          </details>
         </>
       ) : null}
 
