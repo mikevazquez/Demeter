@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main, feat/inteligencia-11-integral-audit]
+    branches: [main]
   pull_request:
     branches: [main]
 
@@ -35,7 +35,6 @@ jobs:
 
       - name: Format check
         run: npm run format:check
-        continue-on-error: true
 
       - name: Lint
         run: npm run lint
