@@ -58,7 +58,7 @@ describe("INTEL-11 integral consistency audit", () => {
     expect(intelligence).toContain(
       "retentionHistoryCovered && !isNewAcquisition && recentAttendance === 0",
     );
-    expect(intelligence).toContain("Cobertura conductual limitada");
+    expect(intelligence).toContain("Historial todavía limitado");
   });
 
   it(
@@ -90,7 +90,7 @@ describe("INTEL-11 integral consistency audit", () => {
     () => {
       expect(intelligence).toContain("if (age < 30)");
       expect(intelligence).toContain("pendingMaturity += 1");
-      expect(intelligence).toContain("Cohorte todavía sin resultados maduros");
+      expect(intelligence).toContain("La cohorte todavía está madurando");
     },
   );
 
@@ -108,7 +108,7 @@ describe("INTEL-11 integral consistency audit", () => {
     () => {
       expect(intelligence).toContain("classDecisionTitle");
       expect(intelligence).toContain("eventHistoryCoversCurrentPeriod");
-      expect(intelligence).toContain("currentClassMetrics.peakOccupancy");
+      expect(intelligence).toContain("classComparisonRows");
     },
   );
 
