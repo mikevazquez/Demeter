@@ -39,7 +39,8 @@ describe("INTEL-07 retention intelligence", () => {
   it("waits 30 days before confirming churn", () => {
     expect(intelligence).toContain("pendingMaturity");
     expect(intelligence).toContain("churnConfirmed");
-    expect(intelligence).toContain("age >= 30");
+    expect(intelligence).toContain("if (age < 30)");
+    expect(intelligence).toContain("pendingMaturity += 1");
     expect(intelligence).toContain("Churn confirmado");
     expect(intelligence).toContain("Reactivaron >30 días");
   });
