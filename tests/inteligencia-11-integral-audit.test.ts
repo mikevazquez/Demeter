@@ -10,15 +10,18 @@ function source(path: string) {
 describe("INTEL-11 integral consistency audit", () => {
   const intelligence = source("app/admin/inteligencia/page.tsx");
 
-  it("uses package or membership consistently for base, retention and churn", () => {
+  it(
+    "uses package or membership consistently for base, retention and churn",
+    () => {
     expect(intelligence).toContain("for (const item of conversionAcquisitions)");
     expect(intelligence).toContain(
       "const expiredCurrent = conversionAcquisitions.filter",
     );
-    expect(intelligence).toContain(
-      "const expiredPrevious = conversionAcquisitions.filter",
-    );
-  });
+      expect(intelligence).toContain(
+        "const expiredPrevious = conversionAcquisitions.filter",
+      );
+    },
+  );
 
   it("uses effective payment dates for economic period selection", () => {
     expect(intelligence).toContain("effective_on.gte.");
@@ -59,18 +62,30 @@ describe("INTEL-11 integral consistency audit", () => {
     expect(intelligence).toContain("contactos aún madurando");
   });
 
-  it("waits for the full 30-day renewal window before calculating retention outcomes", () => {
-    expect(intelligence).toContain("if (age < 30)");
-    expect(intelligence).toContain("pendingMaturity += 1");
-    expect(intelligence).toContain("Cohorte todavía sin resultados maduros");
-  });
+  it(
+    "waits for the full 30-day renewal window before calculating retention outcomes",
+    () => {
+      expect(intelligence).toContain("if (age < 30)");
+      expect(intelligence).toContain("pendingMaturity += 1");
+      expect(intelligence).toContain("Cohorte todavía sin resultados maduros");
+    },
+  );
 
-  it("does not imply expense completeness from the presence of expense rows", () => {
+  it(
+    "does not imply expense completeness from the presence of expense rows",
+    () => {
     expect(intelligence).toContain("Cobertura de gastos no verificada");
     expect(intelligence).toContain(
       "Tener movimientos registrados no demuestra que estén todos los costos del periodo",
     );
-    expect(intelligence).toContain("no contabilidad fiscal");
+      expect(intelligence).toContain("no contabilidad fiscal");
+    },
+  );
+
+  it("keeps summary and class demand on the same peak-demand definition", () => {
+    expect(intelligence).toContain('label="Demanda pico"');
+    expect(intelligence).toContain("eventHistoryCoversCurrentPeriod");
+    expect(intelligence).toContain("currentClassMetrics.peakOccupancy");
   });
 
   it("orders same-priority decisions by explicit business impact", () => {
