@@ -187,6 +187,12 @@ function eventPayloadText(event: DomainEventRow, key: string) {
   return typeof value === "string" && value.trim() ? value.trim() : null;
 }
 
+function isSyntheticDomainEvent(event: DomainEventRow) {
+  const uatCase = eventPayloadText(event, "uat_case");
+  const source = eventPayloadText(event, "source");
+  return Boolean(uatCase || source?.startsWith("uat_"));
+}
+
 function eventStudentId(event: DomainEventRow) {
   return eventPayloadText(event, "student_id");
 }
@@ -611,7 +617,11 @@ export default async function IntelligencePage({
   const templates = (templatesResult.data ?? []) as ClassTemplateRow[];
   const productTemplates = (productTemplatesResult.data ?? []) as ProductTemplateRow[];
   const onboarding = (onboardingResult.data ?? []) as OnboardingRow[];
-  const domainEvents = (domainEventsResult.data ?? []) as DomainEventRow[];
+  const rawDomainEvents = (domainEventsResult.data ?? []) as DomainEventRow[];
+  const domainEvents = rawDomainEvents.filter(
+    (event) => !isSyntheticDomainEvent(event),
+  );
+  const syntheticDomainEventCount = rawDomainEvents.length - domainEvents.length;
   const domainEventTimes = domainEvents
     .map((event) => new Date(event.occurred_at).getTime())
     .filter((value) => Number.isFinite(value));
@@ -2603,6 +2613,11 @@ export default async function IntelligencePage({
             ? "los eventos inmutables observados comienzan el " + eventCoverageStartLabel
             : "todavía no hay eventos inmutables registrados"}
           . No inferimos actividad anterior faltante; las comparaciones y decisiones que dependen de eventos se desactivan cuando el periodo no tiene cobertura suficiente.
+          {syntheticDomainEventCount > 0
+            ? " Además, " +
+              syntheticDomainEventCount +
+              " eventos UAT/sintéticos fueron excluidos de las métricas."
+            : ""}
         </div>
       ) : null}
 
