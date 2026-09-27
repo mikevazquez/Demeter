@@ -30,6 +30,12 @@ describe("INTEL-11 integral consistency audit", () => {
     expect(intelligence).toContain("item.effective_on < currentStartDate");
   });
 
+  it("anchors date-only business records to the studio timezone", () => {
+    expect(intelligence).toContain("dateKeyInTimeZone");
+    expect(intelligence).toContain('studio.timezone ?? "America/Mexico_City"');
+    expect(intelligence).toContain("shiftDateKey(todayDate, -(days - 1))");
+  });
+
   it("never infers immutable event history before coverage starts", () => {
     expect(intelligence).toContain("earliestDomainEventTime");
     expect(intelligence).toContain("eventHistoryCoversCurrentPeriod");
