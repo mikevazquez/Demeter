@@ -216,7 +216,6 @@ const decisionReservationStatuses = new Set([
   "cancelled_on_time",
   "cancelled_late",
 ]);
-const commercialProductTypes = new Set(["package", "membership", "single_class"]);
 const conversionProductTypes = new Set(["package", "membership"]);
 const CONVERSION_MATURITY_DAYS = 7;
 
@@ -657,12 +656,7 @@ export default async function IntelligencePage({
   const upcomingReservations = (upcomingReservationsResult.data ?? []) as ReservationRow[];
   const templateMap = new Map(templates.map((item) => [item.id, item]));
   const productTemplateMap = new Map(productTemplates.map((item) => [item.id, item]));
-  const commercialAcquisitions = acquisitions.filter((item) => {
-    const productType = productTemplateMap.get(item.product_template_id)?.product_type;
-    return Boolean(productType && commercialProductTypes.has(productType));
-  });
-
-  const conversionAcquisitions = commercialAcquisitions.filter((item) => {
+  const conversionAcquisitions = acquisitions.filter((item) => {
     const productType = productTemplateMap.get(item.product_template_id)?.product_type;
     return Boolean(productType && conversionProductTypes.has(productType));
   });
@@ -2611,10 +2605,27 @@ export default async function IntelligencePage({
               }
             />
             <MetricCard
-              label="Ocupación"
-              value={pct(currentClassMetrics.occupancy)}
-              delta={pointsDelta(currentClassMetrics.occupancy, previousClassMetrics.occupancy)}
-              tone={currentClassMetrics.occupancy >= 70 ? "positive" : "warning"}
+              label="Demanda pico"
+              value={
+                eventHistoryCoversCurrentPeriod
+                  ? pct(currentClassMetrics.peakOccupancy)
+                  : "—"
+              }
+              delta={
+                eventHistoryCoversComparison
+                  ? pointsDelta(
+                      currentClassMetrics.peakOccupancy,
+                      previousClassMetrics.peakOccupancy,
+                    )
+                  : "Cobertura histórica limitada"
+              }
+              tone={
+                !eventHistoryCoversCurrentPeriod
+                  ? "neutral"
+                  : currentClassMetrics.peakOccupancy >= 80
+                    ? "positive"
+                    : "warning"
+              }
             />
           </section>
 
@@ -3960,7 +3971,11 @@ export default async function IntelligencePage({
           <section className="intel-kpi-grid">
             <MetricCard
               label="Demanda pico"
-              value={pct(currentClassMetrics.peakOccupancy)}
+              value={
+                eventHistoryCoversCurrentPeriod
+                  ? pct(currentClassMetrics.peakOccupancy)
+                  : "—"
+              }
               delta={
                 eventHistoryCoversComparison
                   ? pointsDelta(
@@ -3969,7 +3984,13 @@ export default async function IntelligencePage({
                     )
                   : "Cobertura histórica limitada"
               }
-              tone={currentClassMetrics.peakOccupancy >= 80 ? "positive" : "neutral"}
+              tone={
+                !eventHistoryCoversCurrentPeriod
+                  ? "neutral"
+                  : currentClassMetrics.peakOccupancy >= 80
+                    ? "positive"
+                    : "neutral"
+              }
             />
             <MetricCard
               label="Asistencia / capacidad"
@@ -4200,11 +4221,11 @@ export default async function IntelligencePage({
                   </div>
                   <div>
                     <span>≥15% cancelación · 5+ reservas</span>
-                    <strong>Medir recuperación antes de culpar al horario</strong>
+                    <strong>Investigar cancelaciones · medir recuperación</strong>
                   </div>
                   <div>
                     <span>≥10% no show · 5+ cierres</span>
-                    <strong>Reforzar confirmación / recuperación</strong>
+                    <strong>Reducir no show · reforzar confirmación</strong>
                   </div>
                 </div>
               </Section>
