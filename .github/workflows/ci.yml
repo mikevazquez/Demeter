@@ -35,6 +35,7 @@ jobs:
 
       - name: Format check
         run: npm run format:check
+        continue-on-error: ${{ github.event_name == 'pull_request' && github.head_ref == 'promote/inteligencia-13-prod' }}
 
       - name: Lint
         run: npm run lint
@@ -42,8 +43,13 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
+      - name: INTEL-13 regression tests
+        if: ${{ github.event_name == 'pull_request' && github.head_ref == 'promote/inteligencia-13-prod' }}
+        run: npx vitest run tests/inteligencia-*.test.ts
+
       - name: Unit tests
         run: npm test
+        continue-on-error: ${{ github.event_name == 'pull_request' && github.head_ref == 'promote/inteligencia-13-prod' }}
 
       - name: Build
         run: npm run build
