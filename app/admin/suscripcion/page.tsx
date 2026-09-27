@@ -68,7 +68,7 @@ export default async function SubscriptionPage() {
 
   const { data: billing } = await ctx.supabase
     .from("studio_plan_assignments")
-    .select("next_billing_at,billing_provider")
+    .select("trial_started_at,next_billing_at,billing_provider")
     .eq("studio_id", ctx.studio.id)
     .maybeSingle();
 
@@ -124,6 +124,12 @@ export default async function SubscriptionPage() {
         <article className="rounded-3xl border border-white/10 bg-white/[0.025] p-5">
           <p className="eyebrow">PERIODO</p>
           <dl className="mt-3 grid gap-2 text-sm">
+            <div className="flex items-center justify-between gap-4">
+              <dt className="text-zinc-500">Trial inicia</dt>
+              <dd className="text-right text-zinc-200">
+                {formatDate(billing?.trial_started_at ?? null, ctx.studio.locale, ctx.studio.timezone)}
+              </dd>
+            </div>
             <div className="flex items-center justify-between gap-4">
               <dt className="text-zinc-500">Trial termina</dt>
               <dd className="text-right text-zinc-200">
