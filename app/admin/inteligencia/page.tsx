@@ -1719,17 +1719,27 @@ export default async function IntelligencePage({
   }
 
   const allMarketingTouches = firstMarketingTouches(conversations);
-  const currentMarketingTouches = allMarketingTouches.filter((touch) =>
+  const currentPeriodMarketingTouches = allMarketingTouches.filter((touch) =>
     isBetween(touch.startedAt, currentStart, currentEnd),
   );
+  const currentMarketingTouches = allMarketingTouches.filter((touch) =>
+    isBetween(touch.startedAt, currentCohortStart, currentCohortEnd),
+  );
   const previousMarketingTouches = allMarketingTouches.filter((touch) =>
-    isBetween(touch.startedAt, previousStart, currentStart),
+    isBetween(touch.startedAt, previousCohortStart, currentCohortStart),
   );
-  const currentMatureMarketingTouches = currentMarketingTouches.filter(
-    (touch) => new Date(touch.startedAt).getTime() <= cohortMaturityCutoff.getTime(),
+  const pendingMarketingTouches = allMarketingTouches.filter((touch) =>
+    isBetween(touch.startedAt, currentCohortEnd, currentEnd),
   );
-  const currentMatureMarketingExpenses = currentExpenses.filter(
-    (expense) => expense.effective_on <= cohortMaturityCutoffDate,
+  const currentMarketingExpenses = expenses.filter(
+    (expense) =>
+      expense.effective_on >= currentCohortStartDate &&
+      expense.effective_on <= currentCohortEndDate,
+  );
+  const previousMarketingExpenses = expenses.filter(
+    (expense) =>
+      expense.effective_on >= previousCohortStartDate &&
+      expense.effective_on <= previousCohortEndDate,
   );
 
   function marketingRows(touches: MarketingTouch[], expenseRows: ExpenseRow[]) {
@@ -1842,12 +1852,19 @@ export default async function IntelligencePage({
       .sort((a, b) => b.contacts - a.contacts || b.revenue - a.revenue);
   }
 
-  const currentMarketingRows = marketingRows(currentMarketingTouches, currentExpenses);
-  const previousMarketingRows = marketingRows(previousMarketingTouches, previousExpenses);
-  const currentMarketingDecisionRows = marketingRows(
-    currentMatureMarketingTouches,
-    currentMatureMarketingExpenses,
+  const currentMarketingRows = marketingRows(
+    currentMarketingTouches,
+    currentMarketingExpenses,
   );
+  const previousMarketingRows = marketingRows(
+    previousMarketingTouches,
+    previousMarketingExpenses,
+  );
+  const currentPeriodMarketingRows = marketingRows(
+    currentPeriodMarketingTouches,
+    currentExpenses,
+  );
+  const currentMarketingDecisionRows = currentMarketingRows;
   const currentMarketingDecisionSpend = currentMarketingDecisionRows.reduce(
     (sum, row) => sum + row.spend,
     0,
@@ -1872,10 +1889,7 @@ export default async function IntelligencePage({
     currentMarketingDecisionSpend > 0
       ? currentMarketingDecisionRevenue / currentMarketingDecisionSpend
       : null;
-  const pendingMarketingContacts = Math.max(
-    currentMarketingTouches.length - currentMatureMarketingTouches.length,
-    0,
-  );
+  const pendingMarketingContacts = pendingMarketingTouches.length;
   const currentMarketingSpend = currentMarketingRows.reduce((sum, row) => sum + row.spend, 0);
   const previousMarketingSpend = previousMarketingRows.reduce((sum, row) => sum + row.spend, 0);
   const currentMarketingRevenue = currentMarketingRows.reduce((sum, row) => sum + row.revenue, 0);
@@ -1905,9 +1919,9 @@ export default async function IntelligencePage({
   const currentMarketingRoas =
     currentMarketingSpend > 0 ? currentMarketingRevenue / currentMarketingSpend : null;
   const unattributedMarketingContacts =
-    currentMarketingRows.find((row) => row.key === "unattributed")?.contacts ?? 0;
+    currentPeriodMarketingRows.find((row) => row.key === "unattributed")?.contacts ?? 0;
   const unattributedMarketingSpend =
-    currentMarketingRows.find((row) => row.key === "unattributed")?.spend ?? 0;
+    currentPeriodMarketingRows.find((row) => row.key === "unattributed")?.spend ?? 0;
 
   const currentConversationCohortAll = conversationCohortStats(currentConversations);
   const currentConversationCohort = conversationCohortStats(
