@@ -3091,7 +3091,7 @@ export default async function IntelligencePage({
       a.priority - b.priority ||
       (b.impact ?? 0) - (a.impact ?? 0),
   );
-  const topDecisions = decisions.slice(0, 5);
+  const topDecisions = decisions.slice(0, 2);
 
   const [pageTitle, pageDescription] = titleFor(view);
 
@@ -3146,86 +3146,58 @@ export default async function IntelligencePage({
 
       {view === "resumen" ? (
         <>
-          <section className="intel-kpi-grid">
-            <MetricCard
-              label="Ingresos cobrados"
-              value={money(currentRevenue, studio.currency)}
-              delta={deltaText(currentRevenue, previousRevenue)}
-              tone={currentRevenue >= previousRevenue ? "positive" : "danger"}
-            />
-            <MetricCard
-              label="Alumnas activas"
-              value={String(activeStudents)}
-              delta={deltaText(activeStudents, previousActiveStudents)}
-              tone="positive"
-            />
-            <MetricCard
-              label="Show rate"
-              value={eventHistoryCoversCurrentPeriod ? pct(showRate) : "—"}
-              delta={
-                eventHistoryCoversComparison
-                  ? pointsDelta(showRate, previousShowRate)
-                  : "Cobertura histórica limitada"
-              }
-              tone={
-                eventHistoryCoversComparison
-                  ? showRate >= previousShowRate
-                    ? "positive"
-                    : "warning"
-                  : "neutral"
-              }
-            />
-            <MetricCard
-              label="Demanda pico"
-              value={
-                eventHistoryCoversCurrentPeriod
-                  ? pct(currentClassMetrics.peakOccupancy)
-                  : "—"
-              }
-              delta={
-                eventHistoryCoversComparison
-                  ? pointsDelta(
-                      currentClassMetrics.peakOccupancy,
-                      previousClassMetrics.peakOccupancy,
-                    )
-                  : "Cobertura histórica limitada"
-              }
-              tone={
-                !eventHistoryCoversCurrentPeriod
-                  ? "neutral"
-                  : currentClassMetrics.peakOccupancy >= 80
-                    ? "positive"
-                    : "warning"
-              }
-            />
-          </section>
-
-          <div className="intel-two-column">
-            <div className="intel-stack">
-              <Section
-                title="🧭 Centro de decisiones"
-                description="Prioriza sólo señales con evidencia suficiente. Cada tarjeta explica qué pasó y qué hacer."
-              >
-                <div className="intel-decision-list">
-                  {topDecisions.length ? (
-                    topDecisions.map((decision) => (
-                      <DecisionCard key={decision.key} decision={decision} />
-                    ))
-                  ) : (
-                    <div className="intel-decision-empty">
-                      <strong>✓ Sin decisiones críticas detectadas</strong>
-                      <p>
-                        Las señales con muestra suficiente están dentro de los umbrales operativos.
-                      </p>
-                    </div>
-                  )}
+          <Section
+            title="🧭 Qué necesita tu atención"
+            description="Sólo mostramos las dos decisiones con mayor impacto. El resto queda en su sección."
+          >
+            <div className="intel-decision-list">
+              {topDecisions.length ? (
+                topDecisions.map((decision) => (
+                  <DecisionCard key={decision.key} decision={decision} />
+                ))
+              ) : (
+                <div className="intel-decision-empty">
+                  <strong>✓ Sin decisiones críticas detectadas</strong>
+                  <p>Las señales con muestra suficiente no requieren una acción prioritaria hoy.</p>
                 </div>
-              </Section>
+              )}
+            </div>
+          </Section>
 
-              <Section
-                title="Ingresos cobrados por día"
-                description="Cobros menos reembolsos registrados en el periodo."
-              >
+          <Section
+            title="Estado del estudio"
+            description="Tres señales rápidas para entender si algo cambió de forma importante."
+          >
+            <div className="intel-finance-strip">
+              <div>
+                <small>Ingresos cobrados</small>
+                <strong>{money(currentRevenue, studio.currency)}</strong>
+                <span>{deltaText(currentRevenue, previousRevenue)}</span>
+              </div>
+              <div>
+                <small>Alumnas activas</small>
+                <strong>{activeStudents}</strong>
+                <span>
+                  {activeStudents - previousActiveStudents >= 0 ? "↑ " : "↓ "}
+                  {Math.abs(activeStudents - previousActiveStudents)} vs inicio del periodo
+                </span>
+              </div>
+              <div>
+                <small>Show rate</small>
+                <strong>{eventHistoryCoversCurrentPeriod ? pct(showRate) : "—"}</strong>
+                <span>
+                  {eventHistoryCoversComparison
+                    ? pointsDelta(showRate, previousShowRate)
+                    : "Cobertura histórica limitada"}
+                </span>
+              </div>
+            </div>
+          </Section>
+
+          <details className="intel-analysis-details">
+            <summary>Ver contexto adicional</summary>
+            <div className="intel-analysis-details-body">
+              <Section title="Ingresos cobrados por día">
                 <div className="intel-bars">
                   {periodBuckets.slice(-14).map((item) => (
                     <BarRow
@@ -3238,109 +3210,11 @@ export default async function IntelligencePage({
                   ))}
                 </div>
               </Section>
+              <div className="intel-source-note">
+                Resumen prioriza decisiones. Para investigar una señal, abre Conversión, Clases, Retención, Marketing o Finanzas.
+              </div>
             </div>
-
-            <div className="intel-stack">
-              <Section
-                title="🎯 Adquisición desde conversación"
-                description={
-                  "Cohorte cerrada " +
-                  currentCohortStartDate +
-                  " → " +
-                  currentCohortEndDate +
-                  ". Cada contacto tiene una ventana fija de " +
-                  CONVERSION_MATURITY_DAYS +
-                  " días para medir el resultado."
-                }
-              >
-                <div className="intel-bars">
-                  <BarRow
-                    label="Conversaciones"
-                    value={currentConversationCohort.conversations}
-                    max={Math.max(currentConversationCohort.conversations, 1)}
-                    display={String(currentConversationCohort.conversations)}
-                    tone="info"
-                  />
-                  <BarRow
-                    label="Contactos únicos"
-                    value={currentConversationCohort.contacts}
-                    max={Math.max(currentConversationCohort.conversations, 1)}
-                    display={String(currentConversationCohort.contacts)}
-                    tone="info"
-                  />
-                  <BarRow
-                    label="Reservaron"
-                    value={
-                      conversationCohortCurrentCovered
-                        ? currentConversationCohort.booked
-                        : 0
-                    }
-                    max={Math.max(currentConversationCohort.contacts, 1)}
-                    display={
-                      conversationCohortCurrentCovered
-                        ? String(currentConversationCohort.booked)
-                        : "—"
-                    }
-                    tone="accent"
-                  />
-                  <BarRow
-                    label="Compraron paquete / membresía"
-                    value={currentConversationCohort.converted}
-                    max={Math.max(currentConversationCohort.contacts, 1)}
-                    display={
-                      currentConversationCohort.converted +
-                      " · " +
-                      pct(currentConversationCohort.conversationToConversionRate)
-                    }
-                    tone="success"
-                  />
-                </div>
-                <div className="intel-source-note">
-                  {currentConversationCohort.contacts > 0
-                    ? "Cohorte madura de " +
-                      currentConversationCohort.contacts +
-                      " contactos: conversación → reserva " +
-                      (conversationCohortCurrentCovered
-                        ? pct(currentConversationCohort.conversationToBookingRate)
-                        : "— por cobertura histórica") +
-                      " · conversación → alumna " +
-                      pct(currentConversationCohort.conversationToConversionRate) +
-                      (pendingConversationContacts > 0
-                        ? " · " +
-                          pendingConversationContacts +
-                          " primeros contactos recientes aún madurando"
-                        : "")
-                    : conversations.length > 0
-                      ? "No hubo primeros contactos dentro de la cohorte madura seleccionada." +
-                        (pendingConversationContacts > 0
-                          ? " " +
-                            pendingConversationContacts +
-                            " primeros contactos recientes aún madurando."
-                          : "")
-                      : "La integración está lista; falta que Asistian empiece a enviar conversation_activity."}
-                </div>
-              </Section>
-
-              <Section title="🪑 Clases" description="Señales rápidas de capacidad.">
-                <div className="intel-compact-table">
-                  <div className="intel-table-head">
-                    <span>Clase</span>
-                    <span>Pico</span>
-                  </div>
-                  {classRows.slice(0, 4).map((row) => (
-                    <div className="intel-table-row" key={row.name}>
-                      <span>{row.name}</span>
-                      <strong>
-                        {eventHistoryCoversCurrentPeriod
-                          ? pct(row.peakOccupancy)
-                          : "—"}
-                      </strong>
-                    </div>
-                  ))}
-                </div>
-              </Section>
-            </div>
-          </div>
+          </details>
         </>
       ) : null}
 
