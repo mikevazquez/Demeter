@@ -52,6 +52,11 @@ const statusCopy: Record<
     detail: "La operación del estudio está restringida.",
     tone: "blocked",
   },
+  cancelled_period_end: {
+    title: "Suscripción finalizada",
+    detail: "El periodo contratado terminó y la operación está restringida hasta reactivar la suscripción.",
+    tone: "blocked",
+  },
 };
 
 export default async function SubscriptionPage() {
@@ -60,6 +65,12 @@ export default async function SubscriptionPage() {
   if (ctx.membership.role !== "owner") {
     redirect("/admin?error=access");
   }
+
+  const { data: billing } = await ctx.supabase
+    .from("studio_plan_assignments")
+    .select("next_billing_at,billing_provider")
+    .eq("studio_id", ctx.studio.id)
+    .maybeSingle();
 
   const state =
     statusCopy[ctx.subscription.effective_status] ??
@@ -133,6 +144,18 @@ export default async function SubscriptionPage() {
               <dt className="text-zinc-500">Gracia termina</dt>
               <dd className="text-right text-zinc-200">
                 {formatDate(ctx.subscription.grace_ends_at, ctx.studio.locale, ctx.studio.timezone)}
+              </dd>
+            </div>
+            <div className="flex items-center justify-between gap-4">
+              <dt className="text-zinc-500">Próximo cobro</dt>
+              <dd className="text-right text-zinc-200">
+                {formatDate(billing?.next_billing_at ?? null, ctx.studio.locale, ctx.studio.timezone)}
+              </dd>
+            </div>
+            <div className="flex items-center justify-between gap-4">
+              <dt className="text-zinc-500">Facturación</dt>
+              <dd className="text-right text-zinc-200">
+                {billing?.billing_provider ?? "Manual / no configurada"}
               </dd>
             </div>
           </dl>
