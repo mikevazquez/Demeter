@@ -31,14 +31,14 @@ describe("INTEL-05 financial intelligence", () => {
   it("calculates operating result from cash received minus registered expenses", () => {
     expect(intelligence).toContain("currentOperatingResult = currentRevenue - currentExpenseTotal");
     expect(intelligence).toContain("currentOperatingMargin");
-    expect(intelligence).toContain('label="Resultado operativo"');
-    expect(intelligence).toContain('label="Margen registrado"');
+    expect(intelligence).toContain('title="💰 Estado financiero"');
+    expect(intelligence).toContain("financeDecisionTitle");
   });
 
   it("makes expense coverage explicit instead of claiming accounting profit", () => {
-    expect(intelligence).toContain("inteligencia operativa, no contabilidad fiscal");
-    expect(intelligence).toContain("el resultado estará sobreestimado");
-    expect(intelligence).toContain("No interpretes el resultado operativo como utilidad real");
+    expect(intelligence).toContain("No equivale a utilidad contable o fiscal");
+    expect(intelligence).toContain("artificialmente inflado");
+    expect(intelligence).toContain("antes de tomar decisiones de rentabilidad");
   });
 
   it("supports direct expense capture and category breakdown", () => {
