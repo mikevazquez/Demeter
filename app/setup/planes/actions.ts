@@ -136,7 +136,12 @@ export async function changeStudioSubscriptionAction(formData: FormData) {
   const reason = field(formData, "billing_reason");
   const trialEndsAt = utcDateTimeField(formData, "trial_ends_at");
   const graceEndsAt = utcDateTimeField(formData, "grace_ends_at");
+  const currentPeriodStart = utcDateTimeField(formData, "current_period_start");
   const currentPeriodEnd = utcDateTimeField(formData, "current_period_end");
+  const nextBillingAt = utcDateTimeField(formData, "next_billing_at");
+  const billingProvider = field(formData, "billing_provider") || null;
+  const providerCustomerId = field(formData, "provider_customer_id") || null;
+  const providerSubscriptionId = field(formData, "provider_subscription_id") || null;
   const cancelAtPeriodEnd = formData.get("cancel_at_period_end") === "on";
 
   if (
@@ -144,7 +149,9 @@ export async function changeStudioSubscriptionAction(formData: FormData) {
     !subscriptionStatuses.has(status) ||
     trialEndsAt === "invalid" ||
     graceEndsAt === "invalid" ||
-    currentPeriodEnd === "invalid"
+    currentPeriodStart === "invalid" ||
+    currentPeriodEnd === "invalid" ||
+    nextBillingAt === "invalid"
   ) {
     redirect("/setup/planes?error=invalid_subscription");
   }
@@ -153,10 +160,22 @@ export async function changeStudioSubscriptionAction(formData: FormData) {
     redirect("/setup/planes?error=cancel_period_required");
   }
 
+  if (status === "trialing" && !trialEndsAt) {
+    redirect("/setup/planes?error=trial_end_required");
+  }
+
+  if (
+    currentPeriodStart &&
+    currentPeriodEnd &&
+    new Date(currentPeriodEnd).getTime() <= new Date(currentPeriodStart).getTime()
+  ) {
+    redirect("/setup/planes?error=invalid_period");
+  }
+
   const { data: currentAssignment } = await supabase
     .from("studio_plan_assignments")
     .select(
-      "metadata,current_period_start,current_period_end,billing_provider,provider_customer_id,provider_subscription_id",
+      "metadata,current_period_start,current_period_end,next_billing_at,billing_provider,provider_customer_id,provider_subscription_id",
     )
     .eq("studio_id", studioId)
     .maybeSingle();
@@ -172,7 +191,12 @@ export async function changeStudioSubscriptionAction(formData: FormData) {
 
   const payload: Record<string, unknown> = {
     status,
-    current_period_end: currentPeriodEnd ?? currentAssignment.current_period_end,
+    current_period_start: currentPeriodStart,
+    current_period_end: currentPeriodEnd,
+    next_billing_at: nextBillingAt,
+    billing_provider: billingProvider,
+    provider_customer_id: providerCustomerId,
+    provider_subscription_id: providerSubscriptionId,
     cancel_at_period_end: status === "active" ? cancelAtPeriodEnd : false,
     metadata: {
       ...currentMetadata,
