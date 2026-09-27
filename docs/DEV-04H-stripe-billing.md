@@ -144,6 +144,24 @@ El motor de billing contempla:
 10. Validar pago exitoso, pago fallido, recuperación, cancelación, duplicados y Customer Portal.
 11. Mantener producción intacta hasta aprobación explícita.
 
+
+## Tenant UAT aislado
+
+Para evitar que la primera compra de prueba modifique Demeter/All Access, se creó un tenant exclusivo de billing en Supabase Sandbox:
+
+- Nombre: `Studio Flow Billing UAT`
+- Slug: `studio-flow-billing-uat`
+- Studio ID: `086b590c-43de-4e44-bae1-bf0fb15ece45`
+- Owner: mismo usuario owner de Demeter en Sandbox
+- Plan inicial: Core
+- Suscripción: `active`
+- Effective status: `active`
+- Access mode: `full`
+- Billing provider: null hasta que Stripe confirme el primer checkout
+- Módulos efectivos verificados: `core`, `documents`, `notifications`
+
+El tenant se usará únicamente para DEV-04H/UAT y evita conectar una suscripción Stripe de prueba al tenant Demeter.
+
 ## Regla de seguridad
 
 No registrar claves secretas de Stripe en Git, documentación, tablas públicas o código cliente.
