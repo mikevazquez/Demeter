@@ -1958,12 +1958,17 @@ export default async function IntelligencePage({
 
   const currentTrialCohortRows = students.filter(
     (student) =>
-      isBetween(student.created_at, currentStart, currentEnd) &&
+      isBetween(student.created_at, currentCohortStart, currentCohortEnd) &&
       (student.student_type === "trial" || Boolean(student.trial_status)),
   );
   const previousTrialCohortRows = students.filter(
     (student) =>
-      isBetween(student.created_at, previousStart, currentStart) &&
+      isBetween(student.created_at, previousCohortStart, currentCohortStart) &&
+      (student.student_type === "trial" || Boolean(student.trial_status)),
+  );
+  const pendingTrialCohortRows = students.filter(
+    (student) =>
+      isBetween(student.created_at, currentCohortEnd, currentEnd) &&
       (student.student_type === "trial" || Boolean(student.trial_status)),
   );
 
@@ -1976,21 +1981,28 @@ export default async function IntelligencePage({
 
     for (const student of rows) {
       const createdAt = new Date(student.created_at).getTime();
-      const eventAfterCreation = (event: DomainEventRow) =>
-        eventStudentId(event) === student.id &&
-        new Date(event.occurred_at).getTime() >= createdAt;
+      const windowEndTime =
+        createdAt + CONVERSION_MATURITY_DAYS * DAY;
+      const eventWithinWindow = (event: DomainEventRow) => {
+        const eventTime = new Date(event.occurred_at).getTime();
+        return (
+          eventStudentId(event) === student.id &&
+          eventTime >= createdAt &&
+          eventTime <= windowEndTime
+        );
+      };
 
-      if (allBookingEvents.some(eventAfterCreation)) booked.add(student.id);
-      if (allCancellationEvents.some(eventAfterCreation)) cancelled.add(student.id);
-      if (allNoShowEvents.some(eventAfterCreation)) noShow.add(student.id);
-      if (allAttendedEvents.some(eventAfterCreation)) attended.add(student.id);
+      if (allBookingEvents.some(eventWithinWindow)) booked.add(student.id);
+      if (allCancellationEvents.some(eventWithinWindow)) cancelled.add(student.id);
+      if (allNoShowEvents.some(eventWithinWindow)) noShow.add(student.id);
+      if (allAttendedEvents.some(eventWithinWindow)) attended.add(student.id);
 
       const conversion = firstConversionAcquisitionByStudent.get(student.id);
-      if (
-        conversion &&
-        new Date(conversion.created_at).getTime() >= createdAt
-      ) {
-        converted.add(student.id);
+      if (conversion) {
+        const conversionTime = new Date(conversion.created_at).getTime();
+        if (conversionTime >= createdAt && conversionTime <= windowEndTime) {
+          converted.add(student.id);
+        }
       }
     }
 
@@ -2008,18 +2020,9 @@ export default async function IntelligencePage({
     };
   }
 
-  const currentMatureTrialCohortRows = currentTrialCohortRows.filter(
-    (student) => new Date(student.created_at).getTime() <= cohortMaturityCutoff.getTime(),
-  );
-  const previousMatureTrialCohortRows = previousTrialCohortRows.filter(
-    (student) => new Date(student.created_at).getTime() <= cohortMaturityCutoff.getTime(),
-  );
-  const currentAcquisitionCohort = acquisitionCohortStats(currentMatureTrialCohortRows);
-  const previousAcquisitionCohort = acquisitionCohortStats(previousMatureTrialCohortRows);
-  const pendingTrialCohort = Math.max(
-    currentTrialCohortRows.length - currentMatureTrialCohortRows.length,
-    0,
-  );
+  const currentAcquisitionCohort = acquisitionCohortStats(currentTrialCohortRows);
+  const previousAcquisitionCohort = acquisitionCohortStats(previousTrialCohortRows);
+  const pendingTrialCohort = pendingTrialCohortRows.length;
   const cancellationRecovery = recoveryStats(currentCancellationEvents, allBookingEvents);
   const noShowRecovery = recoveryStats(currentNoShowEvents, allBookingEvents);
 
