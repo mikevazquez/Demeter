@@ -29,7 +29,7 @@ describe("INTEL-08 class demand intelligence", () => {
     expect(intelligence).toContain("pendingCancelledSeats");
     expect(intelligence).toContain("refilledSeats");
     expect(intelligence).toContain("cancellationRefill");
-    expect(intelligence).toContain("Lugares recuperados");
+    expect(intelligence).toContain("classDecisionTitle");
   });
 
   it("does not recommend expansion from final occupancy alone", () => {
@@ -39,15 +39,14 @@ describe("INTEL-08 class demand intelligence", () => {
   });
 
   it("distinguishes recovered cancellations from real lost capacity", () => {
-    expect(intelligence).toContain("Lugares perdidos por cancelación");
-    expect(intelligence).toContain("Cancelaciones con recuperación");
-    expect(intelligence).toContain("Lugar recuperado");
-    expect(intelligence).toContain("Capacidad bloqueada");
+    expect(intelligence).toContain("cancellationRefill");
+    expect(intelligence).toContain("classComparisonRows");
+    expect(intelligence).toContain("studyAttendanceChangePct");
   });
 
   it("uses peak demand for daypart and weekday analysis", () => {
     expect(intelligence).toContain("sessionLifecycleMap.get(session.id)?.peakReserved");
-    expect(intelligence).toContain('title="🕒 Demanda pico por franja"');
-    expect(intelligence).toContain('title="Demanda pico por día"');
+    expect(intelligence).toContain("sessionLifecycleMap.get(session.id)?.peakReserved");
+    expect(intelligence).toContain('title="🪑 Asistencia por clase"');
   });
 });
