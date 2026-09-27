@@ -49,11 +49,27 @@ La cuenta Live `Demeter` permanece separada y no se usa para DEV-04H.
 
 ## Precios
 
-Todavía **no se han creado precios en Stripe**.
+Precios mensuales oficiales de lanzamiento en MXN:
 
-Motivo: existen propuestas históricas distintas y no hay importes Core/Growth/Pro comercialmente cerrados en el proyecto. No se deben inventar montos.
+- Core: **$899 MXN/mes**
+  - Price ID: `price_1UK8KS6zvrymwOJvbTUZJkDY`
+  - Lookup key: `studio_flow_core_monthly_mxn`
+- Growth: **$1,399 MXN/mes**
+  - Price ID: `price_1UK8KT6zvrymwOJv33T5rase`
+  - Lookup key: `studio_flow_growth_monthly_mxn`
+- Pro: **$1,999 MXN/mes**
+  - Price ID: `price_1UK8KV6zvrymwOJv0QkL82B4`
+  - Lookup key: `studio_flow_pro_monthly_mxn`
 
-Cuando se aprueben, crear precios recurrentes en Stripe Sandbox y registrar sus `provider_product_id` / `provider_price_id` en `saas_plan_prices`.
+Los tres Prices están activos, recurrentes mensuales, en `mxn`, con `livemode=false` y fueron asignados como `default_price` de sus respectivos productos.
+
+Mapeo confirmado en Supabase Sandbox `saas_plan_prices`:
+
+- `billing_interval='month'`
+- `trial_days=0`
+- `grace_days=3`
+- `active=true`
+
 
 ## Stripe Sandbox · objetos de integración
 
@@ -114,9 +130,9 @@ El motor de billing contempla:
 
 ## Pendientes para E2E real en Sandbox
 
-1. Definir importes comerciales Core/Growth/Pro.
-2. Crear Stripe Prices en MXN.
-3. Registrar los Price IDs en `saas_plan_prices`.
+1. ~~Definir importes comerciales Core/Growth/Pro.~~ Completado.
+2. ~~Crear Stripe Prices en MXN.~~ Completado.
+3. ~~Registrar los Price IDs en `saas_plan_prices`.~~ Completado.
 4. Configurar `STRIPE_SECRET_KEY` del Sandbox en Supabase Sandbox.
 5. Configurar `STRIPE_WEBHOOK_SIGNING_SECRET`.
 6. Configurar `SAAS_BILLING_RETURN_ORIGINS` con el origen permitido de Preview.
