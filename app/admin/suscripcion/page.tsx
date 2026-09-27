@@ -3,6 +3,8 @@ import { redirect } from "next/navigation";
 
 import { getAdminContext } from "@/lib/auth/admin-context";
 
+import { openStripePortalAction, startStripeCheckoutAction } from "./actions";
+
 function formatDate(value: string | null, locale: string, timeZone: string) {
   if (!value) return "No configurado";
 
@@ -11,6 +13,14 @@ function formatDate(value: string | null, locale: string, timeZone: string) {
     timeStyle: "short",
     timeZone,
   }).format(new Date(value));
+}
+
+function formatMoney(amountMinor: number, currency: string, locale: string) {
+  return new Intl.NumberFormat(locale, {
+    style: "currency",
+    currency: currency.toUpperCase(),
+    maximumFractionDigits: 0,
+  }).format(amountMinor / 100);
 }
 
 const statusCopy: Record<
@@ -59,18 +69,55 @@ const statusCopy: Record<
   },
 };
 
-export default async function SubscriptionPage() {
+export default async function SubscriptionPage({
+  searchParams,
+}: {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const ctx = await getAdminContext(undefined, { allowRestricted: true });
+  const params = (await searchParams) ?? {};
 
   if (ctx.membership.role !== "owner") {
     redirect("/admin?error=access");
   }
 
-  const { data: billing } = await ctx.supabase
-    .from("studio_plan_assignments")
-    .select("trial_started_at,next_billing_at,billing_provider")
-    .eq("studio_id", ctx.studio.id)
-    .maybeSingle();
+  const [{ data: billing }, { data: stripePrices }, { data: commercialPlans }] =
+    await Promise.all([
+      ctx.supabase
+        .from("studio_plan_assignments")
+        .select(
+          "trial_started_at,next_billing_at,billing_provider,provider_customer_id,provider_subscription_id,provider_price_id",
+        )
+        .eq("studio_id", ctx.studio.id)
+        .maybeSingle(),
+      ctx.supabase
+        .from("saas_plan_prices")
+        .select("id,plan_id,billing_interval,currency,amount_minor,trial_days")
+        .eq("provider", "stripe")
+        .eq("currency", ctx.studio.currency.toLowerCase())
+        .eq("active", true),
+      ctx.supabase
+        .from("saas_plans")
+        .select("id,plan_key,name,description,sort_order")
+        .eq("active", true)
+        .eq("internal_only", false)
+        .order("sort_order"),
+    ]);
+
+  const planById = new Map((commercialPlans ?? []).map((plan) => [plan.id, plan]));
+  const availableStripePlans = (stripePrices ?? [])
+    .map((price) => ({ price, plan: planById.get(price.plan_id) }))
+    .filter((item) => Boolean(item.plan))
+    .sort((left, right) => (left.plan?.sort_order ?? 0) - (right.plan?.sort_order ?? 0));
+  const hasManagedStripeSubscription = Boolean(
+    billing?.billing_provider === "stripe" &&
+      billing.provider_subscription_id &&
+      ctx.subscription.status !== "cancelled",
+  );
+  const billingError =
+    typeof params.billing_error === "string" ? params.billing_error : null;
+  const checkoutState =
+    typeof params.checkout === "string" ? params.checkout : null;
 
   const state =
     statusCopy[ctx.subscription.effective_status] ??
@@ -166,6 +213,89 @@ export default async function SubscriptionPage() {
             </div>
           </dl>
         </article>
+      </section>
+
+      {billingError ? (
+        <section className="mt-4 rounded-3xl border border-red-500/30 bg-red-500/[0.06] p-5 text-sm text-red-100">
+          No pudimos abrir el cobro en este momento. Revisa la configuración de Stripe o intenta de nuevo.
+        </section>
+      ) : checkoutState === "success" ? (
+        <section className="mt-4 rounded-3xl border border-emerald-500/30 bg-emerald-500/[0.06] p-5 text-sm text-emerald-100">
+          Pago enviado. El estado se actualizará automáticamente cuando Stripe confirme el evento.
+        </section>
+      ) : checkoutState === "cancelled" ? (
+        <section className="mt-4 rounded-3xl border border-white/10 bg-white/[0.025] p-5 text-sm text-zinc-300">
+          El checkout fue cancelado y no se cambió tu suscripción.
+        </section>
+      ) : null}
+
+      <section className="mt-4 rounded-3xl border border-white/10 bg-white/[0.025] p-5 sm:p-6">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <p className="eyebrow">FACTURACIÓN AUTOMÁTICA</p>
+            <h2 className="mt-1 text-lg font-semibold text-white">Cobro de la suscripción</h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-400">
+              Stripe procesa el pago. Studio Flow conserva el control del plan, los límites y el
+              acceso operativo.
+            </p>
+          </div>
+
+          {billing?.billing_provider === "stripe" && billing.provider_customer_id ? (
+            <form action={openStripePortalAction}>
+              <button
+                type="submit"
+                className="rounded-2xl border border-white/15 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-white/10"
+              >
+                Administrar cobro
+              </button>
+            </form>
+          ) : null}
+        </div>
+
+        {!hasManagedStripeSubscription && availableStripePlans.length ? (
+          <div className="mt-5 grid gap-3 lg:grid-cols-3">
+            {availableStripePlans.map(({ price, plan }) => (
+              <article
+                key={price.id}
+                className="rounded-2xl border border-white/10 bg-black/20 p-4"
+              >
+                <p className="text-base font-semibold text-white">{plan?.name}</p>
+                <p className="mt-1 text-xs leading-5 text-zinc-500">{plan?.description}</p>
+                <p className="mt-4 text-2xl font-semibold text-white">
+                  {formatMoney(price.amount_minor, price.currency, ctx.studio.locale)}
+                </p>
+                <p className="mt-1 text-xs text-zinc-500">
+                  por {price.billing_interval === "year" ? "año" : "mes"}
+                  {price.trial_days > 0 ? ` · ${price.trial_days} días de prueba` : ""}
+                </p>
+                <form action={startStripeCheckoutAction} className="mt-4">
+                  <input type="hidden" name="plan_key" value={plan?.plan_key ?? ""} />
+                  <input
+                    type="hidden"
+                    name="billing_interval"
+                    value={price.billing_interval}
+                  />
+                  <button
+                    type="submit"
+                    className="w-full rounded-2xl bg-fuchsia-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-fuchsia-500"
+                  >
+                    Elegir {plan?.name}
+                  </button>
+                </form>
+              </article>
+            ))}
+          </div>
+        ) : !hasManagedStripeSubscription ? (
+          <p className="mt-5 rounded-2xl border border-white/10 bg-black/20 p-4 text-sm text-zinc-400">
+            El motor de cobro está listo. Falta vincular los precios comerciales de Stripe para
+            habilitar el checkout.
+          </p>
+        ) : (
+          <p className="mt-5 text-sm text-zinc-400">
+            Tu suscripción ya está vinculada con Stripe. Usa “Administrar cobro” para gestionar el
+            método de pago, facturación o cancelación.
+          </p>
+        )}
       </section>
 
       {ctx.subscription.cancel_at_period_end ? (
