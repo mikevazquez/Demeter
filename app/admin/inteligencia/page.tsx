@@ -847,6 +847,54 @@ export default async function IntelligencePage({
   const previousOperatingResult = previousRevenue - previousExpenseTotal;
   const currentOperatingMargin = safeRate(currentOperatingResult, currentRevenue);
   const previousOperatingMargin = safeRate(previousOperatingResult, previousRevenue);
+
+  const financeDecisionTitle =
+    currentRevenue > 0 && currentExpenses.length === 0
+      ? "Todavía no puedo evaluar la rentabilidad"
+      : currentRevenue === 0
+        ? "No hubo ingresos cobrados en el periodo"
+        : previousRevenue > 0 &&
+            currentOperatingMargin < previousOperatingMargin - 10
+          ? "El margen operativo registrado se redujo"
+          : currentOperatingResult < 0
+            ? "Los gastos registrados superan los ingresos"
+            : "La operación registrada se mantiene positiva";
+
+  const financeDecisionBody =
+    currentRevenue > 0 && currentExpenses.length === 0
+      ? "Hay " +
+        money(currentRevenue, studio.currency) +
+        " cobrados, pero no hay gastos capturados. Cualquier margen mostrado estaría artificialmente inflado."
+      : currentRevenue === 0
+        ? "Sin cobros efectivos no hay una base útil para interpretar margen o resultado del periodo."
+        : previousRevenue > 0 &&
+            currentOperatingMargin < previousOperatingMargin - 10
+          ? "El margen sobre gastos registrados pasó de " +
+            pct(previousOperatingMargin) +
+            " a " +
+            pct(currentOperatingMargin) +
+            "."
+          : currentOperatingResult < 0
+            ? "El resultado sobre gastos registrados es " +
+              money(currentOperatingResult, studio.currency) +
+              "."
+            : "Después de los gastos capturados quedan " +
+              money(currentOperatingResult, studio.currency) +
+              ", equivalente a " +
+              pct(currentOperatingMargin) +
+              " de los ingresos cobrados.";
+
+  const financeDecisionAction =
+    currentRevenue > 0 && currentExpenses.length === 0
+      ? "Capturar y validar renta, nómina, servicios, comisiones, publicidad y demás costos antes de tomar decisiones de rentabilidad."
+      : currentRevenue === 0
+        ? "Revisar cobranza e ingresos efectivos antes de analizar costos."
+        : previousRevenue > 0 &&
+            currentOperatingMargin < previousOperatingMargin - 10
+          ? "Identificar qué categoría de gasto creció y si el cambio es temporal o recurrente antes de recortar indiscriminadamente."
+          : currentOperatingResult < 0
+            ? "Revisar primero los gastos de mayor peso y separar costos recurrentes de extraordinarios."
+            : "Mantener la operación y vigilar cambios relevantes; no optimizar por variaciones pequeñas.";
   const expenseCategoryTotals = new Map<string, number>();
   for (const expense of currentExpenses) {
     expenseCategoryTotals.set(
@@ -4445,63 +4493,74 @@ export default async function IntelligencePage({
 
       {view === "finanzas" ? (
         <>
-          <section className="intel-kpi-grid">
-            <MetricCard
-              label="Ingresos cobrados"
-              value={money(currentRevenue, studio.currency)}
-              delta={deltaText(currentRevenue, previousRevenue)}
-              tone={currentRevenue >= previousRevenue ? "positive" : "danger"}
-            />
-            <MetricCard
-              label="Gastos registrados"
-              value={money(currentExpenseTotal, studio.currency)}
-              delta={deltaText(currentExpenseTotal, previousExpenseTotal)}
-              tone={currentExpenseTotal > previousExpenseTotal ? "warning" : "neutral"}
-            />
-            <MetricCard
-              label="Resultado sobre gastos registrados"
-              value={money(currentOperatingResult, studio.currency)}
-              delta="Cobertura de gastos no verificada"
-              tone="warning"
-            />
-            <MetricCard
-              label="Margen sobre gastos registrados"
-              value={currentRevenue > 0 ? pct(currentOperatingMargin) : "—"}
-              delta="No equivale a rentabilidad definitiva"
-              tone="warning"
-            />
-          </section>
+          <div className="intel-decision-layout">
+            <Section
+              title="💰 Estado financiero"
+              description="Una lectura operativa rápida con los gastos que sí están registrados."
+            >
+              <div className="intel-finance-strip">
+                <div>
+                  <small>Ingresos cobrados</small>
+                  <strong>{money(currentRevenue, studio.currency)}</strong>
+                  <span>{deltaText(currentRevenue, previousRevenue)}</span>
+                </div>
+                <div>
+                  <small>Gastos registrados</small>
+                  <strong>{money(currentExpenseTotal, studio.currency)}</strong>
+                  <span>{currentExpenses.length} movimientos</span>
+                </div>
+                <div>
+                  <small>Resultado registrado</small>
+                  <strong>{money(currentOperatingResult, studio.currency)}</strong>
+                  <span>
+                    {currentRevenue > 0 ? pct(currentOperatingMargin) + " margen" : "—"}
+                  </span>
+                </div>
+              </div>
+              <p className="intel-funnel-note">
+                El resultado sólo usa gastos capturados. No equivale a utilidad contable o fiscal.
+              </p>
+            </Section>
 
-          <div className="intel-two-column">
-            <div className="intel-stack">
-              <Section
-                title="💰 Resultado operativo registrado"
-                description="Cobros netos menos gastos capturados con fecha efectiva dentro del periodo."
+            <Section
+              title="🧠 Qué está pasando"
+              description="La conclusión prioriza primero la calidad de los datos y después el desempeño."
+            >
+              <article
+                className={
+                  "intel-decision-summary " +
+                  (currentRevenue > 0 && currentExpenses.length === 0
+                    ? "is-warning"
+                    : currentOperatingResult < 0 ||
+                        (previousRevenue > 0 &&
+                          currentOperatingMargin < previousOperatingMargin - 10)
+                      ? "is-warning"
+                      : "is-positive")
+                }
               >
-                <div className="intel-rule-list">
-                  <div>
-                    <span>Ingresos cobrados</span>
-                    <strong>{money(currentRevenue, studio.currency)}</strong>
-                  </div>
-                  <div>
-                    <span>Gastos registrados</span>
-                    <strong>{money(currentExpenseTotal, studio.currency)}</strong>
-                  </div>
-                  <div>
-                    <span>Resultado</span>
-                    <strong>{money(currentOperatingResult, studio.currency)}</strong>
-                  </div>
-                  <div>
-                    <span>Margen</span>
-                    <strong>{currentRevenue > 0 ? pct(currentOperatingMargin) : "—"}</strong>
-                  </div>
+                <strong>{financeDecisionTitle}</strong>
+                <p>{financeDecisionBody}</p>
+                <div>
+                  <small>Recomendación</small>
+                  <b>{financeDecisionAction}</b>
                 </div>
-                <div className="intel-source-note">
-                  Esto es inteligencia operativa, no contabilidad fiscal. Si faltan gastos por registrar,
-                  el resultado estará sobreestimado.
-                </div>
-              </Section>
+              </article>
 
+              {expenseCategoryRows[0] ? (
+                <div className="intel-context-callout">
+                  <small>Mayor categoría de gasto</small>
+                  <strong>{expenseCategoryRows[0].label}</strong>
+                  <span>
+                    {money(expenseCategoryRows[0].amount, studio.currency)} en el periodo.
+                  </span>
+                </div>
+              ) : null}
+            </Section>
+          </div>
+
+          <details className="intel-analysis-details">
+            <summary>Ver gastos y análisis detallado</summary>
+            <div className="intel-analysis-details-body">
               <Section title="Gastos por categoría">
                 <div className="intel-bars">
                   {expenseCategoryRows.length ? (
@@ -4521,10 +4580,7 @@ export default async function IntelligencePage({
                 </div>
               </Section>
 
-              <Section
-                title="Últimos gastos"
-                description="Usamos fecha efectiva para que cada gasto caiga en el periodo económico correcto."
-              >
+              <Section title="Últimos gastos">
                 <div className="intel-expense-list">
                   {recentExpenses.map((expense) => (
                     <article className="intel-expense-row" key={expense.id}>
@@ -4554,14 +4610,9 @@ export default async function IntelligencePage({
                   ) : null}
                 </div>
               </Section>
-            </div>
 
-            <div className="intel-stack">
               {canWriteFinance ? (
-                <Section
-                  title="＋ Registrar gasto"
-                  description="Captura el gasto cuando realmente corresponda al negocio, no según la fecha en que lo estás registrando."
-                >
+                <Section title="＋ Registrar gasto">
                   <form action={createStudioExpense} className="intel-expense-form">
                     <input type="hidden" name="days" value={String(days)} />
                     <label>
@@ -4622,9 +4673,6 @@ export default async function IntelligencePage({
                         />
                       </label>
                     </div>
-                    <p className="intel-form-help">
-                      Si el gasto es Publicidad, usa los mismos nombres de origen/campaña que llegan desde Asistian para calcular costo y retorno.
-                    </p>
                     <label>
                       Nota
                       <textarea name="notes" placeholder="Opcional" maxLength={500} rows={3} />
@@ -4633,40 +4681,8 @@ export default async function IntelligencePage({
                   </form>
                 </Section>
               ) : null}
-
-              <Section
-                title="⚠️ Cobertura de gastos no verificada"
-                description="Tener movimientos registrados no demuestra que estén todos los costos del periodo."
-              >
-                <Insight
-                  tone="warning"
-                  title={
-                    currentExpenses.length
-                      ? currentExpenses.length + " gastos registrados · cobertura no verificada"
-                      : "No hay gastos registrados en el periodo"
-                  }
-                  body={
-                    currentExpenses.length
-                      ? "Resultado y margen usan sólo los movimientos capturados. No los interpretes como rentabilidad definitiva hasta validar renta, nómina, servicios, comisiones y demás costos."
-                      : "No interpretes el resultado operativo como utilidad real hasta capturar y validar los gastos del periodo."
-                  }
-                />
-              </Section>
-
-              <Section title="Siguiente nivel de rentabilidad">
-                <ul className="intel-unlock-list">
-                  <li>Costo por clase y por hora</li>
-                  <li>Rentabilidad por disciplina</li>
-                  <li>Rentabilidad por horario</li>
-                  <li>Retorno de publicidad por campaña</li>
-                </ul>
-                <div className="intel-source-note">
-                  Para esas métricas necesitamos asignar costos directos a clases/disciplinas y cerrar
-                  la atribución de campañas desde conversaciones.
-                </div>
-              </Section>
             </div>
-          </div>
+          </details>
         </>
       ) : null}
     </main>
