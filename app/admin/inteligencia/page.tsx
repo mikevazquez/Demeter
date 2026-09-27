@@ -3410,23 +3410,29 @@ export default async function IntelligencePage({
         <>
           <section className="intel-kpi-grid">
             <MetricCard
-              label="Contactos maduros"
-              value={String(currentConversationCohort.contacts)}
+              label="Contactos · cohorte madura"
+              value={
+                conversationHistoryCoversCurrentCohort
+                  ? String(currentConversationCohort.contacts)
+                  : "—"
+              }
               delta={
-                conversationCohortComparable
+                conversationHistoryCoversComparison
                   ? deltaText(
                       currentConversationCohort.contacts,
                       previousConversationCohort.contacts,
                     )
                   : pendingConversationContacts > 0
-                    ? pendingConversationContacts + " contactos aún madurando"
-                    : "Comparación no disponible"
+                    ? pendingConversationContacts +
+                      " primeros contactos recientes aún madurando"
+                    : "Cobertura histórica de conversaciones limitada"
               }
               tone="info"
             />
             <MetricCard
               label="Contacto → reserva"
               value={
+                conversationCohortCurrentCovered &&
                 currentConversationCohort.contacts > 0
                   ? pct(currentConversationCohort.conversationToBookingRate)
                   : "—"
@@ -3440,15 +3446,18 @@ export default async function IntelligencePage({
                   : "Cohorte/comparación aún no madura"
               }
               tone={
-                currentConversationCohort.conversationToBookingRate >=
-                previousConversationCohort.conversationToBookingRate
-                  ? "positive"
-                  : "warning"
+                !conversationCohortCurrentCovered
+                  ? "neutral"
+                  : currentConversationCohort.conversationToBookingRate >=
+                      previousConversationCohort.conversationToBookingRate
+                    ? "positive"
+                    : "warning"
               }
             />
             <MetricCard
               label="Reserva → asistencia"
               value={
+                conversationCohortCurrentCovered &&
                 currentConversationCohort.booked > 0
                   ? pct(currentConversationCohort.bookingToAttendanceRate)
                   : "—"
@@ -3462,15 +3471,18 @@ export default async function IntelligencePage({
                   : "Cohorte/comparación aún no madura"
               }
               tone={
-                currentConversationCohort.bookingToAttendanceRate >=
-                previousConversationCohort.bookingToAttendanceRate
-                  ? "positive"
-                  : "warning"
+                !conversationCohortCurrentCovered
+                  ? "neutral"
+                  : currentConversationCohort.bookingToAttendanceRate >=
+                      previousConversationCohort.bookingToAttendanceRate
+                    ? "positive"
+                    : "warning"
               }
             />
             <MetricCard
               label="Asistencia → alumna"
               value={
+                conversationCohortCurrentCovered &&
                 currentConversationCohort.attended > 0
                   ? pct(currentConversationCohort.attendanceToConversionRate)
                   : "—"
@@ -3484,10 +3496,12 @@ export default async function IntelligencePage({
                   : "Cohorte/comparación aún no madura"
               }
               tone={
-                currentConversationCohort.attendanceToConversionRate >=
-                previousConversationCohort.attendanceToConversionRate
-                  ? "positive"
-                  : "warning"
+                !conversationCohortCurrentCovered
+                  ? "neutral"
+                  : currentConversationCohort.attendanceToConversionRate >=
+                      previousConversationCohort.attendanceToConversionRate
+                    ? "positive"
+                    : "warning"
               }
             />
           </section>
@@ -3496,7 +3510,15 @@ export default async function IntelligencePage({
             <div className="intel-stack">
               <Section
                 title="💬 Embudo desde conversación"
-                description="Cohorte por contacto conversado en el periodo. Varias conversaciones de la misma persona no inflan la conversión."
+                description={
+                  "Cohorte cerrada " +
+                  currentCohortStartDate +
+                  " → " +
+                  currentCohortEndDate +
+                  " con ventana fija de " +
+                  CONVERSION_MATURITY_DAYS +
+                  " días. La actividad del periodo actual se muestra aparte."
+                }
               >
                 <div className="intel-bars">
                   <BarRow
