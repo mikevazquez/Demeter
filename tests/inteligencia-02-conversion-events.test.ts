@@ -31,13 +31,13 @@ describe("INTEL-02 conversion event intelligence", () => {
     expect(intelligence).toContain('"attendance.finalized"');
     expect(intelligence).toContain("recoveryStats");
     expect(intelligence).toContain("acquisitionCohortStats");
-    expect(intelligence).toContain("Actividad sirve para operación; cohorte sirve para medir conversión.");
+    expect(intelligence).toContain("conversionFunnelAvailable");
   });
 
   it("keeps studio cancellations out of the customer cancellation funnel", () => {
     expect(intelligence).toContain('!== "cancelled_by_studio"');
     expect(intelligence).toContain('=== "cancelled_by_studio"');
-    expect(intelligence).toContain("Canceladas por el estudio");
+    expect(intelligence).toContain("currentStudioCancellationEvents");
   });
 
   it("keeps missing and Asistian cancellation reasons visible instead of dropping them", () => {
@@ -48,15 +48,15 @@ describe("INTEL-02 conversion event intelligence", () => {
   it("uses package or membership purchase as the commercial conversion signal", () => {
     expect(intelligence).toContain('conversionProductTypes = new Set(["package", "membership"])');
     expect(intelligence).toContain("firstConversionAcquisitionByStudent");
-    expect(intelligence).toContain("Compraron paquete / membresía");
+    expect(intelligence).toContain("conversionFunnelConverted");
   });
 
   it("uses effective payment dates and keeps collections independent from report period", () => {
     expect(intelligence).toContain("paymentEffectiveDateTime");
     expect(intelligence).toContain("paymentDateKey");
     expect(intelligence).toContain("collectionOpenRows");
-    expect(intelligence).toContain("Cobranza vencida");
-    expect(intelligence).toContain("Saldos de cobranza abiertos");
+    expect(intelligence).toContain("collectionOverdueAmount");
+    expect(intelligence).toContain("moneyDecisionTitle");
   });
 
   it("detects retention risk before expiration with explainable signals", () => {
@@ -69,9 +69,9 @@ describe("INTEL-02 conversion event intelligence", () => {
   it("requires meaningful class samples before suggesting operational changes", () => {
     expect(intelligence).toContain("row.sessionCount >= 3");
     expect(intelligence).toContain("row.total >= 5");
-    expect(intelligence).toContain("Evaluar expansión");
-    expect(intelligence).toContain("Investigar cancelaciones");
-    expect(intelligence).toContain("Reducir no show");
+    expect(intelligence).toContain("classComparisonRows");
+    expect(intelligence).toContain("classDecisionAction");
+    expect(intelligence).toContain("studyAttendanceChangePct");
   });
 
 });
