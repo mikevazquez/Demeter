@@ -1412,9 +1412,6 @@ export default async function IntelligencePage({
   const currentConversations = conversations.filter((conversation) =>
     isBetween(conversation.started_at, currentStart, currentEnd),
   );
-  const previousConversations = conversations.filter((conversation) =>
-    isBetween(conversation.started_at, previousStart, currentStart),
-  );
   const currentCohortConversations = conversations.filter((conversation) =>
     isBetween(conversation.started_at, currentCohortStart, currentCohortEnd),
   );
@@ -2706,7 +2703,7 @@ export default async function IntelligencePage({
             />
             <MetricCard
               label="Show rate"
-              value={pct(showRate)}
+              value={eventHistoryCoversCurrentPeriod ? pct(showRate) : "—"}
               delta={
                 eventHistoryCoversComparison
                   ? pointsDelta(showRate, previousShowRate)
@@ -2882,7 +2879,7 @@ export default async function IntelligencePage({
               tone={collectionPending > 0 ? "warning" : "positive"}
             />
             <MetricCard
-              label="Ticket promedio"
+              label="Ticket promedio vendido"
               value={money(ticketAverage, studio.currency)}
               delta={deltaText(ticketAverage, previousTicketAverage)}
               tone="neutral"
@@ -4585,16 +4582,16 @@ export default async function IntelligencePage({
               tone={currentExpenseTotal > previousExpenseTotal ? "warning" : "neutral"}
             />
             <MetricCard
-              label="Resultado operativo"
+              label="Resultado sobre gastos registrados"
               value={money(currentOperatingResult, studio.currency)}
-              delta={deltaText(currentOperatingResult, previousOperatingResult)}
-              tone={currentOperatingResult >= 0 ? "positive" : "danger"}
+              delta="Cobertura de gastos no verificada"
+              tone="warning"
             />
             <MetricCard
-              label="Margen registrado"
+              label="Margen sobre gastos registrados"
               value={currentRevenue > 0 ? pct(currentOperatingMargin) : "—"}
-              delta={pointsDelta(currentOperatingMargin, previousOperatingMargin)}
-              tone={currentOperatingResult >= 0 ? "positive" : "danger"}
+              delta="No equivale a rentabilidad definitiva"
+              tone="warning"
             />
           </section>
 
