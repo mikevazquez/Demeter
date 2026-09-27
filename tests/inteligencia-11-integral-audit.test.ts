@@ -54,22 +54,28 @@ describe("INTEL-11 integral consistency audit", () => {
     expect(intelligence).toContain("Cobertura conductual limitada");
   });
 
-  it("uses canonical identities so linked conversations do not inflate people", () => {
+  it(
+    "uses canonical identities so linked conversations do not inflate people",
+    () => {
     expect(intelligence).toContain("conversationStudentByProviderContact");
     expect(intelligence).toContain("conversationStudentByPhone");
     expect(intelligence).toContain("resolvedConversationStudentId");
     expect(intelligence).toContain('return "student:" + linkedStudent');
-    expect(intelligence).toContain("conversationIdentity(row)");
-  });
+      expect(intelligence).toContain("conversationIdentity(row)");
+    },
+  );
 
-  it("waits for cohort maturity before conversion and marketing decisions", () => {
+  it(
+    "waits for cohort maturity before conversion and marketing decisions",
+    () => {
     expect(intelligence).toContain("CONVERSION_MATURITY_DAYS = 7");
     expect(intelligence).toContain("currentMatureConversations");
     expect(intelligence).toContain("conversationCohortComparable");
     expect(intelligence).toContain("currentMatureMarketingTouches");
     expect(intelligence).toContain("currentMarketingDecisionRows");
-    expect(intelligence).toContain("contactos aún madurando");
-  });
+      expect(intelligence).toContain("contactos aún madurando");
+    },
+  );
 
   it(
     "waits for the full 30-day renewal window before calculating retention outcomes",
@@ -91,11 +97,14 @@ describe("INTEL-11 integral consistency audit", () => {
     },
   );
 
-  it("keeps summary and class demand on the same peak-demand definition", () => {
-    expect(intelligence).toContain('label="Demanda pico"');
-    expect(intelligence).toContain("eventHistoryCoversCurrentPeriod");
-    expect(intelligence).toContain("currentClassMetrics.peakOccupancy");
-  });
+  it(
+    "keeps summary and class demand on the same peak-demand definition",
+    () => {
+      expect(intelligence).toContain('label="Demanda pico"');
+      expect(intelligence).toContain("eventHistoryCoversCurrentPeriod");
+      expect(intelligence).toContain("currentClassMetrics.peakOccupancy");
+    },
+  );
 
   it("orders same-priority decisions by explicit business impact", () => {
     expect(intelligence).toContain("impact?: number");
