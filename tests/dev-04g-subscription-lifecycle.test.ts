@@ -14,6 +14,9 @@ describe("DEV-04G subscription lifecycle", () => {
   const hardening = source(
     "supabase/migrations/20260927010931_dev_04g_subscription_lifecycle_hardening.sql",
   );
+  const recoveryUsage = source(
+    "supabase/migrations/20260927011454_dev_04g_plan_usage_recovery_visibility.sql",
+  );
   const adminContext = source("lib/auth/admin-context.ts");
   const studentPortal = source("lib/student/portal.ts");
   const adminLayout = source("app/admin/layout.tsx");
@@ -94,6 +97,12 @@ describe("DEV-04G subscription lifecycle", () => {
     expect(hardening).toContain("studio_plan_assignments_cancel_period_requires_end");
     expect(hardening).toContain("then 'cancelled_period_end'");
     expect(hardening).toContain("spa.current_period_end <= now()");
+  });
+
+  it("keeps quota usage observable while operational access is restricted", () => {
+    expect(recoveryUsage).toContain("current_studio_plan_usage");
+    expect(recoveryUsage).not.toContain("spa.status in ('active','trialing')");
+    expect(recoveryUsage).toContain("where spa.studio_id=p_studio_id");
   });
 
   it("blocks service-role automation work when subscription access is restricted", () => {
