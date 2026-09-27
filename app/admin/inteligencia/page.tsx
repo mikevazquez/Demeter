@@ -264,6 +264,27 @@ function isoDateKey(value: Date) {
   return value.toISOString().slice(0, 10);
 }
 
+function dateKeyInTimeZone(value: Date, timeZone: string) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(value);
+  const values = Object.fromEntries(
+    parts
+      .filter((part) => part.type !== "literal")
+      .map((part) => [part.type, part.value]),
+  );
+  return values.year + "-" + values.month + "-" + values.day;
+}
+
+function shiftDateKey(dateKey: string, days: number) {
+  const value = new Date(dateKey + "T12:00:00Z");
+  value.setUTCDate(value.getUTCDate() + days);
+  return isoDateKey(value);
+}
+
 function daysSince(dateKey: string | null, now: Date) {
   if (!dateKey) return null;
   const value = new Date(dateKey + "T12:00:00Z");
@@ -461,9 +482,10 @@ export default async function IntelligencePage({
   );
   const eventStartIso = eventStart.toISOString();
   const currentStartIso = currentStart.toISOString();
-  const currentStartDate = isoDateKey(currentStart);
-  const previousStartDate = isoDateKey(previousStart);
-  const todayDate = isoDateKey(now);
+  const timeZone = studio.timezone ?? "America/Mexico_City";
+  const todayDate = dateKeyInTimeZone(now, timeZone);
+  const currentStartDate = shiftDateKey(todayDate, -(days - 1));
+  const previousStartDate = shiftDateKey(currentStartDate, -days);
   const upcomingEnd = new Date(now.getTime() + 14 * DAY);
   const cohortMaturityCutoff = new Date(
     now.getTime() - CONVERSION_MATURITY_DAYS * DAY,
@@ -2738,12 +2760,16 @@ export default async function IntelligencePage({
                 <div className="intel-compact-table">
                   <div className="intel-table-head">
                     <span>Clase</span>
-                    <span>Ocup.</span>
+                    <span>Pico</span>
                   </div>
                   {classRows.slice(0, 4).map((row) => (
                     <div className="intel-table-row" key={row.name}>
                       <span>{row.name}</span>
-                      <strong>{pct(row.occupancy)}</strong>
+                      <strong>
+                        {eventHistoryCoversCurrentPeriod
+                          ? pct(row.peakOccupancy)
+                          : "—"}
+                      </strong>
                     </div>
                   ))}
                 </div>
