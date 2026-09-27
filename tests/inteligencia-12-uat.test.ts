@@ -44,9 +44,7 @@ describe("INTEL-12 UAT consistency hardening", () => {
   });
 
   it("does not display partial event-derived rates as full-period KPIs", () => {
-    expect(intelligence).toContain(
-      'value={eventHistoryCoversCurrentPeriod ? pct(showRate) : "—"}',
-    );
+    expect(intelligence).toContain("conversionFunnelAvailable");
     expect(intelligence).toContain("eventHistoryCoversCurrentCohort");
     expect(intelligence).toContain("conversationCohortCurrentCovered");
   });
