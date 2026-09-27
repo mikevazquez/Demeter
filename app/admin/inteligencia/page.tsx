@@ -4257,78 +4257,102 @@ export default async function IntelligencePage({
 
       {view === "clases" ? (
         <>
-          <section className="intel-kpi-grid">
-            <MetricCard
-              label="Demanda pico"
-              value={
-                eventHistoryCoversCurrentPeriod
-                  ? pct(currentClassMetrics.peakOccupancy)
-                  : "—"
-              }
-              delta={
-                eventHistoryCoversComparison
-                  ? pointsDelta(
-                      currentClassMetrics.peakOccupancy,
-                      previousClassMetrics.peakOccupancy,
-                    )
-                  : "Cobertura histórica limitada"
-              }
-              tone={
-                !eventHistoryCoversCurrentPeriod
-                  ? "neutral"
-                  : currentClassMetrics.peakOccupancy >= 80
-                    ? "positive"
-                    : "neutral"
-              }
-            />
-            <MetricCard
-              label="Asistencia / capacidad"
-              value={pct(currentClassMetrics.attendanceCapacity)}
-              delta={pointsDelta(
-                currentClassMetrics.attendanceCapacity,
-                previousClassMetrics.attendanceCapacity,
-              )}
-              tone={currentClassMetrics.attendanceCapacity >= 70 ? "positive" : "warning"}
-            />
-            <MetricCard
-              label="Cancelaciones"
-              value={pct(currentClassMetrics.cancellation)}
-              delta={pointsDelta(
-                currentClassMetrics.cancellation,
-                previousClassMetrics.cancellation,
-              )}
-              tone={currentClassMetrics.cancellation > 15 ? "danger" : "neutral"}
-            />
-            <MetricCard
-              label="Lugares recuperados"
-              value={
-                currentClassMetrics.lifecycleCancellations > 0
-                  ? pct(currentClassMetrics.cancellationRefill)
-                  : "—"
-              }
-              delta={
-                currentClassMetrics.lifecycleCancellations > 0
-                  ? currentClassMetrics.refilledSeats +
-                    "/" +
-                    currentClassMetrics.lifecycleCancellations +
-                    " cancelaciones"
-                  : "Sin cancelaciones reconstruibles"
-              }
-              tone={
-                currentClassMetrics.lifecycleCancellations === 0
-                  ? "neutral"
-                  : currentClassMetrics.cancellationRefill >= 60
-                    ? "positive"
-                    : "warning"
-              }
-            />
-          </section>
+          <div className="intel-decision-layout">
+            <Section
+              title="🪑 Asistencia por clase"
+              description="Compara asistencia promedio por sesión contra el periodo anterior. Así una clase no parece peor sólo porque tuvo más o menos sesiones."
+            >
+              <div className="intel-simple-ranking">
+                {classRows.slice(0, 6).map((row) => {
+                  const comparison = classComparisonRows.find(
+                    (item) => item.templateId === row.templateId,
+                  );
+                  const average =
+                    row.sessionCount > 0 ? row.attended / row.sessionCount : 0;
+                  return (
+                    <div className="intel-simple-ranking-row" key={row.templateId}>
+                      <span>
+                        <strong>{row.name}</strong>
+                        <small>
+                          {row.sessionCount} {row.sessionCount === 1 ? "sesión" : "sesiones"}
+                        </small>
+                      </span>
+                      <div>
+                        <b>{average.toFixed(1)}</b>
+                        <small>asist./sesión</small>
+                      </div>
+                      <em
+                        className={
+                          comparison?.changePct === null || comparison?.changePct === undefined
+                            ? "is-neutral"
+                            : comparison.changePct >= 0
+                              ? "is-positive"
+                              : "is-negative"
+                        }
+                      >
+                        {comparison?.changePct === null || comparison?.changePct === undefined
+                          ? "—"
+                          : (comparison.changePct >= 0 ? "↑ " : "↓ ") +
+                            Math.abs(comparison.changePct).toFixed(0) +
+                            "%"}
+                      </em>
+                    </div>
+                  );
+                })}
+                {!classRows.length ? (
+                  <p className="intel-empty">Todavía no hay sesiones para analizar.</p>
+                ) : null}
+              </div>
+              <p className="intel-funnel-note">
+                El porcentaje compara contra el periodo anterior usando sólo clases con al menos 3 sesiones en ambos periodos.
+              </p>
+            </Section>
 
-          <div className="intel-two-column">
-            <div className="intel-stack">
+            <Section
+              title="🧠 Qué está pasando"
+              description="Una conclusión priorizada para decidir si realmente vale la pena mover algo."
+            >
+              <article
+                className={
+                  "intel-decision-summary " +
+                  (!eventHistoryCoversComparison || !classComparisonRows.length
+                    ? "is-info"
+                    : classLargestDrop && (classLargestDrop.changePct ?? 0) <= -15
+                      ? "is-warning"
+                      : "is-positive")
+                }
+              >
+                <strong>{classDecisionTitle}</strong>
+                <p>{classDecisionBody}</p>
+                <div>
+                  <small>Recomendación</small>
+                  <b>{classDecisionAction}</b>
+                </div>
+              </article>
+
+              {studyAttendanceChangePct !== null ? (
+                <div className="intel-context-callout">
+                  <small>Contexto del estudio</small>
+                  <strong>
+                    Asistencia promedio general{" "}
+                    {studyAttendanceChangePct >= 0 ? "subió" : "bajó"}{" "}
+                    {Math.abs(studyAttendanceChangePct).toFixed(0)}%
+                  </strong>
+                  <span>
+                    {currentStudyAttendancePerSession.toFixed(1)} vs{" "}
+                    {previousStudyAttendancePerSession.toFixed(1)} asistencias por sesión.
+                  </span>
+                </div>
+              ) : null}
+            </Section>
+          </div>
+
+          <details className="intel-analysis-details">
+            <summary>Ver análisis detallado</summary>
+            <div className="intel-analysis-details-body">
               <Section
-                title="🪑 Demanda real por clase"
-                description="El pico reconstruye cuántos lugares estuvieron ocupados antes de cancelaciones; la asistencia muestra cuánto de esa demanda llegó realmente al estudio."
+                title="Demanda, cancelación y no show"
+                description="Detalle para investigar una caída o crecimiento detectado."
               >
                 <div className="intel-data-table">
                   <div className="intel-data-head intel-class-grid">
@@ -4340,11 +4364,13 @@ export default async function IntelligencePage({
                     <span>No show</span>
                   </div>
                   {classRows.map((row) => (
-                    <div className="intel-data-row intel-class-grid" key={row.name}>
-                      <span>
-                        {row.name} · {row.sessionCount} {row.sessionCount === 1 ? "sesión" : "sesiones"}
-                      </span>
-                      <strong>{pct(row.peakOccupancy)}</strong>
+                    <div className="intel-data-row intel-class-grid" key={row.templateId}>
+                      <span>{row.name}</span>
+                      <strong>
+                        {eventHistoryCoversCurrentPeriod
+                          ? pct(row.peakOccupancy)
+                          : "—"}
+                      </strong>
                       <span>{pct(row.attendanceCapacity)}</span>
                       <span>{pct(row.cancellation)}</span>
                       <span>
@@ -4356,170 +4382,13 @@ export default async function IntelligencePage({
                     </div>
                   ))}
                 </div>
-                <div className="intel-source-note">
-                  “Pico” es ocupación simultánea máxima observada por eventos. “Presión de reserva” puede superar 100% si un mismo lugar se vendió, canceló y volvió a ocuparse; por eso no la usamos sola para decidir expansión.{" "}
-                  {eventHistoryCoversCurrentPeriod
-                    ? "El periodo actual tiene cobertura suficiente para decisiones de demanda."
-                    : "Cobertura limitada: mostramos evidencia registrada, pero no generamos decisiones de demanda para periodos anteriores al inicio del historial de eventos."}
-                </div>
               </Section>
 
-              <Section
-                title="🕒 Demanda pico por franja"
-                description="Usa el máximo de reservas observado antes de cancelaciones, no el aforo final."
-              >
-                <div className="intel-bars">
-                  {Object.entries(daypart).map(([label, values]) => {
-                    const rate = safeRate(values[0], values[1]);
-                    return (
-                      <BarRow
-                        key={label}
-                        label={label}
-                        value={rate}
-                        max={100}
-                        display={pct(rate)}
-                        tone={rate >= 75 ? "success" : rate < 45 ? "warning" : "info"}
-                      />
-                    );
-                  })}
-                </div>
-              </Section>
-
-              <Section title="Demanda pico por día">
-                <div className="intel-bars">
-                  {[...weekday.entries()].map(([label, values]) => {
-                    const rate = safeRate(values[0], values[1]);
-                    return (
-                      <BarRow
-                        key={label}
-                        label={label}
-                        value={rate}
-                        max={100}
-                        display={pct(rate)}
-                        tone={rate >= 75 ? "success" : rate < 45 ? "warning" : "info"}
-                      />
-                    );
-                  })}
-                </div>
-              </Section>
+              <div className="intel-source-note">
+                Cuando tengamos suficiente historial anual, esta misma conclusión podrá contrastar el comportamiento con el mismo mes de años anteriores para separar una anomalía de un patrón estacional. Hasta entonces no atribuimos una caída a temporada o factores externos sin evidencia.
+              </div>
             </div>
-
-            <div className="intel-stack">
-              <Section
-                title="🚨 Decisiones sugeridas"
-                description="La demanda debe sostenerse por varias sesiones; una clase llena que luego tiene mucho no-show no se interpreta igual que una clase realmente saturada."
-              >
-                <div className="intel-insight-list">
-                  {highestDemand &&
-                  highestDemand.peakOccupancy >= 90 &&
-                  highestDemand.attendanceCapacity >= 70 ? (
-                    <Insight
-                      tone="positive"
-                      title={"🔥 Evaluar expansión · " + highestDemand.name}
-                      body={
-                        pct(highestDemand.peakOccupancy) +
-                        " de demanda pico y " +
-                        pct(highestDemand.attendanceCapacity) +
-                        " de capacidad terminó asistiendo en " +
-                        highestDemand.sessionCount +
-                        " sesiones."
-                      }
-                    />
-                  ) : null}
-                  {lowestDemand && lowestDemand.peakOccupancy < 40 ? (
-                    <Insight
-                      tone="danger"
-                      title={"❄️ Revisar horario · " + lowestDemand.name}
-                      body={
-                        pct(lowestDemand.peakOccupancy) +
-                        " de demanda pico en " +
-                        lowestDemand.sessionCount +
-                        " sesiones. La baja ocupación no se explica sólo por cancelaciones posteriores."
-                      }
-                    />
-                  ) : null}
-                  {highestCancellation && highestCancellation.cancellation >= 15 ? (
-                    <Insight
-                      tone={
-                        highestCancellation.cancellationRefill >= 60
-                          ? "info"
-                          : "warning"
-                      }
-                      title={
-                        highestCancellation.cancellationRefill >= 60
-                          ? "↻ Cancelaciones con recuperación · " + highestCancellation.name
-                          : "⚠️ Lugares perdidos por cancelación · " + highestCancellation.name
-                      }
-                      body={
-                        pct(highestCancellation.cancellation) +
-                        " de cancelación; " +
-                        pct(highestCancellation.cancellationRefill) +
-                        " de lugares liberados se recuperaron con otra reserva."
-                      }
-                    />
-                  ) : null}
-                  {highestNoShow && highestNoShow.noShowRate >= 10 ? (
-                    <Insight
-                      tone="danger"
-                      title={"👻 Reducir no show · " + highestNoShow.name}
-                      body={
-                        pct(highestNoShow.noShowRate) +
-                        " de no show. Esa demanda sí ocupó lugar y no terminó en asistencia."
-                      }
-                    />
-                  ) : null}
-                  {!actionableClassRows.length ? (
-                    <Insight
-                      tone="info"
-                      title="Muestra todavía insuficiente"
-                      body="Necesitamos al menos 3 sesiones por clase antes de sugerir cambios de capacidad u horario."
-                    />
-                  ) : null}
-                </div>
-              </Section>
-
-              <Section
-                title="Dónde se pierde la capacidad"
-                description="Separa tres fenómenos distintos para no tomar la misma acción ante problemas diferentes."
-              >
-                <div className="intel-rule-list">
-                  <div>
-                    <span>Reserva → cancelación → otra reserva</span>
-                    <strong>Lugar recuperado</strong>
-                  </div>
-                  <div>
-                    <span>Reserva → cancelación → queda vacío</span>
-                    <strong>Lugar perdido</strong>
-                  </div>
-                  <div>
-                    <span>Reserva vigente → no show</span>
-                    <strong>Capacidad bloqueada</strong>
-                  </div>
-                </div>
-              </Section>
-
-              <Section title="Cómo se decide">
-                <div className="intel-rule-list">
-                  <div>
-                    <span>≥90% pico + ≥70% asistencia/cap. · 3+ sesiones</span>
-                    <strong>Evaluar expansión</strong>
-                  </div>
-                  <div>
-                    <span>&lt;40% demanda pico · 3+ sesiones</span>
-                    <strong>Probar ajuste antes de eliminar</strong>
-                  </div>
-                  <div>
-                    <span>≥15% cancelación · 5+ reservas</span>
-                    <strong>Investigar cancelaciones · medir recuperación</strong>
-                  </div>
-                  <div>
-                    <span>≥10% no show · 5+ cierres</span>
-                    <strong>Reducir no show · reforzar confirmación</strong>
-                  </div>
-                </div>
-              </Section>
-            </div>
-          </div>
+          </details>
         </>
       ) : null}
 
