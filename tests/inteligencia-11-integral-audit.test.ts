@@ -76,11 +76,12 @@ describe("INTEL-11 integral consistency audit", () => {
     "waits for cohort maturity before conversion and marketing decisions",
     () => {
       expect(intelligence).toContain("CONVERSION_MATURITY_DAYS = 7");
-      expect(intelligence).toContain("currentMatureConversations");
+      expect(intelligence).toContain("currentCohortStart");
+      expect(intelligence).toContain("currentCohortEnd");
+      expect(intelligence).toContain("previousCohortStart");
       expect(intelligence).toContain("conversationCohortComparable");
-      expect(intelligence).toContain("currentMatureMarketingTouches");
       expect(intelligence).toContain("currentMarketingDecisionRows");
-      expect(intelligence).toContain("contactos aún madurando");
+      expect(intelligence).toContain("primeros contactos recientes");
     },
   );
 
