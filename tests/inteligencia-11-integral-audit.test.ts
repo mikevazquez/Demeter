@@ -81,7 +81,7 @@ describe("INTEL-11 integral consistency audit", () => {
       expect(intelligence).toContain("previousCohortStart");
       expect(intelligence).toContain("conversationCohortComparable");
       expect(intelligence).toContain("currentMarketingDecisionRows");
-      expect(intelligence).toContain("primeros contactos recientes");
+      expect(intelligence).toContain("contactos recientes siguen dentro de su ventana de maduración");
     },
   );
 
@@ -97,18 +97,16 @@ describe("INTEL-11 integral consistency audit", () => {
   it(
     "does not imply expense completeness from the presence of expense rows",
     () => {
-      expect(intelligence).toContain("Cobertura de gastos no verificada");
-      expect(intelligence).toContain(
-        "Tener movimientos registrados no demuestra que estén todos los costos del periodo",
-      );
-      expect(intelligence).toContain("no contabilidad fiscal");
+      expect(intelligence).toContain("No equivale a utilidad contable o fiscal");
+      expect(intelligence).toContain("financeDecisionTitle");
+      expect(intelligence).toContain("antes de tomar decisiones de rentabilidad");
     },
   );
 
   it(
     "keeps summary and class demand on the same peak-demand definition",
     () => {
-      expect(intelligence).toContain('label="Demanda pico"');
+      expect(intelligence).toContain("classDecisionTitle");
       expect(intelligence).toContain("eventHistoryCoversCurrentPeriod");
       expect(intelligence).toContain("currentClassMetrics.peakOccupancy");
     },
