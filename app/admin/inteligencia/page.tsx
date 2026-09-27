@@ -2295,6 +2295,23 @@ export default async function IntelligencePage({
     previousConversationCohort.conversationToBookingRate -
     currentConversationCohort.conversationToBookingRate;
 
+  if (currentRevenue > 0 && currentExpenses.length === 0) {
+    decisions.push({
+      key: "finance-expense-coverage-empty",
+      priority: 2,
+      impact: 75,
+      tone: "warning",
+      title: "Completar gastos del periodo",
+      evidence:
+        "Hay " +
+        money(currentRevenue, studio.currency) +
+        " cobrados, pero no hay gastos registrados. El resultado operativo no es interpretable todavía.",
+      action:
+        "Registrar o validar renta, nómina, servicios, comisiones, publicidad y demás gastos antes de usar el margen para decidir.",
+      href: viewHref("finanzas", days),
+    });
+  }
+
   if (collectionOverdueAmount > 0) {
     decisions.push({
       key: "collections-overdue",
