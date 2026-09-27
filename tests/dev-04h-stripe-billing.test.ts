@@ -14,11 +14,16 @@ describe("DEV-04H Stripe billing", () => {
   const audit = source(
     "supabase/migrations/20260927015051_dev_04h_stripe_plan_audit_source.sql",
   );
+  const indexes = source(
+    "supabase/migrations/20260927015548_dev_04h_billing_fk_indexes.sql",
+  );
   const shared = source("supabase/functions/_shared/stripe-billing.ts");
   const checkout = source("supabase/functions/saas-stripe-checkout/index.ts");
   const portal = source("supabase/functions/saas-stripe-portal/index.ts");
   const webhook = source("supabase/functions/saas-stripe-webhook/index.ts");
   const config = source("supabase/config.toml");
+  const ownerActions = source("app/admin/suscripcion/actions.ts");
+  const ownerPage = source("app/admin/suscripcion/page.tsx");
 
   it("models provider prices, checkout attempts and idempotent webhook events", () => {
     expect(foundation).toContain("create table if not exists public.saas_plan_prices");
@@ -99,6 +104,24 @@ describe("DEV-04H Stripe billing", () => {
     expect(config).toContain("[functions.saas-stripe-checkout]\nverify_jwt = true");
     expect(config).toContain("[functions.saas-stripe-portal]\nverify_jwt = true");
     expect(config).toContain("[functions.saas-stripe-webhook]\nverify_jwt = false");
+  });
+
+  it("keeps new billing foreign keys indexed", () => {
+    expect(indexes).toContain("saas_billing_checkout_plan_idx");
+    expect(indexes).toContain("saas_billing_checkout_plan_price_idx");
+    expect(indexes).toContain("saas_billing_checkout_created_by_idx");
+    expect(indexes).toContain("saas_billing_webhook_studio_idx");
+  });
+
+  it("wires owner checkout and billing-portal controls without hardcoded origins", () => {
+    expect(ownerActions).toContain("startStripeCheckoutAction");
+    expect(ownerActions).toContain("openStripePortalAction");
+    expect(ownerActions).toContain("crypto.randomUUID()");
+    expect(ownerActions).toContain("x-forwarded-host");
+    expect(ownerActions).toContain("endsWith(\".stripe.com\")");
+    expect(ownerPage).toContain("FACTURACIÓN AUTOMÁTICA");
+    expect(ownerPage).toContain("Administrar cobro");
+    expect(ownerPage).toContain("Falta vincular los precios comerciales de Stripe");
   });
 
   it("fails closed until Stripe secrets and allowed return origins are configured", () => {
