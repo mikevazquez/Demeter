@@ -57,10 +57,10 @@ describe("INTEL-11 integral consistency audit", () => {
   it(
     "uses canonical identities so linked conversations do not inflate people",
     () => {
-    expect(intelligence).toContain("conversationStudentByProviderContact");
-    expect(intelligence).toContain("conversationStudentByPhone");
-    expect(intelligence).toContain("resolvedConversationStudentId");
-    expect(intelligence).toContain('return "student:" + linkedStudent');
+      expect(intelligence).toContain("conversationStudentByProviderContact");
+      expect(intelligence).toContain("conversationStudentByPhone");
+      expect(intelligence).toContain("resolvedConversationStudentId");
+      expect(intelligence).toContain('return "student:" + linkedStudent');
       expect(intelligence).toContain("conversationIdentity(row)");
     },
   );
@@ -68,11 +68,11 @@ describe("INTEL-11 integral consistency audit", () => {
   it(
     "waits for cohort maturity before conversion and marketing decisions",
     () => {
-    expect(intelligence).toContain("CONVERSION_MATURITY_DAYS = 7");
-    expect(intelligence).toContain("currentMatureConversations");
-    expect(intelligence).toContain("conversationCohortComparable");
-    expect(intelligence).toContain("currentMatureMarketingTouches");
-    expect(intelligence).toContain("currentMarketingDecisionRows");
+      expect(intelligence).toContain("CONVERSION_MATURITY_DAYS = 7");
+      expect(intelligence).toContain("currentMatureConversations");
+      expect(intelligence).toContain("conversationCohortComparable");
+      expect(intelligence).toContain("currentMatureMarketingTouches");
+      expect(intelligence).toContain("currentMarketingDecisionRows");
       expect(intelligence).toContain("contactos aún madurando");
     },
   );
