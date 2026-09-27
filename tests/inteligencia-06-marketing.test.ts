@@ -47,7 +47,7 @@ describe("INTEL-06 marketing attribution", () => {
     expect(intelligence).toContain("costPerStudent");
     expect(intelligence).toContain("roas:");
     expect(intelligence).toContain("Atribución no significa causalidad");
-    expect(intelligence).toContain("Muestra pequeña");
+    expect(intelligence).toContain("Una campaña necesita al menos 5 contactos maduros");
   });
 
   it("requires sample size before campaign decisions", () => {
@@ -60,9 +60,7 @@ describe("INTEL-06 marketing attribution", () => {
   it("exposes Marketing as its own intelligence view", () => {
     expect(intelligence).toContain('{ key: "marketing", label: "Marketing" }');
     expect(intelligence).toContain('{view === "marketing" ? (');
-    expect(intelligence).toContain('title="📣 Embudo de marketing"');
-    expect(intelligence).toContain(
-      'title="💵 Economía atribuida · cohorte madura"',
-    );
+    expect(intelligence).toContain('title="📣 De contacto a alumna"');
+    expect(intelligence).toContain('title="🧠 Qué está pasando"');
   });
 });
