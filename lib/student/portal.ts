@@ -235,7 +235,15 @@ export const getStudentPortalContext = cache(async () => {
     | null;
 
   if (subscriptionError || !subscription || subscription.access_mode !== "full") {
-    redirect("/login/student?error=studio_unavailable");
+    const { data: restrictedStudio } = await supabase
+      .from("studios")
+      .select("slug")
+      .eq("id", membership.studio_id)
+      .maybeSingle();
+    const studioQuery = restrictedStudio?.slug
+      ? `&studio=${encodeURIComponent(restrictedStudio.slug)}`
+      : "";
+    redirect(`/login/student?error=studio_unavailable${studioQuery}`);
   }
 
   const [
