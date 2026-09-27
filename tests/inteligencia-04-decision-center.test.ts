@@ -15,7 +15,7 @@ describe("INTEL-04 decision center", () => {
     expect(intelligence).toContain("type IntelligenceDecision");
     expect(intelligence).toContain('decision.priority === 1 ? "Ahora"');
     expect(intelligence).toContain("<b>Acción:</b>");
-    expect(intelligence).toContain('title="🧭 Centro de decisiones"');
+    expect(intelligence).toContain('title="🧭 Qué necesita tu atención"');
   });
 
   it("prioritizes money and preventive retention", () => {
