@@ -2036,7 +2036,6 @@ export default async function IntelligencePage({
   }
 
   const currentAcquisitionCohort = acquisitionCohortStats(currentTrialCohortRows);
-  const previousAcquisitionCohort = acquisitionCohortStats(previousTrialCohortRows);
   const pendingTrialCohort = pendingTrialCohortRows.length;
   const cancellationRecovery = recoveryStats(currentCancellationEvents, allBookingEvents);
   const noShowRecovery = recoveryStats(currentNoShowEvents, allBookingEvents);
@@ -3852,7 +3851,15 @@ export default async function IntelligencePage({
 
               <Section
                 title="🧪 Cohorte de prueba · respaldo"
-                description="Se conserva para comparar el historial previo mientras la nueva fuente de conversaciones acumula datos."
+                description={
+                  "Misma cohorte cerrada " +
+                  currentCohortStartDate +
+                  " → " +
+                  currentCohortEndDate +
+                  ", con ventana fija de " +
+                  CONVERSION_MATURITY_DAYS +
+                  " días. Sólo se usa mientras conversaciones acumula historial."
+                }
               >
                 <div className="intel-bars">
                   <BarRow
@@ -3864,20 +3871,34 @@ export default async function IntelligencePage({
                   />
                   <BarRow
                     label="Reservaron"
-                    value={currentAcquisitionCohort.booked}
+                    value={
+                      eventHistoryCoversCurrentCohort
+                        ? currentAcquisitionCohort.booked
+                        : 0
+                    }
                     max={Math.max(currentAcquisitionCohort.total, 1)}
                     display={
-                      currentAcquisitionCohort.booked +
-                      " · " +
-                      pct(currentAcquisitionCohort.bookingRate)
+                      eventHistoryCoversCurrentCohort
+                        ? currentAcquisitionCohort.booked +
+                          " · " +
+                          pct(currentAcquisitionCohort.bookingRate)
+                        : "—"
                     }
                     tone="info"
                   />
                   <BarRow
                     label="Asistieron"
-                    value={currentAcquisitionCohort.attended}
+                    value={
+                      eventHistoryCoversCurrentCohort
+                        ? currentAcquisitionCohort.attended
+                        : 0
+                    }
                     max={Math.max(currentAcquisitionCohort.total, 1)}
-                    display={String(currentAcquisitionCohort.attended)}
+                    display={
+                      eventHistoryCoversCurrentCohort
+                        ? String(currentAcquisitionCohort.attended)
+                        : "—"
+                    }
                     tone="accent"
                   />
                   <BarRow
@@ -3893,9 +3914,13 @@ export default async function IntelligencePage({
                   />
                 </div>
                 <div className="intel-source-note">
-                  Cohorte madura: prospectos registrados hace al menos {CONVERSION_MATURITY_DAYS} días.
+                  {eventHistoryCoversCurrentCohort
+                    ? "Reservas y asistencias tienen cobertura para toda la cohorte."
+                    : "Cobertura histórica limitada: reservas y asistencias no se muestran para evitar inferir lo ocurrido antes del historial disponible."}
                   {pendingTrialCohort > 0
-                    ? " " + pendingTrialCohort + " prospectos recientes todavía no entran en estas tasas."
+                    ? " " +
+                      pendingTrialCohort +
+                      " prospectos recientes todavía están dentro de su ventana de maduración."
                     : ""}
                 </div>
               </Section>
