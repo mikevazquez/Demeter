@@ -3933,15 +3933,23 @@ export default async function IntelligencePage({
         <>
           <section className="intel-kpi-grid">
             <MetricCard
-              label="Gasto publicitario"
+              label="Gasto publicitario · cohorte madura"
               value={money(currentMarketingSpend, studio.currency)}
               delta={deltaText(currentMarketingSpend, previousMarketingSpend)}
               tone={currentMarketingSpend > 0 ? "neutral" : "warning"}
             />
             <MetricCard
-              label="Contactos atribuidos"
-              value={String(currentMarketingContacts)}
-              delta={deltaText(currentMarketingContacts, previousMarketingContacts)}
+              label="Contactos · cohorte madura"
+              value={
+                conversationHistoryCoversCurrentCohort
+                  ? String(currentMarketingContacts)
+                  : "—"
+              }
+              delta={
+                conversationHistoryCoversComparison
+                  ? deltaText(currentMarketingContacts, previousMarketingContacts)
+                  : "Cobertura histórica de conversaciones limitada"
+              }
               tone="info"
             />
             <MetricCard
@@ -3986,63 +3994,103 @@ export default async function IntelligencePage({
             <div className="intel-stack">
               <Section
                 title="📣 Embudo de marketing"
-                description="First-touch registrado por contacto: la cohorte del periodo sólo incluye personas cuyo primer contacto disponible ocurrió en estas fechas."
+                description={
+                  "First-touch registrado en cohorte cerrada " +
+                  currentCohortStartDate +
+                  " → " +
+                  currentCohortEndDate +
+                  ". Cada contacto tiene exactamente " +
+                  CONVERSION_MATURITY_DAYS +
+                  " días de observación."
+                }
               >
                 <div className="intel-bars">
                   <BarRow
                     label="Contactos"
-                    value={currentMarketingContacts}
+                    value={
+                      conversationHistoryCoversCurrentCohort
+                        ? currentMarketingContacts
+                        : 0
+                    }
                     max={Math.max(currentMarketingContacts, 1)}
-                    display={String(currentMarketingContacts)}
+                    display={
+                      conversationHistoryCoversCurrentCohort
+                        ? String(currentMarketingContacts)
+                        : "—"
+                    }
                     tone="info"
                   />
                   <BarRow
                     label="Reservaron"
-                    value={currentMarketingBooked}
+                    value={
+                      conversationCohortCurrentCovered
+                        ? currentMarketingBooked
+                        : 0
+                    }
                     max={Math.max(currentMarketingContacts, 1)}
                     display={
-                      currentMarketingBooked +
-                      " · " +
-                      pct(currentMarketingBookingRate)
+                      conversationCohortCurrentCovered
+                        ? currentMarketingBooked +
+                          " · " +
+                          pct(currentMarketingBookingRate)
+                        : "—"
                     }
                     tone="accent"
                   />
                   <BarRow
                     label="Asistieron"
-                    value={currentMarketingAttended}
+                    value={
+                      conversationCohortCurrentCovered
+                        ? currentMarketingAttended
+                        : 0
+                    }
                     max={Math.max(currentMarketingContacts, 1)}
                     display={
-                      currentMarketingAttended +
-                      " · " +
-                      pct(currentMarketingAttendanceRate) +
-                      " desde reserva"
+                      conversationCohortCurrentCovered
+                        ? currentMarketingAttended +
+                          " · " +
+                          pct(currentMarketingAttendanceRate) +
+                          " desde reserva"
+                        : "—"
                     }
                     tone="success"
                   />
                   <BarRow
                     label="Se convirtieron en alumnas"
-                    value={currentMarketingConverted}
+                    value={
+                      conversationHistoryCoversCurrentCohort
+                        ? currentMarketingConverted
+                        : 0
+                    }
                     max={Math.max(currentMarketingContacts, 1)}
                     display={
-                      currentMarketingConverted +
-                      " · " +
-                      pct(currentMarketingConversionRate)
+                      conversationHistoryCoversCurrentCohort
+                        ? currentMarketingConverted +
+                          " · " +
+                          pct(currentMarketingConversionRate)
+                        : "—"
                     }
                     tone="success"
                   />
                 </div>
                 <div className="intel-source-note">
-                  Los ingresos son cobros posteriores al primer contacto únicamente para personas cuya primera compra de paquete/membresía ocurrió después de ese contacto.{" "}
+                  Conversión e ingresos se atribuyen sólo dentro de la ventana fija de {CONVERSION_MATURITY_DAYS} días desde el primer contacto registrado.{" "}
+                  {!conversationHistoryCoversCurrentCohort
+                    ? "La cobertura histórica de conversaciones no alcanza el inicio de esta cohorte."
+                    : !eventHistoryCoversCurrentCohort
+                      ? "Reservas y asistencias no se muestran porque el historial de eventos no cubre toda la cohorte."
+                      : "La cohorte tiene cobertura suficiente para leer el embudo."}
                   {pendingMarketingContacts > 0
-                    ? pendingMarketingContacts +
-                      " contactos recientes siguen madurando; no generan decisiones de campaña todavía."
-                    : "La cohorte actual ya superó la ventana mínima de maduración."}
+                    ? " " +
+                      pendingMarketingContacts +
+                      " primeros contactos recientes siguen madurando y no generan decisiones todavía."
+                    : ""}
                 </div>
               </Section>
 
               <Section
-                title="Campañas y orígenes"
-                description="Compara volumen, calidad del embudo y economía. No se recomienda escalar con muestras pequeñas."
+                title="Campañas y orígenes · cohorte madura"
+                description="Compara cohortes con la misma ventana temporal y de observación. No se recomienda escalar con muestras pequeñas."
               >
                 <div className="intel-campaign-list">
                   {currentMarketingRows.length ? (
