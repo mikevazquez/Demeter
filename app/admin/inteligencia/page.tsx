@@ -2822,6 +2822,52 @@ export default async function IntelligencePage({
     )
     .sort((a, b) => (b.roas ?? 0) - (a.roas ?? 0))[0];
 
+  const marketingDecisionTitle =
+    conversations.length === 0
+      ? "Todavía no puedo evaluar qué marketing trae alumnas"
+      : unattributedMarketingSpend > 0
+        ? "Hay gasto publicitario que no puede medirse"
+        : paidCampaignWithoutConversion
+          ? paidCampaignWithoutConversion.label + " genera contactos pero no alumnas"
+          : efficientCampaign
+            ? "Hay una señal positiva en " + efficientCampaign.label
+            : currentMarketingDecisionContacts < 5
+              ? "La muestra todavía es demasiado pequeña"
+              : "No hay una campaña claramente dominante";
+
+  const marketingDecisionBody =
+    conversations.length === 0
+      ? "Falta recibir conversation_activity desde Asistian para conectar primer contacto, reserva, asistencia y compra."
+      : unattributedMarketingSpend > 0
+        ? money(unattributedMarketingSpend, studio.currency) +
+          " de publicidad del periodo no tienen origen/campaña compatible con la atribución."
+        : paidCampaignWithoutConversion
+          ? paidCampaignWithoutConversion.contacts +
+            " contactos y " +
+            money(paidCampaignWithoutConversion.spend, studio.currency) +
+            " de gasto sin una conversión madura registrada."
+          : efficientCampaign
+            ? efficientCampaign.converted +
+              " alumnas convertidas con ROAS atribuido de " +
+              (efficientCampaign.roas ?? 0).toFixed(1) +
+              "×."
+            : currentMarketingDecisionContacts < 5
+              ? "Todavía no hay al menos 5 contactos maduros para una recomendación confiable."
+              : "Las diferencias actuales no justifican escalar o cortar presupuesto sólo con esta muestra.";
+
+  const marketingDecisionAction =
+    conversations.length === 0
+      ? "Conectar las conversaciones de Asistian antes de optimizar campañas con base en números incompletos."
+      : unattributedMarketingSpend > 0
+        ? "Alinear source/campaign entre Asistian y los gastos para recuperar costo por alumna y ROAS."
+        : paidCampaignWithoutConversion
+          ? "Revisar primero dónde se rompe su embudo antes de aumentar presupuesto: calidad del lead, reserva, asistencia o cierre."
+          : efficientCampaign
+            ? "Mantenerla y escalar sólo de forma gradual si la señal se sostiene con más contactos."
+            : currentMarketingDecisionContacts < 5
+              ? "Seguir acumulando una cohorte comparable; no cortar ni escalar todavía."
+              : "Mantener presupuesto estable y esperar una diferencia más clara.";
+
   if (unattributedMarketingSpend > 0) {
     decisions.push({
       key: "marketing-spend-unattributed",
@@ -3843,174 +3889,134 @@ export default async function IntelligencePage({
 
       {view === "marketing" ? (
         <>
-          <section className="intel-kpi-grid">
-            <MetricCard
-              label="Gasto publicitario · cohorte madura"
-              value={money(currentMarketingSpend, studio.currency)}
-              delta={deltaText(currentMarketingSpend, previousMarketingSpend)}
-              tone={currentMarketingSpend > 0 ? "neutral" : "warning"}
-            />
-            <MetricCard
-              label="Contactos · cohorte madura"
-              value={
-                conversationHistoryCoversCurrentCohort
-                  ? String(currentMarketingContacts)
-                  : "—"
-              }
-              delta={
-                conversationHistoryCoversComparison
-                  ? deltaText(currentMarketingContacts, previousMarketingContacts)
-                  : "Cobertura histórica de conversaciones limitada"
-              }
-              tone="info"
-            />
-            <MetricCard
-              label="Contacto → alumna · madura"
-              value={
-                currentMarketingDecisionContacts > 0
-                  ? pct(currentMarketingDecisionConversionRate)
-                  : "—"
-              }
-              delta={
-                pendingMarketingContacts > 0
-                  ? pendingMarketingContacts + " contactos aún madurando"
-                  : "Cohorte ≥" + CONVERSION_MATURITY_DAYS + " días"
-              }
-              tone={
-                currentMarketingDecisionConversionRate > 0 ? "positive" : "neutral"
-              }
-            />
-            <MetricCard
-              label="ROAS atribuido · maduro"
-              value={
-                currentMarketingDecisionRoas === null
-                  ? "—"
-                  : currentMarketingDecisionRoas.toFixed(2) + "×"
-              }
-              delta={
-                currentMarketingDecisionRoas === null
-                  ? "Falta gasto atribuible en cohorte madura"
-                  : "Cobros atribuidos / gasto hasta corte de maduración"
-              }
-              tone={
-                currentMarketingDecisionRoas === null
-                  ? "warning"
-                  : currentMarketingDecisionRoas >= 1
-                    ? "positive"
-                    : "danger"
-              }
-            />
-          </section>
+          <div className="intel-decision-layout">
+            <Section
+              title="📣 De contacto a alumna"
+              description={"Cohorte madura con " + CONVERSION_MATURITY_DAYS + " días de observación por persona."}
+            >
+              <div className="intel-funnel">
+                <div className="intel-funnel-stage">
+                  <small>Contactos</small>
+                  <strong>
+                    {conversationHistoryCoversCurrentCohort
+                      ? currentMarketingContacts
+                      : "—"}
+                  </strong>
+                  <span>100%</span>
+                </div>
+                <span className="intel-funnel-arrow" aria-hidden="true">→</span>
+                <div className="intel-funnel-stage">
+                  <small>Agendaron</small>
+                  <strong>
+                    {conversationCohortCurrentCovered
+                      ? currentMarketingBooked
+                      : "—"}
+                  </strong>
+                  <span>
+                    {conversationCohortCurrentCovered && currentMarketingContacts > 0
+                      ? pct(currentMarketingBookingRate)
+                      : "—"}
+                  </span>
+                </div>
+                <span className="intel-funnel-arrow" aria-hidden="true">→</span>
+                <div className="intel-funnel-stage">
+                  <small>Asistieron</small>
+                  <strong>
+                    {conversationCohortCurrentCovered
+                      ? currentMarketingAttended
+                      : "—"}
+                  </strong>
+                  <span>
+                    {conversationCohortCurrentCovered && currentMarketingBooked > 0
+                      ? pct(currentMarketingAttendanceRate)
+                      : "—"}
+                  </span>
+                </div>
+                <span className="intel-funnel-arrow" aria-hidden="true">→</span>
+                <div className="intel-funnel-stage is-success">
+                  <small>Se convirtieron</small>
+                  <strong>
+                    {conversationHistoryCoversCurrentCohort
+                      ? currentMarketingConverted
+                      : "—"}
+                  </strong>
+                  <span>
+                    {conversationHistoryCoversCurrentCohort &&
+                    currentMarketingContacts > 0
+                      ? pct(currentMarketingConversionRate)
+                      : "—"}
+                  </span>
+                </div>
+              </div>
 
-          <div className="intel-two-column">
-            <div className="intel-stack">
-              <Section
-                title="📣 Embudo de marketing"
-                description={
-                  "First-touch registrado en cohorte cerrada " +
-                  currentCohortStartDate +
-                  " → " +
-                  currentCohortEndDate +
-                  ". Cada contacto tiene exactamente " +
-                  CONVERSION_MATURITY_DAYS +
-                  " días de observación."
+              <div className="intel-funnel-leaks">
+                <div>
+                  <small>Gasto</small>
+                  <strong>{money(currentMarketingSpend, studio.currency)}</strong>
+                </div>
+                <div>
+                  <small>Cobros atribuidos</small>
+                  <strong>
+                    {conversationHistoryCoversCurrentCohort
+                      ? money(currentMarketingRevenue, studio.currency)
+                      : "—"}
+                  </strong>
+                </div>
+                <div>
+                  <small>ROAS</small>
+                  <strong>
+                    {currentMarketingRoas === null ||
+                    !conversationHistoryCoversCurrentCohort
+                      ? "—"
+                      : currentMarketingRoas.toFixed(2) + "×"}
+                  </strong>
+                </div>
+              </div>
+            </Section>
+
+            <Section
+              title="🧠 Qué está pasando"
+              description="La recomendación prioriza calidad de atribución y después desempeño."
+            >
+              <article
+                className={
+                  "intel-decision-summary " +
+                  (conversations.length === 0 ||
+                  unattributedMarketingSpend > 0 ||
+                  paidCampaignWithoutConversion
+                    ? "is-warning"
+                    : efficientCampaign
+                      ? "is-positive"
+                      : "is-info")
                 }
               >
-                <div className="intel-bars">
-                  <BarRow
-                    label="Contactos"
-                    value={
-                      conversationHistoryCoversCurrentCohort
-                        ? currentMarketingContacts
-                        : 0
-                    }
-                    max={Math.max(currentMarketingContacts, 1)}
-                    display={
-                      conversationHistoryCoversCurrentCohort
-                        ? String(currentMarketingContacts)
-                        : "—"
-                    }
-                    tone="info"
-                  />
-                  <BarRow
-                    label="Reservaron"
-                    value={
-                      conversationCohortCurrentCovered
-                        ? currentMarketingBooked
-                        : 0
-                    }
-                    max={Math.max(currentMarketingContacts, 1)}
-                    display={
-                      conversationCohortCurrentCovered
-                        ? currentMarketingBooked +
-                          " · " +
-                          pct(currentMarketingBookingRate)
-                        : "—"
-                    }
-                    tone="accent"
-                  />
-                  <BarRow
-                    label="Asistieron"
-                    value={
-                      conversationCohortCurrentCovered
-                        ? currentMarketingAttended
-                        : 0
-                    }
-                    max={Math.max(currentMarketingContacts, 1)}
-                    display={
-                      conversationCohortCurrentCovered
-                        ? currentMarketingAttended +
-                          " · " +
-                          pct(currentMarketingAttendanceRate) +
-                          " desde reserva"
-                        : "—"
-                    }
-                    tone="success"
-                  />
-                  <BarRow
-                    label="Se convirtieron en alumnas"
-                    value={
-                      conversationHistoryCoversCurrentCohort
-                        ? currentMarketingConverted
-                        : 0
-                    }
-                    max={Math.max(currentMarketingContacts, 1)}
-                    display={
-                      conversationHistoryCoversCurrentCohort
-                        ? currentMarketingConverted +
-                          " · " +
-                          pct(currentMarketingConversionRate)
-                        : "—"
-                    }
-                    tone="success"
-                  />
+                <strong>{marketingDecisionTitle}</strong>
+                <p>{marketingDecisionBody}</p>
+                <div>
+                  <small>Recomendación</small>
+                  <b>{marketingDecisionAction}</b>
                 </div>
-                <div className="intel-source-note">
-                  Conversión e ingresos se atribuyen sólo dentro de la ventana fija de {CONVERSION_MATURITY_DAYS} días desde el primer contacto registrado.{" "}
-                  {!conversationHistoryCoversCurrentCohort
-                    ? "La cobertura histórica de conversaciones no alcanza el inicio de esta cohorte."
-                    : !eventHistoryCoversCurrentCohort
-                      ? "Reservas y asistencias no se muestran porque el historial de eventos no cubre toda la cohorte."
-                      : "La cohorte tiene cobertura suficiente para leer el embudo."}
-                  {pendingMarketingContacts > 0
-                    ? " " +
-                      pendingMarketingContacts +
-                      " primeros contactos recientes siguen madurando y no generan decisiones todavía."
-                    : ""}
-                </div>
-              </Section>
+              </article>
 
-              <Section
-                title="Campañas y orígenes · cohorte madura"
-                description="Compara cohortes con la misma ventana temporal y de observación. No se recomienda escalar con muestras pequeñas."
-              >
+              {pendingMarketingContacts > 0 ? (
+                <div className="intel-context-callout">
+                  <small>Cohorte reciente</small>
+                  <strong>{pendingMarketingContacts} contactos aún madurando</strong>
+                  <span>No generan decisiones hasta completar su ventana de observación.</span>
+                </div>
+              ) : null}
+            </Section>
+          </div>
+
+          <details className="intel-analysis-details">
+            <summary>Ver campañas y análisis detallado</summary>
+            <div className="intel-analysis-details-body">
+              <Section title="Campañas y orígenes">
                 <div className="intel-campaign-list">
                   {!conversationHistoryCoversCurrentCohort ? (
                     <div className="intel-decision-empty">
                       <strong>Cobertura histórica insuficiente</strong>
-                      <p>
-                        No comparamos campañas hasta que el historial de conversaciones cubra el inicio completo de la cohorte.
-                      </p>
+                      <p>No comparamos campañas hasta cubrir la cohorte completa.</p>
                     </div>
                   ) : currentMarketingDecisionRows.length ? (
                     currentMarketingDecisionRows.map((row) => (
@@ -4021,166 +4027,32 @@ export default async function IntelligencePage({
                             <small>
                               {row.campaign && row.source
                                 ? row.source + " · " + row.campaign
-                                : row.source ?? (row.key === "unattributed" ? "Sin atribución" : "Campaña")}
+                                : row.source ?? "Sin atribución"}
                             </small>
                           </div>
                           <span>{row.contacts} contactos</span>
                         </div>
                         <div className="intel-campaign-metrics">
-                          <div>
-                            <small>Reserva</small>
-                            <b>
-                              {eventHistoryCoversCurrentCohort
-                                ? pct(row.bookingRate)
-                                : "—"}
-                            </b>
-                          </div>
-                          <div>
-                            <small>Alumna</small>
-                            <b>{pct(row.conversionRate)}</b>
-                          </div>
-                          <div>
-                            <small>Gasto</small>
-                            <b>{money(row.spend, studio.currency)}</b>
-                          </div>
-                          <div>
-                            <small>Costo/alumna</small>
-                            <b>
-                              {row.costPerStudent === null
-                                ? "—"
-                                : money(row.costPerStudent, studio.currency)}
-                            </b>
-                          </div>
-                          <div>
-                            <small>Cobros atribuidos</small>
-                            <b>{money(row.revenue, studio.currency)}</b>
-                          </div>
-                          <div>
-                            <small>ROAS</small>
-                            <b>{row.roas === null ? "—" : row.roas.toFixed(2) + "×"}</b>
-                          </div>
+                          <div><small>Reserva</small><b>{eventHistoryCoversCurrentCohort ? pct(row.bookingRate) : "—"}</b></div>
+                          <div><small>Alumna</small><b>{pct(row.conversionRate)}</b></div>
+                          <div><small>Gasto</small><b>{money(row.spend, studio.currency)}</b></div>
+                          <div><small>Costo/alumna</small><b>{row.costPerStudent === null ? "—" : money(row.costPerStudent, studio.currency)}</b></div>
+                          <div><small>Cobros</small><b>{money(row.revenue, studio.currency)}</b></div>
+                          <div><small>ROAS</small><b>{row.roas === null ? "—" : row.roas.toFixed(2) + "×"}</b></div>
                         </div>
-                        {row.contacts < 5 ? (
-                          <p className="intel-campaign-note">
-                            Muestra pequeña: todavía no usar esta fila para escalar o cortar presupuesto.
-                          </p>
-                        ) : null}
                       </article>
                     ))
                   ) : (
-                    <div className="intel-decision-empty">
-                      <strong>Todavía no hay atribución de marketing</strong>
-                      <p>
-                        Configura conversation_activity en Asistian y registra los gastos de publicidad con el mismo origen/campaña.
-                      </p>
-                      <Link href="/admin/integraciones/asistian">Configurar Asistian →</Link>
-                    </div>
+                    <p className="intel-empty">Todavía no hay campañas atribuibles en la cohorte.</p>
                   )}
                 </div>
               </Section>
+
+              <div className="intel-source-note">
+                Atribución no significa causalidad. Una campaña necesita al menos 5 contactos maduros antes de generar una señal de decisión.
+              </div>
             </div>
-
-            <div className="intel-stack">
-              <Section title="💵 Economía atribuida · cohorte madura">
-                <div className="intel-rule-list">
-                  <div>
-                    <span>Gasto publicitario</span>
-                    <strong>{money(currentMarketingSpend, studio.currency)}</strong>
-                  </div>
-                  <div>
-                    <span>Cobros atribuidos</span>
-                    <strong>
-                      {conversationHistoryCoversCurrentCohort
-                        ? money(currentMarketingRevenue, studio.currency)
-                        : "—"}
-                    </strong>
-                  </div>
-                  <div>
-                    <span>Costo por contacto</span>
-                    <strong>
-                      {conversationHistoryCoversCurrentCohort &&
-                      currentMarketingContacts > 0
-                        ? money(
-                            currentMarketingSpend / currentMarketingContacts,
-                            studio.currency,
-                          )
-                        : "—"}
-                    </strong>
-                  </div>
-                  <div>
-                    <span>Costo por alumna</span>
-                    <strong>
-                      {conversationHistoryCoversCurrentCohort &&
-                      currentMarketingConverted > 0
-                        ? money(
-                            currentMarketingSpend / currentMarketingConverted,
-                            studio.currency,
-                          )
-                        : "—"}
-                    </strong>
-                  </div>
-                  <div>
-                    <span>ROAS atribuido</span>
-                    <strong>
-                      {!conversationHistoryCoversCurrentCohort ||
-                      currentMarketingRoas === null
-                        ? "—"
-                        : currentMarketingRoas.toFixed(2) + "×"}
-                    </strong>
-                  </div>
-                </div>
-              </Section>
-
-              <Section
-                title="🧩 Calidad de atribución · periodo actual"
-                description="Esta sección sí observa actividad del periodo seleccionado; no se mezcla con las tasas de la cohorte madura."
-              >
-                <div className="intel-insight-list">
-                  <Insight
-                    tone={unattributedMarketingContacts > 0 ? "warning" : "positive"}
-                    title={
-                      unattributedMarketingContacts > 0
-                        ? unattributedMarketingContacts + " contactos sin atribución"
-                        : "✓ Contactos con origen identificado"
-                    }
-                    body={
-                      unattributedMarketingContacts > 0
-                        ? "No sabemos qué campaña originó esos contactos."
-                        : "Los contactos del periodo tienen origen/campaña disponible."
-                    }
-                    href="/admin/integraciones/asistian"
-                  />
-                  <Insight
-                    tone={unattributedMarketingSpend > 0 ? "warning" : "positive"}
-                    title={
-                      unattributedMarketingSpend > 0
-                        ? money(unattributedMarketingSpend, studio.currency) +
-                          " de gasto sin campaña"
-                        : "✓ Gasto publicitario atribuido"
-                    }
-                    body={
-                      unattributedMarketingSpend > 0
-                        ? "Ese gasto no puede entrar a costo por alumna ni ROAS por campaña."
-                        : "El gasto publicitario registrado tiene una llave de atribución."
-                    }
-                    href={viewHref("finanzas", days)}
-                  />
-                </div>
-              </Section>
-
-              <Section
-                title="Cómo leer esta pantalla"
-                description="Atribución no significa causalidad."
-              >
-                <ul className="intel-unlock-list">
-                  <li>First-touch evita que varias conversaciones cuenten como varios leads.</li>
-                  <li>Una campaña necesita al menos 5 contactos antes de generar una señal de decisión.</li>
-                  <li>ROAS compara cobros atribuidos contra gasto registrado, no utilidad.</li>
-                  <li>La rentabilidad final también depende de costos operativos y retención posterior.</li>
-                </ul>
-              </Section>
-            </div>
-          </div>
+          </details>
         </>
       ) : null}
 
