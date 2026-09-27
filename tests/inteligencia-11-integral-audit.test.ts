@@ -13,10 +13,12 @@ describe("INTEL-11 integral consistency audit", () => {
   it(
     "uses package or membership consistently for base, retention and churn",
     () => {
-    expect(intelligence).toContain("for (const item of conversionAcquisitions)");
-    expect(intelligence).toContain(
-      "const expiredCurrent = conversionAcquisitions.filter",
-    );
+      expect(intelligence).toContain(
+        "for (const item of conversionAcquisitions)",
+      );
+      expect(intelligence).toContain(
+        "const expiredCurrent = conversionAcquisitions.filter",
+      );
       expect(intelligence).toContain(
         "const expiredPrevious = conversionAcquisitions.filter",
       );
@@ -81,10 +83,10 @@ describe("INTEL-11 integral consistency audit", () => {
   it(
     "does not imply expense completeness from the presence of expense rows",
     () => {
-    expect(intelligence).toContain("Cobertura de gastos no verificada");
-    expect(intelligence).toContain(
-      "Tener movimientos registrados no demuestra que estén todos los costos del periodo",
-    );
+      expect(intelligence).toContain("Cobertura de gastos no verificada");
+      expect(intelligence).toContain(
+        "Tener movimientos registrados no demuestra que estén todos los costos del periodo",
+      );
       expect(intelligence).toContain("no contabilidad fiscal");
     },
   );
