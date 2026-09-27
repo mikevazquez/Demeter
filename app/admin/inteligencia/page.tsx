@@ -455,7 +455,7 @@ function titleFor(view: ViewKey) {
     resumen: ["Resumen", "Qué está pasando en el negocio y qué necesita tu atención."],
     dinero: ["Dinero", "Ingresos cobrados, ventas, productos y cobranza del periodo."],
     alumnas: ["Alumnas", "Crecimiento, actividad y señales tempranas de abandono."],
-    conversion: ["Conversión", "Dónde se rompe el embudo, qué se recupera y qué información falta capturar."],
+    conversion: ["Conversión", "Dónde se pierden prospectos, qué se recupera y qué conviene hacer."],
     marketing: ["Marketing", "Qué origen y campaña generan contactos de calidad, alumnas e ingresos atribuibles."],
     clases: ["Clases", "Qué disciplinas y horarios están usando bien —o mal— la capacidad."],
     retencion: ["Retención", "Detectar señales antes del abandono y priorizar a quién intervenir."],
@@ -2113,6 +2113,119 @@ export default async function IntelligencePage({
   const missingCancellationReasonCount =
     cancellationReasonCounts.get("Sin motivo registrado") ?? 0;
 
+  const conversionFunnelUsesConversation =
+    conversationCohortCurrentCovered && currentConversationCohort.contacts > 0;
+  const conversionFunnelUsesTrial =
+    !conversionFunnelUsesConversation &&
+    eventHistoryCoversCurrentCohort &&
+    currentAcquisitionCohort.total > 0;
+  const conversionFunnelAvailable =
+    conversionFunnelUsesConversation || conversionFunnelUsesTrial;
+  const conversionFunnelStart = conversionFunnelUsesConversation
+    ? currentConversationCohort.contacts
+    : currentAcquisitionCohort.total;
+  const conversionFunnelBooked = conversionFunnelUsesConversation
+    ? currentConversationCohort.booked
+    : currentAcquisitionCohort.booked;
+  const conversionFunnelAttended = conversionFunnelUsesConversation
+    ? currentConversationCohort.attended
+    : currentAcquisitionCohort.attended;
+  const conversionFunnelConverted = conversionFunnelUsesConversation
+    ? currentConversationCohort.converted
+    : currentAcquisitionCohort.converted;
+  const conversionFunnelCancelled = conversionFunnelUsesConversation
+    ? currentConversationCohort.cancelled
+    : currentAcquisitionCohort.cancelled;
+  const conversionFunnelRebooked = conversionFunnelUsesConversation
+    ? currentConversationCohort.rebooked
+    : currentAcquisitionCohort.rebooked;
+  const conversionFunnelNoShow = conversionFunnelUsesConversation
+    ? currentConversationCohort.noShow
+    : currentAcquisitionCohort.noShow;
+  const conversionFunnelStartLabel = conversionFunnelUsesConversation
+    ? "Conversaciones"
+    : "Prospectos";
+  const conversionFunnelSourceLabel = conversionFunnelUsesConversation
+    ? "Cohorte madura desde conversación"
+    : conversionFunnelUsesTrial
+      ? "Respaldo temporal con prospectos registrados"
+      : "Sin muestra suficiente";
+
+  const conversionStageCandidates = [
+    {
+      key: "booking",
+      label: conversionFunnelUsesConversation
+        ? "conversación → reserva"
+        : "prospecto → reserva",
+      numerator: conversionFunnelBooked,
+      denominator: conversionFunnelStart,
+      rate: safeRate(conversionFunnelBooked, conversionFunnelStart),
+      action:
+        "Revisar seguimiento, horarios ofrecidos y objeciones antes de agendar.",
+    },
+    {
+      key: "attendance",
+      label: "reserva → asistencia",
+      numerator: conversionFunnelAttended,
+      denominator: conversionFunnelBooked,
+      rate: safeRate(conversionFunnelAttended, conversionFunnelBooked),
+      action:
+        conversionFunnelCancelled > conversionFunnelNoShow
+          ? "Revisar motivos de cancelación y facilitar la reagenda antes de perder el interés."
+          : "Reforzar confirmación, recordatorios y recuperación de no show.",
+    },
+    {
+      key: "purchase",
+      label: "asistencia → compra",
+      numerator: conversionFunnelConverted,
+      denominator: conversionFunnelAttended,
+      rate: safeRate(conversionFunnelConverted, conversionFunnelAttended),
+      action:
+        "Revisar el seguimiento después de la primera clase, la oferta presentada y el cierre de paquete o membresía.",
+    },
+  ].filter((stage) => stage.denominator >= 3);
+
+  const conversionBottleneck = [...conversionStageCandidates].sort(
+    (a, b) => a.rate - b.rate,
+  )[0];
+
+  const conversionDiagnosisTitle = !conversionFunnelAvailable
+    ? "Todavía no puedo detectar el cuello de botella"
+    : !conversionBottleneck
+      ? "Necesitamos un poco más de muestra"
+      : conversionBottleneck.rate < 70
+        ? "El cuello de botella está en " + conversionBottleneck.label
+        : "No hay una fuga dominante en el embudo";
+
+  const conversionDiagnosisBody = !conversionFunnelAvailable
+    ? conversations.length === 0
+      ? "Asistian todavía no ha enviado conversaciones y el historial disponible no alcanza para construir un embudo comparable sin inventar datos."
+      : "La cobertura histórica no alcanza toda la cohorte seleccionada. Esperamos una muestra completa antes de emitir una conclusión."
+    : !conversionBottleneck
+      ? "El embudo ya está preparado, pero ninguna etapa tiene todavía al menos 3 personas de base para una recomendación confiable."
+      : conversionBottleneck.rate < 70
+        ? conversionBottleneck.numerator +
+          " de " +
+          conversionBottleneck.denominator +
+          " personas avanzaron en " +
+          conversionBottleneck.label +
+          " (" +
+          pct(conversionBottleneck.rate) +
+          ")."
+        : "Las etapas con muestra suficiente se mantienen arriba de 70%. La etapa relativamente más débil es " +
+          conversionBottleneck.label +
+          " con " +
+          pct(conversionBottleneck.rate) +
+          ".";
+
+  const conversionDiagnosisAction = !conversionFunnelAvailable
+    ? conversations.length === 0
+      ? "Conectar conversation_activity desde Asistian para que Studio Flow pueda detectar dónde se pierden prospectos desde el primer contacto."
+      : "Dejar madurar la cohorte y volver a leer el embudo cuando haya cobertura completa."
+    : conversionBottleneck
+      ? conversionBottleneck.action
+      : "Seguir acumulando casos; no cambiar el proceso todavía con una muestra tan pequeña.";
+
   const expiredCurrent = conversionAcquisitions.filter(
     (item) =>
       !item.refunded_at &&
@@ -3480,257 +3593,131 @@ export default async function IntelligencePage({
 
       {view === "conversion" ? (
         <>
-          <section className="intel-kpi-grid">
-            <MetricCard
-              label="Contactos · cohorte madura"
-              value={
-                conversationHistoryCoversCurrentCohort
-                  ? String(currentConversationCohort.contacts)
-                  : "—"
+          <div className="intel-decision-layout">
+            <Section
+              title="💬 Embudo de conversión"
+              description={
+                conversionFunnelSourceLabel +
+                " · ventana fija de " +
+                CONVERSION_MATURITY_DAYS +
+                " días por persona."
               }
-              delta={
-                conversationHistoryCoversComparison
-                  ? deltaText(
-                      currentConversationCohort.contacts,
-                      previousConversationCohort.contacts,
-                    )
-                  : pendingConversationContacts > 0
-                    ? pendingConversationContacts +
-                      " primeros contactos recientes aún madurando"
-                    : "Cobertura histórica de conversaciones limitada"
-              }
-              tone="info"
-            />
-            <MetricCard
-              label="Contacto → reserva"
-              value={
-                conversationCohortCurrentCovered &&
-                currentConversationCohort.contacts > 0
-                  ? pct(currentConversationCohort.conversationToBookingRate)
-                  : "—"
-              }
-              delta={
-                conversationCohortComparable
-                  ? pointsDelta(
-                      currentConversationCohort.conversationToBookingRate,
-                      previousConversationCohort.conversationToBookingRate,
-                    )
-                  : "Muestra o cobertura histórica insuficiente"
-              }
-              tone={
-                !conversationCohortCurrentCovered
-                  ? "neutral"
-                  : currentConversationCohort.conversationToBookingRate >=
-                      previousConversationCohort.conversationToBookingRate
-                    ? "positive"
-                    : "warning"
-              }
-            />
-            <MetricCard
-              label="Reserva → asistencia"
-              value={
-                conversationCohortCurrentCovered &&
-                currentConversationCohort.booked > 0
-                  ? pct(currentConversationCohort.bookingToAttendanceRate)
-                  : "—"
-              }
-              delta={
-                conversationCohortComparable
-                  ? pointsDelta(
-                      currentConversationCohort.bookingToAttendanceRate,
-                      previousConversationCohort.bookingToAttendanceRate,
-                    )
-                  : "Muestra o cobertura histórica insuficiente"
-              }
-              tone={
-                !conversationCohortCurrentCovered
-                  ? "neutral"
-                  : currentConversationCohort.bookingToAttendanceRate >=
-                      previousConversationCohort.bookingToAttendanceRate
-                    ? "positive"
-                    : "warning"
-              }
-            />
-            <MetricCard
-              label="Asistencia → alumna"
-              value={
-                conversationCohortCurrentCovered &&
-                currentConversationCohort.attended > 0
-                  ? pct(currentConversationCohort.attendanceToConversionRate)
-                  : "—"
-              }
-              delta={
-                conversationCohortComparable
-                  ? pointsDelta(
-                      currentConversationCohort.attendanceToConversionRate,
-                      previousConversationCohort.attendanceToConversionRate,
-                    )
-                  : "Muestra o cobertura histórica insuficiente"
-              }
-              tone={
-                !conversationCohortCurrentCovered
-                  ? "neutral"
-                  : currentConversationCohort.attendanceToConversionRate >=
-                      previousConversationCohort.attendanceToConversionRate
-                    ? "positive"
-                    : "warning"
-              }
-            />
-          </section>
+            >
+              <div className="intel-funnel">
+                <div className="intel-funnel-stage">
+                  <small>{conversionFunnelStartLabel}</small>
+                  <strong>{conversionFunnelAvailable ? conversionFunnelStart : "—"}</strong>
+                  <span>100%</span>
+                </div>
+                <span className="intel-funnel-arrow" aria-hidden="true">→</span>
+                <div className="intel-funnel-stage">
+                  <small>Agendaron</small>
+                  <strong>{conversionFunnelAvailable ? conversionFunnelBooked : "—"}</strong>
+                  <span>
+                    {conversionFunnelAvailable && conversionFunnelStart > 0
+                      ? pct(safeRate(conversionFunnelBooked, conversionFunnelStart))
+                      : "—"}
+                  </span>
+                </div>
+                <span className="intel-funnel-arrow" aria-hidden="true">→</span>
+                <div className="intel-funnel-stage">
+                  <small>Asistieron</small>
+                  <strong>{conversionFunnelAvailable ? conversionFunnelAttended : "—"}</strong>
+                  <span>
+                    {conversionFunnelAvailable && conversionFunnelBooked > 0
+                      ? pct(safeRate(conversionFunnelAttended, conversionFunnelBooked))
+                      : "—"}
+                  </span>
+                </div>
+                <span className="intel-funnel-arrow" aria-hidden="true">→</span>
+                <div className="intel-funnel-stage is-success">
+                  <small>Se convirtieron</small>
+                  <strong>{conversionFunnelAvailable ? conversionFunnelConverted : "—"}</strong>
+                  <span>
+                    {conversionFunnelAvailable && conversionFunnelAttended > 0
+                      ? pct(safeRate(conversionFunnelConverted, conversionFunnelAttended))
+                      : "—"}
+                  </span>
+                </div>
+              </div>
 
-          <div className="intel-two-column">
-            <div className="intel-stack">
-              <Section
-                title="💬 Embudo desde conversación"
-                description={
-                  "Cohorte cerrada " +
-                  currentCohortStartDate +
-                  " → " +
-                  currentCohortEndDate +
-                  " con ventana fija de " +
-                  CONVERSION_MATURITY_DAYS +
-                  " días. La actividad del periodo actual se muestra aparte."
+              <div className="intel-funnel-leaks">
+                <div>
+                  <small>Cancelaciones</small>
+                  <strong>{conversionFunnelAvailable ? conversionFunnelCancelled : "—"}</strong>
+                </div>
+                <div>
+                  <small>Reagendadas</small>
+                  <strong>{conversionFunnelAvailable ? conversionFunnelRebooked : "—"}</strong>
+                </div>
+                <div>
+                  <small>No show</small>
+                  <strong>{conversionFunnelAvailable ? conversionFunnelNoShow : "—"}</strong>
+                </div>
+              </div>
+
+              {pendingConversationContacts > 0 ? (
+                <p className="intel-funnel-note">
+                  {pendingConversationContacts} contactos recientes siguen dentro de su ventana de maduración y todavía no afectan la conclusión.
+                </p>
+              ) : null}
+            </Section>
+
+            <Section
+              title="🧠 Qué está pasando"
+              description="Studio Flow interpreta el embudo y te muestra una sola prioridad."
+            >
+              <article
+                className={
+                  "intel-decision-summary " +
+                  (!conversionFunnelAvailable
+                    ? "is-info"
+                    : conversionBottleneck && conversionBottleneck.rate < 70
+                      ? "is-warning"
+                      : "is-positive")
                 }
               >
-                <div className="intel-bars">
-                  <BarRow
-                    label="Conversaciones"
-                    value={currentConversationCohort.conversations}
-                    max={Math.max(currentConversationCohort.conversations, 1)}
-                    display={String(currentConversationCohort.conversations)}
-                    tone="info"
-                  />
-                  <BarRow
-                    label="Contactos únicos"
-                    value={currentConversationCohort.contacts}
-                    max={Math.max(currentConversationCohort.conversations, 1)}
-                    display={String(currentConversationCohort.contacts)}
-                    tone="info"
-                  />
-                  <BarRow
-                    label="Reservaron"
-                    value={
-                      conversationCohortCurrentCovered
-                        ? currentConversationCohort.booked
-                        : 0
-                    }
-                    max={Math.max(currentConversationCohort.contacts, 1)}
-                    display={
-                      conversationCohortCurrentCovered
-                        ? currentConversationCohort.booked +
-                          " · " +
-                          pct(currentConversationCohort.conversationToBookingRate)
-                        : "—"
-                    }
-                    tone="accent"
-                  />
-                  <BarRow
-                    label="Asistieron"
-                    value={
-                      conversationCohortCurrentCovered
-                        ? currentConversationCohort.attended
-                        : 0
-                    }
-                    max={Math.max(currentConversationCohort.contacts, 1)}
-                    display={
-                      conversationCohortCurrentCovered
-                        ? String(currentConversationCohort.attended)
-                        : "—"
-                    }
-                    tone="success"
-                  />
-                  <BarRow
-                    label="Compraron paquete / membresía"
-                    value={currentConversationCohort.converted}
-                    max={Math.max(currentConversationCohort.contacts, 1)}
-                    display={
-                      currentConversationCohort.converted +
-                      " · " +
-                      pct(currentConversationCohort.conversationToConversionRate)
-                    }
-                    tone="success"
-                  />
+                <strong>{conversionDiagnosisTitle}</strong>
+                <p>{conversionDiagnosisBody}</p>
+                <div>
+                  <small>Recomendación</small>
+                  <b>{conversionDiagnosisAction}</b>
                 </div>
-                <div className="intel-source-note">
-                  {currentConversationCohort.contacts > 0
-                    ? currentConversationCohort.linked +
-                      "/" +
-                      currentConversationCohort.contacts +
-                      " contactos de la cohorte están enlazados." +
-                      (!conversationHistoryCoversCurrentCohort
-                        ? " La cobertura histórica de conversaciones no alcanza el inicio de la cohorte."
-                        : !eventHistoryCoversCurrentCohort
-                          ? " Reservas y asistencias aparecen como no disponibles porque el historial de eventos no cubre toda la cohorte."
-                          : "") +
-                      (pendingConversationContacts > 0
-                        ? " " +
-                          pendingConversationContacts +
-                          " primeros contactos de los últimos " +
-                          CONVERSION_MATURITY_DAYS +
-                          " días siguen madurando."
-                        : "")
-                    : conversations.length > 0
-                      ? "No hubo primeros contactos dentro de la cohorte madura seleccionada."
-                      : "Esperando el primer evento conversation_activity desde Asistian. El receptor y la cohorte ya están preparados."}
-                </div>
-              </Section>
+              </article>
 
+              {topCancellationReason && conversionFunnelAvailable ? (
+                <div className="intel-context-callout">
+                  <small>Contexto útil</small>
+                  <strong>
+                    Principal motivo de cancelación: {topCancellationReason.label}
+                  </strong>
+                  <span>
+                    {topCancellationReason.count} de {currentCancellationEvents.length} cancelaciones del periodo.
+                  </span>
+                </div>
+              ) : null}
+
+              {!conversionFunnelUsesConversation && conversations.length === 0 ? (
+                <Link
+                  href="/admin/integraciones/asistian"
+                  className="intel-secondary-action"
+                >
+                  Conectar conversaciones de Asistian →
+                </Link>
+              ) : null}
+            </Section>
+          </div>
+
+          <details className="intel-analysis-details">
+            <summary>Ver análisis detallado</summary>
+            <div className="intel-analysis-details-body">
               <Section
-                title="📍 Actividad operativa del periodo"
-                description="Volumen ocurrido en estas fechas. No se presenta como embudo porque las personas pueden venir de cohortes anteriores."
+                title="Fugas y recuperación"
+                description="Detalle operativo para investigar la conclusión; no cambia el embudo principal."
               >
                 <div className="intel-bars">
                   <BarRow
-                    label="Conversaciones"
-                    value={currentConversationCohortAll.conversations}
-                    max={Math.max(currentConversationCohortAll.conversations, 1)}
-                    display={
-                      currentConversationCohortAll.conversations +
-                      " · " +
-                      currentConversationCohortAll.contacts +
-                      " contactos"
-                    }
-                    tone="info"
-                  />
-                  <BarRow
-                    label="Intentos de reserva"
-                    value={currentBookingEvents.length}
-                    max={Math.max(currentBookingEvents.length, 1)}
-                    display={
-                      currentBookingEvents.length +
-                      " · " +
-                      currentBookingStudents.size +
-                      " personas"
-                    }
-                    tone="info"
-                  />
-                  <BarRow
-                    label="Asistencias"
-                    value={currentAttendedEvents.length}
-                    max={Math.max(currentBookingEvents.length, currentAttendedEvents.length, 1)}
-                    display={String(currentAttendedEvents.length)}
-                    tone="success"
-                  />
-                  <BarRow
-                    label="No show"
-                    value={currentNoShowEvents.length}
-                    max={Math.max(currentBookingEvents.length, currentNoShowEvents.length, 1)}
-                    display={String(currentNoShowEvents.length)}
-                    tone="danger"
-                  />
-                </div>
-                <div className="intel-source-note">
-                  Actividad sirve para operación; cohorte sirve para medir conversión.
-                </div>
-              </Section>
-
-              <Section
-                title="↻ Fugas y recuperación"
-                description="Las cancelaciones y no show ya no desaparecen aunque la persona vuelva a reservar."
-              >
-                <div className="intel-bars">
-                  <BarRow
-                    label="Cancelaciones"
+                    label="Cancelaciones del periodo"
                     value={currentCancellationEvents.length}
                     max={Math.max(currentCancellationEvents.length, currentNoShowEvents.length, 1)}
                     display={
@@ -3754,22 +3741,8 @@ export default async function IntelligencePage({
                     }
                     tone="success"
                   />
-                  {currentStudioCancellationEvents.length > 0 ? (
-                    <BarRow
-                      label="Canceladas por el estudio"
-                      value={currentStudioCancellationEvents.length}
-                      max={Math.max(
-                        currentCancellationEvents.length,
-                        currentStudioCancellationEvents.length,
-                        currentNoShowEvents.length,
-                        1,
-                      )}
-                      display={String(currentStudioCancellationEvents.length)}
-                      tone="info"
-                    />
-                  ) : null}
                   <BarRow
-                    label="No show"
+                    label="No show del periodo"
                     value={currentNoShowEvents.length}
                     max={Math.max(currentCancellationEvents.length, currentNoShowEvents.length, 1)}
                     display={
@@ -3796,10 +3769,7 @@ export default async function IntelligencePage({
                 </div>
               </Section>
 
-              <Section
-                title="Motivos de cancelación"
-                description="Solo usa motivos estructurados; los históricos sin clasificación permanecen visibles."
-              >
+              <Section title="Motivos de cancelación">
                 <div className="intel-bars">
                   {cancellationReasonRows.length ? (
                     cancellationReasonRows.map((item) => (
@@ -3817,188 +3787,12 @@ export default async function IntelligencePage({
                   )}
                 </div>
               </Section>
+
+              <div className="intel-source-note">
+                La ruta principal es conversación/prospecto → reserva → asistencia → compra. Cancelación, reagenda y no show son fugas o recuperaciones laterales; no se fuerzan como etapas consecutivas del embudo.
+              </div>
             </div>
-
-            <div className="intel-stack">
-              <Section title="🚨 Qué requiere atención">
-                <div className="intel-insight-list">
-                  {currentConversationCohort.conversations > 0 &&
-                  currentConversationCohort.linked < currentConversationCohort.contacts ? (
-                    <Insight
-                      tone="warning"
-                      title="🔗 Hay conversaciones aún sin identidad"
-                      body={
-                        currentConversationCohort.contacts -
-                        currentConversationCohort.linked +
-                        " contactos todavía no están vinculados a una alumna/prospecto. Se enlazarán automáticamente cuando reserven si Asistian conserva el mismo contacto."
-                      }
-                    />
-                  ) : null}
-                  {topCancellationReason ? (
-                    <Insight
-                      tone={topCancellationReason.label === "Sin motivo registrado" ? "danger" : "warning"}
-                      title={
-                        topCancellationReason.label === "Sin motivo registrado"
-                          ? "Faltan motivos de cancelación"
-                          : "Principal motivo: " + topCancellationReason.label
-                      }
-                      body={
-                        topCancellationReason.count +
-                        " de " +
-                        currentCancellationEvents.length +
-                        " cancelaciones del periodo."
-                      }
-                    />
-                  ) : (
-                    <Insight
-                      tone="positive"
-                      title="✓ Sin cancelaciones registradas"
-                      body="No hay cancelaciones dentro del periodo seleccionado."
-                    />
-                  )}
-                  {currentNoShowEvents.length > 0 ? (
-                    <Insight
-                      tone="danger"
-                      title={"👻 " + currentNoShowEvents.length + " no show"}
-                      body={
-                        noShowRecovery.recovered +
-                        " de " +
-                        noShowRecovery.eligible +
-                        " personas volvieron a reservar después."
-                      }
-                    />
-                  ) : null}
-                  {cancellationRecovery.eligible > 0 ? (
-                    <Insight
-                      tone={cancellationRecovery.rate >= 50 ? "positive" : "warning"}
-                      title="↻ Recuperación después de cancelar"
-                      body={
-                        pct(cancellationRecovery.rate) +
-                        " volvió a generar una reserva posterior."
-                      }
-                    />
-                  ) : null}
-                </div>
-              </Section>
-
-              <Section
-                title="📣 Origen de conversaciones"
-                description="Primera atribución disponible para entender qué canal o campaña sí genera reservas."
-              >
-                <div className="intel-bars">
-                  {conversationSourceRows.length ? (
-                    conversationSourceRows.map((item) => (
-                      <BarRow
-                        key={item.label}
-                        label={item.label}
-                        value={item.count}
-                        max={conversationSourceRows[0]?.count ?? 1}
-                        display={String(item.count)}
-                        tone={item.label === "Sin atribución" ? "warning" : "info"}
-                      />
-                    ))
-                  ) : (
-                    <p className="intel-empty">Todavía no hay conversaciones con atribución.</p>
-                  )}
-                </div>
-              </Section>
-
-              <Section title="Canales">
-                <div className="intel-bars">
-                  {conversationChannelRows.length ? (
-                    conversationChannelRows.map((item) => (
-                      <BarRow
-                        key={item.label}
-                        label={item.label}
-                        value={item.count}
-                        max={conversationChannelRows[0]?.count ?? 1}
-                        display={String(item.count)}
-                        tone="info"
-                      />
-                    ))
-                  ) : (
-                    <p className="intel-empty">Todavía no hay conversaciones registradas.</p>
-                  )}
-                </div>
-              </Section>
-
-              <Section
-                title="🧪 Cohorte de prueba · respaldo"
-                description={
-                  "Misma cohorte cerrada " +
-                  currentCohortStartDate +
-                  " → " +
-                  currentCohortEndDate +
-                  ", con ventana fija de " +
-                  CONVERSION_MATURITY_DAYS +
-                  " días. Sólo se usa mientras conversaciones acumula historial."
-                }
-              >
-                <div className="intel-bars">
-                  <BarRow
-                    label="Prospectos registrados"
-                    value={currentAcquisitionCohort.total}
-                    max={Math.max(currentAcquisitionCohort.total, 1)}
-                    display={String(currentAcquisitionCohort.total)}
-                    tone="info"
-                  />
-                  <BarRow
-                    label="Reservaron"
-                    value={
-                      eventHistoryCoversCurrentCohort
-                        ? currentAcquisitionCohort.booked
-                        : 0
-                    }
-                    max={Math.max(currentAcquisitionCohort.total, 1)}
-                    display={
-                      eventHistoryCoversCurrentCohort
-                        ? currentAcquisitionCohort.booked +
-                          " · " +
-                          pct(currentAcquisitionCohort.bookingRate)
-                        : "—"
-                    }
-                    tone="info"
-                  />
-                  <BarRow
-                    label="Asistieron"
-                    value={
-                      eventHistoryCoversCurrentCohort
-                        ? currentAcquisitionCohort.attended
-                        : 0
-                    }
-                    max={Math.max(currentAcquisitionCohort.total, 1)}
-                    display={
-                      eventHistoryCoversCurrentCohort
-                        ? String(currentAcquisitionCohort.attended)
-                        : "—"
-                    }
-                    tone="accent"
-                  />
-                  <BarRow
-                    label="Compraron paquete / membresía"
-                    value={currentAcquisitionCohort.converted}
-                    max={Math.max(currentAcquisitionCohort.total, 1)}
-                    display={
-                      currentAcquisitionCohort.converted +
-                      " · " +
-                      pct(currentAcquisitionCohort.conversionRate)
-                    }
-                    tone="success"
-                  />
-                </div>
-                <div className="intel-source-note">
-                  {eventHistoryCoversCurrentCohort
-                    ? "Reservas y asistencias tienen cobertura para toda la cohorte."
-                    : "Cobertura histórica limitada: reservas y asistencias no se muestran para evitar inferir lo ocurrido antes del historial disponible."}
-                  {pendingTrialCohort > 0
-                    ? " " +
-                      pendingTrialCohort +
-                      " prospectos recientes todavía están dentro de su ventana de maduración."
-                    : ""}
-                </div>
-              </Section>
-            </div>
-          </div>
+          </details>
         </>
       ) : null}
 
