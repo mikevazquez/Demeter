@@ -30,6 +30,8 @@ const studentMessages: Record<string, string> = {
   auth: "No se pudo validar el acceso en este momento. Vuelve a intentarlo.",
   pending: "Tu cuenta existe, pero todavía no tiene acceso asignado al estudio.",
   access: "Esta cuenta no tiene acceso al portal de alumna.",
+  studio_unavailable:
+    "El portal del estudio está temporalmente pausado. Tus datos siguen guardados; vuelve a intentarlo cuando el estudio reactive el servicio.",
 };
 
 function EyeIcon({ visible }: { visible: boolean }) {
