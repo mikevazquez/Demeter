@@ -1512,6 +1512,9 @@ export default async function IntelligencePage({
     }
 
     const booked = new Set<string>();
+    const cancelled = new Set<string>();
+    const rebooked = new Set<string>();
+    const noShow = new Set<string>();
     const attended = new Set<string>();
     const converted = new Set<string>();
     let linked = 0;
@@ -1531,7 +1534,32 @@ export default async function IntelligencePage({
         );
       };
 
-      if (allBookingEvents.some(withinConversionWindow)) booked.add(key);
+      const bookingEvents = allBookingEvents
+        .filter(withinConversionWindow)
+        .sort(
+          (a, b) =>
+            new Date(a.occurred_at).getTime() - new Date(b.occurred_at).getTime(),
+        );
+      const cancellationEvents = allCancellationEvents
+        .filter(withinConversionWindow)
+        .sort(
+          (a, b) =>
+            new Date(a.occurred_at).getTime() - new Date(b.occurred_at).getTime(),
+        );
+
+      if (bookingEvents.length > 0) booked.add(key);
+      if (cancellationEvents.length > 0) {
+        cancelled.add(key);
+        const firstCancellationAt = new Date(cancellationEvents[0].occurred_at).getTime();
+        if (
+          bookingEvents.some(
+            (event) => new Date(event.occurred_at).getTime() > firstCancellationAt,
+          )
+        ) {
+          rebooked.add(key);
+        }
+      }
+      if (allNoShowEvents.some(withinConversionWindow)) noShow.add(key);
       if (allAttendedEvents.some(withinConversionWindow)) attended.add(key);
 
       const conversion = firstConversionAcquisitionByStudent.get(contact.studentId);
@@ -1548,6 +1576,9 @@ export default async function IntelligencePage({
       contacts: contacts.size,
       linked,
       booked: booked.size,
+      cancelled: cancelled.size,
+      rebooked: rebooked.size,
+      noShow: noShow.size,
       attended: attended.size,
       converted: converted.size,
       conversationToBookingRate: safeRate(booked.size, contacts.size),
@@ -1990,6 +2021,7 @@ export default async function IntelligencePage({
   function acquisitionCohortStats(rows: StudentRow[]) {
     const booked = new Set<string>();
     const cancelled = new Set<string>();
+    const rebooked = new Set<string>();
     const noShow = new Set<string>();
     const attended = new Set<string>();
     const converted = new Set<string>();
@@ -2007,8 +2039,31 @@ export default async function IntelligencePage({
         );
       };
 
-      if (allBookingEvents.some(eventWithinWindow)) booked.add(student.id);
-      if (allCancellationEvents.some(eventWithinWindow)) cancelled.add(student.id);
+      const bookingEvents = allBookingEvents
+        .filter(eventWithinWindow)
+        .sort(
+          (a, b) =>
+            new Date(a.occurred_at).getTime() - new Date(b.occurred_at).getTime(),
+        );
+      const cancellationEvents = allCancellationEvents
+        .filter(eventWithinWindow)
+        .sort(
+          (a, b) =>
+            new Date(a.occurred_at).getTime() - new Date(b.occurred_at).getTime(),
+        );
+
+      if (bookingEvents.length > 0) booked.add(student.id);
+      if (cancellationEvents.length > 0) {
+        cancelled.add(student.id);
+        const firstCancellationAt = new Date(cancellationEvents[0].occurred_at).getTime();
+        if (
+          bookingEvents.some(
+            (event) => new Date(event.occurred_at).getTime() > firstCancellationAt,
+          )
+        ) {
+          rebooked.add(student.id);
+        }
+      }
       if (allNoShowEvents.some(eventWithinWindow)) noShow.add(student.id);
       if (allAttendedEvents.some(eventWithinWindow)) attended.add(student.id);
 
@@ -2025,6 +2080,7 @@ export default async function IntelligencePage({
       total: rows.length,
       booked: booked.size,
       cancelled: cancelled.size,
+      rebooked: rebooked.size,
       noShow: noShow.size,
       attended: attended.size,
       converted: converted.size,
