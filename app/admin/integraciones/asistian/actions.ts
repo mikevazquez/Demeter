@@ -6,7 +6,7 @@ import { redirect } from "next/navigation";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getAdminContext } from "@/lib/auth/admin-context";
 
-const ASISTIAN_TEMPLATE = "reservation_confirmed";
+const ASISTIAN_TEMPLATE = "contact_upsert";
 
 function safeWebhookUrl(value: string) {
   const normalized = value.trim();
@@ -151,15 +151,19 @@ export async function sendAsistianHandshake(formData: FormData) {
     timestamp: new Date().toISOString(),
     phone: "+5213300000000",
     data: {
-      nombre: "Prueba Studio Flow",
-      disciplina: "Pole Fitness",
-      fecha: "23/09/2026",
-      hora: "18:00",
-      coach: "Coach de prueba",
-      ubicacion: "Demeter Fitness Studio",
+      contact_id: eventId,
+      nombre: "Contacto de prueba Demeter",
+      first_name: "Contacto",
+      last_name: "Prueba",
+      phone: "+5213300000000",
+      email: "contacto.prueba@demeter.test",
+      lifecycle_status: "active",
+      active: true,
     },
     metadata: {
-      source: "studio_flow_reservation_confirmation_handshake",
+      source: "demeter_contact_upsert_handshake",
+      entity: "contact",
+      operation: "upsert_contact",
       test: true,
     },
   };
