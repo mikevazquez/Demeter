@@ -2391,20 +2391,9 @@ export default async function IntelligencePage({
   const conversionFunnelCancelled = conversionFunnelUsesConversation
     ? currentConversationCohort.cancelled
     : currentAcquisitionCohort.cancelled;
-  const conversionFunnelRebooked = conversionFunnelUsesConversation
-    ? currentConversationCohort.rebooked
-    : currentAcquisitionCohort.rebooked;
   const conversionFunnelNoShow = conversionFunnelUsesConversation
     ? currentConversationCohort.noShow
     : currentAcquisitionCohort.noShow;
-  const conversionFunnelStartLabel = conversionFunnelUsesConversation
-    ? "Conversaciones"
-    : "Prospectos maduros";
-  const conversionFunnelSourceLabel = conversionFunnelUsesConversation
-    ? "Cohorte madura desde conversación"
-    : conversionFunnelUsesTrial
-      ? "Cohorte madura de prospectos registrados"
-      : "Sin muestra suficiente";
 
   const conversionStageCandidates = [
     {
