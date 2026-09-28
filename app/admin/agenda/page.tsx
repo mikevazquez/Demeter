@@ -307,7 +307,7 @@ export default async function AgendaPage({
 
   const occupiedBySession = new Map<string, number>();
   for (const reservation of reservations ?? []) {
-    if (!["reserved", "attended"].includes(reservation.status)) continue;
+    if (!["reserved", "attended", "no_show"].includes(reservation.status)) continue;
     occupiedBySession.set(
       reservation.session_id,
       (occupiedBySession.get(reservation.session_id) ?? 0) + 1,
