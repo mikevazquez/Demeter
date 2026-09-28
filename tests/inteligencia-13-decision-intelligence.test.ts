@@ -28,6 +28,15 @@ describe("INTEL-13 decision intelligence", () => {
     expect(intelligence).toContain("conversionFunnelNoShow");
   });
 
+  it("keeps recent trial prospects visible before the cohort matures", () => {
+    expect(intelligence).toContain('title="🔥 Pipeline vivo de prospectos"');
+    expect(intelligence).toContain("activeTrialProspects");
+    expect(intelligence).toContain("upcomingTrialRows");
+    expect(intelligence).toContain("tomorrowTrialProspectCount");
+    expect(intelligence).toContain("Prospectos maduros");
+    expect(intelligence).toContain("Sí aparecen arriba en el pipeline vivo");
+  });
+
   it("explains onboarding instead of only listing progress", () => {
     expect(intelligence).toContain('title="🧠 Qué está pasando con onboarding"');
     expect(intelligence).toContain("topOnboardingBottleneck");
