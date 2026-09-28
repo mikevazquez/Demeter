@@ -61,7 +61,8 @@ function packageTermFromValues(
   days: number | null | undefined,
 ): PackageTerm {
   if (
-    term === "weekly" ||\n    term === "monthly" ||
+    term === "weekly" ||
+    term === "monthly" ||
     term === "quarterly" ||
     term === "semiannual" ||
     term === "annual" ||
@@ -69,7 +70,8 @@ function packageTermFromValues(
   ) {
     return term;
   }
-  if (days === 7) return "weekly";\n  if (days === 30) return "monthly";
+  if (days === 7) return "weekly";
+  if (days === 30) return "monthly";
   if (days === 90) return "quarterly";
   if (days === 180) return "semiannual";
   if (days === 365) return "annual";
