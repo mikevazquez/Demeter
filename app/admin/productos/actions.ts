@@ -8,6 +8,7 @@ import { getAdminContext } from "@/lib/auth/admin-context";
 const TYPES = new Set(["package", "membership", "single_class", "enrollment", "other"]);
 const PACKAGE_TERMS = new Set(["weekly", "monthly", "quarterly", "semiannual", "annual", "custom"]);
 const PACKAGE_TERM_DAYS: Record<string, number> = {
+  weekly: 7,
   monthly: 30,
   quarterly: 90,
   semiannual: 180,
