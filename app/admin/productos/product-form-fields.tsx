@@ -327,7 +327,9 @@ export function ProductFormFields({
                     className="mt-0.5 h-4 w-4"
                   />
                   <span>
-                    <strong className="block font-medium text-white">Solo horarios específicos</strong>
+                    <strong className="block font-medium text-white">
+                      Solo horarios específicos
+                    </strong>
                     <small className="mt-1 block text-xs text-zinc-500">
                       El paquete solo podrá consumirse en los horarios marcados.
                     </small>
@@ -339,8 +341,13 @@ export function ProductFormFields({
                 <div className="mt-4 grid gap-3 lg:grid-cols-2">
                   {Object.keys(weekdayLabels)
                     .map(Number)
-                    .filter((weekday) => schedules.some((schedule) => schedule.weekday === weekday))
-                    .sort((left, right) => (left === 0 ? 7 : left) - (right === 0 ? 7 : right))
+                    .filter((weekday) =>
+                      schedules.some((schedule) => schedule.weekday === weekday),
+                    )
+                    .sort(
+                      (left, right) =>
+                        (left === 0 ? 7 : left) - (right === 0 ? 7 : right),
+                    )
                     .map((weekday) => (
                       <div
                         key={weekday}
