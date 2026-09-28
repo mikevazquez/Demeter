@@ -120,7 +120,9 @@ async function validateSchedules(
     throw new Error("schedule_invalid");
   }
 
-  const templateIds = [...new Set((schedules ?? []).map((item) => item.template_id))];
+  const templateIds = [
+    ...new Set((schedules ?? []).map((item) => item.template_id)),
+  ];
   const { data: templates, error: templateError } = await ctx.supabase
     .from("class_templates")
     .select("id,discipline_id")
@@ -132,7 +134,11 @@ async function validateSchedules(
   }
 
   const allowedDisciplines = new Set(disciplineIds);
-  if ((templates ?? []).some((item) => !item.discipline_id || !allowedDisciplines.has(item.discipline_id))) {
+  if (
+    (templates ?? []).some(
+      (item) => !item.discipline_id || !allowedDisciplines.has(item.discipline_id),
+    )
+  ) {
     throw new Error("schedule_discipline_mismatch");
   }
 }
