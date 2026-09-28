@@ -35,6 +35,7 @@ type EnrollmentValidity = "30" | "90" | "180" | "365" | "lifetime" | "custom";
 type PackageTerm = "weekly" | "monthly" | "quarterly" | "semiannual" | "annual" | "custom";
 
 const packageTermDays: Record<Exclude<PackageTerm, "custom">, number> = {
+  weekly: 7,
   monthly: 30,
   quarterly: 90,
   semiannual: 180,
