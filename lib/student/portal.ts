@@ -279,6 +279,7 @@ export function bookingReasonCopy(reason?: string | null) {
     already_reserved: "Ya reservaste esta clase",
     no_active_product: "No tienes un paquete activo para esta fecha",
     outside_product: "Esta clase no está incluida en tu paquete",
+    outside_product_schedule: "Tu paquete no aplica para este horario",
     no_credits: "No tienes créditos suficientes para reservar esta clase",
     payment_pending: "Tienes un pago pendiente que debes resolver",
     enrollment_required: "Necesitas una inscripción vigente para reservar",
