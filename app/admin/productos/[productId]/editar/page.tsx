@@ -52,7 +52,9 @@ export default async function EditProductPage({
   const selectedScheduleIds = (product.product_template_schedules ?? []).map(
     (item) => item.recurring_schedule_id,
   );
-  const disciplineNames = new Map((disciplines ?? []).map((item) => [item.id, item.name]));
+  const disciplineNames = new Map(
+    (disciplines ?? []).map((item) => [item.id, item.name]),
+  );
   const templateById = new Map((templates ?? []).map((item) => [item.id, item]));
 
   return (
