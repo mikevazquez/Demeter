@@ -30,18 +30,6 @@ type RewardLevelDefinitionRow = RewardLevelView & {
   level_order: number;
 };
 
-type RewardStatusSnapshot = {
-  access_unlocked?: boolean;
-  medal_key?: string | null;
-  medal_title?: string | null;
-  active_days?: number;
-  no_show_count?: number;
-  continuity_months?: number;
-  renewal_gap_days?: number;
-  current_medal?: RewardLevelView | null;
-  current_level?: RewardLevelView | null;
-};
-
 type RewardInvitationBalance = {
   total?: number;
   used?: number;
@@ -151,7 +139,7 @@ export default async function StudentHomePage({
   const query = await searchParams;
   const { snapshot, studio, supabase, membership } = await getStudentPortalContext();
   const [
-    rewardStatusResult,
+    rewardOnboardingResult,
     rewardMembershipResult,
     rewardLevelsResult,
     invitationBalanceResult,
@@ -159,7 +147,12 @@ export default async function StudentHomePage({
     unreadEvaluationResult,
     appNotificationResult,
   ] = await Promise.all([
-    supabase.rpc("student_reward_status_snapshot"),
+    supabase
+      .from("reward_onboarding")
+      .select("access_unlocked_at")
+      .eq("studio_id", membership.studio_id)
+      .eq("student_id", snapshot.profile.student_id)
+      .maybeSingle(),
     supabase
       .from("reward_status_memberships")
       .select("current_level_key")
@@ -187,7 +180,7 @@ export default async function StudentHomePage({
       .maybeSingle(),
   ]);
 
-  const rewardStatus = (rewardStatusResult.data as RewardStatusSnapshot | null) ?? null;
+  const rewardAccessUnlocked = Boolean(rewardOnboardingResult.data?.access_unlocked_at);
   const invitationBalance =
     (invitationBalanceResult.data as RewardInvitationBalance | null) ?? null;
   const evaluationsSnapshot =
@@ -234,9 +227,7 @@ export default async function StudentHomePage({
           benefits_definition: row.benefits_definition,
         }
       : null;
-  const currentLevel = rewardStatus?.access_unlocked
-    ? (rewardStatus?.current_medal ?? rewardStatus?.current_level ?? toLevelView(fallbackLevelRow))
-    : null;
+  const currentLevel = rewardAccessUnlocked ? toLevelView(fallbackLevelRow) : null;
   const levelKey =
     currentLevel?.key === "silver" ||
     currentLevel?.key === "gold" ||
@@ -318,7 +309,7 @@ export default async function StudentHomePage({
 
       {query.benefits === "1" && currentLevel ? (
         <StudentNoticeDialog
-          eyebrow={`Medalla ${currentLevel.title ?? rewardStatus?.medal_title ?? ""}`}
+          eyebrow={`Medalla ${currentLevel.title ?? ""}`}
           title="Mis recompensas"
           dismissHref="/student"
           confirmLabel="Cerrar"
@@ -546,7 +537,7 @@ export default async function StudentHomePage({
             href={
               currentLevel
                 ? "/student?benefits=1"
-                : rewardStatus?.access_unlocked
+                : rewardAccessUnlocked
                   ? "/student/recompensas/medallero"
                   : "/student/recompensas"
             }
@@ -557,7 +548,7 @@ export default async function StudentHomePage({
               className="text-[9px] font-semibold uppercase tracking-[0.22em]"
               style={{ color: currentLevel ? levelVisual.accent : "#f0abfc" }}
             >
-              {currentLevel ? "Mi medalla" : rewardStatus?.access_unlocked ? "Medallas" : "Rewards"}
+              {currentLevel ? "Mi medalla" : rewardAccessUnlocked ? "Medallas" : "Rewards"}
             </p>
             <div className="mt-3 flex items-center gap-3">
               <div
@@ -578,14 +569,14 @@ export default async function StudentHomePage({
                 <h2 className="text-lg font-semibold leading-tight text-white sm:text-xl">
                   {currentLevel
                     ? `Medalla ${currentLevel.title ?? "Bronce"}`
-                    : rewardStatus?.access_unlocked
+                    : rewardAccessUnlocked
                       ? "Sin medalla"
                       : "Activando Medallas"}
                 </h2>
                 <p className="mt-0.5 text-[11px] leading-4 text-zinc-400">
                   {currentLevel
                     ? "Tu constancia te lleva más lejos"
-                    : rewardStatus?.access_unlocked
+                    : rewardAccessUnlocked
                       ? "Tu Medalla se evalúa cada mes"
                       : "Completa tu activación para acceder al programa"}
                 </p>
@@ -595,7 +586,7 @@ export default async function StudentHomePage({
               <span>
                 {currentLevel
                   ? "Ver mis recompensas"
-                  : rewardStatus?.access_unlocked
+                  : rewardAccessUnlocked
                     ? "Ver Medallero"
                     : "Continuar activación"}
               </span>
