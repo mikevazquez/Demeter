@@ -19,22 +19,24 @@ describe("INTEL-13 decision intelligence", () => {
     expect(css).toContain(".intel-analysis-details");
   });
 
-  it("turns conversion into a simple funnel with lateral leaks", () => {
+  it("turns conversion into a live aggregate funnel with lateral leaks", () => {
     expect(intelligence).toContain('title="💬 Embudo de conversión"');
-    expect(intelligence).toContain("conversionBottleneck");
-    expect(intelligence).toContain("conversionDiagnosisTitle");
-    expect(intelligence).toContain("conversionFunnelCancelled");
-    expect(intelligence).toContain("conversionFunnelRebooked");
-    expect(intelligence).toContain("conversionFunnelNoShow");
+    expect(intelligence).toContain("liveTrialProspects");
+    expect(intelligence).toContain("liveTrialBooked");
+    expect(intelligence).toContain("liveTrialAttended");
+    expect(intelligence).toContain("liveTrialConverted");
+    expect(intelligence).toContain("liveTrialCancelled");
+    expect(intelligence).toContain("liveTrialNoShow");
+    expect(intelligence).toContain("Pendientes de asistir");
+    expect(intelligence).not.toContain('title="🔥 Pipeline vivo de prospectos"');
+    expect(intelligence).not.toContain("upcomingTrialRows.slice");
   });
 
-  it("keeps recent trial prospects visible before the cohort matures", () => {
-    expect(intelligence).toContain('title="🔥 Pipeline vivo de prospectos"');
-    expect(intelligence).toContain("activeTrialProspects");
-    expect(intelligence).toContain("upcomingTrialRows");
-    expect(intelligence).toContain("tomorrowTrialProspectCount");
-    expect(intelligence).toContain("Prospectos maduros");
-    expect(intelligence).toContain("Sí aparecen arriba en el pipeline vivo");
+  it("keeps mature-cohort logic only for recommendations", () => {
+    expect(intelligence).toContain("conversionBottleneck");
+    expect(intelligence).toContain("conversionDiagnosisTitle");
+    expect(intelligence).toContain("cohorte madura de");
+    expect(intelligence).toContain("recomendaciones prematuras");
   });
 
   it("explains onboarding instead of only listing progress", () => {
