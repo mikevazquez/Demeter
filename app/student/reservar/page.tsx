@@ -392,9 +392,7 @@ export default async function StudentReservePage({
                   "outside_product",
                   "outside_product_schedule",
                   "no_credits",
-                ].includes(
-                  session.eligibility?.reason_code ?? "",
-                );
+                ].includes(session.eligibility?.reason_code ?? "");
 
               return (
                 <article
