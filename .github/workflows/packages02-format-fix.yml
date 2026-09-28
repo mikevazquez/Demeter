@@ -1,0 +1,37 @@
+name: PAQUETES-02 format fix
+
+on:
+  push:
+    branches:
+      - release/packages-02-schedule-restrictions
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: release/packages-02-schedule-restrictions
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Format PAQUETES-02 files
+        run: |
+          npx prettier --write             "app/admin/productos/[productId]/editar/page.tsx"             "app/admin/productos/actions.ts"             "app/admin/productos/product-form-fields.tsx"
+      - name: Commit formatting
+        run: |
+          if git diff --quiet; then
+            echo "No formatting changes needed."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add             "app/admin/productos/[productId]/editar/page.tsx"             "app/admin/productos/actions.ts"             "app/admin/productos/product-form-fields.tsx"
+          git commit -m "style: format PAQUETES-02"
+          git push origin HEAD:release/packages-02-schedule-restrictions
