@@ -32,7 +32,7 @@ type ProductFormFieldsProps = {
 };
 
 type EnrollmentValidity = "30" | "90" | "180" | "365" | "lifetime" | "custom";
-type PackageTerm = "monthly" | "quarterly" | "semiannual" | "annual" | "custom";
+type PackageTerm = "weekly" | "monthly" | "quarterly" | "semiannual" | "annual" | "custom";
 
 const packageTermDays: Record<Exclude<PackageTerm, "custom">, number> = {
   monthly: 30,
@@ -60,7 +60,7 @@ function packageTermFromValues(
   days: number | null | undefined,
 ): PackageTerm {
   if (
-    term === "monthly" ||
+    term === "weekly" ||\n    term === "monthly" ||
     term === "quarterly" ||
     term === "semiannual" ||
     term === "annual" ||
@@ -68,7 +68,7 @@ function packageTermFromValues(
   ) {
     return term;
   }
-  if (days === 30) return "monthly";
+  if (days === 7) return "weekly";\n  if (days === 30) return "monthly";
   if (days === 90) return "quarterly";
   if (days === 180) return "semiannual";
   if (days === 365) return "annual";
@@ -215,7 +215,7 @@ export function ProductFormFields({
                 onChange={(event) => setPackageTerm(event.target.value as PackageTerm)}
                 className="mt-2 w-full rounded-xl border border-white/10 bg-zinc-950 px-3 py-2.5 text-white"
               >
-                <option value="monthly">1 mes · 30 días</option>
+                <option value="weekly">1 semana · 7 días</option>\n                <option value="monthly">1 mes · 30 días</option>
                 <option value="quarterly">3 meses · 90 días</option>
                 <option value="semiannual">6 meses · 180 días</option>
                 <option value="annual">1 año · 365 días</option>
