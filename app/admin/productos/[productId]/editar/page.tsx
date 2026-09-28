@@ -11,11 +11,11 @@ export default async function EditProductPage({
 }) {
   const { productId } = await params;
   const ctx = await getAdminContext("products.write");
-  const [{ data: product }, { data: disciplines }] = await Promise.all([
+  const [{ data: product }, { data: disciplines }, { data: schedules }] = await Promise.all([
     ctx.supabase
       .from("product_templates")
       .select(
-        "id,name,description,product_type,package_term,price_minor,credit_limit,validity_days,unlimited,active,product_template_disciplines(discipline_id)",
+        "id,name,description,product_type,package_term,price_minor,credit_limit,validity_days,unlimited,active,product_template_disciplines(discipline_id),product_template_schedules(recurring_schedule_id)",
       )
       .eq("studio_id", ctx.studio.id)
       .eq("id", productId)
@@ -26,11 +26,21 @@ export default async function EditProductPage({
       .eq("studio_id", ctx.studio.id)
       .eq("active", true)
       .order("name"),
+    ctx.supabase
+      .from("recurring_schedules")
+      .select("id,weekday,local_time,class_templates(name,disciplines(name))")
+      .eq("studio_id", ctx.studio.id)
+      .eq("active", true)
+      .order("weekday")
+      .order("local_time"),
   ]);
   if (!product) notFound();
 
   const selectedDisciplineIds = (product.product_template_disciplines ?? []).map(
     (item) => item.discipline_id,
+  );
+  const selectedScheduleIds = (product.product_template_schedules ?? []).map(
+    (item) => item.recurring_schedule_id,
   );
 
   return (
@@ -68,6 +78,14 @@ export default async function EditProductPage({
           initialCreditLimit={product.credit_limit}
           initialUnlimited={product.unlimited}
           selectedDisciplineIds={selectedDisciplineIds}
+          selectedScheduleIds={selectedScheduleIds}
+          schedules={(schedules ?? []).map((item) => ({
+            id: item.id,
+            weekday: item.weekday,
+            localTime: item.local_time,
+            activity: item.class_templates?.name ?? "Clase",
+            discipline: item.class_templates?.disciplines?.name ?? "Sin disciplina",
+          }))}
           currency={ctx.studio.currency}
         />
 
