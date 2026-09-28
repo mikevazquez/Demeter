@@ -4,7 +4,7 @@ import { ProductFormFields } from "../product-form-fields";
 
 export default async function NewProductPage() {
   const ctx = await getAdminContext("products.write");
-  const [{ data: disciplines }, { data: schedules }] = await Promise.all([
+  const [{ data: disciplines }, { data: schedules }, { data: templates }] = await Promise.all([
     ctx.supabase
       .from("disciplines")
       .select("id,name")
@@ -13,12 +13,20 @@ export default async function NewProductPage() {
       .order("name"),
     ctx.supabase
       .from("recurring_schedules")
-      .select("id,weekday,local_time,class_templates(name,disciplines(name))")
+      .select("id,weekday,local_time,template_id")
       .eq("studio_id", ctx.studio.id)
       .eq("active", true)
       .order("weekday")
       .order("local_time"),
+    ctx.supabase
+      .from("class_templates")
+      .select("id,name,discipline_id")
+      .eq("studio_id", ctx.studio.id)
+      .eq("active", true),
   ]);
+
+  const disciplineNames = new Map((disciplines ?? []).map((item) => [item.id, item.name]));
+  const templateById = new Map((templates ?? []).map((item) => [item.id, item]));
 
   return (
     <main className="dashboard-shell admin-ux04-secondary-detail product-editor-page">
@@ -50,8 +58,10 @@ export default async function NewProductPage() {
             id: item.id,
             weekday: item.weekday,
             localTime: item.local_time,
-            activity: item.class_templates?.name ?? "Clase",
-            discipline: item.class_templates?.disciplines?.name ?? "Sin disciplina",
+            activity: templateById.get(item.template_id)?.name ?? "Clase",
+            discipline:
+              disciplineNames.get(templateById.get(item.template_id)?.discipline_id ?? "") ??
+              "Sin disciplina",
           }))}
           currency={ctx.studio.currency}
         />
