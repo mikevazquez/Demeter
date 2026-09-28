@@ -7,8 +7,17 @@ type Discipline = {
   name: string;
 };
 
+type ProductSchedule = {
+  id: string;
+  weekday: number;
+  localTime: string;
+  activity: string;
+  discipline: string;
+};
+
 type ProductFormFieldsProps = {
   disciplines: Discipline[];
+  schedules?: ProductSchedule[];
   initialProductType?: string;
   initialPackageTerm?: string | null;
   initialPrice?: number;
@@ -16,6 +25,7 @@ type ProductFormFieldsProps = {
   initialCreditLimit?: number | null;
   initialUnlimited?: boolean;
   selectedDisciplineIds?: string[];
+  selectedScheduleIds?: string[];
 };
 
 type EnrollmentValidity = "30" | "90" | "180" | "365" | "lifetime" | "custom";
@@ -64,6 +74,8 @@ export function ProductFormFields({
   initialCreditLimit = 8,
   initialUnlimited = false,
   selectedDisciplineIds = [],
+  selectedScheduleIds = [],
+  schedules = [],
 }: ProductFormFieldsProps) {
   const [productType, setProductType] = useState(initialProductType);
   const [enrollmentValidity, setEnrollmentValidity] = useState<EnrollmentValidity>(() =>
@@ -77,6 +89,19 @@ export function ProductFormFields({
   const isEnrollment = productType === "enrollment";
   const isPackageLike = productType === "package" || productType === "membership";
   const selected = new Set(selectedDisciplineIds);
+  const selectedSchedules = new Set(selectedScheduleIds);
+  const [scheduleScope, setScheduleScope] = useState<"all" | "specific">(
+    selectedScheduleIds.length ? "specific" : "all",
+  );
+  const weekdayLabels: Record<number, string> = {
+    0: "Domingo",
+    1: "Lunes",
+    2: "Martes",
+    3: "Miércoles",
+    4: "Jueves",
+    5: "Viernes",
+    6: "Sábado",
+  };
 
   return (
     <div className="space-y-6">
@@ -262,6 +287,97 @@ export function ProductFormFields({
               ))}
             </div>
           </fieldset>
+
+          {isPackageLike ? (
+            <fieldset className="rounded-2xl border border-white/10 bg-black/10 p-4">
+              <legend className="px-1 text-sm font-medium text-white">Horarios permitidos</legend>
+              <p className="mt-1 text-xs text-zinc-500">
+                Limita este paquete a clases recurrentes concretas. Si no activas la restricción,
+                seguirá funcionando en todos los horarios de las disciplinas seleccionadas.
+              </p>
+              <input type="hidden" name="schedule_scope" value={scheduleScope} />
+
+              <div className="mt-4 grid gap-2">
+                <label className="flex items-start gap-3 rounded-xl border border-white/10 px-3 py-3 text-sm text-zinc-300">
+                  <input
+                    type="radio"
+                    name="schedule_scope_choice"
+                    value="all"
+                    checked={scheduleScope === "all"}
+                    onChange={() => setScheduleScope("all")}
+                    className="mt-0.5 h-4 w-4"
+                  />
+                  <span>
+                    <strong className="block font-medium text-white">
+                      Todos los horarios de las disciplinas seleccionadas
+                    </strong>
+                    <small className="mt-1 block text-xs text-zinc-500">
+                      Comportamiento actual del paquete.
+                    </small>
+                  </span>
+                </label>
+
+                <label className="flex items-start gap-3 rounded-xl border border-white/10 px-3 py-3 text-sm text-zinc-300">
+                  <input
+                    type="radio"
+                    name="schedule_scope_choice"
+                    value="specific"
+                    checked={scheduleScope === "specific"}
+                    onChange={() => setScheduleScope("specific")}
+                    className="mt-0.5 h-4 w-4"
+                  />
+                  <span>
+                    <strong className="block font-medium text-white">Solo horarios específicos</strong>
+                    <small className="mt-1 block text-xs text-zinc-500">
+                      El paquete solo podrá consumirse en los horarios marcados.
+                    </small>
+                  </span>
+                </label>
+              </div>
+
+              {scheduleScope === "specific" ? (
+                <div className="mt-4 grid gap-3 lg:grid-cols-2">
+                  {Object.keys(weekdayLabels)
+                    .map(Number)
+                    .filter((weekday) => schedules.some((schedule) => schedule.weekday === weekday))
+                    .sort((left, right) => (left === 0 ? 7 : left) - (right === 0 ? 7 : right))
+                    .map((weekday) => (
+                      <div
+                        key={weekday}
+                        className="rounded-2xl border border-white/10 bg-black/20 p-3"
+                      >
+                        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-400">
+                          {weekdayLabels[weekday]}
+                        </p>
+                        <div className="mt-2 grid gap-2">
+                          {schedules
+                            .filter((schedule) => schedule.weekday === weekday)
+                            .map((schedule) => (
+                              <label
+                                key={schedule.id}
+                                className="flex items-center gap-3 rounded-xl border border-white/10 px-3 py-2.5 text-sm text-zinc-300"
+                              >
+                                <input
+                                  type="checkbox"
+                                  name="schedule_ids"
+                                  value={schedule.id}
+                                  defaultChecked={selectedSchedules.has(schedule.id)}
+                                />
+                                <span>
+                                  <strong className="font-medium text-white">
+                                    {schedule.localTime.slice(0, 5)} · {schedule.activity}
+                                  </strong>
+                                  <small className="ml-2 text-zinc-500">{schedule.discipline}</small>
+                                </span>
+                              </label>
+                            ))}
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              ) : null}
+            </fieldset>
+          ) : null}
         </>
       ) : null}
     </div>
