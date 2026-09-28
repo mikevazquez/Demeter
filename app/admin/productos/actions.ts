@@ -60,9 +60,7 @@ function parseProductForm(formData: FormData) {
   const disciplineIds = isEnrollment
     ? []
     : [...new Set(formData.getAll("discipline_ids").map(String).filter(Boolean))];
-  const scheduleScope = isPackageLike
-    ? String(formData.get("schedule_scope") ?? "all")
-    : "all";
+  const scheduleScope = isPackageLike ? String(formData.get("schedule_scope") ?? "all") : "all";
   if (!["all", "specific"].includes(scheduleScope)) {
     throw new Error("schedule_scope_invalid");
   }
@@ -120,9 +118,7 @@ async function validateSchedules(
     throw new Error("schedule_invalid");
   }
 
-  const templateIds = [
-    ...new Set((schedules ?? []).map((item) => item.template_id)),
-  ];
+  const templateIds = [...new Set((schedules ?? []).map((item) => item.template_id))];
   const { data: templates, error: templateError } = await ctx.supabase
     .from("class_templates")
     .select("id,discipline_id")
@@ -182,15 +178,13 @@ export async function createProduct(formData: FormData) {
   }
 
   if (values.scheduleIds.length) {
-    const { error: scheduleError } = await ctx.supabase
-      .from("product_template_schedules")
-      .insert(
-        values.scheduleIds.map((scheduleId) => ({
-          studio_id: ctx.studio.id,
-          product_template_id: product.id,
-          recurring_schedule_id: scheduleId,
-        })),
-      );
+    const { error: scheduleError } = await ctx.supabase.from("product_template_schedules").insert(
+      values.scheduleIds.map((scheduleId) => ({
+        studio_id: ctx.studio.id,
+        product_template_id: product.id,
+        recurring_schedule_id: scheduleId,
+      })),
+    );
     if (scheduleError) throw new Error(scheduleError.message);
   }
 
@@ -320,15 +314,13 @@ export async function duplicateProduct(formData: FormData) {
     (item) => item.recurring_schedule_id,
   );
   if (scheduleIds.length) {
-    const { error: scheduleError } = await ctx.supabase
-      .from("product_template_schedules")
-      .insert(
-        scheduleIds.map((scheduleId) => ({
-          studio_id: ctx.studio.id,
-          product_template_id: copy.id,
-          recurring_schedule_id: scheduleId,
-        })),
-      );
+    const { error: scheduleError } = await ctx.supabase.from("product_template_schedules").insert(
+      scheduleIds.map((scheduleId) => ({
+        studio_id: ctx.studio.id,
+        product_template_id: copy.id,
+        recurring_schedule_id: scheduleId,
+      })),
+    );
     if (scheduleError) throw new Error(scheduleError.message);
   }
 
