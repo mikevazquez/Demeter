@@ -38,6 +38,44 @@ export default async function ProductDetailPage({
 
   const productDisciplines: ProductDiscipline[] = product.product_template_disciplines ?? [];
   const isEnrollment = product.product_type === "enrollment";
+  const isPackageLike = product.product_type === "package" || product.product_type === "membership";
+  const { data: scheduleLinks } = isPackageLike
+    ? await ctx.supabase
+        .from("product_template_schedules")
+        .select("recurring_schedule_id")
+        .eq("studio_id", ctx.studio.id)
+        .eq("product_template_id", product.id)
+    : { data: [] as { recurring_schedule_id: string }[] };
+  const scheduleIds = (scheduleLinks ?? []).map((item) => item.recurring_schedule_id);
+  const { data: scheduleRows } = scheduleIds.length
+    ? await ctx.supabase
+        .from("recurring_schedules")
+        .select("id,weekday,local_time,template_id")
+        .eq("studio_id", ctx.studio.id)
+        .in("id", scheduleIds)
+        .order("weekday")
+        .order("local_time")
+    : { data: [] as { id: string; weekday: number; local_time: string; template_id: string }[] };
+  const scheduleTemplateIds = [...new Set((scheduleRows ?? []).map((item) => item.template_id))];
+  const { data: scheduleTemplates } = scheduleTemplateIds.length
+    ? await ctx.supabase
+        .from("class_templates")
+        .select("id,name")
+        .eq("studio_id", ctx.studio.id)
+        .in("id", scheduleTemplateIds)
+    : { data: [] as { id: string; name: string }[] };
+  const scheduleTemplateNames = new Map(
+    (scheduleTemplates ?? []).map((item) => [item.id, item.name]),
+  );
+  const weekdayLabels: Record<number, string> = {
+    0: "Domingo",
+    1: "Lunes",
+    2: "Martes",
+    3: "Miércoles",
+    4: "Jueves",
+    5: "Viernes",
+    6: "Sábado",
+  };
   const validityLabel =
     product.validity_days == null ? "Vitalicia" : `${product.validity_days} días`;
   const statusMessage =
@@ -119,6 +157,35 @@ export default async function ProductDetailPage({
               <p className="text-sm text-zinc-500">Sin disciplinas asignadas.</p>
             )}
           </div>
+        </section>
+      ) : null}
+
+      {isPackageLike ? (
+        <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+          <h2 className="font-semibold text-white">Horarios permitidos</h2>
+          {scheduleRows?.length ? (
+            <>
+              <p className="mt-1 text-sm text-zinc-400">
+                Este producto solo puede utilizarse en los siguientes horarios recurrentes.
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {scheduleRows.map((schedule) => (
+                  <span
+                    key={schedule.id}
+                    className="rounded-full bg-fuchsia-500/10 px-3 py-1.5 text-sm text-fuchsia-200"
+                  >
+                    {weekdayLabels[schedule.weekday] ?? "Día"} · {schedule.local_time.slice(0, 5)}
+                    {" · "}
+                    {scheduleTemplateNames.get(schedule.template_id) ?? "Clase"}
+                  </span>
+                ))}
+              </div>
+            </>
+          ) : (
+            <p className="mt-2 text-sm text-zinc-400">
+              Todos los horarios de las disciplinas seleccionadas.
+            </p>
+          )}
         </section>
       ) : null}
 
