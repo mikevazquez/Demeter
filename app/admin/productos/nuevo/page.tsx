@@ -4,12 +4,21 @@ import { ProductFormFields } from "../product-form-fields";
 
 export default async function NewProductPage() {
   const ctx = await getAdminContext("products.write");
-  const { data: disciplines } = await ctx.supabase
-    .from("disciplines")
-    .select("id,name")
-    .eq("studio_id", ctx.studio.id)
-    .eq("active", true)
-    .order("name");
+  const [{ data: disciplines }, { data: schedules }] = await Promise.all([
+    ctx.supabase
+      .from("disciplines")
+      .select("id,name")
+      .eq("studio_id", ctx.studio.id)
+      .eq("active", true)
+      .order("name"),
+    ctx.supabase
+      .from("recurring_schedules")
+      .select("id,weekday,local_time,class_templates(name,disciplines(name))")
+      .eq("studio_id", ctx.studio.id)
+      .eq("active", true)
+      .order("weekday")
+      .order("local_time"),
+  ]);
 
   return (
     <main className="dashboard-shell admin-ux04-secondary-detail product-editor-page">
@@ -35,7 +44,17 @@ export default async function NewProductPage() {
           />
         </label>
 
-        <ProductFormFields disciplines={disciplines ?? []} currency={ctx.studio.currency} />
+        <ProductFormFields
+          disciplines={disciplines ?? []}
+          schedules={(schedules ?? []).map((item) => ({
+            id: item.id,
+            weekday: item.weekday,
+            localTime: item.local_time,
+            activity: item.class_templates?.name ?? "Clase",
+            discipline: item.class_templates?.disciplines?.name ?? "Sin disciplina",
+          }))}
+          currency={ctx.studio.currency}
+        />
 
         <label className="block text-sm text-zinc-300">
           Descripción
