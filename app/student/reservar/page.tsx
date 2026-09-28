@@ -387,9 +387,12 @@ export default async function StudentReservePage({
                 !eligible &&
                 session.spots_available > 0 &&
                 dropInPriceMinor != null &&
-                ["no_active_product", "outside_product", "no_credits"].includes(
-                  session.eligibility?.reason_code ?? "",
-                );
+                [
+                  "no_active_product",
+                  "outside_product",
+                  "outside_product_schedule",
+                  "no_credits",
+                ].includes(session.eligibility?.reason_code ?? "");
 
               return (
                 <article
