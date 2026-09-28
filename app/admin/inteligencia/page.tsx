@@ -736,90 +736,63 @@ export default async function IntelligencePage({
   }
   const isTrialStudent = (student: StudentRow) =>
     student.student_type === "trial" || Boolean(student.trial_status);
-  const activeTrialProspects = students.filter(
-    (student) =>
-      isTrialStudent(student) &&
-      !firstConversionAcquisitionByStudent.has(student.id) &&
-      (student.trial_status === "pending" || student.trial_status === "attended"),
-  );
-  const activeTrialProspectIds = new Set(activeTrialProspects.map((student) => student.id));
   const recentTrialRows = students.filter(
     (student) => isTrialStudent(student) && isBetween(student.created_at, currentStart, currentEnd),
   );
-  const recentTrialNoShows = recentTrialRows.filter((student) => student.trial_status === "no_show");
-  const recentTrialCancellations = recentTrialRows.filter(
-    (student) => student.trial_status === "cancelled",
-  );
-  const recentTrialConversions = recentTrialRows.filter(
-    (student) =>
-      student.trial_status === "converted" ||
-      firstConversionAcquisitionByStudent.has(student.id),
-  );
-  const attendedTrialAwaitingPurchase = activeTrialProspects.filter(
-    (student) => student.trial_status === "attended",
+  const recentTrialIds = new Set(recentTrialRows.map((student) => student.id));
+  const liveTrialReservations = [...reservations, ...upcomingReservations].filter(
+    (reservation) =>
+      Boolean(reservation.student_id && recentTrialIds.has(reservation.student_id)),
   );
 
-  const upcomingSessionMap = new Map(upcomingSessions.map((session) => [session.id, session]));
-  const studentMap = new Map(students.map((student) => [student.id, student]));
-  const nearestUpcomingTrialReservationByStudent = new Map<string, ReservationRow>();
-  for (const reservation of upcomingReservations) {
-    if (!reservation.student_id || !activeTrialProspectIds.has(reservation.student_id)) continue;
-    const candidateSession = upcomingSessionMap.get(reservation.session_id);
-    if (!candidateSession) continue;
-    const previousReservation = nearestUpcomingTrialReservationByStudent.get(
-      reservation.student_id,
-    );
-    const previousSession = previousReservation
-      ? upcomingSessionMap.get(previousReservation.session_id)
-      : null;
+  const liveTrialBooked = new Set<string>();
+  const liveTrialAttended = new Set<string>();
+  const liveTrialCancelled = new Set<string>();
+  const liveTrialNoShow = new Set<string>();
+
+  for (const reservation of liveTrialReservations) {
+    if (!reservation.student_id) continue;
+    liveTrialBooked.add(reservation.student_id);
+    if (reservation.status === "attended") liveTrialAttended.add(reservation.student_id);
     if (
-      !previousSession ||
-      new Date(candidateSession.starts_at).getTime() <
-        new Date(previousSession.starts_at).getTime()
+      reservation.status === "cancelled_on_time" ||
+      reservation.status === "cancelled_late"
     ) {
-      nearestUpcomingTrialReservationByStudent.set(reservation.student_id, reservation);
+      liveTrialCancelled.add(reservation.student_id);
     }
+    if (reservation.status === "no_show") liveTrialNoShow.add(reservation.student_id);
   }
 
-  const upcomingTrialRows = [...nearestUpcomingTrialReservationByStudent.values()]
-    .map((reservation) => {
-      const session = upcomingSessionMap.get(reservation.session_id);
-      const student = reservation.student_id ? studentMap.get(reservation.student_id) : null;
-      if (!session || !student) return null;
-      return {
-        reservationId: reservation.id,
-        studentId: student.id,
-        name: student.full_name,
-        startsAt: session.starts_at,
-        className: templateMap.get(session.template_id)?.name ?? "Clase",
-      };
-    })
-    .filter(
-      (
-        row,
-      ): row is {
-        reservationId: string;
-        studentId: string;
-        name: string;
-        startsAt: string;
-        className: string;
-      } => Boolean(row),
-    )
-    .sort(
-      (a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime(),
-    );
-  const tomorrowDate = shiftDateKey(todayDate, 1);
-  const tomorrowTrialProspectCount = upcomingTrialRows.filter(
-    (row) => dateKeyInTimeZone(new Date(row.startsAt), timeZone) === tomorrowDate,
+  for (const student of recentTrialRows) {
+    if (student.trial_status === "attended" || student.trial_status === "converted") {
+      liveTrialAttended.add(student.id);
+    }
+    if (student.trial_status === "cancelled") liveTrialCancelled.add(student.id);
+    if (student.trial_status === "no_show") liveTrialNoShow.add(student.id);
+  }
+
+  const liveTrialConverted = new Set(
+    recentTrialRows
+      .filter(
+        (student) =>
+          student.trial_status === "converted" ||
+          firstConversionAcquisitionByStudent.has(student.id),
+      )
+      .map((student) => student.id),
+  );
+  const liveTrialPending = recentTrialRows.filter(
+    (student) =>
+      student.trial_status === "pending" &&
+      liveTrialBooked.has(student.id) &&
+      !liveTrialAttended.has(student.id) &&
+      !liveTrialCancelled.has(student.id) &&
+      !liveTrialNoShow.has(student.id),
   ).length;
-  const trialDateTimeFormatter = new Intl.DateTimeFormat("es-MX", {
-    timeZone,
-    weekday: "short",
-    day: "numeric",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+
+  const liveTrialProspects = recentTrialRows.length;
+  const liveTrialBookingRate = safeRate(liveTrialBooked.size, liveTrialProspects);
+  const liveTrialAttendanceRate = safeRate(liveTrialAttended.size, liveTrialBooked.size);
+  const liveTrialConversionRate = safeRate(liveTrialConverted.size, liveTrialAttended.size);
 
   const newCommercialStudentsCurrent = [...firstConversionAcquisitionByStudent.values()].filter(
     (item) => isBetween(item.created_at, currentStart, currentEnd),
@@ -2418,20 +2391,9 @@ export default async function IntelligencePage({
   const conversionFunnelCancelled = conversionFunnelUsesConversation
     ? currentConversationCohort.cancelled
     : currentAcquisitionCohort.cancelled;
-  const conversionFunnelRebooked = conversionFunnelUsesConversation
-    ? currentConversationCohort.rebooked
-    : currentAcquisitionCohort.rebooked;
   const conversionFunnelNoShow = conversionFunnelUsesConversation
     ? currentConversationCohort.noShow
     : currentAcquisitionCohort.noShow;
-  const conversionFunnelStartLabel = conversionFunnelUsesConversation
-    ? "Conversaciones"
-    : "Prospectos maduros";
-  const conversionFunnelSourceLabel = conversionFunnelUsesConversation
-    ? "Cohorte madura desde conversación"
-    : conversionFunnelUsesTrial
-      ? "Cohorte madura de prospectos registrados"
-      : "Sin muestra suficiente";
 
   const conversionStageCandidates = [
     {
@@ -3622,134 +3584,66 @@ export default async function IntelligencePage({
 
       {view === "conversion" ? (
         <>
-          <Section
-            title="🔥 Pipeline vivo de prospectos"
-            description="Operación en tiempo real. Aquí sí aparecen las clases de prueba recientes aunque todavía no hayan completado la ventana de 7 días del análisis de conversión."
-          >
-            <div className="intel-funnel-leaks">
-              <div>
-                <small>Prospectos activos</small>
-                <strong>{activeTrialProspects.length}</strong>
-              </div>
-              <div>
-                <small>Próximas clases de prueba</small>
-                <strong>{upcomingTrialRows.length}</strong>
-              </div>
-              <div>
-                <small>Mañana</small>
-                <strong>{tomorrowTrialProspectCount}</strong>
-              </div>
-            </div>
-
-            <p className="intel-funnel-note">
-              En el periodo seleccionado: {recentTrialNoShows.length} no show ·{" "}
-              {recentTrialCancellations.length} cancelaciones ·{" "}
-              {recentTrialConversions.length} conversiones.{" "}
-              {attendedTrialAwaitingPurchase.length > 0
-                ? attendedTrialAwaitingPurchase.length +
-                  " asistieron y todavía requieren seguimiento para compra."
-                : "No hay asistencias pendientes de cierre registradas."}
-            </p>
-
-            <div className="intel-risk-list">
-              {upcomingTrialRows.slice(0, 12).map((row) => (
-                <Link
-                  href={"/admin/alumnas/" + row.studentId}
-                  key={row.reservationId}
-                  className="intel-risk-row"
-                >
-                  <span>
-                    <strong>{row.name}</strong>
-                    <small>
-                      {trialDateTimeFormatter.format(new Date(row.startsAt))} · {row.className}
-                    </small>
-                  </span>
-                  <b>Clase de prueba</b>
-                </Link>
-              ))}
-              {!upcomingTrialRows.length ? (
-                <p className="intel-empty">No hay clases de prueba futuras reservadas.</p>
-              ) : null}
-            </div>
-          </Section>
-
           <div className="intel-decision-layout">
             <Section
               title="💬 Embudo de conversión"
-              description={
-                conversionFunnelSourceLabel +
-                " · ventana fija de " +
-                CONVERSION_MATURITY_DAYS +
-                " días por persona."
-              }
+              description="Personas únicas del periodo seleccionado. Muestra el estado real del proceso hoy, sin esperar a que madure la cohorte."
             >
               <div className="intel-funnel">
                 <div className="intel-funnel-stage">
-                  <small>{conversionFunnelStartLabel}</small>
-                  <strong>{conversionFunnelAvailable ? conversionFunnelStart : "—"}</strong>
+                  <small>Prospectos</small>
+                  <strong>{liveTrialProspects}</strong>
                   <span>100%</span>
                 </div>
                 <span className="intel-funnel-arrow" aria-hidden="true">→</span>
                 <div className="intel-funnel-stage">
-                  <small>Agendaron</small>
-                  <strong>{conversionFunnelAvailable ? conversionFunnelBooked : "—"}</strong>
-                  <span>
-                    {conversionFunnelAvailable && conversionFunnelStart > 0
-                      ? pct(safeRate(conversionFunnelBooked, conversionFunnelStart))
-                      : "—"}
-                  </span>
+                  <small>Reservaron</small>
+                  <strong>{liveTrialBooked.size}</strong>
+                  <span>{liveTrialProspects > 0 ? pct(liveTrialBookingRate) : "—"}</span>
                 </div>
                 <span className="intel-funnel-arrow" aria-hidden="true">→</span>
                 <div className="intel-funnel-stage">
                   <small>Asistieron</small>
-                  <strong>{conversionFunnelAvailable ? conversionFunnelAttended : "—"}</strong>
+                  <strong>{liveTrialAttended.size}</strong>
                   <span>
-                    {conversionFunnelAvailable && conversionFunnelBooked > 0
-                      ? pct(safeRate(conversionFunnelAttended, conversionFunnelBooked))
-                      : "—"}
+                    {liveTrialBooked.size > 0 ? pct(liveTrialAttendanceRate) : "—"}
                   </span>
                 </div>
                 <span className="intel-funnel-arrow" aria-hidden="true">→</span>
                 <div className="intel-funnel-stage is-success">
-                  <small>Se convirtieron</small>
-                  <strong>{conversionFunnelAvailable ? conversionFunnelConverted : "—"}</strong>
+                  <small>Compraron</small>
+                  <strong>{liveTrialConverted.size}</strong>
                   <span>
-                    {conversionFunnelAvailable && conversionFunnelAttended > 0
-                      ? pct(safeRate(conversionFunnelConverted, conversionFunnelAttended))
-                      : "—"}
+                    {liveTrialAttended.size > 0 ? pct(liveTrialConversionRate) : "—"}
                   </span>
                 </div>
               </div>
 
               <div className="intel-funnel-leaks">
                 <div>
-                  <small>Cancelaciones</small>
-                  <strong>{conversionFunnelAvailable ? conversionFunnelCancelled : "—"}</strong>
+                  <small>Pendientes de asistir</small>
+                  <strong>{liveTrialPending}</strong>
                 </div>
                 <div>
-                  <small>Reagendadas</small>
-                  <strong>{conversionFunnelAvailable ? conversionFunnelRebooked : "—"}</strong>
+                  <small>Cancelaron</small>
+                  <strong>{liveTrialCancelled.size}</strong>
                 </div>
                 <div>
                   <small>No show</small>
-                  <strong>{conversionFunnelAvailable ? conversionFunnelNoShow : "—"}</strong>
+                  <strong>{liveTrialNoShow.size}</strong>
                 </div>
               </div>
 
-              {pendingConversationContacts > 0 ? (
-                <p className="intel-funnel-note">
-                  {pendingConversationContacts} contactos recientes siguen dentro de su ventana de maduración y todavía no afectan la conclusión.
-                </p>
-              ) : !conversionFunnelUsesConversation && pendingTrialCohort > 0 ? (
-                <p className="intel-funnel-note">
-                  {pendingTrialCohort} prospectos recientes siguen dentro de su ventana de maduración. Sí aparecen arriba en el pipeline vivo, pero todavía no afectan las tasas del embudo.
-                </p>
-              ) : null}
+              <p className="intel-funnel-note">
+                Este embudo es operativo y se actualiza con reservas, asistencia, cancelaciones,
+                no show y compras. La recomendación de abajo conserva la ventana madura de{" "}
+                {CONVERSION_MATURITY_DAYS} días para no sacar conclusiones con casos todavía abiertos.
+              </p>
             </Section>
 
             <Section
               title="🧠 Qué está pasando"
-              description="Studio Flow interpreta el embudo y te muestra una sola prioridad."
+              description={"Studio Flow interpreta una cohorte madura de " + CONVERSION_MATURITY_DAYS + " días para evitar recomendaciones prematuras."}
             >
               <article
                 className={
