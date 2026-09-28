@@ -6,7 +6,7 @@ import { redirect } from "next/navigation";
 import { getAdminContext } from "@/lib/auth/admin-context";
 
 const TYPES = new Set(["package", "membership", "single_class", "enrollment", "other"]);
-const PACKAGE_TERMS = new Set(["monthly", "quarterly", "semiannual", "annual", "custom"]);
+const PACKAGE_TERMS = new Set(["weekly", "monthly", "quarterly", "semiannual", "annual", "custom"]);
 const PACKAGE_TERM_DAYS: Record<string, number> = {
   monthly: 30,
   quarterly: 90,
