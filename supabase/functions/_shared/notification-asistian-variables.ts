@@ -90,7 +90,7 @@ export function buildAsistianVariables(
       return {
         ...common,
         coach: safeText(variables.coach),
-        ubicacion: safeText(variables.location),
+        ubicacion: safeText(variables.location) ?? safeText(variables.studio_name),
         creditos_restantes: safeNumber(variables.credits_remaining),
       };
 
