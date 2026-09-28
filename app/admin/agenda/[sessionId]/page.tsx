@@ -288,7 +288,7 @@ export default async function SessionDetailPage({
   });
 
   const occupied = (reservations ?? []).filter((reservation) =>
-    ["reserved", "attended"].includes(reservation.status),
+    ["reserved", "attended", "no_show"].includes(reservation.status),
   ).length;
   const attended = (reservations ?? []).filter(
     (reservation) => reservation.status === "attended",
