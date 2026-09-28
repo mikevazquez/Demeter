@@ -38,3 +38,16 @@ on conflict (studio_id,channel_key,provider_key) do update set adapter_key=exclu
 insert into public.notification_rule_channels(studio_id,rule_id,version_number,channel_key,is_required,ordinal,channel_policy)
 values ('9fe23cfa-fb47-4670-afeb-ed4a56433772','414e56f7-c753-4abf-82ac-551892031851',1,'whatsapp',false,2,'{"delivery_max_attempts":3}'::jsonb)
 on conflict (rule_id,version_number,channel_key) do update set is_required=false,ordinal=2,channel_policy=excluded.channel_policy;
+
+
+-- Studio-owned customer service destination used by notification-only inbound redirect.
+create table if not exists public.studio_contact_channels (
+ studio_id uuid primary key references public.studios(id) on delete cascade,
+ whatsapp_attention_e164 text check (whatsapp_attention_e164 is null or whatsapp_attention_e164 ~ E'^\\+[1-9][0-9]{7,14}$'),
+ updated_at timestamptz not null default now()
+);
+alter table public.studio_contact_channels enable row level security;
+revoke all on public.studio_contact_channels from public, anon, authenticated;
+insert into public.studio_contact_channels(studio_id,whatsapp_attention_e164)
+values ('9fe23cfa-fb47-4670-afeb-ed4a56433772','+525665053888')
+on conflict(studio_id) do update set whatsapp_attention_e164=excluded.whatsapp_attention_e164,updated_at=now();
