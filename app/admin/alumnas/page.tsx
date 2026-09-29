@@ -211,6 +211,7 @@ export default async function StudentsPage({
   const expiringStudentsCount = (allStudents ?? []).filter((student) => {
     const acquisition = currentAcquisitionFor(student.id);
     return Boolean(
+      relationshipStatusFor(student) === "active" &&
       acquisition?.expires_on &&
       acquisition.expires_on >= today &&
       acquisition.expires_on <= sevenDaysFromToday,
