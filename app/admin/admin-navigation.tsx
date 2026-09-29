@@ -85,7 +85,7 @@ function NavIcon({ label }: { label: string }) {
       </svg>
     );
   }
-  if (label === "Productos") {
+  if (label === "Productos" || label === "Paquetes") {
     return (
       <svg {...common}>
         <path d="M5 7h14l-1 14H6L5 7Z" />
