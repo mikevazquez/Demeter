@@ -334,8 +334,46 @@
 
 .student-state-pill {
   align-self: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   padding: 5px 8px;
+  border: 1px solid transparent;
+  border-radius: 999px;
   font-size: 8px;
+  font-weight: 800;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.student-state-pill.is-active {
+  border-color: rgba(49, 211, 137, 0.42);
+  background: rgba(49, 211, 137, 0.1);
+  color: #65e7aa;
+}
+
+.student-state-pill.is-expired {
+  border-color: rgba(255, 77, 112, 0.42);
+  background: rgba(255, 77, 112, 0.1);
+  color: #ff7892;
+}
+
+.student-state-pill.is-trial {
+  border-color: rgba(91, 163, 255, 0.46);
+  background: rgba(91, 163, 255, 0.1);
+  color: #82baff;
+}
+
+.student-state-pill.is-prospect {
+  border-color: rgba(255, 190, 45, 0.46);
+  background: rgba(255, 190, 45, 0.1);
+  color: #ffd064;
+}
+
+.student-state-pill.is-inactive {
+  border-color: rgba(150, 165, 190, 0.34);
+  background: rgba(150, 165, 190, 0.08);
+  color: #a8b2c0;
 }
 
 .student-directory-arrow {
