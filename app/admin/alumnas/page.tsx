@@ -199,7 +199,9 @@ export default async function StudentsPage({
       studentType: student.student_type,
       trialStatus: student.trial_status,
       hasCurrentProduct: Boolean(currentAcquisitionFor(student.id)),
-      hasProductHistory: acquisitions.some((item) => !item.refunded_at),
+      hasExpiredProduct: acquisitions.some(
+        (item) => !item.refunded_at && Boolean(item.expires_on && item.expires_on < today),
+      ),
     });
   }
 
