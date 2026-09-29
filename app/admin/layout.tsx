@@ -149,7 +149,7 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
           ? [{ href: "/admin/evaluaciones", label: "Evaluaciones", enabled: true }]
           : []),
         ...(can(CAPABILITIES.PRODUCTS_READ)
-          ? [{ href: "/admin/productos", label: "Productos", enabled: true }]
+          ? [{ href: "/admin/productos", label: "Paquetes", enabled: true }]
           : []),
         ...(can(CAPABILITIES.INSTRUCTORS_READ)
           ? [{ href: "/admin/instructores", label: "Equipo", enabled: true }]
