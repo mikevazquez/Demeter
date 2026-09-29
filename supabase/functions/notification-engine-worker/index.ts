@@ -66,6 +66,8 @@ type ReservationContext = {
   studio: JsonObject | null;
   template: JsonObject | null;
   discipline: JsonObject | null;
+  coach: string | null;
+  location: string | null;
 };
 
 type EventContext = {
@@ -77,6 +79,8 @@ type EventContext = {
   studio: JsonObject | null;
   template: JsonObject | null;
   discipline: JsonObject | null;
+  coach: string | null;
+  location: string | null;
 };
 
 function response(body: JsonObject, status = 200) {
@@ -228,7 +232,7 @@ async function loadReservationContext(
   if (sessionId) {
     const { data, error } = await adminClient
       .from("class_sessions")
-      .select("id,template_id,starts_at,ends_at,status,coach_user_id,instructor_id")
+      .select("id,template_id,starts_at,ends_at,status,coach_user_id,instructor_id,space_id")
       .eq("id", sessionId)
       .eq("studio_id", event.studio_id)
       .maybeSingle();
@@ -271,6 +275,68 @@ async function loadReservationContext(
 
   if (disciplineError) throw new Error("discipline_context_lookup_failed");
 
+  let coach: string | null = null;
+  const instructorId = safeText(session?.instructor_id);
+  if (instructorId) {
+    const { data: instructor, error: instructorError } = await adminClient
+      .from("instructors")
+      .select("person_id")
+      .eq("id", instructorId)
+      .eq("studio_id", event.studio_id)
+      .maybeSingle();
+
+    if (instructorError) throw new Error("notification_coach_lookup_failed");
+
+    if (instructor?.person_id) {
+      const { data: person, error: personError } = await adminClient
+        .from("persons")
+        .select("first_name,last_name")
+        .eq("id", instructor.person_id)
+        .eq("studio_id", event.studio_id)
+        .maybeSingle();
+
+      if (personError) throw new Error("notification_coach_person_lookup_failed");
+
+      coach =
+        [safeText(person?.first_name), safeText(person?.last_name)].filter(Boolean).join(" ") ||
+        null;
+    }
+  }
+
+  let location: string | null = null;
+  const spaceId = safeText(session?.space_id);
+  if (spaceId) {
+    const { data: space, error: spaceError } = await adminClient
+      .from("spaces")
+      .select("name,site_id")
+      .eq("id", spaceId)
+      .eq("studio_id", event.studio_id)
+      .maybeSingle();
+
+    if (spaceError) throw new Error("notification_space_lookup_failed");
+
+    let site: { name?: unknown; address?: unknown } | null = null;
+    if (space?.site_id) {
+      const { data: siteData, error: siteError } = await adminClient
+        .from("sites")
+        .select("name,address")
+        .eq("id", space.site_id)
+        .eq("studio_id", event.studio_id)
+        .maybeSingle();
+
+      if (siteError) throw new Error("notification_site_lookup_failed");
+      site = siteData;
+    }
+
+    const locationParts = [
+      safeText(site?.name),
+      safeText(space?.name),
+      safeText(site?.address),
+    ].filter(Boolean);
+
+    location = locationParts.join(" · ") || null;
+  }
+
   return {
     reservation,
     student,
@@ -278,6 +344,8 @@ async function loadReservationContext(
     studio: (studioData ?? null) as JsonObject | null,
     template,
     discipline: (disciplineData ?? null) as JsonObject | null,
+    coach,
+    location,
   };
 }
 
@@ -686,6 +754,9 @@ function buildTemplateVariables(context: EventContext, recipient: Recipient): Js
     session_ends_at: safeText(context.session?.ends_at) ?? safeText(context.payload.new_ends_at),
     class_name: safeText(context.template?.name),
     discipline_name: safeText(context.discipline?.name),
+    coach: safeText(context.coach) ?? "Por confirmar",
+    location:
+      safeText(context.location) ?? safeText(context.studio?.name) ?? "Por confirmar",
     studio_name: safeText(context.studio?.name),
     studio_timezone: safeText(context.studio?.timezone),
   };
