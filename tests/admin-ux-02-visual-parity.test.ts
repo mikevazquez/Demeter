@@ -66,7 +66,7 @@ describe("ADMIN-UX-02 approved visual parity", () => {
     expect(today).toContain('.is("refunded_at", null)');
     expect(today).toContain('starts_on.is.null,starts_on.lte.${todayKey}');
     expect(today).toContain('expires_on.is.null,expires_on.gte.${todayKey}');
-    expect(today).toContain("activeProductStudentIds");
+    expect(today).toContain("activeProductStudentIds.size");
     expect(today).toContain("<strong>{activeStudents}</strong>");
   });
 
