@@ -9,16 +9,27 @@ const initialState: CreateClassPackageState = { error: null };
 type Props = {
   currency: string;
   locale: string;
+  packageTerm: "monthly" | "quarterly" | "semiannual" | "annual" | "custom";
+  periodLabel: string;
+  initialDays: number;
+  fixedValidity: boolean;
 };
 
-export function CreateClassPackageForm({ currency, locale }: Props) {
+export function CreateClassPackageForm({
+  currency,
+  locale,
+  packageTerm,
+  periodLabel,
+  initialDays,
+  fixedValidity,
+}: Props) {
   const [state, formAction, pending] = useActionState(createClassPackage, initialState);
   const [credits, setCredits] = useState(12);
-  const [days, setDays] = useState(30);
+  const [days, setDays] = useState(initialDays);
   const [price, setPrice] = useState("700");
   const [customName, setCustomName] = useState<string | null>(null);
 
-  const generatedName = `${credits} clases · ${days} días`;
+  const generatedName = `${credits} clases · ${fixedValidity ? periodLabel : `${days} días`}`;
   const name = customName ?? generatedName;
 
   const formattedPrice = useMemo(() => {
@@ -32,6 +43,8 @@ export function CreateClassPackageForm({ currency, locale }: Props) {
 
   return (
     <form action={formAction} className="package-form">
+      <input type="hidden" name="package_term" value={packageTerm} />
+
       <section className="package-form-card">
         <div className="package-form-card-heading">
           <span className="package-form-card-heading-icon" aria-hidden="true">
@@ -108,33 +121,56 @@ export function CreateClassPackageForm({ currency, locale }: Props) {
       </section>
 
       <section className="package-form-card">
-        <div className="package-counter-row">
-          <span className="package-counter-copy">
-            <strong>Vigencia</strong>
-            <span>Cantidad de días que estará activo después de comprarlo.</span>
-          </span>
-          <span className="package-counter">
-            <button
-              type="button"
-              aria-label="Quitar un día"
-              onClick={() => setDays((value) => Math.max(1, value - 1))}
-            >
-              −
-            </button>
-            <input
-              name="validity_days"
-              type="number"
-              min="1"
-              required
-              value={days}
-              onChange={(event) => setDays(Math.max(1, Number(event.target.value) || 1))}
-              aria-label="Días de vigencia"
-            />
-            <button type="button" aria-label="Agregar un día" onClick={() => setDays((value) => value + 1)}>
-              +
-            </button>
-          </span>
-        </div>
+        {fixedValidity ? (
+          <>
+            <div className="package-form-card-heading">
+              <span className="package-form-card-heading-icon" aria-hidden="true">
+                ◫
+              </span>
+              <span>
+                <strong>Vigencia</strong>
+                <span>La duración viene definida por la categoría elegida.</span>
+              </span>
+            </div>
+            <input type="hidden" name="validity_days" value={initialDays} />
+            <div className="package-fixed-period">
+              <strong>{periodLabel}</strong>
+              <span>{initialDays} días de vigencia</span>
+            </div>
+          </>
+        ) : (
+          <div className="package-counter-row">
+            <span className="package-counter-copy">
+              <strong>Vigencia</strong>
+              <span>Elige cuántos días estará activo después de comprarlo.</span>
+            </span>
+            <span className="package-counter">
+              <button
+                type="button"
+                aria-label="Quitar un día"
+                onClick={() => setDays((value) => Math.max(1, value - 1))}
+              >
+                −
+              </button>
+              <input
+                name="validity_days"
+                type="number"
+                min="1"
+                required
+                value={days}
+                onChange={(event) => setDays(Math.max(1, Number(event.target.value) || 1))}
+                aria-label="Días de vigencia"
+              />
+              <button
+                type="button"
+                aria-label="Agregar un día"
+                onClick={() => setDays((value) => value + 1)}
+              >
+                +
+              </button>
+            </span>
+          </div>
+        )}
       </section>
 
       <section className="package-form-card">
@@ -182,7 +218,7 @@ export function CreateClassPackageForm({ currency, locale }: Props) {
         </div>
         <div className="package-summary">
           <strong>
-            {credits} clases · {days} días · {formattedPrice}
+            {credits} clases · {fixedValidity ? periodLabel : `${days} días`} · {formattedPrice}
           </strong>
           <span className="package-list-chip">Todas las disciplinas</span>
         </div>
@@ -201,7 +237,10 @@ export function CreateClassPackageForm({ currency, locale }: Props) {
         <button type="submit" className="packages-v2-primary" disabled={pending}>
           {pending ? "Guardando…" : "Guardar paquete"}
         </button>
-        <a href="/admin/productos/por-clases" className="packages-v2-secondary">
+        <a
+          href={`/admin/productos/por-clases/${packageTerm}`}
+          className="packages-v2-secondary"
+        >
           Cancelar
         </a>
       </div>
