@@ -2,11 +2,57 @@ import Link from "next/link";
 
 import { getAdminContext } from "@/lib/auth/admin-context";
 
-function TicketIcon() {
+type PeriodKey = "monthly" | "quarterly" | "semiannual" | "annual" | "custom";
+
+const periodCards: Array<{
+  key: PeriodKey;
+  title: string;
+  description: string;
+  tone: string;
+  days: number | null;
+}> = [
+  {
+    key: "monthly",
+    title: "Mensuales",
+    description: "Paquetes con vigencia de 30 días.",
+    tone: "",
+    days: 30,
+  },
+  {
+    key: "quarterly",
+    title: "Trimestrales",
+    description: "Paquetes con vigencia de 3 meses.",
+    tone: "is-blue",
+    days: 90,
+  },
+  {
+    key: "semiannual",
+    title: "Semestrales",
+    description: "Paquetes con vigencia de 6 meses.",
+    tone: "is-amber",
+    days: 180,
+  },
+  {
+    key: "annual",
+    title: "Anuales",
+    description: "Paquetes con vigencia de 1 año.",
+    tone: "is-purple",
+    days: 365,
+  },
+  {
+    key: "custom",
+    title: "Otra vigencia",
+    description: "Paquetes con una duración personalizada.",
+    tone: "is-neutral",
+    days: null,
+  },
+];
+
+function CalendarIcon({ days }: { days: number | null }) {
   return (
     <svg
-      width="30"
-      height="30"
+      width="34"
+      height="34"
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
@@ -15,10 +61,41 @@ function TicketIcon() {
       strokeLinejoin="round"
       aria-hidden="true"
     >
-      <path d="M4 7.5A2.5 2.5 0 0 1 6.5 5H19v4a3 3 0 0 0 0 6v4H6.5A2.5 2.5 0 0 1 4 16.5V7.5Z" />
-      <path d="M9 8v8" strokeDasharray="2 2" />
+      <rect x="3" y="5" width="18" height="16" rx="3" />
+      <path d="M7 3v4M17 3v4M3 10h18" />
+      {days ? (
+        <text
+          x="12"
+          y="17"
+          textAnchor="middle"
+          fill="currentColor"
+          stroke="none"
+          fontSize="6.5"
+          fontWeight="800"
+        >
+          {days}
+        </text>
+      ) : (
+        <path d="M9 15h6M12 12v6" />
+      )}
     </svg>
   );
+}
+
+function resolvePeriod(packageTerm: string | null, validityDays: number | null): PeriodKey {
+  if (
+    packageTerm === "monthly" ||
+    packageTerm === "quarterly" ||
+    packageTerm === "semiannual" ||
+    packageTerm === "annual"
+  ) {
+    return packageTerm;
+  }
+  if (validityDays === 30) return "monthly";
+  if (validityDays === 90) return "quarterly";
+  if (validityDays === 180) return "semiannual";
+  if (validityDays === 365) return "annual";
+  return "custom";
 }
 
 export default async function ClassPackagesPage() {
@@ -32,13 +109,11 @@ export default async function ClassPackagesPage() {
       .eq("active", true),
     ctx.supabase
       .from("product_templates")
-      .select("id,name,price_minor,currency,credit_limit,validity_days,active")
+      .select("id,package_term,validity_days")
       .eq("studio_id", ctx.studio.id)
       .eq("product_type", "package")
       .eq("unlimited", false)
-      .eq("active", true)
-      .order("credit_limit")
-      .order("name"),
+      .eq("active", true),
   ]);
 
   const productIds = (rows ?? []).map((product) => product.id);
@@ -51,7 +126,7 @@ export default async function ClassPackagesPage() {
           .in("product_template_id", productIds),
         ctx.supabase
           .from("product_template_schedules")
-          .select("product_template_id,recurring_schedule_id")
+          .select("product_template_id")
           .eq("studio_id", ctx.studio.id)
           .in("product_template_id", productIds),
       ])
@@ -69,14 +144,23 @@ export default async function ClassPackagesPage() {
     (scheduleLinks ?? []).map((link) => link.product_template_id),
   );
 
-  const products = (rows ?? []).filter((product) => {
+  const counts: Record<PeriodKey, number> = {
+    monthly: 0,
+    quarterly: 0,
+    semiannual: 0,
+    annual: 0,
+    custom: 0,
+  };
+
+  for (const product of rows ?? []) {
     const productDisciplineIds = disciplinesByProduct.get(product.id) ?? new Set<string>();
     const appliesToEveryActiveDiscipline =
       activeDisciplineIds.size > 0 &&
       [...activeDisciplineIds].every((disciplineId) => productDisciplineIds.has(disciplineId));
 
-    return appliesToEveryActiveDiscipline && !scheduleRestrictedProductIds.has(product.id);
-  });
+    if (!appliesToEveryActiveDiscipline || scheduleRestrictedProductIds.has(product.id)) continue;
+    counts[resolvePeriod(product.package_term, product.validity_days)] += 1;
+  }
 
   return (
     <main className="packages-v2">
@@ -85,74 +169,39 @@ export default async function ClassPackagesPage() {
           <span aria-hidden="true">←</span> Paquetes
         </Link>
         <h1>Por clases</h1>
-        <p>Paquetes por cantidad de clases y vigencia.</p>
+        <p>Elige la vigencia del paquete que quieres administrar.</p>
       </header>
 
-      <section className="packages-v2-info is-green" aria-label="Paquetes activos">
+      <section className="packages-v2-info is-green" aria-label="Organización por vigencia">
         <span className="packages-v2-info-icon" aria-hidden="true">
           i
         </span>
-        <p>Aquí ves los paquetes activos de esta categoría.</p>
+        <p>Dentro de cada vigencia verás únicamente los paquetes activos de ese periodo.</p>
       </section>
 
-      {products.length ? (
-        <section className="package-list" aria-label="Paquetes por clases activos">
-          {products.map((product) => {
-            const money = new Intl.NumberFormat(ctx.studio.locale, {
-              style: "currency",
-              currency: product.currency,
-              maximumFractionDigits: 0,
-            });
-
-            return (
-              <Link
-                key={product.id}
-                href={`/admin/productos/${product.id}`}
-                className="package-list-card"
-              >
-                <span className="package-list-icon">
-                  <TicketIcon />
-                </span>
-
-                <span className="package-list-main">
-                  <span className="package-list-title-row">
-                    <strong>{product.name}</strong>
-                    <span className="package-list-price">
-                      {money.format(product.price_minor / 100)}
-                    </span>
-                  </span>
-                  <span className="package-list-chip">Todas las disciplinas</span>
-                  <span className="package-list-meta">
-                    <span>
-                      Vigencia:{" "}
-                      {product.validity_days == null
-                        ? "sin vencimiento"
-                        : `${product.validity_days} días`}
-                    </span>
-                    <span>
-                      {product.credit_limit == null
-                        ? "Sin límite definido"
-                        : `${product.credit_limit} clases`}
-                    </span>
-                  </span>
-                </span>
-
-                <span className="package-list-status">Activo</span>
-              </Link>
-            );
-          })}
-        </section>
-      ) : (
-        <section className="packages-v2-empty">
-          Aún no hay paquetes activos que apliquen a todas las disciplinas.
-        </section>
-      )}
-
-      {ctx.can("products.write") ? (
-        <Link href="/admin/productos/por-clases/nuevo" className="packages-v2-primary">
-          <span aria-hidden="true">＋</span> Crear paquete
-        </Link>
-      ) : null}
+      <section className="package-category-grid" aria-label="Vigencias de paquetes">
+        {periodCards.map((period) => (
+          <Link
+            key={period.key}
+            href={`/admin/productos/por-clases/${period.key}`}
+            className={`package-category-card ${period.tone}`}
+          >
+            <span className="package-category-icon">
+              <CalendarIcon days={period.days} />
+            </span>
+            <span className="package-category-copy">
+              <strong>{period.title}</strong>
+              <span>{period.description}</span>
+              <small className="package-period-count">
+                {counts[period.key]} {counts[period.key] === 1 ? "paquete activo" : "paquetes activos"}
+              </small>
+            </span>
+            <span className="package-category-action">
+              Ver <span aria-hidden="true">›</span>
+            </span>
+          </Link>
+        ))}
+      </section>
     </main>
   );
 }
