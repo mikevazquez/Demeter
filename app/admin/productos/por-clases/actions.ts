@@ -9,9 +9,22 @@ export type CreateClassPackageState = {
   error: string | null;
 };
 
+const PACKAGE_TERM_DAYS = {
+  monthly: 30,
+  quarterly: 90,
+  semiannual: 180,
+  annual: 365,
+} as const;
+
+type PackageTerm = keyof typeof PACKAGE_TERM_DAYS | "custom";
+
 function positiveInteger(value: FormDataEntryValue | null) {
   const parsed = Number(value);
   return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+}
+
+function isPackageTerm(value: string): value is PackageTerm {
+  return value === "custom" || value in PACKAGE_TERM_DAYS;
 }
 
 export async function createClassPackage(
@@ -24,11 +37,18 @@ export async function createClassPackage(
   const description = String(formData.get("description") ?? "").trim() || null;
   const price = Number(formData.get("price") ?? 0);
   const creditLimit = positiveInteger(formData.get("credit_limit"));
-  const validityDays = positiveInteger(formData.get("validity_days"));
+  const packageTermRaw = String(formData.get("package_term") ?? "");
+  const validityInput = positiveInteger(formData.get("validity_days"));
 
   if (!name) return { error: "Escribe un nombre para el paquete." };
   if (!Number.isFinite(price) || price < 0) return { error: "Escribe un precio válido." };
   if (!creditLimit) return { error: "La cantidad de clases debe ser mayor a cero." };
+  if (!isPackageTerm(packageTermRaw)) return { error: "Selecciona una vigencia válida." };
+
+  const packageTerm: PackageTerm = packageTermRaw;
+  const validityDays =
+    packageTerm === "custom" ? validityInput : PACKAGE_TERM_DAYS[packageTerm];
+
   if (!validityDays) return { error: "La vigencia debe ser mayor a cero." };
 
   const { data: disciplines, error: disciplinesError } = await ctx.supabase
@@ -55,7 +75,7 @@ export async function createClassPackage(
       name,
       description,
       product_type: "package",
-      package_term: "custom",
+      package_term: packageTerm,
       price_minor: Math.round(price * 100),
       currency: ctx.studio.currency,
       credit_limit: creditLimit,
@@ -92,5 +112,6 @@ export async function createClassPackage(
 
   revalidatePath("/admin/productos");
   revalidatePath("/admin/productos/por-clases");
-  redirect("/admin/productos/por-clases");
+  revalidatePath(`/admin/productos/por-clases/${packageTerm}`);
+  redirect(`/admin/productos/por-clases/${packageTerm}`);
 }
