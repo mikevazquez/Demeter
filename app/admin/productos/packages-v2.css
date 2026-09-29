@@ -904,3 +904,62 @@
     height: 44px;
   }
 }
+
+
+/* Package period groups */
+.package-category-copy .package-period-count {
+  margin-top: 8px;
+  color: #8a97a8;
+  font-size: 11px;
+  font-weight: 750;
+}
+
+.package-category-card.is-neutral .package-category-icon {
+  background: #eef2f6;
+  color: #65748a;
+}
+
+.package-category-card.is-neutral .package-category-action {
+  background: #eef2f6;
+  color: #65748a;
+}
+
+.package-fixed-period {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 15px 16px;
+  border: 1px solid #d8eee6;
+  border-radius: 15px;
+  background: #f1faf7;
+}
+
+.package-fixed-period strong,
+.package-fixed-period span {
+  display: block;
+}
+
+.package-fixed-period strong {
+  color: var(--packages-text);
+  font-size: 17px;
+}
+
+.package-fixed-period span {
+  color: var(--packages-muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+@media (max-width: 430px) {
+  .package-category-copy .package-period-count {
+    margin-top: 6px;
+    font-size: 10px;
+  }
+
+  .package-fixed-period {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 4px;
+  }
+}
