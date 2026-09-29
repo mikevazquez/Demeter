@@ -3,18 +3,6 @@ import Link from "next/link";
 import { getAdminContext } from "@/lib/auth/admin-context";
 import "../packages-v2.css";
 
-type ClassPackageRow = {
-  id: string;
-  name: string;
-  price_minor: number;
-  currency: string;
-  credit_limit: number | null;
-  validity_days: number | null;
-  active: boolean;
-  product_template_disciplines?: { discipline_id: string }[] | null;
-  product_template_schedules?: { recurring_schedule_id: string }[] | null;
-};
-
 function TicketIcon() {
   return (
     <svg
@@ -45,9 +33,7 @@ export default async function ClassPackagesPage() {
       .eq("active", true),
     ctx.supabase
       .from("product_templates")
-      .select(
-        "id,name,price_minor,currency,credit_limit,validity_days,active,product_template_disciplines(discipline_id),product_template_schedules(recurring_schedule_id)",
-      )
+      .select("id,name,price_minor,currency,credit_limit,validity_days,active")
       .eq("studio_id", ctx.studio.id)
       .eq("product_type", "package")
       .eq("unlimited", false)
@@ -56,23 +42,41 @@ export default async function ClassPackagesPage() {
       .order("name"),
   ]);
 
+  const productIds = (rows ?? []).map((product) => product.id);
+  const [{ data: disciplineLinks }, { data: scheduleLinks }] = productIds.length
+    ? await Promise.all([
+        ctx.supabase
+          .from("product_template_disciplines")
+          .select("product_template_id,discipline_id")
+          .eq("studio_id", ctx.studio.id)
+          .in("product_template_id", productIds),
+        ctx.supabase
+          .from("product_template_schedules")
+          .select("product_template_id,recurring_schedule_id")
+          .eq("studio_id", ctx.studio.id)
+          .in("product_template_id", productIds),
+      ])
+    : [{ data: [] }, { data: [] }];
+
   const activeDisciplineIds = new Set((disciplines ?? []).map((item) => item.id));
-  const products = ((rows ?? []) as ClassPackageRow[]).filter((product) => {
-    const disciplineIds = new Set(
-      (product.product_template_disciplines ?? []).map((item) => item.discipline_id),
-    );
-    const hasEveryActiveDiscipline =
+  const disciplinesByProduct = new Map<string, Set<string>>();
+  for (const link of disciplineLinks ?? []) {
+    const current = disciplinesByProduct.get(link.product_template_id) ?? new Set<string>();
+    current.add(link.discipline_id);
+    disciplinesByProduct.set(link.product_template_id, current);
+  }
+
+  const scheduleRestrictedProductIds = new Set(
+    (scheduleLinks ?? []).map((link) => link.product_template_id),
+  );
+
+  const products = (rows ?? []).filter((product) => {
+    const productDisciplineIds = disciplinesByProduct.get(product.id) ?? new Set<string>();
+    const appliesToEveryActiveDiscipline =
       activeDisciplineIds.size > 0 &&
-      [...activeDisciplineIds].every((disciplineId) => disciplineIds.has(disciplineId));
-    const hasScheduleRestriction = Boolean(product.product_template_schedules?.length);
+      [...activeDisciplineIds].every((disciplineId) => productDisciplineIds.has(disciplineId));
 
-    return hasEveryActiveDiscipline && !hasScheduleRestriction;
-  });
-
-  const money = new Intl.NumberFormat(ctx.studio.locale, {
-    style: "currency",
-    currency: ctx.studio.currency,
-    maximumFractionDigits: 0,
+    return appliesToEveryActiveDiscipline && !scheduleRestrictedProductIds.has(product.id);
   });
 
   return (
@@ -94,42 +98,50 @@ export default async function ClassPackagesPage() {
 
       {products.length ? (
         <section className="package-list" aria-label="Paquetes por clases activos">
-          {products.map((product) => (
-            <Link
-              key={product.id}
-              href={`/admin/productos/${product.id}`}
-              className="package-list-card"
-            >
-              <span className="package-list-icon">
-                <TicketIcon />
-              </span>
+          {products.map((product) => {
+            const money = new Intl.NumberFormat(ctx.studio.locale, {
+              style: "currency",
+              currency: product.currency,
+              maximumFractionDigits: 0,
+            });
 
-              <span className="package-list-main">
-                <span className="package-list-title-row">
-                  <strong>{product.name}</strong>
-                  <span className="package-list-price">
-                    {money.format(product.price_minor / 100)}
+            return (
+              <Link
+                key={product.id}
+                href={`/admin/productos/${product.id}`}
+                className="package-list-card"
+              >
+                <span className="package-list-icon">
+                  <TicketIcon />
+                </span>
+
+                <span className="package-list-main">
+                  <span className="package-list-title-row">
+                    <strong>{product.name}</strong>
+                    <span className="package-list-price">
+                      {money.format(product.price_minor / 100)}
+                    </span>
+                  </span>
+                  <span className="package-list-chip">Todas las disciplinas</span>
+                  <span className="package-list-meta">
+                    <span>
+                      Vigencia:{" "}
+                      {product.validity_days == null
+                        ? "sin vencimiento"
+                        : `${product.validity_days} días`}
+                    </span>
+                    <span>
+                      {product.credit_limit == null
+                        ? "Sin límite definido"
+                        : `${product.credit_limit} clases`}
+                    </span>
                   </span>
                 </span>
-                <span className="package-list-chip">Todas las disciplinas</span>
-                <span className="package-list-meta">
-                  <span>
-                    Vigencia:{" "}
-                    {product.validity_days == null
-                      ? "sin vencimiento"
-                      : `${product.validity_days} días`}
-                  </span>
-                  <span>
-                    {product.credit_limit == null
-                      ? "Sin límite definido"
-                      : `${product.credit_limit} clases`}
-                  </span>
-                </span>
-              </span>
 
-              <span className="package-list-status">Activo</span>
-            </Link>
-          ))}
+                <span className="package-list-status">Activo</span>
+              </Link>
+            );
+          })}
         </section>
       ) : (
         <section className="packages-v2-empty">
