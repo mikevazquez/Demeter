@@ -25,10 +25,9 @@ describe("student generic access entry", () => {
     expect(edge).not.toContain("email");
   });
 
-  it("never creates an account or password from the generic URL", () => {
+  it("never creates or resets auth users from the generic URL", () => {
     expect(edge).not.toContain("auth.admin.createUser");
     expect(edge).not.toContain("auth.admin.updateUserById");
-    expect(edge).not.toContain("auth.admin.updateUserById");\n    expect(edge).not.toContain("auth.admin.createUser");
     expect(action).not.toContain("password");
   });
 
