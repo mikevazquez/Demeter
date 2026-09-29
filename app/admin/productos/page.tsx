@@ -1,7 +1,6 @@
 import Link from "next/link";
 
 import { getAdminContext } from "@/lib/auth/admin-context";
-import "./packages-v2.css";
 
 type CategoryIcon = "classes" | "schedule" | "unlimited" | "course";
 
