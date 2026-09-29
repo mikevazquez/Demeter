@@ -10,11 +10,11 @@ export function deriveStudentDirectoryRelationshipStatus(input: {
   studentType?: string | null;
   trialStatus?: string | null;
   hasCurrentProduct: boolean;
-  hasProductHistory: boolean;
+  hasExpiredProduct: boolean;
 }): StudentDirectoryRelationshipStatus {
   if (input.lifecycleStatus === "inactive") return "inactive";
   if (input.hasCurrentProduct) return "active";
   if (input.studentType === "trial" && input.trialStatus !== "converted") return "trial";
-  if (input.hasProductHistory) return "expired";
+  if (input.hasExpiredProduct) return "expired";
   return "prospect";
 }
