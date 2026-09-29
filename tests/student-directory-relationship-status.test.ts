@@ -10,7 +10,7 @@ describe("student directory relationship status", () => {
         studentType: "regular",
         trialStatus: null,
         hasCurrentProduct: true,
-        hasProductHistory: true,
+        hasExpiredProduct: true,
       }),
     ).toBe("active");
   });
@@ -22,7 +22,7 @@ describe("student directory relationship status", () => {
         studentType: "trial",
         trialStatus: "attended",
         hasCurrentProduct: false,
-        hasProductHistory: false,
+        hasExpiredProduct: false,
       }),
     ).toBe("trial");
   });
@@ -34,7 +34,7 @@ describe("student directory relationship status", () => {
         studentType: "regular",
         trialStatus: "converted",
         hasCurrentProduct: false,
-        hasProductHistory: true,
+        hasExpiredProduct: true,
       }),
     ).toBe("expired");
   });
@@ -46,7 +46,7 @@ describe("student directory relationship status", () => {
         studentType: "regular",
         trialStatus: null,
         hasCurrentProduct: false,
-        hasProductHistory: false,
+        hasExpiredProduct: false,
       }),
     ).toBe("prospect");
   });
@@ -58,7 +58,7 @@ describe("student directory relationship status", () => {
         studentType: "regular",
         trialStatus: null,
         hasCurrentProduct: true,
-        hasProductHistory: true,
+        hasExpiredProduct: true,
       }),
     ).toBe("inactive");
   });
