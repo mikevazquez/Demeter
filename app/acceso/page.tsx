@@ -61,7 +61,7 @@ export default async function StudentAccessPage({
 
         {state !== "pending" ? (
           <form action={resolveStudentAccess} className="auth-form auth-login-form">
-            <label className="auth-field">
+            <label className="auth-field auth-field-single">
               <span className="auth-field-body">
                 <span className="auth-field-label">Teléfono</span>
                 <input
