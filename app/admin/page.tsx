@@ -247,9 +247,7 @@ export default async function AdminPage({
       acquisition.student_id ? [acquisition.student_id] : [],
     ),
   );
-  const activeStudents = (students ?? []).filter((student) =>
-    activeProductStudentIds.has(student.id),
-  ).length;
+  const activeStudents = activeProductStudentIds.size;
 
   const sessionIds = (selectedSessions ?? []).map((session) => session.id);
   const templateIds = [...new Set((selectedSessions ?? []).map((session) => session.template_id))];
