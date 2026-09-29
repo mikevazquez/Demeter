@@ -4,14 +4,18 @@ import Link from "next/link";
 import PendingActionButton from "@/app/admin/components/PendingActionButton";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getAdminContext } from "@/lib/auth/admin-context";
+import { deriveStudentDirectoryRelationshipStatus } from "@/lib/student/directory-status";
 
 import { createStudent } from "./actions";
 import DuplicateStudentDialog from "./DuplicateStudentDialog";
 import StudentDeletedDialog from "./StudentDeletedDialog";
 import StudentFormErrorDialog from "./StudentFormErrorDialog";
 
-const lifecycleLabels: Record<string, string> = {
+const relationshipLabels: Record<string, string> = {
   active: "Activa",
+  expired: "Vencida",
+  trial: "Prueba",
+  prospect: "Prospecto",
   inactive: "Inactiva",
 };
 
@@ -79,7 +83,15 @@ export default async function StudentsPage({
   const params = await searchParams;
   const query = String(params.q ?? "").trim();
   const requestedStatus = String(params.status ?? "all");
-  const status = ["all", "active", "inactive", "expiring", "expired"].includes(requestedStatus)
+  const status = [
+    "all",
+    "active",
+    "inactive",
+    "expiring",
+    "expired",
+    "trial",
+    "prospect",
+  ].includes(requestedStatus)
     ? requestedStatus
     : "all";
 
@@ -92,13 +104,15 @@ export default async function StudentsPage({
 
   let studentsQuery = supabase
     .from("students")
-    .select("id, user_id, full_name, email, phone, lifecycle_status, created_at")
+    .select(
+      "id, user_id, full_name, email, phone, lifecycle_status, student_type, trial_status, created_at",
+    )
     .eq("studio_id", studio.id)
     .neq("lifecycle_status", "archived")
     .order("full_name");
 
-  if (status === "active" || status === "inactive") {
-    studentsQuery = studentsQuery.eq("lifecycle_status", status);
+  if (status === "inactive") {
+    studentsQuery = studentsQuery.eq("lifecycle_status", "inactive");
   }
 
   if (query) {
@@ -115,7 +129,7 @@ export default async function StudentsPage({
   const [{ data: allStudents }, acquisitionResult] = await Promise.all([
     supabase
       .from("students")
-      .select("id,lifecycle_status")
+      .select("id,lifecycle_status,student_type,trial_status")
       .eq("studio_id", studio.id)
       .neq("lifecycle_status", "archived"),
     canReadProducts
@@ -173,8 +187,24 @@ export default async function StudentsPage({
     );
   }
 
+  function relationshipStatusFor(student: {
+    id: string;
+    lifecycle_status: string;
+    student_type?: string | null;
+    trial_status?: string | null;
+  }) {
+    const acquisitions = acquisitionsByStudent.get(student.id) ?? [];
+    return deriveStudentDirectoryRelationshipStatus({
+      lifecycleStatus: student.lifecycle_status,
+      studentType: student.student_type,
+      trialStatus: student.trial_status,
+      hasCurrentProduct: Boolean(currentAcquisitionFor(student.id)),
+      hasProductHistory: acquisitions.some((item) => !item.refunded_at),
+    });
+  }
+
   const activeStudentsCount = (allStudents ?? []).filter(
-    (item) => item.lifecycle_status === "active",
+    (item) => relationshipStatusFor(item) === "active",
   ).length;
   const expiringStudentsCount = (allStudents ?? []).filter((student) => {
     const acquisition = currentAcquisitionFor(student.id);
@@ -184,28 +214,23 @@ export default async function StudentsPage({
       acquisition.expires_on <= sevenDaysFromToday,
     );
   }).length;
-  const expiredStudentsCount = (allStudents ?? []).filter((student) => {
-    if (currentAcquisitionFor(student.id)) return false;
-    return (acquisitionsByStudent.get(student.id) ?? []).some(
-      (item) => !item.refunded_at && Boolean(item.expires_on && item.expires_on < today),
-    );
-  }).length;
+  const expiredStudentsCount = (allStudents ?? []).filter(
+    (student) => relationshipStatusFor(student) === "expired",
+  ).length;
 
   const filteredStudents = (students ?? []).filter((student) => {
     if (status === "expiring") {
       const acquisition = currentAcquisitionFor(student.id);
       return Boolean(
+        relationshipStatusFor(student) === "active" &&
         acquisition?.expires_on &&
         acquisition.expires_on >= today &&
         acquisition.expires_on <= sevenDaysFromToday,
       );
     }
 
-    if (status === "expired") {
-      if (currentAcquisitionFor(student.id)) return false;
-      return (acquisitionsByStudent.get(student.id) ?? []).some(
-        (item) => !item.refunded_at && Boolean(item.expires_on && item.expires_on < today),
-      );
+    if (["active", "inactive", "expired", "trial", "prospect"].includes(status)) {
+      return relationshipStatusFor(student) === status;
     }
 
     return true;
@@ -247,8 +272,8 @@ export default async function StudentsPage({
     { key: "inactive", label: "Inactivas", enabled: true },
     { key: "expiring", label: "Por vencer", enabled: canReadProducts },
     { key: "expired", label: "Vencidas", enabled: canReadProducts },
-    { key: "trial", label: "De prueba", enabled: false },
-    { key: "prospect", label: "Prospectos", enabled: false },
+    { key: "trial", label: "Prueba", enabled: true },
+    { key: "prospect", label: "Prospectos", enabled: true },
   ];
 
   return (
@@ -416,7 +441,11 @@ export default async function StudentsPage({
                     ? "Inactivas"
                     : status === "expiring"
                       ? "Por vencer"
-                      : "Vencidas"}
+                      : status === "expired"
+                        ? "Vencidas"
+                        : status === "trial"
+                          ? "Prueba"
+                          : "Prospectos"}
             </h2>
           </div>
           <span className="count-badge">{filteredStudents.length}</span>
@@ -479,11 +508,18 @@ export default async function StudentsPage({
                       </span>
                     );
                   })()}
-                  <span
-                    className={`student-state-pill is-${student.lifecycle_status === "inactive" ? "inactive" : "active"}`}
-                  >
-                    {lifecycleLabels[student.lifecycle_status] ?? student.lifecycle_status}
-                  </span>
+                  {(() => {
+                    const relationshipStatus = relationshipStatusFor(student);
+                    const relationshipLabel = relationshipLabels[relationshipStatus] ?? relationshipStatus;
+                    return (
+                      <span
+                        className={`student-state-pill is-${relationshipStatus}`}
+                        aria-label={`Estado: ${relationshipLabel}`}
+                      >
+                        {relationshipLabel}
+                      </span>
+                    );
+                  })()}
                 </span>
                 <span className="student-directory-arrow" aria-hidden="true">
                   ›
