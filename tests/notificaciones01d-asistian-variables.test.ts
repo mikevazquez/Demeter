@@ -14,7 +14,7 @@ const base = {
 };
 
 describe("NOTIFICACIONES-01D Assistian variable mapping", () => {
-  it("maps transactional class variables to the legacy Assistian contract", () => {
+  it("keeps class transactional templates intentionally minimal", () => {
     expect(
       buildAsistianVariables("reservation_confirmed", {
         ...base,
@@ -23,14 +23,27 @@ describe("NOTIFICACIONES-01D Assistian variable mapping", () => {
         credits_remaining: 4,
       }),
     ).toEqual({
-      nombre: "Mike",
       disciplina: "Pole Fitness",
       fecha: "27/09/2026",
       hora: "15:00",
-      coach: "Coach Demo",
-      ubicacion: "Salón A",
-      creditos_restantes: 4,
     });
+  });
+
+  it("uses the same minimal contract for waitlist promotions and reminders", () => {
+    for (const template of ["waitlist_promoted", "class_reminder"]) {
+      expect(
+        buildAsistianVariables(template, {
+          ...base,
+          coach: "Coach Demo",
+          location: "Salón A",
+          credits_remaining: 4,
+        }),
+      ).toEqual({
+        disciplina: "Pole Fitness",
+        fecha: "27/09/2026",
+        hora: "15:00",
+      });
+    }
   });
 
   it("maps cancellation status without losing the legacy semantic fields", () => {
