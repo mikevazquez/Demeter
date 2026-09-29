@@ -37,8 +37,8 @@ const items: MoreItem[] = [
     capability: CAPABILITIES.EVALUATIONS_READ,
   },
   {
-    title: "Productos",
-    description: "Paquetes, membresías, clases sueltas e inscripciones.",
+    title: "Paquetes",
+    description: "Paquetes por clases, restricciones, ilimitados y talleres.",
     href: "/admin/productos",
     capability: CAPABILITIES.PRODUCTS_READ,
   },
