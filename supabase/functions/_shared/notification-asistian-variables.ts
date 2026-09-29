@@ -76,22 +76,14 @@ export function buildAsistianVariables(
     variables.studio_timezone,
   );
 
-  const common = {
-    nombre: safeText(variables.recipient_name) ?? "Alumna",
-    disciplina: safeText(variables.discipline_name) ?? safeText(variables.class_name) ?? "Clase",
-    fecha: starts.fecha,
-    hora: starts.hora,
-  };
-
   switch (providerTemplateKey) {
     case "reservation_confirmed":
     case "waitlist_promoted":
     case "class_reminder":
       return {
-        ...common,
-        coach: safeText(variables.coach),
-        ubicacion: safeText(variables.location),
-        creditos_restantes: safeNumber(variables.credits_remaining),
+        disciplina: safeText(variables.discipline_name) ?? safeText(variables.class_name) ?? "Clase",
+        fecha: starts.fecha,
+        hora: starts.hora,
       };
 
     case "reservation_cancelled": {
