@@ -19,6 +19,7 @@ import "./admin-ux-04-secondary.css";
 import "./admin-ux-04-secondary-detail.css";
 import "./evaluaciones/evaluaciones.css";
 import "./inteligencia/inteligencia.css";
+import "./productos/packages-v2.css";
 
 type PwaBrand = {
   name: string;
