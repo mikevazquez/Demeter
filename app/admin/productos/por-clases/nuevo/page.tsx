@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 import { getAdminContext } from "@/lib/auth/admin-context";
-import "../packages-v2.css";
+import "../../packages-v2.css";
 import { CreateClassPackageForm } from "../CreateClassPackageForm";
 
 export default async function NewClassPackagePage() {
