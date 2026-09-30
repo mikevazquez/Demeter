@@ -552,6 +552,19 @@ export async function createSingleClassMercadoPagoOrderAction(
   };
 }
 
+export async function createEnrollmentMercadoPagoOrderAction(productTemplateId: string, clientRequestKey: string) {
+  const returnBaseUrl = await mercadoPagoReturnBaseUrl();
+  if (!productTemplateId.trim() || !clientRequestKey.trim() || !returnBaseUrl) return { ok: false as const, error: "invalid_request" };
+  const { supabase } = await getStudentPortalContext();
+  const { data: attempt, error: attemptError } = await supabase.rpc("student_create_enrollment_checkout_attempt", { target_product_template_id: productTemplateId.trim(), target_client_request_key: clientRequestKey.trim() });
+  if (attemptError || !attempt?.id) return { ok: false as const, error: attemptError?.message?.includes("enrollment_already_active") ? "enrollment_already_active" : "checkout_failed" };
+  const { data, error } = await supabase.functions.invoke("create-mercadopago-order", { body: { productTemplateId: productTemplateId.trim(), clientRequestKey: clientRequestKey.trim(), returnBaseUrl } });
+  if (error) return { ok: false as const, error: await edgeFunctionErrorCode(error, "checkout_failed") };
+  const result = data as MercadoPagoOrderResult;
+  if (!result?.ok || !result.checkoutUrl) return { ok: false as const, error: result?.error ?? "checkout_failed" };
+  return { ok: true as const, checkoutUrl: result.checkoutUrl };
+}
+
 export async function createMercadoPagoOrderAction(
   productTemplateId: string,
   clientRequestKey: string,
