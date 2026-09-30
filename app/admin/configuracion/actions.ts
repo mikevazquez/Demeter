@@ -28,6 +28,15 @@ function identityConfigurationPath(formData: FormData, params?: Record<string, s
   return query.size ? `${target}?${query.toString()}` : target;
 }
 
+function regionalConfigurationPath(formData: FormData, params?: Record<string, string>) {
+  const target =
+    String(formData.get("return_to") ?? "").trim() === "region"
+      ? "/admin/configuracion/region"
+      : "/admin/configuracion";
+  const query = new URLSearchParams(params);
+  return query.size ? `${target}?${query.toString()}` : target;
+}
+
 function checkboxValue(formData: FormData, key: string) {
   return formData.get(key) === "on";
 }
@@ -243,7 +252,7 @@ export async function saveStudioRegionalSettingsAction(formData: FormData) {
     locale.length > 20 ||
     !/^\+[1-9][0-9]{0,3}$/.test(phoneCountryCallingCode)
   ) {
-    redirect(configurationPath({ error: "regional" }));
+    redirect(regionalConfigurationPath(formData, { error: "regional" }));
   }
 
   const { error } = await ctx.supabase.rpc("owner_update_studio_regional_settings_v2", {
@@ -259,10 +268,11 @@ export async function saveStudioRegionalSettingsAction(formData: FormData) {
       code: error.code,
       message: error.message.slice(0, 160),
     });
-    redirect(configurationPath({ error: "regional_save" }));
+    redirect(regionalConfigurationPath(formData, { error: "regional_save" }));
   }
 
   revalidatePath("/admin");
   revalidatePath("/admin/configuracion");
-  redirect(configurationPath({ saved: "regional" }));
+  revalidatePath("/admin/configuracion/region");
+  redirect(regionalConfigurationPath(formData, { saved: "regional" }));
 }
