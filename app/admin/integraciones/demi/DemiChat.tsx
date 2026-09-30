@@ -29,6 +29,9 @@ const ERROR_COPY: Record<string, string> = {
   assistant_demo_disabled: "La demo de Demi está desactivada.",
   conversation_not_found: "Esta conversación ya no está disponible. Inicia una nueva.",
   conversation_create_failed: "No se pudo iniciar la conversación.",
+  invalid_demo_identity: "La identidad de prueba ya no está disponible.",
+  conversation_identity_mismatch:
+    "La identidad cambió. Inicia una conversación nueva con esa identidad.",
   turn_create_failed: "No se pudo guardar tu mensaje.",
   conversation_history_failed: "No se pudo recuperar el contexto de la conversación.",
   openai_not_configured:
@@ -63,6 +66,8 @@ function toolLabel(name: string) {
     get_commercial_options: "Consultó paquetes y precios",
     get_studio_information: "Consultó información del estudio",
     get_policy_information: "Consultó políticas",
+    prepare_booking: "Validó y preparó la reserva",
+    execute_booking: "Ejecutó la reserva confirmada",
   };
   return labels[name] ?? name;
 }
@@ -70,11 +75,14 @@ function toolLabel(name: string) {
 export default function DemiChat({
   assistantName,
   openAIConfigured,
+  students,
 }: {
   assistantName: string;
   openAIConfigured: boolean;
+  students: Array<{ id: string; name: string }>;
 }) {
   const [conversationId, setConversationId] = useState<string | null>(null);
+  const [studentId, setStudentId] = useState("");
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [isPending, startTransition] = useTransition();
@@ -89,6 +97,14 @@ export default function DemiChat({
 
   function resetConversation() {
     if (isPending) return;
+    setConversationId(null);
+    setMessages([]);
+    setMessage("");
+  }
+
+  function changeIdentity(nextStudentId: string) {
+    if (isPending) return;
+    setStudentId(nextStudentId);
     setConversationId(null);
     setMessages([]);
     setMessage("");
@@ -109,6 +125,7 @@ export default function DemiChat({
     startTransition(async () => {
       const result = await sendDemiMessage({
         conversationId,
+        studentId: studentId || null,
         message: text,
       });
 
@@ -156,6 +173,27 @@ export default function DemiChat({
           </button>
         </header>
 
+        <div className="demi-identity">
+          <label htmlFor="demi-demo-identity">Simular WhatsApp de</label>
+          <select
+            id="demi-demo-identity"
+            value={studentId}
+            onChange={(event) => changeIdentity(event.target.value)}
+            disabled={isPending}
+          >
+            <option value="">Sin identidad · solo consultas</option>
+            {students.map((student) => (
+              <option key={student.id} value={student.id}>
+                {student.name}
+              </option>
+            ))}
+          </select>
+          <small>
+            En WhatsApp real Studio Flow identificará a la persona por el número; este selector
+            existe solo para UAT.
+          </small>
+        </div>
+
         <div className="demi-chat">
           {messages.length === 0 ? (
             <div className="demi-empty">
@@ -163,7 +201,8 @@ export default function DemiChat({
               <strong>Prueba una conversación real</strong>
               <p>
                 Pregunta por horarios, disponibilidad, actividades, precios, ubicación o
-                políticas. Demi debe consultar Studio Flow antes de responder.
+                políticas. Si seleccionas una identidad también puedes probar una reserva con
+                confirmación.
               </p>
               <div className="demi-prompts">
                 {[
@@ -171,6 +210,7 @@ export default function DemiChat({
                   "¿Cuánto cuesta?",
                   "¿Qué clases tienen mañana?",
                   "¿Dónde están?",
+                  "Quiero reservar Pole Fitness mañana a las 5",
                 ].map((prompt) => (
                   <button
                     key={prompt}
@@ -293,7 +333,8 @@ export default function DemiChat({
             <li>Studio Flow = fuente de verdad</li>
             <li>Sin acceso SQL para el modelo</li>
             <li>Tenant tomado del contexto autenticado</li>
-            <li>Solo tools de lectura en este bloque</li>
+            <li>Reservas en dos pasos: preparar → confirmar → ejecutar</li>
+            <li>Cancelación, reagendado y lista de espera siguen bloqueados</li>
             <li>store:false en OpenAI</li>
           </ul>
         </div>
