@@ -28,6 +28,7 @@ type Props = {
   technicalLevels: Array<{ disciplineName: string; levelTitle: string }>;
   showEvaluations: boolean;
   showDocuments: boolean;
+  canSell: boolean;
   currentPackage: {
     name: string;
     unlimited: boolean;
@@ -95,6 +96,7 @@ export default function Profile360Overview({
   technicalLevels,
   showEvaluations,
   showDocuments,
+  canSell,
   currentPackage,
   nextClass,
   historicalValueMinor,
@@ -170,6 +172,14 @@ export default function Profile360Overview({
             >
               {student.lifecycleStatus === "inactive" ? "Inactiva" : "Activa"}
             </span>
+            {canSell && student.lifecycleStatus !== "inactive" ? (
+              <Link
+                className="profile360-sale-link"
+                href={"/admin/ventas/nueva?student_id=" + student.id}
+              >
+                Registrar venta
+              </Link>
+            ) : null}
             <Link className="profile360-edit-link" href={href("profile")}>
               Editar
             </Link>
