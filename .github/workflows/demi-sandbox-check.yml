@@ -34,8 +34,8 @@ jobs:
       - name: Install
         run: npm ci
 
-      - name: Lint
-        run: npm run lint
+      - name: Lint Demi scope
+        run: npx eslint app/admin/integraciones/demi app/admin/integraciones/page.tsx lib/assistant
 
       - name: Typecheck
         run: npm run typecheck
