@@ -579,3 +579,48 @@
 .student-quick-create-panel .compact-form input{border-color:var(--students-v2-line);background:#fafbfc;color:var(--students-v2-text)}
 .student-quick-create-panel .primary-button{background:var(--students-v2-accent);border-color:var(--students-v2-accent)}
 @media(max-width:760px){.student-directory-page{background:var(--students-v2-bg)}}
+
+
+/* SF V2 · CRM directory architecture */
+.student-directory-crm-toolbar{margin:2px 0 16px;padding:4px;border:1px solid var(--students-v2-line);border-radius:14px;background:#fff;width:max-content;max-width:100%;overflow:auto}
+.student-directory-crm-toolbar .student-filter-chip{border:0;box-shadow:none;white-space:nowrap}
+.student-directory-crm-toolbar .student-filter-chip small{margin-left:6px;color:#9aa4b2;font-size:10px}
+.student-directory-crm-toolbar .student-filter-chip.is-active small{color:#3f8f84}
+.student-directory-page>.panel{overflow:hidden}
+.student-directory-page>.panel .panel-heading{padding:16px 20px}
+.student-directory-list{display:grid}
+.student-directory-card{display:grid;grid-template-columns:52px minmax(0,1fr) 22px;align-items:center;gap:14px;min-height:82px;padding:14px 20px}
+.student-directory-main{display:grid;grid-template-columns:minmax(220px,1.5fr) minmax(180px,1fr) 86px 88px;align-items:center;gap:20px}
+.student-directory-identity{display:grid;gap:5px;min-width:0}
+.student-directory-identity>strong{font-size:16px;line-height:1.2;color:#172033}
+.student-directory-meta{display:flex;gap:8px;min-width:0;font-size:11px;color:#7b8798}
+.student-directory-meta small{font-size:11px;color:#98a2b1}
+.student-package-summary{display:grid;gap:4px;min-width:0}
+.student-package-summary b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px}
+.student-package-summary small{font-size:10px}
+.student-credit-summary{display:grid;gap:2px;text-align:center}
+.student-credit-summary b{font-size:15px;color:#263247}
+.student-credit-summary small{font-size:9px;color:#8792a2}
+.student-state-pill{justify-self:start}
+.student-avatar{width:46px;height:46px;font-size:12px}
+.student-directory-arrow{font-size:22px}
+@media(max-width:900px){
+ .student-directory-main{grid-template-columns:minmax(0,1fr) 150px 70px}
+ .student-state-pill{display:none}
+}
+@media(max-width:680px){
+ .student-directory-header{gap:14px}
+ .student-directory-header h1{font-size:26px}
+ .student-directory-header>div>p:last-child{font-size:11px}
+ .student-directory-search input{min-height:46px;font-size:14px}
+ .student-directory-crm-toolbar{width:100%}
+ .student-directory-page>.panel .panel-heading{padding:13px 14px}
+ .student-directory-card{grid-template-columns:46px minmax(0,1fr) 16px;gap:11px;min-height:96px;padding:13px 14px}
+ .student-directory-main{grid-template-columns:minmax(0,1fr) auto;gap:7px 12px}
+ .student-directory-identity{grid-column:1/-1}
+ .student-directory-identity>strong{font-size:16px}
+ .student-package-summary{grid-column:1}
+ .student-credit-summary{grid-column:2;grid-row:2}
+ .student-package-summary b{font-size:11px}
+ .student-package-summary small{font-size:9px}
+}
