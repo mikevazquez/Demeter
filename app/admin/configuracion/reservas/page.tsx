@@ -5,6 +5,7 @@ import { getAdminContext } from "@/lib/auth/admin-context";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 
 import { ReservationPolicyForm } from "./ReservationPolicyForm";
+import "./reservas-v2.css";
 
 const errorCopy: Record<string, string> = {
   cutoff: "Revisa cuántas horas antes se puede cancelar sin penalización.",
