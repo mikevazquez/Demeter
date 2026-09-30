@@ -35,8 +35,13 @@ const termCopy: Record<string, string> = {
 
 const termOrder = ["monthly", "quarterly", "semiannual", "annual", "custom"];
 
-function packageTermKey(value: string | null) {
-  return value && termCopy[value] ? value : "custom";
+function packageTermKey(value: string | null, validityDays: number | null) {
+  if (value && termCopy[value]) return value;
+  if (validityDays === 30) return "monthly";
+  if (validityDays === 90) return "quarterly";
+  if (validityDays === 180) return "semiannual";
+  if (validityDays === 365) return "annual";
+  return "custom";
 }
 
 function money(minor: number, currency: string, locale: string) {
@@ -82,9 +87,7 @@ export default function StudentOnboardingForm({
   flowContext?: "onboarding" | "sale";
 }) {
   const [selectedId, setSelectedId] = useState(packages[0]?.id ?? "");
-  const [openPackageTerm, setOpenPackageTerm] = useState<string | null>(
-    packages[0] ? packageTermKey(packages[0].packageTerm) : null,
-  );
+  const [openPackageTerm, setOpenPackageTerm] = useState<string | null>(null);
   const [startMode, setStartMode] = useState("today");
   const [discountMode, setDiscountMode] = useState("none");
   const [discountValue, setDiscountValue] = useState("");
@@ -111,7 +114,7 @@ export default function StudentOnboardingForm({
         .map((term) => ({
           term,
           label: termCopy[term],
-          packages: packages.filter((item) => packageTermKey(item.packageTerm) === term),
+          packages: packages.filter((item) => packageTermKey(item.packageTerm, item.validityDays) === term),
         }))
         .filter((group) => group.packages.length > 0),
     [packages],
