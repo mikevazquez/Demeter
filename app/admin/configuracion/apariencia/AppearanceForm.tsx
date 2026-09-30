@@ -130,11 +130,7 @@ export function AppearanceForm({
             <input
               className="appearance-v2-color-code"
               value={primaryColor.toUpperCase()}
-              onChange={(event) => {
-                const value = event.target.value.toUpperCase();
-                if (/^#[0-9A-F]{0,6}$/.test(value)) setPrimaryColor(value);
-              }}
-              maxLength={7}
+              readOnly
               aria-label="Código del color principal"
             />
           </div>
