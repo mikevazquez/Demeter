@@ -19,6 +19,15 @@ function configurationPath(params?: Record<string, string>) {
   return query.size ? `/admin/configuracion?${query.toString()}` : "/admin/configuracion";
 }
 
+function identityConfigurationPath(formData: FormData, params?: Record<string, string>) {
+  const target =
+    String(formData.get("return_to") ?? "").trim() === "appearance"
+      ? "/admin/configuracion/apariencia"
+      : "/admin/configuracion";
+  const query = new URLSearchParams(params);
+  return query.size ? `${target}?${query.toString()}` : target;
+}
+
 function checkboxValue(formData: FormData, key: string) {
   return formData.get(key) === "on";
 }
@@ -47,15 +56,15 @@ export async function saveStudioPortalIdentityAction(formData: FormData) {
   const logo = formData.get("logo");
 
   if (name.length < 2 || name.length > 80) {
-    redirect(configurationPath({ error: "name" }));
+    redirect(identityConfigurationPath(formData, { error: "name" }));
   }
 
   if (tagline.length > 120) {
-    redirect(configurationPath({ error: "tagline" }));
+    redirect(identityConfigurationPath(formData, { error: "tagline" }));
   }
 
   if (!/^#[0-9A-F]{6}$/.test(primaryColor)) {
-    redirect(configurationPath({ error: "primary_color" }));
+    redirect(identityConfigurationPath(formData, { error: "primary_color" }));
   }
 
   let nextLogoPath = removeLogo ? null : (ctx.studio.logo_path ?? null);
@@ -65,11 +74,11 @@ export async function saveStudioPortalIdentityAction(formData: FormData) {
     const extension = extensionByMime[logo.type];
 
     if (!extension) {
-      redirect(configurationPath({ error: "logo_type" }));
+      redirect(identityConfigurationPath(formData, { error: "logo_type" }));
     }
 
     if (logo.size > MAX_LOGO_BYTES) {
-      redirect(configurationPath({ error: "logo_size" }));
+      redirect(identityConfigurationPath(formData, { error: "logo_size" }));
     }
 
     uploadedLogoPath = `${ctx.studio.id}/logo-${crypto.randomUUID()}.${extension}`;
@@ -87,7 +96,7 @@ export async function saveStudioPortalIdentityAction(formData: FormData) {
         code: uploadError.name,
         message: uploadError.message.slice(0, 160),
       });
-      redirect(configurationPath({ error: "logo_upload" }));
+      redirect(identityConfigurationPath(formData, { error: "logo_upload" }));
     }
 
     nextLogoPath = uploadedLogoPath;
@@ -110,7 +119,7 @@ export async function saveStudioPortalIdentityAction(formData: FormData) {
       code: updateError.code,
       message: updateError.message.slice(0, 160),
     });
-    redirect(configurationPath({ error: "identity_save" }));
+    redirect(identityConfigurationPath(formData, { error: "identity_save" }));
   }
 
   const previousLogoPath = ctx.studio.logo_path ?? null;
@@ -132,7 +141,7 @@ export async function saveStudioPortalIdentityAction(formData: FormData) {
   revalidatePath("/admin");
   revalidatePath("/admin/configuracion");
 
-  redirect(configurationPath({ saved: "identity" }));
+  redirect(identityConfigurationPath(formData, { saved: "identity" }));
 }
 
 export async function saveStudioOperatingPolicyAction(formData: FormData) {
