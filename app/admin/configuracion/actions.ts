@@ -166,7 +166,7 @@ export async function saveStudioRegionalSettingsAction(formData: FormData) {
     !/^[A-Z]{3}$/.test(currency) ||
     locale.length < 2 ||
     locale.length > 20 ||
-    !/^\\+[1-9][0-9]{0,3}$/.test(phoneCountryCallingCode)
+    !/^\+[1-9][0-9]{0,3}$/.test(phoneCountryCallingCode)
   ) {
     redirect(regionalConfigurationPath(formData, { error: "regional" }));
   }
