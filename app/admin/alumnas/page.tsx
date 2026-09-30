@@ -152,6 +152,12 @@ export default async function StudentsPage({
       activeStudentPlanUsage.usage >= activeStudentPlanUsage.limit_value,
   );
 
+  const studentUserIds = (allStudents ?? []).map((item) => item.user_id).filter((id): id is string => Boolean(id));
+  const { data: avatarProfiles } = studentUserIds.length
+    ? await supabase.from("profiles").select("id,avatar_url").in("id", studentUserIds)
+    : { data: [] as { id: string; avatar_url: string | null }[] };
+  const usersWithAvatar = new Set((avatarProfiles ?? []).filter((item) => Boolean(item.avatar_url)).map((item) => item.id));
+
   const acquisitionProductIds = [
     ...new Set((allAcquisitions ?? []).map((item) => item.product_template_id).filter(Boolean)),
   ];
@@ -447,7 +453,7 @@ export default async function StudentsPage({
               >
                 <span className="student-avatar" aria-hidden="true">
                   {initials(student.full_name)}
-                  {student.user_id ? (
+                  {student.user_id && usersWithAvatar.has(student.user_id) ? (
                     <Image
                       src={`/admin/alumnas/${student.id}/avatar`}
                       alt=""
@@ -460,10 +466,6 @@ export default async function StudentsPage({
                 <span className="student-directory-main">
                   <span className="student-directory-identity">
                     <strong>{student.full_name}</strong>
-                    <span className="student-directory-meta">
-                      {student.email || student.phone}
-                      {student.email && student.phone ? <small>{student.phone}</small> : null}
-                    </span>
                   </span>
                   {(() => {
                     const acquisition = currentAcquisitionFor(student.id);
