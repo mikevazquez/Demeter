@@ -140,6 +140,7 @@ export async function saveStudioPortalIdentityAction(formData: FormData) {
   revalidatePath(`/s/${ctx.studio.slug}`);
   revalidatePath("/admin");
   revalidatePath("/admin/configuracion");
+  revalidatePath("/admin/configuracion/apariencia");
 
   redirect(identityConfigurationPath(formData, { saved: "identity" }));
 }
