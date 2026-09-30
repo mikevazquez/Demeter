@@ -21,7 +21,7 @@ export default function QuickActions({canStudents,canSales,students,products,loc
  const total=product?Math.max(product.priceMinor-discount,0):0;
  const close=()=>{setOpen(null);setMessage(null)};
  return <div className="hoy-quick-root">
-   <button className="hoy-header-action" type="button" onClick={()=>setOpen(open?"": "menu" as any)}>Atajos</button>
+   <button className="hoy-header-action" type="button" onClick={()=>setOpen(open ? null : "menu")}>Atajos</button>
    {open==="menu"?<div className="hoy-shortcuts-menu hoy-shortcuts-menu-inline">
      {canStudents?<button onClick={()=>{setMessage(null);setOpen("student")}}>Nueva alumna</button>:null}
      {canSales?<button onClick={()=>{setMessage(null);setOpen("sale")}}>Nueva venta</button>:null}
