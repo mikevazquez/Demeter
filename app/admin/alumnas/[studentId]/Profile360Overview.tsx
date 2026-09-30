@@ -195,7 +195,7 @@ export default function Profile360Overview({
           Paquetes
         </Link>
         <Link className={activeView === "rewards" ? "is-active" : ""} href={href("rewards")}>
-          Rewards
+          Progreso
         </Link>
         {showEvaluations ? (
           <Link
@@ -210,11 +210,11 @@ export default function Profile360Overview({
             Documentos
           </Link>
         ) : null}
-        <Link className={activeView === "followup" ? "is-active" : ""} href={href("followup")}>
-          Seguimiento
-        </Link>
         <Link className={activeView === "history" ? "is-active" : ""} href={href("history")}>
-          Historial
+          Actividad
+        </Link>
+        <Link className={activeView === "profile" ? "is-active" : ""} href={href("profile")}>
+          Datos
         </Link>
       </nav>
 
@@ -300,17 +300,17 @@ export default function Profile360Overview({
             </section>
           ) : null}
 
-          <section className="profile360-approved-indicators" aria-label="Indicadores rápidos">
+          <section className="profile360-approved-indicators profile360-statistics" aria-label="Estadísticas">
             <article>
-              <span>Valor histórico</span>
+              <span>Compras históricas</span>
               <strong>{formatMoney(historicalValueMinor, locale, currency)}</strong>
             </article>
             <article>
-              <span>Recompensas</span>
+              <span>Recompensas disponibles</span>
               <strong>{rewardsAvailable === null ? "—" : rewardsAvailable}</strong>
             </article>
             <article>
-              <span>Inscripción</span>
+              <span>Estado de inscripción</span>
               <strong>
                 {enrollment?.status === "active"
                   ? enrollment.expiresOn
@@ -322,7 +322,7 @@ export default function Profile360Overview({
               </strong>
             </article>
             <article>
-              <span>Antigüedad</span>
+              <span>Desde</span>
               <strong>
                 {new Intl.DateTimeFormat(locale, {
                   month: "short",
