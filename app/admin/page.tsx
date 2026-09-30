@@ -23,7 +23,7 @@ const eligibilityCopy: Record<string, string> = {
   no_credits: "sin créditos",
 };
 
-const occupyingReservationStatuses = new Set(["reserved", "attended"]);
+const occupyingReservationStatuses = new Set(["reserved", "attended", "no_show"]);
 
 function formatExpiry(value: string | null, locale: string) {
   if (!value) return "Sin vencimiento";
