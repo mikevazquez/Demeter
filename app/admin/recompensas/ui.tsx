@@ -97,7 +97,7 @@ export function statusTone(status: string) {
   if (["cancelled", "revoked"].includes(status)) {
     return "border-rose-500/20 bg-rose-500/10 text-rose-300";
   }
-  return "border-white/10 bg-white/[0.04] text-zinc-300";
+  return "border-slate-200 bg-white text-slate-700";
 }
 
 export function StatusBadge({ status, label }: { status: string; label?: string }) {
@@ -124,19 +124,19 @@ export function MetricCard({
   detail?: ReactNode;
 }) {
   return (
-    <article className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-      <p className="text-xs font-semibold uppercase tracking-[0.15em] text-zinc-500">{label}</p>
-      <div className="mt-2 text-2xl font-semibold text-white">{value}</div>
-      {detail ? <div className="mt-1 text-xs text-zinc-500">{detail}</div> : null}
+    <article className="rounded-2xl border border-slate-200 bg-white p-4">
+      <p className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-500">{label}</p>
+      <div className="mt-2 text-2xl font-semibold text-slate-900">{value}</div>
+      {detail ? <div className="mt-1 text-xs text-slate-500">{detail}</div> : null}
     </article>
   );
 }
 
 export function EmptyState({ title, children }: { title: string; children?: ReactNode }) {
   return (
-    <div className="rounded-2xl border border-dashed border-white/10 bg-black/15 p-7 text-center">
-      <strong className="text-sm text-white">{title}</strong>
-      {children ? <div className="mt-2 text-sm leading-6 text-zinc-500">{children}</div> : null}
+    <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-7 text-center">
+      <strong className="text-sm text-slate-900">{title}</strong>
+      {children ? <div className="mt-2 text-sm leading-6 text-slate-500">{children}</div> : null}
     </div>
   );
 }
@@ -153,15 +153,15 @@ export function SectionCard({
   action?: ReactNode;
 }) {
   return (
-    <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+    <section className="rounded-2xl border border-slate-200 bg-white p-5">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           {eyebrow ? (
-            <p className="text-xs font-semibold uppercase tracking-[0.15em] text-[#FF0A8A]">
+            <p className="text-xs font-semibold uppercase tracking-[0.15em] text-teal-700">
               {eyebrow}
             </p>
           ) : null}
-          <h2 className="mt-1 text-xl font-semibold text-white">{title}</h2>
+          <h2 className="mt-1 text-xl font-semibold text-slate-900">{title}</h2>
         </div>
         {action}
       </div>
