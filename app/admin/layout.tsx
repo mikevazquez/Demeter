@@ -176,6 +176,21 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
               },
             ]
           : []),
+        ...(membership.role === "owner"
+          ? [
+              {
+                href: "/admin/mas",
+                label: "Más",
+                enabled: true,
+                secondary: true,
+                activeFor: [
+                  "/admin/configuracion/region",
+                  "/admin/configuracion/recursos",
+                  "/admin/suscripcion",
+                ],
+              },
+            ]
+          : []),
       ];
 
   const hasMoreDestinations =
