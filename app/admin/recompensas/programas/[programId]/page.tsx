@@ -95,7 +95,7 @@ export default async function ProgramDetailPage({
         <div>
           <Link
             href="/admin/recompensas/programas"
-            className="text-sm font-semibold text-zinc-400 hover:text-white"
+            className="text-sm font-semibold text-slate-600 hover:text-slate-900"
           >
             ← Programas
           </Link>
@@ -104,7 +104,7 @@ export default async function ProgramDetailPage({
             {hasDraft ? " · BORRADOR" : ""}
           </p>
           <h1 className="dashboard-title">{latestVersion.name}</h1>
-          <p className="mt-2 max-w-3xl text-sm leading-6 text-zinc-400">
+          <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
             {latestVersion.description || "Sin descripción."}
           </p>
         </div>
@@ -115,81 +115,81 @@ export default async function ProgramDetailPage({
       {query.error ? <div className="notice error">{query.error}</div> : null}
 
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-          <p className="text-xs uppercase tracking-[0.14em] text-zinc-500">Progresión</p>
-          <strong className="mt-2 block text-white">
+        <div className="rounded-2xl border border-slate-200 bg-white p-4">
+          <p className="text-xs uppercase tracking-[0.14em] text-slate-500">Progresión</p>
+          <strong className="mt-2 block text-slate-900">
             {latestVersion.progression_mode === "sequential" ? "Secuencial" : "Acumulativa"}
           </strong>
         </div>
-        <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-          <p className="text-xs uppercase tracking-[0.14em] text-zinc-500">Audiencia</p>
-          <strong className="mt-2 block text-white">
+        <div className="rounded-2xl border border-slate-200 bg-white p-4">
+          <p className="text-xs uppercase tracking-[0.14em] text-slate-500">Audiencia</p>
+          <strong className="mt-2 block text-slate-900">
             {audience.scope === "all_students" ? "Todas" : "Activas"}
           </strong>
         </div>
-        <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-          <p className="text-xs uppercase tracking-[0.14em] text-zinc-500">Participaciones</p>
-          <strong className="mt-2 block text-white">{participationCount ?? 0}</strong>
+        <div className="rounded-2xl border border-slate-200 bg-white p-4">
+          <p className="text-xs uppercase tracking-[0.14em] text-slate-500">Participaciones</p>
+          <strong className="mt-2 block text-slate-900">{participationCount ?? 0}</strong>
         </div>
-        <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-          <p className="text-xs uppercase tracking-[0.14em] text-zinc-500">Niveles conseguidos</p>
-          <strong className="mt-2 block text-white">{unlockCount ?? 0}</strong>
+        <div className="rounded-2xl border border-slate-200 bg-white p-4">
+          <p className="text-xs uppercase tracking-[0.14em] text-slate-500">Niveles conseguidos</p>
+          <strong className="mt-2 block text-slate-900">{unlockCount ?? 0}</strong>
         </div>
       </section>
 
       {canManage && hasDraft ? (
-        <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
-          <p className="text-xs font-semibold uppercase tracking-[0.15em] text-[#FF0A8A]">
+        <section className="rounded-2xl border border-slate-200 bg-white p-5">
+          <p className="text-xs font-semibold uppercase tracking-[0.15em] text-teal-700">
             CONFIGURACIÓN DEL BORRADOR
           </p>
           <form action={updateProgramDraftAction} className="mt-4 grid gap-4 md:grid-cols-2">
             <input type="hidden" name="program_id" value={program.id} />
-            <label className="grid gap-1 text-sm text-zinc-300 md:col-span-2">
+            <label className="grid gap-1 text-sm text-slate-700 md:col-span-2">
               Nombre
               <input
                 name="name"
                 required
                 defaultValue={latestVersion.name}
-                className="rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 text-white"
+                className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-slate-900"
               />
             </label>
-            <label className="grid gap-1 text-sm text-zinc-300 md:col-span-2">
+            <label className="grid gap-1 text-sm text-slate-700 md:col-span-2">
               Descripción
               <textarea
                 name="description"
                 rows={3}
                 defaultValue={latestVersion.description ?? ""}
-                className="rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 text-white"
+                className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-slate-900"
               />
             </label>
-            <label className="grid gap-1 text-sm text-zinc-300">
+            <label className="grid gap-1 text-sm text-slate-700">
               Progresión
               <select
                 name="progression_mode"
                 defaultValue={latestVersion.progression_mode}
-                className="rounded-xl border border-white/10 bg-[#111114] px-3 py-2.5 text-white"
+                className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-slate-900"
               >
                 <option value="cumulative">Acumulativa</option>
                 <option value="sequential">Secuencial</option>
               </select>
             </label>
-            <label className="grid gap-1 text-sm text-zinc-300">
+            <label className="grid gap-1 text-sm text-slate-700">
               Audiencia
               <select
                 name="audience_scope"
                 defaultValue={String(audience.scope ?? "all_active_students")}
-                className="rounded-xl border border-white/10 bg-[#111114] px-3 py-2.5 text-white"
+                className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-slate-900"
               >
                 <option value="all_active_students">Alumnas activas</option>
                 <option value="all_students">Todas las alumnas</option>
               </select>
             </label>
-            <label className="grid gap-1 text-sm text-zinc-300">
+            <label className="grid gap-1 text-sm text-slate-700">
               Elegibilidad
               <select
                 name="eligibility_mode"
                 defaultValue={String(audience.eligibility_mode ?? "continuous")}
-                className="rounded-xl border border-white/10 bg-[#111114] px-3 py-2.5 text-white"
+                className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-slate-900"
               >
                 <option value="continuous">Continua</option>
                 <option value="lock_on_join">Se conserva al entrar</option>
@@ -197,7 +197,7 @@ export default async function ProgramDetailPage({
             </label>
             <div className="flex items-end justify-end">
               <PendingActionButton
-                className="rounded-xl border border-white/10 bg-white/[0.05] px-4 py-2.5 text-sm font-semibold text-white"
+                className="rounded-xl border border-slate-200 bg-white/[0.05] px-4 py-2.5 text-sm font-semibold text-slate-900"
                 pendingLabel="Guardando…"
               >
                 Guardar configuración
@@ -207,18 +207,18 @@ export default async function ProgramDetailPage({
         </section>
       ) : null}
 
-      <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+      <section className="rounded-2xl border border-slate-200 bg-white p-5">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.15em] text-[#FF0A8A]">
+            <p className="text-xs font-semibold uppercase tracking-[0.15em] text-teal-700">
               NIVELES
             </p>
-            <h2 className="mt-1 text-xl font-semibold text-white">Ruta del programa</h2>
+            <h2 className="mt-1 text-xl font-semibold text-slate-900">Ruta del programa</h2>
           </div>
           {canManage && hasDraft ? (
             <Link
               href={`/admin/recompensas/programas/${program.id}/niveles/nuevo`}
-              className="rounded-xl bg-[#FF0A8A] px-4 py-2.5 text-sm font-semibold text-white"
+              className="rounded-xl bg-teal-600 px-4 py-2.5 text-sm font-semibold text-slate-900"
             >
               + Agregar nivel
             </Link>
@@ -226,7 +226,7 @@ export default async function ProgramDetailPage({
         </div>
 
         {!levels?.length ? (
-          <div className="mt-5 rounded-2xl border border-dashed border-white/10 p-7 text-center text-sm text-zinc-500">
+          <div className="mt-5 rounded-2xl border border-dashed border-slate-200 p-7 text-center text-sm text-slate-500">
             Este borrador todavía no tiene niveles.
           </div>
         ) : (
@@ -238,19 +238,19 @@ export default async function ProgramDetailPage({
               return (
                 <article
                   key={level.id}
-                  className="rounded-2xl border border-white/10 bg-black/20 p-4"
+                  className="rounded-2xl border border-slate-200 bg-white p-4"
                 >
                   <div className="flex flex-wrap items-start justify-between gap-4">
                     <div>
-                      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#FF0A8A]">
+                      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-teal-700">
                         NIVEL {level.level_order}
                         {level.level_visibility === "hidden" ? " · OCULTO" : ""}
                       </p>
-                      <h3 className="mt-1 text-lg font-semibold text-white">{level.title}</h3>
-                      <p className="mt-2 text-sm text-zinc-400">
+                      <h3 className="mt-1 text-lg font-semibold text-slate-900">{level.title}</h3>
+                      <p className="mt-2 text-sm text-slate-600">
                         {conditionsLabel(ruleVersion?.condition_definition)}
                       </p>
-                      <p className="mt-2 text-xs text-zinc-500">
+                      <p className="mt-2 text-xs text-slate-500">
                         {level.reward_visibility === "surprise"
                           ? "Recompensa sorpresa"
                           : rewardDefinitionLabel(ruleVersion?.reward_definition, ctx.studio.locale, ctx.studio.currency)}
@@ -261,7 +261,7 @@ export default async function ProgramDetailPage({
                       <div className="flex gap-2">
                         <Link
                           href={`/admin/recompensas/programas/${program.id}/niveles/${encodeURIComponent(level.level_key)}`}
-                          className="rounded-xl border border-white/10 px-3 py-2 text-sm font-semibold text-white"
+                          className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-900"
                         >
                           Configurar
                         </Link>
@@ -283,13 +283,13 @@ export default async function ProgramDetailPage({
       </section>
 
       {canManage ? (
-        <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+        <section className="rounded-2xl border border-slate-200 bg-white p-5">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.15em] text-zinc-500">
+              <p className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-500">
                 ESTADO DEL PROGRAMA
               </p>
-              <p className="mt-2 text-sm text-zinc-400">
+              <p className="mt-2 text-sm text-slate-600">
                 Lo conseguido por las alumnas nunca se elimina al cambiar el estado.
               </p>
             </div>
@@ -298,7 +298,7 @@ export default async function ProgramDetailPage({
                 <form action={startProgramVersionAction}>
                   <input type="hidden" name="program_id" value={program.id} />
                   <PendingActionButton
-                    className="rounded-xl border border-white/10 px-3 py-2 text-sm font-semibold text-white"
+                    className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-900"
                     pendingLabel="Preparando…"
                   >
                     Crear nueva versión
@@ -310,7 +310,7 @@ export default async function ProgramDetailPage({
                 <form action={publishProgramAction}>
                   <input type="hidden" name="program_id" value={program.id} />
                   <PendingActionButton
-                    className="rounded-xl bg-[#FF0A8A] px-3 py-2 text-sm font-semibold text-white"
+                    className="rounded-xl bg-teal-600 px-3 py-2 text-sm font-semibold text-slate-900"
                     pendingLabel="Publicando…"
                   >
                     Publicar versión
