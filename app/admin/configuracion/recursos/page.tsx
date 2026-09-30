@@ -95,7 +95,7 @@ export default async function ResourcesConfigurationPage({
       <header className={styles.header}>
         <div className={styles.headerCopy}>
           <Link className={styles.backLink} href="/admin/configuracion">
-            ← Configuración
+            ← Avanzado
           </Link>
           <p className={styles.eyebrow}>CONFIGURACIÓN · {ctx.studio.name}</p>
           <h1>Recursos</h1>
