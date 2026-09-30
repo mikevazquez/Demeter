@@ -43,6 +43,12 @@ const items: MoreItem[] = [
     capability: CAPABILITIES.PRODUCTS_READ,
   },
   {
+    title: "Reservas",
+    description: "Cancelaciones, no-show y penalizaciones del estudio.",
+    href: "/admin/configuracion/reservas",
+    ownerOnly: true,
+  },
+  {
     title: "Equipo",
     description: "Miembros del estudio, perfiles operativos y estado.",
     href: "/admin/instructores",
