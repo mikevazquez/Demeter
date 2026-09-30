@@ -263,7 +263,6 @@ async function prepareBooking(
   return {
     ok: true,
     status: "confirmation_required",
-    pending_action_ref: `action:${pending.id}`,
     expires_at: expiresAt,
     summary: sessionInfo.summary,
   };
@@ -296,7 +295,6 @@ async function executeBooking(
       ok: true,
       status: "executed",
       already_executed: true,
-      pending_action_ref: `action:${pending.id}`,
       summary: pending.confirmation_summary,
       reservation_ref: pending.execution_ref ?? null,
     };
@@ -398,7 +396,6 @@ async function executeBooking(
   return {
     ok: true,
     status: "executed",
-    pending_action_ref: `action:${pending.id}`,
     reservation_ref: reservationRef,
     summary: sessionInfo.summary,
   };
