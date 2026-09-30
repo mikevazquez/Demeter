@@ -7,7 +7,7 @@ permissions:
   contents: write
 jobs:
   format:
-    if: ${{ !contains(github.event.head_commit.message, 'style(v2): format release candidate') }}
+    if: "${{ !contains(github.event.head_commit.message, 'style(v2): format release candidate') }}"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
