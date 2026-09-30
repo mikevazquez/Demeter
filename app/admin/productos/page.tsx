@@ -82,7 +82,7 @@ const categories = [
     icon: "course" as const,
     href: "/admin/productos/cursos-talleres",
     tone: "is-purple",
-    ready: false,
+    ready: true,
   },
 ];
 
