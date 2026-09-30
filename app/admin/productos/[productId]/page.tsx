@@ -37,6 +37,20 @@ export default async function ProductDetailPage({
   if (!product) notFound();
 
   const productDisciplines: ProductDiscipline[] = product.product_template_disciplines ?? [];
+  const { data: activityLinks } = await ctx.supabase
+    .from("product_template_activities")
+    .select("class_template_id")
+    .eq("studio_id", ctx.studio.id)
+    .eq("product_template_id", product.id);
+  const activityIds = (activityLinks ?? []).map((item) => item.class_template_id);
+  const { data: linkedActivities } = activityIds.length
+    ? await ctx.supabase
+        .from("class_templates")
+        .select("id,name")
+        .eq("studio_id", ctx.studio.id)
+        .in("id", activityIds)
+    : { data: [] as { id: string; name: string }[] };
+  const isActivityScoped = Boolean(linkedActivities?.length);
   const isEnrollment = product.product_type === "enrollment";
   const isPackageLike = product.product_type === "package" || product.product_type === "membership";
   const { data: scheduleLinks } = isPackageLike
@@ -140,7 +154,26 @@ export default async function ProductDetailPage({
         </div>
       </section>
 
-      {!isEnrollment ? (
+      {isActivityScoped ? (
+        <section className="rounded-2xl border border-violet-500/20 bg-violet-500/[0.06] p-5">
+          <h2 className="font-semibold text-white">Actividad vinculada</h2>
+          <p className="mt-1 text-sm text-zinc-400">
+            Este producto solo puede utilizarse en la actividad indicada.
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {(linkedActivities ?? []).map((activity) => (
+              <span
+                key={activity.id}
+                className="rounded-full bg-violet-500/15 px-3 py-1.5 text-sm text-violet-200"
+              >
+                {activity.name}
+              </span>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      {!isEnrollment && !isActivityScoped ? (
         <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
           <h2 className="font-semibold text-white">Disciplinas incluidas</h2>
           <div className="mt-3 flex flex-wrap gap-2">
@@ -183,7 +216,9 @@ export default async function ProductDetailPage({
             </>
           ) : (
             <p className="mt-2 text-sm text-zinc-400">
-              Todos los horarios de las disciplinas seleccionadas.
+              {isActivityScoped
+                ? `Todos los horarios de ${linkedActivities?.map((item) => item.name).join(", ")}.`
+                : "Todos los horarios de las disciplinas seleccionadas."}
             </p>
           )}
         </section>
