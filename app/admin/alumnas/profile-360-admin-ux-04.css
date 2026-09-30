@@ -1129,3 +1129,19 @@
  .admin-ux04-profile360 .profile360-package-card-summary{gap:8px}
  .admin-ux04-profile360 .profile360-package-card-side{align-items:flex-start}
 }
+
+
+/* SF V2 · profile header alignment + contrast audit */
+.admin-ux04-profile360 .profile360-approved-meta{display:grid;grid-template-columns:1fr;gap:7px;justify-items:stretch;min-width:132px}
+.admin-ux04-profile360 .profile360-approved-meta>a,.admin-ux04-profile360 .profile360-approved-meta>span{display:flex;align-items:center;justify-content:center;width:100%;min-height:34px;box-sizing:border-box;border-radius:10px;padding:7px 10px;font-size:10px;font-weight:750;line-height:1.1}
+.admin-ux04-profile360 .profile360-level-pill{border:1px solid #b8ded8;background:#edf8f6!important;color:#247f74!important}
+.admin-ux04-profile360 .profile360-state-pill{border:1px solid #c7e6d7;background:#f0faf5!important;color:#2c7a58!important}
+.admin-ux04-profile360 .profile360-edit-link{border:1px solid #cad3dd!important;background:#fff!important;color:#263247!important}
+.admin-ux04-profile360 .profile360-approved-next strong,.admin-ux04-profile360 .profile360-approved-empty{color:#344258!important}
+.admin-ux04-profile360 .profile360-approved-next span,.admin-ux04-profile360 .profile360-approved-package-balance span,.admin-ux04-profile360 .profile360-approved-package-expiry span{color:#7b8798!important}
+.admin-ux04-profile360 .status-pill,.admin-ux04-profile360 .count-badge{color:#315f59!important}
+@media(max-width:680px){
+ .admin-ux04-profile360 .profile360-approved-person{grid-template-columns:58px minmax(0,1fr);align-items:start}
+ .admin-ux04-profile360 .profile360-approved-meta{grid-column:1/-1;grid-template-columns:repeat(3,minmax(0,1fr));width:100%;min-width:0}
+ .admin-ux04-profile360 .profile360-approved-meta>a,.admin-ux04-profile360 .profile360-approved-meta>span{min-height:36px;padding:7px 6px;font-size:9px}
+}
