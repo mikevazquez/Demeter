@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { PurchasePackageButton } from "@/app/student/paquete/purchase-package-button";
+import PurchaseEnrollmentButton from "@/app/student/paquete/PurchaseEnrollmentButton";
 import {
   formatDate,
   formatMoney,
@@ -101,6 +102,9 @@ export default async function StudentPackagePage() {
     ? daysRemaining(activePackage.expires_on, studio.timezone)
     : null;
 
+  const { data: enrollmentProducts } = await supabase.from("product_templates").select("id,name,price_minor,currency,validity_days").eq("studio_id",membership.studio_id).eq("active",true).eq("product_type","enrollment").order("validity_days",{ascending:true,nullsFirst:false});
+  const enrollmentMissing = !snapshot.enrollment?.active_now;
+
   const { data: purchasableProductRows } = await supabase
     .from("product_templates")
     .select(
@@ -180,6 +184,9 @@ export default async function StudentPackagePage() {
           entrenando.
         </p>
       </header>
+
+
+      {enrollmentMissing ? <section className="rounded-3xl border border-amber-400/30 bg-amber-400/[0.06] p-5 sm:p-6"><p className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-200">Inscripción requerida</p><h2 className="mt-2 text-xl font-semibold text-white">Tu inscripción no está vigente</h2><p className="mt-2 text-sm leading-6 text-zinc-300">Necesitas una inscripción vigente para reservar. Puedes pagarla ahora por separado o se agregará automáticamente cuando compres un paquete o una clase suelta.</p><div className="mt-4 grid gap-3">{(enrollmentProducts??[]).map((item)=><div key={item.id} className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/10 bg-black/20 p-4"><div><strong className="text-sm text-white">{item.validity_days==null?"Inscripción vitalicia":`Inscripción · ${item.validity_days} días`}</strong><p className="mt-1 text-xs text-zinc-400">{formatMoney(item.price_minor,item.currency)}</p></div><PurchaseEnrollmentButton productTemplateId={item.id} label="Pagar inscripción" /></div>)}</div></section> : null}
 
       {activePackage ? (
         <>
@@ -507,10 +514,7 @@ export default async function StudentPackagePage() {
                         <p className="max-w-[13rem] text-[11px] leading-4 text-zinc-600">
                           Serás enviado a Mercado Pago para completar el pago.
                         </p>
-                        <PurchasePackageButton
-                          productTemplateId={product.id}
-                          productName={product.name}
-                        />
+                        <div className="space-y-2">{enrollmentMissing ? <p className="text-[11px] text-amber-200">Incluye la inscripción requerida en el checkout.</p> : null}<PurchasePackageButton productTemplateId={product.id} productName={product.name} /></div>
                       </div>
                     </article>
                   ))}
