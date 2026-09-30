@@ -1775,3 +1775,90 @@
   .today-roster-header.compact { align-items: center; }
   .today-add-student-button.is-labeled { min-height: 38px; }
 }
+
+/* Studio Flow V2 · Hoy final */
+.hoy-dashboard.hoy-approved { max-width: 1040px; gap: 12px; }
+.hoy-title-block { display:flex; align-items:end; justify-content:space-between; gap:18px; padding:8px 2px 2px; }
+.hoy-title-block > div:first-child { display:grid; gap:5px; }
+.hoy-eyebrow { color:#ff5caf; font-size:9px; font-weight:850; letter-spacing:.16em; }
+.hoy-day-summary { display:flex; align-items:baseline; gap:5px; color:#8994a4; font-size:10px; white-space:nowrap; }
+.hoy-day-summary strong { color:#eef1f5; font-size:16px; }
+.hoy-day-summary i { width:3px; height:3px; margin:0 4px; border-radius:999px; background:#56606e; }
+.hoy-week-card { border-radius:16px; background:#0d1218; box-shadow:none; }
+.hoy-week-heading { grid-template-columns:34px minmax(0,1fr) 34px; padding:7px 10px 2px; }
+.hoy-week-heading > a { width:34px; height:34px; border:0; background:transparent; }
+.hoy-week-card .mock-week-calendar { padding:4px 8px 8px; }
+.hoy-week-card .mock-week-day { min-height:48px; border-radius:10px; }
+.hoy-week-card .mock-week-day strong { font-size:15px; }
+.hoy-glance { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:1px; overflow:hidden; border:1px solid #242d38; border-radius:14px; background:#242d38; }
+.hoy-glance > * { min-width:0; display:grid; gap:2px; padding:10px 13px; background:#0d1218; color:inherit; text-decoration:none; }
+.hoy-glance strong { overflow:hidden; color:#f3f5f8; font-size:16px; line-height:1.1; text-overflow:ellipsis; white-space:nowrap; }
+.hoy-glance span { color:#818c9c; font-size:9px; }
+.today-class-list { gap:7px; }
+.today-class-card { border-radius:15px; background:#0e141b; box-shadow:none; }
+.today-class-summary { min-height:66px; grid-template-columns:4px 72px minmax(0,1fr) auto 30px; gap:10px; }
+.today-class-time { justify-content:center; color:#c1c8d2; font-size:12px; font-weight:750; }
+.today-class-copy { gap:2px; }
+.today-class-copy strong { font-size:14px; }
+.today-class-meta { color:#7f8a99 !important; font-size:9px !important; }
+.today-class-state-row { margin-top:1px; }
+.today-class-state { padding:3px 6px; border:0; font-size:8px; }
+.today-class-countdown { padding:3px 6px; border:0; font-size:8px; }
+.today-class-capacity { min-width:44px; justify-items:center; gap:0; }
+.today-class-capacity b { color:#f4f5f7; font-size:15px; line-height:1; }
+.today-class-capacity > small:not(.today-class-minimum-badge) { margin-top:3px; color:#697483; font-size:7px; font-weight:650; }
+.today-class-chevron { width:27px; height:27px; background:transparent; font-size:17px; }
+.today-class-card .today-session-drawer { padding:11px; }
+.today-roster-header.compact { min-height:38px; }
+.today-roster-header.compact h3 { margin:0; font-size:13px; }
+.today-roster-header.compact span { font-size:9px; }
+.today-add-student-button.is-labeled { height:34px; border:1px solid rgba(255,10,138,.3); background:rgba(255,10,138,.07); color:#ff8fc7; }
+.today-add-panel { margin-top:3px; border-radius:13px; }
+.today-student-list.compact { gap:5px; }
+.today-student-card.compact { border-radius:12px; background:rgba(255,255,255,.018); }
+.today-correction-details, .today-session-more { font-size:10px; }
+.today-correction-details > summary, .today-session-more > summary { width:fit-content; cursor:pointer; color:#9da7b5; list-style:none; }
+.today-correction-details > summary::-webkit-details-marker, .today-session-more > summary::-webkit-details-marker { display:none; }
+.today-correction-details[open] > summary { color:#ff8fc7; }
+.today-correction-form { margin-top:7px; }
+.today-session-more { justify-self:end; }
+.today-session-more a { display:block; margin-top:7px; color:#ff8fc7; text-decoration:none; }
+.today-attendance-footer { padding-top:6px; border-top:1px solid rgba(255,255,255,.06); }
+.today-attendance-footer p { margin:4px 0 0; color:#6f7a89; font-size:9px; }
+.today-attendance-summary { gap:10px; font-size:9px; }
+.today-session-detail-link { display:none; }
+
+@media (max-width:760px) {
+  .hoy-approved { display:grid; grid-template-columns:1fr; padding:12px 14px 92px; row-gap:9px; }
+  .hoy-product-header { grid-column:1; grid-row:auto; min-height:44px; padding-bottom:0; }
+  .hoy-title-block { grid-column:1; grid-row:auto; align-items:center; padding:3px 1px; }
+  .hoy-title-block h1 { font-size:25px; }
+  .hoy-title-block p { display:none; }
+  .hoy-week-card { display:block; grid-column:1; }
+  .hoy-week-heading { grid-column:auto; grid-row:auto; grid-template-columns:30px minmax(0,1fr) 30px; }
+  .hoy-week-heading > a { width:30px; height:30px; }
+  .hoy-week-card .mock-week-calendar { grid-column:auto; grid-row:auto; min-height:0; padding:3px 6px 7px; border:0; border-radius:0; background:transparent; box-shadow:none; }
+  .hoy-week-card .mock-week-day { min-height:43px; }
+  .hoy-glance { grid-column:1; }
+  .hoy-glance > * { padding:9px 10px; }
+  .hoy-glance strong { font-size:14px; }
+  .hoy-glance span { font-size:8px; }
+  .today-class-list { grid-column:1; }
+  .today-class-summary { min-height:62px; grid-template-columns:4px 56px minmax(0,1fr) 38px 24px; gap:7px; padding-right:8px; }
+  .today-class-time { font-size:10px; }
+  .today-class-copy strong { font-size:13px; }
+  .today-class-meta { display:none; }
+  .today-class-capacity b { font-size:14px; }
+  .today-class-chevron { width:24px; height:24px; }
+  .today-class-evaluation-summary { display:none; }
+}
+@media (max-width:430px) {
+  .hoy-approved { padding-inline:12px; }
+  .hoy-product-wordmark small { display:none; }
+  .hoy-day-summary span { display:none; }
+  .hoy-day-summary i { display:none; }
+  .hoy-day-summary { gap:8px; }
+  .hoy-week-heading > strong { font-size:8px; }
+  .today-class-summary { grid-template-columns:4px 52px minmax(0,1fr) 34px 22px; gap:6px; }
+  .today-class-state-row { gap:4px; }
+}
