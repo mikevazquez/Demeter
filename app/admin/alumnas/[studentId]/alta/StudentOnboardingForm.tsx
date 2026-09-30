@@ -166,7 +166,7 @@ export default function StudentOnboardingForm({
   return (
     <form
       action={createStudentOnboardingSale}
-      className="grid gap-5"
+      className={flowContext === "sale" ? "sales-v2-flow grid gap-5" : "grid gap-5"}
       onSubmit={(event) => {
         if (completedSaleId) event.preventDefault();
       }}
