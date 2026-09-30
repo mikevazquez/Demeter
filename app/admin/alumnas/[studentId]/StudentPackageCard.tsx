@@ -27,19 +27,20 @@ type Props = {
   classes: ClassEvent[];
   editable: boolean;
   timeZone: string;
+  locale: string;
 };
 
-function formatDate(value: string | null) {
+function formatDate(value: string | null, locale: string) {
   if (!value) return "Sin fecha";
-  return new Intl.DateTimeFormat("es-MX", {
+  return new Intl.DateTimeFormat(locale, {
     day: "numeric",
     month: "short",
     year: "numeric",
   }).format(new Date(value + "T12:00:00Z"));
 }
 
-function formatClassDate(value: string, timeZone: string) {
-  return new Intl.DateTimeFormat("es-MX", {
+function formatClassDate(value: string, timeZone: string, locale: string) {
+  return new Intl.DateTimeFormat(locale, {
     timeZone,
     day: "numeric",
     month: "short",
@@ -75,7 +76,21 @@ export default function StudentPackageCard({
   classes,
   editable,
   timeZone,
+  locale,
 }: Props) {
+  const attendedCount = classes.filter((event) => event.status === "attended").length;
+  const reservedCount = classes.filter((event) => event.status === "reserved").length;
+  const noShowCount = classes.filter((event) => event.status === "no_show").length;
+  const lateCancellationCount = classes.filter((event) => event.status === "cancelled_late").length;
+  const onTimeCancellationCount = classes.filter((event) => event.status === "cancelled_on_time").length;
+  const studioCancellationCount = classes.filter((event) => event.status === "cancelled_by_studio").length;
+  const consumedCount = attendedCount + noShowCount + lateCancellationCount;
+  const disciplineCounts = Array.from(
+    classes
+      .filter((event) => event.status === "attended")
+      .reduce((map, event) => map.set(event.className, (map.get(event.className) ?? 0) + 1), new Map<string, number>()),
+  ).sort((left, right) => right[1] - left[1]);
+
   const eyebrow =
     kind === "current"
       ? "PAQUETE ACTUAL"
@@ -92,9 +107,9 @@ export default function StudentPackageCard({
             <h3>{acquisition.name}</h3>
             <span>
               {acquisition.startsOn && acquisition.expiresOn
-                ? formatDate(acquisition.startsOn) + " → " + formatDate(acquisition.expiresOn)
+                ? formatDate(acquisition.startsOn, locale) + " → " + formatDate(acquisition.expiresOn, locale)
                 : acquisition.startsOn
-                  ? "Inicia " + formatDate(acquisition.startsOn)
+                  ? "Inicia " + formatDate(acquisition.startsOn, locale)
                   : kind === "scheduled"
                     ? "Inicio programado"
                     : "Sin vigencia registrada"}
@@ -120,11 +135,11 @@ export default function StudentPackageCard({
         <div className="profile360-package-facts">
           <div>
             <span>Inicio</span>
-            <strong>{formatDate(acquisition.startsOn)}</strong>
+            <strong>{formatDate(acquisition.startsOn, locale)}</strong>
           </div>
           <div>
             <span>Vencimiento</span>
-            <strong>{formatDate(acquisition.expiresOn)}</strong>
+            <strong>{formatDate(acquisition.expiresOn, locale)}</strong>
           </div>
           <div>
             <span>Créditos</span>
@@ -137,6 +152,36 @@ export default function StudentPackageCard({
             <strong>{classes.length}</strong>
           </div>
         </div>
+
+        <section className="profile360-package-usage">
+          <div className="profile360-package-subheading">
+            <strong>Consumo del paquete</strong>
+            <span>{consumedCount} consumidas</span>
+          </div>
+          <div className="profile360-package-usage-stats">
+            <div><span>Asistencias</span><strong>{attendedCount}</strong></div>
+            <div><span>No shows</span><strong>{noShowCount}</strong></div>
+            <div><span>Cancelaciones tardías</span><strong>{lateCancellationCount}</strong></div>
+            <div><span>Cancelaciones a tiempo</span><strong>{onTimeCancellationCount}</strong></div>
+          </div>
+          {disciplineCounts.length ? (
+            <div className="profile360-package-disciplines">
+              <span>Clases asistidas por disciplina</span>
+              <div>
+                {disciplineCounts.map(([name, count]) => (
+                  <b key={name}>{name} · {count}</b>
+                ))}
+              </div>
+            </div>
+          ) : null}
+          {(reservedCount > 0 || studioCancellationCount > 0) ? (
+            <p className="profile360-package-secondary">
+              {reservedCount > 0 ? reservedCount + " reservada" + (reservedCount === 1 ? "" : "s") : ""}
+              {reservedCount > 0 && studioCancellationCount > 0 ? " · " : ""}
+              {studioCancellationCount > 0 ? studioCancellationCount + " cancelada" + (studioCancellationCount === 1 ? "" : "s") + " por el estudio" : ""}
+            </p>
+          ) : null}
+        </section>
 
         {editable ? (
           <details className="profile360-package-edit">
@@ -210,7 +255,7 @@ export default function StudentPackageCard({
                   <div key={event.id} className="profile360-package-class-row">
                     <div>
                       <strong>{event.className}</strong>
-                      <span>{formatClassDate(event.startsAt, timeZone)}</span>
+                      <span>{formatClassDate(event.startsAt, timeZone, locale)}</span>
                     </div>
                     <div>
                       <strong>{classStatusLabel(event.status)}</strong>

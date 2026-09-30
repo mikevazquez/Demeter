@@ -11,6 +11,7 @@ import { notFound } from "next/navigation";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getAdminContext } from "@/lib/auth/admin-context";
 import {
+  resolveStudentOperatingCharge,
   unlockMedalsAccess,
   updateCommunicationPreferences,
   updateDynamicProfileFields,
@@ -64,19 +65,19 @@ function scalarValue(value: unknown): string {
   return "";
 }
 
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat("es-MX", {
+function formatDate(value: string, locale: string) {
+  return new Intl.DateTimeFormat(locale, {
     day: "numeric",
     month: "short",
     year: "numeric",
   }).format(new Date(`${value}T12:00:00Z`));
 }
 
-function formatDateTime(value: string) {
-  return new Intl.DateTimeFormat("es-MX", {
+function formatDateTime(value: string, timeZone: string, locale: string) {
+  return new Intl.DateTimeFormat(locale, {
     dateStyle: "medium",
     timeStyle: "short",
-    timeZone: "America/Mexico_City",
+    timeZone,
   }).format(new Date(value));
 }
 
@@ -92,7 +93,12 @@ function rewardStatusLabel(status: string) {
   return labels[status] ?? status;
 }
 
-function rewardBenefitLabel(kind: string, benefit: unknown) {
+function rewardBenefitLabel(
+  kind: string,
+  benefit: unknown,
+  locale: string,
+  currency: string,
+) {
   const data = benefit && typeof benefit === "object" ? (benefit as Record<string, unknown>) : {};
   if (kind === "credits" && typeof data.credits === "number") {
     return String(data.credits) + (data.credits === 1 ? " crédito" : " créditos");
@@ -102,9 +108,9 @@ function rewardBenefitLabel(kind: string, benefit: unknown) {
   }
   if (kind === "fixed_discount" && typeof data.amount_minor === "number") {
     return (
-      new Intl.NumberFormat("es-MX", {
+      new Intl.NumberFormat(locale, {
         style: "currency",
-        currency: "MXN",
+        currency,
         maximumFractionDigits: 0,
       }).format(data.amount_minor / 100) + " de descuento"
     );
@@ -305,7 +311,7 @@ export default async function StudentProfilePage({
   const canEdit = can(CAPABILITIES.STUDENTS_WRITE);
   const canReadSchedule = can(CAPABILITIES.SCHEDULE_READ);
   const canReadSales = can(CAPABILITIES.SALES_READ);
-  const canWriteSales = can(CAPABILITIES.SALES_WRITE);
+  const canManageOperatingCharges = can(CAPABILITIES.SALES_WRITE);
   const canReadRewards = can(CAPABILITIES.REWARDS_READ);
   const canManageRewards = can(CAPABILITIES.REWARDS_MANAGE);
   const canReadEvaluations = can(CAPABILITIES.EVALUATIONS_READ);
@@ -321,7 +327,23 @@ export default async function StudentProfilePage({
         .limit(12)
     : { data: [] };
   const lifecycleEvents = lifecycleEventsResult.data ?? [];
-  const timeZone = studio.timezone ?? "America/Mexico_City";
+  const { data: operatingCharges } = canReadSales
+    ? await supabase
+        .from("student_operating_charges")
+        .select(
+          "id,charge_type,amount_minor,currency,status,created_at,resolved_at,resolution_note,reservation_id",
+        )
+        .eq("studio_id", studio.id)
+        .eq("student_id", student.id)
+        .order("created_at", { ascending: false })
+        .limit(30)
+    : { data: [] };
+  const pendingOperatingCharges = (operatingCharges ?? []).filter(
+    (charge) => charge.status === "pending",
+  );
+  const timeZone = studio.timezone;
+  const locale = studio.locale;
+  const currency = studio.currency;
   const today = localDateKey(timeZone);
   const liveAcquisitions = acquisitions.filter(
     (item) => item.status === "active" && !item.refunded_at,
@@ -432,16 +454,30 @@ export default async function StudentProfilePage({
     }
   }
 
+  type StudentSaleHistory = {
+    id: string;
+    folio: string;
+    totalMinor: number;
+    status: string;
+    createdAt: string;
+    netPaidMinor: number;
+    balanceMinor: number;
+    stateLabel: string;
+  };
+
   let historicalValueMinor: number | null = null;
   let pendingBalanceMinor = 0;
+  let studentSalesHistory: StudentSaleHistory[] = [];
+
   if (canReadSales) {
-    const { data: confirmedSales } = await supabase
+    const { data: studentSales } = await supabase
       .from("sales")
-      .select("id,total_minor,status")
+      .select("id,folio,total_minor,status,created_at")
       .eq("studio_id", studio.id)
       .eq("student_id", student.id)
-      .eq("status", "confirmed");
-    const saleIds = (confirmedSales ?? []).map((sale) => sale.id);
+      .order("created_at", { ascending: false });
+
+    const saleIds = (studentSales ?? []).map((sale) => sale.id);
     const { data: payments } = saleIds.length
       ? await supabase
           .from("payments")
@@ -449,16 +485,48 @@ export default async function StudentProfilePage({
           .eq("studio_id", studio.id)
           .in("sale_id", saleIds)
       : { data: [] };
-    const paidBySale = new Map<string, number>();
+
+    const grossPaidBySale = new Map<string, number>();
+    const refundsBySale = new Map<string, number>();
+
     for (const payment of payments ?? []) {
-      const signedAmount = payment.kind === "refund" ? -payment.amount_minor : payment.amount_minor;
-      paidBySale.set(payment.sale_id, (paidBySale.get(payment.sale_id) ?? 0) + signedAmount);
+      const target = payment.kind === "refund" ? refundsBySale : grossPaidBySale;
+      target.set(payment.sale_id, (target.get(payment.sale_id) ?? 0) + payment.amount_minor);
     }
-    historicalValueMinor = [...paidBySale.values()].reduce((sum, amount) => sum + amount, 0);
-    pendingBalanceMinor = (confirmedSales ?? []).reduce(
-      (sum, sale) => sum + Math.max(0, sale.total_minor - (paidBySale.get(sale.id) ?? 0)),
-      0,
-    );
+
+    studentSalesHistory = (studentSales ?? []).map((sale) => {
+      const grossPaid = grossPaidBySale.get(sale.id) ?? 0;
+      const refunded = refundsBySale.get(sale.id) ?? 0;
+      const netPaidMinor = grossPaid - refunded;
+      const balanceMinor = Math.max(0, sale.total_minor - netPaidMinor);
+      const stateLabel =
+        sale.status === "voided"
+          ? "Anulada"
+          : refunded > 0
+            ? refunded >= grossPaid && grossPaid > 0
+              ? "Reembolsada"
+              : "Con reembolso"
+            : netPaidMinor <= 0
+              ? "Pendiente"
+              : netPaidMinor < sale.total_minor
+                ? "Parcial"
+                : "Pagada";
+
+      return {
+        id: sale.id,
+        folio: sale.folio,
+        totalMinor: sale.total_minor,
+        status: sale.status,
+        createdAt: sale.created_at,
+        netPaidMinor,
+        balanceMinor,
+        stateLabel,
+      };
+    });
+
+    const confirmedSales = studentSalesHistory.filter((sale) => sale.status === "confirmed");
+    historicalValueMinor = confirmedSales.reduce((sum, sale) => sum + sale.netPaidMinor, 0);
+    pendingBalanceMinor = confirmedSales.reduce((sum, sale) => sum + sale.balanceMinor, 0);
   }
 
   const { data: enrollmentRows } = await supabase
@@ -695,9 +763,10 @@ export default async function StudentProfilePage({
   type ProfileHistoryEvent = {
     id: string;
     at: string;
-    kind: "class" | "package" | "reward" | "status";
+    kind: "class" | "package" | "sale" | "reward" | "status";
     title: string;
     detail: string;
+    href?: string;
   };
   const profileHistoryEvents: ProfileHistoryEvent[] = [];
 
@@ -719,7 +788,7 @@ export default async function StudentProfilePage({
       kind: "class",
       title: classTitleMap[event.status] ?? "Actividad de clase",
       detail: isCancellation
-        ? `${event.className} · clase programada ${formatDateTime(event.startsAt)}`
+        ? `${event.className} · clase programada ${formatDateTime(event.startsAt, timeZone, locale)}`
         : event.className,
     });
   }
@@ -733,6 +802,7 @@ export default async function StudentProfilePage({
       detail: productMap.get(acquisition.product_template_id)?.name ?? "Paquete",
     });
   }
+
 
   for (const achievement of rewardAchievements) {
     profileHistoryEvents.push({
@@ -778,7 +848,7 @@ export default async function StudentProfilePage({
     alerts.push({
       title: latestRelevant?.expires_on ? "Paquete vencido" : "Sin paquete activo",
       detail: latestRelevant?.expires_on
-        ? "El último paquete venció " + formatDate(latestRelevant.expires_on) + "."
+        ? "El último paquete venció " + formatDate(latestRelevant.expires_on, locale) + "."
         : "No hay un paquete vigente o programado.",
     });
   }
@@ -803,7 +873,13 @@ export default async function StudentProfilePage({
       title: "Saldo pendiente",
       detail:
         pendingBalanceMinor > 0
-          ? "Quedan $" + (pendingBalanceMinor / 100).toLocaleString("es-MX") + " MXN por cobrar."
+          ? "Quedan " +
+            new Intl.NumberFormat(locale, {
+              style: "currency",
+              currency,
+              maximumFractionDigits: 2,
+            }).format(pendingBalanceMinor / 100) +
+            " por cobrar."
           : "El paquete está bloqueado por una condición de pago pendiente.",
     });
   }
@@ -811,9 +887,15 @@ export default async function StudentProfilePage({
     alerts.push({
       title: "Inscripción no vigente",
       detail: enrollment.expires_on
-        ? "La última inscripción terminó " + formatDate(enrollment.expires_on) + "."
+        ? "La última inscripción terminó " + formatDate(enrollment.expires_on, locale) + "."
         : "Revisa el estado de inscripción de la alumna.",
     });
+  }
+
+  let portalEntered = false;
+  if (student.user_id) {
+    const { data: authUser } = await supabase.auth.admin.getUserById(student.user_id);
+    portalEntered = Boolean(authUser?.user?.last_sign_in_at);
   }
 
   const errorCopy: Record<string, string> = {
@@ -842,6 +924,7 @@ export default async function StudentProfilePage({
           phone,
           email: email || null,
           createdAt: student.created_at,
+          portalEntered,
         }}
         birthDate={birthDate}
         levelTitle={levelTitle}
@@ -849,6 +932,7 @@ export default async function StudentProfilePage({
         technicalLevels={technicalLevels}
         showEvaluations={canReadEvaluations}
         showDocuments={canReadDocuments}
+        canSell={can(CAPABILITIES.SALES_WRITE)}
         currentPackage={currentPackageView}
         nextClass={nextClass}
         historicalValueMinor={historicalValueMinor}
@@ -863,6 +947,8 @@ export default async function StudentProfilePage({
         }
         alerts={alerts}
         timeZone={timeZone}
+        locale={locale}
+        currency={currency}
       />
 
       <StudentLifecycleNoticeDialog
@@ -897,13 +983,20 @@ export default async function StudentProfilePage({
 
       {query.alta === "reserva_realizada" ? (
         <div className="notice success">
-          Primera reserva registrada. Demeter mantuvo la misma alumna y aplicó las reglas reales de
+          Primera reserva registrada. {studio.name} mantuvo la misma alumna y aplicó las reglas reales de
           paquete, inscripción, créditos y cupo.
         </div>
       ) : null}
 
       {view === "profile" ? (
-        <>
+        <section className="profile360-view-panel profile360-data-view">
+          <div className="profile360-view-heading">
+            <div>
+              <p className="eyebrow">DATOS</p>
+              <h2>Datos y preferencias</h2>
+              <p>Información personal y comunicación de la alumna.</p>
+            </div>
+          </div>
           <details id="datos-personales" className="profile360-detail scroll-mt-6">
             <summary>
               <span>
@@ -1122,7 +1215,7 @@ export default async function StudentProfilePage({
                               <strong>{changedFields}</strong>
                               <span>
                                 {communicationOriginCopy[event.origin] ?? event.origin} ·{" "}
-                                {formatDateTime(event.created_at)}
+                                {formatDateTime(event.created_at, timeZone, locale)}
                               </span>
                               {event.reason ? <span>{event.reason}</span> : null}
                             </div>
@@ -1135,29 +1228,112 @@ export default async function StudentProfilePage({
               </section>
             </details>
           ) : null}
-        </>
+        </section>
       ) : null}
 
       {view === "packages" && canReadProducts ? (
         <section id="paquetes-y-creditos" className="profile360-packages-view">
           <div className="profile360-view-heading">
             <div>
-              <p className="eyebrow">PAQUETES</p>
-              <h2>Paquetes de la alumna</h2>
-              <p>
-                El paquete actual puede ajustarse. Los paquetes vencidos conservan su historia y
-                permanecen en sólo lectura.
-              </p>
+              <p className="eyebrow">PAQUETES Y CRÉDITOS</p>
+              <h2>Consumo e historial de paquetes</h2>
+              <p>Revisa exactamente qué ocurrió con cada paquete, sus créditos, clases e incidencias.</p>
             </div>
-            {canWriteSales ? (
-              <Link
-                href={`/admin/ventas/nueva?student_id=${student.id}`}
-                className="primary-button"
-              >
-                Vender paquete
-              </Link>
-            ) : null}
           </div>
+
+          {canReadSales ? (
+            <div className="profile360-package-group">
+              <div className="profile360-package-group-heading">
+                <strong>Penalizaciones operativas</strong>
+                <span>{pendingOperatingCharges.length} pendientes</span>
+              </div>
+
+              {(operatingCharges ?? []).length ? (
+                <div className="grid gap-3">
+                  {(operatingCharges ?? []).map((charge) => {
+                    const amount = new Intl.NumberFormat(locale, {
+                      style: "currency",
+                      currency: charge.currency ?? currency,
+                    }).format(Number(charge.amount_minor ?? 0) / 100);
+                    const label =
+                      charge.charge_type === "late_cancellation"
+                        ? "Cancelación tardía"
+                        : "No-show";
+
+                    return (
+                      <article
+                        key={charge.id}
+                        className="rounded-2xl border border-white/10 bg-white/[0.03] p-4"
+                      >
+                        <div className="flex flex-wrap items-start justify-between gap-3">
+                          <div>
+                            <strong className="text-sm text-white">{label}</strong>
+                            <p className="mt-1 text-xs text-zinc-500">
+                              {formatDateTime(charge.created_at, timeZone, locale)}
+                            </p>
+                            {charge.resolution_note ? (
+                              <p className="mt-1 text-xs text-zinc-400">
+                                {charge.resolution_note}
+                              </p>
+                            ) : null}
+                          </div>
+                          <div className="text-right">
+                            <strong className="text-sm text-white">{amount}</strong>
+                            <p
+                              className={
+                                charge.status === "pending"
+                                  ? "mt-1 text-xs text-amber-300"
+                                  : charge.status === "paid"
+                                    ? "mt-1 text-xs text-emerald-300"
+                                    : "mt-1 text-xs text-zinc-500"
+                              }
+                            >
+                              {charge.status === "pending"
+                                ? "Pendiente"
+                                : charge.status === "paid"
+                                  ? "Pagada"
+                                  : charge.status === "waived"
+                                    ? "Condonada"
+                                    : "Anulada"}
+                            </p>
+                          </div>
+                        </div>
+
+                        {charge.status === "pending" && canManageOperatingCharges ? (
+                          <div className="mt-3 grid gap-2 border-t border-white/10 pt-3 sm:grid-cols-2">
+                            <form action={resolveStudentOperatingCharge}>
+                              <input type="hidden" name="student_id" value={student.id} />
+                              <input type="hidden" name="charge_id" value={charge.id} />
+                              <input type="hidden" name="resolution" value="paid" />
+                              <PendingActionButton
+                                pendingLabel="Registrando…"
+                                className="min-h-10 w-full rounded-xl bg-emerald-500/15 px-3 text-xs font-semibold text-emerald-200"
+                              >
+                                Marcar pagada
+                              </PendingActionButton>
+                            </form>
+                            <form action={resolveStudentOperatingCharge}>
+                              <input type="hidden" name="student_id" value={student.id} />
+                              <input type="hidden" name="charge_id" value={charge.id} />
+                              <input type="hidden" name="resolution" value="waived" />
+                              <PendingActionButton
+                                pendingLabel="Condonando…"
+                                className="min-h-10 w-full rounded-xl border border-white/10 px-3 text-xs font-semibold text-zinc-300"
+                              >
+                                Condonar
+                              </PendingActionButton>
+                            </form>
+                          </div>
+                        ) : null}
+                      </article>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="empty-state">No hay penalizaciones registradas.</div>
+              )}
+            </div>
+          ) : null}
 
           {currentAcquisition ? (
             <StudentPackageCard
@@ -1179,6 +1355,7 @@ export default async function StudentProfilePage({
               classes={packageClassEvents.get(currentAcquisition.id) ?? []}
               editable={canEditAcquisitions && !currentAcquisition.refunded_at}
               timeZone={timeZone}
+              locale={locale}
             />
           ) : (
             <div className="empty-state">No hay paquete actual.</div>
@@ -1211,6 +1388,7 @@ export default async function StudentProfilePage({
                   classes={packageClassEvents.get(acquisition.id) ?? []}
                   editable={false}
                   timeZone={timeZone}
+                  locale={locale}
                 />
               ))}
             </div>
@@ -1251,6 +1429,7 @@ export default async function StudentProfilePage({
                     classes={packageClassEvents.get(acquisition.id) ?? []}
                     editable={false}
                     timeZone={timeZone}
+                    locale={locale}
                   />
                 );
               })
@@ -1265,8 +1444,8 @@ export default async function StudentProfilePage({
         <section className="profile360-view-panel">
           <div className="profile360-view-heading">
             <div>
-              <p className="eyebrow">REWARDS</p>
-              <h2>Progreso, logros y recompensas</h2>
+              <p className="eyebrow">PROGRESO</p>
+              <h2>Medallas, logros y recompensas</h2>
               <p>
                 Las medallas representan progreso y beneficios de Rewards; son independientes de los
                 niveles técnicos por disciplina.
@@ -1318,7 +1497,7 @@ export default async function StudentProfilePage({
                   >
                     <span className="text-sm font-medium text-white">{label}</span>
                     <span className={value ? "text-xs text-emerald-300" : "text-xs text-zinc-500"}>
-                      {value ? "✓ " + formatDateTime(String(value)) : "Pendiente"}
+                      {value ? "✓ " + formatDateTime(String(value), timeZone, locale) : "Pendiente"}
                     </span>
                   </div>
                 ))}
@@ -1399,10 +1578,10 @@ export default async function StudentProfilePage({
                 {rewardInstancesDetail.map((reward) => (
                   <article key={reward.id}>
                     <div>
-                      <strong>{rewardBenefitLabel(reward.kind, reward.benefitDefinition)}</strong>
+                      <strong>{rewardBenefitLabel(reward.kind, reward.benefitDefinition, locale, currency)}</strong>
                       <span>
                         {reward.expiresAt
-                          ? "Vence " + formatDateTime(reward.expiresAt)
+                          ? "Vence " + formatDateTime(reward.expiresAt, timeZone, locale)
                           : "Sin vencimiento registrado"}
                       </span>
                     </div>
@@ -1427,7 +1606,7 @@ export default async function StudentProfilePage({
                     <div className="profile360-history-dot is-reward" aria-hidden="true" />
                     <div>
                       <strong>{achievement.title}</strong>
-                      <span>{formatDateTime(achievement.unlockedAt)}</span>
+                      <span>{formatDateTime(achievement.unlockedAt, timeZone, locale)}</span>
                     </div>
                   </article>
                 ))}
@@ -1450,7 +1629,7 @@ export default async function StudentProfilePage({
                     <div>
                       <strong>{level.title}</strong>
                       <span>
-                        Medalla {level.title} · {formatDateTime(level.unlockedAt)}
+                        Medalla {level.title} · {formatDateTime(level.unlockedAt, timeZone, locale)}
                       </span>
                     </div>
                   </article>
@@ -1465,6 +1644,7 @@ export default async function StudentProfilePage({
         <StudentEvaluationsPanel
           studentId={student.id}
           timeZone={timeZone}
+          locale={locale}
           error={query.evaluation_error}
         />
       ) : null}
@@ -1473,6 +1653,7 @@ export default async function StudentProfilePage({
         <StudentDocumentsPanel
           studentId={student.id}
           timeZone={timeZone}
+          locale={locale}
           result={query.document_result}
           error={query.document_error}
         />
@@ -1502,36 +1683,128 @@ export default async function StudentProfilePage({
         </section>
       ) : null}
       {view === "history" ? (
-        <section className="profile360-view-panel">
-          <div className="profile360-view-heading">
-            <div>
-              <p className="eyebrow">HISTORIAL</p>
-              <h2>Actividad de la alumna</h2>
-              <p>
-                Cronología derivada de clases, paquetes, Rewards y cambios de estado. Cada fuente
-                conserva su propio detalle.
-              </p>
-            </div>
-            <span className="count-badge">{profileHistoryEvents.length}</span>
-          </div>
+        <div className="profile360-history-stack">
+          {canReadSales ? (
+            <section className="profile360-view-panel profile360-sales-history">
+              <div className="profile360-view-heading">
+                <div>
+                  <p className="eyebrow">COMPRAS Y PAGOS</p>
+                  <h2>Historial de ventas</h2>
+                  <p>Consulta las compras, pagos y saldos registrados para esta alumna.</p>
+                </div>
+                {can(CAPABILITIES.SALES_WRITE) && student.lifecycle_status !== "inactive" ? (
+                  <Link
+                    className="profile360-sale-history-action"
+                    href={"/admin/ventas/nueva?student_id=" + student.id}
+                  >
+                    + Registrar venta
+                  </Link>
+                ) : null}
+              </div>
 
-          {profileHistoryEvents.length ? (
-            <div className="profile360-history-list">
-              {profileHistoryEvents.slice(0, 60).map((event) => (
-                <article key={event.id}>
-                  <div className={"profile360-history-dot is-" + event.kind} aria-hidden="true" />
-                  <div>
-                    <strong>{event.title}</strong>
-                    <span>{event.detail}</span>
-                    <small>{formatDateTime(event.at)}</small>
-                  </div>
-                </article>
-              ))}
+              
+
+              <div className="profile360-sales-history-meta">
+                <span>{studentSalesHistory.length} ventas</span>
+                <span>
+                  Total pagado:{" "}
+                  {new Intl.NumberFormat(locale, {
+                    style: "currency",
+                    currency,
+                    maximumFractionDigits: 0,
+                  }).format(
+                    studentSalesHistory.reduce(
+                      (sum, sale) => sum + Math.max(0, sale.netPaidMinor),
+                      0,
+                    ) / 100,
+                  )}
+                </span>
+              </div>
+
+              {studentSalesHistory.length ? (
+                <div className="profile360-sales-list">
+                  {studentSalesHistory.map((sale) => (
+                    <Link
+                      key={sale.id}
+                      href={"/admin/ventas/" + sale.id}
+                      className="profile360-sale-row"
+                    >
+                      <span>
+                        <strong>{sale.folio}</strong>
+                        <small>{formatDateTime(sale.createdAt, timeZone, locale)}</small>
+                      </span>
+                      <span className="profile360-sale-values">
+                        <span>
+                          <small>Total</small>
+                          <strong>
+                            {new Intl.NumberFormat(locale, {
+                              style: "currency",
+                              currency,
+                              maximumFractionDigits: 0,
+                            }).format(sale.totalMinor / 100)}
+                          </strong>
+                        </span>
+                        <span>
+                          <small>Pagado</small>
+                          <strong>
+                            {new Intl.NumberFormat(locale, {
+                              style: "currency",
+                              currency,
+                              maximumFractionDigits: 0,
+                            }).format(sale.netPaidMinor / 100)}
+                          </strong>
+                        </span>
+                        {sale.balanceMinor > 0 ? (
+                          <span>
+                            <small>Saldo</small>
+                            <strong>
+                              {new Intl.NumberFormat(locale, {
+                                style: "currency",
+                                currency,
+                                maximumFractionDigits: 0,
+                              }).format(sale.balanceMinor / 100)}
+                            </strong>
+                          </span>
+                        ) : null}
+                      </span>
+                      <span className="profile360-sale-state">{sale.stateLabel}</span>
+                    </Link>
+                  ))}
+                </div>
+              ) : (
+                <div className="empty-state">Todavía no hay ventas registradas.</div>
+              )}
+            </section>
+          ) : null}
+
+          <section className="profile360-view-panel">
+            <div className="profile360-view-heading">
+              <div>
+                <p className="eyebrow">ACTIVIDAD</p>
+                <h2>Historial general</h2>
+                <p>Clases, paquetes, Rewards y cambios de estado.</p>
+              </div>
+              <span className="count-badge">{profileHistoryEvents.length}</span>
             </div>
-          ) : (
-            <div className="empty-state">Todavía no hay actividad histórica para mostrar.</div>
-          )}
-        </section>
+
+            {profileHistoryEvents.length ? (
+              <div className="profile360-history-list">
+                {profileHistoryEvents.slice(0, 60).map((event) => (
+                  <article key={event.id}>
+                    <div className={"profile360-history-dot is-" + event.kind} aria-hidden="true" />
+                    <div>
+                      <strong>{event.title}</strong>
+                      <span>{event.detail}</span>
+                      <small>{formatDateTime(event.at, timeZone, locale)}</small>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            ) : (
+              <div className="empty-state">Todavía no hay actividad histórica para mostrar.</div>
+            )}
+          </section>
+        </div>
       ) : null}
 
       {view === "profile" ? (
@@ -1745,7 +2018,7 @@ export default async function StudentProfilePage({
                         {lifecycleCopy[event.to_status] ?? event.to_status}
                       </strong>
                       <span className="text-xs text-zinc-500">
-                        {formatDateTime(event.created_at)}
+                        {formatDateTime(event.created_at, timeZone, locale)}
                       </span>
                     </div>
                   ))}
