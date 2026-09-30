@@ -132,7 +132,7 @@ export default async function StudentsPage({
       ? supabase
           .from("product_acquisitions")
           .select(
-            "id,student_id,product_template_id,status,starts_on,expires_on,refunded_at,created_at",
+            "id,student_id,product_template_id,status,starts_on,expires_on,refunded_at,created_at,unlimited,credit_limit",
           )
           .eq("studio_id", studio.id)
           .order("created_at", { ascending: false })
@@ -174,6 +174,8 @@ export default async function StudentsPage({
       expires_on: string | null;
       refunded_at: string | null;
       created_at: string;
+      unlimited: boolean;
+      credit_limit: number | null;
     }>
   >();
 
@@ -232,6 +234,25 @@ export default async function StudentsPage({
 
     return true;
   });
+
+  const visibleAcquisitionIds = filteredStudents
+    .map((student) => currentAcquisitionFor(student.id)?.id)
+    .filter((id): id is string => Boolean(id));
+  const { data: visibleLedgerRows } =
+    canReadProducts && visibleAcquisitionIds.length
+      ? await supabase
+          .from("credit_ledger")
+          .select("acquisition_id,quantity")
+          .eq("studio_id", studio.id)
+          .in("acquisition_id", visibleAcquisitionIds)
+      : { data: [] as { acquisition_id: string; quantity: number }[] };
+  const visibleBalanceMap = new Map<string, number>();
+  for (const row of visibleLedgerRows ?? []) {
+    visibleBalanceMap.set(
+      row.acquisition_id,
+      (visibleBalanceMap.get(row.acquisition_id) ?? 0) + row.quantity,
+    );
+  }
 
   const duplicateId = String(params.duplicate ?? "").trim();
   const { data: duplicateStudent } = duplicateId
@@ -371,70 +392,20 @@ export default async function StudentsPage({
         </form>
       </header>
 
-      <section className="student-directory-kpis" aria-label="Resumen de alumnas">
-        <article className="student-directory-kpi is-active">
-          <span className="student-kpi-icon" aria-hidden="true">
-            ◎
-          </span>
-          <span>
-            <strong>{activeStudentsCount}</strong>
-            <small>Alumnas activas</small>
-          </span>
-        </article>
-        <article className="student-directory-kpi is-expiring">
-          <span className="student-kpi-icon" aria-hidden="true">
-            ◷
-          </span>
-          <span>
-            <strong>{expiringStudentsCount}</strong>
-            <small>Por vencer · 7 días</small>
-          </span>
-        </article>
-        <article className="student-directory-kpi is-expired">
-          <span className="student-kpi-icon" aria-hidden="true">
-            !
-          </span>
-          <span>
-            <strong>{expiredStudentsCount}</strong>
-            <small>Vencidas</small>
-          </span>
-        </article>
-        <article className="student-directory-kpi is-total">
-          <span className="student-kpi-icon" aria-hidden="true">
-            ◉
-          </span>
-          <span>
-            <strong>{allStudents?.length ?? 0}</strong>
-            <small>Total</small>
-          </span>
-        </article>
-      </section>
-
-      <nav className="student-directory-filters" aria-label="Filtrar alumnas">
-        {filters.map((filter) =>
-          filter.enabled ? (
-            <Link
-              key={filter.key}
-              href={filterHref(filter.key, query)}
-              className={`student-filter-chip${status === filter.key ? " is-active" : ""}`}
-            >
-              {filter.label}
-            </Link>
-          ) : (
-            <span
-              key={filter.key}
-              className="student-filter-chip is-future"
-              aria-disabled="true"
-              title={
-                filter.key === "expiring"
-                  ? "Se conectará a la regla configurable de paquete por vencer."
-                  : "Estado preparado para una fase futura."
-              }
-            >
-              {filter.label}
-            </span>
-          ),
-        )}
+      <nav className="student-directory-filters student-directory-crm-toolbar" aria-label="Filtrar alumnas">
+        {filters.filter((filter) => filter.enabled).map((filter) => (
+          <Link
+            key={filter.key}
+            href={filterHref(filter.key, query)}
+            className={`student-filter-chip${status === filter.key ? " is-active" : ""}`}
+          >
+            {filter.label}
+            {filter.key === "all" ? <small>{allStudents?.length ?? 0}</small> : null}
+            {filter.key === "active" ? <small>{activeStudentsCount}</small> : null}
+            {filter.key === "expiring" ? <small>{expiringStudentsCount}</small> : null}
+            {filter.key === "expired" ? <small>{expiredStudentsCount}</small> : null}
+          </Link>
+        ))}
       </nav>
 
       {params.created === "student" ? (
@@ -487,10 +458,12 @@ export default async function StudentsPage({
                   ) : null}
                 </span>
                 <span className="student-directory-main">
-                  <strong>{student.full_name}</strong>
-                  <span className="student-directory-meta">
-                    {student.email || student.phone}
-                    {student.email && student.phone ? <small>{student.phone}</small> : null}
+                  <span className="student-directory-identity">
+                    <strong>{student.full_name}</strong>
+                    <span className="student-directory-meta">
+                      {student.email || student.phone}
+                      {student.email && student.phone ? <small>{student.phone}</small> : null}
+                    </span>
                   </span>
                   {(() => {
                     const acquisition = currentAcquisitionFor(student.id);
@@ -500,26 +473,26 @@ export default async function StudentsPage({
                           !item.refunded_at && Boolean(item.expires_on && item.expires_on < today),
                       );
                       return (
-                        <span
-                          className={`student-package-summary${hasExpired ? " is-expired" : ""}`}
-                        >
+                        <span className={`student-package-summary${hasExpired ? " is-expired" : ""}`}>
                           <b>{hasExpired ? "Paquete vencido" : "Sin paquete activo"}</b>
                           <small>{hasExpired ? "Revisar renovación" : "Sin vigencia actual"}</small>
                         </span>
                       );
                     }
                     return (
-                      <span className="student-package-summary">
-                        <b>
-                          {productNameMap.get(acquisition.product_template_id) ?? "Paquete activo"}
-                        </b>
-                        <small>{shortDate(acquisition.expires_on, studio.locale)}</small>
-                      </span>
+                      <>
+                        <span className="student-package-summary">
+                          <b>{productNameMap.get(acquisition.product_template_id) ?? "Paquete activo"}</b>
+                          <small>Vence {shortDate(acquisition.expires_on, studio.locale)}</small>
+                        </span>
+                        <span className="student-credit-summary">
+                          <b>{acquisition.unlimited ? "Ilimitado" : String(visibleBalanceMap.get(acquisition.id) ?? 0)}</b>
+                          <small>{acquisition.unlimited ? "acceso" : "créditos"}</small>
+                        </span>
+                      </>
                     );
                   })()}
-                  <span
-                    className={`student-state-pill is-${student.lifecycle_status === "inactive" ? "inactive" : "active"}`}
-                  >
+                  <span className={`student-state-pill is-${student.lifecycle_status === "inactive" ? "inactive" : "active"}`}>
                     {lifecycleLabels[student.lifecycle_status] ?? student.lifecycle_status}
                   </span>
                 </span>
