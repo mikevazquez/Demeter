@@ -81,13 +81,13 @@ export default async function SaleDetailPage({
     .from("studio_payment_methods")
     .select("code,name,requires_reference,allow_refunds")
     .eq("studio_id", ctx.studio.id)
-    .eq("active", true)
     .order("sort_order");
 
   const paymentMethodLabel = new Map(
     (paymentMethods ?? []).map((method) => [method.code, method.name]),
   );
-  const refundMethods = (paymentMethods ?? []).filter((method) => method.allow_refunds);
+  const activePaymentMethods = (paymentMethods ?? []).filter((method) => method.active !== false);
+  const refundMethods = activePaymentMethods.filter((method) => method.allow_refunds);
 
   const lineIds = (lines ?? []).map((line) => line.id);
   const [{ data: acquisitions }, { data: enrollments }] = lineIds.length
@@ -459,7 +459,7 @@ export default async function SaleDetailPage({
                 <option value="" disabled>
                   Selecciona método
                 </option>
-                {(paymentMethods ?? []).map((method) => (
+                {activePaymentMethods.map((method) => (
                   <option key={method.code} value={method.code}>
                     {method.name}
                     {method.requires_reference ? " · requiere referencia" : ""}
