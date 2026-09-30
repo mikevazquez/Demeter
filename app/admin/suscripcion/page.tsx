@@ -132,8 +132,8 @@ export default async function SubscriptionPage({
       <header className="subscription-v2-header">
         <div>
           {ctx.subscription.access_mode === "full" ? (
-            <Link className="subscription-v2-back" href="/admin/configuracion">
-              ← Avanzado
+            <Link className="subscription-v2-back" href="/admin/mas">
+              ← Más
             </Link>
           ) : null}
           <h1>Plan y suscripción</h1>
