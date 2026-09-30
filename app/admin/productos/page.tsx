@@ -66,7 +66,7 @@ const categories = [
     icon: "schedule" as const,
     href: "/admin/productos/por-disciplina-horario",
     tone: "is-blue",
-    ready: false,
+    ready: true,
   },
   {
     title: "Ilimitados",
