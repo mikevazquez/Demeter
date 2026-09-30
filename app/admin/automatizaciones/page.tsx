@@ -8,6 +8,7 @@ import { saveGlobalCommunicationWindowAction } from "./actions";
 import "./communication-v2.css";
 
 type Tab = "processes" | "marketing" | "templates" | "preferences";
+type AutomationTemplate = (typeof AUTOMATION_CATALOG)[number];
 
 const statusLabels: Record<string, string> = {
   draft: "Borrador",
@@ -122,11 +123,11 @@ export default async function AutomationsPage({
     ["conversion", "retention"].includes(item.category),
   );
   const templates = AUTOMATION_CATALOG.filter((item) =>
-    item.configurableParameters.includes("message_template"),
+    item.configurableParameters.some((parameter) => parameter === "message_template"),
   );
 
   const renderAutomationRows = (
-    rows: readonly (typeof AUTOMATION_CATALOG)[number][],
+    rows: readonly AutomationTemplate[],
     kind: "process" | "marketing",
   ) => (
     <section className="communication-v2-list">
