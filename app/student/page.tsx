@@ -287,6 +287,10 @@ export default async function StudentHomePage({
       ? Math.min(100, Math.round((activePackage.used_credits / packageLimit) * 100))
       : 0;
 
+  const enrollment = snapshot.enrollment;
+  const enrollmentDaysRemaining = enrollment?.expires_on ? dateDistanceInDays(today,enrollment.expires_on) : null;
+  const enrollmentExpiringSoon = Boolean(enrollment?.active_now && enrollmentDaysRemaining !== null && enrollmentDaysRemaining >= 0 && enrollmentDaysRemaining <= 30);
+  const enrollmentMissing = !enrollment?.active_now;
   const noCredits = Boolean(activePackage && !activePackage.unlimited && credits === 0);
   const canReserve = Boolean(activePackage && (activePackage.unlimited || (credits ?? 0) > 0));
   const compactPackageHeadline = activePackage
@@ -297,6 +301,10 @@ export default async function StudentHomePage({
 
   return (
     <main className="space-y-3 pb-4 sm:space-y-4">
+
+      {enrollmentExpiringSoon ? <section className="rounded-[26px] border border-amber-400/30 bg-amber-400/[0.06] p-4 sm:p-5"><p className="text-xs font-semibold text-amber-200">Tu inscripción está por vencer</p><p className="mt-1 text-sm text-zinc-300">Vence en {enrollmentDaysRemaining} día{enrollmentDaysRemaining===1?"":"s"}. Renuévala para no perder la posibilidad de reservar.</p><Link href="/student/paquete" className="mt-3 inline-flex rounded-xl border border-amber-400/30 px-3 py-2 text-xs font-semibold text-amber-100">Ver inscripción</Link></section> : null}
+      {enrollmentMissing ? <section className="rounded-[26px] border border-rose-400/30 bg-rose-400/[0.06] p-4 sm:p-5"><p className="text-sm font-semibold text-rose-200">No tienes una inscripción vigente</p><p className="mt-1 text-xs leading-5 text-zinc-300">La inscripción es obligatoria para reservar. Puedes pagarla sola o junto con tu próximo paquete o clase.</p><Link href="/student/paquete" className="mt-3 inline-flex rounded-xl bg-fuchsia-600 px-3 py-2 text-xs font-semibold text-white">Pagar inscripción</Link></section> : null}
+
       {query.cancelled ? (
         <StudentNoticeDialog
           eyebrow="Reserva actualizada"
