@@ -20,6 +20,26 @@ function errorUrl(path: string, error: string) {
   return `${path}?error=${encodeURIComponent(error)}`;
 }
 
+async function getConfiguredMethod(
+  supabase: Awaited<ReturnType<typeof getAdminContext>>["supabase"],
+  studioId: string,
+  code: string,
+  forRefund = false,
+) {
+  const query = supabase
+    .from("studio_payment_methods")
+    .select("code,requires_reference,allow_refunds")
+    .eq("studio_id", studioId)
+    .eq("code", code)
+    .eq("active", true);
+
+  const { data } = forRefund
+    ? await query.eq("allow_refunds", true).maybeSingle()
+    : await query.maybeSingle();
+
+  return data;
+}
+
 export async function createManualSaleAction(formData: FormData) {
   const studentId = String(formData.get("student_id") ?? "");
   const productIds = formData
@@ -41,7 +61,16 @@ export async function createManualSaleAction(formData: FormData) {
     redirect(errorUrl("/admin/ventas/nueva", "sale_invalid"));
   }
 
-  const { supabase } = await getAdminContext(CAPABILITIES.SALES_WRITE);
+  const { supabase, studio } = await getAdminContext(CAPABILITIES.SALES_WRITE);
+
+  if (paymentMinor > 0) {
+    const method = await getConfiguredMethod(supabase, studio.id, paymentMethod);
+    if (!method) redirect(errorUrl("/admin/ventas/nueva", "payment_method_unavailable"));
+    if (method.requires_reference && !paymentReference) {
+      redirect(errorUrl("/admin/ventas/nueva", "payment_reference_required"));
+    }
+  }
+
   const { data, error } = await supabase.rpc("create_manual_sale", {
     target_student_id: studentId,
     target_product_ids: productIds,
@@ -80,7 +109,15 @@ export async function registerSalePaymentAction(formData: FormData) {
     redirect(errorUrl(`/admin/ventas/${saleId}`, "payment_invalid"));
   }
 
-  const { supabase } = await getAdminContext(CAPABILITIES.SALES_WRITE);
+  const { supabase, studio } = await getAdminContext(CAPABILITIES.SALES_WRITE);
+  const method = await getConfiguredMethod(supabase, studio.id, paymentMethod);
+  if (!method) {
+    redirect(errorUrl(`/admin/ventas/${saleId}`, "payment_method_unavailable"));
+  }
+  if (method.requires_reference && !paymentReference) {
+    redirect(errorUrl(`/admin/ventas/${saleId}`, "payment_reference_required"));
+  }
+
   const { error } = await supabase.rpc("register_sale_payment", {
     target_sale_id: saleId,
     payment_amount_minor: paymentMinor,
@@ -120,7 +157,15 @@ export async function refundSaleLineAction(formData: FormData) {
     redirect(errorUrl(`/admin/ventas/${saleId}`, "refund_invalid"));
   }
 
-  const { supabase } = await getAdminContext(CAPABILITIES.SALES_WRITE);
+  const { supabase, studio } = await getAdminContext(CAPABILITIES.SALES_WRITE);
+  const method = await getConfiguredMethod(supabase, studio.id, refundMethod, true);
+  if (!method) {
+    redirect(errorUrl(`/admin/ventas/${saleId}`, "refund_method_unavailable"));
+  }
+  if (method.requires_reference && !refundReference) {
+    redirect(errorUrl(`/admin/ventas/${saleId}`, "refund_reference_required"));
+  }
+
   const { error } = await supabase.rpc("refund_sale_line", {
     target_sale_line_id: saleLineId,
     refund_amount_minor: refundMinor,
