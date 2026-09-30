@@ -2022,3 +2022,29 @@
   .hoy-v2 .today-class-card { border-width:2px; }
   .hoy-v2 .today-class-accent { width:7px; }
 }
+
+/* Hoy V2 · quick actions */
+.hoy-v2 .hoy-product-header .flex { position:relative; }
+.hoy-v2 .hoy-header-action {
+  display:inline-flex; align-items:center; justify-content:center; min-height:36px;
+  padding:0 13px; border:1px solid var(--v2-line); border-radius:999px;
+  background:#fff; color:#53637b; font-size:12px; font-weight:700; cursor:pointer;
+  list-style:none; text-decoration:none;
+}
+.hoy-v2 .hoy-header-action::-webkit-details-marker { display:none; }
+.hoy-v2 a.hoy-header-action { border-color:#cfe8df; background:var(--v2-accent-soft); color:var(--v2-accent-strong); }
+.hoy-v2 .hoy-shortcuts { position:relative; }
+.hoy-v2 .hoy-shortcuts-menu {
+  position:absolute; z-index:40; top:44px; right:0; width:180px; padding:7px;
+  border:1px solid var(--v2-line); border-radius:16px; background:#fff;
+  box-shadow:0 18px 45px rgba(44,64,86,.14);
+}
+.hoy-v2 .hoy-shortcuts-menu a {
+  display:flex; align-items:center; min-height:42px; padding:0 12px; border-radius:11px;
+  color:var(--v2-text); font-size:13px; font-weight:700; text-decoration:none;
+}
+.hoy-v2 .hoy-shortcuts-menu a:hover { background:var(--v2-accent-soft); color:var(--v2-accent-strong); }
+@media (max-width:480px) {
+  .hoy-v2 .hoy-header-action { min-height:34px; padding:0 10px; font-size:11px; }
+  .hoy-v2 .hoy-shortcuts-menu { right:-36px; }
+}
