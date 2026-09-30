@@ -922,3 +922,14 @@
     font-size: 12px;
   }
 }
+
+.sales-v2-student-picker { display:grid; gap:18px; padding:22px; border:1px solid #e3eaf1; border-radius:22px; background:#fff; }
+.sales-v2-student-picker > div:first-child span { color:#0f8f66; font-size:11px; font-weight:800; }
+.sales-v2-student-picker > div:first-child h2 { margin:4px 0; color:#10203a; font-size:24px; }
+.sales-v2-student-picker > div:first-child p { margin:0; color:#687891; }
+.sales-v2-student-picker-list { display:grid; gap:8px; }
+.sales-v2-student-picker-list a { display:grid; grid-template-columns:1fr auto; gap:2px 12px; align-items:center; padding:13px 14px; border:1px solid #e3eaf1; border-radius:14px; background:#f8fafb; color:#10203a; text-decoration:none; }
+.sales-v2-student-picker-list a strong { grid-column:1; }
+.sales-v2-student-picker-list a small { grid-column:1; color:#687891; }
+.sales-v2-student-picker-list a span { grid-column:2; grid-row:1 / span 2; color:#17a878; font-size:22px; }
+.sales-v2-student-picker-list a:hover { border-color:#bfe3d6; background:#e7f8f1; }
