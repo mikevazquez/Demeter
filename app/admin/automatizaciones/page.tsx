@@ -69,7 +69,7 @@ export default async function AutomationsPage({
 }) {
   const params = await searchParams;
   const ctx = await getAdminContext(CAPABILITIES.AUTOMATIONS_READ);
-  const canManageNotifications = ctx.can(CAPABILITIES.NOTIFICATIONS_MANAGE);
+  const canManageNotifications = ctx.can(CAPABILITIES.AUTOMATIONS_MANAGE);
 
   const requestedTab = String(params.tab ?? "processes");
   const tab: Tab = ["processes", "marketing", "templates", "preferences"].includes(requestedTab)
