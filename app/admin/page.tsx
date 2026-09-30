@@ -480,10 +480,11 @@ export default async function AdminPage({
 
   const quickSalePreference: Record<string, string> = {};
   for (const sale of quickSaleHistory ?? []) {
-    if (quickSalePreference[sale.student_id]) continue;
+    const studentId = sale.student_id;
+    if (!studentId || quickSalePreference[studentId]) continue;
     const lines = Array.isArray(sale.sale_lines) ? sale.sale_lines : [];
-    const productId = lines.find((line) => line.product_template_id)?.product_template_id;
-    if (productId) quickSalePreference[sale.student_id] = productId;
+    const productId = lines.find((line) => Boolean(line.product_template_id))?.product_template_id;
+    if (typeof productId === "string") quickSalePreference[studentId] = productId;
   }
 
   const totalDailyCapacity = classes.reduce((sum, item) => sum + item.capacity, 0);
