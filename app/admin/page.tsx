@@ -503,11 +503,6 @@ export default async function AdminPage({
           <span className="hoy-eyebrow">{selectedKey === todayKey ? "Hoy" : "Agenda"}</span>
           <h1>{selectedDayLabel(selectedDate, selectedKey === todayKey, locale)}</h1>
         </div>
-        <div className="hoy-day-summary" aria-label="Resumen del día">
-          <strong>{selectedSessions?.length ?? 0}</strong><span>clases</span>
-          <i aria-hidden="true" />
-          <strong>{totalDailyReservations}</strong><span>reservas</span>
-        </div>
       </header>
 
       {params.error ? (
