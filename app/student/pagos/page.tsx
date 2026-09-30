@@ -1,5 +1,16 @@
 import { formatDateTime, formatMoney, getStudentPortalContext } from "@/lib/student/portal";
 
+function paymentMethodLabel(method: string) {
+  const labels: Record<string, string> = {
+    cash: "Efectivo",
+    bank_transfer: "Transferencia",
+    card: "Tarjeta",
+    mercado_pago: "Mercado Pago",
+    other: "Otro",
+  };
+  return labels[method] ?? method;
+}
+
 export default async function StudentPaymentsPage() {
   const { snapshot, studio } = await getStudentPortalContext();
 
@@ -39,7 +50,7 @@ export default async function StudentPaymentsPage() {
                       </span>
                     </div>
                     <p className="mt-1 text-sm text-zinc-400">
-                      {formatDateTime(payment.created_at, studio.timezone, studio.locale)} · {payment.method}
+                      {formatDateTime(payment.created_at, studio.timezone, studio.locale)} · {paymentMethodLabel(payment.method)}
                     </p>
                     {payment.reference ? (
                       <p className="mt-1 text-xs text-zinc-500">Referencia: {payment.reference}</p>
