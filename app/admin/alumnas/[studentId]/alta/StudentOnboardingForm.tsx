@@ -25,6 +25,12 @@ type EnrollmentProduct = {
   validityDays: number | null;
 };
 
+type PaymentMethodOption = {
+  code: string;
+  name: string;
+  requiresReference: boolean;
+};
+
 const termCopy: Record<string, string> = {
   monthly: "Mensual",
   quarterly: "Trimestral",
@@ -70,6 +76,7 @@ export default function StudentOnboardingForm({
   enrollmentProducts,
   defaultEnrollmentProductId,
   completedSaleId,
+  paymentMethods = [],
   flowContext = "onboarding",
 }: {
   studentId: string;
@@ -84,6 +91,7 @@ export default function StudentOnboardingForm({
   enrollmentProducts: EnrollmentProduct[];
   defaultEnrollmentProductId: string | null;
   completedSaleId: string | null;
+  paymentMethods?: PaymentMethodOption[];
   flowContext?: "onboarding" | "sale";
 }) {
   const [selectedId, setSelectedId] = useState(packages[0]?.id ?? "");
@@ -101,6 +109,7 @@ export default function StudentOnboardingForm({
       : (enrollmentProducts[0]?.id ?? ""),
   );
   const [paymentAmount, setPaymentAmount] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState("");
   const [priorCredits, setPriorCredits] = useState("0");
 
   const selectedPackage = useMemo(
@@ -160,6 +169,17 @@ export default function StudentOnboardingForm({
   const paidMinor = Math.min(inputMoneyToMinor(paymentAmount), totalMinor);
   const balanceMinor = Math.max(totalMinor - paidMinor, 0);
   const pendingWithoutPayment = totalMinor > 0 && paidMinor === 0;
+  const availablePaymentMethods =
+    paymentMethods.length > 0
+      ? paymentMethods
+      : [
+          { code: "cash", name: "Efectivo", requiresReference: false },
+          { code: "bank_transfer", name: "Transferencia", requiresReference: true },
+          { code: "card", name: "Tarjeta", requiresReference: false },
+          { code: "other", name: "Otro", requiresReference: true },
+        ];
+  const selectedPaymentMethod =
+    availablePaymentMethods.find((item) => item.code === paymentMethod) ?? null;
 
   if (!selectedPackage) {
     return (
@@ -519,15 +539,24 @@ export default function StudentOnboardingForm({
               <>
                 <label>
                   <span>Método de pago</span>
-                  <select name="payment_method" required defaultValue="">
+                  <select
+                    name="payment_method"
+                    required
+                    value={paymentMethod}
+                    onChange={(event) => setPaymentMethod(event.target.value)}
+                  >
                     <option value="" disabled>
                       Seleccionar
                     </option>
-                    <option value="Efectivo">Efectivo</option>
-                    <option value="Transferencia">Transferencia</option>
-                    <option value="Tarjeta">Tarjeta</option>
-                    <option value="Otro">Otro</option>
+                    {availablePaymentMethods.map((method) => (
+                      <option key={method.code} value={method.code}>
+                        {method.name}
+                      </option>
+                    ))}
                   </select>
+                  {selectedPaymentMethod?.requiresReference ? (
+                    <small>Este método requiere referencia.</small>
+                  ) : null}
                 </label>
                 <label>
                   <span>Fecha real del pago</span>
@@ -541,7 +570,11 @@ export default function StudentOnboardingForm({
                 </label>
                 <label>
                   <span>Referencia opcional</span>
-                  <input name="payment_reference" maxLength={120} />
+                  <input
+                    name="payment_reference"
+                    maxLength={120}
+                    required={Boolean(selectedPaymentMethod?.requiresReference)}
+                  />
                 </label>
                 <label>
                   <span>Nota opcional</span>
