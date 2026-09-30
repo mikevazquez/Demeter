@@ -73,9 +73,29 @@ const items: MoreItem[] = [
     capability: CAPABILITIES.REWARDS_READ,
   },
   {
-    title: "Avanzado",
-    description: "Región, integraciones, recursos y plan del estudio.",
-    href: "/admin/configuracion",
+    title: "Integraciones",
+    description: "Conecta Mercado Pago, Asistian, Meta y otros servicios externos.",
+    href: "/admin/integraciones",
+    capability: CAPABILITIES.INTEGRATIONS_READ,
+    ownerOnly: true,
+  },
+  {
+    title: "Región y formatos",
+    description: "Zona horaria, moneda, formato regional y prefijo telefónico.",
+    href: "/admin/configuracion/region",
+    ownerOnly: true,
+  },
+  {
+    title: "Recursos y espacios",
+    description: "Recursos físicos, mapas y distribución de los espacios.",
+    href: "/admin/configuracion/recursos",
+    capability: CAPABILITIES.RESOURCES_MANAGE,
+    ownerOnly: true,
+  },
+  {
+    title: "Plan y suscripción",
+    description: "Estado del plan, periodo contratado y facturación de Studio Flow.",
+    href: "/admin/suscripcion",
     ownerOnly: true,
   },
 ];
