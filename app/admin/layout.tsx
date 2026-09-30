@@ -170,7 +170,7 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
           ? [
               {
                 href: "/admin/configuracion",
-                label: "Configuración",
+                label: "Avanzado",
                 enabled: true,
                 secondary: true,
               },
@@ -217,6 +217,8 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
                   "/admin/automatizaciones",
                   "/admin/inteligencia",
                   "/admin/configuracion",
+                  "/admin/integraciones",
+                  "/admin/suscripcion",
                 ],
               },
             ]
