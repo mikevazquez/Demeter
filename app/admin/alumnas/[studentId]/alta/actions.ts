@@ -60,6 +60,8 @@ function rpcErrorCode(message: string) {
     "enrollment_payment_required",
     "payment_exceeds_balance",
     "payment_method_required",
+    "payment_method_unavailable",
+    "payment_reference_required",
     "payment_effective_date_required",
     "payment_effective_date_future",
     "payment_followup_required",
@@ -138,6 +140,24 @@ export async function createStudentOnboardingSale(formData: FormData) {
 
   if (!student) redirectError(studentId, flowContext, "student_not_operable");
   if (!product) redirectError(studentId, flowContext, "package_not_available");
+
+  if (paymentMinor > 0) {
+    const { data: configuredMethod } = await supabase
+      .from("studio_payment_methods")
+      .select("code,requires_reference")
+      .eq("studio_id", studio.id)
+      .eq("code", paymentMethod)
+      .eq("active", true)
+      .maybeSingle();
+
+    if (!configuredMethod) {
+      redirectError(studentId, flowContext, "payment_method_unavailable");
+    }
+
+    if (configuredMethod.requires_reference && !paymentReference) {
+      redirectError(studentId, flowContext, "payment_reference_required");
+    }
+  }
 
   let packageDiscountMinor = 0;
   let packageDiscountKind: string | null = null;
