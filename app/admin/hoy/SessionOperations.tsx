@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import {
@@ -432,15 +431,6 @@ export function SessionOperations({
               </div>
             ) : null}
           </section>
-
-          {!isCancelled ? (
-            <details className="today-session-more">
-              <summary>Más opciones</summary>
-              <Link href={`/admin/agenda/${sessionId}?from=${encodeURIComponent(returnDate)}`}>
-                Ver detalle de la sesión
-              </Link>
-            </details>
-          ) : null}
         </div>
       ) : null}
     </div>
