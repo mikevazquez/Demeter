@@ -96,7 +96,7 @@ export default async function DocumentVersionsPage({
                   {version.effective_at ? (
                     <span>
                       Vigencia:{" "}
-                      {new Intl.DateTimeFormat("es-MX", {
+                      {new Intl.DateTimeFormat(studio.locale, {
                         dateStyle: "medium",
                         timeZone: studio.timezone,
                       }).format(new Date(version.effective_at))}

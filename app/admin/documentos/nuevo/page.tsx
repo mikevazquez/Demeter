@@ -1,4 +1,5 @@
 import Link from "next/link";
+import "../documents-v2.css";
 
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getAdminContext } from "@/lib/auth/admin-context";
@@ -9,10 +10,10 @@ export default async function NewDocumentPage() {
   await getAdminContext(CAPABILITIES.DOCUMENTS_MANAGE);
 
   return (
-    <main className="dashboard-shell mx-auto max-w-3xl space-y-5">
+    <main className="dashboard-shell documents-v2 documents-new-v2 mx-auto max-w-3xl space-y-5">
       <Link
         href="/admin/documentos"
-        className="text-sm font-semibold text-zinc-400 hover:text-white"
+        className="documents-back text-sm font-semibold"
       >
         ← Documentos
       </Link>
@@ -26,25 +27,25 @@ export default async function NewDocumentPage() {
 
       <form
         action={createDocumentAction}
-        className="space-y-5 rounded-3xl border border-fuchsia-500/20 bg-[#0d0f16] p-6"
+        className="documents-new-card space-y-5 rounded-3xl p-6"
       >
         <label className="block">
-          <span className="mb-2 block text-sm font-semibold text-white">Nombre del documento</span>
+          <span className="mb-2 block text-sm font-semibold">Nombre del documento</span>
           <input
             name="name"
             required
             maxLength={120}
             placeholder="Ej. Responsiva general"
-            className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white outline-none focus:border-fuchsia-500/60"
+            className="documents-field w-full rounded-2xl px-4 py-3 text-sm outline-none"
           />
         </label>
 
         <label className="block">
-          <span className="mb-2 block text-sm font-semibold text-white">Tipo</span>
+          <span className="mb-2 block text-sm font-semibold">Tipo</span>
           <select
             name="document_type"
             defaultValue="waiver"
-            className="w-full rounded-2xl border border-white/10 bg-[#11131b] px-4 py-3 text-sm text-white"
+            className="documents-field w-full rounded-2xl px-4 py-3 text-sm"
           >
             <option value="waiver">Responsiva</option>
             <option value="regulation">Reglamento</option>
@@ -57,21 +58,21 @@ export default async function NewDocumentPage() {
         </label>
 
         <label className="block">
-          <span className="mb-2 block text-sm font-semibold text-white">Descripción interna</span>
+          <span className="mb-2 block text-sm font-semibold">Descripción interna</span>
           <textarea
             name="description"
             rows={4}
             maxLength={500}
             placeholder="Explica brevemente para qué se usa."
-            className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white outline-none focus:border-fuchsia-500/60"
+            className="documents-field w-full rounded-2xl px-4 py-3 text-sm outline-none"
           />
         </label>
 
-        <div className="rounded-2xl border border-cyan-400/20 bg-cyan-400/[0.05] p-4 text-sm leading-6 text-cyan-100/80">
+        <div className="documents-new-note rounded-2xl p-4 text-sm leading-6">
           Crear este borrador no afecta a ninguna alumna ni bloquea reservas.
         </div>
 
-        <button className="w-full rounded-2xl bg-fuchsia-600 px-5 py-3 text-sm font-semibold text-white hover:bg-fuchsia-500">
+        <button className="documents-primary-action w-full px-5 py-3 text-sm font-semibold">
           Crear borrador y continuar
         </button>
       </form>
