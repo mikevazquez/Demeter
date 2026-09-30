@@ -108,8 +108,8 @@ export default async function AsistianIntegrationTestPage({
     <main className="dashboard-shell">
       <header className="topbar">
         <div>
-          <Link className="back-link compact" href="/admin">
-            ← Inicio
+          <Link className="back-link compact" href="/admin/configuracion">
+            ← Avanzado
           </Link>
           <p className="eyebrow">INTEGRACIONES · ASISTIAN</p>
           <h1 className="dashboard-title">Pruebas de Webhook</h1>
