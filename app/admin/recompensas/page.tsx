@@ -89,7 +89,7 @@ export default async function RewardsControlCenterPage() {
         <div>
           <p className="eyebrow">PROGRESS & REWARDS · {ctx.studio.name}</p>
           <h1 className="dashboard-title">Centro de Control</h1>
-          <p className="mt-2 max-w-3xl text-sm leading-6 text-zinc-400">
+          <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
             Configura cómo se reconoce el progreso y revisa lo que las alumnas están construyendo.
             El progreso siempre se deriva de comportamiento real.
           </p>
@@ -97,7 +97,7 @@ export default async function RewardsControlCenterPage() {
         {ctx.can(CAPABILITIES.REWARDS_MANAGE) ? (
           <Link
             href="/admin/recompensas/programas/nuevo"
-            className="rounded-xl bg-[#FF0A8A] px-4 py-2.5 text-sm font-semibold text-white transition hover:brightness-110"
+            className="rounded-xl bg-teal-600 px-4 py-2.5 text-sm font-semibold text-slate-900 transition hover:brightness-110"
           >
             + Nuevo programa
           </Link>
@@ -135,7 +135,7 @@ export default async function RewardsControlCenterPage() {
       <SectionCard eyebrow="ACTIVACIÓN" title="Acceso al sistema de Medallas">
         <div className="grid gap-4 lg:grid-cols-[1fr_.9fr]">
           <div>
-            <p className="text-sm leading-6 text-zinc-400">
+            <p className="text-sm leading-6 text-slate-600">
               El onboarding no entrega una Medalla. Al completar los seis hitos, la alumna obtiene
               acceso al sistema mensual de Medallas y comienza a ser evaluada por su constancia. Las
               alumnas de legado conservan su Medalla vigente.
@@ -165,29 +165,29 @@ export default async function RewardsControlCenterPage() {
                 ],
                 ["6", "Asistir a primera clase", "Requiere una reserva con estado attended."],
               ].map(([number, title, detail]) => (
-                <div key={number} className="rounded-2xl border border-white/10 bg-black/20 p-4">
-                  <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#FF0A8A]">
+                <div key={number} className="rounded-2xl border border-slate-200 bg-white p-4">
+                  <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-teal-700">
                     Paso {number}
                   </span>
-                  <strong className="mt-1 block text-sm text-white">{title}</strong>
-                  <p className="mt-1 text-xs leading-5 text-zinc-500">{detail}</p>
+                  <strong className="mt-1 block text-sm text-slate-900">{title}</strong>
+                  <p className="mt-1 text-xs leading-5 text-slate-500">{detail}</p>
                 </div>
               ))}
             </div>
           </div>
-          <div className="rounded-2xl border border-fuchsia-500/25 bg-fuchsia-500/[0.05] p-5">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-fuchsia-300">
+          <div className="rounded-2xl border border-teal-200 bg-white p-5">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-teal-700">
               Resultado
             </p>
-            <h3 className="mt-2 text-xl font-semibold text-white">Medallas desbloqueadas</h3>
-            <p className="mt-2 text-sm leading-6 text-zinc-400">
+            <h3 className="mt-2 text-xl font-semibold text-slate-900">Medallas desbloqueadas</h3>
+            <p className="mt-2 text-sm leading-6 text-slate-600">
               Una vez activada, cada mes la alumna puede obtener directamente Bronce, Plata, Oro o
               Diamante según Días activos, No show, Continuidad y Renovación. No existe una
               escalera.
             </p>
             <Link
               href="/admin/recompensas/medallas"
-              className="mt-4 flex min-h-11 items-center justify-between rounded-xl border border-fuchsia-500/25 bg-black/20 px-3 text-xs font-semibold text-fuchsia-200"
+              className="mt-4 flex min-h-11 items-center justify-between rounded-xl border border-teal-200 bg-white px-3 text-xs font-semibold text-teal-700"
             >
               <span>Ver reglas de Medallas</span>
               <span aria-hidden="true">→</span>
@@ -217,13 +217,13 @@ export default async function RewardsControlCenterPage() {
           <Link
             key={item.href}
             href={item.href}
-            className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 transition hover:border-[#FF0A8A]/35 hover:bg-white/[0.05]"
+            className="rounded-2xl border border-slate-200 bg-white p-5 transition hover:border-[#FF0A8A]/35 hover:bg-white"
           >
-            <p className="text-xs font-semibold uppercase tracking-[0.15em] text-[#FF0A8A]">
+            <p className="text-xs font-semibold uppercase tracking-[0.15em] text-teal-700">
               CONFIGURAR
             </p>
-            <h2 className="mt-2 text-xl font-semibold text-white">{item.title}</h2>
-            <p className="mt-2 text-sm leading-6 text-zinc-400">{item.copy}</p>
+            <h2 className="mt-2 text-xl font-semibold text-slate-900">{item.title}</h2>
+            <p className="mt-2 text-sm leading-6 text-slate-600">{item.copy}</p>
           </Link>
         ))}
       </section>
@@ -235,7 +235,7 @@ export default async function RewardsControlCenterPage() {
           action={
             <Link
               href="/admin/recompensas/seguimiento"
-              className="text-sm font-semibold text-zinc-400 hover:text-white"
+              className="text-sm font-semibold text-slate-600 hover:text-slate-900"
             >
               Ver seguimiento →
             </Link>
@@ -250,10 +250,10 @@ export default async function RewardsControlCenterPage() {
               {programEventsResult.data.map((event) => (
                 <div
                   key={event.id}
-                  className="flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-black/20 px-4 py-3"
+                  className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3"
                 >
                   <div>
-                    <strong className="text-sm text-white">
+                    <strong className="text-sm text-slate-900">
                       {event.event_type === "level_completed"
                         ? "Nivel completado"
                         : event.event_type === "program_completed"
@@ -262,7 +262,7 @@ export default async function RewardsControlCenterPage() {
                             ? "Nueva participación"
                             : "Actualización de progreso"}
                     </strong>
-                    <p className="mt-1 text-xs text-zinc-500">
+                    <p className="mt-1 text-xs text-slate-500">
                       {formatDateTime(event.occurred_at, ctx.studio.locale, ctx.studio.timezone)}
                     </p>
                   </div>
@@ -281,7 +281,7 @@ export default async function RewardsControlCenterPage() {
           action={
             <Link
               href="/admin/recompensas/generadas"
-              className="text-sm font-semibold text-zinc-400 hover:text-white"
+              className="text-sm font-semibold text-slate-600 hover:text-slate-900"
             >
               Ver todas →
             </Link>
@@ -295,15 +295,15 @@ export default async function RewardsControlCenterPage() {
                 <Link
                   key={reward.id}
                   href={`/admin/recompensas/generadas/${reward.id}`}
-                  className="rounded-xl border border-white/10 bg-black/20 px-4 py-3 transition hover:border-[#FF0A8A]/30"
+                  className="rounded-xl border border-slate-200 bg-white px-4 py-3 transition hover:border-teal-200"
                 >
                   <div className="flex items-center justify-between gap-3">
-                    <strong className="text-sm text-white">
+                    <strong className="text-sm text-slate-900">
                       {rewardDefinitionLabel(reward.benefit_definition, ctx.studio.locale, ctx.studio.currency)}
                     </strong>
                     <StatusBadge status={reward.status} />
                   </div>
-                  <p className="mt-1 text-xs text-zinc-500">
+                  <p className="mt-1 text-xs text-slate-500">
                     {reward.expires_at
                       ? `Vence ${formatDateTime(reward.expires_at, ctx.studio.locale, ctx.studio.timezone)}`
                       : "Sin vencimiento fijo"}
