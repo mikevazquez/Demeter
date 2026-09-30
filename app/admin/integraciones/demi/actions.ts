@@ -6,6 +6,7 @@ import { runAssistantTurn } from "@/lib/assistant/orchestrator";
 
 type SendDemiInput = {
   conversationId?: string | null;
+  studentId?: string | null;
   message: string;
 };
 
@@ -46,11 +47,14 @@ export async function sendDemiMessage(input: SendDemiInput) {
     return { ok: false as const, error: "assistant_demo_disabled" };
   }
 
+  const requestedStudentId = String(input.studentId ?? "").trim() || null;
   let conversationId = String(input.conversationId ?? "").trim();
+  let conversationStudentId: string | null = null;
+
   if (conversationId) {
     const { data: existing } = await supabase
       .from("assistant_conversations")
-      .select("id")
+      .select("id,student_id")
       .eq("id", conversationId)
       .eq("studio_id", studio.id)
       .eq("channel", "internal_demo")
@@ -58,21 +62,42 @@ export async function sendDemiMessage(input: SendDemiInput) {
       .maybeSingle();
 
     if (!existing) return { ok: false as const, error: "conversation_not_found" };
+
+    conversationStudentId = existing.student_id ?? null;
+    if (requestedStudentId !== conversationStudentId) {
+      return { ok: false as const, error: "conversation_identity_mismatch" };
+    }
   } else {
+    if (requestedStudentId) {
+      const { data: student, error: studentError } = await supabase
+        .from("students")
+        .select("id")
+        .eq("id", requestedStudentId)
+        .eq("studio_id", studio.id)
+        .eq("active", true)
+        .maybeSingle();
+
+      if (studentError || !student) {
+        return { ok: false as const, error: "invalid_demo_identity" };
+      }
+    }
+
     const { data: created, error: createError } = await supabase
       .from("assistant_conversations")
       .insert({
         studio_id: studio.id,
         channel: "internal_demo",
+        student_id: requestedStudentId,
         status: "open",
       })
-      .select("id")
+      .select("id,student_id")
       .single();
 
     if (createError || !created) {
       return { ok: false as const, error: "conversation_create_failed" };
     }
     conversationId = created.id;
+    conversationStudentId = created.student_id ?? null;
   }
 
   const { data: inboundTurn, error: turnError } = await supabase
@@ -134,6 +159,7 @@ export async function sendDemiMessage(input: SendDemiInput) {
       },
       conversationId,
       turnId: inboundTurn.id,
+      studentId: conversationStudentId,
       history,
     });
 
