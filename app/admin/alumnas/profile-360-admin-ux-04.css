@@ -1150,3 +1150,14 @@
 .admin-ux04-profile360 .profile360-portal-pill.is-entered{border-color:#b8ded8;background:#edf8f6!important;color:#247f74!important}
 .admin-ux04-profile360 .profile360-portal-pill.is-pending{border-color:#e7d9ad;background:#fff9e8!important;color:#80661c!important}
 @media(max-width:680px){.admin-ux04-profile360 .profile360-approved-meta{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* SF V2 · coherent profile status tags */
+.admin-ux04-profile360 .profile360-approved-person{position:relative}
+.admin-ux04-profile360 .profile360-approved-meta{align-self:start;justify-self:end;width:140px;min-width:140px}
+.admin-ux04-profile360 .profile360-approved-meta>a,.admin-ux04-profile360 .profile360-approved-meta>span{width:140px;min-height:34px;height:34px;padding:0 10px;white-space:nowrap}
+@media(max-width:680px){
+ .admin-ux04-profile360 .profile360-approved-person{grid-template-columns:58px minmax(0,1fr) 112px}
+ .admin-ux04-profile360 .profile360-approved-copy{min-width:0}
+ .admin-ux04-profile360 .profile360-approved-meta{grid-column:3;grid-row:1;width:112px;min-width:112px;display:grid;grid-template-columns:1fr;gap:6px;justify-self:end}
+ .admin-ux04-profile360 .profile360-approved-meta>a,.admin-ux04-profile360 .profile360-approved-meta>span{width:112px;height:32px;min-height:32px;font-size:9px}
+}
