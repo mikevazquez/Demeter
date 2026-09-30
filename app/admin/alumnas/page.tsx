@@ -55,16 +55,6 @@ function shortDate(value: string | null, locale: string) {
   }).format(new Date(`${value}T12:00:00Z`));
 }
 
-type PlanUsageRow = {
-  limit_key: string;
-  limit_value: number | null;
-  usage: number;
-  unlimited: boolean;
-  over_limit: boolean;
-  remaining: number | null;
-  plan_name: string;
-};
-
 function filterHref(status: string, query: string) {
   const params = new URLSearchParams();
   if (status !== "all") params.set("status", status);
@@ -122,7 +112,7 @@ export default async function StudentsPage({
 
   const { data: students } = await studentsQuery;
 
-  const [{ data: allStudents }, acquisitionResult, { data: planUsage }] = await Promise.all([
+  const [{ data: allStudents }, acquisitionResult] = await Promise.all([
     supabase
       .from("students")
       .select("id,lifecycle_status")
@@ -136,21 +126,9 @@ export default async function StudentsPage({
           )
           .eq("studio_id", studio.id)
           .order("created_at", { ascending: false })
-      : Promise.resolve({ data: [] }),
-    supabase.rpc("current_studio_plan_usage", {
-      p_studio_id: studio.id,
-    }),
+      : Promise.resolve({ data: [] })
   ]);
   const allAcquisitions = acquisitionResult.data ?? [];
-  const activeStudentPlanUsage = ((planUsage ?? []) as PlanUsageRow[]).find(
-    (row) => row.limit_key === "active_students",
-  );
-  const activeStudentQuotaReached = Boolean(
-    activeStudentPlanUsage &&
-      !activeStudentPlanUsage.unlimited &&
-      activeStudentPlanUsage.limit_value !== null &&
-      activeStudentPlanUsage.usage >= activeStudentPlanUsage.limit_value,
-  );
 
   const acquisitionProductIds = [
     ...new Set((allAcquisitions ?? []).map((item) => item.product_template_id).filter(Boolean)),
@@ -319,15 +297,6 @@ export default async function StudentsPage({
           <p>Encuentra a una persona y entra a su Perfil 360.</p>
         </div>
         {canEdit ? (
-          activeStudentQuotaReached ? (
-            <Link
-              className="primary-button"
-              href="/admin/configuracion"
-              title="Revisar plan y uso"
-            >
-              Límite de alumnas alcanzado
-            </Link>
-          ) : (
             <details id="alta-rapida" className="student-quick-create">
               <summary aria-label="Nueva alumna" title="Nueva alumna">
                 <span aria-hidden="true">+</span>
