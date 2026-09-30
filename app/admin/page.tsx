@@ -1,3 +1,302 @@
+import Link from "next/link";
+
+import { CAPABILITIES } from "@/lib/auth/capabilities";
+import { getAdminContext } from "@/lib/auth/admin-context";
+import { TodayClasses, type TodayClassItem } from "./hoy/TodayClasses";
+
+type EligibilityResult = {
+  eligible?: boolean;
+  reason_code?: string | null;
+  available_credits?: number | null;
+  unlimited?: boolean;
+};
+
+const eligibilityCopy: Record<string, string> = {
+  student_not_operable: "perfil no habilitado",
+  session_not_bookable: "clase no disponible",
+  already_reserved: "ya reservada",
+  session_full: "clase llena",
+  no_active_product: "sin paquete activo",
+  enrollment_required: "inscripción no vigente",
+  payment_pending: "pago pendiente",
+  outside_product: "fuera de paquete",
+  no_credits: "sin créditos",
+};
+
+const occupyingReservationStatuses = new Set(["reserved", "attended"]);
+
+function formatExpiry(value: string | null, locale: string) {
+  if (!value) return "Sin vencimiento";
+  return `Vence ${new Intl.DateTimeFormat(locale, {
+    day: "numeric",
+    month: "short",
+    timeZone: "UTC",
+  }).format(new Date(`${value}T12:00:00Z`))}`;
+}
+
+function formatTime(value: string, timeZone: string, locale: string) {
+  return new Intl.DateTimeFormat(locale, {
+    timeZone,
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(value));
+}
+
+function localDateKey(value: Date, timeZone: string) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(value);
+  const part = (type: string) => parts.find((item) => item.type === type)?.value ?? "";
+  return `${part("year")}-${part("month")}-${part("day")}`;
+}
+
+function parseDateKey(value: string | undefined) {
+  if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
+  const parsed = new Date(`${value}T12:00:00Z`);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+function utcDateKey(value: Date) {
+  return [
+    value.getUTCFullYear(),
+    String(value.getUTCMonth() + 1).padStart(2, "0"),
+    String(value.getUTCDate()).padStart(2, "0"),
+  ].join("-");
+}
+
+function shiftUtcDays(value: Date, days: number) {
+  const next = new Date(value);
+  next.setUTCDate(next.getUTCDate() + days);
+  return next;
+}
+
+function weekStartMonday(value: Date) {
+  const weekday = value.getUTCDay();
+  return shiftUtcDays(value, weekday === 0 ? -6 : 1 - weekday);
+}
+
+function shortWeekday(value: Date, locale: string) {
+  return new Intl.DateTimeFormat(locale, {
+    timeZone: "UTC",
+    weekday: "short",
+  })
+    .format(value)
+    .replace(".", "")
+    .slice(0, 3);
+}
+
+function shortMonth(value: Date, locale: string) {
+  return new Intl.DateTimeFormat(locale, {
+    timeZone: "UTC",
+    month: "short",
+  })
+    .format(value)
+    .replace(".", "");
+}
+
+function selectedDayLabel(value: Date, isToday: boolean, locale: string) {
+  if (isToday) return "Clases de hoy";
+  return `Clases del ${new Intl.DateTimeFormat(locale, {
+    timeZone: "UTC",
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  }).format(value)}`;
+}
+
+export default async function AdminPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string; created?: string; date?: string }>;
+}) {
+  const { supabase, studio, can, user } = await getAdminContext();
+  const params = await searchParams;
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("full_name")
+    .eq("id", user.id)
+    .maybeSingle();
+  const headerName = profile?.full_name?.trim() || user.email?.split("@")[0] || "Usuario";
+  const headerInitials =
+    headerName
+      .split(/\s+/)
+      .slice(0, 2)
+      .map((part: string) => part.slice(0, 1).toUpperCase())
+      .join("") || "U";
+  const timeZone = studio.timezone;
+  const locale = studio.locale;
+  const now = new Date();
+  const todayKey = localDateKey(now, timeZone);
+  const selectedDate = parseDateKey(params.date) ?? parseDateKey(todayKey)!;
+  const selectedKey = utcDateKey(selectedDate);
+  const weekStart = weekStartMonday(selectedDate);
+  const weekDays = Array.from({ length: 7 }, (_, index) => shiftUtcDays(weekStart, index));
+  const previousWeekKey = utcDateKey(shiftUtcDays(weekStart, -7));
+  const nextWeekKey = utcDateKey(shiftUtcDays(weekStart, 7));
+  const weekEnd = shiftUtcDays(weekStart, 6);
+
+  const offsetName =
+    new Intl.DateTimeFormat("en-US", {
+      timeZone,
+      timeZoneName: "longOffset",
+      hour: "2-digit",
+    })
+      .formatToParts(now)
+      .find((item) => item.type === "timeZoneName")?.value ?? "GMT-06:00";
+  const offset = offsetName.replace("GMT", "") || "+00:00";
+
+  const todayStart = new Date(`${todayKey}T00:00:00${offset}`);
+  const todayEnd = new Date(todayStart.getTime() + 86400000);
+  const selectedStart = new Date(`${selectedKey}T00:00:00${offset}`);
+  const selectedEnd = new Date(selectedStart.getTime() + 86400000);
+
+  const canWriteSchedule = can(CAPABILITIES.SCHEDULE_WRITE);
+  const canWriteStudents = can(CAPABILITIES.STUDENTS_WRITE);
+  const canWriteSales = can(CAPABILITIES.SALES_WRITE);
+  const canWriteAttendance = can(CAPABILITIES.ATTENDANCE_WRITE);
+  const { data: serverNow } = await supabase.rpc("current_server_time");
+
+  const [
+    { data: selectedSessions },
+    { count: activeStudents },
+    { data: salesToday },
+    { data: students },
+  ] = await Promise.all([
+    supabase
+      .from("class_sessions")
+      .select(
+        "id,starts_at,ends_at,capacity,status,template_id,instructor_id,space_id,minimum_reservations_enabled,minimum_reservations,minimum_review_status",
+      )
+      .eq("studio_id", studio.id)
+      .gte("starts_at", selectedStart.toISOString())
+      .lt("starts_at", selectedEnd.toISOString())
+      .order("starts_at", { ascending: true }),
+    supabase
+      .from("students")
+      .select("*", { count: "exact", head: true })
+      .eq("studio_id", studio.id)
+      .eq("active", true),
+    supabase
+      .from("sales")
+      .select("total_minor,status")
+      .eq("studio_id", studio.id)
+      .gte("created_at", todayStart.toISOString())
+      .lt("created_at", todayEnd.toISOString()),
+    supabase
+      .from("students")
+      .select("id,full_name")
+      .eq("studio_id", studio.id)
+      .eq("active", true)
+      .eq("lifecycle_status", "active")
+      .order("full_name"),
+  ]);
+
+  const sessionIds = (selectedSessions ?? []).map((session) => session.id);
+  const templateIds = [...new Set((selectedSessions ?? []).map((session) => session.template_id))];
+  const instructorIds = [
+    ...new Set((selectedSessions ?? []).map((session) => session.instructor_id).filter(Boolean)),
+  ] as string[];
+  const spaceIds = [
+    ...new Set((selectedSessions ?? []).map((session) => session.space_id).filter(Boolean)),
+  ] as string[];
+
+  const [{ data: reservations }, { data: templates }, { data: instructors }, { data: spaces }] =
+    await Promise.all([
+      sessionIds.length
+        ? supabase
+            .from("reservations")
+            .select("id,session_id,student_id,guest_person_id,status,acquisition_id,booked_at")
+            .in("session_id", sessionIds)
+            .in("status", ["reserved", "attended", "no_show"])
+            .order("booked_at")
+        : Promise.resolve({
+            data: [] as {
+              id: string;
+              session_id: string;
+              student_id: string | null;
+              guest_person_id: string | null;
+              status: string;
+              acquisition_id: string | null;
+              booked_at: string;
+            }[],
+          }),
+      templateIds.length
+        ? supabase.from("class_templates").select("id,name,color_hex").in("id", templateIds)
+        : Promise.resolve({
+            data: [] as { id: string; name: string; color_hex: string | null }[],
+          }),
+      instructorIds.length
+        ? supabase.from("instructors").select("id,person_id").in("id", instructorIds)
+        : Promise.resolve({ data: [] as { id: string; person_id: string }[] }),
+      spaceIds.length
+        ? supabase.from("spaces").select("id,name").in("id", spaceIds)
+        : Promise.resolve({ data: [] as { id: string; name: string }[] }),
+    ]);
+
+  const guestPersonIds = [
+    ...new Set(
+      (reservations ?? []).map((reservation) => reservation.guest_person_id).filter(Boolean),
+    ),
+  ] as string[];
+  const personIds = [
+    ...new Set([
+      ...(instructors ?? []).map((instructor) => instructor.person_id),
+      ...guestPersonIds,
+    ]),
+  ];
+
+  const { data: persons } = personIds.length
+    ? await supabase
+        .from("persons")
+        .select("id,first_name,last_name")
+        .eq("studio_id", studio.id)
+        .in("id", personIds)
+    : {
+        data: [] as { id: string; first_name: string | null; last_name: string | null }[],
+      };
+
+  const reservationIds = (reservations ?? []).map((reservation) => reservation.id);
+  const { data: attendanceCheckins } = reservationIds.length
+    ? await supabase
+        .from("attendance_checkins")
+        .select("reservation_id,source,checked_in_at")
+        .in("reservation_id", reservationIds)
+    : {
+        data: [] as {
+          reservation_id: string;
+          source: string;
+          checked_in_at: string;
+        }[],
+      };
+  const checkinByReservation = new Map(
+    (attendanceCheckins ?? []).map((item) => [item.reservation_id, item]),
+  );
+
+  const { data: evaluationInvitations } = reservationIds.length
+    ? await supabase
+        .from("evaluation_invitations")
+        .select("id,reservation_id,status")
+        .in("reservation_id", reservationIds)
+        .in("status", ["scheduled", "in_progress"])
+    : {
+        data: [] as { id: string; reservation_id: string | null; status: string }[],
+      };
+  const evaluationByReservation = new Map(
+    (evaluationInvitations ?? [])
+      .filter((item) => item.reservation_id)
+      .map((item) => [item.reservation_id!, item]),
+  );
+
+  const acquisitionIds = [
+    ...new Set(
+      (reservations ?? []).map((reservation) => reservation.acquisition_id).filter(Boolean),
+    ),
+  ] as string[];
+  const { data: acquisitions } = acquisitionIds.length
+    ? await supabase
         .from("product_acquisitions")
         .select("id,product_template_id,expires_on,unlimited")
         .in("id", acquisitionIds)
