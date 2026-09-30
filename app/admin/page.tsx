@@ -487,10 +487,19 @@ export default async function AdminPage({
           {canWriteAttendance ? (
             <Link
               href="/admin/kiosco"
-              className="rounded-full border border-fuchsia-500/25 bg-fuchsia-500/[0.08] px-3.5 py-2 text-xs font-semibold text-fuchsia-100 transition hover:bg-fuchsia-500/[0.14]"
+              className="hoy-header-action"
             >
               Check-in
             </Link>
+          ) : null}
+          {(canWriteStudents || canWriteSales) ? (
+            <details className="hoy-shortcuts">
+              <summary className="hoy-header-action">Atajos</summary>
+              <div className="hoy-shortcuts-menu">
+                {canWriteStudents ? <Link href="/admin/alumnas#alta-rapida">Nueva alumna</Link> : null}
+                {canWriteSales ? <Link href="/admin/ventas/nueva">Nueva venta</Link> : null}
+              </div>
+            </details>
           ) : null}
           <span className="hoy-product-avatar" aria-label={headerName}>
             {headerInitials}
