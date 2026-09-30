@@ -2048,3 +2048,27 @@
   .hoy-v2 .hoy-header-action { min-height:34px; padding:0 10px; font-size:11px; }
   .hoy-v2 .hoy-shortcuts-menu { right:-36px; }
 }
+
+/* Hoy V2 · inline quick-action sheets */
+.hoy-v2 .hoy-quick-root{position:relative}
+.hoy-v2 .hoy-shortcuts-menu-inline{top:44px;right:0}
+.hoy-v2 .hoy-shortcuts-menu-inline button{display:flex;width:100%;align-items:center;min-height:42px;padding:0 12px;border:0;border-radius:11px;background:transparent;color:var(--v2-text);font-size:13px;font-weight:700;text-align:left}
+.hoy-v2 .hoy-shortcuts-menu-inline button:hover{background:var(--v2-accent-soft);color:var(--v2-accent-strong)}
+.hoy-v2 .hoy-quick-overlay{position:fixed;inset:0;z-index:90;display:flex;align-items:flex-start;justify-content:center;padding:84px 18px 110px;background:rgba(16,32,58,.28);overflow:auto;backdrop-filter:blur(4px)}
+.hoy-v2 .hoy-quick-card{width:min(560px,100%);padding:22px;border:1px solid var(--v2-line);border-radius:24px;background:#fff;box-shadow:0 28px 80px rgba(16,32,58,.2)}
+.hoy-v2 .hoy-quick-card>header{display:flex;justify-content:space-between;gap:16px;margin-bottom:18px}
+.hoy-v2 .hoy-quick-card>header span{color:var(--v2-accent-strong);font-size:11px;font-weight:800}
+.hoy-v2 .hoy-quick-card>header h2{margin:3px 0;color:var(--v2-text);font-size:28px;line-height:1.05}
+.hoy-v2 .hoy-quick-card>header p{margin:0;color:var(--v2-muted);font-size:13px}
+.hoy-v2 .hoy-quick-card>header>button{width:34px;height:34px;border:1px solid var(--v2-line);border-radius:50%;background:#f6f8fa;color:#53637b;font-size:22px}
+.hoy-v2 .hoy-quick-form{display:grid;gap:12px}
+.hoy-v2 .hoy-quick-form label{display:grid;gap:6px}
+.hoy-v2 .hoy-quick-form label>span{color:#53637b;font-size:11px;font-weight:700}
+.hoy-v2 .hoy-quick-form input,.hoy-v2 .hoy-quick-form select{width:100%;min-height:48px;padding:0 13px;border:1px solid var(--v2-line);border-radius:13px;background:#f8fafb;color:var(--v2-text);font-size:14px}
+.hoy-v2 .hoy-quick-form .primary-button{min-height:50px;border:0;border-radius:14px;background:var(--v2-accent);color:#fff;font-weight:800}
+.hoy-v2 .hoy-quick-product{display:grid;grid-template-columns:1fr auto;gap:3px 12px;padding:14px;border:1px solid #bfe3d6;border-radius:14px;background:var(--v2-accent-soft);color:var(--v2-text)}
+.hoy-v2 .hoy-quick-product strong,.hoy-v2 .hoy-quick-product span{grid-column:1}.hoy-v2 .hoy-quick-product span{color:#557064;font-size:12px}.hoy-v2 .hoy-quick-product b{grid-column:2;grid-row:1/span 2;align-self:center;color:var(--v2-accent-strong)}
+.hoy-v2 .hoy-quick-total{display:flex;justify-content:space-between;align-items:center;padding:12px 2px;color:var(--v2-text)}.hoy-v2 .hoy-quick-total strong{font-size:22px}
+.hoy-v2 .hoy-money-row{display:grid;grid-template-columns:1fr auto;gap:8px}.hoy-v2 .hoy-money-row button{padding:0 12px;border:1px solid #bfe3d6;border-radius:12px;background:var(--v2-accent-soft);color:var(--v2-accent-strong);font-weight:700}
+.hoy-v2 .quick-success,.hoy-v2 .quick-error{margin:0;padding:10px 12px;border-radius:12px;font-size:12px;font-weight:700}.hoy-v2 .quick-success{background:#e7f8f1;color:#0b7654}.hoy-v2 .quick-error{background:#fff0f1;color:#a62e55}
+@media(max-width:600px){.hoy-v2 .hoy-quick-overlay{align-items:flex-end;padding:70px 0 72px}.hoy-v2 .hoy-quick-card{max-height:calc(100vh - 110px);overflow:auto;border-radius:24px 24px 0 0;padding:20px 18px}.hoy-v2 .hoy-quick-card>header h2{font-size:25px}}
