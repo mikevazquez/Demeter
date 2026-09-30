@@ -126,7 +126,7 @@ export default async function AutomationsPage({
   );
 
   const renderAutomationRows = (
-    rows: typeof AUTOMATION_CATALOG,
+    rows: readonly (typeof AUTOMATION_CATALOG)[number][],
     kind: "process" | "marketing",
   ) => (
     <section className="communication-v2-list">
