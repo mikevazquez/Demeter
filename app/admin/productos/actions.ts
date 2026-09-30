@@ -268,7 +268,7 @@ export async function duplicateProduct(formData: FormData) {
   const { data: source } = await ctx.supabase
     .from("product_templates")
     .select(
-      "name,description,product_type,package_term,price_minor,currency,credit_limit,validity_days,unlimited,product_template_disciplines(discipline_id),product_template_schedules(recurring_schedule_id)",
+      "name,description,product_type,package_term,price_minor,currency,credit_limit,validity_days,unlimited,product_template_disciplines(discipline_id),product_template_schedules(recurring_schedule_id),product_template_activities(class_template_id)",
     )
     .eq("id", productId)
     .eq("studio_id", ctx.studio.id)
@@ -308,6 +308,22 @@ export async function duplicateProduct(formData: FormData) {
         })),
       );
     if (disciplineError) throw new Error(disciplineError.message);
+  }
+
+  const activityIds = (source.product_template_activities ?? []).map(
+    (item) => item.class_template_id,
+  );
+  if (activityIds.length) {
+    const { error: activityError } = await ctx.supabase
+      .from("product_template_activities")
+      .insert(
+        activityIds.map((activityId) => ({
+          studio_id: ctx.studio.id,
+          product_template_id: copy.id,
+          class_template_id: activityId,
+        })),
+      );
+    if (activityError) throw new Error(activityError.message);
   }
 
   const scheduleIds = (source.product_template_schedules ?? []).map(
