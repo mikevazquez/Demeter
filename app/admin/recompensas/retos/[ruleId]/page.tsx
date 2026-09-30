@@ -52,7 +52,7 @@ export default async function ChallengeDetailPage({
       <header>
         <Link
           href="/admin/recompensas/retos"
-          className="text-sm font-semibold text-zinc-400 hover:text-white"
+          className="text-sm font-semibold text-slate-600 hover:text-slate-900"
         >
           ← Retos
         </Link>
