@@ -21,7 +21,7 @@ function checkoutStatusLabel(status: string) {
 }
 
 export default async function MercadoPagoIntegrationPage() {
-  const { supabase, studio } = await getAdminContext(CAPABILITIES.INTEGRATIONS_READ);
+  const { supabase, studio } = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
 
   const [
     { count: onlineProducts },
