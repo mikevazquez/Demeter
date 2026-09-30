@@ -21,6 +21,7 @@ type Props = {
     phone: string;
     email: string | null;
     createdAt: string;
+    portalEntered: boolean;
   };
   birthDate: string | null;
   levelTitle: string | null;
@@ -162,7 +163,7 @@ export default function Profile360Overview({
 
           <div className="profile360-approved-meta">
             <span className="profile360-level-pill">
-              {levelTitle ? "Medalla " + levelTitle : "En activación"}
+              {levelTitle ? "Medalla " + levelTitle : "Sin medalla"}
             </span>
             <span
               className={
@@ -171,6 +172,9 @@ export default function Profile360Overview({
               }
             >
               {student.lifecycleStatus === "inactive" ? "Inactiva" : "Activa"}
+            </span>
+            <span className={"profile360-portal-pill " + (student.portalEntered ? "is-entered" : "is-pending")}>
+              {student.portalEntered ? "Portal: ingresó" : "Portal: sin ingresar"}
             </span>
             <Link className="profile360-edit-link" href={href("profile")}>
               Editar
