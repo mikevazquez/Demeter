@@ -185,7 +185,7 @@ export function SessionOperations({
           onClick={() => setOpen((value) => !value)}
           aria-expanded={open}
         >
-          {open ? "Cerrar clase" : `Ver alumnas · ${roster.length}`}
+          {open ? "Ocultar" : `Alumnas · ${roster.length}`}
         </button>
       ) : null}
 
@@ -200,7 +200,7 @@ export function SessionOperations({
           <section className="today-roster roster-priority">
             <div className="today-roster-header compact">
               <div>
-                <h3>Asistencia</h3>
+                <h3>Alumnas</h3>
                 <span>
                   {roster.length} {roster.length === 1 ? "alumna" : "alumnas"}
                 </span>
@@ -364,7 +364,9 @@ export function SessionOperations({
                       )}
 
                       {canCorrect ? (
-                        <form action={setAttendanceFromToday} className="today-correction-form">
+                        <details className="today-correction-details">
+                          <summary>Corregir</summary>
+                          <form action={setAttendanceFromToday} className="today-correction-form">
                           <input type="hidden" name="session_id" value={sessionId} />
                           <input type="hidden" name="reservation_id" value={item.id} />
                           <input type="hidden" name="return_date" value={returnDate} />
@@ -382,6 +384,7 @@ export function SessionOperations({
                             Corregir a {correctionTarget === "attended" ? "Asistió" : "No asistió"}
                           </button>
                         </form>
+                        </details>
                       ) : null}
                     </article>
                   );
@@ -434,13 +437,12 @@ export function SessionOperations({
           </section>
 
           {!isCancelled ? (
-            <Link
-              href={`/admin/agenda/${sessionId}?from=${encodeURIComponent(returnDate)}`}
-              className="today-session-detail-link"
-            >
-              Ver detalle de la sesión
-              <span aria-hidden="true">›</span>
-            </Link>
+            <details className="today-session-more">
+              <summary>Más opciones</summary>
+              <Link href={`/admin/agenda/${sessionId}?from=${encodeURIComponent(returnDate)}`}>
+                Ver detalle de la sesión
+              </Link>
+            </details>
           ) : null}
 
           {canAttendance ? (
@@ -452,19 +454,15 @@ export function SessionOperations({
               </div>
 
               {isCompleted ? (
-                <p>
-                  {canCorrectCompleted
-                    ? "Clase finalizada. Puedes seguir agregando alumnas o corregir la asistencia; las correcciones quedan registradas."
-                    : "Clase finalizada · asistencia en modo solo lectura."}
-                </p>
+                <p>{canCorrectCompleted ? "Finalizada · puedes seguir haciendo correcciones." : "Finalizada."}</p>
               ) : isCancelled ? (
-                <p>Clase cancelada · sin acciones operativas.</p>
+                <p>Clase cancelada.</p>
               ) : inProgress ? (
-                <p>Clase en curso · el cierre de asistencia es automático.</p>
+                <p>En curso.</p>
               ) : now !== null && now < startsAtMs ? (
-                <p>La asistencia manual se habilita cuando inicia la clase.</p>
+                <p>La asistencia se habilita al iniciar.</p>
               ) : (
-                <p>Cerrando asistencia automáticamente…</p>
+                <p>Finalizando…</p>
               )}
             </section>
           ) : null}
