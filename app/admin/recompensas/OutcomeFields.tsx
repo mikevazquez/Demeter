@@ -29,8 +29,8 @@ export function OutcomeFields({
   return (
     <div className="grid gap-4">
       {medalAllowed ? (
-        <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
-          <label className="flex items-center gap-3 text-sm font-semibold text-white">
+        <div className="rounded-2xl border border-slate-200 bg-white p-4">
+          <label className="flex items-center gap-3 text-sm font-semibold text-slate-900">
             <input
               type="checkbox"
               name="badge_enabled"
@@ -43,22 +43,22 @@ export function OutcomeFields({
           </label>
           {medalRequired ? <input type="hidden" name="badge_enabled" value="true" /> : null}
           {medal ? (
-            <label className="mt-3 grid gap-1 text-sm text-zinc-300">
+            <label className="mt-3 grid gap-1 text-sm text-slate-700">
               Nombre del logro
               <input
                 name="badge_title"
                 required
                 defaultValue={defaultBadgeTitle}
                 placeholder="Ej. Constancia de acero"
-                className="rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 text-white"
+                className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-slate-900"
               />
             </label>
           ) : null}
         </div>
       ) : null}
 
-      <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
-        <label className="flex items-center gap-3 text-sm font-semibold text-white">
+      <div className="rounded-2xl border border-slate-200 bg-white p-4">
+        <label className="flex items-center gap-3 text-sm font-semibold text-slate-900">
           <input
             type="checkbox"
             name="reward_enabled"
@@ -71,12 +71,12 @@ export function OutcomeFields({
 
         {reward ? (
           <div className="mt-4 grid gap-3 md:grid-cols-2">
-            <label className="grid gap-1 text-sm text-zinc-300">
+            <label className="grid gap-1 text-sm text-slate-700">
               Tipo
               <select
                 name="reward_kind"
                 defaultValue={defaultRewardKind}
-                className="rounded-xl border border-white/10 bg-[#111114] px-3 py-2.5 text-white"
+                className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-slate-900"
               >
                 <option value="credits">Créditos de clase</option>
                 <option value="percentage_discount">Descuento porcentual</option>
@@ -85,7 +85,7 @@ export function OutcomeFields({
               </select>
             </label>
 
-            <label className="grid gap-1 text-sm text-zinc-300">
+            <label className="grid gap-1 text-sm text-slate-700">
               Valor
               <input
                 type="number"
@@ -94,11 +94,11 @@ export function OutcomeFields({
                 step="1"
                 required
                 defaultValue={defaultRewardValue}
-                className="rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 text-white"
+                className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-slate-900"
               />
             </label>
 
-            <label className="grid gap-1 text-sm text-zinc-300">
+            <label className="grid gap-1 text-sm text-slate-700">
               Vigencia de la recompensa
               <input
                 type="number"
@@ -106,16 +106,16 @@ export function OutcomeFields({
                 min="1"
                 step="1"
                 defaultValue={defaultValidityDays}
-                className="rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 text-white"
+                className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-slate-900"
               />
             </label>
 
-            <label className="grid gap-1 text-sm text-zinc-300">
+            <label className="grid gap-1 text-sm text-slate-700">
               Visibilidad
               <select
                 name="reward_visibility"
                 defaultValue={defaultRewardVisibility}
-                className="rounded-xl border border-white/10 bg-[#111114] px-3 py-2.5 text-white"
+                className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-slate-900"
               >
                 <option value="visible">Visible</option>
                 <option value="surprise">Recompensa sorpresa</option>
