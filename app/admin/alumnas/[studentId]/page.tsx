@@ -1704,8 +1704,8 @@ export default async function StudentProfilePage({
               <p className="eyebrow">HISTORIAL</p>
               <h2>Actividad de la alumna</h2>
               <p>
-                Cronología derivada de clases, paquetes, Rewards y cambios de estado. Cada fuente
-                conserva su propio detalle.
+                Cronología de clases, paquetes, ventas, Rewards y cambios de estado. Cada venta
+                conserva su detalle de pagos y reembolsos.
               </p>
             </div>
             <span className="count-badge">{profileHistoryEvents.length}</span>
