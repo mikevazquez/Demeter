@@ -48,6 +48,7 @@ type Props = {
   timeZone: string;
   locale: string;
   currency: string;
+  hasAvatar: boolean;
 };
 
 function initials(name: string) {
@@ -105,6 +106,7 @@ export default function Profile360Overview({
   timeZone,
   locale,
   currency,
+  hasAvatar,
 }: Props) {
   const href = (view: string) => "/admin/alumnas/" + student.id + "?view=" + view;
   const usedCredits =
@@ -130,7 +132,7 @@ export default function Profile360Overview({
         <div className="profile360-approved-person">
           <span className="profile360-avatar" aria-hidden="true">
             {initials(student.fullName)}
-            {student.userId ? (
+            {student.userId && hasAvatar ? (
               <Image
                 src={"/admin/alumnas/" + student.id + "/avatar"}
                 alt=""
@@ -172,14 +174,6 @@ export default function Profile360Overview({
             >
               {student.lifecycleStatus === "inactive" ? "Inactiva" : "Activa"}
             </span>
-            {canSell && student.lifecycleStatus !== "inactive" ? (
-              <Link
-                className="profile360-sale-link"
-                href={"/admin/ventas/nueva?student_id=" + student.id}
-              >
-                Registrar venta
-              </Link>
-            ) : null}
             <Link className="profile360-edit-link" href={href("profile")}>
               Editar
             </Link>
