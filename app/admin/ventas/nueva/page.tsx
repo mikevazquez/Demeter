@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
@@ -66,6 +67,7 @@ export default async function NewSalePage({
   const query = await searchParams;
   const { supabase, studio } = await getAdminContext(CAPABILITIES.SALES_WRITE);
   const selectedStudentId = String(query.student_id ?? "").trim();
+  if (!selectedStudentId) redirect("/admin/alumnas");
   const today = localDate(studio.timezone);
 
   const { data: students } = await supabase
@@ -125,9 +127,9 @@ export default async function NewSalePage({
         <div>
           <Link
             className="sales-v2-back"
-            href={selectedStudent ? `/admin/alumnas/${selectedStudent.id}` : "/admin/ventas"}
+            href={selectedStudent ? `/admin/alumnas/${selectedStudent.id}` : "/admin/alumnas"}
           >
-            {selectedStudent ? "← Perfil de alumna" : "← Ventas"}
+            ← Perfil de alumna
           </Link>
           <h1>Nueva venta</h1>
           <p>Selecciona la alumna y registra lo que compró y cómo pagó.</p>
@@ -145,33 +147,8 @@ export default async function NewSalePage({
           No hay alumnas activas disponibles para registrar una venta.
         </section>
       ) : !selectedStudent ? (
-        <section className="sales-v2-select-card">
-          <div className="sale-step-layout">
-            <span className="sale-step-number">1</span>
-            <div className="sale-step-content">
-              <h2>Selecciona la alumna</h2>
-              <p>Después continuarás con el mismo flujo de venta ya aprobado.</p>
-              <form method="get" className="compact-form mt-4">
-                <label>
-                  <span>Alumna</span>
-                  <select name="student_id" required defaultValue="">
-                    <option value="" disabled>
-                      Selecciona una alumna
-                    </option>
-                    {(students ?? []).map((student) => (
-                      <option key={student.id} value={student.id}>
-                        {student.full_name}
-                        {student.phone ? ` · ${student.phone}` : ""}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <button className="primary-button" type="submit">
-                  Continuar
-                </button>
-              </form>
-            </div>
-          </div>
+        <section className="module-empty">
+          La alumna seleccionada no está disponible para registrar una venta.
         </section>
       ) : (
         <>
