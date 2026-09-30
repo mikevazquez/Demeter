@@ -74,7 +74,7 @@ const categories = [
     icon: "unlimited" as const,
     href: "/admin/productos/ilimitados",
     tone: "is-amber",
-    ready: false,
+    ready: true,
   },
   {
     title: "Cursos y talleres",
