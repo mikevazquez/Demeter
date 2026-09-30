@@ -478,6 +478,14 @@ export default async function AdminPage({
     });
   }
 
+  const quickSalePreference: Record<string, string> = {};
+  for (const sale of quickSaleHistory ?? []) {
+    if (quickSalePreference[sale.student_id]) continue;
+    const lines = Array.isArray(sale.sale_lines) ? sale.sale_lines : [];
+    const productId = lines.find((line) => line.product_template_id)?.product_template_id;
+    if (productId) quickSalePreference[sale.student_id] = productId;
+  }
+
   const totalDailyCapacity = classes.reduce((sum, item) => sum + item.capacity, 0);
   const totalDailyReservations = classes.reduce((sum, item) => sum + item.occupied, 0);
   const dailyReservationPercentage =
