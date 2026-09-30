@@ -28,8 +28,8 @@ export default async function RegionSettingsPage({
     <main className="advanced-v2 advanced-v2-detail">
       <header className="advanced-v2-header">
         <div>
-          <Link className="advanced-v2-back" href="/admin/configuracion">
-            ← Avanzado
+          <Link className="advanced-v2-back" href="/admin/mas">
+            ← Más
           </Link>
           <h1>Región y formatos</h1>
           <p>Define cómo se interpretan fechas, moneda y teléfonos en este estudio.</p>
