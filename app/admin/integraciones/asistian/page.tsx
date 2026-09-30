@@ -157,7 +157,9 @@ export default async function AsistianIntegrationPage({
         </article>
         <article>
           <span>Eventos recientes procesados</span>
-          <strong>{processedCount}/{receivedEvents?.length ?? 0}</strong>
+          <strong>
+            {processedCount}/{receivedEvents?.length ?? 0}
+          </strong>
         </article>
       </section>
 
@@ -186,9 +188,7 @@ export default async function AsistianIntegrationPage({
                 autoComplete="off"
                 required
               />
-              <small>
-                Se usa para validar que los eventos realmente vienen de Asistian.
-              </small>
+              <small>Se usa para validar que los eventos realmente vienen de Asistian.</small>
             </label>
 
             <button className="integration-detail-v2-button" type="submit">
@@ -314,9 +314,7 @@ export default async function AsistianIntegrationPage({
                   autoComplete="off"
                   required
                 />
-                <small>
-                  Envía un payload sintético para capturar las variables disponibles.
-                </small>
+                <small>Envía un payload sintético para capturar las variables disponibles.</small>
               </label>
               <button className="integration-detail-v2-button" type="submit">
                 Enviar prueba

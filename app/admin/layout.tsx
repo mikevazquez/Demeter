@@ -126,7 +126,14 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
             ]
           : []),
         ...(can(CAPABILITIES.STUDENTS_READ)
-          ? [{ href: "/admin/alumnas", label: "Alumnas", enabled: true, activeFor: ["/admin/ventas"] }]
+          ? [
+              {
+                href: "/admin/alumnas",
+                label: "Alumnas",
+                enabled: true,
+                activeFor: ["/admin/ventas"],
+              },
+            ]
           : []),
         ...(can(CAPABILITIES.REPORTS_READ)
           ? [{ href: "/admin/inteligencia", label: "Inteligencia", enabled: true }]

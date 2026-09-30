@@ -26,10 +26,7 @@ export default async function NewActivityPackagePage({
   return (
     <main className="packages-v2">
       <header className="packages-v2-header">
-        <Link
-          href={`/admin/productos/cursos-talleres/${activity.id}`}
-          className="packages-v2-back"
-        >
+        <Link href={`/admin/productos/cursos-talleres/${activity.id}`} className="packages-v2-back">
           <span aria-hidden="true">←</span> {activity.name}
         </Link>
         <h1>Crear paquete</h1>

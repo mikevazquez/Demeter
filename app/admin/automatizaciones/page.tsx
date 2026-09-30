@@ -110,8 +110,7 @@ export default async function AutomationsPage({
   for (const instance of instanceRows) {
     const version = (versions ?? []).find(
       (item) =>
-        item.instance_id === instance.id &&
-        item.version_number === instance.current_version_number,
+        item.instance_id === instance.id && item.version_number === instance.current_version_number,
     );
     currentConfiguration.set(instance.catalog_code, version?.configuration ?? {});
   }
@@ -157,7 +156,9 @@ export default async function AutomationsPage({
               {statusLabels[status] ?? status}
             </span>
 
-            <span className="communication-v2-chevron" aria-hidden="true">›</span>
+            <span className="communication-v2-chevron" aria-hidden="true">
+              ›
+            </span>
           </Link>
         );
       })}
@@ -243,7 +244,9 @@ export default async function AutomationsPage({
                     <strong>{template.name}</strong>
                     <small>{message || "Plantilla predeterminada"}</small>
                   </span>
-                  <span className="communication-v2-chevron" aria-hidden="true">›</span>
+                  <span className="communication-v2-chevron" aria-hidden="true">
+                    ›
+                  </span>
                 </Link>
               );
             })}
@@ -260,7 +263,10 @@ export default async function AutomationsPage({
             </div>
           </div>
 
-          <form action={saveGlobalCommunicationWindowAction} className="communication-v2-preferences">
+          <form
+            action={saveGlobalCommunicationWindowAction}
+            className="communication-v2-preferences"
+          >
             <label className="communication-v2-field">
               <span>Horario de envío</span>
               <div className="communication-v2-window-input">
@@ -274,7 +280,8 @@ export default async function AutomationsPage({
                 <b>{ctx.studio.timezone}</b>
               </div>
               <small>
-                Ejemplo: 09:00-20:00. Fuera de este horario, los mensajes se posponen cuando la regla lo permite.
+                Ejemplo: 09:00-20:00. Fuera de este horario, los mensajes se posponen cuando la
+                regla lo permite.
               </small>
             </label>
 

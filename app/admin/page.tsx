@@ -454,7 +454,9 @@ export default async function AdminPage({
               : acquisition
                 ? `${balance ?? 0} créditos`
                 : "—",
-          expiresLabel: isGuest ? "Misma clase" : formatExpiry(acquisition?.expires_on ?? null, locale),
+          expiresLabel: isGuest
+            ? "Misma clase"
+            : formatExpiry(acquisition?.expires_on ?? null, locale),
           studentId: reservation.student_id,
           evaluationInvitationId: evaluationInvitation?.id ?? null,
           evaluationStatus: evaluationInvitation?.status ?? null,
@@ -502,7 +504,8 @@ export default async function AdminPage({
 
   const salesTotalMinor = (selectedPayments ?? []).reduce(
     (sum, payment) =>
-      sum + (payment.kind === "refund" ? -(payment.amount_minor ?? 0) : (payment.amount_minor ?? 0)),
+      sum +
+      (payment.kind === "refund" ? -(payment.amount_minor ?? 0) : (payment.amount_minor ?? 0)),
     0,
   );
   const salesTotal = new Intl.NumberFormat(studio.locale, {
@@ -522,14 +525,11 @@ export default async function AdminPage({
         </div>
         <div className="flex items-center gap-2">
           {canWriteAttendance ? (
-            <Link
-              href="/admin/kiosco"
-              className="hoy-header-action"
-            >
+            <Link href="/admin/kiosco" className="hoy-header-action">
               Check-in
             </Link>
           ) : null}
-          {(canWriteStudents || canWriteSales) ? (
+          {canWriteStudents || canWriteSales ? (
             <QuickActions
               canStudents={canWriteStudents}
               canSales={canWriteSales}
@@ -601,9 +601,20 @@ export default async function AdminPage({
       </section>
 
       <section className="hoy-glance" aria-label="Resumen rápido">
-        <Link href="/admin/alumnas"><strong>{activeStudents}</strong><span>Alumnas activas</span></Link>
-        <Link href="/admin/ventas"><strong>{salesTotal}</strong><span>Ventas hoy</span></Link>
-        <div><strong>{dailyReservationPercentage}%</strong><span>Ocupación · {totalDailyReservations}/{totalDailyCapacity}</span></div>
+        <Link href="/admin/alumnas">
+          <strong>{activeStudents}</strong>
+          <span>Alumnas activas</span>
+        </Link>
+        <Link href="/admin/ventas">
+          <strong>{salesTotal}</strong>
+          <span>Ventas hoy</span>
+        </Link>
+        <div>
+          <strong>{dailyReservationPercentage}%</strong>
+          <span>
+            Ocupación · {totalDailyReservations}/{totalDailyCapacity}
+          </span>
+        </div>
       </section>
 
       <TodayClasses

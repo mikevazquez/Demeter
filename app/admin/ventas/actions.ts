@@ -69,7 +69,6 @@ export async function createManualSaleAction(formData: FormData) {
   redirect(`/admin/ventas/${result.sale_id}?created=sale`);
 }
 
-
 export async function createEnrollmentOnlySaleAction(formData: FormData) {
   const studentId = String(formData.get("student_id") ?? "");
   const enrollmentProductId = String(formData.get("enrollment_product_id") ?? "");
@@ -84,12 +83,27 @@ export async function createEnrollmentOnlySaleAction(formData: FormData) {
 
   const { supabase } = await getAdminContext(CAPABILITIES.SALES_WRITE);
   const [{ data: product }, { data: activeEnrollment }] = await Promise.all([
-    supabase.from("product_templates").select("id,price_minor").eq("id", enrollmentProductId).eq("product_type", "enrollment").eq("active", true).maybeSingle(),
-    supabase.from("student_enrollments").select("id").eq("student_id", studentId).eq("status", "active").lte("starts_on", new Date().toISOString().slice(0,10)).or("expires_on.is.null,expires_on.gte."+new Date().toISOString().slice(0,10)).limit(1).maybeSingle(),
+    supabase
+      .from("product_templates")
+      .select("id,price_minor")
+      .eq("id", enrollmentProductId)
+      .eq("product_type", "enrollment")
+      .eq("active", true)
+      .maybeSingle(),
+    supabase
+      .from("student_enrollments")
+      .select("id")
+      .eq("student_id", studentId)
+      .eq("status", "active")
+      .lte("starts_on", new Date().toISOString().slice(0, 10))
+      .or("expires_on.is.null,expires_on.gte." + new Date().toISOString().slice(0, 10))
+      .limit(1)
+      .maybeSingle(),
   ]);
   if (!product) redirect(errorUrl("/admin/ventas/nueva", "enrollment_product_not_configured"));
   if (activeEnrollment) redirect(errorUrl("/admin/ventas/nueva", "enrollment_already_active"));
-  if (paymentMinor !== product.price_minor) redirect(errorUrl("/admin/ventas/nueva", "enrollment_payment_required"));
+  if (paymentMinor !== product.price_minor)
+    redirect(errorUrl("/admin/ventas/nueva", "enrollment_payment_required"));
   if (!paymentMethod) redirect(errorUrl("/admin/ventas/nueva", "payment_method_required"));
 
   const { data, error } = await supabase.rpc("create_manual_sale", {
@@ -99,7 +113,7 @@ export async function createEnrollmentOnlySaleAction(formData: FormData) {
     payment_method: paymentMethod,
     payment_reference: paymentReference || null,
     payment_notes: paymentNotes || null,
-    target_starts_on: new Date().toISOString().slice(0,10),
+    target_starts_on: new Date().toISOString().slice(0, 10),
   });
   if (error) redirect(errorUrl("/admin/ventas/nueva", error.message));
   const result = (data ?? {}) as { sale_id?: string };

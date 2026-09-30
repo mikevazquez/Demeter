@@ -60,9 +60,7 @@ function parseProductForm(formData: FormData) {
   const disciplineIds = isEnrollment
     ? []
     : [...new Set(formData.getAll("discipline_ids").map(String).filter(Boolean))];
-  const scheduleScope = isPackageLike
-    ? String(formData.get("schedule_scope") ?? "all")
-    : "all";
+  const scheduleScope = isPackageLike ? String(formData.get("schedule_scope") ?? "all") : "all";
   if (!["all", "specific"].includes(scheduleScope)) {
     throw new Error("schedule_scope_invalid");
   }
@@ -132,7 +130,11 @@ async function validateSchedules(
   }
 
   const allowedDisciplines = new Set(disciplineIds);
-  if ((templates ?? []).some((item) => !item.discipline_id || !allowedDisciplines.has(item.discipline_id))) {
+  if (
+    (templates ?? []).some(
+      (item) => !item.discipline_id || !allowedDisciplines.has(item.discipline_id),
+    )
+  ) {
     throw new Error("schedule_discipline_mismatch");
   }
 }
@@ -176,15 +178,13 @@ export async function createProduct(formData: FormData) {
   }
 
   if (values.scheduleIds.length) {
-    const { error: scheduleError } = await ctx.supabase
-      .from("product_template_schedules")
-      .insert(
-        values.scheduleIds.map((scheduleId) => ({
-          studio_id: ctx.studio.id,
-          product_template_id: product.id,
-          recurring_schedule_id: scheduleId,
-        })),
-      );
+    const { error: scheduleError } = await ctx.supabase.from("product_template_schedules").insert(
+      values.scheduleIds.map((scheduleId) => ({
+        studio_id: ctx.studio.id,
+        product_template_id: product.id,
+        recurring_schedule_id: scheduleId,
+      })),
+    );
     if (scheduleError) throw new Error(scheduleError.message);
   }
 
@@ -314,15 +314,13 @@ export async function duplicateProduct(formData: FormData) {
     (item) => item.class_template_id,
   );
   if (activityIds.length) {
-    const { error: activityError } = await ctx.supabase
-      .from("product_template_activities")
-      .insert(
-        activityIds.map((activityId) => ({
-          studio_id: ctx.studio.id,
-          product_template_id: copy.id,
-          class_template_id: activityId,
-        })),
-      );
+    const { error: activityError } = await ctx.supabase.from("product_template_activities").insert(
+      activityIds.map((activityId) => ({
+        studio_id: ctx.studio.id,
+        product_template_id: copy.id,
+        class_template_id: activityId,
+      })),
+    );
     if (activityError) throw new Error(activityError.message);
   }
 
@@ -330,15 +328,13 @@ export async function duplicateProduct(formData: FormData) {
     (item) => item.recurring_schedule_id,
   );
   if (scheduleIds.length) {
-    const { error: scheduleError } = await ctx.supabase
-      .from("product_template_schedules")
-      .insert(
-        scheduleIds.map((scheduleId) => ({
-          studio_id: ctx.studio.id,
-          product_template_id: copy.id,
-          recurring_schedule_id: scheduleId,
-        })),
-      );
+    const { error: scheduleError } = await ctx.supabase.from("product_template_schedules").insert(
+      scheduleIds.map((scheduleId) => ({
+        studio_id: ctx.studio.id,
+        product_template_id: copy.id,
+        recurring_schedule_id: scheduleId,
+      })),
+    );
     if (scheduleError) throw new Error(scheduleError.message);
   }
 

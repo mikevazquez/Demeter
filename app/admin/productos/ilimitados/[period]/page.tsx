@@ -7,10 +7,19 @@ type PeriodKey = "monthly" | "quarterly" | "semiannual" | "annual" | "custom";
 
 const periods: Record<PeriodKey, { title: string; description: string }> = {
   monthly: { title: "Mensuales", description: "Membresías ilimitadas con vigencia de 30 días." },
-  quarterly: { title: "Trimestrales", description: "Membresías ilimitadas con vigencia de 3 meses." },
-  semiannual: { title: "Semestrales", description: "Membresías ilimitadas con vigencia de 6 meses." },
+  quarterly: {
+    title: "Trimestrales",
+    description: "Membresías ilimitadas con vigencia de 3 meses.",
+  },
+  semiannual: {
+    title: "Semestrales",
+    description: "Membresías ilimitadas con vigencia de 6 meses.",
+  },
   annual: { title: "Anuales", description: "Membresías ilimitadas con vigencia de 1 año." },
-  custom: { title: "Otra vigencia", description: "Membresías ilimitadas con duración personalizada." },
+  custom: {
+    title: "Otra vigencia",
+    description: "Membresías ilimitadas con duración personalizada.",
+  },
 };
 
 function isPeriodKey(value: string): value is PeriodKey {

@@ -44,9 +44,7 @@ export default async function ReservationSettingsPage({
       </header>
 
       {params.saved ? (
-        <div className="reservations-v2-notice is-success">
-          Cambios guardados correctamente.
-        </div>
+        <div className="reservations-v2-notice is-success">Cambios guardados correctamente.</div>
       ) : null}
 
       {params.error ? (
@@ -57,16 +55,12 @@ export default async function ReservationSettingsPage({
 
       <ReservationPolicyForm
         cancellationCutoffMinutes={policy?.cancellation_cutoff_minutes ?? 300}
-        lateCancellationConsumesCredit={
-          policy?.late_cancellation_consumes_credit ?? true
-        }
+        lateCancellationConsumesCredit={policy?.late_cancellation_consumes_credit ?? true}
         noShowConsumesCredit={policy?.no_show_consumes_credit ?? true}
         unlimitedLateCancellationPenaltyMinor={
           policy?.unlimited_late_cancellation_penalty_minor ?? 0
         }
-        unlimitedNoShowPenaltyMinor={
-          policy?.unlimited_no_show_penalty_minor ?? 0
-        }
+        unlimitedNoShowPenaltyMinor={policy?.unlimited_no_show_penalty_minor ?? 0}
         currency={ctx.studio.currency}
       />
     </main>

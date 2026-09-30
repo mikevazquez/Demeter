@@ -104,8 +104,7 @@ export async function saveActivity(formData: FormData) {
   const minimumReviewMinutes =
     payload.minimumReviewUnit === "hours" ? minimumReviewValue * 60 : minimumReviewValue;
 
-  let requiresResource = Boolean(payload.requiresResource);
-
+  const requiresResource = Boolean(payload.requiresResource);
 
   if (
     !name ||
@@ -176,9 +175,7 @@ export async function saveActivity(formData: FormData) {
       Number.isInteger(minimumReviewMinutes) && minimumReviewMinutes >= 15
         ? minimumReviewMinutes
         : 120,
-    p_allow_minimum_reservation_override: Boolean(
-      payload.allowMinimumReservationOverride,
-    ),
+    p_allow_minimum_reservation_override: Boolean(payload.allowMinimumReservationOverride),
   });
 
   if (error || !data) {

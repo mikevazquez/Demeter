@@ -187,30 +187,62 @@ export default async function NewSalePage({
                 <input type="hidden" name="student_id" value={selectedStudent.id} />
                 <label>
                   <span>Inscripción</span>
-                  <select name="enrollment_product_id" defaultValue={policy?.enrollment_product_template_id ?? enrollmentProducts?.[0]?.id ?? ""} required>
+                  <select
+                    name="enrollment_product_id"
+                    defaultValue={
+                      policy?.enrollment_product_template_id ?? enrollmentProducts?.[0]?.id ?? ""
+                    }
+                    required
+                  >
                     {(enrollmentProducts ?? []).map((item) => (
                       <option key={item.id} value={item.id}>
-                        {item.name} · {item.validity_days == null ? "Vitalicia" : `${item.validity_days} días`} · {new Intl.NumberFormat(studio.locale,{style:"currency",currency:item.currency}).format(item.price_minor/100)}
+                        {item.name} ·{" "}
+                        {item.validity_days == null ? "Vitalicia" : `${item.validity_days} días`} ·{" "}
+                        {new Intl.NumberFormat(studio.locale, {
+                          style: "currency",
+                          currency: item.currency,
+                        }).format(item.price_minor / 100)}
                       </option>
                     ))}
                   </select>
                 </label>
                 <label>
                   <span>Pago recibido</span>
-                  <input name="payment_amount" type="number" min="0" step="0.01" required defaultValue={((enrollmentProducts?.find((item)=>item.id===policy?.enrollment_product_template_id) ?? enrollmentProducts?.[0])?.price_minor ?? 0)/100} />
+                  <input
+                    name="payment_amount"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    required
+                    defaultValue={
+                      ((
+                        enrollmentProducts?.find(
+                          (item) => item.id === policy?.enrollment_product_template_id,
+                        ) ?? enrollmentProducts?.[0]
+                      )?.price_minor ?? 0) / 100
+                    }
+                  />
                 </label>
                 <label>
                   <span>Cómo pagó</span>
                   <select name="payment_method" required defaultValue="">
-                    <option value="" disabled>Seleccionar</option>
+                    <option value="" disabled>
+                      Seleccionar
+                    </option>
                     <option value="Efectivo">Efectivo</option>
                     <option value="Transferencia">Transferencia</option>
                     <option value="Tarjeta">Tarjeta</option>
                     <option value="Otro">Otro</option>
                   </select>
                 </label>
-                <label><span>Referencia opcional</span><input name="payment_reference" /></label>
-                <label><span>Nota opcional</span><input name="payment_notes" /></label>
+                <label>
+                  <span>Referencia opcional</span>
+                  <input name="payment_reference" />
+                </label>
+                <label>
+                  <span>Nota opcional</span>
+                  <input name="payment_notes" />
+                </label>
                 <button className="primary-button">Pagar solo inscripción</button>
               </form>
             </section>

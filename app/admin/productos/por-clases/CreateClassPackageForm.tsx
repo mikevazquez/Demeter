@@ -237,10 +237,7 @@ export function CreateClassPackageForm({
         <button type="submit" className="packages-v2-primary" disabled={pending}>
           {pending ? "Guardando…" : "Guardar paquete"}
         </button>
-        <a
-          href={`/admin/productos/por-clases/${packageTerm}`}
-          className="packages-v2-secondary"
-        >
+        <a href={`/admin/productos/por-clases/${packageTerm}`} className="packages-v2-secondary">
           Cancelar
         </a>
       </div>

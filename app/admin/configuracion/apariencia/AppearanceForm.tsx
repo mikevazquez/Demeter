@@ -15,13 +15,7 @@ function SaveButton() {
   );
 }
 
-function LogoPreview({
-  name,
-  logo,
-}: {
-  name: string;
-  logo: string | null;
-}) {
+function LogoPreview({ name, logo }: { name: string; logo: string | null }) {
   if (logo) {
     return (
       <span

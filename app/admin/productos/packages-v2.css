@@ -905,7 +905,6 @@
   }
 }
 
-
 /* Package period groups */
 .package-category-copy .package-period-count {
   margin-top: 8px;
@@ -963,7 +962,6 @@
     gap: 4px;
   }
 }
-
 
 /* Discipline / schedule package flow */
 .package-chip-row {
@@ -1136,7 +1134,6 @@
   }
 }
 
-
 /* Unlimited memberships */
 .package-unlimited-badge {
   display: grid;
@@ -1157,7 +1154,6 @@
   font-size: 12px;
   line-height: 1.5;
 }
-
 
 /* Activity-linked packages */
 .package-activity-badge {

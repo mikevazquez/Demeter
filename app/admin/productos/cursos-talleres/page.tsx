@@ -24,24 +24,23 @@ function ActivityIcon() {
 export default async function CoursesWorkshopsPage() {
   const ctx = await getAdminContext("products.read");
 
-  const [{ data: activities }, { data: schedules }, { data: activityLinks }] =
-    await Promise.all([
-      ctx.supabase
-        .from("class_templates")
-        .select("id,name,description")
-        .eq("studio_id", ctx.studio.id)
-        .eq("active", true)
-        .order("name"),
-      ctx.supabase
-        .from("recurring_schedules")
-        .select("id,template_id")
-        .eq("studio_id", ctx.studio.id)
-        .eq("active", true),
-      ctx.supabase
-        .from("product_template_activities")
-        .select("product_template_id,class_template_id")
-        .eq("studio_id", ctx.studio.id),
-    ]);
+  const [{ data: activities }, { data: schedules }, { data: activityLinks }] = await Promise.all([
+    ctx.supabase
+      .from("class_templates")
+      .select("id,name,description")
+      .eq("studio_id", ctx.studio.id)
+      .eq("active", true)
+      .order("name"),
+    ctx.supabase
+      .from("recurring_schedules")
+      .select("id,template_id")
+      .eq("studio_id", ctx.studio.id)
+      .eq("active", true),
+    ctx.supabase
+      .from("product_template_activities")
+      .select("product_template_id,class_template_id")
+      .eq("studio_id", ctx.studio.id),
+  ]);
 
   const scheduleCountByActivity = new Map<string, number>();
   for (const schedule of schedules ?? []) {
@@ -51,7 +50,9 @@ export default async function CoursesWorkshopsPage() {
     );
   }
 
-  const linkedProductIds = [...new Set((activityLinks ?? []).map((link) => link.product_template_id))];
+  const linkedProductIds = [
+    ...new Set((activityLinks ?? []).map((link) => link.product_template_id)),
+  ];
   const { data: products } = linkedProductIds.length
     ? await ctx.supabase
         .from("product_templates")

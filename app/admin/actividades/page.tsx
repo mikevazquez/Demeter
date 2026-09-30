@@ -76,7 +76,10 @@ export default async function ActivitiesPage() {
       >
         <span
           className="activities-v2-card-icon"
-          style={{ background: `${activity.color_hex ?? "#17A878"}18`, color: activity.color_hex ?? "#17A878" }}
+          style={{
+            background: `${activity.color_hex ?? "#17A878"}18`,
+            color: activity.color_hex ?? "#17A878",
+          }}
         >
           <ActivityIcon />
         </span>
@@ -116,7 +119,9 @@ export default async function ActivitiesPage() {
           </span>
         </span>
 
-        <span className="activities-v2-chevron" aria-hidden="true">›</span>
+        <span className="activities-v2-chevron" aria-hidden="true">
+          ›
+        </span>
       </Link>
     );
   };

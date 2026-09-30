@@ -329,7 +329,9 @@ export function ProductFormFields({
                     className="mt-0.5 h-4 w-4"
                   />
                   <span>
-                    <strong className="block font-medium text-white">Solo horarios específicos</strong>
+                    <strong className="block font-medium text-white">
+                      Solo horarios específicos
+                    </strong>
                     <small className="mt-1 block text-xs text-zinc-500">
                       El paquete solo podrá consumirse en los horarios marcados.
                     </small>
@@ -369,7 +371,9 @@ export function ProductFormFields({
                                   <strong className="font-medium text-white">
                                     {schedule.localTime.slice(0, 5)} · {schedule.activity}
                                   </strong>
-                                  <small className="ml-2 text-zinc-500">{schedule.discipline}</small>
+                                  <small className="ml-2 text-zinc-500">
+                                    {schedule.discipline}
+                                  </small>
                                 </span>
                               </label>
                             ))}

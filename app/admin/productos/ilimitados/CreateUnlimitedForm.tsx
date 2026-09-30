@@ -23,10 +23,7 @@ export function CreateUnlimitedForm({
   initialDays,
   fixedValidity,
 }: Props) {
-  const [state, formAction, pending] = useActionState(
-    createUnlimitedMembership,
-    initialState,
-  );
+  const [state, formAction, pending] = useActionState(createUnlimitedMembership, initialState);
   const [days, setDays] = useState(initialDays);
   const [price, setPrice] = useState("1000");
   const [customName, setCustomName] = useState<string | null>(null);
@@ -211,10 +208,7 @@ export function CreateUnlimitedForm({
         <button type="submit" className="packages-v2-primary" disabled={pending}>
           {pending ? "Guardando…" : "Guardar ilimitado"}
         </button>
-        <a
-          href={`/admin/productos/ilimitados/${packageTerm}`}
-          className="packages-v2-secondary"
-        >
+        <a href={`/admin/productos/ilimitados/${packageTerm}`} className="packages-v2-secondary">
           Cancelar
         </a>
       </div>

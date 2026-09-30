@@ -92,16 +92,10 @@ export default async function ClassPackagesByPeriodPage({
   const ctx = await getAdminContext("products.read");
 
   const [{ data: disciplines }, { data: rows }] = await Promise.all([
-    ctx.supabase
-      .from("disciplines")
-      .select("id")
-      .eq("studio_id", ctx.studio.id)
-      .eq("active", true),
+    ctx.supabase.from("disciplines").select("id").eq("studio_id", ctx.studio.id).eq("active", true),
     ctx.supabase
       .from("product_templates")
-      .select(
-        "id,name,price_minor,currency,credit_limit,validity_days,package_term,active",
-      )
+      .select("id,name,price_minor,currency,credit_limit,validity_days,package_term,active")
       .eq("studio_id", ctx.studio.id)
       .eq("product_type", "package")
       .eq("unlimited", false)

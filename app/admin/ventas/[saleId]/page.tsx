@@ -179,9 +179,7 @@ export default async function SaleDetailPage({
           <h1 className="sales-v2-detail-title">{student?.full_name ?? "Venta"}</h1>
           <p className="sales-v2-detail-subtitle">{student?.phone ?? "Sin teléfono"}</p>
         </div>
-        <span className="sales-v2-detail-status">
-          {paymentState}
-        </span>
+        <span className="sales-v2-detail-status">{paymentState}</span>
       </header>
 
       {query.created ? (

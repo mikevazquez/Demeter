@@ -51,7 +51,7 @@
 
 .admin-shell:has(.advanced-v2) .admin-utility-bar {
   border-bottom-color: var(--advanced-line);
-  background: rgba(255,255,255,.92);
+  background: rgba(255, 255, 255, 0.92);
 }
 
 .advanced-v2 {
@@ -76,9 +76,9 @@
 .advanced-v2-header h1 {
   margin: 0;
   color: var(--advanced-text);
-  font-size: clamp(34px,4vw,48px);
-  line-height: .98;
-  letter-spacing: -.045em;
+  font-size: clamp(34px, 4vw, 48px);
+  line-height: 0.98;
+  letter-spacing: -0.045em;
 }
 
 .advanced-v2-header p {
@@ -108,7 +108,7 @@
   border: 1px solid var(--advanced-line);
   border-radius: 20px;
   background: #fff;
-  box-shadow: 0 10px 28px rgba(44,64,86,.05);
+  box-shadow: 0 10px 28px rgba(44, 64, 86, 0.05);
 }
 
 .advanced-v2-plan-heading {
@@ -126,14 +126,14 @@
   color: #8592a2;
   font-size: 10px;
   font-weight: 850;
-  letter-spacing: .09em;
+  letter-spacing: 0.09em;
 }
 
 .advanced-v2-plan-heading h2 {
   margin: 4px 0 0;
   color: var(--advanced-text);
   font-size: 21px;
-  letter-spacing: -.02em;
+  letter-spacing: -0.02em;
 }
 
 .advanced-v2-plan-heading p {
@@ -160,7 +160,7 @@
 
 .advanced-v2-usage-grid {
   display: grid;
-  grid-template-columns: repeat(4,minmax(0,1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 8px;
 }
 
@@ -226,32 +226,32 @@
 
 .advanced-v2-grid {
   display: grid;
-  grid-template-columns: repeat(2,minmax(0,1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
 }
 
 .advanced-v2-card {
   min-height: 118px;
   display: grid;
-  grid-template-columns: 52px minmax(0,1fr) 18px;
+  grid-template-columns: 52px minmax(0, 1fr) 18px;
   gap: 13px;
   align-items: center;
   padding: 15px;
   border: 1px solid var(--advanced-line);
   border-radius: 18px;
   background: #fff;
-  box-shadow: 0 8px 24px rgba(44,64,86,.045);
+  box-shadow: 0 8px 24px rgba(44, 64, 86, 0.045);
   color: var(--advanced-text);
   transition:
-    transform .18s ease,
-    border-color .18s ease,
-    box-shadow .18s ease;
+    transform 0.18s ease,
+    border-color 0.18s ease,
+    box-shadow 0.18s ease;
 }
 
 .advanced-v2-card:hover {
   transform: translateY(-1px);
   border-color: #cbded7;
-  box-shadow: 0 14px 30px rgba(44,64,86,.07);
+  box-shadow: 0 14px 30px rgba(44, 64, 86, 0.07);
 }
 
 .advanced-v2-icon {
@@ -353,7 +353,7 @@
   border: 1px solid var(--advanced-line);
   border-radius: 20px;
   background: #fff;
-  box-shadow: 0 10px 28px rgba(44,64,86,.05);
+  box-shadow: 0 10px 28px rgba(44, 64, 86, 0.05);
 }
 
 .advanced-v2-form {
@@ -393,7 +393,7 @@
 
 .advanced-v2-field input:focus {
   border-color: #78cbb0;
-  box-shadow: 0 0 0 3px rgba(23,168,120,.08);
+  box-shadow: 0 0 0 3px rgba(23, 168, 120, 0.08);
 }
 
 .advanced-v2-save {
@@ -406,12 +406,12 @@
   color: #fff;
   font-size: 13px;
   font-weight: 850;
-  box-shadow: 0 12px 26px rgba(23,168,120,.18);
+  box-shadow: 0 12px 26px rgba(23, 168, 120, 0.18);
   cursor: pointer;
 }
 
 .advanced-v2-save:disabled {
-  opacity: .6;
+  opacity: 0.6;
   cursor: wait;
 }
 
@@ -437,7 +437,7 @@
 
 @media (max-width: 900px) {
   .advanced-v2-usage-grid {
-    grid-template-columns: repeat(2,minmax(0,1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
@@ -468,16 +468,16 @@
   }
 
   .advanced-v2-usage-grid {
-    grid-template-columns: repeat(2,minmax(0,1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .advanced-v2-grid {
-    grid-template-columns: minmax(0,1fr);
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .advanced-v2-card {
     min-height: 106px;
-    grid-template-columns: 48px minmax(0,1fr) 18px;
+    grid-template-columns: 48px minmax(0, 1fr) 18px;
     gap: 11px;
     padding: 13px;
   }

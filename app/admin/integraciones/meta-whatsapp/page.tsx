@@ -49,7 +49,9 @@ export default async function MetaWhatsAppIntegrationPage() {
         <div className="integration-detail-v2-card-heading">
           <div>
             <h2>Conexión</h2>
-            <p>Esta integración entrega los mensajes que Comunicación decide enviar por WhatsApp.</p>
+            <p>
+              Esta integración entrega los mensajes que Comunicación decide enviar por WhatsApp.
+            </p>
           </div>
         </div>
 
@@ -84,7 +86,10 @@ export default async function MetaWhatsAppIntegrationPage() {
         <div className="integration-detail-v2-card-heading">
           <div>
             <h2>Qué vive aquí</h2>
-            <p>Integraciones administra la conexión con Meta; Comunicación administra cuándo y qué se envía.</p>
+            <p>
+              Integraciones administra la conexión con Meta; Comunicación administra cuándo y qué se
+              envía.
+            </p>
           </div>
         </div>
 

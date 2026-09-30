@@ -11,7 +11,9 @@ function checkboxValue(formData: FormData, key: string) {
 }
 
 function moneyToMinor(value: FormDataEntryValue | null) {
-  const normalized = String(value ?? "").trim().replace(",", ".");
+  const normalized = String(value ?? "")
+    .trim()
+    .replace(",", ".");
   if (!normalized) return null;
   const amount = Number(normalized);
   if (!Number.isFinite(amount) || amount < 0) return null;
@@ -64,13 +66,10 @@ export async function saveReservationPolicyAction(formData: FormData) {
       "late_cancellation_consumes_credit",
     ),
     p_no_show_consumes_credit: checkboxValue(formData, "no_show_consumes_credit"),
-    p_default_minimum_reservations_enabled:
-      current?.default_minimum_reservations_enabled ?? false,
+    p_default_minimum_reservations_enabled: current?.default_minimum_reservations_enabled ?? false,
     p_default_minimum_reservations: current?.default_minimum_reservations ?? 2,
-    p_default_minimum_review_minutes_before:
-      current?.default_minimum_review_minutes_before ?? 120,
-    p_default_minimum_override_allowed:
-      current?.default_minimum_override_allowed ?? true,
+    p_default_minimum_review_minutes_before: current?.default_minimum_review_minutes_before ?? 120,
+    p_default_minimum_override_allowed: current?.default_minimum_override_allowed ?? true,
     p_unlimited_late_cancellation_penalty_minor: latePenalty,
     p_unlimited_no_show_penalty_minor: noShowPenalty,
   });

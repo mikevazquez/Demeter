@@ -39,8 +39,7 @@ export function CreateActivityPackageForm({
   const [customDays, setCustomDays] = useState(30);
   const [customName, setCustomName] = useState<string | null>(null);
 
-  const validityDays =
-    packageTerms.find((term) => term.key === packageTerm)?.days ?? customDays;
+  const validityDays = packageTerms.find((term) => term.key === packageTerm)?.days ?? customDays;
   const generatedName = `${activityName} · ${credits} ${credits === 1 ? "clase" : "clases"}`;
   const name = customName ?? generatedName;
 
@@ -217,8 +216,7 @@ export function CreateActivityPackageForm({
 
         <div className="package-summary">
           <strong>
-            {credits} {credits === 1 ? "clase" : "clases"} · {validityDays} días ·{" "}
-            {formattedPrice}
+            {credits} {credits === 1 ? "clase" : "clases"} · {validityDays} días · {formattedPrice}
           </strong>
           <div className="package-chip-row">
             <span className="package-list-chip">Solo {activityName}</span>

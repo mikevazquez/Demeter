@@ -60,7 +60,7 @@
 .admin-shell:has(.team-v2) .admin-utility-bar,
 .admin-shell:has(.team-v2-detail) .admin-utility-bar {
   border-bottom-color: var(--team-line);
-  background: rgba(255,255,255,.92);
+  background: rgba(255, 255, 255, 0.92);
 }
 
 .team-v2,
@@ -97,9 +97,9 @@
 .team-v2-detail-header h1 {
   margin: 0;
   color: var(--team-text);
-  font-size: clamp(34px,4vw,48px);
-  line-height: .98;
-  letter-spacing: -.045em;
+  font-size: clamp(34px, 4vw, 48px);
+  line-height: 0.98;
+  letter-spacing: -0.045em;
 }
 
 .team-v2-header p,
@@ -123,7 +123,7 @@
   color: #fff;
   font-size: 13px;
   font-weight: 850;
-  box-shadow: 0 10px 22px rgba(23,168,120,.16);
+  box-shadow: 0 10px 22px rgba(23, 168, 120, 0.16);
   cursor: pointer;
 }
 
@@ -151,7 +151,7 @@
   border: 1px solid var(--team-line);
   border-radius: 18px;
   background: #fff;
-  box-shadow: 0 22px 60px rgba(31,48,69,.16);
+  box-shadow: 0 22px 60px rgba(31, 48, 69, 0.16);
 }
 
 .team-v2-create-heading {
@@ -172,7 +172,7 @@
 
 .team-v2-create-grid {
   display: grid;
-  grid-template-columns: repeat(2,minmax(0,1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
 }
 
@@ -248,7 +248,7 @@
 .team-v2-search {
   min-height: 48px;
   display: grid;
-  grid-template-columns: 28px minmax(0,1fr);
+  grid-template-columns: 28px minmax(0, 1fr);
   align-items: center;
   padding: 0 10px;
   border: 1px solid var(--team-line);
@@ -279,20 +279,20 @@
 .team-v2-row {
   min-height: 88px;
   display: grid;
-  grid-template-columns: 52px minmax(0,1fr) auto 18px;
+  grid-template-columns: 52px minmax(0, 1fr) auto 18px;
   gap: 13px;
   align-items: center;
   padding: 13px 14px;
   border: 1px solid var(--team-line);
   border-radius: 17px;
   background: #fff;
-  box-shadow: 0 8px 24px rgba(44,64,86,.045);
+  box-shadow: 0 8px 24px rgba(44, 64, 86, 0.045);
   color: var(--team-text);
 }
 
 .team-v2-row:hover {
   border-color: #c9ddd6;
-  box-shadow: 0 14px 30px rgba(44,64,86,.07);
+  box-shadow: 0 14px 30px rgba(44, 64, 86, 0.07);
 }
 
 .team-v2-avatar {
@@ -354,7 +354,7 @@
   padding: 38px 22px;
   border: 1px dashed #cfd9e2;
   border-radius: 20px;
-  background: rgba(255,255,255,.74);
+  background: rgba(255, 255, 255, 0.74);
   color: var(--team-muted);
   text-align: center;
 }
@@ -390,7 +390,7 @@
 
 .team-v2-detail-grid {
   display: grid;
-  grid-template-columns: repeat(2,minmax(0,1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
 }
 
@@ -402,7 +402,7 @@
   border: 1px solid var(--team-line);
   border-radius: 18px;
   background: #fff;
-  box-shadow: 0 9px 28px rgba(44,64,86,.05);
+  box-shadow: 0 9px 28px rgba(44, 64, 86, 0.05);
 }
 
 .team-v2-card.is-wide {
@@ -422,7 +422,7 @@
   margin: 0;
   color: var(--team-text);
   font-size: 18px;
-  letter-spacing: -.02em;
+  letter-spacing: -0.02em;
 }
 
 .team-v2-card-heading p {
@@ -579,7 +579,7 @@
   }
 
   .team-v2-create-grid {
-    grid-template-columns: minmax(0,1fr);
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .team-v2-create input,
@@ -588,7 +588,7 @@
   }
 
   .team-v2-toolbar {
-    grid-template-columns: minmax(0,1fr);
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .team-v2-search input {
@@ -596,7 +596,7 @@
   }
 
   .team-v2-row {
-    grid-template-columns: 48px minmax(0,1fr) auto;
+    grid-template-columns: 48px minmax(0, 1fr) auto;
     gap: 10px;
     padding: 12px;
   }
@@ -625,7 +625,7 @@
   }
 
   .team-v2-detail-grid {
-    grid-template-columns: minmax(0,1fr);
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .team-v2-card.is-wide {
@@ -660,7 +660,6 @@
     font-size: 14px;
   }
 }
-
 
 .team-v2-detail .team-v2-access-help {
   margin: 0;

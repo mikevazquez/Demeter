@@ -68,9 +68,9 @@
 .integration-detail-v2-header h1 {
   margin: 0;
   color: var(--integration-text);
-  font-size: clamp(34px,4vw,48px);
-  line-height: .98;
-  letter-spacing: -.045em;
+  font-size: clamp(34px, 4vw, 48px);
+  line-height: 0.98;
+  letter-spacing: -0.045em;
 }
 
 .integrations-v2-header p,
@@ -99,14 +99,14 @@
 .integrations-v2-card {
   min-height: 104px;
   display: grid;
-  grid-template-columns: 52px minmax(0,1fr) auto 18px;
+  grid-template-columns: 52px minmax(0, 1fr) auto 18px;
   gap: 13px;
   align-items: center;
   padding: 15px;
   border: 1px solid var(--integration-line);
   border-radius: 18px;
   background: #fff;
-  box-shadow: 0 8px 24px rgba(44,64,86,.045);
+  box-shadow: 0 8px 24px rgba(44, 64, 86, 0.045);
   color: var(--integration-text);
 }
 
@@ -171,7 +171,7 @@
 /* Asistian detail */
 .integration-detail-v2-summary {
   display: grid;
-  grid-template-columns: repeat(3,minmax(0,1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 9px;
 }
 
@@ -180,7 +180,7 @@
   border: 1px solid var(--integration-line);
   border-radius: 18px;
   background: #fff;
-  box-shadow: 0 9px 28px rgba(44,64,86,.05);
+  box-shadow: 0 9px 28px rgba(44, 64, 86, 0.05);
 }
 
 .integration-detail-v2-summary article {
@@ -218,7 +218,7 @@
   margin: 0;
   color: var(--integration-text);
   font-size: 18px;
-  letter-spacing: -.02em;
+  letter-spacing: -0.02em;
 }
 
 .integration-detail-v2-card-heading p {
@@ -283,7 +283,7 @@
 
 .integration-detail-v2-row {
   display: grid;
-  grid-template-columns: minmax(0,1fr) minmax(180px,.7fr) auto;
+  grid-template-columns: minmax(0, 1fr) minmax(180px, 0.7fr) auto;
   gap: 10px;
   align-items: center;
   padding: 11px 12px;
@@ -386,7 +386,7 @@
   }
 
   .integrations-v2-card {
-    grid-template-columns: 48px minmax(0,1fr) 18px;
+    grid-template-columns: 48px minmax(0, 1fr) 18px;
   }
 
   .integrations-v2-status {
@@ -400,11 +400,11 @@
   }
 
   .integration-detail-v2-summary {
-    grid-template-columns: repeat(2,minmax(0,1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .integration-detail-v2-row {
-    grid-template-columns: minmax(0,1fr);
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .integration-detail-v2-button {
@@ -418,7 +418,6 @@
   }
 }
 
-
 .integrations-v2-section {
   display: grid;
   gap: 10px;
@@ -428,7 +427,7 @@
   margin: 0;
   color: var(--integration-text);
   font-size: 20px;
-  letter-spacing: -.02em;
+  letter-spacing: -0.02em;
 }
 
 .integrations-v2-section-heading p {
@@ -440,19 +439,19 @@
 
 .integrations-v2-card {
   transition:
-    transform .18s ease,
-    border-color .18s ease,
-    box-shadow .18s ease;
+    transform 0.18s ease,
+    border-color 0.18s ease,
+    box-shadow 0.18s ease;
 }
 
 .integrations-v2-card:not(.is-disabled):hover {
   transform: translateY(-1px);
   border-color: #cbded7;
-  box-shadow: 0 14px 30px rgba(44,64,86,.07);
+  box-shadow: 0 14px 30px rgba(44, 64, 86, 0.07);
 }
 
 .integrations-v2-card.is-disabled {
-  opacity: .72;
+  opacity: 0.72;
   cursor: default;
 }
 

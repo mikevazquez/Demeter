@@ -248,10 +248,7 @@ export default async function AutomationDetailPage({
   return (
     <main className="communication-v2-detail automation-detail-page">
       <header>
-        <Link
-          href="/admin/automatizaciones"
-          className="communication-v2-detail-back"
-        >
+        <Link href="/admin/automatizaciones" className="communication-v2-detail-back">
           ← Comunicación
         </Link>
         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-fuchsia-300">

@@ -132,9 +132,11 @@ function money(minor: number, currency: string, locale: string) {
 }
 
 function pct(value: number, locale: string) {
-  return new Intl.NumberFormat(locale, {
-    maximumFractionDigits: 1,
-  }).format(value) + "%";
+  return (
+    new Intl.NumberFormat(locale, {
+      maximumFractionDigits: 1,
+    }).format(value) + "%"
+  );
 }
 
 function safeRate(numerator: number, denominator: number) {
@@ -273,14 +275,7 @@ function BarRow({
 }
 
 function EmptyMetric({ label }: { label: string }) {
-  return (
-    <MetricCard
-      label={label}
-      value="—"
-      delta="Fuente pendiente"
-      tone="warning"
-    />
-  );
+  return <MetricCard label={label} value="—" delta="Fuente pendiente" tone="warning" />;
 }
 
 function viewHref(view: ViewKey, days: number) {
@@ -368,14 +363,8 @@ export default async function IntelligencePage({
       .gte("starts_at", rangeStartIso)
       .lt("starts_at", currentEnd.toISOString())
       .order("starts_at"),
-    supabase
-      .from("class_templates")
-      .select("id,name,color_hex")
-      .eq("studio_id", studio.id),
-    supabase
-      .from("product_templates")
-      .select("id,product_type,name")
-      .eq("studio_id", studio.id),
+    supabase.from("class_templates").select("id,name,color_hex").eq("studio_id", studio.id),
+    supabase.from("product_templates").select("id,product_type,name").eq("studio_id", studio.id),
     supabase
       .from("reward_onboarding")
       .select(
@@ -421,7 +410,8 @@ export default async function IntelligencePage({
     (item) => item.status === "confirmed" && isBetween(item.created_at, currentStart, currentEnd),
   );
   const previousSales = sales.filter(
-    (item) => item.status === "confirmed" && isBetween(item.created_at, previousStart, currentStart),
+    (item) =>
+      item.status === "confirmed" && isBetween(item.created_at, previousStart, currentStart),
   );
 
   const currentPayments = payments.filter((item) =>
@@ -523,11 +513,26 @@ export default async function IntelligencePage({
     const elapsed = daysSince(latest?.expires_on ?? null, now);
     if (elapsed === null || elapsed < 7) continue;
     if (elapsed >= 30) {
-      abandonedStudents.push({ id: student.id, name: student.full_name, days: elapsed, state: "Abandono" });
+      abandonedStudents.push({
+        id: student.id,
+        name: student.full_name,
+        days: elapsed,
+        state: "Abandono",
+      });
     } else if (elapsed >= 15) {
-      inactiveStudents.push({ id: student.id, name: student.full_name, days: elapsed, state: "Inactiva" });
+      inactiveStudents.push({
+        id: student.id,
+        name: student.full_name,
+        days: elapsed,
+        state: "Inactiva",
+      });
     } else {
-      riskStudents.push({ id: student.id, name: student.full_name, days: elapsed, state: "En riesgo" });
+      riskStudents.push({
+        id: student.id,
+        name: student.full_name,
+        days: elapsed,
+        state: "En riesgo",
+      });
     }
   }
 
@@ -599,17 +604,16 @@ export default async function IntelligencePage({
     if (session.status === "cancelled") continue;
     const template = templateMap.get(session.template_id);
     const key = session.template_id;
-    const current =
-      classAggregate.get(key) ?? {
-        name: template?.name ?? "Clase",
-        capacity: 0,
-        occupied: 0,
-        attended: 0,
-        noShow: 0,
-        cancelled: 0,
-        total: 0,
-        color: template?.color_hex ?? "#FF0A8A",
-      };
+    const current = classAggregate.get(key) ?? {
+      name: template?.name ?? "Clase",
+      capacity: 0,
+      occupied: 0,
+      attended: 0,
+      noShow: 0,
+      cancelled: 0,
+      total: 0,
+      color: template?.color_hex ?? "#FF0A8A",
+    };
     current.capacity += session.capacity ?? 0;
     for (const reservation of reservationsBySession.get(session.id) ?? []) {
       if (!decisionReservationStatuses.has(reservation.status)) continue;
@@ -684,7 +688,9 @@ export default async function IntelligencePage({
     (item) =>
       !item.refunded_at &&
       item.status !== "cancelled" &&
-      Boolean(item.expires_on && item.expires_on >= currentStartDate && item.expires_on <= todayDate),
+      Boolean(
+        item.expires_on && item.expires_on >= currentStartDate && item.expires_on <= todayDate,
+      ),
   );
   const expiredPrevious = commercialAcquisitions.filter(
     (item) =>
@@ -692,8 +698,8 @@ export default async function IntelligencePage({
       item.status !== "cancelled" &&
       Boolean(
         item.expires_on &&
-          item.expires_on >= previousStartDate &&
-          item.expires_on < currentStartDate,
+        item.expires_on >= previousStartDate &&
+        item.expires_on < currentStartDate,
       ),
   );
 
@@ -747,7 +753,8 @@ export default async function IntelligencePage({
       line.refunded_at ||
       !currentSaleIds.has(line.sale_id) ||
       !isBetween(line.created_at, currentStart, currentEnd)
-    ) continue;
+    )
+      continue;
     productRevenue.set(
       line.product_name,
       (productRevenue.get(line.product_name) ?? 0) + line.line_total_minor,
@@ -782,9 +789,7 @@ export default async function IntelligencePage({
 
   const highestDemand = classRows[0];
   const lowestDemand = [...classRows].sort((a, b) => a.occupancy - b.occupancy)[0];
-  const highestCancellation = [...classRows].sort(
-    (a, b) => b.cancellation - a.cancellation,
-  )[0];
+  const highestCancellation = [...classRows].sort((a, b) => b.cancellation - a.cancellation)[0];
 
   const onboardingRows = onboarding.filter((row) =>
     students.some((student) => student.id === row.student_id),
@@ -912,7 +917,10 @@ export default async function IntelligencePage({
                     <Insight
                       tone="warning"
                       title="💳 Cobranza pendiente"
-                      body={money(pendingCurrent, studio.currency, locale) + " continúan sin cobrar en ventas del periodo."}
+                      body={
+                        money(pendingCurrent, studio.currency, locale) +
+                        " continúan sin cobrar en ventas del periodo."
+                      }
                       href={viewHref("dinero", days)}
                     />
                   ) : null}
@@ -966,7 +974,8 @@ export default async function IntelligencePage({
                   />
                 </div>
                 <div className="intel-source-note">
-                  Registro → reserva todavía no tiene una fuente de leads previa a la clase de prueba.
+                  Registro → reserva todavía no tiene una fuente de leads previa a la clase de
+                  prueba.
                 </div>
               </Section>
 
@@ -1099,7 +1108,9 @@ export default async function IntelligencePage({
                   <Insight
                     tone={currentRefunds > 0 ? "danger" : "info"}
                     title="↩ Reembolsos"
-                    body={money(currentRefunds, studio.currency, locale) + " registrados en el periodo."}
+                    body={
+                      money(currentRefunds, studio.currency, locale) + " registrados en el periodo."
+                    }
                     href="/admin/ventas"
                   />
                 </div>
@@ -1187,7 +1198,11 @@ export default async function IntelligencePage({
                         value={completed}
                         max={Math.max(onboardingRows.length, 1)}
                         display={completed + "/" + onboardingRows.length}
-                        tone={completed === onboardingRows.length && onboardingRows.length > 0 ? "success" : "info"}
+                        tone={
+                          completed === onboardingRows.length && onboardingRows.length > 0
+                            ? "success"
+                            : "info"
+                        }
                       />
                     );
                   })}
@@ -1234,10 +1249,10 @@ export default async function IntelligencePage({
                         <b>{item.state}</b>
                       </Link>
                     ))}
-                  {!riskStudents.length &&
-                  !inactiveStudents.length &&
-                  !abandonedStudents.length ? (
-                    <p className="intel-empty">No hay alumnas dentro de estas ventanas de riesgo.</p>
+                  {!riskStudents.length && !inactiveStudents.length && !abandonedStudents.length ? (
+                    <p className="intel-empty">
+                      No hay alumnas dentro de estas ventanas de riesgo.
+                    </p>
                   ) : null}
                 </div>
               </Section>
@@ -1332,9 +1347,9 @@ export default async function IntelligencePage({
 
               <Section title="Fuente pendiente: leads">
                 <div className="intel-source-note is-large">
-                  Para medir <strong>registro → reserva</strong> necesitamos persistir el lead antes de
-                  que exista una clase de prueba. Hoy Studio Flow comienza a tener trazabilidad cuando
-                  la prueba ya fue creada.
+                  Para medir <strong>registro → reserva</strong> necesitamos persistir el lead antes
+                  de que exista una clase de prueba. Hoy Studio Flow comienza a tener trazabilidad
+                  cuando la prueba ya fue creada.
                 </div>
               </Section>
             </div>
@@ -1345,7 +1360,9 @@ export default async function IntelligencePage({
                   <Insight
                     tone="warning"
                     title="⚠️ No show"
-                    body={trialNoShow + " clases de prueba terminaron en no show durante el periodo."}
+                    body={
+                      trialNoShow + " clases de prueba terminaron en no show durante el periodo."
+                    }
                   />
                   <Insight
                     tone="danger"
@@ -1380,7 +1397,10 @@ export default async function IntelligencePage({
             <MetricCard
               label="Cancelaciones"
               value={pct(currentClassMetrics.cancellation, locale)}
-              delta={pointsDelta(currentClassMetrics.cancellation, previousClassMetrics.cancellation)}
+              delta={pointsDelta(
+                currentClassMetrics.cancellation,
+                previousClassMetrics.cancellation,
+              )}
               tone={currentClassMetrics.cancellation > 15 ? "danger" : "warning"}
             />
             <MetricCard
@@ -1495,16 +1515,24 @@ export default async function IntelligencePage({
 
               <Section title="Qué revisar">
                 <div className="intel-rule-list">
-                  <div><span>&lt;40% por 4+ semanas</span><strong>Mover o promover</strong></div>
-                  <div><span>&gt;15% cancelación</span><strong>Revisar horario</strong></div>
-                  <div><span>&gt;90% ocupación</span><strong>Agregar capacidad</strong></div>
+                  <div>
+                    <span>&lt;40% por 4+ semanas</span>
+                    <strong>Mover o promover</strong>
+                  </div>
+                  <div>
+                    <span>&gt;15% cancelación</span>
+                    <strong>Revisar horario</strong>
+                  </div>
+                  <div>
+                    <span>&gt;90% ocupación</span>
+                    <strong>Agregar capacidad</strong>
+                  </div>
                 </div>
               </Section>
             </div>
           </div>
         </>
       ) : null}
-
     </main>
   );
 }

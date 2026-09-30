@@ -98,8 +98,7 @@ export default async function ActivityDetailPage({
       (activity.minimum_review_minutes_before ?? 120) % 60 === 0
         ? (activity.minimum_review_minutes_before ?? 120) / 60
         : (activity.minimum_review_minutes_before ?? 120),
-    allowMinimumReservationOverride:
-      activity.allow_minimum_reservation_override ?? true,
+    allowMinimumReservationOverride: activity.allow_minimum_reservation_override ?? true,
   };
 
   return (

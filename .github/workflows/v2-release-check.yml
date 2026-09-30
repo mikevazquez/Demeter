@@ -5,12 +5,12 @@ on:
       - release/studio-flow-v2
   workflow_dispatch:
 jobs:
-  build:
+  quality:
     env:
       NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: test-publishable-key
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -18,4 +18,7 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npx vitest run tests/v2-release-safety.test.ts
       - run: npm run build
