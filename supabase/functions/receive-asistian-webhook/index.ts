@@ -442,10 +442,8 @@ Deno.serve(async (request) => {
       return jsonResponse({ error: "conversation_sync_failed" }, 500);
     }
 
-    const conversationResult = asRecord(response.data) ?? {
-      ok: false,
-      reason_code: "conversation_sync_result_invalid",
-    };
+    const conversationResult =
+      asRecord(response.data) ?? { ok: false, reason_code: "conversation_sync_result_invalid" };
 
     if (conversationResult.ok === true) {
       await markEvent("processed", conversationResult);

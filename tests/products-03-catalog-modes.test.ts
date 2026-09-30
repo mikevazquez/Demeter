@@ -19,13 +19,13 @@ describe("PRODUCTS-03 catalog modes", () => {
   });
 
   it("classifies unlimited and schedule-restricted products from existing rules", () => {
-    expect(catalog).toContain("if (isPackageLike && product.unlimited)");
+    expect(catalog).toContain('if (isPackageLike && product.unlimited)');
     expect(catalog).toContain("product.product_template_schedules?.length");
   });
 
   it("offers a creation mode before showing the product form", () => {
     expect(createPage).toContain("¿Qué quieres crear?");
-    expect(createPage).toContain("creationMode={mode}");
+    expect(createPage).toContain('creationMode={mode}');
   });
 
   it("locks simple packs to credits plus validity and restricted packs to schedules", () => {

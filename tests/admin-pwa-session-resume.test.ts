@@ -17,7 +17,7 @@ describe("independent Admin and Student PWAs", () => {
     expect(studentLayout).toContain('portal: "student"');
     expect(manifest).toContain('const startUrl = portal === "admin" ? "/admin" : "/student"');
     expect(manifest).toContain('const appName = portal === "admin" ? name + " Admin" : name');
-    expect(manifest).toContain("start_url: startUrl");
+    expect(manifest).toContain('start_url: startUrl');
     expect(manifest).toContain('id: "/pwa/" + slug + "/" + portal');
   });
 

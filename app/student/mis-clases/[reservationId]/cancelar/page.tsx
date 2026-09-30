@@ -202,9 +202,7 @@ export default async function StudentCancelReservationPage({
               defaultValue=""
               className="mt-2 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-sm text-white outline-none transition focus:border-fuchsia-500/60"
             >
-              <option value="" disabled>
-                Selecciona un motivo
-              </option>
+              <option value="" disabled>Selecciona un motivo</option>
               <option value="schedule_conflict">Horario / cambio de planes</option>
               <option value="health">Salud</option>
               <option value="work_school">Trabajo / escuela</option>
