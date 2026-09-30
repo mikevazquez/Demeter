@@ -480,15 +480,15 @@ export default async function StudentsPage({
                       <span className="student-package-summary student-package-quick-summary">
                         <b>{productNameMap.get(acquisition.product_template_id) ?? "Paquete activo"}</b>
                         <span className="student-package-quick-facts">
-                          <small>
+                          <small className="student-package-remaining">
                             {acquisition.unlimited
                               ? "Ilimitado"
-                              : remaining + " de " + String(acquisition.credit_limit ?? "—") + " disponibles"}
+                              : remaining + " clases restantes"}
                           </small>
-                          <small>
+                          <small className="student-package-expiry">
                             {acquisition.expires_on
                               ? "Vence " + shortDate(acquisition.expires_on, studio.locale)
-                              : "Sin fecha de vencimiento"}
+                              : "Sin vencimiento"}
                           </small>
                         </span>
                       </span>
