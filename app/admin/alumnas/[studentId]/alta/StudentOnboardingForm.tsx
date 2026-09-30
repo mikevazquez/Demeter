@@ -33,6 +33,12 @@ const termCopy: Record<string, string> = {
   custom: "Otra vigencia",
 };
 
+const termOrder = ["monthly", "quarterly", "semiannual", "annual", "custom"];
+
+function packageTermKey(value: string | null) {
+  return value && termCopy[value] ? value : "custom";
+}
+
 function money(minor: number, currency: string, locale: string) {
   return new Intl.NumberFormat(locale, {
     style: "currency",
@@ -76,6 +82,9 @@ export default function StudentOnboardingForm({
   flowContext?: "onboarding" | "sale";
 }) {
   const [selectedId, setSelectedId] = useState(packages[0]?.id ?? "");
+  const [openPackageTerm, setOpenPackageTerm] = useState<string | null>(
+    packages[0] ? packageTermKey(packages[0].packageTerm) : null,
+  );
   const [startMode, setStartMode] = useState("today");
   const [discountMode, setDiscountMode] = useState("none");
   const [discountValue, setDiscountValue] = useState("");
@@ -94,6 +103,18 @@ export default function StudentOnboardingForm({
   const selectedPackage = useMemo(
     () => packages.find((item) => item.id === selectedId) ?? packages[0] ?? null,
     [packages, selectedId],
+  );
+
+  const packageGroups = useMemo(
+    () =>
+      termOrder
+        .map((term) => ({
+          term,
+          label: termCopy[term],
+          packages: packages.filter((item) => packageTermKey(item.packageTerm) === term),
+        }))
+        .filter((group) => group.packages.length > 0),
+    [packages],
   );
 
   const selectedEnrollment = useMemo(
@@ -188,36 +209,62 @@ export default function StudentOnboardingForm({
           </div>
         </div>
 
-        <div className="grid gap-3 md:grid-cols-2">
-          {packages.map((item) => {
-            const selected = item.id === selectedPackage.id;
+        <div className="sales-v2-package-groups">
+          {packageGroups.map((group) => {
+            const isOpen = openPackageTerm === group.term;
+            const selectedInGroup = group.packages.some((item) => item.id === selectedPackage.id);
+
             return (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => setSelectedId(item.id)}
-                className={`rounded-2xl border p-4 text-left transition ${
-                  selected
-                    ? "border-fuchsia-500/70 bg-fuchsia-500/10"
-                    : "border-white/10 bg-white/[0.03] hover:border-white/20"
-                }`}
+              <section
+                key={group.term}
+                className={`sales-v2-package-group ${selectedInGroup ? "has-selection" : ""}`}
               >
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-fuchsia-300">
-                      {item.packageTerm
-                        ? (termCopy[item.packageTerm] ?? "Otra vigencia")
-                        : "Paquete"}
-                    </p>
-                    <strong className="mt-1 block text-white">{item.name}</strong>
-                    <span className="mt-1 block text-sm text-zinc-400">
-                      {item.unlimited ? "Clases ilimitadas" : `${item.creditLimit ?? 0} créditos`}
-                      {item.validityDays ? ` · ${item.validityDays} días` : ""}
-                    </span>
+                <button
+                  type="button"
+                  className="sales-v2-package-group-toggle"
+                  onClick={() => setOpenPackageTerm(isOpen ? null : group.term)}
+                  aria-expanded={isOpen}
+                >
+                  <span>
+                    <strong>{group.label}</strong>
+                    <small>
+                      {group.packages.length} {group.packages.length === 1 ? "paquete" : "paquetes"}
+                      {selectedInGroup ? ` · Seleccionado: ${selectedPackage.name}` : ""}
+                    </small>
+                  </span>
+                  <b aria-hidden="true">{isOpen ? "−" : "+"}</b>
+                </button>
+
+                {isOpen ? (
+                  <div className="sales-v2-package-options">
+                    {group.packages.map((item) => {
+                      const selected = item.id === selectedPackage.id;
+                      return (
+                        <button
+                          key={item.id}
+                          type="button"
+                          onClick={() => {
+                            setSelectedId(item.id);
+                            setOpenPackageTerm(group.term);
+                          }}
+                          className={`sales-v2-package-option ${selected ? "is-selected" : ""}`}
+                        >
+                          <span>
+                            <strong>{item.name}</strong>
+                            <small>
+                              {item.unlimited
+                                ? "Clases ilimitadas"
+                                : `${item.creditLimit ?? 0} créditos`}
+                              {item.validityDays ? ` · ${item.validityDays} días` : ""}
+                            </small>
+                          </span>
+                          <strong>{money(item.priceMinor, item.currency, locale)}</strong>
+                        </button>
+                      );
+                    })}
                   </div>
-                  <strong>{money(item.priceMinor, item.currency, locale)}</strong>
-                </div>
-              </button>
+                ) : null}
+              </section>
             );
           })}
         </div>
