@@ -55,8 +55,8 @@ const items: MoreItem[] = [
     capability: CAPABILITIES.INSTRUCTORS_READ,
   },
   {
-    title: "Automatizaciones",
-    description: "Mensajes, recordatorios y flujos automáticos.",
+    title: "Comunicación",
+    description: "Procesos, marketing, plantillas y horarios de envío.",
     href: "/admin/automatizaciones",
     capability: CAPABILITIES.AUTOMATIONS_READ,
   },
