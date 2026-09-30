@@ -216,6 +216,49 @@ export function SessionOperations({
               ) : null}
             </div>
 
+
+
+            {showAddStudent ? (
+              <div className="today-add-panel">
+                <div className="today-add-panel-heading">
+                  <span><strong>Agregar alumna</strong><small>Busca primero. Si no existe, créala aquí mismo.</small></span>
+                  {canAddExisting && canAddNew ? (
+                    <button
+                      type="button"
+                      onClick={() => setNewWalkin((value) => !value)}
+                      className="today-add-mode"
+                    >
+                      {showNewWalkin ? "Buscar existente" : "Nueva alumna"}
+                    </button>
+                  ) : null}
+                </div>
+
+                {available <= 0 ? (
+                  <div className="today-drawer-empty">La clase ya está llena.</div>
+                ) : showNewWalkin ? (
+                  <form action={createWalkinFromToday} className="today-add-form">
+                    <input type="hidden" name="session_id" value={sessionId} />
+                    <input type="hidden" name="return_date" value={returnDate} />
+                    {returnTo ? <input type="hidden" name="return_to" value={returnTo} /> : null}
+                    <input name="first_name" placeholder="Nombre" required />
+                    <input name="last_name" placeholder="Apellido" />
+                    <input name="phone" type="tel" placeholder="Teléfono" required />
+                    <button className="primary-button" type="submit">
+                      Registrar y agregar
+                    </button>
+                  </form>
+                ) : canAddExisting ? (
+                  <ExistingStudentAddForm
+                    sessionId={sessionId}
+                    returnDate={returnDate}
+                    returnTo={returnTo}
+                    candidates={candidates}
+                    canPostCloseAdd={canPostCloseAdd}
+                  />
+                ) : null}
+              </div>
+            ) : null}
+
             {roster.length ? (
               <div className="today-student-list compact">
                 {roster.map((item) => {
@@ -389,47 +432,6 @@ export function SessionOperations({
             ) : (
               <div className="today-drawer-empty">Todavía no hay alumnas en esta clase.</div>
             )}
-
-            {showAddStudent ? (
-              <div className="today-add-panel">
-                <div className="today-add-panel-heading">
-                  <span><strong>Agregar alumna</strong><small>Busca primero. Si no existe, créala aquí mismo.</small></span>
-                  {canAddExisting && canAddNew ? (
-                    <button
-                      type="button"
-                      onClick={() => setNewWalkin((value) => !value)}
-                      className="today-add-mode"
-                    >
-                      {showNewWalkin ? "Buscar existente" : "Nueva alumna"}
-                    </button>
-                  ) : null}
-                </div>
-
-                {available <= 0 ? (
-                  <div className="today-drawer-empty">La clase ya está llena.</div>
-                ) : showNewWalkin ? (
-                  <form action={createWalkinFromToday} className="today-add-form">
-                    <input type="hidden" name="session_id" value={sessionId} />
-                    <input type="hidden" name="return_date" value={returnDate} />
-                    {returnTo ? <input type="hidden" name="return_to" value={returnTo} /> : null}
-                    <input name="first_name" placeholder="Nombre" required />
-                    <input name="last_name" placeholder="Apellido" />
-                    <input name="phone" type="tel" placeholder="Teléfono" required />
-                    <button className="primary-button" type="submit">
-                      Registrar y agregar
-                    </button>
-                  </form>
-                ) : canAddExisting ? (
-                  <ExistingStudentAddForm
-                    sessionId={sessionId}
-                    returnDate={returnDate}
-                    returnTo={returnTo}
-                    candidates={candidates}
-                    canPostCloseAdd={canPostCloseAdd}
-                  />
-                ) : null}
-              </div>
-            ) : null}
           </section>
         </div>
       ) : null}
