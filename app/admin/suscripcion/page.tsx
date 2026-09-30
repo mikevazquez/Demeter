@@ -136,8 +136,8 @@ export default async function SubscriptionPage({
       <header className="topbar">
         <div>
           {ctx.subscription.access_mode === "full" ? (
-            <Link className="back-link compact" href="/admin/mas">
-              ← Más
+            <Link className="back-link compact" href="/admin/configuracion">
+              ← Avanzado
             </Link>
           ) : null}
           <p className="eyebrow">STUDIO FLOW · SUSCRIPCIÓN</p>
