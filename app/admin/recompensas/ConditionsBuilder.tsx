@@ -92,14 +92,14 @@ export function ConditionsBuilder({ initial }: { initial?: ConditionInput[] }) {
       {conditions.map((condition, index) => (
         <div
           key={condition.key}
-          className="grid gap-3 rounded-2xl border border-white/10 bg-black/20 p-4 md:grid-cols-[1fr_150px_120px_auto]"
+          className="grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 md:grid-cols-[1fr_150px_120px_auto]"
         >
-          <label className="grid gap-1 text-sm text-zinc-300">
+          <label className="grid gap-1 text-sm text-slate-700">
             Objetivo
             <select
               value={condition.metric}
               onChange={(event) => update(index, { metric: event.target.value })}
-              className="rounded-xl border border-white/10 bg-[#111114] px-3 py-2.5 text-white"
+              className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-slate-900"
             >
               {metricGroups.map((group) => (
                 <optgroup key={group.label} label={group.label}>
@@ -113,12 +113,12 @@ export function ConditionsBuilder({ initial }: { initial?: ConditionInput[] }) {
             </select>
           </label>
 
-          <label className="grid gap-1 text-sm text-zinc-300">
+          <label className="grid gap-1 text-sm text-slate-700">
             Condición
             <select
               value={condition.comparator}
               onChange={(event) => update(index, { comparator: event.target.value })}
-              className="rounded-xl border border-white/10 bg-[#111114] px-3 py-2.5 text-white"
+              className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-slate-900"
             >
               {comparators.map(([value, label]) => (
                 <option key={value} value={value}>
@@ -128,7 +128,7 @@ export function ConditionsBuilder({ initial }: { initial?: ConditionInput[] }) {
             </select>
           </label>
 
-          <label className="grid gap-1 text-sm text-zinc-300">
+          <label className="grid gap-1 text-sm text-slate-700">
             Meta
             <input
               type="number"
@@ -136,14 +136,14 @@ export function ConditionsBuilder({ initial }: { initial?: ConditionInput[] }) {
               step="1"
               value={condition.target}
               onChange={(event) => update(index, { target: Number(event.target.value) })}
-              className="rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 text-white"
+              className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-slate-900"
             />
           </label>
 
           <button
             type="button"
             onClick={() => remove(index)}
-            className="self-end rounded-xl border border-white/10 px-3 py-2.5 text-sm text-zinc-400 transition hover:border-rose-500/30 hover:text-rose-300"
+            className="self-end rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-600 transition hover:border-rose-500/30 hover:text-rose-300"
           >
             Quitar
           </button>
@@ -154,11 +154,11 @@ export function ConditionsBuilder({ initial }: { initial?: ConditionInput[] }) {
         <button
           type="button"
           onClick={add}
-          className="rounded-xl border border-[#FF0A8A]/30 bg-[#FF0A8A]/10 px-4 py-2.5 text-sm font-semibold text-[#ff64b6]"
+          className="rounded-xl border border-teal-200 bg-teal-600/10 px-4 py-2.5 text-sm font-semibold text-teal-700"
         >
           + Agregar condición
         </button>
-        <p className="mt-2 text-xs text-zinc-500">
+        <p className="mt-2 text-xs text-slate-500">
           En V1 se deben cumplir todas las condiciones. No mezcles métricas de asistencia y
           fidelidad dentro de la misma configuración.
         </p>
