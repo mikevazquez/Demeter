@@ -164,7 +164,7 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
           ? [{ href: "/admin/instructores", label: "Equipo", enabled: true }]
           : []),
         ...(can(CAPABILITIES.AUTOMATIONS_READ)
-          ? [{ href: "/admin/automatizaciones", label: "Automatizaciones", enabled: true }]
+          ? [{ href: "/admin/automatizaciones", label: "Comunicación", enabled: true }]
           : []),
         ...(membership.role === "owner"
           ? [
