@@ -67,7 +67,6 @@ export default async function NewSalePage({
   const query = await searchParams;
   const { supabase, studio } = await getAdminContext(CAPABILITIES.SALES_WRITE);
   const selectedStudentId = String(query.student_id ?? "").trim();
-  if (!selectedStudentId) redirect("/admin/alumnas");
   const today = localDate(studio.timezone);
 
   const { data: students } = await supabase
@@ -145,6 +144,23 @@ export default async function NewSalePage({
       {!students?.length ? (
         <section className="module-empty">
           No hay alumnas activas disponibles para registrar una venta.
+        </section>
+      ) : !selectedStudentId ? (
+        <section className="sales-v2-student-picker">
+          <div>
+            <span>Primero</span>
+            <h2>¿A quién le vas a vender?</h2>
+            <p>Busca o selecciona una alumna para continuar.</p>
+          </div>
+          <div className="sales-v2-student-picker-list">
+            {(students ?? []).map((student) => (
+              <Link key={student.id} href={`/admin/ventas/nueva?student_id=${student.id}`}>
+                <strong>{student.full_name}</strong>
+                {student.phone ? <small>{student.phone}</small> : null}
+                <span aria-hidden="true">›</span>
+              </Link>
+            ))}
+          </div>
         </section>
       ) : !selectedStudent ? (
         <section className="module-empty">
