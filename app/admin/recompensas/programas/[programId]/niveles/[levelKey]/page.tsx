@@ -45,7 +45,7 @@ export default async function EditProgramLevelPage({
       <header>
         <Link
           href={`/admin/recompensas/programas/${programId}`}
-          className="text-sm font-semibold text-zinc-400 hover:text-white"
+          className="text-sm font-semibold text-slate-600 hover:text-slate-900"
         >
           ← Programa
         </Link>
