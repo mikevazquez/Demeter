@@ -20,7 +20,7 @@ export default async function NewProgramPage({
       <header>
         <Link
           href="/admin/recompensas/programas"
-          className="text-sm font-semibold text-zinc-400 hover:text-white"
+          className="text-sm font-semibold text-slate-600 hover:text-slate-900"
         >
           ← Programas
         </Link>
@@ -34,55 +34,55 @@ export default async function NewProgramPage({
 
       <form
         action={createProgramAction}
-        className="grid gap-5 rounded-2xl border border-white/10 bg-white/[0.03] p-5"
+        className="grid gap-5 rounded-2xl border border-slate-200 bg-white p-5"
       >
         <div className="grid gap-4 md:grid-cols-2">
-          <label className="grid gap-1 text-sm text-zinc-300 md:col-span-2">
+          <label className="grid gap-1 text-sm text-slate-700 md:col-span-2">
             Nombre
             <input
               name="name"
               required
               maxLength={120}
               placeholder="Ej. Programa de constancia"
-              className="rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 text-white"
+              className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-slate-900"
             />
           </label>
-          <label className="grid gap-1 text-sm text-zinc-300 md:col-span-2">
+          <label className="grid gap-1 text-sm text-slate-700 md:col-span-2">
             Descripción
             <textarea
               name="description"
               rows={3}
-              className="rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 text-white"
+              className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-slate-900"
             />
           </label>
-          <label className="grid gap-1 text-sm text-zinc-300">
+          <label className="grid gap-1 text-sm text-slate-700">
             Progresión
             <select
               name="progression_mode"
               defaultValue="cumulative"
-              className="rounded-xl border border-white/10 bg-[#111114] px-3 py-2.5 text-white"
+              className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-slate-900"
             >
               <option value="cumulative">Acumulativa</option>
               <option value="sequential">Secuencial</option>
             </select>
           </label>
-          <label className="grid gap-1 text-sm text-zinc-300">
+          <label className="grid gap-1 text-sm text-slate-700">
             Audiencia
             <select
               name="audience_scope"
               defaultValue="all_active_students"
-              className="rounded-xl border border-white/10 bg-[#111114] px-3 py-2.5 text-white"
+              className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-slate-900"
             >
               <option value="all_active_students">Alumnas activas</option>
               <option value="all_students">Todas las alumnas</option>
             </select>
           </label>
-          <label className="grid gap-1 text-sm text-zinc-300">
+          <label className="grid gap-1 text-sm text-slate-700">
             Elegibilidad
             <select
               name="eligibility_mode"
               defaultValue="continuous"
-              className="rounded-xl border border-white/10 bg-[#111114] px-3 py-2.5 text-white"
+              className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-slate-900"
             >
               <option value="continuous">Debe seguir siendo elegible</option>
               <option value="lock_on_join">Se conserva al entrar</option>
@@ -92,7 +92,7 @@ export default async function NewProgramPage({
 
         <div className="flex justify-end">
           <PendingActionButton
-            className="rounded-xl bg-[#FF0A8A] px-4 py-2.5 text-sm font-semibold text-white"
+            className="rounded-xl bg-teal-600 px-4 py-2.5 text-sm font-semibold text-slate-900"
             pendingLabel="Creando…"
           >
             Crear y configurar niveles
