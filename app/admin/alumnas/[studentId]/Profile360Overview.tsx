@@ -48,7 +48,6 @@ type Props = {
   timeZone: string;
   locale: string;
   currency: string;
-  hasAvatar: boolean;
 };
 
 function initials(name: string) {
@@ -106,7 +105,6 @@ export default function Profile360Overview({
   timeZone,
   locale,
   currency,
-  hasAvatar,
 }: Props) {
   const href = (view: string) => "/admin/alumnas/" + student.id + "?view=" + view;
   const usedCredits =
@@ -132,7 +130,7 @@ export default function Profile360Overview({
         <div className="profile360-approved-person">
           <span className="profile360-avatar" aria-hidden="true">
             {initials(student.fullName)}
-            {student.userId && hasAvatar ? (
+            {student.userId ? (
               <Image
                 src={"/admin/alumnas/" + student.id + "/avatar"}
                 alt=""
