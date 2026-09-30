@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import {
@@ -10,7 +9,6 @@ import {
 } from "../actions";
 import { startScheduledEvaluationAction } from "../alumnas/[studentId]/evaluation-actions";
 import { ExistingStudentAddForm } from "./ExistingStudentAddForm";
-import { PendingClassPaymentDialog } from "./PendingClassPaymentDialog";
 
 type RosterItem = {
   id: string;
@@ -25,9 +23,6 @@ type RosterItem = {
   attendanceSource?: string | null;
   checkedInAt?: string | null;
   attendanceProvenance?: string | null;
-  paymentDueOnAttendance?: boolean;
-  individualPriceMinor?: number | null;
-  currency?: string;
 };
 
 type Candidate = {
@@ -49,6 +44,8 @@ type SessionOperationsProps = {
   canAttendance: boolean;
   canBook: boolean;
   canCreateStudent: boolean;
+  locale: string;
+  timeZone: string;
   canCorrectCompleted?: boolean;
   returnTo?: string;
   initiallyOpen?: boolean;
@@ -82,6 +79,8 @@ export function SessionOperations({
   canAttendance,
   canBook,
   canCreateStudent,
+  locale,
+  timeZone,
   canCorrectCompleted = true,
   returnTo = "",
   initiallyOpen = false,
@@ -90,7 +89,6 @@ export function SessionOperations({
   const [open, setOpen] = useState(initiallyOpen);
   const [showAddStudent, setShowAddStudent] = useState(false);
   const [newWalkin, setNewWalkin] = useState(false);
-  const [paymentItem, setPaymentItem] = useState<RosterItem | null>(null);
   const [feedback, setFeedback] = useState<{
     kind: "success" | "error";
     message: string;
@@ -99,17 +97,14 @@ export function SessionOperations({
 
   const isCompleted = sessionStatus === "completed";
   const isCancelled = sessionStatus === "cancelled";
-  const attendanceCount = roster.filter((item) => item.status === "attended").length;
-  const noShowCount = roster.filter((item) => item.status === "no_show").length;
-  const pendingCount = roster.filter((item) => item.status === "reserved").length;
   const startsAtMs = new Date(startsAt).getTime();
   const endsAtMs = new Date(endsAt).getTime();
   const inProgress =
     sessionStatus === "scheduled" && now !== null && now >= startsAtMs && now < endsAtMs;
-  const sessionOpen = sessionStatus === "scheduled";
+  // Closing consolidates the session; it does not lock studio operations.
   const canPostCloseAdd = isCompleted && canCorrectCompleted && canAttendance;
-  const canAddExisting = (sessionOpen && canBook) || canPostCloseAdd;
-  const canAddNew = sessionOpen && canCreateStudent;
+  const canAddExisting = !isCancelled && (canBook || canPostCloseAdd);
+  const canAddNew = !isCancelled && canCreateStudent && canAttendance;
   const canAddWalkin = canAddExisting || canAddNew;
   const showNewWalkin = canAddNew && (newWalkin || !canAddExisting);
 
@@ -143,15 +138,13 @@ export function SessionOperations({
                   ? "Corrección registrada correctamente."
                   : created === "post-close-attendee"
                     ? "Asistencia agregada después del cierre."
-                    : created === "paid-attendance"
-                      ? "Pago y asistencia registrados correctamente."
-                      : created === "walkin"
-                        ? "Walk-in registrada y agregada a la clase."
-                        : created === "walkin-existing"
-                          ? "Alumna agregada a la clase."
-                          : created === "cancel"
-                            ? "Reserva cancelada correctamente."
-                            : "Reserva creada correctamente.",
+                    : created === "walkin"
+                      ? "Walk-in registrada y agregada a la clase."
+                      : created === "walkin-existing"
+                        ? "Alumna agregada a la clase."
+                        : created === "cancel"
+                          ? "Reserva cancelada correctamente."
+                          : "Reserva creada correctamente.",
           });
         }
       } else if (error) {
@@ -162,25 +155,13 @@ export function SessionOperations({
               ? "La corrección requiere un motivo."
               : error === "attendance_not_persisted"
                 ? "La corrección no se guardó. Intenta nuevamente."
-                : error === "attendance_payment_not_persisted"
-                  ? "El pago o la asistencia no se guardaron. Intenta nuevamente."
-                  : error === "asistian_payment_required"
-                    ? "Esta reserva de Asistian tiene pago pendiente. Registra el cobro antes de marcar asistencia."
-                    : error === "class_price_required"
-                      ? "Esta actividad no tiene precio individual configurado. Ingresa el monto cobrado."
-                      : error === "payment_method_required"
-                        ? "Selecciona cómo se pagó la clase."
-                        : error === "payment_not_pending"
-                          ? "Esta reserva ya no tiene un pago pendiente."
-                          : error === "reservation_not_asistian"
-                            ? "La reserva no corresponde a una entrada desde Asistian."
-                            : error === "phone_exists"
-                              ? "Ese teléfono ya pertenece a una alumna. Agrégala como alumna existente."
-                              : error === "session_full"
-                                ? "La clase ya está llena."
-                                : error === "enrollment_required"
-                                  ? "La alumna necesita una inscripción vigente para reservar esta clase."
-                                  : "No se pudo completar la operación.",
+                : error === "phone_exists"
+                  ? "Ese teléfono ya pertenece a una alumna. Agrégala como alumna existente."
+                  : error === "session_full"
+                    ? "La clase ya está llena."
+                    : error === "enrollment_required"
+                      ? "La alumna necesita una inscripción vigente para reservar esta clase."
+                      : "No se pudo completar la operación.",
         });
       }
     });
@@ -200,7 +181,7 @@ export function SessionOperations({
           onClick={() => setOpen((value) => !value)}
           aria-expanded={open}
         >
-          {open ? "Cerrar clase" : `Ver alumnas · ${roster.length}`}
+          {open ? "Ocultar" : `Alumnas · ${roster.length}`}
         </button>
       ) : null}
 
@@ -215,7 +196,7 @@ export function SessionOperations({
           <section className="today-roster roster-priority">
             <div className="today-roster-header compact">
               <div>
-                <h3>Asistencia</h3>
+                <h3>Alumnas</h3>
                 <span>
                   {roster.length} {roster.length === 1 ? "alumna" : "alumnas"}
                 </span>
@@ -223,226 +204,24 @@ export function SessionOperations({
 
               {canAddWalkin ? (
                 <button
-                  className="today-add-student-button"
+                  className="today-add-student-button is-labeled"
                   type="button"
                   onClick={() => setShowAddStudent((value) => !value)}
                   aria-expanded={showAddStudent}
                   aria-label={showAddStudent ? "Cerrar agregar alumna" : "Agregar alumna"}
                   title="Agregar alumna"
                 >
-                  {showAddStudent ? "×" : "+"}
+                  {showAddStudent ? "Cerrar" : "+ Agregar alumna"}
                 </button>
               ) : null}
             </div>
 
-            {roster.length ? (
-              <div className="today-student-list compact">
-                {roster.map((item) => {
-                  const canCorrect =
-                    isCompleted &&
-                    canCorrectCompleted &&
-                    canAttendance &&
-                    ["attended", "no_show"].includes(item.status);
-                  const correctionTarget = item.status === "attended" ? "no_show" : "attended";
-                  const isInvitation = item.packageLabel === "Invitación";
 
-                  return (
-                    <article className="today-student-card compact" key={item.id}>
-                      <div className="today-student-avatar" aria-hidden="true">
-                        {initials(item.studentName)}
-                      </div>
-
-                      <div className="today-student-identity">
-                        <div className="today-student-name-line">
-                          <strong>{item.studentName}</strong>
-                          {isInvitation ? (
-                            <span className="today-invite-tag">Invitación</span>
-                          ) : null}
-                          {item.paymentDueOnAttendance ? (
-                            <span className="today-payment-pending-tag">Pago pendiente</span>
-                          ) : null}
-                          {item.evaluationStatus === "scheduled" ? (
-                            <span className="today-evaluation-tag">Evaluación programada</span>
-                          ) : item.evaluationStatus === "in_progress" ? (
-                            <span className="today-evaluation-tag is-active">
-                              Evaluación en curso
-                            </span>
-                          ) : null}
-                        </div>
-                        <span>
-                          {isInvitation
-                            ? item.creditsLabel
-                            : `${item.packageLabel} · ${item.creditsLabel}`}
-                        </span>
-                        {item.status === "attended" ? (
-                          <>
-                            <span className="today-attendance-origin">
-                              {item.attendanceSource === "KIOSK" ? "Check-in" : "Manual"}
-                              {item.checkedInAt
-                                ? ` · ${new Intl.DateTimeFormat("es-MX", {
-                                    hour: "2-digit",
-                                    minute: "2-digit",
-                                  }).format(new Date(item.checkedInAt))}`
-                                : ""}
-                            </span>
-                            {item.attendanceProvenance ? (
-                              <span className="today-attendance-origin">
-                                {item.attendanceProvenance}
-                              </span>
-                            ) : null}
-                          </>
-                        ) : null}
-                        {item.evaluationStatus === "scheduled" &&
-                        item.evaluationInvitationId &&
-                        item.studentId ? (
-                          <form
-                            action={startScheduledEvaluationAction}
-                            className="today-evaluation-start-form"
-                          >
-                            <input type="hidden" name="student_id" value={item.studentId} />
-                            <input
-                              type="hidden"
-                              name="invitation_id"
-                              value={item.evaluationInvitationId}
-                            />
-                            <button type="submit">Iniciar evaluación →</button>
-                          </form>
-                        ) : null}
-                      </div>
-
-                      {inProgress &&
-                      canAttendance &&
-                      ["reserved", "attended", "no_show"].includes(item.status) ? (
-                        <div className="today-attendance-preview">
-                          {item.paymentDueOnAttendance && item.status !== "attended" ? (
-                            <button
-                              type="button"
-                              className="today-payment-attendance-trigger"
-                              onClick={() => setPaymentItem(item)}
-                              aria-haspopup="dialog"
-                            >
-                              Asistió
-                            </button>
-                          ) : (
-                            <form action={setAttendanceFromToday}>
-                              <input type="hidden" name="session_id" value={sessionId} />
-                              <input type="hidden" name="reservation_id" value={item.id} />
-                              <input type="hidden" name="return_date" value={returnDate} />
-                              {returnTo ? (
-                                <input type="hidden" name="return_to" value={returnTo} />
-                              ) : null}
-                              <input type="hidden" name="status" value="attended" />
-                              <button
-                                className={
-                                  item.status === "attended" ? "is-selected is-attended" : ""
-                                }
-                                type="submit"
-                                disabled={item.status === "attended"}
-                                aria-pressed={item.status === "attended"}
-                              >
-                                {item.status === "attended" ? "✓ " : ""}
-                                Asistió
-                              </button>
-                            </form>
-                          )}
-
-                          <form action={setAttendanceFromToday}>
-                            <input type="hidden" name="session_id" value={sessionId} />
-                            <input type="hidden" name="reservation_id" value={item.id} />
-                            <input type="hidden" name="return_date" value={returnDate} />
-                            {returnTo ? (
-                              <input type="hidden" name="return_to" value={returnTo} />
-                            ) : null}
-                            <input type="hidden" name="status" value="no_show" />
-                            <button
-                              className={item.status === "no_show" ? "is-selected is-no-show" : ""}
-                              type="submit"
-                              disabled={item.status === "no_show"}
-                              aria-pressed={item.status === "no_show"}
-                            >
-                              No asistió
-                            </button>
-                          </form>
-                        </div>
-                      ) : (
-                        <span
-                          className={`today-attendance-state${item.status === "attended" ? " is-attended" : ""}${item.status === "no_show" ? " is-no-show" : ""}`}
-                        >
-                          {attendanceLabel(item.status)}
-                        </span>
-                      )}
-
-                      {!isCompleted && !isCancelled && canBook && item.status === "reserved" ? (
-                        <details className="today-student-more">
-                          <summary aria-label={`Más acciones para ${item.studentName}`}>⋮</summary>
-                          <div>
-                            <form action={cancelReservationFromToday} className="space-y-2">
-                              <input type="hidden" name="session_id" value={sessionId} />
-                              <input type="hidden" name="reservation_id" value={item.id} />
-                              <input type="hidden" name="return_date" value={returnDate} />
-                              {returnTo ? (
-                                <input type="hidden" name="return_to" value={returnTo} />
-                              ) : null}
-                              <label className="block text-[11px] text-zinc-400">
-                                Motivo de cancelación
-                                <select
-                                  name="reason"
-                                  required
-                                  defaultValue=""
-                                  className="mt-1 w-full rounded-lg border border-white/10 bg-zinc-950 px-2 py-2 text-xs text-white"
-                                >
-                                  <option value="" disabled>Selecciona un motivo</option>
-                                  <option value="schedule_conflict">Horario / cambio de planes</option>
-                                  <option value="health">Salud</option>
-                                  <option value="work_school">Trabajo / escuela</option>
-                                  <option value="transport">Transporte / distancia</option>
-                                  <option value="price">Precio</option>
-                                  <option value="lost_interest">Ya no le interesa</option>
-                                  <option value="booking_error">Error de reserva</option>
-                                  <option value="other">Otro</option>
-                                  <option value="prefer_not_say">Prefiere no decir</option>
-                                </select>
-                              </label>
-                              <button type="submit">Cancelar reserva</button>
-                            </form>
-                          </div>
-                        </details>
-                      ) : (
-                        <span className="today-student-more-placeholder" aria-hidden="true" />
-                      )}
-
-                      {canCorrect ? (
-                        <form action={setAttendanceFromToday} className="today-correction-form">
-                          <input type="hidden" name="session_id" value={sessionId} />
-                          <input type="hidden" name="reservation_id" value={item.id} />
-                          <input type="hidden" name="return_date" value={returnDate} />
-                          {returnTo ? (
-                            <input type="hidden" name="return_to" value={returnTo} />
-                          ) : null}
-                          <input type="hidden" name="status" value={correctionTarget} />
-                          <input
-                            name="reason"
-                            placeholder="Motivo de la corrección"
-                            required
-                            aria-label="Motivo de la corrección"
-                          />
-                          <button className="secondary-button" type="submit">
-                            Corregir a {correctionTarget === "attended" ? "Asistió" : "No asistió"}
-                          </button>
-                        </form>
-                      ) : null}
-                    </article>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="today-drawer-empty">Todavía no hay alumnas en esta clase.</div>
-            )}
 
             {showAddStudent ? (
               <div className="today-add-panel">
                 <div className="today-add-panel-heading">
-                  <strong>Agregar alumna</strong>
+                  <span><strong>Agregar alumna</strong><small>Busca primero. Si no existe, créala aquí mismo.</small></span>
                   {canAddExisting && canAddNew ? (
                     <button
                       type="button"
@@ -479,57 +258,182 @@ export function SessionOperations({
                 ) : null}
               </div>
             ) : null}
-          </section>
 
-          {!isCancelled ? (
-            <Link
-              href={`/admin/agenda/${sessionId}?from=${encodeURIComponent(returnDate)}`}
-              className="today-session-detail-link"
-            >
-              Ver detalle de la sesión
-              <span aria-hidden="true">›</span>
-            </Link>
-          ) : null}
+            {roster.length ? (
+              <div className="today-student-list compact">
+                {roster.map((item) => {
+                  const canCorrect =
+                    isCompleted &&
+                    canCorrectCompleted &&
+                    canAttendance &&
+                    ["attended", "no_show"].includes(item.status);
+                  const correctionTarget = item.status === "attended" ? "no_show" : "attended";
+                  const isInvitation = item.packageLabel === "Invitación";
 
-          {canAttendance ? (
-            <section className="today-attendance-footer">
-              <div className="today-attendance-summary">
-                <span>{attendanceCount} asistieron</span>
-                <span>{noShowCount} no asistieron</span>
-                <span>{pendingCount} pendientes</span>
+                  return (
+                    <article className="today-student-card compact" key={item.id}>
+                      <div className="today-student-avatar" aria-hidden="true">
+                        {initials(item.studentName)}
+                      </div>
+
+                      <div className="today-student-identity">
+                        <div className="today-student-name-line">
+                          <strong>{item.studentName}</strong>
+                          {isInvitation ? (
+                            <span className="today-invite-tag">Invitación</span>
+                          ) : null}
+                          {item.evaluationStatus === "scheduled" ? (
+                            <span className="today-evaluation-tag">Evaluación programada</span>
+                          ) : item.evaluationStatus === "in_progress" ? (
+                            <span className="today-evaluation-tag is-active">
+                              Evaluación en curso
+                            </span>
+                          ) : null}
+                        </div>
+                        <span>
+                          {isInvitation
+                            ? item.creditsLabel
+                            : `${item.packageLabel} · ${item.creditsLabel}`}
+                        </span>
+                        {item.status === "attended" ? (
+                          <>
+                            <span className="today-attendance-origin">
+                              {item.attendanceSource === "KIOSK" ? "Check-in" : "Manual"}
+                              {item.checkedInAt
+                                ? ` · ${new Intl.DateTimeFormat(locale, {
+                                    timeZone,
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  }).format(new Date(item.checkedInAt))}`
+                                : ""}
+                            </span>
+                            {item.attendanceProvenance ? (
+                              <span className="today-attendance-origin">
+                                {item.attendanceProvenance}
+                              </span>
+                            ) : null}
+                          </>
+                        ) : null}
+                        {item.evaluationStatus === "scheduled" &&
+                        item.evaluationInvitationId &&
+                        item.studentId ? (
+                          <form
+                            action={startScheduledEvaluationAction}
+                            className="today-evaluation-start-form"
+                          >
+                            <input type="hidden" name="student_id" value={item.studentId} />
+                            <input
+                              type="hidden"
+                              name="invitation_id"
+                              value={item.evaluationInvitationId}
+                            />
+                            <button type="submit">Iniciar evaluación →</button>
+                          </form>
+                        ) : null}
+                      </div>
+
+                      {inProgress &&
+                      canAttendance &&
+                      ["reserved", "attended", "no_show"].includes(item.status) ? (
+                        <div className="today-attendance-preview">
+                          <form action={setAttendanceFromToday}>
+                            <input type="hidden" name="session_id" value={sessionId} />
+                            <input type="hidden" name="reservation_id" value={item.id} />
+                            <input type="hidden" name="return_date" value={returnDate} />
+                            {returnTo ? (
+                              <input type="hidden" name="return_to" value={returnTo} />
+                            ) : null}
+                            <input type="hidden" name="status" value="attended" />
+                            <button
+                              className={
+                                item.status === "attended" ? "is-selected is-attended" : ""
+                              }
+                              type="submit"
+                              disabled={item.status === "attended"}
+                              aria-pressed={item.status === "attended"}
+                            >
+                              {item.status === "attended" ? "✓ " : ""}
+                              Asistió
+                            </button>
+                          </form>
+
+                          <form action={setAttendanceFromToday}>
+                            <input type="hidden" name="session_id" value={sessionId} />
+                            <input type="hidden" name="reservation_id" value={item.id} />
+                            <input type="hidden" name="return_date" value={returnDate} />
+                            {returnTo ? (
+                              <input type="hidden" name="return_to" value={returnTo} />
+                            ) : null}
+                            <input type="hidden" name="status" value="no_show" />
+                            <button
+                              className={item.status === "no_show" ? "is-selected is-no-show" : ""}
+                              type="submit"
+                              disabled={item.status === "no_show"}
+                              aria-pressed={item.status === "no_show"}
+                            >
+                              No asistió
+                            </button>
+                          </form>
+                        </div>
+                      ) : (
+                        <span
+                          className={`today-attendance-state${item.status === "attended" ? " is-attended" : ""}${item.status === "no_show" ? " is-no-show" : ""}`}
+                        >
+                          {attendanceLabel(item.status)}
+                        </span>
+                      )}
+
+                      {!isCompleted && !isCancelled && canBook && item.status === "reserved" ? (
+                        <details className="today-student-more">
+                          <summary aria-label={`Más acciones para ${item.studentName}`}>⋮</summary>
+                          <div>
+                            <form action={cancelReservationFromToday}>
+                              <input type="hidden" name="session_id" value={sessionId} />
+                              <input type="hidden" name="reservation_id" value={item.id} />
+                              <input type="hidden" name="return_date" value={returnDate} />
+                              {returnTo ? (
+                                <input type="hidden" name="return_to" value={returnTo} />
+                              ) : null}
+                              <button type="submit">Cancelar reserva</button>
+                            </form>
+                          </div>
+                        </details>
+                      ) : (
+                        <span className="today-student-more-placeholder" aria-hidden="true" />
+                      )}
+
+                      {canCorrect ? (
+                        <details className="today-correction-details">
+                          <summary>Corregir</summary>
+                          <form action={setAttendanceFromToday} className="today-correction-form">
+                          <input type="hidden" name="session_id" value={sessionId} />
+                          <input type="hidden" name="reservation_id" value={item.id} />
+                          <input type="hidden" name="return_date" value={returnDate} />
+                          {returnTo ? (
+                            <input type="hidden" name="return_to" value={returnTo} />
+                          ) : null}
+                          <input type="hidden" name="status" value={correctionTarget} />
+                          <input
+                            name="reason"
+                            placeholder="Motivo de la corrección"
+                            required
+                            aria-label="Motivo de la corrección"
+                          />
+                          <button className="secondary-button" type="submit">
+                            Corregir a {correctionTarget === "attended" ? "Asistió" : "No asistió"}
+                          </button>
+                        </form>
+                        </details>
+                      ) : null}
+                    </article>
+                  );
+                })}
               </div>
-
-              {isCompleted ? (
-                <p>
-                  {canCorrectCompleted
-                    ? "Asistencia finalizada. Las correcciones requieren motivo."
-                    : "Clase finalizada · asistencia en modo solo lectura."}
-                </p>
-              ) : isCancelled ? (
-                <p>Clase cancelada · sin acciones operativas.</p>
-              ) : inProgress ? (
-                <p>Clase en curso · el cierre de asistencia es automático.</p>
-              ) : now !== null && now < startsAtMs ? (
-                <p>La asistencia manual se habilita cuando inicia la clase.</p>
-              ) : (
-                <p>Cerrando asistencia automáticamente…</p>
-              )}
-            </section>
-          ) : null}
+            ) : (
+              <div className="today-drawer-empty">Todavía no hay alumnas en esta clase.</div>
+            )}
+          </section>
         </div>
-      ) : null}
-
-      {paymentItem ? (
-        <PendingClassPaymentDialog
-          reservationId={paymentItem.id}
-          sessionId={sessionId}
-          returnDate={returnDate}
-          returnTo={returnTo}
-          studentName={paymentItem.studentName}
-          amountMinor={paymentItem.individualPriceMinor ?? null}
-          currency={paymentItem.currency ?? "MXN"}
-          onClose={() => setPaymentItem(null)}
-        />
       ) : null}
     </div>
   );
