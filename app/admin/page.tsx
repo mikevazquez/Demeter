@@ -3,6 +3,7 @@ import Link from "next/link";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { TodayClasses, type TodayClassItem } from "./hoy/TodayClasses";
+import QuickActions from "./hoy/QuickActions";
 
 type EligibilityResult = {
   eligible?: boolean;
@@ -164,6 +165,7 @@ export default async function AdminPage({
     { count: activeStudents },
     { data: salesToday },
     { data: students },
+    { data: quickSaleProducts },
   ] = await Promise.all([
     supabase
       .from("class_sessions")
@@ -192,6 +194,13 @@ export default async function AdminPage({
       .eq("active", true)
       .eq("lifecycle_status", "active")
       .order("full_name"),
+    supabase
+      .from("product_templates")
+      .select("id,name,price_minor,currency,credit_limit,validity_days,unlimited")
+      .eq("studio_id", studio.id)
+      .in("product_type", ["package", "membership"])
+      .eq("active", true)
+      .order("price_minor"),
   ]);
 
   const sessionIds = (selectedSessions ?? []).map((session) => session.id);
@@ -493,13 +502,21 @@ export default async function AdminPage({
             </Link>
           ) : null}
           {(canWriteStudents || canWriteSales) ? (
-            <details className="hoy-shortcuts">
-              <summary className="hoy-header-action">Atajos</summary>
-              <div className="hoy-shortcuts-menu">
-                {canWriteStudents ? <Link href="/admin/alumnas#alta-rapida">Nueva alumna</Link> : null}
-                {canWriteSales ? <Link href="/admin/ventas/nueva">Nueva venta</Link> : null}
-              </div>
-            </details>
+            <QuickActions
+              canStudents={canWriteStudents}
+              canSales={canWriteSales}
+              locale={locale}
+              students={(students ?? []).map((item) => ({ id: item.id, fullName: item.full_name }))}
+              products={(quickSaleProducts ?? []).map((item) => ({
+                id: item.id,
+                name: item.name,
+                priceMinor: item.price_minor,
+                currency: item.currency,
+                creditLimit: item.credit_limit,
+                validityDays: item.validity_days,
+                unlimited: item.unlimited,
+              }))}
+            />
           ) : null}
           <span className="hoy-product-avatar" aria-label={headerName}>
             {headerInitials}
