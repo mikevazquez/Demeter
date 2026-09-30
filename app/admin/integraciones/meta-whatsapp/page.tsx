@@ -6,7 +6,7 @@ import { getAdminContext } from "@/lib/auth/admin-context";
 import "../integrations-v2.css";
 
 export default async function MetaWhatsAppIntegrationPage() {
-  const { supabase, studio } = await getAdminContext(CAPABILITIES.INTEGRATIONS_READ);
+  const { supabase, studio } = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
 
   const { data: provider } = await supabase
     .from("notification_studio_channel_providers")
