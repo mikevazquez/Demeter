@@ -136,7 +136,14 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
             ]
           : []),
         ...(can(CAPABILITIES.STUDENTS_READ)
-          ? [{ href: "/admin/alumnas", label: "Alumnas", enabled: true }]
+          ? [
+              {
+                href: "/admin/alumnas",
+                label: "Alumnas",
+                enabled: true,
+                activeFor: ["/admin/ventas"],
+              },
+            ]
           : []),
         ...(can(CAPABILITIES.REPORTS_READ)
           ? [{ href: "/admin/inteligencia", label: "Inteligencia", enabled: true }]
@@ -193,9 +200,6 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
           : []),
         ...(can(CAPABILITIES.STUDENTS_READ)
           ? [{ href: "/admin/alumnas", label: "Alumnas", enabled: true }]
-          : []),
-        ...(can(CAPABILITIES.SALES_READ)
-          ? [{ href: "/admin/ventas", label: "Ventas", enabled: true }]
           : []),
         ...(hasMoreDestinations
           ? [
