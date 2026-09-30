@@ -24,6 +24,12 @@ export default async function RegionSettingsPage({
     redirect("/admin?error=access");
   }
 
+  const { data: extraStudioSettings } = await ctx.supabase
+    .from("studios")
+    .select("phone_country_calling_code")
+    .eq("id", ctx.studio.id)
+    .maybeSingle();
+
   return (
     <main className="advanced-v2 advanced-v2-detail">
       <header className="advanced-v2-header">
@@ -53,7 +59,7 @@ export default async function RegionSettingsPage({
           timezone={ctx.studio.timezone}
           currency={ctx.studio.currency}
           locale={ctx.studio.locale}
-          phoneCountryCallingCode={ctx.studio.phone_country_calling_code}
+          phoneCountryCallingCode={(extraStudioSettings as { phone_country_calling_code?: string } | null)?.phone_country_calling_code ?? "+52"}
         />
       </section>
     </main>
