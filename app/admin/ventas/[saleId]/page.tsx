@@ -169,8 +169,11 @@ export default async function SaleDetailPage({
     <main className="sales-v2 sales-v2-detail">
       <header className="sales-v2-detail-header">
         <div>
-          <Link href="/admin/ventas" className="sales-v2-back">
-            ← Ventas
+          <Link
+            href={student?.id ? `/admin/alumnas/${student.id}?view=history` : "/admin/alumnas"}
+            className="sales-v2-back"
+          >
+            ← Historial de alumna
           </Link>
           <p className="sales-v2-folio">{sale.folio}</p>
           <h1 className="sales-v2-detail-title">{student?.full_name ?? "Venta"}</h1>
