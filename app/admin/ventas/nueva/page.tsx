@@ -48,6 +48,8 @@ const errorCopy: Record<string, string> = {
   payment_invalid: "Revisa el monto recibido.",
   payment_exceeds_balance: "El monto recibido no puede superar el total.",
   payment_method_required: "Selecciona el método de pago.",
+  payment_method_unavailable: "Ese método de pago está inactivo o ya no está disponible.",
+  payment_reference_required: "Este método requiere una referencia.",
   payment_effective_date_required: "Indica la fecha real del pago.",
   payment_effective_date_future: "La fecha del pago no puede estar en el futuro.",
   payment_followup_required:
