@@ -105,10 +105,10 @@ export function SessionOperations({
   const endsAtMs = new Date(endsAt).getTime();
   const inProgress =
     sessionStatus === "scheduled" && now !== null && now >= startsAtMs && now < endsAtMs;
-  const sessionOpen = sessionStatus === "scheduled";
+  // Closing consolidates the session; it does not lock studio operations.
   const canPostCloseAdd = isCompleted && canCorrectCompleted && canAttendance;
-  const canAddExisting = (sessionOpen && canBook) || canPostCloseAdd;
-  const canAddNew = sessionOpen && canCreateStudent;
+  const canAddExisting = !isCancelled && (canBook || canPostCloseAdd);
+  const canAddNew = !isCancelled && canCreateStudent && canAttendance;
   const canAddWalkin = canAddExisting || canAddNew;
   const showNewWalkin = canAddNew && (newWalkin || !canAddExisting);
 
@@ -208,14 +208,14 @@ export function SessionOperations({
 
               {canAddWalkin ? (
                 <button
-                  className="today-add-student-button"
+                  className="today-add-student-button is-labeled"
                   type="button"
                   onClick={() => setShowAddStudent((value) => !value)}
                   aria-expanded={showAddStudent}
                   aria-label={showAddStudent ? "Cerrar agregar alumna" : "Agregar alumna"}
                   title="Agregar alumna"
                 >
-                  {showAddStudent ? "×" : "+"}
+                  {showAddStudent ? "Cerrar" : "+ Agregar alumna"}
                 </button>
               ) : null}
             </div>
@@ -394,7 +394,7 @@ export function SessionOperations({
             {showAddStudent ? (
               <div className="today-add-panel">
                 <div className="today-add-panel-heading">
-                  <strong>Agregar alumna</strong>
+                  <span><strong>Agregar alumna</strong><small>Busca primero. Si no existe, créala aquí mismo.</small></span>
                   {canAddExisting && canAddNew ? (
                     <button
                       type="button"
@@ -454,7 +454,7 @@ export function SessionOperations({
               {isCompleted ? (
                 <p>
                   {canCorrectCompleted
-                    ? "Asistencia finalizada. Las correcciones requieren motivo."
+                    ? "Clase finalizada. Puedes seguir agregando alumnas o corregir la asistencia; las correcciones quedan registradas."
                     : "Clase finalizada · asistencia en modo solo lectura."}
                 </p>
               ) : isCancelled ? (
