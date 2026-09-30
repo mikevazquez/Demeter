@@ -3,7 +3,6 @@ import { notFound } from "next/navigation";
 
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
-import { STUDIO_MODULES } from "@/lib/auth/modules";
 
 import { ActivityWizard, type ActivityDraft } from "../ActivityWizard";
 
@@ -16,7 +15,7 @@ export default async function ActivityDetailPage({
 }) {
   const { activityId } = await params;
   const query = await searchParams;
-  const { supabase, studio, hasModule } = await getAdminContext(CAPABILITIES.SCHEDULE_WRITE);
+  const { supabase, studio } = await getAdminContext(CAPABILITIES.SCHEDULE_WRITE);
 
   const [
     { data: activity },
@@ -125,7 +124,7 @@ export default async function ActivityDetailPage({
         locale={studio.locale}
         currency={studio.currency}
         mode="edit"
-        resourcesEnabled={hasModule(STUDIO_MODULES.RESOURCES)}
+        resourcesEnabled
         saveError={Boolean(query.error)}
         initial={initial}
         instructors={(instructors ?? []).map((item) => ({
