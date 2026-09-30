@@ -51,7 +51,7 @@ function IntegrationCard({
 }
 
 export default async function IntegrationsPage() {
-  const { supabase, studio } = await getAdminContext(CAPABILITIES.INTEGRATIONS_READ);
+  const { supabase, studio } = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
 
   const [
     { count: asistianEvents },
