@@ -49,6 +49,12 @@ const items: MoreItem[] = [
     ownerOnly: true,
   },
   {
+    title: "Pagos",
+    description: "Métodos de cobro, referencias y pago en línea.",
+    href: "/admin/configuracion/pagos",
+    ownerOnly: true,
+  },
+  {
     title: "Equipo",
     description: "Miembros del estudio, perfiles operativos y estado.",
     href: "/admin/instructores",
