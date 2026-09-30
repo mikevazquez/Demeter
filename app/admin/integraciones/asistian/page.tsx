@@ -10,10 +10,11 @@ import {
   sendAsistianHandshake,
   sendAsistianMappingProbe,
 } from "./actions";
+import "../integrations-v2.css";
 
 const errorCopy: Record<string, string> = {
   invalid_url: "La URL no es válida. Debe ser una URL HTTPS de Asistian.",
-  invalid_secret: "El Signing Secret no parece válido.",
+  invalid_secret: "El secreto de firma no parece válido.",
   receiver_secret_invalid: "El secreto del webhook saliente de Asistian no parece válido.",
   receiver_secret_save: "No se pudo guardar el secreto para recibir eventos de Asistian.",
   service_mapping_invalid: "Selecciona un servicio de Asistian y una actividad de Studio Flow.",
@@ -35,7 +36,7 @@ function scalarText(value: unknown) {
   return null;
 }
 
-export default async function AsistianIntegrationTestPage({
+export default async function AsistianIntegrationPage({
   searchParams,
 }: {
   searchParams: Promise<{
@@ -104,70 +105,80 @@ export default async function AsistianIntegrationTestPage({
     (serviceMappings ?? []).map((mapping) => [mapping.asistian_service_id, mapping]),
   );
 
+  const processedCount = (receivedEvents ?? []).filter(
+    (event) => event.processing_status === "processed",
+  ).length;
+
   return (
-    <main className="dashboard-shell">
-      <header className="topbar">
+    <main className="integration-detail-v2">
+      <header className="integration-detail-v2-header">
         <div>
-          <Link className="back-link compact" href="/admin/configuracion">
-            ← Avanzado
+          <Link className="integration-detail-v2-back" href="/admin/integraciones">
+            ← Integraciones
           </Link>
-          <p className="eyebrow">INTEGRACIONES · ASISTIAN</p>
-          <h1 className="dashboard-title">Pruebas de Webhook</h1>
-          <p>Prueba ambas direcciones sin mezclar las credenciales de cada flujo.</p>
+          <h1>Asistian</h1>
+          <p>Configura reservas, mapeo de actividades y comunicación entre ambos sistemas.</p>
         </div>
       </header>
 
       {query.receiver_saved === "1" ? (
-        <div className="notice success">
-          Receptor Asistian → Studio Flow configurado. Ya puedes usar “Probar” en el webhook
-          saliente de Asistian.
-        </div>
-      ) : null}
-
-      {query.mapping_sent === "1" ? (
-        <div className="notice success">
-          Payload de mapeo enviado
-          {query.status ? ` · HTTP ${query.status}` : ""}. Revisa Asistian.
+        <div className="integration-detail-v2-notice is-success">
+          Conexión de entrada guardada. Ya puedes probar el webhook desde Asistian.
         </div>
       ) : null}
 
       {query.service_mapping_saved === "1" ? (
-        <div className="notice success">
-          Mapeo de servicio guardado. Las próximas reservas usarán el ID nativo de Asistian.
+        <div className="integration-detail-v2-notice is-success">
+          Mapeo de actividad actualizado.
         </div>
       ) : null}
 
-      {query.sent === "1" ? (
-        <div className="notice success">
-          Webhook firmado enviado
-          {query.status ? ` · HTTP ${query.status}` : ""}.
+      {query.mapping_sent === "1" || query.sent === "1" ? (
+        <div className="integration-detail-v2-notice is-success">
+          Prueba enviada{query.status ? ` · HTTP ${query.status}` : ""}.
         </div>
       ) : null}
 
       {query.error ? (
-        <div className="notice error">
-          {errorCopy[query.error] ?? "No se pudo completar la prueba."}
+        <div className="integration-detail-v2-notice is-error">
+          {errorCopy[query.error] ?? "No se pudo completar la operación."}
           {query.status ? ` · HTTP ${query.status}` : ""}
         </div>
       ) : null}
 
-      <section className="panel">
-        <div className="panel-heading">
+      <section className="integration-detail-v2-summary">
+        <article>
+          <span>Servicios detectados</span>
+          <strong>{observedServices.size}</strong>
+        </article>
+        <article>
+          <span>Actividades mapeadas</span>
+          <strong>{serviceMappings?.length ?? 0}</strong>
+        </article>
+        <article>
+          <span>Eventos recientes procesados</span>
+          <strong>{processedCount}/{receivedEvents?.length ?? 0}</strong>
+        </article>
+      </section>
+
+      <section className="integration-detail-v2-card">
+        <div className="integration-detail-v2-card-heading">
           <div>
-            <p className="eyebrow">ASISTIAN → STUDIO FLOW · CAPTURA</p>
-            <h2>Recibir una reserva real desde Asistian</h2>
+            <h2>1. Recibir reservas desde Asistian</h2>
+            <p>Conecta el webhook saliente de Asistian con este estudio.</p>
           </div>
         </div>
 
-        <div className="compact-form">
-          <label>
-            URL receptora de Studio Flow
+        <div className="integration-detail-v2-form">
+          <label className="integration-detail-v2-field">
+            <span>URL receptora de Studio Flow</span>
             <input type="text" readOnly value={receiverUrl} />
+            <small>Copia esta URL en el webhook saliente de Asistian.</small>
           </label>
 
-          <form action={saveAsistianToStudioReceiverSecret} className="compact-form">
-            <label>
-              Secreto del webhook saliente de Asistian
+          <form action={saveAsistianToStudioReceiverSecret} className="integration-detail-v2-form">
+            <label className="integration-detail-v2-field">
+              <span>Secreto generado por Asistian</span>
               <input
                 type="password"
                 name="provider_signing_secret"
@@ -175,52 +186,54 @@ export default async function AsistianIntegrationTestPage({
                 autoComplete="off"
                 required
               />
+              <small>
+                Se usa para validar que los eventos realmente vienen de Asistian.
+              </small>
             </label>
-            <p className="text-sm text-zinc-400">
-              En Asistian crea un Webhook Saliente, pega la URL anterior, marca “Reserva Creada” y
-              pega aquí el secreto que Asistian genera. El receptor valida HMAC, evita duplicados y
-              guarda el payload para cerrar el mapeo sin adivinar campos.
-            </p>
-            <button className="primary-button" type="submit">
-              Guardar secreto receptor
+
+            <button className="integration-detail-v2-button" type="submit">
+              Guardar conexión
             </button>
           </form>
         </div>
       </section>
 
-      <section className="panel">
-        <div className="panel-heading">
+      <section className="integration-detail-v2-card">
+        <div className="integration-detail-v2-card-heading">
           <div>
-            <p className="eyebrow">ASISTIAN → STUDIO FLOW · SERVICIOS</p>
-            <h2>Mapeo estable de actividades</h2>
-            <p className="text-sm text-zinc-400">
-              Vincula el ID nativo de cada servicio de Asistian con una actividad de Studio Flow.
-              Una vez mapeado, el nombre puede cambiar en Asistian sin romper la sincronización.
-            </p>
+            <h2>2. Relacionar actividades</h2>
+            <p>Indica a qué actividad de Studio Flow corresponde cada servicio detectado.</p>
           </div>
         </div>
 
         {observedServices.size === 0 ? (
-          <p className="text-sm text-zinc-400">
-            Todavía no hemos observado servicios reales en los webhooks recibidos.
-          </p>
+          <div className="integration-detail-v2-empty">
+            Todavía no hemos recibido servicios reales desde Asistian.
+          </div>
         ) : (
-          <div className="compact-form">
+          <div className="integration-detail-v2-list">
             {Array.from(observedServices.values()).map((service) => {
               const mapping = mappingByServiceId.get(service.id);
+
               return (
-                <form action={saveAsistianServiceMapping} className="compact-form" key={service.id}>
+                <form
+                  action={saveAsistianServiceMapping}
+                  className="integration-detail-v2-row"
+                  key={service.id}
+                >
                   <input type="hidden" name="service_id" value={service.id} />
                   <input type="hidden" name="service_name" value={service.name ?? ""} />
-                  <div>
+
+                  <span className="integration-detail-v2-row-copy">
                     <strong>{service.name ?? "Servicio sin nombre"}</strong>
-                    <p className="text-sm text-zinc-400">
+                    <small>
                       Asistian ID {service.id}
-                      {mapping ? " · Mapeado" : " · Sin mapear"}
-                    </p>
-                  </div>
-                  <label>
-                    Actividad de Studio Flow
+                      {mapping ? " · Ya relacionado" : " · Pendiente"}
+                    </small>
+                  </span>
+
+                  <label className="integration-detail-v2-field">
+                    <span className="sr-only">Actividad de Studio Flow</span>
                     <select
                       name="class_template_id"
                       defaultValue={mapping?.class_template_id ?? ""}
@@ -236,8 +249,9 @@ export default async function AsistianIntegrationTestPage({
                       ))}
                     </select>
                   </label>
-                  <button className="primary-button" type="submit">
-                    {mapping ? "Actualizar mapeo" : "Guardar mapeo"}
+
+                  <button className="integration-detail-v2-button" type="submit">
+                    {mapping ? "Actualizar" : "Relacionar"}
                   </button>
                 </form>
               );
@@ -246,103 +260,105 @@ export default async function AsistianIntegrationTestPage({
         )}
       </section>
 
-      <section className="panel">
-        <div className="panel-heading">
+      <section className="integration-detail-v2-card">
+        <div className="integration-detail-v2-card-heading">
           <div>
-            <p className="eyebrow">EVENTOS RECIBIDOS</p>
-            <h2>Últimos webhooks de Asistian</h2>
+            <h2>3. Eventos recibidos</h2>
+            <p>Últimos eventos enviados por Asistian para diagnóstico.</p>
           </div>
         </div>
 
         {!receivedEvents?.length ? (
-          <p className="text-sm text-zinc-400">
-            Todavía no hay eventos. Usa “Probar” en Asistian después de guardar el secreto.
-          </p>
+          <div className="integration-detail-v2-empty">Todavía no hay eventos recibidos.</div>
         ) : (
-          <div className="compact-form">
+          <div className="integration-detail-v2-list">
             {receivedEvents.map((event) => (
-              <details key={event.id}>
+              <details key={event.id} className="integration-detail-v2-event">
                 <summary>
                   {event.event_name} · {event.processing_status} ·{" "}
                   {new Date(event.received_at).toLocaleString(studio.locale, {
                     timeZone: studio.timezone,
                   })}
                 </summary>
-                <p className="text-sm text-zinc-400">
-                  Event ID: {event.provider_event_id}
-                  {event.attempt ? ` · intento ${event.attempt}` : ""}
-                </p>
-                <pre style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>
-                  {JSON.stringify(event.payload, null, 2)}
-                </pre>
+                <div>
+                  <small>
+                    Event ID: {event.provider_event_id}
+                    {event.attempt ? ` · intento ${event.attempt}` : ""}
+                  </small>
+                  <pre>{JSON.stringify(event.payload, null, 2)}</pre>
+                </div>
               </details>
             ))}
           </div>
         )}
       </section>
 
-      <section className="panel">
-        <div className="panel-heading">
+      <section className="integration-detail-v2-card">
+        <div className="integration-detail-v2-card-heading">
           <div>
-            <p className="eyebrow">STUDIO FLOW → ASISTIAN · MAPEO</p>
-            <h2>Capturar variables de confirmación</h2>
+            <h2>Pruebas y diagnóstico</h2>
+            <p>Herramientas técnicas para validar la conexión de salida hacia Asistian.</p>
           </div>
         </div>
 
-        <form action={sendAsistianMappingProbe} className="compact-form">
-          <label>
-            URL de prueba de Asistian
-            <input
-              type="url"
-              name="test_webhook_url"
-              placeholder="https://…"
-              autoComplete="off"
-              required
-            />
-          </label>
-          <p className="text-sm text-zinc-400">
-            Con Probar Webhook escuchando, esta prueba envía datos sintéticos con nombre,
-            disciplina, fecha, hora, coach y ubicación.
-          </p>
-          <button className="primary-button" type="submit">
-            Enviar las 6 variables
-          </button>
-        </form>
+        <details className="integration-detail-v2-event">
+          <summary>Probar variables de confirmación</summary>
+          <div>
+            <form action={sendAsistianMappingProbe} className="integration-detail-v2-form">
+              <label className="integration-detail-v2-field">
+                <span>URL de prueba de Asistian</span>
+                <input
+                  type="url"
+                  name="test_webhook_url"
+                  placeholder="https://…"
+                  autoComplete="off"
+                  required
+                />
+                <small>
+                  Envía un payload sintético para capturar las variables disponibles.
+                </small>
+              </label>
+              <button className="integration-detail-v2-button" type="submit">
+                Enviar prueba
+              </button>
+            </form>
+          </div>
+        </details>
+
+        <details className="integration-detail-v2-event">
+          <summary>Configurar conexión firmada de salida</summary>
+          <div>
+            <form action={sendAsistianHandshake} className="integration-detail-v2-form">
+              <label className="integration-detail-v2-field">
+                <span>URL de webhook de Asistian</span>
+                <input
+                  type="url"
+                  name="webhook_url"
+                  placeholder="https://…"
+                  autoComplete="off"
+                  required
+                />
+              </label>
+              <label className="integration-detail-v2-field">
+                <span>Secreto de firma</span>
+                <input
+                  type="password"
+                  name="signing_secret"
+                  placeholder="Pega aquí el secreto"
+                  autoComplete="off"
+                  required
+                />
+              </label>
+              <button className="integration-detail-v2-button" type="submit">
+                Guardar y probar conexión
+              </button>
+            </form>
+          </div>
+        </details>
       </section>
 
-      <section className="panel">
-        <div className="panel-heading">
-          <div>
-            <p className="eyebrow">STUDIO FLOW → ASISTIAN · FIRMA</p>
-            <h2>Conexión firmada</h2>
-          </div>
-        </div>
-
-        <form action={sendAsistianHandshake} className="compact-form">
-          <label>
-            URL de Webhook de Producción
-            <input
-              type="url"
-              name="webhook_url"
-              placeholder="https://…"
-              autoComplete="off"
-              required
-            />
-          </label>
-          <label>
-            Secreto de firma
-            <input
-              type="password"
-              name="signing_secret"
-              placeholder="Pega aquí el secreto"
-              autoComplete="off"
-              required
-            />
-          </label>
-          <button className="primary-button" type="submit">
-            Guardar y enviar prueba firmada
-          </button>
-        </form>
+      <section className="integration-detail-v2-note">
+        Los datos técnicos de diagnóstico quedan aquí para no mezclarlos con la operación diaria.
       </section>
     </main>
   );
