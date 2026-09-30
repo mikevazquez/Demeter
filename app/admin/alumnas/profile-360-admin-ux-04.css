@@ -1091,3 +1091,41 @@
 .admin-ux04-profile360 .profile360-package-disciplines b{padding:6px 9px;border:1px solid #d9e8e5;border-radius:999px;background:#edf8f6;color:#167c70;font-size:9px}
 .admin-ux04-profile360 .profile360-package-secondary{margin-top:10px;color:#7b8798;font-size:9px}
 @media(max-width:760px){.admin-ux04-profile360 .profile360-package-usage-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+
+/* SF V2 · Profile 360 full-block hierarchy */
+.admin-ux04-profile360{max-width:1180px}
+.admin-ux04-profile360 .profile360-approved-person{padding:20px 22px;border-radius:18px}
+.admin-ux04-profile360 .profile360-avatar{width:72px;height:72px}
+.admin-ux04-profile360 .profile360-approved-title h1{font-size:25px;line-height:1.12}
+.admin-ux04-profile360 .profile360-approved-contact{margin-top:7px;gap:7px;font-size:11px}
+.admin-ux04-profile360 .profile360-approved-tabs{position:sticky;top:0;z-index:8;margin-top:14px;padding:4px 7px;border-radius:14px;overflow:auto;box-shadow:0 5px 18px rgba(24,36,54,.04)}
+.admin-ux04-profile360 .profile360-approved-tabs a{min-height:40px;padding:11px 12px;white-space:nowrap;font-size:11px}
+.admin-ux04-profile360 .profile360-approved-summary{gap:14px;margin-top:14px}
+.admin-ux04-profile360 .profile360-approved-package,.admin-ux04-profile360 .profile360-technical-levels,.admin-ux04-profile360 .profile360-approved-alerts,.admin-ux04-profile360 .profile360-view-panel{border-radius:18px}
+.admin-ux04-profile360 .profile360-statistics article{min-height:76px}
+.admin-ux04-profile360 .profile360-statistics article span{font-size:9px}
+.admin-ux04-profile360 .profile360-statistics article strong{font-size:16px}
+.admin-ux04-profile360 .profile360-data-view{display:grid;gap:10px}
+.admin-ux04-profile360 .profile360-data-view>.profile360-detail{box-shadow:none;margin:0}
+.admin-ux04-profile360 .profile360-packages-view{display:grid;gap:14px}
+.admin-ux04-profile360 .profile360-package-group{display:grid;gap:9px}
+.admin-ux04-profile360 .profile360-package-group-heading{padding:0 2px}
+.admin-ux04-profile360 .profile360-package-card{border-radius:16px;overflow:hidden}
+.admin-ux04-profile360 .profile360-package-card>summary{padding:15px 16px}
+.admin-ux04-profile360 .profile360-package-card-summary h3{font-size:15px;color:#172033}
+.admin-ux04-profile360 .profile360-package-card-summary span{font-size:10px;color:#7b8798}
+.admin-ux04-profile360 .profile360-package-card-side strong{font-size:12px;color:#344258}
+.admin-ux04-profile360 .profile360-package-card-body{padding:14px 16px 16px}
+.admin-ux04-profile360 .profile360-package-class-row{padding:10px 11px}
+.admin-ux04-profile360 .profile360-package-class-row strong{font-size:11px;color:#263247}
+.admin-ux04-profile360 .profile360-package-class-row span{font-size:9px;color:#7b8798}
+@media(max-width:680px){
+ .admin-ux04-profile360 .profile360-approved-person{padding:15px}
+ .admin-ux04-profile360 .profile360-avatar{width:58px;height:58px}
+ .admin-ux04-profile360 .profile360-approved-title h1{font-size:21px}
+ .admin-ux04-profile360 .profile360-approved-tabs{margin-left:-4px;margin-right:-4px}
+ .admin-ux04-profile360 .profile360-approved-tabs a{font-size:10px}
+ .admin-ux04-profile360 .profile360-package-card-summary{gap:8px}
+ .admin-ux04-profile360 .profile360-package-card-side{align-items:flex-start}
+}
