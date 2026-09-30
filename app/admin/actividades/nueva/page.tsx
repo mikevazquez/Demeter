@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
+import { STUDIO_MODULES } from "@/lib/auth/modules";
 
 import { ActivityWizard } from "../ActivityWizard";
 
@@ -11,9 +12,14 @@ export default async function NewActivityPage({
   searchParams: Promise<{ error?: string }>;
 }) {
   const params = await searchParams;
-  const { supabase, studio } = await getAdminContext(CAPABILITIES.SCHEDULE_WRITE);
+  const { supabase, studio, hasModule } = await getAdminContext(CAPABILITIES.SCHEDULE_WRITE);
 
-  const [{ data: instructors }, { data: persons }, { data: spaces }] = await Promise.all([
+  const [
+    { data: instructors },
+    { data: persons },
+    { data: spaces },
+    { data: operatingPolicy },
+  ] = await Promise.all([
     supabase
       .from("instructors")
       .select("id,person_id,status")
@@ -26,6 +32,13 @@ export default async function NewActivityPage({
       .eq("studio_id", studio.id)
       .eq("active", true)
       .order("name"),
+    supabase
+      .from("studio_operating_policies")
+      .select(
+        "default_minimum_reservations_enabled,default_minimum_reservations,default_minimum_review_minutes_before,default_minimum_override_allowed",
+      )
+      .eq("studio_id", studio.id)
+      .maybeSingle(),
   ]);
 
   const personMap = new Map(
@@ -36,20 +49,22 @@ export default async function NewActivityPage({
   );
 
   return (
-    <main className="dashboard-shell activities-editor-page">
-      <header className="activities-editor-header">
+    <main className="activities-v2 activities-editor-page">
+      <header className="activities-v2-editor-header">
         <div>
-          <Link className="activities-back-link" href="/admin/actividades">
+          <Link className="activities-v2-back" href="/admin/actividades">
             ← Actividades
           </Link>
-          <p className="eyebrow">NUEVA ACTIVIDAD · {studio.name}</p>
           <h1>Nueva actividad</h1>
-          <p>Completa las cuatro etapas aprobadas antes de crearla.</p>
+          <p>Primero configura lo esencial. Las opciones avanzadas aparecen solo cuando las necesitas.</p>
         </div>
       </header>
 
       <ActivityWizard
+        locale={studio.locale}
+        currency={studio.currency}
         mode="create"
+        resourcesEnabled={hasModule(STUDIO_MODULES.RESOURCES)}
         saveError={Boolean(params.error)}
         instructors={(instructors ?? []).map((item) => ({
           id: item.id,
@@ -59,6 +74,15 @@ export default async function NewActivityPage({
           id: item.id,
           label: item.capacity ? `${item.name} · máx. ${item.capacity}` : item.name,
         }))}
+        operatingDefaults={{
+          minimumReservationsEnabled:
+            operatingPolicy?.default_minimum_reservations_enabled ?? false,
+          minimumReservations: operatingPolicy?.default_minimum_reservations ?? 2,
+          minimumReviewMinutesBefore:
+            operatingPolicy?.default_minimum_review_minutes_before ?? 120,
+          allowMinimumReservationOverride:
+            operatingPolicy?.default_minimum_override_allowed ?? true,
+        }}
       />
     </main>
   );

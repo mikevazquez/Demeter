@@ -33,6 +33,7 @@ export type ActivityDraft = {
   minimumReservations: number;
   minimumReviewValue: number;
   minimumReviewUnit: "minutes" | "hours";
+  allowMinimumReservationOverride: boolean;
 };
 
 const DAYS = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
@@ -48,10 +49,10 @@ function SaveActivityButton({ mode }: { mode: "create" | "edit" }) {
 }
 
 const STEPS = [
-  { key: "general", label: "Información general" },
-  { key: "schedule", label: "Horarios y operación" },
-  { key: "sales", label: "Venta y acceso" },
-  { key: "confirm", label: "Confirmación" },
+  { key: "general", label: "Lo básico" },
+  { key: "schedule", label: "Horarios" },
+  { key: "sales", label: "Acceso" },
+  { key: "confirm", label: "Revisar" },
 ] as const;
 
 function todayKey() {
@@ -71,16 +72,41 @@ export function ActivityWizard({
   initial,
   mode,
   saveError = false,
+  operatingDefaults,
+  locale,
+  currency,
+  resourcesEnabled = true,
 }: {
   instructors: Option[];
   spaces: Option[];
   initial?: ActivityDraft;
   mode: "create" | "edit";
   saveError?: boolean;
+  locale: string;
+  currency: string;
+  resourcesEnabled?: boolean;
+  operatingDefaults?: {
+    minimumReservationsEnabled: boolean;
+    minimumReservations: number;
+    minimumReviewMinutesBefore: number;
+    allowMinimumReservationOverride: boolean;
+  };
 }) {
   const [step, setStep] = useState(saveError ? 3 : 0);
   const [message, setMessage] = useState("");
   const [serverSaveError, setServerSaveError] = useState(saveError);
+  const currencyFormatter = useMemo(
+    () =>
+      new Intl.NumberFormat(locale, {
+        style: "currency",
+        currency,
+        maximumFractionDigits: 2,
+      }),
+    [locale, currency],
+  );
+  const currencySymbol =
+    currencyFormatter.formatToParts(0).find((part) => part.type === "currency")?.value ?? currency;
+
   const [draft, setDraft] = useState<ActivityDraft>(
     initial ?? {
       name: "",
@@ -97,10 +123,18 @@ export function ActivityWizard({
       allowIndividualPurchase: false,
       individualPrice: "",
       individualPurchaseNotes: "",
-      minimumReservationsEnabled: false,
-      minimumReservations: 2,
-      minimumReviewValue: 2,
-      minimumReviewUnit: "hours",
+      minimumReservationsEnabled: operatingDefaults?.minimumReservationsEnabled ?? false,
+      minimumReservations: operatingDefaults?.minimumReservations ?? 2,
+      minimumReviewValue:
+        (operatingDefaults?.minimumReviewMinutesBefore ?? 120) % 60 === 0
+          ? (operatingDefaults?.minimumReviewMinutesBefore ?? 120) / 60
+          : (operatingDefaults?.minimumReviewMinutesBefore ?? 120),
+      minimumReviewUnit:
+        (operatingDefaults?.minimumReviewMinutesBefore ?? 120) % 60 === 0
+          ? "hours"
+          : "minutes",
+      allowMinimumReservationOverride:
+        operatingDefaults?.allowMinimumReservationOverride ?? true,
     },
   );
 
@@ -269,9 +303,9 @@ export function ActivityWizard({
           <div className="activities-stage-heading">
             <span>A01</span>
             <div>
-              <h2>Información general</h2>
+              <h2>Lo básico</h2>
               <p>
-                Define lo esencial de la actividad. Las reglas de cada sesión se ajustan después.
+                Nombre, duración, cupo y cómo se identifica en la Agenda.
               </p>
             </div>
           </div>
@@ -347,6 +381,7 @@ export function ActivityWizard({
                   type="button"
                   className={draft.requiresResource ? "is-selected" : ""}
                   onClick={() => patch({ requiresResource: true })}
+                  disabled={!resourcesEnabled}
                 >
                   Sí
                 </button>
@@ -354,14 +389,17 @@ export function ActivityWizard({
                   type="button"
                   className={!draft.requiresResource ? "is-selected" : ""}
                   onClick={() => patch({ requiresResource: false })}
+                  disabled={!resourcesEnabled}
                 >
                   No
                 </button>
               </div>
               <small>
-                {draft.requiresResource
-                  ? "Esta actividad utiliza recursos del estudio."
-                  : "La reserva no pedirá seleccionar un recurso físico."}
+                {!resourcesEnabled
+                  ? "El módulo Recursos no está habilitado para este estudio."
+                  : draft.requiresResource
+                    ? "Esta actividad utiliza recursos del estudio."
+                    : "La reserva no pedirá seleccionar un recurso físico."}
               </small>
             </fieldset>
           </div>
@@ -373,18 +411,17 @@ export function ActivityWizard({
           <div className="activities-stage-heading">
             <span>A02</span>
             <div>
-              <h2>Horarios y operación</h2>
-              <p>Define únicamente los días y horas. El resto se hereda en cada sesión.</p>
+              <h2>Horarios</h2>
+              <p>Elige los días y horas. Después puedes cambiar una sesión puntual desde Agenda.</p>
             </div>
           </div>
 
           <div className="activities-operation-defaults">
             <div className="activities-operation-copy">
-              <span>OPERACIÓN PREDETERMINADA</span>
-              <strong>Datos que heredarán las sesiones</strong>
+              <span>OPCIONES DEL HORARIO</span>
+              <strong>Coach, espacio y vigencia de la programación</strong>
               <p>
-                Si un coach, espacio o fecha cambia solo para una sesión, se edita después desde
-                Agenda sin alterar la actividad.
+                Estos datos se aplican por defecto. Una sesión individual puede ajustarse después sin cambiar toda la actividad.
               </p>
             </div>
 
@@ -511,6 +548,22 @@ export function ActivityWizard({
                   </label>
                 </div>
 
+                <label className="activities-toggle-row">
+                  <span>
+                    <strong>Permitir “Impartir aunque no alcance”</strong>
+                    <small>
+                      Administración podrá conservar una sesión aunque no llegue al mínimo.
+                    </small>
+                  </span>
+                  <input
+                    type="checkbox"
+                    checked={draft.allowMinimumReservationOverride}
+                    onChange={(event) =>
+                      patch({ allowMinimumReservationOverride: event.target.checked })
+                    }
+                  />
+                </label>
+
                 <div className="activities-minimum-example">
                   <span>✓</span>
                   <p>
@@ -585,7 +638,7 @@ export function ActivityWizard({
           <div className="activities-stage-heading">
             <span>A03</span>
             <div>
-              <h2>Venta y acceso</h2>
+              <h2>Acceso</h2>
               <p>Define cómo puede acceder una alumna a esta actividad.</p>
             </div>
           </div>
@@ -615,7 +668,7 @@ export function ActivityWizard({
               <label className="activities-field">
                 <span>Precio de compra individual *</span>
                 <div className="activities-price-field">
-                  <b>$</b>
+                  <b>{currencySymbol}</b>
                   <input
                     type="number"
                     min="1"
@@ -625,7 +678,7 @@ export function ActivityWizard({
                     placeholder="150"
                     onChange={(event) => patch({ individualPrice: event.target.value })}
                   />
-                  <em>MXN</em>
+                  <em>{currency}</em>
                 </div>
                 <small>
                   Este precio aplica a todas las sesiones compradas individualmente desde el portal
@@ -654,7 +707,7 @@ export function ActivityWizard({
           <div className="activities-stage-heading">
             <span>A04</span>
             <div>
-              <h2>Confirmación</h2>
+              <h2>Revisar</h2>
               <p>
                 Revisa la actividad antes de {mode === "create" ? "crearla" : "guardar cambios"}.
               </p>
@@ -664,7 +717,7 @@ export function ActivityWizard({
           <div className="activities-review-list">
             <article className="activities-review-card">
               <header>
-                <strong>Información general</strong>
+                <strong>Lo básico</strong>
                 <button type="button" onClick={() => setStep(0)}>
                   Editar
                 </button>
@@ -698,7 +751,7 @@ export function ActivityWizard({
 
             <article className="activities-review-card">
               <header>
-                <strong>Horarios y operación</strong>
+                <strong>Horarios</strong>
                 <button type="button" onClick={() => setStep(1)}>
                   Editar
                 </button>
@@ -733,7 +786,7 @@ export function ActivityWizard({
 
             <article className="activities-review-card">
               <header>
-                <strong>Venta y acceso</strong>
+                <strong>Acceso</strong>
                 <button type="button" onClick={() => setStep(2)}>
                   Editar
                 </button>
@@ -750,7 +803,7 @@ export function ActivityWizard({
                 {draft.allowIndividualPurchase ? (
                   <div>
                     <dt>Precio individual</dt>
-                    <dd>${Number(draft.individualPrice || 0).toLocaleString("es-MX")} MXN</dd>
+                    <dd>{currencyFormatter.format(Number(draft.individualPrice || 0))}</dd>
                   </div>
                 ) : null}
               </dl>
