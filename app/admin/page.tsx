@@ -107,55 +107,6 @@ function selectedDayLabel(value: Date, isToday: boolean, locale: string) {
   }).format(value)}`;
 }
 
-function KpiIcon({ kind }: { kind: "classes" | "students" | "sales" | "reservations" }) {
-  const common = {
-    width: 22,
-    height: 22,
-    viewBox: "0 0 24 24",
-    fill: "none",
-    stroke: "currentColor",
-    strokeWidth: 1.8,
-    strokeLinecap: "round" as const,
-    strokeLinejoin: "round" as const,
-    "aria-hidden": true,
-  };
-
-  if (kind === "classes") {
-    return (
-      <svg {...common}>
-        <rect x="3" y="5" width="18" height="16" rx="2" />
-        <path d="M7 3v4M17 3v4M3 10h18" />
-      </svg>
-    );
-  }
-
-  if (kind === "students") {
-    return (
-      <svg {...common}>
-        <circle cx="9" cy="8" r="3" />
-        <path d="M3.5 20c.6-4 2.6-6 5.5-6s4.9 2 5.5 6" />
-        <path d="M16 7.5a2.5 2.5 0 0 1 0 5M17 15c2.2.6 3.4 2.3 3.8 5" />
-      </svg>
-    );
-  }
-
-  if (kind === "sales") {
-    return (
-      <svg {...common}>
-        <path d="M5 20V12M12 20V7M19 20V3" />
-      </svg>
-    );
-  }
-
-  return (
-    <svg {...common}>
-      <circle cx="12" cy="12" r="8" />
-      <path d="M12 8v4l3 2" />
-      <path d="M17.5 6.5 19 5" />
-    </svg>
-  );
-}
-
 export default async function AdminPage({
   searchParams,
 }: {
@@ -548,8 +499,15 @@ export default async function AdminPage({
       </header>
 
       <header className="hoy-title-block">
-        <h1>{selectedDayLabel(selectedDate, selectedKey === todayKey, locale)}</h1>
-        <p>Administra, conecta, haz fluir.</p>
+        <div>
+          <span className="hoy-eyebrow">{selectedKey === todayKey ? "HOY" : "AGENDA"}</span>
+          <h1>{selectedDayLabel(selectedDate, selectedKey === todayKey, locale)}</h1>
+        </div>
+        <div className="hoy-day-summary" aria-label="Resumen del día">
+          <strong>{selectedSessions?.length ?? 0}</strong><span>clases</span>
+          <i aria-hidden="true" />
+          <strong>{totalDailyReservations}</strong><span>reservas</span>
+        </div>
       </header>
 
       {params.error ? (
@@ -592,64 +550,10 @@ export default async function AdminPage({
         </nav>
       </section>
 
-      <section className="hoy-kpi-grid" aria-label="Resumen del estudio">
-        <Link className="hoy-kpi-card" href={`/admin?date=${selectedKey}`}>
-          <span className="hoy-kpi-icon">
-            <KpiIcon kind="classes" />
-          </span>
-          <span>
-            <small>{selectedKey === todayKey ? "Clases hoy" : "Clases del día"}</small>
-            <strong>{selectedSessions?.length ?? 0}</strong>
-          </span>
-          <b aria-hidden="true">›</b>
-        </Link>
-
-        <Link className="hoy-kpi-card" href="/admin/alumnas">
-          <span className="hoy-kpi-icon">
-            <KpiIcon kind="students" />
-          </span>
-          <span>
-            <small>Alumnas activas</small>
-            <strong>{activeStudents ?? 0}</strong>
-          </span>
-          <b aria-hidden="true">›</b>
-        </Link>
-
-        {canWriteSales ? (
-          <Link className="hoy-kpi-card" href="/admin/ventas">
-            <span className="hoy-kpi-icon">
-              <KpiIcon kind="sales" />
-            </span>
-            <span>
-              <small>Ventas hoy</small>
-              <strong>{salesTotal}</strong>
-            </span>
-            <b aria-hidden="true">›</b>
-          </Link>
-        ) : (
-          <article className="hoy-kpi-card">
-            <span className="hoy-kpi-icon">
-              <KpiIcon kind="sales" />
-            </span>
-            <span>
-              <small>Ventas hoy</small>
-              <strong>{salesTotal}</strong>
-            </span>
-          </article>
-        )}
-
-        <article className="hoy-kpi-card hoy-kpi-reservations">
-          <span className="hoy-kpi-icon">
-            <KpiIcon kind="reservations" />
-          </span>
-          <span>
-            <small>Reservas del día</small>
-            <strong>{dailyReservationPercentage}%</strong>
-            <em>
-              {totalDailyReservations}/{totalDailyCapacity} lugares
-            </em>
-          </span>
-        </article>
+      <section className="hoy-glance" aria-label="Resumen rápido">
+        <Link href="/admin/alumnas"><strong>{activeStudents ?? 0}</strong><span>Alumnas activas</span></Link>
+        <Link href="/admin/ventas"><strong>{salesTotal}</strong><span>Ventas hoy</span></Link>
+        <div><strong>{dailyReservationPercentage}%</strong><span>Ocupación · {totalDailyReservations}/{totalDailyCapacity}</span></div>
       </section>
 
       <TodayClasses
