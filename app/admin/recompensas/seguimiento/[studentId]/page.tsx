@@ -254,13 +254,13 @@ export default async function StudentRewardsProgressPage({
         <div>
           <Link
             href="/admin/recompensas/seguimiento"
-            className="text-sm font-semibold text-zinc-400 hover:text-white"
+            className="text-sm font-semibold text-slate-600 hover:text-slate-900"
           >
             ← Seguimiento
           </Link>
           <p className="mt-4 eyebrow">PROGRESO INDIVIDUAL · {ctx.studio.name}</p>
           <h1 className="dashboard-title">{student.full_name}</h1>
-          <p className="mt-2 text-sm text-zinc-400">
+          <p className="mt-2 text-sm text-slate-600">
             Trayectoria calculada por comportamiento real. No existe edición manual de progreso.
           </p>
         </div>
@@ -271,7 +271,7 @@ export default async function StudentRewardsProgressPage({
       </header>
 
       {student.lifecycle_status !== "active" ? (
-        <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-sm text-zinc-400">
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 text-sm text-slate-600">
           La alumna está inactiva. Su trayectoria, logros y recompensas históricas se conservan.
         </div>
       ) : null}
@@ -287,7 +287,7 @@ export default async function StudentRewardsProgressPage({
             key={value}
             href={`/admin/recompensas/seguimiento/${student.id}?tab=${value}`}
             className={`rounded-xl px-3 py-2 text-sm font-semibold ${
-              tab === value ? "bg-[#FF0A8A] text-white" : "border border-white/10 text-zinc-400"
+              tab === value ? "bg-teal-600 text-slate-900" : "border border-slate-200 text-slate-600"
             }`}
           >
             {label}
@@ -298,32 +298,32 @@ export default async function StudentRewardsProgressPage({
       {tab === "summary" ? (
         <div className="grid gap-5">
           <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-              <p className="text-xs uppercase tracking-[0.14em] text-zinc-500">Programas</p>
-              <strong className="mt-2 block text-2xl text-white">
+            <div className="rounded-2xl border border-slate-200 bg-white p-4">
+              <p className="text-xs uppercase tracking-[0.14em] text-slate-500">Programas</p>
+              <strong className="mt-2 block text-2xl text-slate-900">
                 {programParticipations.length}
               </strong>
             </div>
-            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-              <p className="text-xs uppercase tracking-[0.14em] text-zinc-500">Logros</p>
-              <strong className="mt-2 block text-2xl text-white">{achievements.length}</strong>
+            <div className="rounded-2xl border border-slate-200 bg-white p-4">
+              <p className="text-xs uppercase tracking-[0.14em] text-slate-500">Logros</p>
+              <strong className="mt-2 block text-2xl text-slate-900">{achievements.length}</strong>
             </div>
-            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-              <p className="text-xs uppercase tracking-[0.14em] text-zinc-500">Racha actual</p>
-              <strong className="mt-2 block text-2xl text-white">{currentStreak}</strong>
-              <span className="text-xs text-zinc-500">Mejor registrada: {bestStreak}</span>
+            <div className="rounded-2xl border border-slate-200 bg-white p-4">
+              <p className="text-xs uppercase tracking-[0.14em] text-slate-500">Racha actual</p>
+              <strong className="mt-2 block text-2xl text-slate-900">{currentStreak}</strong>
+              <span className="text-xs text-slate-500">Mejor registrada: {bestStreak}</span>
             </div>
-            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-              <p className="text-xs uppercase tracking-[0.14em] text-zinc-500">Recompensas</p>
-              <strong className="mt-2 block text-2xl text-white">{rewards.length}</strong>
+            <div className="rounded-2xl border border-slate-200 bg-white p-4">
+              <p className="text-xs uppercase tracking-[0.14em] text-slate-500">Recompensas</p>
+              <strong className="mt-2 block text-2xl text-slate-900">{rewards.length}</strong>
             </div>
           </section>
 
-          <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
-            <p className="text-xs font-semibold uppercase tracking-[0.15em] text-[#FF0A8A]">
+          <section className="rounded-2xl border border-slate-200 bg-white p-5">
+            <p className="text-xs font-semibold uppercase tracking-[0.15em] text-teal-700">
               PROGRAMAS
             </p>
-            <h2 className="mt-1 text-xl font-semibold text-white">Progreso actual</h2>
+            <h2 className="mt-1 text-xl font-semibold text-slate-900">Progreso actual</h2>
             <div className="mt-5 grid gap-3">
               {!programParticipations.length ? (
                 <EmptyState title="Sin programas en su trayectoria" />
@@ -342,12 +342,12 @@ export default async function StudentRewardsProgressPage({
                   return (
                     <article
                       key={participation.id}
-                      className="rounded-xl border border-white/10 bg-black/20 p-4"
+                      className="rounded-xl border border-slate-200 bg-white p-4"
                     >
                       <div className="flex flex-wrap items-start justify-between gap-3">
                         <div>
-                          <strong className="text-white">{program?.name ?? "Programa"}</strong>
-                          <p className="mt-1 text-sm text-zinc-400">
+                          <strong className="text-slate-900">{program?.name ?? "Programa"}</strong>
+                          <p className="mt-1 text-sm text-slate-600">
                             {participation.status === "completed"
                               ? "Programa completado"
                               : level
@@ -355,7 +355,7 @@ export default async function StudentRewardsProgressPage({
                                 : "En progreso"}
                           </p>
                           {evaluation && participation.status !== "completed" ? (
-                            <p className="mt-2 text-xs text-zinc-500">
+                            <p className="mt-2 text-xs text-slate-500">
                               {conditionProgressLabel(evaluation.condition_results)}
                             </p>
                           ) : null}
@@ -369,11 +369,11 @@ export default async function StudentRewardsProgressPage({
             </div>
           </section>
 
-          <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
-            <p className="text-xs font-semibold uppercase tracking-[0.15em] text-[#FF0A8A]">
+          <section className="rounded-2xl border border-slate-200 bg-white p-5">
+            <p className="text-xs font-semibold uppercase tracking-[0.15em] text-teal-700">
               RETOS
             </p>
-            <h2 className="mt-1 text-xl font-semibold text-white">Retos en la trayectoria</h2>
+            <h2 className="mt-1 text-xl font-semibold text-slate-900">Retos en la trayectoria</h2>
             <div className="mt-5 grid gap-3">
               {!challengeRows.length ? (
                 <EmptyState title="Sin retos registrados" />
@@ -381,12 +381,12 @@ export default async function StudentRewardsProgressPage({
                 challengeRows.map(({ participation, version, evaluation }) => (
                   <article
                     key={participation.id}
-                    className="rounded-xl border border-white/10 bg-black/20 p-4"
+                    className="rounded-xl border border-slate-200 bg-white p-4"
                   >
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div>
-                        <strong className="text-white">{version?.name ?? "Reto"}</strong>
-                        <p className="mt-2 text-xs text-zinc-500">
+                        <strong className="text-slate-900">{version?.name ?? "Reto"}</strong>
+                        <p className="mt-2 text-xs text-slate-500">
                           {evaluation
                             ? conditionProgressLabel(evaluation.condition_results)
                             : "Aún sin actividad contabilizada."}
@@ -410,15 +410,15 @@ export default async function StudentRewardsProgressPage({
             achievements.map((achievement) => (
               <article
                 key={achievement.id}
-                className="rounded-2xl border border-white/10 bg-white/[0.03] p-5"
+                className="rounded-2xl border border-slate-200 bg-white p-5"
               >
-                <p className="text-xs font-semibold uppercase tracking-[0.15em] text-[#FF0A8A]">
+                <p className="text-xs font-semibold uppercase tracking-[0.15em] text-teal-700">
                   LOGRO
                 </p>
-                <h2 className="mt-2 text-lg font-semibold text-white">
+                <h2 className="mt-2 text-lg font-semibold text-slate-900">
                   {achievement.title_snapshot}
                 </h2>
-                <p className="mt-2 text-sm text-zinc-400">
+                <p className="mt-2 text-sm text-slate-600">
                   Desbloqueado {formatDateTime(achievement.unlocked_at, ctx.studio.locale, ctx.studio.timezone)}
                 </p>
               </article>
@@ -436,14 +436,14 @@ export default async function StudentRewardsProgressPage({
               <Link
                 key={reward.id}
                 href={`/admin/recompensas/generadas/${reward.id}`}
-                className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 transition hover:border-[#FF0A8A]/35"
+                className="rounded-2xl border border-slate-200 bg-white p-5 transition hover:border-[#FF0A8A]/35"
               >
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
-                    <strong className="text-white">
+                    <strong className="text-slate-900">
                       {rewardDefinitionLabel(reward.benefit_definition, ctx.studio.locale, ctx.studio.currency)}
                     </strong>
-                    <p className="mt-1 text-xs text-zinc-500">
+                    <p className="mt-1 text-xs text-slate-500">
                       Obtenida {formatDateTime(reward.created_at, ctx.studio.locale, ctx.studio.timezone)}
                     </p>
                   </div>
@@ -465,20 +465,20 @@ export default async function StudentRewardsProgressPage({
                 <Link
                   key={item.id}
                   href={`/admin/recompensas/generadas/${item.rewardId}`}
-                  className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 transition hover:border-[#FF0A8A]/30"
+                  className="rounded-xl border border-slate-200 bg-white px-4 py-3 transition hover:border-teal-200"
                 >
-                  <strong className="text-sm text-white">{item.title}</strong>
-                  <p className="mt-1 text-sm text-zinc-400">{item.detail}</p>
-                  <p className="mt-1 text-xs text-zinc-500">{formatDateTime(item.at, ctx.studio.locale, ctx.studio.timezone)}</p>
+                  <strong className="text-sm text-slate-900">{item.title}</strong>
+                  <p className="mt-1 text-sm text-slate-600">{item.detail}</p>
+                  <p className="mt-1 text-xs text-slate-500">{formatDateTime(item.at, ctx.studio.locale, ctx.studio.timezone)}</p>
                 </Link>
               ) : (
                 <div
                   key={item.id}
-                  className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3"
+                  className="rounded-xl border border-slate-200 bg-white px-4 py-3"
                 >
-                  <strong className="text-sm text-white">{item.title}</strong>
-                  {item.detail ? <p className="mt-1 text-sm text-zinc-400">{item.detail}</p> : null}
-                  <p className="mt-1 text-xs text-zinc-500">{formatDateTime(item.at, ctx.studio.locale, ctx.studio.timezone)}</p>
+                  <strong className="text-sm text-slate-900">{item.title}</strong>
+                  {item.detail ? <p className="mt-1 text-sm text-slate-600">{item.detail}</p> : null}
+                  <p className="mt-1 text-xs text-slate-500">{formatDateTime(item.at, ctx.studio.locale, ctx.studio.timezone)}</p>
                 </div>
               ),
             )
