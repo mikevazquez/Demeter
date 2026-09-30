@@ -1987,3 +1987,38 @@
   .hoy-v2 .hoy-glance span { font-size:9px; }
   .hoy-v2 .today-class-card { border-radius:19px; }
 }
+
+/* Hoy V2 · visual clarity pass */
+.hoy-v2 .today-class-card {
+  border: 2px solid color-mix(in srgb, var(--class-accent) 58%, white);
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--class-accent) 9%, white), #fff 34%);
+}
+.hoy-v2 .today-class-card.is-open {
+  border-color: color-mix(in srgb, var(--class-accent) 72%, white);
+}
+.hoy-v2 .today-class-accent {
+  width: 8px;
+  align-self: stretch;
+  min-height: 54px;
+  border-radius: 999px;
+  background: var(--class-accent);
+}
+.hoy-v2 .today-student-avatar {
+  border-color:#e8a8ce!important;
+  background:#f9d9ec!important;
+  color:#7d285b!important;
+  text-shadow:none!important;
+}
+.hoy-v2 .today-attendance-state { background:#f5f7f9; color:#42526a; }
+.hoy-v2 .today-attendance-state.is-attended { border-color:#83d9b8; background:#e7f8f1; color:#0b7654; }
+.hoy-v2 .today-attendance-state.is-no-show { border-color:#f0a3b9; background:#fff0f4; color:#a62e55; }
+.hoy-v2 .today-invite-tag,
+.hoy-v2 .today-evaluation-tag { color:#5d2b85!important; background:#f2eafe!important; }
+.hoy-v2 .today-evaluation-tag.is-active { color:#0b7654!important; background:#e7f8f1!important; }
+.hoy-v2 .notice.success { color:#0b6b4d; background:#e7f8f1; border-color:#bfe3d6; }
+.hoy-v2 .notice.error { color:#9f3142; background:#fff0f1; border-color:#efc7cd; }
+@media (max-width:760px) {
+  .hoy-v2 .today-class-card { border-width:2px; }
+  .hoy-v2 .today-class-accent { width:7px; }
+}
