@@ -77,6 +77,18 @@ export default async function SaleDetailPage({
       .order("created_at"),
   ]);
 
+  const { data: paymentMethods } = await ctx.supabase
+    .from("studio_payment_methods")
+    .select("code,name,requires_reference,allow_refunds")
+    .eq("studio_id", ctx.studio.id)
+    .eq("active", true)
+    .order("sort_order");
+
+  const paymentMethodLabel = new Map(
+    (paymentMethods ?? []).map((method) => [method.code, method.name]),
+  );
+  const refundMethods = (paymentMethods ?? []).filter((method) => method.allow_refunds);
+
   const lineIds = (lines ?? []).map((line) => line.id);
   const [{ data: acquisitions }, { data: enrollments }] = lineIds.length
     ? await Promise.all([
@@ -305,13 +317,18 @@ export default async function SaleDetailPage({
                         <select
                           name="refund_method"
                           required
-                          defaultValue="efectivo"
+                          defaultValue=""
                           className="rounded-xl border border-white/10 bg-zinc-950 px-3 py-3 text-white"
                         >
-                          <option value="efectivo">Efectivo</option>
-                          <option value="transferencia">Transferencia</option>
-                          <option value="tarjeta_manual">Tarjeta · registro manual</option>
-                          <option value="otro">Otro</option>
+                          <option value="" disabled>
+                            Selecciona método
+                          </option>
+                          {refundMethods.map((method) => (
+                            <option key={method.code} value={method.code}>
+                              {method.name}
+                              {method.requires_reference ? " · requiere referencia" : ""}
+                            </option>
+                          ))}
                         </select>
                       </label>
                       <label className="grid gap-1.5 text-sm text-zinc-300 md:col-span-2">
@@ -383,7 +400,7 @@ export default async function SaleDetailPage({
                 </span>
                 <div>
                   <p className="text-sm text-zinc-300">
-                    {payment.method}
+                    {paymentMethodLabel.get(payment.method) ?? payment.method}
                     {payment.sale_line_id
                       ? ` · ${lineNameMap.get(payment.sale_line_id) ?? "Producto"}`
                       : ""}
@@ -442,10 +459,12 @@ export default async function SaleDetailPage({
                 <option value="" disabled>
                   Selecciona método
                 </option>
-                <option value="efectivo">Efectivo</option>
-                <option value="transferencia">Transferencia</option>
-                <option value="tarjeta">Tarjeta</option>
-                <option value="otro">Otro</option>
+                {(paymentMethods ?? []).map((method) => (
+                  <option key={method.code} value={method.code}>
+                    {method.name}
+                    {method.requires_reference ? " · requiere referencia" : ""}
+                  </option>
+                ))}
               </select>
             </label>
             <label className="grid gap-1.5 text-sm text-zinc-300">
