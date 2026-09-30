@@ -660,3 +660,17 @@
     font-size: 14px;
   }
 }
+
+
+.team-v2-detail .team-v2-access-help {
+  margin: 0;
+  color: var(--team-muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+@media (max-width: 760px) {
+  .team-v2-detail .team-v2-access-help {
+    font-size: 12px;
+  }
+}
