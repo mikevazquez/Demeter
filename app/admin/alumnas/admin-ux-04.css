@@ -624,3 +624,16 @@
  .student-package-summary b{font-size:11px}
  .student-package-summary small{font-size:9px}
 }
+
+
+/* SF V2 · compact operational directory */
+.student-directory-identity{align-self:center}
+.student-directory-main{grid-template-columns:minmax(190px,1.4fr) minmax(170px,1fr) 86px 88px}
+.student-directory-identity>strong{font-size:17px}
+.student-avatar img{width:100%;height:100%;object-fit:cover;border-radius:inherit}
+@media(max-width:680px){
+ .student-directory-card{min-height:88px}
+ .student-directory-main{grid-template-columns:minmax(0,1fr) auto}
+ .student-directory-identity{grid-column:1/-1}
+ .student-directory-package-summary{min-width:0}
+}
