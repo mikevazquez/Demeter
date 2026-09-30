@@ -56,14 +56,14 @@ export function ProgramLevelForm({
   return (
     <form
       action={saveProgramLevelAction}
-      className="grid gap-6 rounded-2xl border border-white/10 bg-white/[0.03] p-5"
+      className="grid gap-6 rounded-2xl border border-slate-200 bg-white p-5"
     >
       <input type="hidden" name="program_id" value={programId} />
       <input type="hidden" name="original_level_key" value={level?.level_key ?? ""} />
       {level ? <input type="hidden" name="level_key" value={level.level_key} /> : null}
 
       <section className="grid gap-4 md:grid-cols-2">
-        <label className="grid gap-1 text-sm text-zinc-300">
+        <label className="grid gap-1 text-sm text-slate-700">
           Orden
           <input
             type="number"
@@ -72,23 +72,23 @@ export function ProgramLevelForm({
             step="1"
             required
             defaultValue={level?.level_order ?? nextOrder}
-            className="rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 text-white"
+            className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-slate-900"
           />
         </label>
 
-        <label className="grid gap-1 text-sm text-zinc-300">
+        <label className="grid gap-1 text-sm text-slate-700">
           Visibilidad del nivel
           <select
             name="level_visibility"
             defaultValue={level?.level_visibility ?? "visible"}
-            className="rounded-xl border border-white/10 bg-[#111114] px-3 py-2.5 text-white"
+            className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-slate-900"
           >
             <option value="visible">Visible</option>
             <option value="hidden">Nivel oculto</option>
           </select>
         </label>
 
-        <label className="grid gap-1 text-sm text-zinc-300 md:col-span-2">
+        <label className="grid gap-1 text-sm text-slate-700 md:col-span-2">
           Nombre del nivel
           <input
             name="title"
@@ -96,36 +96,36 @@ export function ProgramLevelForm({
             maxLength={120}
             defaultValue={level?.title ?? ""}
             placeholder="Ej. Nivel Bronce"
-            className="rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 text-white"
+            className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-slate-900"
           />
         </label>
 
-        <label className="grid gap-1 text-sm text-zinc-300 md:col-span-2">
+        <label className="grid gap-1 text-sm text-slate-700 md:col-span-2">
           Descripción
           <textarea
             name="description"
             rows={3}
             defaultValue={level?.description ?? ""}
-            className="rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 text-white"
+            className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-slate-900"
           />
         </label>
       </section>
 
       <section>
-        <p className="text-xs font-semibold uppercase tracking-[0.15em] text-[#FF0A8A]">
+        <p className="text-xs font-semibold uppercase tracking-[0.15em] text-teal-700">
           CONDICIONES
         </p>
-        <h2 className="mt-1 text-lg font-semibold text-white">¿Qué debe conseguir?</h2>
+        <h2 className="mt-1 text-lg font-semibold text-slate-900">¿Qué debe conseguir?</h2>
         <div className="mt-4">
           <ConditionsBuilder initial={initialConditions.length ? initialConditions : undefined} />
         </div>
       </section>
 
       <section>
-        <p className="text-xs font-semibold uppercase tracking-[0.15em] text-[#FF0A8A]">
+        <p className="text-xs font-semibold uppercase tracking-[0.15em] text-teal-700">
           RESULTADO
         </p>
-        <h2 className="mt-1 text-lg font-semibold text-white">¿Qué desbloquea?</h2>
+        <h2 className="mt-1 text-lg font-semibold text-slate-900">¿Qué desbloquea?</h2>
         <div className="mt-4">
           <OutcomeFields
             defaultMedal={Boolean(badge)}
@@ -141,7 +141,7 @@ export function ProgramLevelForm({
 
       <div className="flex justify-end">
         <PendingActionButton
-          className="rounded-xl bg-[#FF0A8A] px-4 py-2.5 text-sm font-semibold text-white"
+          className="rounded-xl bg-teal-600 px-4 py-2.5 text-sm font-semibold text-slate-900"
           pendingLabel="Guardando…"
         >
           Guardar nivel
