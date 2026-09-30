@@ -982,7 +982,14 @@ export default async function StudentProfilePage({
       ) : null}
 
       {view === "profile" ? (
-        <>
+        <section className="profile360-view-panel profile360-data-view">
+          <div className="profile360-view-heading">
+            <div>
+              <p className="eyebrow">DATOS</p>
+              <h2>Datos y preferencias</h2>
+              <p>Información personal y comunicación de la alumna.</p>
+            </div>
+          </div>
           <details id="datos-personales" className="profile360-detail scroll-mt-6">
             <summary>
               <span>
@@ -1214,19 +1221,16 @@ export default async function StudentProfilePage({
               </section>
             </details>
           ) : null}
-        </>
+        </section>
       ) : null}
 
       {view === "packages" && canReadProducts ? (
         <section id="paquetes-y-creditos" className="profile360-packages-view">
           <div className="profile360-view-heading">
             <div>
-              <p className="eyebrow">PAQUETES</p>
-              <h2>Paquetes de la alumna</h2>
-              <p>
-                El paquete actual puede ajustarse. Los paquetes vencidos conservan su historia y
-                permanecen en sólo lectura.
-              </p>
+              <p className="eyebrow">PAQUETES Y CRÉDITOS</p>
+              <h2>Consumo e historial de paquetes</h2>
+              <p>Revisa exactamente qué ocurrió con cada paquete, sus créditos, clases e incidencias.</p>
             </div>
           </div>
 
@@ -1433,8 +1437,8 @@ export default async function StudentProfilePage({
         <section className="profile360-view-panel">
           <div className="profile360-view-heading">
             <div>
-              <p className="eyebrow">REWARDS</p>
-              <h2>Progreso, logros y recompensas</h2>
+              <p className="eyebrow">PROGRESO</p>
+              <h2>Medallas, logros y recompensas</h2>
               <p>
                 Las medallas representan progreso y beneficios de Rewards; son independientes de los
                 niveles técnicos por disciplina.
