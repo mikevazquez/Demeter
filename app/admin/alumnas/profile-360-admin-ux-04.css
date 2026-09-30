@@ -1078,3 +1078,16 @@
 .admin-ux04-profile360 .profile360-detail>.panel{border-top-color:var(--p360-line);background:#fff}
 .admin-ux04-profile360 .compact-form input,.admin-ux04-profile360 .compact-form select,.admin-ux04-profile360 .compact-form textarea{border-color:var(--p360-line);background:#fafbfc;color:#263247}
 .admin-ux04-profile360 .compact-form input:focus,.admin-ux04-profile360 .compact-form select:focus,.admin-ux04-profile360 .compact-form textarea:focus{border-color:#78c9bd;box-shadow:0 0 0 3px rgba(21,155,140,.08)}
+
+
+/* SF V2 · package audit blocks */
+.admin-ux04-profile360 .profile360-package-usage{margin:14px 0;padding:14px;border:1px solid var(--p360-line);border-radius:15px;background:#f8fafb}
+.admin-ux04-profile360 .profile360-package-usage-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:10px}
+.admin-ux04-profile360 .profile360-package-usage-stats>div{display:grid;gap:4px;padding:10px 11px;border:1px solid #e6ebef;border-radius:12px;background:#fff}
+.admin-ux04-profile360 .profile360-package-usage-stats span,.admin-ux04-profile360 .profile360-package-disciplines>span{color:#7b8798;font-size:9px;font-weight:650}
+.admin-ux04-profile360 .profile360-package-usage-stats strong{color:#263247;font-size:16px}
+.admin-ux04-profile360 .profile360-package-disciplines{display:grid;gap:7px;margin-top:12px}
+.admin-ux04-profile360 .profile360-package-disciplines>div{display:flex;flex-wrap:wrap;gap:6px}
+.admin-ux04-profile360 .profile360-package-disciplines b{padding:6px 9px;border:1px solid #d9e8e5;border-radius:999px;background:#edf8f6;color:#167c70;font-size:9px}
+.admin-ux04-profile360 .profile360-package-secondary{margin-top:10px;color:#7b8798;font-size:9px}
+@media(max-width:760px){.admin-ux04-profile360 .profile360-package-usage-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
