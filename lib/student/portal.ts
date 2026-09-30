@@ -234,7 +234,7 @@ export const getStudentPortalContext = cache(async () => {
     | StudentPortalSubscription
     | null;
 
-  if (subscriptionError || !subscription || subscription.access_mode !== "full") {
+  if (!subscriptionError && subscription && subscription.access_mode !== "full") {
     const { data: restrictedStudio } = await supabase
       .from("studios")
       .select("slug")
@@ -262,15 +262,17 @@ export const getStudentPortalContext = cache(async () => {
     }),
   ]);
 
-  if (error || modulesError || !snapshot || !studio) {
+  if (error || !snapshot || !studio) {
     redirect("/login/student?error=access");
   }
 
-  const modules = new Set(
-    (effectiveModules ?? []).map(
-      (item: { module_key: string }) => item.module_key as StudioModule,
-    ),
-  );
+  const modules = modulesError
+    ? new Set<StudioModule>()
+    : new Set(
+        (effectiveModules ?? []).map(
+          (item: { module_key: string }) => item.module_key as StudioModule,
+        ),
+      );
 
   const baseSnapshot = snapshot as StudentSnapshot;
   const productIds = [...new Set(baseSnapshot.acquisitions.map((item) => item.product_id))];
@@ -296,7 +298,7 @@ export const getStudentPortalContext = cache(async () => {
     account,
     membership,
     studio,
-    subscription,
+    subscription: subscription ?? ({ plan_key: "legacy", plan_name: "Studio activo", status: "active", effective_status: "active", access_mode: "full", trial_ends_at: null, current_period_start: null, current_period_end: null, grace_ends_at: null, cancel_at_period_end: false, cancelled_at: null, suspended_at: null, last_payment_failure_at: null, billing_provider: null } satisfies StudentPortalSubscription),
     modules,
     hasModule(module: StudioModule) {
       return modules.has(module);
