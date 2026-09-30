@@ -119,6 +119,14 @@ function NavIcon({ label }: { label: string }) {
       </svg>
     );
   }
+  if (label === "Integraciones") {
+    return (
+      <svg {...common}>
+        <path d="M8 8h4V4M16 16h-4v4" />
+        <path d="M12 8 7 13a3 3 0 0 0 4 4l5-5M12 16l5-5a3 3 0 0 0-4-4l-5 5" />
+      </svg>
+    );
+  }
   if (label === "Más") {
     return (
       <svg {...common}>
