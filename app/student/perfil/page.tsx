@@ -3,10 +3,9 @@ import Link from "next/link";
 
 import { formatDate, getStudentPortalContext } from "@/lib/student/portal";
 
-import { updateStudentProfileAction } from "../actions";
+import { updateStudentAvatarAction, updateStudentProfileAction } from "../actions";
 import PendingActionButton from "../components/PendingActionButton";
 import StudentNoticeDialog from "../components/StudentNoticeDialog";
-import AvatarFilePicker from "./AvatarFilePicker";
 
 const errorCopy: Record<string, string> = {
   email_invalid: "Revisa el formato de tu correo.",
@@ -143,9 +142,21 @@ export default async function StudentProfilePage({
                   className="object-cover"
                 />
               </div>
-              <div className="mt-2">
-                <AvatarFilePicker />
-              </div>
+              <form action={updateStudentAvatarAction} className="mt-2 space-y-1.5">
+                <input
+                  name="avatar"
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  required
+                  className="block w-24 text-[9px] text-zinc-500 file:mr-1 file:rounded-md file:border-0 file:bg-white/10 file:px-2 file:py-1 file:text-[9px] file:font-semibold file:text-zinc-200"
+                />
+                <PendingActionButton
+                  pendingLabel="Guardando…"
+                  className="min-h-8 w-full rounded-lg border border-white/10 px-2 py-1 text-[10px] font-semibold text-zinc-300 transition hover:border-fuchsia-500/35 hover:text-white disabled:cursor-wait disabled:opacity-60"
+                >
+                  Guardar foto
+                </PendingActionButton>
+              </form>
             </div>
             <div className="min-w-0">
               <h2 className="truncate text-xl font-semibold text-white sm:text-2xl">{fullName}</h2>
@@ -259,8 +270,8 @@ export default async function StudentProfilePage({
           <p className="mt-0.5 text-xs text-zinc-400">
             {activePackage
               ? activePackage.unlimited
-                ? `Ilimitado · vence ${formatDate(activePackage.expires_on, studio.timezone)}`
-                : `${activePackage.available_credits ?? 0} clases disponibles · vence ${formatDate(activePackage.expires_on, studio.timezone)}`
+                ? `Ilimitado · vence ${formatDate(activePackage.expires_on, studio.timezone, studio.locale)}`
+                : `${activePackage.available_credits ?? 0} clases disponibles · vence ${formatDate(activePackage.expires_on, studio.timezone, studio.locale)}`
               : "Compra o activa un paquete para reservar clases."}
           </p>
         </div>
@@ -293,7 +304,7 @@ export default async function StudentProfilePage({
               <span className="mt-0.5 block truncate text-xs text-zinc-500">
                 {activePackage
                   ? activePackage.unlimited
-                    ? `Ilimitado · vence ${formatDate(activePackage.expires_on, studio.timezone)}`
+                    ? `Ilimitado · vence ${formatDate(activePackage.expires_on, studio.timezone, studio.locale)}`
                     : `${activePackage.available_credits} clases disponibles`
                   : "Sin paquete activo"}
               </span>
@@ -317,9 +328,9 @@ export default async function StudentProfilePage({
               ✦
             </span>
             <span>
-              <strong className="block text-sm font-semibold text-white">Rewards</strong>
+              <strong className="block text-sm font-semibold text-white">Mi progreso</strong>
               <span className="mt-0.5 block text-xs text-zinc-500">
-                Medallas, beneficios y recompensas obtenidas
+                Programas, retos, logros y recompensas
               </span>
             </span>
             <span
@@ -413,30 +424,6 @@ export default async function StudentProfilePage({
             <span>
               <strong className="block text-sm font-semibold text-white">Pagos</strong>
               <span className="mt-0.5 block text-xs text-zinc-500">Historial comercial</span>
-            </span>
-            <span
-              aria-hidden="true"
-              className="text-xl text-zinc-600 transition group-hover:text-fuchsia-300"
-            >
-              ›
-            </span>
-          </Link>
-
-          <Link
-            href="/student/perfil/notificaciones"
-            className="group grid min-h-24 grid-cols-[auto_1fr_auto] items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 transition hover:border-fuchsia-500/25 hover:bg-white/[0.05]"
-          >
-            <span
-              aria-hidden="true"
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-fuchsia-500/10 text-lg text-fuchsia-300"
-            >
-              ◉
-            </span>
-            <span>
-              <strong className="block text-sm font-semibold text-white">Notificaciones</strong>
-              <span className="mt-0.5 block text-xs text-zinc-500">
-                Elige Push, WhatsApp y correo
-              </span>
             </span>
             <span
               aria-hidden="true"

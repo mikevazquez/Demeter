@@ -15,12 +15,9 @@ type ProductSchedule = {
   discipline: string;
 };
 
-type CreationMode = "class_pack" | "restricted_pack" | "unlimited_membership" | "other";
-
 type ProductFormFieldsProps = {
   disciplines: Discipline[];
   schedules?: ProductSchedule[];
-  creationMode?: CreationMode;
   initialProductType?: string;
   initialPackageTerm?: string | null;
   initialPrice?: number;
@@ -29,24 +26,17 @@ type ProductFormFieldsProps = {
   initialUnlimited?: boolean;
   selectedDisciplineIds?: string[];
   selectedScheduleIds?: string[];
+  currency: string;
 };
 
 type EnrollmentValidity = "30" | "90" | "180" | "365" | "lifetime" | "custom";
-type PackageTerm = "weekly" | "monthly" | "quarterly" | "semiannual" | "annual" | "custom";
+type PackageTerm = "monthly" | "quarterly" | "semiannual" | "annual" | "custom";
 
 const packageTermDays: Record<Exclude<PackageTerm, "custom">, number> = {
-  weekly: 7,
   monthly: 30,
   quarterly: 90,
   semiannual: 180,
   annual: 365,
-};
-
-const creationModeLabels: Record<CreationMode, string> = {
-  class_pack: "Paquete por clases",
-  restricted_pack: "Paquete restringido",
-  unlimited_membership: "Membresía ilimitada",
-  other: "Otro producto",
 };
 
 function enrollmentValidityFromDays(days: number | null | undefined): EnrollmentValidity {
@@ -61,7 +51,6 @@ function packageTermFromValues(
   days: number | null | undefined,
 ): PackageTerm {
   if (
-    term === "weekly" ||
     term === "monthly" ||
     term === "quarterly" ||
     term === "semiannual" ||
@@ -70,7 +59,6 @@ function packageTermFromValues(
   ) {
     return term;
   }
-  if (days === 7) return "weekly";
   if (days === 30) return "monthly";
   if (days === 90) return "quarterly";
   if (days === 180) return "semiannual";
@@ -89,7 +77,7 @@ export function ProductFormFields({
   selectedDisciplineIds = [],
   selectedScheduleIds = [],
   schedules = [],
-  creationMode,
+  currency,
 }: ProductFormFieldsProps) {
   const [productType, setProductType] = useState(initialProductType);
   const [enrollmentValidity, setEnrollmentValidity] = useState<EnrollmentValidity>(() =>
@@ -105,7 +93,7 @@ export function ProductFormFields({
   const selected = new Set(selectedDisciplineIds);
   const selectedSchedules = new Set(selectedScheduleIds);
   const [scheduleScope, setScheduleScope] = useState<"all" | "specific">(
-    creationMode === "restricted_pack" || selectedScheduleIds.length ? "specific" : "all",
+    selectedScheduleIds.length ? "specific" : "all",
   );
   const weekdayLabels: Record<number, string> = {
     0: "Domingo",
@@ -117,44 +105,28 @@ export function ProductFormFields({
     6: "Sábado",
   };
 
-  const locksProductType =
-    creationMode === "class_pack" ||
-    creationMode === "restricted_pack" ||
-    creationMode === "unlimited_membership";
-  const hidesCreditLimit = creationMode === "unlimited_membership";
-
   return (
     <div className="space-y-6">
       <div className="grid gap-4 md:grid-cols-2">
-        {locksProductType ? (
-          <div className="text-sm text-zinc-300">
-            Modalidad
-            <input type="hidden" name="product_type" value={productType} />
-            <div className="mt-2 rounded-xl border border-fuchsia-500/20 bg-fuchsia-500/[0.06] px-3 py-2.5 font-medium text-fuchsia-100">
-              {creationMode ? creationModeLabels[creationMode] : "Producto"}
-            </div>
-          </div>
-        ) : (
-          <label className="text-sm text-zinc-300">
-            Tipo
-            <select
-              name="product_type"
-              required
-              value={productType}
-              onChange={(event) => setProductType(event.target.value)}
-              className="mt-2 w-full rounded-xl border border-white/10 bg-zinc-950 px-3 py-2.5 text-white"
-            >
-              {creationMode !== "other" ? <option value="package">Paquete</option> : null}
-              {creationMode !== "other" ? <option value="membership">Membresía</option> : null}
-              <option value="single_class">Clase suelta</option>
-              <option value="enrollment">Inscripción</option>
-              <option value="other">Otro</option>
-            </select>
-          </label>
-        )}
+        <label className="text-sm text-zinc-300">
+          Tipo
+          <select
+            name="product_type"
+            required
+            value={productType}
+            onChange={(event) => setProductType(event.target.value)}
+            className="mt-2 w-full rounded-xl border border-white/10 bg-zinc-950 px-3 py-2.5 text-white"
+          >
+            <option value="package">Paquete</option>
+            <option value="membership">Membresía</option>
+            <option value="single_class">Clase suelta</option>
+            <option value="enrollment">Inscripción</option>
+            <option value="other">Otro</option>
+          </select>
+        </label>
 
         <label className="text-sm text-zinc-300">
-          Precio MXN
+          Precio {currency}
           <input
             name="price"
             type="number"
@@ -210,7 +182,7 @@ export function ProductFormFields({
         ) : isPackageLike ? (
           <>
             <label className="text-sm text-zinc-300">
-              Vigencia
+              Periodo del paquete
               <select
                 name="package_term"
                 required
@@ -218,10 +190,10 @@ export function ProductFormFields({
                 onChange={(event) => setPackageTerm(event.target.value as PackageTerm)}
                 className="mt-2 w-full rounded-xl border border-white/10 bg-zinc-950 px-3 py-2.5 text-white"
               >
-                <option value="weekly">1 semana · 7 días</option>\n                <option value="monthly">1 mes · 30 días</option>
-                <option value="quarterly">3 meses · 90 días</option>
-                <option value="semiannual">6 meses · 180 días</option>
-                <option value="annual">1 año · 365 días</option>
+                <option value="monthly">Mensual</option>
+                <option value="quarterly">Trimestral</option>
+                <option value="semiannual">Semestral</option>
+                <option value="annual">Anual</option>
                 <option value="custom">Otra vigencia</option>
               </select>
             </label>
@@ -257,9 +229,9 @@ export function ProductFormFields({
           </label>
         )}
 
-        {!isEnrollment && !hidesCreditLimit ? (
+        {!isEnrollment ? (
           <label className="text-sm text-zinc-300">
-            Cantidad de clases
+            Créditos
             <input
               name="credit_limit"
               type="number"
@@ -285,35 +257,15 @@ export function ProductFormFields({
 
       {!isEnrollment ? (
         <>
-          {creationMode === "unlimited_membership" ? (
-            <>
-              <input type="hidden" name="unlimited" value="on" />
-              <div className="rounded-xl border border-fuchsia-500/20 bg-fuchsia-500/[0.06] p-4">
-                <p className="text-sm font-semibold text-fuchsia-100">Acceso ilimitado</p>
-                <p className="mt-1 text-xs leading-5 text-zinc-400">
-                  Esta membresía no consume créditos. Su límite es la vigencia y las reglas de
-                  acceso que configures debajo.
-                </p>
-              </div>
-            </>
-          ) : creationMode === "class_pack" || creationMode === "restricted_pack" ? (
-            <div className="rounded-xl border border-white/10 bg-black/10 p-4">
-              <p className="text-sm font-medium text-white">Consumo por clases</p>
-              <p className="mt-1 text-xs leading-5 text-zinc-500">
-                Cada reserva consume los créditos definidos arriba según el costo de la actividad.
-              </p>
-            </div>
-          ) : (
-            <label className="flex items-center gap-3 rounded-xl border border-white/10 p-4 text-sm text-zinc-300">
-              <input
-                name="unlimited"
-                type="checkbox"
-                defaultChecked={initialUnlimited}
-                className="h-4 w-4"
-              />
-              Producto ilimitado (ignora el número de créditos)
-            </label>
-          )}
+          <label className="flex items-center gap-3 rounded-xl border border-white/10 p-4 text-sm text-zinc-300">
+            <input
+              name="unlimited"
+              type="checkbox"
+              defaultChecked={initialUnlimited}
+              className="h-4 w-4"
+            />
+            Producto ilimitado (ignora el número de créditos)
+          </label>
 
           <fieldset>
             <legend className="text-sm font-medium text-white">Disciplinas incluidas</legend>
@@ -339,120 +291,94 @@ export function ProductFormFields({
           </fieldset>
 
           {isPackageLike ? (
-            creationMode === "class_pack" ? (
-              <input type="hidden" name="schedule_scope" value="all" />
-            ) : (
-              <fieldset className="rounded-2xl border border-white/10 bg-black/10 p-4">
-                <legend className="px-1 text-sm font-medium text-white">
-                  {creationMode === "restricted_pack" ? "Horarios incluidos" : "Horarios permitidos"}
-                </legend>
-                <p className="mt-1 text-xs text-zinc-500">
-                  {creationMode === "restricted_pack"
-                    ? "Selecciona exactamente los días y horarios en los que este paquete podrá utilizarse."
-                    : "Puedes dejar todos los horarios disponibles o limitar la membresía a horarios concretos."}
-                </p>
-                <input
-                  type="hidden"
-                  name="schedule_scope"
-                  value={creationMode === "restricted_pack" ? "specific" : scheduleScope}
-                />
+            <fieldset className="rounded-2xl border border-white/10 bg-black/10 p-4">
+              <legend className="px-1 text-sm font-medium text-white">Horarios permitidos</legend>
+              <p className="mt-1 text-xs text-zinc-500">
+                Limita este paquete a clases recurrentes concretas. Si no activas la restricción,
+                seguirá funcionando en todos los horarios de las disciplinas seleccionadas.
+              </p>
+              <input type="hidden" name="schedule_scope" value={scheduleScope} />
 
-                {creationMode !== "restricted_pack" ? (
-                  <div className="mt-4 grid gap-2">
-                    <label className="flex items-start gap-3 rounded-xl border border-white/10 px-3 py-3 text-sm text-zinc-300">
-                      <input
-                        type="radio"
-                        name="schedule_scope_choice"
-                        value="all"
-                        checked={scheduleScope === "all"}
-                        onChange={() => setScheduleScope("all")}
-                        className="mt-0.5 h-4 w-4"
-                      />
-                      <span>
-                        <strong className="block font-medium text-white">
-                          Todos los horarios de las disciplinas seleccionadas
-                        </strong>
-                        <small className="mt-1 block text-xs text-zinc-500">
-                          La membresía funcionará en cualquier horario compatible.
-                        </small>
-                      </span>
-                    </label>
+              <div className="mt-4 grid gap-2">
+                <label className="flex items-start gap-3 rounded-xl border border-white/10 px-3 py-3 text-sm text-zinc-300">
+                  <input
+                    type="radio"
+                    name="schedule_scope_choice"
+                    value="all"
+                    checked={scheduleScope === "all"}
+                    onChange={() => setScheduleScope("all")}
+                    className="mt-0.5 h-4 w-4"
+                  />
+                  <span>
+                    <strong className="block font-medium text-white">
+                      Todos los horarios de las disciplinas seleccionadas
+                    </strong>
+                    <small className="mt-1 block text-xs text-zinc-500">
+                      Comportamiento actual del paquete.
+                    </small>
+                  </span>
+                </label>
 
-                    <label className="flex items-start gap-3 rounded-xl border border-white/10 px-3 py-3 text-sm text-zinc-300">
-                      <input
-                        type="radio"
-                        name="schedule_scope_choice"
-                        value="specific"
-                        checked={scheduleScope === "specific"}
-                        onChange={() => setScheduleScope("specific")}
-                        className="mt-0.5 h-4 w-4"
-                      />
-                      <span>
-                        <strong className="block font-medium text-white">
-                          Solo horarios específicos
-                        </strong>
-                        <small className="mt-1 block text-xs text-zinc-500">
-                          El acceso ilimitado también puede limitarse a ciertos horarios.
-                        </small>
-                      </span>
-                    </label>
-                  </div>
-                ) : null}
+                <label className="flex items-start gap-3 rounded-xl border border-white/10 px-3 py-3 text-sm text-zinc-300">
+                  <input
+                    type="radio"
+                    name="schedule_scope_choice"
+                    value="specific"
+                    checked={scheduleScope === "specific"}
+                    onChange={() => setScheduleScope("specific")}
+                    className="mt-0.5 h-4 w-4"
+                  />
+                  <span>
+                    <strong className="block font-medium text-white">Solo horarios específicos</strong>
+                    <small className="mt-1 block text-xs text-zinc-500">
+                      El paquete solo podrá consumirse en los horarios marcados.
+                    </small>
+                  </span>
+                </label>
+              </div>
 
-                {creationMode === "restricted_pack" || scheduleScope === "specific" ? (
-                  schedules.length ? (
-                    <div className="mt-4 grid gap-3 lg:grid-cols-2">
-                      {Object.keys(weekdayLabels)
-                        .map(Number)
-                        .filter((weekday) =>
-                          schedules.some((schedule) => schedule.weekday === weekday),
-                        )
-                        .sort((left, right) => (left === 0 ? 7 : left) - (right === 0 ? 7 : right))
-                        .map((weekday) => (
-                          <div
-                            key={weekday}
-                            className="rounded-2xl border border-white/10 bg-black/20 p-3"
-                          >
-                            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-400">
-                              {weekdayLabels[weekday]}
-                            </p>
-                            <div className="mt-2 grid gap-2">
-                              {schedules
-                                .filter((schedule) => schedule.weekday === weekday)
-                                .map((schedule) => (
-                                  <label
-                                    key={schedule.id}
-                                    className="flex items-center gap-3 rounded-xl border border-white/10 px-3 py-2.5 text-sm text-zinc-300"
-                                  >
-                                    <input
-                                      type="checkbox"
-                                      name="schedule_ids"
-                                      value={schedule.id}
-                                      defaultChecked={selectedSchedules.has(schedule.id)}
-                                    />
-                                    <span>
-                                      <strong className="font-medium text-white">
-                                        {schedule.localTime.slice(0, 5)} · {schedule.activity}
-                                      </strong>
-                                      <small className="ml-2 text-zinc-500">
-                                        {schedule.discipline}
-                                      </small>
-                                    </span>
-                                  </label>
-                                ))}
-                            </div>
-                          </div>
-                        ))}
-                    </div>
-                  ) : (
-                    <p className="mt-4 rounded-xl border border-amber-500/20 bg-amber-500/[0.06] p-3 text-xs text-amber-200">
-                      Aún no hay horarios recurrentes configurados. Crea primero los horarios del
-                      estudio para poder restringir este producto.
-                    </p>
-                  )
-                ) : null}
-              </fieldset>
-            )
+              {scheduleScope === "specific" ? (
+                <div className="mt-4 grid gap-3 lg:grid-cols-2">
+                  {Object.keys(weekdayLabels)
+                    .map(Number)
+                    .filter((weekday) => schedules.some((schedule) => schedule.weekday === weekday))
+                    .sort((left, right) => (left === 0 ? 7 : left) - (right === 0 ? 7 : right))
+                    .map((weekday) => (
+                      <div
+                        key={weekday}
+                        className="rounded-2xl border border-white/10 bg-black/20 p-3"
+                      >
+                        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-400">
+                          {weekdayLabels[weekday]}
+                        </p>
+                        <div className="mt-2 grid gap-2">
+                          {schedules
+                            .filter((schedule) => schedule.weekday === weekday)
+                            .map((schedule) => (
+                              <label
+                                key={schedule.id}
+                                className="flex items-center gap-3 rounded-xl border border-white/10 px-3 py-2.5 text-sm text-zinc-300"
+                              >
+                                <input
+                                  type="checkbox"
+                                  name="schedule_ids"
+                                  value={schedule.id}
+                                  defaultChecked={selectedSchedules.has(schedule.id)}
+                                />
+                                <span>
+                                  <strong className="font-medium text-white">
+                                    {schedule.localTime.slice(0, 5)} · {schedule.activity}
+                                  </strong>
+                                  <small className="ml-2 text-zinc-500">{schedule.discipline}</small>
+                                </span>
+                              </label>
+                            ))}
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              ) : null}
+            </fieldset>
           ) : null}
         </>
       ) : null}

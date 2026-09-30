@@ -7,6 +7,7 @@ import {
   localDateKey,
   type StudentSession,
 } from "@/lib/student/portal";
+import { STUDIO_MODULES } from "@/lib/auth/modules";
 
 import ResourcePicker, {
   type StudentMapElement,
@@ -38,13 +39,19 @@ export default async function StudentResourceSelectionPage({
   searchParams,
 }: {
   params: Promise<{ sessionId: string }>;
-  searchParams: Promise<{ date?: string; error?: string; credit?: string }>;
+  searchParams: Promise<{ date?: string; error?: string }>;
 }) {
   const { sessionId } = await params;
   const query = await searchParams;
-  const rewardMode = query.credit === "reward";
-  const rewardSuffix = rewardMode ? "&credit=reward" : "";
-  const { supabase, studio } = await getStudentPortalContext();
+  const { supabase, studio, hasModule } = await getStudentPortalContext();
+
+  if (!hasModule(STUDIO_MODULES.RESOURCES)) {
+    const dateQuery =
+      query.date && /^\d{4}-\d{2}-\d{2}$/.test(query.date)
+        ? `?date=${encodeURIComponent(query.date)}`
+        : "";
+    redirect(`/student/reservar/${sessionId}/confirmar${dateQuery}`);
+  }
 
   const [{ data: sessionData, error: sessionError }, { data: resourceData, error: resourceError }] =
     await Promise.all([
@@ -60,7 +67,7 @@ export default async function StudentResourceSelectionPage({
   const resourceMap = resourceData as ResourceMapPayload;
 
   if (!session.requires_resource || !resourceMap.requires_resource) {
-    redirect(`/student/reservar/${sessionId}/confirmar${rewardMode ? "?credit=reward" : ""}`);
+    redirect(`/student/reservar/${sessionId}/confirmar`);
   }
 
   if (session.reservation_id) {
@@ -68,7 +75,7 @@ export default async function StudentResourceSelectionPage({
   }
 
   if (!session.eligibility?.eligible) {
-    redirect(`/student/reservar/${sessionId}${rewardMode ? "?credit=reward" : ""}`);
+    redirect(`/student/reservar/${sessionId}`);
   }
 
   const sessionDate = localDateKey(new Date(session.starts_at), studio.timezone);
@@ -81,7 +88,7 @@ export default async function StudentResourceSelectionPage({
   return (
     <main className="mx-auto max-w-2xl space-y-4 pb-4">
       <Link
-        href={`/student/reservar/${sessionId}?date=${returnDate}${rewardSuffix}`}
+        href={`/student/reservar/${sessionId}?date=${returnDate}`}
         className="inline-flex items-center gap-2 text-xs font-semibold text-fuchsia-300"
       >
         <span aria-hidden="true">←</span>
@@ -94,7 +101,7 @@ export default async function StudentResourceSelectionPage({
         </p>
         <h1 className="mt-1 text-xl font-semibold text-white">{session.activity}</h1>
         <p className="mt-1.5 text-xs text-zinc-400">
-          {formatDateTime(session.starts_at, studio.timezone)}
+          {formatDateTime(session.starts_at, studio.timezone, studio.locale)}
           {session.space ? ` · ${session.space}` : ""}
         </p>
       </section>
@@ -133,7 +140,6 @@ export default async function StudentResourceSelectionPage({
           returnDate={returnDate}
           resources={resourceMap.resources}
           elements={resourceMap.elements}
-          useRewardCredits={rewardMode}
         />
       )}
     </main>

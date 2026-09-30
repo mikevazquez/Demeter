@@ -1,3 +1,4 @@
+import QRCode from "npm:qrcode@1.5.4";
 import type { SupabaseClient } from "npm:@supabase/supabase-js@2.116.0";
 
 import {
@@ -155,7 +156,7 @@ export async function sendMetaWhatsAppTemplate(
   }
 
   const internalTemplate = input.template as MetaWhatsAppTemplateKey;
-  const metaTemplateName = safeText(connection.templates[internalTemplate]);
+  const metaTemplateName = safeText(connection.templates[internalTemplate]) ?? (internalTemplate === "demeter_reserva_confirmada_qr_v3" ? "demeter_reserva_confirmada_qr_v3" : null);
   if (!metaTemplateName) {
     return {
       status: "skipped",
@@ -178,12 +179,29 @@ export async function sendMetaWhatsAppTemplate(
     };
   }
 
+  let headerMediaId: string | null = null;
+  if (internalTemplate === "demeter_reserva_confirmada_qr_v3") {
+    const reservationId = safeText(input.variables.reservation_id);
+    if (!reservationId) return { status:"error", errorCode:"meta_whatsapp_qr_reservation_missing", retryable:false, responseSnapshot:{} };
+    const { data: token, error: tokenError } = await input.adminClient.rpc("service_reservation_checkin_token",{target_studio_id:input.studioId,target_reservation_id:reservationId});
+    if (tokenError || !safeText(token)) return { status:"error", errorCode:"meta_whatsapp_qr_token_unavailable", retryable:false, responseSnapshot:{} };
+    const dataUrl = await QRCode.toDataURL(String(token), { errorCorrectionLevel:"M", margin:2, width:768 });
+    const base64 = dataUrl.split(",")[1] ?? "";
+    const bytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+    const form = new FormData(); form.append("messaging_product","whatsapp"); form.append("type","image/png"); form.append("file",new Blob([bytes],{type:"image/png"}),"reservation-qr.png");
+    const mediaResp = await (input.fetcher ?? fetch)(`https://graph.facebook.com/${connection.graphApiVersion}/${connection.phoneNumberId}/media`,{method:"POST",headers:{authorization:`Bearer ${connection.accessToken}`},body:form});
+    const mediaBody = await mediaResp.json().catch(()=>({}));
+    headerMediaId = isObject(mediaBody) ? safeText(mediaBody.id) : null;
+    if (!mediaResp.ok || !headerMediaId) return { status:"error", errorCode:`meta_whatsapp_media_http_${mediaResp.status}`, retryable:retryableHttpStatus(mediaResp.status), httpStatus:mediaResp.status, responseSnapshot:metaErrorSnapshot(mediaBody) };
+  }
+
   const payload = buildMetaWhatsAppTemplatePayload({
     recipient,
     internalTemplate,
     metaTemplateName,
     languageCode: connection.languageCode,
     variables: input.variables,
+    headerMediaId,
   });
 
   const endpoint =

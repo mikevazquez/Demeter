@@ -14,7 +14,11 @@ export async function saveSessionResourcesAction(formData: FormData) {
     redirect(`/admin/agenda/${sessionId}/recursos?error=invalid`);
   }
 
-  const { supabase, studio } = await getAdminContext(CAPABILITIES.SCHEDULE_WRITE);
+  const ctx = await getAdminContext(CAPABILITIES.SCHEDULE_WRITE);
+  if (!ctx.can(CAPABILITIES.RESOURCES_MANAGE)) {
+    redirect(`/admin/agenda/${sessionId}?error=access`);
+  }
+  const { supabase, studio } = ctx;
   const { data: session } = await supabase
     .from("class_sessions")
     .select("id,space_id,requires_resource,status")
@@ -80,8 +84,11 @@ export async function reassignReservationResourceAction(formData: FormData) {
     redirect(`/admin/agenda/${sessionId}/recursos?error=reassign`);
   }
 
-  const { supabase } = await getAdminContext(CAPABILITIES.SCHEDULE_WRITE);
-  const { error } = await supabase.rpc("admin_reassign_reservation_resource", {
+  const ctx = await getAdminContext(CAPABILITIES.SCHEDULE_WRITE);
+  if (!ctx.can(CAPABILITIES.RESOURCES_MANAGE)) {
+    redirect(`/admin/agenda/${sessionId}?error=access`);
+  }
+  const { error } = await ctx.supabase.rpc("admin_reassign_reservation_resource", {
     p_assignment_id: assignmentId,
     p_target_resource_id: targetResourceId,
   });

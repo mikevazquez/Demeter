@@ -234,9 +234,8 @@ export default async function StudentHomePage({
           benefits_definition: row.benefits_definition,
         }
       : null;
-  const currentLevel = rewardStatus?.access_unlocked
-    ? (rewardStatus?.current_medal ?? rewardStatus?.current_level ?? toLevelView(fallbackLevelRow))
-    : null;
+  const currentLevel =
+    rewardStatus?.current_medal ?? rewardStatus?.current_level ?? toLevelView(fallbackLevelRow);
   const levelKey =
     currentLevel?.key === "silver" ||
     currentLevel?.key === "gold" ||
@@ -247,27 +246,7 @@ export default async function StudentHomePage({
   const fullName = [snapshot.profile.first_name, snapshot.profile.last_name]
     .filter(Boolean)
     .join(" ");
-  const rewardCreditWallets = snapshot.acquisitions.filter(
-    (item) => item.reward_credit_wallet && item.status === "active" && item.active_now,
-  );
-  const packageAcquisitions = snapshot.acquisitions.filter((item) => !item.reward_credit_wallet);
-  const activePackage = packageAcquisitions.find((item) => item.active_now) ?? null;
-  const rewardCreditsAvailable = rewardCreditWallets.reduce(
-    (total, item) => total + (item.available_credits ?? 0),
-    0,
-  );
-  const rewardCreditsTotal = rewardCreditWallets.reduce(
-    (total, item) =>
-      total +
-      (item.credit_limit ??
-        (item.available_credits ?? 0) + item.reserved_credits + item.used_credits),
-    0,
-  );
-  const nearestRewardCreditExpiry =
-    rewardCreditWallets
-      .map((item) => item.expires_on)
-      .filter(Boolean)
-      .sort()[0] ?? null;
+  const activePackage = snapshot.acquisitions.find((item) => item.active_now) ?? null;
   const credits = availableCredits(activePackage);
   const nextClass =
     [...snapshot.upcoming].sort(
@@ -355,7 +334,7 @@ export default async function StudentHomePage({
                   <p>Acceso anticipado · inscripciones y promociones especiales</p>
                 ) : null}
                 {currentLevel.key === "diamond" ? (
-                  <p>Experiencias premium · beneficios exclusivos de Demeter</p>
+                  <p>Experiencias premium · beneficios exclusivos de {studio.name}</p>
                 ) : null}
               </div>
             </div>
@@ -478,8 +457,8 @@ export default async function StudentHomePage({
               {activeEvaluationInvitation.window_start && activeEvaluationInvitation.window_end ? (
                 <p className="mt-1 text-[11px] text-zinc-500">
                   Disponible del{" "}
-                  {formatDate(activeEvaluationInvitation.window_start, studio.timezone)} al{" "}
-                  {formatDate(activeEvaluationInvitation.window_end, studio.timezone)}
+                  {formatDate(activeEvaluationInvitation.window_start, studio.timezone, studio.locale)} al{" "}
+                  {formatDate(activeEvaluationInvitation.window_end, studio.timezone, studio.locale)}
                 </p>
               ) : null}
             </div>
@@ -513,7 +492,7 @@ export default async function StudentHomePage({
           backgroundImage: `radial-gradient(circle at 86% 8%, ${levelVisual.wash}, transparent 30%), linear-gradient(135deg, rgba(255,255,255,0.035), rgba(255,255,255,0.012))`,
         }}
       >
-        <div className="grid grid-cols-[112px_minmax(0,1fr)] items-start gap-2.5 sm:grid-cols-[128px_minmax(0,1fr)] sm:gap-4">
+        <div className="grid grid-cols-[0.92fr_1.08fr] items-start gap-4">
           <div className="min-w-0">
             <div
               className="relative h-28 w-28 overflow-hidden rounded-full border-2 bg-black/25 sm:h-32 sm:w-32"
@@ -575,7 +554,7 @@ export default async function StudentHomePage({
                 {currentLevel ? "♛" : "◇"}
               </div>
               <div className="min-w-0">
-                <h2 className="text-lg font-semibold leading-tight text-white sm:text-xl">
+                <h2 className="truncate text-xl font-semibold text-white">
                   {currentLevel
                     ? `Medalla ${currentLevel.title ?? "Bronce"}`
                     : rewardStatus?.access_unlocked
@@ -677,7 +656,7 @@ export default async function StudentHomePage({
               <strong
                 className={`ml-2 text-sm ${expiresSoon ? "text-amber-200" : "text-zinc-300"}`}
               >
-                {formatDate(activePackage.expires_on, studio.timezone)}
+                {formatDate(activePackage.expires_on, studio.timezone, studio.locale)}
               </strong>
             </div>
           </div>
@@ -732,51 +711,6 @@ export default async function StudentHomePage({
         </section>
       )}
 
-      {rewardCreditWallets.length ? (
-        <section
-          data-home-block="reward-credits"
-          className="rounded-[20px] border border-emerald-400/55 bg-[radial-gradient(circle_at_88%_12%,rgba(16,185,129,0.16),transparent_36%),rgba(5,20,15,0.72)] px-4 py-3 shadow-[0_0_26px_rgba(16,185,129,0.08)]"
-        >
-          <div className="flex items-center gap-3">
-            <div
-              aria-hidden="true"
-              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-emerald-400/40 bg-emerald-400/10 text-lg text-emerald-300"
-            >
-              ◇
-            </div>
-
-            <div className="min-w-0 flex-1">
-              <p className="text-[9px] font-semibold uppercase tracking-[0.22em] text-emerald-300">
-                Créditos extra
-              </p>
-              <strong className="mt-0.5 block text-base font-semibold text-white">
-                {rewardCreditsAvailable} de {rewardCreditsTotal} disponibles
-              </strong>
-              {nearestRewardCreditExpiry ? (
-                <p className="mt-0.5 text-[11px] text-zinc-400">
-                  Vence {formatDate(nearestRewardCreditExpiry, studio.timezone)}
-                </p>
-              ) : null}
-            </div>
-
-            {rewardCreditsAvailable > 0 ? (
-              <Link
-                href="/student/reservar?credit=reward"
-                className="inline-flex min-h-10 shrink-0 items-center justify-center rounded-full border border-emerald-400/60 bg-emerald-400/[0.08] px-3 text-xs font-semibold text-emerald-200 transition hover:bg-emerald-400/[0.14]"
-              >
-                Usar créditos →
-              </Link>
-            ) : (
-              <span className="shrink-0 text-xs font-semibold text-zinc-500">Agotados</span>
-            )}
-          </div>
-
-          <p className="mt-2 border-t border-emerald-400/10 pt-2 text-[10px] text-zinc-500">
-            Saldo independiente de tu paquete actual.
-          </p>
-        </section>
-      ) : null}
-
       <section
         data-home-block="reserved-classes"
         className="rounded-[24px] border border-fuchsia-500/25 bg-white/[0.025] p-4"
@@ -813,7 +747,7 @@ export default async function StudentHomePage({
                 </span>
               </div>
               <p className="mt-1 text-xs text-zinc-300">
-                {formatDateTime(nextClass.starts_at, studio.timezone)}
+                {formatDateTime(nextClass.starts_at, studio.timezone, studio.locale)}
               </p>
               <p className="mt-1 truncate text-[11px] text-zinc-500">
                 {[nextClass.space, nextClass.coach].filter(Boolean).join(" · ") ||

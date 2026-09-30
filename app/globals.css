@@ -853,10 +853,6 @@ a.admin-nav-item:hover .nav-dot {
   box-shadow: 0 0 0 3px rgba(255, 10, 138, 0.09);
 }
 
-.auth-field.auth-field-single {
-  grid-template-columns: minmax(0, 1fr);
-}
-
 .auth-field-icon {
   display: grid;
   place-items: center;

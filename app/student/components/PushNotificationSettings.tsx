@@ -81,14 +81,14 @@ function deviceLabel() {
   return "Navegador";
 }
 
-async function browserClient() {
+async function browserClient(studioId: string) {
   const { createClient } = await import("@/lib/supabase/client");
-  return createClient();
+  return createClient(studioId);
 }
 
 export default function PushNotificationSettings({
   studioId,
-  studioName = "Demeter",
+  studioName = "Studio Flow",
   onboardingMode = false,
 }: {
   studioId: string;
@@ -145,7 +145,7 @@ export default function PushNotificationSettings({
             return;
           }
 
-          const supabase = await browserClient();
+          const supabase = await browserClient(studioId);
           const { error: registerError } = await supabase.rpc("register_my_push_subscription", {
             p_studio_id: studioId,
             p_endpoint: endpoint,
@@ -186,7 +186,7 @@ export default function PushNotificationSettings({
 
   async function refreshServerStatus() {
     try {
-      const supabase = await browserClient();
+      const supabase = await browserClient(studioId);
       const { data, error } = await supabase.rpc("get_my_push_notification_status", {
         p_studio_id: studioId,
       });
@@ -232,7 +232,7 @@ export default function PushNotificationSettings({
         return;
       }
 
-      const supabase = await browserClient();
+      const supabase = await browserClient(studioId);
       const { data: rawPublicKey, error: keyError } = await supabase.rpc(
         "get_push_vapid_public_key",
       );
@@ -281,15 +281,6 @@ export default function PushNotificationSettings({
 
       if (registerError) throw registerError;
 
-      const { error: preferenceError } = await supabase.rpc(
-        "student_set_notification_channel_preference",
-        {
-          p_channel_key: "push",
-          p_enabled: true,
-        },
-      );
-      if (preferenceError) throw preferenceError;
-
       setState("active");
       setMessage("Notificaciones activadas en este dispositivo.");
       await refreshServerStatus();
@@ -312,18 +303,9 @@ export default function PushNotificationSettings({
         return;
       }
 
-      const supabase = await browserClient();
+      const supabase = await browserClient(studioId);
       const registration = await serviceWorkerRegistration();
       const subscription = await registration.pushManager.getSubscription();
-
-      const { error: preferenceError } = await supabase.rpc(
-        "student_set_notification_channel_preference",
-        {
-          p_channel_key: "push",
-          p_enabled: false,
-        },
-      );
-      if (preferenceError) throw preferenceError;
 
       if (subscription) {
         const { error } = await supabase.rpc("unregister_my_push_subscription", {
@@ -352,7 +334,7 @@ export default function PushNotificationSettings({
     setMessage(null);
 
     try {
-      const supabase = await browserClient();
+      const supabase = await browserClient(studioId);
       const { data, error } = await supabase.functions.invoke("send-push-notification", {
         body: {
           mode: "self_test",

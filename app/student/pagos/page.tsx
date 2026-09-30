@@ -39,7 +39,7 @@ export default async function StudentPaymentsPage() {
                       </span>
                     </div>
                     <p className="mt-1 text-sm text-zinc-400">
-                      {formatDateTime(payment.created_at, studio.timezone)} · {payment.method}
+                      {formatDateTime(payment.created_at, studio.timezone, studio.locale)} · {payment.method}
                     </p>
                     {payment.reference ? (
                       <p className="mt-1 text-xs text-zinc-500">Referencia: {payment.reference}</p>
@@ -47,7 +47,7 @@ export default async function StudentPaymentsPage() {
                   </div>
                   <strong className={refund ? "text-rose-300" : "text-white"}>
                     {refund ? "−" : ""}
-                    {formatMoney(payment.amount_minor, payment.currency)}
+                    {formatMoney(payment.amount_minor, payment.currency, studio.locale)}
                   </strong>
                 </article>
               );

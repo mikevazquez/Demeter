@@ -79,7 +79,7 @@ function requirementState(met: boolean | undefined) {
   return met ? "text-emerald-300" : "text-zinc-300";
 }
 
-function benefitLines(level: MedalDefinition) {
+function benefitLines(level: MedalDefinition, studioName: string) {
   const lines: string[] = [];
 
   lines.push(
@@ -107,14 +107,14 @@ function benefitLines(level: MedalDefinition) {
     lines.push("Acceso anticipado a inscripciones y promociones especiales");
   }
   if (level.level_key === "diamond") {
-    lines.push("Beneficios y experiencias premium de Demeter");
+    lines.push(`Beneficios y experiencias premium de ${studioName}`);
   }
 
   return lines;
 }
 
 export default async function StudentMedalsPage() {
-  const { supabase, membership } = await getStudentPortalContext();
+  const { supabase, membership, studio } = await getStudentPortalContext();
 
   const [{ data: statusData }, { data: levelsData }] = await Promise.all([
     supabase.rpc("student_reward_status_snapshot"),
@@ -292,7 +292,7 @@ export default async function StudentMedalsPage() {
                   Recompensas
                 </p>
                 <div className="mt-2 space-y-1.5">
-                  {benefitLines(level).map((line) => (
+                  {benefitLines(level, studio.name).map((line) => (
                     <p key={line} className="text-xs text-zinc-300">
                       <span className="mr-2 text-fuchsia-300">✓</span>
                       {line}

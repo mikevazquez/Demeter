@@ -8,16 +8,15 @@ function source(path: string) {
 }
 
 describe("SF-166 automation admin UI", () => {
-  it("surfaces communication management as Notificaciones while preserving the automation route", () => {
+  it("exposes Automations as a durable module and in mobile Más", () => {
     const more = source("app/admin/mas/page.tsx");
     const layout = source("app/admin/layout.tsx");
 
-    expect(more).toContain('title: "Notificaciones"');
-    expect(more).toContain('href: "/admin/notificaciones"');
+    expect(more).toContain('title: "Automatizaciones"');
+    expect(more).toContain('href: "/admin/automatizaciones"');
     expect(more).toContain("CAPABILITIES.AUTOMATIONS_READ");
-    expect(layout).toContain('href: "/admin/notificaciones"');
-    expect(layout).toContain('label: "Notificaciones"');
-    expect(layout).toContain('activeFor: ["/admin/automatizaciones"]');
+    expect(layout).toContain('href: "/admin/automatizaciones"');
+    expect(layout).toContain('label: "Automatizaciones"');
   });
 
   it("renders the approved catalog and execution audit surfaces", () => {

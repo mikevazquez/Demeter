@@ -33,8 +33,19 @@ const termCopy: Record<string, string> = {
   custom: "Otra vigencia",
 };
 
-function money(minor: number, currency = "MXN") {
-  return new Intl.NumberFormat("es-MX", {
+const termOrder = ["monthly", "quarterly", "semiannual", "annual", "custom"];
+
+function packageTermKey(value: string | null, validityDays: number | null) {
+  if (value && termCopy[value]) return value;
+  if (validityDays === 30) return "monthly";
+  if (validityDays === 90) return "quarterly";
+  if (validityDays === 180) return "semiannual";
+  if (validityDays === 365) return "annual";
+  return "custom";
+}
+
+function money(minor: number, currency: string, locale: string) {
+  return new Intl.NumberFormat(locale, {
     style: "currency",
     currency,
     maximumFractionDigits: 2,
@@ -49,6 +60,8 @@ function inputMoneyToMinor(value: string) {
 export default function StudentOnboardingForm({
   studentId,
   studentName,
+  studioName,
+  locale,
   packages,
   today,
   idempotencyKey,
@@ -61,6 +74,8 @@ export default function StudentOnboardingForm({
 }: {
   studentId: string;
   studentName: string;
+  studioName: string;
+  locale: string;
   packages: PackageOption[];
   today: string;
   idempotencyKey: string;
@@ -72,6 +87,7 @@ export default function StudentOnboardingForm({
   flowContext?: "onboarding" | "sale";
 }) {
   const [selectedId, setSelectedId] = useState(packages[0]?.id ?? "");
+  const [openPackageTerm, setOpenPackageTerm] = useState<string | null>(null);
   const [startMode, setStartMode] = useState("today");
   const [discountMode, setDiscountMode] = useState("none");
   const [discountValue, setDiscountValue] = useState("");
@@ -90,6 +106,18 @@ export default function StudentOnboardingForm({
   const selectedPackage = useMemo(
     () => packages.find((item) => item.id === selectedId) ?? packages[0] ?? null,
     [packages, selectedId],
+  );
+
+  const packageGroups = useMemo(
+    () =>
+      termOrder
+        .map((term) => ({
+          term,
+          label: termCopy[term],
+          packages: packages.filter((item) => packageTermKey(item.packageTerm, item.validityDays) === term),
+        }))
+        .filter((group) => group.packages.length > 0),
+    [packages],
   );
 
   const selectedEnrollment = useMemo(
@@ -162,7 +190,7 @@ export default function StudentOnboardingForm({
   return (
     <form
       action={createStudentOnboardingSale}
-      className="grid gap-5"
+      className={flowContext === "sale" ? "sales-v2-flow grid gap-5" : "grid gap-5"}
       onSubmit={(event) => {
         if (completedSaleId) event.preventDefault();
       }}
@@ -184,36 +212,62 @@ export default function StudentOnboardingForm({
           </div>
         </div>
 
-        <div className="grid gap-3 md:grid-cols-2">
-          {packages.map((item) => {
-            const selected = item.id === selectedPackage.id;
+        <div className="sales-v2-package-groups">
+          {packageGroups.map((group) => {
+            const isOpen = openPackageTerm === group.term;
+            const selectedInGroup = group.packages.some((item) => item.id === selectedPackage.id);
+
             return (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => setSelectedId(item.id)}
-                className={`rounded-2xl border p-4 text-left transition ${
-                  selected
-                    ? "border-fuchsia-500/70 bg-fuchsia-500/10"
-                    : "border-white/10 bg-white/[0.03] hover:border-white/20"
-                }`}
+              <section
+                key={group.term}
+                className={`sales-v2-package-group ${selectedInGroup ? "has-selection" : ""}`}
               >
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-fuchsia-300">
-                      {item.packageTerm
-                        ? (termCopy[item.packageTerm] ?? "Otra vigencia")
-                        : "Paquete"}
-                    </p>
-                    <strong className="mt-1 block text-white">{item.name}</strong>
-                    <span className="mt-1 block text-sm text-zinc-400">
-                      {item.unlimited ? "Clases ilimitadas" : `${item.creditLimit ?? 0} créditos`}
-                      {item.validityDays ? ` · ${item.validityDays} días` : ""}
-                    </span>
+                <button
+                  type="button"
+                  className="sales-v2-package-group-toggle"
+                  onClick={() => setOpenPackageTerm(isOpen ? null : group.term)}
+                  aria-expanded={isOpen}
+                >
+                  <span>
+                    <strong>{group.label}</strong>
+                    <small>
+                      {group.packages.length} {group.packages.length === 1 ? "paquete" : "paquetes"}
+                      {selectedInGroup ? ` · Seleccionado: ${selectedPackage.name}` : ""}
+                    </small>
+                  </span>
+                  <b aria-hidden="true">{isOpen ? "−" : "+"}</b>
+                </button>
+
+                {isOpen ? (
+                  <div className="sales-v2-package-options">
+                    {group.packages.map((item) => {
+                      const selected = item.id === selectedPackage.id;
+                      return (
+                        <button
+                          key={item.id}
+                          type="button"
+                          onClick={() => {
+                            setSelectedId(item.id);
+                            setOpenPackageTerm(group.term);
+                          }}
+                          className={`sales-v2-package-option ${selected ? "is-selected" : ""}`}
+                        >
+                          <span>
+                            <strong>{item.name}</strong>
+                            <small>
+                              {item.unlimited
+                                ? "Clases ilimitadas"
+                                : `${item.creditLimit ?? 0} créditos`}
+                              {item.validityDays ? ` · ${item.validityDays} días` : ""}
+                            </small>
+                          </span>
+                          <strong>{money(item.priceMinor, item.currency, locale)}</strong>
+                        </button>
+                      );
+                    })}
                   </div>
-                  <strong>{money(item.priceMinor, item.currency)}</strong>
-                </div>
-              </button>
+                ) : null}
+              </section>
             );
           })}
         </div>
@@ -344,7 +398,7 @@ export default function StudentOnboardingForm({
                     <option key={item.id} value={item.id}>
                       {item.name} ·{" "}
                       {item.validityDays === null ? "Vitalicia" : `${item.validityDays} días`} ·{" "}
-                      {money(item.priceMinor, item.currency)}
+                      {money(item.priceMinor, item.currency, locale)}
                     </option>
                   ))}
                 </select>
@@ -357,7 +411,7 @@ export default function StudentOnboardingForm({
                 >
                   <option value="paid">
                     Cobrar inscripción ·{" "}
-                    {money(selectedEnrollment.priceMinor, selectedEnrollment.currency)}
+                    {money(selectedEnrollment.priceMinor, selectedEnrollment.currency, locale)}
                   </option>
                   <option value="promotion">Aplicar promoción</option>
                   <option value="exception">Aplicar excepción autorizada</option>
@@ -405,7 +459,7 @@ export default function StudentOnboardingForm({
         <p className="eyebrow">5 · HISTORIAL INICIAL</p>
         <h2>¿Ya consumió clases de este paquete?</h2>
         <p>
-          Si aplica, Demeter conserva la adquisición y registra un ajuste auditable de créditos; no
+          Si aplica, {studioName} conserva la adquisición y registra un ajuste auditable de créditos; no
           inventa asistencias.
         </p>
         <div className="compact-form">
@@ -458,7 +512,7 @@ export default function StudentOnboardingForm({
               className="ghost-button"
               onClick={() => setPaymentAmount((totalMinor / 100).toFixed(2))}
             >
-              Usar total · {money(totalMinor, selectedPackage.currency)}
+              Usar total · {money(totalMinor, selectedPackage.currency, locale)}
             </button>
 
             {paidMinor > 0 ? (
@@ -552,31 +606,31 @@ export default function StudentOnboardingForm({
             <div className="mt-4 grid gap-3 text-sm">
               <div className="flex justify-between gap-3">
                 <span className="text-zinc-400">Precio de lista</span>
-                <strong>{money(selectedPackage.priceMinor, selectedPackage.currency)}</strong>
+                <strong>{money(selectedPackage.priceMinor, selectedPackage.currency, locale)}</strong>
               </div>
               {packageDiscountMinor > 0 ? (
                 <div className="flex justify-between gap-3">
                   <span className="text-zinc-400">Descuento</span>
-                  <strong>− {money(packageDiscountMinor, selectedPackage.currency)}</strong>
+                  <strong>− {money(packageDiscountMinor, selectedPackage.currency, locale)}</strong>
                 </div>
               ) : null}
               {enrollmentNetMinor > 0 ? (
                 <div className="flex justify-between gap-3">
                   <span className="text-zinc-400">Inscripción</span>
-                  <strong>{money(enrollmentNetMinor, selectedPackage.currency)}</strong>
+                  <strong>{money(enrollmentNetMinor, selectedPackage.currency, locale)}</strong>
                 </div>
               ) : null}
               <div className="border-t border-white/10 pt-3 flex justify-between gap-3 text-base">
                 <span>Total</span>
-                <strong>{money(totalMinor, selectedPackage.currency)}</strong>
+                <strong>{money(totalMinor, selectedPackage.currency, locale)}</strong>
               </div>
               <div className="flex justify-between gap-3">
                 <span className="text-zinc-400">Registrado ahora</span>
-                <strong>{money(paidMinor, selectedPackage.currency)}</strong>
+                <strong>{money(paidMinor, selectedPackage.currency, locale)}</strong>
               </div>
               <div className="flex justify-between gap-3">
                 <span className="text-zinc-400">Saldo pendiente</span>
-                <strong>{money(balanceMinor, selectedPackage.currency)}</strong>
+                <strong>{money(balanceMinor, selectedPackage.currency, locale)}</strong>
               </div>
             </div>
             {pendingWithoutPayment ? (

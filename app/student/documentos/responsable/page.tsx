@@ -14,7 +14,7 @@ export default async function StudentGuardianPage({
 }) {
   const query = await searchParams;
   const returnTo = safeReservationReturnTo(query.returnTo);
-  const { supabase, snapshot, membership } = await getStudentPortalContext();
+  const { supabase, snapshot, membership, studio } = await getStudentPortalContext();
   const studentId = snapshot.profile.student_id;
 
   const [{ data: guardians }, { data: invitations }] = await Promise.all([
@@ -198,9 +198,10 @@ export default async function StudentGuardianPage({
                   </p>
                 </div>
                 <span className="text-xs text-zinc-500">
-                  {new Intl.DateTimeFormat("es-MX", { dateStyle: "medium" }).format(
-                    new Date(invite.sent_at),
-                  )}
+                  {new Intl.DateTimeFormat(studio.locale, {
+                    dateStyle: "medium",
+                    timeZone: studio.timezone,
+                  }).format(new Date(invite.sent_at))}
                 </span>
               </div>
             ))}

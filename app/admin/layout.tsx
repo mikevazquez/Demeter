@@ -18,8 +18,9 @@ import "./actividades/actividades.css";
 import "./admin-ux-04-secondary.css";
 import "./admin-ux-04-secondary-detail.css";
 import "./evaluaciones/evaluaciones.css";
-import "./notificaciones/notificaciones.css";
 import "./inteligencia/inteligencia.css";
+import "./productos/packages-v2.css";
+import "./ventas/sales-v2.css";
 
 type PwaBrand = {
   name: string;
@@ -34,27 +35,26 @@ function pwaBrandQuery(brand: PwaBrand) {
     slug: brand.slug,
     primary: brand.primary_color,
     logo: brand.logo_path ?? "",
-    portal: "admin",
-    v: "5",
+    v: "4",
   }).toString();
 }
 
-const getCachedAdminContext = cache(async () => getAdminContext());
+const getCachedAdminContext = cache(async () =>
+  getAdminContext(undefined, { allowRestricted: true }),
+);
 
 export async function generateMetadata(): Promise<Metadata> {
   const { studio } = await getCachedAdminContext();
   const query = pwaBrandQuery(studio);
 
-  const appName = studio.name + " Admin";
-
   return {
-    applicationName: appName,
-    title: appName,
+    applicationName: studio.name,
+    title: studio.name,
     manifest: "/pwa/manifest?" + query,
     appleWebApp: {
       capable: true,
       statusBarStyle: "black-translucent",
-      title: appName,
+      title: studio.name,
     },
     icons: {
       icon: [
@@ -88,9 +88,12 @@ const roleLabels: Record<string, string> = {
 };
 
 export default async function AdminLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  const { supabase, studio, membership, can, user } = await getCachedAdminContext();
+  const { supabase, studio, membership, can, user, subscription } =
+    await getCachedAdminContext();
   const pwaQuery = pwaBrandQuery(studio);
-  const instructorOnly = can(CAPABILITIES.INSTRUCTOR_PORTAL) && !can(CAPABILITIES.ADMIN_PORTAL);
+  const restricted = subscription.access_mode === "restricted";
+  const instructorOnly =
+    can(CAPABILITIES.INSTRUCTOR_PORTAL) && !can(CAPABILITIES.ADMIN_PORTAL);
   const brandLogoUrl = studio.logo_path
     ? supabase.storage.from("studio-branding").getPublicUrl(studio.logo_path).data.publicUrl
     : null;
@@ -107,16 +110,24 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
     .map((part: string) => part.slice(0, 1).toUpperCase())
     .join("");
 
-  const desktopNavItems = instructorOnly
+  const desktopNavItems = restricted
     ? [
         {
-          href: "/admin/mis-clases",
-          label: "Mis clases",
+          href: "/admin/suscripcion",
+          label: "Suscripción",
           enabled: true,
-          activeFor: ["/coach"],
         },
       ]
-    : [
+    : instructorOnly
+      ? [
+          {
+            href: "/admin/mis-clases",
+            label: "Mis clases",
+            enabled: true,
+            activeFor: ["/coach"],
+          },
+        ]
+      : [
         { href: "/admin", label: "Hoy", enabled: true },
         ...(can(CAPABILITIES.SCHEDULE_READ)
           ? [
@@ -125,7 +136,14 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
             ]
           : []),
         ...(can(CAPABILITIES.STUDENTS_READ)
-          ? [{ href: "/admin/alumnas", label: "Alumnas", enabled: true }]
+          ? [
+              {
+                href: "/admin/alumnas",
+                label: "Alumnas",
+                enabled: true,
+                activeFor: ["/admin/ventas"],
+              },
+            ]
           : []),
         ...(can(CAPABILITIES.REPORTS_READ)
           ? [{ href: "/admin/inteligencia", label: "Inteligencia", enabled: true }]
@@ -134,37 +152,42 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
           ? [{ href: "/admin/documentos", label: "Documentos", enabled: true }]
           : []),
         ...(can(CAPABILITIES.REWARDS_READ)
-          ? [
-              { href: "/admin/retos", label: "Retos", enabled: true },
-              { href: "/admin/recompensas", label: "Rewards", enabled: true },
-            ]
+          ? [{ href: "/admin/recompensas", label: "Progreso", enabled: true }]
           : []),
         ...(can(CAPABILITIES.EVALUATIONS_READ)
           ? [{ href: "/admin/evaluaciones", label: "Evaluaciones", enabled: true }]
           : []),
         ...(can(CAPABILITIES.PRODUCTS_READ)
-          ? [{ href: "/admin/productos", label: "Productos", enabled: true }]
+          ? [{ href: "/admin/productos", label: "Paquetes", enabled: true }]
           : []),
         ...(can(CAPABILITIES.INSTRUCTORS_READ)
           ? [{ href: "/admin/instructores", label: "Equipo", enabled: true }]
           : []),
         ...(can(CAPABILITIES.AUTOMATIONS_READ)
+          ? [{ href: "/admin/automatizaciones", label: "Comunicación", enabled: true }]
+          : []),
+        ...(membership.role === "owner" && can(CAPABILITIES.INTEGRATIONS_READ)
           ? [
               {
-                href: "/admin/notificaciones",
-                label: "Notificaciones",
+                href: "/admin/integraciones",
+                label: "Integraciones",
                 enabled: true,
-                activeFor: ["/admin/automatizaciones"],
+                secondary: true,
               },
             ]
           : []),
         ...(membership.role === "owner"
           ? [
               {
-                href: "/admin/configuracion",
-                label: "Configuración",
+                href: "/admin/mas",
+                label: "Más",
                 enabled: true,
                 secondary: true,
+                activeFor: [
+                  "/admin/configuracion/region",
+                  "/admin/configuracion/recursos",
+                  "/admin/suscripcion",
+                ],
               },
             ]
           : []),
@@ -181,9 +204,11 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
     can(CAPABILITIES.REPORTS_READ) ||
     membership.role === "owner";
 
-  const mobileNavItems = instructorOnly
+  const mobileNavItems = restricted
     ? desktopNavItems
-    : [
+    : instructorOnly
+      ? desktopNavItems
+      : [
         { href: "/admin", label: "Hoy", enabled: true },
         ...(can(CAPABILITIES.SCHEDULE_READ)
           ? [{ href: "/admin/agenda", label: "Agenda", enabled: true }]
@@ -200,15 +225,15 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
                 activeFor: [
                   "/admin/actividades",
                   "/admin/documentos",
-                  "/admin/retos",
                   "/admin/recompensas",
                   "/admin/evaluaciones",
                   "/admin/productos",
                   "/admin/instructores",
-                  "/admin/notificaciones",
                   "/admin/automatizaciones",
                   "/admin/inteligencia",
                   "/admin/configuracion",
+                  "/admin/integraciones",
+                  "/admin/suscripcion",
                 ],
               },
             ]
@@ -218,7 +243,7 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
   return (
     <div className="admin-shell">
       <PwaBrandingSync
-        name={studio.name + " Admin"}
+        name={studio.name}
         manifestHref={"/pwa/manifest?" + pwaQuery}
         appleTouchIconHref={"/pwa/studio-icon/180?" + pwaQuery}
       />
@@ -251,7 +276,6 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
             </span>
           </div>
           <form action={signOut}>
-            <input type="hidden" name="mode" value="studio" />
             <button type="submit" className="sidebar-signout">
               Cerrar sesión
             </button>
@@ -295,6 +319,21 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
               </div>
             </header>
           </>
+        ) : null}
+        {subscription.effective_status === "past_due_grace" ? (
+          <div className="notice error">
+            Hay un pago pendiente. El estudio conserva acceso durante el periodo de gracia configurado.
+          </div>
+        ) : null}
+        {subscription.effective_status === "trialing" ? (
+          <div className="notice">
+            El estudio está en periodo de prueba.
+          </div>
+        ) : null}
+        {subscription.cancel_at_period_end && subscription.access_mode === "full" ? (
+          <div className="notice">
+            La suscripción está programada para cancelarse al finalizar el periodo actual.
+          </div>
         ) : null}
         {children}
       </div>

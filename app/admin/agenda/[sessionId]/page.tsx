@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { CAPABILITIES } from "@/lib/auth/capabilities";
+import { STUDIO_MODULES } from "@/lib/auth/modules";
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { SessionOperations } from "../../hoy/SessionOperations";
 import { cancelSession, setMinimumOverride, updateSession } from "./actions";
@@ -25,9 +26,9 @@ const eligibilityCopy: Record<string, string> = {
   no_credits: "sin créditos",
 };
 
-function formatExpiry(value: string | null) {
+function formatExpiry(value: string | null, locale: string) {
   if (!value) return "Sin vencimiento";
-  return `Vence ${new Intl.DateTimeFormat("es-MX", {
+  return `Vence ${new Intl.DateTimeFormat(locale, {
     day: "numeric",
     month: "short",
     timeZone: "UTC",
@@ -38,9 +39,9 @@ function validDateKey(value: string | undefined) {
   return Boolean(value && /^\d{4}-\d{2}-\d{2}$/.test(value));
 }
 
-function formatSessionDateTime(value: string | null, timeZone: string) {
+function formatSessionDateTime(value: string | null, timeZone: string, locale: string) {
   if (!value) return "—";
-  return new Intl.DateTimeFormat("es-MX", {
+  return new Intl.DateTimeFormat(locale, {
     timeZone,
     day: "numeric",
     month: "short",
@@ -66,7 +67,8 @@ export default async function SessionDetailPage({
 }) {
   const { sessionId } = await params;
   const query = await searchParams;
-  const { supabase, studio, can } = await getAdminContext(CAPABILITIES.SCHEDULE_READ);
+  const { supabase, studio, can, hasModule } = await getAdminContext(CAPABILITIES.SCHEDULE_READ);
+  const resourcesEnabled = hasModule(STUDIO_MODULES.RESOURCES);
 
   const { data: session } = await supabase
     .from("class_sessions")
@@ -93,7 +95,7 @@ export default async function SessionDetailPage({
   ] = await Promise.all([
     supabase
       .from("class_templates")
-      .select("name,discipline_id,duration_minutes,credit_cost,color_hex,drop_in_price_minor")
+      .select("name,discipline_id,duration_minutes,credit_cost,color_hex")
       .eq("id", session.template_id)
       .single(),
     supabase
@@ -117,13 +119,14 @@ export default async function SessionDetailPage({
       .order("full_name"),
     supabase
       .from("reservations")
-      .select("id,student_id,guest_person_id,status,acquisition_id,commercial_status")
+      .select("id,student_id,guest_person_id,status,acquisition_id")
       .eq("session_id", sessionId)
       .in("status", ["reserved", "attended", "no_show"])
       .order("booked_at"),
   ]);
 
-  const timeZone = studio.timezone ?? "America/Mexico_City";
+  const timeZone = studio.timezone;
+  const locale = studio.locale;
   const personMap = new Map(
     (persons ?? []).map((person) => [
       person.id,
@@ -139,7 +142,7 @@ export default async function SessionDetailPage({
   const spaceMap = new Map((spaces ?? []).map((space) => [space.id, space.name]));
   const studentMap = new Map((students ?? []).map((student) => [student.id, student.full_name]));
 
-  const dateLabel = new Intl.DateTimeFormat("es-MX", {
+  const dateLabel = new Intl.DateTimeFormat(locale, {
     timeZone,
     weekday: "long",
     day: "numeric",
@@ -259,13 +262,10 @@ export default async function SessionDetailPage({
           : acquisition
             ? `${balance ?? 0} créditos disponibles`
             : "—",
-      expiresLabel: isGuest ? "Misma clase" : formatExpiry(acquisition?.expires_on ?? null),
+      expiresLabel: isGuest ? "Misma clase" : formatExpiry(acquisition?.expires_on ?? null, locale),
       studentId: reservation.student_id,
       evaluationInvitationId: evaluationInvitation?.id ?? null,
       evaluationStatus: evaluationInvitation?.status ?? null,
-      paymentDueOnAttendance: reservation.commercial_status === "payment_pending",
-      individualPriceMinor: template?.drop_in_price_minor ?? null,
-      currency: studio.currency ?? "MXN",
     };
   });
 
@@ -288,7 +288,7 @@ export default async function SessionDetailPage({
   });
 
   const occupied = (reservations ?? []).filter((reservation) =>
-    ["reserved", "attended", "no_show"].includes(reservation.status),
+    ["reserved", "attended"].includes(reservation.status),
   ).length;
   const attended = (reservations ?? []).filter(
     (reservation) => reservation.status === "attended",
@@ -334,7 +334,7 @@ export default async function SessionDetailPage({
     query.created === "cancel-session" ||
     query.created === "minimum-override";
 
-  const { data: sessionResourceRows } = session.requires_resource
+  const { data: sessionResourceRows } = resourcesEnabled && session.requires_resource
     ? await supabase
         .from("session_resources")
         .select("id,enabled")
@@ -446,7 +446,7 @@ export default async function SessionDetailPage({
             </div>
             <div>
               <span>Revisión automática</span>
-              <strong>{formatSessionDateTime(session.minimum_review_at, timeZone)}</strong>
+              <strong>{formatSessionDateTime(session.minimum_review_at, timeZone, locale)}</strong>
             </div>
             <div>
               <span>Estado</span>
@@ -458,7 +458,7 @@ export default async function SessionDetailPage({
             <div className="admin-minimum-cancelled-detail">
               <strong>Sesión cancelada por mínimo no alcanzado</strong>
               <p>
-                Cancelada {formatSessionDateTime(session.minimum_cancelled_at, timeZone)} · mínimo
+                Cancelada {formatSessionDateTime(session.minimum_cancelled_at, timeZone, locale)} · mínimo
                 requerido: {session.minimum_reservations} · reservas al revisar:{" "}
                 {session.minimum_reservations_at_review ?? 0}.
               </p>
@@ -484,7 +484,7 @@ export default async function SessionDetailPage({
               <span>✓</span>
               <p>
                 La revisión se completó{" "}
-                {formatSessionDateTime(session.minimum_reviewed_at, timeZone)} con{" "}
+                {formatSessionDateTime(session.minimum_reviewed_at, timeZone, locale)} con{" "}
                 {session.minimum_reservations_at_review ?? occupied} reservas. Esta sesión ya no
                 volverá a evaluarse automáticamente.
               </p>
@@ -538,13 +538,15 @@ export default async function SessionDetailPage({
           canAttendance={canAttendance && session.status !== "cancelled"}
           canBook={canEdit && session.status === "scheduled"}
           canCreateStudent={canCreateStudent && session.status === "scheduled"}
+          locale={locale}
+          timeZone={timeZone}
           returnTo={returnTo}
           initiallyOpen
           showToggle={false}
         />
       </section>
 
-      {session.requires_resource ? (
+      {resourcesEnabled && session.requires_resource ? (
         <section className="panel">
           <p className="eyebrow">RECURSOS</p>
           <h2>Recursos de esta sesión</h2>

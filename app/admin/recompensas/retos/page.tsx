@@ -23,7 +23,7 @@ export default async function ChallengesPage({
   const ctx = await getAdminContext(CAPABILITIES.REWARDS_READ);
   const search = String(query.q ?? "")
     .trim()
-    .toLocaleLowerCase("es-MX");
+    .toLocaleLowerCase(ctx.studio.locale);
   const status = ["active", "scheduled", "draft", "finished"].includes(String(query.status))
     ? String(query.status)
     : "all";
@@ -72,7 +72,7 @@ export default async function ChallengesPage({
       if (!search) return true;
       const haystack =
         `${override?.title ?? version?.name ?? ""} ${override?.description ?? version?.description ?? ""}`.toLocaleLowerCase(
-          "es-MX",
+          ctx.studio.locale,
         );
       return haystack.includes(search);
     });
@@ -155,7 +155,7 @@ export default async function ChallengesPage({
                 <p className="mt-3 text-xs font-semibold text-zinc-500">
                   {presentation.reward_visibility === "surprise"
                     ? "Recompensa sorpresa"
-                    : rewardDefinitionLabel(version?.reward_definition)}
+                    : rewardDefinitionLabel(version?.reward_definition, ctx.studio.locale, ctx.studio.currency)}
                 </p>
               </Link>
             );

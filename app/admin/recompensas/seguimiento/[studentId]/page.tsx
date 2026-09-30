@@ -243,7 +243,7 @@ export default async function StudentRewardsProgressPage({
           : reward.status === "revoked"
             ? "Recompensa ajustada"
             : "Recompensa obtenida",
-      detail: rewardDefinitionLabel(reward.benefit_definition),
+      detail: rewardDefinitionLabel(reward.benefit_definition, ctx.studio.locale, ctx.studio.currency),
       rewardId: reward.id,
     })),
   ].sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime());
@@ -419,7 +419,7 @@ export default async function StudentRewardsProgressPage({
                   {achievement.title_snapshot}
                 </h2>
                 <p className="mt-2 text-sm text-zinc-400">
-                  Desbloqueado {formatDateTime(achievement.unlocked_at)}
+                  Desbloqueado {formatDateTime(achievement.unlocked_at, ctx.studio.locale, ctx.studio.timezone)}
                 </p>
               </article>
             ))
@@ -441,10 +441,10 @@ export default async function StudentRewardsProgressPage({
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
                     <strong className="text-white">
-                      {rewardDefinitionLabel(reward.benefit_definition)}
+                      {rewardDefinitionLabel(reward.benefit_definition, ctx.studio.locale, ctx.studio.currency)}
                     </strong>
                     <p className="mt-1 text-xs text-zinc-500">
-                      Obtenida {formatDateTime(reward.created_at)}
+                      Obtenida {formatDateTime(reward.created_at, ctx.studio.locale, ctx.studio.timezone)}
                     </p>
                   </div>
                   <StatusBadge status={reward.status} />
@@ -469,7 +469,7 @@ export default async function StudentRewardsProgressPage({
                 >
                   <strong className="text-sm text-white">{item.title}</strong>
                   <p className="mt-1 text-sm text-zinc-400">{item.detail}</p>
-                  <p className="mt-1 text-xs text-zinc-500">{formatDateTime(item.at)}</p>
+                  <p className="mt-1 text-xs text-zinc-500">{formatDateTime(item.at, ctx.studio.locale, ctx.studio.timezone)}</p>
                 </Link>
               ) : (
                 <div
@@ -478,7 +478,7 @@ export default async function StudentRewardsProgressPage({
                 >
                   <strong className="text-sm text-white">{item.title}</strong>
                   {item.detail ? <p className="mt-1 text-sm text-zinc-400">{item.detail}</p> : null}
-                  <p className="mt-1 text-xs text-zinc-500">{formatDateTime(item.at)}</p>
+                  <p className="mt-1 text-xs text-zinc-500">{formatDateTime(item.at, ctx.studio.locale, ctx.studio.timezone)}</p>
                 </div>
               ),
             )

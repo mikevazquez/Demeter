@@ -1,21 +1,21 @@
 import { createServerClient } from "@supabase/ssr";
-import { cookies, headers } from "next/headers";
-import { env } from "@/lib/env";
-import {
-  AUTH_PORTAL_HEADER,
-  authCookieOptions,
-  type AuthPortal,
-} from "@/lib/supabase/session-policy";
+import { cookies } from "next/headers";
 
-export async function createClient(explicitPortal?: AuthPortal) {
+import { STUDIO_CONTEXT_COOKIE } from "@/lib/auth/studio-context-cookie";
+import { env } from "@/lib/env";
+
+export async function createClient() {
   const cookieStore = await cookies();
-  const headerStore = await headers();
-  const headerPortal = headerStore.get(AUTH_PORTAL_HEADER);
-  const portal: AuthPortal =
-    explicitPortal ?? (headerPortal === "student" ? "student" : "admin");
+  const selectedStudioId = cookieStore.get(STUDIO_CONTEXT_COOKIE)?.value?.trim();
 
   return createServerClient(env.supabaseUrl, env.supabasePublishableKey, {
-    cookieOptions: authCookieOptions(portal),
+    global: selectedStudioId
+      ? {
+          headers: {
+            "x-studio-id": selectedStudioId,
+          },
+        }
+      : undefined,
     cookies: {
       getAll() {
         return cookieStore.getAll();

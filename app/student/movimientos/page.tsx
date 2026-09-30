@@ -166,7 +166,7 @@ export default async function StudentMovementsPage() {
                       ) : null}
                     </div>
                     <p className="mt-1 text-xs text-zinc-600">
-                      {formatDateTime(movement.created_at, studio.timezone)}
+                      {formatDateTime(movement.created_at, studio.timezone, studio.locale)}
                     </p>
                     {movement.note ? (
                       <p className="mt-2 rounded-xl bg-black/15 px-3 py-2 text-xs leading-5 text-zinc-500">

@@ -7,28 +7,8 @@ import { getAdminContext } from "@/lib/auth/admin-context";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { normalizeMexicanPhone } from "@/lib/phone";
 
-const CANCELLATION_REASON_CODES = new Set([
-  "schedule_conflict",
-  "health",
-  "work_school",
-  "transport",
-  "price",
-  "lost_interest",
-  "booking_error",
-  "other",
-  "prefer_not_say",
-]);
-
 function todayReturnUrl(returnDate: string) {
   return returnDate ? `/admin?date=${encodeURIComponent(returnDate)}` : "/admin";
-}
-
-function moneyToMinor(value: string) {
-  const normalized = value.trim().replace(",", ".");
-  if (!normalized || !/^\d+(?:\.\d{1,2})?$/.test(normalized)) return null;
-  const [whole, decimals = ""] = normalized.split(".");
-  const result = Number(whole) * 100 + Number(decimals.padEnd(2, "0"));
-  return Number.isSafeInteger(result) ? result : null;
 }
 
 function withQuery(url: string, key: string, value: string) {
@@ -159,25 +139,21 @@ export async function cancelReservationFromToday(formData: FormData) {
   const reservationId = String(formData.get("reservation_id") ?? "");
   const returnDate = String(formData.get("return_date") ?? "");
   const returnUrl = operationReturnUrl(formData, returnDate, sessionId);
-  const reason = String(formData.get("reason") ?? "").trim();
 
-  if (!sessionId || !reservationId || !CANCELLATION_REASON_CODES.has(reason)) {
-    redirect(withQuery(returnUrl, "error", "cancel_reason_required"));
+  if (!sessionId || !reservationId) {
+    redirect(withQuery(returnUrl, "error", "cancel"));
   }
 
   const { supabase } = await getAdminContext(CAPABILITIES.SCHEDULE_WRITE);
-  const { data, error } = await supabase.rpc("cancel_reservation", {
+  const { error } = await supabase.rpc("admin_cancel_reservation", {
     target_reservation_id: reservationId,
-    target_reason: reason,
   });
-  const result = data as { ok?: boolean; reason_code?: string | null } | null;
 
-  if (error || result?.ok !== true) {
-    redirect(withQuery(returnUrl, "error", result?.reason_code ?? "cancel"));
+  if (error) {
+    redirect(withQuery(returnUrl, "error", "cancel"));
   }
 
   refreshSession(sessionId);
-  revalidatePath("/admin/inteligencia");
   redirect(withQuery(returnUrl, "created", "cancel"));
 }
 
@@ -226,64 +202,6 @@ export async function setAttendanceFromToday(formData: FormData) {
 
   refreshSession(sessionId);
   redirect(withQuery(returnUrl, "created", reason ? "attendance-corrected" : status));
-}
-
-export async function recordPendingClassPaymentAndAttendanceFromToday(formData: FormData) {
-  const sessionId = String(formData.get("session_id") ?? "");
-  const reservationId = String(formData.get("reservation_id") ?? "");
-  const returnDate = String(formData.get("return_date") ?? "");
-  const paymentMethod = String(formData.get("payment_method") ?? "")
-    .trim()
-    .toLowerCase();
-  const paymentReference = String(formData.get("payment_reference") ?? "").trim();
-  const paymentMinor = moneyToMinor(String(formData.get("payment_amount") ?? ""));
-  const returnUrl = operationReturnUrl(formData, returnDate, sessionId);
-
-  if (
-    !sessionId ||
-    !reservationId ||
-    !["efectivo", "transferencia", "tarjeta", "otro"].includes(paymentMethod)
-  ) {
-    redirect(withQuery(returnUrl, "error", "payment_method_required"));
-  }
-
-  const { supabase } = await getAdminContext(CAPABILITIES.ATTENDANCE_WRITE);
-  const { data, error } = await supabase.rpc("record_asistian_class_payment_and_attendance", {
-    target_reservation_id: reservationId,
-    payment_method: paymentMethod,
-    payment_reference: paymentReference || null,
-    payment_amount_minor: paymentMinor,
-  });
-
-  if (error) {
-    const knownCodes = [
-      "asistian_payment_required",
-      "class_price_required",
-      "payment_method_required",
-      "payment_not_pending",
-      "reservation_not_asistian",
-      "session_not_started",
-      "session_ended",
-      "forbidden",
-    ];
-    const code = knownCodes.find((item) => error.message.includes(item)) ?? error.message;
-    redirect(withQuery(returnUrl, "error", code));
-  }
-
-  const result = (data ?? {}) as {
-    ok?: boolean;
-    status?: string;
-    commercial_status?: string;
-  };
-
-  if (result.ok !== true || result.status !== "attended" || result.commercial_status !== "paid") {
-    redirect(withQuery(returnUrl, "error", "attendance_payment_not_persisted"));
-  }
-
-  refreshSession(sessionId);
-  revalidatePath("/admin/ventas");
-  revalidatePath("/admin/alumnas");
-  redirect(withQuery(returnUrl, "created", "paid-attendance"));
 }
 
 export async function createWalkinFromToday(formData: FormData) {

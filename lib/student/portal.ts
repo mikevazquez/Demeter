@@ -1,9 +1,29 @@
 import "server-only";
 
 import { cache } from "react";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
+import { type StudioModule } from "@/lib/auth/modules";
+import { STUDIO_CONTEXT_COOKIE } from "@/lib/auth/studio-context-cookie";
 import { createClient } from "@/lib/supabase/server";
+
+export type StudentPortalSubscription = {
+  plan_key: string;
+  plan_name: string;
+  status: string;
+  effective_status: string;
+  access_mode: "full" | "restricted";
+  trial_ends_at: string | null;
+  current_period_start: string | null;
+  current_period_end: string | null;
+  grace_ends_at: string | null;
+  cancel_at_period_end: boolean;
+  cancelled_at: string | null;
+  suspended_at: string | null;
+  last_payment_failure_at: string | null;
+  billing_provider: string | null;
+};
 
 export type StudentProfile = {
   student_id: string;
@@ -24,7 +44,6 @@ export type StudentAcquisition = {
   name: string;
   product_type: string;
   package_term: string | null;
-  reward_credit_wallet: boolean;
   status: string;
   starts_on: string;
   expires_on: string;
@@ -151,22 +170,17 @@ export type StudentClassFeedItem = {
   credits_held: number;
   cancelled_at?: string | null;
   cancellation_reason?: string | null;
-  credit_restored?: boolean;
 };
 
 export const getStudentPortalContext = cache(async () => {
-  const supabase = await createClient("student");
+  const supabase = await createClient();
   const {
     data: { user },
-    error: authError,
   } = await supabase.auth.getUser();
 
-  if (authError && (authError.status == null || authError.status === 0 || authError.status >= 500)) {
-    throw new Error("student_auth_temporarily_unavailable");
-  }
   if (!user) redirect("/login/student");
 
-  const [accountResult, membershipResult] = await Promise.all([
+  const [{ data: account }, { data: memberships }] = await Promise.all([
     supabase
       .from("user_accounts")
       .select("status, must_change_password")
@@ -177,57 +191,103 @@ export const getStudentPortalContext = cache(async () => {
       .select("studio_id,role,active")
       .eq("user_id", user.id)
       .eq("role", "student")
-      .eq("active", true)
-      .limit(1)
-      .maybeSingle(),
+      .eq("active", true),
   ]);
 
-  if (accountResult.error || membershipResult.error) {
-    throw new Error("student_access_lookup_temporarily_unavailable");
-  }
-
-  const account = accountResult.data;
-  const membership = membershipResult.data;
-
-  if (!account || account.status !== "active" || !membership) {
+  if (!account || account.status !== "active" || !memberships?.length) {
     redirect("/login/student?error=access");
   }
 
   if (account.must_change_password) redirect("/login/student/activar");
 
-  const [snapshotResult, studioResult] = await Promise.all([
-    supabase.rpc("student_portal_snapshot"),
-    supabase.from("studios").select("name,timezone").eq("id", membership.studio_id).maybeSingle(),
-  ]);
+  const cookieStore = await cookies();
+  const selectedStudioId = cookieStore.get(STUDIO_CONTEXT_COOKIE)?.value;
+  const selectedMembership = selectedStudioId
+    ? memberships.find((item) => item.studio_id === selectedStudioId)
+    : null;
+  const membership = selectedMembership ?? (memberships.length === 1 ? memberships[0] : null);
 
-  if (snapshotResult.error || studioResult.error) {
-    throw new Error("student_portal_temporarily_unavailable");
+  if (!membership) {
+    redirect("/login/student/seleccionar");
   }
 
-  const snapshot = snapshotResult.data;
-  const studio = studioResult.data;
-  if (!snapshot || !studio) redirect("/login/student?error=access");
+  const { data: studentRecord } = await supabase
+    .from("students")
+    .select("id")
+    .eq("user_id", user.id)
+    .eq("studio_id", membership.studio_id)
+    .eq("active", true)
+    .eq("lifecycle_status", "active")
+    .maybeSingle();
+
+  if (!studentRecord) {
+    redirect("/login/student/seleccionar?error=access");
+  }
+
+  const { data: subscriptionRows, error: subscriptionError } = await supabase.rpc(
+    "current_studio_subscription",
+    {
+      p_studio_id: membership.studio_id,
+    },
+  );
+  const subscription = ((subscriptionRows ?? [])[0] ?? null) as
+    | StudentPortalSubscription
+    | null;
+
+  if (subscriptionError || !subscription || subscription.access_mode !== "full") {
+    const { data: restrictedStudio } = await supabase
+      .from("studios")
+      .select("slug")
+      .eq("id", membership.studio_id)
+      .maybeSingle();
+    const studioQuery = restrictedStudio?.slug
+      ? `&studio=${encodeURIComponent(restrictedStudio.slug)}`
+      : "";
+    redirect(`/login/student?error=studio_unavailable${studioQuery}`);
+  }
+
+  const [
+    { data: snapshot, error },
+    { data: studio },
+    { data: effectiveModules, error: modulesError },
+  ] = await Promise.all([
+    supabase.rpc("student_portal_snapshot"),
+    supabase
+      .from("studios")
+      .select("name,timezone,locale,currency,phone_country_calling_code")
+      .eq("id", membership.studio_id)
+      .maybeSingle(),
+    supabase.rpc("current_studio_modules", {
+      p_studio_id: membership.studio_id,
+    }),
+  ]);
+
+  if (error || modulesError || !snapshot || !studio) {
+    redirect("/login/student?error=access");
+  }
+
+  const modules = new Set(
+    (effectiveModules ?? []).map(
+      (item: { module_key: string }) => item.module_key as StudioModule,
+    ),
+  );
 
   const baseSnapshot = snapshot as StudentSnapshot;
   const productIds = [...new Set(baseSnapshot.acquisitions.map((item) => item.product_id))];
   const { data: productTerms } = productIds.length
     ? await supabase
         .from("product_templates")
-        .select("id,package_term,reward_credit_wallet")
+        .select("id,package_term")
         .eq("studio_id", membership.studio_id)
         .in("id", productIds)
     : { data: [] };
-  const productMetaMap = new Map((productTerms ?? []).map((item) => [item.id, item]));
+  const termMap = new Map((productTerms ?? []).map((item) => [item.id, item.package_term]));
   const enrichedSnapshot: StudentSnapshot = {
     ...baseSnapshot,
-    acquisitions: baseSnapshot.acquisitions.map((item) => {
-      const product = productMetaMap.get(item.product_id);
-      return {
-        ...item,
-        package_term: product?.package_term ?? null,
-        reward_credit_wallet: product?.reward_credit_wallet ?? false,
-      };
-    }),
+    acquisitions: baseSnapshot.acquisitions.map((item) => ({
+      ...item,
+      package_term: termMap.get(item.product_id) ?? null,
+    })),
   };
 
   return {
@@ -236,6 +296,11 @@ export const getStudentPortalContext = cache(async () => {
     account,
     membership,
     studio,
+    subscription,
+    modules,
+    hasModule(module: StudioModule) {
+      return modules.has(module);
+    },
     snapshot: enrichedSnapshot,
   };
 });
@@ -249,8 +314,8 @@ export function localDateKey(date: Date, timeZone: string) {
   }).format(date);
 }
 
-export function formatDateTime(value: string, timeZone: string) {
-  return new Intl.DateTimeFormat("es-MX", {
+export function formatDateTime(value: string, timeZone: string, locale = "es-MX") {
+  return new Intl.DateTimeFormat(locale, {
     timeZone,
     weekday: "short",
     day: "numeric",
@@ -260,8 +325,8 @@ export function formatDateTime(value: string, timeZone: string) {
   }).format(new Date(value));
 }
 
-export function formatDate(value: string, timeZone: string) {
-  return new Intl.DateTimeFormat("es-MX", {
+export function formatDate(value: string, timeZone: string, locale = "es-MX") {
+  return new Intl.DateTimeFormat(locale, {
     timeZone,
     day: "numeric",
     month: "short",
@@ -269,8 +334,8 @@ export function formatDate(value: string, timeZone: string) {
   }).format(new Date(`${value}T12:00:00Z`));
 }
 
-export function formatMoney(minor: number, currency = "MXN") {
-  return new Intl.NumberFormat("es-MX", { style: "currency", currency }).format(minor / 100);
+export function formatMoney(minor: number, currency = "MXN", locale = "es-MX") {
+  return new Intl.NumberFormat(locale, { style: "currency", currency }).format(minor / 100);
 }
 
 export function bookingReasonCopy(reason?: string | null) {

@@ -37,10 +37,16 @@ const items: MoreItem[] = [
     capability: CAPABILITIES.EVALUATIONS_READ,
   },
   {
-    title: "Productos",
-    description: "Paquetes, membresías, clases sueltas e inscripciones.",
+    title: "Paquetes",
+    description: "Paquetes por clases, restricciones, ilimitados y talleres.",
     href: "/admin/productos",
     capability: CAPABILITIES.PRODUCTS_READ,
+  },
+  {
+    title: "Reservas",
+    description: "Cancelaciones, no-show y penalizaciones del estudio.",
+    href: "/admin/configuracion/reservas",
+    ownerOnly: true,
   },
   {
     title: "Equipo",
@@ -49,33 +55,47 @@ const items: MoreItem[] = [
     capability: CAPABILITIES.INSTRUCTORS_READ,
   },
   {
-    title: "Notificaciones",
-    description: "Procesos, marketing, plantillas y preferencias de comunicación.",
-    href: "/admin/notificaciones",
+    title: "Apariencia",
+    description: "Nombre, logo, color e identidad visible del estudio.",
+    href: "/admin/configuracion/apariencia",
+    ownerOnly: true,
+  },
+  {
+    title: "Comunicación",
+    description: "Procesos, marketing, plantillas y horarios de envío.",
+    href: "/admin/automatizaciones",
     capability: CAPABILITIES.AUTOMATIONS_READ,
   },
   {
-    title: "Retos",
-    description: "Crea retos individuales y competencias con ranking, premios y progreso.",
-    href: "/admin/retos",
-    capability: CAPABILITIES.REWARDS_READ,
-  },
-  {
-    title: "Rewards",
-    description: "Programas, logros, medallas, seguimiento y recompensas generadas.",
+    title: "Progreso y recompensas",
+    description: "Programas, logros, retos, seguimiento y recompensas generadas.",
     href: "/admin/recompensas",
     capability: CAPABILITIES.REWARDS_READ,
   },
   {
     title: "Integraciones",
-    description: "Conecta Studio Flow con Asistian y otros servicios externos.",
-    href: "/admin/integraciones/asistian",
+    description: "Conecta Mercado Pago, Asistian, Meta y otros servicios externos.",
+    href: "/admin/integraciones",
+    capability: CAPABILITIES.INTEGRATIONS_READ,
     ownerOnly: true,
   },
   {
-    title: "Configuración",
-    description: "Identidad pública y preferencias del estudio.",
-    href: "/admin/configuracion",
+    title: "Región y formatos",
+    description: "Zona horaria, moneda, formato regional y prefijo telefónico.",
+    href: "/admin/configuracion/region",
+    ownerOnly: true,
+  },
+  {
+    title: "Recursos y espacios",
+    description: "Recursos físicos, mapas y distribución de los espacios.",
+    href: "/admin/configuracion/recursos",
+    capability: CAPABILITIES.RESOURCES_MANAGE,
+    ownerOnly: true,
+  },
+  {
+    title: "Plan y suscripción",
+    description: "Estado del plan, periodo contratado y facturación de Studio Flow.",
+    href: "/admin/suscripcion",
     ownerOnly: true,
   },
 ];
@@ -83,8 +103,8 @@ const items: MoreItem[] = [
 export default async function MorePage() {
   const ctx = await getAdminContext();
   const visibleItems = items.filter((item) => {
-    if (item.ownerOnly) return ctx.membership.role === "owner";
-    return item.capability ? ctx.can(item.capability) : false;
+    if (item.ownerOnly && ctx.membership.role !== "owner") return false;
+    return item.capability ? ctx.can(item.capability) : true;
   });
 
   return (

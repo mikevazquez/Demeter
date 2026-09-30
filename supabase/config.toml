@@ -9,3 +9,12 @@ verify_jwt = true
 
 [functions.mercadopago-webhook]
 verify_jwt = false
+
+[functions.saas-stripe-checkout]
+verify_jwt = true
+
+[functions.saas-stripe-portal]
+verify_jwt = true
+
+[functions.saas-stripe-webhook]
+verify_jwt = false

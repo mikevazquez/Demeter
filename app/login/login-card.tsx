@@ -9,6 +9,8 @@ import { signIn } from "@/app/auth/actions";
 type LoginCardProps = {
   mode: "studio" | "student";
   error?: string;
+  brandName?: string;
+  studioSlug?: string;
 };
 
 const studioMessages: Record<string, string> = {
@@ -28,6 +30,8 @@ const studentMessages: Record<string, string> = {
   auth: "No se pudo validar el acceso en este momento. Vuelve a intentarlo.",
   pending: "Tu cuenta existe, pero todavía no tiene acceso asignado al estudio.",
   access: "Esta cuenta no tiene acceso al portal de alumna.",
+  studio_unavailable:
+    "El portal del estudio está temporalmente pausado. Tus datos siguen guardados; vuelve a intentarlo cuando el estudio reactive el servicio.",
 };
 
 function EyeIcon({ visible }: { visible: boolean }) {
@@ -126,10 +130,10 @@ function LockIcon() {
   );
 }
 
-function DemeterBrand() {
+function LoginBrand({ name }: { name: string }) {
   return (
-    <div className="auth-brand" aria-label="Demeter">
-      <strong>DEMETER</strong>
+    <div className="auth-brand" aria-label={name}>
+      <strong>{name.toUpperCase()}</strong>
     </div>
   );
 }
@@ -163,7 +167,12 @@ function portalCopy(mode: LoginCardProps["mode"]) {
   };
 }
 
-export function LoginCard({ mode, error }: LoginCardProps) {
+export function LoginCard({
+  mode,
+  error,
+  brandName = "Studio Flow",
+  studioSlug,
+}: LoginCardProps) {
   const [passwordVisible, setPasswordVisible] = useState(false);
   const isStudent = mode === "student";
   const messages = isStudent ? studentMessages : studioMessages;
@@ -174,10 +183,14 @@ export function LoginCard({ mode, error }: LoginCardProps) {
     <main className="auth-shell auth-login-shell">
       <section className="auth-card auth-login-card">
         <div className="auth-login-header">
-          <Link className="auth-back-button" href="/" aria-label="Volver al inicio">
+          <Link
+            className="auth-back-button"
+            href={studioSlug ? `/s/${studioSlug}` : "/"}
+            aria-label="Volver al inicio"
+          >
             ←
           </Link>
-          <DemeterBrand />
+          <LoginBrand name={brandName} />
         </div>
 
         <div className="auth-login-intro">
@@ -189,6 +202,7 @@ export function LoginCard({ mode, error }: LoginCardProps) {
 
         <form action={signIn} className="auth-form auth-login-form">
           <input type="hidden" name="mode" value={mode} />
+          {studioSlug ? <input type="hidden" name="studio_slug" value={studioSlug} /> : null}
 
           <label className="auth-field">
             <span className="auth-field-icon">{isStudent ? <PhoneIcon /> : <MailIcon />}</span>
@@ -209,7 +223,7 @@ export function LoginCard({ mode, error }: LoginCardProps) {
                   type="email"
                   autoComplete="email"
                   required
-                  placeholder="tu@demeter.com"
+                  placeholder="tu@estudio.com"
                 />
               )}
             </span>
@@ -245,7 +259,10 @@ export function LoginCard({ mode, error }: LoginCardProps) {
           </label>
 
           <div className="auth-options">
-            <span className="auth-remember">Sesión persistente en este dispositivo</span>
+            <label className="auth-remember">
+              <input name="remember" type="checkbox" />
+              <span>Recordarme</span>
+            </label>
             <span className="auth-recovery-link">¿Olvidaste tu contraseña?</span>
           </div>
 
@@ -258,7 +275,14 @@ export function LoginCard({ mode, error }: LoginCardProps) {
           <span />
         </div>
 
-        <Link className="auth-switch-button" href={isStudent ? "/login/studio" : "/login/student"}>
+        <Link
+          className="auth-switch-button"
+          href={
+            isStudent
+              ? `/login/studio${studioSlug ? `?studio=${studioSlug}` : ""}`
+              : `/login/student${studioSlug ? `?studio=${studioSlug}` : ""}`
+          }
+        >
           {isStudent ? "Acceso al estudio" : "Soy alumna"}
         </Link>
       </section>

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { cache } from "react";
 
 import { signOut } from "@/app/auth/actions";
+import { STUDIO_MODULES } from "@/lib/auth/modules";
 import { getStudentPortalContext } from "@/lib/student/portal";
 
 import PendingActionButton from "./components/PendingActionButton";
@@ -22,8 +23,7 @@ function pwaBrandQuery(brand: PwaBrand) {
     slug: brand.slug,
     primary: brand.primary_color,
     logo: brand.logo_path ?? "",
-    portal: "student",
-    v: "4",
+    v: "3",
   }).toString();
 }
 
@@ -83,17 +83,11 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function StudentLayout({ children }: { children: React.ReactNode }) {
-  const [{ snapshot, studio, supabase }, brand] = await Promise.all([
+  const [{ snapshot, studio, hasModule }, brand] = await Promise.all([
     getStudentPortalContext(),
     getPwaBrand(),
   ]);
   const query = pwaBrandQuery(brand);
-  const { count: unreadNotificationCount } = await supabase
-    .from("app_notifications")
-    .select("id", { count: "exact", head: true })
-    .eq("student_id", snapshot.profile.student_id)
-    .eq("recipient_kind", "student")
-    .is("read_at", null);
 
   return (
     <div className="min-h-screen bg-[#090a0f] text-white">
@@ -107,42 +101,38 @@ export default async function StudentLayout({ children }: { children: React.Reac
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
           <Link href="/student" className="min-w-0">
             <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-fuchsia-300">
-              DEMETER
+              Studio Flow
             </p>
             <p className="truncate text-sm font-semibold text-white">{studio.name}</p>
           </Link>
           <div className="flex items-center gap-2 sm:gap-3">
-            <Link
-              href="/student/notificaciones"
-              aria-label="Notificaciones"
-              title="Notificaciones"
-              className="relative inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[#D4AF37]/30 text-[#D4AF37] transition hover:border-[#D4AF37]/50 hover:bg-[#D4AF37]/10 hover:text-[#E6C85C]"
-            >
-              <svg
-                aria-hidden="true"
-                viewBox="0 0 24 24"
-                fill="none"
-                className="h-5 w-5"
-                stroke="currentColor"
-                strokeWidth="1.8"
-                strokeLinecap="round"
-                strokeLinejoin="round"
+            {hasModule(STUDIO_MODULES.NOTIFICATIONS) ? (
+              <Link
+                href="/student/notificaciones"
+                aria-label="Notificaciones"
+                title="Notificaciones"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[#D4AF37]/30 text-[#D4AF37] transition hover:border-[#D4AF37]/50 hover:bg-[#D4AF37]/10 hover:text-[#E6C85C]"
               >
-                <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9" />
-                <path d="M13.7 21a2 2 0 0 1-3.4 0" />
-              </svg>
-              {(unreadNotificationCount ?? 0) > 0 ? (
-                <span className="absolute -right-1.5 -top-1.5 min-w-5 rounded-full bg-fuchsia-500 px-1.5 py-0.5 text-center text-[9px] font-bold leading-4 text-white shadow-[0_0_12px_rgba(236,72,153,0.55)]">
-                  {(unreadNotificationCount ?? 0) > 9 ? "9+" : unreadNotificationCount}
-                </span>
-              ) : null}
-            </Link>
+                <svg
+                  aria-hidden="true"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  className="h-5 w-5"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9" />
+                  <path d="M13.7 21a2 2 0 0 1-3.4 0" />
+                </svg>
+              </Link>
+            ) : null}
             <div className="hidden text-right sm:block">
               <p className="text-sm font-medium text-white">{snapshot.profile.first_name}</p>
               <p className="text-xs text-zinc-500">Portal de alumna</p>
             </div>
             <form action={signOut}>
-              <input type="hidden" name="mode" value="student" />
               <PendingActionButton
                 pendingLabel="Saliendo…"
                 className="rounded-xl border border-white/10 px-3 py-2 text-xs font-semibold text-zinc-300 transition hover:bg-white/[0.05] hover:text-white disabled:cursor-wait disabled:opacity-60"

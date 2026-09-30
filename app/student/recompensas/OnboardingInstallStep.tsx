@@ -42,16 +42,18 @@ function platformLabel() {
   return "Navegador";
 }
 
-async function browserClient() {
+async function browserClient(studioId: string) {
   const { createClient } = await import("@/lib/supabase/client");
-  return createClient();
+  return createClient(studioId);
 }
 
 export default function OnboardingInstallStep({
   complete,
+  studioId,
   studioName,
 }: {
   complete: boolean;
+  studioId: string;
   studioName: string;
 }) {
   const router = useRouter();
@@ -73,7 +75,7 @@ export default function OnboardingInstallStep({
       if (!complete && installed) {
         void (async () => {
           try {
-            const supabase = await browserClient();
+            const supabase = await browserClient(studioId);
             const { error } = await supabase.rpc("student_confirm_reward_app_installation", {
               p_display_mode: ios ? "ios-standalone" : "standalone",
               p_platform: platformLabel(),
@@ -105,7 +107,7 @@ export default function OnboardingInstallStep({
       window.removeEventListener("beforeinstallprompt", capturePrompt);
       window.removeEventListener("appinstalled", installedHandler);
     };
-  }, [complete, router, studioName]);
+  }, [complete, router, studioId, studioName]);
 
   async function requestInstall() {
     if (!installPrompt) return;

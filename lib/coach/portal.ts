@@ -89,8 +89,8 @@ export function addDays(value: string, days: number) {
   return date.toISOString().slice(0, 10);
 }
 
-export function formatLongDate(value: string) {
-  return new Intl.DateTimeFormat("es-MX", {
+export function formatLongDate(value: string, locale = "es-MX") {
+  return new Intl.DateTimeFormat(locale, {
     timeZone: "UTC",
     weekday: "long",
     day: "numeric",
@@ -99,8 +99,8 @@ export function formatLongDate(value: string) {
   }).format(new Date(`${value}T12:00:00Z`));
 }
 
-export function formatSessionDate(value: string, timeZone: string) {
-  return new Intl.DateTimeFormat("es-MX", {
+export function formatSessionDate(value: string, timeZone: string, locale = "es-MX") {
+  return new Intl.DateTimeFormat(locale, {
     timeZone,
     weekday: "long",
     day: "numeric",
@@ -108,8 +108,8 @@ export function formatSessionDate(value: string, timeZone: string) {
   }).format(new Date(value));
 }
 
-export function formatTime(value: string, timeZone: string) {
-  return new Intl.DateTimeFormat("es-MX", {
+export function formatTime(value: string, timeZone: string, locale = "es-MX") {
+  return new Intl.DateTimeFormat(locale, {
     timeZone,
     hour: "2-digit",
     minute: "2-digit",

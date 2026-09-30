@@ -218,8 +218,8 @@ export default async function ScheduleEvaluationPage({
           Ventana de evaluación
         </p>
         <strong className="mt-1 block text-sm text-white">
-          Del {formatDate(invitation.window_start, studio.timezone)} al{" "}
-          {formatDate(invitation.window_end, studio.timezone)}
+          Del {formatDate(invitation.window_start, studio.timezone, studio.locale)} al{" "}
+          {formatDate(invitation.window_end, studio.timezone, studio.locale)}
         </strong>
       </section>
 
@@ -267,7 +267,8 @@ export default async function ScheduleEvaluationPage({
                   <strong className="text-sm text-white">
                     {formatMoney(
                       enrollmentRequirement.price_minor,
-                      enrollmentRequirement.currency ?? "MXN",
+                      enrollmentRequirement.currency ?? studio.currency,
+                      studio.locale,
                     )}
                   </strong>
                 ) : null}
@@ -307,14 +308,14 @@ export default async function ScheduleEvaluationPage({
                       </p>
                     </div>
                     <strong className="text-base text-white">
-                      {formatMoney(finalDropInMinor)} MXN
+                      {formatMoney(finalDropInMinor, studio.currency, studio.locale)}
                     </strong>
                   </div>
                   <div className="mt-4">
                     <PurchaseSingleClassButton
                       sessionId={selectedSession.session_id}
-                      priceLabel={formatMoney(finalDropInMinor).replace(".00", "")}
-                      regularPriceLabel={formatMoney(regularDropInMinor).replace(".00", "")}
+                      priceLabel={formatMoney(finalDropInMinor, studio.currency, studio.locale).replace(".00", "")}
+                      regularPriceLabel={formatMoney(regularDropInMinor, studio.currency, studio.locale).replace(".00", "")}
                       discountPct={rewardPrice?.discount_pct ?? 0}
                       levelTitle={rewardPrice?.level_title ?? null}
                       evaluationInvitationId={invitation.id}
@@ -361,15 +362,17 @@ export default async function ScheduleEvaluationPage({
                                     ? (enrollmentRequirement.price_minor ?? 0)
                                     : 0),
                                 product.currency,
+                                studio.locale,
                               )}
                             </strong>
                             {enrollmentRequirement?.missing && enrollmentRequirement.price_minor ? (
                               <span className="mt-0.5 block text-[10px] text-zinc-600">
-                                Incluye {formatMoney(product.price_minor, product.currency)} del
+                                Incluye {formatMoney(product.price_minor, product.currency, studio.locale)} del
                                 paquete +{" "}
                                 {formatMoney(
                                   enrollmentRequirement.price_minor,
                                   enrollmentRequirement.currency ?? product.currency,
+                                  studio.locale,
                                 )}{" "}
                                 de inscripción
                               </span>
@@ -410,7 +413,7 @@ export default async function ScheduleEvaluationPage({
               >
                 <div className="min-w-0">
                   <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-fuchsia-300">
-                    {formatDateTime(session.starts_at, studio.timezone)}
+                    {formatDateTime(session.starts_at, studio.timezone, studio.locale)}
                   </p>
                   <h2 className="mt-1 text-base font-semibold text-white">{session.activity}</h2>
                   <p className="mt-1 text-xs text-zinc-500">

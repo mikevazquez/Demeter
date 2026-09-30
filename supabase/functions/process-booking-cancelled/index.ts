@@ -114,7 +114,7 @@ async function loadContext(adminClient: SupabaseClient, reservationId: string) {
       .maybeSingle(),
     adminClient
       .from("studios")
-      .select("id,name,timezone")
+      .select("id,name,timezone,locale")
       .eq("id", reservation.studio_id)
       .maybeSingle(),
   ]);

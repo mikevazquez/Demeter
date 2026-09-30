@@ -1,22 +1,43 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { CAPABILITIES, type Capability } from "@/lib/auth/capabilities";
+import { type StudioModule } from "@/lib/auth/modules";
 import { STUDIO_CONTEXT_COOKIE } from "@/lib/auth/studio-context-cookie";
 import { createClient } from "@/lib/supabase/server";
 
-export async function getAdminContext(requiredCapability?: Capability) {
-  const supabase = await createClient("admin");
+export type StudioSubscriptionSnapshot = {
+  plan_key: string;
+  plan_name: string;
+  status: string;
+  effective_status: string;
+  access_mode: "full" | "restricted";
+  trial_ends_at: string | null;
+  current_period_start: string | null;
+  current_period_end: string | null;
+  grace_ends_at: string | null;
+  cancel_at_period_end: boolean;
+  cancelled_at: string | null;
+  suspended_at: string | null;
+  last_payment_failure_at: string | null;
+  billing_provider: string | null;
+};
+
+type AdminContextOptions = {
+  allowRestricted?: boolean;
+};
+
+export async function getAdminContext(
+  requiredCapability?: Capability,
+  options: AdminContextOptions = {},
+) {
+  const supabase = await createClient();
   const {
     data: { user },
-    error: authError,
   } = await supabase.auth.getUser();
 
-  if (authError && (authError.status == null || authError.status === 0 || authError.status >= 500)) {
-    throw new Error("admin_auth_temporarily_unavailable");
-  }
   if (!user) redirect("/login/studio");
 
-  const [accountResult, membershipsResult] = await Promise.all([
+  const [{ data: account }, { data: memberships }] = await Promise.all([
     supabase.from("user_accounts").select("status").eq("id", user.id).maybeSingle(),
     supabase
       .from("studio_memberships")
@@ -24,13 +45,6 @@ export async function getAdminContext(requiredCapability?: Capability) {
       .eq("user_id", user.id)
       .eq("active", true),
   ]);
-
-  if (accountResult.error || membershipsResult.error) {
-    throw new Error("admin_access_lookup_temporarily_unavailable");
-  }
-
-  const account = accountResult.data;
-  const memberships = membershipsResult.data;
 
   if (!account || account.status !== "active" || !memberships?.length) {
     await supabase.auth.signOut();
@@ -48,29 +62,53 @@ export async function getAdminContext(requiredCapability?: Capability) {
     redirect("/login/studio/seleccionar");
   }
 
-  const [studioResult, roleCapabilitiesResult] = await Promise.all([
+  const [
+    { data: studio },
+    { data: effectiveCapabilities, error: capabilitiesError },
+    { data: effectiveModules, error: modulesError },
+    { data: subscriptionRows, error: subscriptionError },
+  ] = await Promise.all([
     supabase
       .from("studios")
-      .select("id, name, slug, logo_path, timezone, locale, currency, primary_color, status")
+      .select("id, name, slug, logo_path, tagline, timezone, locale, currency, phone_country_calling_code, primary_color, status")
       .eq("id", membership.studio_id)
       .single(),
-    supabase.from("role_capabilities").select("capability_key").eq("role", membership.role),
+    supabase.rpc("current_studio_capabilities", {
+      p_studio_id: membership.studio_id,
+    }),
+    supabase.rpc("current_studio_modules", {
+      p_studio_id: membership.studio_id,
+    }),
+    supabase.rpc("current_studio_subscription", {
+      p_studio_id: membership.studio_id,
+    }),
   ]);
 
-  if (studioResult.error || roleCapabilitiesResult.error) {
-    throw new Error("admin_studio_lookup_temporarily_unavailable");
-  }
+  const subscription = ((subscriptionRows ?? [])[0] ?? null) as
+    | StudioSubscriptionSnapshot
+    | null;
 
-  const studio = studioResult.data;
-  const roleCapabilities = roleCapabilitiesResult.data;
-
-  if (!studio || studio.status !== "active") {
+  if (
+    !studio ||
+    studio.status !== "active" ||
+    capabilitiesError ||
+    modulesError ||
+    subscriptionError ||
+    !subscription
+  ) {
     await supabase.auth.signOut();
     redirect("/login/studio?error=access");
   }
 
   const capabilities = new Set(
-    (roleCapabilities ?? []).map((item) => item.capability_key as Capability),
+    (effectiveCapabilities ?? []).map(
+      (item: { capability_key: string }) => item.capability_key as Capability,
+    ),
+  );
+  const modules = new Set(
+    (effectiveModules ?? []).map(
+      (item: { module_key: string }) => item.module_key as StudioModule,
+    ),
   );
   const canUseStudioPortal =
     capabilities.has(CAPABILITIES.ADMIN_PORTAL) || capabilities.has(CAPABILITIES.INSTRUCTOR_PORTAL);
@@ -78,6 +116,10 @@ export async function getAdminContext(requiredCapability?: Capability) {
   if (!canUseStudioPortal) {
     await supabase.auth.signOut();
     redirect("/login/studio?error=access");
+  }
+
+  if (subscription.access_mode === "restricted" && !options.allowRestricted) {
+    redirect("/admin/suscripcion");
   }
 
   if (requiredCapability && !capabilities.has(requiredCapability)) {
@@ -94,9 +136,14 @@ export async function getAdminContext(requiredCapability?: Capability) {
     account,
     membership,
     studio,
+    subscription,
     capabilities,
+    modules,
     can(capability: Capability) {
       return capabilities.has(capability);
+    },
+    hasModule(module: StudioModule) {
+      return modules.has(module);
     },
   };
 }

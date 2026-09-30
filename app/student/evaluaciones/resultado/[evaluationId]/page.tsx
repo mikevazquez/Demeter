@@ -178,7 +178,7 @@ export default async function StudentEvaluationResultPage({
             <div>
               <p className="text-[10px] text-zinc-500">Fecha de evaluación</p>
               <strong className="mt-0.5 block text-base text-white">
-                {formatDate(result.evaluation_date, studio.timezone)}
+                {formatDate(result.evaluation_date, studio.timezone, studio.locale)}
               </strong>
             </div>
           </div>
@@ -266,7 +266,7 @@ export default async function StudentEvaluationResultPage({
             <div>
               <span className="text-xs text-zinc-500">Disponible a partir del</span>
               <strong className="mt-1 block text-lg text-white">
-                {formatDate(result.next_due_on, studio.timezone)}
+                {formatDate(result.next_due_on, studio.timezone, studio.locale)}
               </strong>
             </div>
             {result.cadence_months ? (

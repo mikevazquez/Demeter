@@ -96,11 +96,13 @@ async function invokeStudentAccess(
     const host = forwardedHost || requestHeaders.get("host")?.trim();
     if (!host) return { ok: false, error: "provision_unavailable" };
 
-    const activationUrl = new URL("/login/student/activar", `https://${host}`).toString();
+    const activationUrl = new URL("/login/student/activar", `https://${host}`);
+    activationUrl.searchParams.set("studio", studio.slug);
+    const activationUrlValue = activationUrl.toString();
     body =
       mode === "resend"
-        ? { studentId, mode: "resend", activationUrl }
-        : { studentId, activationUrl };
+        ? { studentId, mode: "resend", activationUrl: activationUrlValue }
+        : { studentId, activationUrl: activationUrlValue };
   }
 
   const { data, error } = await supabase.functions.invoke("provision-student-access", {
@@ -186,7 +188,7 @@ async function getAcquisitionEditContext(studentId: string, acquisitionId: strin
 
   if (!acquisition) redirect(`/admin/alumnas/${studentId}?error=acquisition_not_found`);
 
-  const timeZone = ctx.studio.timezone ?? "America/Mexico_City";
+  const timeZone = ctx.studio.timezone;
   const dateParts = Object.fromEntries(
     new Intl.DateTimeFormat("en-US", {
       timeZone,
@@ -422,6 +424,32 @@ export async function deleteStudent(formData: FormData) {
       String(Number.isFinite(cancelledReservations) ? cancelledReservations : 0),
     )}`,
   );
+}
+
+export async function resolveStudentOperatingCharge(formData: FormData) {
+  const studentId = String(formData.get("student_id") ?? "").trim();
+  const chargeId = String(formData.get("charge_id") ?? "").trim();
+  const resolution = String(formData.get("resolution") ?? "").trim();
+  const note = String(formData.get("note") ?? "").trim();
+
+  if (!studentId || !chargeId || !["paid", "waived"].includes(resolution)) {
+    redirect(`/admin/alumnas/${studentId}?view=packages&error=operating_charge`);
+  }
+
+  const { supabase } = await getAdminContext(CAPABILITIES.SALES_WRITE);
+  const { error } = await supabase.rpc("admin_resolve_student_operating_charge", {
+    p_charge_id: chargeId,
+    p_resolution: resolution,
+    p_note: note || null,
+  });
+
+  if (error) {
+    redirect(`/admin/alumnas/${studentId}?view=packages&error=operating_charge`);
+  }
+
+  revalidatePath(`/admin/alumnas/${studentId}`);
+  revalidatePath("/admin");
+  redirect(`/admin/alumnas/${studentId}?view=packages&saved=operating_charge`);
 }
 
 export async function setAcquisitionStartDate(formData: FormData) {

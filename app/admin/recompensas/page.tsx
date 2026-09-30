@@ -263,7 +263,7 @@ export default async function RewardsControlCenterPage() {
                             : "Actualización de progreso"}
                     </strong>
                     <p className="mt-1 text-xs text-zinc-500">
-                      {formatDateTime(event.occurred_at)}
+                      {formatDateTime(event.occurred_at, ctx.studio.locale, ctx.studio.timezone)}
                     </p>
                   </div>
                   <StatusBadge
@@ -299,13 +299,13 @@ export default async function RewardsControlCenterPage() {
                 >
                   <div className="flex items-center justify-between gap-3">
                     <strong className="text-sm text-white">
-                      {rewardDefinitionLabel(reward.benefit_definition)}
+                      {rewardDefinitionLabel(reward.benefit_definition, ctx.studio.locale, ctx.studio.currency)}
                     </strong>
                     <StatusBadge status={reward.status} />
                   </div>
                   <p className="mt-1 text-xs text-zinc-500">
                     {reward.expires_at
-                      ? `Vence ${formatDateTime(reward.expires_at)}`
+                      ? `Vence ${formatDateTime(reward.expires_at, ctx.studio.locale, ctx.studio.timezone)}`
                       : "Sin vencimiento fijo"}
                   </p>
                 </Link>

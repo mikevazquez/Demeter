@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { completeStudioPasswordActivation } from "@/app/auth/actions";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { createClient } from "@/lib/supabase/server";
+import { getPublicStudioPortal } from "@/lib/studio-public-portal";
 import { PendingSubmitButton } from "../../pending-submit-button";
 
 const messages: Record<string, string> = {
@@ -14,15 +15,26 @@ const messages: Record<string, string> = {
 export default async function StudioActivationPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; studio?: string }>;
 }) {
-  const { error } = await searchParams;
+  const { error, studio: requestedStudioSlug } = await searchParams;
+  const portal = requestedStudioSlug
+    ? await getPublicStudioPortal(requestedStudioSlug)
+    : null;
+  const brandName = portal?.name ?? "Studio Flow";
+
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) redirect("/login/studio");
+  if (!user) {
+    redirect(
+      requestedStudioSlug
+        ? `/login/studio?studio=${encodeURIComponent(requestedStudioSlug)}`
+        : "/login/studio",
+    );
+  }
 
   const [{ data: account }, { data: memberships }] = await Promise.all([
     supabase
@@ -49,12 +61,14 @@ export default async function StudioActivationPage({
     .in("role", roles)
     .in("capability_key", [CAPABILITIES.ADMIN_PORTAL, CAPABILITIES.INSTRUCTOR_PORTAL]);
 
-  if (!portalCapabilities?.length) {
-    await supabase.auth.signOut();
-    redirect("/login/studio?error=access");
-  }
+  const eligiblePortalRoles = new Set((portalCapabilities ?? []).map((item) => item.role));
+  const supportsActivation = memberships.some(
+    (membership) =>
+      ["owner", "admin", "instructor"].includes(membership.role) &&
+      eligiblePortalRoles.has(membership.role),
+  );
 
-  if (!roles.includes("instructor")) {
+  if (!supportsActivation) {
     await supabase.auth.signOut();
     redirect("/login/studio?error=activation");
   }
@@ -64,15 +78,16 @@ export default async function StudioActivationPage({
   return (
     <main className="auth-shell">
       <section className="auth-card">
-        <p className="eyebrow">DEMETER</p>
-        <h1 className="auth-title">Activa tu acceso a Demeter</h1>
+        <p className="eyebrow">{brandName.toUpperCase()}</p>
+        <h1 className="auth-title">Activa tu acceso</h1>
         <p className="auth-copy">
-          Es tu primer ingreso. Crea una contraseña personal para continuar.
+          Es tu primer ingreso a {brandName}. Crea una contraseña personal para continuar.
         </p>
 
         {error && messages[error] ? <div className="notice error">{messages[error]}</div> : null}
 
         <form action={completeStudioPasswordActivation} className="auth-form">
+          {portal?.slug ? <input type="hidden" name="studio_slug" value={portal.slug} /> : null}
           <label>
             Nueva contraseña
             <input

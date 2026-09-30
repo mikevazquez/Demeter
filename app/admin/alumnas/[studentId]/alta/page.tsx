@@ -79,7 +79,7 @@ export default async function StudentOnboardingPage({
 
   if (!student) notFound();
 
-  const today = localDate(studio.timezone ?? "America/Mexico_City");
+  const today = localDate(studio.timezone);
   const canSell = can(CAPABILITIES.SALES_WRITE);
 
   const [
@@ -210,6 +210,8 @@ export default async function StudentOnboardingPage({
         <StudentOnboardingForm
           studentId={student.id}
           studentName={student.full_name}
+          studioName={studio.name}
+          locale={studio.locale}
           packages={(packages ?? []).map((item) => ({
             id: item.id,
             name: item.name,

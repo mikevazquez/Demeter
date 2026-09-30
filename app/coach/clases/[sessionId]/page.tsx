@@ -26,7 +26,8 @@ export default async function CoachClassDetailPage({
   params: Promise<{ sessionId: string }>;
 }) {
   const { sessionId } = await params;
-  const { supabase, studio } = await getCoachContext(CAPABILITIES.SCHEDULE_READ);
+  const { supabase, studio, can } = await getCoachContext(CAPABILITIES.SCHEDULE_READ);
+  const resourcesEnabled = can(CAPABILITIES.RESOURCES_READ);
   const [
     { data: detailData, error: detailError },
     { data: resourceMapData, error: resourceMapError },
@@ -35,10 +36,22 @@ export default async function CoachClassDetailPage({
       target_studio_id: studio.id,
       target_session_id: sessionId,
     }),
-    supabase.rpc("coach_session_resource_map", {
-      target_studio_id: studio.id,
-      target_session_id: sessionId,
-    }),
+    resourcesEnabled
+      ? supabase.rpc("coach_session_resource_map", {
+          target_studio_id: studio.id,
+          target_session_id: sessionId,
+        })
+      : Promise.resolve({
+          data: {
+            session_id: sessionId,
+            requires_resource: false,
+            default_uses: 1,
+            map: null,
+            resources: [],
+            elements: [],
+          },
+          error: null,
+        }),
   ]);
 
   if (detailError || resourceMapError || !detailData || !resourceMapData) notFound();
@@ -71,7 +84,7 @@ export default async function CoachClassDetailPage({
                 {detail.activity}
               </h1>
               <p className="mt-3 capitalize text-zinc-300">
-                {formatSessionDate(detail.starts_at, studio.timezone)}
+                {formatSessionDate(detail.starts_at, studio.timezone, studio.locale)}
               </p>
             </div>
             <span className="self-start rounded-full border border-white/10 px-3 py-1 text-xs font-semibold text-zinc-300">
@@ -84,8 +97,8 @@ export default async function CoachClassDetailPage({
           <div className="rounded-2xl bg-black/20 p-4">
             <p className="text-xs text-zinc-500">Horario</p>
             <p className="mt-1 font-semibold text-white">
-              {formatTime(detail.starts_at, studio.timezone)} –{" "}
-              {formatTime(detail.ends_at, studio.timezone)}
+              {formatTime(detail.starts_at, studio.timezone, studio.locale)} –{" "}
+              {formatTime(detail.ends_at, studio.timezone, studio.locale)}
             </p>
           </div>
           <div className="rounded-2xl bg-black/20 p-4">

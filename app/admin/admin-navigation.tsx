@@ -77,24 +77,6 @@ function NavIcon({ label }: { label: string }) {
       </svg>
     );
   }
-  if (label === "Retos") {
-    return (
-      <svg {...common}>
-        <path d="M8 4h8v3a4 4 0 0 1-8 0V4Z" />
-        <path d="M8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4" />
-        <path d="M12 11v5M9 20h6M10 16h4" />
-      </svg>
-    );
-  }
-  if (label === "Rewards") {
-    return (
-      <svg {...common}>
-        <rect x="4" y="9" width="16" height="11" rx="2" />
-        <path d="M12 9v11M3 9h18v-3H3z" />
-        <path d="M12 6c-1.7 0-4-.8-4-2.3C8 2.7 8.8 2 9.8 2 11.2 2 12 4 12 6Zm0 0c1.7 0 4-.8 4-2.3C16 2.7 15.2 2 14.2 2 12.8 2 12 4 12 6Z" />
-      </svg>
-    );
-  }
   if (label === "Evaluaciones") {
     return (
       <svg {...common}>
@@ -103,7 +85,7 @@ function NavIcon({ label }: { label: string }) {
       </svg>
     );
   }
-  if (label === "Productos") {
+  if (label === "Productos" || label === "Paquetes") {
     return (
       <svg {...common}>
         <path d="M5 7h14l-1 14H6L5 7Z" />
@@ -121,14 +103,6 @@ function NavIcon({ label }: { label: string }) {
       </svg>
     );
   }
-  if (label === "Notificaciones") {
-    return (
-      <svg {...common}>
-        <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9" />
-        <path d="M10 21h4" />
-      </svg>
-    );
-  }
   if (label === "Automatizaciones") {
     return (
       <svg {...common}>
@@ -142,6 +116,14 @@ function NavIcon({ label }: { label: string }) {
       <svg {...common}>
         <circle cx="12" cy="12" r="3" />
         <path d="M19 12a7 7 0 0 0-.1-1l2-1.5-2-3.5-2.5 1A7 7 0 0 0 14.7 6L14.4 3h-4.8L9.3 6a7 7 0 0 0-1.7 1L5 6 3 9.5 5 11a7 7 0 0 0 0 2l-2 1.5L5 18l2.6-1a7 7 0 0 0 1.7 1l.3 3h4.8l.3-3a7 7 0 0 0 1.7-1l2.6 1 2-3.5-2-1.5a7 7 0 0 0 .1-1Z" />
+      </svg>
+    );
+  }
+  if (label === "Integraciones") {
+    return (
+      <svg {...common}>
+        <path d="M8 8h4V4M16 16h-4v4" />
+        <path d="M12 8 7 13a3 3 0 0 0 4 4l5-5M12 16l5-5a3 3 0 0 0-4-4l-5 5" />
       </svg>
     );
   }

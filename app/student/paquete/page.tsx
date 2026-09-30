@@ -91,11 +91,8 @@ function acquisitionTone(status: string) {
 
 export default async function StudentPackagePage() {
   const { snapshot, studio, supabase, membership } = await getStudentPortalContext();
-  const packageAcquisitions = snapshot.acquisitions.filter((item) => !item.reward_credit_wallet);
-  const activePackage = packageAcquisitions.find((item) => item.active_now) ?? null;
-  const others = packageAcquisitions
-    .filter((item) => item.id !== activePackage?.id)
-    .sort((left, right) => right.expires_on.localeCompare(left.expires_on));
+  const activePackage = snapshot.acquisitions.find((item) => item.active_now) ?? null;
+  const others = snapshot.acquisitions.filter((item) => item.id !== activePackage?.id);
   const activeProgress = activePackage ? progressPercent(activePackage) : null;
   const activeDaysRemaining = activePackage
     ? daysRemaining(activePackage.expires_on, studio.timezone)
@@ -223,8 +220,8 @@ export default async function StudentPackagePage() {
                 <div>
                   <p className="text-xs font-medium text-zinc-500">Vigencia</p>
                   <p className="mt-1 text-sm text-white">
-                    {formatDate(activePackage.starts_on, studio.timezone)} →{" "}
-                    {formatDate(activePackage.expires_on, studio.timezone)}
+                    {formatDate(activePackage.starts_on, studio.timezone, studio.locale)} →{" "}
+                    {formatDate(activePackage.expires_on, studio.timezone, studio.locale)}
                   </p>
                 </div>
                 {activeDaysRemaining !== null ? (
@@ -258,50 +255,6 @@ export default async function StudentPackagePage() {
                 </div>
               </div>
 
-              <div className="mt-5 border-t border-white/10 pt-5">
-                {activeProgress !== null && activePackage.credit_limit ? (
-                  <>
-                    <div className="flex items-end justify-between gap-4">
-                      <div>
-                        <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-zinc-500">
-                          Progreso del paquete
-                        </p>
-                        <p className="mt-1 text-sm text-zinc-400">
-                          {activePackage.used_credits} de {activePackage.credit_limit} clases
-                          utilizadas
-                        </p>
-                      </div>
-                      <strong className="text-lg text-white">{activeProgress}%</strong>
-                    </div>
-                    <div
-                      role="progressbar"
-                      aria-label="Progreso de clases utilizadas"
-                      aria-valuemin={0}
-                      aria-valuemax={100}
-                      aria-valuenow={activeProgress}
-                      className="mt-3 h-2 overflow-hidden rounded-full bg-white/10"
-                    >
-                      <div
-                        className="h-full rounded-full bg-fuchsia-500"
-                        style={{ width: `${activeProgress}%` }}
-                      />
-                    </div>
-                  </>
-                ) : (
-                  <div className="flex items-center justify-between gap-4">
-                    <div>
-                      <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-zinc-500">
-                        Progreso del paquete
-                      </p>
-                      <p className="mt-1 text-sm text-zinc-400">
-                        Este paquete no usa un límite de créditos por clase.
-                      </p>
-                    </div>
-                    <strong className="text-2xl text-fuchsia-300">∞</strong>
-                  </div>
-                )}
-              </div>
-
               <div className="mt-5 grid gap-2 sm:grid-cols-2">
                 <Link
                   href="/student/reservar"
@@ -317,6 +270,57 @@ export default async function StudentPackagePage() {
                 </Link>
               </div>
             </div>
+          </section>
+
+          <section
+            data-package-block="progress"
+            className="rounded-3xl border border-white/10 bg-white/[0.03] p-5 sm:p-6"
+          >
+            {activeProgress !== null && activePackage.credit_limit ? (
+              <>
+                <div className="flex items-end justify-between gap-4">
+                  <div>
+                    <h2 className="text-lg font-semibold text-white">Tu progreso</h2>
+                    <p className="mt-1 text-sm text-zinc-400">
+                      {activePackage.used_credits} de {activePackage.credit_limit} clases utilizadas
+                    </p>
+                  </div>
+                  <strong className="text-lg text-white">{activeProgress}%</strong>
+                </div>
+                <div
+                  role="progressbar"
+                  aria-label="Progreso de clases utilizadas"
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-valuenow={activeProgress}
+                  className="mt-4 h-2 overflow-hidden rounded-full bg-white/10"
+                >
+                  <div
+                    className="h-full rounded-full bg-fuchsia-500"
+                    style={{ width: `${activeProgress}%` }}
+                  />
+                </div>
+                <p className="mt-4 rounded-2xl border border-white/10 bg-black/15 px-4 py-3 text-xs leading-5 text-zinc-500">
+                  Las clases reservadas se muestran por separado. El saldo disponible proviene del
+                  ledger real de tu paquete.
+                </p>
+              </>
+            ) : (
+              <>
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <h2 className="text-lg font-semibold text-white">Acceso ilimitado</h2>
+                    <p className="mt-1 text-sm text-zinc-400">
+                      Este paquete no usa un límite de créditos por clase.
+                    </p>
+                  </div>
+                  <strong className="text-3xl text-fuchsia-300">∞</strong>
+                </div>
+                <p className="mt-4 rounded-2xl border border-white/10 bg-black/15 px-4 py-3 text-xs leading-5 text-zinc-500">
+                  Tus reservas y clases utilizadas siguen registrándose en Movimientos.
+                </p>
+              </>
+            )}
           </section>
         </>
       ) : (
@@ -347,78 +351,46 @@ export default async function StudentPackagePage() {
       )}
 
       {others.length ? (
-        <details
+        <section
           data-package-block="history"
-          className="group rounded-3xl border border-white/10 bg-white/[0.03] p-5 sm:p-6"
+          className="rounded-3xl border border-white/10 bg-white/[0.03] p-5 sm:p-6"
         >
-          <summary className="flex cursor-pointer list-none items-center justify-between gap-4">
-            <div>
-              <h2 className="text-lg font-semibold text-white">Historial de paquetes</h2>
-              <p className="mt-1 text-xs text-zinc-500">
-                {others.length} paquete{others.length === 1 ? "" : "s"} anterior
-                {others.length === 1 ? "" : "es"}
-              </p>
-            </div>
-            <span
-              aria-hidden="true"
-              className="text-xl text-zinc-500 transition group-open:rotate-180 group-open:text-fuchsia-300"
-            >
-              ⌄
-            </span>
-          </summary>
+          <div>
+            <h2 className="text-lg font-semibold text-white">Otros paquetes</h2>
+            <p className="mt-1 text-xs text-zinc-500">
+              Consulta tus otras vigencias y paquetes anteriores.
+            </p>
+          </div>
 
-          <div className="mt-4 divide-y divide-white/10 border-t border-white/10">
+          <div className="mt-4 divide-y divide-white/10">
             {others.map((item) => (
-              <details key={item.id} className="group/item py-1">
-                <summary className="flex cursor-pointer list-none items-center justify-between gap-3 py-3">
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-medium text-white">{item.name}</p>
-                    <p className="mt-1 text-[11px] text-zinc-500">
-                      {formatDate(item.starts_on, studio.timezone)} →{" "}
-                      {formatDate(item.expires_on, studio.timezone)}
-                    </p>
-                  </div>
-                  <div className="flex shrink-0 items-center gap-2">
-                    <span
-                      className={`rounded-full px-2 py-1 text-[10px] font-medium ${acquisitionTone(
-                        item.status,
-                      )}`}
-                    >
-                      {statusCopy[item.status] ?? item.status}
-                    </span>
-                    <span
-                      aria-hidden="true"
-                      className="text-sm text-zinc-600 transition group-open/item:rotate-180"
-                    >
-                      ⌄
-                    </span>
-                  </div>
-                </summary>
-
-                <div className="mb-3 rounded-2xl border border-white/10 bg-black/20 px-4 py-3">
-                  <div className="grid grid-cols-3 gap-3 text-center">
-                    <div>
-                      <strong className="block text-base text-white">
-                        {item.unlimited ? "∞" : (item.available_credits ?? 0)}
-                      </strong>
-                      <span className="mt-1 block text-[10px] text-zinc-500">Disponibles</span>
-                    </div>
-                    <div className="border-x border-white/10">
-                      <strong className="block text-base text-white">
-                        {item.reserved_credits}
-                      </strong>
-                      <span className="mt-1 block text-[10px] text-zinc-500">Reservadas</span>
-                    </div>
-                    <div>
-                      <strong className="block text-base text-white">{item.used_credits}</strong>
-                      <span className="mt-1 block text-[10px] text-zinc-500">Utilizadas</span>
-                    </div>
-                  </div>
+              <article
+                key={item.id}
+                className="flex flex-wrap items-center justify-between gap-3 py-4 first:pt-0 last:pb-0"
+              >
+                <div className="min-w-0">
+                  <p className="font-medium text-white">{item.name}</p>
+                  <p className="mt-1 text-xs text-zinc-500">
+                    {formatDate(item.starts_on, studio.timezone, studio.locale)} →{" "}
+                    {formatDate(item.expires_on, studio.timezone, studio.locale)}
+                  </p>
+                  <p className="mt-1 text-xs text-zinc-500">
+                    {item.unlimited
+                      ? "Acceso ilimitado"
+                      : `${item.available_credits ?? 0} disponibles · ${item.reserved_credits} reservadas · ${item.used_credits} utilizadas`}
+                  </p>
                 </div>
-              </details>
+                <span
+                  className={`rounded-full px-2.5 py-1 text-xs font-medium ${acquisitionTone(
+                    item.status,
+                  )}`}
+                >
+                  {statusCopy[item.status] ?? item.status}
+                </span>
+              </article>
             ))}
           </div>
-        </details>
+        </section>
       ) : null}
 
       {purchasableProducts.length ? (
@@ -487,7 +459,7 @@ export default async function StudentPackagePage() {
                           <p className="mt-1 text-sm text-zinc-400">{productBenefit(product)}</p>
                         </div>
                         <strong className="shrink-0 text-base text-white">
-                          {formatMoney(product.price_minor, product.currency)}
+                          {formatMoney(product.price_minor, product.currency, studio.locale)}
                         </strong>
                       </div>
 
@@ -541,7 +513,7 @@ export default async function StudentPackagePage() {
                 </h2>
                 <p className="mt-1 text-xs text-zinc-500">
                   {snapshot.enrollment.expires_on
-                    ? `Vence ${formatDate(snapshot.enrollment.expires_on, studio.timezone)}`
+                    ? `Vence ${formatDate(snapshot.enrollment.expires_on, studio.timezone, studio.locale)}`
                     : snapshot.enrollment.active_now
                       ? "Vitalicia · sin vencimiento"
                       : "Consulta el estado con el estudio"}

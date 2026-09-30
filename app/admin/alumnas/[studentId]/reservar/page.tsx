@@ -83,7 +83,8 @@ export default async function StudentFirstReservationPage({
     : [];
 
   const eligibilityMap = new Map(eligibilityEntries);
-  const timeZone = studio.timezone ?? "America/Mexico_City";
+  const timeZone = studio.timezone;
+  const locale = studio.locale;
 
   return (
     <main className="dashboard-shell">
@@ -143,7 +144,7 @@ export default async function StudentFirstReservationPage({
             {(sessions ?? []).map((session) => {
               const template = templateMap.get(session.template_id);
               const eligibility = eligibilityMap.get(session.id);
-              const label = new Intl.DateTimeFormat("es-MX", {
+              const label = new Intl.DateTimeFormat(locale, {
                 timeZone,
                 weekday: "short",
                 day: "numeric",

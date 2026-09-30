@@ -232,7 +232,7 @@ function renderMessage(delivery: DeliveryRow): RenderedMessage {
           : `Tu lugar en ${className} quedó reservado.`,
         url: "/student",
         tag: `notification-${delivery.id}`,
-        providerTemplateKey: overrideProviderTemplate ?? "reservation_confirmed",
+        providerTemplateKey: overrideProviderTemplate ?? "demeter_reserva_confirmada_qr_v3",
       };
 
     case "reservation_cancelled":
@@ -340,6 +340,26 @@ function renderMessage(delivery: DeliveryRow): RenderedMessage {
       };
     }
 
+    case "account_created": return { title: "Tu cuenta está lista", body: "Tu acceso a Demeter ya fue creado. Completa la activación para comenzar.", url: "/student", tag: `notification-${delivery.id}`, providerTemplateKey: overrideProviderTemplate ?? "account_created" };
+    case "attendance_no_show": return { title: "Inasistencia registrada", body: "La clase cerró sin check-in y la reserva quedó registrada como no show.", url: "/student/mis-clases", tag: `notification-${delivery.id}`, providerTemplateKey: overrideProviderTemplate ?? "attendance_no_show" };
+    case "credit_restored": return { title: "Crédito restaurado", body: "El crédito de esta reserva fue devuelto a tu paquete.", url: "/student/paquete", tag: `notification-${delivery.id}`, providerTemplateKey: overrideProviderTemplate ?? "credit_restored" };
+    case "document_new_version": return { title: "Nueva versión de documento", body: "Se publicó una nueva versión de un documento del estudio. Revísala en Demeter.", url: "/student/documentos", tag: `notification-${delivery.id}`, providerTemplateKey: overrideProviderTemplate ?? "document_new_version" };
+    case "documents_pending": return { title: "Tienes documentos pendientes", body: "Hay documentos obligatorios que todavía requieren tu atención.", url: "/student/documentos", tag: `notification-${delivery.id}`, providerTemplateKey: overrideProviderTemplate ?? "documents_pending" };
+    case "evaluation_reminder": return { title: "Tu evaluación es pronto", body: "Tienes una evaluación programada dentro de las próximas 24 horas.", url: "/student/evaluaciones", tag: `notification-${delivery.id}`, providerTemplateKey: overrideProviderTemplate ?? "evaluation_reminder" };
+    case "guardian_signature_pending": return { title: "Firma del responsable pendiente", body: "Tu proceso tiene una firma pendiente de tu responsable.", url: "/student/documentos", tag: `notification-${delivery.id}`, providerTemplateKey: overrideProviderTemplate ?? "guardian_signature_pending" };
+    case "late_cancellation": return { title: "Cancelación tardía", body: "La reserva se canceló dentro de la ventana tardía y aplican las reglas correspondientes.", url: "/student/mis-clases", tag: `notification-${delivery.id}`, providerTemplateKey: overrideProviderTemplate ?? "late_cancellation" };
+    case "package_activated": return { title: "Paquete activado", body: "Tu paquete ya está activo. Puedes consultar vigencia y créditos en Demeter.", url: "/student/paquete", tag: `notification-${delivery.id}`, providerTemplateKey: overrideProviderTemplate ?? "package_activated" };
+    case "package_expired": return { title: "Tu paquete venció", body: "La vigencia de tu paquete terminó. Consulta tus opciones en Demeter.", url: "/student/paquete", tag: `notification-${delivery.id}`, providerTemplateKey: overrideProviderTemplate ?? "package_expired" };
+    case "package_expiring": return { title: "Tu paquete está por vencer", body: "Tu paquete vence en 3 días. Revisa tus créditos y próximas clases.", url: "/student/paquete", tag: `notification-${delivery.id}`, providerTemplateKey: overrideProviderTemplate ?? "package_expiring" };
+    case "password_reset": return { title: "Acceso restablecido", body: "Se generó un nuevo acceso temporal para tu cuenta. Completa el cambio de contraseña.", url: "/login/student/activar", tag: `notification-${delivery.id}`, providerTemplateKey: overrideProviderTemplate ?? "password_reset" };
+    case "payment_confirmed": return { title: "Pago confirmado", body: "Tu pago quedó registrado correctamente.", url: "/student/paquete", tag: `notification-${delivery.id}`, providerTemplateKey: overrideProviderTemplate ?? "payment_confirmed" };
+    case "payment_pending": return { title: "Pago pendiente", body: "Hay una operación pendiente de completar. Revisa los detalles con el estudio.", url: "/student", tag: `notification-${delivery.id}`, providerTemplateKey: overrideProviderTemplate ?? "payment_pending" };
+    case "reservation_cancelled_by_student": return { title: "Reserva cancelada", body: "Tu reserva quedó cancelada. Consulta el estado de tu crédito en Demeter.", url: "/student/mis-clases", tag: `notification-${delivery.id}`, providerTemplateKey: overrideProviderTemplate ?? "reservation_cancelled" };
+    case "reservation_modified": return { title: "Reserva actualizada", body: "Se actualizó información de tu reserva. Revisa los detalles en Demeter.", url: "/student/mis-clases", tag: `notification-${delivery.id}`, providerTemplateKey: overrideProviderTemplate ?? "reservation_modified" };
+    case "session_cancelled_by_studio": return { title: "Tu clase fue cancelada", body: "El estudio canceló esta clase. Revisa tu reserva y el estado de tu crédito.", url: "/student/mis-clases", tag: `notification-${delivery.id}`, providerTemplateKey: overrideProviderTemplate ?? "session_cancelled_by_studio" };
+    case "session_coach_changed": return { title: "Cambio de coach", body: "Cambió el coach de una de tus próximas clases. Revisa los detalles.", url: "/student/mis-clases", tag: `notification-${delivery.id}`, providerTemplateKey: overrideProviderTemplate ?? "session_coach_changed" };
+    case "studio_closure": return { title: "Cambio extraordinario en el estudio", body: "Una de tus clases fue afectada por un cierre o ajuste extraordinario del estudio.", url: "/student/mis-clases", tag: `notification-${delivery.id}`, providerTemplateKey: overrideProviderTemplate ?? "studio_closure" };
+    case "waitlist_expired": return { title: "La oportunidad de lista de espera venció", body: "Ya no hay una oportunidad activa para esta clase. Puedes revisar otras opciones.", url: "/student/reservar", tag: `notification-${delivery.id}`, providerTemplateKey: overrideProviderTemplate ?? "waitlist_expired" };
     default:
       throw new Error(`notification_template_unsupported:${delivery.template_key}`);
   }

@@ -51,11 +51,22 @@ export default async function StudentCancelReservationPage({
     uses_credits?: boolean;
     unlimited?: boolean;
     credit_will_return?: boolean | null;
+    unlimited_penalty_minor?: number;
+    currency?: string;
   } | null;
   const willLoseCredit = Boolean(preview?.ok && preview.late && preview.uses_credits);
   const willReturnCredit = Boolean(
     preview?.ok && !preview.late && preview.credit_will_return === true,
   );
+  const unlimitedPenaltyMinor = Number(preview?.unlimited_penalty_minor ?? 0);
+  const willChargeUnlimitedPenalty = Boolean(
+    preview?.ok && preview.unlimited && preview.late && unlimitedPenaltyMinor > 0,
+  );
+  const unlimitedPenaltyLabel = new Intl.NumberFormat(studio.locale, {
+    style: "currency",
+    currency: preview?.currency ?? studio.currency,
+    maximumFractionDigits: 2,
+  }).format(unlimitedPenaltyMinor / 100);
   const activeGuests =
     (
       invitationContextData as {
@@ -131,7 +142,7 @@ export default async function StudentCancelReservationPage({
           <p className="text-sm font-semibold text-white">{item.activity}</p>
           <p className="mt-1 text-xs font-medium text-fuchsia-300">{item.discipline}</p>
           <p className="mt-2 text-xs text-zinc-300">
-            {formatDateTime(item.starts_at, studio.timezone)}
+            {formatDateTime(item.starts_at, studio.timezone, studio.locale)}
           </p>
           <p className="mt-0.5 text-[11px] text-zinc-500">
             {[item.coach, item.space].filter(Boolean).join(" · ") || "Estudio"}
@@ -165,6 +176,16 @@ export default async function StudentCancelReservationPage({
               Si cancelas ahora, el crédito utilizado para esta clase no será devuelto.
             </p>
           </div>
+        ) : willChargeUnlimitedPenalty ? (
+          <div className="mt-4 rounded-2xl border border-amber-400/25 bg-amber-400/[0.08] p-4">
+            <p className="text-sm font-semibold text-amber-100">
+              Esta cancelación genera una penalización
+            </p>
+            <p className="mt-1.5 text-xs leading-5 text-amber-100/80">
+              Tu paquete es ilimitado. Si cancelas ahora se registrará un cargo pendiente de{" "}
+              <strong>{unlimitedPenaltyLabel}</strong>.
+            </p>
+          </div>
         ) : willReturnCredit ? (
           <div className="mt-4 rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.07] p-4">
             <p className="text-xs leading-5 text-emerald-100">
@@ -195,24 +216,14 @@ export default async function StudentCancelReservationPage({
           <input type="hidden" name="reservation_id" value={item.reservation_id} />
           <input type="hidden" name="return_to" value="/student/mis-clases" />
           <label className="block text-xs text-zinc-400">
-            Motivo de cancelación
-            <select
+            Motivo
+            <span className="ml-1 text-zinc-600">(opcional)</span>
+            <input
               name="reason"
-              required
-              defaultValue=""
+              maxLength={250}
+              placeholder="Cuéntanos si quieres"
               className="mt-2 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-sm text-white outline-none transition focus:border-fuchsia-500/60"
-            >
-              <option value="" disabled>Selecciona un motivo</option>
-              <option value="schedule_conflict">Horario / cambio de planes</option>
-              <option value="health">Salud</option>
-              <option value="work_school">Trabajo / escuela</option>
-              <option value="transport">Transporte / distancia</option>
-              <option value="price">Precio</option>
-              <option value="lost_interest">Ya no me interesa</option>
-              <option value="booking_error">Error de reserva</option>
-              <option value="other">Otro</option>
-              <option value="prefer_not_say">Prefiero no decir</option>
-            </select>
+            />
           </label>
 
           <PendingActionButton

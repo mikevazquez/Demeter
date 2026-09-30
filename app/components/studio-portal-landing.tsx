@@ -62,7 +62,7 @@ export function StudioPortalLanding({ portal }: { portal: PublicStudioPortal }) 
 
           <h1>{portal.name}</h1>
           <span className="studio-entry-rule" aria-hidden="true" />
-          <p>Movimiento que transforma</p>
+          {portal.tagline ? <p>{portal.tagline}</p> : null}
         </div>
 
         <div className="studio-entry-actions">

@@ -172,7 +172,7 @@ export default async function GeneratedRewardsPage({
             >
               <div>
                 <strong className="text-white">
-                  {rewardDefinitionLabel(reward.benefit_definition)}
+                  {rewardDefinitionLabel(reward.benefit_definition, ctx.studio.locale, ctx.studio.currency)}
                 </strong>
                 <p className="mt-1 text-sm text-zinc-400">
                   {studentMap.get(reward.student_id)?.full_name ?? "Alumna"}
@@ -188,7 +188,7 @@ export default async function GeneratedRewardsPage({
                       : originType === "achievement"
                         ? "Logro"
                         : "Otro"}{" "}
-                  · {formatDateTime(reward.created_at)}
+                  · {formatDateTime(reward.created_at, ctx.studio.locale, ctx.studio.timezone)}
                 </p>
               </div>
               <StatusBadge status={reward.status} />

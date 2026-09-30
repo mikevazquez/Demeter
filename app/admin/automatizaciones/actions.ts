@@ -92,7 +92,7 @@ export async function saveGlobalCommunicationWindowAction(formData: FormData) {
     redirect(`/admin/automatizaciones?error=${encodeURIComponent(message)}`);
   }
 
-  const { supabase, studio, user } = await getAdminContext(CAPABILITIES.AUTOMATIONS_MANAGE);
+  const { supabase, studio, user } = await getAdminContext(CAPABILITIES.NOTIFICATIONS_MANAGE);
   const { error } = await supabase.from("automation_communication_settings").upsert(
     {
       studio_id: studio.id,

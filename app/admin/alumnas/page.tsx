@@ -4,18 +4,14 @@ import Link from "next/link";
 import PendingActionButton from "@/app/admin/components/PendingActionButton";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getAdminContext } from "@/lib/auth/admin-context";
-import { deriveStudentDirectoryRelationshipStatus } from "@/lib/student/directory-status";
 
 import { createStudent } from "./actions";
 import DuplicateStudentDialog from "./DuplicateStudentDialog";
 import StudentDeletedDialog from "./StudentDeletedDialog";
 import StudentFormErrorDialog from "./StudentFormErrorDialog";
 
-const relationshipLabels: Record<string, string> = {
+const lifecycleLabels: Record<string, string> = {
   active: "Activa",
-  expired: "Vencida",
-  trial: "Prueba",
-  prospect: "Prospecto",
   inactive: "Inactiva",
 };
 
@@ -49,15 +45,25 @@ function addDaysToDateKey(value: string, days: number) {
   ].join("-");
 }
 
-function shortDate(value: string | null) {
+function shortDate(value: string | null, locale: string) {
   if (!value) return "Sin vencimiento";
-  return new Intl.DateTimeFormat("es-MX", {
+  return new Intl.DateTimeFormat(locale, {
     day: "numeric",
     month: "short",
     year: "numeric",
     timeZone: "UTC",
   }).format(new Date(`${value}T12:00:00Z`));
 }
+
+type PlanUsageRow = {
+  limit_key: string;
+  limit_value: number | null;
+  usage: number;
+  unlimited: boolean;
+  over_limit: boolean;
+  remaining: number | null;
+  plan_name: string;
+};
 
 function filterHref(status: string, query: string) {
   const params = new URLSearchParams();
@@ -83,36 +89,26 @@ export default async function StudentsPage({
   const params = await searchParams;
   const query = String(params.q ?? "").trim();
   const requestedStatus = String(params.status ?? "all");
-  const status = [
-    "all",
-    "active",
-    "inactive",
-    "expiring",
-    "expired",
-    "trial",
-    "prospect",
-  ].includes(requestedStatus)
+  const status = ["all", "active", "inactive", "expiring", "expired"].includes(requestedStatus)
     ? requestedStatus
     : "all";
 
   const { supabase, studio, membership, can } = await getAdminContext(CAPABILITIES.STUDENTS_READ);
   const canEdit = can(CAPABILITIES.STUDENTS_WRITE);
   const canReadProducts = can(CAPABILITIES.PRODUCTS_READ);
-  const timeZone = studio.timezone ?? "America/Mexico_City";
+  const timeZone = studio.timezone;
   const today = localDateKey(timeZone);
   const sevenDaysFromToday = addDaysToDateKey(today, 7);
 
   let studentsQuery = supabase
     .from("students")
-    .select(
-      "id, user_id, full_name, email, phone, lifecycle_status, student_type, trial_status, created_at",
-    )
+    .select("id, user_id, full_name, email, phone, lifecycle_status, created_at")
     .eq("studio_id", studio.id)
     .neq("lifecycle_status", "archived")
     .order("full_name");
 
-  if (status === "inactive") {
-    studentsQuery = studentsQuery.eq("lifecycle_status", "inactive");
+  if (status === "active" || status === "inactive") {
+    studentsQuery = studentsQuery.eq("lifecycle_status", status);
   }
 
   if (query) {
@@ -126,23 +122,35 @@ export default async function StudentsPage({
 
   const { data: students } = await studentsQuery;
 
-  const [{ data: allStudents }, acquisitionResult] = await Promise.all([
+  const [{ data: allStudents }, acquisitionResult, { data: planUsage }] = await Promise.all([
     supabase
       .from("students")
-      .select("id,lifecycle_status,student_type,trial_status")
+      .select("id,lifecycle_status")
       .eq("studio_id", studio.id)
       .neq("lifecycle_status", "archived"),
     canReadProducts
       ? supabase
           .from("product_acquisitions")
           .select(
-            "id,student_id,product_template_id,status,starts_on,expires_on,refunded_at,created_at",
+            "id,student_id,product_template_id,status,starts_on,expires_on,refunded_at,created_at,unlimited,credit_limit",
           )
           .eq("studio_id", studio.id)
           .order("created_at", { ascending: false })
       : Promise.resolve({ data: [] }),
+    supabase.rpc("current_studio_plan_usage", {
+      p_studio_id: studio.id,
+    }),
   ]);
   const allAcquisitions = acquisitionResult.data ?? [];
+  const activeStudentPlanUsage = ((planUsage ?? []) as PlanUsageRow[]).find(
+    (row) => row.limit_key === "active_students",
+  );
+  const activeStudentQuotaReached = Boolean(
+    activeStudentPlanUsage &&
+      !activeStudentPlanUsage.unlimited &&
+      activeStudentPlanUsage.limit_value !== null &&
+      activeStudentPlanUsage.usage >= activeStudentPlanUsage.limit_value,
+  );
 
   const acquisitionProductIds = [
     ...new Set((allAcquisitions ?? []).map((item) => item.product_template_id).filter(Boolean)),
@@ -166,6 +174,8 @@ export default async function StudentsPage({
       expires_on: string | null;
       refunded_at: string | null;
       created_at: string;
+      unlimited: boolean;
+      credit_limit: number | null;
     }>
   >();
 
@@ -187,57 +197,62 @@ export default async function StudentsPage({
     );
   }
 
-  function relationshipStatusFor(student: {
-    id: string;
-    lifecycle_status: string;
-    student_type?: string | null;
-    trial_status?: string | null;
-  }) {
-    const acquisitions = acquisitionsByStudent.get(student.id) ?? [];
-    return deriveStudentDirectoryRelationshipStatus({
-      lifecycleStatus: student.lifecycle_status,
-      studentType: student.student_type,
-      trialStatus: student.trial_status,
-      hasCurrentProduct: Boolean(currentAcquisitionFor(student.id)),
-      hasExpiredProduct: acquisitions.some(
-        (item) => !item.refunded_at && Boolean(item.expires_on && item.expires_on < today),
-      ),
-    });
-  }
-
   const activeStudentsCount = (allStudents ?? []).filter(
-    (item) => relationshipStatusFor(item) === "active",
+    (item) => item.lifecycle_status === "active",
   ).length;
   const expiringStudentsCount = (allStudents ?? []).filter((student) => {
     const acquisition = currentAcquisitionFor(student.id);
     return Boolean(
-      relationshipStatusFor(student) === "active" &&
       acquisition?.expires_on &&
       acquisition.expires_on >= today &&
       acquisition.expires_on <= sevenDaysFromToday,
     );
   }).length;
-  const expiredStudentsCount = (allStudents ?? []).filter(
-    (student) => relationshipStatusFor(student) === "expired",
-  ).length;
+  const expiredStudentsCount = (allStudents ?? []).filter((student) => {
+    if (currentAcquisitionFor(student.id)) return false;
+    return (acquisitionsByStudent.get(student.id) ?? []).some(
+      (item) => !item.refunded_at && Boolean(item.expires_on && item.expires_on < today),
+    );
+  }).length;
 
   const filteredStudents = (students ?? []).filter((student) => {
     if (status === "expiring") {
       const acquisition = currentAcquisitionFor(student.id);
       return Boolean(
-        relationshipStatusFor(student) === "active" &&
         acquisition?.expires_on &&
         acquisition.expires_on >= today &&
         acquisition.expires_on <= sevenDaysFromToday,
       );
     }
 
-    if (["active", "inactive", "expired", "trial", "prospect"].includes(status)) {
-      return relationshipStatusFor(student) === status;
+    if (status === "expired") {
+      if (currentAcquisitionFor(student.id)) return false;
+      return (acquisitionsByStudent.get(student.id) ?? []).some(
+        (item) => !item.refunded_at && Boolean(item.expires_on && item.expires_on < today),
+      );
     }
 
     return true;
   });
+
+  const visibleAcquisitionIds = filteredStudents
+    .map((student) => currentAcquisitionFor(student.id)?.id)
+    .filter((id): id is string => Boolean(id));
+  const { data: visibleLedgerRows } =
+    canReadProducts && visibleAcquisitionIds.length
+      ? await supabase
+          .from("credit_ledger")
+          .select("acquisition_id,quantity")
+          .eq("studio_id", studio.id)
+          .in("acquisition_id", visibleAcquisitionIds)
+      : { data: [] as { acquisition_id: string; quantity: number }[] };
+  const visibleBalanceMap = new Map<string, number>();
+  for (const row of visibleLedgerRows ?? []) {
+    visibleBalanceMap.set(
+      row.acquisition_id,
+      (visibleBalanceMap.get(row.acquisition_id) ?? 0) + row.quantity,
+    );
+  }
 
   const duplicateId = String(params.duplicate ?? "").trim();
   const { data: duplicateStudent } = duplicateId
@@ -262,12 +277,18 @@ export default async function StudentsPage({
               title: "Este teléfono ya está registrado",
               message: "Ya existe una alumna con este teléfono en el estudio.",
             }
-          : params.error
+          : params.error === "plan_limit_active_students"
             ? {
-                title: "No pudimos crear la alumna",
-                message: "Revisa los datos e inténtalo de nuevo.",
+                title: "Límite de alumnas alcanzado",
+                message:
+                  "Tu plan ya alcanzó el máximo de alumnas activas. Archiva una alumna que ya no esté activa o cambia de plan para continuar.",
               }
-            : null;
+            : params.error
+              ? {
+                  title: "No pudimos crear la alumna",
+                  message: "Revisa los datos e inténtalo de nuevo.",
+                }
+              : null;
 
   const filters = [
     { key: "all", label: "Todas", enabled: true },
@@ -275,8 +296,8 @@ export default async function StudentsPage({
     { key: "inactive", label: "Inactivas", enabled: true },
     { key: "expiring", label: "Por vencer", enabled: canReadProducts },
     { key: "expired", label: "Vencidas", enabled: canReadProducts },
-    { key: "trial", label: "Prueba", enabled: true },
-    { key: "prospect", label: "Prospectos", enabled: true },
+    { key: "trial", label: "De prueba", enabled: false },
+    { key: "prospect", label: "Prospectos", enabled: false },
   ];
 
   return (
@@ -298,53 +319,63 @@ export default async function StudentsPage({
           <p>Encuentra a una persona y entra a su Perfil 360.</p>
         </div>
         {canEdit ? (
-          <details id="alta-rapida" className="student-quick-create">
-            <summary aria-label="Nueva alumna" title="Nueva alumna">
-              <span aria-hidden="true">+</span>
-              <span className="student-quick-create-label">Nueva alumna</span>
-            </summary>
-            <div className="student-quick-create-panel">
-              <div className="student-quick-create-heading">
-                <div>
-                  <p className="eyebrow">ALTA RÁPIDA</p>
-                  <h2>Nueva alumna</h2>
-                  <p>Nombre y teléfono bastan para crear el expediente.</p>
+          activeStudentQuotaReached ? (
+            <Link
+              className="primary-button"
+              href="/admin/configuracion"
+              title="Revisar plan y uso"
+            >
+              Límite de alumnas alcanzado
+            </Link>
+          ) : (
+            <details id="alta-rapida" className="student-quick-create">
+              <summary aria-label="Nueva alumna" title="Nueva alumna">
+                <span aria-hidden="true">+</span>
+                <span className="student-quick-create-label">Nueva alumna</span>
+              </summary>
+              <div className="student-quick-create-panel">
+                <div className="student-quick-create-heading">
+                  <div>
+                    <p className="eyebrow">ALTA RÁPIDA</p>
+                    <h2>Nueva alumna</h2>
+                    <p>Nombre y teléfono bastan para crear el expediente.</p>
+                  </div>
                 </div>
-              </div>
-              <form action={createStudent} className="compact-form">
-                <div className="form-split">
+                <form action={createStudent} className="compact-form">
+                  <div className="form-split">
+                    <input
+                      name="first_name"
+                      required
+                      placeholder="Nombre"
+                      autoComplete="given-name"
+                    />
+                    <input
+                      name="last_name"
+                      placeholder="Apellido opcional"
+                      autoComplete="family-name"
+                    />
+                  </div>
                   <input
-                    name="first_name"
+                    name="phone"
+                    type="tel"
+                    inputMode="tel"
                     required
-                    placeholder="Nombre"
-                    autoComplete="given-name"
+                    placeholder="Teléfono · 10 dígitos"
+                    autoComplete="tel"
                   />
                   <input
-                    name="last_name"
-                    placeholder="Apellido opcional"
-                    autoComplete="family-name"
+                    name="email"
+                    type="email"
+                    placeholder="Correo opcional"
+                    autoComplete="email"
                   />
-                </div>
-                <input
-                  name="phone"
-                  type="tel"
-                  inputMode="tel"
-                  required
-                  placeholder="Teléfono · 10 dígitos"
-                  autoComplete="tel"
-                />
-                <input
-                  name="email"
-                  type="email"
-                  placeholder="Correo opcional"
-                  autoComplete="email"
-                />
-                <PendingActionButton className="primary-button" pendingLabel="Creando alumna…">
-                  Crear alumna
-                </PendingActionButton>
-              </form>
-            </div>
-          </details>
+                  <PendingActionButton className="primary-button" pendingLabel="Creando alumna…">
+                    Crear alumna
+                  </PendingActionButton>
+                </form>
+              </div>
+            </details>
+          )
         ) : (
           <span className="role-pill">{membership.role}</span>
         )}
@@ -361,70 +392,20 @@ export default async function StudentsPage({
         </form>
       </header>
 
-      <section className="student-directory-kpis" aria-label="Resumen de alumnas">
-        <article className="student-directory-kpi is-active">
-          <span className="student-kpi-icon" aria-hidden="true">
-            ◎
-          </span>
-          <span>
-            <strong>{activeStudentsCount}</strong>
-            <small>Alumnas activas</small>
-          </span>
-        </article>
-        <article className="student-directory-kpi is-expiring">
-          <span className="student-kpi-icon" aria-hidden="true">
-            ◷
-          </span>
-          <span>
-            <strong>{expiringStudentsCount}</strong>
-            <small>Por vencer · 7 días</small>
-          </span>
-        </article>
-        <article className="student-directory-kpi is-expired">
-          <span className="student-kpi-icon" aria-hidden="true">
-            !
-          </span>
-          <span>
-            <strong>{expiredStudentsCount}</strong>
-            <small>Vencidas</small>
-          </span>
-        </article>
-        <article className="student-directory-kpi is-total">
-          <span className="student-kpi-icon" aria-hidden="true">
-            ◉
-          </span>
-          <span>
-            <strong>{allStudents?.length ?? 0}</strong>
-            <small>Total</small>
-          </span>
-        </article>
-      </section>
-
-      <nav className="student-directory-filters" aria-label="Filtrar alumnas">
-        {filters.map((filter) =>
-          filter.enabled ? (
-            <Link
-              key={filter.key}
-              href={filterHref(filter.key, query)}
-              className={`student-filter-chip${status === filter.key ? " is-active" : ""}`}
-            >
-              {filter.label}
-            </Link>
-          ) : (
-            <span
-              key={filter.key}
-              className="student-filter-chip is-future"
-              aria-disabled="true"
-              title={
-                filter.key === "expiring"
-                  ? "Se conectará a la regla configurable de paquete por vencer."
-                  : "Estado preparado para una fase futura."
-              }
-            >
-              {filter.label}
-            </span>
-          ),
-        )}
+      <nav className="student-directory-filters student-directory-crm-toolbar" aria-label="Filtrar alumnas">
+        {filters.filter((filter) => filter.enabled).map((filter) => (
+          <Link
+            key={filter.key}
+            href={filterHref(filter.key, query)}
+            className={`student-filter-chip${status === filter.key ? " is-active" : ""}`}
+          >
+            {filter.label}
+            {filter.key === "all" ? <small>{allStudents?.length ?? 0}</small> : null}
+            {filter.key === "active" ? <small>{activeStudentsCount}</small> : null}
+            {filter.key === "expiring" ? <small>{expiringStudentsCount}</small> : null}
+            {filter.key === "expired" ? <small>{expiredStudentsCount}</small> : null}
+          </Link>
+        ))}
       </nav>
 
       {params.created === "student" ? (
@@ -444,11 +425,7 @@ export default async function StudentsPage({
                     ? "Inactivas"
                     : status === "expiring"
                       ? "Por vencer"
-                      : status === "expired"
-                        ? "Vencidas"
-                        : status === "trial"
-                          ? "Prueba"
-                          : "Prospectos"}
+                      : "Vencidas"}
             </h2>
           </div>
           <span className="count-badge">{filteredStudents.length}</span>
@@ -481,10 +458,8 @@ export default async function StudentsPage({
                   ) : null}
                 </span>
                 <span className="student-directory-main">
-                  <strong>{student.full_name}</strong>
-                  <span className="student-directory-meta">
-                    {student.email || student.phone}
-                    {student.email && student.phone ? <small>{student.phone}</small> : null}
+                  <span className="student-directory-identity">
+                    <strong>{student.full_name}</strong>
                   </span>
                   {(() => {
                     const acquisition = currentAcquisitionFor(student.id);
@@ -494,35 +469,34 @@ export default async function StudentsPage({
                           !item.refunded_at && Boolean(item.expires_on && item.expires_on < today),
                       );
                       return (
-                        <span
-                          className={`student-package-summary${hasExpired ? " is-expired" : ""}`}
-                        >
+                        <span className={`student-package-summary${hasExpired ? " is-expired" : ""}`}>
                           <b>{hasExpired ? "Paquete vencido" : "Sin paquete activo"}</b>
                           <small>{hasExpired ? "Revisar renovación" : "Sin vigencia actual"}</small>
                         </span>
                       );
                     }
+                    const remaining = visibleBalanceMap.get(acquisition.id) ?? 0;
                     return (
-                      <span className="student-package-summary">
-                        <b>
-                          {productNameMap.get(acquisition.product_template_id) ?? "Paquete activo"}
-                        </b>
-                        <small>{shortDate(acquisition.expires_on)}</small>
+                      <span className="student-package-summary student-package-quick-summary">
+                        <b>{productNameMap.get(acquisition.product_template_id) ?? "Paquete activo"}</b>
+                        <span className="student-package-quick-facts">
+                          <small className="student-package-remaining">
+                            {acquisition.unlimited
+                              ? "Ilimitado"
+                              : remaining + " clases restantes"}
+                          </small>
+                          <small className="student-package-expiry">
+                            {acquisition.expires_on
+                              ? "Vence " + shortDate(acquisition.expires_on, studio.locale)
+                              : "Sin vencimiento"}
+                          </small>
+                        </span>
                       </span>
                     );
                   })()}
-                  {(() => {
-                    const relationshipStatus = relationshipStatusFor(student);
-                    const relationshipLabel = relationshipLabels[relationshipStatus] ?? relationshipStatus;
-                    return (
-                      <span
-                        className={`student-state-pill is-${relationshipStatus}`}
-                        aria-label={`Estado: ${relationshipLabel}`}
-                      >
-                        {relationshipLabel}
-                      </span>
-                    );
-                  })()}
+                  <span className={`student-state-pill is-${student.lifecycle_status === "inactive" ? "inactive" : "active"}`}>
+                    {lifecycleLabels[student.lifecycle_status] ?? student.lifecycle_status}
+                  </span>
                 </span>
                 <span className="student-directory-arrow" aria-hidden="true">
                   ›

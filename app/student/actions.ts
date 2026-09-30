@@ -6,18 +6,6 @@ import { redirect } from "next/navigation";
 
 import { getStudentPortalContext } from "@/lib/student/portal";
 
-const CANCELLATION_REASON_CODES = new Set([
-  "schedule_conflict",
-  "health",
-  "work_school",
-  "transport",
-  "price",
-  "lost_interest",
-  "booking_error",
-  "other",
-  "prefer_not_say",
-]);
-
 function errorCode(error: { message?: string } | null, fallback: string) {
   if (!error?.message) return fallback;
   const known = [
@@ -144,21 +132,16 @@ export async function joinStudentWaitlistInlineAction(sessionId: string) {
   };
 }
 
-export async function bookStudentSessionInlineAction(sessionId: string, useRewardCredits = false) {
+export async function bookStudentSessionInlineAction(sessionId: string) {
   const normalizedSessionId = sessionId.trim();
   if (!normalizedSessionId) {
     return { ok: false as const, error: "session_required" };
   }
 
   const { supabase } = await getStudentPortalContext();
-  const { data, error } = useRewardCredits
-    ? await supabase.rpc("student_book_session_with_reward_credits", {
-        target_session_id: normalizedSessionId,
-        target_resource_id: null,
-      })
-    : await supabase.rpc("student_book_session", {
-        target_session_id: normalizedSessionId,
-      });
+  const { data, error } = await supabase.rpc("student_book_session", {
+    target_session_id: normalizedSessionId,
+  });
 
   if (error) {
     return { ok: false as const, error: errorCode(error, "booking_failed") };
@@ -184,26 +167,20 @@ export async function bookStudentSessionAction(formData: FormData) {
   const sessionId = String(formData.get("session_id") ?? "").trim();
   const rawDate = String(formData.get("date") ?? "").trim();
   const resourceId = String(formData.get("resource_id") ?? "").trim() || null;
-  const useRewardCredits = String(formData.get("credit_source") ?? "") === "reward";
   const selectedDate = /^\d{4}-\d{2}-\d{2}$/.test(rawDate) ? rawDate : "";
   const dateQuery = selectedDate ? `&date=${encodeURIComponent(selectedDate)}` : "";
 
   if (!sessionId) redirect("/student/reservar?error=session_required");
 
   const { supabase } = await getStudentPortalContext();
-  const { data, error } = useRewardCredits
-    ? await supabase.rpc("student_book_session_with_reward_credits", {
+  const { data, error } = resourceId
+    ? await supabase.rpc("student_book_session_with_resource", {
         target_session_id: sessionId,
         target_resource_id: resourceId,
       })
-    : resourceId
-      ? await supabase.rpc("student_book_session_with_resource", {
-          target_session_id: sessionId,
-          target_resource_id: resourceId,
-        })
-      : await supabase.rpc("student_book_session", {
-          target_session_id: sessionId,
-        });
+    : await supabase.rpc("student_book_session", {
+        target_session_id: sessionId,
+      });
 
   if (error) {
     redirect(
@@ -238,12 +215,21 @@ export async function bookStudentSessionAction(formData: FormData) {
 }
 
 function normalizeGuestIdentityName(value: string) {
-  return value.trim().replace(/\s+/g, " ").toLocaleLowerCase("es-MX");
+  return value.trim().replace(/\s+/g, " ").toLowerCase();
 }
 
-function normalizeMexicanPhone(value: string) {
-  const digits = value.replace(/\D/g, "");
-  return digits.length === 10 ? `+52${digits}` : null;
+function normalizeGuestPhone(value: string, countryCallingCode: string) {
+  const trimmed = value.trim();
+
+  if (trimmed.startsWith("+")) {
+    const digits = trimmed.replace(/\D/g, "");
+    const international = `+${digits}`;
+    return /^\+[1-9][0-9]{7,14}$/.test(international) ? international : null;
+  }
+
+  const nationalDigits = trimmed.replace(/\D/g, "");
+  const candidate = `${countryCallingCode}${nationalDigits}`;
+  return /^\+[1-9][0-9]{7,14}$/.test(candidate) ? candidate : null;
 }
 
 export async function createGuestInvitationAction(formData: FormData) {
@@ -254,11 +240,14 @@ export async function createGuestInvitationAction(formData: FormData) {
   if (!reservationId) redirect("/student/mis-clases?error=reservation_required");
 
   const detailPath = `/student/mis-clases/${reservationId}`;
-  const guestPhone = normalizeMexicanPhone(guestPhoneInput);
+  const { supabase, studio } = await getStudentPortalContext();
+  const guestPhone = normalizeGuestPhone(
+    guestPhoneInput,
+    studio.phone_country_calling_code,
+  );
   if (!guestPhone) {
     redirect(`${detailPath}?invite=1&invite_error=guest_phone_invalid`);
   }
-  const { supabase } = await getStudentPortalContext();
   const { data: lookupData, error: lookupError } = await supabase.rpc(
     "student_guest_invitation_contact_lookup",
     { target_guest_phone: guestPhone },
@@ -449,12 +438,9 @@ export async function cancelGuestInvitationAction(formData: FormData) {
 
 export async function cancelStudentReservationAction(formData: FormData) {
   const reservationId = String(formData.get("reservation_id") ?? "").trim();
-  const reason = String(formData.get("reason") ?? "").trim();
+  const reason = String(formData.get("reason") ?? "").trim() || null;
   const returnPath = cancellationReturnPath(formData);
   if (!reservationId) redirect(`${returnPath}?error=reservation_required`);
-  if (!CANCELLATION_REASON_CODES.has(reason)) {
-    redirect(`/student/mis-clases/${reservationId}/cancelar?error=cancel_reason_required`);
-  }
 
   const { supabase } = await getStudentPortalContext();
   const { data: previewData } = await supabase.rpc("student_cancellation_preview", {
@@ -605,23 +591,33 @@ export async function createMercadoPagoOrderAction(
   };
 }
 
-export async function finalizeStudentAvatarAction(avatarPath: string) {
-  const { supabase, user, snapshot } = await getStudentPortalContext();
-  const expectedAvatarPath = `${user.id}/avatar`;
-
-  if (avatarPath.trim() !== expectedAvatarPath) {
-    return { ok: false as const, error: "invalid_avatar_path" };
+export async function updateStudentAvatarAction(formData: FormData) {
+  const file = formData.get("avatar");
+  if (!(file instanceof File) || file.size <= 0) {
+    redirect("/student/perfil?avatar_error=missing");
   }
 
-  const { data: uploadedObjects, error: storageError } = await supabase.storage
+  if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+    redirect("/student/perfil?avatar_error=type");
+  }
+
+  if (file.size > 5 * 1024 * 1024) {
+    redirect("/student/perfil?avatar_error=size");
+  }
+
+  const { supabase, user, snapshot } = await getStudentPortalContext();
+  const avatarPath = `${user.id}/avatar`;
+
+  const { error: uploadError } = await supabase.storage
     .from("profile-avatars")
-    .list(user.id, {
-      limit: 1,
-      search: "avatar",
+    .upload(avatarPath, file, {
+      cacheControl: "3600",
+      contentType: file.type,
+      upsert: true,
     });
 
-  if (storageError || !uploadedObjects?.some((object) => object.name === "avatar")) {
-    return { ok: false as const, error: "avatar_upload_missing" };
+  if (uploadError) {
+    redirect("/student/perfil?avatar_error=upload");
   }
 
   const { error: profileError } = await supabase.from("profiles").upsert(
@@ -629,21 +625,18 @@ export async function finalizeStudentAvatarAction(avatarPath: string) {
       id: user.id,
       full_name: snapshot.profile.full_name,
       phone: snapshot.profile.phone,
-      avatar_url: expectedAvatarPath,
+      avatar_url: avatarPath,
       updated_at: new Date().toISOString(),
     },
     { onConflict: "id" },
   );
 
   if (profileError) {
-    return { ok: false as const, error: "avatar_profile_update_failed" };
+    redirect("/student/perfil?avatar_error=profile");
   }
 
-  revalidatePath("/student");
   revalidatePath("/student/perfil");
-  revalidatePath("/student/recompensas");
-
-  return { ok: true as const };
+  redirect("/student/perfil?avatar=updated");
 }
 
 export async function updateStudentProfileAction(formData: FormData) {

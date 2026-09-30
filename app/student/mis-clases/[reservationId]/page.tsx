@@ -60,7 +60,7 @@ type CheckInTokenData = {
 
 const inviteErrorCopy: Record<string, string> = {
   guest_name_required: "Escribe el nombre completo de tu invitado.",
-  guest_phone_invalid: "Escribe un número de teléfono de 10 dígitos.",
+  guest_phone_invalid: "Escribe un teléfono válido en formato local o internacional.",
   no_invites_remaining: "Ya utilizaste las invitaciones disponibles de este mes.",
   session_full: "Ya no hay un cupo adicional disponible para tu invitado.",
   session_not_bookable: "Esta clase ya no admite invitaciones.",
@@ -204,7 +204,7 @@ export default async function StudentReservationDetailPage({
           </div>
 
           <p className="mt-3 text-sm font-medium text-zinc-200">
-            {formatDateTime(item.starts_at, studio.timezone)}
+            {formatDateTime(item.starts_at, studio.timezone, studio.locale)}
           </p>
         </div>
 
@@ -221,25 +221,6 @@ export default async function StudentReservationDetailPage({
           </div>
         </dl>
       </section>
-
-      {item.status === "cancelled_by_studio" && item.cancellation_reason ? (
-        <section className="space-y-2 rounded-3xl border border-rose-500/20 bg-rose-500/[0.055] p-4">
-          <div>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-rose-300">
-              Motivo de cancelación
-            </p>
-            <p className="mt-1.5 text-sm leading-6 text-zinc-200">{item.cancellation_reason}</p>
-          </div>
-          {item.credit_restored ? (
-            <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.07] px-3 py-2.5">
-              <p className="text-xs font-semibold text-emerald-300">✓ Crédito restaurado</p>
-              <p className="mt-0.5 text-[10px] text-zinc-500">
-                El crédito fue devuelto automáticamente a tu paquete.
-              </p>
-            </div>
-          ) : null}
-        </section>
-      ) : null}
 
       {checkIn?.ok && checkIn.token ? (
         <section
@@ -408,7 +389,7 @@ export default async function StudentReservationDetailPage({
             <div className="mt-4 rounded-2xl border border-white/10 bg-black/20 p-3">
               <p className="text-sm font-semibold text-white">{item.activity}</p>
               <p className="mt-1 text-xs text-zinc-400">
-                {formatDateTime(item.starts_at, studio.timezone)}
+                {formatDateTime(item.starts_at, studio.timezone, studio.locale)}
               </p>
               <p className="mt-0.5 text-[11px] text-zinc-500">{item.space ?? "Estudio"}</p>
             </div>
@@ -485,12 +466,10 @@ export default async function StudentReservationDetailPage({
                     name="guest_phone"
                     type="tel"
                     required
-                    inputMode="numeric"
-                    pattern="[0-9]{10}"
-                    minLength={10}
-                    maxLength={10}
+                    inputMode="tel"
+                    maxLength={20}
                     className="mt-1.5 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-3 text-sm text-white outline-none focus:border-fuchsia-500/60"
-                    placeholder="3312345678"
+                    placeholder="3312345678 o +523312345678"
                   />
                   <span className="mt-1 block text-[10px] text-zinc-600">
                     Escribe los 10 dígitos. Agregamos el código de país automáticamente.

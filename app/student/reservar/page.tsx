@@ -11,7 +11,6 @@ import BookingEligibilityRefresh from "./BookingEligibilityRefresh";
 import PurchaseSingleClassButton from "./PurchaseSingleClassButton";
 import { QuickBookButton } from "./quick-book-button";
 import { BookingRestrictionCard } from "./BookingRestrictionCard";
-import { HolidayNotice, type StudentHolidaySnapshot } from "./HolidayNotice";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -34,30 +33,30 @@ function startOfWeek(value: string) {
   return date.toISOString().slice(0, 10);
 }
 
-function dateChip(value: string) {
+function dateChip(value: string, locale: string) {
   const date = new Date(`${value}T12:00:00Z`);
   return {
-    weekday: new Intl.DateTimeFormat("es-MX", {
+    weekday: new Intl.DateTimeFormat(locale, {
       weekday: "short",
       timeZone: "UTC",
     }).format(date),
-    day: new Intl.DateTimeFormat("es-MX", {
+    day: new Intl.DateTimeFormat(locale, {
       day: "numeric",
       timeZone: "UTC",
     }).format(date),
   };
 }
 
-function shortDate(value: string) {
-  return new Intl.DateTimeFormat("es-MX", {
+function shortDate(value: string, locale: string) {
+  return new Intl.DateTimeFormat(locale, {
     day: "numeric",
     month: "short",
     timeZone: "UTC",
   }).format(new Date(`${value}T12:00:00Z`));
 }
 
-function longDate(value: string) {
-  return new Intl.DateTimeFormat("es-MX", {
+function longDate(value: string, locale: string) {
+  return new Intl.DateTimeFormat(locale, {
     weekday: "long",
     day: "numeric",
     month: "long",
@@ -65,8 +64,8 @@ function longDate(value: string) {
   }).format(new Date(`${value}T12:00:00Z`));
 }
 
-function timeOnly(value: string, timeZone: string) {
-  return new Intl.DateTimeFormat("es-MX", {
+function timeOnly(value: string, timeZone: string, locale: string) {
+  return new Intl.DateTimeFormat(locale, {
     timeZone,
     hour: "numeric",
     minute: "2-digit",
@@ -82,13 +81,6 @@ type StudentWaitlistItem = {
 
 type RewardStatusSnapshot = {
   level_title?: string | null;
-};
-
-type HolidayWeekItem = {
-  holiday_date: string;
-  name: string;
-  theme_key: string;
-  operation_mode: "normal" | "closed" | "special";
 };
 
 function statusClass(session: StudentSession, waitlisted = false) {
@@ -117,11 +109,9 @@ function statusCopy(session: StudentSession, waitlisted = false) {
 export default async function StudentReservePage({
   searchParams,
 }: {
-  searchParams: Promise<{ date?: string; error?: string; credit?: string }>;
+  searchParams: Promise<{ date?: string; error?: string }>;
 }) {
   const query = await searchParams;
-  const rewardMode = query.credit === "reward";
-  const rewardSuffix = rewardMode ? "&credit=reward" : "";
   const { supabase, studio, membership } = await getStudentPortalContext();
   const { data: globalRestrictionData } = await supabase.rpc(
     "student_booking_restrictions_snapshot",
@@ -141,38 +131,11 @@ export default async function StudentReservePage({
   const previousWeekDate = addDays(selectedDate, -7);
   const nextWeekDate = addDays(selectedDate, 7);
 
-  const [{ data: sessions, error }, { data: selectedHolidayData }, { data: holidayWeekData }] =
-    await Promise.all([
-      supabase.rpc("student_schedule_feed", {
-        target_start: selectedDate,
-        target_end: selectedDate,
-        target_discipline_id: null,
-      }),
-      supabase.rpc("student_holiday_snapshot", { target_date: selectedDate }),
-      supabase.rpc("student_holiday_week_snapshot", {
-        target_start: weekStart,
-        target_end: weekEnd,
-      }),
-    ]);
-
-  const selectedHolidayBase = (selectedHolidayData as StudentHolidaySnapshot | null) ?? null;
-  const selectedHoliday = selectedHolidayBase
-    ? {
-        ...selectedHolidayBase,
-        hero_image_url: selectedHolidayBase.hero_image_path
-          ? supabase.storage
-              .from("holiday-artwork")
-              .getPublicUrl(selectedHolidayBase.hero_image_path).data.publicUrl
-          : null,
-        message_image_url: selectedHolidayBase.message_image_path
-          ? supabase.storage
-              .from("holiday-artwork")
-              .getPublicUrl(selectedHolidayBase.message_image_path).data.publicUrl
-          : null,
-      }
-    : null;
-  const holidayWeekItems = (holidayWeekData ?? []) as HolidayWeekItem[];
-  const holidayByDate = new Map(holidayWeekItems.map((holiday) => [holiday.holiday_date, holiday]));
+  const { data: sessions, error } = await supabase.rpc("student_schedule_feed", {
+    target_start: selectedDate,
+    target_end: selectedDate,
+    target_discipline_id: null,
+  });
 
   const baseItems = (sessions ?? []) as StudentSession[];
   const sessionIds = baseItems.map((item) => item.session_id);
@@ -240,17 +203,8 @@ export default async function StudentReservePage({
       {globalRestrictions.length ? (
         <BookingRestrictionCard
           restrictions={globalRestrictions}
-          returnTo={`/student/reservar?date=${selectedDate}${rewardSuffix}`}
+          returnTo={`/student/reservar?date=${selectedDate}`}
         />
-      ) : null}
-
-      {rewardMode ? (
-        <section className="rounded-2xl border border-emerald-400/35 bg-emerald-400/[0.07] px-4 py-3">
-          <p className="text-xs font-semibold text-emerald-200">Usando créditos extra</p>
-          <p className="mt-1 text-[11px] leading-5 text-zinc-400">
-            Las reservas que confirmes desde este flujo se cobrarán del saldo premio disponible.
-          </p>
-        </section>
       ) : null}
 
       <section
@@ -260,7 +214,7 @@ export default async function StudentReservePage({
         <div className="mb-3 flex items-center justify-between gap-3">
           {weekStart > currentWeekStart ? (
             <Link
-              href={`/student/reservar?date=${previousWeekDate < today ? today : previousWeekDate}${rewardSuffix}`}
+              href={`/student/reservar?date=${previousWeekDate < today ? today : previousWeekDate}`}
               aria-label="Semana anterior"
               className="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-black/20 text-lg text-white transition hover:bg-white/[0.06]"
             >
@@ -276,11 +230,11 @@ export default async function StudentReservePage({
           )}
 
           <p className="text-center text-xs font-medium capitalize text-zinc-300">
-            {shortDate(weekStart)} – {shortDate(weekEnd)}
+            {shortDate(weekStart, studio.locale)} – {shortDate(weekEnd, studio.locale)}
           </p>
 
           <Link
-            href={`/student/reservar?date=${nextWeekDate}${rewardSuffix}`}
+            href={`/student/reservar?date=${nextWeekDate}`}
             aria-label="Semana siguiente"
             className="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-black/20 text-lg text-white transition hover:bg-white/[0.06]"
           >
@@ -290,34 +244,21 @@ export default async function StudentReservePage({
 
         <div className="grid grid-cols-7 gap-1.5">
           {days.map((day) => {
-            const chip = dateChip(day);
+            const chip = dateChip(day, studio.locale);
             const isPast = day < today;
             const isSelected = day === selectedDate;
-            const holiday = holidayByDate.get(day);
-            const className = `relative rounded-2xl px-1 py-2.5 text-center transition ${
+            const className = `rounded-2xl px-1 py-2.5 text-center transition ${
               isSelected
                 ? "bg-fuchsia-600 text-white shadow-[0_0_24px_rgba(255,10,138,0.18)]"
                 : isPast
                   ? "border border-white/5 bg-black/10 text-zinc-700"
                   : "border border-white/10 bg-black/20 text-zinc-400 hover:border-fuchsia-500/25 hover:text-white"
-            } ${holiday ? "ring-1 ring-inset ring-fuchsia-500/20" : ""}`;
+            }`;
 
             const dateContent = (
               <>
                 <span className="block text-[10px] capitalize">{chip.weekday}</span>
                 <strong className="mt-0.5 block text-sm">{chip.day}</strong>
-                {holiday ? (
-                  <span
-                    className={`mx-auto mt-1 block h-1.5 w-1.5 rounded-full ${
-                      holiday.operation_mode === "special"
-                        ? "bg-sky-400"
-                        : holiday.operation_mode === "closed"
-                          ? "bg-fuchsia-500"
-                          : "bg-emerald-400"
-                    }`}
-                    title={holiday.name}
-                  />
-                ) : null}
               </>
             );
 
@@ -328,7 +269,7 @@ export default async function StudentReservePage({
             ) : (
               <Link
                 key={day}
-                href={`/student/reservar?date=${day}${rewardSuffix}`}
+                href={`/student/reservar?date=${day}`}
                 aria-current={isSelected ? "date" : undefined}
                 className={className}
               >
@@ -339,16 +280,14 @@ export default async function StudentReservePage({
         </div>
       </section>
 
-      {selectedHoliday ? <HolidayNotice holiday={selectedHoliday} /> : null}
-
-      {selectedHoliday?.operation_mode === "closed" ? null : query.error || error ? (
+      {query.error || error ? (
         <section className="rounded-3xl border border-rose-500/25 bg-rose-500/[0.08] p-5 text-center">
           <h2 className="text-base font-semibold text-white">No pudimos cargar las clases</h2>
           <p className="mt-1.5 text-xs leading-5 text-zinc-400">
             Conservamos la fecha seleccionada. Intenta nuevamente.
           </p>
           <Link
-            href={`/student/reservar?date=${selectedDate}${rewardSuffix}`}
+            href={`/student/reservar?date=${selectedDate}`}
             className="mt-4 inline-flex min-h-10 items-center justify-center rounded-xl bg-fuchsia-600 px-4 py-2 text-xs font-semibold text-white"
           >
             Intentar de nuevo
@@ -362,7 +301,7 @@ export default async function StudentReservePage({
                 Clases del día
               </p>
               <h2 className="mt-0.5 text-base font-semibold capitalize text-white">
-                {longDate(selectedDate)}
+                {longDate(selectedDate, studio.locale)}
               </h2>
             </div>
             {items.length ? (
@@ -374,7 +313,7 @@ export default async function StudentReservePage({
 
           {items.length ? (
             items.map((session) => {
-              const timeLabel = timeOnly(session.starts_at, studio.timezone);
+              const timeLabel = timeOnly(session.starts_at, studio.timezone, studio.locale);
               const eligible = Boolean(session.eligibility?.eligible);
               const reserved = Boolean(session.is_reserved);
               const waitlisted = waitlistedSessionIds.has(session.session_id);
@@ -392,7 +331,9 @@ export default async function StudentReservePage({
                   "outside_product",
                   "outside_product_schedule",
                   "no_credits",
-                ].includes(session.eligibility?.reason_code ?? "");
+                ].includes(
+                  session.eligibility?.reason_code ?? "",
+                );
 
               return (
                 <article
@@ -411,7 +352,7 @@ export default async function StudentReservePage({
                     </div>
 
                     <Link
-                      href={`/student/reservar/${session.session_id}?date=${selectedDate}${rewardSuffix}`}
+                      href={`/student/reservar/${session.session_id}?date=${selectedDate}`}
                       className="min-w-0 border-l border-white/10 pl-3"
                     >
                       <p className="truncate text-sm font-semibold text-white">
@@ -428,7 +369,7 @@ export default async function StudentReservePage({
                     </Link>
 
                     <Link
-                      href={`/student/reservar/${session.session_id}?date=${selectedDate}${rewardSuffix}`}
+                      href={`/student/reservar/${session.session_id}?date=${selectedDate}`}
                       aria-label={`Ver detalles de ${session.activity}`}
                       className="flex items-center gap-2"
                     >
@@ -455,9 +396,9 @@ export default async function StudentReservePage({
                           </p>
                           <p className="mt-0.5 text-[10px] text-zinc-500">
                             Clase suelta ·{" "}
-                            {new Intl.NumberFormat("es-MX", {
+                            {new Intl.NumberFormat(studio.locale, {
                               style: "currency",
-                              currency: "MXN",
+                              currency: studio.currency,
                               maximumFractionDigits: 0,
                             }).format((dropInPriceMinor ?? 0) / 100)}
                           </p>
@@ -471,9 +412,9 @@ export default async function StudentReservePage({
                           </Link>
                           <PurchaseSingleClassButton
                             sessionId={session.session_id}
-                            priceLabel={new Intl.NumberFormat("es-MX", {
+                            priceLabel={new Intl.NumberFormat(studio.locale, {
                               style: "currency",
-                              currency: "MXN",
+                              currency: studio.currency,
                               maximumFractionDigits: 0,
                             }).format((dropInPriceMinor ?? 0) / 100)}
                           />
@@ -492,7 +433,6 @@ export default async function StudentReservePage({
                           waitlisted={waitlisted}
                           levelTitle={levelTitle}
                           requiresResource={session.requires_resource}
-                          useRewardCredits={rewardMode}
                         />
                       </div>
                     )}

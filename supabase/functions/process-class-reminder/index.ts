@@ -54,6 +54,7 @@ function formatReminderVariables(input: {
   discipline: string;
   startsAt: string;
   timeZone: string;
+  locale?: string;
   coach: string | null;
   location: string | null;
 }) {
@@ -63,13 +64,13 @@ function formatReminderVariables(input: {
   return {
     nombre: input.studentName.trim() || "Alumna",
     disciplina: input.discipline.trim(),
-    fecha: new Intl.DateTimeFormat("es-MX", {
+    fecha: new Intl.DateTimeFormat(input.locale || "es-MX", {
       timeZone: input.timeZone,
       day: "2-digit",
       month: "2-digit",
       year: "numeric",
     }).format(startsAt),
-    hora: new Intl.DateTimeFormat("es-MX", {
+    hora: new Intl.DateTimeFormat(input.locale || "es-MX", {
       timeZone: input.timeZone,
       hour: "2-digit",
       minute: "2-digit",
@@ -108,7 +109,7 @@ async function loadContext(adminClient: SupabaseClient, reservationId: string) {
       .maybeSingle(),
     adminClient
       .from("studios")
-      .select("id,name,timezone")
+      .select("id,name,timezone,locale")
       .eq("id", reservation.studio_id)
       .maybeSingle(),
   ]);
@@ -276,6 +277,7 @@ const handler = {
       discipline: contextData.discipline?.name ?? contextData.template?.name ?? "",
       startsAt: contextData.session?.starts_at ?? new Date().toISOString(),
       timeZone: contextData.studio?.timezone ?? "UTC",
+      locale: contextData.studio?.locale ?? "es-MX",
       coach: contextData.coach,
       location: contextData.location,
     });

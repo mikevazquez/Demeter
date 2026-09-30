@@ -17,6 +17,7 @@ export interface ReservationConfirmedVariableInput {
   discipline: string;
   startsAt: string;
   timeZone: string;
+  locale?: string;
   coach: string | null;
   location: string | null;
   creditsRemaining: number | null;
@@ -155,14 +156,14 @@ export function buildReservationConfirmedVariables(
     throw new Error("reservation_confirmed_invalid_start_time");
   }
 
-  const date = new Intl.DateTimeFormat("es-MX", {
+  const date = new Intl.DateTimeFormat(input.locale || "es-MX", {
     timeZone: input.timeZone,
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
   }).format(startsAt);
 
-  const time = new Intl.DateTimeFormat("es-MX", {
+  const time = new Intl.DateTimeFormat(input.locale || "es-MX", {
     timeZone: input.timeZone,
     hour: "2-digit",
     minute: "2-digit",

@@ -7,6 +7,7 @@ export const META_WHATSAPP_TEMPLATE_KEYS = [
   "waitlist_promoted",
   "class_reminder",
   "class_cancelled_coach",
+  "demeter_reserva_confirmada_qr_v3",
 ] as const;
 
 export type MetaWhatsAppTemplateKey = (typeof META_WHATSAPP_TEMPLATE_KEYS)[number];
@@ -24,6 +25,7 @@ const PARAMETER_ORDER: Record<MetaWhatsAppTemplateKey, readonly string[]> = {
   ],
   waitlist_promoted: ["nombre", "disciplina", "fecha", "hora", "coach", "ubicacion"],
   class_reminder: ["nombre", "disciplina", "fecha", "hora", "coach", "ubicacion"],
+  demeter_reserva_confirmada_qr_v3: ["nombre", "disciplina", "fecha", "hora", "coach", "ubicacion"],
   class_cancelled_coach: [
     "coach",
     "clase",
@@ -68,6 +70,7 @@ export function buildMetaWhatsAppTemplatePayload(input: {
   metaTemplateName: string;
   languageCode: string;
   variables: Record<string, unknown>;
+  headerMediaId?: string | null;
 }) {
   const mapped =
     input.internalTemplate === "student_welcome"
@@ -78,7 +81,7 @@ export function buildMetaWhatsAppTemplatePayload(input: {
               ? input.variables.recipient_name.trim()
               : "Alumna",
         }
-      : buildAsistianVariables(input.internalTemplate, input.variables);
+      : buildAsistianVariables(input.internalTemplate === "demeter_reserva_confirmada_qr_v3" ? "reservation_confirmed" : input.internalTemplate, input.variables);
   const parameters = PARAMETER_ORDER[input.internalTemplate].map((key) => ({
     type: "text" as const,
     text: asTemplateText(mapped[key]),
@@ -97,10 +100,8 @@ export function buildMetaWhatsAppTemplatePayload(input: {
       ...(parameters.length
         ? {
             components: [
-              {
-                type: "body" as const,
-                parameters,
-              },
+              ...(input.headerMediaId ? [{ type: "header" as const, parameters: [{ type: "image" as const, image: { id: input.headerMediaId } }] }] : []),
+              { type: "body" as const, parameters },
             ],
           }
         : {}),

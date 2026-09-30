@@ -1,81 +1,91 @@
 import Link from "next/link";
-import { createInitialOwnerAccount } from "@/app/auth/actions";
+import { redirect } from "next/navigation";
 
-export default async function SetupPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ error?: string; created?: string }>;
-}) {
-  const { error, created } = await searchParams;
+import { createClient } from "@/lib/supabase/server";
+import { ProvisionStudioForm, type ProvisionPlanOption } from "./ProvisionStudioForm";
+
+export default async function SetupPage() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) redirect("/login/studio");
+
+  const { data: platformAdmin } = await supabase
+    .from("platform_admins")
+    .select("user_id")
+    .eq("user_id", user.id)
+    .eq("active", true)
+    .maybeSingle();
+
+  if (!platformAdmin) redirect("/");
+
+  const [{ data: plans }, { data: planModules }, { data: modules }] = await Promise.all([
+    supabase
+      .from("saas_plans")
+      .select("id,plan_key,name,description,sort_order")
+      .eq("active", true)
+      .eq("internal_only", false)
+      .order("sort_order")
+      .order("name"),
+    supabase
+      .from("saas_plan_modules")
+      .select("plan_id,module_key,enabled")
+      .eq("enabled", true),
+    supabase
+      .from("saas_modules")
+      .select("module_key,name,sort_order")
+      .eq("active", true)
+      .order("sort_order"),
+  ]);
+
+  const moduleByKey = new Map(
+    (modules ?? []).map((module) => [module.module_key, module.name]),
+  );
+  const moduleOrder = new Map(
+    (modules ?? []).map((module) => [module.module_key, module.sort_order]),
+  );
+  const modulesByPlan = new Map<string, string[]>();
+
+  for (const item of planModules ?? []) {
+    const rows = modulesByPlan.get(item.plan_id) ?? [];
+    rows.push(item.module_key);
+    modulesByPlan.set(item.plan_id, rows);
+  }
+
+  const planOptions: ProvisionPlanOption[] = (plans ?? []).map((plan) => ({
+    planKey: plan.plan_key,
+    name: plan.name,
+    description: plan.description,
+    moduleNames: (modulesByPlan.get(plan.id) ?? [])
+      .sort(
+        (left, right) =>
+          (moduleOrder.get(left) ?? 999) - (moduleOrder.get(right) ?? 999),
+      )
+      .map((moduleKey) => moduleByKey.get(moduleKey) ?? moduleKey),
+  }));
 
   return (
     <main className="auth-shell">
       <section className="auth-card">
-        <Link className="back-link" href="/">
-          ← Inicio
-        </Link>
-        <p className="eyebrow">CONFIGURACIÓN INICIAL</p>
-        <h1 className="auth-title">Cuenta propietaria</h1>
+        <div className="flex items-center justify-between gap-3">
+          <Link className="back-link" href="/admin">
+            ← Administración
+          </Link>
+          <Link className="back-link" href="/setup/planes">
+            Administrar planes →
+          </Link>
+        </div>
+
+        <p className="eyebrow">STUDIO FLOW · INTERNO</p>
+        <h1 className="auth-title">Crear estudio</h1>
         <p className="auth-copy">
-          Crea la primera cuenta de administración. Después de crearla, se asignará manualmente como
-          propietaria de Demeter y esta ruta se retirará.
+          Provisiona un tenant nuevo con owner, sede principal, sala, configuración base y plan
+          comercial. Esta herramienta solo está disponible para administración de plataforma.
         </p>
 
-        {created === "1" ? (
-          <div className="notice success">
-            Cuenta creada. Si Supabase te envió un correo de confirmación, confírmalo. Después
-            vuelve aquí al chat para asignarte el rol de propietario.
-          </div>
-        ) : null}
-        {error === "invalid" ? (
-          <div className="notice error">
-            Completa todos los campos y usa una contraseña de al menos 8 caracteres.
-          </div>
-        ) : null}
-        {error === "signup" ? (
-          <div className="notice error">
-            No se pudo crear la cuenta. Puede que el correo ya exista.
-          </div>
-        ) : null}
-
-        {created !== "1" ? (
-          <form action={createInitialOwnerAccount} className="auth-form">
-            <label>
-              Nombre
-              <input
-                name="full_name"
-                type="text"
-                autoComplete="name"
-                required
-                placeholder="Tu nombre"
-              />
-            </label>
-            <label>
-              Correo
-              <input
-                name="email"
-                type="email"
-                autoComplete="email"
-                required
-                placeholder="tu@correo.com"
-              />
-            </label>
-            <label>
-              Contraseña
-              <input
-                name="password"
-                type="password"
-                autoComplete="new-password"
-                minLength={8}
-                required
-                placeholder="Mínimo 8 caracteres"
-              />
-            </label>
-            <button className="primary-button" type="submit">
-              Crear cuenta propietaria
-            </button>
-          </form>
-        ) : null}
+        <ProvisionStudioForm plans={planOptions} />
       </section>
     </main>
   );

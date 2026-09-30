@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { STUDIO_MODULES } from "@/lib/auth/modules";
 import { formatDateTime } from "@/lib/student/portal";
 import {
   conditionProgress,
@@ -18,13 +19,16 @@ import {
 import { ProgressBar, RewardsEmpty, SectionHeading, StateChip, SummaryTile } from "./components";
 import { MedalsAccessUnlocked, RewardsOnboardingActivation } from "./OnboardingActivation";
 
-function rewardLabelFromDefinition(value: unknown) {
+function rewardLabelFromDefinition(
+  value: unknown,
+  regional: { currency: string; locale: string },
+) {
   const definition = rewardObject(value);
   const rewards = Array.isArray(definition.rewards) ? definition.rewards : null;
 
   if (rewards && rewards.length === 0) return null;
   if (!rewards && Object.keys(definition).length === 0) return null;
-  return rewardDefinitionLabel(value);
+  return rewardDefinitionLabel(value, regional);
 }
 
 function plural(count: number, singular: string, pluralValue: string) {
@@ -45,8 +49,10 @@ export default async function StudentProgressPage() {
         onboarding={ctx.onboarding}
         upcomingClass={upcomingClass}
         timeZone={ctx.studio.timezone}
+        locale={ctx.studio.locale}
         studioId={ctx.membership.studio_id}
         studioName={ctx.studio.name}
+        notificationsEnabled={ctx.hasModule(STUDIO_MODULES.NOTIFICATIONS)}
       />
     );
   }
@@ -56,7 +62,7 @@ export default async function StudentProgressPage() {
     !ctx.onboarding.access_acknowledged_at &&
     ctx.onboarding.access_method !== "legacy"
   ) {
-    return <MedalsAccessUnlocked />;
+    return <MedalsAccessUnlocked studioName={ctx.studio.name} />;
   }
 
   const activePrograms = ctx.programParticipations
@@ -148,7 +154,10 @@ export default async function StudentProgressPage() {
         missing: exactMissingLabel(item.conditions),
         deadline: item.cycle?.window_end_at ?? null,
         reward: item.ruleVersion
-          ? rewardLabelFromDefinition(item.ruleVersion.reward_definition)
+          ? rewardLabelFromDefinition(item.ruleVersion.reward_definition, {
+          currency: ctx.studio.currency,
+          locale: ctx.studio.locale,
+        })
           : null,
       })),
     ...activeChallenges.map((item) => ({
@@ -159,7 +168,10 @@ export default async function StudentProgressPage() {
       percent: item.percent,
       missing: exactMissingLabel(item.conditions),
       deadline: item.cycle?.window_end_at ?? item.rule?.scheduled_end_at ?? null,
-      reward: item.version ? rewardLabelFromDefinition(item.version.reward_definition) : null,
+      reward: item.version ? rewardLabelFromDefinition(item.version.reward_definition, {
+          currency: ctx.studio.currency,
+          locale: ctx.studio.locale,
+        }) : null,
     })),
   ]
     .filter((item) => item.percent < 100)
@@ -191,13 +203,13 @@ export default async function StudentProgressPage() {
     <main className="space-y-5 pb-4">
       <header>
         <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-fuchsia-300">
-          Rewards
+          Mi progreso
         </p>
         <h1 className="mt-1 text-3xl font-semibold tracking-tight text-white sm:text-4xl">
-          Rewards
+          Mi progreso
         </h1>
         <p className="mt-1.5 text-sm text-zinc-400">
-          Consulta tus programas de fidelidad, logros y recompensas.
+          Sigue tus metas, rachas, logros y recompensas.
         </p>
       </header>
 
@@ -291,7 +303,7 @@ export default async function StudentProgressPage() {
 
             {nearest.deadline ? (
               <p className="mt-3 text-xs text-zinc-400">
-                Límite: {formatDateTime(nearest.deadline, ctx.studio.timezone)}
+                Límite: {formatDateTime(nearest.deadline, ctx.studio.timezone, ctx.studio.locale)}
               </p>
             ) : null}
 
@@ -369,7 +381,10 @@ export default async function StudentProgressPage() {
           <div className="space-y-2">
             {activeChallenges.map((item) => {
               const reward = item.version
-                ? rewardLabelFromDefinition(item.version.reward_definition)
+                ? rewardLabelFromDefinition(item.version.reward_definition, {
+          currency: ctx.studio.currency,
+          locale: ctx.studio.locale,
+        })
                 : null;
 
               return (
@@ -398,7 +413,7 @@ export default async function StudentProgressPage() {
                   </div>
                   {item.cycle?.window_end_at ? (
                     <p className="mt-2 text-[11px] text-zinc-500">
-                      Termina {formatDateTime(item.cycle.window_end_at, ctx.studio.timezone)}
+                      Termina {formatDateTime(item.cycle.window_end_at, ctx.studio.timezone, ctx.studio.locale)}
                     </p>
                   ) : null}
                   {reward ? (
@@ -492,11 +507,14 @@ export default async function StudentProgressPage() {
                     Disponible
                   </p>
                   <strong className="mt-1 block truncate text-sm text-white">
-                    {rewardBenefitLabel(reward)}
+                    {rewardBenefitLabel(reward, {
+                    currency: ctx.studio.currency,
+                    locale: ctx.studio.locale,
+                  })}
                   </strong>
                   {reward.expires_at ? (
                     <span className="mt-1 block text-[11px] text-zinc-500">
-                      Vence {formatDateTime(reward.expires_at, ctx.studio.timezone)}
+                      Vence {formatDateTime(reward.expires_at, ctx.studio.timezone, ctx.studio.locale)}
                     </span>
                   ) : null}
                 </div>

@@ -42,7 +42,7 @@ function benefitCopy(level: MedalRow) {
     items.push("Acceso anticipado a inscripciones y promociones");
   }
   if (level.level_key === "diamond") {
-    items.push("Experiencias premium de Demeter");
+    items.push("Experiencias premium del estudio");
   }
   return items;
 }

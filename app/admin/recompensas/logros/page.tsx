@@ -83,7 +83,7 @@ export default async function AchievementsPage() {
                   {conditionsLabel(version?.condition_definition)}
                 </p>
                 <p className="mt-3 text-xs font-semibold text-zinc-500">
-                  {rewardDefinitionLabel(version?.reward_definition)}
+                  {rewardDefinitionLabel(version?.reward_definition, ctx.studio.locale, ctx.studio.currency)}
                 </p>
               </Link>
             );

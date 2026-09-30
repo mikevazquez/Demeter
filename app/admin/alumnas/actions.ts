@@ -62,6 +62,9 @@ export async function createStudent(formData: FormData) {
       errorRedirect("phone_exists");
     }
     if (error.message.includes("phone_invalid")) errorRedirect("phone_invalid");
+    if (error.message.includes("plan_limit_exceeded")) {
+      errorRedirect("plan_limit_active_students");
+    }
     errorRedirect("student_create_failed");
   }
 
@@ -88,7 +91,12 @@ export async function setStudentLifecycle(formData: FormData) {
     p_status: nextStatus,
   });
 
-  if (error) errorRedirect("lifecycle_failed");
+  if (error) {
+    if (error.message.includes("plan_limit_exceeded")) {
+      errorRedirect("plan_limit_active_students");
+    }
+    errorRedirect("lifecycle_failed");
+  }
 
   revalidatePath("/admin/alumnas");
   revalidatePath("/admin");

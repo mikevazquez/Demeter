@@ -71,14 +71,18 @@ export function RewardsOnboardingActivation({
   onboarding,
   upcomingClass,
   timeZone,
+  locale,
   studioId,
   studioName,
+  notificationsEnabled,
 }: {
   onboarding: StudentRewardOnboarding;
   upcomingClass: StudentUpcomingClass | null;
   timeZone: string;
+  locale: string;
   studioId: string;
   studioName: string;
+  notificationsEnabled: boolean;
 }) {
   const documentsComplete = Boolean(onboarding.documents_completed_at);
   const profileComplete = Boolean(onboarding.profile_completed_at);
@@ -86,15 +90,17 @@ export function RewardsOnboardingActivation({
   const notificationsComplete = Boolean(onboarding.notifications_enabled_at);
   const reservationComplete = Boolean(onboarding.first_reservation_at);
   const attendanceComplete = Boolean(onboarding.first_attendance_at);
-  const completed = [
+  const steps = [
     documentsComplete,
     profileComplete,
     appInstalled,
-    notificationsComplete,
+    ...(notificationsEnabled ? [notificationsComplete] : []),
     reservationComplete,
     attendanceComplete,
-  ].filter(Boolean).length;
-  const percent = Math.round((completed / 6) * 100);
+  ];
+  const completed = steps.filter(Boolean).length;
+  const totalSteps = steps.length;
+  const percent = Math.round((completed / totalSteps) * 100);
 
   const emailReady = evidenceFlag(onboarding.profile_evidence, "email");
   const avatarReady = evidenceFlag(onboarding.profile_evidence, "avatar");
@@ -116,7 +122,7 @@ export function RewardsOnboardingActivation({
 
       <section className="rounded-[28px] border border-fuchsia-500/30 bg-[radial-gradient(circle_at_85%_0%,rgba(236,72,153,0.18),transparent_34%),linear-gradient(135deg,rgba(255,255,255,0.045),rgba(255,255,255,0.015))] p-4 shadow-[0_0_32px_rgba(236,72,153,0.07)] sm:p-5">
         <div className="flex items-center justify-between gap-3">
-          <strong className="text-sm text-white">{completed} de 6 completados</strong>
+          <strong className="text-sm text-white">{completed} de {totalSteps} completados</strong>
           <span className="text-xs font-semibold text-fuchsia-300">{percent}%</span>
         </div>
         <div
@@ -147,7 +153,7 @@ export function RewardsOnboardingActivation({
               </p>
               <h2 className="mt-1 text-lg font-semibold text-white">Sistema de Medallas</h2>
               <p className="mt-0.5 text-xs text-zinc-400">
-                Completa los 6 pasos para participar en la evaluación mensual.
+                Completa estos pasos para participar en la evaluación mensual.
               </p>
             </div>
           </div>
@@ -182,22 +188,26 @@ export function RewardsOnboardingActivation({
             detail={appInstalled ? "Listo" : `Instala ${studioName} y ábrela desde el nuevo icono`}
           />
           {!appInstalled ? (
-            <OnboardingInstallStep complete={appInstalled} studioName={studioName} />
+            <OnboardingInstallStep complete={appInstalled} studioId={studioId} studioName={studioName} />
           ) : null}
 
-          <StepRow
-            complete={notificationsComplete}
-            title="Activa las notificaciones"
-            detail={
-              notificationsComplete
-                ? "Listo"
-                : appInstalled
-                  ? "Permite Push para recibir avisos importantes"
-                  : "Primero guarda y abre la app"
-            }
-          />
-          {appInstalled && !notificationsComplete ? (
-            <PushNotificationSettings studioId={studioId} studioName={studioName} onboardingMode />
+          {notificationsEnabled ? (
+            <>
+              <StepRow
+                complete={notificationsComplete}
+                title="Activa las notificaciones"
+                detail={
+                  notificationsComplete
+                    ? "Listo"
+                    : appInstalled
+                      ? "Permite Push para recibir avisos importantes"
+                      : "Primero guarda y abre la app"
+                }
+              />
+              {appInstalled && !notificationsComplete ? (
+                <PushNotificationSettings studioId={studioId} studioName={studioName} onboardingMode />
+              ) : null}
+            </>
           ) : null}
 
           <StepRow
@@ -213,7 +223,7 @@ export function RewardsOnboardingActivation({
               attendanceComplete
                 ? "Listo"
                 : upcomingClass
-                  ? `${upcomingClass.activity} · ${formatDateTime(upcomingClass.starts_at, timeZone)}`
+                  ? `${upcomingClass.activity} · ${formatDateTime(upcomingClass.starts_at, timeZone, locale)}`
                   : reservationComplete
                     ? "Tu primera asistencia desbloqueará este paso"
                     : "Primero reserva una clase"
@@ -229,7 +239,7 @@ export function RewardsOnboardingActivation({
   );
 }
 
-export function MedalsAccessUnlocked() {
+export function MedalsAccessUnlocked({ studioName }: { studioName: string }) {
   return (
     <main className="pb-5">
       <section className="relative overflow-hidden rounded-[30px] border border-fuchsia-500/40 bg-[radial-gradient(circle_at_50%_18%,rgba(236,72,153,0.28),transparent_30%),radial-gradient(circle_at_50%_22%,rgba(205,127,50,0.2),transparent_42%),rgba(255,255,255,0.025)] px-5 py-9 text-center shadow-[0_0_36px_rgba(236,72,153,0.1)]">
@@ -243,7 +253,7 @@ export function MedalsAccessUnlocked() {
           ¡Medallas desbloqueadas!
         </h1>
         <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-zinc-300">
-          Completaste tu activación en Demeter. Desde ahora puedes ganar Bronce, Plata, Oro o
+          Completaste tu activación en {studioName}. Desde ahora puedes ganar Bronce, Plata, Oro o
           Diamante en cada evaluación mensual.
         </p>
 
@@ -260,7 +270,7 @@ export function MedalsAccessUnlocked() {
             type="submit"
             className="min-h-12 w-full rounded-2xl bg-fuchsia-600 px-5 text-sm font-semibold text-white transition hover:bg-fuchsia-500"
           >
-            Ir a mi Medallero
+            Entrar a Medallas
           </button>
         </form>
       </section>

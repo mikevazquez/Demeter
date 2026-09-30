@@ -24,7 +24,7 @@ export default async function SingleClassCheckoutReturnPage({
   const query = await searchParams;
   const attemptId = query.attempt?.trim() ?? "";
   const outcome = safeOutcome(query.outcome);
-  const { supabase } = await getStudentPortalContext();
+  const { supabase, studio } = await getStudentPortalContext();
 
   let reconciliation: ReconcileResult = null;
   if (attemptId) {
@@ -38,7 +38,7 @@ export default async function SingleClassCheckoutReturnPage({
     ? await supabase
         .from("online_checkout_attempts")
         .select(
-          "id,session_id,product_name_snapshot,amount_minor,regular_amount_minor,reward_discount_pct,reward_level_title_snapshot,status",
+          "id,session_id,product_name_snapshot,amount_minor,regular_amount_minor,reward_discount_pct,reward_level_title_snapshot,status,currency",
         )
         .eq("id", attemptId)
         .eq("provider", "mercado_pago")
@@ -116,7 +116,7 @@ export default async function SingleClassCheckoutReturnPage({
                 <div className="flex items-center justify-between gap-3 text-zinc-500">
                   <span>Precio regular</span>
                   <span className="line-through">
-                    {formatMoney(attempt.regular_amount_minor ?? attempt.amount_minor)} MXN
+                    {formatMoney(attempt.regular_amount_minor ?? attempt.amount_minor, attempt.currency, studio.locale)}
                   </span>
                 </div>
                 <div className="flex items-center justify-between gap-3 text-fuchsia-300">
@@ -125,11 +125,11 @@ export default async function SingleClassCheckoutReturnPage({
                 </div>
                 <div className="flex items-center justify-between gap-3 border-t border-white/10 pt-1.5 text-white">
                   <span className="font-semibold">Total pagado</span>
-                  <strong>{formatMoney(attempt.amount_minor)} MXN</strong>
+                  <strong>{formatMoney(attempt.amount_minor, attempt.currency, studio.locale)}</strong>
                 </div>
               </div>
             ) : (
-              <p className="mt-1 text-xs text-zinc-400">{formatMoney(attempt.amount_minor)} MXN</p>
+              <p className="mt-1 text-xs text-zinc-400">{formatMoney(attempt.amount_minor, attempt.currency, studio.locale)}</p>
             )}
           </div>
         ) : null}

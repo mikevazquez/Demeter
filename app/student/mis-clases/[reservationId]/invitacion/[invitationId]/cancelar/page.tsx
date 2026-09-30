@@ -125,7 +125,7 @@ export default async function StudentCancelGuestInvitationPage({
           <p className="text-sm font-semibold text-white">{item.activity}</p>
           <p className="mt-1 text-xs font-medium text-fuchsia-300">{item.discipline}</p>
           <p className="mt-2 text-xs text-zinc-300">
-            {formatDateTime(item.starts_at, studio.timezone)}
+            {formatDateTime(item.starts_at, studio.timezone, studio.locale)}
           </p>
           <p className="mt-0.5 text-[11px] text-zinc-500">
             {[item.coach, item.space].filter(Boolean).join(" · ") || "Estudio"}

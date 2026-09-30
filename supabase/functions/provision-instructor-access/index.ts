@@ -16,7 +16,7 @@ function generateTemporaryPassword() {
   const values = new Uint32Array(6);
   crypto.getRandomValues(values);
   const suffix = Array.from(values, (value) => String(value % 10)).join("");
-  return `Demeter${suffix}`;
+  return `Sf!${suffix}A9`;
 }
 
 const handler = {

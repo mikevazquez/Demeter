@@ -43,7 +43,7 @@ export default async function NewProgramPage({
               name="name"
               required
               maxLength={120}
-              placeholder="Ej. Constancia Demeter"
+              placeholder="Ej. Programa de constancia"
               className="rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 text-white"
             />
           </label>

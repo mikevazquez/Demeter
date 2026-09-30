@@ -15,10 +15,6 @@ function safePrimary(value: string | null) {
   return /^#[0-9a-f]{6}$/i.test(primary) ? primary : "#FF0A8A";
 }
 
-function safePortal(value: string | null) {
-  return value === "admin" ? "admin" : "student";
-}
-
 function shortName(name: string) {
   const words = name.split(/\s+/).filter(Boolean);
   let result = "";
@@ -38,27 +34,21 @@ export async function GET(request: Request) {
   const slug = safeSlug(url.searchParams.get("slug"));
   const primary = safePrimary(url.searchParams.get("primary"));
   const logo = url.searchParams.get("logo")?.trim() ?? "";
-  const portal = safePortal(url.searchParams.get("portal"));
   const version = url.searchParams.get("v")?.trim() || "2";
-  const startUrl = portal === "admin" ? "/admin" : "/student";
-  const appName = portal === "admin" ? name + " Admin" : name;
 
   const iconQuery = new URLSearchParams({
-    name: appName,
+    name,
     primary,
     logo,
     v: version,
   }).toString();
 
   const manifest: MetadataRoute.Manifest = {
-    id: "/pwa/" + slug + "/" + portal,
-    name: appName,
-    short_name: shortName(appName),
-    description:
-      portal === "admin"
-        ? "Administración y operación de " + name + "."
-        : "Reservas, progreso y comunicación de " + name + ".",
-    start_url: startUrl,
+    id: "/pwa/" + slug,
+    name,
+    short_name: shortName(name),
+    description: "Reservas, progreso y comunicación de " + name + ".",
+    start_url: "/student",
     scope: "/",
     display: "standalone",
     background_color: "#090A0F",

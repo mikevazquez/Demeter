@@ -3,8 +3,10 @@ import { notFound } from "next/navigation";
 
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getAdminContext } from "@/lib/auth/admin-context";
+
 import { InstructorAccessProvisioner } from "./InstructorAccessProvisioner";
 import { setInstructorStatus } from "../actions";
+import "../team-v2.css";
 
 export default async function InstructorProfilePage({
   params,
@@ -18,12 +20,14 @@ export default async function InstructorProfilePage({
   const { supabase, studio, can } = await getAdminContext(CAPABILITIES.INSTRUCTORS_READ);
   const canWrite = can(CAPABILITIES.INSTRUCTORS_WRITE);
   const canManageAccess = can(CAPABILITIES.SETTINGS_WRITE);
+
   const { data: instructor } = await supabase
     .from("instructors")
     .select("id, person_id, status, bio, created_at")
     .eq("id", instructorId)
     .eq("studio_id", studio.id)
     .maybeSingle();
+
   if (!instructor) notFound();
 
   const [
@@ -81,13 +85,14 @@ export default async function InstructorProfilePage({
 
   const linkedIds = new Set((links ?? []).map((item) => item.discipline_id));
   const templateMap = new Map((templates ?? []).map((item) => [item.id, item.name]));
-  const name = [person?.first_name, person?.last_name].filter(Boolean).join(" ") || "Instructor";
+  const name = [person?.first_name, person?.last_name].filter(Boolean).join(" ") || "Integrante";
   const phone = contacts?.find((item) => item.kind === "phone")?.value;
   const primaryEmail = contacts?.find(
     (item) => item.kind === "email" && item.is_primary === true,
   )?.value;
   const email = primaryEmail ?? contacts?.find((item) => item.kind === "email")?.value;
-  const timeZone = studio.timezone ?? "America/Mexico_City";
+  const timeZone = studio.timezone;
+
   const accessState = !accessMembership
     ? "not_linked"
     : !accessMembership.active || !accessAccount || accessAccount.status !== "active"
@@ -97,40 +102,65 @@ export default async function InstructorProfilePage({
         : "active";
 
   return (
-    <main className="dashboard-shell admin-ux04-secondary-detail team-detail-page">
-      <header className="topbar">
+    <main className="team-v2-detail">
+      <header className="team-v2-detail-header">
         <div>
-          <Link className="back-link compact" href="/admin/instructores">
-            ← Instructores
+          <Link className="team-v2-detail-back" href="/admin/instructores">
+            ← Equipo
           </Link>
-          <p className="eyebrow">PERFIL INSTRUCTOR · {studio.name}</p>
-          <h1 className="dashboard-title">{name}</h1>
-          <p>Perfil operativo independiente de su cuenta de acceso.</p>
+          <h1>{name}</h1>
+          <p>Datos, acceso, especialidades y próximas clases.</p>
         </div>
-        <span className="role-pill">{instructor.status === "active" ? "ACTIVO" : "INACTIVO"}</span>
-      </header>
-      {query.created ? (
-        <div className="notice success">Instructor creado correctamente.</div>
-      ) : null}
-      {query.saved ? <div className="notice success">Estado actualizado.</div> : null}
-      {query.error ? <div className="notice error">No se pudo guardar el cambio.</div> : null}
 
-      <section className="panel-grid">
-        <article className="panel">
-          <p className="eyebrow">CONTACTO</p>
-          <h2>Datos del instructor</h2>
-          <div className="student-list">
-            <div className="student-row">
+        <span
+          className={`team-v2-detail-status ${instructor.status === "active" ? "is-active" : ""}`}
+        >
+          {instructor.status === "active" ? "Activo" : "Inactivo"}
+        </span>
+      </header>
+
+      {query.created ? (
+        <div className="team-v2-notice is-success">Integrante creado correctamente.</div>
+      ) : null}
+      {query.saved ? (
+        <div className="team-v2-notice is-success">Estado actualizado.</div>
+      ) : null}
+      {query.error ? (
+        <div className="team-v2-notice is-error">No se pudo guardar el cambio.</div>
+      ) : null}
+
+      <section className="team-v2-detail-grid">
+        <article className="team-v2-card">
+          <div className="team-v2-card-heading">
+            <div>
+              <h2>Datos</h2>
+              <p>Información básica del integrante.</p>
+            </div>
+          </div>
+
+          <div className="team-v2-detail-list">
+            <div className="team-v2-detail-row">
               <div>
-                <strong>{name}</strong>
+                <strong>Nombre</strong>
+                <span>{name}</span>
+              </div>
+            </div>
+            <div className="team-v2-detail-row">
+              <div>
+                <strong>Teléfono</strong>
                 <span>{phone || "Sin teléfono"}</span>
+              </div>
+            </div>
+            <div className="team-v2-detail-row">
+              <div>
+                <strong>Correo</strong>
                 <span>{email || "Sin correo"}</span>
               </div>
             </div>
             {instructor.bio ? (
-              <div className="student-row">
+              <div className="team-v2-detail-row">
                 <div>
-                  <strong>Bio / especialidad</strong>
+                  <strong>Especialidad o nota</strong>
                   <span>{instructor.bio}</span>
                 </div>
               </div>
@@ -138,21 +168,25 @@ export default async function InstructorProfilePage({
           </div>
         </article>
 
-        <article className="panel">
-          <p className="eyebrow">ACCESO COACH</p>
-          <h2>Cuenta separada</h2>
+        <article className="team-v2-card">
+          <div className="team-v2-card-heading">
+            <div>
+              <h2>Acceso Coach</h2>
+              <p>Permite entrar al portal para consultar y operar sus clases.</p>
+            </div>
+          </div>
+
           {!canManageAccess ? (
-            <div className="empty-state">
-              Tu rol puede consultar el InstructorProfile, pero no administrar cuentas de acceso.
+            <div className="team-v2-empty-inline">
+              Puedes consultar este perfil, pero no administrar su acceso.
             </div>
           ) : instructor.status !== "active" ? (
-            <div className="notice error">
-              Activa al instructor antes de habilitar el portal Coach.
+            <div className="team-v2-notice is-error">
+              Reactiva al integrante antes de habilitar su acceso.
             </div>
           ) : accessState === "not_linked" && !email ? (
-            <div className="notice error">
-              Falta un correo válido. El Coach inicia sesión con correo y contraseña, por lo que el
-              acceso no puede crearse hasta completar ese dato.
+            <div className="team-v2-notice is-error">
+              Agrega un correo válido antes de crear su acceso Coach.
             </div>
           ) : accessState === "not_linked" ? (
             <InstructorAccessProvisioner
@@ -162,9 +196,8 @@ export default async function InstructorProfilePage({
             />
           ) : accessState === "pending_activation" ? (
             <>
-              <div className="notice success">
-                Cuenta Coach vinculada. Está pendiente de que el instructor cambie su contraseña
-                temporal en el primer acceso.
+              <div className="team-v2-notice is-success">
+                El acceso ya fue creado. Falta que el integrante cambie su contraseña temporal.
               </div>
               <InstructorAccessProvisioner
                 instructorId={instructor.id}
@@ -173,99 +206,108 @@ export default async function InstructorProfilePage({
               />
             </>
           ) : accessState === "active" ? (
-            <div className="notice success">
-              Acceso Coach activo y contraseña inicial ya reemplazada por el instructor.
-            </div>
+            <div className="team-v2-notice is-success">Acceso Coach activo.</div>
           ) : (
-            <div className="notice error">
-              La cuenta de acceso está incompleta o inactiva. No se harán reparaciones automáticas;
-              revisa UserAccount y membership antes de continuar.
+            <div className="team-v2-notice is-error">
+              El acceso está incompleto o inactivo. Revisa la cuenta antes de continuar.
             </div>
           )}
         </article>
-      </section>
 
-      <section className="panel">
-        <div className="panel-heading">
-          <div>
-            <p className="eyebrow">DISCIPLINAS</p>
-            <h2>Especialidades asignadas</h2>
+        <article className="team-v2-card">
+          <div className="team-v2-card-heading">
+            <div>
+              <h2>Especialidades</h2>
+              <p>Disciplinas asociadas a este integrante.</p>
+            </div>
+            <span className="team-v2-count">{linkedIds.size}</span>
           </div>
-          <span className="count-badge">{linkedIds.size}</span>
-        </div>
-        {linkedIds.size === 0 ? (
-          <div className="empty-state">Aún no tiene disciplinas asignadas.</div>
-        ) : (
-          <div className="student-list">
-            {(disciplines ?? [])
-              .filter((item) => linkedIds.has(item.id))
-              .map((item) => (
-                <div className="student-row" key={item.id}>
-                  <div>
-                    <strong>{item.name}</strong>
-                    <span>Disciplina autorizada</span>
+
+          {linkedIds.size === 0 ? (
+            <div className="team-v2-empty-inline">Aún no tiene especialidades asignadas.</div>
+          ) : (
+            <div className="team-v2-detail-list">
+              {(disciplines ?? [])
+                .filter((item) => linkedIds.has(item.id))
+                .map((item) => (
+                  <div className="team-v2-detail-row" key={item.id}>
+                    <div>
+                      <strong>{item.name}</strong>
+                      <span>Especialidad asignada</span>
+                    </div>
                   </div>
-                </div>
+                ))}
+            </div>
+          )}
+        </article>
+
+        <article className="team-v2-card">
+          <div className="team-v2-card-heading">
+            <div>
+              <h2>Próximas clases</h2>
+              <p>Sesiones que ya tiene asignadas en Agenda.</p>
+            </div>
+            <span className="team-v2-count">{sessions?.length ?? 0}</span>
+          </div>
+
+          {(sessions?.length ?? 0) === 0 ? (
+            <div className="team-v2-empty-inline">No tiene próximas clases asignadas.</div>
+          ) : (
+            <div className="team-v2-detail-list">
+              {sessions?.map((session) => (
+                <Link
+                  className="team-v2-detail-row"
+                  href={`/admin/agenda/${session.id}`}
+                  key={session.id}
+                >
+                  <div>
+                    <strong>{templateMap.get(session.template_id) ?? "Clase"}</strong>
+                    <span>
+                      {new Intl.DateTimeFormat(studio.locale, {
+                        timeZone,
+                        weekday: "short",
+                        day: "numeric",
+                        month: "short",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      }).format(new Date(session.starts_at))}
+                    </span>
+                  </div>
+                  <small>{session.status}</small>
+                </Link>
               ))}
-          </div>
-        )}
-      </section>
+            </div>
+          )}
+        </article>
 
-      <section className="panel">
-        <div className="panel-heading">
-          <div>
-            <p className="eyebrow">AGENDA</p>
-            <h2>Próximas clases</h2>
-          </div>
-          <span className="count-badge">{sessions?.length ?? 0}</span>
-        </div>
-        {(sessions?.length ?? 0) === 0 ? (
-          <div className="empty-state">No tiene próximas clases asignadas.</div>
-        ) : (
-          <div className="student-list">
-            {sessions?.map((session) => (
-              <Link className="student-row" href={`/admin/agenda/${session.id}`} key={session.id}>
-                <div>
-                  <strong>{templateMap.get(session.template_id) ?? "Clase"}</strong>
-                  <span>
-                    {new Intl.DateTimeFormat("es-MX", {
-                      timeZone,
-                      weekday: "short",
-                      day: "numeric",
-                      month: "short",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    }).format(new Date(session.starts_at))}
-                  </span>
-                </div>
-                <span className="status-pill">{session.status}</span>
-              </Link>
-            ))}
-          </div>
-        )}
-      </section>
+        {canWrite ? (
+          <article className="team-v2-card is-wide">
+            <div className="team-v2-card-heading">
+              <div>
+                <h2>Estado</h2>
+                <p>
+                  Desactivar conserva el perfil, historial y clases anteriores; no elimina información.
+                </p>
+              </div>
+            </div>
 
-      {canWrite ? (
-        <section className="panel">
-          <p className="eyebrow">ADMINISTRACIÓN</p>
-          <h2>Estado operativo</h2>
-          <p>Desactivar conserva el perfil y su historial; no elimina información.</p>
-          <form action={setInstructorStatus}>
-            <input type="hidden" name="instructor_id" value={instructor.id} />
-            <input
-              type="hidden"
-              name="status"
-              value={instructor.status === "active" ? "inactive" : "active"}
-            />
-            <button
-              className={instructor.status === "active" ? "ghost-button" : "primary-button"}
-              type="submit"
-            >
-              {instructor.status === "active" ? "Marcar inactivo" : "Reactivar instructor"}
-            </button>
-          </form>
-        </section>
-      ) : null}
+            <form action={setInstructorStatus}>
+              <input type="hidden" name="instructor_id" value={instructor.id} />
+              <input
+                type="hidden"
+                name="status"
+                value={instructor.status === "active" ? "inactive" : "active"}
+              />
+              <button
+                className={instructor.status === "active" ? "ghost-button" : "primary-button"}
+                type="submit"
+              >
+                {instructor.status === "active" ? "Marcar como inactivo" : "Reactivar integrante"}
+              </button>
+            </form>
+          </article>
+        ) : null}
+      </section>
     </main>
   );
 }

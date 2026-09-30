@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import QueryNotice from "@/app/components/QueryNotice";
@@ -9,6 +10,15 @@ type Invitation = {
   invitation_id: string;
   status: string;
   expires_at: string;
+  studio: {
+    id: string;
+    name: string;
+    tagline: string | null;
+    timezone: string;
+    locale: string;
+    primary_color: string | null;
+    logo_path: string | null;
+  };
   guardian: {
     id: string;
     full_name: string;
@@ -18,6 +28,30 @@ type Invitation = {
   student: { id: string; full_name: string };
   items?: unknown[];
 };
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ token: string }>;
+}): Promise<Metadata> {
+  const { token } = await params;
+  const supabase = await createClient();
+  const { data } = await supabase.rpc("guardian_document_invitation", {
+    p_token: token,
+  });
+
+  if (!data) {
+    return { title: "Documentos" };
+  }
+
+  const invitation = data as Invitation;
+  return {
+    title: `${invitation.studio.name} · Documentos`,
+    description:
+      invitation.studio.tagline ??
+      `Documentos de ${invitation.studio.name}`,
+  };
+}
 
 export default async function GuardianInvitationPage({
   params,
@@ -35,17 +69,32 @@ export default async function GuardianInvitationPage({
 
   if (error || !data) notFound();
   const invitation = data as Invitation;
+  const brandColor = invitation.studio.primary_color ?? "#FF0A8A";
+  const logoUrl = invitation.studio.logo_path
+    ? supabase.storage.from("studio-branding").getPublicUrl(invitation.studio.logo_path).data.publicUrl
+    : null;
 
   return (
     <main className="min-h-screen bg-[#090a0f] px-4 py-8 text-white sm:px-6">
       <div className="mx-auto max-w-xl space-y-5">
         <header className="text-center">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.26em] text-fuchsia-300">
-            Studio Flow · Documentos
+          {logoUrl ? (
+            <img
+              src={logoUrl}
+              alt={invitation.studio.name}
+              className="mx-auto mb-4 h-14 max-w-[180px] object-contain"
+            />
+          ) : null}
+          <p
+            className="text-[10px] font-semibold uppercase tracking-[0.26em]"
+            style={{ color: brandColor }}
+          >
+            {invitation.studio.name} · Documentos
           </p>
           <h1 className="mt-2 text-2xl font-semibold sm:text-3xl">Invitación para responsable</h1>
           <p className="mt-2 text-sm leading-6 text-zinc-400">
-            Antes de mostrar documentos necesitamos confirmar que esta invitación corresponde a ti.
+            {invitation.studio.tagline ||
+              "Antes de mostrar documentos necesitamos confirmar que esta invitación corresponde a ti."}
           </p>
         </header>
 
@@ -103,7 +152,10 @@ export default async function GuardianInvitationPage({
               Confirmo que soy {invitation.guardian.full_name} y que mi relación con la alumna es la
               indicada arriba.
             </label>
-            <button className="mt-4 w-full rounded-2xl bg-fuchsia-600 px-5 py-3 text-sm font-semibold text-white">
+            <button
+              className="mt-4 w-full rounded-2xl px-5 py-3 text-sm font-semibold text-white"
+              style={{ backgroundColor: brandColor }}
+            >
               Ver documentos pendientes
             </button>
           </form>
@@ -111,9 +163,10 @@ export default async function GuardianInvitationPage({
 
         <p className="text-center text-[11px] leading-5 text-zinc-600">
           La invitación vence el{" "}
-          {new Intl.DateTimeFormat("es-MX", {
+          {new Intl.DateTimeFormat(invitation.studio.locale, {
             dateStyle: "medium",
             timeStyle: "short",
+            timeZone: invitation.studio.timezone,
           }).format(new Date(invitation.expires_at))}
           .
         </p>

@@ -54,10 +54,12 @@ function statusClass(status: string) {
 function ClassRow({
   item,
   timezone,
+  locale,
   showQuickCancel = false,
 }: {
   item: StudentClassFeedItem;
   timezone: string;
+  locale: string;
   showQuickCancel?: boolean;
 }) {
   return (
@@ -75,7 +77,7 @@ function ClassRow({
               {statusCopy[item.status] ?? item.status}
             </span>
           </div>
-          <p className="mt-1 text-xs text-zinc-300">{formatDateTime(item.starts_at, timezone)}</p>
+          <p className="mt-1 text-xs text-zinc-300">{formatDateTime(item.starts_at, timezone, locale)}</p>
           <p className="mt-0.5 truncate text-[11px] text-zinc-500">
             {[item.coach, item.space].filter(Boolean).join(" · ") || item.discipline}
           </p>
@@ -89,25 +91,6 @@ function ClassRow({
           ›
         </Link>
       </div>
-
-      {item.status === "cancelled_by_studio" && item.cancellation_reason ? (
-        <div className="mt-3 space-y-2 border-t border-white/10 pt-3">
-          <div className="rounded-xl border border-rose-500/20 bg-rose-500/[0.06] px-3 py-2.5">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-rose-300">
-              Motivo
-            </p>
-            <p className="mt-1 text-xs leading-5 text-zinc-300">{item.cancellation_reason}</p>
-          </div>
-          {item.credit_restored ? (
-            <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/[0.06] px-3 py-2.5">
-              <p className="text-xs font-semibold text-emerald-300">✓ Crédito restaurado</p>
-              <p className="mt-0.5 text-[10px] leading-4 text-zinc-500">
-                El crédito de esta reserva fue devuelto a tu paquete.
-              </p>
-            </div>
-          ) : null}
-        </div>
-      ) : null}
 
       {showQuickCancel && item.status === "reserved" ? (
         <div className="mt-3 flex justify-end border-t border-white/10 pt-3">
@@ -126,10 +109,12 @@ function ClassRow({
 function WaitlistRow({
   item,
   timezone,
+  locale,
   levelTitle,
 }: {
   item: StudentWaitlistItem;
   timezone: string;
+  locale: string;
   levelTitle: string | null;
 }) {
   const priorityLabel =
@@ -145,7 +130,7 @@ function WaitlistRow({
               En lista de espera
             </span>
           </div>
-          <p className="mt-1 text-xs text-zinc-300">{formatDateTime(item.starts_at, timezone)}</p>
+          <p className="mt-1 text-xs text-zinc-300">{formatDateTime(item.starts_at, timezone, locale)}</p>
           <p className="mt-0.5 truncate text-[11px] text-zinc-500">
             {[item.coach, item.space].filter(Boolean).join(" · ") || item.discipline}
           </p>
@@ -295,6 +280,7 @@ export default async function StudentClassesPage({
                     key={item.waitlist_entry_id}
                     item={item}
                     timezone={studio.timezone}
+                    locale={studio.locale}
                     levelTitle={levelTitle}
                   />
                 ))}
@@ -329,7 +315,7 @@ export default async function StudentClassesPage({
                         {nextClass.discipline}
                       </p>
                       <p className="mt-1.5 text-xs text-zinc-300">
-                        {formatDateTime(nextClass.starts_at, studio.timezone)}
+                        {formatDateTime(nextClass.starts_at, studio.timezone, studio.locale)}
                       </p>
                       <p className="mt-0.5 truncate text-[11px] text-zinc-500">
                         {[nextClass.coach, nextClass.space].filter(Boolean).join(" · ") ||
@@ -370,6 +356,7 @@ export default async function StudentClassesPage({
                         key={item.reservation_id}
                         item={item}
                         timezone={studio.timezone}
+                        locale={studio.locale}
                         showQuickCancel
                       />
                     ))}
@@ -406,7 +393,12 @@ export default async function StudentClassesPage({
           {history.length ? (
             <div className="space-y-2">
               {history.map((item) => (
-                <ClassRow key={item.reservation_id} item={item} timezone={studio.timezone} />
+                <ClassRow
+                  key={item.reservation_id}
+                  item={item}
+                  timezone={studio.timezone}
+                  locale={studio.locale}
+                />
               ))}
             </div>
           ) : (

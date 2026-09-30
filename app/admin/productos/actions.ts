@@ -6,9 +6,8 @@ import { redirect } from "next/navigation";
 import { getAdminContext } from "@/lib/auth/admin-context";
 
 const TYPES = new Set(["package", "membership", "single_class", "enrollment", "other"]);
-const PACKAGE_TERMS = new Set(["weekly", "monthly", "quarterly", "semiannual", "annual", "custom"]);
+const PACKAGE_TERMS = new Set(["monthly", "quarterly", "semiannual", "annual", "custom"]);
 const PACKAGE_TERM_DAYS: Record<string, number> = {
-  weekly: 7,
   monthly: 30,
   quarterly: 90,
   semiannual: 180,
@@ -61,7 +60,9 @@ function parseProductForm(formData: FormData) {
   const disciplineIds = isEnrollment
     ? []
     : [...new Set(formData.getAll("discipline_ids").map(String).filter(Boolean))];
-  const scheduleScope = isPackageLike ? String(formData.get("schedule_scope") ?? "all") : "all";
+  const scheduleScope = isPackageLike
+    ? String(formData.get("schedule_scope") ?? "all")
+    : "all";
   if (!["all", "specific"].includes(scheduleScope)) {
     throw new Error("schedule_scope_invalid");
   }
@@ -131,11 +132,7 @@ async function validateSchedules(
   }
 
   const allowedDisciplines = new Set(disciplineIds);
-  if (
-    (templates ?? []).some(
-      (item) => !item.discipline_id || !allowedDisciplines.has(item.discipline_id),
-    )
-  ) {
+  if ((templates ?? []).some((item) => !item.discipline_id || !allowedDisciplines.has(item.discipline_id))) {
     throw new Error("schedule_discipline_mismatch");
   }
 }
@@ -155,7 +152,7 @@ export async function createProduct(formData: FormData) {
       product_type: values.productType,
       package_term: values.packageTerm,
       price_minor: values.priceMinor,
-      currency: "MXN",
+      currency: ctx.studio.currency,
       credit_limit: values.creditLimit,
       validity_days: values.validityDays,
       unlimited: values.unlimited,
@@ -179,13 +176,15 @@ export async function createProduct(formData: FormData) {
   }
 
   if (values.scheduleIds.length) {
-    const { error: scheduleError } = await ctx.supabase.from("product_template_schedules").insert(
-      values.scheduleIds.map((scheduleId) => ({
-        studio_id: ctx.studio.id,
-        product_template_id: product.id,
-        recurring_schedule_id: scheduleId,
-      })),
-    );
+    const { error: scheduleError } = await ctx.supabase
+      .from("product_template_schedules")
+      .insert(
+        values.scheduleIds.map((scheduleId) => ({
+          studio_id: ctx.studio.id,
+          product_template_id: product.id,
+          recurring_schedule_id: scheduleId,
+        })),
+      );
     if (scheduleError) throw new Error(scheduleError.message);
   }
 
@@ -269,7 +268,7 @@ export async function duplicateProduct(formData: FormData) {
   const { data: source } = await ctx.supabase
     .from("product_templates")
     .select(
-      "name,description,product_type,package_term,price_minor,currency,credit_limit,validity_days,unlimited,product_template_disciplines(discipline_id),product_template_schedules(recurring_schedule_id)",
+      "name,description,product_type,package_term,price_minor,currency,credit_limit,validity_days,unlimited,product_template_disciplines(discipline_id),product_template_schedules(recurring_schedule_id),product_template_activities(class_template_id)",
     )
     .eq("id", productId)
     .eq("studio_id", ctx.studio.id)
@@ -311,17 +310,35 @@ export async function duplicateProduct(formData: FormData) {
     if (disciplineError) throw new Error(disciplineError.message);
   }
 
+  const activityIds = (source.product_template_activities ?? []).map(
+    (item) => item.class_template_id,
+  );
+  if (activityIds.length) {
+    const { error: activityError } = await ctx.supabase
+      .from("product_template_activities")
+      .insert(
+        activityIds.map((activityId) => ({
+          studio_id: ctx.studio.id,
+          product_template_id: copy.id,
+          class_template_id: activityId,
+        })),
+      );
+    if (activityError) throw new Error(activityError.message);
+  }
+
   const scheduleIds = (source.product_template_schedules ?? []).map(
     (item) => item.recurring_schedule_id,
   );
   if (scheduleIds.length) {
-    const { error: scheduleError } = await ctx.supabase.from("product_template_schedules").insert(
-      scheduleIds.map((scheduleId) => ({
-        studio_id: ctx.studio.id,
-        product_template_id: copy.id,
-        recurring_schedule_id: scheduleId,
-      })),
-    );
+    const { error: scheduleError } = await ctx.supabase
+      .from("product_template_schedules")
+      .insert(
+        scheduleIds.map((scheduleId) => ({
+          studio_id: ctx.studio.id,
+          product_template_id: copy.id,
+          recurring_schedule_id: scheduleId,
+        })),
+      );
     if (scheduleError) throw new Error(scheduleError.message);
   }
 

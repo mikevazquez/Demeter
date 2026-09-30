@@ -29,6 +29,25 @@ function loginPath(mode: LoginMode) {
   return mode === "student" ? "/login/student" : "/login/studio";
 }
 
+function normalizedStudioSlug(value: FormDataEntryValue | null) {
+  const slug = String(value ?? "").trim().toLowerCase();
+  return /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug) ? slug : "";
+}
+
+function loginErrorPath(mode: LoginMode, error: string, studioSlug?: string) {
+  const params = new URLSearchParams({ error });
+  if (studioSlug) params.set("studio", studioSlug);
+  return `${loginPath(mode)}?${params.toString()}`;
+}
+
+function activationPath(mode: LoginMode, studioSlug?: string, error?: string) {
+  const params = new URLSearchParams();
+  if (studioSlug) params.set("studio", studioSlug);
+  if (error) params.set("error", error);
+  const query = params.toString();
+  return `${loginPath(mode)}/activar${query ? `?${query}` : ""}`;
+}
+
 function passwordIntegrity(password: string) {
   return {
     passwordLength: password.length,
@@ -62,6 +81,26 @@ async function setSelectedStudio(studioId: string) {
 async function clearSelectedStudio() {
   const cookieStore = await cookies();
   cookieStore.delete(STUDIO_CONTEXT_COOKIE);
+}
+
+async function membershipForRequestedStudio(
+  accessClient: Awaited<ReturnType<typeof createClient>>,
+  memberships: StudioMembership[],
+  studioSlug: string,
+) {
+  if (!studioSlug || !memberships.length) return null;
+
+  const studioIds = [...new Set(memberships.map((item) => item.studio_id))];
+  const { data: studio } = await accessClient
+    .from("studios")
+    .select("id")
+    .eq("slug", studioSlug)
+    .eq("status", "active")
+    .in("id", studioIds)
+    .maybeSingle();
+
+  if (!studio) return null;
+  return memberships.find((item) => item.studio_id === studio.id) ?? null;
 }
 
 async function getEligibleStudioAccess(
@@ -133,10 +172,86 @@ async function getEligibleStudioAccess(
   };
 }
 
+async function getEligibleStudentAccess(
+  accessClient: Awaited<ReturnType<typeof createClient>>,
+  userId: string,
+) {
+  const membershipResult = await accessClient
+    .from("studio_memberships")
+    .select("studio_id, role, active, person_id")
+    .eq("user_id", userId)
+    .eq("role", "student")
+    .eq("active", true);
+
+  if (membershipResult.error) {
+    return {
+      error: membershipResult.error,
+      memberships: [] as StudioMembership[],
+    };
+  }
+
+  const memberships = (membershipResult.data ?? []) as StudioMembership[];
+  if (!memberships.length) {
+    return { error: null, memberships: [] as StudioMembership[] };
+  }
+
+  const capabilityResult = await accessClient
+    .from("role_capabilities")
+    .select("capability_key")
+    .eq("role", "student")
+    .eq("capability_key", CAPABILITIES.STUDENT_PORTAL)
+    .maybeSingle();
+
+  if (capabilityResult.error) {
+    return {
+      error: capabilityResult.error,
+      memberships: [] as StudioMembership[],
+    };
+  }
+
+  if (!capabilityResult.data) {
+    return { error: null, memberships: [] as StudioMembership[] };
+  }
+
+  const studioIds = [...new Set(memberships.map((item) => item.studio_id))];
+  const [studiosResult, studentsResult] = await Promise.all([
+    accessClient
+      .from("studios")
+      .select("id")
+      .in("id", studioIds)
+      .eq("status", "active"),
+    accessClient
+      .from("students")
+      .select("studio_id")
+      .eq("user_id", userId)
+      .eq("active", true)
+      .eq("lifecycle_status", "active")
+      .in("studio_id", studioIds),
+  ]);
+
+  if (studiosResult.error || studentsResult.error) {
+    return {
+      error: studiosResult.error ?? studentsResult.error,
+      memberships: [] as StudioMembership[],
+    };
+  }
+
+  const activeStudioIds = new Set((studiosResult.data ?? []).map((item) => item.id));
+  const studentStudioIds = new Set((studentsResult.data ?? []).map((item) => item.studio_id));
+
+  return {
+    error: null,
+    memberships: memberships.filter(
+      (item) => activeStudioIds.has(item.studio_id) && studentStudioIds.has(item.studio_id),
+    ),
+  };
+}
+
 export async function signIn(formData: FormData) {
   const password = String(formData.get("password") ?? "");
   const requestedMode = String(formData.get("mode") ?? "");
   const mode: LoginMode = requestedMode === "student" ? "student" : "studio";
+  const requestedStudioSlug = normalizedStudioSlug(formData.get("studio_slug"));
   const email = String(formData.get("email") ?? "")
     .trim()
     .toLowerCase();
@@ -144,11 +259,10 @@ export async function signIn(formData: FormData) {
   const studentAuthEmail = phone ? studentAuthEmailFromPhone(phone) : null;
 
   if (!password || (mode === "student" ? !phone || !studentAuthEmail : !email)) {
-    redirect(`${loginPath(mode)}?error=missing`);
+    redirect(loginErrorPath(mode, "missing", requestedStudioSlug));
   }
 
-  const authPortal = mode === "student" ? "student" : "admin";
-  const supabase = await createClient(authPortal);
+  const supabase = await createClient();
   const credentials =
     mode === "student" ? { email: studentAuthEmail!, password } : { email, password };
   let { data, error } = await supabase.auth.signInWithPassword(credentials);
@@ -187,17 +301,17 @@ export async function signIn(formData: FormData) {
     }
 
     if (error?.code === "invalid_credentials") {
-      redirect(`${loginPath(mode)}?error=invalid`);
+      redirect(loginErrorPath(mode, "invalid", requestedStudioSlug));
     }
 
     if (error?.status === 429) {
-      redirect(`${loginPath(mode)}?error=rate`);
+      redirect(loginErrorPath(mode, "rate", requestedStudioSlug));
     }
 
-    redirect(`${loginPath(mode)}?error=auth`);
+    redirect(loginErrorPath(mode, "auth", requestedStudioSlug));
   }
 
-  const accessClient = await createClient(authPortal);
+  const accessClient = await createClient();
   const accountResult = await accessClient
     .from("user_accounts")
     .select("status, must_change_password")
@@ -210,67 +324,54 @@ export async function signIn(formData: FormData) {
       accountError: authErrorSummary(accountResult.error),
     });
     await accessClient.auth.signOut();
-    redirect(`${loginPath(mode)}?error=auth`);
+    redirect(loginErrorPath(mode, "auth", requestedStudioSlug));
   }
 
   const account = accountResult.data;
   if (!account || account.status !== "active") {
     await accessClient.auth.signOut();
-    redirect(`${loginPath(mode)}?error=access`);
+    redirect(loginErrorPath(mode, "access", requestedStudioSlug));
   }
 
   if (mode === "student") {
-    const membershipResult = await accessClient
-      .from("studio_memberships")
-      .select("studio_id, role, active")
-      .eq("user_id", data.user.id)
-      .eq("role", "student")
-      .eq("active", true)
-      .limit(1)
-      .maybeSingle();
+    const studentAccess = await getEligibleStudentAccess(accessClient, data.user.id);
 
-    if (membershipResult.error) {
-      console.error("[auth.signIn] Student membership lookup failed", {
-        membershipError: authErrorSummary(membershipResult.error),
+    if (studentAccess.error) {
+      console.error("[auth.signIn] Student access lookup failed", {
+        error: authErrorSummary(studentAccess.error),
       });
       await accessClient.auth.signOut();
-      redirect("/login/student?error=auth");
+      redirect(loginErrorPath("student", "auth", requestedStudioSlug));
     }
 
-    const membership = membershipResult.data;
-    if (!membership) {
+    if (!studentAccess.memberships.length) {
       await accessClient.auth.signOut();
-      redirect("/login/student?error=pending");
+      redirect(loginErrorPath("student", "pending", requestedStudioSlug));
     }
 
-    const [studioResult, capabilityResult] = await Promise.all([
-      accessClient.from("studios").select("status").eq("id", membership.studio_id).maybeSingle(),
-      accessClient
-        .from("role_capabilities")
-        .select("capability_key")
-        .eq("role", membership.role)
-        .eq("capability_key", CAPABILITIES.STUDENT_PORTAL)
-        .maybeSingle(),
-    ]);
-
-    if (studioResult.error || capabilityResult.error) {
-      console.error("[auth.signIn] Student portal capability lookup failed", {
-        studioError: authErrorSummary(studioResult.error),
-        capabilityError: authErrorSummary(capabilityResult.error),
-      });
-      await accessClient.auth.signOut();
-      redirect("/login/student?error=auth");
-    }
-
-    if (!studioResult.data || studioResult.data.status !== "active" || !capabilityResult.data) {
-      await accessClient.auth.signOut();
-      redirect("/login/student?error=access");
-    }
+    const requestedMembership = await membershipForRequestedStudio(
+      accessClient,
+      studentAccess.memberships,
+      requestedStudioSlug,
+    );
 
     if (account.must_change_password) {
-      redirect("/login/student/activar");
+      await clearSelectedStudio();
+      redirect(activationPath("student", requestedMembership ? requestedStudioSlug : undefined));
     }
 
+    if (requestedMembership) {
+      await setSelectedStudio(requestedMembership.studio_id);
+      redirect("/student");
+    }
+
+    if (studentAccess.memberships.length > 1) {
+      await clearSelectedStudio();
+      redirect("/login/student/seleccionar");
+    }
+
+    const membership = studentAccess.memberships[0];
+    await setSelectedStudio(membership.studio_id);
     redirect("/student");
   }
 
@@ -281,24 +382,40 @@ export async function signIn(formData: FormData) {
       error: authErrorSummary(studioAccess.error),
     });
     await accessClient.auth.signOut();
-    redirect("/login/studio?error=auth");
+    redirect(loginErrorPath("studio", "auth", requestedStudioSlug));
   }
 
   if (!studioAccess.memberships.length) {
     await accessClient.auth.signOut();
-    redirect("/login/studio?error=pending");
+    redirect(loginErrorPath("studio", "pending", requestedStudioSlug));
   }
 
+  const requestedStudioMembership = await membershipForRequestedStudio(
+    accessClient,
+    studioAccess.memberships,
+    requestedStudioSlug,
+  );
+
   if (account.must_change_password) {
-    const supportsActivation = studioAccess.memberships.some(
-      (membership) => membership.role === "instructor",
+    const supportsActivation = studioAccess.memberships.some((membership) =>
+      ["owner", "admin", "instructor"].includes(membership.role),
     );
     if (!supportsActivation) {
       await accessClient.auth.signOut();
-      redirect("/login/studio?error=activation");
+      redirect(loginErrorPath("studio", "activation", requestedStudioSlug));
     }
     await clearSelectedStudio();
-    redirect("/login/studio/activar");
+    redirect(
+      activationPath(
+        "studio",
+        requestedStudioMembership ? requestedStudioSlug : undefined,
+      ),
+    );
+  }
+
+  if (requestedStudioMembership) {
+    await setSelectedStudio(requestedStudioMembership.studio_id);
+    redirect(portalDestination(requestedStudioMembership, studioAccess.capabilities));
   }
 
   if (studioAccess.memberships.length > 1) {
@@ -315,7 +432,7 @@ export async function selectStudio(formData: FormData) {
   const studioId = String(formData.get("studio_id") ?? "").trim();
   if (!studioId) redirect("/login/studio/seleccionar?error=missing");
 
-  const accessClient = await createClient("admin");
+  const accessClient = await createClient();
   const {
     data: { user },
   } = await accessClient.auth.getUser();
@@ -348,20 +465,65 @@ export async function selectStudio(formData: FormData) {
   redirect(portalDestination(membership, studioAccess.capabilities));
 }
 
+
+export async function selectStudentStudio(formData: FormData) {
+  const studioId = String(formData.get("studio_id") ?? "").trim();
+  if (!studioId) redirect("/login/student/seleccionar?error=missing");
+
+  const accessClient = await createClient();
+  const {
+    data: { user },
+  } = await accessClient.auth.getUser();
+
+  if (!user) redirect("/login/student");
+
+  const accountResult = await accessClient
+    .from("user_accounts")
+    .select("status, must_change_password")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (!accountResult.data || accountResult.data.status !== "active") {
+    await accessClient.auth.signOut();
+    redirect("/login/student?error=access");
+  }
+
+  if (accountResult.data.must_change_password) {
+    await clearSelectedStudio();
+    redirect("/login/student/activar");
+  }
+
+  const studentAccess = await getEligibleStudentAccess(accessClient, user.id);
+  const membership = studentAccess.memberships.find((item) => item.studio_id === studioId);
+
+  if (studentAccess.error || !membership) {
+    redirect("/login/student/seleccionar?error=access");
+  }
+
+  await setSelectedStudio(studioId);
+  redirect("/student");
+}
+
 export async function completeStudioPasswordActivation(formData: FormData) {
   const password = String(formData.get("password") ?? "");
   const confirmation = String(formData.get("password_confirmation") ?? "");
+  const requestedStudioSlug = normalizedStudioSlug(formData.get("studio_slug"));
 
   if (password.length < 8 || password !== confirmation) {
-    redirect("/login/studio/activar?error=invalid");
+    redirect(activationPath("studio", requestedStudioSlug || undefined, "invalid"));
   }
 
-  const supabase = await createClient("admin");
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) redirect("/login/studio");
+  if (!user) {
+    const login = requestedStudioSlug
+      ? `/login/studio?studio=${encodeURIComponent(requestedStudioSlug)}`
+      : "/login/studio";
+    redirect(login);
+  }
 
   const accountResult = await supabase
     .from("user_accounts")
@@ -371,32 +533,53 @@ export async function completeStudioPasswordActivation(formData: FormData) {
 
   if (!accountResult.data || accountResult.data.status !== "active") {
     await supabase.auth.signOut();
-    redirect("/login/studio?error=access");
+    redirect(loginErrorPath("studio", "access", requestedStudioSlug));
   }
 
   const studioAccess = await getEligibleStudioAccess(supabase, user.id);
   if (studioAccess.error || !studioAccess.memberships.length) {
     await supabase.auth.signOut();
-    redirect("/login/studio?error=access");
+    redirect(loginErrorPath("studio", "access", requestedStudioSlug));
   }
 
+  const requestedMembership = await membershipForRequestedStudio(
+    supabase,
+    studioAccess.memberships,
+    requestedStudioSlug,
+  );
+
   if (!accountResult.data.must_change_password) {
+    if (requestedMembership) {
+      await setSelectedStudio(requestedMembership.studio_id);
+      redirect(portalDestination(requestedMembership, studioAccess.capabilities));
+    }
     if (studioAccess.memberships.length > 1) redirect("/login/studio/seleccionar");
     const membership = studioAccess.memberships[0];
     await setSelectedStudio(membership.studio_id);
     redirect(portalDestination(membership, studioAccess.capabilities));
   }
 
-  const hasInstructorMembership = studioAccess.memberships.some(
-    (membership) => membership.role === "instructor",
+  const hasActivatableStudioMembership = studioAccess.memberships.some((membership) =>
+    ["owner", "admin", "instructor"].includes(membership.role),
   );
-  if (!hasInstructorMembership) redirect("/login/studio?error=activation");
+  if (!hasActivatableStudioMembership) {
+    redirect(loginErrorPath("studio", "activation", requestedStudioSlug));
+  }
 
   const { error: passwordError } = await supabase.auth.updateUser({ password });
-  if (passwordError) redirect("/login/studio/activar?error=password");
+  if (passwordError) {
+    redirect(activationPath("studio", requestedStudioSlug || undefined, "password"));
+  }
 
-  const { error: activationError } = await supabase.rpc("instructor_complete_password_activation");
-  if (activationError) redirect("/login/studio/activar?error=save");
+  const { error: activationError } = await supabase.rpc("studio_complete_password_activation");
+  if (activationError) {
+    redirect(activationPath("studio", requestedStudioSlug || undefined, "save"));
+  }
+
+  if (requestedMembership) {
+    await setSelectedStudio(requestedMembership.studio_id);
+    redirect(portalDestination(requestedMembership, studioAccess.capabilities));
+  }
 
   if (studioAccess.memberships.length > 1) {
     await clearSelectedStudio();
@@ -408,39 +591,9 @@ export async function completeStudioPasswordActivation(formData: FormData) {
   redirect(portalDestination(membership, studioAccess.capabilities));
 }
 
-export async function createInitialOwnerAccount(formData: FormData) {
-  const fullName = String(formData.get("full_name") ?? "").trim();
-  const email = String(formData.get("email") ?? "").trim();
-  const password = String(formData.get("password") ?? "");
-
-  if (!fullName || !email || password.length < 8) {
-    redirect("/setup?error=invalid");
-  }
-
-  const supabase = await createClient("admin");
-  const { data, error } = await supabase.auth.signUp({
-    email,
-    password,
-    options: { data: { full_name: fullName } },
-  });
-
-  if (error || !data.user) {
-    redirect("/setup?error=signup");
-  }
-
+export async function signOut() {
+  const supabase = await createClient();
   await supabase.auth.signOut();
-  redirect("/setup?created=1");
-}
-
-export async function signOut(formData?: FormData) {
-  const mode = String(formData?.get("mode") ?? "");
-  const portal = mode === "student" ? "student" : "admin";
-  const supabase = await createClient(portal);
-  await supabase.auth.signOut();
-
-  if (portal === "admin") {
-    await clearSelectedStudio();
-  }
-
-  redirect(portal === "student" ? "/login/student" : "/login/studio");
+  await clearSelectedStudio();
+  redirect("/");
 }

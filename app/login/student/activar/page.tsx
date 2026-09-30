@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getPublicStudioPortal } from "@/lib/studio-public-portal";
 import { completeStudentPasswordActivation } from "./actions";
 
 const messages: Record<string, string> = {
@@ -14,9 +15,13 @@ type EntryRoute = "activate" | "profile" | "login" | "invalid";
 export default async function StudentActivationPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; token_hash?: string; type?: string }>;
+  searchParams: Promise<{ error?: string; token_hash?: string; type?: string; studio?: string }>;
 }) {
-  const { error, token_hash: tokenHash, type } = await searchParams;
+  const { error, token_hash: tokenHash, type, studio: requestedStudioSlug } = await searchParams;
+  const portal = requestedStudioSlug
+    ? await getPublicStudioPortal(requestedStudioSlug)
+    : null;
+  const brandName = portal?.name ?? "Studio Flow";
   const recoveryToken = typeof tokenHash === "string" && type === "recovery" ? tokenHash : null;
   const supabase = await createClient();
 
@@ -75,20 +80,23 @@ export default async function StudentActivationPage({
   return (
     <main className="auth-shell">
       <section className="auth-card">
-        <p className="eyebrow">DEMETER</p>
+        <p className="eyebrow">{brandName.toUpperCase()}</p>
         <h1 className="auth-title">
           {invalidLinkState ? "Enlace de activación" : "Crea tu contraseña"}
         </h1>
         <p className="auth-copy">
           {invalidLinkState
             ? "Este enlace ya no puede usarse para crear una contraseña."
-            : "Elige la contraseña que usarás para entrar a Studio Flow. Debe tener al menos 8 caracteres."}
+            : `Elige la contraseña que usarás para entrar a ${brandName}. Debe tener al menos 8 caracteres.`}
         </p>
 
         {invalidLinkState ? (
           <>
             <div className="notice error">{messages.link}</div>
-            <a className="primary-button" href="/login/student">
+            <a
+              className="primary-button"
+              href={portal?.slug ? `/login/student?studio=${portal.slug}` : "/login/student"}
+            >
               Ir al inicio de sesión
             </a>
           </>
@@ -99,6 +107,7 @@ export default async function StudentActivationPage({
             ) : null}
 
             <form action={completeStudentPasswordActivation} className="auth-form">
+              {portal?.slug ? <input type="hidden" name="studio_slug" value={portal.slug} /> : null}
               {recoveryToken ? (
                 <>
                   <input type="hidden" name="token_hash" value={recoveryToken} />

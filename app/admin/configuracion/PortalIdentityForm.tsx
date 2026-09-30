@@ -19,14 +19,18 @@ export function PortalIdentityForm({
   initialName,
   initialLogoUrl,
   portalPath,
-  primaryColor,
+  initialPrimaryColor,
+  initialTagline,
 }: {
   initialName: string;
   initialLogoUrl: string | null;
   portalPath: string;
-  primaryColor: string;
+  initialPrimaryColor: string;
+  initialTagline: string | null;
 }) {
   const [name, setName] = useState(initialName);
+  const [tagline, setTagline] = useState(initialTagline ?? "");
+  const [primaryColor, setPrimaryColor] = useState(initialPrimaryColor);
   const [previewLogo, setPreviewLogo] = useState<string | null>(initialLogoUrl);
   const [removeLogo, setRemoveLogo] = useState(false);
 
@@ -67,6 +71,29 @@ export function PortalIdentityForm({
             onChange={(event) => setName(event.target.value)}
           />
           <small>Este mismo nombre se usa en el portal y dentro del panel del estudio.</small>
+        </label>
+
+        <label className="branding-field">
+          <span>Frase de marca</span>
+          <input
+            name="tagline"
+            value={tagline}
+            maxLength={120}
+            placeholder="Opcional"
+            onChange={(event) => setTagline(event.target.value)}
+          />
+          <small>Se muestra debajo del nombre en la entrada pública del estudio.</small>
+        </label>
+
+        <label className="branding-field">
+          <span>Color principal</span>
+          <input
+            name="primary_color"
+            type="color"
+            value={primaryColor}
+            onChange={(event) => setPrimaryColor(event.target.value.toUpperCase())}
+          />
+          <small>{primaryColor.toUpperCase()}</small>
         </label>
 
         <div className="branding-field">
@@ -121,7 +148,7 @@ export function PortalIdentityForm({
           )}
           <strong>{name.trim() || "Nombre del estudio"}</strong>
           <span />
-          <p>Movimiento que transforma</p>
+          <p>{tagline.trim() || "Tu frase de marca"}</p>
           <div className="branding-preview-actions">
             <small>MI ESTUDIO</small>
             <small>SOY ALUMNA</small>

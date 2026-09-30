@@ -228,7 +228,7 @@ export default async function StudentDocumentReadPage({
       <p className="text-center text-[11px] leading-5 text-zinc-600">
         Vigente desde{" "}
         {detail.effective_at
-          ? new Intl.DateTimeFormat("es-MX", {
+          ? new Intl.DateTimeFormat(studio.locale, {
               dateStyle: "medium",
               timeZone: studio.timezone,
             }).format(new Date(detail.effective_at))
