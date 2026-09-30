@@ -1039,3 +1039,42 @@
     justify-self: end;
   }
 }
+
+
+/* SF V2 · Perfil 360 light visual system. Behavior unchanged. */
+.admin-ux04-profile360{--p360-bg:#f5f7f9;--p360-surface:#fff;--p360-line:#e3e8ed;--p360-text:#172033;--p360-muted:#748095;--p360-accent:#159b8c;--p360-soft:#e8f7f4;background:var(--p360-bg);color:var(--p360-text)}
+.admin-ux04-profile360 .profile360-back{color:#657389}
+.admin-ux04-profile360 .profile360-approved-person{border-color:var(--p360-line);background:var(--p360-surface);box-shadow:0 10px 30px rgba(24,36,54,.06)}
+.admin-ux04-profile360 .profile360-avatar{border-color:#9dd9d0;background:#eaf7f4;box-shadow:none}
+.admin-ux04-profile360 .profile360-approved-title h1{color:var(--p360-text)}
+.admin-ux04-profile360 .profile360-approved-contact{color:var(--p360-muted)}
+.admin-ux04-profile360 .profile360-level-pill{border-color:#b9e4dd;background:var(--p360-soft);color:#0c8174}
+.admin-ux04-profile360 .profile360-edit-link{border-color:#b9e4dd;background:#fff;color:#0c8174}
+.admin-ux04-profile360 .profile360-approved-tabs{border-color:var(--p360-line);background:var(--p360-surface)}
+.admin-ux04-profile360 .profile360-approved-tabs a{color:#758196}
+.admin-ux04-profile360 .profile360-approved-tabs a.is-active{color:#0c8174}
+.admin-ux04-profile360 .profile360-approved-tabs a.is-active::after{background:var(--p360-accent)}
+.admin-ux04-profile360 .profile360-approved-package,.admin-ux04-profile360 .profile360-approved-alerts,.admin-ux04-profile360 .profile360-view-panel,.admin-ux04-profile360 .profile360-detail,.admin-ux04-profile360 .profile360-technical-levels{border-color:var(--p360-line);background:var(--p360-surface);box-shadow:0 8px 24px rgba(24,36,54,.05)}
+.admin-ux04-profile360 .profile360-approved-card-heading h2,.admin-ux04-profile360 .profile360-view-heading h2{color:var(--p360-text)}
+.admin-ux04-profile360 .profile360-approved-package-balance,.admin-ux04-profile360 .profile360-approved-package-expiry,.admin-ux04-profile360 .profile360-approved-indicators article,.admin-ux04-profile360 .profile360-technical-level-row,.admin-ux04-profile360 .profile360-package-card,.admin-ux04-profile360 .profile360-reward-list article,.admin-ux04-profile360 .profile360-history-list article,.admin-ux04-profile360 .profile360-package-class-row{border-color:var(--p360-line);background:#fafbfc}
+.admin-ux04-profile360 .profile360-approved-package-balance strong,.admin-ux04-profile360 .profile360-approved-package-expiry strong,.admin-ux04-profile360 .profile360-approved-indicators strong{color:#263247}
+.admin-ux04-profile360 .profile360-approved-package-balance span,.admin-ux04-profile360 .profile360-approved-package-expiry span,.admin-ux04-profile360 .profile360-approved-next>span,.admin-ux04-profile360 .profile360-approved-indicators span{color:var(--p360-muted)}
+.admin-ux04-profile360 .profile360-approved-progress{background:#e7ecef}
+.admin-ux04-profile360 .profile360-approved-progress span{background:var(--p360-accent)}
+.admin-ux04-profile360 .profile360-approved-next{border-top-color:var(--p360-line)}
+.admin-ux04-profile360 .profile360-approved-alerts{border-color:#f0d6db;background:#fffafb}
+.admin-ux04-profile360 .profile360-technical-levels .profile360-approved-card-heading>a,.admin-ux04-profile360 .profile360-technical-level-empty a{color:#0c8174}
+.admin-ux04-profile360 .profile360-technical-level-row>span{color:#5f6d82}
+.admin-ux04-profile360 .profile360-technical-level-row>strong{border-color:#b9e4dd;background:var(--p360-soft);color:#0c8174}
+.admin-ux04-profile360 .profile360-technical-level-empty{border-color:#d9e0e6;color:#748095}
+.admin-ux04-profile360 .profile360-approved-alert-list>div{border-color:#efdde1;background:#fff}
+.admin-ux04-profile360 .profile360-approved-alert-list strong{color:#a94159}
+.admin-ux04-profile360 .profile360-package-card.is-current{border-color:#9dd9d0;box-shadow:0 0 0 1px rgba(21,155,140,.04)}
+.admin-ux04-profile360 .profile360-package-card-body,.admin-ux04-profile360 .panel-heading{border-color:var(--p360-line)}
+.admin-ux04-profile360 .profile360-package-facts>div{border-color:var(--p360-line);background:#fafbfc}
+.admin-ux04-profile360 .profile360-package-edit{border-color:#b9e4dd;background:var(--p360-soft)}
+.admin-ux04-profile360 .profile360-detail>summary strong{color:#263247}
+.admin-ux04-profile360 .profile360-detail>summary small{color:var(--p360-muted)}
+.admin-ux04-profile360 .profile360-detail>.panel{border-top-color:var(--p360-line);background:#fff}
+.admin-ux04-profile360 .compact-form input,.admin-ux04-profile360 .compact-form select,.admin-ux04-profile360 .compact-form textarea{border-color:var(--p360-line);background:#fafbfc;color:#263247}
+.admin-ux04-profile360 .compact-form input:focus,.admin-ux04-profile360 .compact-form select:focus,.admin-ux04-profile360 .compact-form textarea:focus{border-color:#78c9bd;box-shadow:0 0 0 3px rgba(21,155,140,.08)}
