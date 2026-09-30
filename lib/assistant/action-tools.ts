@@ -273,19 +273,18 @@ async function executeBooking(
   ctx: AssistantActionToolContext,
   args: ExecuteBookingArgs,
 ) {
-  const actionId = parseOpaqueRef(args.pending_action_ref, "action");
-  if (!actionId) {
-    return { ok: false, error: "invalid_pending_action_ref" };
-  }
+  void args;
 
   const { data: pending, error: pendingError } = await ctx.supabase
     .from("assistant_pending_actions")
     .select(
       "id,action_type,action_payload,confirmation_summary,status,expires_at,execution_ref",
     )
-    .eq("id", actionId)
     .eq("studio_id", ctx.studio.id)
     .eq("conversation_id", ctx.conversationId)
+    .eq("action_type", "booking.create")
+    .order("created_at", { ascending: false })
+    .limit(1)
     .maybeSingle();
 
   if (pendingError || !pending) {
