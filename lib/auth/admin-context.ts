@@ -88,28 +88,31 @@ export async function getAdminContext(
     | StudioSubscriptionSnapshot
     | null;
 
-  if (
-    !studio ||
-    studio.status !== "active" ||
-    capabilitiesError ||
-    modulesError ||
-    subscriptionError ||
-    !subscription
-  ) {
+  if (!studio || studio.status !== "active") {
     await supabase.auth.signOut();
     redirect("/login/studio?error=access");
   }
 
-  const capabilities = new Set(
-    (effectiveCapabilities ?? []).map(
-      (item: { capability_key: string }) => item.capability_key as Capability,
-    ),
-  );
-  const modules = new Set(
-    (effectiveModules ?? []).map(
-      (item: { module_key: string }) => item.module_key as StudioModule,
-    ),
-  );
+  // SaaS entitlement metadata must never invalidate a valid studio login.
+  // Fall back to the membership role while subscription/module metadata is unavailable.
+  const fallbackCapabilities = new Set<Capability>();
+  if (["owner", "admin"].includes(membership.role)) fallbackCapabilities.add(CAPABILITIES.ADMIN_PORTAL);
+  if (membership.role === "instructor") fallbackCapabilities.add(CAPABILITIES.INSTRUCTOR_PORTAL);
+
+  const capabilities = capabilitiesError
+    ? fallbackCapabilities
+    : new Set(
+        (effectiveCapabilities ?? []).map(
+          (item: { capability_key: string }) => item.capability_key as Capability,
+        ),
+      );
+  const modules = modulesError
+    ? new Set<StudioModule>()
+    : new Set(
+        (effectiveModules ?? []).map(
+          (item: { module_key: string }) => item.module_key as StudioModule,
+        ),
+      );
   const canUseStudioPortal =
     capabilities.has(CAPABILITIES.ADMIN_PORTAL) || capabilities.has(CAPABILITIES.INSTRUCTOR_PORTAL);
 
@@ -118,7 +121,7 @@ export async function getAdminContext(
     redirect("/login/studio?error=access");
   }
 
-  if (subscription.access_mode === "restricted" && !options.allowRestricted) {
+  if (subscription && !subscriptionError && subscription.access_mode === "restricted" && !options.allowRestricted) {
     redirect("/admin/suscripcion");
   }
 
@@ -136,7 +139,7 @@ export async function getAdminContext(
     account,
     membership,
     studio,
-    subscription,
+    subscription: subscription ?? ({ plan_key: "legacy", plan_name: "Studio activo", status: "active", effective_status: "active", access_mode: "full", trial_ends_at: null, current_period_start: null, current_period_end: null, grace_ends_at: null, cancel_at_period_end: false, cancelled_at: null, suspended_at: null, last_payment_failure_at: null, billing_provider: null } satisfies StudioSubscriptionSnapshot),
     capabilities,
     modules,
     can(capability: Capability) {
