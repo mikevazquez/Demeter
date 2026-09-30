@@ -607,3 +607,24 @@ a.intel-data-row:hover {
  .intel-panel{padding:15px}.intel-two-column{gap:12px}.intel-stack{gap:12px}
 }
 @media(max-width:420px){.intel-kpi-grid{grid-template-columns:minmax(0,1fr)}}
+
+
+/* SF V2 · Intelligence mobile layout hardening */
+@media(max-width:760px){
+ .intel-page,.intel-page *{box-sizing:border-box}
+ .intel-page{width:100%;max-width:100%;overflow-x:hidden}
+ .intel-two-column{display:grid!important;grid-template-columns:minmax(0,1fr)!important;width:100%!important}
+ .intel-two-column>*{width:100%!important;min-width:0!important;max-width:100%!important}
+ .intel-stack{display:grid!important;grid-template-columns:minmax(0,1fr)!important;width:100%!important;min-width:0!important}
+ .intel-panel{width:100%!important;min-width:0!important;max-width:100%!important;overflow:hidden}
+ .intel-insight-list,.intel-bars,.intel-table,.intel-data-list,.intel-risk-list{width:100%!important;min-width:0!important}
+ .intel-insight{width:100%!important;min-width:0!important}
+ .intel-insight-copy{min-width:0!important}
+ .intel-insight-copy strong,.intel-insight-copy small{overflow-wrap:anywhere}
+ .intel-table-head,.intel-table-row,.intel-data-head,.intel-data-row{min-width:0!important}
+ .intel-tabs{width:100%;max-width:100%;overflow-x:auto;scrollbar-width:none}
+ .intel-tabs::-webkit-scrollbar{display:none}
+ .intel-tabs a{flex:0 0 auto}
+ .intel-periods{max-width:100%}
+ .intel-kpi-grid{width:100%}
+}
