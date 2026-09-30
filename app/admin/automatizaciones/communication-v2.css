@@ -498,3 +498,162 @@
     font-size: 15px;
   }
 }
+
+
+/* Communication detail */
+.admin-shell:has(.communication-v2-detail) {
+  --communication-accent: #17a878;
+  --communication-accent-strong: #0f8f66;
+  --communication-accent-soft: #e7f8f1;
+  --communication-text: #10203a;
+  --communication-muted: #687891;
+  --communication-line: #e3eaf1;
+  --communication-bg: #f5f8fb;
+  background: var(--communication-bg);
+  color: var(--communication-text);
+}
+
+.admin-shell:has(.communication-v2-detail) .admin-content {
+  background: var(--communication-bg);
+}
+
+.admin-shell:has(.communication-v2-detail) .admin-sidebar {
+  border-right-color: var(--communication-line);
+  background: #fff;
+}
+
+.admin-shell:has(.communication-v2-detail) .brand-lockup strong,
+.admin-shell:has(.communication-v2-detail) .sidebar-user-copy strong {
+  color: var(--communication-text);
+}
+
+.admin-shell:has(.communication-v2-detail) .brand-lockup small,
+.admin-shell:has(.communication-v2-detail) .sidebar-user-copy small,
+.admin-shell:has(.communication-v2-detail) .sidebar-signout {
+  color: var(--communication-muted);
+}
+
+.admin-shell:has(.communication-v2-detail) .admin-nav-item {
+  color: #53637b;
+}
+
+.admin-shell:has(.communication-v2-detail) .admin-nav-item.is-active {
+  background: var(--communication-accent-soft);
+  color: var(--communication-accent-strong);
+}
+
+.admin-shell:has(.communication-v2-detail) .admin-utility-bar {
+  border-bottom-color: var(--communication-line);
+  background: rgba(255,255,255,.92);
+}
+
+.communication-v2-detail {
+  width: min(980px, 100%);
+  min-height: calc(100vh - 54px);
+  display: grid;
+  align-content: start;
+  gap: 18px;
+  margin: 0 auto;
+  padding: 34px 34px 46px;
+  color: var(--communication-text);
+}
+
+.communication-v2-detail .communication-v2-detail-back {
+  display: inline-flex;
+  margin-bottom: 8px;
+  color: var(--communication-muted);
+  font-size: 14px;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.communication-v2-detail h1,
+.communication-v2-detail h2,
+.communication-v2-detail h3,
+.communication-v2-detail .text-white {
+  color: var(--communication-text) !important;
+}
+
+.communication-v2-detail header > p:first-of-type,
+.communication-v2-detail .text-fuchsia-300 {
+  color: var(--communication-accent-strong) !important;
+}
+
+.communication-v2-detail .text-zinc-300,
+.communication-v2-detail .text-zinc-400,
+.communication-v2-detail .text-zinc-500 {
+  color: var(--communication-muted) !important;
+}
+
+.communication-v2-detail .border-white\/10,
+.communication-v2-detail [class*="border-white/10"] {
+  border-color: var(--communication-line) !important;
+}
+
+.communication-v2-detail .bg-white\/\[0\.03\],
+.communication-v2-detail [class*="bg-white/[0.03]"],
+.communication-v2-detail [class*="bg-black/20"] {
+  background: #fff !important;
+}
+
+.communication-v2-detail input,
+.communication-v2-detail select,
+.communication-v2-detail textarea {
+  border-color: #dce4eb !important;
+  background: #fbfcfd !important;
+  color: var(--communication-text) !important;
+}
+
+.communication-v2-detail input:focus,
+.communication-v2-detail select:focus,
+.communication-v2-detail textarea:focus {
+  border-color: #78cbb0 !important;
+  box-shadow: 0 0 0 3px rgba(23,168,120,.08) !important;
+}
+
+.communication-v2-detail button[class*="bg-fuchsia"],
+.communication-v2-detail a[class*="bg-fuchsia"] {
+  background: var(--communication-accent) !important;
+  color: #fff !important;
+}
+
+.communication-v2-detail [class*="bg-emerald"] {
+  background: var(--communication-accent-soft) !important;
+}
+
+.communication-v2-detail [class*="text-emerald"] {
+  color: var(--communication-accent-strong) !important;
+}
+
+.communication-v2-detail [class*="bg-amber"] {
+  background: #fff4df !important;
+}
+
+.communication-v2-detail [class*="text-amber"] {
+  color: #a56500 !important;
+}
+
+.communication-v2-detail [class*="bg-rose"] {
+  background: #fff0f2 !important;
+}
+
+.communication-v2-detail [class*="text-rose"] {
+  color: #b84c56 !important;
+}
+
+@media (max-width: 760px) {
+  .communication-v2-detail {
+    gap: 14px;
+    padding: 22px 14px 100px;
+  }
+
+  .communication-v2-detail h1 {
+    font-size: 32px;
+  }
+
+  .communication-v2-detail input,
+  .communication-v2-detail select,
+  .communication-v2-detail textarea {
+    font-size: 16px !important;
+  }
+}
