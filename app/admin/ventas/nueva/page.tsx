@@ -120,17 +120,17 @@ export default async function NewSalePage({
   );
 
   return (
-    <main className="dashboard-shell admin-module-page sale-page">
-      <header className="module-header">
+    <main className="sales-v2 sales-v2-new">
+      <header className="sales-v2-header sales-v2-new-header">
         <div>
           <Link
-            className="back-link compact"
-            href={selectedStudent ? `/admin/alumnas/${selectedStudent.id}` : "/admin"}
+            className="sales-v2-back"
+            href={selectedStudent ? `/admin/alumnas/${selectedStudent.id}` : "/admin/ventas"}
           >
-            {selectedStudent ? "← Perfil 360" : "← Hoy"}
+            {selectedStudent ? "← Perfil de alumna" : "← Ventas"}
           </Link>
-          <h1>Registrar venta</h1>
-          <p>Mismo flujo comercial aprobado: alumna, paquete, condiciones, pago y confirmación.</p>
+          <h1>Nueva venta</h1>
+          <p>Selecciona la alumna y registra lo que compró y cómo pagó.</p>
         </div>
       </header>
 
@@ -145,7 +145,7 @@ export default async function NewSalePage({
           No hay alumnas activas disponibles para registrar una venta.
         </section>
       ) : !selectedStudent ? (
-        <section className="sale-step-card">
+        <section className="sales-v2-select-card">
           <div className="sale-step-layout">
             <span className="sale-step-number">1</span>
             <div className="sale-step-content">
@@ -175,7 +175,7 @@ export default async function NewSalePage({
         </section>
       ) : (
         <>
-          <section className="sale-context-card">
+          <section className="sales-v2-student-context">
             <div>
               <span>Alumna</span>
               <strong>{selectedStudent.full_name}</strong>
