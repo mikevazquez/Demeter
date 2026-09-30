@@ -126,16 +126,16 @@ export default async function GeneratedRewardsPage({
       <header>
         <p className="eyebrow">RECOMPENSAS GENERADAS · {ctx.studio.name}</p>
         <h1 className="dashboard-title">Recompensas generadas</h1>
-        <p className="mt-2 text-sm text-zinc-400">
+        <p className="mt-2 text-sm text-slate-600">
           Aquí se revisan recompensas ya creadas por el sistema. No se crean recompensas manuales.
         </p>
       </header>
 
-      <form className="grid gap-3 rounded-2xl border border-white/10 bg-white/[0.03] p-4 md:grid-cols-[220px_220px_auto]">
+      <form className="grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 md:grid-cols-[220px_220px_auto]">
         <select
           name="status"
           defaultValue={status}
-          className="rounded-xl border border-white/10 bg-[#111114] px-3 py-2.5 text-white"
+          className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-slate-900"
         >
           <option value="">Todos los estados</option>
           <option value="available">Disponible</option>
@@ -147,7 +147,7 @@ export default async function GeneratedRewardsPage({
         <select
           name="origin"
           defaultValue={origin}
-          className="rounded-xl border border-white/10 bg-[#111114] px-3 py-2.5 text-white"
+          className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-slate-900"
         >
           <option value="">Todos los orígenes</option>
           <option value="program">Programa</option>
@@ -155,7 +155,7 @@ export default async function GeneratedRewardsPage({
           <option value="achievement">Logro</option>
           <option value="other">Otro</option>
         </select>
-        <button className="rounded-xl border border-[#FF0A8A]/30 bg-[#FF0A8A]/10 px-4 py-2.5 text-sm font-semibold text-[#ff64b6]">
+        <button className="rounded-xl border border-teal-200 bg-teal-600/10 px-4 py-2.5 text-sm font-semibold text-teal-700">
           Filtrar
         </button>
       </form>
@@ -168,19 +168,19 @@ export default async function GeneratedRewardsPage({
             <Link
               key={reward.id}
               href={`/admin/recompensas/generadas/${reward.id}`}
-              className="grid gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-5 py-4 transition hover:border-[#FF0A8A]/35 md:grid-cols-[1.3fr_1fr_auto] md:items-center"
+              className="grid gap-3 rounded-2xl border border-slate-200 bg-white px-5 py-4 transition hover:border-[#FF0A8A]/35 md:grid-cols-[1.3fr_1fr_auto] md:items-center"
             >
               <div>
-                <strong className="text-white">
+                <strong className="text-slate-900">
                   {rewardDefinitionLabel(reward.benefit_definition, ctx.studio.locale, ctx.studio.currency)}
                 </strong>
-                <p className="mt-1 text-sm text-zinc-400">
+                <p className="mt-1 text-sm text-slate-600">
                   {studentMap.get(reward.student_id)?.full_name ?? "Alumna"}
                 </p>
               </div>
-              <div className="text-sm text-zinc-400">
+              <div className="text-sm text-slate-600">
                 <p>{originLabel}</p>
-                <p className="mt-1 text-xs uppercase tracking-wide text-zinc-500">
+                <p className="mt-1 text-xs uppercase tracking-wide text-slate-500">
                   {originType === "program"
                     ? "Programa"
                     : originType === "challenge"
