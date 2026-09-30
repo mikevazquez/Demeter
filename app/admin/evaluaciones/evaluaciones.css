@@ -2731,3 +2731,21 @@ body:has(.evaluations-page),main:has(.evaluations-page){background:#f5f7f8!impor
 .eval-empty{color:var(--eval-muted)!important}.back-link{color:#526174!important}
 .eval-discipline-card:hover,.eval-level-row:hover{border-color:#b8d9d4!important;background:#fbfefd!important}
 @media(max-width:760px){.evaluations-page{padding:16px 14px 96px!important}.eval-config-section{padding:14px!important}.eval-discipline-card{min-height:76px!important}.eval-level-row{padding:12px!important}.eval-level-actions{width:100%}.eval-level-actions form,.eval-level-actions a{flex:1}.eval-level-actions .eval-secondary-button,.eval-level-actions .eval-primary-button,.eval-level-actions .eval-danger-button{width:100%!important;min-width:0!important}}
+
+/* V2 completion pass: every nested evaluation editor uses the same light surface */
+.evaluations-page .eval-v2-steps{border-color:var(--eval-line)!important;background:#fff!important}
+.evaluations-page .eval-v2-steps a{color:#667487!important}.evaluations-page .eval-v2-steps a.is-active{border-bottom-color:var(--eval-accent)!important;background:var(--eval-soft)!important;color:var(--eval-accent)!important}
+.evaluations-page .eval-v2-percent-input,.evaluations-page .eval-v2-mini-percent,.evaluations-page .eval-v2-score-input{border-color:var(--eval-line)!important;background:#fafbfc!important;color:var(--eval-muted)!important}
+.evaluations-page .eval-v2-weight-track,.evaluations-page .eval-progress-track,.evaluations-page .eval-breakdown-track{background:#e9eef1!important}
+.evaluations-page .eval-v2-weight-track i,.evaluations-page .eval-progress-track i,.evaluations-page .eval-breakdown-track i{background:var(--eval-accent)!important;box-shadow:none!important}
+.evaluations-page .eval-v2-add-button{border-color:#9bcfc8!important;background:#f7fcfb!important;color:var(--eval-accent)!important}
+.evaluations-page .eval-v2-block-editor{border-color:#cfe3df!important}
+.evaluations-page .eval-v2-check{color:#526174!important}.evaluations-page .eval-v2-check input{accent-color:var(--eval-accent)!important}
+.evaluations-page .eval-v2-items-section,.evaluations-page .eval-step-form{border-color:var(--eval-line)!important}
+.evaluations-page .eval-v2-new-item{border-color:#cfd8df!important;background:#f8fafb!important}
+.evaluations-page .eval-choice{border-color:var(--eval-line)!important;background:#fafbfc!important;color:#526174!important}.evaluations-page .eval-choice.is-selected{border-color:#8fc8c0!important;background:var(--eval-soft)!important;color:#23675e!important}
+.evaluations-page .eval-summary-card{border-color:#b8d9d4!important;background:#fff!important}.evaluations-page .eval-total-score strong{color:var(--eval-text)!important}.evaluations-page .eval-total-score{border-color:var(--eval-line)!important}.evaluations-page .eval-breakdown-row,.evaluations-page .eval-progress-header{color:#526174!important}
+.evaluations-page .eval-mandatory,.evaluations-page .eval-step-label{border-color:#b8d9d4!important;color:var(--eval-accent)!important}
+.evaluations-page .eval-tabs{border-color:var(--eval-line)!important;background:#fff!important}.evaluations-page .eval-tabs a{color:#667487!important}.evaluations-page .eval-tabs a.is-active{background:var(--eval-soft)!important;color:var(--eval-accent)!important;box-shadow:inset 0 -2px 0 var(--eval-accent)!important}
+.evaluations-page .eval-kpi-card{border-color:var(--eval-line)!important;background:#fff!important;box-shadow:0 8px 24px rgba(24,36,54,.04)!important}.evaluations-page .eval-kpi-copy strong{color:var(--eval-text)!important}.evaluations-page .eval-kpi-copy span,.evaluations-page .eval-kpi-copy small{color:var(--eval-muted)!important}.evaluations-page .eval-kpi-icon{background:var(--eval-soft)!important;color:var(--eval-accent)!important}
+.evaluations-page .eval-date-box{background:var(--eval-soft)!important;box-shadow:inset 3px 0 0 var(--eval-accent)!important}.evaluations-page .eval-date-box strong{color:var(--eval-text)!important}.evaluations-page .eval-date-box small,.evaluations-page .eval-row-copy small{color:var(--eval-muted)!important}.evaluations-page .eval-row-copy strong,.evaluations-page .eval-score{color:var(--eval-text)!important}
