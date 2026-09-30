@@ -27,8 +27,7 @@ function ActivityIcon() {
       strokeLinejoin="round"
       aria-hidden="true"
     >
-      <path d="M12 3v18M5 8.5c2.2-1.8 4.5-2.7 7-2.7s4.8.9 7 2.7M6 16c1.8 1.5 3.8 2.2 6 2.2s4.2-.7 6-2.2" />
-      <circle cx="12" cy="6" r="2" />
+      <path d="M3 12h4l2.5-5 4 10 2.5-5H21" />
     </svg>
   );
 }
@@ -135,29 +134,6 @@ export default async function ActivitiesPage() {
           </Link>
         ) : null}
       </header>
-
-      <section className="activities-v2-info">
-        <span aria-hidden="true">i</span>
-        <p>
-          Una actividad guarda su duración, cupo, horarios y reglas. La Agenda muestra las sesiones
-          que se generan a partir de aquí.
-        </p>
-      </section>
-
-      <section className="activities-v2-summary" aria-label="Resumen de actividades">
-        <article>
-          <strong>{activeActivities.length}</strong>
-          <span>activas</span>
-        </article>
-        <article>
-          <strong>{schedules?.length ?? 0}</strong>
-          <span>horarios activos</span>
-        </article>
-        <article>
-          <strong>{activeActivities.filter((item) => item.requires_resource).length}</strong>
-          <span>usan recurso</span>
-        </article>
-      </section>
 
       <section className="activities-v2-section">
         <div className="activities-v2-section-heading">
