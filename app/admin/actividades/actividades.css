@@ -2199,3 +2199,87 @@
     font-size: 11px;
   }
 }
+
+
+/* ACTIVITIES-V2 · Mobile readability */
+@media (max-width: 760px) {
+  .activities-v2 .activities-stage-heading p {
+    font-size: 13px;
+  }
+
+  .activities-v2 .activities-field > span,
+  .activities-v2 .activities-choice legend {
+    font-size: 14px;
+  }
+
+  .activities-v2 .activities-field input,
+  .activities-v2 .activities-field textarea,
+  .activities-v2 .activities-field select {
+    font-size: 16px;
+  }
+
+  .activities-v2 .activities-field small,
+  .activities-v2 .activities-choice small {
+    font-size: 12px;
+    line-height: 1.5;
+  }
+
+  .activities-v2 .activities-day-card > header small {
+    font-size: 10px;
+  }
+
+  .activities-v2 .activities-day-card > header strong {
+    font-size: 14px;
+  }
+
+  .activities-v2 .activities-day-card > header button,
+  .activities-v2 .activities-add-day,
+  .activities-v2 .activities-remove-slot,
+  .activities-v2 .activities-review-card header button {
+    font-size: 13px;
+  }
+
+  .activities-v2 .activities-duration-chip {
+    font-size: 12px;
+  }
+
+  .activities-v2 .activities-helper,
+  .activities-v2 .activities-operation-copy p,
+  .activities-v2 .activities-credit-card p,
+  .activities-v2 .activities-toggle-row small,
+  .activities-v2 .activities-minimum-how ol,
+  .activities-v2 .activities-ready-card p {
+    font-size: 12px;
+    line-height: 1.55;
+  }
+
+  .activities-v2 .activities-operation-copy > span,
+  .activities-v2 .activities-credit-card > span {
+    font-size: 10px;
+  }
+
+  .activities-v2 .activities-operation-copy strong,
+  .activities-v2 .activities-credit-card strong,
+  .activities-v2 .activities-toggle-row strong,
+  .activities-v2 .activities-minimum-how strong {
+    font-size: 13px;
+  }
+
+  .activities-v2 .activities-review-card dt {
+    font-size: 11px;
+  }
+
+  .activities-v2 .activities-review-card dd,
+  .activities-v2 .activities-review-schedules span {
+    font-size: 13px;
+  }
+
+  .activities-v2 .activities-stepper button strong {
+    font-size: 12px;
+  }
+
+  .activities-v2 .activities-back-button,
+  .activities-v2 .activities-next-button {
+    font-size: 15px;
+  }
+}
