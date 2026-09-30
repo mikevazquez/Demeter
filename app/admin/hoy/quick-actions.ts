@@ -5,7 +5,7 @@ import { getAdminContext } from "@/lib/auth/admin-context";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { normalizeMexicanPhone } from "@/lib/phone";
 
-type QuickResult = { ok: boolean; message: string };
+type QuickResult = { ok: boolean; message: string; student?: { id: string; fullName: string } };
 
 function moneyToMinor(value: FormDataEntryValue | null) {
   const raw=String(value??"").replace(/,/g,"").trim();
@@ -31,7 +31,8 @@ export async function createQuickStudent(formData:FormData):Promise<QuickResult>
   const {data:id,error}=await supabase.rpc("admin_create_student",{p_first_name:first,p_last_name:last||null,p_phone:phone,p_email:email});
   if(error||typeof id!=="string") return {ok:false,message:error?.message.includes("plan_limit_exceeded")?"Se alcanzó el límite de alumnas activas del plan.":"No se pudo crear la alumna."};
   revalidatePath("/admin"); revalidatePath("/admin/alumnas");
-  return {ok:true,message:`${[first,last].filter(Boolean).join(" ")} fue creada.`};
+  const fullName=[first,last].filter(Boolean).join(" ");
+  return {ok:true,message:`${fullName} fue creada.`,student:{id,fullName}};
 }
 
 export async function createQuickSale(formData:FormData):Promise<QuickResult>{
