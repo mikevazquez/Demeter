@@ -6,6 +6,9 @@ on:
   workflow_dispatch:
 jobs:
   build:
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: test-publishable-key
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
