@@ -9,3 +9,10 @@ body:has(.rewards-admin-page),main:has(.rewards-admin-page){background:#f5f7f8!i
 .rewards-admin-page [class*="bg-emerald-500/10"]{background:#edf8f6!important}.rewards-admin-page [class*="text-emerald-300"]{color:#28795d!important}
 .rewards-admin-page [class*="bg-amber-500/10"]{background:#fff8e8!important}.rewards-admin-page [class*="text-amber-300"]{color:#8b6a21!important}
 .rewards-admin-page [class*="bg-rose-500/10"]{background:#fff3f5!important}.rewards-admin-page [class*="text-rose-300"]{color:#a84659!important}
+
+/* Exact generated Tailwind selectors — do not rely on substring selectors with escaped arbitrary values */
+.rewards-admin-page .bg-black\/20,.rewards-admin-page .bg-black\/15,.rewards-admin-page .bg-white\/\[0\.03\],.rewards-admin-page .bg-white\/\[0\.04\],.rewards-admin-page .bg-\[\#111114\],.rewards-admin-page .bg-fuchsia-500\/\[0\.05\]{background:#fff!important}
+.rewards-admin-page .border-white\/10,.rewards-admin-page .border-white\/\[0\.06\],.rewards-admin-page .border-fuchsia-500\/25{border-color:var(--rw-line)!important}
+.rewards-admin-page .text-white{color:var(--rw-text)!important}.rewards-admin-page .text-zinc-300,.rewards-admin-page .text-zinc-400,.rewards-admin-page .text-zinc-500{color:var(--rw-muted)!important}
+.rewards-admin-page .bg-\[\#FF0A8A\]{background:var(--rw-accent)!important}.rewards-admin-page a.bg-\[\#FF0A8A\],.rewards-admin-page button.bg-\[\#FF0A8A\]{color:#fff!important}
+.rewards-admin-page .bg-\[\#FF0A8A\]\/10{background:var(--rw-soft)!important}.rewards-admin-page .text-\[\#ff64b6\],.rewards-admin-page .text-\[\#FF0A8A\]{color:var(--rw-accent)!important}.rewards-admin-page .border-\[\#FF0A8A\]\/30,.rewards-admin-page .border-\[\#FF0A8A\]\/25{border-color:#9bcfc8!important}
