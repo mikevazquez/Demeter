@@ -1157,3 +1157,25 @@
   font-size: 12px;
   line-height: 1.5;
 }
+
+
+/* Activity-linked packages */
+.package-activity-badge {
+  display: grid;
+  gap: 5px;
+  padding: 16px;
+  border: 1px solid #dfd2f3;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #f7f2ff, #f1e9fd);
+}
+
+.package-activity-badge strong {
+  color: #6231a9;
+  font-size: 17px;
+}
+
+.package-activity-badge span {
+  color: #776a88;
+  font-size: 12px;
+  line-height: 1.5;
+}
