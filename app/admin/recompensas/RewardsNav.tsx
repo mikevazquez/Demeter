@@ -20,7 +20,7 @@ export function RewardsNav() {
   return (
     <nav
       aria-label="Progress & Rewards"
-      className="flex gap-2 overflow-x-auto rounded-2xl border border-white/10 bg-black/20 p-2"
+      className="flex gap-2 overflow-x-auto rounded-2xl border border-slate-200 bg-white p-2"
     >
       {items.map((item) => {
         const active = item.exact
@@ -32,8 +32,8 @@ export function RewardsNav() {
             href={item.href}
             className={`whitespace-nowrap rounded-xl px-3 py-2 text-sm font-semibold transition ${
               active
-                ? "bg-[#FF0A8A] text-white"
-                : "text-zinc-400 hover:bg-white/[0.05] hover:text-white"
+                ? "bg-teal-600 text-slate-900"
+                : "text-slate-600 hover:bg-white/[0.05] hover:text-slate-900"
             }`}
           >
             {item.label}
