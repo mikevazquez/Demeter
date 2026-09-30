@@ -2714,3 +2714,20 @@
     padding-bottom: 18px;
   }
 }
+
+/* Studio Flow V2 · light evaluation system */
+.evaluations-page{--eval-accent:#238b7e;--eval-text:#172033;--eval-muted:#748093;--eval-line:#e1e6ea;--eval-card:#fff;--eval-soft:#edf8f6;color:var(--eval-text);background:#f5f7f8}
+body:has(.evaluations-page),main:has(.evaluations-page){background:#f5f7f8!important}
+.eval-header h1,.eval-panel h2,.eval-discipline-card-copy strong,.eval-discipline-copy strong,.eval-template-card h3,.eval-element-copy strong,.eval-feedback-card h3,.eval-v2-items-heading h3,.eval-v2-block-card>strong{color:var(--eval-text)!important}
+.eval-header p,.eval-config-section>header p,.eval-discipline-card-copy small,.eval-discipline-copy small,.eval-template-card p,.eval-template-meta,.eval-element-copy small,.eval-v2-items-heading p,.eval-summary-hint{color:var(--eval-muted)!important}
+.eval-panel,.eval-discipline-card,.eval-discipline-row,.eval-level-row,.eval-template-card,.eval-shortcut,.eval-element-card,.eval-criterion-tab,.eval-v2-block-card,.eval-v2-item-row{background:var(--eval-card)!important;border-color:var(--eval-line)!important;box-shadow:0 8px 24px rgba(24,36,54,.04)!important}
+.eval-discipline-icon,.eval-level-number{background:var(--eval-soft)!important;color:var(--eval-accent)!important}
+.eval-primary-button{border-color:var(--eval-accent)!important;background:var(--eval-accent)!important;color:#fff!important;box-shadow:none!important}
+.eval-secondary-button{border-color:var(--eval-line)!important;background:#f8fafb!important;color:var(--eval-text)!important}
+.eval-danger-button{background:#fff6f7!important;color:#b9475b!important;border-color:#f0cbd2!important}
+.eval-status{border-color:#d7dee5!important;color:#667487!important;background:#f7f9fa!important}.eval-status.approved{border-color:#cce6e1!important;background:var(--eval-soft)!important;color:#28795d!important}
+.eval-field label{color:#526174!important}.eval-field input,.eval-field select,.eval-field textarea,.eval-v2-item-name,.eval-score-row input,.eval-score-row textarea{border-color:var(--eval-line)!important;background:#fafbfc!important;color:var(--eval-text)!important}
+.eval-notice{border-color:#cce6e1!important;background:var(--eval-soft)!important;color:#376b65!important}
+.eval-empty{color:var(--eval-muted)!important}.back-link{color:#526174!important}
+.eval-discipline-card:hover,.eval-level-row:hover{border-color:#b8d9d4!important;background:#fbfefd!important}
+@media(max-width:760px){.evaluations-page{padding:16px 14px 96px!important}.eval-config-section{padding:14px!important}.eval-discipline-card{min-height:76px!important}.eval-level-row{padding:12px!important}.eval-level-actions{width:100%}.eval-level-actions form,.eval-level-actions a{flex:1}.eval-level-actions .eval-secondary-button,.eval-level-actions .eval-primary-button,.eval-level-actions .eval-danger-button{width:100%!important;min-width:0!important}}
