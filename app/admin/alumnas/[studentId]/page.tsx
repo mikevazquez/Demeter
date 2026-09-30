@@ -892,6 +892,10 @@ export default async function StudentProfilePage({
     });
   }
 
+  const { data: profileAvatar } = student.user_id
+    ? await supabase.from("profiles").select("avatar_url").eq("id", student.user_id).maybeSingle()
+    : { data: null };
+
   const errorCopy: Record<string, string> = {
     phone_exists: "Ese teléfono ya pertenece a otra alumna.",
     profile_fields: "No se pudieron guardar los campos adicionales. Revisa sus valores.",
@@ -942,6 +946,7 @@ export default async function StudentProfilePage({
         timeZone={timeZone}
         locale={locale}
         currency={currency}
+        hasAvatar={Boolean(profileAvatar?.avatar_url)}
       />
 
       <StudentLifecycleNoticeDialog
