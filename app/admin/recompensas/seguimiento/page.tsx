@@ -204,28 +204,28 @@ export default async function RewardsTrackingPage({
       <header>
         <p className="eyebrow">SEGUIMIENTO · {ctx.studio.name}</p>
         <h1 className="dashboard-title">Seguimiento</h1>
-        <p className="mt-2 text-sm text-zinc-400">
+        <p className="mt-2 text-sm text-slate-600">
           Observa progreso real. Desde aquí no se puede editar ni fabricar avance.
         </p>
       </header>
 
-      <form className="grid gap-3 rounded-2xl border border-white/10 bg-white/[0.03] p-4 md:grid-cols-[1fr_220px_auto]">
+      <form className="grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 md:grid-cols-[1fr_220px_auto]">
         <input
           name="q"
           defaultValue={search}
           placeholder="Buscar alumna"
-          className="rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 text-white"
+          className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-slate-900"
         />
         <select
           name="type"
           defaultValue={type}
-          className="rounded-xl border border-white/10 bg-[#111114] px-3 py-2.5 text-white"
+          className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-slate-900"
         >
           <option value="programs">Programas</option>
           <option value="challenges">Retos</option>
           <option value="achievements">Logros</option>
         </select>
-        <button className="rounded-xl border border-[#FF0A8A]/30 bg-[#FF0A8A]/10 px-4 py-2.5 text-sm font-semibold text-[#ff64b6]">
+        <button className="rounded-xl border border-teal-200 bg-teal-600/10 px-4 py-2.5 text-sm font-semibold text-teal-700">
           Aplicar
         </button>
       </form>
@@ -241,22 +241,22 @@ export default async function RewardsTrackingPage({
               <Link
                 key={row.id}
                 href={`/admin/recompensas/seguimiento/${row.studentId}`}
-                className="rounded-2xl border border-white/10 bg-white/[0.03] px-5 py-4 transition hover:border-[#FF0A8A]/35"
+                className="rounded-2xl border border-slate-200 bg-white px-5 py-4 transition hover:border-[#FF0A8A]/35"
               >
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div>
                     <div className="flex flex-wrap items-center gap-2">
-                      <strong className="text-white">{student?.full_name ?? "Alumna"}</strong>
+                      <strong className="text-slate-900">{student?.full_name ?? "Alumna"}</strong>
                       {closest ? (
-                        <span className="rounded-full border border-[#FF0A8A]/25 bg-[#FF0A8A]/10 px-2 py-0.5 text-[11px] font-semibold text-[#ff64b6]">
+                        <span className="rounded-full border border-teal-200 bg-teal-600/10 px-2 py-0.5 text-[11px] font-semibold text-teal-700">
                           Más cerca de completar
                         </span>
                       ) : null}
                     </div>
-                    <p className="mt-1 text-sm text-zinc-400">
+                    <p className="mt-1 text-sm text-slate-600">
                       {row.name} · {row.detail}
                     </p>
-                    <p className="mt-2 text-xs text-zinc-500">{row.missing}</p>
+                    <p className="mt-2 text-xs text-slate-500">{row.missing}</p>
                   </div>
                   <StatusBadge status={row.status} />
                 </div>
