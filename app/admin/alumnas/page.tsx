@@ -344,7 +344,6 @@ export default async function StudentsPage({
                 </form>
               </div>
             </details>
-          )
         ) : (
           <span className="role-pill">{membership.role}</span>
         )}
