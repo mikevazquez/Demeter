@@ -104,13 +104,12 @@ export default async function ActivityDetailPage({
   };
 
   return (
-    <main className="dashboard-shell activities-editor-page">
-      <header className="activities-editor-header">
+    <main className="activities-v2 activities-editor-page">
+      <header className="activities-v2-editor-header">
         <div>
-          <Link className="activities-back-link" href="/admin/actividades">
+          <Link className="activities-v2-back" href="/admin/actividades">
             ← Actividades
           </Link>
-          <p className="eyebrow">EDITAR ACTIVIDAD · {studio.name}</p>
           <h1>{activity.name}</h1>
           <p>
             Puedes entrar directamente a cualquiera de las cuatro etapas sin reconstruir la
