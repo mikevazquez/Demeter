@@ -124,13 +124,13 @@ export default async function GeneratedRewardDetailPage({
         <div>
           <Link
             href="/admin/recompensas/generadas"
-            className="text-sm font-semibold text-zinc-400 hover:text-white"
+            className="text-sm font-semibold text-slate-600 hover:text-slate-900"
           >
             ← Recompensas generadas
           </Link>
           <p className="mt-4 eyebrow">DETALLE DE RECOMPENSA</p>
           <h1 className="dashboard-title">{rewardDefinitionLabel(reward.benefit_definition, ctx.studio.locale, ctx.studio.currency)}</h1>
-          <p className="mt-2 text-sm text-zinc-400">
+          <p className="mt-2 text-sm text-slate-600">
             {student?.full_name ?? "Alumna"} · {originType}
           </p>
         </div>
@@ -141,39 +141,39 @@ export default async function GeneratedRewardDetailPage({
       {query.error ? <div className="notice error">{query.error}</div> : null}
 
       <section className="grid gap-4 lg:grid-cols-2">
-        <article className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
-          <p className="text-xs font-semibold uppercase tracking-[0.15em] text-[#FF0A8A]">
+        <article className="rounded-2xl border border-slate-200 bg-white p-5">
+          <p className="text-xs font-semibold uppercase tracking-[0.15em] text-teal-700">
             BENEFICIO
           </p>
-          <h2 className="mt-2 text-xl font-semibold text-white">
+          <h2 className="mt-2 text-xl font-semibold text-slate-900">
             {rewardDefinitionLabel(reward.benefit_definition, ctx.studio.locale, ctx.studio.currency)}
           </h2>
           <dl className="mt-5 grid gap-3 text-sm">
             <div className="flex justify-between gap-4">
-              <dt className="text-zinc-500">Obtenida</dt>
-              <dd className="text-right text-zinc-300">{formatDateTime(reward.created_at, ctx.studio.locale, ctx.studio.timezone)}</dd>
+              <dt className="text-slate-500">Obtenida</dt>
+              <dd className="text-right text-slate-700">{formatDateTime(reward.created_at, ctx.studio.locale, ctx.studio.timezone)}</dd>
             </div>
             <div className="flex justify-between gap-4">
-              <dt className="text-zinc-500">Vence</dt>
-              <dd className="text-right text-zinc-300">{formatDateTime(reward.expires_at, ctx.studio.locale, ctx.studio.timezone)}</dd>
+              <dt className="text-slate-500">Vence</dt>
+              <dd className="text-right text-slate-700">{formatDateTime(reward.expires_at, ctx.studio.locale, ctx.studio.timezone)}</dd>
             </div>
             <div className="flex justify-between gap-4">
-              <dt className="text-zinc-500">Entrega</dt>
-              <dd className="text-right text-zinc-300">
+              <dt className="text-slate-500">Entrega</dt>
+              <dd className="text-right text-slate-700">
                 {reward.delivery_mode === "auto_apply" ? "Aplicación automática" : "Canjeable"}
               </dd>
             </div>
           </dl>
         </article>
 
-        <article className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
-          <p className="text-xs font-semibold uppercase tracking-[0.15em] text-[#FF0A8A]">ORIGEN</p>
-          <h2 className="mt-2 text-xl font-semibold text-white">{originLabel}</h2>
-          <p className="mt-4 text-sm leading-6 text-zinc-400">
+        <article className="rounded-2xl border border-slate-200 bg-white p-5">
+          <p className="text-xs font-semibold uppercase tracking-[0.15em] text-teal-700">ORIGEN</p>
+          <h2 className="mt-2 text-xl font-semibold text-slate-900">{originLabel}</h2>
+          <p className="mt-4 text-sm leading-6 text-slate-600">
             {whyGenerated(evaluation?.condition_results)}
           </p>
           {evaluation ? (
-            <p className="mt-3 text-xs text-zinc-500">
+            <p className="mt-3 text-xs text-slate-500">
               Validado {formatDateTime(evaluation.evaluated_at, ctx.studio.locale, ctx.studio.timezone)}
             </p>
           ) : null}
@@ -185,7 +185,7 @@ export default async function GeneratedRewardDetailPage({
           <p className="text-xs font-semibold uppercase tracking-[0.15em] text-amber-300">
             AJUSTADA
           </p>
-          <p className="mt-2 text-sm text-zinc-300">
+          <p className="mt-2 text-sm text-slate-700">
             {reward.revoked_reason || "La recompensa fue ajustada mediante una excepción auditada."}
           </p>
         </section>
@@ -196,13 +196,13 @@ export default async function GeneratedRewardDetailPage({
           <p className="text-xs font-semibold uppercase tracking-[0.15em] text-rose-300">
             AJUSTE EXCEPCIONAL
           </p>
-          <h2 className="mt-1 text-lg font-semibold text-white">Ajustar esta recompensa</h2>
-          <p className="mt-2 text-sm leading-6 text-zinc-400">
+          <h2 className="mt-1 text-lg font-semibold text-slate-900">Ajustar esta recompensa</h2>
+          <p className="mt-2 text-sm leading-6 text-slate-600">
             No es una operación normal. El motivo es obligatorio y queda registrado en auditoría.
           </p>
           <form action={adjustRewardAction} className="mt-4 grid gap-3">
             <input type="hidden" name="reward_id" value={reward.id} />
-            <label className="grid gap-1 text-sm text-zinc-300">
+            <label className="grid gap-1 text-sm text-slate-700">
               Motivo
               <textarea
                 name="reason"
@@ -210,7 +210,7 @@ export default async function GeneratedRewardDetailPage({
                 required
                 maxLength={500}
                 placeholder="Explica por qué debe ajustarse esta recompensa"
-                className="rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 text-white"
+                className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-slate-900"
               />
             </label>
             <div>
@@ -224,7 +224,7 @@ export default async function GeneratedRewardDetailPage({
           </form>
         </section>
       ) : reward.status !== "revoked" ? (
-        <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-sm text-zinc-400">
+        <section className="rounded-2xl border border-slate-200 bg-white p-4 text-sm text-slate-600">
           Esta recompensa ya está{" "}
           {reward.status === "reserved"
             ? "en uso"
@@ -235,11 +235,11 @@ export default async function GeneratedRewardDetailPage({
         </section>
       ) : null}
 
-      <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
-        <p className="text-xs font-semibold uppercase tracking-[0.15em] text-[#FF0A8A]">
+      <section className="rounded-2xl border border-slate-200 bg-white p-5">
+        <p className="text-xs font-semibold uppercase tracking-[0.15em] text-teal-700">
           HISTORIAL
         </p>
-        <h2 className="mt-1 text-xl font-semibold text-white">Movimientos de la recompensa</h2>
+        <h2 className="mt-1 text-xl font-semibold text-slate-900">Movimientos de la recompensa</h2>
         <div className="mt-5 grid gap-2">
           {!events.length ? (
             <EmptyStateFallback />
@@ -247,11 +247,11 @@ export default async function GeneratedRewardDetailPage({
             events.map((event) => (
               <div
                 key={event.id}
-                className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/10 bg-black/20 px-4 py-3"
+                className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3"
               >
                 <div>
-                  <strong className="text-sm text-white">{event.event_type}</strong>
-                  <p className="mt-1 text-xs text-zinc-500">{formatDateTime(event.occurred_at, ctx.studio.locale, ctx.studio.timezone)}</p>
+                  <strong className="text-sm text-slate-900">{event.event_type}</strong>
+                  <p className="mt-1 text-xs text-slate-500">{formatDateTime(event.occurred_at, ctx.studio.locale, ctx.studio.timezone)}</p>
                 </div>
                 <StatusBadge status={event.to_status} />
               </div>
@@ -265,7 +265,7 @@ export default async function GeneratedRewardDetailPage({
 
 function EmptyStateFallback() {
   return (
-    <div className="rounded-xl border border-dashed border-white/10 p-5 text-sm text-zinc-500">
+    <div className="rounded-xl border border-dashed border-slate-200 p-5 text-sm text-slate-500">
       Todavía no hay movimientos adicionales.
     </div>
   );
