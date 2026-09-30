@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { getAdminContext } from "@/lib/auth/admin-context";
 
 import { openStripePortalAction, startStripeCheckoutAction } from "./actions";
+import "./subscription-v2.css";
 
 function formatDate(value: string | null, locale: string, timeZone: string) {
   if (!value) return "No configurado";
@@ -34,7 +35,7 @@ const statusCopy: Record<
   },
   trialing: {
     title: "Periodo de prueba",
-    detail: "El estudio conserva acceso completo mientras el trial siga vigente.",
+    detail: "El estudio conserva acceso completo mientras el periodo de prueba siga vigente.",
     tone: "warn",
   },
   trial_expired: {
@@ -43,13 +44,13 @@ const statusCopy: Record<
     tone: "blocked",
   },
   past_due_grace: {
-    title: "Pago pendiente · periodo de gracia",
-    detail: "El estudio conserva acceso temporalmente mientras el periodo de gracia siga vigente.",
+    title: "Pago pendiente",
+    detail: "El estudio conserva acceso temporalmente durante el periodo de gracia.",
     tone: "warn",
   },
   past_due_expired: {
     title: "Pago pendiente · acceso restringido",
-    detail: "El periodo de gracia terminó. La operación está restringida hasta regularizar la suscripción.",
+    detail: "El periodo de gracia terminó. Regulariza la suscripción para recuperar el acceso.",
     tone: "blocked",
   },
   suspended: {
@@ -64,7 +65,7 @@ const statusCopy: Record<
   },
   cancelled_period_end: {
     title: "Suscripción finalizada",
-    detail: "El periodo contratado terminó y la operación está restringida hasta reactivar la suscripción.",
+    detail: "El periodo contratado terminó y la operación está restringida hasta reactivarla.",
     tone: "blocked",
   },
 };
@@ -109,11 +110,13 @@ export default async function SubscriptionPage({
     .map((price) => ({ price, plan: planById.get(price.plan_id) }))
     .filter((item) => Boolean(item.plan))
     .sort((left, right) => (left.plan?.sort_order ?? 0) - (right.plan?.sort_order ?? 0));
+
   const hasManagedStripeSubscription = Boolean(
     billing?.billing_provider === "stripe" &&
       billing.provider_subscription_id &&
       ctx.subscription.status !== "cancelled",
   );
+
   const billingError =
     typeof params.billing_error === "string" ? params.billing_error : null;
   const checkoutState =
@@ -124,128 +127,99 @@ export default async function SubscriptionPage({
     statusCopy[ctx.subscription.status] ??
     statusCopy.active;
 
-  const cardClass =
-    state.tone === "blocked"
-      ? "border-red-500/40 bg-red-500/[0.06]"
-      : state.tone === "warn"
-        ? "border-amber-500/30 bg-amber-500/[0.05]"
-        : "border-emerald-500/30 bg-emerald-500/[0.05]";
-
   return (
-    <main className="dashboard-shell admin-ux04-secondary">
-      <header className="topbar">
+    <main className="subscription-v2">
+      <header className="subscription-v2-header">
         <div>
           {ctx.subscription.access_mode === "full" ? (
-            <Link className="back-link compact" href="/admin/configuracion">
+            <Link className="subscription-v2-back" href="/admin/configuracion">
               ← Avanzado
             </Link>
           ) : null}
-          <p className="eyebrow">STUDIO FLOW · SUSCRIPCIÓN</p>
-          <h1 className="dashboard-title">Plan y suscripción</h1>
-          <p>Consulta el estado operativo de {ctx.studio.name}.</p>
+          <h1>Plan y suscripción</h1>
+          <p>Consulta el plan, periodo y facturación de {ctx.studio.name}.</p>
         </div>
       </header>
 
-      <section className={`rounded-3xl border p-5 sm:p-6 ${cardClass}`}>
-        <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-zinc-500">
-          Estado
-        </p>
-        <h2 className="mt-2 text-xl font-semibold text-white">{state.title}</h2>
-        <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-300">{state.detail}</p>
+      <section className={`subscription-v2-status is-${state.tone}`}>
+        <span>ESTADO</span>
+        <h2>{state.title}</h2>
+        <p>{state.detail}</p>
       </section>
 
-      <section className="mt-4 grid gap-3 sm:grid-cols-2">
-        <article className="rounded-3xl border border-white/10 bg-white/[0.025] p-5">
-          <p className="eyebrow">PLAN</p>
-          <h2 className="mt-1 text-xl font-semibold text-white">
-            {ctx.subscription.plan_name}
-          </h2>
-          <p className="mt-2 text-sm text-zinc-400">
-            Estado técnico: {ctx.subscription.status}
-          </p>
-          <p className="mt-1 text-sm text-zinc-400">
-            Acceso: {ctx.subscription.access_mode === "full" ? "Completo" : "Restringido"}
-          </p>
+      {billingError ? (
+        <div className="subscription-v2-notice is-error">
+          No pudimos abrir el cobro. Revisa la configuración o intenta nuevamente.
+        </div>
+      ) : checkoutState === "success" ? (
+        <div className="subscription-v2-notice is-success">
+          Pago enviado. El estado se actualizará cuando Stripe confirme el evento.
+        </div>
+      ) : checkoutState === "cancelled" ? (
+        <div className="subscription-v2-notice">El checkout fue cancelado y no hubo cambios.</div>
+      ) : null}
+
+      <section className="subscription-v2-grid">
+        <article className="subscription-v2-card">
+          <div className="subscription-v2-card-heading">
+            <h2>Plan actual</h2>
+          </div>
+          <div className="subscription-v2-plan-name">{ctx.subscription.plan_name}</div>
+          <dl className="subscription-v2-list">
+            <div>
+              <dt>Acceso</dt>
+              <dd>{ctx.subscription.access_mode === "full" ? "Completo" : "Restringido"}</dd>
+            </div>
+            <div>
+              <dt>Estado</dt>
+              <dd>{ctx.subscription.status}</dd>
+            </div>
+            <div>
+              <dt>Facturación</dt>
+              <dd>{billing?.billing_provider ?? "Manual / no configurada"}</dd>
+            </div>
+          </dl>
         </article>
 
-        <article className="rounded-3xl border border-white/10 bg-white/[0.025] p-5">
-          <p className="eyebrow">PERIODO</p>
-          <dl className="mt-3 grid gap-2 text-sm">
-            <div className="flex items-center justify-between gap-4">
-              <dt className="text-zinc-500">Trial inicia</dt>
-              <dd className="text-right text-zinc-200">
-                {formatDate(billing?.trial_started_at ?? null, ctx.studio.locale, ctx.studio.timezone)}
-              </dd>
+        <article className="subscription-v2-card">
+          <div className="subscription-v2-card-heading">
+            <h2>Fechas importantes</h2>
+          </div>
+          <dl className="subscription-v2-list">
+            <div>
+              <dt>Inicio de prueba</dt>
+              <dd>{formatDate(billing?.trial_started_at ?? null, ctx.studio.locale, ctx.studio.timezone)}</dd>
             </div>
-            <div className="flex items-center justify-between gap-4">
-              <dt className="text-zinc-500">Trial termina</dt>
-              <dd className="text-right text-zinc-200">
-                {formatDate(ctx.subscription.trial_ends_at, ctx.studio.locale, ctx.studio.timezone)}
-              </dd>
+            <div>
+              <dt>Fin de prueba</dt>
+              <dd>{formatDate(ctx.subscription.trial_ends_at, ctx.studio.locale, ctx.studio.timezone)}</dd>
             </div>
-            <div className="flex items-center justify-between gap-4">
-              <dt className="text-zinc-500">Periodo actual termina</dt>
-              <dd className="text-right text-zinc-200">
-                {formatDate(
-                  ctx.subscription.current_period_end,
-                  ctx.studio.locale,
-                  ctx.studio.timezone,
-                )}
-              </dd>
+            <div>
+              <dt>Fin del periodo</dt>
+              <dd>{formatDate(ctx.subscription.current_period_end, ctx.studio.locale, ctx.studio.timezone)}</dd>
             </div>
-            <div className="flex items-center justify-between gap-4">
-              <dt className="text-zinc-500">Gracia termina</dt>
-              <dd className="text-right text-zinc-200">
-                {formatDate(ctx.subscription.grace_ends_at, ctx.studio.locale, ctx.studio.timezone)}
-              </dd>
+            <div>
+              <dt>Fin de gracia</dt>
+              <dd>{formatDate(ctx.subscription.grace_ends_at, ctx.studio.locale, ctx.studio.timezone)}</dd>
             </div>
-            <div className="flex items-center justify-between gap-4">
-              <dt className="text-zinc-500">Próximo cobro</dt>
-              <dd className="text-right text-zinc-200">
-                {formatDate(billing?.next_billing_at ?? null, ctx.studio.locale, ctx.studio.timezone)}
-              </dd>
-            </div>
-            <div className="flex items-center justify-between gap-4">
-              <dt className="text-zinc-500">Facturación</dt>
-              <dd className="text-right text-zinc-200">
-                {billing?.billing_provider ?? "Manual / no configurada"}
-              </dd>
+            <div>
+              <dt>Próximo cobro</dt>
+              <dd>{formatDate(billing?.next_billing_at ?? null, ctx.studio.locale, ctx.studio.timezone)}</dd>
             </div>
           </dl>
         </article>
       </section>
 
-      {billingError ? (
-        <section className="mt-4 rounded-3xl border border-red-500/30 bg-red-500/[0.06] p-5 text-sm text-red-100">
-          No pudimos abrir el cobro en este momento. Revisa la configuración de Stripe o intenta de nuevo.
-        </section>
-      ) : checkoutState === "success" ? (
-        <section className="mt-4 rounded-3xl border border-emerald-500/30 bg-emerald-500/[0.06] p-5 text-sm text-emerald-100">
-          Pago enviado. El estado se actualizará automáticamente cuando Stripe confirme el evento.
-        </section>
-      ) : checkoutState === "cancelled" ? (
-        <section className="mt-4 rounded-3xl border border-white/10 bg-white/[0.025] p-5 text-sm text-zinc-300">
-          El checkout fue cancelado y no se cambió tu suscripción.
-        </section>
-      ) : null}
-
-      <section className="mt-4 rounded-3xl border border-white/10 bg-white/[0.025] p-5 sm:p-6">
-        <div className="flex flex-wrap items-start justify-between gap-4">
+      <section className="subscription-v2-card">
+        <div className="subscription-v2-card-heading subscription-v2-billing-heading">
           <div>
-            <p className="eyebrow">FACTURACIÓN AUTOMÁTICA</p>
-            <h2 className="mt-1 text-lg font-semibold text-white">Cobro de la suscripción</h2>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-400">
-              Stripe procesa el pago. Studio Flow conserva el control del plan, los límites y el
-              acceso operativo.
-            </p>
+            <h2>Facturación</h2>
+            <p>Stripe procesa el pago; Studio Flow conserva el control del plan y acceso.</p>
           </div>
 
           {billing?.billing_provider === "stripe" && billing.provider_customer_id ? (
             <form action={openStripePortalAction}>
-              <button
-                type="submit"
-                className="rounded-2xl border border-white/15 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-white/10"
-              >
+              <button className="subscription-v2-secondary" type="submit">
                 Administrar cobro
               </button>
             </form>
@@ -253,32 +227,22 @@ export default async function SubscriptionPage({
         </div>
 
         {!hasManagedStripeSubscription && availableStripePlans.length ? (
-          <div className="mt-5 grid gap-3 lg:grid-cols-3">
+          <div className="subscription-v2-plans">
             {availableStripePlans.map(({ price, plan }) => (
-              <article
-                key={price.id}
-                className="rounded-2xl border border-white/10 bg-black/20 p-4"
-              >
-                <p className="text-base font-semibold text-white">{plan?.name}</p>
-                <p className="mt-1 text-xs leading-5 text-zinc-500">{plan?.description}</p>
-                <p className="mt-4 text-2xl font-semibold text-white">
+              <article key={price.id} className="subscription-v2-plan-option">
+                <strong>{plan?.name}</strong>
+                <p>{plan?.description}</p>
+                <div className="subscription-v2-price">
                   {formatMoney(price.amount_minor, price.currency, ctx.studio.locale)}
-                </p>
-                <p className="mt-1 text-xs text-zinc-500">
+                </div>
+                <small>
                   por {price.billing_interval === "year" ? "año" : "mes"}
                   {price.trial_days > 0 ? ` · ${price.trial_days} días de prueba` : ""}
-                </p>
-                <form action={startStripeCheckoutAction} className="mt-4">
+                </small>
+                <form action={startStripeCheckoutAction}>
                   <input type="hidden" name="plan_key" value={plan?.plan_key ?? ""} />
-                  <input
-                    type="hidden"
-                    name="billing_interval"
-                    value={price.billing_interval}
-                  />
-                  <button
-                    type="submit"
-                    className="w-full rounded-2xl bg-fuchsia-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-fuchsia-500"
-                  >
+                  <input type="hidden" name="billing_interval" value={price.billing_interval} />
+                  <button className="subscription-v2-primary" type="submit">
                     Elegir {plan?.name}
                   </button>
                 </form>
@@ -286,32 +250,29 @@ export default async function SubscriptionPage({
             ))}
           </div>
         ) : !hasManagedStripeSubscription ? (
-          <p className="mt-5 rounded-2xl border border-white/10 bg-black/20 p-4 text-sm text-zinc-400">
-            El motor de cobro está listo. Falta vincular los precios comerciales de Stripe para
-            habilitar el checkout.
-          </p>
+          <div className="subscription-v2-empty">
+            El motor de cobro está listo. Falta vincular precios comerciales de Stripe para habilitar el checkout.
+          </div>
         ) : (
-          <p className="mt-5 text-sm text-zinc-400">
-            Tu suscripción ya está vinculada con Stripe. Usa “Administrar cobro” para gestionar el
-            método de pago, facturación o cancelación.
-          </p>
+          <div className="subscription-v2-connected">
+            Suscripción vinculada con Stripe. Usa “Administrar cobro” para método de pago, facturación o cancelación.
+          </div>
         )}
       </section>
 
       {ctx.subscription.cancel_at_period_end ? (
-        <section className="notice mt-4">
-          La cancelación está programada para el final del periodo actual. Hasta entonces el acceso
-          permanece activo.
-        </section>
+        <div className="subscription-v2-notice">
+          La cancelación está programada para el final del periodo actual. Hasta entonces el acceso permanece activo.
+        </div>
       ) : null}
 
       {ctx.subscription.access_mode === "restricted" ? (
-        <section className="panel mt-4">
-          <p className="eyebrow">ACCESO RESTRINGIDO</p>
-          <h2>La operación está pausada</h2>
-          <p>
-            Mientras la suscripción esté restringida, alumnas, coaches y herramientas operativas no
-            pueden usarse. El owner conserva acceso a esta pantalla para revisar el estado.
+        <section className="subscription-v2-card">
+          <div className="subscription-v2-card-heading">
+            <h2>Acceso restringido</h2>
+          </div>
+          <p className="subscription-v2-muted">
+            Mientras la suscripción esté restringida, la operación diaria queda pausada. El owner conserva acceso a esta pantalla para revisar el estado y regularizar el plan.
           </p>
         </section>
       ) : null}
