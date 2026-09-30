@@ -479,12 +479,15 @@ export default async function AdminPage({
   }
 
   const quickSalePreference: Record<string, string> = {};
-  for (const sale of quickSaleHistory ?? []) {
+  const quickSaleHistoryRows = (quickSaleHistory ?? []) as unknown as Array<{
+    student_id: string | null;
+    sale_lines: Array<{ product_template_id: string | null }> | null;
+  }>;
+  for (const sale of quickSaleHistoryRows) {
     const studentId = sale.student_id;
     if (!studentId || quickSalePreference[studentId]) continue;
-    const lines = Array.isArray(sale.sale_lines) ? sale.sale_lines : [];
-    const productId = lines.find((line) => Boolean(line.product_template_id))?.product_template_id;
-    if (typeof productId === "string") quickSalePreference[studentId] = productId;
+    const productId = (sale.sale_lines ?? []).find((line) => Boolean(line.product_template_id))?.product_template_id;
+    if (productId) quickSalePreference[studentId] = productId;
   }
 
   const totalDailyCapacity = classes.reduce((sum, item) => sum + item.capacity, 0);
@@ -529,10 +532,10 @@ export default async function AdminPage({
                 id: item.id,
                 name: item.name,
                 priceMinor: item.price_minor,
-                currency: item.currency,
+                currency: item.currency ?? "MXN",
                 creditLimit: item.credit_limit,
                 validityDays: item.validity_days,
-                unlimited: item.unlimited,
+                unlimited: Boolean(item.unlimited),
               }))}
             />
           ) : null}
