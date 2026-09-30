@@ -39,7 +39,7 @@ export default function QuickActions({
   locale,
   preferredProductByStudent = {},
 }: Props) {
-  const [open, setOpen] = useState<null | "menu" | "student" | "sale">(null);
+  const [open, setOpen] = useState<null | "menu" | "student" | "studentCreated" | "sale">(null);
   const [studentQuery, setStudentQuery] = useState("");
   const [studentId, setStudentId] = useState("");
   const [productId, setProductId] = useState("");
@@ -48,6 +48,7 @@ export default function QuickActions({
   const [discountValue, setDiscountValue] = useState("");
   const [payment, setPayment] = useState("");
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
+  const [createdStudent, setCreatedStudent] = useState<Student | null>(null);
   const [pending, startTransition] = useTransition();
 
   const selectedProduct = products.find((item) => item.id === productId) ?? null;
@@ -175,9 +176,11 @@ export default function QuickActions({
                 startTransition(async () => {
                   const result = await createQuickStudent(data);
                   setMessage({ ok: result.ok, text: result.message });
-                  if (result.ok) {
+                  if (result.ok && result.student) {
                     form.reset();
-                    window.setTimeout(close, 700);
+                    setCreatedStudent(result.student);
+                    setMessage(null);
+                    setOpen("studentCreated");
                   }
                 });
               }}
@@ -191,6 +194,37 @@ export default function QuickActions({
                 {pending ? "Creando…" : "Crear alumna"}
               </button>
             </form>
+          </section>
+        </div>
+      ) : null}
+
+      {open === "studentCreated" && createdStudent ? (
+        <div className="hoy-quick-overlay" onMouseDown={(event) => { if (event.target === event.currentTarget) close(); }}>
+          <section className="hoy-quick-card">
+            <header>
+              <div>
+                <span>Alumna creada</span>
+                <h2>{createdStudent.fullName}</h2>
+                <p>¿Quieres agregarle un paquete de clases ahora?</p>
+              </div>
+              <button type="button" onClick={close}>×</button>
+            </header>
+            <div className="hoy-quick-form">
+              <button
+                className="primary-button"
+                type="button"
+                onClick={() => {
+                  chooseStudent(createdStudent);
+                  setMessage(null);
+                  setOpen("sale");
+                }}
+              >
+                Sí, agregar paquete
+              </button>
+              <button className="secondary-button" type="button" onClick={close}>
+                No, terminar
+              </button>
+            </div>
           </section>
         </div>
       ) : null}
@@ -243,7 +277,7 @@ export default function QuickActions({
                 <input type="hidden" name="student_id" value={studentId} />
               </label>
 
-              {studentId ? (
+              {studentId && !selectedProduct ? (
                 <div className="hoy-package-picker">
                   <span>Paquete</span>
                   <div className="hoy-package-options">
@@ -263,14 +297,19 @@ export default function QuickActions({
                       {otherProducts.map(renderProduct)}
                     </div>
                   ) : null}
-                  <input type="hidden" name="product_id" value={productId} />
                 </div>
               ) : null}
+              <input type="hidden" name="product_id" value={productId} />
 
               {selectedProduct ? (
                 <>
                   <div className="hoy-quick-product">
-                    <strong>{selectedProduct.name}</strong>
+                    <div>
+                      <strong>{selectedProduct.name}</strong>
+                      <button type="button" className="hoy-change-package" onClick={() => { setProductId(""); setPayment(""); }}>
+                        Cambiar paquete
+                      </button>
+                    </div>
                     <span>
                       {selectedProduct.unlimited ? "Ilimitado" : `${selectedProduct.creditLimit ?? 0} créditos`}
                       {selectedProduct.validityDays ? ` · ${selectedProduct.validityDays} días` : ""}
