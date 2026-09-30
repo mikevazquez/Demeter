@@ -2072,3 +2072,18 @@
 .hoy-v2 .hoy-money-row{display:grid;grid-template-columns:1fr auto;gap:8px}.hoy-v2 .hoy-money-row button{padding:0 12px;border:1px solid #bfe3d6;border-radius:12px;background:var(--v2-accent-soft);color:var(--v2-accent-strong);font-weight:700}
 .hoy-v2 .quick-success,.hoy-v2 .quick-error{margin:0;padding:10px 12px;border-radius:12px;font-size:12px;font-weight:700}.hoy-v2 .quick-success{background:#e7f8f1;color:#0b7654}.hoy-v2 .quick-error{background:#fff0f1;color:#a62e55}
 @media(max-width:600px){.hoy-v2 .hoy-quick-overlay{align-items:flex-end;padding:70px 0 72px}.hoy-v2 .hoy-quick-card{max-height:calc(100vh - 110px);overflow:auto;border-radius:24px 24px 0 0;padding:20px 18px}.hoy-v2 .hoy-quick-card>header h2{font-size:25px}}
+
+/* Hoy V2 · scalable quick-sale search */
+.hoy-v2 .hoy-student-search{position:relative}
+.hoy-v2 .hoy-student-results{position:absolute;z-index:4;top:72px;left:0;right:0;display:grid;gap:3px;padding:6px;border:1px solid var(--v2-line);border-radius:14px;background:#fff;box-shadow:0 14px 36px rgba(16,32,58,.14)}
+.hoy-v2 .hoy-student-results button{min-height:44px;padding:0 12px;border:0;border-radius:10px;background:#fff;color:var(--v2-text);font-size:14px;font-weight:700;text-align:left}
+.hoy-v2 .hoy-student-results button:hover{background:var(--v2-accent-soft);color:var(--v2-accent-strong)}
+.hoy-v2 .hoy-package-picker{display:grid;gap:8px}
+.hoy-v2 .hoy-package-picker>span{color:#53637b;font-size:11px;font-weight:700}
+.hoy-v2 .hoy-package-options{display:grid;gap:7px}
+.hoy-v2 .hoy-package-options>button{position:relative;display:grid;gap:2px;width:100%;min-height:62px;padding:11px 13px;border:1px solid var(--v2-line);border-radius:14px;background:#f8fafb;color:var(--v2-text);text-align:left}
+.hoy-v2 .hoy-package-options>button strong{font-size:14px}.hoy-v2 .hoy-package-options>button small{color:var(--v2-muted);font-size:11px}
+.hoy-v2 .hoy-package-options>button em{position:absolute;top:10px;right:10px;padding:3px 7px;border-radius:999px;background:var(--v2-accent-soft);color:var(--v2-accent-strong);font-size:9px;font-style:normal;font-weight:800}
+.hoy-v2 .hoy-package-options>button.is-selected{border-color:#78cdb0;background:var(--v2-accent-soft)}
+.hoy-v2 .hoy-other-products{justify-self:start;padding:5px 0;border:0;background:transparent;color:var(--v2-accent-strong);font-size:12px;font-weight:800}
+.hoy-v2 .hoy-package-options-other{padding-top:2px}
