@@ -24,8 +24,12 @@ function monthStartIso() {
 export default async function DemiDemoPage() {
   const { supabase, studio } = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
 
-  const [{ data: config }, { data: monthCalls }, { count: conversations }] =
-    await Promise.all([
+  const [
+    { data: config },
+    { data: monthCalls },
+    { count: conversations },
+    { data: students },
+  ] = await Promise.all([
       supabase
         .from("assistant_configs")
         .select(
@@ -42,6 +46,14 @@ export default async function DemiDemoPage() {
         .from("assistant_conversations")
         .select("id", { count: "exact", head: true })
         .eq("studio_id", studio.id),
+      supabase
+        .from("students")
+        .select("id,full_name")
+        .eq("studio_id", studio.id)
+        .eq("active", true)
+        .eq("lifecycle_status", "active")
+        .order("full_name")
+        .limit(60),
     ]);
 
   if (!config) {
@@ -78,8 +90,9 @@ export default async function DemiDemoPage() {
           <div className="demi-eyebrow">Sandbox · interno</div>
           <h1>🤖 {config.assistant_name}</h1>
           <p>
-            Conversa con el asistente usando datos reales de {studio.name}. En este bloque
-            solo puede consultar: todavía no puede reservar, cancelar ni modificar datos.
+            Conversa con el asistente usando datos reales de {studio.name}. Ya puede
+            preparar y ejecutar reservas en Sandbox con confirmación explícita; cancelar,
+            reagendar y lista de espera siguen bloqueados.
           </p>
         </div>
         <span className="demi-mode">Modo {config.mode}</span>
@@ -109,13 +122,18 @@ export default async function DemiDemoPage() {
       </section>
 
       <section className="demi-notice">
-        <strong>Regla de la demo:</strong> si Studio Flow no devuelve el dato, Demi debe decir que
-        no lo encontró. No puede usar el ejemplo del prompt como si fuera un horario real.
+        <strong>Regla de la demo:</strong> si Studio Flow no devuelve el dato, Demi debe decir
+        que no lo encontró. Para reservar, primero debe validar la clase y después pedir una
+        confirmación nueva antes de ejecutar.
       </section>
 
       <DemiChat
         assistantName={config.assistant_name}
         openAIConfigured={openAIConfigured}
+        students={(students ?? []).map((student) => ({
+          id: student.id,
+          name: student.full_name,
+        }))}
       />
     </main>
   );
