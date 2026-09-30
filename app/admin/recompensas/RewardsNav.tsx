@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import "./rewards-v2.css";
 import { usePathname } from "next/navigation";
 
 const items = [
