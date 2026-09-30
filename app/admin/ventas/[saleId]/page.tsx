@@ -166,17 +166,17 @@ export default async function SaleDetailPage({
   };
 
   return (
-    <main className="space-y-6">
-      <header className="flex flex-wrap items-start justify-between gap-4">
+    <main className="sales-v2 sales-v2-detail">
+      <header className="sales-v2-detail-header">
         <div>
-          <Link href="/admin/ventas" className="text-sm text-fuchsia-300 hover:text-fuchsia-200">
+          <Link href="/admin/ventas" className="sales-v2-back">
             ← Ventas
           </Link>
-          <p className="mt-4 text-sm text-zinc-400">{sale.folio}</p>
-          <h1 className="text-3xl font-semibold text-white">{student?.full_name ?? "Venta"}</h1>
-          <p className="mt-1 text-sm text-zinc-400">{student?.phone ?? "Sin teléfono"}</p>
+          <p className="sales-v2-folio">{sale.folio}</p>
+          <h1 className="sales-v2-detail-title">{student?.full_name ?? "Venta"}</h1>
+          <p className="sales-v2-detail-subtitle">{student?.phone ?? "Sin teléfono"}</p>
         </div>
-        <span className="rounded-full bg-white/10 px-3 py-1.5 text-sm font-medium text-white">
+        <span className="sales-v2-detail-status">
           {paymentState}
         </span>
       </header>
@@ -193,7 +193,7 @@ export default async function SaleDetailPage({
         </div>
       ) : null}
 
-      <section className="grid gap-3 md:grid-cols-5">
+      <section className="sales-v2-detail-summary">
         {[
           ["Total vendido", sale.total_minor],
           ["Cobrado", grossPaid],
