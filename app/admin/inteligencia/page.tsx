@@ -3,14 +3,7 @@ import Link from "next/link";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getAdminContext } from "@/lib/auth/admin-context";
 
-type ViewKey =
-  | "resumen"
-  | "dinero"
-  | "alumnas"
-  | "conversion"
-  | "clases"
-  | "retencion"
-  | "finanzas";
+type ViewKey = "resumen" | "dinero" | "alumnas" | "conversion" | "clases";
 
 type Tone = "neutral" | "positive" | "warning" | "danger" | "info";
 
@@ -101,13 +94,11 @@ type OnboardingRow = {
 };
 
 const views: { key: ViewKey; label: string }[] = [
-  { key: "resumen", label: "Resumen" },
-  { key: "dinero", label: "Dinero" },
+  { key: "resumen", label: "Ahora" },
+  { key: "dinero", label: "Ventas" },
   { key: "alumnas", label: "Alumnas" },
   { key: "conversion", label: "Conversión" },
   { key: "clases", label: "Clases" },
-  { key: "retencion", label: "Retención" },
-  { key: "finanzas", label: "Finanzas" },
 ];
 
 const DAY = 86_400_000;
@@ -302,16 +293,11 @@ function periodHref(view: ViewKey, days: number) {
 
 function titleFor(view: ViewKey) {
   const map: Record<ViewKey, [string, string]> = {
-    resumen: ["Resumen", "Qué está pasando en el negocio y qué necesita tu atención."],
-    dinero: ["Dinero", "Ingresos cobrados, ventas, productos y cobranza del periodo."],
-    alumnas: ["Alumnas", "Crecimiento, actividad y señales tempranas de abandono."],
-    conversion: ["Conversión", "Qué ocurre con las clases de prueba hasta convertirse en alumnas."],
-    clases: ["Clases", "Qué disciplinas y horarios están usando bien —o mal— la capacidad."],
-    retencion: ["Retención", "Quién renueva, quién se está alejando y cuándo debemos intervenir."],
-    finanzas: [
-      "Finanzas",
-      "Ingresos y rentabilidad. La utilidad sólo existe cuando también registramos gastos.",
-    ],
+    resumen: ["Ahora", "Lo importante del estudio y lo que necesita tu atención."],
+    dinero: ["Ventas", "Cobros, ventas y saldos pendientes del periodo."],
+    alumnas: ["Alumnas", "Actividad, renovación y alumnas que requieren seguimiento."],
+    conversion: ["Conversión", "Del primer contacto y la clase de prueba hasta la compra."],
+    clases: ["Clases", "Ocupación, asistencia, cancelaciones y demanda por horario."],
   };
   return map[view];
 }
@@ -831,7 +817,7 @@ export default async function IntelligencePage({
     <main className="intel-page">
       <header className="intel-header">
         <div>
-          <p className="intel-kicker">📊 INTELIGENCIA</p>
+          <p className="intel-kicker">INTELIGENCIA</p>
           <h1>{pageTitle}</h1>
           <p>{pageDescription}</p>
         </div>
@@ -892,7 +878,7 @@ export default async function IntelligencePage({
           <div className="intel-two-column">
             <div className="intel-stack">
               <Section
-                title="🚨 Requiere atención"
+                title="Requiere atención"
                 description="Sólo aparecen señales que justifican una acción concreta."
               >
                 <div className="intel-insight-list">
@@ -934,7 +920,7 @@ export default async function IntelligencePage({
               </Section>
 
               <Section
-                title="Ingresos cobrados por día"
+                title="Movimiento de ingresos"
                 description="Cobros menos reembolsos registrados en el periodo."
               >
                 <div className="intel-bars">
@@ -953,7 +939,7 @@ export default async function IntelligencePage({
 
             <div className="intel-stack">
               <Section
-                title="🎯 Conversión de prueba"
+                title="Conversión de prueba"
                 description="El sistema actual empieza a medir desde la clase de prueba registrada."
               >
                 <div className="intel-bars">
@@ -984,7 +970,7 @@ export default async function IntelligencePage({
                 </div>
               </Section>
 
-              <Section title="🪑 Clases" description="Señales rápidas de capacidad.">
+              <Section title="Clases" description="Señales rápidas de capacidad.">
                 <div className="intel-compact-table">
                   <div className="intel-table-head">
                     <span>Clase</span>
@@ -1034,7 +1020,7 @@ export default async function IntelligencePage({
 
           <div className="intel-two-column">
             <div className="intel-stack">
-              <Section title="💰 Ingresos cobrados" description="Cobros netos por día.">
+              <Section title="Ingresos cobrados" description="Cobros netos por día.">
                 <div className="intel-bars">
                   {periodBuckets.slice(-14).map((item) => (
                     <BarRow
@@ -1154,7 +1140,7 @@ export default async function IntelligencePage({
 
           <div className="intel-two-column">
             <div className="intel-stack">
-              <Section title="👥 Estado de la base">
+              <Section title="Estado de alumnas">
                 <div className="intel-bars">
                   <BarRow
                     label="Activas"
@@ -1188,7 +1174,7 @@ export default async function IntelligencePage({
               </Section>
 
               <Section
-                title="🚀 Onboarding"
+                title="Activación del portal"
                 description="Progreso real de los pasos necesarios para completar la activación."
               >
                 <div className="intel-bars">
@@ -1228,7 +1214,7 @@ export default async function IntelligencePage({
 
             <div className="intel-stack">
               <Section
-                title="🚨 Requieren seguimiento"
+                title="Requieren seguimiento"
                 description="Tocar una alumna abre directamente su perfil."
               >
                 <div className="intel-risk-list">
@@ -1429,7 +1415,7 @@ export default async function IntelligencePage({
                 </div>
               </Section>
 
-              <Section title="🕒 Demanda por franja">
+              <Section title="Demanda por horario">
                 <div className="intel-bars">
                   {Object.entries(daypart).map(([label, values]) => {
                     const rate = safeRate(values[0], values[1]);
@@ -1466,7 +1452,7 @@ export default async function IntelligencePage({
             </div>
 
             <div className="intel-stack">
-              <Section title="🚨 Decisiones sugeridas">
+              <Section title="Señales para decidir">
                 <div className="intel-insight-list">
                   {highestDemand ? (
                     <Insight
@@ -1551,7 +1537,7 @@ export default async function IntelligencePage({
           <div className="intel-two-column">
             <div className="intel-stack">
               <Section
-                title="📈 Renovación del periodo"
+                title="Renovación del periodo"
                 description="Paquetes que vencieron dentro del periodo y registraron una compra posterior."
               >
                 <div className="intel-bars">
