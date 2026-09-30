@@ -122,6 +122,59 @@ export const assistantReadToolDefinitions: AssistantToolDefinition[] = [
   },
 ];
 
+export type PrepareBookingArgs = {
+  session_ref: string;
+};
+
+export type ExecuteBookingArgs = {
+  pending_action_ref: string;
+};
+
+export const assistantActionToolDefinitions: AssistantToolDefinition[] = [
+  {
+    type: "function",
+    name: "prepare_booking",
+    description:
+      "Prepara una reserva para una clase exacta previamente encontrada en Studio Flow. Valida elegibilidad real y devuelve un resumen que debe confirmarse. No ejecuta la reserva.",
+    strict: true,
+    parameters: {
+      type: "object",
+      properties: {
+        session_ref: {
+          type: "string",
+          description:
+            "Referencia opaca de la clase devuelta por search_class_availability, con formato session:<uuid>.",
+        },
+      },
+      required: ["session_ref"],
+      additionalProperties: false,
+    },
+  },
+  {
+    type: "function",
+    name: "execute_booking",
+    description:
+      "Ejecuta una reserva previamente preparada. Solo úsala después de un NUEVO mensaje de la persona que confirme explícitamente la reserva.",
+    strict: true,
+    parameters: {
+      type: "object",
+      properties: {
+        pending_action_ref: {
+          type: "string",
+          description:
+            "Referencia opaca action:<uuid> devuelta por prepare_booking.",
+        },
+      },
+      required: ["pending_action_ref"],
+      additionalProperties: false,
+    },
+  },
+];
+
 export const assistantReadToolNames = new Set(
   assistantReadToolDefinitions.map((tool) => tool.name),
+);
+
+export const assistantActionToolNames = new Set(
+  assistantActionToolDefinitions.map((tool) => tool.name),
 );
