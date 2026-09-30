@@ -8,9 +8,7 @@ function source(path: string) {
 }
 
 describe("INTEL-05 financial intelligence", () => {
-  const migration = source(
-    "supabase/migrations/20260926123500_inteligencia05_expenses.sql",
-  );
+  const migration = source("supabase/migrations/20260926123500_inteligencia05_expenses.sql");
   const actions = source("app/admin/inteligencia/actions.ts");
   const intelligence = source("app/admin/inteligencia/page.tsx");
 
@@ -42,9 +40,9 @@ describe("INTEL-05 financial intelligence", () => {
   });
 
   it("supports direct expense capture and category breakdown", () => {
-    expect(intelligence).toContain('action={createStudioExpense}');
+    expect(intelligence).toContain("action={createStudioExpense}");
     expect(intelligence).toContain("expenseCategoryRows");
     expect(intelligence).toContain('title="Gastos por categoría"');
-    expect(intelligence).toContain('action={deleteStudioExpense}');
+    expect(intelligence).toContain("action={deleteStudioExpense}");
   });
 });

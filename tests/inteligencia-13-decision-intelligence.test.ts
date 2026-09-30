@@ -43,7 +43,9 @@ describe("INTEL-13 decision intelligence", () => {
     expect(intelligence).toContain('title="🧠 Qué está pasando con onboarding"');
     expect(intelligence).toContain("topOnboardingBottleneck");
     expect(intelligence).toContain("onboardingPending.length >= 3");
-    expect(intelligence).toContain("topOnboardingBottleneck.count / onboardingPending.length >= 0.4");
+    expect(intelligence).toContain(
+      "topOnboardingBottleneck.count / onboardingPending.length >= 0.4",
+    );
   });
 
   it("compares class attendance per session and separates studio-wide movement", () => {
@@ -56,7 +58,9 @@ describe("INTEL-13 decision intelligence", () => {
 
   it("does not claim seasonality without enough historical evidence", () => {
     expect(intelligence).toContain("mismo mes de años anteriores");
-    expect(intelligence).toContain("no atribuimos una caída a temporada o factores externos sin evidencia");
+    expect(intelligence).toContain(
+      "no atribuimos una caída a temporada o factores externos sin evidencia",
+    );
   });
 
   it("uses the same decision-first pattern for retention, marketing and finance", () => {
@@ -69,7 +73,7 @@ describe("INTEL-13 decision intelligence", () => {
   });
 
   it("keeps detail available but collapsed by default", () => {
-    expect(intelligence).toContain("<details className=\"intel-analysis-details\">");
+    expect(intelligence).toContain('<details className="intel-analysis-details">');
     expect(intelligence).toContain("<summary>Ver análisis detallado</summary>");
     expect(intelligence).toContain("<summary>Ver gastos y análisis detallado</summary>");
     expect(intelligence).toContain("<summary>Ver ventas y cobranza detallada</summary>");
