@@ -55,6 +55,12 @@ const items: MoreItem[] = [
     capability: CAPABILITIES.INSTRUCTORS_READ,
   },
   {
+    title: "Apariencia",
+    description: "Nombre, logo, color e identidad visible del estudio.",
+    href: "/admin/configuracion/apariencia",
+    ownerOnly: true,
+  },
+  {
     title: "Comunicación",
     description: "Procesos, marketing, plantillas y horarios de envío.",
     href: "/admin/automatizaciones",
