@@ -1135,3 +1135,25 @@
     align-items: flex-start;
   }
 }
+
+
+/* Unlimited memberships */
+.package-unlimited-badge {
+  display: grid;
+  gap: 5px;
+  padding: 16px;
+  border: 1px solid #f1d6ae;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #fff8ec, #fff3df);
+}
+
+.package-unlimited-badge strong {
+  color: #9f5600;
+  font-size: 17px;
+}
+
+.package-unlimited-badge span {
+  color: #7d6a55;
+  font-size: 12px;
+  line-height: 1.5;
+}
