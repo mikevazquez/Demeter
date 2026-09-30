@@ -5,8 +5,7 @@ import { getAdminContext } from "@/lib/auth/admin-context";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { STUDIO_MODULES } from "@/lib/auth/modules";
 
-import { OperatingPolicyForm } from "./OperatingPolicyForm";
-import { RegionalSettingsForm } from "./RegionalSettingsForm";
+import "./advanced-v2.css";
 
 type PlanUsageRow = {
   plan_key: string;
@@ -22,200 +21,179 @@ type PlanUsageRow = {
   note: string | null;
 };
 
-const errorCopy: Record<string, string> = {
-  name: "El nombre del estudio debe tener entre 2 y 80 caracteres.",
-  tagline: "La frase de marca debe tener máximo 120 caracteres.",
-  primary_color: "Selecciona un color principal válido.",
-  logo_type: "Usa un logo PNG, JPG o WebP.",
-  logo_size: "El logo debe pesar máximo 2 MB.",
-  logo_upload: "No pudimos subir el logo. Inténtalo nuevamente.",
-  identity_save: "No pudimos guardar la identidad del estudio.",
-  cutoff: "El límite de cancelación debe estar entre 0 y 168 horas.",
-  minimum_defaults: "Revisa los defaults de mínimo de reservas y penalizaciones.",
-  operating_save: "No pudimos guardar la política operativa.",
-  regional: "Revisa zona horaria, moneda, locale y prefijo telefónico.",
-  regional_save: "No pudimos guardar la configuración regional.",
-};
-
-const savedCopy: Record<string, string> = {
-  identity: "Identidad del portal actualizada correctamente.",
-  operating: "Política operativa actualizada correctamente.",
-  regional: "Configuración regional actualizada correctamente.",
-};
-
-export default async function ConfigurationPage({
-  searchParams,
+function AdvancedIcon({
+  kind,
 }: {
-  searchParams: Promise<{ saved?: string; error?: string }>;
+  kind: "region" | "integration" | "resources" | "subscription";
 }) {
-  const params = await searchParams;
+  if (kind === "region") {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="12" cy="12" r="9" />
+        <path d="M3 12h18M12 3c3 3.2 4.3 6.2 4.3 9S15 17.8 12 21M12 3c-3 3.2-4.3 6.2-4.3 9S9 17.8 12 21" />
+      </svg>
+    );
+  }
+
+  if (kind === "integration") {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M8 8h4V4M16 16h-4v4" />
+        <path d="M12 8 7 13a3 3 0 0 0 4 4l5-5M12 16l5-5a3 3 0 0 0-4-4l-5 5" />
+      </svg>
+    );
+  }
+
+  if (kind === "resources") {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M4 5h16v14H4zM8 5v14M16 5v14M4 12h16" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <rect x="3" y="5" width="18" height="14" rx="2" />
+      <path d="M3 9h18M7 15h4" />
+    </svg>
+  );
+}
+
+export default async function AdvancedConfigurationPage() {
   const ctx = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
 
   if (ctx.membership.role !== "owner") {
     redirect("/admin?error=access");
   }
 
-  const [{ data: operatingPolicy }, { data: planUsage }] = await Promise.all([
-    ctx.supabase
-      .from("studio_operating_policies")
-      .select(
-        "cancellation_cutoff_minutes,late_cancellation_consumes_credit,no_show_consumes_credit,default_minimum_reservations_enabled,default_minimum_reservations,default_minimum_review_minutes_before,default_minimum_override_allowed,unlimited_late_cancellation_penalty_minor,unlimited_no_show_penalty_minor",
-      )
-      .eq("studio_id", ctx.studio.id)
-      .maybeSingle(),
-    ctx.supabase.rpc("current_studio_plan_usage", {
-      p_studio_id: ctx.studio.id,
-    }),
-  ]);
+  const { data: planUsage } = await ctx.supabase.rpc("current_studio_plan_usage", {
+    p_studio_id: ctx.studio.id,
+  });
 
   const usageRows = (planUsage ?? []) as PlanUsageRow[];
-  const planName = usageRows[0]?.plan_name ?? "Plan";
+  const planName = usageRows[0]?.plan_name ?? ctx.subscription.plan_name ?? "Plan";
+  const hasResources = ctx.hasModule(STUDIO_MODULES.RESOURCES);
+  const canIntegrations = ctx.can(CAPABILITIES.INTEGRATIONS_READ);
 
   return (
-    <main className="dashboard-shell admin-ux04-secondary configuration-page">
-      <header className="topbar">
+    <main className="advanced-v2">
+      <header className="advanced-v2-header">
         <div>
-          <Link className="back-link compact" href="/admin/mas">
+          <Link className="advanced-v2-back" href="/admin/mas">
             ← Más
           </Link>
-          <p className="eyebrow">CONFIGURACIÓN · {ctx.studio.name}</p>
-          <h1 className="dashboard-title">Configuración</h1>
-          <p>Ajusta la identidad, región y reglas operativas de este estudio.</p>
+          <h1>Avanzado</h1>
+          <p>Configuraciones técnicas y poco frecuentes del estudio.</p>
         </div>
       </header>
 
-      {params.saved && savedCopy[params.saved] ? (
-        <div className="notice success">{savedCopy[params.saved]}</div>
-      ) : null}
-
-      {params.error ? (
-        <div className="notice error">
-          {errorCopy[params.error] ?? "No pudimos guardar los cambios."}
-        </div>
-      ) : null}
-
-      <section className="panel">
-        <div className="panel-heading">
+      <section className="advanced-v2-plan">
+        <div className="advanced-v2-plan-heading">
           <div>
-            <p className="eyebrow">PLAN Y USO</p>
+            <span>PLAN Y USO</span>
             <h2>{planName}</h2>
-            <p>
-              Consulta cuánto estás usando de cada capacidad incluida en tu plan.
-            </p>
+            <p>Consulta el uso actual de las capacidades incluidas en tu plan.</p>
           </div>
+          <Link href="/admin/suscripcion" className="advanced-v2-secondary-action">
+            Ver suscripción
+          </Link>
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {usageRows.map((row) => {
-            const percent =
-              row.limit_value && row.limit_value > 0
-                ? Math.min(100, Math.round((row.usage / row.limit_value) * 100))
-                : null;
+        {usageRows.length ? (
+          <div className="advanced-v2-usage-grid">
+            {usageRows.map((row) => {
+              const percent =
+                row.limit_value && row.limit_value > 0
+                  ? Math.min(100, Math.round((row.usage / row.limit_value) * 100))
+                  : null;
 
-            return (
-              <article
-                key={row.limit_key}
-                className={`rounded-2xl border p-4 ${
-                  row.over_limit
-                    ? "border-red-500/40 bg-red-500/5"
-                    : "border-white/10 bg-white/[0.025]"
-                }`}
-              >
-                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-zinc-500">
-                  {row.limit_name}
-                </p>
-                <div className="mt-2 flex items-end justify-between gap-2">
-                  <strong className="text-2xl text-white">{row.usage}</strong>
-                  <span
-                    className={`text-xs font-semibold ${
-                      row.over_limit ? "text-red-300" : "text-zinc-400"
-                    }`}
-                  >
-                    {row.unlimited ? "Ilimitado" : `de ${row.limit_value}`}
-                  </span>
-                </div>
-
-                {percent !== null ? (
-                  <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/10">
-                    <div
-                      className="h-full rounded-full bg-fuchsia-500"
-                      style={{ width: `${percent}%` }}
-                    />
+              return (
+                <article
+                  key={row.limit_key}
+                  className={`advanced-v2-usage-card ${row.over_limit ? "is-over" : ""}`}
+                >
+                  <span>{row.limit_name}</span>
+                  <div>
+                    <strong>{row.usage}</strong>
+                    <small>{row.unlimited ? "Ilimitado" : `de ${row.limit_value}`}</small>
                   </div>
-                ) : null}
-
-                <p className="mt-2 text-[11px] leading-5 text-zinc-500">
-                  {row.over_limit
-                    ? "Sobre cuota. No se permitirán nuevas altas que incrementen este uso."
-                    : row.unlimited
-                      ? row.note ?? `${row.unit} ilimitados`
-                      : `${row.remaining ?? 0} disponibles`}
-                </p>
-              </article>
-            );
-          })}
-        </div>
+                  {percent !== null ? (
+                    <div className="advanced-v2-progress" aria-hidden="true">
+                      <span style={{ width: `${percent}%` }} />
+                    </div>
+                  ) : null}
+                </article>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="advanced-v2-empty-inline">No hay datos de uso disponibles.</div>
+        )}
       </section>
 
-      <OperatingPolicyForm
-        cancellationCutoffMinutes={operatingPolicy?.cancellation_cutoff_minutes ?? 300}
-        lateCancellationConsumesCredit={
-          operatingPolicy?.late_cancellation_consumes_credit ?? true
-        }
-        noShowConsumesCredit={operatingPolicy?.no_show_consumes_credit ?? true}
-        defaultMinimumReservationsEnabled={
-          operatingPolicy?.default_minimum_reservations_enabled ?? false
-        }
-        defaultMinimumReservations={operatingPolicy?.default_minimum_reservations ?? 2}
-        defaultMinimumReviewMinutesBefore={
-          operatingPolicy?.default_minimum_review_minutes_before ?? 120
-        }
-        defaultMinimumOverrideAllowed={
-          operatingPolicy?.default_minimum_override_allowed ?? true
-        }
-        unlimitedLateCancellationPenaltyMinor={
-          operatingPolicy?.unlimited_late_cancellation_penalty_minor ?? 0
-        }
-        unlimitedNoShowPenaltyMinor={
-          operatingPolicy?.unlimited_no_show_penalty_minor ?? 0
-        }
-        currency={ctx.studio.currency}
-      />
+      <section className="advanced-v2-grid">
+        <Link href="/admin/configuracion/region" className="advanced-v2-card">
+          <span className="advanced-v2-icon">
+            <AdvancedIcon kind="region" />
+          </span>
+          <span className="advanced-v2-card-copy">
+            <strong>Región y formatos</strong>
+            <small>
+              Zona horaria, moneda, formato regional y prefijo telefónico.
+            </small>
+            <span>
+              {ctx.studio.timezone} · {ctx.studio.currency} · {ctx.studio.locale}
+            </span>
+          </span>
+          <span className="advanced-v2-chevron" aria-hidden="true">›</span>
+        </Link>
 
-      <RegionalSettingsForm
-        timezone={ctx.studio.timezone}
-        currency={ctx.studio.currency}
-        locale={ctx.studio.locale}
-        phoneCountryCallingCode={ctx.studio.phone_country_calling_code}
-      />
-
-      {ctx.can(CAPABILITIES.INTEGRATIONS_READ) ? (
-        <section className="panel">
-          <p className="eyebrow">INTEGRACIONES</p>
-          <h2>Asistian</h2>
-          <p>
-            Configura y prueba los webhooks firmados que conectan Studio Flow con las automatizaciones
-            de WhatsApp en Asistian.
-          </p>
-          <Link className="primary-button" href="/admin/integraciones/asistian">
-            Configurar Asistian
+        {canIntegrations ? (
+          <Link href="/admin/integraciones/asistian" className="advanced-v2-card">
+            <span className="advanced-v2-icon is-purple">
+              <AdvancedIcon kind="integration" />
+            </span>
+            <span className="advanced-v2-card-copy">
+              <strong>Integraciones</strong>
+              <small>Conecta servicios externos y revisa sus configuraciones técnicas.</small>
+              <span>Asistian</span>
+            </span>
+            <span className="advanced-v2-chevron" aria-hidden="true">›</span>
           </Link>
-        </section>
-      ) : null}
+        ) : null}
 
-      {ctx.hasModule(STUDIO_MODULES.RESOURCES) ? (
-        <section className="panel">
-          <p className="eyebrow">RECURSOS</p>
-          <h2>Recursos y mapa</h2>
-          <p>
-            Define qué recursos físicos existen y dónde están ubicados. Las sesiones administran
-            después su disponibilidad y capacidad.
-          </p>
-          <Link className="primary-button" href="/admin/configuracion/recursos">
-            Configurar recursos
+        {hasResources ? (
+          <Link href="/admin/configuracion/recursos" className="advanced-v2-card">
+            <span className="advanced-v2-icon is-blue">
+              <AdvancedIcon kind="resources" />
+            </span>
+            <span className="advanced-v2-card-copy">
+              <strong>Recursos y espacios</strong>
+              <small>Recursos físicos, mapas y distribución de los espacios.</small>
+              <span>Configuración física del estudio</span>
+            </span>
+            <span className="advanced-v2-chevron" aria-hidden="true">›</span>
           </Link>
-        </section>
-      ) : null}
+        ) : null}
+
+        <Link href="/admin/suscripcion" className="advanced-v2-card">
+          <span className="advanced-v2-icon is-amber">
+            <AdvancedIcon kind="subscription" />
+          </span>
+          <span className="advanced-v2-card-copy">
+            <strong>Plan y suscripción</strong>
+            <small>Estado de acceso, periodo contratado, trial y facturación.</small>
+            <span>{ctx.subscription.plan_name}</span>
+          </span>
+          <span className="advanced-v2-chevron" aria-hidden="true">›</span>
+        </Link>
+      </section>
+
+      <section className="advanced-v2-note">
+        Las reglas de cancelación y no-show están en <strong>Reservas</strong>; la identidad visual
+        está en <strong>Apariencia</strong>. Aquí solo dejamos configuraciones técnicas o poco frecuentes.
+      </section>
     </main>
   );
 }
