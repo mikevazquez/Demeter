@@ -2,7 +2,6 @@ import Link from "next/link";
 
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
-import { STUDIO_MODULES } from "@/lib/auth/modules";
 
 import { ActivityWizard } from "../ActivityWizard";
 
@@ -12,7 +11,7 @@ export default async function NewActivityPage({
   searchParams: Promise<{ error?: string }>;
 }) {
   const params = await searchParams;
-  const { supabase, studio, hasModule } = await getAdminContext(CAPABILITIES.SCHEDULE_WRITE);
+  const { supabase, studio } = await getAdminContext(CAPABILITIES.SCHEDULE_WRITE);
 
   const [
     { data: instructors },
@@ -64,7 +63,7 @@ export default async function NewActivityPage({
         locale={studio.locale}
         currency={studio.currency}
         mode="create"
-        resourcesEnabled={hasModule(STUDIO_MODULES.RESOURCES)}
+        resourcesEnabled
         saveError={Boolean(params.error)}
         instructors={(instructors ?? []).map((item) => ({
           id: item.id,
