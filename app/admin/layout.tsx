@@ -166,11 +166,11 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
         ...(can(CAPABILITIES.AUTOMATIONS_READ)
           ? [{ href: "/admin/automatizaciones", label: "Comunicación", enabled: true }]
           : []),
-        ...(membership.role === "owner"
+        ...(membership.role === "owner" && can(CAPABILITIES.INTEGRATIONS_READ)
           ? [
               {
-                href: "/admin/configuracion",
-                label: "Avanzado",
+                href: "/admin/integraciones",
+                label: "Integraciones",
                 enabled: true,
                 secondary: true,
               },
