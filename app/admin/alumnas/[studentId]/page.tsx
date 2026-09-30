@@ -454,16 +454,30 @@ export default async function StudentProfilePage({
     }
   }
 
+  type StudentSaleHistory = {
+    id: string;
+    folio: string;
+    totalMinor: number;
+    status: string;
+    createdAt: string;
+    netPaidMinor: number;
+    balanceMinor: number;
+    stateLabel: string;
+  };
+
   let historicalValueMinor: number | null = null;
   let pendingBalanceMinor = 0;
+  let studentSalesHistory: StudentSaleHistory[] = [];
+
   if (canReadSales) {
-    const { data: confirmedSales } = await supabase
+    const { data: studentSales } = await supabase
       .from("sales")
-      .select("id,total_minor,status")
+      .select("id,folio,total_minor,status,created_at")
       .eq("studio_id", studio.id)
       .eq("student_id", student.id)
-      .eq("status", "confirmed");
-    const saleIds = (confirmedSales ?? []).map((sale) => sale.id);
+      .order("created_at", { ascending: false });
+
+    const saleIds = (studentSales ?? []).map((sale) => sale.id);
     const { data: payments } = saleIds.length
       ? await supabase
           .from("payments")
@@ -471,16 +485,48 @@ export default async function StudentProfilePage({
           .eq("studio_id", studio.id)
           .in("sale_id", saleIds)
       : { data: [] };
-    const paidBySale = new Map<string, number>();
+
+    const grossPaidBySale = new Map<string, number>();
+    const refundsBySale = new Map<string, number>();
+
     for (const payment of payments ?? []) {
-      const signedAmount = payment.kind === "refund" ? -payment.amount_minor : payment.amount_minor;
-      paidBySale.set(payment.sale_id, (paidBySale.get(payment.sale_id) ?? 0) + signedAmount);
+      const target = payment.kind === "refund" ? refundsBySale : grossPaidBySale;
+      target.set(payment.sale_id, (target.get(payment.sale_id) ?? 0) + payment.amount_minor);
     }
-    historicalValueMinor = [...paidBySale.values()].reduce((sum, amount) => sum + amount, 0);
-    pendingBalanceMinor = (confirmedSales ?? []).reduce(
-      (sum, sale) => sum + Math.max(0, sale.total_minor - (paidBySale.get(sale.id) ?? 0)),
-      0,
-    );
+
+    studentSalesHistory = (studentSales ?? []).map((sale) => {
+      const grossPaid = grossPaidBySale.get(sale.id) ?? 0;
+      const refunded = refundsBySale.get(sale.id) ?? 0;
+      const netPaidMinor = grossPaid - refunded;
+      const balanceMinor = Math.max(0, sale.total_minor - netPaidMinor);
+      const stateLabel =
+        sale.status === "voided"
+          ? "Anulada"
+          : refunded > 0
+            ? refunded >= grossPaid && grossPaid > 0
+              ? "Reembolsada"
+              : "Con reembolso"
+            : netPaidMinor <= 0
+              ? "Pendiente"
+              : netPaidMinor < sale.total_minor
+                ? "Parcial"
+                : "Pagada";
+
+      return {
+        id: sale.id,
+        folio: sale.folio,
+        totalMinor: sale.total_minor,
+        status: sale.status,
+        createdAt: sale.created_at,
+        netPaidMinor,
+        balanceMinor,
+        stateLabel,
+      };
+    });
+
+    const confirmedSales = studentSalesHistory.filter((sale) => sale.status === "confirmed");
+    historicalValueMinor = confirmedSales.reduce((sum, sale) => sum + sale.netPaidMinor, 0);
+    pendingBalanceMinor = confirmedSales.reduce((sum, sale) => sum + sale.balanceMinor, 0);
   }
 
   const { data: enrollmentRows } = await supabase
@@ -717,9 +763,10 @@ export default async function StudentProfilePage({
   type ProfileHistoryEvent = {
     id: string;
     at: string;
-    kind: "class" | "package" | "reward" | "status";
+    kind: "class" | "package" | "sale" | "reward" | "status";
     title: string;
     detail: string;
+    href?: string;
   };
   const profileHistoryEvents: ProfileHistoryEvent[] = [];
 
@@ -753,6 +800,33 @@ export default async function StudentProfilePage({
       kind: "package",
       title: acquisition.id === currentAcquisition?.id ? "Paquete actual" : "Paquete registrado",
       detail: productMap.get(acquisition.product_template_id)?.name ?? "Paquete",
+    });
+  }
+
+
+  for (const sale of studentSalesHistory) {
+    const total = new Intl.NumberFormat(locale, {
+      style: "currency",
+      currency,
+      maximumFractionDigits: 0,
+    }).format(sale.totalMinor / 100);
+    const balance = new Intl.NumberFormat(locale, {
+      style: "currency",
+      currency,
+      maximumFractionDigits: 0,
+    }).format(sale.balanceMinor / 100);
+
+    profileHistoryEvents.push({
+      id: "sale:" + sale.id,
+      at: sale.createdAt,
+      kind: "sale",
+      title: "Venta · " + sale.stateLabel,
+      detail:
+        sale.folio +
+        " · Total " +
+        total +
+        (sale.balanceMinor > 0 ? " · Saldo " + balance : ""),
+      href: "/admin/ventas/" + sale.id,
     });
   }
 
@@ -877,6 +951,7 @@ export default async function StudentProfilePage({
         technicalLevels={technicalLevels}
         showEvaluations={canReadEvaluations}
         showDocuments={canReadDocuments}
+        canSell={can(CAPABILITIES.SALES_WRITE)}
         currentPackage={currentPackageView}
         nextClass={nextClass}
         historicalValueMinor={historicalValueMinor}
@@ -1642,7 +1717,13 @@ export default async function StudentProfilePage({
                 <article key={event.id}>
                   <div className={"profile360-history-dot is-" + event.kind} aria-hidden="true" />
                   <div>
-                    <strong>{event.title}</strong>
+                    {event.href ? (
+                      <Link href={event.href} className="profile360-history-link">
+                        <strong>{event.title}</strong>
+                      </Link>
+                    ) : (
+                      <strong>{event.title}</strong>
+                    )}
                     <span>{event.detail}</span>
                     <small>{formatDateTime(event.at, timeZone, locale)}</small>
                   </div>
