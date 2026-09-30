@@ -13,7 +13,7 @@ export default async function NewAchievementPage() {
       <header>
         <Link
           href="/admin/recompensas/logros"
-          className="text-sm font-semibold text-zinc-400 hover:text-white"
+          className="text-sm font-semibold text-slate-600 hover:text-slate-900"
         >
           ← Logros
         </Link>
