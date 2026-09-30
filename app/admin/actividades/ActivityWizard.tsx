@@ -49,10 +49,10 @@ function SaveActivityButton({ mode }: { mode: "create" | "edit" }) {
 }
 
 const STEPS = [
-  { key: "general", label: "Información general" },
-  { key: "schedule", label: "Horarios y operación" },
-  { key: "sales", label: "Venta y acceso" },
-  { key: "confirm", label: "Confirmación" },
+  { key: "general", label: "Lo básico" },
+  { key: "schedule", label: "Horarios" },
+  { key: "sales", label: "Acceso" },
+  { key: "confirm", label: "Revisar" },
 ] as const;
 
 function todayKey() {
@@ -303,9 +303,9 @@ export function ActivityWizard({
           <div className="activities-stage-heading">
             <span>A01</span>
             <div>
-              <h2>Información general</h2>
+              <h2>Lo básico</h2>
               <p>
-                Define lo esencial de la actividad. Las reglas de cada sesión se ajustan después.
+                Nombre, duración, cupo y cómo se identifica en la Agenda.
               </p>
             </div>
           </div>
@@ -411,18 +411,17 @@ export function ActivityWizard({
           <div className="activities-stage-heading">
             <span>A02</span>
             <div>
-              <h2>Horarios y operación</h2>
-              <p>Define únicamente los días y horas. El resto se hereda en cada sesión.</p>
+              <h2>Horarios</h2>
+              <p>Elige los días y horas. Después puedes cambiar una sesión puntual desde Agenda.</p>
             </div>
           </div>
 
           <div className="activities-operation-defaults">
             <div className="activities-operation-copy">
-              <span>OPERACIÓN PREDETERMINADA</span>
-              <strong>Datos que heredarán las sesiones</strong>
+              <span>OPCIONES DEL HORARIO</span>
+              <strong>Coach, espacio y vigencia de la programación</strong>
               <p>
-                Si un coach, espacio o fecha cambia solo para una sesión, se edita después desde
-                Agenda sin alterar la actividad.
+                Estos datos se aplican por defecto. Una sesión individual puede ajustarse después sin cambiar toda la actividad.
               </p>
             </div>
 
@@ -639,7 +638,7 @@ export function ActivityWizard({
           <div className="activities-stage-heading">
             <span>A03</span>
             <div>
-              <h2>Venta y acceso</h2>
+              <h2>Acceso</h2>
               <p>Define cómo puede acceder una alumna a esta actividad.</p>
             </div>
           </div>
@@ -708,7 +707,7 @@ export function ActivityWizard({
           <div className="activities-stage-heading">
             <span>A04</span>
             <div>
-              <h2>Confirmación</h2>
+              <h2>Revisar</h2>
               <p>
                 Revisa la actividad antes de {mode === "create" ? "crearla" : "guardar cambios"}.
               </p>
@@ -718,7 +717,7 @@ export function ActivityWizard({
           <div className="activities-review-list">
             <article className="activities-review-card">
               <header>
-                <strong>Información general</strong>
+                <strong>Lo básico</strong>
                 <button type="button" onClick={() => setStep(0)}>
                   Editar
                 </button>
@@ -752,7 +751,7 @@ export function ActivityWizard({
 
             <article className="activities-review-card">
               <header>
-                <strong>Horarios y operación</strong>
+                <strong>Horarios</strong>
                 <button type="button" onClick={() => setStep(1)}>
                   Editar
                 </button>
@@ -787,7 +786,7 @@ export function ActivityWizard({
 
             <article className="activities-review-card">
               <header>
-                <strong>Venta y acceso</strong>
+                <strong>Acceso</strong>
                 <button type="button" onClick={() => setStep(2)}>
                   Editar
                 </button>
