@@ -4,7 +4,11 @@ import { getAdminContext } from "@/lib/auth/admin-context";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 
 function money(value: number, currency: string, locale: string) {
-  return new Intl.NumberFormat(locale, { style: "currency", currency }).format(value / 100);
+  return new Intl.NumberFormat(locale, {
+    style: "currency",
+    currency,
+    maximumFractionDigits: 0,
+  }).format(value / 100);
 }
 
 function paymentState(
@@ -13,18 +17,33 @@ function paymentState(
   refunded: number,
   saleStatus: string,
 ) {
-  if (saleStatus === "voided")
-    return { label: "Anulada", className: "bg-rose-500/15 text-rose-300" };
-  if (refunded > 0 && refunded >= grossPaid)
-    return { label: "Reembolsada", className: "bg-rose-500/15 text-rose-300" };
-  if (refunded > 0)
-    return { label: "Con reembolso", className: "bg-orange-500/15 text-orange-300" };
+  if (saleStatus === "voided") return { label: "Anulada", tone: "is-danger" };
+  if (refunded > 0 && refunded >= grossPaid) return { label: "Reembolsada", tone: "is-danger" };
+  if (refunded > 0) return { label: "Con reembolso", tone: "is-amber" };
 
   const netCollected = grossPaid - refunded;
-  if (netCollected <= 0) return { label: "Pendiente", className: "bg-amber-500/15 text-amber-300" };
-  if (netCollected < collectibleTotal)
-    return { label: "Parcial", className: "bg-sky-500/15 text-sky-300" };
-  return { label: "Pagada", className: "bg-emerald-500/15 text-emerald-300" };
+  if (netCollected <= 0) return { label: "Pendiente", tone: "is-amber" };
+  if (netCollected < collectibleTotal) return { label: "Parcial", tone: "is-blue" };
+  return { label: "Pagada", tone: "is-green" };
+}
+
+function ReceiptIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      width="30"
+      height="30"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M6 3h12v18l-3-2-3 2-3-2-3 2V3Z" />
+      <path d="M9 8h6M9 12h6M9 16h3" />
+    </svg>
+  );
 }
 
 export default async function SalesPage({
@@ -91,12 +110,8 @@ export default async function SalesPage({
     const grossPaid = grossPaidMap.get(sale.id) ?? 0;
     const refunded = refundMap.get(sale.id) ?? 0;
     const collectibleTotal = collectibleMap.get(sale.id) ?? sale.total_minor;
-    const state = paymentState(
-      collectibleTotal,
-      grossPaid,
-      refunded,
-      sale.status,
-    ).label.toLocaleLowerCase(ctx.studio.locale);
+    const state = paymentState(collectibleTotal, grossPaid, refunded, sale.status).label
+      .toLocaleLowerCase(ctx.studio.locale);
     const studentName = studentMap.get(sale.student_id) ?? "Alumna";
     const matchesQuery =
       !query ||
@@ -107,109 +122,92 @@ export default async function SalesPage({
   });
 
   return (
-    <main className="space-y-6">
-      <header className="flex flex-wrap items-end justify-between gap-4">
+    <main className="sales-v2">
+      <header className="sales-v2-header">
         <div>
-          <p className="text-sm text-zinc-400">Comercial</p>
-          <h1 className="text-3xl font-semibold text-white">Ventas</h1>
-          <p className="mt-1 text-sm text-zinc-400">
-            Total, cobrado, reembolsos y saldo se conservan como conceptos separados.
-          </p>
+          <h1>Ventas</h1>
+          <p>Registra cobros y consulta el estado real de cada venta.</p>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <Link
-            href="/admin/ventas/inscripcion"
-            className="rounded-xl border border-white/10 px-4 py-2.5 text-sm font-semibold text-zinc-200 hover:bg-white/[0.04]"
-          >
-            Inscripción
+        {ctx.can(CAPABILITIES.SALES_WRITE) ? (
+          <Link href="/admin/ventas/nueva" className="sales-v2-primary">
+            <span aria-hidden="true">＋</span> Nueva venta
           </Link>
-          {ctx.can(CAPABILITIES.SALES_WRITE) ? (
-            <Link
-              href="/admin/ventas/nueva"
-              className="rounded-xl bg-fuchsia-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-fuchsia-500"
-            >
-              Nueva venta
-            </Link>
-          ) : null}
-        </div>
+        ) : null}
       </header>
 
-      <form className="grid gap-3 rounded-2xl border border-white/10 bg-white/[0.03] p-4 md:grid-cols-[1fr_180px_auto]">
+      <form className="sales-v2-filters">
         <input
           name="q"
           defaultValue={params.q ?? ""}
-          placeholder="Buscar por folio o alumna"
-          className="rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 text-sm text-white outline-none focus:border-fuchsia-500/60"
+          placeholder="Buscar alumna o folio"
+          aria-label="Buscar alumna o folio"
         />
-        <select
-          name="status"
-          defaultValue={statusFilter}
-          className="rounded-xl border border-white/10 bg-zinc-950 px-3 py-2.5 text-sm text-white"
-        >
-          <option value="all">Todos los estados</option>
-          <option value="pagada">Pagada</option>
-          <option value="parcial">Parcial</option>
-          <option value="pendiente">Pendiente</option>
+        <select name="status" defaultValue={statusFilter} aria-label="Estado de pago">
+          <option value="all">Todos</option>
+          <option value="pagada">Pagadas</option>
+          <option value="parcial">Parciales</option>
+          <option value="pendiente">Pendientes</option>
           <option value="con reembolso">Con reembolso</option>
-          <option value="reembolsada">Reembolsada</option>
-          <option value="anulada">Anulada</option>
+          <option value="reembolsada">Reembolsadas</option>
+          <option value="anulada">Anuladas</option>
         </select>
-        <button className="rounded-xl border border-white/10 px-4 py-2.5 text-sm font-semibold text-white">
-          Filtrar
-        </button>
+        <button type="submit">Filtrar</button>
       </form>
 
       {!visibleSales.length ? (
-        <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-8 text-center">
-          <h2 className="font-semibold text-white">No hay ventas que mostrar</h2>
-          <p className="mt-2 text-sm text-zinc-400">
-            Cuando registres una venta aparecerá aquí con su historia comercial.
-          </p>
+        <section className="sales-v2-empty">
+          <strong>No hay ventas que mostrar</strong>
+          <p>Cuando registres una venta aparecerá aquí.</p>
         </section>
       ) : (
-        <section className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03]">
-          <div className="hidden grid-cols-[1.1fr_1.4fr_1fr_1fr_1fr_auto] gap-4 border-b border-white/10 px-5 py-3 text-xs font-semibold uppercase tracking-wide text-zinc-500 md:grid">
-            <span>Folio</span>
-            <span>Alumna</span>
-            <span>Total</span>
-            <span>Neto</span>
-            <span>Saldo</span>
-            <span>Estado</span>
-          </div>
-          <div className="divide-y divide-white/10">
-            {visibleSales.map((sale) => {
-              const grossPaid = grossPaidMap.get(sale.id) ?? 0;
-              const refunded = refundMap.get(sale.id) ?? 0;
-              const netCollected = grossPaid - refunded;
-              const collectibleTotal = collectibleMap.get(sale.id) ?? sale.total_minor;
-              const balance = Math.max(collectibleTotal - netCollected, 0);
-              const state = paymentState(collectibleTotal, grossPaid, refunded, sale.status);
-              return (
-                <Link
-                  key={sale.id}
-                  href={`/admin/ventas/${sale.id}`}
-                  className="grid gap-2 px-5 py-4 transition hover:bg-white/[0.04] md:grid-cols-[1.1fr_1.4fr_1fr_1fr_1fr_auto] md:items-center md:gap-4"
-                >
-                  <strong className="text-sm text-white">{sale.folio}</strong>
-                  <span className="text-sm text-zinc-300">
-                    {studentMap.get(sale.student_id) ?? "Alumna"}
+        <section className="sales-v2-list" aria-label="Ventas">
+          {visibleSales.map((sale) => {
+            const grossPaid = grossPaidMap.get(sale.id) ?? 0;
+            const refunded = refundMap.get(sale.id) ?? 0;
+            const netCollected = grossPaid - refunded;
+            const collectibleTotal = collectibleMap.get(sale.id) ?? sale.total_minor;
+            const balance = Math.max(collectibleTotal - netCollected, 0);
+            const state = paymentState(collectibleTotal, grossPaid, refunded, sale.status);
+            const createdAt = new Intl.DateTimeFormat(ctx.studio.locale, {
+              day: "numeric",
+              month: "short",
+              year: "numeric",
+              timeZone: ctx.studio.timezone,
+            }).format(new Date(sale.created_at));
+
+            return (
+              <Link key={sale.id} href={`/admin/ventas/${sale.id}`} className="sales-v2-card">
+                <span className="sales-v2-card-icon">
+                  <ReceiptIcon />
+                </span>
+
+                <span className="sales-v2-card-main">
+                  <span className="sales-v2-card-title">
+                    <strong>{studentMap.get(sale.student_id) ?? "Alumna"}</strong>
+                    <small>{sale.folio}</small>
                   </span>
-                  <span className="text-sm text-zinc-300">
-                    {money(sale.total_minor, sale.currency, ctx.studio.locale)}
+                  <span className="sales-v2-card-date">{createdAt}</span>
+
+                  <span className="sales-v2-card-money">
+                    <span>
+                      <small>Total</small>
+                      <strong>{money(collectibleTotal, sale.currency, ctx.studio.locale)}</strong>
+                    </span>
+                    <span>
+                      <small>Pagado</small>
+                      <strong>{money(netCollected, sale.currency, ctx.studio.locale)}</strong>
+                    </span>
+                    <span>
+                      <small>Saldo</small>
+                      <strong>{money(balance, sale.currency, ctx.studio.locale)}</strong>
+                    </span>
                   </span>
-                  <span className="text-sm text-zinc-300">
-                    {money(netCollected, sale.currency, ctx.studio.locale)}
-                  </span>
-                  <span className="text-sm font-medium text-white">
-                    {money(balance, sale.currency, ctx.studio.locale)}
-                  </span>
-                  <span className={`w-fit rounded-full px-2.5 py-1 text-xs ${state.className}`}>
-                    {state.label}
-                  </span>
-                </Link>
-              );
-            })}
-          </div>
+                </span>
+
+                <span className={`sales-v2-status ${state.tone}`}>{state.label}</span>
+              </Link>
+            );
+          })}
         </section>
       )}
     </main>
