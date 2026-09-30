@@ -46,7 +46,7 @@ export function RewardsNav() {
 
 export function RewardsShell({ children }: { children: React.ReactNode }) {
   return (
-    <main className="dashboard-shell space-y-6 admin-ux04-secondary rewards-admin-page">
+    <main className="dashboard-shell space-y-6 rewards-admin-page">
       <RewardsNav />
       {children}
     </main>
