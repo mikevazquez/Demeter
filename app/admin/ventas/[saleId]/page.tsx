@@ -79,7 +79,7 @@ export default async function SaleDetailPage({
 
   const { data: paymentMethods } = await ctx.supabase
     .from("studio_payment_methods")
-    .select("code,name,requires_reference,allow_refunds")
+    .select("code,name,requires_reference,allow_refunds,active")
     .eq("studio_id", ctx.studio.id)
     .order("sort_order");
 
