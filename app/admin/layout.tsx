@@ -20,6 +20,7 @@ import "./admin-ux-04-secondary-detail.css";
 import "./evaluaciones/evaluaciones.css";
 import "./inteligencia/inteligencia.css";
 import "./productos/packages-v2.css";
+import "./ventas/sales-v2.css";
 
 type PwaBrand = {
   name: string;
@@ -137,6 +138,9 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
         ...(can(CAPABILITIES.STUDENTS_READ)
           ? [{ href: "/admin/alumnas", label: "Alumnas", enabled: true }]
           : []),
+        ...(can(CAPABILITIES.SALES_READ)
+          ? [{ href: "/admin/ventas", label: "Ventas", enabled: true }]
+          : []),
         ...(can(CAPABILITIES.REPORTS_READ)
           ? [{ href: "/admin/inteligencia", label: "Inteligencia", enabled: true }]
           : []),
@@ -193,6 +197,9 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
         ...(can(CAPABILITIES.STUDENTS_READ)
           ? [{ href: "/admin/alumnas", label: "Alumnas", enabled: true }]
           : []),
+        ...(can(CAPABILITIES.SALES_READ)
+          ? [{ href: "/admin/ventas", label: "Ventas", enabled: true }]
+          : []),
         ...(hasMoreDestinations
           ? [
               {
@@ -201,6 +208,7 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
                 enabled: true,
                 activeFor: [
                   "/admin/actividades",
+                  "/admin/ventas",
                   "/admin/documentos",
                   "/admin/recompensas",
                   "/admin/evaluaciones",
