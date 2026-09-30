@@ -5,7 +5,6 @@ import { redirect } from "next/navigation";
 
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
-import { STUDIO_MODULES } from "@/lib/auth/modules";
 
 type SchedulePayload = {
   id?: string;
@@ -106,19 +105,7 @@ export async function saveActivity(formData: FormData) {
     payload.minimumReviewUnit === "hours" ? minimumReviewValue * 60 : minimumReviewValue;
 
   let requiresResource = Boolean(payload.requiresResource);
-  if (!ctx.hasModule(STUDIO_MODULES.RESOURCES)) {
-    if (payload.activityId) {
-      const { data: currentActivity } = await supabase
-        .from("class_templates")
-        .select("requires_resource")
-        .eq("id", payload.activityId)
-        .eq("studio_id", studio.id)
-        .maybeSingle();
-      requiresResource = currentActivity?.requires_resource ?? false;
-    } else {
-      requiresResource = false;
-    }
-  }
+
 
   if (
     !name ||
