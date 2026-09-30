@@ -649,3 +649,13 @@
  .student-package-quick-facts{display:flex!important;gap:4px 10px}
  .student-package-quick-facts small{font-size:10px}
 }
+
+.student-package-quick-facts{display:flex!important;align-items:center!important;gap:6px 12px!important}
+.student-package-quick-facts small{display:inline-block!important;color:#6f7c8e!important;font-size:10px!important;font-weight:600!important;line-height:1.25!important;opacity:1!important}
+.student-package-remaining{color:#344258!important}
+.student-package-expiry{color:#6f7c8e!important}
+@media(max-width:680px){
+ .student-package-quick-summary{display:grid!important;gap:5px!important}
+ .student-package-quick-facts{display:flex!important;flex-wrap:wrap!important;gap:4px 10px!important}
+ .student-package-quick-facts small{display:inline-block!important;font-size:10px!important}
+}
