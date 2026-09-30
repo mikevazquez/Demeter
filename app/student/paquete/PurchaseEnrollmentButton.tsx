@@ -1,0 +1,4 @@
+"use client";
+import { useRef,useState,useTransition } from "react";
+import { createEnrollmentMercadoPagoOrderAction } from "@/app/student/actions";
+export default function PurchaseEnrollmentButton({productTemplateId,label}:{productTemplateId:string;label:string}){const [pending,start]=useTransition();const [error,setError]=useState<string|null>(null);const key=useRef<string|null>(null);return <div><button type="button" disabled={pending} onClick={()=>{if(!key.current)key.current=crypto.randomUUID();setError(null);start(async()=>{const r=await createEnrollmentMercadoPagoOrderAction(productTemplateId,key.current!);if(!r.ok){setError("No pudimos iniciar el pago de tu inscripción.");return;}window.location.assign(r.checkoutUrl);});}} className="min-h-11 rounded-2xl bg-fuchsia-600 px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-60">{pending?"Abriendo pago seguro…":label}</button>{error?<p className="mt-2 text-xs text-rose-300">{error}</p>:null}</div>}
