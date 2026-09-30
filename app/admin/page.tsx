@@ -166,7 +166,6 @@ export default async function AdminPage({
     { data: salesToday },
     { data: students },
     { data: quickSaleProducts },
-    { data: quickSaleHistory },
   ] = await Promise.all([
     supabase
       .from("class_sessions")
@@ -202,13 +201,6 @@ export default async function AdminPage({
       .in("product_type", ["package", "membership"])
       .eq("active", true)
       .order("price_minor"),
-    supabase
-      .from("product_acquisitions")
-      .select("student_id,product_template_id,created_at")
-      .eq("studio_id", studio.id)
-      .neq("status", "refunded")
-      .order("created_at", { ascending: false })
-      .limit(1000),
   ]);
 
   const sessionIds = (selectedSessions ?? []).map((session) => session.id);
@@ -478,14 +470,6 @@ export default async function AdminPage({
     });
   }
 
-  const quickSalePreference: Record<string, string> = {};
-  for (const acquisition of quickSaleHistory ?? []) {
-    if (!acquisition.student_id || quickSalePreference[acquisition.student_id]) continue;
-    if (acquisition.product_template_id) {
-      quickSalePreference[acquisition.student_id] = acquisition.product_template_id;
-    }
-  }
-
   const totalDailyCapacity = classes.reduce((sum, item) => sum + item.capacity, 0);
   const totalDailyReservations = classes.reduce((sum, item) => sum + item.occupied, 0);
   const dailyReservationPercentage =
@@ -522,16 +506,15 @@ export default async function AdminPage({
               canStudents={canWriteStudents}
               canSales={canWriteSales}
               locale={locale}
-              preferredProductByStudent={quickSalePreference}
               students={(students ?? []).map((item) => ({ id: item.id, fullName: item.full_name }))}
               products={(quickSaleProducts ?? []).map((item) => ({
                 id: item.id,
                 name: item.name,
                 priceMinor: item.price_minor,
-                currency: item.currency ?? "MXN",
+                currency: item.currency,
                 creditLimit: item.credit_limit,
                 validityDays: item.validity_days,
-                unlimited: Boolean(item.unlimited),
+                unlimited: item.unlimited,
               }))}
             />
           ) : null}
