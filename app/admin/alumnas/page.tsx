@@ -475,17 +475,23 @@ export default async function StudentsPage({
                         </span>
                       );
                     }
+                    const remaining = visibleBalanceMap.get(acquisition.id) ?? 0;
                     return (
-                      <>
-                        <span className="student-package-summary">
-                          <b>{productNameMap.get(acquisition.product_template_id) ?? "Paquete activo"}</b>
-                          <small>Vence {shortDate(acquisition.expires_on, studio.locale)}</small>
+                      <span className="student-package-summary student-package-quick-summary">
+                        <b>{productNameMap.get(acquisition.product_template_id) ?? "Paquete activo"}</b>
+                        <span className="student-package-quick-facts">
+                          <small>
+                            {acquisition.unlimited
+                              ? "Ilimitado"
+                              : remaining + " de " + String(acquisition.credit_limit ?? "—") + " disponibles"}
+                          </small>
+                          <small>
+                            {acquisition.expires_on
+                              ? "Vence " + shortDate(acquisition.expires_on, studio.locale)
+                              : "Sin fecha de vencimiento"}
+                          </small>
                         </span>
-                        <span className="student-credit-summary">
-                          <b>{acquisition.unlimited ? "Ilimitado" : String(visibleBalanceMap.get(acquisition.id) ?? 0)}</b>
-                          <small>{acquisition.unlimited ? "acceso" : "créditos"}</small>
-                        </span>
-                      </>
+                      </span>
                     );
                   })()}
                   <span className={`student-state-pill is-${student.lifecycle_status === "inactive" ? "inactive" : "active"}`}>
