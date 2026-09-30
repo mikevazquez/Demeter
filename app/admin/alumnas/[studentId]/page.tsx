@@ -127,17 +127,45 @@ function rewardBenefitLabel(
   return labels[kind] ?? "Recompensa";
 }
 
-function localDateKey(timeZone: string) {
+function dateKeyFromDate(date: Date, timeZone: string) {
   const parts = new Intl.DateTimeFormat("en-US", {
     timeZone,
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
-  }).formatToParts(new Date());
+  }).formatToParts(date);
   const year = parts.find((part) => part.type === "year")?.value ?? "0000";
   const month = parts.find((part) => part.type === "month")?.value ?? "00";
   const day = parts.find((part) => part.type === "day")?.value ?? "00";
   return year + "-" + month + "-" + day;
+}
+
+function localDateKey(timeZone: string) {
+  return dateKeyFromDate(new Date(), timeZone);
+}
+
+function periodStartDateKey(today: string, period: string) {
+  if (period === "all") return null;
+
+  const [yearText, monthText] = today.split("-");
+  const year = Number(yearText);
+  const month = Number(monthText);
+
+  if (period === "month") {
+    return `${yearText}-${monthText}-01`;
+  }
+
+  if (period === "quarter") {
+    const startMonth = Math.floor((month - 1) / 3) * 3 + 1;
+    return `${year}-${String(startMonth).padStart(2, "0")}-01`;
+  }
+
+  if (period === "semester") {
+    const startMonth = month <= 6 ? 1 : 7;
+    return `${year}-${String(startMonth).padStart(2, "0")}-01`;
+  }
+
+  return `${year}-01-01`;
 }
 
 export default async function StudentProfilePage({
@@ -156,11 +184,18 @@ export default async function StudentProfilePage({
     document_result?: string;
     document_error?: string;
     view?: string;
+    sales_period?: string;
   }>;
 }) {
   const { studentId } = await params;
   const query = await searchParams;
   const requestedView = String(query.view ?? "summary");
+  const requestedSalesPeriod = String(query.sales_period ?? "month");
+  const salesPeriod = ["month", "quarter", "semester", "year", "all"].includes(
+    requestedSalesPeriod,
+  )
+    ? requestedSalesPeriod
+    : "month";
   const view = (
     [
       "summary",
@@ -529,6 +564,12 @@ export default async function StudentProfilePage({
     pendingBalanceMinor = confirmedSales.reduce((sum, sale) => sum + sale.balanceMinor, 0);
   }
 
+  const salesPeriodStart = periodStartDateKey(today, salesPeriod);
+  const visibleStudentSalesHistory = studentSalesHistory.filter((sale) => {
+    if (!salesPeriodStart) return true;
+    return dateKeyFromDate(new Date(sale.createdAt), timeZone) >= salesPeriodStart;
+  });
+
   const { data: enrollmentRows } = await supabase
     .from("student_enrollments")
     .select("id,status,starts_on,expires_on,created_at")
@@ -803,32 +844,6 @@ export default async function StudentProfilePage({
     });
   }
 
-
-  for (const sale of studentSalesHistory) {
-    const total = new Intl.NumberFormat(locale, {
-      style: "currency",
-      currency,
-      maximumFractionDigits: 0,
-    }).format(sale.totalMinor / 100);
-    const balance = new Intl.NumberFormat(locale, {
-      style: "currency",
-      currency,
-      maximumFractionDigits: 0,
-    }).format(sale.balanceMinor / 100);
-
-    profileHistoryEvents.push({
-      id: "sale:" + sale.id,
-      at: sale.createdAt,
-      kind: "sale",
-      title: "Venta · " + sale.stateLabel,
-      detail:
-        sale.folio +
-        " · Total " +
-        total +
-        (sale.balanceMinor > 0 ? " · Saldo " + balance : ""),
-      href: "/admin/ventas/" + sale.id,
-    });
-  }
 
   for (const achievement of rewardAchievements) {
     profileHistoryEvents.push({
@@ -1698,42 +1713,144 @@ export default async function StudentProfilePage({
         </section>
       ) : null}
       {view === "history" ? (
-        <section className="profile360-view-panel">
-          <div className="profile360-view-heading">
-            <div>
-              <p className="eyebrow">HISTORIAL</p>
-              <h2>Actividad de la alumna</h2>
-              <p>
-                Cronología de clases, paquetes, ventas, Rewards y cambios de estado. Cada venta
-                conserva su detalle de pagos y reembolsos.
-              </p>
-            </div>
-            <span className="count-badge">{profileHistoryEvents.length}</span>
-          </div>
+        <div className="profile360-history-stack">
+          {canReadSales ? (
+            <section className="profile360-view-panel profile360-sales-history">
+              <div className="profile360-view-heading">
+                <div>
+                  <p className="eyebrow">COMPRAS Y PAGOS</p>
+                  <h2>Historial de ventas</h2>
+                  <p>Consulta las compras de esta alumna por periodo.</p>
+                </div>
+                {can(CAPABILITIES.SALES_WRITE) && student.lifecycle_status !== "inactive" ? (
+                  <Link
+                    className="profile360-sale-history-action"
+                    href={"/admin/ventas/nueva?student_id=" + student.id}
+                  >
+                    + Registrar venta
+                  </Link>
+                ) : null}
+              </div>
 
-          {profileHistoryEvents.length ? (
-            <div className="profile360-history-list">
-              {profileHistoryEvents.slice(0, 60).map((event) => (
-                <article key={event.id}>
-                  <div className={"profile360-history-dot is-" + event.kind} aria-hidden="true" />
-                  <div>
-                    {event.href ? (
-                      <Link href={event.href} className="profile360-history-link">
-                        <strong>{event.title}</strong>
-                      </Link>
-                    ) : (
-                      <strong>{event.title}</strong>
-                    )}
-                    <span>{event.detail}</span>
-                    <small>{formatDateTime(event.at, timeZone, locale)}</small>
-                  </div>
-                </article>
-              ))}
+              <nav className="profile360-sales-periods" aria-label="Periodo de ventas">
+                {[
+                  ["month", "Mes"],
+                  ["quarter", "Trimestre"],
+                  ["semester", "Semestre"],
+                  ["year", "Año"],
+                  ["all", "Todo"],
+                ].map(([period, label]) => (
+                  <Link
+                    key={period}
+                    className={salesPeriod === period ? "is-active" : ""}
+                    href={`/admin/alumnas/${student.id}?view=history&sales_period=${period}`}
+                  >
+                    {label}
+                  </Link>
+                ))}
+              </nav>
+
+              <div className="profile360-sales-history-meta">
+                <span>{visibleStudentSalesHistory.length} ventas</span>
+                <span>
+                  Total pagado:{" "}
+                  {new Intl.NumberFormat(locale, {
+                    style: "currency",
+                    currency,
+                    maximumFractionDigits: 0,
+                  }).format(
+                    visibleStudentSalesHistory.reduce(
+                      (sum, sale) => sum + Math.max(0, sale.netPaidMinor),
+                      0,
+                    ) / 100,
+                  )}
+                </span>
+              </div>
+
+              {visibleStudentSalesHistory.length ? (
+                <div className="profile360-sales-list">
+                  {visibleStudentSalesHistory.map((sale) => (
+                    <Link
+                      key={sale.id}
+                      href={"/admin/ventas/" + sale.id}
+                      className="profile360-sale-row"
+                    >
+                      <span>
+                        <strong>{sale.folio}</strong>
+                        <small>{formatDateTime(sale.createdAt, timeZone, locale)}</small>
+                      </span>
+                      <span className="profile360-sale-values">
+                        <span>
+                          <small>Total</small>
+                          <strong>
+                            {new Intl.NumberFormat(locale, {
+                              style: "currency",
+                              currency,
+                              maximumFractionDigits: 0,
+                            }).format(sale.totalMinor / 100)}
+                          </strong>
+                        </span>
+                        <span>
+                          <small>Pagado</small>
+                          <strong>
+                            {new Intl.NumberFormat(locale, {
+                              style: "currency",
+                              currency,
+                              maximumFractionDigits: 0,
+                            }).format(sale.netPaidMinor / 100)}
+                          </strong>
+                        </span>
+                        {sale.balanceMinor > 0 ? (
+                          <span>
+                            <small>Saldo</small>
+                            <strong>
+                              {new Intl.NumberFormat(locale, {
+                                style: "currency",
+                                currency,
+                                maximumFractionDigits: 0,
+                              }).format(sale.balanceMinor / 100)}
+                            </strong>
+                          </span>
+                        ) : null}
+                      </span>
+                      <span className="profile360-sale-state">{sale.stateLabel}</span>
+                    </Link>
+                  ))}
+                </div>
+              ) : (
+                <div className="empty-state">No hay ventas en este periodo.</div>
+              )}
+            </section>
+          ) : null}
+
+          <section className="profile360-view-panel">
+            <div className="profile360-view-heading">
+              <div>
+                <p className="eyebrow">ACTIVIDAD</p>
+                <h2>Historial general</h2>
+                <p>Clases, paquetes, Rewards y cambios de estado.</p>
+              </div>
+              <span className="count-badge">{profileHistoryEvents.length}</span>
             </div>
-          ) : (
-            <div className="empty-state">Todavía no hay actividad histórica para mostrar.</div>
-          )}
-        </section>
+
+            {profileHistoryEvents.length ? (
+              <div className="profile360-history-list">
+                {profileHistoryEvents.slice(0, 60).map((event) => (
+                  <article key={event.id}>
+                    <div className={"profile360-history-dot is-" + event.kind} aria-hidden="true" />
+                    <div>
+                      <strong>{event.title}</strong>
+                      <span>{event.detail}</span>
+                      <small>{formatDateTime(event.at, timeZone, locale)}</small>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            ) : (
+              <div className="empty-state">Todavía no hay actividad histórica para mostrar.</div>
+            )}
+          </section>
+        </div>
       ) : null}
 
       {view === "profile" ? (
