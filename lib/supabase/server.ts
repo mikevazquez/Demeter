@@ -11,7 +11,8 @@ export async function createClient(explicitPortal?: AuthPortal) {
   const cookieStore = await cookies();
   const headerStore = await headers();
   const headerPortal = headerStore.get(AUTH_PORTAL_HEADER);
-  const portal: AuthPortal = explicitPortal ?? (headerPortal === "student" ? "student" : "admin");
+  const portal: AuthPortal =
+    explicitPortal ?? (headerPortal === "student" ? "student" : "admin");
 
   return createServerClient(env.supabaseUrl, env.supabasePublishableKey, {
     cookieOptions: authCookieOptions(portal),

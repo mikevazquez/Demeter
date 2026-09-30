@@ -46,7 +46,10 @@ export function isMetaWhatsAppTemplateKey(value: string): value is MetaWhatsAppT
   return (META_WHATSAPP_TEMPLATE_KEYS as readonly string[]).includes(value);
 }
 
-export function normalizeMetaWhatsAppPhone(value: unknown, defaultCountryCallingCode = "52") {
+export function normalizeMetaWhatsAppPhone(
+  value: unknown,
+  defaultCountryCallingCode = "52",
+) {
   if (typeof value !== "string" || !value.trim()) return null;
 
   const digits = value.replace(/\D/g, "");

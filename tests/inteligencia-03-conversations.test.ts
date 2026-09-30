@@ -8,7 +8,9 @@ function source(path: string) {
 }
 
 describe("INTEL-03 conversation intelligence", () => {
-  const migration = source("supabase/migrations/20260926121500_inteligencia03_conversations.sql");
+  const migration = source(
+    "supabase/migrations/20260926121500_inteligencia03_conversations.sql",
+  );
   const receiver = source("supabase/functions/receive-asistian-webhook/index.ts");
   const intelligence = source("app/admin/inteligencia/page.tsx");
   const integrationPage = source("app/admin/integraciones/asistian/page.tsx");
@@ -30,9 +32,7 @@ describe("INTEL-03 conversation intelligence", () => {
   it("links historical conversations when the contact later books", () => {
     expect(migration).toContain("link_asistian_conversations_from_booking");
     expect(migration).toContain("inteligencia03_link_conversations_after_asistian_booking");
-    expect(migration).toContain(
-      "provider_contact_id = coalesce(c.provider_contact_id, new.asistian_client_id)",
-    );
+    expect(migration).toContain("provider_contact_id = coalesce(c.provider_contact_id, new.asistian_client_id)");
   });
 
   it("accepts the custom conversation_activity contract in the signed receiver", () => {
