@@ -126,9 +126,7 @@ export type PrepareBookingArgs = {
   session_ref: string;
 };
 
-export type ExecuteBookingArgs = {
-  pending_action_ref: string;
-};
+export type ExecuteBookingArgs = EmptyArgs;
 
 export const assistantActionToolDefinitions: AssistantToolDefinition[] = [
   {
@@ -154,18 +152,12 @@ export const assistantActionToolDefinitions: AssistantToolDefinition[] = [
     type: "function",
     name: "execute_booking",
     description:
-      "Ejecuta una reserva previamente preparada. Solo úsala después de un NUEVO mensaje de la persona que confirme explícitamente la reserva.",
+      "Ejecuta la última reserva pendiente de esta conversación. Solo úsala después de un NUEVO mensaje de la persona que confirme explícitamente la reserva. El servidor decide qué acción pendiente puede ejecutarse.",
     strict: true,
     parameters: {
       type: "object",
-      properties: {
-        pending_action_ref: {
-          type: "string",
-          description:
-            "Referencia opaca action:<uuid> devuelta por prepare_booking.",
-        },
-      },
-      required: ["pending_action_ref"],
+      properties: {},
+      required: [],
       additionalProperties: false,
     },
   },
