@@ -533,3 +533,49 @@
     font-size: 7px;
   }
 }
+
+
+/* SF V2 · Alumnas directory light visual system. Behavior unchanged. */
+.student-directory-page {
+  --students-v2-bg:#f5f7f9; --students-v2-surface:#fff; --students-v2-line:#e3e8ed;
+  --students-v2-text:#172033; --students-v2-muted:#748095; --students-v2-accent:#159b8c;
+  --students-v2-accent-soft:#e8f7f4;
+  background:var(--students-v2-bg); color:var(--students-v2-text);
+}
+.student-directory-header h1{color:var(--students-v2-text)}
+.student-directory-header>div>p:last-child{color:var(--students-v2-muted)}
+.student-quick-create>summary{border-color:#9dd9d0;background:var(--students-v2-accent-soft);color:#0c8174;box-shadow:0 6px 18px rgba(24,36,54,.06)}
+.student-quick-create[open]>summary{border-color:var(--students-v2-accent);background:#dff3ef;color:#0c8174}
+.student-quick-create-panel{border-color:var(--students-v2-line);background:var(--students-v2-surface);box-shadow:0 22px 56px rgba(24,36,54,.16)}
+.student-quick-create-heading h2{color:var(--students-v2-text)}
+.student-quick-create-heading p:last-child{color:var(--students-v2-muted)}
+.student-directory-search input{border-color:var(--students-v2-line);background:var(--students-v2-surface);color:var(--students-v2-text);box-shadow:0 3px 12px rgba(24,36,54,.04)}
+.student-directory-search input:focus{border-color:#78c9bd;box-shadow:0 0 0 3px rgba(21,155,140,.08)}
+.student-directory-kpi{border-color:var(--students-v2-line);background:var(--students-v2-surface);box-shadow:0 6px 20px rgba(24,36,54,.05)}
+.student-directory-kpi strong{color:var(--students-v2-text)}
+.student-directory-kpi small{color:var(--students-v2-muted)}
+.student-directory-kpi.is-active .student-kpi-icon{background:#e6f7ef;color:#16845c}
+.student-directory-kpi.is-expiring .student-kpi-icon{background:#fff5d9;color:#a56c00}
+.student-directory-kpi.is-expired .student-kpi-icon{background:#ffebef;color:#b83c59}
+.student-directory-kpi.is-total .student-kpi-icon{background:#eef2f6;color:#637086}
+.student-filter-chip{border-color:var(--students-v2-line);background:var(--students-v2-surface);color:#68768a}
+.student-filter-chip.is-active{border-color:#9dd9d0;background:var(--students-v2-accent-soft);color:#0c8174}
+.student-filter-chip.is-future{opacity:.45}
+.student-directory-page>.panel{border-color:var(--students-v2-line);background:var(--students-v2-surface);box-shadow:0 10px 30px rgba(24,36,54,.06)}
+.student-directory-page>.panel .panel-heading{border-bottom-color:var(--students-v2-line)}
+.student-directory-page>.panel .panel-heading h2{color:var(--students-v2-text)}
+.student-directory-page>.panel .count-badge{border-color:#b9e4dd;background:var(--students-v2-accent-soft);color:#0c8174}
+.student-directory-card{border-bottom-color:#edf0f3;background:transparent}
+.student-directory-card:hover{border-color:#edf0f3;background:#f8fafb}
+.student-directory-card:focus-visible{outline-color:var(--students-v2-accent)}
+.student-avatar{border-color:#b9dcd7;background:#edf8f6;color:#0c8174}
+.student-directory-main>strong{color:#253147}
+.student-directory-meta{color:#68768a}
+.student-directory-meta small{color:#8792a2}
+.student-package-summary b{color:#39475d}
+.student-package-summary small{color:#7b8798}
+.student-package-summary.is-expired b,.student-package-summary.is-expired small{color:#b83c59}
+.student-directory-arrow{color:#9aa4b2}
+.student-quick-create-panel .compact-form input{border-color:var(--students-v2-line);background:#fafbfc;color:var(--students-v2-text)}
+.student-quick-create-panel .primary-button{background:var(--students-v2-accent);border-color:var(--students-v2-accent)}
+@media(max-width:760px){.student-directory-page{background:var(--students-v2-bg)}}
