@@ -73,21 +73,8 @@ const items: MoreItem[] = [
     capability: CAPABILITIES.REWARDS_READ,
   },
   {
-    title: "Integraciones",
-    description: "Conecta Studio Flow con Asistian y otros servicios externos.",
-    href: "/admin/integraciones/asistian",
-    capability: CAPABILITIES.INTEGRATIONS_READ,
-    ownerOnly: true,
-  },
-  {
-    title: "Suscripción",
-    description: "Plan, estado de acceso, trial, periodo y pagos pendientes.",
-    href: "/admin/suscripcion",
-    ownerOnly: true,
-  },
-  {
-    title: "Configuración",
-    description: "Identidad pública y preferencias del estudio.",
+    title: "Avanzado",
+    description: "Región, integraciones, recursos y plan del estudio.",
     href: "/admin/configuracion",
     ownerOnly: true,
   },
