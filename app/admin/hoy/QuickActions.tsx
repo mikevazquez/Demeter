@@ -7,7 +7,7 @@ type Product={id:string;name:string;priceMinor:number;currency:string;creditLimi
 
 function money(n:number,c:string,locale:string){return new Intl.NumberFormat(locale,{style:"currency",currency:c,maximumFractionDigits:2}).format(n/100)}
 
-export default function QuickActions({canStudents,canSales,students,products,locale,preferredProductByStudent}:{canStudents:boolean;canSales:boolean;students:Student[];products:Product[];locale:string;preferredProductByStudent:Record<string,string>}){
+export default function QuickActions({canStudents,canSales,students,products,locale,preferredProductByStudent={}}:{canStudents:boolean;canSales:boolean;students:Student[];products:Product[];locale:string;preferredProductByStudent?:Record<string,string>}){
  const [open,setOpen]=useState<null|"menu"|"student"|"sale">(null);
  const [studentId,setStudentId]=useState("");
  const [studentQuery,setStudentQuery]=useState("");
