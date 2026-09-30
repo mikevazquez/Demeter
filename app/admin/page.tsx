@@ -167,7 +167,6 @@ export default async function AdminPage({
     { data: students },
     { data: quickSaleProducts },
     { data: quickSaleHistory },
-    { data: quickSaleLines },
   ] = await Promise.all([
     supabase
       .from("class_sessions")
@@ -204,18 +203,12 @@ export default async function AdminPage({
       .eq("active", true)
       .order("price_minor"),
     supabase
-      .from("sales")
-      .select("id,student_id,created_at")
+      .from("product_acquisitions")
+      .select("student_id,product_template_id,created_at")
       .eq("studio_id", studio.id)
-      .neq("status", "voided")
+      .neq("status", "refunded")
       .order("created_at", { ascending: false })
       .limit(1000),
-    supabase
-      .from("sale_lines")
-      .select("sale_id,product_template_id")
-      .eq("studio_id", studio.id)
-      .not("product_template_id", "is", null)
-      .limit(2000),
   ]);
 
   const sessionIds = (selectedSessions ?? []).map((session) => session.id);
@@ -486,16 +479,11 @@ export default async function AdminPage({
   }
 
   const quickSalePreference: Record<string, string> = {};
-  const productBySaleId = new Map<string, string>();
-  for (const line of quickSaleLines ?? []) {
-    if (line.sale_id && line.product_template_id && !productBySaleId.has(line.sale_id)) {
-      productBySaleId.set(line.sale_id, line.product_template_id);
+  for (const acquisition of quickSaleHistory ?? []) {
+    if (!acquisition.student_id || quickSalePreference[acquisition.student_id]) continue;
+    if (acquisition.product_template_id) {
+      quickSalePreference[acquisition.student_id] = acquisition.product_template_id;
     }
-  }
-  for (const sale of quickSaleHistory ?? []) {
-    if (!sale.student_id || quickSalePreference[sale.student_id]) continue;
-    const productId = productBySaleId.get(sale.id);
-    if (productId) quickSalePreference[sale.student_id] = productId;
   }
 
   const totalDailyCapacity = classes.reduce((sum, item) => sum + item.capacity, 0);
