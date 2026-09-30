@@ -167,6 +167,7 @@ export default async function AdminPage({
     { data: students },
     { data: quickSaleProducts },
     { data: quickSaleHistory },
+    { data: quickSaleLines },
   ] = await Promise.all([
     supabase
       .from("class_sessions")
@@ -204,11 +205,17 @@ export default async function AdminPage({
       .order("price_minor"),
     supabase
       .from("sales")
-      .select("student_id,created_at,sale_lines(product_template_id)")
+      .select("id,student_id,created_at")
       .eq("studio_id", studio.id)
       .neq("status", "voided")
       .order("created_at", { ascending: false })
       .limit(1000),
+    supabase
+      .from("sale_lines")
+      .select("sale_id,product_template_id")
+      .eq("studio_id", studio.id)
+      .not("product_template_id", "is", null)
+      .limit(2000),
   ]);
 
   const sessionIds = (selectedSessions ?? []).map((session) => session.id);
@@ -479,15 +486,16 @@ export default async function AdminPage({
   }
 
   const quickSalePreference: Record<string, string> = {};
-  const quickSaleHistoryRows = (quickSaleHistory ?? []) as unknown as Array<{
-    student_id: string | null;
-    sale_lines: Array<{ product_template_id: string | null }> | null;
-  }>;
-  for (const sale of quickSaleHistoryRows) {
-    const studentId = sale.student_id;
-    if (!studentId || quickSalePreference[studentId]) continue;
-    const productId = (sale.sale_lines ?? []).find((line) => Boolean(line.product_template_id))?.product_template_id;
-    if (productId) quickSalePreference[studentId] = productId;
+  const productBySaleId = new Map<string, string>();
+  for (const line of quickSaleLines ?? []) {
+    if (line.sale_id && line.product_template_id && !productBySaleId.has(line.sale_id)) {
+      productBySaleId.set(line.sale_id, line.product_template_id);
+    }
+  }
+  for (const sale of quickSaleHistory ?? []) {
+    if (!sale.student_id || quickSalePreference[sale.student_id]) continue;
+    const productId = productBySaleId.get(sale.id);
+    if (productId) quickSalePreference[sale.student_id] = productId;
   }
 
   const totalDailyCapacity = classes.reduce((sum, item) => sum + item.capacity, 0);
