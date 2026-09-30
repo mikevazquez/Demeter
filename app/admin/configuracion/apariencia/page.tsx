@@ -29,6 +29,12 @@ export default async function AppearancePage({
     redirect("/admin?error=access");
   }
 
+  const { data: extraStudioSettings } = await ctx.supabase
+    .from("studios")
+    .select("tagline")
+    .eq("id", ctx.studio.id)
+    .maybeSingle();
+
   const logoUrl = ctx.studio.logo_path
     ? ctx.supabase.storage.from("studio-branding").getPublicUrl(ctx.studio.logo_path).data.publicUrl
     : null;
@@ -61,7 +67,7 @@ export default async function AppearancePage({
         initialName={ctx.studio.name}
         initialLogoUrl={logoUrl}
         initialPrimaryColor={ctx.studio.primary_color ?? "#FF0A8A"}
-        initialTagline={ctx.studio.tagline ?? null}
+        initialTagline={(extraStudioSettings as { tagline?: string | null } | null)?.tagline ?? null}
         portalPath={`/s/${ctx.studio.slug}`}
       />
     </main>
