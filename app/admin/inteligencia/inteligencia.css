@@ -628,3 +628,8 @@ a.intel-data-row:hover {
  .intel-periods{max-width:100%}
  .intel-kpi-grid{width:100%}
 }
+
+
+/* SF V2 · light page canvas */
+.intel-page{background:#f5f7f8!important}
+body:has(.intel-page),main:has(.intel-page){background:#f5f7f8!important}
