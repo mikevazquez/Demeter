@@ -150,7 +150,7 @@ export default async function AdvancedConfigurationPage() {
         </Link>
 
         {canIntegrations ? (
-          <Link href="/admin/integraciones/asistian" className="advanced-v2-card">
+          <Link href="/admin/integraciones" className="advanced-v2-card">
             <span className="advanced-v2-icon is-purple">
               <AdvancedIcon kind="integration" />
             </span>
