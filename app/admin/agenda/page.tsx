@@ -3,10 +3,9 @@ import Link from "next/link";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { cancelSession, updateSession } from "./[sessionId]/actions";
-import { HolidayConfigurator } from "./HolidayConfigurator";
 
-function formatMoney(minor: number) {
-  return new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(minor / 100);
+function formatMoney(minor: number, locale: string, currency: string) {
+  return new Intl.NumberFormat(locale, { style: "currency", currency }).format(minor / 100);
 }
 
 function localDateKey(value: Date, timeZone: string) {
@@ -45,8 +44,8 @@ function weekStartMonday(value: Date) {
   return shiftUtcDays(value, weekday === 0 ? -6 : 1 - weekday);
 }
 
-function shortWeekday(value: Date) {
-  return new Intl.DateTimeFormat("es-MX", {
+function shortWeekday(value: Date, locale: string) {
+  return new Intl.DateTimeFormat(locale, {
     timeZone: "UTC",
     weekday: "short",
   })
@@ -55,8 +54,8 @@ function shortWeekday(value: Date) {
     .slice(0, 3);
 }
 
-function shortMonth(value: Date) {
-  return new Intl.DateTimeFormat("es-MX", {
+function shortMonth(value: Date, locale: string) {
+  return new Intl.DateTimeFormat(locale, {
     timeZone: "UTC",
     month: "short",
   })
@@ -64,8 +63,8 @@ function shortMonth(value: Date) {
     .replace(".", "");
 }
 
-function fullDateLabel(value: Date) {
-  return new Intl.DateTimeFormat("es-MX", {
+function fullDateLabel(value: Date, locale: string) {
+  return new Intl.DateTimeFormat(locale, {
     timeZone: "UTC",
     weekday: "long",
     day: "numeric",
@@ -121,18 +120,18 @@ function localClockParts(value: string, timeZone: string) {
   };
 }
 
-function formatTime(value: string, timeZone: string) {
-  return new Intl.DateTimeFormat("es-MX", {
+function formatTime(value: string, timeZone: string, locale: string) {
+  return new Intl.DateTimeFormat(locale, {
     timeZone,
     hour: "numeric",
     minute: "2-digit",
   }).format(new Date(value));
 }
 
-function formatHour(hour: number) {
+function formatHour(hour: number, locale: string) {
   const normalized = ((hour % 24) + 24) % 24;
   const date = new Date(Date.UTC(2026, 0, 1, normalized, 0, 0));
-  return new Intl.DateTimeFormat("es-MX", {
+  return new Intl.DateTimeFormat(locale, {
     timeZone: "UTC",
     hour: "numeric",
     minute: "2-digit",
@@ -148,18 +147,14 @@ function statusLabel(status: string) {
 export default async function AgendaPage({
   searchParams,
 }: {
-  searchParams: Promise<{
-    error?: string;
-    created?: string;
-    date?: string;
-    session?: string;
-    holiday?: string;
-  }>;
+  searchParams: Promise<{ error?: string; created?: string; date?: string; session?: string }>;
 }) {
   const params = await searchParams;
   const { supabase, studio, can, user } = await getAdminContext(CAPABILITIES.SCHEDULE_READ);
   const canEdit = can(CAPABILITIES.SCHEDULE_WRITE);
-  const timeZone = studio.timezone ?? "America/Mexico_City";
+  const timeZone = studio.timezone;
+  const locale = studio.locale;
+  const currency = studio.currency;
   const now = new Date();
   const todayKey = localDateKey(now, timeZone);
   const selectedDate = parseDateKey(params.date) ?? parseDateKey(todayKey)!;
@@ -224,27 +219,6 @@ export default async function AgendaPage({
       .order("weekday"),
   ]);
 
-  const [{ data: officialHolidays }, { data: holidayOverrides }] = await Promise.all([
-    supabase
-      .from("official_holidays")
-      .select(
-        "id,holiday_code,holiday_date,name,theme_key,default_message,source_label,source_url,legal_basis",
-      )
-      .eq("country_code", "MX")
-      .eq("is_official", true)
-      .gte("holiday_date", weekStartKey)
-      .lte("holiday_date", utcDateKey(weekEnd))
-      .order("holiday_date"),
-    supabase
-      .from("studio_holiday_overrides")
-      .select(
-        "id,official_holiday_id,holiday_date,operation_mode,student_message,special_recurring_schedule_ids,source_kind,custom_name,theme_key",
-      )
-      .eq("studio_id", studio.id)
-      .gte("holiday_date", weekStartKey)
-      .lte("holiday_date", utcDateKey(weekEnd)),
-  ]);
-
   if (canEdit) {
     for (const schedule of schedules ?? []) {
       await supabase.rpc("materialize_recurring_schedule", {
@@ -257,7 +231,7 @@ export default async function AgendaPage({
   const { data: sessions } = await supabase
     .from("class_sessions")
     .select(
-      "id,starts_at,ends_at,capacity,status,notes,template_id,space_id,instructor_id,recurring_schedule_id,is_schedule_exception,holiday_override_id,cancellation_reason",
+      "id,starts_at,ends_at,capacity,status,notes,template_id,space_id,instructor_id,recurring_schedule_id,is_schedule_exception",
     )
     .eq("studio_id", studio.id)
     .gte("starts_at", weekStartUtc.toISOString())
@@ -285,29 +259,10 @@ export default async function AgendaPage({
   const instructorMap = new Map(
     (instructors ?? []).map((item) => [item.id, personMap.get(item.person_id) ?? "Instructor"]),
   );
-  const holidayMap = new Map((officialHolidays ?? []).map((item) => [item.holiday_date, item]));
-  const holidayOverrideMap = new Map(
-    (holidayOverrides ?? []).map((item) => [item.holiday_date, item]),
-  );
-  const calendarDayMap = new Map<string, { name: string; sourceKind: "official" | "manual" }>(
-    (officialHolidays ?? []).map((item) => [
-      item.holiday_date,
-      { name: item.name, sourceKind: "official" as const },
-    ]),
-  );
-  for (const override of holidayOverrides ?? []) {
-    if (override.source_kind !== "manual") continue;
-    calendarDayMap.set(override.holiday_date, {
-      name: override.custom_name ?? "Día especial",
-      sourceKind: "manual",
-    });
-  }
-  const selectedHoliday = holidayMap.get(selectedKey) ?? null;
-  const selectedHolidayOverride = holidayOverrideMap.get(selectedKey) ?? null;
 
   const occupiedBySession = new Map<string, number>();
   for (const reservation of reservations ?? []) {
-    if (!["reserved", "attended", "no_show"].includes(reservation.status)) continue;
+    if (!["reserved", "attended"].includes(reservation.status)) continue;
     occupiedBySession.set(
       reservation.session_id,
       (occupiedBySession.get(reservation.session_id) ?? 0) + 1,
@@ -376,36 +331,6 @@ export default async function AgendaPage({
     ? `/admin/agenda?date=${selectedKey}&session=${selectedSession.id}`
     : `/admin/agenda?date=${selectedKey}`;
 
-  const selectedHolidaySessions = calendarSessions.filter(
-    (session) => session.dateKey === selectedKey,
-  );
-  const activeReservationsBySession = new Map<string, number>();
-  for (const reservation of reservations ?? []) {
-    if (reservation.status !== "reserved") continue;
-    activeReservationsBySession.set(
-      reservation.session_id,
-      (activeReservationsBySession.get(reservation.session_id) ?? 0) + 1,
-    );
-  }
-  const selectedHolidaySessionItems = selectedHolidaySessions.map((session) => ({
-    id: session.id,
-    name: session.name,
-    time: formatTime(session.starts_at, timeZone),
-    instructor: session.instructor,
-    space: session.space,
-    status: session.status,
-    reservations: activeReservationsBySession.get(session.id) ?? 0,
-  }));
-  const selectedHolidayMode =
-    (selectedHolidayOverride?.operation_mode as "normal" | "closed" | "special" | undefined) ??
-    "normal";
-  const defaultKeepSessionIds =
-    selectedHolidayMode === "special"
-      ? selectedHolidaySessions
-          .filter((session) => session.status === "scheduled")
-          .map((session) => session.id)
-      : selectedHolidaySessions.map((session) => session.id);
-
   const errorCopy: Record<string, string> = {
     conflict: "El instructor o espacio ya está ocupado en ese horario.",
     space: "El espacio no admite ese cupo.",
@@ -445,8 +370,8 @@ export default async function AgendaPage({
             ‹
           </Link>
           <strong className="agenda-week-range">
-            {weekStart.getUTCDate()} {shortMonth(weekStart)} — {weekEnd.getUTCDate()}{" "}
-            {shortMonth(weekEnd)}
+            {weekStart.getUTCDate()} {shortMonth(weekStart, locale)} — {weekEnd.getUTCDate()}{" "}
+            {shortMonth(weekEnd, locale)}
           </strong>
           <Link
             className="agenda-icon-button"
@@ -485,52 +410,19 @@ export default async function AgendaPage({
         {weekDays.map((day) => {
           const key = utcDateKey(day);
           const isSelected = key === selectedKey;
-          const holiday = calendarDayMap.get(key);
-          const holidayMode = holidayOverrideMap.get(key)?.operation_mode ?? "normal";
           return (
             <Link
               href={`/admin/agenda?date=${key}`}
               key={key}
-              className={`agenda-week-day${isSelected ? " is-selected" : ""}${key === todayKey ? " is-today" : ""}${holiday ? ` is-holiday is-holiday-${holidayMode}` : ""}`}
+              className={`agenda-week-day${isSelected ? " is-selected" : ""}${key === todayKey ? " is-today" : ""}`}
               aria-current={isSelected ? "date" : undefined}
             >
-              <span>{shortWeekday(day)}</span>
+              <span>{shortWeekday(day, locale)}</span>
               <strong>{day.getUTCDate()}</strong>
-              {holiday ? (
-                <small className="agenda-week-holiday" title={holiday.name}>
-                  {holidayMode === "closed"
-                    ? "Cerrado"
-                    : holidayMode === "special"
-                      ? "Especial"
-                      : holiday.sourceKind === "manual"
-                        ? "Especial"
-                        : "Festivo"}
-                </small>
-              ) : null}
             </Link>
           );
         })}
       </nav>
-
-      {params.holiday === "save-error" ? (
-        <div className="notice error">No se pudo guardar la operación del festivo.</div>
-      ) : params.holiday === "not-found" ? (
-        <div className="notice error">No encontramos ese festivo en el catálogo oficial.</div>
-      ) : null}
-
-      {selectedHoliday ? (
-        <HolidayConfigurator
-          holiday={selectedHoliday}
-          operationMode={selectedHolidayMode}
-          studentMessage={
-            selectedHolidayOverride?.student_message ?? selectedHoliday.default_message
-          }
-          sessions={selectedHolidaySessionItems}
-          defaultKeepSessionIds={defaultKeepSessionIds}
-          canEdit={canEdit}
-          saved={params.holiday === "saved"}
-        />
-      ) : null}
 
       <div className={`agenda-workspace${selectedSession ? " has-editor" : ""}`}>
         <section
@@ -539,7 +431,7 @@ export default async function AgendaPage({
           aria-label="Calendario semanal"
         >
           <div className="agenda-mobile-day-summary">
-            <strong>{fullDateLabel(selectedDate)}</strong>
+            <strong>{fullDateLabel(selectedDate, locale)}</strong>
             <span>
               {calendarSessions.filter((session) => session.dateKey === selectedKey).length} clases
             </span>
@@ -556,7 +448,7 @@ export default async function AgendaPage({
                   style={{ top: (hour - calendarStartHour) * 60 }}
                   className="agenda-time-label"
                 >
-                  {formatHour(hour)}
+                  {formatHour(hour, locale)}
                 </span>
               ))}
             </div>
@@ -594,8 +486,8 @@ export default async function AgendaPage({
                           }
                         >
                           <span className="agenda-session-time">
-                            {formatTime(session.starts_at, timeZone)} –{" "}
-                            {formatTime(session.ends_at, timeZone)}
+                            {formatTime(session.starts_at, timeZone, locale)} –{" "}
+                            {formatTime(session.ends_at, timeZone, locale)}
                           </span>
                           <strong>{session.name}</strong>
                           <small>
