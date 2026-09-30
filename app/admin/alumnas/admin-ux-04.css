@@ -637,3 +637,15 @@
  .student-directory-identity{grid-column:1/-1}
  .student-directory-package-summary{min-width:0}
 }
+
+/* SF V2 · mobile package snapshot */
+.student-package-quick-summary{gap:5px}
+.student-package-quick-facts{display:flex;flex-wrap:wrap;gap:5px 12px}
+.student-package-quick-facts small{font-size:10px;color:#6f7c8e}
+@media(max-width:680px){
+ .student-directory-main{display:block}
+ .student-directory-identity{display:block;margin-bottom:7px}
+ .student-package-quick-summary{display:grid!important}
+ .student-package-quick-facts{display:flex!important;gap:4px 10px}
+ .student-package-quick-facts small{font-size:10px}
+}
