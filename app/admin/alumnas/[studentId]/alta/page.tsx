@@ -132,6 +132,15 @@ export default async function StudentOnboardingPage({
       : Promise.resolve({ data: [] }),
   ]);
 
+  const { data: paymentMethods } = canSell
+    ? await supabase
+        .from("studio_payment_methods")
+        .select("code,name,requires_reference")
+        .eq("studio_id", studio.id)
+        .eq("active", true)
+        .order("sort_order")
+    : { data: [] };
+
   const enrollmentRequired = Boolean(policy?.enabled && policy.required_for_booking);
   const currentEnrollment = (activeEnrollments ?? []).some(
     (item) => item.starts_on <= today && (item.expires_on === null || item.expires_on >= today),
@@ -234,6 +243,11 @@ export default async function StudentOnboardingPage({
             validityDays: item.validity_days,
           }))}
           defaultEnrollmentProductId={policy?.enrollment_product_template_id ?? null}
+          paymentMethods={(paymentMethods ?? []).map((method) => ({
+            code: method.code,
+            name: method.name,
+            requiresReference: method.requires_reference,
+          }))}
           completedSaleId={completedHere ? (query.sale ?? null) : null}
         />
       )}
