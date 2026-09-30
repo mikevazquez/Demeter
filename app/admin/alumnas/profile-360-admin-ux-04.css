@@ -860,3 +860,182 @@
     font-size: 8px;
   }
 }
+
+
+/* Sales history periods */
+.admin-ux04-profile360 .profile360-history-stack {
+  display: grid;
+  gap: 12px;
+}
+
+.admin-ux04-profile360 .profile360-sales-history {
+  display: grid;
+  gap: 14px;
+}
+
+.admin-ux04-profile360 .profile360-sale-history-action {
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 11px;
+  border: 1px solid rgba(38, 196, 145, 0.34);
+  border-radius: 10px;
+  background: rgba(38, 196, 145, 0.08);
+  color: #74dfb7;
+  font-size: 9px;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.admin-ux04-profile360 .profile360-sales-periods {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+
+.admin-ux04-profile360 .profile360-sales-periods a {
+  min-height: 34px;
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 11px;
+  border: 1px solid #29333f;
+  border-radius: 999px;
+  background: #0f161e;
+  color: #8d99a9;
+  font-size: 10px;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.admin-ux04-profile360 .profile360-sales-periods a.is-active {
+  border-color: rgba(38, 196, 145, 0.42);
+  background: rgba(38, 196, 145, 0.10);
+  color: #83e7c1;
+}
+
+.admin-ux04-profile360 .profile360-sales-history-meta {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px 14px;
+  color: #8b97a6;
+  font-size: 10px;
+}
+
+.admin-ux04-profile360 .profile360-sales-list {
+  display: grid;
+  gap: 8px;
+}
+
+.admin-ux04-profile360 .profile360-sale-row {
+  display: grid;
+  grid-template-columns: minmax(120px, 1fr) auto auto;
+  gap: 14px;
+  align-items: center;
+  padding: 12px 13px;
+  border: 1px solid #28323e;
+  border-radius: 13px;
+  background: #0f161e;
+  color: inherit;
+  text-decoration: none;
+}
+
+.admin-ux04-profile360 .profile360-sale-row:hover {
+  border-color: rgba(38, 196, 145, 0.32);
+  background: #111a23;
+}
+
+.admin-ux04-profile360 .profile360-sale-row > span:first-child {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.admin-ux04-profile360 .profile360-sale-row > span:first-child strong {
+  color: #eef1f5;
+  font-size: 11px;
+}
+
+.admin-ux04-profile360 .profile360-sale-row > span:first-child small {
+  color: #7f8b9b;
+  font-size: 9px;
+}
+
+.admin-ux04-profile360 .profile360-sale-values {
+  display: flex;
+  gap: 14px;
+}
+
+.admin-ux04-profile360 .profile360-sale-values > span {
+  display: grid;
+  gap: 2px;
+  text-align: right;
+}
+
+.admin-ux04-profile360 .profile360-sale-values small {
+  color: #778495;
+  font-size: 8px;
+}
+
+.admin-ux04-profile360 .profile360-sale-values strong {
+  color: #eef1f5;
+  font-size: 10px;
+}
+
+.admin-ux04-profile360 .profile360-sale-state {
+  min-width: 72px;
+  min-height: 27px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 9px;
+  border-radius: 999px;
+  background: rgba(38, 196, 145, 0.10);
+  color: #83e7c1;
+  font-size: 8px;
+  font-weight: 850;
+  white-space: nowrap;
+}
+
+@media (max-width: 760px) {
+  .admin-ux04-profile360 .profile360-sale-history-action {
+    min-height: 30px;
+    font-size: 8px;
+  }
+
+  .admin-ux04-profile360 .profile360-sales-periods a {
+    min-height: 32px;
+    padding-inline: 10px;
+    font-size: 9px;
+  }
+
+  .admin-ux04-profile360 .profile360-sale-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 9px;
+  }
+
+  .admin-ux04-profile360 .profile360-sale-values {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 7px;
+    padding-top: 9px;
+    border-top: 1px solid #27313d;
+  }
+
+  .admin-ux04-profile360 .profile360-sale-values > span {
+    text-align: left;
+  }
+
+  .admin-ux04-profile360 .profile360-sale-values strong {
+    font-size: 11px;
+  }
+
+  .admin-ux04-profile360 .profile360-sale-state {
+    justify-self: end;
+  }
+}
