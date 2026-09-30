@@ -98,9 +98,6 @@ export function SessionOperations({
 
   const isCompleted = sessionStatus === "completed";
   const isCancelled = sessionStatus === "cancelled";
-  const attendanceCount = roster.filter((item) => item.status === "attended").length;
-  const noShowCount = roster.filter((item) => item.status === "no_show").length;
-  const pendingCount = roster.filter((item) => item.status === "reserved").length;
   const startsAtMs = new Date(startsAt).getTime();
   const endsAtMs = new Date(endsAt).getTime();
   const inProgress =
@@ -443,28 +440,6 @@ export function SessionOperations({
                 Ver detalle de la sesión
               </Link>
             </details>
-          ) : null}
-
-          {canAttendance ? (
-            <section className="today-attendance-footer">
-              <div className="today-attendance-summary">
-                <span>{attendanceCount} asistieron</span>
-                <span>{noShowCount} no asistieron</span>
-                <span>{pendingCount} pendientes</span>
-              </div>
-
-              {isCompleted ? (
-                <p>{canCorrectCompleted ? "Finalizada · puedes seguir haciendo correcciones." : "Finalizada."}</p>
-              ) : isCancelled ? (
-                <p>Clase cancelada.</p>
-              ) : inProgress ? (
-                <p>En curso.</p>
-              ) : now !== null && now < startsAtMs ? (
-                <p>La asistencia se habilita al iniciar.</p>
-              ) : (
-                <p>Finalizando…</p>
-              )}
-            </section>
           ) : null}
         </div>
       ) : null}
