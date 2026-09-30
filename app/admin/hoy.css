@@ -2087,3 +2087,8 @@
 .hoy-v2 .hoy-package-options>button.is-selected{border-color:#78cdb0;background:var(--v2-accent-soft)}
 .hoy-v2 .hoy-other-products{justify-self:start;padding:5px 0;border:0;background:transparent;color:var(--v2-accent-strong);font-size:12px;font-weight:800}
 .hoy-v2 .hoy-package-options-other{padding-top:2px}
+/* Hoy V2 · focused sale after package selection */
+.hoy-v2 .hoy-quick-product>div{grid-column:1;display:grid;gap:4px}
+.hoy-v2 .hoy-quick-product>div strong{grid-column:auto}
+.hoy-v2 .hoy-change-package{justify-self:start;padding:0;border:0;background:transparent;color:var(--v2-accent-strong);font-size:11px;font-weight:800;cursor:pointer}
+.hoy-v2 .hoy-quick-form .secondary-button{min-height:48px;border:1px solid var(--v2-line);border-radius:14px;background:#fff;color:#53637b;font-weight:800;cursor:pointer}
