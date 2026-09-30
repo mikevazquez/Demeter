@@ -102,11 +102,7 @@ export default async function ClassPackagesPage() {
   const ctx = await getAdminContext("products.read");
 
   const [{ data: disciplines }, { data: rows }] = await Promise.all([
-    ctx.supabase
-      .from("disciplines")
-      .select("id")
-      .eq("studio_id", ctx.studio.id)
-      .eq("active", true),
+    ctx.supabase.from("disciplines").select("id").eq("studio_id", ctx.studio.id).eq("active", true),
     ctx.supabase
       .from("product_templates")
       .select("id,package_term,validity_days")
@@ -193,7 +189,8 @@ export default async function ClassPackagesPage() {
               <strong>{period.title}</strong>
               <span>{period.description}</span>
               <small className="package-period-count">
-                {counts[period.key]} {counts[period.key] === 1 ? "paquete activo" : "paquetes activos"}
+                {counts[period.key]}{" "}
+                {counts[period.key] === 1 ? "paquete activo" : "paquetes activos"}
               </small>
             </span>
             <span className="package-category-action">

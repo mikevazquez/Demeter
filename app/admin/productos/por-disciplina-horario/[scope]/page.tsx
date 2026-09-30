@@ -60,37 +60,33 @@ export default async function RestrictedPackageListPage({
   const scope = scopes[rawScope];
   const ctx = await getAdminContext("products.read");
 
-  const [
-    { data: disciplines },
-    { data: rows },
-    { data: schedules },
-    { data: templates },
-  ] = await Promise.all([
-    ctx.supabase
-      .from("disciplines")
-      .select("id,name")
-      .eq("studio_id", ctx.studio.id)
-      .eq("active", true)
-      .order("name"),
-    ctx.supabase
-      .from("product_templates")
-      .select("id,name,price_minor,currency,credit_limit,validity_days,package_term,active")
-      .eq("studio_id", ctx.studio.id)
-      .eq("product_type", "package")
-      .eq("unlimited", false)
-      .eq("active", true)
-      .order("name"),
-    ctx.supabase
-      .from("recurring_schedules")
-      .select("id,weekday,local_time,template_id")
-      .eq("studio_id", ctx.studio.id)
-      .eq("active", true),
-    ctx.supabase
-      .from("class_templates")
-      .select("id,name,discipline_id")
-      .eq("studio_id", ctx.studio.id)
-      .eq("active", true),
-  ]);
+  const [{ data: disciplines }, { data: rows }, { data: schedules }, { data: templates }] =
+    await Promise.all([
+      ctx.supabase
+        .from("disciplines")
+        .select("id,name")
+        .eq("studio_id", ctx.studio.id)
+        .eq("active", true)
+        .order("name"),
+      ctx.supabase
+        .from("product_templates")
+        .select("id,name,price_minor,currency,credit_limit,validity_days,package_term,active")
+        .eq("studio_id", ctx.studio.id)
+        .eq("product_type", "package")
+        .eq("unlimited", false)
+        .eq("active", true)
+        .order("name"),
+      ctx.supabase
+        .from("recurring_schedules")
+        .select("id,weekday,local_time,template_id")
+        .eq("studio_id", ctx.studio.id)
+        .eq("active", true),
+      ctx.supabase
+        .from("class_templates")
+        .select("id,name,discipline_id")
+        .eq("studio_id", ctx.studio.id)
+        .eq("active", true),
+    ]);
 
   const productIds = (rows ?? []).map((product) => product.id);
   const [{ data: disciplineLinks }, { data: scheduleLinks }] = productIds.length

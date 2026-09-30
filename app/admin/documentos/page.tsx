@@ -70,10 +70,7 @@ export default async function AdminDocumentsPage() {
           </p>
         </div>
         {can(CAPABILITIES.DOCUMENTS_MANAGE) ? (
-          <Link
-            href="/admin/documentos/nuevo"
-            className="documents-primary-action"
-          >
+          <Link href="/admin/documentos/nuevo" className="documents-primary-action">
             + Nuevo documento
           </Link>
         ) : null}
@@ -85,10 +82,7 @@ export default async function AdminDocumentsPage() {
           ["Programados", scheduled, "Entrarán en vigor después"],
           ["Borradores", drafts, "Todavía no afectan a alumnas"],
         ].map(([label, value, copy]) => (
-          <div
-            key={String(label)}
-            className="documents-kpi rounded-3xl p-5"
-          >
+          <div key={String(label)} className="documents-kpi rounded-3xl p-5">
             <p className="text-xs font-semibold uppercase tracking-[0.16em] documents-muted">
               {label}
             </p>

@@ -458,7 +458,9 @@ export default async function StudentEvaluationsPanel({
                             {item.latestPublished.total_score ?? "—"}%
                           </span>
                           {item.cycle?.next_due_on ? (
-                            <small>Próxima disponible: {formatDate(item.cycle.next_due_on, locale)}</small>
+                            <small>
+                              Próxima disponible: {formatDate(item.cycle.next_due_on, locale)}
+                            </small>
                           ) : null}
                         </>
                       ) : (
@@ -647,7 +649,8 @@ export default async function StudentEvaluationsPanel({
                     {invitationStatusCopy(invitation.status)}
                   </span>
                   <span>
-                    {formatDate(invitation.window_start, locale)} – {formatDate(invitation.window_end, locale)}
+                    {formatDate(invitation.window_start, locale)} –{" "}
+                    {formatDate(invitation.window_end, locale)}
                   </span>
                 </div>
               );

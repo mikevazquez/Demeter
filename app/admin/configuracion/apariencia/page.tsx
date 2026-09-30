@@ -52,9 +52,7 @@ export default async function AppearancePage({
       </header>
 
       {params.saved === "identity" ? (
-        <div className="appearance-v2-notice is-success">
-          Apariencia actualizada correctamente.
-        </div>
+        <div className="appearance-v2-notice is-success">Apariencia actualizada correctamente.</div>
       ) : null}
 
       {params.error ? (
@@ -67,7 +65,9 @@ export default async function AppearancePage({
         initialName={ctx.studio.name}
         initialLogoUrl={logoUrl}
         initialPrimaryColor={ctx.studio.primary_color ?? "#FF0A8A"}
-        initialTagline={(extraStudioSettings as { tagline?: string | null } | null)?.tagline ?? null}
+        initialTagline={
+          (extraStudioSettings as { tagline?: string | null } | null)?.tagline ?? null
+        }
         portalPath={`/s/${ctx.studio.slug}`}
       />
     </main>

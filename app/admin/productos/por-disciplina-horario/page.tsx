@@ -44,11 +44,7 @@ export default async function DisciplineSchedulePackagesPage() {
   const ctx = await getAdminContext("products.read");
 
   const [{ data: disciplines }, { data: rows }] = await Promise.all([
-    ctx.supabase
-      .from("disciplines")
-      .select("id")
-      .eq("studio_id", ctx.studio.id)
-      .eq("active", true),
+    ctx.supabase.from("disciplines").select("id").eq("studio_id", ctx.studio.id).eq("active", true),
     ctx.supabase
       .from("product_templates")
       .select("id")

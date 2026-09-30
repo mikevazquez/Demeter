@@ -25,9 +25,7 @@ describe("INTEL-12 UAT consistency hardening", () => {
   });
 
   it("caps conversion outcomes to the same seven-day observation window", () => {
-    expect(intelligence).toContain(
-      "startTime + CONVERSION_MATURITY_DAYS * DAY",
-    );
+    expect(intelligence).toContain("startTime + CONVERSION_MATURITY_DAYS * DAY");
     expect(intelligence).toContain("eventTime <= windowEndTime");
     expect(intelligence).toContain(
       "conversionTime >= startTime && conversionTime <= windowEndTime",

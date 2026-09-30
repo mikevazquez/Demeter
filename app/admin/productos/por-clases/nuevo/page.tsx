@@ -5,10 +5,7 @@ import { CreateClassPackageForm } from "../CreateClassPackageForm";
 
 type PeriodKey = "monthly" | "quarterly" | "semiannual" | "annual" | "custom";
 
-const periods: Record<
-  PeriodKey,
-  { label: string; days: number; fixedValidity: boolean }
-> = {
+const periods: Record<PeriodKey, { label: string; days: number; fixedValidity: boolean }> = {
   monthly: { label: "Mensual", days: 30, fixedValidity: true },
   quarterly: { label: "Trimestral", days: 90, fixedValidity: true },
   semiannual: { label: "Semestral", days: 180, fixedValidity: true },

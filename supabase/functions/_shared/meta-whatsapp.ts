@@ -165,10 +165,7 @@ export async function sendMetaWhatsAppTemplate(
     };
   }
 
-  const recipient = normalizeMetaWhatsAppPhone(
-    input.recipient,
-    connection.countryCallingCode,
-  );
+  const recipient = normalizeMetaWhatsAppPhone(input.recipient, connection.countryCallingCode);
   if (!recipient) {
     return {
       status: "skipped",
@@ -186,8 +183,7 @@ export async function sendMetaWhatsAppTemplate(
     variables: input.variables,
   });
 
-  const endpoint =
-    `https://graph.facebook.com/${connection.graphApiVersion}/${connection.phoneNumberId}/messages`;
+  const endpoint = `https://graph.facebook.com/${connection.graphApiVersion}/${connection.phoneNumberId}/messages`;
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 10_000);
 

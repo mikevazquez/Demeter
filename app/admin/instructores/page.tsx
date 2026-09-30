@@ -101,7 +101,9 @@ export default async function InstructorsPage({
             <form action={createInstructor} className="team-v2-create-panel">
               <div className="team-v2-create-heading">
                 <strong>Nuevo integrante</strong>
-                <small>Agrega primero sus datos básicos. El acceso Coach se configura después.</small>
+                <small>
+                  Agrega primero sus datos básicos. El acceso Coach se configura después.
+                </small>
               </div>
 
               <div className="team-v2-create-grid">
@@ -179,14 +181,8 @@ export default async function InstructorsPage({
               .join("");
 
             return (
-              <Link
-                className="team-v2-row"
-                key={item.id}
-                href={`/admin/instructores/${item.id}`}
-              >
-                <span className="team-v2-avatar">
-                  {initials || <TeamIcon />}
-                </span>
+              <Link className="team-v2-row" key={item.id} href={`/admin/instructores/${item.id}`}>
+                <span className="team-v2-avatar">{initials || <TeamIcon />}</span>
 
                 <span className="team-v2-row-copy">
                   <strong>{item.name}</strong>

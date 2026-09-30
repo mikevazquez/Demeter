@@ -216,12 +216,13 @@ export function SessionOperations({
               ) : null}
             </div>
 
-
-
             {showAddStudent ? (
               <div className="today-add-panel">
                 <div className="today-add-panel-heading">
-                  <span><strong>Agregar alumna</strong><small>Busca primero. Si no existe, créala aquí mismo.</small></span>
+                  <span>
+                    <strong>Agregar alumna</strong>
+                    <small>Busca primero. Si no existe, créala aquí mismo.</small>
+                  </span>
                   {canAddExisting && canAddNew ? (
                     <button
                       type="button"
@@ -406,23 +407,24 @@ export function SessionOperations({
                         <details className="today-correction-details">
                           <summary>Corregir</summary>
                           <form action={setAttendanceFromToday} className="today-correction-form">
-                          <input type="hidden" name="session_id" value={sessionId} />
-                          <input type="hidden" name="reservation_id" value={item.id} />
-                          <input type="hidden" name="return_date" value={returnDate} />
-                          {returnTo ? (
-                            <input type="hidden" name="return_to" value={returnTo} />
-                          ) : null}
-                          <input type="hidden" name="status" value={correctionTarget} />
-                          <input
-                            name="reason"
-                            placeholder="Motivo de la corrección"
-                            required
-                            aria-label="Motivo de la corrección"
-                          />
-                          <button className="secondary-button" type="submit">
-                            Corregir a {correctionTarget === "attended" ? "Asistió" : "No asistió"}
-                          </button>
-                        </form>
+                            <input type="hidden" name="session_id" value={sessionId} />
+                            <input type="hidden" name="reservation_id" value={item.id} />
+                            <input type="hidden" name="return_date" value={returnDate} />
+                            {returnTo ? (
+                              <input type="hidden" name="return_to" value={returnTo} />
+                            ) : null}
+                            <input type="hidden" name="status" value={correctionTarget} />
+                            <input
+                              name="reason"
+                              placeholder="Motivo de la corrección"
+                              required
+                              aria-label="Motivo de la corrección"
+                            />
+                            <button className="secondary-button" type="submit">
+                              Corregir a{" "}
+                              {correctionTarget === "attended" ? "Asistió" : "No asistió"}
+                            </button>
+                          </form>
                         </details>
                       ) : null}
                     </article>

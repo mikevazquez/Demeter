@@ -37,7 +37,9 @@ export function ReservationPolicyForm({
     <form action={saveReservationPolicyAction} className="reservations-v2-form">
       <section className="reservations-v2-card">
         <div className="reservations-v2-card-heading">
-          <span className="reservations-v2-card-icon" aria-hidden="true">↩</span>
+          <span className="reservations-v2-card-icon" aria-hidden="true">
+            ↩
+          </span>
           <div>
             <h2>Cancelaciones</h2>
             <p>Define hasta cuándo una alumna puede cancelar sin penalización.</p>
@@ -58,9 +60,7 @@ export function ReservationPolicyForm({
             />
             <b>horas antes</b>
           </div>
-          <small>
-            Si cancela después de este límite, se considera cancelación tardía.
-          </small>
+          <small>Si cancela después de este límite, se considera cancelación tardía.</small>
         </label>
 
         <label className="reservations-v2-toggle">
@@ -78,7 +78,9 @@ export function ReservationPolicyForm({
 
       <section className="reservations-v2-card">
         <div className="reservations-v2-card-heading">
-          <span className="reservations-v2-card-icon is-amber" aria-hidden="true">○</span>
+          <span className="reservations-v2-card-icon is-amber" aria-hidden="true">
+            ○
+          </span>
           <div>
             <h2>No-show</h2>
             <p>Qué pasa cuando alguien reserva y no asiste.</p>
@@ -100,7 +102,9 @@ export function ReservationPolicyForm({
 
       <section className="reservations-v2-card">
         <div className="reservations-v2-card-heading">
-          <span className="reservations-v2-card-icon is-purple" aria-hidden="true">∞</span>
+          <span className="reservations-v2-card-icon is-purple" aria-hidden="true">
+            ∞
+          </span>
           <div>
             <h2>Paquetes ilimitados</h2>
             <p>Como no usan créditos, puedes cobrar una penalización en su lugar.</p>

@@ -117,7 +117,7 @@ export function ExistingStudentAddForm({
               </div>
             )}
           </div>
-) : null}
+        ) : null}
       </div>
 
       <button className="primary-button" type="submit" disabled={!selectedStudentId}>

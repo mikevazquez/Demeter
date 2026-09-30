@@ -49,8 +49,7 @@ export default async function NewRestrictedPackagePage({
       weekday: schedule.weekday,
       localTime: schedule.local_time,
       activity: template?.name ?? "Clase",
-      discipline:
-        disciplineNameById.get(template?.discipline_id ?? "") ?? "Sin disciplina",
+      discipline: disciplineNameById.get(template?.discipline_id ?? "") ?? "Sin disciplina",
     };
   });
 

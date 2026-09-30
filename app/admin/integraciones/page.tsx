@@ -176,8 +176,8 @@ export default async function IntegrationsPage() {
       </section>
 
       <section className="integrations-v2-note">
-        Aquí solo viven servicios externos. Región, recursos, suscripción y otras configuraciones del
-        estudio permanecen separadas.
+        Aquí solo viven servicios externos. Región, recursos, suscripción y otras configuraciones
+        del estudio permanecen separadas.
       </section>
     </main>
   );

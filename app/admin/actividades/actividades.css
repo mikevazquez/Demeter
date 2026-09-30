@@ -1234,7 +1234,6 @@
   }
 }
 
-
 /* Studio Flow V2 · Actividades
    Sandbox-only visual slice. Scoped through :has(.activities-v2). */
 
@@ -1641,7 +1640,7 @@
   padding: 36px 20px;
   border: 1px dashed #cfd9e2;
   border-radius: 20px;
-  background: rgba(255,255,255,0.74);
+  background: rgba(255, 255, 255, 0.74);
   color: var(--activities-muted);
   text-align: center;
 }
@@ -1658,7 +1657,7 @@
 .activities-v2-inactive {
   border: 1px solid var(--activities-line);
   border-radius: 18px;
-  background: rgba(255,255,255,0.7);
+  background: rgba(255, 255, 255, 0.7);
 }
 
 .activities-v2-inactive summary {
@@ -1717,7 +1716,7 @@
   border: 1px solid var(--activities-line);
   border-radius: 18px;
   background: #fff;
-  box-shadow: 0 8px 22px rgba(44,64,86,0.04);
+  box-shadow: 0 8px 22px rgba(44, 64, 86, 0.04);
 }
 
 .activities-v2 .activities-stepper button {
@@ -1790,7 +1789,7 @@
   border: 1px solid var(--activities-line);
   border-radius: 22px;
   background: #fff;
-  box-shadow: 0 12px 32px rgba(44,64,86,0.05);
+  box-shadow: 0 12px 32px rgba(44, 64, 86, 0.05);
 }
 
 .activities-v2 .activities-stage-heading {
@@ -1864,7 +1863,7 @@
 .activities-v2 .activities-field textarea:focus,
 .activities-v2 .activities-field select:focus {
   border-color: #78cbb0;
-  box-shadow: 0 0 0 3px rgba(23,168,120,0.08);
+  box-shadow: 0 0 0 3px rgba(23, 168, 120, 0.08);
 }
 
 .activities-v2 .activities-field small,
@@ -2080,8 +2079,8 @@
 
 .activities-v2 .activities-wizard-footer {
   border-color: var(--activities-line);
-  background: rgba(255,255,255,0.95);
-  box-shadow: 0 8px 24px rgba(44,64,86,0.05);
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 8px 24px rgba(44, 64, 86, 0.05);
 }
 
 .activities-v2 .activities-back-button {
@@ -2146,7 +2145,7 @@
   }
 
   .activities-v2-card {
-    grid-template-columns: 52px minmax(0,1fr) 18px;
+    grid-template-columns: 52px minmax(0, 1fr) 18px;
     gap: 12px;
     padding: 14px;
     border-radius: 18px;
@@ -2188,7 +2187,7 @@
 
 @media (max-width: 480px) {
   .activities-v2-summary {
-    grid-template-columns: minmax(0,1fr);
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .activities-v2-card-meta {
@@ -2199,7 +2198,6 @@
     font-size: 11px;
   }
 }
-
 
 /* ACTIVITIES-V2 · Mobile readability */
 @media (max-width: 760px) {

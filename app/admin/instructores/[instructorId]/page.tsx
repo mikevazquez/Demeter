@@ -122,9 +122,7 @@ export default async function InstructorProfilePage({
       {query.created ? (
         <div className="team-v2-notice is-success">Integrante creado correctamente.</div>
       ) : null}
-      {query.saved ? (
-        <div className="team-v2-notice is-success">Estado actualizado.</div>
-      ) : null}
+      {query.saved ? <div className="team-v2-notice is-success">Estado actualizado.</div> : null}
       {query.error ? (
         <div className="team-v2-notice is-error">No se pudo guardar el cambio.</div>
       ) : null}
@@ -286,7 +284,8 @@ export default async function InstructorProfilePage({
               <div>
                 <h2>Estado</h2>
                 <p>
-                  Desactivar conserva el perfil, historial y clases anteriores; no elimina información.
+                  Desactivar conserva el perfil, historial y clases anteriores; no elimina
+                  información.
                 </p>
               </div>
             </div>

@@ -2,10 +2,7 @@
 
 import { useActionState, useMemo, useState } from "react";
 
-import {
-  createRestrictedPackage,
-  type CreateRestrictedPackageState,
-} from "./actions";
+import { createRestrictedPackage, type CreateRestrictedPackageState } from "./actions";
 
 const initialState: CreateRestrictedPackageState = { error: null };
 
@@ -71,8 +68,7 @@ export function CreateRestrictedPackageForm({
   const [selectedDisciplines, setSelectedDisciplines] = useState<string[]>([]);
   const [selectedSchedules, setSelectedSchedules] = useState<string[]>([]);
 
-  const validityDays =
-    packageTerms.find((term) => term.key === packageTerm)?.days ?? customDays;
+  const validityDays = packageTerms.find((term) => term.key === packageTerm)?.days ?? customDays;
 
   const formattedPrice = useMemo(() => {
     const value = Number(price);

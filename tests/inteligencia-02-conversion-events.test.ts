@@ -15,12 +15,12 @@ describe("INTEL-02 conversion event intelligence", () => {
 
   it("requires structured cancellation reasons in admin and student flows", () => {
     expect(adminActions).toContain("CANCELLATION_REASON_CODES");
-    expect(adminActions).toContain('target_reason: reason');
+    expect(adminActions).toContain("target_reason: reason");
     expect(adminActions).toContain('supabase.rpc("cancel_reservation"');
     expect(adminRoster).toContain('name="reason"');
     expect(adminRoster).toContain('value="schedule_conflict"');
     expect(studentCancel).toContain('name="reason"');
-    expect(studentCancel).toContain('required');
+    expect(studentCancel).toContain("required");
     expect(studentCancel).toContain('value="prefer_not_say"');
   });
 
@@ -73,5 +73,4 @@ describe("INTEL-02 conversion event intelligence", () => {
     expect(intelligence).toContain("classDecisionAction");
     expect(intelligence).toContain("studyAttendanceChangePct");
   });
-
 });

@@ -93,7 +93,10 @@ export default async function MercadoPagoIntegrationPage() {
         <div className="integration-detail-v2-card-heading">
           <div>
             <h2>Cómo se usa</h2>
-            <p>Mercado Pago aparece cuando una alumna compra un producto habilitado para pago en línea.</p>
+            <p>
+              Mercado Pago aparece cuando una alumna compra un producto habilitado para pago en
+              línea.
+            </p>
           </div>
         </div>
 

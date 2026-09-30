@@ -43,9 +43,7 @@ export default async function RegionSettingsPage({
       </header>
 
       {params.saved === "regional" ? (
-        <div className="advanced-v2-notice is-success">
-          Configuración regional actualizada.
-        </div>
+        <div className="advanced-v2-notice is-success">Configuración regional actualizada.</div>
       ) : null}
 
       {params.error ? (
@@ -59,7 +57,10 @@ export default async function RegionSettingsPage({
           timezone={ctx.studio.timezone}
           currency={ctx.studio.currency}
           locale={ctx.studio.locale}
-          phoneCountryCallingCode={(extraStudioSettings as { phone_country_calling_code?: string } | null)?.phone_country_calling_code ?? "+52"}
+          phoneCountryCallingCode={
+            (extraStudioSettings as { phone_country_calling_code?: string } | null)
+              ?.phone_country_calling_code ?? "+52"
+          }
         />
       </section>
     </main>

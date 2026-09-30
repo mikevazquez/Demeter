@@ -85,7 +85,10 @@ export default function QuickActions({
     if (discountMode === "courtesy") return selectedProduct.priceMinor;
     if (discountMode === "percentage") {
       const percentage = Number(discountValue) || 0;
-      return Math.min(selectedProduct.priceMinor, Math.round(selectedProduct.priceMinor * percentage / 100));
+      return Math.min(
+        selectedProduct.priceMinor,
+        Math.round((selectedProduct.priceMinor * percentage) / 100),
+      );
     }
     if (discountMode === "amount") {
       return Math.min(selectedProduct.priceMinor, Math.round((Number(discountValue) || 0) * 100));
@@ -93,9 +96,7 @@ export default function QuickActions({
     return 0;
   }, [discountMode, discountValue, selectedProduct]);
 
-  const totalMinor = selectedProduct
-    ? Math.max(selectedProduct.priceMinor - discountMinor, 0)
-    : 0;
+  const totalMinor = selectedProduct ? Math.max(selectedProduct.priceMinor - discountMinor, 0) : 0;
 
   function close() {
     setOpen(null);
@@ -144,12 +145,24 @@ export default function QuickActions({
       {open === "menu" ? (
         <div className="hoy-shortcuts-menu hoy-shortcuts-menu-inline">
           {canStudents ? (
-            <button type="button" onClick={() => { setMessage(null); setOpen("student"); }}>
+            <button
+              type="button"
+              onClick={() => {
+                setMessage(null);
+                setOpen("student");
+              }}
+            >
               Nueva alumna
             </button>
           ) : null}
           {canSales ? (
-            <button type="button" onClick={() => { setMessage(null); setOpen("sale"); }}>
+            <button
+              type="button"
+              onClick={() => {
+                setMessage(null);
+                setOpen("sale");
+              }}
+            >
               Nueva venta
             </button>
           ) : null}
@@ -157,7 +170,12 @@ export default function QuickActions({
       ) : null}
 
       {open === "student" ? (
-        <div className="hoy-quick-overlay" onMouseDown={(event) => { if (event.target === event.currentTarget) close(); }}>
+        <div
+          className="hoy-quick-overlay"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) close();
+          }}
+        >
           <section className="hoy-quick-card">
             <header>
               <div>
@@ -165,7 +183,9 @@ export default function QuickActions({
                 <h2>Nueva alumna</h2>
                 <p>Nombre y teléfono bastan para crearla.</p>
               </div>
-              <button type="button" onClick={close}>×</button>
+              <button type="button" onClick={close}>
+                ×
+              </button>
             </header>
             <form
               className="hoy-quick-form"
@@ -189,7 +209,9 @@ export default function QuickActions({
               <input name="last_name" placeholder="Apellido opcional" />
               <input name="phone" inputMode="tel" placeholder="Teléfono · 10 dígitos" required />
               <input name="email" type="email" placeholder="Correo opcional" />
-              {message ? <p className={message.ok ? "quick-success" : "quick-error"}>{message.text}</p> : null}
+              {message ? (
+                <p className={message.ok ? "quick-success" : "quick-error"}>{message.text}</p>
+              ) : null}
               <button className="primary-button" disabled={pending}>
                 {pending ? "Creando…" : "Crear alumna"}
               </button>
@@ -199,7 +221,12 @@ export default function QuickActions({
       ) : null}
 
       {open === "studentCreated" && createdStudent ? (
-        <div className="hoy-quick-overlay" onMouseDown={(event) => { if (event.target === event.currentTarget) close(); }}>
+        <div
+          className="hoy-quick-overlay"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) close();
+          }}
+        >
           <section className="hoy-quick-card">
             <header>
               <div>
@@ -207,7 +234,9 @@ export default function QuickActions({
                 <h2>{createdStudent.fullName}</h2>
                 <p>¿Quieres agregarle un paquete de clases ahora?</p>
               </div>
-              <button type="button" onClick={close}>×</button>
+              <button type="button" onClick={close}>
+                ×
+              </button>
             </header>
             <div className="hoy-quick-form">
               <button
@@ -230,7 +259,12 @@ export default function QuickActions({
       ) : null}
 
       {open === "sale" ? (
-        <div className="hoy-quick-overlay" onMouseDown={(event) => { if (event.target === event.currentTarget) close(); }}>
+        <div
+          className="hoy-quick-overlay"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) close();
+          }}
+        >
           <section className="hoy-quick-card hoy-quick-sale">
             <header>
               <div>
@@ -238,7 +272,9 @@ export default function QuickActions({
                 <h2>Nueva venta</h2>
                 <p>Busca a la alumna y elige su paquete.</p>
               </div>
-              <button type="button" onClick={close}>×</button>
+              <button type="button" onClick={close}>
+                ×
+              </button>
             </header>
 
             <form
@@ -280,9 +316,7 @@ export default function QuickActions({
               {studentId && !selectedProduct ? (
                 <div className="hoy-package-picker">
                   <span>Paquete</span>
-                  <div className="hoy-package-options">
-                    {visibleProducts.map(renderProduct)}
-                  </div>
+                  <div className="hoy-package-options">{visibleProducts.map(renderProduct)}</div>
                   {otherProducts.length > 0 ? (
                     <button
                       type="button"
@@ -306,13 +340,24 @@ export default function QuickActions({
                   <div className="hoy-quick-product">
                     <div>
                       <strong>{selectedProduct.name}</strong>
-                      <button type="button" className="hoy-change-package" onClick={() => { setProductId(""); setPayment(""); }}>
+                      <button
+                        type="button"
+                        className="hoy-change-package"
+                        onClick={() => {
+                          setProductId("");
+                          setPayment("");
+                        }}
+                      >
                         Cambiar paquete
                       </button>
                     </div>
                     <span>
-                      {selectedProduct.unlimited ? "Ilimitado" : `${selectedProduct.creditLimit ?? 0} créditos`}
-                      {selectedProduct.validityDays ? ` · ${selectedProduct.validityDays} días` : ""}
+                      {selectedProduct.unlimited
+                        ? "Ilimitado"
+                        : `${selectedProduct.creditLimit ?? 0} créditos`}
+                      {selectedProduct.validityDays
+                        ? ` · ${selectedProduct.validityDays} días`
+                        : ""}
                     </span>
                     <b>{money(selectedProduct.priceMinor, selectedProduct.currency, locale)}</b>
                   </div>
@@ -336,7 +381,9 @@ export default function QuickActions({
 
                   {discountMode === "percentage" || discountMode === "amount" ? (
                     <label>
-                      <span>{discountMode === "percentage" ? "Porcentaje" : "Monto a descontar"}</span>
+                      <span>
+                        {discountMode === "percentage" ? "Porcentaje" : "Monto a descontar"}
+                      </span>
                       <input
                         name="discount_value"
                         type="number"
@@ -376,7 +423,10 @@ export default function QuickActions({
                         onChange={(event) => setPayment(event.target.value)}
                         placeholder="0.00"
                       />
-                      <button type="button" onClick={() => setPayment((totalMinor / 100).toFixed(2))}>
+                      <button
+                        type="button"
+                        onClick={() => setPayment((totalMinor / 100).toFixed(2))}
+                      >
                         Usar total
                       </button>
                     </div>
@@ -386,7 +436,9 @@ export default function QuickActions({
                     <label>
                       <span>Cómo pagó</span>
                       <select name="payment_method" required defaultValue="">
-                        <option value="" disabled>Seleccionar</option>
+                        <option value="" disabled>
+                          Seleccionar
+                        </option>
                         <option value="Efectivo">Efectivo</option>
                         <option value="Transferencia">Transferencia</option>
                         <option value="Tarjeta">Tarjeta</option>
@@ -399,7 +451,9 @@ export default function QuickActions({
                 </>
               ) : null}
 
-              {message ? <p className={message.ok ? "quick-success" : "quick-error"}>{message.text}</p> : null}
+              {message ? (
+                <p className={message.ok ? "quick-success" : "quick-error"}>{message.text}</p>
+              ) : null}
               <button className="primary-button" disabled={pending || !studentId || !productId}>
                 {pending ? "Registrando…" : "Registrar venta"}
               </button>

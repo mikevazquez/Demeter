@@ -126,7 +126,7 @@ export default async function StudentsPage({
           )
           .eq("studio_id", studio.id)
           .order("created_at", { ascending: false })
-      : Promise.resolve({ data: [] })
+      : Promise.resolve({ data: [] }),
   ]);
   const allAcquisitions = acquisitionResult.data ?? [];
 
@@ -297,53 +297,53 @@ export default async function StudentsPage({
           <p>Encuentra a una persona y entra a su Perfil 360.</p>
         </div>
         {canEdit ? (
-            <details id="alta-rapida" className="student-quick-create">
-              <summary aria-label="Nueva alumna" title="Nueva alumna">
-                <span aria-hidden="true">+</span>
-                <span className="student-quick-create-label">Nueva alumna</span>
-              </summary>
-              <div className="student-quick-create-panel">
-                <div className="student-quick-create-heading">
-                  <div>
-                    <p className="eyebrow">ALTA RÁPIDA</p>
-                    <h2>Nueva alumna</h2>
-                    <p>Nombre y teléfono bastan para crear el expediente.</p>
-                  </div>
+          <details id="alta-rapida" className="student-quick-create">
+            <summary aria-label="Nueva alumna" title="Nueva alumna">
+              <span aria-hidden="true">+</span>
+              <span className="student-quick-create-label">Nueva alumna</span>
+            </summary>
+            <div className="student-quick-create-panel">
+              <div className="student-quick-create-heading">
+                <div>
+                  <p className="eyebrow">ALTA RÁPIDA</p>
+                  <h2>Nueva alumna</h2>
+                  <p>Nombre y teléfono bastan para crear el expediente.</p>
                 </div>
-                <form action={createStudent} className="compact-form">
-                  <div className="form-split">
-                    <input
-                      name="first_name"
-                      required
-                      placeholder="Nombre"
-                      autoComplete="given-name"
-                    />
-                    <input
-                      name="last_name"
-                      placeholder="Apellido opcional"
-                      autoComplete="family-name"
-                    />
-                  </div>
-                  <input
-                    name="phone"
-                    type="tel"
-                    inputMode="tel"
-                    required
-                    placeholder="Teléfono · 10 dígitos"
-                    autoComplete="tel"
-                  />
-                  <input
-                    name="email"
-                    type="email"
-                    placeholder="Correo opcional"
-                    autoComplete="email"
-                  />
-                  <PendingActionButton className="primary-button" pendingLabel="Creando alumna…">
-                    Crear alumna
-                  </PendingActionButton>
-                </form>
               </div>
-            </details>
+              <form action={createStudent} className="compact-form">
+                <div className="form-split">
+                  <input
+                    name="first_name"
+                    required
+                    placeholder="Nombre"
+                    autoComplete="given-name"
+                  />
+                  <input
+                    name="last_name"
+                    placeholder="Apellido opcional"
+                    autoComplete="family-name"
+                  />
+                </div>
+                <input
+                  name="phone"
+                  type="tel"
+                  inputMode="tel"
+                  required
+                  placeholder="Teléfono · 10 dígitos"
+                  autoComplete="tel"
+                />
+                <input
+                  name="email"
+                  type="email"
+                  placeholder="Correo opcional"
+                  autoComplete="email"
+                />
+                <PendingActionButton className="primary-button" pendingLabel="Creando alumna…">
+                  Crear alumna
+                </PendingActionButton>
+              </form>
+            </div>
+          </details>
         ) : (
           <span className="role-pill">{membership.role}</span>
         )}
@@ -360,20 +360,25 @@ export default async function StudentsPage({
         </form>
       </header>
 
-      <nav className="student-directory-filters student-directory-crm-toolbar" aria-label="Filtrar alumnas">
-        {filters.filter((filter) => filter.enabled).map((filter) => (
-          <Link
-            key={filter.key}
-            href={filterHref(filter.key, query)}
-            className={`student-filter-chip${status === filter.key ? " is-active" : ""}`}
-          >
-            {filter.label}
-            {filter.key === "all" ? <small>{allStudents?.length ?? 0}</small> : null}
-            {filter.key === "active" ? <small>{activeStudentsCount}</small> : null}
-            {filter.key === "expiring" ? <small>{expiringStudentsCount}</small> : null}
-            {filter.key === "expired" ? <small>{expiredStudentsCount}</small> : null}
-          </Link>
-        ))}
+      <nav
+        className="student-directory-filters student-directory-crm-toolbar"
+        aria-label="Filtrar alumnas"
+      >
+        {filters
+          .filter((filter) => filter.enabled)
+          .map((filter) => (
+            <Link
+              key={filter.key}
+              href={filterHref(filter.key, query)}
+              className={`student-filter-chip${status === filter.key ? " is-active" : ""}`}
+            >
+              {filter.label}
+              {filter.key === "all" ? <small>{allStudents?.length ?? 0}</small> : null}
+              {filter.key === "active" ? <small>{activeStudentsCount}</small> : null}
+              {filter.key === "expiring" ? <small>{expiringStudentsCount}</small> : null}
+              {filter.key === "expired" ? <small>{expiredStudentsCount}</small> : null}
+            </Link>
+          ))}
       </nav>
 
       {params.created === "student" ? (
@@ -437,7 +442,9 @@ export default async function StudentsPage({
                           !item.refunded_at && Boolean(item.expires_on && item.expires_on < today),
                       );
                       return (
-                        <span className={`student-package-summary${hasExpired ? " is-expired" : ""}`}>
+                        <span
+                          className={`student-package-summary${hasExpired ? " is-expired" : ""}`}
+                        >
                           <b>{hasExpired ? "Paquete vencido" : "Sin paquete activo"}</b>
                           <small>{hasExpired ? "Revisar renovación" : "Sin vigencia actual"}</small>
                         </span>
@@ -446,12 +453,12 @@ export default async function StudentsPage({
                     const remaining = visibleBalanceMap.get(acquisition.id) ?? 0;
                     return (
                       <span className="student-package-summary student-package-quick-summary">
-                        <b>{productNameMap.get(acquisition.product_template_id) ?? "Paquete activo"}</b>
+                        <b>
+                          {productNameMap.get(acquisition.product_template_id) ?? "Paquete activo"}
+                        </b>
                         <span className="student-package-quick-facts">
                           <small className="student-package-remaining">
-                            {acquisition.unlimited
-                              ? "Ilimitado"
-                              : remaining + " clases restantes"}
+                            {acquisition.unlimited ? "Ilimitado" : remaining + " clases restantes"}
                           </small>
                           <small className="student-package-expiry">
                             {acquisition.expires_on
@@ -462,7 +469,9 @@ export default async function StudentsPage({
                       </span>
                     );
                   })()}
-                  <span className={`student-state-pill is-${student.lifecycle_status === "inactive" ? "inactive" : "active"}`}>
+                  <span
+                    className={`student-state-pill is-${student.lifecycle_status === "inactive" ? "inactive" : "active"}`}
+                  >
                     {lifecycleLabels[student.lifecycle_status] ?? student.lifecycle_status}
                   </span>
                 </span>

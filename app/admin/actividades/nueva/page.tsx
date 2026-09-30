@@ -13,32 +13,28 @@ export default async function NewActivityPage({
   const params = await searchParams;
   const { supabase, studio } = await getAdminContext(CAPABILITIES.SCHEDULE_WRITE);
 
-  const [
-    { data: instructors },
-    { data: persons },
-    { data: spaces },
-    { data: operatingPolicy },
-  ] = await Promise.all([
-    supabase
-      .from("instructors")
-      .select("id,person_id,status")
-      .eq("studio_id", studio.id)
-      .eq("status", "active"),
-    supabase.from("persons").select("id,first_name,last_name").eq("studio_id", studio.id),
-    supabase
-      .from("spaces")
-      .select("id,name,capacity")
-      .eq("studio_id", studio.id)
-      .eq("active", true)
-      .order("name"),
-    supabase
-      .from("studio_operating_policies")
-      .select(
-        "default_minimum_reservations_enabled,default_minimum_reservations,default_minimum_review_minutes_before,default_minimum_override_allowed",
-      )
-      .eq("studio_id", studio.id)
-      .maybeSingle(),
-  ]);
+  const [{ data: instructors }, { data: persons }, { data: spaces }, { data: operatingPolicy }] =
+    await Promise.all([
+      supabase
+        .from("instructors")
+        .select("id,person_id,status")
+        .eq("studio_id", studio.id)
+        .eq("status", "active"),
+      supabase.from("persons").select("id,first_name,last_name").eq("studio_id", studio.id),
+      supabase
+        .from("spaces")
+        .select("id,name,capacity")
+        .eq("studio_id", studio.id)
+        .eq("active", true)
+        .order("name"),
+      supabase
+        .from("studio_operating_policies")
+        .select(
+          "default_minimum_reservations_enabled,default_minimum_reservations,default_minimum_review_minutes_before,default_minimum_override_allowed",
+        )
+        .eq("studio_id", studio.id)
+        .maybeSingle(),
+    ]);
 
   const personMap = new Map(
     (persons ?? []).map((item) => [
@@ -55,7 +51,10 @@ export default async function NewActivityPage({
             ← Actividades
           </Link>
           <h1>Nueva actividad</h1>
-          <p>Primero configura lo esencial. Las opciones avanzadas aparecen solo cuando las necesitas.</p>
+          <p>
+            Primero configura lo esencial. Las opciones avanzadas aparecen solo cuando las
+            necesitas.
+          </p>
         </div>
       </header>
 
@@ -77,8 +76,7 @@ export default async function NewActivityPage({
           minimumReservationsEnabled:
             operatingPolicy?.default_minimum_reservations_enabled ?? false,
           minimumReservations: operatingPolicy?.default_minimum_reservations ?? 2,
-          minimumReviewMinutesBefore:
-            operatingPolicy?.default_minimum_review_minutes_before ?? 120,
+          minimumReviewMinutesBefore: operatingPolicy?.default_minimum_review_minutes_before ?? 120,
           allowMinimumReservationOverride:
             operatingPolicy?.default_minimum_override_allowed ?? true,
         }}

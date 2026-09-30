@@ -11,11 +11,41 @@ const periods: Array<{
   days: number | null;
   tone: string;
 }> = [
-  { key: "monthly", title: "Mensuales", description: "Acceso ilimitado por 30 días.", days: 30, tone: "" },
-  { key: "quarterly", title: "Trimestrales", description: "Acceso ilimitado por 3 meses.", days: 90, tone: "is-blue" },
-  { key: "semiannual", title: "Semestrales", description: "Acceso ilimitado por 6 meses.", days: 180, tone: "is-amber" },
-  { key: "annual", title: "Anuales", description: "Acceso ilimitado por 1 año.", days: 365, tone: "is-purple" },
-  { key: "custom", title: "Otra vigencia", description: "Acceso ilimitado con duración personalizada.", days: null, tone: "is-neutral" },
+  {
+    key: "monthly",
+    title: "Mensuales",
+    description: "Acceso ilimitado por 30 días.",
+    days: 30,
+    tone: "",
+  },
+  {
+    key: "quarterly",
+    title: "Trimestrales",
+    description: "Acceso ilimitado por 3 meses.",
+    days: 90,
+    tone: "is-blue",
+  },
+  {
+    key: "semiannual",
+    title: "Semestrales",
+    description: "Acceso ilimitado por 6 meses.",
+    days: 180,
+    tone: "is-amber",
+  },
+  {
+    key: "annual",
+    title: "Anuales",
+    description: "Acceso ilimitado por 1 año.",
+    days: 365,
+    tone: "is-purple",
+  },
+  {
+    key: "custom",
+    title: "Otra vigencia",
+    description: "Acceso ilimitado con duración personalizada.",
+    days: null,
+    tone: "is-neutral",
+  },
 ];
 
 function CalendarInfinityIcon({ days }: { days: number | null }) {
@@ -122,7 +152,8 @@ export default async function UnlimitedPackagesPage() {
               <strong>{period.title}</strong>
               <span>{period.description}</span>
               <small className="package-period-count">
-                {counts[period.key]} {counts[period.key] === 1 ? "membresía activa" : "membresías activas"}
+                {counts[period.key]}{" "}
+                {counts[period.key] === 1 ? "membresía activa" : "membresías activas"}
               </small>
             </span>
             <span className="package-category-action">

@@ -33,9 +33,7 @@ describe("INTEL-06 marketing attribution", () => {
   it("attributes outcomes inside the same fixed maturity window", () => {
     expect(intelligence).toContain("collectedRevenueWithinConversionWindow");
     expect(intelligence).toContain("windowEndTime");
-    expect(intelligence).toContain(
-      "firstConversionAcquisitionByStudent.get(touch.studentId)",
-    );
+    expect(intelligence).toContain("firstConversionAcquisitionByStudent.get(touch.studentId)");
     expect(intelligence).toContain(
       "conversionTime >= startTime && conversionTime <= windowEndTime",
     );

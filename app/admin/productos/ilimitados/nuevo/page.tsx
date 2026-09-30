@@ -5,10 +5,7 @@ import { CreateUnlimitedForm } from "../CreateUnlimitedForm";
 
 type PeriodKey = "monthly" | "quarterly" | "semiannual" | "annual" | "custom";
 
-const periods: Record<
-  PeriodKey,
-  { label: string; days: number; fixedValidity: boolean }
-> = {
+const periods: Record<PeriodKey, { label: string; days: number; fixedValidity: boolean }> = {
   monthly: { label: "Mensual", days: 30, fixedValidity: true },
   quarterly: { label: "Trimestral", days: 90, fixedValidity: true },
   semiannual: { label: "Semestral", days: 180, fixedValidity: true },
@@ -39,10 +36,7 @@ export default async function NewUnlimitedMembershipPage({
   return (
     <main className="packages-v2">
       <header className="packages-v2-header">
-        <Link
-          href={`/admin/productos/ilimitados/${periodKey}`}
-          className="packages-v2-back"
-        >
+        <Link href={`/admin/productos/ilimitados/${periodKey}`} className="packages-v2-back">
           <span aria-hidden="true">←</span> {period.label}
         </Link>
         <h1>Crear ilimitado</h1>

@@ -46,7 +46,11 @@ export async function saveStudioPortalIdentityAction(formData: FormData) {
 
   const name = String(formData.get("name") ?? "").trim();
   const tagline = String(formData.get("tagline") ?? "").trim();
-  const primaryColor = String(formData.get("primary_color") ?? ctx.studio.primary_color ?? "#FF0A8A").trim().toUpperCase();
+  const primaryColor = String(
+    formData.get("primary_color") ?? ctx.studio.primary_color ?? "#FF0A8A",
+  )
+    .trim()
+    .toUpperCase();
   const removeLogo = String(formData.get("remove_logo") ?? "") === "1";
   const logo = formData.get("logo");
 
@@ -97,13 +101,16 @@ export async function saveStudioPortalIdentityAction(formData: FormData) {
     nextLogoPath = uploadedLogoPath;
   }
 
-  const { error: updateError } = await ctx.supabase.rpc("owner_update_studio_portal_branding_v2_release", {
-    p_studio_id: ctx.studio.id,
-    p_name: name,
-    p_logo_path: nextLogoPath,
-    p_tagline: tagline || null,
-    p_primary_color: primaryColor,
-  });
+  const { error: updateError } = await ctx.supabase.rpc(
+    "owner_update_studio_portal_branding_v2_release",
+    {
+      p_studio_id: ctx.studio.id,
+      p_name: name,
+      p_logo_path: nextLogoPath,
+      p_tagline: tagline || null,
+      p_primary_color: primaryColor,
+    },
+  );
 
   if (updateError) {
     if (uploadedLogoPath) {
@@ -148,7 +155,9 @@ export async function saveStudioRegionalSettingsAction(formData: FormData) {
   }
 
   const timezone = String(formData.get("timezone") ?? "").trim();
-  const currency = String(formData.get("currency") ?? "").trim().toUpperCase();
+  const currency = String(formData.get("currency") ?? "")
+    .trim()
+    .toUpperCase();
   const locale = String(formData.get("locale") ?? "").trim();
   const phoneCountryCallingCode = String(formData.get("phone_country_calling_code") ?? "").trim();
 

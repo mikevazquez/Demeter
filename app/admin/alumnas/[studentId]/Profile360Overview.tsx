@@ -173,7 +173,11 @@ export default function Profile360Overview({
             >
               {student.lifecycleStatus === "inactive" ? "Inactiva" : "Activa"}
             </span>
-            <span className={"profile360-portal-pill " + (student.portalEntered ? "is-entered" : "is-pending")}>
+            <span
+              className={
+                "profile360-portal-pill " + (student.portalEntered ? "is-entered" : "is-pending")
+              }
+            >
               {student.portalEntered ? "Portal: ingresó" : "Portal: sin ingresar"}
             </span>
             <Link className="profile360-edit-link" href={href("profile")}>
@@ -258,7 +262,9 @@ export default function Profile360Overview({
                   <span>Próxima clase</span>
                   <strong>
                     {nextClass
-                      ? nextClass.name + " · " + formatDateTime(nextClass.startsAt, timeZone, locale)
+                      ? nextClass.name +
+                        " · " +
+                        formatDateTime(nextClass.startsAt, timeZone, locale)
                       : "Sin próxima clase"}
                   </strong>
                 </div>
@@ -296,7 +302,10 @@ export default function Profile360Overview({
             </section>
           ) : null}
 
-          <section className="profile360-approved-indicators profile360-statistics" aria-label="Estadísticas">
+          <section
+            className="profile360-approved-indicators profile360-statistics"
+            aria-label="Estadísticas"
+          >
             <article>
               <span>Compras históricas</span>
               <strong>{formatMoney(historicalValueMinor, locale, currency)}</strong>

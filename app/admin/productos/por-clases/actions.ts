@@ -46,8 +46,7 @@ export async function createClassPackage(
   if (!isPackageTerm(packageTermRaw)) return { error: "Selecciona una vigencia válida." };
 
   const packageTerm: PackageTerm = packageTermRaw;
-  const validityDays =
-    packageTerm === "custom" ? validityInput : PACKAGE_TERM_DAYS[packageTerm];
+  const validityDays = packageTerm === "custom" ? validityInput : PACKAGE_TERM_DAYS[packageTerm];
 
   if (!validityDays) return { error: "La vigencia debe ser mayor a cero." };
 

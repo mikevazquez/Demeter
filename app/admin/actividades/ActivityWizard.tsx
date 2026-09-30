@@ -130,11 +130,8 @@ export function ActivityWizard({
           ? (operatingDefaults?.minimumReviewMinutesBefore ?? 120) / 60
           : (operatingDefaults?.minimumReviewMinutesBefore ?? 120),
       minimumReviewUnit:
-        (operatingDefaults?.minimumReviewMinutesBefore ?? 120) % 60 === 0
-          ? "hours"
-          : "minutes",
-      allowMinimumReservationOverride:
-        operatingDefaults?.allowMinimumReservationOverride ?? true,
+        (operatingDefaults?.minimumReviewMinutesBefore ?? 120) % 60 === 0 ? "hours" : "minutes",
+      allowMinimumReservationOverride: operatingDefaults?.allowMinimumReservationOverride ?? true,
     },
   );
 
@@ -304,9 +301,7 @@ export function ActivityWizard({
             <span>A01</span>
             <div>
               <h2>Lo básico</h2>
-              <p>
-                Nombre, duración, cupo y cómo se identifica en la Agenda.
-              </p>
+              <p>Nombre, duración, cupo y cómo se identifica en la Agenda.</p>
             </div>
           </div>
 
@@ -421,7 +416,8 @@ export function ActivityWizard({
               <span>OPCIONES DEL HORARIO</span>
               <strong>Coach, espacio y vigencia de la programación</strong>
               <p>
-                Estos datos se aplican por defecto. Una sesión individual puede ajustarse después sin cambiar toda la actividad.
+                Estos datos se aplican por defecto. Una sesión individual puede ajustarse después
+                sin cambiar toda la actividad.
               </p>
             </div>
 

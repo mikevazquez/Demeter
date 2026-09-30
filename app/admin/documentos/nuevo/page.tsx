@@ -11,10 +11,7 @@ export default async function NewDocumentPage() {
 
   return (
     <main className="dashboard-shell documents-v2 documents-new-v2 mx-auto max-w-3xl space-y-5">
-      <Link
-        href="/admin/documentos"
-        className="documents-back text-sm font-semibold"
-      >
+      <Link href="/admin/documentos" className="documents-back text-sm font-semibold">
         ← Documentos
       </Link>
       <header>
@@ -25,10 +22,7 @@ export default async function NewDocumentPage() {
         </p>
       </header>
 
-      <form
-        action={createDocumentAction}
-        className="documents-new-card space-y-5 rounded-3xl p-6"
-      >
+      <form action={createDocumentAction} className="documents-new-card space-y-5 rounded-3xl p-6">
         <label className="block">
           <span className="mb-2 block text-sm font-semibold">Nombre del documento</span>
           <input

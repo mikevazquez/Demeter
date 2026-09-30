@@ -275,7 +275,11 @@ export default async function StudentDocumentsPanel({
                                 ? "No autorizó"
                                 : "Aceptó") +
                               " · " +
-                              formatDateTime(item.current_student_acceptance.accepted_at, timeZone, locale)}
+                              formatDateTime(
+                                item.current_student_acceptance.accepted_at,
+                                timeZone,
+                                locale,
+                              )}
                           </p>
                         ) : null}
                         {item.current_guardian_acceptance ? (

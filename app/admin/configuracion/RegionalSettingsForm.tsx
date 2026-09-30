@@ -37,13 +37,7 @@ export function RegionalSettingsForm({
 
       <label className="advanced-v2-field">
         <span>Moneda</span>
-        <input
-          name="currency"
-          defaultValue={currency}
-          minLength={3}
-          maxLength={3}
-          required
-        />
+        <input name="currency" defaultValue={currency} minLength={3} maxLength={3} required />
         <small>Ejemplos: MXN, USD o EUR.</small>
       </label>
 

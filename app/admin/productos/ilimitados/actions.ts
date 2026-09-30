@@ -44,8 +44,7 @@ export async function createUnlimitedMembership(
   if (!isPackageTerm(packageTermRaw)) return { error: "Selecciona una vigencia válida." };
 
   const packageTerm: PackageTerm = packageTermRaw;
-  const validityDays =
-    packageTerm === "custom" ? validityInput : PACKAGE_TERM_DAYS[packageTerm];
+  const validityDays = packageTerm === "custom" ? validityInput : PACKAGE_TERM_DAYS[packageTerm];
 
   if (!validityDays) return { error: "La vigencia debe ser mayor a cero." };
 
@@ -61,8 +60,7 @@ export async function createUnlimitedMembership(
 
   if (!disciplines?.length) {
     return {
-      error:
-        "Primero necesitas al menos una disciplina activa para crear una membresía ilimitada.",
+      error: "Primero necesitas al menos una disciplina activa para crear una membresía ilimitada.",
     };
   }
 

@@ -92,12 +92,7 @@ function rewardStatusLabel(status: string) {
   return labels[status] ?? status;
 }
 
-function rewardBenefitLabel(
-  kind: string,
-  benefit: unknown,
-  locale: string,
-  currency: string,
-) {
+function rewardBenefitLabel(kind: string, benefit: unknown, locale: string, currency: string) {
   const data = benefit && typeof benefit === "object" ? (benefit as Record<string, unknown>) : {};
   if (kind === "credits" && typeof data.credits === "number") {
     return String(data.credits) + (data.credits === 1 ? " crédito" : " créditos");
@@ -801,7 +796,6 @@ export default async function StudentProfilePage({
     });
   }
 
-
   for (const achievement of rewardAchievements) {
     profileHistoryEvents.push({
       id: "reward:" + achievement.id,
@@ -981,8 +975,8 @@ export default async function StudentProfilePage({
 
       {query.alta === "reserva_realizada" ? (
         <div className="notice success">
-          Primera reserva registrada. {studio.name} mantuvo la misma alumna y aplicó las reglas reales de
-          paquete, inscripción, créditos y cupo.
+          Primera reserva registrada. {studio.name} mantuvo la misma alumna y aplicó las reglas
+          reales de paquete, inscripción, créditos y cupo.
         </div>
       ) : null}
 
@@ -1235,7 +1229,9 @@ export default async function StudentProfilePage({
             <div>
               <p className="eyebrow">PAQUETES Y CRÉDITOS</p>
               <h2>Consumo e historial de paquetes</h2>
-              <p>Revisa exactamente qué ocurrió con cada paquete, sus créditos, clases e incidencias.</p>
+              <p>
+                Revisa exactamente qué ocurrió con cada paquete, sus créditos, clases e incidencias.
+              </p>
             </div>
           </div>
 
@@ -1254,9 +1250,7 @@ export default async function StudentProfilePage({
                       currency: charge.currency ?? currency,
                     }).format(Number(charge.amount_minor ?? 0) / 100);
                     const label =
-                      charge.charge_type === "late_cancellation"
-                        ? "Cancelación tardía"
-                        : "No-show";
+                      charge.charge_type === "late_cancellation" ? "Cancelación tardía" : "No-show";
 
                     return (
                       <article
@@ -1270,9 +1264,7 @@ export default async function StudentProfilePage({
                               {formatDateTime(charge.created_at, timeZone, locale)}
                             </p>
                             {charge.resolution_note ? (
-                              <p className="mt-1 text-xs text-zinc-400">
-                                {charge.resolution_note}
-                              </p>
+                              <p className="mt-1 text-xs text-zinc-400">{charge.resolution_note}</p>
                             ) : null}
                           </div>
                           <div className="text-right">
@@ -1296,7 +1288,6 @@ export default async function StudentProfilePage({
                             </p>
                           </div>
                         </div>
-
                       </article>
                     );
                   })}
@@ -1550,7 +1541,14 @@ export default async function StudentProfilePage({
                 {rewardInstancesDetail.map((reward) => (
                   <article key={reward.id}>
                     <div>
-                      <strong>{rewardBenefitLabel(reward.kind, reward.benefitDefinition, locale, currency)}</strong>
+                      <strong>
+                        {rewardBenefitLabel(
+                          reward.kind,
+                          reward.benefitDefinition,
+                          locale,
+                          currency,
+                        )}
+                      </strong>
                       <span>
                         {reward.expiresAt
                           ? "Vence " + formatDateTime(reward.expiresAt, timeZone, locale)
@@ -1673,8 +1671,6 @@ export default async function StudentProfilePage({
                   </Link>
                 ) : null}
               </div>
-
-              
 
               <div className="profile360-sales-history-meta">
                 <span>{studentSalesHistory.length} ventas</span>

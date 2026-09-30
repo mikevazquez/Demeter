@@ -49,23 +49,23 @@ export default async function ActivityPackagesPage({
   const { data: products } = productIds.length
     ? await ctx.supabase
         .from("product_templates")
-        .select(
-          "id,name,price_minor,currency,credit_limit,validity_days,package_term,active",
-        )
+        .select("id,name,price_minor,currency,credit_limit,validity_days,package_term,active")
         .eq("studio_id", ctx.studio.id)
         .eq("active", true)
         .in("id", productIds)
         .order("name")
-    : { data: [] as {
-        id: string;
-        name: string;
-        price_minor: number;
-        currency: string;
-        credit_limit: number | null;
-        validity_days: number | null;
-        package_term: string | null;
-        active: boolean;
-      }[] };
+    : {
+        data: [] as {
+          id: string;
+          name: string;
+          price_minor: number;
+          currency: string;
+          credit_limit: number | null;
+          validity_days: number | null;
+          package_term: string | null;
+          active: boolean;
+        }[],
+      };
 
   return (
     <main className="packages-v2">
@@ -81,9 +81,7 @@ export default async function ActivityPackagesPage({
         <span className="packages-v2-info-icon" aria-hidden="true">
           ✓
         </span>
-        <p>
-          Quien tenga uno de estos paquetes podrá usar sus créditos solo en {activity.name}.
-        </p>
+        <p>Quien tenga uno de estos paquetes podrá usar sus créditos solo en {activity.name}.</p>
       </section>
 
       {products?.length ? (
