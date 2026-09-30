@@ -49,15 +49,14 @@ export default async function NewActivityPage({
   );
 
   return (
-    <main className="dashboard-shell activities-editor-page">
-      <header className="activities-editor-header">
+    <main className="activities-v2 activities-editor-page">
+      <header className="activities-v2-editor-header">
         <div>
-          <Link className="activities-back-link" href="/admin/actividades">
+          <Link className="activities-v2-back" href="/admin/actividades">
             ← Actividades
           </Link>
-          <p className="eyebrow">NUEVA ACTIVIDAD · {studio.name}</p>
           <h1>Nueva actividad</h1>
-          <p>Completa las cuatro etapas aprobadas antes de crearla.</p>
+          <p>Primero configura lo esencial. Las opciones avanzadas aparecen solo cuando las necesitas.</p>
         </div>
       </header>
 
