@@ -6,7 +6,6 @@ import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { STUDIO_MODULES } from "@/lib/auth/modules";
 
 import { OperatingPolicyForm } from "./OperatingPolicyForm";
-import { PortalIdentityForm } from "./PortalIdentityForm";
 import { RegionalSettingsForm } from "./RegionalSettingsForm";
 
 type PlanUsageRow = {
@@ -56,7 +55,7 @@ export default async function ConfigurationPage({
     redirect("/admin?error=access");
   }
 
-  const [{ data: operatingPolicy }, { data: planUsage }, logoUrl] = await Promise.all([
+  const [{ data: operatingPolicy }, { data: planUsage }] = await Promise.all([
     ctx.supabase
       .from("studio_operating_policies")
       .select(
@@ -67,15 +66,8 @@ export default async function ConfigurationPage({
     ctx.supabase.rpc("current_studio_plan_usage", {
       p_studio_id: ctx.studio.id,
     }),
-    Promise.resolve(
-      ctx.studio.logo_path
-        ? ctx.supabase.storage.from("studio-branding").getPublicUrl(ctx.studio.logo_path).data
-            .publicUrl
-        : null,
-    ),
   ]);
 
-  const portalPath = `/s/${ctx.studio.slug}`;
   const usageRows = (planUsage ?? []) as PlanUsageRow[];
   const planName = usageRows[0]?.plan_name ?? "Plan";
 
@@ -164,14 +156,6 @@ export default async function ConfigurationPage({
           })}
         </div>
       </section>
-
-      <PortalIdentityForm
-        initialName={ctx.studio.name}
-        initialLogoUrl={logoUrl}
-        portalPath={portalPath}
-        initialPrimaryColor={ctx.studio.primary_color ?? "#FF0A8A"}
-        initialTagline={ctx.studio.tagline ?? null}
-      />
 
       <OperatingPolicyForm
         cancellationCutoffMinutes={operatingPolicy?.cancellation_cutoff_minutes ?? 300}
