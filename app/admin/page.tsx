@@ -162,8 +162,8 @@ export default async function AdminPage({
 
   const [
     { data: selectedSessions },
-    { count: activeStudents },
-    { data: salesToday },
+    { data: activeProductAcquisitions },
+    { data: selectedPayments },
     { data: students },
     { data: quickSaleProducts },
     { data: quickSaleHistory },
@@ -178,16 +178,18 @@ export default async function AdminPage({
       .lt("starts_at", selectedEnd.toISOString())
       .order("starts_at", { ascending: true }),
     supabase
-      .from("students")
-      .select("*", { count: "exact", head: true })
+      .from("product_acquisitions")
+      .select("student_id")
       .eq("studio_id", studio.id)
-      .eq("active", true),
+      .eq("status", "active")
+      .is("refunded_at", null)
+      .or(`starts_on.is.null,starts_on.lte.${todayKey}`)
+      .or(`expires_on.is.null,expires_on.gte.${todayKey}`),
     supabase
-      .from("sales")
-      .select("total_minor,status")
+      .from("payments")
+      .select("amount_minor,kind")
       .eq("studio_id", studio.id)
-      .gte("created_at", todayStart.toISOString())
-      .lt("created_at", todayEnd.toISOString()),
+      .eq("effective_on", selectedKey),
     supabase
       .from("students")
       .select("id,full_name")
@@ -209,6 +211,13 @@ export default async function AdminPage({
       .order("created_at", { ascending: false })
       .limit(1000),
   ]);
+
+  const activeProductStudentIds = new Set(
+    (activeProductAcquisitions ?? []).flatMap((acquisition) =>
+      acquisition.student_id ? [acquisition.student_id] : [],
+    ),
+  );
+  const activeStudents = activeProductStudentIds.size;
 
   const sessionIds = (selectedSessions ?? []).map((session) => session.id);
   const templateIds = [...new Set((selectedSessions ?? []).map((session) => session.template_id))];
@@ -491,8 +500,11 @@ export default async function AdminPage({
   const dailyReservationPercentage =
     totalDailyCapacity > 0 ? Math.round((totalDailyReservations / totalDailyCapacity) * 100) : 0;
 
-  const visibleSales = (salesToday ?? []).filter((sale) => sale.status !== "voided");
-  const salesTotalMinor = visibleSales.reduce((sum, sale) => sum + (sale.total_minor ?? 0), 0);
+  const salesTotalMinor = (selectedPayments ?? []).reduce(
+    (sum, payment) =>
+      sum + (payment.kind === "refund" ? -(payment.amount_minor ?? 0) : (payment.amount_minor ?? 0)),
+    0,
+  );
   const salesTotal = new Intl.NumberFormat(studio.locale, {
     style: "currency",
     currency: studio.currency,
@@ -589,7 +601,7 @@ export default async function AdminPage({
       </section>
 
       <section className="hoy-glance" aria-label="Resumen rápido">
-        <Link href="/admin/alumnas"><strong>{activeStudents ?? 0}</strong><span>Alumnas activas</span></Link>
+        <Link href="/admin/alumnas"><strong>{activeStudents}</strong><span>Alumnas activas</span></Link>
         <Link href="/admin/ventas"><strong>{salesTotal}</strong><span>Ventas hoy</span></Link>
         <div><strong>{dailyReservationPercentage}%</strong><span>Ocupación · {totalDailyReservations}/{totalDailyCapacity}</span></div>
       </section>
