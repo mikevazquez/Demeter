@@ -208,7 +208,6 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
                 enabled: true,
                 activeFor: [
                   "/admin/actividades",
-                  "/admin/ventas",
                   "/admin/documentos",
                   "/admin/recompensas",
                   "/admin/evaluaciones",
