@@ -20,6 +20,7 @@ import "./admin-ux-04-secondary-detail.css";
 import "./evaluaciones/evaluaciones.css";
 import "./notificaciones/notificaciones.css";
 import "./inteligencia/inteligencia.css";
+import "./productos/packages-v2.css";
 
 type PwaBrand = {
   name: string;
@@ -125,7 +126,7 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
             ]
           : []),
         ...(can(CAPABILITIES.STUDENTS_READ)
-          ? [{ href: "/admin/alumnas", label: "Alumnas", enabled: true }]
+          ? [{ href: "/admin/alumnas", label: "Alumnas", enabled: true, activeFor: ["/admin/ventas"] }]
           : []),
         ...(can(CAPABILITIES.REPORTS_READ)
           ? [{ href: "/admin/inteligencia", label: "Inteligencia", enabled: true }]
@@ -143,28 +144,33 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
           ? [{ href: "/admin/evaluaciones", label: "Evaluaciones", enabled: true }]
           : []),
         ...(can(CAPABILITIES.PRODUCTS_READ)
-          ? [{ href: "/admin/productos", label: "Productos", enabled: true }]
+          ? [{ href: "/admin/productos", label: "Paquetes", enabled: true }]
           : []),
         ...(can(CAPABILITIES.INSTRUCTORS_READ)
           ? [{ href: "/admin/instructores", label: "Equipo", enabled: true }]
           : []),
         ...(can(CAPABILITIES.AUTOMATIONS_READ)
-          ? [
-              {
-                href: "/admin/notificaciones",
-                label: "Notificaciones",
-                enabled: true,
-                activeFor: ["/admin/automatizaciones"],
-              },
-            ]
+          ? [{ href: "/admin/automatizaciones", label: "Comunicación", enabled: true }]
           : []),
         ...(membership.role === "owner"
           ? [
               {
-                href: "/admin/configuracion",
-                label: "Configuración",
+                href: "/admin/integraciones",
+                label: "Integraciones",
                 enabled: true,
                 secondary: true,
+              },
+              {
+                href: "/admin/mas",
+                label: "Más",
+                enabled: true,
+                secondary: true,
+                activeFor: [
+                  "/admin/configuracion",
+                  "/admin/integraciones",
+                  "/admin/suscripcion",
+                  "/admin/suscripcion",
+                ],
               },
             ]
           : []),
@@ -205,7 +211,6 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
                   "/admin/evaluaciones",
                   "/admin/productos",
                   "/admin/instructores",
-                  "/admin/notificaciones",
                   "/admin/automatizaciones",
                   "/admin/inteligencia",
                   "/admin/configuracion",

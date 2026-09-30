@@ -103,7 +103,7 @@ function NavIcon({ label }: { label: string }) {
       </svg>
     );
   }
-  if (label === "Productos") {
+  if (label === "Productos" || label === "Paquetes") {
     return (
       <svg {...common}>
         <path d="M5 7h14l-1 14H6L5 7Z" />
@@ -121,7 +121,7 @@ function NavIcon({ label }: { label: string }) {
       </svg>
     );
   }
-  if (label === "Notificaciones") {
+  if (label === "Notificaciones" || label === "Comunicación") {
     return (
       <svg {...common}>
         <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9" />
@@ -137,7 +137,7 @@ function NavIcon({ label }: { label: string }) {
       </svg>
     );
   }
-  if (label === "Configuración") {
+  if (label === "Configuración" || label === "Integraciones") {
     return (
       <svg {...common}>
         <circle cx="12" cy="12" r="3" />

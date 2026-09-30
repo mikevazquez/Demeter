@@ -37,8 +37,8 @@ const items: MoreItem[] = [
     capability: CAPABILITIES.EVALUATIONS_READ,
   },
   {
-    title: "Productos",
-    description: "Paquetes, membresías, clases sueltas e inscripciones.",
+    title: "Paquetes",
+    description: "Paquetes por clases, restricciones, ilimitados y talleres.",
     href: "/admin/productos",
     capability: CAPABILITIES.PRODUCTS_READ,
   },
@@ -49,9 +49,9 @@ const items: MoreItem[] = [
     capability: CAPABILITIES.INSTRUCTORS_READ,
   },
   {
-    title: "Notificaciones",
-    description: "Procesos, marketing, plantillas y preferencias de comunicación.",
-    href: "/admin/notificaciones",
+    title: "Comunicación",
+    description: "Procesos, marketing, plantillas y horarios de envío.",
+    href: "/admin/automatizaciones",
     capability: CAPABILITIES.AUTOMATIONS_READ,
   },
   {
@@ -68,14 +68,32 @@ const items: MoreItem[] = [
   },
   {
     title: "Integraciones",
-    description: "Conecta Studio Flow con Asistian y otros servicios externos.",
-    href: "/admin/integraciones/asistian",
+    description: "Conecta Mercado Pago, Asistian, Meta y otros servicios externos.",
+    href: "/admin/integraciones",
     ownerOnly: true,
   },
   {
-    title: "Configuración",
-    description: "Identidad pública y preferencias del estudio.",
-    href: "/admin/configuracion",
+    title: "Apariencia",
+    description: "Nombre, logo, color e identidad visible del estudio.",
+    href: "/admin/configuracion/apariencia",
+    ownerOnly: true,
+  },
+  {
+    title: "Región y formatos",
+    description: "Zona horaria, moneda, formato regional y prefijo telefónico.",
+    href: "/admin/configuracion/region",
+    ownerOnly: true,
+  },
+  {
+    title: "Recursos y espacios",
+    description: "Recursos físicos, mapas y distribución de los espacios.",
+    href: "/admin/configuracion/recursos",
+    ownerOnly: true,
+  },
+  {
+    title: "Plan y suscripción",
+    description: "Estado del plan, periodo contratado y facturación de Studio Flow.",
+    href: "/admin/suscripcion",
     ownerOnly: true,
   },
 ];
