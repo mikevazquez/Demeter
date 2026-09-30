@@ -33,7 +33,7 @@ export default async function ResourcesConfigurationPage({
   const ctx = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
 
   if (!ctx.can(CAPABILITIES.RESOURCES_MANAGE)) {
-    redirect("/admin/configuracion?error=access");
+    redirect("/admin/mas?error=access");
   }
 
   if (ctx.membership.role !== "owner") {
@@ -94,8 +94,8 @@ export default async function ResourcesConfigurationPage({
     <main className={`dashboard-shell ${styles.page}`}>
       <header className={styles.header}>
         <div className={styles.headerCopy}>
-          <Link className={styles.backLink} href="/admin/configuracion">
-            ← Avanzado
+          <Link className={styles.backLink} href="/admin/mas">
+            ← Más
           </Link>
           <p className={styles.eyebrow}>CONFIGURACIÓN · {ctx.studio.name}</p>
           <h1>Recursos</h1>
