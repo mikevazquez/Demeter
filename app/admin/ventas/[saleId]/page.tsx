@@ -24,6 +24,8 @@ const errorCopy: Record<string, string> = {
   sale_not_open: "Esta venta ya no acepta movimientos.",
   refund_invalid: "Completa monto, método, motivo y confirmación del reembolso.",
   refund_method_required: "Selecciona el método del reembolso.",
+  refund_method_unavailable: "Ese método no está disponible para reembolsos.",
+  refund_reference_required: "Este método requiere una referencia para el reembolso.",
   refund_reason_required: "El motivo del reembolso es obligatorio.",
   refund_exceeds_line: "El monto supera lo reembolsable de este producto.",
   refund_exceeds_collected: "No puedes reembolsar más dinero del que se ha cobrado.",
