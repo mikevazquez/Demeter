@@ -11,7 +11,6 @@ import { notFound } from "next/navigation";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getAdminContext } from "@/lib/auth/admin-context";
 import {
-  resolveStudentOperatingCharge,
   unlockMedalsAccess,
   updateCommunicationPreferences,
   updateDynamicProfileFields,
@@ -311,7 +310,6 @@ export default async function StudentProfilePage({
   const canEdit = can(CAPABILITIES.STUDENTS_WRITE);
   const canReadSchedule = can(CAPABILITIES.SCHEDULE_READ);
   const canReadSales = can(CAPABILITIES.SALES_READ);
-  const canManageOperatingCharges = can(CAPABILITIES.SALES_WRITE);
   const canReadRewards = can(CAPABILITIES.REWARDS_READ);
   const canManageRewards = can(CAPABILITIES.REWARDS_MANAGE);
   const canReadEvaluations = can(CAPABILITIES.EVALUATIONS_READ);
@@ -1299,32 +1297,6 @@ export default async function StudentProfilePage({
                           </div>
                         </div>
 
-                        {charge.status === "pending" && canManageOperatingCharges ? (
-                          <div className="mt-3 grid gap-2 border-t border-white/10 pt-3 sm:grid-cols-2">
-                            <form action={resolveStudentOperatingCharge}>
-                              <input type="hidden" name="student_id" value={student.id} />
-                              <input type="hidden" name="charge_id" value={charge.id} />
-                              <input type="hidden" name="resolution" value="paid" />
-                              <PendingActionButton
-                                pendingLabel="Registrando…"
-                                className="min-h-10 w-full rounded-xl bg-emerald-500/15 px-3 text-xs font-semibold text-emerald-200"
-                              >
-                                Marcar pagada
-                              </PendingActionButton>
-                            </form>
-                            <form action={resolveStudentOperatingCharge}>
-                              <input type="hidden" name="student_id" value={student.id} />
-                              <input type="hidden" name="charge_id" value={charge.id} />
-                              <input type="hidden" name="resolution" value="waived" />
-                              <PendingActionButton
-                                pendingLabel="Condonando…"
-                                className="min-h-10 w-full rounded-xl border border-white/10 px-3 text-xs font-semibold text-zinc-300"
-                              >
-                                Condonar
-                              </PendingActionButton>
-                            </form>
-                          </div>
-                        ) : null}
                       </article>
                     );
                   })}
