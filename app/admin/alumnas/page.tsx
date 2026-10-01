@@ -112,8 +112,12 @@ export default async function StudentsPage({
 
   const duplicateId = String(params.duplicate ?? "").trim();
   const needsAllStudentsQuery = Boolean(query) || status === "active" || status === "inactive";
-  const [{ data: students }, allStudentsResult, acquisitionResult, { data: duplicateStudent }] =
-    await Promise.all([
+  const [
+    { data: students },
+    allStudentsResult,
+    acquisitionResult,
+    { data: duplicateStudent },
+  ] = await Promise.all([
       studentsQuery,
       needsAllStudentsQuery
         ? supabase
