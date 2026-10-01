@@ -204,7 +204,10 @@ export const getStudentPortalContext = cache(async () => {
 
   const [snapshotResult, studioResult] = await Promise.all([
     supabase.rpc("student_portal_snapshot"),
-    supabase.from("studios").select("name,timezone").eq("id", membership.studio_id).maybeSingle(),
+    supabase.from("studios")
+      .select("name,timezone,slug,primary_color,logo_path")
+      .eq("id", membership.studio_id)
+      .maybeSingle(),
   ]);
 
   if (snapshotResult.error || studioResult.error) {
