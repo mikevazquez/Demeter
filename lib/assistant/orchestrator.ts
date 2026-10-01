@@ -256,9 +256,13 @@ function confirmationReply(
   if (toolName === "execute_booking" && summary) {
     const paymentText =
       summary.payment_pending === true
-        ? " Quedó con pago pendiente; todavía no se ha registrado como pagada."
+        ? " Quedó con pago pendiente; la clase debe pagarse antes de marcar la asistencia."
         : "";
-    return `Listo. Tu reserva de ${String(summary.activity ?? "la clase")} quedó confirmada para el ${formatDateForReply(summary.date)}, de ${formatTimeForReply(summary.starts_at_local)} a ${formatTimeForReply(summary.ends_at_local)}.${paymentText}`;
+    const trialText =
+      summary.trial_booking === true
+        ? " Esta reserva de prueba no requiere inscripción. Después de tu primera asistencia, la inscripción sí será necesaria para futuras reservas."
+        : "";
+    return `Listo. Tu reserva de ${String(summary.activity ?? "la clase")} quedó confirmada para el ${formatDateForReply(summary.date)}, de ${formatTimeForReply(summary.starts_at_local)} a ${formatTimeForReply(summary.ends_at_local)}.${paymentText}${trialText}`;
   }
 
   if (toolName === "execute_cancellation" && summary) {
@@ -415,8 +419,14 @@ export async function runAssistantTurn(input: OrchestratorInput) {
     "Nunca llames execute_booking en el mismo turno en que preparaste la reserva. Debes esperar un NUEVO mensaje de la persona con una confirmación explícita.",
     "Cuando llegue un nuevo mensaje claro de confirmación, usa execute_booking sin argumentos. El servidor elegirá únicamente la última acción pendiente de esta conversación. Si el mensaje es ambiguo, pregunta otra vez y no ejecutes.",
     "Si una herramienta de reserva devuelve identity_required, explica que la demo necesita una identidad simulada seleccionada; en WhatsApp real la identidad vendrá del número.",
-    "Si la identidad viene del CRM como prospecto y pide reservar, prepare_booking puede crear su perfil trial de onboarding en Studio Flow. No inventes que ya era alumna antes de que la herramienta lo confirme.",
-    "Si prepare_booking devuelve onboarding_required, explica el requisito real que devolvió Studio Flow y no pidas confirmación de reserva todavía.",
+    "Para prospectos y alumnas trial existe una política especial de primera clase. La excepción dura hasta la primera asistencia real, no hasta el primer intento de reserva.",
+    "Mientras no haya asistido a ninguna clase, una prospecto/trial puede reservar una sola clase de prueba activa sin inscripción ni paquete. prepare_booking es la única fuente de verdad para decidir si esa excepción aplica.",
+    "La clase de prueba queda con pago pendiente: antes de pedir confirmación explica que la clase sí debe pagarse, aunque todavía no se cobre la inscripción.",
+    "Después de la primera asistencia, la excepción termina y la inscripción normal es obligatoria para futuras reservas.",
+    "Los no-shows de prueba se acumulan. Hasta 2 no-shows puede volver a intentar reservar; cuando prepare_booking devuelva prepayment_required o trial_prepayment_required, no prepares ni afirmes una reserva: explica que por sus 2 no-shows la siguiente clase requiere pago anticipado.",
+    "Una prospecto/trial solo puede tener una reserva de prueba activa a la vez. Si la herramienta devuelve trial_active_booking_exists, explica que debe usar, cancelar o resolver esa reserva antes de agendar otra.",
+    "No inventes ni calcules por tu cuenta cuántos no-shows tiene; usa exclusivamente el resultado de Studio Flow.",
+    "Si prepare_booking devuelve onboarding_required para una alumna que ya terminó su clase de prueba, explica el requisito real y no pidas confirmación de reserva.",
     "Si prepare_booking devuelve payment_pending=true, explica antes de confirmar que la reserva quedará pendiente de pago y que Studio Flow no la considera pagada automáticamente.",
     "Para cancelar, primero usa get_student_reservations para localizar la reserva real. Si la persona no expresó un motivo, pregúntalo y no prepares todavía la cancelación.",
     "Nunca inventes ni completes un motivo de cancelación. Usa prepare_cancellation solo con un motivo expresado por la persona y presenta claramente si la cancelación es a tiempo o tardía, si regresa el crédito y cualquier penalización.",
