@@ -9,6 +9,7 @@ function source(path: string) {
 
 describe("Enrollment V2", () => {
   const migration = source("supabase/migrations/20261001053000_enrollment_v2_required_checkout.sql");
+  const bookingCore = source("supabase/migrations/20260930005800_packages03_activity_restrictions.sql");
   const policyAction = source("app/admin/ventas/inscripcion/actions.ts");
   const policyPage = source("app/admin/ventas/inscripcion/page.tsx");
   const studentActions = source("app/student/actions.ts");
@@ -31,7 +32,7 @@ describe("Enrollment V2", () => {
 
   it("blocks booking consistently when enrollment is missing", () => {
     expect(migration).toContain("private.student_enrollment_requirement_for_booking");
-    expect(migration).toContain("'enrollment_required'");
+    expect(bookingCore).toContain("'enrollment_required'");
     expect(sessionDetail).toContain('reason === "enrollment_required"');
     expect(sessionDetail).toContain('enrollmentMode === "package_booking"');
     expect(sessionDetail).toContain('"Pagar inscripción"');
