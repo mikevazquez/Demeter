@@ -13,10 +13,7 @@ type NoticeDialogProps = {
   onConfirm: () => void;
 };
 
-const toneClasses: Record<
-  NoticeTone,
-  { icon: string; eyebrow: string; symbol: string }
-> = {
+const toneClasses: Record<NoticeTone, { icon: string; eyebrow: string; symbol: string }> = {
   success: {
     icon: "is-success",
     eyebrow: "",

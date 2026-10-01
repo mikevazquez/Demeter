@@ -66,40 +66,34 @@ export default async function SessionDetailPage({
   const canAttendance = can(CAPABILITIES.ATTENDANCE_WRITE);
   const canCreateStudent = can(CAPABILITIES.STUDENTS_WRITE);
 
-  const [
-    { data: template },
-    { data: spaces },
-    { data: instructors },
-    { data: reservations },
-  ] = await Promise.all([
-    supabase
-      .from("class_templates")
-      .select("name,discipline_id,duration_minutes,credit_cost,color_hex,drop_in_price_minor")
-      .eq("id", session.template_id)
-      .single(),
-    supabase
-      .from("spaces")
-      .select("id,name,capacity")
-      .eq("studio_id", studio.id)
-      .eq("active", true)
-      .order("name"),
-    supabase
-      .from("instructors")
-      .select("id,person_id")
-      .eq("studio_id", studio.id)
-      .eq("status", "active"),
-    supabase
-      .from("reservations")
-      .select("id,student_id,guest_person_id,status,acquisition_id,commercial_status")
-      .eq("session_id", sessionId)
-      .in("status", ["reserved", "attended", "no_show"])
-      .order("booked_at"),
-  ]);
+  const [{ data: template }, { data: spaces }, { data: instructors }, { data: reservations }] =
+    await Promise.all([
+      supabase
+        .from("class_templates")
+        .select("name,discipline_id,duration_minutes,credit_cost,color_hex,drop_in_price_minor")
+        .eq("id", session.template_id)
+        .single(),
+      supabase
+        .from("spaces")
+        .select("id,name,capacity")
+        .eq("studio_id", studio.id)
+        .eq("active", true)
+        .order("name"),
+      supabase
+        .from("instructors")
+        .select("id,person_id")
+        .eq("studio_id", studio.id)
+        .eq("status", "active"),
+      supabase
+        .from("reservations")
+        .select("id,student_id,guest_person_id,status,acquisition_id,commercial_status")
+        .eq("session_id", sessionId)
+        .in("status", ["reserved", "attended", "no_show"])
+        .order("booked_at"),
+    ]);
 
   const reservationStudentIds = [
-    ...new Set(
-      (reservations ?? []).map((reservation) => reservation.student_id).filter(Boolean),
-    ),
+    ...new Set((reservations ?? []).map((reservation) => reservation.student_id).filter(Boolean)),
   ] as string[];
   const guestPersonIds = [
     ...new Set(

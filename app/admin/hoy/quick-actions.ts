@@ -68,7 +68,13 @@ export async function searchQuickSaleStudents(search: string): Promise<QuickSale
         .in("student_id", studentIds)
         .order("created_at", { ascending: false })
         .limit(100)
-    : { data: [] as { student_id: string | null; product_template_id: string; created_at: string }[] };
+    : {
+        data: [] as {
+          student_id: string | null;
+          product_template_id: string;
+          created_at: string;
+        }[],
+      };
 
   const preferredByStudent = new Map<string, string>();
   for (const acquisition of acquisitions ?? []) {

@@ -19,8 +19,7 @@ export default function AdminDialogFrame({
   footer: ReactNode;
   labelledBy?: string;
 }) {
-  const iconClass =
-    tone === "danger" ? "is-error" : tone === "info" ? "is-info" : "is-warning";
+  const iconClass = tone === "danger" ? "is-error" : tone === "info" ? "is-info" : "is-warning";
   const eyebrowClass = iconClass;
 
   return (

@@ -295,7 +295,11 @@ export function HolidayConfigurator({
           onClose={() => setConfirmation(null)}
           footer={
             <>
-              <button type="button" className="secondary-button" onClick={() => setConfirmation(null)}>
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={() => setConfirmation(null)}
+              >
                 Volver
               </button>
               <button type="button" className="sf-dialog-warning" onClick={confirmOperation}>

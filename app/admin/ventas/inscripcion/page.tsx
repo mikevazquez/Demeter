@@ -24,7 +24,9 @@ export default async function EnrollmentPolicyPage({
   const [{ data: policy }, { data: enrollmentProducts }] = await Promise.all([
     ctx.supabase
       .from("enrollment_policies")
-      .select("enabled,required_for_booking,required_for_package_purchase,required_for_single_class,single_class_grace_count,enrollment_product_template_id,rules")
+      .select(
+        "enabled,required_for_booking,required_for_package_purchase,required_for_single_class,single_class_grace_count,enrollment_product_template_id,rules",
+      )
       .eq("studio_id", ctx.studio.id)
       .maybeSingle(),
     ctx.supabase
@@ -50,8 +52,8 @@ export default async function EnrollmentPolicyPage({
         <h1 className="text-3xl font-semibold text-white">Inscripción</h1>
         <p className="mt-1 text-sm leading-6 text-zinc-400">
           Cada estudio define si utiliza inscripción, qué producto la cobra y su vigencia. Cuando
-          está habilitada, Studio Flow la exige de forma consistente al reservar, comprar paquetes
-          y comprar clases sueltas.
+          está habilitada, Studio Flow la exige de forma consistente al reservar, comprar paquetes y
+          comprar clases sueltas.
         </p>
       </header>
 

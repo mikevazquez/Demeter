@@ -79,7 +79,9 @@ describe("V2 codebase audit inventory", () => {
       .sort((a, b) => b.count - a.count);
 
     const customDialogs = allPortalFiles
-      .filter((path) => /role=["']dialog["']|aria-modal|fixed\s+inset-0/.test(readFileSync(path, "utf8")))
+      .filter((path) =>
+        /role=["']dialog["']|aria-modal|fixed\s+inset-0/.test(readFileSync(path, "utf8")),
+      )
       .map(rel);
 
     const manualLoaders = allPortalFiles
@@ -87,7 +89,11 @@ describe("V2 codebase audit inventory", () => {
       .map(rel);
 
     const nativeConfirms = allPortalFiles
-      .filter((path) => /window\.confirm\s*\(|\bconfirm\s*\(|window\.alert\s*\(|\balert\s*\(/.test(readFileSync(path, "utf8")))
+      .filter((path) =>
+        /window\.confirm\s*\(|\bconfirm\s*\(|window\.alert\s*\(|\balert\s*\(/.test(
+          readFileSync(path, "utf8"),
+        ),
+      )
       .map(rel);
 
     const sequentialContext = pageFiles

@@ -78,27 +78,24 @@ export default async function AutomationsPage({
     ? (requestedTab as Tab)
     : "processes";
 
-  const [
-    { data: instances },
-    { data: communicationSettings },
-    { data: versionRows },
-  ] = await Promise.all([
-    ctx.supabase
-      .from("automation_instances")
-      .select("id,catalog_code,status,current_version_number,updated_at")
-      .eq("studio_id", ctx.studio.id)
-      .neq("status", "archived")
-      .order("updated_at", { ascending: false }),
-    ctx.supabase
-      .from("automation_communication_settings")
-      .select("global_send_window")
-      .eq("studio_id", ctx.studio.id)
-      .maybeSingle(),
-    ctx.supabase
-      .from("automation_instance_versions")
-      .select("instance_id,version_number,configuration")
-      .eq("studio_id", ctx.studio.id),
-  ]);
+  const [{ data: instances }, { data: communicationSettings }, { data: versionRows }] =
+    await Promise.all([
+      ctx.supabase
+        .from("automation_instances")
+        .select("id,catalog_code,status,current_version_number,updated_at")
+        .eq("studio_id", ctx.studio.id)
+        .neq("status", "archived")
+        .order("updated_at", { ascending: false }),
+      ctx.supabase
+        .from("automation_communication_settings")
+        .select("global_send_window")
+        .eq("studio_id", ctx.studio.id)
+        .maybeSingle(),
+      ctx.supabase
+        .from("automation_instance_versions")
+        .select("instance_id,version_number,configuration")
+        .eq("studio_id", ctx.studio.id),
+    ]);
 
   const instanceRows = instances ?? [];
   const instanceIds = new Set(instanceRows.map((item) => item.id));

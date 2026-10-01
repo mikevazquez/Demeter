@@ -50,7 +50,11 @@ export default function StudentLifecycleActions({
           labelledBy="delete-student-title"
           footer={
             <>
-              <button type="button" className="secondary-button" onClick={() => setDeleteOpen(false)}>
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={() => setDeleteOpen(false)}
+              >
                 Cancelar
               </button>
               <form action={deleteStudent}>
@@ -66,12 +70,12 @@ export default function StudentLifecycleActions({
             El expediente operativo dejará de existir y <strong>no podrá reactivarse</strong>.
           </p>
           <p>
-            Se cancelarán sus reservas futuras sin penalización, se liberarán los créditos
-            retenidos y se revocará su acceso al estudio.
+            Se cancelarán sus reservas futuras sin penalización, se liberarán los créditos retenidos
+            y se revocará su acceso al estudio.
           </p>
           <p>
-            Su teléfono y correo quedarán disponibles para una nueva alta. Ventas, pagos,
-            reembolsos y asistencias históricas necesarias para reportes se conservarán.
+            Su teléfono y correo quedarán disponibles para una nueva alta. Ventas, pagos, reembolsos
+            y asistencias históricas necesarias para reportes se conservarán.
           </p>
         </AdminDialogFrame>
       ) : null}

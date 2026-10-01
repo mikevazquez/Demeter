@@ -250,16 +250,13 @@ const handler = {
 
     const isEvaluationEnrollment =
       hasEvaluationContext && String(product.product_type) === "enrollment";
-    const isEnrollmentPurchase =
-      enrollmentOnly && String(product.product_type) === "enrollment";
+    const isEnrollmentPurchase = enrollmentOnly && String(product.product_type) === "enrollment";
 
     if (
       attemptRow.product_template_id !== product.id ||
       attemptRow.studio_id !== product.studio_id ||
       product.active !== true ||
-      (product.online_purchasable !== true &&
-        !isEvaluationEnrollment &&
-        !isEnrollmentPurchase) ||
+      (product.online_purchasable !== true && !isEvaluationEnrollment && !isEnrollmentPurchase) ||
       !["package", "membership", "single_class", "enrollment"].includes(
         String(product.product_type),
       )

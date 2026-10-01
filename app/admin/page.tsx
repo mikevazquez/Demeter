@@ -186,7 +186,9 @@ export default async function AdminPage({
       sessionIds.length
         ? supabase
             .from("reservations")
-            .select("id,session_id,student_id,guest_person_id,status,acquisition_id,booked_at,commercial_status")
+            .select(
+              "id,session_id,student_id,guest_person_id,status,acquisition_id,booked_at,commercial_status",
+            )
             .in("session_id", sessionIds)
             .in("status", ["reserved", "attended", "no_show"])
             .order("booked_at")
@@ -236,9 +238,7 @@ export default async function AdminPage({
   ];
 
   const reservationStudentIds = [
-    ...new Set(
-      (reservations ?? []).map((reservation) => reservation.student_id).filter(Boolean),
-    ),
+    ...new Set((reservations ?? []).map((reservation) => reservation.student_id).filter(Boolean)),
   ] as string[];
   const reservationIds = (reservations ?? []).map((reservation) => reservation.id);
   const acquisitionIds = [
@@ -486,11 +486,7 @@ export default async function AdminPage({
             </Link>
           ) : null}
           {canWriteStudents || canWriteSales ? (
-            <QuickActions
-              canStudents={canWriteStudents}
-              canSales={canWriteSales}
-              locale={locale}
-            />
+            <QuickActions canStudents={canWriteStudents} canSales={canWriteSales} locale={locale} />
           ) : null}
           <span className="hoy-product-avatar" aria-label={headerName}>
             {headerInitials}

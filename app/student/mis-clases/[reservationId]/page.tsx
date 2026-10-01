@@ -125,27 +125,24 @@ export default async function StudentReservationDetailPage({
 
   const isActiveReservation = item.status === "reserved";
   const canShowCheckIn = item.status === "reserved" || item.status === "attended";
-  const [
-    { data: invitationContextData },
-    { data: contactMatchData },
-    { data: checkInData },
-  ] = await Promise.all([
-    isActiveReservation
-      ? supabase.rpc("student_reward_invitation_context", {
-          target_host_reservation_id: reservationId,
-        })
-      : Promise.resolve({ data: null }),
-    isActiveReservation && query.contact_match
-      ? supabase.rpc("student_guest_invitation_contact_identity", {
-          target_guest_person_id: query.contact_match,
-        })
-      : Promise.resolve({ data: null }),
-    canShowCheckIn
-      ? supabase.rpc("student_reservation_checkin_token", {
-          target_reservation_id: reservationId,
-        })
-      : Promise.resolve({ data: null }),
-  ]);
+  const [{ data: invitationContextData }, { data: contactMatchData }, { data: checkInData }] =
+    await Promise.all([
+      isActiveReservation
+        ? supabase.rpc("student_reward_invitation_context", {
+            target_host_reservation_id: reservationId,
+          })
+        : Promise.resolve({ data: null }),
+      isActiveReservation && query.contact_match
+        ? supabase.rpc("student_guest_invitation_contact_identity", {
+            target_guest_person_id: query.contact_match,
+          })
+        : Promise.resolve({ data: null }),
+      canShowCheckIn
+        ? supabase.rpc("student_reservation_checkin_token", {
+            target_reservation_id: reservationId,
+          })
+        : Promise.resolve({ data: null }),
+    ]);
 
   const invitationContext = (invitationContextData as InvitationContext | null) ?? null;
   const contactMatch = (contactMatchData as InvitationContactMatch | null) ?? null;

@@ -54,7 +54,7 @@ describe("Admin session controls regression", () => {
   });
 
   it("keeps session editing available directly from Agenda", () => {
-    expect(agenda).toContain('href={`/admin/agenda?date=${key}&session=${session.id}`}');
+    expect(agenda).toContain("href={`/admin/agenda?date=${key}&session=${session.id}`}");
     expect(agenda).toContain('className="agenda-session-editor"');
     expect(agenda).toContain("<small>EDITAR SESIÓN</small>");
     expect(agenda).toContain("action={updateSession}");

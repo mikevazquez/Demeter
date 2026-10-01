@@ -97,8 +97,7 @@ export async function searchStudentsForToday(
 
   if (!session || session.status === "cancelled") return [];
 
-  const canPostCloseAdd =
-    session.status === "completed" && can(CAPABILITIES.ATTENDANCE_WRITE);
+  const canPostCloseAdd = session.status === "completed" && can(CAPABILITIES.ATTENDANCE_WRITE);
   if (!canPostCloseAdd && !can(CAPABILITIES.SCHEDULE_WRITE)) return [];
 
   const [{ data: students }, { data: existingReservations }] = await Promise.all([

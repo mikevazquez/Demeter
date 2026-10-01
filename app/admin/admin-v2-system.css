@@ -376,9 +376,15 @@
   text-transform: uppercase;
 }
 
-.sf-admin-dialog-eyebrow.is-warning { color: #9a6000; }
-.sf-admin-dialog-eyebrow.is-error { color: #ad3d4c; }
-.sf-admin-dialog-eyebrow.is-info { color: #2869ab; }
+.sf-admin-dialog-eyebrow.is-warning {
+  color: #9a6000;
+}
+.sf-admin-dialog-eyebrow.is-error {
+  color: #ad3d4c;
+}
+.sf-admin-dialog-eyebrow.is-info {
+  color: #2869ab;
+}
 
 .sf-admin-dialog-title {
   margin: 5px 0 0;
@@ -493,7 +499,6 @@
   }
 }
 
-
 /* Route skeletons: render structure immediately while server data resolves. */
 .sf-admin-loading {
   width: min(1040px, 100%);
@@ -540,7 +545,7 @@
   position: absolute;
   inset: 0;
   transform: translateX(-100%);
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,.72), transparent);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.72), transparent);
   animation: sf-skeleton-shimmer 1.3s ease-in-out infinite;
 }
 
@@ -577,7 +582,9 @@
 }
 
 @keyframes sf-skeleton-shimmer {
-  100% { transform: translateX(100%); }
+  100% {
+    transform: translateX(100%);
+  }
 }
 
 @media (max-width: 760px) {
@@ -605,7 +612,6 @@
     display: none;
   }
 }
-
 
 .sf-admin-dialog-footer {
   display: flex;
@@ -653,7 +659,6 @@
     width: 100%;
   }
 }
-
 
 /* Legacy utility normalization
    Some older admin modules still carry dark Tailwind utilities inline. Keep their

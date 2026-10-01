@@ -33,11 +33,7 @@ function money(value: number, currency: string, locale: string) {
   }).format(value / 100);
 }
 
-export default function QuickActions({
-  canStudents,
-  canSales,
-  locale,
-}: Props) {
+export default function QuickActions({ canStudents, canSales, locale }: Props) {
   const [open, setOpen] = useState<null | "menu" | "student" | "studentCreated" | "sale">(null);
   const [studentQuery, setStudentQuery] = useState("");
   const [studentId, setStudentId] = useState("");
@@ -50,9 +46,9 @@ export default function QuickActions({
   const [createdStudent, setCreatedStudent] = useState<Student | null>(null);
   const [students, setStudents] = useState<Student[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
-  const [preferredProductByStudent, setPreferredProductByStudent] = useState<Record<string, string>>(
-    {},
-  );
+  const [preferredProductByStudent, setPreferredProductByStudent] = useState<
+    Record<string, string>
+  >({});
   const [catalogLoading, setCatalogLoading] = useState(false);
   const [searchLoading, setSearchLoading] = useState(false);
   const searchRequestRef = useRef(0);
@@ -362,9 +358,7 @@ export default function QuickActions({
               {studentId && !selectedProduct ? (
                 <div className="hoy-package-picker">
                   <span>Paquete</span>
-                  {catalogLoading ? (
-                    <p className="quick-loading">Cargando paquetes…</p>
-                  ) : null}
+                  {catalogLoading ? <p className="quick-loading">Cargando paquetes…</p> : null}
                   <div className="hoy-package-options">{visibleProducts.map(renderProduct)}</div>
                   {otherProducts.length > 0 ? (
                     <button

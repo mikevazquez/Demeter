@@ -381,7 +381,6 @@
   }
 }
 
-
 /* Studio Flow V2 · light session-resource surfaces */
 .page {
   color: #10203a;
@@ -466,8 +465,7 @@
   border-color: #dce4eb;
   background:
     linear-gradient(rgba(96, 112, 134, 0.07) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(96, 112, 134, 0.07) 1px, transparent 1px),
-    #f8fafb;
+    linear-gradient(90deg, rgba(96, 112, 134, 0.07) 1px, transparent 1px), #f8fafb;
 }
 
 .mapElement {

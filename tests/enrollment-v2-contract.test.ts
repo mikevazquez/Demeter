@@ -8,11 +8,15 @@ function source(path: string) {
 }
 
 describe("Enrollment V2", () => {
-  const migration = source("supabase/migrations/20261001053000_enrollment_v2_required_checkout.sql");
+  const migration = source(
+    "supabase/migrations/20261001053000_enrollment_v2_required_checkout.sql",
+  );
   const purchaseOptionMigration = source(
     "supabase/migrations/20261001064600_enrollment_student_purchase_option.sql",
   );
-  const bookingCore = source("supabase/migrations/20260930005800_packages03_activity_restrictions.sql");
+  const bookingCore = source(
+    "supabase/migrations/20260930005800_packages03_activity_restrictions.sql",
+  );
   const policyAction = source("app/admin/ventas/inscripcion/actions.ts");
   const policyPage = source("app/admin/ventas/inscripcion/page.tsx");
   const studentActions = source("app/student/actions.ts");

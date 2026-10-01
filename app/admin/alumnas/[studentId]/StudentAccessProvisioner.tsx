@@ -302,7 +302,11 @@ export function StudentTemporaryPasswordResetter({
           onClose={() => setConfirmOpen(false)}
           footer={
             <>
-              <button type="button" className="secondary-button" onClick={() => setConfirmOpen(false)}>
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={() => setConfirmOpen(false)}
+              >
                 Cancelar
               </button>
               <button type="button" className="sf-dialog-danger" onClick={confirmReset}>

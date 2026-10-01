@@ -295,9 +295,9 @@ export default async function StudentHomePage({
     : null;
   const enrollmentExpiringSoon = Boolean(
     enrollment?.active_now &&
-      enrollmentDaysRemaining !== null &&
-      enrollmentDaysRemaining >= 0 &&
-      enrollmentDaysRemaining <= 7,
+    enrollmentDaysRemaining !== null &&
+    enrollmentDaysRemaining >= 0 &&
+    enrollmentDaysRemaining <= 7,
   );
   const enrollmentMissing = !enrollment?.active_now;
 
@@ -329,9 +329,7 @@ export default async function StudentHomePage({
 
       {enrollmentMissing ? (
         <section className="rounded-[26px] border border-rose-400/30 bg-rose-400/[0.06] p-4 sm:p-5">
-          <p className="text-sm font-semibold text-rose-200">
-            No tienes una inscripción vigente
-          </p>
+          <p className="text-sm font-semibold text-rose-200">No tienes una inscripción vigente</p>
           <p className="mt-1 text-xs leading-5 text-zinc-300">
             La inscripción es obligatoria para reservar. Puedes pagarla sola o incluirla con tu
             próximo paquete o clase suelta.

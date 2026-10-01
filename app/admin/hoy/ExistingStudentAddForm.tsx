@@ -82,9 +82,7 @@ export function ExistingStudentAddForm({
                 Escribe al menos 2 letras.
               </div>
             ) : isPending && !matches.length ? (
-              <div className="px-3 py-4 text-center text-xs text-zinc-500">
-                Buscando alumnas…
-              </div>
+              <div className="px-3 py-4 text-center text-xs text-zinc-500">Buscando alumnas…</div>
             ) : matches.length ? (
               matches.map((candidate) => {
                 const canFallbackToWalkin = walkinFallbackDetails.has(candidate.detail);

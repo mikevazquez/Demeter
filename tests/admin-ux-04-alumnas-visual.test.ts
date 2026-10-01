@@ -52,7 +52,9 @@ describe("ADMIN-UX-04 Alumnas visual homologation", () => {
 
   it("keeps new-student creation at the top behind a compact plus action", () => {
     const quickCreateIndex = page.indexOf('id="alta-rapida"');
-    const filtersIndex = page.indexOf('className="student-directory-filters student-directory-crm-toolbar"');
+    const filtersIndex = page.indexOf(
+      'className="student-directory-filters student-directory-crm-toolbar"',
+    );
     const directoryIndex = page.indexOf('<section className="panel">');
 
     expect(quickCreateIndex).toBeGreaterThan(0);

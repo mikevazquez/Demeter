@@ -89,7 +89,7 @@ describe("Studio Flow V2 visual + performance contract", () => {
   });
 
   it("keeps the student portal on its tenant-specific dark language while adding loading feedback", () => {
-    expect(studentLayout).toContain('bg-[#090a0f]');
+    expect(studentLayout).toContain("bg-[#090a0f]");
     expect(studentLoading).toContain("Cargando tu información");
     expect(studentLoading).toContain("animate-pulse");
   });
