@@ -140,7 +140,6 @@ export default async function AdminPage({
     { data: selectedSessions },
     { data: activeProductAcquisitions },
     { data: selectedPayments },
-    { data: students },
   ] = await Promise.all([
     supabase.rpc("current_server_time"),
     supabase
@@ -165,13 +164,6 @@ export default async function AdminPage({
       .select("amount_minor,kind")
       .eq("studio_id", studio.id)
       .eq("effective_on", selectedKey),
-    supabase
-      .from("students")
-      .select("id,full_name")
-      .eq("studio_id", studio.id)
-      .eq("active", true)
-      .eq("lifecycle_status", "active")
-      .order("full_name"),
   ]);
 
   const activeProductStudentIds = new Set(
@@ -365,10 +357,9 @@ export default async function AdminPage({
     ]),
   );
   const spaceMap = new Map((spaces ?? []).map((space) => [space.id, space.name]));
-  const studentMap = new Map([
-    ...(students ?? []).map((student) => [student.id, student.full_name] as const),
-    ...(reservationStudents ?? []).map((student) => [student.id, student.full_name] as const),
-  ]);
+  const studentMap = new Map(
+    (reservationStudents ?? []).map((student) => [student.id, student.full_name] as const),
+  );
   const acquisitionMap = new Map((acquisitions ?? []).map((item) => [item.id, item]));
   const productMap = new Map((products ?? []).map((item) => [item.id, item.name]));
   const balanceMap = new Map<string, number>();
@@ -390,10 +381,6 @@ export default async function AdminPage({
 
   for (const session of selectedSessions ?? []) {
     const sessionReservations = reservationsBySession.get(session.id) ?? [];
-    const bookedIds = new Set(
-      sessionReservations.map((reservation) => reservation.student_id).filter(Boolean),
-    );
-    const candidates = (students ?? []).filter((student) => !bookedIds.has(student.id));
     const template = templateMap.get(session.template_id);
     const occupied = sessionReservations.filter((reservation) =>
       occupyingReservationStatuses.has(reservation.status),
@@ -471,12 +458,6 @@ export default async function AdminPage({
           currency: studio.currency ?? "MXN",
         };
       }),
-      candidates: candidates.map((student) => ({
-        id: student.id,
-        fullName: student.full_name,
-        eligible: true,
-        detail: "Se valida al agregar",
-      })),
     });
   }
 
