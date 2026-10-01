@@ -352,12 +352,12 @@ export default async function IntelligencePage({
       .from("payments")
       .select("sale_id,kind,amount_minor,created_at")
       .eq("studio_id", studio.id)
-      .is("refunded_at", null)
       .gte("created_at", rangeStartIso),
     supabase
       .from("sale_lines")
       .select("sale_id,product_template_id,product_name,line_total_minor,refunded_at,created_at")
       .eq("studio_id", studio.id)
+      .is("refunded_at", null)
       .gte("created_at", rangeStartIso),
     supabase
       .from("class_sessions")
