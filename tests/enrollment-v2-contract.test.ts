@@ -17,6 +17,8 @@ describe("Enrollment V2", () => {
   const home = source("app/student/page.tsx");
   const sessionDetail = source("app/student/reservar/[sessionId]/page.tsx");
   const edge = source("supabase/functions/create-mercadopago-order/index.ts");
+  const packageCheckout = source("app/student/paquete/checkout/page.tsx");
+  const singleCheckout = source("app/student/reservar/checkout/page.tsx");
 
   it("uses one mandatory rule whenever enrollment is enabled", () => {
     expect(migration).toContain("required_for_package_purchase");
@@ -45,6 +47,8 @@ describe("Enrollment V2", () => {
     expect(edge).toContain("enrollmentOnly");
     expect(edge).toContain('rpc("student_create_enrollment_checkout_attempt"');
     expect(packagePage).toContain("PurchaseEnrollmentButton");
+    expect(packageCheckout).toContain('"¡Tu inscripción ya está activa!"');
+    expect(packageCheckout).toContain('"¡Tu paquete y tu inscripción ya están listos!"');
   });
 
   it("bundles enrollment into package and single-class checkout without redundant purchases", () => {
@@ -56,6 +60,8 @@ describe("Enrollment V2", () => {
     expect(packagePage).toContain("incluirá también la inscripción requerida");
     expect(sessionDetail).toContain("checkoutTotalMinor");
     expect(sessionDetail).toContain("enrollmentCanBundleSingle");
+    expect(singleCheckout).toContain("Tu clase y tu inscripción ya están listas");
+    expect(singleCheckout).toContain("extra_fulfillment_snapshot");
   });
 
   it("warns about expiration seven days before and missing enrollment", () => {
