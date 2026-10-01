@@ -148,8 +148,10 @@ export default async function StudentHomePage({
 }: {
   searchParams: Promise<{ cancelled?: string; error?: string; benefits?: string }>;
 }) {
-  const query = await searchParams;
-  const { snapshot, studio, supabase, membership } = await getStudentPortalContext();
+  const [query, { snapshot, studio, supabase, membership }] = await Promise.all([
+    searchParams,
+    getStudentPortalContext(),
+  ]);
   const [
     rewardStatusResult,
     rewardMembershipResult,
