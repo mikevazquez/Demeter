@@ -11,6 +11,7 @@ import {
 import {
   executeAssistantActionTool,
   isExplicitAssistantConfirmation,
+  parsePostTrialEnrollmentMethod,
 } from "./action-tools";
 import {
   executeAssistantReadTool,
@@ -418,6 +419,132 @@ async function tryServerSideConfirmation(
   };
 }
 
+
+async function tryServerSidePostTrialEnrollmentMethod(
+  input: OrchestratorInput,
+  trace: AssistantTrace,
+) {
+  const currentUserMessage =
+    [...input.history].reverse().find((message) => message.role === "user")
+      ?.content ?? "";
+  const method = parsePostTrialEnrollmentMethod(currentUserMessage);
+  if (!method) return null;
+
+  const { data: pending, error } = await input.supabase
+    .from("assistant_pending_actions")
+    .select("id,action_type,expires_at")
+    .eq("studio_id", input.studio.id)
+    .eq("conversation_id", input.conversationId)
+    .eq("action_type", "enrollment.resolve")
+    .eq("status", "pending")
+    .gt("expires_at", new Date().toISOString())
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error || !pending) return null;
+
+  const startedAt = Date.now();
+  let result: unknown;
+  let toolStatus: "executed" | "blocked" | "error" = "executed";
+  try {
+    result = await executeAssistantActionTool(
+      {
+        supabase: input.supabase,
+        studio: input.studio,
+        conversationId: input.conversationId,
+        turnId: input.turnId,
+        studentId: input.studentId,
+        crmContactId: input.crmContactId,
+        activationUrl: input.activationUrl,
+        currentUserMessage,
+      },
+      "resolve_post_trial_enrollment_method",
+      { payment_method: method },
+    );
+    if (asObject(result)?.ok === false) toolStatus = "blocked";
+  } catch {
+    result = { ok: false, error: "tool_execution_failed" };
+    toolStatus = "error";
+  }
+
+  const resultObject = asObject(result) ?? { ok: false, error: "invalid_tool_result" };
+  const auditResult = {
+    ...resultObject,
+    activation_url:
+      typeof resultObject.activation_url === "string" ? "[REDACTED]" : resultObject.activation_url,
+  };
+
+  await input.supabase.from("assistant_tool_executions").insert({
+    studio_id: input.studio.id,
+    conversation_id: input.conversationId,
+    turn_id: input.turnId,
+    model_call_id: null,
+    tool_call_id: `server-enrollment-method:${input.turnId}`,
+    tool_name: "resolve_post_trial_enrollment_method",
+    schema_version: 1,
+    permission_class: "B",
+    request_json: { payment_method: method },
+    result_json: auditResult,
+    status: toolStatus === "executed" ? "executed" : toolStatus,
+    duration_ms: Date.now() - startedAt,
+  });
+
+  trace.toolCalls.push({
+    name: "resolve_post_trial_enrollment_method",
+    status: toolStatus,
+  });
+
+  if (resultObject.ok !== true) {
+    const reason = String(resultObject.reason_message ?? "").trim();
+    return {
+      reply:
+        reason ||
+        "No pude completar ese paso automáticamente. Voy a dejarlo para atención humana dentro de este mismo chat.",
+      trace,
+    };
+  }
+
+  const price =
+    formatMoney(
+      resultObject.enrollment_amount_minor,
+      resultObject.currency,
+    ) ?? "la inscripción";
+  const summary = asObject(resultObject.summary);
+  const target = summary ? asObject(summary.target_session) : null;
+  const classText = target
+    ? `${String(target.activity ?? "la clase")} del ${formatDateForReply(target.date)}, a las ${formatTimeForReply(target.starts_at_local)}`
+    : "tu clase";
+
+  if (method === "cash") {
+    return {
+      reply: `Listo. Reservé ${classText}. La inscripción de ${price} la pagarás en efectivo en el estudio. Cuando se registre ese pago, tu inscripción quedará activa y la app te pedirá completar los documentos correspondientes.`,
+      trace,
+    };
+  }
+
+  if (method === "bank_transfer") {
+    return {
+      reply: `Listo. Reservé ${classText}. La inscripción de ${price} será por transferencia y la reserva queda sujeta a la validación del pago. Envíame el comprobante por este mismo chat y lo pasaré a revisión.`,
+      trace,
+    };
+  }
+
+  const activationUrl = String(resultObject.activation_url ?? "").trim();
+  const appUrl = String(resultObject.app_url ?? "").trim();
+  if (activationUrl) {
+    return {
+      reply: `Perfecto. Puedes pagar la inscripción de ${price} desde la app. Primero activa tu acceso aquí: ${activationUrl} Después de crear tu contraseña, entra a Mi paquete y verás la opción para pagar la inscripción. Cuando el pago sea aprobado, podrás reservar y completar tus documentos desde la app.`,
+      trace,
+    };
+  }
+
+  return {
+    reply: `Perfecto. Puedes pagar la inscripción de ${price} desde la app. Entra aquí: ${appUrl} Cuando el pago sea aprobado, podrás reservar y completar tus documentos desde la app.`,
+    trace,
+  };
+}
+
 export async function runAssistantTurn(input: OrchestratorInput) {
   const trace: AssistantTrace = {
     model: input.config.model,
@@ -429,6 +556,9 @@ export async function runAssistantTurn(input: OrchestratorInput) {
     reasoningTokens: 0,
     estimatedCostUsdMicros: 0,
   };
+
+  const enrollmentMethod = await tryServerSidePostTrialEnrollmentMethod(input, trace);
+  if (enrollmentMethod) return enrollmentMethod;
 
   const serverConfirmation = await tryServerSideConfirmation(input, trace);
   if (serverConfirmation) return serverConfirmation;
@@ -467,16 +597,21 @@ export async function runAssistantTurn(input: OrchestratorInput) {
     "Los no-shows de prueba se acumulan. Hasta 2 no-shows puede volver a intentar reservar; cuando prepare_booking devuelva prepayment_required o trial_prepayment_required, no prepares ni afirmes una reserva: explica que por sus 2 no-shows la siguiente clase requiere pago anticipado.",
     "Una prospecto/trial solo puede tener una reserva de prueba activa a la vez. Si la herramienta devuelve trial_active_booking_exists, explica que debe usar, cancelar o resolver esa reserva antes de agendar otra.",
     "No inventes ni calcules por tu cuenta cuántos no-shows tiene; usa exclusivamente el resultado de Studio Flow.",
-    "Si prepare_booking devuelve onboarding_required para una alumna que ya terminó su clase de prueba, explica el requisito real y no pidas confirmación de reserva.",
-    "Si una alumna trial ya asistió a su primera clase y una nueva reserva queda bloqueada por inscripción, usa prepare_student_access_activation para revisar precio de inscripción, documentos y estado de acceso. No inventes el precio.",
-    "Si prepare_student_access_activation devuelve confirmation_required, explica qué necesita completar y pregunta una sola vez si quiere que generes su acceso. El enlace se genera únicamente después de un NUEVO mensaje afirmativo y lo entrega Studio Flow directamente; nunca pidas ni muestres tokens internos.",
-    "Si el acceso ya está activo, no prepares otra activación. Indica que puede entrar a su portal y completar los requisitos pendientes.",
+    "Después de la primera asistencia, NO menciones documentos antes de que la inscripción quede pagada o aprobada.",
+    "Si prepare_booking devuelve status=payment_method_required, explica únicamente que para continuar necesita cubrir la inscripción, menciona el precio real devuelto por Studio Flow y pregunta: efectivo en el estudio, transferencia o pago desde la app.",
+    "No pidas una confirmación adicional después de que la persona elija efectivo, transferencia o app. Esa elección es suficiente para continuar.",
+    "Si elige efectivo, Studio Flow puede reservar la clase con la inscripción por cobrar en el estudio. No afirmes que la inscripción ya fue pagada.",
+    "Si elige transferencia, Studio Flow puede reservar la clase de forma condicionada. Pide que envíe el comprobante por este mismo chat y explica que la reserva queda sujeta a validación del pago.",
+    "Si elige pagar desde la app, no reserves todavía: Studio Flow le dará acceso para pagar la inscripción online. Una vez aprobado el pago podrá reservar normalmente.",
+    "Nunca le digas 'contacta al estudio': este chat ya es el canal del estudio. Si hace falta revisión manual, usa escalate_to_human y di que lo pasarás a atención humana dentro de este mismo chat.",
+    "Los documentos se muestran y se exigen después de que la inscripción quede activa. Antes de eso no los uses como obstáculo conversacional.",
     "Para una reserva de prueba, jamás le digas a la persona 'pago pendiente', 'commercial_status', 'crédito' ni 'usa 1 crédito'. Son conceptos internos.",
     "Si prepare_booking devuelve trial_booking=true, antes de confirmar menciona únicamente el precio real de la clase usando amount_minor/currency y pide una sola confirmación. Ejemplo de tono: 'Tu primera clase cuesta $150. ¿Confirmas la reserva?'.",
     "Después de ejecutar una reserva de prueba, el servidor preguntará si pagará en efectivo en el estudio o por transferencia.",
     "Si la persona responde efectivo, llama record_trial_payment_preference con cash. Si responde transferencia, llama record_trial_payment_preference con bank_transfer. Elegir método NO significa que el pago ya fue recibido.",
     "Después de registrar cash, explica de forma natural: su primera clase cuesta el precio real devuelto, no paga inscripción en esa primera clase y, a partir de su siguiente reserva después de asistir, deberá cubrir la inscripción.",
-    "Después de registrar bank_transfer, si transfer_details_configured=false explica que la preferencia quedó registrada pero no inventes datos bancarios; indica que los datos de transferencia deben ser proporcionados/configurados por el estudio.",
+    "Después de registrar bank_transfer para una primera clase, si transfer_details_configured=false no inventes datos bancarios.",
+    "Si una persona dice que ya envió un comprobante de transferencia o pide que revisen su pago y no tienes una validación automática verificable, usa escalate_to_human con transfer_receipt_review. No afirmes que el pago fue aprobado.",
     "Para cancelar, primero usa get_student_reservations para localizar la reserva real. Si la persona no expresó un motivo, pregúntalo y no prepares todavía la cancelación.",
     "Nunca inventes ni completes un motivo de cancelación. Usa prepare_cancellation solo con un motivo expresado por la persona y presenta claramente si la cancelación es a tiempo o tardía, si regresa el crédito y cualquier penalización.",
     "Nunca llames execute_cancellation en el mismo turno en que preparaste la cancelación. Debes esperar un NUEVO mensaje con confirmación explícita.",
