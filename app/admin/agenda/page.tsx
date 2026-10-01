@@ -216,12 +216,12 @@ export default async function AgendaPage({
       .order("weekday"),
   ]);
 
-  if (canEdit && schedules?.length) {
+  if (canEdit && schedules?.length && weekAfterKey >= todayKey) {
     await Promise.all(
       schedules.map((schedule) =>
         supabase.rpc("materialize_recurring_schedule", {
           p_schedule_id: schedule.id,
-          p_through: null,
+          p_through: weekAfterKey,
         }),
       ),
     );
