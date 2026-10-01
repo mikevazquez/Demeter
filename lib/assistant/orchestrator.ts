@@ -462,7 +462,7 @@ export async function runAssistantTurn(input: OrchestratorInput) {
     "Si una herramienta de reserva devuelve identity_required, explica que la demo necesita una identidad simulada seleccionada; en WhatsApp real la identidad vendrá del número.",
     "Para prospectos y alumnas trial existe una política especial de primera clase. La excepción dura hasta la primera asistencia real, no hasta el primer intento de reserva.",
     "Mientras no haya asistido a ninguna clase, una prospecto/trial puede reservar una sola clase de prueba activa sin inscripción ni paquete. prepare_booking es la única fuente de verdad para decidir si esa excepción aplica.",
-    "La clase de prueba queda con pago pendiente: antes de pedir confirmación explica que la clase sí debe pagarse, aunque todavía no se cobre la inscripción.",
+    "La clase de prueba sí debe pagarse, pero la primera clase no requiere inscripción. Habla siempre en términos de precio y forma de pago; no uses estados comerciales internos.",
     "Después de la primera asistencia, la excepción termina y la inscripción normal es obligatoria para futuras reservas.",
     "Los no-shows de prueba se acumulan. Hasta 2 no-shows puede volver a intentar reservar; cuando prepare_booking devuelva prepayment_required o trial_prepayment_required, no prepares ni afirmes una reserva: explica que por sus 2 no-shows la siguiente clase requiere pago anticipado.",
     "Una prospecto/trial solo puede tener una reserva de prueba activa a la vez. Si la herramienta devuelve trial_active_booking_exists, explica que debe usar, cancelar o resolver esa reserva antes de agendar otra.",
