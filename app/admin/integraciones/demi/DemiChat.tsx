@@ -71,6 +71,8 @@ function toolLabel(name: string) {
     execute_booking: "Ejecutó la reserva confirmada",
     prepare_cancellation: "Calculó y preparó la cancelación",
     execute_cancellation: "Ejecutó la cancelación confirmada",
+    prepare_reschedule: "Validó y preparó el reagendado",
+    execute_reschedule: "Movió la reserva de forma atómica",
   };
   return labels[name] ?? name;
 }
@@ -338,7 +340,8 @@ export default function DemiChat({
             <li>Tenant tomado del contexto autenticado</li>
             <li>Reservas en dos pasos: preparar → confirmar → ejecutar</li>
             <li>Cancelaciones: motivo → consecuencia → confirmar → ejecutar</li>
-            <li>Reagendado y lista de espera siguen bloqueados</li>
+            <li>Reagendado atómico: origen → destino → confirmar → mover</li>
+            <li>Lista de espera sigue bloqueada</li>
             <li>store:false en OpenAI</li>
           </ul>
         </div>
