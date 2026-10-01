@@ -28,6 +28,11 @@ describe("Studio Flow V2 visual + performance contract", () => {
   const sessionDetail = source("app/admin/agenda/[sessionId]/page.tsx");
   const studentLayout = source("app/student/layout.tsx");
   const studentLoading = source("app/student/loading.tsx");
+  const coachLoading = source("app/coach/loading.tsx");
+  const loginLoading = source("app/login/loading.tsx");
+  const responsibleLoading = source("app/responsable/loading.tsx");
+  const accessLoading = source("app/acceso/loading.tsx");
+  const setupLoading = source("app/setup/loading.tsx");
   const reserve = source("app/student/reservar/page.tsx");
   const packagePage = source("app/student/paquete/page.tsx");
   const productDetail = source("app/admin/productos/[productId]/page.tsx");
@@ -73,6 +78,14 @@ describe("Studio Flow V2 visual + performance contract", () => {
     expect(noticeDialog).not.toContain("bg-black/75");
     expect(adminLoading).toContain("sf-skeleton");
     expect(adminError).toContain("admin-state-card");
+  });
+
+  it("provides route-level loading feedback for every portal entry surface", () => {
+    expect(coachLoading).toContain("Cargando tus clases");
+    expect(loginLoading).toContain("Preparando acceso");
+    expect(responsibleLoading).toContain("Cargando documentos");
+    expect(accessLoading).toContain("Revisando tu acceso");
+    expect(setupLoading).toContain("Preparando configuración");
   });
 
   it("keeps the student portal on its tenant-specific dark language while adding loading feedback", () => {
