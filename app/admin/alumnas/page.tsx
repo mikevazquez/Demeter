@@ -110,9 +110,8 @@ export default async function StudentsPage({
     }
   }
 
-  const { data: students } = await studentsQuery;
-
-  const [{ data: allStudents }, acquisitionResult] = await Promise.all([
+  const [{ data: students }, { data: allStudents }, acquisitionResult] = await Promise.all([
+    studentsQuery,
     supabase
       .from("students")
       .select("id,lifecycle_status")
