@@ -1010,3 +1010,197 @@ a.notification-process-row:hover {
     bottom: 76px;
   }
 }
+
+
+/* Studio Flow V2 · light notification surfaces */
+.notification-admin-page,
+.notification-detail-page {
+  --notification-card: #ffffff;
+  --notification-card-2: #f8fafb;
+  --notification-line: #e3eaf1;
+  --notification-muted: #687891;
+  --notification-accent: #17a878;
+  --notification-accent-strong: #0f8f66;
+  --notification-accent-soft: #e7f8f1;
+  color: #10203a;
+}
+
+.notification-page-header h1,
+.notification-detail-header h1,
+.notification-overview-heading h2,
+.notification-section-heading h2,
+.notification-detail-card h2,
+.notification-settings-card h2,
+.notification-kpis strong,
+.notification-process-copy strong,
+.notification-title-with-status strong,
+.notification-message-card h3,
+.notification-message-preview strong {
+  color: #10203a !important;
+}
+
+.notification-page-header p:not(.notification-eyebrow),
+.notification-detail-header p,
+.notification-overview-heading p,
+.notification-section-heading p,
+.notification-detail-card-heading p,
+.notification-settings-heading p,
+.notification-kpis span,
+.notification-process-copy small,
+.notification-row-chevron,
+.notification-message-card p,
+.notification-message-preview p {
+  color: var(--notification-muted) !important;
+}
+
+.notification-eyebrow {
+  color: var(--notification-accent-strong) !important;
+}
+
+.notification-tabs,
+.notification-overview-card,
+.notification-detail-card,
+.notification-settings-card,
+.notification-process-row,
+.notification-channel-settings-grid label,
+.notification-message-card,
+.notification-message-preview,
+.notification-general-grid > *,
+.notification-detail-channel-grid > * {
+  border-color: var(--notification-line) !important;
+  background: #fff !important;
+  color: #10203a !important;
+  box-shadow: 0 8px 26px rgba(44, 64, 86, 0.045) !important;
+}
+
+.notification-tabs a {
+  color: #66758a !important;
+}
+.notification-tabs a.is-active {
+  background: var(--notification-accent-soft) !important;
+  color: var(--notification-accent-strong) !important;
+  box-shadow: inset 0 -2px 0 var(--notification-accent) !important;
+}
+
+.notification-process-row:hover,
+a.notification-process-row:hover {
+  border-color: #bfe3d6 !important;
+  background: #f7fbf9 !important;
+}
+
+.notification-filter-row a {
+  border-color: var(--notification-line) !important;
+  background: #fff !important;
+  color: #66758a !important;
+}
+.notification-filter-row a span {
+  background: #f1f4f7 !important;
+  color: #718096 !important;
+}
+.notification-filter-row a.is-active {
+  border-color: #bfe3d6 !important;
+  background: var(--notification-accent-soft) !important;
+  color: var(--notification-accent-strong) !important;
+}
+
+.notification-operation-badge,
+.notification-channel-chips > span.is-on,
+.notification-row-status.is-on {
+  border-color: #bfe3d6 !important;
+  background: var(--notification-accent-soft) !important;
+  color: var(--notification-accent-strong) !important;
+}
+.notification-operation-badge > span {
+  background: var(--notification-accent) !important;
+  box-shadow: none !important;
+}
+
+.notification-operation-badge.is-paused,
+.notification-readonly-badge,
+.notification-row-status {
+  border-color: var(--notification-line) !important;
+  background: #f2f5f7 !important;
+  color: #718096 !important;
+}
+
+.notification-essential-badge,
+.notification-channel-chips > span.is-partial {
+  border-color: #efd9ae !important;
+  background: #fff8e9 !important;
+  color: #8d5a00 !important;
+}
+
+.notification-feedback {
+  border-color: #bfe3d6 !important;
+  background: var(--notification-accent-soft) !important;
+  color: var(--notification-accent-strong) !important;
+}
+.notification-feedback.is-error {
+  border-color: #efc7cd !important;
+  background: #fff0f2 !important;
+  color: #b84c56 !important;
+}
+
+.notification-recommendation,
+.notification-info-box {
+  border-color: #dbe5ec !important;
+  background: #f8fafb !important;
+  color: #607086 !important;
+}
+.notification-recommendation strong {
+  color: #10203a !important;
+}
+
+.notification-process-icon,
+.notification-detail-icon,
+.notification-channel-symbol {
+  background: var(--notification-accent-soft) !important;
+  color: var(--notification-accent-strong) !important;
+}
+
+.notification-channel-chips > span {
+  border-color: var(--notification-line) !important;
+  background: #f8fafb !important;
+  color: #718096 !important;
+}
+
+.notification-field input,
+.notification-field select,
+.notification-field textarea,
+.notification-message-form input,
+.notification-message-form select,
+.notification-message-form textarea,
+.notification-advanced-form input,
+.notification-advanced-form select,
+.notification-advanced-form textarea {
+  border-color: #dce4eb !important;
+  background: #fbfcfd !important;
+  color: #10203a !important;
+}
+
+.notification-field input:focus,
+.notification-field select:focus,
+.notification-field textarea:focus,
+.notification-message-form input:focus,
+.notification-message-form select:focus,
+.notification-message-form textarea:focus,
+.notification-advanced-form input:focus,
+.notification-advanced-form select:focus,
+.notification-advanced-form textarea:focus {
+  border-color: #78cbb0 !important;
+  box-shadow: 0 0 0 3px rgba(23, 168, 120, 0.08) !important;
+}
+
+.notification-switch input {
+  accent-color: var(--notification-accent) !important;
+}
+
+.notification-form-actions button[class*="bg-fuchsia"],
+.notification-form-actions .primary-button,
+.notification-message-form button[class*="bg-fuchsia"],
+.notification-advanced-form button[class*="bg-fuchsia"] {
+  border-color: transparent !important;
+  background: var(--notification-accent) !important;
+  color: #fff !important;
+  box-shadow: 0 10px 24px rgba(23, 168, 120, 0.14) !important;
+}
