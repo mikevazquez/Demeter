@@ -8,7 +8,10 @@ import {
   assistantReadToolDefinitions,
   assistantReadToolNames,
 } from "./tool-contracts";
-import { executeAssistantActionTool } from "./action-tools";
+import {
+  executeAssistantActionTool,
+  isExplicitAssistantConfirmation,
+} from "./action-tools";
 import {
   executeAssistantReadTool,
   type AssistantStudioContext,
@@ -194,7 +197,186 @@ async function logModelCall(input: {
   return data?.id ?? null;
 }
 
+
+function formatDateForReply(dateKey: unknown) {
+  const value = String(dateKey ?? "").trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
+  const date = new Date(`${value}T12:00:00Z`);
+  return new Intl.DateTimeFormat("es-MX", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  }).format(date);
+}
+
+function formatTimeForReply(value: unknown) {
+  const raw = String(value ?? "").trim();
+  const match = raw.match(/^(\d{2}):(\d{2})$/);
+  if (!match) return raw;
+  const hour = Number(match[1]);
+  const minute = match[2];
+  const suffix = hour >= 12 ? "p. m." : "a. m.";
+  const normalizedHour = hour % 12 || 12;
+  return `${normalizedHour}:${minute} ${suffix}`;
+}
+
+function confirmationReply(
+  toolName: string,
+  result: Record<string, unknown>,
+) {
+  if (result.ok !== true) {
+    if (result.original_reservation_preserved === true) {
+      return "No pude completar el cambio y tu reserva original permanece intacta. No se hizo ningún movimiento.";
+    }
+    const reasonMessage = String(result.reason_message ?? "").trim();
+    return reasonMessage || "No pude completar la acción. No se hizo ningún cambio.";
+  }
+
+  if (
+    result.status === "confirmation_required" &&
+    result.consequence_changed === true
+  ) {
+    const summary = asObject(result.summary);
+    if (toolName === "execute_cancellation" && summary) {
+      const creditText =
+        summary.credit_will_return === true
+          ? "El crédito se devolverá."
+          : summary.credit_will_return === false
+            ? "El crédito no se devolverá."
+            : "";
+      return `La consecuencia cambió antes de ejecutar. ${creditText} ¿Confirmas de nuevo la cancelación?`.trim();
+    }
+    if (toolName === "execute_reschedule" && summary) {
+      return "Cambió una condición antes de mover tu reserva. La reserva original sigue intacta. ¿Confirmas de nuevo con la condición actualizada?";
+    }
+  }
+
+  const summary = asObject(result.summary);
+  if (toolName === "execute_booking" && summary) {
+    return `Listo. Tu reserva de ${String(summary.activity ?? "la clase")} quedó confirmada para el ${formatDateForReply(summary.date)}, de ${formatTimeForReply(summary.starts_at_local)} a ${formatTimeForReply(summary.ends_at_local)}.`;
+  }
+
+  if (toolName === "execute_cancellation" && summary) {
+    const creditText =
+      summary.credit_will_return === true
+        ? " El crédito regresó a tu cuenta."
+        : summary.credit_will_return === false
+          ? " El crédito no se devuelve por esta cancelación."
+          : "";
+    return `Listo. Cancelé tu reserva de ${String(summary.activity ?? "la clase")} del ${formatDateForReply(summary.date)}, de ${formatTimeForReply(summary.starts_at_local)} a ${formatTimeForReply(summary.ends_at_local)}.${creditText}`;
+  }
+
+  if (toolName === "execute_reschedule" && summary) {
+    const from = asObject(summary.from);
+    const to = asObject(summary.to);
+    if (from && to) {
+      return `Listo. Moví tu reserva de ${String(from.activity ?? "la clase")} del ${formatDateForReply(from.date)}, ${formatTimeForReply(from.starts_at_local)}, al ${formatDateForReply(to.date)}, ${formatTimeForReply(to.starts_at_local)}.`;
+    }
+  }
+
+  return "Listo. La acción quedó confirmada.";
+}
+
+async function tryServerSideConfirmation(
+  input: OrchestratorInput,
+  trace: AssistantTrace,
+) {
+  const currentUserMessage =
+    [...input.history].reverse().find((message) => message.role === "user")
+      ?.content ?? "";
+
+  if (!isExplicitAssistantConfirmation(currentUserMessage)) return null;
+
+  const { data: pending, error } = await input.supabase
+    .from("assistant_pending_actions")
+    .select("id,action_type,expires_at")
+    .eq("studio_id", input.studio.id)
+    .eq("conversation_id", input.conversationId)
+    .eq("status", "pending")
+    .gt("expires_at", new Date().toISOString())
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error || !pending) return null;
+
+  const executeToolByAction: Record<string, string> = {
+    "booking.create": "execute_booking",
+    "booking.cancel": "execute_cancellation",
+    "booking.reschedule": "execute_reschedule",
+  };
+  const toolName = executeToolByAction[String(pending.action_type ?? "")];
+  if (!toolName) return null;
+
+  const startedAt = Date.now();
+  let result: unknown;
+  let toolStatus: "executed" | "blocked" | "error" = "executed";
+  try {
+    result = await executeAssistantActionTool(
+      {
+        supabase: input.supabase,
+        studio: input.studio,
+        conversationId: input.conversationId,
+        turnId: input.turnId,
+        studentId: input.studentId,
+        currentUserMessage,
+      },
+      toolName,
+      {},
+    );
+    if (asObject(result)?.ok === false) toolStatus = "blocked";
+  } catch {
+    result = { ok: false, error: "tool_execution_failed" };
+    toolStatus = "error";
+  }
+
+  const resultObject = asObject(result) ?? { ok: false, error: "invalid_tool_result" };
+  const auditStatus =
+    toolStatus === "error"
+      ? "error"
+      : toolStatus === "blocked"
+        ? "blocked"
+        : resultObject.status === "confirmation_required"
+          ? "prepared"
+          : "executed";
+
+  await input.supabase.from("assistant_tool_executions").insert({
+    studio_id: input.studio.id,
+    conversation_id: input.conversationId,
+    turn_id: input.turnId,
+    model_call_id: null,
+    tool_call_id: `server-confirmation:${input.turnId}`,
+    tool_name: toolName,
+    schema_version: 1,
+    permission_class: "B",
+    request_json: {},
+    result_json: resultObject,
+    status: auditStatus,
+    duration_ms: Date.now() - startedAt,
+  });
+
+  trace.toolCalls.push({ name: toolName, status: toolStatus });
+  return {
+    reply: confirmationReply(toolName, resultObject),
+    trace,
+  };
+}
+
 export async function runAssistantTurn(input: OrchestratorInput) {
+  const trace: AssistantTrace = {
+    model: input.config.model,
+    modelCalls: 0,
+    toolCalls: [],
+    inputTokens: 0,
+    cachedInputTokens: 0,
+    outputTokens: 0,
+    reasoningTokens: 0,
+    estimatedCostUsdMicros: 0,
+  };
+
+  const serverConfirmation = await tryServerSideConfirmation(input, trace);
+  if (serverConfirmation) return serverConfirmation;
+
   const apiKey = process.env.OPENAI_API_KEY?.trim();
   if (!apiKey) {
     throw new Error("openai_not_configured");
@@ -240,17 +422,6 @@ export async function runAssistantTurn(input: OrchestratorInput) {
     role: message.role,
     content: message.content,
   }));
-
-  const trace: AssistantTrace = {
-    model: input.config.model,
-    modelCalls: 0,
-    toolCalls: [],
-    inputTokens: 0,
-    cachedInputTokens: 0,
-    outputTokens: 0,
-    reasoningTokens: 0,
-    estimatedCostUsdMicros: 0,
-  };
 
   let toolCallsThisTurn = 0;
 
