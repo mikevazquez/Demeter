@@ -174,9 +174,11 @@ export default async function StudentClassesPage({
     credit?: string;
   }>;
 }) {
-  const query = await searchParams;
+  const [query, { supabase, studio }] = await Promise.all([
+    searchParams,
+    getStudentPortalContext(),
+  ]);
   const activeView = query.view === "history" ? "history" : "upcoming";
-  const { supabase, studio } = await getStudentPortalContext();
   const [classesResult, waitlistResult, rewardStatusResult] = await Promise.all([
     supabase.rpc("student_classes_feed"),
     supabase.rpc("student_waitlist_feed"),
