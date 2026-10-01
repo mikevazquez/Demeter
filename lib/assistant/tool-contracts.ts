@@ -161,6 +161,8 @@ export type RecordTrialPaymentPreferenceArgs = {
   payment_method: "cash" | "bank_transfer";
 };
 
+export type PrepareStudentAccessActivationArgs = EmptyArgs;
+
 export const assistantActionToolDefinitions: AssistantToolDefinition[] = [
   {
     type: "function",
@@ -284,6 +286,19 @@ export const assistantActionToolDefinitions: AssistantToolDefinition[] = [
     name: "execute_waitlist_join",
     description:
       "Ejecuta el último ingreso pendiente a lista de espera de esta conversación. Solo úsala después de un NUEVO mensaje con confirmación explícita.",
+    strict: true,
+    parameters: {
+      type: "object",
+      properties: {},
+      required: [],
+      additionalProperties: false,
+    },
+  },
+  {
+    type: "function",
+    name: "prepare_student_access_activation",
+    description:
+      "Prepara la activación del acceso de una alumna que ya asistió a su clase de prueba y necesita continuar con inscripción/documentos. No genera todavía ningún enlace ni token.",
     strict: true,
     parameters: {
       type: "object",
