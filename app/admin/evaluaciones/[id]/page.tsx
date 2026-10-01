@@ -38,9 +38,11 @@ export default async function TechnicalEvaluationDetailPage({
   params: Promise<{ id: string }>;
   searchParams: Promise<{ step?: string; error?: string }>;
 }) {
-  const { id } = await params;
-  const qs = await searchParams;
-  const ctx = await getAdminContext(CAPABILITIES.EVALUATIONS_READ);
+  const [{ id }, qs, ctx] = await Promise.all([
+    params,
+    searchParams,
+    getAdminContext(CAPABILITIES.EVALUATIONS_READ),
+  ]);
 
   const { data: evaluation } = await ctx.supabase
     .from("technical_evaluations")
