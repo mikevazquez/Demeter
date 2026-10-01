@@ -149,10 +149,10 @@ export default async function AgendaPage({
 }: {
   searchParams: Promise<{ error?: string; created?: string; date?: string; session?: string }>;
 }) {
-  const params = await searchParams;
-  const { supabase, studio, can, user, profile } = await getAdminContext(
-    CAPABILITIES.SCHEDULE_READ,
-  );
+  const [params, { supabase, studio, can, user, profile }] = await Promise.all([
+    searchParams,
+    getAdminContext(CAPABILITIES.SCHEDULE_READ),
+  ]);
   const canEdit = can(CAPABILITIES.SCHEDULE_WRITE);
   const timeZone = studio.timezone;
   const locale = studio.locale;
