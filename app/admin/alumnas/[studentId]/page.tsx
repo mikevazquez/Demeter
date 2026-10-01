@@ -191,6 +191,14 @@ export default async function StudentProfilePage({
 
   if (!student || student.lifecycle_status === "archived") notFound();
 
+  const canEdit = can(CAPABILITIES.STUDENTS_WRITE);
+  const canReadSchedule = can(CAPABILITIES.SCHEDULE_READ);
+  const canReadSales = can(CAPABILITIES.SALES_READ);
+  const canReadRewards = can(CAPABILITIES.REWARDS_READ);
+  const canManageRewards = can(CAPABILITIES.REWARDS_MANAGE);
+  const canReadEvaluations = can(CAPABILITIES.EVALUATIONS_READ);
+  const canReadDocuments = can(CAPABILITIES.DOCUMENTS_READ);
+  const canArchive = can(CAPABILITIES.STUDENTS_ARCHIVE);
   const canReadProducts = can(CAPABILITIES.PRODUCTS_READ);
   const canEditAcquisitions = can(CAPABILITIES.PRODUCTS_WRITE) || can(CAPABILITIES.SALES_WRITE);
 
@@ -413,14 +421,6 @@ export default async function StudentProfilePage({
     whatsappBlocked: communicationPreferenceRow?.whatsapp_blocked ?? false,
   };
   const communicationPreferenceEvents = communicationPreferenceEventsResult.data ?? [];
-  const canEdit = can(CAPABILITIES.STUDENTS_WRITE);
-  const canReadSchedule = can(CAPABILITIES.SCHEDULE_READ);
-  const canReadSales = can(CAPABILITIES.SALES_READ);
-  const canReadRewards = can(CAPABILITIES.REWARDS_READ);
-  const canManageRewards = can(CAPABILITIES.REWARDS_MANAGE);
-  const canReadEvaluations = can(CAPABILITIES.EVALUATIONS_READ);
-  const canReadDocuments = can(CAPABILITIES.DOCUMENTS_READ);
-  const canArchive = can(CAPABILITIES.STUDENTS_ARCHIVE);
   const [
     lifecycleEventsResult,
     operatingChargesResult,
