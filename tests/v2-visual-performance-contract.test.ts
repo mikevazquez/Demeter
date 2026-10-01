@@ -11,6 +11,13 @@ describe("Studio Flow V2 visual + performance contract", () => {
   const adminLayout = source("app/admin/layout.tsx");
   const visualSystem = source("app/admin/admin-v2-system.css");
   const noticeDialog = source("app/admin/components/NoticeDialog.tsx");
+  const secondaryCss = source("app/admin/admin-ux-04-secondary.css");
+  const secondaryDetailCss = source("app/admin/admin-ux-04-secondary-detail.css");
+  const sessionDetailCss = source("app/admin/agenda/session-detail-admin-ux-04.css");
+  const notificationCss = source("app/admin/notificaciones/notificaciones.css");
+  const sessionResourcesCss = source(
+    "app/admin/agenda/[sessionId]/recursos/session-resources.module.css",
+  );
   const adminLoading = source("app/admin/loading.tsx");
   const adminError = source("app/admin/error.tsx");
   const today = source("app/admin/page.tsx");
@@ -35,6 +42,16 @@ describe("Studio Flow V2 visual + performance contract", () => {
     expect(visualSystem).toContain("--accent: #17a878");
     expect(visualSystem).toContain(".sf-admin-dialog");
     expect(visualSystem).toContain(".sf-admin-loading");
+  });
+
+  it("eliminates the remaining dark islands from secondary admin modules", () => {
+    expect(secondaryCss).toContain("Studio Flow V2 · light visual consolidation");
+    expect(secondaryDetailCss).toContain("Studio Flow V2 · light detail/editor consolidation");
+    expect(sessionDetailCss).toContain("Studio Flow V2 · light session-detail consolidation");
+    expect(notificationCss).toContain("Studio Flow V2 · light notification surfaces");
+    expect(sessionResourcesCss).toContain("Studio Flow V2 · light session-resource surfaces");
+    expect(sessionDetailCss).toContain("--session-v2-accent: #17a878");
+    expect(notificationCss).toContain("--notification-accent: #17a878");
   });
 
   it("standardizes admin confirmation, error and loading surfaces", () => {
