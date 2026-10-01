@@ -451,3 +451,149 @@
     padding: 11px;
   }
 }
+
+
+/* Studio Flow V2 · light detail/editor consolidation */
+.admin-ux04-secondary-detail {
+  --ux04d-surface: #ffffff;
+  --ux04d-soft: #f8fafb;
+  --ux04d-line: #e3eaf1;
+  --ux04d-text: #10203a;
+  --ux04d-muted: #687891;
+  --ux04d-accent: #17a878;
+  --ux04d-accent-strong: #0f8f66;
+  --ux04d-accent-soft: #e7f8f1;
+  color: var(--ux04d-text);
+}
+
+.admin-ux04-secondary-detail > header h1,
+.admin-ux04-secondary-detail > .topbar .dashboard-title,
+.automation-detail-page > header h1,
+.rewards-admin-page > header .dashboard-title {
+  color: var(--ux04d-text) !important;
+}
+
+.admin-ux04-secondary-detail > header p,
+.admin-ux04-secondary-detail > .topbar p:last-child,
+.automation-detail-page > header p:last-child,
+.product-detail-page > section[class*="grid"] > div p:first-child,
+.product-detail-page > section[class*="rounded-2xl"] p,
+.team-detail-page .student-row span {
+  color: var(--ux04d-muted) !important;
+}
+
+.admin-ux04-secondary-detail > header a,
+.admin-ux04-secondary-detail .back-link,
+.rewards-admin-page > header > div > a,
+.rewards-admin-page > header > a {
+  color: #607086 !important;
+}
+.admin-ux04-secondary-detail > header a:hover,
+.admin-ux04-secondary-detail .back-link:hover {
+  color: var(--ux04d-accent-strong) !important;
+}
+
+.product-detail-page > section[class*="grid"] > div,
+.product-detail-page > section[class*="rounded-2xl"],
+.product-editor-page > form,
+.team-detail-page > .topbar,
+.team-detail-page > .panel,
+.team-detail-page .panel-grid > .panel,
+.automation-detail-page article[class*="rounded-2xl"],
+.automation-detail-page section[class*="rounded-2xl"],
+.automation-detail-page form[class*="rounded-2xl"],
+.automation-detail-page details[class*="rounded-2xl"],
+.rewards-admin-page form[class*="rounded-2xl"],
+.rewards-admin-page section[class*="rounded-2xl"],
+.rewards-admin-page article[class*="rounded-2xl"],
+.rewards-admin-page div[class*="rounded-2xl"][class*="border"] {
+  border-color: var(--ux04d-line) !important;
+  background: #fff !important;
+  color: var(--ux04d-text) !important;
+  box-shadow: 0 8px 26px rgba(44, 64, 86, 0.045) !important;
+}
+
+.product-detail-page > section[class*="grid"] > div p:last-child,
+.product-detail-page > section[class*="rounded-2xl"] h2,
+.team-detail-page .panel h2,
+.team-detail-page .student-row strong {
+  color: var(--ux04d-text) !important;
+}
+
+.product-editor-page label {
+  color: #607086 !important;
+}
+
+.product-editor-page input,
+.product-editor-page select,
+.product-editor-page textarea,
+.automation-detail-page input,
+.automation-detail-page select,
+.automation-detail-page textarea,
+.rewards-admin-page input,
+.rewards-admin-page select,
+.rewards-admin-page textarea {
+  border-color: #dce4eb !important;
+  background: #fbfcfd !important;
+  color: var(--ux04d-text) !important;
+}
+
+.product-editor-page input:focus,
+.product-editor-page select:focus,
+.product-editor-page textarea:focus,
+.automation-detail-page input:focus,
+.automation-detail-page select:focus,
+.automation-detail-page textarea:focus,
+.rewards-admin-page input:focus,
+.rewards-admin-page select:focus,
+.rewards-admin-page textarea:focus {
+  border-color: #78cbb0 !important;
+  box-shadow: 0 0 0 3px rgba(23, 168, 120, 0.08) !important;
+}
+
+.product-editor-page fieldset,
+.product-editor-page [class*="border"][class*="rounded-xl"],
+.rewards-admin-page div[class*="rounded-xl"][class*="border"],
+.rewards-admin-page article[class*="rounded-xl"][class*="border"],
+.rewards-admin-page a[class*="rounded-xl"][class*="border"] {
+  border-color: var(--ux04d-line) !important;
+  background: var(--ux04d-soft) !important;
+  color: var(--ux04d-text) !important;
+}
+
+.product-detail-page > section:last-child a[class*="bg-fuchsia"],
+.product-editor-page button[class*="bg-fuchsia"],
+.automation-detail-page button[class*="bg-fuchsia"],
+.team-detail-page .primary-button,
+.rewards-admin-page button[class*="bg-fuchsia"],
+.rewards-admin-page a[class*="bg-fuchsia"] {
+  border-color: transparent !important;
+  background: var(--ux04d-accent) !important;
+  color: #fff !important;
+  box-shadow: 0 10px 24px rgba(23, 168, 120, 0.14) !important;
+}
+
+.product-detail-page > section:last-child button,
+.team-detail-page .secondary-button,
+.team-detail-page .ghost-button {
+  border-color: var(--ux04d-line) !important;
+  background: #fff !important;
+  color: #607086 !important;
+}
+
+.team-detail-page > .topbar {
+  background: #fff !important;
+}
+.team-detail-page > .topbar .role-pill {
+  border-color: #c6e8db !important;
+  background: var(--ux04d-accent-soft) !important;
+  color: var(--ux04d-accent-strong) !important;
+}
+
+.team-detail-page .student-list {
+  border-color: var(--ux04d-line) !important;
+}
+.team-detail-page .student-row {
+  border-bottom-color: var(--ux04d-line) !important;
+  background: #fff !important;
+}
