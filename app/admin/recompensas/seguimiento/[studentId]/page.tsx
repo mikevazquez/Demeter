@@ -47,13 +47,14 @@ export default async function StudentRewardsProgressPage({
   params: Promise<{ studentId: string }>;
   searchParams: Promise<{ tab?: string }>;
 }) {
-  const { studentId } = await params;
-  const query = await searchParams;
+  const [{ studentId }, query, ctx] = await Promise.all([
+    params,
+    searchParams,
+    getAdminContext(CAPABILITIES.REWARDS_READ),
+  ]);
   const tab = ["summary", "achievements", "rewards", "history"].includes(String(query.tab))
     ? String(query.tab)
     : "summary";
-
-  const ctx = await getAdminContext(CAPABILITIES.REWARDS_READ);
   const { data: student } = await ctx.supabase
     .from("students")
     .select("id,full_name,lifecycle_status,active,created_at")
@@ -125,27 +126,28 @@ export default async function StudentRewardsProgressPage({
   const programEvents = programEventsResult.data ?? [];
 
   const programIds = [...new Set(programParticipations.map((item) => item.program_id))];
-  const programVersionsResult = programIds.length
-    ? await ctx.supabase
-        .from("reward_program_versions")
-        .select("program_id,version_number,name,progression_mode")
-        .in("program_id", programIds)
-    : { data: [] };
+  const [programVersionsResult, programLevelsResult] = await Promise.all([
+    programIds.length
+      ? ctx.supabase
+          .from("reward_program_versions")
+          .select("program_id,version_number,name,progression_mode")
+          .in("program_id", programIds)
+      : Promise.resolve({ data: [] }),
+    programIds.length
+      ? ctx.supabase
+          .from("reward_program_levels")
+          .select(
+            "id,program_id,program_version_number,level_order,title,rule_id,rule_version_number",
+          )
+          .in("program_id", programIds)
+      : Promise.resolve({ data: [] }),
+  ]);
   const programVersionMap = new Map(
     (programVersionsResult.data ?? []).map((item) => [
       `${item.program_id}:${item.version_number}`,
       item,
     ]),
   );
-
-  const programLevelsResult = programIds.length
-    ? await ctx.supabase
-        .from("reward_program_levels")
-        .select(
-          "id,program_id,program_version_number,level_order,title,rule_id,rule_version_number",
-        )
-        .in("program_id", programIds)
-    : { data: [] };
   const programLevels = programLevelsResult.data ?? [];
 
   const ruleIds = [
@@ -156,22 +158,23 @@ export default async function StudentRewardsProgressPage({
       ...programLevels.map((item) => item.rule_id),
     ]),
   ];
-  const rulesResult = ruleIds.length
-    ? await ctx.supabase
-        .from("reward_rules")
-        .select("id,status,current_version_number")
-        .in("id", ruleIds)
-    : { data: [] };
+  const [rulesResult, ruleVersionsResult] = await Promise.all([
+    ruleIds.length
+      ? ctx.supabase
+          .from("reward_rules")
+          .select("id,status,current_version_number")
+          .in("id", ruleIds)
+      : Promise.resolve({ data: [] }),
+    ruleIds.length
+      ? ctx.supabase
+          .from("reward_rule_versions")
+          .select(
+            "rule_id,version_number,name,family,presentation_definition,condition_definition,reward_definition",
+          )
+          .in("rule_id", ruleIds)
+      : Promise.resolve({ data: [] }),
+  ]);
   const ruleMap = new Map((rulesResult.data ?? []).map((item) => [item.id, item]));
-
-  const ruleVersionsResult = ruleIds.length
-    ? await ctx.supabase
-        .from("reward_rule_versions")
-        .select(
-          "rule_id,version_number,name,family,presentation_definition,condition_definition,reward_definition",
-        )
-        .in("rule_id", ruleIds)
-    : { data: [] };
   const ruleVersionMap = new Map(
     (ruleVersionsResult.data ?? []).map((item) => [`${item.rule_id}:${item.version_number}`, item]),
   );
