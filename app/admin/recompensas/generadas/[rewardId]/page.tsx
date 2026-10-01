@@ -37,9 +37,11 @@ export default async function GeneratedRewardDetailPage({
   params: Promise<{ rewardId: string }>;
   searchParams: Promise<{ saved?: string; error?: string }>;
 }) {
-  const { rewardId } = await params;
-  const query = await searchParams;
-  const ctx = await getAdminContext(CAPABILITIES.REWARDS_READ);
+  const [{ rewardId }, query, ctx] = await Promise.all([
+    params,
+    searchParams,
+    getAdminContext(CAPABILITIES.REWARDS_READ),
+  ]);
 
   const { data: reward } = await ctx.supabase
     .from("reward_instances")
