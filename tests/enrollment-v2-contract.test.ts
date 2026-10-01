@@ -9,6 +9,9 @@ function source(path: string) {
 
 describe("Enrollment V2", () => {
   const migration = source("supabase/migrations/20261001053000_enrollment_v2_required_checkout.sql");
+  const purchaseOptionMigration = source(
+    "supabase/migrations/20261001064600_enrollment_student_purchase_option.sql",
+  );
   const bookingCore = source("supabase/migrations/20260930005800_packages03_activity_restrictions.sql");
   const policyAction = source("app/admin/ventas/inscripcion/actions.ts");
   const policyPage = source("app/admin/ventas/inscripcion/page.tsx");
@@ -38,6 +41,16 @@ describe("Enrollment V2", () => {
     expect(sessionDetail).toContain('reason === "enrollment_required"');
     expect(sessionDetail).toContain('enrollmentMode === "package_booking"');
     expect(sessionDetail).toContain('"Pagar inscripción"');
+  });
+
+  it("reads the student purchase option through a secure RPC instead of direct RLS access", () => {
+    expect(purchaseOptionMigration).toContain("public.student_enrollment_purchase_option");
+    expect(purchaseOptionMigration).toContain("security definer");
+    expect(purchaseOptionMigration).toContain(
+      "revoke all on function public.student_enrollment_purchase_option() from public,anon",
+    );
+    expect(packagePage).toContain('rpc("student_enrollment_purchase_option"');
+    expect(packagePage).not.toContain('.from("enrollment_policies")');
   });
 
   it("supports standalone enrollment checkout", () => {
