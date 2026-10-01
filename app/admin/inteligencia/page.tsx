@@ -339,6 +339,8 @@ export default async function IntelligencePage({
         "id,student_id,product_template_id,status,starts_on,expires_on,created_at,refunded_at",
       )
       .eq("studio_id", studio.id)
+      .is("refunded_at", null)
+      .neq("status", "cancelled")
       .order("created_at", { ascending: true }),
     supabase
       .from("sales")
@@ -350,6 +352,7 @@ export default async function IntelligencePage({
       .from("payments")
       .select("sale_id,kind,amount_minor,created_at")
       .eq("studio_id", studio.id)
+      .is("refunded_at", null)
       .gte("created_at", rangeStartIso),
     supabase
       .from("sale_lines")
@@ -360,11 +363,16 @@ export default async function IntelligencePage({
       .from("class_sessions")
       .select("id,template_id,starts_at,capacity,status")
       .eq("studio_id", studio.id)
+      .neq("status", "cancelled")
       .gte("starts_at", rangeStartIso)
       .lt("starts_at", currentEnd.toISOString())
       .order("starts_at"),
     supabase.from("class_templates").select("id,name,color_hex").eq("studio_id", studio.id),
-    supabase.from("product_templates").select("id,product_type,name").eq("studio_id", studio.id),
+    supabase
+      .from("product_templates")
+      .select("id,product_type,name")
+      .eq("studio_id", studio.id)
+      .in("product_type", [...commercialProductTypes]),
     supabase
       .from("reward_onboarding")
       .select(
