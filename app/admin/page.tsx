@@ -141,8 +141,6 @@ export default async function AdminPage({
     { data: activeProductAcquisitions },
     { data: selectedPayments },
     { data: students },
-    { data: quickSaleProducts },
-    { data: quickSaleHistory },
   ] = await Promise.all([
     supabase.rpc("current_server_time"),
     supabase
@@ -174,19 +172,6 @@ export default async function AdminPage({
       .eq("active", true)
       .eq("lifecycle_status", "active")
       .order("full_name"),
-    supabase
-      .from("product_templates")
-      .select("id,name,price_minor,currency,credit_limit,validity_days,unlimited")
-      .eq("studio_id", studio.id)
-      .in("product_type", ["package", "membership"])
-      .eq("active", true)
-      .order("price_minor"),
-    supabase
-      .from("product_acquisitions")
-      .select("student_id,product_template_id,created_at")
-      .eq("studio_id", studio.id)
-      .order("created_at", { ascending: false })
-      .limit(1000),
   ]);
 
   const activeProductStudentIds = new Set(
@@ -495,15 +480,6 @@ export default async function AdminPage({
     });
   }
 
-  const quickSalePreference: Record<string, string> = {};
-  for (const acquisition of quickSaleHistory ?? []) {
-    const studentId = acquisition.student_id;
-    const templateId = acquisition.product_template_id;
-    if (studentId && templateId && !quickSalePreference[studentId]) {
-      quickSalePreference[studentId] = templateId;
-    }
-  }
-
   const totalDailyCapacity = classes.reduce((sum, item) => sum + item.capacity, 0);
   const totalDailyReservations = classes.reduce((sum, item) => sum + item.occupied, 0);
   const dailyReservationPercentage =
@@ -541,17 +517,6 @@ export default async function AdminPage({
               canStudents={canWriteStudents}
               canSales={canWriteSales}
               locale={locale}
-              preferredProductByStudent={quickSalePreference}
-              students={(students ?? []).map((item) => ({ id: item.id, fullName: item.full_name }))}
-              products={(quickSaleProducts ?? []).map((item) => ({
-                id: item.id,
-                name: item.name,
-                priceMinor: item.price_minor,
-                currency: item.currency,
-                creditLimit: item.credit_limit,
-                validityDays: item.validity_days,
-                unlimited: item.unlimited,
-              }))}
             />
           ) : null}
           <span className="hoy-product-avatar" aria-label={headerName}>
