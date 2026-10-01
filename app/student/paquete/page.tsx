@@ -225,7 +225,7 @@ export default async function StudentPackagePage() {
               <p className="mt-3 text-2xl font-semibold text-white">
                 {formatMoney(
                   Number(enrollmentOption.product.price_minor ?? 0),
-                  enrollmentOption.product.currency ?? studio.currency,
+                  enrollmentOption.product.currency ?? "MXN",
                 )}
               </p>
             </div>
