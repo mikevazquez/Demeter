@@ -260,79 +260,85 @@ export default async function AdminPage({
     ]),
   ];
 
-  const { data: persons } = personIds.length
-    ? await supabase
-        .from("persons")
-        .select("id,first_name,last_name")
-        .eq("studio_id", studio.id)
-        .in("id", personIds)
-    : {
-        data: [] as { id: string; first_name: string | null; last_name: string | null }[],
-      };
-
   const reservationStudentIds = [
     ...new Set(
       (reservations ?? []).map((reservation) => reservation.student_id).filter(Boolean),
     ),
   ] as string[];
-  const { data: reservationStudents } = reservationStudentIds.length
-    ? await supabase
-        .from("students")
-        .select("id,full_name")
-        .eq("studio_id", studio.id)
-        .in("id", reservationStudentIds)
-    : { data: [] as { id: string; full_name: string }[] };
-
   const reservationIds = (reservations ?? []).map((reservation) => reservation.id);
-  const { data: attendanceCheckins } = reservationIds.length
-    ? await supabase
-        .from("attendance_checkins")
-        .select("reservation_id,source,checked_in_at")
-        .in("reservation_id", reservationIds)
-    : {
-        data: [] as {
-          reservation_id: string;
-          source: string;
-          checked_in_at: string;
-        }[],
-      };
-  const checkinByReservation = new Map(
-    (attendanceCheckins ?? []).map((item) => [item.reservation_id, item]),
-  );
-
-  const { data: evaluationInvitations } = reservationIds.length
-    ? await supabase
-        .from("evaluation_invitations")
-        .select("id,reservation_id,status")
-        .in("reservation_id", reservationIds)
-        .in("status", ["scheduled", "in_progress"])
-    : {
-        data: [] as { id: string; reservation_id: string | null; status: string }[],
-      };
-  const evaluationByReservation = new Map(
-    (evaluationInvitations ?? [])
-      .filter((item) => item.reservation_id)
-      .map((item) => [item.reservation_id!, item]),
-  );
-
   const acquisitionIds = [
     ...new Set(
       (reservations ?? []).map((reservation) => reservation.acquisition_id).filter(Boolean),
     ),
   ] as string[];
-  const { data: acquisitions } = acquisitionIds.length
-    ? await supabase
-        .from("product_acquisitions")
-        .select("id,product_template_id,expires_on,unlimited")
-        .in("id", acquisitionIds)
-    : {
-        data: [] as {
-          id: string;
-          product_template_id: string;
-          expires_on: string | null;
-          unlimited: boolean;
-        }[],
-      };
+
+  const [
+    { data: persons },
+    { data: reservationStudents },
+    { data: attendanceCheckins },
+    { data: evaluationInvitations },
+    { data: acquisitions },
+  ] = await Promise.all([
+    personIds.length
+      ? supabase
+          .from("persons")
+          .select("id,first_name,last_name")
+          .eq("studio_id", studio.id)
+          .in("id", personIds)
+      : Promise.resolve({
+          data: [] as { id: string; first_name: string | null; last_name: string | null }[],
+        }),
+    reservationStudentIds.length
+      ? supabase
+          .from("students")
+          .select("id,full_name")
+          .eq("studio_id", studio.id)
+          .in("id", reservationStudentIds)
+      : Promise.resolve({ data: [] as { id: string; full_name: string }[] }),
+    reservationIds.length
+      ? supabase
+          .from("attendance_checkins")
+          .select("reservation_id,source,checked_in_at")
+          .in("reservation_id", reservationIds)
+      : Promise.resolve({
+          data: [] as {
+            reservation_id: string;
+            source: string;
+            checked_in_at: string;
+          }[],
+        }),
+    reservationIds.length
+      ? supabase
+          .from("evaluation_invitations")
+          .select("id,reservation_id,status")
+          .in("reservation_id", reservationIds)
+          .in("status", ["scheduled", "in_progress"])
+      : Promise.resolve({
+          data: [] as { id: string; reservation_id: string | null; status: string }[],
+        }),
+    acquisitionIds.length
+      ? supabase
+          .from("product_acquisitions")
+          .select("id,product_template_id,expires_on,unlimited")
+          .in("id", acquisitionIds)
+      : Promise.resolve({
+          data: [] as {
+            id: string;
+            product_template_id: string;
+            expires_on: string | null;
+            unlimited: boolean;
+          }[],
+        }),
+  ]);
+
+  const checkinByReservation = new Map(
+    (attendanceCheckins ?? []).map((item) => [item.reservation_id, item]),
+  );
+  const evaluationByReservation = new Map(
+    (evaluationInvitations ?? [])
+      .filter((item) => item.reservation_id)
+      .map((item) => [item.reservation_id!, item]),
+  );
 
   const productIds = [...new Set((acquisitions ?? []).map((item) => item.product_template_id))];
   const meteredAcquisitionIds = (acquisitions ?? [])
