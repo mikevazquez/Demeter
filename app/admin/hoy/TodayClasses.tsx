@@ -18,6 +18,9 @@ export type TodayRosterItem = {
   attendanceSource?: string | null;
   checkedInAt?: string | null;
   attendanceProvenance?: string | null;
+  paymentDueOnAttendance?: boolean;
+  individualPriceMinor?: number | null;
+  currency?: string;
 };
 
 export type TodayCandidate = {
