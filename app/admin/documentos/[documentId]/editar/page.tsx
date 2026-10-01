@@ -28,9 +28,11 @@ export default async function EditDocumentPage({
   params: Promise<{ documentId: string }>;
   searchParams: Promise<{ saved?: string; error?: string }>;
 }) {
-  const { documentId } = await params;
-  const query = await searchParams;
-  const { supabase, studio } = await getAdminContext(CAPABILITIES.DOCUMENTS_MANAGE);
+  const [{ documentId }, query, { supabase, studio }] = await Promise.all([
+    params,
+    searchParams,
+    getAdminContext(CAPABILITIES.DOCUMENTS_MANAGE),
+  ]);
 
   const [{ data: document }, { data: version }] = await Promise.all([
     supabase
