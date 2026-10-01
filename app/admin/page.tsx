@@ -338,19 +338,30 @@ export default async function AdminPage({
       };
 
   const productIds = [...new Set((acquisitions ?? []).map((item) => item.product_template_id))];
-  const { data: products } = productIds.length
-    ? await supabase.from("product_templates").select("id,name").in("id", productIds)
-    : { data: [] as { id: string; name: string }[] };
+  const meteredAcquisitionIds = (acquisitions ?? [])
+    .filter((item) => !item.unlimited)
+    .map((item) => item.id);
+  const [{ data: products }, { data: balanceRows }] = await Promise.all([
+    productIds.length
+      ? supabase.from("product_templates").select("id,name").in("id", productIds)
+      : Promise.resolve({ data: [] as { id: string; name: string }[] }),
+    meteredAcquisitionIds.length
+      ? supabase.rpc("acquisition_credit_balances", {
+          target_acquisition_ids: meteredAcquisitionIds,
+        })
+      : Promise.resolve({
+          data: [] as { acquisition_id: string; balance: number }[],
+        }),
+  ]);
 
-  const balances = await Promise.all(
-    (acquisitions ?? []).map(async (acquisition) => {
-      if (acquisition.unlimited) return [acquisition.id, null] as const;
-      const { data } = await supabase.rpc("acquisition_credit_balance", {
-        target_acquisition_id: acquisition.id,
-      });
-      return [acquisition.id, typeof data === "number" ? data : 0] as const;
-    }),
-  );
+  const balances = [
+    ...(acquisitions ?? [])
+      .filter((item) => item.unlimited)
+      .map((item) => [item.id, null] as const),
+    ...((balanceRows ?? []) as { acquisition_id: string; balance: number }[]).map(
+      (item) => [item.acquisition_id, item.balance] as const,
+    ),
+  ];
 
   const templateMap = new Map((templates ?? []).map((item) => [item.id, item]));
   const personMap = new Map(
