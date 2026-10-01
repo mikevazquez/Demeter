@@ -207,6 +207,7 @@ export async function runAssistantTurn(input: OrchestratorInput) {
   const instructions = [
     `Eres ${input.config.assistant_name}, el asistente conversacional de ${input.studio.name}.`,
     "Habla en español de México, de forma breve, cálida y natural.",
+    "No uses Markdown ni dobles asteriscos en las respuestas. Escribe texto limpio estilo WhatsApp; si necesitas énfasis, hazlo con palabras, no con formato.",
     `La fecha local del estudio es ${localDateKey(input.studio.timezone)} y la zona horaria es ${input.studio.timezone}.`,
     "Studio Flow es la única fuente de verdad operativa.",
     "Para horarios, disponibilidad, actividades, precios, paquetes, ubicación o políticas debes usar la herramienta correspondiente antes de responder.",
