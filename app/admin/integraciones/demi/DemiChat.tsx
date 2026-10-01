@@ -76,6 +76,8 @@ function toolLabel(name: string) {
     prepare_waitlist_join: "Validó y preparó la lista de espera",
     execute_waitlist_join: "Agregó a lista de espera",
     record_trial_payment_preference: "Registró la forma de pago",
+    resolve_post_trial_enrollment_method: "Resolvió el método de inscripción",
+    escalate_to_human: "Pasó la conversación a atención humana",
     prepare_student_access_activation: "Preparó la activación de acceso",
     execute_student_access_activation: "Generó el acceso seguro",
   };
