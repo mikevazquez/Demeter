@@ -16,8 +16,14 @@ import {
 export default async function RewardsControlCenterPage() {
   const ctx = await getAdminContext(CAPABILITIES.REWARDS_READ);
 
-  const [programsResult, rulesResult, rewardsResult, programEventsResult, onboardingResult] =
-    await Promise.all([
+  const [
+    programsResult,
+    rulesResult,
+    versionsResult,
+    rewardsResult,
+    programEventsResult,
+    onboardingResult,
+  ] = await Promise.all([
       ctx.supabase
         .from("reward_programs")
         .select("id,status,latest_version_number,published_version_number,updated_at")
@@ -28,6 +34,10 @@ export default async function RewardsControlCenterPage() {
         .select("id,status,current_version_number,updated_at")
         .eq("studio_id", ctx.studio.id)
         .order("updated_at", { ascending: false }),
+      ctx.supabase
+        .from("reward_rule_versions")
+        .select("rule_id,version_number,name,family,reward_definition")
+        .eq("studio_id", ctx.studio.id),
       ctx.supabase
         .from("reward_instances")
         .select("id,status,kind,benefit_definition,student_id,expires_at,created_at")
@@ -50,13 +60,6 @@ export default async function RewardsControlCenterPage() {
 
   const programs = programsResult.data ?? [];
   const rules = rulesResult.data ?? [];
-  const ruleIds = rules.map((rule) => rule.id);
-  const versionsResult = ruleIds.length
-    ? await ctx.supabase
-        .from("reward_rule_versions")
-        .select("rule_id,version_number,name,family,reward_definition")
-        .in("rule_id", ruleIds)
-    : { data: [] };
   const versions = versionsResult.data ?? [];
   const currentVersions = new Map(
     versions.map((version) => [`${version.rule_id}:${version.version_number}`, version]),
