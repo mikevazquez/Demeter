@@ -36,12 +36,14 @@ export default async function EvaluationCheckoutReturnPage({
   params: Promise<{ invitationId: string }>;
   searchParams: Promise<{ attempt?: string; outcome?: string; session?: string }>;
 }) {
-  const { invitationId } = await params;
-  const query = await searchParams;
+  const [{ invitationId }, query, { supabase }] = await Promise.all([
+    params,
+    searchParams,
+    getStudentPortalContext(),
+  ]);
   const attemptId = query.attempt?.trim() ?? "";
   const sessionId = query.session?.trim() ?? "";
   const outcome = safeOutcome(query.outcome);
-  const { supabase } = await getStudentPortalContext();
 
   const { data: invitationData, error: invitationError } = await supabase.rpc(
     "student_evaluation_invitation_detail",
