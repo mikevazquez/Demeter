@@ -2892,6 +2892,34 @@
   background: var(--v2-accent-soft);
   color: var(--v2-accent-strong);
 }
+.hoy-v2 .hoy-student-results.is-loading,
+.hoy-v2 .quick-loading {
+  color: var(--v2-muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.hoy-v2 .hoy-student-results.is-loading {
+  position: absolute;
+  z-index: 4;
+  top: 72px;
+  left: 0;
+  right: 0;
+  padding: 12px 14px;
+  border: 1px solid var(--v2-line);
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 14px 36px rgba(16, 32, 58, 0.14);
+}
+
+.hoy-v2 .quick-loading {
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--v2-line);
+  border-radius: 12px;
+  background: #f8fafb;
+}
+
 .hoy-v2 .hoy-package-picker {
   display: grid;
   gap: 8px;
