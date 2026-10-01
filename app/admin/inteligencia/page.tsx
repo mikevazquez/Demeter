@@ -302,10 +302,12 @@ export default async function IntelligencePage({
 }: {
   searchParams: Promise<{ view?: string; days?: string }>;
 }) {
-  const params = await searchParams;
+  const [params, { supabase, studio }] = await Promise.all([
+    searchParams,
+    getAdminContext(CAPABILITIES.REPORTS_READ),
+  ]);
   const view = validView(params.view);
   const days = clampDays(params.days);
-  const { supabase, studio } = await getAdminContext(CAPABILITIES.REPORTS_READ);
   const locale = studio.locale;
   const timeZone = studio.timezone;
   const now = new Date();
