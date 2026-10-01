@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 import { CAPABILITIES } from "@/lib/auth/capabilities";
-import { getAdminContext } from "@/lib/auth/admin-context";
+import { getAdminContext, getAdminDisplayName } from "@/lib/auth/admin-context";
 import { TodayClasses, type TodayClassItem } from "./hoy/TodayClasses";
 import QuickActions from "./hoy/QuickActions";
 
@@ -94,14 +94,11 @@ export default async function AdminPage({
 }: {
   searchParams: Promise<{ error?: string; created?: string; date?: string }>;
 }) {
-  const { supabase, studio, can, user } = await getAdminContext();
-  const params = await searchParams;
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("full_name")
-    .eq("id", user.id)
-    .maybeSingle();
-  const headerName = profile?.full_name?.trim() || user.email?.split("@")[0] || "Usuario";
+  const [{ supabase, studio, can }, params, headerName] = await Promise.all([
+    getAdminContext(),
+    searchParams,
+    getAdminDisplayName(),
+  ]);
   const headerInitials =
     headerName
       .split(/\s+/)
