@@ -37,10 +37,7 @@ export function ExistingStudentAddForm({
   const selectedCandidate = matches.find((candidate) => candidate.id === selectedStudentId);
 
   useEffect(() => {
-    if (normalizedQuery.length < 2) {
-      setMatches([]);
-      return;
-    }
+    if (normalizedQuery.length < 2) return;
 
     const requestId = ++requestIdRef.current;
     const timer = window.setTimeout(() => {
