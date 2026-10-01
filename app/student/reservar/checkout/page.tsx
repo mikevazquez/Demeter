@@ -21,12 +21,10 @@ export default async function SingleClassCheckoutReturnPage({
 }: {
   searchParams: Promise<{ attempt?: string; outcome?: string }>;
 }) {
-  const [query, { supabase }] = await Promise.all([
-    searchParams,
-    getStudentAccessContext(),
-  ]);
+  const query = await searchParams;
   const attemptId = query.attempt?.trim() ?? "";
   const outcome = safeOutcome(query.outcome);
+  const { supabase } = await getStudentAccessContext();
 
   let reconciliation: ReconcileResult = null;
   if (attemptId) {
