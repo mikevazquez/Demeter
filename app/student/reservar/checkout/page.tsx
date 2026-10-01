@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import { formatMoney, getStudentPortalContext } from "@/lib/student/portal";
+import { formatMoney, getStudentAccessContext } from "@/lib/student/portal";
 
 type ReconcileResult = {
   ok?: boolean;
@@ -24,7 +24,7 @@ export default async function SingleClassCheckoutReturnPage({
   const query = await searchParams;
   const attemptId = query.attempt?.trim() ?? "";
   const outcome = safeOutcome(query.outcome);
-  const { supabase } = await getStudentPortalContext();
+  const { supabase } = await getStudentAccessContext();
 
   let reconciliation: ReconcileResult = null;
   if (attemptId) {
