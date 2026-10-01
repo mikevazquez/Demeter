@@ -22,8 +22,10 @@ export default async function MyClassesPage({
 }: {
   searchParams: Promise<{ date?: string; error?: string }>;
 }) {
-  const query = await searchParams;
-  const { supabase, studio, membership } = await getAdminContext(CAPABILITIES.SCHEDULE_READ);
+  const [query, { supabase, studio, membership }] = await Promise.all([
+    searchParams,
+    getAdminContext(CAPABILITIES.SCHEDULE_READ),
+  ]);
 
   if (membership.role !== "instructor") {
     return (
