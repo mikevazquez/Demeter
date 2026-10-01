@@ -28,6 +28,8 @@ export default function PurchaseSingleClassButton({
   levelTitle = null,
   evaluationInvitationId,
   evaluationSessionId,
+  checkoutTotalLabel,
+  extraChargeLabel,
 }: {
   sessionId: string;
   priceLabel: string;
@@ -36,6 +38,8 @@ export default function PurchaseSingleClassButton({
   levelTitle?: string | null;
   evaluationInvitationId?: string;
   evaluationSessionId?: string;
+  checkoutTotalLabel?: string | null;
+  extraChargeLabel?: string | null;
 }) {
   const [isPending, startTransition] = useTransition();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -83,13 +87,18 @@ export default function PurchaseSingleClassButton({
           </div>
         </div>
       ) : null}
+      {extraChargeLabel ? (
+        <p className="text-left text-xs leading-5 text-amber-200">{extraChargeLabel}</p>
+      ) : null}
       <button
         type="button"
         onClick={buy}
         disabled={isPending}
         className="min-h-11 rounded-2xl bg-fuchsia-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-fuchsia-500 disabled:cursor-wait disabled:opacity-60"
       >
-        {isPending ? "Abriendo pago seguro…" : `Comprar · ${priceLabel}`}
+        {isPending
+          ? "Abriendo pago seguro…"
+          : `Comprar · ${checkoutTotalLabel ?? priceLabel}`}
       </button>
       {errorMessage ? <p className="mt-2 max-w-xs text-xs text-rose-300">{errorMessage}</p> : null}
     </div>
