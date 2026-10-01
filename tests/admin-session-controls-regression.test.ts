@@ -20,7 +20,7 @@ describe("Admin session controls regression", () => {
     expect(today).toContain("reservationStudentIds");
     expect(today).toContain("reservationStudents");
     expect(today).toContain('.in("id", reservationStudentIds)');
-    expect(today).toContain("...(reservationStudents ?? [])");
+    expect(today).toContain("(reservationStudents ?? []).map");
     expect(sessionDetail).toContain("reservationStudentIds");
     expect(sessionDetail).toContain("(reservationStudents ?? []).map");
   });
