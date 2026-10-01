@@ -101,9 +101,21 @@ export default async function StudentPackagePage() {
   const activeDaysRemaining = activePackage
     ? daysRemaining(activePackage.expires_on, studio.timezone)
     : null;
-  const { data: enrollmentOptionData } = await supabase.rpc(
-    "student_enrollment_purchase_option",
-  );
+  const [{ data: enrollmentOptionData }, { data: purchasableProductRows }] =
+    await Promise.all([
+      supabase.rpc("student_enrollment_purchase_option"),
+      supabase
+        .from("product_templates")
+        .select(
+          "id,name,product_type,package_term,price_minor,currency,validity_days,credit_limit,unlimited",
+        )
+        .eq("studio_id", membership.studio_id)
+        .eq("active", true)
+        .eq("online_purchasable", true)
+        .in("product_type", ["package", "membership"])
+        .order("price_minor", { ascending: true }),
+    ]);
+
   const enrollmentOption = (enrollmentOptionData as {
     enabled?: boolean;
     missing?: boolean;
@@ -118,17 +130,6 @@ export default async function StudentPackagePage() {
   } | null) ?? null;
   const enrollmentMissing = enrollmentOption?.missing === true;
   const enrollmentProduct = enrollmentOption?.product ?? null;
-
-  const { data: purchasableProductRows } = await supabase
-    .from("product_templates")
-    .select(
-      "id,name,product_type,package_term,price_minor,currency,validity_days,credit_limit,unlimited",
-    )
-    .eq("studio_id", membership.studio_id)
-    .eq("active", true)
-    .eq("online_purchasable", true)
-    .in("product_type", ["package", "membership"])
-    .order("price_minor", { ascending: true });
 
   const purchasableProducts = (purchasableProductRows ?? []) as PurchasableProduct[];
   const productDisciplineNames = new Map<string, string[]>();
