@@ -138,7 +138,7 @@ export default async function EnrollmentPolicyPage({
                     style: "currency",
                     currency: product.currency,
                   }).format(product.price_minor / 100)}{" "}
-                  · {product.validity_days} días
+                  · {product.validity_days == null ? "Vitalicia" : `${product.validity_days} días`}
                   {!product.active ? " · inactivo" : ""}
                 </option>
               ))}
