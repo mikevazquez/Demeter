@@ -217,7 +217,7 @@ async function prepareBooking(
     };
   }
 
-  let studentId = ctx.studentId;
+  const studentId = ctx.studentId;
   let resolvedStudentType: string | null = null;
 
   if (studentId) {
