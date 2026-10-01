@@ -136,8 +136,6 @@ export default async function AdminPage({
   const canWriteStudents = can(CAPABILITIES.STUDENTS_WRITE);
   const canWriteSales = can(CAPABILITIES.SALES_WRITE);
   const canWriteAttendance = can(CAPABILITIES.ATTENDANCE_WRITE);
-  const { data: serverNow } = await supabase.rpc("current_server_time");
-
   const [
     { data: selectedSessions },
     { data: activeProductAcquisitions },
@@ -145,6 +143,7 @@ export default async function AdminPage({
     { data: students },
     { data: quickSaleProducts },
     { data: quickSaleHistory },
+    { data: serverNow },
   ] = await Promise.all([
     supabase
       .from("class_sessions")
@@ -188,6 +187,7 @@ export default async function AdminPage({
       .eq("studio_id", studio.id)
       .order("created_at", { ascending: false })
       .limit(1000),
+    supabase.rpc("current_server_time"),
   ]);
 
   const activeProductStudentIds = new Set(
