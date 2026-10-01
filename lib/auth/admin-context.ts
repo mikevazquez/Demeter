@@ -5,7 +5,7 @@ import { CAPABILITIES, type Capability } from "@/lib/auth/capabilities";
 import { STUDIO_CONTEXT_COOKIE } from "@/lib/auth/studio-context-cookie";
 import { createClient } from "@/lib/supabase/server";
 
-async function resolveAdminBaseContext() {
+async function getAdminContextImpl(requiredCapability?: Capability) {
   const supabase = await createClient("admin");
   const {
     data: { user },
@@ -17,13 +17,14 @@ async function resolveAdminBaseContext() {
   }
   if (!user) redirect("/login/studio");
 
-  const [accountResult, membershipsResult] = await Promise.all([
+  const [accountResult, membershipsResult, profileResult] = await Promise.all([
     supabase.from("user_accounts").select("status").eq("id", user.id).maybeSingle(),
     supabase
       .from("studio_memberships")
       .select("studio_id, role, active, person_id")
       .eq("user_id", user.id)
       .eq("active", true),
+    supabase.from("profiles").select("full_name").eq("id", user.id).maybeSingle(),
   ]);
 
   if (accountResult.error || membershipsResult.error) {
@@ -81,12 +82,21 @@ async function resolveAdminBaseContext() {
     redirect("/login/studio?error=access");
   }
 
+  if (requiredCapability && !capabilities.has(requiredCapability)) {
+    redirect(
+      capabilities.has(CAPABILITIES.ADMIN_PORTAL)
+        ? "/admin?error=access"
+        : "/admin/mis-clases?error=access",
+    );
+  }
+
   return {
     supabase,
     user,
     account,
     membership,
     studio,
+    profile: profileResult.data,
     capabilities,
     can(capability: Capability) {
       return capabilities.has(capability);
@@ -94,32 +104,4 @@ async function resolveAdminBaseContext() {
   };
 }
 
-
-// Request-scoped React cache: every admin surface in the same render shares
-// one auth/studio/capability resolution. Capability checks remain per caller.
-const getAdminBaseContext = cache(resolveAdminBaseContext);
-
-export async function getAdminContext(requiredCapability?: Capability) {
-  const context = await getAdminBaseContext();
-
-  if (requiredCapability && !context.capabilities.has(requiredCapability)) {
-    redirect(
-      context.capabilities.has(CAPABILITIES.ADMIN_PORTAL)
-        ? "/admin?error=access"
-        : "/admin/mis-clases?error=access",
-    );
-  }
-
-  return context;
-}
-
-export const getAdminDisplayName = cache(async () => {
-  const { supabase, user } = await getAdminContext();
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("full_name")
-    .eq("id", user.id)
-    .maybeSingle();
-
-  return profile?.full_name?.trim() || user.email?.split("@")[0] || "Usuario";
-});
+export const getAdminContext = cache(getAdminContextImpl);
