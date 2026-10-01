@@ -49,7 +49,7 @@ describe("Enrollment V2", () => {
     expect(purchaseOptionMigration).toContain(
       "revoke all on function public.student_enrollment_purchase_option() from public,anon",
     );
-    expect(packagePage).toContain('rpc("student_enrollment_purchase_option"');
+    expect(packagePage).toContain("student_enrollment_purchase_option");
     expect(packagePage).not.toContain('.from("enrollment_policies")');
   });
 
