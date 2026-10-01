@@ -13,6 +13,7 @@ export type AssistantStudioContext = {
 export type AssistantToolContext = {
   supabase: SupabaseClient;
   studio: AssistantStudioContext;
+  studentId?: string | null;
 };
 
 function normalize(value: string) {
@@ -56,6 +57,10 @@ function localParts(value: string, timeZone: string) {
 
 function sessionRef(id: string) {
   return `session:${id}`;
+}
+
+function reservationRef(id: string) {
+  return `reservation:${id}`;
 }
 
 export async function searchClassAvailability(
@@ -355,6 +360,127 @@ export async function getPolicyInformation(ctx: AssistantToolContext) {
   };
 }
 
+export async function getStudentReservations(ctx: AssistantToolContext) {
+  if (!ctx.studentId) {
+    return { ok: false, error: "identity_required" };
+  }
+
+  const { data: reservations, error: reservationError } = await ctx.supabase
+    .from("reservations")
+    .select("id,session_id,status,credits_held,acquisition_id,booked_at")
+    .eq("studio_id", ctx.studio.id)
+    .eq("student_id", ctx.studentId)
+    .eq("status", "reserved")
+    .order("booked_at", { ascending: false })
+    .limit(50);
+
+  if (reservationError) {
+    return { ok: false, error: "reservations_unavailable" };
+  }
+
+  const sessionIds = [
+    ...new Set((reservations ?? []).map((item) => item.session_id).filter(Boolean)),
+  ] as string[];
+
+  if (!sessionIds.length) {
+    return { ok: true, reservations: [] };
+  }
+
+  const { data: sessions, error: sessionError } = await ctx.supabase
+    .from("class_sessions")
+    .select("id,template_id,starts_at,ends_at,status,location_id,space_id")
+    .eq("studio_id", ctx.studio.id)
+    .in("id", sessionIds)
+    .gt("starts_at", new Date().toISOString())
+    .order("starts_at", { ascending: true });
+
+  if (sessionError) {
+    return { ok: false, error: "reservations_unavailable" };
+  }
+
+  const activeSessionIds = new Set((sessions ?? []).map((item) => item.id));
+  const filteredReservations = (reservations ?? []).filter((item) =>
+    activeSessionIds.has(item.session_id),
+  );
+
+  if (!filteredReservations.length) {
+    return { ok: true, reservations: [] };
+  }
+
+  const templateIds = [
+    ...new Set((sessions ?? []).map((item) => item.template_id).filter(Boolean)),
+  ] as string[];
+  const spaceIds = [
+    ...new Set((sessions ?? []).map((item) => item.space_id).filter(Boolean)),
+  ] as string[];
+  const locationIds = [
+    ...new Set((sessions ?? []).map((item) => item.location_id).filter(Boolean)),
+  ] as string[];
+
+  const [templatesResult, spacesResult, locationsResult] = await Promise.all([
+    templateIds.length
+      ? ctx.supabase
+          .from("class_templates")
+          .select("id,name")
+          .eq("studio_id", ctx.studio.id)
+          .in("id", templateIds)
+      : Promise.resolve({ data: [], error: null }),
+    spaceIds.length
+      ? ctx.supabase
+          .from("spaces")
+          .select("id,name")
+          .eq("studio_id", ctx.studio.id)
+          .in("id", spaceIds)
+      : Promise.resolve({ data: [], error: null }),
+    locationIds.length
+      ? ctx.supabase
+          .from("studio_locations")
+          .select("id,name")
+          .eq("studio_id", ctx.studio.id)
+          .in("id", locationIds)
+      : Promise.resolve({ data: [], error: null }),
+  ]);
+
+  if (templatesResult.error || spacesResult.error || locationsResult.error) {
+    return { ok: false, error: "reservation_details_unavailable" };
+  }
+
+  const sessionMap = new Map((sessions ?? []).map((item) => [item.id, item]));
+  const templateMap = new Map(
+    (templatesResult.data ?? []).map((item) => [item.id, item.name]),
+  );
+  const spaceMap = new Map(
+    (spacesResult.data ?? []).map((item) => [item.id, item.name]),
+  );
+  const locationMap = new Map(
+    (locationsResult.data ?? []).map((item) => [item.id, item.name]),
+  );
+
+  return {
+    ok: true,
+    reservations: filteredReservations.slice(0, 20).map((reservation) => {
+      const session = sessionMap.get(reservation.session_id);
+      if (!session) return null;
+      const start = localParts(session.starts_at, ctx.studio.timezone);
+      const end = localParts(session.ends_at, ctx.studio.timezone);
+
+      return {
+        reservation_ref: reservationRef(reservation.id),
+        activity: templateMap.get(session.template_id) ?? "Clase",
+        date: start.date,
+        starts_at_local: start.time,
+        ends_at_local: end.time,
+        location: session.location_id
+          ? locationMap.get(session.location_id) ?? null
+          : null,
+        space: session.space_id ? spaceMap.get(session.space_id) ?? null : null,
+        credit_cost: Math.max(Number(reservation.credits_held ?? 1), 1),
+        status: reservation.status,
+      };
+    }).filter(Boolean),
+  };
+}
+
 export async function executeAssistantReadTool(
   ctx: AssistantToolContext,
   toolName: string,
@@ -371,6 +497,8 @@ export async function executeAssistantReadTool(
       return getStudioInformation(ctx);
     case "get_policy_information":
       return getPolicyInformation(ctx);
+    case "get_student_reservations":
+      return getStudentReservations(ctx);
     default:
       return { ok: false, error: "tool_not_allowed" };
   }
