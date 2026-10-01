@@ -15,9 +15,11 @@ export default async function InstructorProfilePage({
   params: Promise<{ instructorId: string }>;
   searchParams: Promise<{ created?: string; saved?: string; error?: string }>;
 }) {
-  const { instructorId } = await params;
-  const query = await searchParams;
-  const { supabase, studio, can } = await getAdminContext(CAPABILITIES.INSTRUCTORS_READ);
+  const [{ instructorId }, query, { supabase, studio, can }] = await Promise.all([
+    params,
+    searchParams,
+    getAdminContext(CAPABILITIES.INSTRUCTORS_READ),
+  ]);
   const canWrite = can(CAPABILITIES.INSTRUCTORS_WRITE);
   const canManageAccess = can(CAPABILITIES.SETTINGS_WRITE);
 
