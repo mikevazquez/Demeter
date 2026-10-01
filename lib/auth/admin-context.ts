@@ -17,13 +17,14 @@ async function getAdminContextImpl(requiredCapability?: Capability) {
   }
   if (!user) redirect("/login/studio");
 
-  const [accountResult, membershipsResult] = await Promise.all([
+  const [accountResult, membershipsResult, profileResult] = await Promise.all([
     supabase.from("user_accounts").select("status").eq("id", user.id).maybeSingle(),
     supabase
       .from("studio_memberships")
       .select("studio_id, role, active, person_id")
       .eq("user_id", user.id)
       .eq("active", true),
+    supabase.from("profiles").select("full_name").eq("id", user.id).maybeSingle(),
   ]);
 
   if (accountResult.error || membershipsResult.error) {
@@ -95,6 +96,7 @@ async function getAdminContextImpl(requiredCapability?: Capability) {
     account,
     membership,
     studio,
+    profile: profileResult.data,
     capabilities,
     can(capability: Capability) {
       return capabilities.has(capability);
