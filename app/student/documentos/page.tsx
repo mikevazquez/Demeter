@@ -13,8 +13,10 @@ export default async function StudentDocumentsPage({
 }: {
   searchParams: Promise<{ error?: string }>;
 }) {
-  const query = await searchParams;
-  const { supabase } = await getStudentPortalContext();
+  const [query, { supabase }] = await Promise.all([
+    searchParams,
+    getStudentPortalContext(),
+  ]);
   const { data, error } = await supabase.rpc("student_document_center");
 
   const center = (data ?? {}) as {
