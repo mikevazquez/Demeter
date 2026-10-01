@@ -14,9 +14,11 @@ export default async function EvaluationDisciplinePage({
   params: Promise<{ disciplineId: string }>;
   searchParams: Promise<{ error?: string }>;
 }) {
-  const { disciplineId } = await params;
-  const qs = await searchParams;
-  const ctx = await getAdminContext(CAPABILITIES.EVALUATIONS_CONFIGURE);
+  const [{ disciplineId }, qs, ctx] = await Promise.all([
+    params,
+    searchParams,
+    getAdminContext(CAPABILITIES.EVALUATIONS_CONFIGURE),
+  ]);
 
   const { data: discipline } = await ctx.supabase
     .from("disciplines")
