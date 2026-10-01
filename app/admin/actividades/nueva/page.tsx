@@ -10,8 +10,10 @@ export default async function NewActivityPage({
 }: {
   searchParams: Promise<{ error?: string }>;
 }) {
-  const params = await searchParams;
-  const { supabase, studio } = await getAdminContext(CAPABILITIES.SCHEDULE_WRITE);
+  const [params, { supabase, studio }] = await Promise.all([
+    searchParams,
+    getAdminContext(CAPABILITIES.SCHEDULE_WRITE),
+  ]);
 
   const [{ data: instructors }, { data: persons }, { data: spaces }, { data: operatingPolicy }] =
     await Promise.all([
