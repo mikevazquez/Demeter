@@ -1,0 +1,25 @@
+name: Admin Session Controls Check
+on:
+  push:
+    branches:
+      - fix/restore-admin-session-controls
+  workflow_dispatch:
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: test-publishable-key
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npx vitest run tests/admin-session-controls-regression.test.ts tests/asistian-attendance-payment.test.ts tests/admin-ux-03-agenda-calendar.test.ts tests/admin-ux-04-session-detail-visual.test.ts
+      - run: npm run build
