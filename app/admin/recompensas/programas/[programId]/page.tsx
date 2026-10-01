@@ -23,9 +23,11 @@ export default async function ProgramDetailPage({
   params: Promise<{ programId: string }>;
   searchParams: Promise<{ saved?: string; error?: string }>;
 }) {
-  const { programId } = await params;
-  const query = await searchParams;
-  const ctx = await getAdminContext(CAPABILITIES.REWARDS_READ);
+  const [{ programId }, query, ctx] = await Promise.all([
+    params,
+    searchParams,
+    getAdminContext(CAPABILITIES.REWARDS_READ),
+  ]);
 
   const { data: program } = await ctx.supabase
     .from("reward_programs")
