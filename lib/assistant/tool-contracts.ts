@@ -296,19 +296,6 @@ export const assistantActionToolDefinitions: AssistantToolDefinition[] = [
   },
   {
     type: "function",
-    name: "prepare_student_access_activation",
-    description:
-      "Prepara la activación del acceso de una alumna que ya asistió a su clase de prueba y necesita continuar con inscripción/documentos. No genera todavía ningún enlace ni token.",
-    strict: true,
-    parameters: {
-      type: "object",
-      properties: {},
-      required: [],
-      additionalProperties: false,
-    },
-  },
-  {
-    type: "function",
     name: "escalate_to_human",
     description:
       "Pasa esta conversación a atención humana dentro del mismo canal cuando un pago o comprobante necesita revisión manual, cuando la persona lo pide o cuando Demi no puede resolver el caso con seguridad.",
