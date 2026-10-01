@@ -3,7 +3,7 @@ import Link from "next/link";
 
 import QueryNotice from "@/app/components/QueryNotice";
 import { safeReservationReturnTo } from "@/lib/documents";
-import { getStudentPortalContext } from "@/lib/student/portal";
+import { getStudentShellContext } from "@/lib/student/portal";
 
 import { registerGuardianAction } from "../actions";
 
@@ -14,8 +14,8 @@ export default async function StudentGuardianPage({
 }) {
   const query = await searchParams;
   const returnTo = safeReservationReturnTo(query.returnTo);
-  const { supabase, snapshot, membership } = await getStudentPortalContext();
-  const studentId = snapshot.profile.student_id;
+  const { supabase, student, membership } = await getStudentShellContext();
+  const studentId = student.id;
 
   const [{ data: guardians }, { data: invitations }] = await Promise.all([
     supabase
