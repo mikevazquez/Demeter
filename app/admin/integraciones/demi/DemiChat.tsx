@@ -75,6 +75,7 @@ function toolLabel(name: string) {
     execute_reschedule: "Movió la reserva de forma atómica",
     prepare_waitlist_join: "Validó y preparó la lista de espera",
     execute_waitlist_join: "Agregó a lista de espera",
+    record_trial_payment_preference: "Registró la forma de pago",
   };
   return labels[name] ?? name;
 }
