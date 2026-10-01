@@ -651,3 +651,176 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+
+/* Studio Flow V2 · light session-detail consolidation */
+.admin-ux04-session-detail {
+  --session-v2-surface: #ffffff;
+  --session-v2-soft: #f8fafb;
+  --session-v2-line: #e3eaf1;
+  --session-v2-text: #10203a;
+  --session-v2-muted: #687891;
+  --session-v2-accent: #17a878;
+  --session-v2-accent-strong: #0f8f66;
+  --session-v2-accent-soft: #e7f8f1;
+  color: var(--session-v2-text);
+}
+
+.admin-ux04-session-detail .admin-class-detail-header,
+.admin-ux04-session-detail .admin-class-stats .stat-card,
+.admin-ux04-session-detail .admin-class-operations-panel,
+.admin-ux04-session-detail .today-roster,
+.admin-ux04-session-detail .today-roster-header.compact,
+.admin-ux04-session-detail .today-add-panel,
+.admin-ux04-session-detail .today-attendance-footer,
+.admin-ux04-session-detail .admin-session-settings,
+.admin-ux04-session-detail .admin-minimum-status {
+  border-color: var(--session-v2-line) !important;
+  background: #fff !important;
+  box-shadow: 0 8px 26px rgba(44, 64, 86, 0.045) !important;
+}
+
+.admin-ux04-session-detail .admin-class-detail-header .back-link,
+.admin-ux04-session-detail .admin-class-detail-header p:last-child,
+.admin-ux04-session-detail .admin-class-stats .stat-card span,
+.admin-ux04-session-detail .admin-class-stats .stat-card small,
+.admin-ux04-session-detail .today-roster-header span,
+.admin-ux04-session-detail .today-student-identity > span,
+.admin-ux04-session-detail .today-attendance-summary,
+.admin-ux04-session-detail .admin-session-field-grid label > span,
+.admin-ux04-session-detail .admin-session-notes > span,
+.admin-ux04-session-detail .admin-session-scope legend,
+.admin-ux04-session-detail .admin-session-cancel-note,
+.admin-ux04-session-detail .admin-minimum-status-head p,
+.admin-ux04-session-detail .admin-minimum-grid span,
+.admin-ux04-session-detail .admin-minimum-override-form small {
+  color: var(--session-v2-muted) !important;
+}
+
+.admin-ux04-session-detail .admin-class-detail-header .eyebrow,
+.admin-ux04-session-detail .admin-session-settings > summary small {
+  color: var(--session-v2-accent-strong) !important;
+}
+
+.admin-ux04-session-detail .dashboard-title,
+.admin-ux04-session-detail .admin-class-stats .stat-card strong,
+.admin-ux04-session-detail .today-roster-header h3,
+.admin-ux04-session-detail .today-student-identity strong,
+.admin-ux04-session-detail .admin-session-settings > summary strong,
+.admin-ux04-session-detail .admin-minimum-status-head strong,
+.admin-ux04-session-detail .admin-minimum-grid strong,
+.admin-ux04-session-detail .admin-minimum-override-form strong {
+  color: var(--session-v2-text) !important;
+}
+
+.admin-ux04-session-detail .admin-class-detail-header > .secondary-button,
+.admin-ux04-session-detail .today-add-student-button {
+  border-color: #c6e8db !important;
+  background: var(--session-v2-accent-soft) !important;
+  color: var(--session-v2-accent-strong) !important;
+}
+
+.admin-ux04-session-detail .today-student-card.compact {
+  border-bottom-color: var(--session-v2-line) !important;
+  background: #fff !important;
+}
+.admin-ux04-session-detail .today-student-card.compact:hover {
+  background: #f7fbf9 !important;
+}
+
+.admin-ux04-session-detail .today-student-avatar {
+  border-color: #c6e8db !important;
+  background: var(--session-v2-accent-soft) !important;
+  color: var(--session-v2-accent-strong) !important;
+}
+
+.admin-ux04-session-detail .today-attendance-preview button {
+  border-color: #dce4eb !important;
+  background: #fff !important;
+  color: #607086 !important;
+}
+
+.admin-ux04-session-detail .today-attendance-preview button.is-attended {
+  border-color: #bfe3d6 !important;
+  background: var(--session-v2-accent-soft) !important;
+  color: var(--session-v2-accent-strong) !important;
+}
+
+.admin-ux04-session-detail .today-attendance-preview button.is-no-show {
+  border-color: #efc7cd !important;
+  background: #fff0f2 !important;
+  color: #b84c56 !important;
+}
+
+.admin-ux04-session-detail .today-add-form input,
+.admin-ux04-session-detail .today-add-form select,
+.admin-ux04-session-detail .today-correction-form input,
+.admin-ux04-session-detail .admin-session-field-grid > label,
+.admin-ux04-session-detail .admin-session-notes,
+.admin-ux04-session-detail .admin-session-scope {
+  border-color: #dce4eb !important;
+  background: #fbfcfd !important;
+  color: var(--session-v2-text) !important;
+}
+
+.admin-ux04-session-detail .admin-session-field-grid input,
+.admin-ux04-session-detail .admin-session-field-grid select,
+.admin-ux04-session-detail .admin-session-notes textarea {
+  color: var(--session-v2-text) !important;
+  color-scheme: light !important;
+}
+
+.admin-ux04-session-detail .admin-session-scope label {
+  color: #53637b !important;
+}
+.admin-ux04-session-detail .admin-session-scope input {
+  accent-color: var(--session-v2-accent) !important;
+}
+
+.admin-ux04-session-detail .today-finalize-button,
+.admin-ux04-session-detail .admin-session-form-actions .primary-button {
+  background: var(--session-v2-accent) !important;
+  color: #fff !important;
+  box-shadow: 0 10px 24px rgba(23, 168, 120, 0.14) !important;
+}
+
+.admin-ux04-session-detail .admin-session-settings-body {
+  border-top-color: var(--session-v2-line) !important;
+}
+
+.admin-ux04-session-detail .admin-session-cancel-button {
+  border-color: #efc7cd !important;
+  background: #fff0f2 !important;
+  color: #b84c56 !important;
+}
+
+.admin-ux04-session-detail .admin-minimum-status-pill,
+.admin-ux04-session-detail .admin-minimum-success {
+  border-color: #bfe3d6 !important;
+  background: var(--session-v2-accent-soft) !important;
+  color: var(--session-v2-accent-strong) !important;
+}
+
+.admin-ux04-session-detail .admin-minimum-cancelled-detail {
+  border-color: #efc7cd !important;
+  background: #fff0f2 !important;
+  color: #a7444d !important;
+}
+
+.admin-ux04-session-detail .admin-minimum-override-note,
+.admin-ux04-session-detail .admin-minimum-override-form {
+  border-color: var(--session-v2-line) !important;
+  background: var(--session-v2-soft) !important;
+  color: var(--session-v2-text) !important;
+}
+
+.admin-ux04-session-detail .admin-minimum-override-form button {
+  border-color: #c6e8db !important;
+  background: var(--session-v2-accent-soft) !important;
+  color: var(--session-v2-accent-strong) !important;
+}
+.admin-ux04-session-detail .admin-minimum-override-form button.is-active {
+  border-color: #efc7cd !important;
+  background: #fff0f2 !important;
+  color: #b84c56 !important;
+}
