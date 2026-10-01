@@ -177,11 +177,8 @@ export default async function StudentReservePage({
 
   const baseItems = (sessions ?? []) as StudentSession[];
   const sessionIds = baseItems.map((item) => item.session_id);
-  const [
-    { data: resourceRequirements },
-    { data: waitlistData },
-    { data: rewardStatusData },
-  ] = await Promise.all([
+  const [{ data: resourceRequirements }, { data: waitlistData }, { data: rewardStatusData }] =
+    await Promise.all([
     sessionIds.length
       ? supabase
           .from("class_sessions")
@@ -189,9 +186,9 @@ export default async function StudentReservePage({
           .eq("studio_id", membership.studio_id)
           .in("id", sessionIds)
       : Promise.resolve({ data: [] as { id: string; requires_resource: boolean }[] }),
-    supabase.rpc("student_waitlist_feed"),
-    supabase.rpc("student_reward_status_snapshot"),
-  ]);
+      supabase.rpc("student_waitlist_feed"),
+      supabase.rpc("student_reward_status_snapshot"),
+    ]);
   const resourceRequirementMap = new Map(
     (resourceRequirements ?? []).map((item) => [item.id, item.requires_resource]),
   );
