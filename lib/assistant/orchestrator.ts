@@ -273,7 +273,13 @@ function confirmationReply(
           summary.amount_minor ?? summary.drop_in_price_minor,
           summary.currency,
         ) ?? "el costo de la clase";
-      return `Listo. Tu reserva de ${String(summary.activity ?? "la clase")} quedó confirmada para el ${formatDateForReply(summary.date)}, de ${formatTimeForReply(summary.starts_at_local)} a ${formatTimeForReply(summary.ends_at_local)}. ¿El pago de ${price} lo harás en efectivo en el estudio o por transferencia?`;
+      const activationUrl = String(result.activation_url ?? "").trim();
+      const accessText = activationUrl
+        ? ` También te habilité el acceso a la app. Crea tu contraseña aquí: ${activationUrl}`
+        : result.access_already_available === true
+          ? " Tu acceso a la app ya estaba habilitado."
+          : "";
+      return `Listo. Tu reserva de ${String(summary.activity ?? "la clase")} quedó confirmada para el ${formatDateForReply(summary.date)}, de ${formatTimeForReply(summary.starts_at_local)} a ${formatTimeForReply(summary.ends_at_local)}.${accessText} ¿El pago de ${price} lo harás en efectivo en el estudio o por transferencia?`;
     }
 
     return `Listo. Tu reserva de ${String(summary.activity ?? "la clase")} quedó confirmada para el ${formatDateForReply(summary.date)}, de ${formatTimeForReply(summary.starts_at_local)} a ${formatTimeForReply(summary.ends_at_local)}.`;
@@ -387,7 +393,7 @@ async function tryServerSideConfirmation(
           : "executed";
 
   const auditResult =
-    toolName === "execute_student_access_activation"
+    toolName === "execute_student_access_activation" || toolName === "execute_booking"
       ? {
           ...resultObject,
           activation_url:
