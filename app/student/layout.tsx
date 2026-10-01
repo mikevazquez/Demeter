@@ -28,21 +28,14 @@ function pwaBrandQuery(brand: PwaBrand) {
 }
 
 const getPwaBrand = cache(async (): Promise<PwaBrand> => {
-  const { membership, studio, supabase } = await getStudentPortalContext();
-  const { data: brand } = await supabase
-    .from("studios")
-    .select("name,slug,primary_color,logo_path")
-    .eq("id", membership.studio_id)
-    .maybeSingle();
+  const { studio } = await getStudentPortalContext();
 
-  return (
-    brand ?? {
-      name: studio.name,
-      slug: "studio",
-      primary_color: "#FF0A8A",
-      logo_path: null,
-    }
-  );
+  return {
+    name: studio.name,
+    slug: studio.slug ?? "studio",
+    primary_color: studio.primary_color ?? "#FF0A8A",
+    logo_path: studio.logo_path ?? null,
+  };
 });
 
 export async function generateMetadata(): Promise<Metadata> {
