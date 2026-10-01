@@ -148,6 +148,9 @@ export type PrepareCancellationArgs = {
 
 export type ExecuteCancellationArgs = EmptyArgs;
 
+export type PrepareRescheduleArgs = { reservation_ref: string; target_session_ref: string };
+export type ExecuteRescheduleArgs = EmptyArgs;
+
 export const assistantActionToolDefinitions: AssistantToolDefinition[] = [
   {
     type: "function",
@@ -210,6 +213,35 @@ export const assistantActionToolDefinitions: AssistantToolDefinition[] = [
     name: "execute_cancellation",
     description:
       "Ejecuta la última cancelación pendiente de esta conversación. Solo úsala después de un NUEVO mensaje con confirmación explícita. El servidor vuelve a validar la consecuencia antes de cancelar.",
+    strict: true,
+    parameters: {
+      type: "object",
+      properties: {},
+      required: [],
+      additionalProperties: false,
+    },
+  },
+  {
+    type: "function",
+    name: "prepare_reschedule",
+    description:
+      "Prepara mover una reserva existente a una clase destino exacta. Valida la reserva actual, la clase destino y las consecuencias de crédito. No modifica nada todavía.",
+    strict: true,
+    parameters: {
+      type: "object",
+      properties: {
+        reservation_ref: { type: "string" },
+        target_session_ref: { type: "string" },
+      },
+      required: ["reservation_ref", "target_session_ref"],
+      additionalProperties: false,
+    },
+  },
+  {
+    type: "function",
+    name: "execute_reschedule",
+    description:
+      "Ejecuta el último reagendado pendiente de esta conversación dentro de una sola transacción. Solo úsala después de un NUEVO mensaje con confirmación explícita.",
     strict: true,
     parameters: {
       type: "object",
