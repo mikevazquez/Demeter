@@ -13,6 +13,7 @@ import type {
   PrepareCancellationArgs,
   PrepareRescheduleArgs,
   PrepareWaitlistJoinArgs,
+  RecordTrialPaymentPreferenceArgs,
 } from "./tool-contracts";
 
 type AssistantActionToolContext = {
@@ -1624,6 +1625,50 @@ async function executeWaitlistJoin(
   };
 }
 
+
+async function recordTrialPaymentPreference(
+  ctx: AssistantActionToolContext,
+  args: RecordTrialPaymentPreferenceArgs,
+) {
+  const method = args.payment_method;
+  if (!["cash", "bank_transfer"].includes(method)) {
+    return { ok: false, error: "payment_method_not_supported" };
+  }
+
+  const { data, error } = await ctx.supabase.rpc(
+    "assistant_record_trial_payment_preference",
+    {
+      target_studio_id: ctx.studio.id,
+      target_assistant_conversation_id: ctx.conversationId,
+      target_payment_preference: method,
+    },
+  );
+
+  const result = asObject(data);
+  if (error || !result || result.ok !== true) {
+    return {
+      ok: false,
+      error: "payment_preference_record_failed",
+      reason_code: String(result?.reason_code ?? "payment_preference_record_failed"),
+    };
+  }
+
+  return {
+    ok: true,
+    status: "recorded",
+    payment_method: method,
+    amount_minor:
+      result.amount_minor == null ? null : Number(result.amount_minor),
+    currency: String(result.currency ?? ctx.studio.currency),
+    first_class_no_enrollment: result.first_class_no_enrollment === true,
+    enrollment_required_after_first_attendance:
+      result.enrollment_required_after_first_attendance === true,
+    marks_payment_received: false,
+    transfer_details_configured:
+      result.transfer_details_configured === true,
+  };
+}
+
 export async function executeAssistantActionTool(
   ctx: AssistantActionToolContext,
   toolName: string,
@@ -1646,6 +1691,11 @@ export async function executeAssistantActionTool(
       return prepareWaitlistJoin(ctx, args as PrepareWaitlistJoinArgs);
     case "execute_waitlist_join":
       return executeWaitlistJoin(ctx, args as ExecuteWaitlistJoinArgs);
+    case "record_trial_payment_preference":
+      return recordTrialPaymentPreference(
+        ctx,
+        args as RecordTrialPaymentPreferenceArgs,
+      );
     default:
       return { ok: false, error: "tool_not_allowed" };
   }
