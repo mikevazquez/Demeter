@@ -27,7 +27,7 @@ export default async function MyClassesPage({
 
   if (membership.role !== "instructor") {
     return (
-      <main className="dashboard-shell">
+      <main className="dashboard-shell admin-v2-light coach-classes-v2">
         <section className="panel">
           <p className="eyebrow">MIS CLASES</p>
           <h1 className="dashboard-title">Agenda asignada</h1>
@@ -72,7 +72,7 @@ export default async function MyClassesPage({
   const sessions = (data ?? []) as CoachSession[];
 
   return (
-    <main className="dashboard-shell space-y-6">
+    <main className="dashboard-shell space-y-6 admin-v2-light coach-classes-v2">
       <section>
         <p className="eyebrow">OPERACIÓN · {studio.name}</p>
         <h1 className="dashboard-title">Mis clases</h1>
