@@ -208,12 +208,17 @@ export async function sendDemiMessage(input: SendDemiInput) {
       history,
     });
 
+    const persistedReply = result.reply.replace(
+      /https:\/\/[^\s]+\/login\/student\/activar\?[^\s]+/g,
+      "[enlace de activación enviado]",
+    );
+
     const { error: replyError } = await supabase.from("assistant_turns").insert({
       studio_id: studio.id,
       conversation_id: conversationId,
       direction: "outbound",
       role: "assistant",
-      content: result.reply,
+      content: persistedReply,
       sanitized: true,
     });
     if (replyError) {
