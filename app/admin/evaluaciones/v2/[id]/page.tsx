@@ -74,11 +74,13 @@ export default async function EvaluationV2EditorPage({
   params: Promise<{ id: string }>;
   searchParams: Promise<{ step?: string; block?: string; view?: string; error?: string }>;
 }) {
-  const { id } = await params;
-  const qs = await searchParams;
+  const [{ id }, qs, ctx] = await Promise.all([
+    params,
+    searchParams,
+    getAdminContext(CAPABILITIES.EVALUATIONS_CONFIGURE),
+  ]);
   const tab = resolveTab(qs.step);
   const sectionView = resolveSectionView(qs.view);
-  const ctx = await getAdminContext(CAPABILITIES.EVALUATIONS_CONFIGURE);
 
   const { data: template } = await ctx.supabase
     .from("evaluation_templates")
