@@ -196,6 +196,32 @@ async function prepareBooking(
   let resolvedStudentType: string | null = null;
 
   if (!studentId && ctx.crmContactId) {
+    const nowIso = new Date().toISOString();
+    const { data: requiredDocuments, error: documentError } = await ctx.supabase
+      .from("document_versions")
+      .select("id,document_id,enforcement_scope,response_mode,audience_scope")
+      .eq("studio_id", ctx.studio.id)
+      .in("status", ["active", "scheduled"])
+      .not("published_at", "is", null)
+      .lte("published_at", nowIso)
+      .is("retired_at", null)
+      .neq("response_mode", "informational")
+      .eq("audience_scope", "all")
+      .eq("enforcement_scope", "global_booking")
+      .limit(1);
+
+    if (!documentError && (requiredDocuments?.length ?? 0) > 0) {
+      return {
+        ok: false,
+        error: "onboarding_required",
+        onboarding_required: true,
+        reason_code: "document_required",
+        reason_message:
+          "Necesitas activar tu acceso y completar los documentos obligatorios antes de reservar.",
+        requires_access_provisioning: true,
+      };
+    }
+
     const { data: ensured, error: ensureError } = await ctx.supabase.rpc(
       "assistant_ensure_trial_student",
       {
