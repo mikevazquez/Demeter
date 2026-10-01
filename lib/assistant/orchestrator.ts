@@ -70,6 +70,7 @@ type OrchestratorInput = {
   conversationId: string;
   turnId: string;
   studentId: string | null;
+  crmContactId: string | null;
   history: HistoryMessage[];
 };
 
@@ -253,7 +254,11 @@ function confirmationReply(
 
   const summary = asObject(result.summary);
   if (toolName === "execute_booking" && summary) {
-    return `Listo. Tu reserva de ${String(summary.activity ?? "la clase")} quedó confirmada para el ${formatDateForReply(summary.date)}, de ${formatTimeForReply(summary.starts_at_local)} a ${formatTimeForReply(summary.ends_at_local)}.`;
+    const paymentText =
+      summary.payment_pending === true
+        ? " Quedó con pago pendiente; todavía no se ha registrado como pagada."
+        : "";
+    return `Listo. Tu reserva de ${String(summary.activity ?? "la clase")} quedó confirmada para el ${formatDateForReply(summary.date)}, de ${formatTimeForReply(summary.starts_at_local)} a ${formatTimeForReply(summary.ends_at_local)}.${paymentText}`;
   }
 
   if (toolName === "execute_cancellation" && summary) {
@@ -324,6 +329,7 @@ async function tryServerSideConfirmation(
         conversationId: input.conversationId,
         turnId: input.turnId,
         studentId: input.studentId,
+        crmContactId: input.crmContactId,
         currentUserMessage,
       },
       toolName,
@@ -409,6 +415,9 @@ export async function runAssistantTurn(input: OrchestratorInput) {
     "Nunca llames execute_booking en el mismo turno en que preparaste la reserva. Debes esperar un NUEVO mensaje de la persona con una confirmación explícita.",
     "Cuando llegue un nuevo mensaje claro de confirmación, usa execute_booking sin argumentos. El servidor elegirá únicamente la última acción pendiente de esta conversación. Si el mensaje es ambiguo, pregunta otra vez y no ejecutes.",
     "Si una herramienta de reserva devuelve identity_required, explica que la demo necesita una identidad simulada seleccionada; en WhatsApp real la identidad vendrá del número.",
+    "Si la identidad viene del CRM como prospecto y pide reservar, prepare_booking puede crear su perfil trial de onboarding en Studio Flow. No inventes que ya era alumna antes de que la herramienta lo confirme.",
+    "Si prepare_booking devuelve onboarding_required, explica el requisito real que devolvió Studio Flow y no pidas confirmación de reserva todavía.",
+    "Si prepare_booking devuelve payment_pending=true, explica antes de confirmar que la reserva quedará pendiente de pago y que Studio Flow no la considera pagada automáticamente.",
     "Para cancelar, primero usa get_student_reservations para localizar la reserva real. Si la persona no expresó un motivo, pregúntalo y no prepares todavía la cancelación.",
     "Nunca inventes ni completes un motivo de cancelación. Usa prepare_cancellation solo con un motivo expresado por la persona y presenta claramente si la cancelación es a tiempo o tardía, si regresa el crédito y cualquier penalización.",
     "Nunca llames execute_cancellation en el mismo turno en que preparaste la cancelación. Debes esperar un NUEVO mensaje con confirmación explícita.",
@@ -628,6 +637,7 @@ export async function runAssistantTurn(input: OrchestratorInput) {
             conversationId: input.conversationId,
             turnId: input.turnId,
             studentId: input.studentId,
+            crmContactId: input.crmContactId,
             currentUserMessage,
           },
           toolName,
