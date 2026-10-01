@@ -120,6 +120,19 @@ export const assistantReadToolDefinitions: AssistantToolDefinition[] = [
       additionalProperties: false,
     },
   },
+  {
+    type: "function",
+    name: "get_student_reservations",
+    description:
+      "Consulta las próximas reservas activas de la persona identificada en esta conversación. Úsala antes de cancelar o reagendar para localizar la reserva exacta. No inventes reservas.",
+    strict: true,
+    parameters: {
+      type: "object",
+      properties: {},
+      required: [],
+      additionalProperties: false,
+    },
+  },
 ];
 
 export type PrepareBookingArgs = {
@@ -127,6 +140,13 @@ export type PrepareBookingArgs = {
 };
 
 export type ExecuteBookingArgs = EmptyArgs;
+
+export type PrepareCancellationArgs = {
+  reservation_ref: string;
+  reason: string;
+};
+
+export type ExecuteCancellationArgs = EmptyArgs;
 
 export const assistantActionToolDefinitions: AssistantToolDefinition[] = [
   {
@@ -153,6 +173,43 @@ export const assistantActionToolDefinitions: AssistantToolDefinition[] = [
     name: "execute_booking",
     description:
       "Ejecuta la última reserva pendiente de esta conversación. Solo úsala después de un NUEVO mensaje de la persona que confirme explícitamente la reserva. El servidor decide qué acción pendiente puede ejecutarse.",
+    strict: true,
+    parameters: {
+      type: "object",
+      properties: {},
+      required: [],
+      additionalProperties: false,
+    },
+  },
+  {
+    type: "function",
+    name: "prepare_cancellation",
+    description:
+      "Prepara la cancelación de una reserva exacta. Requiere un motivo expresado por la persona, calcula la consecuencia real y pide confirmación. Nunca inventes el motivo.",
+    strict: true,
+    parameters: {
+      type: "object",
+      properties: {
+        reservation_ref: {
+          type: "string",
+          description:
+            "Referencia opaca reservation:<uuid> devuelta por get_student_reservations.",
+        },
+        reason: {
+          type: "string",
+          description:
+            "Motivo de cancelación expresado por la persona. No lo inventes ni lo completes por tu cuenta.",
+        },
+      },
+      required: ["reservation_ref", "reason"],
+      additionalProperties: false,
+    },
+  },
+  {
+    type: "function",
+    name: "execute_cancellation",
+    description:
+      "Ejecuta la última cancelación pendiente de esta conversación. Solo úsala después de un NUEVO mensaje con confirmación explícita. El servidor vuelve a validar la consecuencia antes de cancelar.",
     strict: true,
     parameters: {
       type: "object",
