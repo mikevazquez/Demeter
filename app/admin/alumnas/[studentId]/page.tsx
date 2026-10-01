@@ -492,14 +492,8 @@ export default async function StudentProfilePage({
 
   let nextClass: { name: string; startsAt: string } | null = null;
   if (canReadSchedule) {
-    const { data: reservationRows } = await supabase
-      .from("reservations")
-      .select("id,session_id,acquisition_id,status,credits_held,cancelled_at")
-      .eq("studio_id", studio.id)
-      .eq("student_id", student.id)
-      .order("booked_at", { ascending: false });
-
-    const allSessionIds = [...new Set((reservationRows ?? []).map((item) => item.session_id))];
+    const reservationRows = reservationRowsResult.data ?? [];
+    const allSessionIds = [...new Set(reservationRows.map((item) => item.session_id))];
     const { data: sessionRows } = allSessionIds.length
       ? await supabase
           .from("class_sessions")
@@ -520,7 +514,7 @@ export default async function StudentProfilePage({
     const sessionMap = new Map((sessionRows ?? []).map((item) => [item.id, item]));
     const templateNameMap = new Map((templateRows ?? []).map((item) => [item.id, item.name]));
 
-    for (const reservation of reservationRows ?? []) {
+    for (const reservation of reservationRows) {
       const session = sessionMap.get(reservation.session_id);
       if (!session) continue;
       const event: PackageClassEvent = {
@@ -571,14 +565,8 @@ export default async function StudentProfilePage({
   let studentSalesHistory: StudentSaleHistory[] = [];
 
   if (canReadSales) {
-    const { data: studentSales } = await supabase
-      .from("sales")
-      .select("id,folio,total_minor,status,created_at")
-      .eq("studio_id", studio.id)
-      .eq("student_id", student.id)
-      .order("created_at", { ascending: false });
-
-    const saleIds = (studentSales ?? []).map((sale) => sale.id);
+    const studentSales = studentSalesResult.data ?? [];
+    const saleIds = studentSales.map((sale) => sale.id);
     const { data: payments } = saleIds.length
       ? await supabase
           .from("payments")
@@ -595,7 +583,7 @@ export default async function StudentProfilePage({
       target.set(payment.sale_id, (target.get(payment.sale_id) ?? 0) + payment.amount_minor);
     }
 
-    studentSalesHistory = (studentSales ?? []).map((sale) => {
+    studentSalesHistory = studentSales.map((sale) => {
       const grossPaid = grossPaidBySale.get(sale.id) ?? 0;
       const refunded = refundsBySale.get(sale.id) ?? 0;
       const netPaidMinor = grossPaid - refunded;
@@ -630,20 +618,15 @@ export default async function StudentProfilePage({
     pendingBalanceMinor = confirmedSales.reduce((sum, sale) => sum + sale.balanceMinor, 0);
   }
 
-  const { data: enrollmentRows } = await supabase
-    .from("student_enrollments")
-    .select("id,status,starts_on,expires_on,created_at")
-    .eq("studio_id", studio.id)
-    .eq("student_id", student.id)
-    .order("created_at", { ascending: false });
+  const enrollmentRows = enrollmentRowsResult.data ?? [];
   const enrollment =
-    (enrollmentRows ?? []).find(
+    enrollmentRows.find(
       (item) =>
         item.status === "active" &&
         (!item.starts_on || item.starts_on <= today) &&
         (!item.expires_on || item.expires_on >= today),
     ) ??
-    (enrollmentRows ?? [])[0] ??
+    enrollmentRows[0] ??
     null;
 
   let levelTitle: string | null = null;
@@ -683,22 +666,11 @@ export default async function StudentProfilePage({
     benefitDefinition: unknown;
   }> = [];
   if (canReadRewards) {
-    const [{ data: statusMembership }, { data: onboardingRow }] = await Promise.all([
-      supabase
-        .from("reward_status_memberships")
-        .select("current_level_key")
-        .eq("studio_id", studio.id)
-        .eq("student_id", student.id)
-        .maybeSingle(),
-      supabase
-        .from("reward_onboarding")
-        .select(
-          "documents_completed_at,profile_completed_at,app_installed_at,notifications_enabled_at,first_reservation_at,first_attendance_at,access_unlocked_at,access_method,access_reason",
-        )
-        .eq("studio_id", studio.id)
-        .eq("student_id", student.id)
-        .maybeSingle(),
-    ]);
+    const statusMembership = statusMembershipResult.data;
+    const onboardingRow = onboardingResult.data;
+    const achievementRows = achievementRowsResult.data ?? [];
+    const levelUnlockRows = levelUnlockRowsResult.data ?? [];
+    const rewardRows = rewardRowsResult.data ?? [];
 
     rewardOnboarding = onboardingRow
       ? {
@@ -725,40 +697,7 @@ export default async function StudentProfilePage({
       levelTitle = statusLevel?.title ?? null;
     }
 
-    const rewardCountResult = await supabase
-      .from("reward_instances")
-      .select("id", { count: "exact", head: true })
-      .eq("studio_id", studio.id)
-      .eq("student_id", student.id)
-      .eq("status", "available");
     rewardsAvailable = rewardCountResult.count ?? 0;
-
-    const [{ data: achievementRows }, { data: levelUnlockRows }, { data: rewardRows }] =
-      await Promise.all([
-        supabase
-          .from("reward_achievement_unlocks")
-          .select("id,title_snapshot,achievement_key,level_key,unlocked_at")
-          .eq("studio_id", studio.id)
-          .eq("student_id", student.id)
-          .order("unlocked_at", { ascending: false })
-          .limit(20),
-        supabase
-          .from("reward_status_months")
-          .select("id,resulting_level_key,closed_at,period_start")
-          .eq("studio_id", studio.id)
-          .eq("student_id", student.id)
-          .eq("is_closed", true)
-          .not("resulting_level_key", "is", null)
-          .order("period_start", { ascending: false })
-          .limit(20),
-        supabase
-          .from("reward_instances")
-          .select("id,reward_key,status,kind,benefit_definition,expires_at,redeemed_at,created_at")
-          .eq("studio_id", studio.id)
-          .eq("student_id", student.id)
-          .order("created_at", { ascending: false })
-          .limit(30),
-      ]);
 
     rewardAchievements = (achievementRows ?? []).map((item) => ({
       id: item.id,
@@ -797,18 +736,13 @@ export default async function StudentProfilePage({
   }
 
   if (canReadEvaluations) {
-    const { data: studentLevelRows } = await supabase
-      .from("student_discipline_levels")
-      .select("discipline_id,discipline_technical_level_id")
-      .eq("studio_id", studio.id)
-      .eq("student_id", student.id);
-
+    const studentLevelRows = studentLevelRowsResult.data ?? [];
     const disciplineIds = [
-      ...new Set((studentLevelRows ?? []).map((item) => item.discipline_id).filter(Boolean)),
+      ...new Set(studentLevelRows.map((item) => item.discipline_id).filter(Boolean)),
     ];
     const disciplineLevelIds = [
       ...new Set(
-        (studentLevelRows ?? []).map((item) => item.discipline_technical_level_id).filter(Boolean),
+        studentLevelRows.map((item) => item.discipline_technical_level_id).filter(Boolean),
       ),
     ];
 
@@ -992,11 +926,7 @@ export default async function StudentProfilePage({
     });
   }
 
-  let portalEntered = false;
-  if (student.user_id) {
-    const { data: authUser } = await supabase.auth.admin.getUserById(student.user_id);
-    portalEntered = Boolean(authUser?.user?.last_sign_in_at);
-  }
+  const portalEntered = Boolean(authUserResult.data?.user?.last_sign_in_at);
 
   const errorCopy: Record<string, string> = {
     phone_exists: "Ese teléfono ya pertenece a otra alumna.",
