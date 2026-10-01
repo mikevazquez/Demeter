@@ -524,7 +524,7 @@ async function tryServerSidePostTrialEnrollmentMethod(
 
   if (method === "cash") {
     return {
-      reply: `Listo. Reservé ${classText}. La inscripción de ${price} la pagarás en efectivo en el estudio. Cuando se registre ese pago, tu inscripción quedará activa y la app te pedirá completar los documentos correspondientes.`,
+      reply: `Listo. Reservé ${classText}. La inscripción de ${price} la pagarás en efectivo en el estudio. Cuando se registre ese pago, tu inscripción quedará activa.`,
       trace,
     };
   }
@@ -540,13 +540,13 @@ async function tryServerSidePostTrialEnrollmentMethod(
   const appUrl = String(resultObject.app_url ?? "").trim();
   if (activationUrl) {
     return {
-      reply: `Perfecto. Puedes pagar la inscripción de ${price} desde la app. Primero activa tu acceso aquí: ${activationUrl} Después de crear tu contraseña, entra a Mi paquete y verás la opción para pagar la inscripción. Cuando el pago sea aprobado, podrás reservar y completar tus documentos desde la app.`,
+      reply: `Perfecto. Puedes pagar la inscripción de ${price} desde la app. Primero activa tu acceso aquí: ${activationUrl} Después de crear tu contraseña, entra a Mi paquete y verás la opción para pagar la inscripción. Cuando el pago sea aprobado, podrás reservar normalmente.`,
       trace,
     };
   }
 
   return {
-    reply: `Perfecto. Puedes pagar la inscripción de ${price} desde la app. Entra aquí: ${appUrl} Cuando el pago sea aprobado, podrás reservar y completar tus documentos desde la app.`,
+    reply: `Perfecto. Puedes pagar la inscripción de ${price} desde la app. Entra aquí: ${appUrl} Cuando el pago sea aprobado, podrás reservar normalmente.`,
     trace,
   };
 }
@@ -603,14 +603,14 @@ export async function runAssistantTurn(input: OrchestratorInput) {
     "Internamente Studio Flow contabiliza los no-shows de prueba. De cara a la alumna nunca uses la expresión 'no-show': di que en dos ocasiones anteriores reservó una clase y no pudo asistir. Cuando prepare_booking devuelva prepayment_required o trial_prepayment_required, no prepares ni afirmes una reserva: explica en lenguaje cotidiano que la siguiente clase requiere pago anticipado.",
     "Una prospecto/trial solo puede tener una reserva de prueba activa a la vez. Si la herramienta devuelve trial_active_booking_exists, explica que debe usar, cancelar o resolver esa reserva antes de agendar otra.",
     "No inventes ni calcules por tu cuenta cuántas ausencias a clases reservadas tiene; usa exclusivamente el resultado de Studio Flow. Puedes usar el campo interno no_show_count para razonar, pero no muestres ese término técnico a la alumna.",
-    "Después de la primera asistencia, NO menciones documentos antes de que la inscripción quede pagada o aprobada.",
+    "Después de la primera asistencia, NO menciones documentos mientras la inscripción todavía no esté activa, ni siquiera para explicar lo que ocurrirá después del pago.",
     "Si prepare_booking devuelve status=payment_method_required, explica únicamente que para continuar necesita cubrir la inscripción, menciona el precio real devuelto por Studio Flow y pregunta: efectivo en el estudio, transferencia o pago desde la app.",
     "No pidas una confirmación adicional después de que la persona elija efectivo, transferencia o app. Esa elección es suficiente para continuar.",
     "Si elige efectivo, Studio Flow puede reservar la clase con la inscripción por cobrar en el estudio. No afirmes que la inscripción ya fue pagada.",
     "Si elige transferencia, Studio Flow puede reservar la clase de forma condicionada. Pide que envíe el comprobante por este mismo chat y explica que la reserva queda sujeta a validación del pago.",
     "Si elige pagar desde la app, no reserves todavía: Studio Flow le dará acceso para pagar la inscripción online. Una vez aprobado el pago podrá reservar normalmente.",
     "Nunca le digas 'contacta al estudio': este chat ya es el canal del estudio. Si hace falta revisión manual, usa escalate_to_human y di que lo pasarás a atención humana dentro de este mismo chat.",
-    "Los documentos se muestran y se exigen después de que la inscripción quede activa. Antes de eso no los uses como obstáculo conversacional.",
+    "Los documentos se muestran y se exigen después de que la inscripción quede activa. Antes de ese momento no los menciones en la conversación.",
     "Para una reserva de prueba, jamás le digas a la persona 'pago pendiente', 'commercial_status', 'crédito' ni 'usa 1 crédito'. Son conceptos internos.",
     "Si prepare_booking devuelve trial_booking=true, antes de confirmar menciona únicamente el precio real de la clase usando amount_minor/currency y pide una sola confirmación. Ejemplo de tono: 'Tu primera clase cuesta $150. ¿Confirmas la reserva?'.",
     "Después de ejecutar una reserva de prueba, el servidor preguntará si pagará en efectivo en el estudio o por transferencia.",
