@@ -2104,23 +2104,23 @@ async function resolvePostTrialEnrollmentMethod(
     return { ok: false, error: "enrollment_product_not_configured" };
   }
 
-  const { error: intentError } = await ctx.supabase
-    .from("assistant_enrollment_intents")
-    .insert({
-      studio_id: ctx.studio.id,
-      conversation_id: ctx.conversationId,
-      student_id: studentId,
-      enrollment_product_template_id: String(enrollmentProduct.id),
+  const { data: intentData, error: intentError } = await ctx.supabase.rpc(
+    "assistant_create_online_enrollment_intent",
+    {
+      target_studio_id: ctx.studio.id,
+      target_conversation_id: ctx.conversationId,
+      target_student_id: studentId,
       target_session_id: sessionId,
-      reservation_id: null,
-      payment_method: "app",
-      status: "online_pending",
-      amount_minor: Number(enrollmentProduct.price_minor ?? 0),
-      currency: String(enrollmentProduct.currency ?? ctx.studio.currency),
-    });
+    },
+  );
 
-  if (intentError) {
-    return { ok: false, error: "enrollment_intent_create_failed" };
+  const intent = asObject(intentData);
+  if (intentError || !intent || intent.ok !== true) {
+    return {
+      ok: false,
+      error: "enrollment_intent_create_failed",
+      reason_code: String(intent?.reason_code ?? "enrollment_intent_create_failed"),
+    };
   }
 
   await ctx.supabase
@@ -2166,24 +2166,6 @@ async function escalateToHuman(
   const result = asObject(data);
   if (error || !result || result.ok !== true) {
     return { ok: false, error: "human_handoff_failed" };
-  }
-
-  const { data: latestIntent } = await ctx.supabase
-    .from("assistant_enrollment_intents")
-    .select("id")
-    .eq("studio_id", ctx.studio.id)
-    .eq("conversation_id", ctx.conversationId)
-    .eq("status", "receipt_required")
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  if (latestIntent) {
-    await ctx.supabase
-      .from("assistant_enrollment_intents")
-      .update({ status: "human_review", updated_at: new Date().toISOString() })
-      .eq("id", latestIntent.id)
-      .eq("studio_id", ctx.studio.id);
   }
 
   return { ok: true, status: "human_handoff", reason_code: reasonCode };
