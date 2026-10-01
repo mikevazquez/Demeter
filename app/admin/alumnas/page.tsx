@@ -76,15 +76,14 @@ export default async function StudentsPage({
     cancelled?: string;
   }>;
 }) {
-  const [params, { supabase, studio, membership, can }] = await Promise.all([
-    searchParams,
-    getAdminContext(CAPABILITIES.STUDENTS_READ),
-  ]);
+  const params = await searchParams;
   const query = String(params.q ?? "").trim();
   const requestedStatus = String(params.status ?? "all");
   const status = ["all", "active", "inactive", "expiring", "expired"].includes(requestedStatus)
     ? requestedStatus
     : "all";
+
+  const { supabase, studio, membership, can } = await getAdminContext(CAPABILITIES.STUDENTS_READ);
   const canEdit = can(CAPABILITIES.STUDENTS_WRITE);
   const canReadProducts = can(CAPABILITIES.PRODUCTS_READ);
   const timeZone = studio.timezone;
@@ -111,37 +110,44 @@ export default async function StudentsPage({
     }
   }
 
-  const [{ data: students }, { data: allStudents }, acquisitionResult] = await Promise.all([
-    studentsQuery,
-    supabase
-      .from("students")
-      .select("id,lifecycle_status")
-      .eq("studio_id", studio.id)
-      .neq("lifecycle_status", "archived"),
-    canReadProducts
-      ? supabase
-          .from("product_acquisitions")
-          .select(
-            "id,student_id,product_template_id,status,starts_on,expires_on,refunded_at,created_at,unlimited,credit_limit",
-          )
-          .eq("studio_id", studio.id)
-          .order("created_at", { ascending: false })
-      : Promise.resolve({ data: [] }),
-  ]);
+  const duplicateId = String(params.duplicate ?? "").trim();
+  const needsAllStudentsQuery = Boolean(query) || status === "active" || status === "inactive";
+  const [{ data: students }, allStudentsResult, acquisitionResult, { data: duplicateStudent }] =
+    await Promise.all([
+      studentsQuery,
+      needsAllStudentsQuery
+        ? supabase
+            .from("students")
+            .select("id,lifecycle_status")
+            .eq("studio_id", studio.id)
+            .neq("lifecycle_status", "archived")
+        : Promise.resolve({ data: null }),
+      canReadProducts
+        ? supabase
+            .from("product_acquisitions")
+            .select(
+              "id,student_id,product_template_id,status,starts_on,expires_on,created_at,unlimited,credit_limit",
+            )
+            .eq("studio_id", studio.id)
+            .is("refunded_at", null)
+            .order("created_at", { ascending: false })
+        : Promise.resolve({ data: [] }),
+      duplicateId
+        ? supabase
+            .from("students")
+            .select("id,full_name,lifecycle_status")
+            .eq("id", duplicateId)
+            .eq("studio_id", studio.id)
+            .maybeSingle()
+        : Promise.resolve({ data: null }),
+    ]);
+  const allStudents =
+    allStudentsResult.data ??
+    (students ?? []).map((student) => ({
+      id: student.id,
+      lifecycle_status: student.lifecycle_status,
+    }));
   const allAcquisitions = acquisitionResult.data ?? [];
-
-  const acquisitionProductIds = [
-    ...new Set((allAcquisitions ?? []).map((item) => item.product_template_id).filter(Boolean)),
-  ];
-  const { data: acquisitionProducts } = acquisitionProductIds.length
-    ? await supabase
-        .from("product_templates")
-        .select("id,name")
-        .eq("studio_id", studio.id)
-        .in("id", acquisitionProductIds)
-    : { data: [] as { id: string; name: string }[] };
-
-  const productNameMap = new Map((acquisitionProducts ?? []).map((item) => [item.id, item.name]));
   const acquisitionsByStudent = new Map<
     string,
     Array<{
@@ -150,7 +156,6 @@ export default async function StudentsPage({
       status: string;
       starts_on: string | null;
       expires_on: string | null;
-      refunded_at: string | null;
       created_at: string;
       unlimited: boolean;
       credit_limit: number | null;
@@ -168,7 +173,6 @@ export default async function StudentsPage({
       (acquisitionsByStudent.get(studentId) ?? []).find(
         (item) =>
           item.status === "active" &&
-          !item.refunded_at &&
           (!item.starts_on || item.starts_on <= today) &&
           (!item.expires_on || item.expires_on >= today),
       ) ?? null
@@ -188,8 +192,8 @@ export default async function StudentsPage({
   }).length;
   const expiredStudentsCount = (allStudents ?? []).filter((student) => {
     if (currentAcquisitionFor(student.id)) return false;
-    return (acquisitionsByStudent.get(student.id) ?? []).some(
-      (item) => !item.refunded_at && Boolean(item.expires_on && item.expires_on < today),
+    return (acquisitionsByStudent.get(student.id) ?? []).some((item) =>
+      Boolean(item.expires_on && item.expires_on < today),
     );
   }).length;
 
@@ -205,25 +209,38 @@ export default async function StudentsPage({
 
     if (status === "expired") {
       if (currentAcquisitionFor(student.id)) return false;
-      return (acquisitionsByStudent.get(student.id) ?? []).some(
-        (item) => !item.refunded_at && Boolean(item.expires_on && item.expires_on < today),
+      return (acquisitionsByStudent.get(student.id) ?? []).some((item) =>
+        Boolean(item.expires_on && item.expires_on < today),
       );
     }
 
     return true;
   });
 
-  const visibleAcquisitionIds = filteredStudents
-    .map((student) => currentAcquisitionFor(student.id)?.id)
-    .filter((id): id is string => Boolean(id));
-  const { data: visibleLedgerRows } =
+  const visibleCurrentAcquisitions = filteredStudents
+    .map((student) => currentAcquisitionFor(student.id))
+    .filter((item): item is NonNullable<typeof item> => Boolean(item));
+  const visibleAcquisitionIds = visibleCurrentAcquisitions.map((item) => item.id);
+  const visibleProductIds = [
+    ...new Set(visibleCurrentAcquisitions.map((item) => item.product_template_id)),
+  ];
+  const [{ data: acquisitionProducts }, { data: visibleLedgerRows }] = await Promise.all([
+    visibleProductIds.length
+      ? supabase
+          .from("product_templates")
+          .select("id,name")
+          .eq("studio_id", studio.id)
+          .in("id", visibleProductIds)
+      : Promise.resolve({ data: [] as { id: string; name: string }[] }),
     canReadProducts && visibleAcquisitionIds.length
-      ? await supabase
+      ? supabase
           .from("credit_ledger")
           .select("acquisition_id,quantity")
           .eq("studio_id", studio.id)
           .in("acquisition_id", visibleAcquisitionIds)
-      : { data: [] as { acquisition_id: string; quantity: number }[] };
+      : Promise.resolve({ data: [] as { acquisition_id: string; quantity: number }[] }),
+  ]);
+  const productNameMap = new Map((acquisitionProducts ?? []).map((item) => [item.id, item.name]));
   const visibleBalanceMap = new Map<string, number>();
   for (const row of visibleLedgerRows ?? []) {
     visibleBalanceMap.set(
@@ -231,16 +248,6 @@ export default async function StudentsPage({
       (visibleBalanceMap.get(row.acquisition_id) ?? 0) + row.quantity,
     );
   }
-
-  const duplicateId = String(params.duplicate ?? "").trim();
-  const { data: duplicateStudent } = duplicateId
-    ? await supabase
-        .from("students")
-        .select("id,full_name,lifecycle_status")
-        .eq("id", duplicateId)
-        .eq("studio_id", studio.id)
-        .maybeSingle()
-    : { data: null };
 
   const errorDialog =
     params.error === "first_name_required"
@@ -438,8 +445,7 @@ export default async function StudentsPage({
                     const acquisition = currentAcquisitionFor(student.id);
                     if (!acquisition) {
                       const hasExpired = (acquisitionsByStudent.get(student.id) ?? []).some(
-                        (item) =>
-                          !item.refunded_at && Boolean(item.expires_on && item.expires_on < today),
+                        (item) => Boolean(item.expires_on && item.expires_on < today),
                       );
                       return (
                         <span
