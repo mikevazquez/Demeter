@@ -31,7 +31,7 @@ export default function DuplicateStudentDialog({ studentName }: { studentName: s
       tone="success"
       onConfirm={closeDialog}
     >
-      El teléfono ya pertenece a <strong className="text-white">{studentName}</strong>. No se creó
+      El teléfono ya pertenece a <strong>{studentName}</strong>. No se creó
       una alumna nueva ni se modificó el expediente existente.
     </NoticeDialog>
   );
