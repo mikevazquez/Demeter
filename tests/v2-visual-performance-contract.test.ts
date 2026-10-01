@@ -32,6 +32,7 @@ describe("Studio Flow V2 visual + performance contract", () => {
   const packagePage = source("app/student/paquete/page.tsx");
   const productDetail = source("app/admin/productos/[productId]/page.tsx");
   const evaluationSchedule = source("app/student/evaluaciones/[invitationId]/programar/page.tsx");
+  const rewardsProgress = source("app/admin/recompensas/seguimiento/[studentId]/page.tsx");
   const adminContext = source("lib/auth/admin-context.ts");
   const balanceMigration = source(
     "supabase/migrations/20261001150000_perf_batch_acquisition_credit_balances.sql",
@@ -111,6 +112,13 @@ describe("Studio Flow V2 visual + performance contract", () => {
     expect(adminContext).toContain("const getAdminBaseContext = cache(resolveAdminBaseContext)");
     expect(adminContext).toContain("export async function getAdminContext");
     expect(adminContext).toContain("getAdminDisplayName");
+  });
+
+  it("parallelizes rewards progress metadata without changing reward rules", () => {
+    expect(rewardsProgress).toContain("Promise.all([");
+    expect(rewardsProgress).toContain("reward_program_versions");
+    expect(rewardsProgress).toContain("reward_program_levels");
+    expect(rewardsProgress).toContain("reward_rule_versions");
   });
 
   it("parallelizes evaluation purchase prerequisites without changing checkout rules", () => {
