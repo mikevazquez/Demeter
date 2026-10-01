@@ -22,9 +22,11 @@ export default async function DocumentDetailPage({
   params: Promise<{ documentId: string }>;
   searchParams: Promise<{ published?: string; retired?: string; error?: string }>;
 }) {
-  const { documentId } = await params;
-  const query = await searchParams;
-  const { supabase, studio, can } = await getAdminContext(CAPABILITIES.DOCUMENTS_READ);
+  const [{ documentId }, query, { supabase, studio, can }] = await Promise.all([
+    params,
+    searchParams,
+    getAdminContext(CAPABILITIES.DOCUMENTS_READ),
+  ]);
 
   const { data: document } = await supabase
     .from("studio_documents")
