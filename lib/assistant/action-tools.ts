@@ -112,6 +112,12 @@ const BOOKING_REASON_MESSAGES: Record<string, string> = {
   session_full: "La clase ya está llena.",
   no_credits: "No hay créditos suficientes para reservar.",
   account_restricted: "La cuenta tiene una restricción que impide reservar.",
+  trial_active_booking_exists:
+    "Ya tienes una clase de prueba reservada. Solo puedes tener una reserva de prueba activa a la vez.",
+  trial_completed_enrollment_required:
+    "Ya asististe a tu primera clase de prueba. Para volver a reservar necesitas completar la inscripción.",
+  trial_prepayment_required:
+    "Ya acumulaste 2 no-shows. Para volver a agendar necesitas pagar la clase por adelantado.",
 };
 
 function safeBookingReason(reason: unknown) {
@@ -192,85 +198,6 @@ async function prepareBooking(
   ctx: AssistantActionToolContext,
   args: PrepareBookingArgs,
 ) {
-  let studentId = ctx.studentId;
-  let resolvedStudentType: string | null = null;
-
-  if (!studentId && ctx.crmContactId) {
-    const nowIso = new Date().toISOString();
-    const { data: requiredDocuments, error: documentError } = await ctx.supabase
-      .from("document_versions")
-      .select("id,document_id,enforcement_scope,response_mode,audience_scope")
-      .eq("studio_id", ctx.studio.id)
-      .in("status", ["active", "scheduled"])
-      .not("published_at", "is", null)
-      .lte("published_at", nowIso)
-      .is("retired_at", null)
-      .neq("response_mode", "informational")
-      .eq("audience_scope", "all")
-      .eq("enforcement_scope", "global_booking")
-      .limit(1);
-
-    if (!documentError && (requiredDocuments?.length ?? 0) > 0) {
-      return {
-        ok: false,
-        error: "onboarding_required",
-        onboarding_required: true,
-        reason_code: "document_required",
-        reason_message:
-          "Necesitas activar tu acceso y completar los documentos obligatorios antes de reservar.",
-        requires_access_provisioning: true,
-      };
-    }
-
-    const { data: ensured, error: ensureError } = await ctx.supabase.rpc(
-      "assistant_ensure_trial_student",
-      {
-        target_studio_id: ctx.studio.id,
-        target_crm_contact_id: ctx.crmContactId,
-      },
-    );
-
-    const ensuredObject = asObject(ensured);
-    if (ensureError || !ensuredObject || ensuredObject.ok !== true) {
-      return {
-        ok: false,
-        error: "trial_identity_create_failed",
-        reason_code: String(ensuredObject?.reason_code ?? "trial_identity_create_failed"),
-      };
-    }
-
-    studentId = String(ensuredObject.student_id ?? "") || null;
-    resolvedStudentType = String(ensuredObject.student_type ?? "") || "trial";
-
-    if (!studentId) {
-      return { ok: false, error: "trial_identity_create_failed" };
-    }
-
-    ctx.studentId = studentId;
-    await ctx.supabase
-      .from("assistant_conversations")
-      .update({
-        student_id: studentId,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", ctx.conversationId)
-      .eq("studio_id", ctx.studio.id);
-  }
-
-  if (!studentId) {
-    return { ok: false, error: "identity_required" };
-  }
-
-  if (!resolvedStudentType) {
-    const { data: student } = await ctx.supabase
-      .from("students")
-      .select("student_type")
-      .eq("id", studentId)
-      .eq("studio_id", ctx.studio.id)
-      .maybeSingle();
-    resolvedStudentType = student?.student_type ?? null;
-  }
-
   const sessionId = parseOpaqueRef(args.session_ref, "session");
   if (!sessionId) {
     return { ok: false, error: "invalid_session_ref" };
@@ -290,6 +217,131 @@ async function prepareBooking(
     };
   }
 
+  let studentId = ctx.studentId;
+  let resolvedStudentType: string | null = null;
+
+  if (studentId) {
+    const { data: student } = await ctx.supabase
+      .from("students")
+      .select("student_type")
+      .eq("id", studentId)
+      .eq("studio_id", ctx.studio.id)
+      .maybeSingle();
+    resolvedStudentType = student?.student_type ?? null;
+  }
+
+  const shouldEvaluateTrial =
+    Boolean(ctx.crmContactId && !studentId) || resolvedStudentType === "trial";
+
+  if (shouldEvaluateTrial) {
+    const { data: preview, error: previewError } = await ctx.supabase.rpc(
+      "assistant_trial_booking_preview",
+      {
+        target_studio_id: ctx.studio.id,
+        target_session_id: sessionId,
+        target_student_id: studentId,
+        target_crm_contact_id: studentId ? null : ctx.crmContactId,
+      },
+    );
+
+    if (previewError) {
+      return { ok: false, error: "trial_booking_preview_unavailable" };
+    }
+
+    const previewObject = asObject(preview);
+    if (!previewObject || previewObject.ok !== true || previewObject.eligible !== true) {
+      const reasonCode = String(previewObject?.reason_code ?? "booking_not_eligible");
+
+      if (reasonCode === "trial_prepayment_required") {
+        return {
+          ok: false,
+          error: "prepayment_required",
+          reason_code: reasonCode,
+          reason_message: BOOKING_REASON_MESSAGES.trial_prepayment_required,
+          prepayment_required: true,
+          no_show_count: Number(previewObject?.no_show_count ?? 2),
+          prepayment_threshold: Number(previewObject?.prepayment_threshold ?? 2),
+          amount_minor:
+            previewObject?.amount_minor == null
+              ? sessionInfo.summary.drop_in_price_minor
+              : Number(previewObject.amount_minor),
+          currency: String(previewObject?.currency ?? ctx.studio.currency),
+        };
+      }
+
+      return {
+        ok: false,
+        error: "booking_not_eligible",
+        ...safeBookingReason(reasonCode),
+      };
+    }
+
+    const confirmationSummary = {
+      ...sessionInfo.summary,
+      commercial_status: "payment_pending",
+      payment_pending: true,
+      trial_booking: true,
+      no_show_count: Number(previewObject.no_show_count ?? 0),
+      prepayment_threshold: Number(previewObject.prepayment_threshold ?? 2),
+      amount_minor:
+        previewObject.amount_minor == null
+          ? sessionInfo.summary.drop_in_price_minor
+          : Number(previewObject.amount_minor),
+      currency: String(previewObject.currency ?? ctx.studio.currency),
+      enrollment_required_now: false,
+    };
+
+    const now = new Date().toISOString();
+    await ctx.supabase
+      .from("assistant_pending_actions")
+      .update({ status: "cancelled", updated_at: now })
+      .eq("studio_id", ctx.studio.id)
+      .eq("conversation_id", ctx.conversationId)
+      .eq("action_type", "booking.create")
+      .eq("status", "pending");
+
+    const secretToken = randomUUID();
+    const tokenHash = createHash("sha256").update(secretToken).digest("hex");
+    const expiresAt = new Date(Date.now() + 10 * 60_000).toISOString();
+
+    const { data: pending, error: pendingError } = await ctx.supabase
+      .from("assistant_pending_actions")
+      .insert({
+        studio_id: ctx.studio.id,
+        conversation_id: ctx.conversationId,
+        action_type: "booking.create",
+        action_token_hash: tokenHash,
+        action_payload: {
+          session_id: sessionId,
+          student_id: studentId,
+          crm_contact_id: studentId ? null : ctx.crmContactId,
+          trial_exception: true,
+          commercial_pending: true,
+          prepared_turn_id: ctx.turnId,
+        },
+        confirmation_summary: confirmationSummary,
+        status: "pending",
+        expires_at: expiresAt,
+      })
+      .select("id")
+      .single();
+
+    if (pendingError || !pending) {
+      return { ok: false, error: "pending_action_create_failed" };
+    }
+
+    return {
+      ok: true,
+      status: "confirmation_required",
+      expires_at: expiresAt,
+      summary: confirmationSummary,
+    };
+  }
+
+  if (!studentId) {
+    return { ok: false, error: "identity_required" };
+  }
+
   const { data: eligibility, error: eligibilityError } = await ctx.supabase.rpc(
     "booking_eligibility",
     {
@@ -304,20 +356,8 @@ async function prepareBooking(
 
   const eligibilityObject = asObject(eligibility);
   const eligibilityReason = String(eligibilityObject?.reason_code ?? "");
-  const commercialPendingReasons = new Set([
-    "no_active_product",
-    "outside_product",
-    "outside_product_schedule",
-    "no_credits",
-    "payment_pending",
-    "enrollment_required",
-  ]);
-  const commercialPending =
-    eligibilityObject?.eligible !== true &&
-    resolvedStudentType === "trial" &&
-    commercialPendingReasons.has(eligibilityReason);
 
-  if (!eligibilityObject || (eligibilityObject.eligible !== true && !commercialPending)) {
+  if (!eligibilityObject || eligibilityObject.eligible !== true) {
     const safeReason = safeBookingReason(eligibilityReason);
     return {
       ok: false,
@@ -338,9 +378,9 @@ async function prepareBooking(
 
   const confirmationSummary = {
     ...sessionInfo.summary,
-    commercial_status: commercialPending ? "payment_pending" : "package_covered",
-    payment_pending: commercialPending,
-    eligibility_reason: commercialPending ? eligibilityReason : null,
+    commercial_status: "package_covered",
+    payment_pending: false,
+    trial_booking: false,
   };
 
   const now = new Date().toISOString();
@@ -366,7 +406,8 @@ async function prepareBooking(
       action_payload: {
         session_id: sessionId,
         student_id: studentId,
-        commercial_pending: commercialPending,
+        trial_exception: false,
+        commercial_pending: false,
         prepared_turn_id: ctx.turnId,
       },
       confirmation_summary: confirmationSummary,
