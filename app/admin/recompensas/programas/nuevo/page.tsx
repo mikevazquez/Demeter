@@ -12,8 +12,10 @@ export default async function NewProgramPage({
 }: {
   searchParams: Promise<{ error?: string }>;
 }) {
-  const query = await searchParams;
-  const ctx = await getAdminContext(CAPABILITIES.REWARDS_MANAGE);
+  const [query, ctx] = await Promise.all([
+    searchParams,
+    getAdminContext(CAPABILITIES.REWARDS_MANAGE),
+  ]);
 
   return (
     <RewardsShell>
