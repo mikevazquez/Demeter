@@ -101,23 +101,23 @@ export default async function StudentPackagePage() {
   const activeDaysRemaining = activePackage
     ? daysRemaining(activePackage.expires_on, studio.timezone)
     : null;
-  const enrollmentMissing = !snapshot.enrollment?.active_now;
-  const { data: enrollmentPolicy } = await supabase
-    .from("enrollment_policies")
-    .select("enabled,enrollment_product_template_id")
-    .eq("studio_id", membership.studio_id)
-    .maybeSingle();
-  const { data: enrollmentProduct } =
-    enrollmentMissing && enrollmentPolicy?.enabled && enrollmentPolicy.enrollment_product_template_id
-      ? await supabase
-          .from("product_templates")
-          .select("id,name,price_minor,currency,validity_days")
-          .eq("studio_id", membership.studio_id)
-          .eq("id", enrollmentPolicy.enrollment_product_template_id)
-          .eq("active", true)
-          .eq("product_type", "enrollment")
-          .maybeSingle()
-      : { data: null };
+  const { data: enrollmentOptionData } = await supabase.rpc(
+    "student_enrollment_purchase_option",
+  );
+  const enrollmentOption = (enrollmentOptionData as {
+    enabled?: boolean;
+    missing?: boolean;
+    configured?: boolean;
+    product?: {
+      id: string;
+      name: string;
+      price_minor: number;
+      currency: string;
+      validity_days: number | null;
+    } | null;
+  } | null) ?? null;
+  const enrollmentMissing = enrollmentOption?.missing === true;
+  const enrollmentProduct = enrollmentOption?.product ?? null;
 
   const { data: purchasableProductRows } = await supabase
     .from("product_templates")
@@ -199,7 +199,7 @@ export default async function StudentPackagePage() {
         </p>
       </header>
 
-      {enrollmentMissing && enrollmentPolicy?.enabled ? (
+      {enrollmentMissing && enrollmentOption?.enabled ? (
         <section className="rounded-3xl border border-amber-400/30 bg-amber-400/[0.06] p-5 sm:p-6">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-200">
             Inscripción requerida
@@ -560,7 +560,7 @@ export default async function StudentPackagePage() {
                           Serás enviado a Mercado Pago para completar el pago.
                         </p>
                         <div className="space-y-2">
-                          {enrollmentMissing && enrollmentPolicy?.enabled ? (
+                          {enrollmentMissing && enrollmentOption?.enabled ? (
                             <p className="text-[11px] leading-4 text-amber-200">
                               Este checkout incluirá también la inscripción requerida.
                             </p>
