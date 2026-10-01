@@ -50,9 +50,14 @@ export default async function StudentSessionDetailPage({
   ]);
   const rewardMode = query.credit === "reward";
   const rewardSuffix = rewardMode ? "&credit=reward" : "";
-  const { data, error } = await supabase.rpc("student_session_detail", {
-    target_session_id: sessionId,
-  });
+  const [{ data, error }, { data: waitlistData }, { data: rewardStatusData }] =
+    await Promise.all([
+      supabase.rpc("student_session_detail", {
+        target_session_id: sessionId,
+      }),
+      supabase.rpc("student_waitlist_feed"),
+      supabase.rpc("student_reward_status_snapshot"),
+    ]);
 
   if (error || !data) notFound();
 
@@ -66,10 +71,6 @@ export default async function StudentSessionDetailPage({
     .limit(1)
     .maybeSingle();
   const activityColor = activityStyle?.color_hex ?? "#FF0A8A";
-  const [{ data: waitlistData }, { data: rewardStatusData }] = await Promise.all([
-    supabase.rpc("student_waitlist_feed"),
-    supabase.rpc("student_reward_status_snapshot"),
-  ]);
   const waitlisted = ((waitlistData ?? []) as StudentWaitlistItem[]).some(
     (item) => item.session_id === session.session_id && item.status === "active",
   );
