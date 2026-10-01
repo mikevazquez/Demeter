@@ -10,8 +10,10 @@ export default async function EvaluationsDashboardPage({
 }: {
   searchParams: Promise<{ error?: string }>;
 }) {
-  const qs = await searchParams;
-  const ctx = await getAdminContext(CAPABILITIES.EVALUATIONS_READ);
+  const [qs, ctx] = await Promise.all([
+    searchParams,
+    getAdminContext(CAPABILITIES.EVALUATIONS_READ),
+  ]);
 
   const [disciplinesResult, linksResult] = await Promise.all([
     ctx.supabase
