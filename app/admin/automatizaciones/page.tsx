@@ -78,7 +78,11 @@ export default async function AutomationsPage({
     ? (requestedTab as Tab)
     : "processes";
 
-  const [{ data: instances }, { data: communicationSettings }] = await Promise.all([
+  const [
+    { data: instances },
+    { data: communicationSettings },
+    { data: versionRows },
+  ] = await Promise.all([
     ctx.supabase
       .from("automation_instances")
       .select("id,catalog_code,status,current_version_number,updated_at")
@@ -90,16 +94,15 @@ export default async function AutomationsPage({
       .select("global_send_window")
       .eq("studio_id", ctx.studio.id)
       .maybeSingle(),
+    ctx.supabase
+      .from("automation_instance_versions")
+      .select("instance_id,version_number,configuration")
+      .eq("studio_id", ctx.studio.id),
   ]);
 
   const instanceRows = instances ?? [];
-  const instanceIds = instanceRows.map((item) => item.id);
-  const { data: versions } = instanceIds.length
-    ? await ctx.supabase
-        .from("automation_instance_versions")
-        .select("instance_id,version_number,configuration")
-        .in("instance_id", instanceIds)
-    : { data: [] };
+  const instanceIds = new Set(instanceRows.map((item) => item.id));
+  const versions = (versionRows ?? []).filter((item) => instanceIds.has(item.instance_id));
 
   const latestByCode = new Map<string, (typeof instanceRows)[number]>();
   for (const instance of instanceRows) {
