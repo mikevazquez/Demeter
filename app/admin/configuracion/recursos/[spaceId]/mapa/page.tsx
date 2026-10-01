@@ -14,9 +14,11 @@ export default async function ResourceMapPage({
   params: Promise<{ spaceId: string }>;
   searchParams: Promise<{ saved?: string; error?: string }>;
 }) {
-  const { spaceId } = await params;
-  const query = await searchParams;
-  const ctx = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
+  const [{ spaceId }, query, ctx] = await Promise.all([
+    params,
+    searchParams,
+    getAdminContext(CAPABILITIES.SETTINGS_WRITE),
+  ]);
 
   if (ctx.membership.role !== "owner") {
     redirect("/admin?error=access");
