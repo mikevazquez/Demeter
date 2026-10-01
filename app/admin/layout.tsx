@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
-import { cache } from "react";
 
 import { signOut } from "@/app/auth/actions";
 import PwaBrandingSync from "@/app/components/PwaBrandingSync";
-import { getAdminContext } from "@/lib/auth/admin-context";
+import { getAdminContext, getAdminDisplayName } from "@/lib/auth/admin-context";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { AdminMobileNavigation, AdminNavigation } from "./admin-navigation";
 import "./hoy.css";
@@ -41,10 +40,8 @@ function pwaBrandQuery(brand: PwaBrand) {
   }).toString();
 }
 
-const getCachedAdminContext = cache(async () => getAdminContext());
-
 export async function generateMetadata(): Promise<Metadata> {
-  const { studio } = await getCachedAdminContext();
+  const { studio } = await getAdminContext();
   const query = pwaBrandQuery(studio);
 
   const appName = studio.name + " Admin";
@@ -90,19 +87,15 @@ const roleLabels: Record<string, string> = {
 };
 
 export default async function AdminLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  const { supabase, studio, membership, can, user } = await getCachedAdminContext();
+  const [{ supabase, studio, membership, can }, userName] = await Promise.all([
+    getAdminContext(),
+    getAdminDisplayName(),
+  ]);
   const pwaQuery = pwaBrandQuery(studio);
   const instructorOnly = can(CAPABILITIES.INSTRUCTOR_PORTAL) && !can(CAPABILITIES.ADMIN_PORTAL);
   const brandLogoUrl = studio.logo_path
     ? supabase.storage.from("studio-branding").getPublicUrl(studio.logo_path).data.publicUrl
     : null;
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("full_name")
-    .eq("id", user.id)
-    .maybeSingle();
-  const userName = profile?.full_name?.trim() || user.email?.split("@")[0] || "Usuario";
   const userInitials = userName
     .split(/\s+/)
     .slice(0, 2)
