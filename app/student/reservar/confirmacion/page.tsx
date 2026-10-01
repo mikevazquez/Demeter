@@ -2,7 +2,7 @@ import Link from "next/link";
 
 import {
   formatDateTime,
-  getStudentPortalContext,
+  getStudentStudioContext,
   localDateKey,
   type StudentSession,
 } from "@/lib/student/portal";
@@ -12,40 +12,38 @@ export default async function StudentReservationConfirmationPage({
 }: {
   searchParams: Promise<{ session?: string; reservation?: string; date?: string }>;
 }) {
-  const [query, { supabase, studio }] = await Promise.all([
-    searchParams,
-    getStudentPortalContext(),
-  ]);
+  const query = await searchParams;
+  const { supabase, studio } = await getStudentStudioContext();
 
-  const [{ data: sessionData }, { data: assignment }] = await Promise.all([
-    query.session
-      ? supabase.rpc("student_session_detail", {
-          target_session_id: query.session,
-        })
-      : Promise.resolve({ data: null }),
-    query.reservation
-      ? supabase
-          .from("reservation_resource_assignments")
-          .select("resource_id")
-          .eq("reservation_id", query.reservation)
-          .is("released_at", null)
-          .maybeSingle()
-      : Promise.resolve({ data: null }),
-  ]);
+  let session: StudentSession | null = null;
+  if (query.session) {
+    const { data } = await supabase.rpc("student_session_detail", {
+      target_session_id: query.session,
+    });
+    session = (data as StudentSession | null) ?? null;
+  }
 
-  const session = (sessionData as StudentSession | null) ?? null;
   const sessionDate = session ? localDateKey(new Date(session.starts_at), studio.timezone) : null;
   const selectedDate =
     query.date && /^\d{4}-\d{2}-\d{2}$/.test(query.date) ? query.date : sessionDate;
 
   let assignedResourceName: string | null = null;
-  if (assignment?.resource_id) {
-    const { data: resource } = await supabase
-      .from("resources")
-      .select("name")
-      .eq("id", assignment.resource_id)
+  if (query.reservation) {
+    const { data: assignment } = await supabase
+      .from("reservation_resource_assignments")
+      .select("resource_id")
+      .eq("reservation_id", query.reservation)
+      .is("released_at", null)
       .maybeSingle();
-    assignedResourceName = resource?.name ?? null;
+
+    if (assignment?.resource_id) {
+      const { data: resource } = await supabase
+        .from("resources")
+        .select("name")
+        .eq("id", assignment.resource_id)
+        .maybeSingle();
+      assignedResourceName = resource?.name ?? null;
+    }
   }
 
   return (
