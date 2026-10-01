@@ -24,7 +24,21 @@ describe("V2 codebase audit inventory", () => {
   it("prints visual and performance findings for the full app surface", () => {
     const adminFiles = filesUnder("app/admin");
     const studentFiles = filesUnder("app/student");
-    const pageFiles = [...adminFiles, ...studentFiles].filter((path) => path.endsWith("/page.tsx"));
+    const coachFiles = filesUnder("app/coach");
+    const loginFiles = filesUnder("app/login");
+    const responsibleFiles = filesUnder("app/responsable");
+    const accessFiles = filesUnder("app/acceso");
+    const setupFiles = filesUnder("app/setup");
+    const allPortalFiles = [
+      ...adminFiles,
+      ...studentFiles,
+      ...coachFiles,
+      ...loginFiles,
+      ...responsibleFiles,
+      ...accessFiles,
+      ...setupFiles,
+    ];
+    const pageFiles = allPortalFiles.filter((path) => path.endsWith("/page.tsx"));
 
     const darkUtilities = adminFiles
       .map((path) => {
@@ -43,11 +57,11 @@ describe("V2 codebase audit inventory", () => {
       .filter((path) => /role=["']dialog["']|aria-modal|fixed\s+inset-0/.test(readFileSync(path, "utf8")))
       .map(rel);
 
-    const manualLoaders = [...adminFiles, ...studentFiles]
+    const manualLoaders = allPortalFiles
       .filter((path) => /animate-spin|animate-pulse/.test(readFileSync(path, "utf8")))
       .map(rel);
 
-    const nativeConfirms = [...adminFiles, ...studentFiles]
+    const nativeConfirms = allPortalFiles
       .filter((path) => /window\.confirm\s*\(|\bconfirm\s*\(|window\.alert\s*\(|\balert\s*\(/.test(readFileSync(path, "utf8")))
       .map(rel);
 
@@ -94,6 +108,11 @@ describe("V2 codebase audit inventory", () => {
           totals: {
             adminTsx: adminFiles.length,
             studentTsx: studentFiles.length,
+            coachTsx: coachFiles.length,
+            loginTsx: loginFiles.length,
+            responsibleTsx: responsibleFiles.length,
+            accessTsx: accessFiles.length,
+            setupTsx: setupFiles.length,
             pages: pageFiles.length,
           },
           darkUtilities: darkUtilities.slice(0, 80),
