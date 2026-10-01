@@ -14,6 +14,7 @@ describe("Admin session controls regression", () => {
   const adminActions = source("app/admin/actions.ts");
   const agenda = source("app/admin/agenda/page.tsx");
   const sessionDetail = source("app/admin/agenda/[sessionId]/page.tsx");
+  const rosterStyles = source("app/admin/roster-uat.css");
 
   it("resolves reserved trial student names independently from the active-student directory", () => {
     expect(today).toContain("reservationStudentIds");
@@ -22,6 +23,12 @@ describe("Admin session controls regression", () => {
     expect(today).toContain("...(reservationStudents ?? [])");
     expect(sessionDetail).toContain("reservationStudentIds");
     expect(sessionDetail).toContain("...(reservationStudents ?? [])");
+  });
+
+  it("keeps reserved student names visible on the light Today roster", () => {
+    expect(todayOperations).toContain("<strong>{item.studentName}</strong>");
+    expect(rosterStyles).toContain(".hoy-approved .today-student-name-line strong");
+    expect(rosterStyles).toContain("color: #172033");
   });
 
   it("restores pending-payment data from Today", () => {
