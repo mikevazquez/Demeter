@@ -273,19 +273,62 @@ async function prepareBooking(
       }
 
       if (reasonCode === "trial_completed_enrollment_required" && studentId) {
-        const { data: requirementData } = await ctx.supabase.rpc(
-          "assistant_post_trial_requirement",
-          {
+        const { data: requirementData, error: requirementError } =
+          await ctx.supabase.rpc("assistant_post_trial_requirement", {
             target_studio_id: ctx.studio.id,
             target_student_id: studentId,
-          },
-        );
+          });
+
+        const requirement = asObject(requirementData);
+        if (requirementError || !requirement || requirement.ok !== true) {
+          return { ok: false, error: "post_trial_requirement_unavailable" };
+        }
+
+        const now = new Date().toISOString();
+        await ctx.supabase
+          .from("assistant_pending_actions")
+          .update({ status: "cancelled", updated_at: now })
+          .eq("studio_id", ctx.studio.id)
+          .eq("conversation_id", ctx.conversationId)
+          .eq("action_type", "enrollment.resolve")
+          .eq("status", "pending");
+
+        const secretToken = randomUUID();
+        const tokenHash = createHash("sha256").update(secretToken).digest("hex");
+        const expiresAt = new Date(Date.now() + 20 * 60_000).toISOString();
+
+        const { error: pendingError } = await ctx.supabase
+          .from("assistant_pending_actions")
+          .insert({
+            studio_id: ctx.studio.id,
+            conversation_id: ctx.conversationId,
+            action_type: "enrollment.resolve",
+            action_token_hash: tokenHash,
+            action_payload: {
+              session_id: sessionId,
+              student_id: studentId,
+              prepared_turn_id: ctx.turnId,
+            },
+            confirmation_summary: {
+              ...requirement,
+              target_session: sessionInfo.summary,
+            },
+            status: "pending",
+            expires_at: expiresAt,
+          });
+
+        if (pendingError) {
+          return { ok: false, error: "pending_action_create_failed" };
+        }
 
         return {
-          ok: false,
-          error: "post_trial_requirements",
-          ...safeBookingReason(reasonCode),
-          post_trial_requirement: asObject(requirementData),
+          ok: true,
+          status: "payment_method_required",
+          expires_at: expiresAt,
+          summary: {
+            ...requirement,
+            target_session: sessionInfo.summary,
+          },
         };
       }
 
@@ -1863,6 +1906,289 @@ async function executeStudentAccessActivation(
   };
 }
 
+
+export function parsePostTrialEnrollmentMethod(value: string) {
+  const normalized = normalizeConfirmation(value);
+  if (!normalized) return null;
+
+  if (
+    normalized === "efectivo" ||
+    normalized === "en efectivo" ||
+    normalized === "cash" ||
+    normalized.includes("efectivo en el estudio")
+  ) {
+    return "cash" as const;
+  }
+
+  if (
+    normalized === "transferencia" ||
+    normalized === "transfer" ||
+    normalized.includes("transferencia bancaria") ||
+    normalized.includes("por transferencia")
+  ) {
+    return "bank_transfer" as const;
+  }
+
+  if (
+    normalized === "app" ||
+    normalized === "aplicacion" ||
+    normalized === "aplicacion movil" ||
+    normalized.includes("desde la app") ||
+    normalized.includes("en la app") ||
+    normalized.includes("mercado pago") ||
+    normalized.includes("pagar en linea")
+  ) {
+    return "app" as const;
+  }
+
+  return null;
+}
+
+async function resolvePostTrialEnrollmentMethod(
+  ctx: AssistantActionToolContext,
+  method: "cash" | "bank_transfer" | "app",
+) {
+  const { data: pending, error: pendingError } = await ctx.supabase
+    .from("assistant_pending_actions")
+    .select("id,action_payload,confirmation_summary,status,expires_at")
+    .eq("studio_id", ctx.studio.id)
+    .eq("conversation_id", ctx.conversationId)
+    .eq("action_type", "enrollment.resolve")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (pendingError || !pending) {
+    return { ok: false, error: "pending_enrollment_not_found" };
+  }
+
+  if (pending.status !== "pending") {
+    return { ok: false, error: "pending_enrollment_not_available" };
+  }
+
+  if (new Date(pending.expires_at).getTime() <= Date.now()) {
+    await ctx.supabase
+      .from("assistant_pending_actions")
+      .update({ status: "expired", updated_at: new Date().toISOString() })
+      .eq("id", pending.id)
+      .eq("studio_id", ctx.studio.id)
+      .eq("status", "pending");
+    return { ok: false, error: "enrollment_choice_expired" };
+  }
+
+  const payload = asObject(pending.action_payload);
+  const summary = asObject(pending.confirmation_summary);
+  if (!payload || !summary) {
+    return { ok: false, error: "pending_enrollment_invalid" };
+  }
+
+  const studentId = String(payload.student_id ?? "");
+  const sessionId = String(payload.session_id ?? "");
+  if (!ctx.studentId || studentId !== ctx.studentId || !sessionId) {
+    return { ok: false, error: "conversation_identity_changed" };
+  }
+
+  if (method === "cash" || method === "bank_transfer") {
+    const { data, error } = await ctx.supabase.rpc(
+      "assistant_create_post_trial_reservation",
+      {
+        target_studio_id: ctx.studio.id,
+        target_conversation_id: ctx.conversationId,
+        target_student_id: studentId,
+        target_session_id: sessionId,
+        target_payment_method: method,
+      },
+    );
+
+    const result = asObject(data);
+    if (error || !result || result.ok !== true) {
+      return {
+        ok: false,
+        error: "post_trial_reservation_failed",
+        reason_code: String(result?.reason_code ?? "post_trial_reservation_failed"),
+      };
+    }
+
+    await ctx.supabase
+      .from("assistant_pending_actions")
+      .update({
+        status: "executed",
+        confirmed_at: new Date().toISOString(),
+        executed_at: new Date().toISOString(),
+        execution_ref: `enrollment-intent:${String(result.intent_id ?? "")}`,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", pending.id)
+      .eq("studio_id", ctx.studio.id)
+      .eq("status", "pending");
+
+    return {
+      ok: true,
+      status: "executed",
+      payment_method: method,
+      review_required: result.review_required === true,
+      enrollment_amount_minor: Number(result.enrollment_amount_minor ?? 0),
+      currency: String(result.currency ?? ctx.studio.currency),
+      reservation_id: String(result.reservation_id ?? ""),
+      summary,
+    };
+  }
+
+  const requirement = asObject(summary);
+  const accessState = String(requirement?.access_state ?? "");
+
+  if (!ctx.activationUrl) {
+    return { ok: false, error: "activation_url_unavailable" };
+  }
+
+  const appOrigin = new URL(ctx.activationUrl).origin;
+  let directUrl = `${appOrigin}/student/paquete?inscripcion=1`;
+  let activationLink: string | null = null;
+
+  if (accessState === "active") {
+    directUrl = `${appOrigin}/student/paquete?inscripcion=1`;
+  } else if (["not_provisioned", "activation_pending"].includes(accessState)) {
+    const {
+      data: { session },
+    } = await ctx.supabase.auth.getSession();
+
+    if (!session?.access_token) {
+      return { ok: false, error: "activation_authorization_unavailable" };
+    }
+
+    const body =
+      accessState === "activation_pending"
+        ? {
+            studentId,
+            mode: "resend",
+            activationUrl: ctx.activationUrl,
+            delivery: "return_link",
+          }
+        : {
+            studentId,
+            activationUrl: ctx.activationUrl,
+            delivery: "return_link",
+          };
+
+    const { data, error } = await ctx.supabase.functions.invoke(
+      "provision-student-access",
+      {
+        body,
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      },
+    );
+
+    const provision = asObject(data);
+    if (error || !provision || provision.ok !== true) {
+      return {
+        ok: false,
+        error: "student_access_provision_failed",
+        reason_code: String(provision?.error ?? "student_access_provision_failed"),
+      };
+    }
+
+    activationLink =
+      typeof provision.activationLink === "string"
+        ? provision.activationLink
+        : null;
+
+    if (!activationLink && provision.mustChangePassword !== false) {
+      return { ok: false, error: "activation_link_missing" };
+    }
+  } else {
+    return { ok: false, error: "student_access_inconsistent" };
+  }
+
+  const enrollmentProduct = asObject(requirement?.enrollment_product);
+  if (!enrollmentProduct?.id) {
+    return { ok: false, error: "enrollment_product_not_configured" };
+  }
+
+  const { error: intentError } = await ctx.supabase
+    .from("assistant_enrollment_intents")
+    .insert({
+      studio_id: ctx.studio.id,
+      conversation_id: ctx.conversationId,
+      student_id: studentId,
+      enrollment_product_template_id: String(enrollmentProduct.id),
+      target_session_id: sessionId,
+      reservation_id: null,
+      payment_method: "app",
+      status: "online_pending",
+      amount_minor: Number(enrollmentProduct.price_minor ?? 0),
+      currency: String(enrollmentProduct.currency ?? ctx.studio.currency),
+    });
+
+  if (intentError) {
+    return { ok: false, error: "enrollment_intent_create_failed" };
+  }
+
+  await ctx.supabase
+    .from("assistant_pending_actions")
+    .update({
+      status: "executed",
+      confirmed_at: new Date().toISOString(),
+      executed_at: new Date().toISOString(),
+      execution_ref: `student-access:${studentId}`,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", pending.id)
+    .eq("studio_id", ctx.studio.id)
+    .eq("status", "pending");
+
+  return {
+    ok: true,
+    status: "executed",
+    payment_method: "app",
+    activation_url: activationLink,
+    app_url: directUrl,
+    enrollment_amount_minor: Number(enrollmentProduct.price_minor ?? 0),
+    currency: String(enrollmentProduct.currency ?? ctx.studio.currency),
+    summary,
+  };
+}
+
+async function escalateToHuman(
+  ctx: AssistantActionToolContext,
+  args: Record<string, unknown>,
+) {
+  const reasonCode = String(args.reason_code ?? "human_review").trim() || "human_review";
+  const note = String(args.note ?? "").trim() || null;
+
+  const { data, error } = await ctx.supabase.rpc("assistant_create_handoff", {
+    target_studio_id: ctx.studio.id,
+    target_conversation_id: ctx.conversationId,
+    target_student_id: ctx.studentId,
+    target_reason_code: reasonCode,
+    target_note: note,
+  });
+
+  const result = asObject(data);
+  if (error || !result || result.ok !== true) {
+    return { ok: false, error: "human_handoff_failed" };
+  }
+
+  const { data: latestIntent } = await ctx.supabase
+    .from("assistant_enrollment_intents")
+    .select("id")
+    .eq("studio_id", ctx.studio.id)
+    .eq("conversation_id", ctx.conversationId)
+    .eq("status", "receipt_required")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (latestIntent) {
+    await ctx.supabase
+      .from("assistant_enrollment_intents")
+      .update({ status: "human_review", updated_at: new Date().toISOString() })
+      .eq("id", latestIntent.id)
+      .eq("studio_id", ctx.studio.id);
+  }
+
+  return { ok: true, status: "human_handoff", reason_code: reasonCode };
+}
+
 async function recordTrialPaymentPreference(
   ctx: AssistantActionToolContext,
   args: RecordTrialPaymentPreferenceArgs,
@@ -1940,6 +2266,16 @@ export async function executeAssistantActionTool(
       );
     case "execute_student_access_activation":
       return executeStudentAccessActivation(ctx);
+    case "resolve_post_trial_enrollment_method":
+      return resolvePostTrialEnrollmentMethod(
+        ctx,
+        String((args as Record<string, unknown>).payment_method ?? "") as
+          | "cash"
+          | "bank_transfer"
+          | "app",
+      );
+    case "escalate_to_human":
+      return escalateToHuman(ctx, args as Record<string, unknown>);
     default:
       return { ok: false, error: "tool_not_allowed" };
   }
