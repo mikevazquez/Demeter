@@ -31,10 +31,12 @@ export default async function StudentDocumentConfirmPage({
   params: Promise<{ versionId: string }>;
   searchParams: Promise<{ error?: string; returnTo?: string }>;
 }) {
-  const { versionId } = await params;
-  const query = await searchParams;
+  const [{ versionId }, query, { supabase, snapshot }] = await Promise.all([
+    params,
+    searchParams,
+    getStudentPortalContext(),
+  ]);
   const returnTo = safeReservationReturnTo(query.returnTo);
-  const { supabase, snapshot } = await getStudentPortalContext();
   const { data, error } = await supabase.rpc("student_document_detail", {
     p_version_id: versionId,
   });
