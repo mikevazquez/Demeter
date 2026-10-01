@@ -7,6 +7,87 @@ import { normalizeMexicanPhone } from "@/lib/phone";
 
 type QuickResult = { ok: boolean; message: string; student?: { id: string; fullName: string } };
 
+type QuickSaleStudent = {
+  id: string;
+  fullName: string;
+  preferredProductId?: string;
+};
+
+type QuickSaleProduct = {
+  id: string;
+  name: string;
+  priceMinor: number;
+  currency: string;
+  creditLimit: number | null;
+  validityDays: number | null;
+  unlimited: boolean;
+};
+
+export async function loadQuickSaleProducts(): Promise<QuickSaleProduct[]> {
+  const { supabase, studio } = await getAdminContext(CAPABILITIES.SALES_WRITE);
+  const { data } = await supabase
+    .from("product_templates")
+    .select("id,name,price_minor,currency,credit_limit,validity_days,unlimited")
+    .eq("studio_id", studio.id)
+    .in("product_type", ["package", "membership"])
+    .eq("active", true)
+    .order("price_minor");
+
+  return (data ?? []).map((item) => ({
+    id: item.id,
+    name: item.name,
+    priceMinor: item.price_minor,
+    currency: item.currency,
+    creditLimit: item.credit_limit,
+    validityDays: item.validity_days,
+    unlimited: item.unlimited,
+  }));
+}
+
+export async function searchQuickSaleStudents(search: string): Promise<QuickSaleStudent[]> {
+  const normalized = search.trim();
+  if (normalized.length < 2) return [];
+
+  const { supabase, studio } = await getAdminContext(CAPABILITIES.SALES_WRITE);
+  const { data: students } = await supabase
+    .from("students")
+    .select("id,full_name")
+    .eq("studio_id", studio.id)
+    .eq("active", true)
+    .eq("lifecycle_status", "active")
+    .ilike("full_name", `%${normalized}%`)
+    .order("full_name")
+    .limit(7);
+
+  const studentIds = (students ?? []).map((student) => student.id);
+  const { data: acquisitions } = studentIds.length
+    ? await supabase
+        .from("product_acquisitions")
+        .select("student_id,product_template_id,created_at")
+        .eq("studio_id", studio.id)
+        .in("student_id", studentIds)
+        .order("created_at", { ascending: false })
+        .limit(100)
+    : { data: [] as { student_id: string | null; product_template_id: string; created_at: string }[] };
+
+  const preferredByStudent = new Map<string, string>();
+  for (const acquisition of acquisitions ?? []) {
+    if (
+      acquisition.student_id &&
+      acquisition.product_template_id &&
+      !preferredByStudent.has(acquisition.student_id)
+    ) {
+      preferredByStudent.set(acquisition.student_id, acquisition.product_template_id);
+    }
+  }
+
+  return (students ?? []).map((student) => ({
+    id: student.id,
+    fullName: student.full_name,
+    preferredProductId: preferredByStudent.get(student.id),
+  }));
+}
+
 function moneyToMinor(value: FormDataEntryValue | null) {
   const raw = String(value ?? "")
     .replace(/,/g, "")
