@@ -272,6 +272,23 @@ async function prepareBooking(
         };
       }
 
+      if (reasonCode === "trial_completed_enrollment_required" && studentId) {
+        const { data: requirementData } = await ctx.supabase.rpc(
+          "assistant_post_trial_requirement",
+          {
+            target_studio_id: ctx.studio.id,
+            target_student_id: studentId,
+          },
+        );
+
+        return {
+          ok: false,
+          error: "post_trial_requirements",
+          ...safeBookingReason(reasonCode),
+          post_trial_requirement: asObject(requirementData),
+        };
+      }
+
       return {
         ok: false,
         error: "booking_not_eligible",
