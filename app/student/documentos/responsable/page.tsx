@@ -12,9 +12,12 @@ export default async function StudentGuardianPage({
 }: {
   searchParams: Promise<{ created?: string; token?: string; error?: string; returnTo?: string }>;
 }) {
-  const query = await searchParams;
+  const [query, { supabase, student, membership }, requestHeaders] = await Promise.all([
+    searchParams,
+    getStudentShellContext(),
+    headers(),
+  ]);
   const returnTo = safeReservationReturnTo(query.returnTo);
-  const { supabase, student, membership } = await getStudentShellContext();
   const studentId = student.id;
 
   const [{ data: guardians }, { data: invitations }] = await Promise.all([
@@ -36,7 +39,6 @@ export default async function StudentGuardianPage({
       .limit(5),
   ]);
 
-  const requestHeaders = await headers();
   const host = requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host") ?? "";
   const proto = requestHeaders.get("x-forwarded-proto") ?? "https";
   const invitationUrl =
