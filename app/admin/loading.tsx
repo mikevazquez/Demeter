@@ -1,12 +1,29 @@
 export default function AdminLoading() {
   return (
-    <main className="admin-route-state" aria-live="polite" aria-busy="true">
-      <section className="admin-state-card admin-state-loading">
-        <div className="admin-state-spinner" aria-hidden="true" />
-        <p className="admin-state-eyebrow">STUDIO FLOW</p>
-        <h1>Cargando tu estudio…</h1>
-        <p>Estamos preparando la información más reciente.</p>
+    <main className="sf-admin-loading" aria-live="polite" aria-busy="true">
+      <header className="sf-admin-loading-header">
+        <span className="sf-skeleton sf-skeleton-kicker" />
+        <span className="sf-skeleton sf-skeleton-title" />
+      </header>
+
+      <section className="sf-admin-loading-toolbar">
+        <span className="sf-skeleton sf-skeleton-control" />
+        <span className="sf-skeleton sf-skeleton-control is-short" />
       </section>
+
+      <section className="sf-admin-loading-grid" aria-label="Cargando contenido">
+        <span className="sf-skeleton sf-skeleton-card" />
+        <span className="sf-skeleton sf-skeleton-card" />
+        <span className="sf-skeleton sf-skeleton-card" />
+      </section>
+
+      <section className="sf-admin-loading-list">
+        <span className="sf-skeleton sf-skeleton-row" />
+        <span className="sf-skeleton sf-skeleton-row" />
+        <span className="sf-skeleton sf-skeleton-row" />
+      </section>
+
+      <span className="sr-only">Cargando información del estudio…</span>
     </main>
   );
 }
