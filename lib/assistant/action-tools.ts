@@ -492,6 +492,88 @@ async function prepareBooking(
   };
 }
 
+async function provisionTrialActivationLink(
+  ctx: AssistantActionToolContext,
+  studentId: string,
+) {
+  if (!ctx.activationUrl) {
+    return {
+      generated: false,
+      error: "activation_url_unavailable",
+      activation_url: null as string | null,
+    };
+  }
+
+  const { data: student, error: studentError } = await ctx.supabase
+    .from("students")
+    .select("user_id")
+    .eq("id", studentId)
+    .eq("studio_id", ctx.studio.id)
+    .maybeSingle();
+
+  if (studentError || !student) {
+    return {
+      generated: false,
+      error: "student_access_lookup_failed",
+      activation_url: null as string | null,
+    };
+  }
+
+  if (student.user_id) {
+    return {
+      generated: false,
+      already_has_access: true,
+      activation_url: null as string | null,
+    };
+  }
+
+  const {
+    data: { session },
+  } = await ctx.supabase.auth.getSession();
+
+  if (!session?.access_token) {
+    return {
+      generated: false,
+      error: "activation_authorization_unavailable",
+      activation_url: null as string | null,
+    };
+  }
+
+  const { data, error } = await ctx.supabase.functions.invoke(
+    "provision-student-access",
+    {
+      body: {
+        studentId,
+        activationUrl: ctx.activationUrl,
+        delivery: "return_link",
+      },
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+      },
+    },
+  );
+
+  const response = asObject(data);
+  const activationUrl =
+    typeof response?.activationLink === "string"
+      ? String(response.activationLink)
+      : null;
+
+  if (error || !response || response.ok !== true || !activationUrl) {
+    return {
+      generated: false,
+      error: String(response?.error ?? "activation_link_failed"),
+      activation_url: null as string | null,
+    };
+  }
+
+  return {
+    generated: true,
+    already_has_access: false,
+    activation_url: activationUrl,
+  };
+}
+
 async function executeBooking(
   ctx: AssistantActionToolContext,
   args: ExecuteBookingArgs,
@@ -697,6 +779,19 @@ async function executeBooking(
     return { ok: false, error: "booking_execution_failed" };
   }
 
+  let accessProvision:
+    | {
+        generated: boolean;
+        already_has_access?: boolean;
+        error?: string;
+        activation_url: string | null;
+      }
+    | null = null;
+
+  if (trialException && finalStudentId) {
+    accessProvision = await provisionTrialActivationLink(ctx, finalStudentId);
+  }
+
   const executedAt = new Date().toISOString();
   const reservationRef = `reservation:${reservationId}`;
   await ctx.supabase
@@ -718,6 +813,10 @@ async function executeBooking(
     reservation_ref: reservationRef,
     student_id: finalStudentId,
     commercial_status: finalCommercialStatus,
+    activation_url: accessProvision?.activation_url ?? null,
+    access_link_generated: accessProvision?.generated === true,
+    access_already_available: accessProvision?.already_has_access === true,
+    access_error: accessProvision?.error ?? null,
     summary: {
       ...sessionInfo.summary,
       commercial_status: finalCommercialStatus,
