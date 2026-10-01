@@ -35,38 +35,36 @@ export default async function ChallengesPage({
     ? String(query.status)
     : "all";
 
-  const { data: versions } = await ctx.supabase
-    .from("reward_rule_versions")
-    .select(
-      "rule_id,version_number,name,description,family,condition_definition,reward_definition,presentation_definition,created_at",
-    )
-    .eq("studio_id", ctx.studio.id)
-    .eq("family", "challenge")
-    .order("created_at", { ascending: false });
-
-  const ruleIds = [...new Set((versions ?? []).map((version) => version.rule_id))];
-  const [rulesResult, overridesResult, enrollmentsResult] = ruleIds.length
-    ? await Promise.all([
-        ctx.supabase
-          .from("reward_rules")
-          .select("id,status,current_version_number,scheduled_start_at,scheduled_end_at,updated_at")
-          .in("id", ruleIds)
-          .neq("status", "cancelled")
-          .order("updated_at", { ascending: false }),
-        ctx.supabase
-          .from("reward_rule_copy_overrides")
-          .select("rule_id,title,description,cover_url")
-          .in("rule_id", ruleIds),
-        ctx.supabase
-          .from("reward_challenge_enrollments")
-          .select("rule_id")
-          .in("rule_id", ruleIds)
-          .eq("status", "active"),
-      ])
-    : [{ data: [] }, { data: [] }, { data: [] }];
+  const [versionsResult, rulesResult, overridesResult, enrollmentsResult] = await Promise.all([
+    ctx.supabase
+      .from("reward_rule_versions")
+      .select(
+        "rule_id,version_number,name,description,family,condition_definition,reward_definition,presentation_definition,created_at",
+      )
+      .eq("studio_id", ctx.studio.id)
+      .eq("family", "challenge")
+      .order("created_at", { ascending: false }),
+    ctx.supabase
+      .from("reward_rules")
+      .select("id,status,current_version_number,scheduled_start_at,scheduled_end_at,updated_at")
+      .eq("studio_id", ctx.studio.id)
+      .neq("status", "cancelled")
+      .order("updated_at", { ascending: false }),
+    ctx.supabase
+      .from("reward_rule_copy_overrides")
+      .select("rule_id,title,description,cover_url")
+      .eq("studio_id", ctx.studio.id),
+    ctx.supabase
+      .from("reward_challenge_enrollments")
+      .select("rule_id")
+      .eq("studio_id", ctx.studio.id)
+      .eq("status", "active"),
+  ]);
+  const versions = versionsResult.data ?? [];
+  const ruleIds = new Set(versions.map((version) => version.rule_id));
 
   const current = new Map(
-    (versions ?? []).map((version) => [`${version.rule_id}:${version.version_number}`, version]),
+    versions.map((version) => [`${version.rule_id}:${version.version_number}`, version]),
   );
   const overrideMap = new Map(
     (overridesResult.data ?? []).map((override) => [override.rule_id, override]),
@@ -77,6 +75,7 @@ export default async function ChallengesPage({
   }
 
   const rows = (rulesResult.data ?? [])
+    .filter((rule) => ruleIds.has(rule.id))
     .map((rule) => ({
       rule,
       version: current.get(`${rule.id}:${rule.current_version_number}`),
