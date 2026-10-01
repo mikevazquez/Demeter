@@ -20,22 +20,19 @@ export default async function EvaluationDisciplinePage({
     getAdminContext(CAPABILITIES.EVALUATIONS_CONFIGURE),
   ]);
 
-  const { data: discipline } = await ctx.supabase
-    .from("disciplines")
-    .select("id,name,active")
-    .eq("id", disciplineId)
-    .eq("studio_id", ctx.studio.id)
-    .eq("active", true)
-    .maybeSingle();
-
-  if (!discipline) notFound();
-
-  const [linksResult, definitionsResult, templatesResult] = await Promise.all([
+  const [disciplineResult, linksResult, definitionsResult, templatesResult] = await Promise.all([
+    ctx.supabase
+      .from("disciplines")
+      .select("id,name,active")
+      .eq("id", disciplineId)
+      .eq("studio_id", ctx.studio.id)
+      .eq("active", true)
+      .maybeSingle(),
     ctx.supabase
       .from("discipline_technical_levels")
       .select("id,technical_level_id,discipline_order,active")
       .eq("studio_id", ctx.studio.id)
-      .eq("discipline_id", discipline.id)
+      .eq("discipline_id", disciplineId)
       .order("discipline_order"),
     ctx.supabase
       .from("technical_level_definitions")
@@ -46,9 +43,11 @@ export default async function EvaluationDisciplinePage({
       .from("evaluation_templates")
       .select("id,name,discipline_technical_level_id,updated_at,archived_at")
       .eq("studio_id", ctx.studio.id)
-      .eq("discipline_id", discipline.id)
+      .eq("discipline_id", disciplineId)
       .order("updated_at", { ascending: false }),
   ]);
+  const discipline = disciplineResult.data;
+  if (!discipline) notFound();
 
   const links = linksResult.data ?? [];
   const definitions = definitionsResult.data ?? [];
