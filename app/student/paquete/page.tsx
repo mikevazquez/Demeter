@@ -101,21 +101,28 @@ export default async function StudentPackagePage() {
   const activeDaysRemaining = activePackage
     ? daysRemaining(activePackage.expires_on, studio.timezone)
     : null;
-  const [{ data: enrollmentOptionData }, { data: purchasableProductRows }] =
-    await Promise.all([
-      supabase.rpc("student_enrollment_purchase_option"),
-      supabase
-        .from("product_templates")
-        .select(
-          "id,name,product_type,package_term,price_minor,currency,validity_days,credit_limit,unlimited",
-        )
-        .eq("studio_id", membership.studio_id)
-        .eq("active", true)
-        .eq("online_purchasable", true)
-        .in("product_type", ["package", "membership"])
-        .order("price_minor", { ascending: true }),
-    ]);
-
+  const [
+    { data: enrollmentOptionData },
+    { data: purchasableProductRows },
+    { data: disciplineRows },
+  ] = await Promise.all([
+    supabase.rpc("student_enrollment_purchase_option"),
+    supabase
+      .from("product_templates")
+      .select(
+        "id,name,product_type,package_term,price_minor,currency,validity_days,credit_limit,unlimited",
+      )
+      .eq("studio_id", membership.studio_id)
+      .eq("active", true)
+      .eq("online_purchasable", true)
+      .in("product_type", ["package", "membership"])
+      .order("price_minor", { ascending: true }),
+    supabase
+      .from("disciplines")
+      .select("id,name")
+      .eq("studio_id", membership.studio_id)
+      .eq("active", true),
+  ]);
   const enrollmentOption = (enrollmentOptionData as {
     enabled?: boolean;
     missing?: boolean;
@@ -136,41 +143,36 @@ export default async function StudentPackagePage() {
 
   if (purchasableProducts.length) {
     const productIds = purchasableProducts.map((product) => product.id);
-    const [{ data: productDisciplineRows }, { data: disciplineRows }] = await Promise.all([
-      supabase
-        .from("product_template_disciplines")
-        .select("product_template_id,discipline_id")
-        .eq("studio_id", membership.studio_id)
-        .in("product_template_id", productIds),
-      supabase
-        .from("disciplines")
-        .select("id,name")
-        .eq("studio_id", membership.studio_id)
-        .eq("active", true),
-    ]);
+    const { data: productDisciplineRows } = await supabase
+      .from("product_template_disciplines")
+      .select("product_template_id,discipline_id")
+      .eq("studio_id", membership.studio_id)
+      .in("product_template_id", productIds);
 
     const links = (productDisciplineRows ?? []) as ProductDisciplineLink[];
-    const disciplineNameById = new Map(
-      ((disciplineRows ?? []) as DisciplineRow[]).map((discipline) => [
-        discipline.id,
-        discipline.name,
-      ]),
-    );
-
-    for (const link of links) {
-      const disciplineName = disciplineNameById.get(link.discipline_id);
-      if (!disciplineName) continue;
-      productDisciplineNames.set(link.product_template_id, [
-        ...(productDisciplineNames.get(link.product_template_id) ?? []),
-        disciplineName,
-      ]);
-    }
-
-    for (const [productId, disciplineNames] of productDisciplineNames) {
-      productDisciplineNames.set(
-        productId,
-        disciplineNames.sort((left, right) => left.localeCompare(right, "es")),
+    if (links.length) {
+      const disciplineNameById = new Map(
+        ((disciplineRows ?? []) as DisciplineRow[]).map((discipline) => [
+          discipline.id,
+          discipline.name,
+        ]),
       );
+
+      for (const link of links) {
+        const disciplineName = disciplineNameById.get(link.discipline_id);
+        if (!disciplineName) continue;
+        productDisciplineNames.set(link.product_template_id, [
+          ...(productDisciplineNames.get(link.product_template_id) ?? []),
+          disciplineName,
+        ]);
+      }
+
+      for (const [productId, disciplineNames] of productDisciplineNames) {
+        productDisciplineNames.set(
+          productId,
+          disciplineNames.sort((left, right) => left.localeCompare(right, "es")),
+        );
+      }
     }
   }
 
