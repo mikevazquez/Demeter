@@ -114,15 +114,16 @@ export default async function NotificationsPage({
     saved?: string;
   }>;
 }) {
-  const query = await searchParams;
+  const [query, ctx] = await Promise.all([
+    searchParams,
+    getAdminContext(CAPABILITIES.AUTOMATIONS_READ),
+  ]);
   const activeTab = tabs.some((tab) => tab.key === query.tab) ? query.tab! : "procesos";
   const activeCategory = NOTIFICATION_PROCESS_CATEGORIES.some(
     (category) => category.key === query.category,
   )
     ? query.category!
     : "all";
-
-  const ctx = await getAdminContext(CAPABILITIES.AUTOMATIONS_READ);
   const canManage = ctx.can(CAPABILITIES.AUTOMATIONS_MANAGE);
 
   const [{ data: rawSnapshot }, { data: automationInstances }, { data: marketingConfigs }] =
