@@ -9,28 +9,39 @@ import {
 
 export async function updateSession(request: NextRequest) {
   const portal = authPortalFromPath(request.nextUrl.pathname);
-  const requestHeaders = new Headers(request.headers);
-  requestHeaders.set(AUTH_PORTAL_HEADER, portal);
 
-  let response = NextResponse.next({
-    request: {
-      headers: requestHeaders,
-    },
-  });
+  const buildResponse = () => {
+    const requestHeaders = new Headers(request.headers);
+    requestHeaders.set(AUTH_PORTAL_HEADER, portal);
+
+    return NextResponse.next({
+      request: {
+        headers: requestHeaders,
+      },
+    });
+  };
+
+  let response = buildResponse();
 
   const supabase = createServerClient(env.supabaseUrl, env.supabasePublishableKey, {
     cookieOptions: authCookieOptions(portal),
     cookies: {
       getAll: () => request.cookies.getAll(),
-      setAll(cookiesToSet) {
+      setAll(cookiesToSet, responseHeaders) {
         cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
-        response = NextResponse.next({
-          request: {
-            headers: requestHeaders,
-          },
-        });
+
+        // Rebuild after mutating request.cookies so Server Components receive
+        // the refreshed auth cookies on this same request.
+        response = buildResponse();
+
         cookiesToSet.forEach(({ name, value, options }) =>
           response.cookies.set(name, value, options),
+        );
+
+        // @supabase/ssr >= 0.10 provides anti-cache headers during refresh.
+        // Forward them so Vercel/CDNs never reuse a response carrying auth state.
+        Object.entries(responseHeaders ?? {}).forEach(([name, value]) =>
+          response.headers.set(name, value),
         );
       },
     },

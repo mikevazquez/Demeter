@@ -7,8 +7,9 @@ import { describe, expect, it } from "vitest";
 const stableBlobs: Record<string, string> = {
   "app/auth/actions.ts": "90a3b8155c458303cdbb4ac9020bca29b52db354",
   "lib/auth/admin-context.ts": "1d8cf8dbf53c42b971b1b32b20baa12188a43dfa",
+  "lib/auth/studio-context-cookie.ts": "ed8605c1d786a8b04b4cd6b799c1853621f3d7d0",
   "lib/student/portal.ts": "31c144c1b85a66edf45df36b099670291cc5724e",
-  "lib/supabase/proxy.ts": "88601be82f6cc11a8812189e15744c6981239935",
+  "lib/supabase/proxy.ts": "e05797beb94e42633777e3c1184bc8b909f570f1",
   "lib/supabase/server.ts": "8e50d08cdab89aec120e8f5484a8c6d83660ff06",
   "lib/supabase/client.ts": "877a8544a6dfbf0618242c861b07e07e6a943d02",
   "lib/supabase/session-policy.ts": "024e5bb64e8a3c85bcab52587a917fe7e02ed803",
