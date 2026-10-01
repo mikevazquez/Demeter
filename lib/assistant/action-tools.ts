@@ -6,7 +6,9 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { AssistantStudioContext } from "./read-tools";
 import type {
   ExecuteBookingArgs,
+  ExecuteCancellationArgs,
   PrepareBookingArgs,
+  PrepareCancellationArgs,
 } from "./tool-contracts";
 
 type AssistantActionToolContext = {
@@ -401,6 +403,386 @@ async function executeBooking(
   };
 }
 
+
+type CancellationSnapshot = {
+  reservationId: string;
+  status: string;
+  summary: {
+    activity: string;
+    date: string;
+    starts_at_local: string;
+    ends_at_local: string;
+    location: string | null;
+    space: string | null;
+    cancellation_status: "cancelled_on_time" | "cancelled_late";
+    late: boolean;
+    credit_cost: number;
+    credit_will_return: boolean | null;
+    unlimited_penalty_minor: number;
+    currency: string;
+    cancellation_cutoff_minutes: number;
+  };
+};
+
+async function getCancellationSnapshot(
+  ctx: AssistantActionToolContext,
+  reservationId: string,
+): Promise<CancellationSnapshot | null> {
+  if (!ctx.studentId) return null;
+
+  const { data: reservation, error: reservationError } = await ctx.supabase
+    .from("reservations")
+    .select("id,session_id,student_id,status,credits_held,acquisition_id")
+    .eq("id", reservationId)
+    .eq("studio_id", ctx.studio.id)
+    .eq("student_id", ctx.studentId)
+    .maybeSingle();
+
+  if (reservationError || !reservation) return null;
+
+  const { data: session, error: sessionError } = await ctx.supabase
+    .from("class_sessions")
+    .select("id,template_id,starts_at,ends_at,location_id,space_id")
+    .eq("id", reservation.session_id)
+    .eq("studio_id", ctx.studio.id)
+    .maybeSingle();
+
+  if (sessionError || !session) return null;
+
+  const [templateResult, locationResult, spaceResult, policyResult, acquisitionResult] =
+    await Promise.all([
+      ctx.supabase
+        .from("class_templates")
+        .select("name")
+        .eq("id", session.template_id)
+        .eq("studio_id", ctx.studio.id)
+        .maybeSingle(),
+      session.location_id
+        ? ctx.supabase
+            .from("studio_locations")
+            .select("name")
+            .eq("id", session.location_id)
+            .eq("studio_id", ctx.studio.id)
+            .maybeSingle()
+        : Promise.resolve({ data: null, error: null }),
+      session.space_id
+        ? ctx.supabase
+            .from("spaces")
+            .select("name")
+            .eq("id", session.space_id)
+            .eq("studio_id", ctx.studio.id)
+            .maybeSingle()
+        : Promise.resolve({ data: null, error: null }),
+      ctx.supabase
+        .from("studio_operating_policies")
+        .select(
+          "cancellation_cutoff_minutes,late_cancellation_consumes_credit,unlimited_late_cancellation_penalty_minor",
+        )
+        .eq("studio_id", ctx.studio.id)
+        .maybeSingle(),
+      reservation.acquisition_id
+        ? ctx.supabase
+            .from("product_acquisitions")
+            .select("unlimited")
+            .eq("id", reservation.acquisition_id)
+            .eq("studio_id", ctx.studio.id)
+            .maybeSingle()
+        : Promise.resolve({ data: null, error: null }),
+    ]);
+
+  if (templateResult.error || policyResult.error || acquisitionResult.error) {
+    return null;
+  }
+
+  const cutoffMinutes = Math.max(
+    Number(policyResult.data?.cancellation_cutoff_minutes ?? 0),
+    0,
+  );
+  const late =
+    Date.now() >
+    new Date(session.starts_at).getTime() - cutoffMinutes * 60_000;
+  const unlimited = Boolean(acquisitionResult.data?.unlimited);
+  const creditCost = Math.max(Number(reservation.credits_held ?? 1), 1);
+  const lateConsumesCredit = Boolean(
+    policyResult.data?.late_cancellation_consumes_credit,
+  );
+
+  const start = localParts(session.starts_at, ctx.studio.timezone);
+  const end = localParts(session.ends_at, ctx.studio.timezone);
+
+  return {
+    reservationId: reservation.id,
+    status: String(reservation.status),
+    summary: {
+      activity: templateResult.data?.name ?? "Clase",
+      date: start.date,
+      starts_at_local: start.time,
+      ends_at_local: end.time,
+      location: locationResult.data?.name ?? null,
+      space: spaceResult.data?.name ?? null,
+      cancellation_status: late ? "cancelled_late" : "cancelled_on_time",
+      late,
+      credit_cost: creditCost,
+      credit_will_return: unlimited ? null : !(late && lateConsumesCredit),
+      unlimited_penalty_minor:
+        unlimited && late
+          ? Math.max(
+              Number(
+                policyResult.data?.unlimited_late_cancellation_penalty_minor ?? 0,
+              ),
+              0,
+            )
+          : 0,
+      currency: ctx.studio.currency,
+      cancellation_cutoff_minutes: cutoffMinutes,
+    },
+  };
+}
+
+function cancellationConsequenceKey(snapshot: CancellationSnapshot["summary"]) {
+  return JSON.stringify({
+    cancellation_status: snapshot.cancellation_status,
+    credit_will_return: snapshot.credit_will_return,
+    unlimited_penalty_minor: snapshot.unlimited_penalty_minor,
+    credit_cost: snapshot.credit_cost,
+  });
+}
+
+async function prepareCancellation(
+  ctx: AssistantActionToolContext,
+  args: PrepareCancellationArgs,
+) {
+  if (!ctx.studentId) {
+    return { ok: false, error: "identity_required" };
+  }
+
+  const reservationId = parseOpaqueRef(args.reservation_ref, "reservation");
+  if (!reservationId) {
+    return { ok: false, error: "invalid_reservation_ref" };
+  }
+
+  const reason = String(args.reason ?? "").trim();
+  if (reason.length < 2 || reason.length > 240) {
+    return { ok: false, error: "cancellation_reason_required" };
+  }
+
+  const snapshot = await getCancellationSnapshot(ctx, reservationId);
+  if (!snapshot) {
+    return { ok: false, error: "reservation_not_found" };
+  }
+  if (snapshot.status !== "reserved") {
+    return { ok: false, error: "reservation_not_cancellable" };
+  }
+
+  const now = new Date().toISOString();
+  await ctx.supabase
+    .from("assistant_pending_actions")
+    .update({ status: "cancelled", updated_at: now })
+    .eq("studio_id", ctx.studio.id)
+    .eq("conversation_id", ctx.conversationId)
+    .eq("action_type", "booking.cancel")
+    .eq("status", "pending");
+
+  const secretToken = randomUUID();
+  const tokenHash = createHash("sha256").update(secretToken).digest("hex");
+  const expiresAt = new Date(Date.now() + 10 * 60_000).toISOString();
+
+  const confirmationSummary = {
+    ...snapshot.summary,
+    reason,
+  };
+
+  const { data: pending, error: pendingError } = await ctx.supabase
+    .from("assistant_pending_actions")
+    .insert({
+      studio_id: ctx.studio.id,
+      conversation_id: ctx.conversationId,
+      action_type: "booking.cancel",
+      action_token_hash: tokenHash,
+      action_payload: {
+        reservation_id: reservationId,
+        student_id: ctx.studentId,
+        reason,
+        prepared_turn_id: ctx.turnId,
+        consequence_key: cancellationConsequenceKey(snapshot.summary),
+      },
+      confirmation_summary: confirmationSummary,
+      status: "pending",
+      expires_at: expiresAt,
+    })
+    .select("id")
+    .single();
+
+  if (pendingError || !pending) {
+    return { ok: false, error: "pending_action_create_failed" };
+  }
+
+  return {
+    ok: true,
+    status: "confirmation_required",
+    expires_at: expiresAt,
+    summary: confirmationSummary,
+  };
+}
+
+async function executeCancellation(
+  ctx: AssistantActionToolContext,
+  args: ExecuteCancellationArgs,
+) {
+  void args;
+
+  const { data: pending, error: pendingError } = await ctx.supabase
+    .from("assistant_pending_actions")
+    .select(
+      "id,action_type,action_payload,confirmation_summary,status,expires_at,execution_ref",
+    )
+    .eq("studio_id", ctx.studio.id)
+    .eq("conversation_id", ctx.conversationId)
+    .eq("action_type", "booking.cancel")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (pendingError || !pending) {
+    return { ok: false, error: "pending_action_not_found" };
+  }
+
+  if (pending.status === "executed") {
+    return {
+      ok: true,
+      status: "executed",
+      already_executed: true,
+      summary: pending.confirmation_summary,
+      reservation_ref: pending.execution_ref ?? null,
+    };
+  }
+
+  if (pending.status !== "pending" || pending.action_type !== "booking.cancel") {
+    return { ok: false, error: "pending_action_not_available" };
+  }
+
+  if (new Date(pending.expires_at).getTime() <= Date.now()) {
+    await ctx.supabase
+      .from("assistant_pending_actions")
+      .update({ status: "expired", updated_at: new Date().toISOString() })
+      .eq("id", pending.id)
+      .eq("studio_id", ctx.studio.id)
+      .eq("status", "pending");
+    return { ok: false, error: "confirmation_expired" };
+  }
+
+  const payload = asObject(pending.action_payload);
+  if (!payload) return { ok: false, error: "pending_action_invalid" };
+
+  if (String(payload.prepared_turn_id ?? "") === ctx.turnId) {
+    return { ok: false, error: "confirmation_requires_new_turn" };
+  }
+
+  if (!isExplicitAssistantConfirmation(ctx.currentUserMessage)) {
+    return { ok: false, error: "explicit_confirmation_required" };
+  }
+
+  const studentId = String(payload.student_id ?? "");
+  const reservationId = String(payload.reservation_id ?? "");
+  const reason = String(payload.reason ?? "").trim();
+
+  if (!ctx.studentId || studentId !== ctx.studentId) {
+    return { ok: false, error: "conversation_identity_changed" };
+  }
+  if (!reservationId || reason.length < 2) {
+    return { ok: false, error: "pending_action_invalid" };
+  }
+
+  const snapshot = await getCancellationSnapshot(ctx, reservationId);
+  if (!snapshot) {
+    return { ok: false, error: "reservation_not_found" };
+  }
+  if (snapshot.status !== "reserved") {
+    return { ok: false, error: "reservation_not_cancellable" };
+  }
+
+  const previousConsequence = String(payload.consequence_key ?? "");
+  const currentConsequence = cancellationConsequenceKey(snapshot.summary);
+  if (previousConsequence !== currentConsequence) {
+    const refreshedAt = new Date().toISOString();
+    const refreshedExpiry = new Date(Date.now() + 10 * 60_000).toISOString();
+    const refreshedSummary = { ...snapshot.summary, reason };
+
+    await ctx.supabase
+      .from("assistant_pending_actions")
+      .update({
+        action_payload: {
+          ...payload,
+          prepared_turn_id: ctx.turnId,
+          consequence_key: currentConsequence,
+        },
+        confirmation_summary: refreshedSummary,
+        expires_at: refreshedExpiry,
+        updated_at: refreshedAt,
+      })
+      .eq("id", pending.id)
+      .eq("studio_id", ctx.studio.id)
+      .eq("status", "pending");
+
+    return {
+      ok: true,
+      status: "confirmation_required",
+      consequence_changed: true,
+      expires_at: refreshedExpiry,
+      summary: refreshedSummary,
+    };
+  }
+
+  const { data: cancellation, error: cancellationError } = await ctx.supabase.rpc(
+    "cancel_reservation",
+    {
+      target_reservation_id: reservationId,
+      target_reason: reason,
+    },
+  );
+
+  const cancellationObject = asObject(cancellation);
+  if (
+    cancellationError ||
+    !cancellationObject ||
+    cancellationObject.ok !== true
+  ) {
+    return {
+      ok: false,
+      error:
+        String(cancellationObject?.reason_code ?? "") ||
+        "cancellation_execution_failed",
+    };
+  }
+
+  const executedAt = new Date().toISOString();
+  const reservationRef = `reservation:${reservationId}`;
+  await ctx.supabase
+    .from("assistant_pending_actions")
+    .update({
+      status: "executed",
+      confirmed_at: executedAt,
+      executed_at: executedAt,
+      execution_ref: reservationRef,
+      updated_at: executedAt,
+    })
+    .eq("id", pending.id)
+    .eq("studio_id", ctx.studio.id)
+    .eq("status", "pending");
+
+  return {
+    ok: true,
+    status: "executed",
+    reservation_ref: reservationRef,
+    cancellation_status: cancellationObject.status,
+    credit_cost: cancellationObject.credit_cost,
+    summary: {
+      ...snapshot.summary,
+      reason,
+    },
+  };
+}
+
 export async function executeAssistantActionTool(
   ctx: AssistantActionToolContext,
   toolName: string,
@@ -411,6 +793,10 @@ export async function executeAssistantActionTool(
       return prepareBooking(ctx, args as PrepareBookingArgs);
     case "execute_booking":
       return executeBooking(ctx, args as ExecuteBookingArgs);
+    case "prepare_cancellation":
+      return prepareCancellation(ctx, args as PrepareCancellationArgs);
+    case "execute_cancellation":
+      return executeCancellation(ctx, args as ExecuteCancellationArgs);
     default:
       return { ok: false, error: "tool_not_allowed" };
   }
