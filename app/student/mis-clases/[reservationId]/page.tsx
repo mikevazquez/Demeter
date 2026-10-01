@@ -100,9 +100,11 @@ export default async function StudentReservationDetailPage({
     contact_match?: string;
   }>;
 }) {
-  const { reservationId } = await params;
-  const query = await searchParams;
-  const { supabase, studio } = await getStudentPortalContext();
+  const [{ reservationId }, query, { supabase, studio }] = await Promise.all([
+    params,
+    searchParams,
+    getStudentPortalContext(),
+  ]);
   const { data, error } = await supabase.rpc("student_classes_feed");
 
   if (error || !data) {
@@ -123,19 +125,31 @@ export default async function StudentReservationDetailPage({
 
   const isActiveReservation = item.status === "reserved";
   const canShowCheckIn = item.status === "reserved" || item.status === "attended";
-  const { data: invitationContextData } = isActiveReservation
-    ? await supabase.rpc("student_reward_invitation_context", {
-        target_host_reservation_id: reservationId,
-      })
-    : { data: null };
-  const invitationContext = (invitationContextData as InvitationContext | null) ?? null;
-  const { data: contactMatchData } =
+  const [
+    { data: invitationContextData },
+    { data: contactMatchData },
+    { data: checkInData },
+  ] = await Promise.all([
+    isActiveReservation
+      ? supabase.rpc("student_reward_invitation_context", {
+          target_host_reservation_id: reservationId,
+        })
+      : Promise.resolve({ data: null }),
     isActiveReservation && query.contact_match
-      ? await supabase.rpc("student_guest_invitation_contact_identity", {
+      ? supabase.rpc("student_guest_invitation_contact_identity", {
           target_guest_person_id: query.contact_match,
         })
-      : { data: null };
+      : Promise.resolve({ data: null }),
+    canShowCheckIn
+      ? supabase.rpc("student_reservation_checkin_token", {
+          target_reservation_id: reservationId,
+        })
+      : Promise.resolve({ data: null }),
+  ]);
+
+  const invitationContext = (invitationContextData as InvitationContext | null) ?? null;
   const contactMatch = (contactMatchData as InvitationContactMatch | null) ?? null;
+  const checkIn = (checkInData as CheckInTokenData | null) ?? null;
   const activeGuests = invitationContext?.active_guests ?? [];
   const invitationTotal = invitationContext?.total ?? 0;
   const invitationRemaining = invitationContext?.remaining ?? 0;
@@ -144,32 +158,29 @@ export default async function StudentReservationDetailPage({
     ? (inviteErrorCopy[query.invite_error] ?? inviteErrorCopy.invite_failed)
     : null;
 
-  const { data: checkInData } = canShowCheckIn
-    ? await supabase.rpc("student_reservation_checkin_token", {
-        target_reservation_id: reservationId,
-      })
-    : { data: null };
-  const checkIn = (checkInData as CheckInTokenData | null) ?? null;
-
-  const guestCheckIns = isActiveReservation
-    ? await Promise.all(
-        activeGuests
-          .filter((guest) => guest.status === "active")
-          .map(async (guest) => {
-            const { data: guestCheckInData } = await supabase.rpc(
-              "student_reservation_checkin_token",
-              {
-                target_reservation_id: guest.guest_reservation_id,
-              },
-            );
-
-            return {
-              guest,
-              checkIn: (guestCheckInData as CheckInTokenData | null) ?? null,
-            };
-          }),
-      )
-    : [];
+  const activeGuestReservationIds = activeGuests
+    .filter((guest) => guest.status === "active")
+    .map((guest) => guest.guest_reservation_id);
+  const { data: guestCheckInRows } =
+    isActiveReservation && activeGuestReservationIds.length
+      ? await supabase.rpc("student_reservation_checkin_tokens", {
+          target_reservation_ids: activeGuestReservationIds,
+        })
+      : { data: [] as { reservation_id: string; token_data: CheckInTokenData }[] };
+  const guestCheckInMap = new Map(
+    (
+      (guestCheckInRows ?? []) as {
+        reservation_id: string;
+        token_data: CheckInTokenData;
+      }[]
+    ).map((row) => [row.reservation_id, row.token_data]),
+  );
+  const guestCheckIns = activeGuests
+    .filter((guest) => guest.status === "active")
+    .map((guest) => ({
+      guest,
+      checkIn: guestCheckInMap.get(guest.guest_reservation_id) ?? null,
+    }));
 
   return (
     <main className="mx-auto max-w-2xl space-y-4 pb-4">
