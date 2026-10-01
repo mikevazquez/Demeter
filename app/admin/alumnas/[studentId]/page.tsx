@@ -152,8 +152,11 @@ export default async function StudentProfilePage({
     view?: string;
   }>;
 }) {
-  const { studentId } = await params;
-  const query = await searchParams;
+  const [{ studentId }, query, { supabase, studio, can }] = await Promise.all([
+    params,
+    searchParams,
+    getAdminContext(CAPABILITIES.STUDENTS_READ),
+  ]);
   const requestedView = String(query.view ?? "summary");
   const view = (
     [
@@ -177,8 +180,6 @@ export default async function StudentProfilePage({
     | "followup"
     | "history"
     | "profile";
-  const { supabase, studio, can } = await getAdminContext(CAPABILITIES.STUDENTS_READ);
-
   const { data: student } = await supabase
     .from("students")
     .select(
@@ -192,6 +193,116 @@ export default async function StudentProfilePage({
 
   const canReadProducts = can(CAPABILITIES.PRODUCTS_READ);
   const canEditAcquisitions = can(CAPABILITIES.PRODUCTS_WRITE) || can(CAPABILITIES.SALES_WRITE);
+
+  const secondaryReads = Promise.all([
+    canArchive
+      ? supabase
+          .from("student_lifecycle_events")
+          .select("id, from_status, to_status, created_at")
+          .eq("student_id", student.id)
+          .eq("studio_id", studio.id)
+          .order("created_at", { ascending: false })
+          .limit(12)
+      : Promise.resolve({ data: [] }),
+    canReadSales
+      ? supabase
+          .from("student_operating_charges")
+          .select(
+            "id,charge_type,amount_minor,currency,status,created_at,resolved_at,resolution_note,reservation_id",
+          )
+          .eq("studio_id", studio.id)
+          .eq("student_id", student.id)
+          .order("created_at", { ascending: false })
+          .limit(30)
+      : Promise.resolve({ data: [] }),
+    canReadSchedule
+      ? supabase
+          .from("reservations")
+          .select("id,session_id,acquisition_id,status,credits_held,cancelled_at")
+          .eq("studio_id", studio.id)
+          .eq("student_id", student.id)
+          .order("booked_at", { ascending: false })
+      : Promise.resolve({ data: [] }),
+    canReadSales
+      ? supabase
+          .from("sales")
+          .select("id,folio,total_minor,status,created_at")
+          .eq("studio_id", studio.id)
+          .eq("student_id", student.id)
+          .order("created_at", { ascending: false })
+      : Promise.resolve({ data: [] }),
+    supabase
+      .from("student_enrollments")
+      .select("id,status,starts_on,expires_on,created_at")
+      .eq("studio_id", studio.id)
+      .eq("student_id", student.id)
+      .order("created_at", { ascending: false }),
+    canReadRewards
+      ? supabase
+          .from("reward_status_memberships")
+          .select("current_level_key")
+          .eq("studio_id", studio.id)
+          .eq("student_id", student.id)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
+    canReadRewards
+      ? supabase
+          .from("reward_onboarding")
+          .select(
+            "documents_completed_at,profile_completed_at,app_installed_at,notifications_enabled_at,first_reservation_at,first_attendance_at,access_unlocked_at,access_method,access_reason",
+          )
+          .eq("studio_id", studio.id)
+          .eq("student_id", student.id)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
+    canReadRewards
+      ? supabase
+          .from("reward_instances")
+          .select("id", { count: "exact", head: true })
+          .eq("studio_id", studio.id)
+          .eq("student_id", student.id)
+          .eq("status", "available")
+      : Promise.resolve({ data: null, count: 0 }),
+    canReadRewards
+      ? supabase
+          .from("reward_achievement_unlocks")
+          .select("id,title_snapshot,achievement_key,level_key,unlocked_at")
+          .eq("studio_id", studio.id)
+          .eq("student_id", student.id)
+          .order("unlocked_at", { ascending: false })
+          .limit(20)
+      : Promise.resolve({ data: [] }),
+    canReadRewards
+      ? supabase
+          .from("reward_status_months")
+          .select("id,resulting_level_key,closed_at,period_start")
+          .eq("studio_id", studio.id)
+          .eq("student_id", student.id)
+          .eq("is_closed", true)
+          .not("resulting_level_key", "is", null)
+          .order("period_start", { ascending: false })
+          .limit(20)
+      : Promise.resolve({ data: [] }),
+    canReadRewards
+      ? supabase
+          .from("reward_instances")
+          .select("id,reward_key,status,kind,benefit_definition,expires_at,redeemed_at,created_at")
+          .eq("studio_id", studio.id)
+          .eq("student_id", student.id)
+          .order("created_at", { ascending: false })
+          .limit(30)
+      : Promise.resolve({ data: [] }),
+    canReadEvaluations
+      ? supabase
+          .from("student_discipline_levels")
+          .select("discipline_id,discipline_technical_level_id")
+          .eq("studio_id", studio.id)
+          .eq("student_id", student.id)
+      : Promise.resolve({ data: [] }),
+    student.user_id
+      ? supabase.auth.admin.getUserById(student.user_id)
+      : Promise.resolve({ data: { user: null } }),
+  ]);
 
   const [
     { data: person },
