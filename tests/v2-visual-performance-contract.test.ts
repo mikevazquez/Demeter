@@ -53,6 +53,8 @@ describe("Studio Flow V2 visual + performance contract", () => {
     expect(visualSystem).toContain('[class*="bg-black/20"]');
     expect(visualSystem).toContain(".bg-fuchsia-600");
     expect(visualSystem).toContain("background-color: var(--accent) !important");
+    expect(visualSystem).toContain(".admin-shell .text-white");
+    expect(visualSystem).toContain('[class~="hover:text-white"]');
   });
 
   it("eliminates the remaining dark islands from secondary admin modules", () => {
