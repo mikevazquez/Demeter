@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import { getStudentPortalContext } from "@/lib/student/portal";
+import { getStudentAccessContext } from "@/lib/student/portal";
 
 type ReconcileResult = {
   ok?: boolean;
@@ -146,12 +146,10 @@ export default async function StudentCheckoutReturnPage({
 }: {
   searchParams: Promise<{ attempt?: string; outcome?: string }>;
 }) {
-  const [query, { supabase }] = await Promise.all([
-    searchParams,
-    getStudentPortalContext(),
-  ]);
+  const query = await searchParams;
   const attemptId = query.attempt?.trim() ?? "";
   const outcome = safeOutcome(query.outcome);
+  const { supabase } = await getStudentAccessContext();
 
   const { data: attempt } = attemptId
     ? await supabase
