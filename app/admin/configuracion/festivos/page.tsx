@@ -31,9 +31,11 @@ export default async function HolidaysConfigurationPage({
     error?: string;
   }>;
 }) {
-  const params = await searchParams;
+  const [params, ctx] = await Promise.all([
+    searchParams,
+    getAdminContext(CAPABILITIES.SETTINGS_WRITE),
+  ]);
   const year = safeYear(params.year);
-  const ctx = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
 
   if (ctx.membership.role !== "owner") {
     redirect("/admin?error=access");
