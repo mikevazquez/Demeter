@@ -8,6 +8,7 @@ type CreateOrderRequest = {
   returnBaseUrl?: unknown;
   evaluationInvitationId?: unknown;
   evaluationSessionId?: unknown;
+  enrollmentOnly?: unknown;
 };
 
 type CheckoutAttempt = {
@@ -117,6 +118,7 @@ const handler = {
     const returnBaseUrl = validReturnBaseUrl(payload.returnBaseUrl);
     const evaluationInvitationId = safeText(payload.evaluationInvitationId);
     const evaluationSessionId = safeText(payload.evaluationSessionId);
+    const enrollmentOnly = payload.enrollmentOnly === true;
     const hasEvaluationContext = Boolean(evaluationInvitationId || evaluationSessionId);
     const buyingSingleClass = Boolean(sessionId);
 
@@ -132,7 +134,8 @@ const handler = {
           !evaluationSessionId ||
           !UUID_PATTERN.test(evaluationInvitationId) ||
           !UUID_PATTERN.test(evaluationSessionId))) ||
-      (buyingSingleClass && hasEvaluationContext && evaluationSessionId !== sessionId)
+      (buyingSingleClass && hasEvaluationContext && evaluationSessionId !== sessionId) ||
+      (enrollmentOnly && (buyingSingleClass || hasEvaluationContext))
     ) {
       return jsonResponse({ error: "invalid_request" }, 400);
     }
@@ -149,10 +152,15 @@ const handler = {
             target_session_id: sessionId,
             target_client_request_key: clientRequestKey,
           })
-        : await userClient.rpc("student_create_online_checkout_attempt", {
-            target_product_template_id: productTemplateId,
-            target_client_request_key: clientRequestKey,
-          });
+        : enrollmentOnly
+          ? await userClient.rpc("student_create_enrollment_checkout_attempt", {
+              target_product_template_id: productTemplateId,
+              target_client_request_key: clientRequestKey,
+            })
+          : await userClient.rpc("student_create_online_checkout_attempt", {
+              target_product_template_id: productTemplateId,
+              target_client_request_key: clientRequestKey,
+            });
 
     if (attemptError || !attemptData) {
       const message = attemptError?.message ?? "checkout_attempt_failed";
@@ -170,6 +178,12 @@ const handler = {
       }
       if (message.includes("session_not_bookable")) {
         return jsonResponse({ error: "session_not_bookable" }, 409);
+      }
+      if (message.includes("enrollment_already_active")) {
+        return jsonResponse({ error: "enrollment_already_active" }, 409);
+      }
+      if (message.includes("enrollment_product_not_configured")) {
+        return jsonResponse({ error: "enrollment_product_not_configured" }, 409);
       }
       if (
         message.includes("request_key_reused_for_different_product") ||
@@ -236,12 +250,16 @@ const handler = {
 
     const isEvaluationEnrollment =
       hasEvaluationContext && String(product.product_type) === "enrollment";
+    const isEnrollmentPurchase =
+      enrollmentOnly && String(product.product_type) === "enrollment";
 
     if (
       attemptRow.product_template_id !== product.id ||
       attemptRow.studio_id !== product.studio_id ||
       product.active !== true ||
-      (product.online_purchasable !== true && !isEvaluationEnrollment) ||
+      (product.online_purchasable !== true &&
+        !isEvaluationEnrollment &&
+        !isEnrollmentPurchase) ||
       !["package", "membership", "single_class", "enrollment"].includes(
         String(product.product_type),
       )

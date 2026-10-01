@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import PurchaseEnrollmentButton from "@/app/student/paquete/PurchaseEnrollmentButton";
 import { PurchasePackageButton } from "@/app/student/paquete/purchase-package-button";
 import {
   formatDate,
@@ -100,6 +101,23 @@ export default async function StudentPackagePage() {
   const activeDaysRemaining = activePackage
     ? daysRemaining(activePackage.expires_on, studio.timezone)
     : null;
+  const { data: enrollmentOptionData } = await supabase.rpc(
+    "student_enrollment_purchase_option",
+  );
+  const enrollmentOption = (enrollmentOptionData as {
+    enabled?: boolean;
+    missing?: boolean;
+    configured?: boolean;
+    product?: {
+      id: string;
+      name: string;
+      price_minor: number;
+      currency: string;
+      validity_days: number | null;
+    } | null;
+  } | null) ?? null;
+  const enrollmentMissing = enrollmentOption?.missing === true;
+  const enrollmentProduct = enrollmentOption?.product ?? null;
 
   const { data: purchasableProductRows } = await supabase
     .from("product_templates")
@@ -180,6 +198,40 @@ export default async function StudentPackagePage() {
           entrenando.
         </p>
       </header>
+
+      {enrollmentMissing && enrollmentOption?.enabled ? (
+        <section className="rounded-3xl border border-amber-400/30 bg-amber-400/[0.06] p-5 sm:p-6">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-200">
+            Inscripción requerida
+          </p>
+          <h2 className="mt-2 text-xl font-semibold text-white">
+            Tu inscripción no está vigente
+          </h2>
+          <p className="mt-2 text-sm leading-6 text-zinc-300">
+            Necesitas una inscripción vigente para reservar. Puedes pagarla sola ahora o se
+            agregará automáticamente cuando compres un paquete o una clase suelta.
+          </p>
+          {enrollmentProduct ? (
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/10 bg-black/20 p-4">
+              <div>
+                <strong className="text-sm text-white">{enrollmentProduct.name}</strong>
+                <p className="mt-1 text-xs text-zinc-400">
+                  {formatMoney(enrollmentProduct.price_minor, enrollmentProduct.currency)}
+                  {" · "}
+                  {enrollmentProduct.validity_days == null
+                    ? "Sin vencimiento"
+                    : `${enrollmentProduct.validity_days} días`}
+                </p>
+              </div>
+              <PurchaseEnrollmentButton productTemplateId={enrollmentProduct.id} />
+            </div>
+          ) : (
+            <p className="mt-4 text-xs text-rose-200">
+              El estudio debe configurar el producto de inscripción antes de poder cobrarla.
+            </p>
+          )}
+        </section>
+      ) : null}
 
       {activePackage ? (
         <>
@@ -507,10 +559,17 @@ export default async function StudentPackagePage() {
                         <p className="max-w-[13rem] text-[11px] leading-4 text-zinc-600">
                           Serás enviado a Mercado Pago para completar el pago.
                         </p>
-                        <PurchasePackageButton
-                          productTemplateId={product.id}
-                          productName={product.name}
-                        />
+                        <div className="space-y-2">
+                          {enrollmentMissing && enrollmentOption?.enabled ? (
+                            <p className="text-[11px] leading-4 text-amber-200">
+                              Este checkout incluirá también la inscripción requerida.
+                            </p>
+                          ) : null}
+                          <PurchasePackageButton
+                            productTemplateId={product.id}
+                            productName={product.name}
+                          />
+                        </div>
                       </div>
                     </article>
                   ))}

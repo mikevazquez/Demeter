@@ -75,21 +75,48 @@ export default async function StudentSessionDetailPage({
   const eligible = Boolean(session.eligibility?.eligible);
   const alreadyReserved = Boolean(session.reservation_id);
   const reason = session.eligibility?.reason_code;
+  const enrollmentMode = session.eligibility?.enrollment_requirement?.mode ?? null;
+  const enrollmentNeedsStandalone =
+    reason === "enrollment_required" && enrollmentMode === "package_booking";
+  const enrollmentCanBundleSingle =
+    reason === "enrollment_required" &&
+    (enrollmentMode === "single_class_booking" ||
+      enrollmentMode === "single_class_next_purchase");
   const sessionDate = localDateKey(new Date(session.starts_at), studio.timezone);
   const returnDate =
     query.date && /^\d{4}-\d{2}-\d{2}$/.test(query.date) ? query.date : sessionDate;
   const showDropIn =
     !eligible &&
-    Boolean(reason && DROP_IN_REASONS.has(reason)) &&
+    Boolean(
+      reason && (DROP_IN_REASONS.has(reason) || enrollmentCanBundleSingle),
+    ) &&
     session.drop_in_price_minor != null;
-  const { data: rewardPriceData } = showDropIn
-    ? await supabase.rpc("student_reward_single_class_price", {
-        target_session_id: session.session_id,
-      })
-    : { data: null };
+  const [{ data: rewardPriceData }, { data: enrollmentCheckoutData }] = await Promise.all([
+    showDropIn
+      ? supabase.rpc("student_reward_single_class_price", {
+          target_session_id: session.session_id,
+        })
+      : Promise.resolve({ data: null }),
+    enrollmentCanBundleSingle
+      ? supabase.rpc("student_enrollment_checkout_requirement", {
+          target_session_id: session.session_id,
+        })
+      : Promise.resolve({ data: null }),
+  ]);
   const rewardPrice = (rewardPriceData as RewardPricePreview | null) ?? null;
+  const enrollmentCheckout = (enrollmentCheckoutData as {
+    missing?: boolean;
+    name?: string;
+    price_minor?: number;
+    currency?: string;
+  } | null) ?? null;
   const regularDropInMinor = rewardPrice?.regular_amount_minor ?? session.drop_in_price_minor ?? 0;
   const finalDropInMinor = rewardPrice?.final_amount_minor ?? regularDropInMinor;
+  const enrollmentExtraMinor =
+    enrollmentCheckout?.missing && Number.isInteger(enrollmentCheckout.price_minor)
+      ? (enrollmentCheckout.price_minor ?? 0)
+      : 0;
+  const checkoutTotalMinor = finalDropInMinor + enrollmentExtraMinor;
   const rewardDiscountPct = rewardPrice?.discount_pct ?? 0;
   const rewardPriceLevelTitle = rewardPrice?.level_title ?? null;
   const durationMinutes = Math.max(
@@ -247,6 +274,12 @@ export default async function StudentSessionDetailPage({
           {showDropIn ? (
             <p className="mt-2 text-xs leading-5 text-zinc-400">
               Clase suelta: {formatMoney(finalDropInMinor)} MXN.
+              {enrollmentExtraMinor > 0 ? (
+                <>
+                  {" "}Inscripción: {formatMoney(enrollmentExtraMinor)} MXN. Total:{" "}
+                  {formatMoney(checkoutTotalMinor)} MXN.
+                </>
+              ) : null}
             </p>
           ) : (
             <p className="mt-2 text-xs leading-5 text-zinc-400">
@@ -267,6 +300,18 @@ export default async function StudentSessionDetailPage({
                 regularPriceLabel={formatMoney(regularDropInMinor).replace(".00", "")}
                 discountPct={rewardDiscountPct}
                 levelTitle={rewardPriceLevelTitle}
+                checkoutTotalLabel={
+                  enrollmentExtraMinor > 0
+                    ? formatMoney(checkoutTotalMinor).replace(".00", "")
+                    : null
+                }
+                extraChargeLabel={
+                  enrollmentExtraMinor > 0
+                    ? `Incluye ${enrollmentCheckout?.name ?? "inscripción"} por ${formatMoney(
+                        enrollmentExtraMinor,
+                      ).replace(".00", "")}.`
+                    : null
+                }
               />
             </div>
           ) : session.eligibility?.restrictions?.length ? null : (
@@ -274,7 +319,7 @@ export default async function StudentSessionDetailPage({
               href="/student/paquete"
               className="mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-2xl border border-white/10 px-4 py-2.5 text-sm font-semibold text-white"
             >
-              Ver mi paquete
+              {enrollmentNeedsStandalone ? "Pagar inscripción" : "Ver mi paquete"}
             </Link>
           )}
         </section>

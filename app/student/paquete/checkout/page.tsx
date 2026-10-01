@@ -23,8 +23,32 @@ function safeOutcome(value: string | undefined): Outcome {
   return value === "success" || value === "failure" || value === "pending" ? value : null;
 }
 
-function statePresentation(status: string, outcome: Outcome): Presentation {
+type PurchaseKind = "package" | "package_enrollment" | "enrollment";
+
+function statePresentation(
+  status: string,
+  outcome: Outcome,
+  purchaseKind: PurchaseKind,
+): Presentation {
   if (status === "approved") {
+    if (purchaseKind === "enrollment") {
+      return {
+        tone: "emerald",
+        eyebrow: "Pago confirmado",
+        title: "¡Tu inscripción ya está activa!",
+        description:
+          "Mercado Pago confirmó el cobro y Studio Flow activó tu inscripción. No se agregó ningún paquete ni crédito extra.",
+      };
+    }
+    if (purchaseKind === "package_enrollment") {
+      return {
+        tone: "emerald",
+        eyebrow: "Pago confirmado",
+        title: "¡Tu paquete y tu inscripción ya están listos!",
+        description:
+          "Mercado Pago confirmó el cobro y Studio Flow activó ambos conceptos. Ya puedes reservar tus clases.",
+      };
+    }
     return {
       tone: "emerald",
       eyebrow: "Pago confirmado",
@@ -48,7 +72,12 @@ function statePresentation(status: string, outcome: Outcome): Presentation {
     return {
       tone: "rose",
       eyebrow: status === "rejected" ? "Pago rechazado" : "Pago cancelado",
-      title: "No se activó ningún paquete",
+      title:
+        purchaseKind === "enrollment"
+          ? "No se activó la inscripción"
+          : purchaseKind === "package_enrollment"
+            ? "No se activó el paquete ni la inscripción"
+            : "No se activó ningún paquete",
       description:
         "El cobro no fue confirmado por Mercado Pago. Puedes regresar a Mi paquete e iniciar un nuevo intento cuando quieras.",
     };
@@ -58,7 +87,12 @@ function statePresentation(status: string, outcome: Outcome): Presentation {
     return {
       tone: "rose",
       eyebrow: "Pago no completado",
-      title: "No se activó ningún paquete",
+      title:
+        purchaseKind === "enrollment"
+          ? "No se activó la inscripción"
+          : purchaseKind === "package_enrollment"
+            ? "No se activó el paquete ni la inscripción"
+            : "No se activó ningún paquete",
       description:
         "Mercado Pago te regresó desde un resultado no exitoso, pero todavía no publica un estado final verificable por API. Studio Flow no otorgará clases mientras eso ocurra.",
     };
@@ -117,6 +151,32 @@ export default async function StudentCheckoutReturnPage({
   const outcome = safeOutcome(query.outcome);
   const { supabase } = await getStudentPortalContext();
 
+  const { data: attempt } = attemptId
+    ? await supabase
+        .from("online_checkout_attempts")
+        .select("product_template_id,extra_fulfillment_snapshot")
+        .eq("id", attemptId)
+        .eq("provider", "mercado_pago")
+        .maybeSingle()
+    : { data: null };
+  const { data: purchasedProduct } = attempt?.product_template_id
+    ? await supabase
+        .from("product_templates")
+        .select("product_type")
+        .eq("id", attempt.product_template_id)
+        .maybeSingle()
+    : { data: null };
+  const extraEnrollment =
+    attempt?.extra_fulfillment_snapshot &&
+    typeof attempt.extra_fulfillment_snapshot === "object" &&
+    (attempt.extra_fulfillment_snapshot as { type?: unknown }).type === "enrollment";
+  const purchaseKind: PurchaseKind =
+    purchasedProduct?.product_type === "enrollment"
+      ? "enrollment"
+      : extraEnrollment
+        ? "package_enrollment"
+        : "package";
+
   let reconciliation: ReconcileResult = null;
   if (attemptId) {
     const { data } = await supabase.functions.invoke("reconcile-mercadopago-order", {
@@ -126,7 +186,7 @@ export default async function StudentCheckoutReturnPage({
   }
 
   const status = reconciliation?.ok ? (reconciliation.status ?? "unknown") : "unknown";
-  const presentation = statePresentation(status, outcome);
+  const presentation = statePresentation(status, outcome, purchaseKind);
   const tone = toneClasses[presentation.tone];
   const refreshHref = attemptId
     ? `/student/paquete/checkout?attempt=${encodeURIComponent(attemptId)}${outcome ? `&outcome=${outcome}` : ""}`
@@ -176,10 +236,10 @@ export default async function StudentCheckoutReturnPage({
         <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-center">
           {status === "approved" ? (
             <Link
-              href="/student/reservar"
+              href={purchaseKind === "enrollment" ? "/student/paquete" : "/student/reservar"}
               className="rounded-2xl bg-fuchsia-600 px-5 py-3 text-sm font-semibold text-white hover:bg-fuchsia-500"
             >
-              Reservar una clase
+              {purchaseKind === "enrollment" ? "Ver paquetes" : "Reservar una clase"}
             </Link>
           ) : status === "rejected" || status === "cancelled" ? (
             <Link

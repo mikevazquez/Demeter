@@ -122,6 +122,13 @@ export type StudentSession = {
     unlimited?: boolean;
     available_credits?: number | null;
     credit_cost?: number;
+    enrollment_requirement?: {
+      required?: boolean;
+      missing?: boolean;
+      mode?: string;
+      single_class_count?: number;
+      grace_count?: number;
+    };
     restrictions?: Array<{
       code: string;
       type: string;

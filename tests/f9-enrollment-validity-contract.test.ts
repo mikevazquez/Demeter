@@ -42,11 +42,10 @@ describe("F9 enrollment validity contracts", () => {
     expect(eligibility).toContain("se.expires_on is null or se.expires_on>=v_class_date");
   });
 
-  it("shows lifetime enrollment clearly in the product catalog and detail", () => {
-    const list = source("app/admin/productos/page.tsx");
+  it("shows lifetime enrollment clearly in the V2 enrollment settings and detail", () => {
+    const policy = source("app/admin/ventas/inscripcion/page.tsx");
     const detail = source("app/admin/productos/[productId]/page.tsx");
-    expect(list).toContain("product.validity_days == null");
-    expect(list).toContain('"Vitalicia"');
+    expect(policy).toContain('product.validity_days == null ? "Vitalicia"');
     expect(detail).toContain('product.validity_days == null ? "Vitalicia"');
     expect(detail).toContain("inscripción vitalicia, sin fecha de vencimiento");
   });
