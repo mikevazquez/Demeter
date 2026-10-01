@@ -43,11 +43,13 @@ export default async function StudentSessionDetailPage({
   params: Promise<{ sessionId: string }>;
   searchParams: Promise<{ date?: string; credit?: string }>;
 }) {
-  const { sessionId } = await params;
-  const query = await searchParams;
+  const [{ sessionId }, query, { supabase, studio, membership }] = await Promise.all([
+    params,
+    searchParams,
+    getStudentPortalContext(),
+  ]);
   const rewardMode = query.credit === "reward";
   const rewardSuffix = rewardMode ? "&credit=reward" : "";
-  const { supabase, studio, membership } = await getStudentPortalContext();
   const { data, error } = await supabase.rpc("student_session_detail", {
     target_session_id: sessionId,
   });
