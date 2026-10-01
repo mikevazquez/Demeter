@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import { formatDate, formatDateTime, getStudentPortalContext } from "@/lib/student/portal";
+import { formatDate, formatDateTime, getStudentStudioContext } from "@/lib/student/portal";
 
 import EvaluationHeroCard from "./EvaluationHeroCard";
 
@@ -69,7 +69,7 @@ function statusCopy(status: EvaluationDisciplineSnapshot["invitation_status"]) {
 }
 
 export default async function StudentEvaluationsPage() {
-  const { supabase, studio } = await getStudentPortalContext();
+  const { supabase, studio } = await getStudentStudioContext();
   const { data, error } = await supabase.rpc("student_evaluations_snapshot");
 
   if (error) {
