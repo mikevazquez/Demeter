@@ -71,6 +71,7 @@ type OrchestratorInput = {
   turnId: string;
   studentId: string | null;
   crmContactId: string | null;
+  activationUrl: string | null;
   history: HistoryMessage[];
 };
 
@@ -299,6 +300,21 @@ function confirmationReply(
     return `Listo. Te agregué a la lista de espera de ${String(summary.activity ?? "la clase")} del ${formatDateForReply(summary.date)}, de ${formatTimeForReply(summary.starts_at_local)} a ${formatTimeForReply(summary.ends_at_local)}. No se descontó ningún crédito ahora; si se libera un lugar y te corresponde, Studio Flow intentará reservarlo automáticamente.`;
   }
 
+  if (toolName === "execute_student_access_activation") {
+    const activationUrl = String(result.activation_url ?? "").trim();
+    if (activationUrl) {
+      const enrollment = summary ? asObject(summary.enrollment_product) : null;
+      const enrollmentPrice = enrollment
+        ? formatMoney(enrollment.price_minor, enrollment.currency)
+        : null;
+      const enrollmentText =
+        summary?.enrollment_required === true && enrollmentPrice
+          ? ` Para volver a reservar, también necesitarás cubrir la inscripción de ${enrollmentPrice}.`
+          : "";
+      return `Listo. Aquí tienes tu enlace seguro para activar tu acceso y completar tus documentos: ${activationUrl}.${enrollmentText}`;
+    }
+  }
+
   return "Listo. La acción quedó confirmada.";
 }
 
@@ -330,6 +346,7 @@ async function tryServerSideConfirmation(
     "booking.cancel": "execute_cancellation",
     "booking.reschedule": "execute_reschedule",
     "waitlist.join": "execute_waitlist_join",
+    "account.activate": "execute_student_access_activation",
   };
   const toolName = executeToolByAction[String(pending.action_type ?? "")];
   if (!toolName) return null;
@@ -346,6 +363,7 @@ async function tryServerSideConfirmation(
         turnId: input.turnId,
         studentId: input.studentId,
         crmContactId: input.crmContactId,
+        activationUrl: input.activationUrl,
         currentUserMessage,
       },
       toolName,
@@ -367,6 +385,17 @@ async function tryServerSideConfirmation(
           ? "prepared"
           : "executed";
 
+  const auditResult =
+    toolName === "execute_student_access_activation"
+      ? {
+          ...resultObject,
+          activation_url:
+            typeof resultObject.activation_url === "string"
+              ? "[REDACTED]"
+              : resultObject.activation_url,
+        }
+      : resultObject;
+
   await input.supabase.from("assistant_tool_executions").insert({
     studio_id: input.studio.id,
     conversation_id: input.conversationId,
@@ -377,7 +406,7 @@ async function tryServerSideConfirmation(
     schema_version: 1,
     permission_class: "B",
     request_json: {},
-    result_json: resultObject,
+    result_json: auditResult,
     status: auditStatus,
     duration_ms: Date.now() - startedAt,
   });
@@ -439,6 +468,9 @@ export async function runAssistantTurn(input: OrchestratorInput) {
     "Una prospecto/trial solo puede tener una reserva de prueba activa a la vez. Si la herramienta devuelve trial_active_booking_exists, explica que debe usar, cancelar o resolver esa reserva antes de agendar otra.",
     "No inventes ni calcules por tu cuenta cuántos no-shows tiene; usa exclusivamente el resultado de Studio Flow.",
     "Si prepare_booking devuelve onboarding_required para una alumna que ya terminó su clase de prueba, explica el requisito real y no pidas confirmación de reserva.",
+    "Si una alumna trial ya asistió a su primera clase y una nueva reserva queda bloqueada por inscripción, usa prepare_student_access_activation para revisar precio de inscripción, documentos y estado de acceso. No inventes el precio.",
+    "Si prepare_student_access_activation devuelve confirmation_required, explica qué necesita completar y pregunta una sola vez si quiere que generes su acceso. El enlace se genera únicamente después de un NUEVO mensaje afirmativo y lo entrega Studio Flow directamente; nunca pidas ni muestres tokens internos.",
+    "Si el acceso ya está activo, no prepares otra activación. Indica que puede entrar a su portal y completar los requisitos pendientes.",
     "Para una reserva de prueba, jamás le digas a la persona 'pago pendiente', 'commercial_status', 'crédito' ni 'usa 1 crédito'. Son conceptos internos.",
     "Si prepare_booking devuelve trial_booking=true, antes de confirmar menciona únicamente el precio real de la clase usando amount_minor/currency y pide una sola confirmación. Ejemplo de tono: 'Tu primera clase cuesta $150. ¿Confirmas la reserva?'.",
     "Después de ejecutar una reserva de prueba, el servidor preguntará si pagará en efectivo en el estudio o por transferencia.",
@@ -665,6 +697,7 @@ export async function runAssistantTurn(input: OrchestratorInput) {
             turnId: input.turnId,
             studentId: input.studentId,
             crmContactId: input.crmContactId,
+            activationUrl: input.activationUrl,
             currentUserMessage,
           },
           toolName,
