@@ -91,8 +91,8 @@ export default async function DemiDemoPage() {
           <h1>🤖 {config.assistant_name}</h1>
           <p>
             Conversa con el asistente usando datos reales de {studio.name}. Ya puede
-            reservar y cancelar en Sandbox con confirmación explícita; reagendar y lista
-            de espera siguen bloqueados.
+            reservar, cancelar y reagendar en Sandbox con confirmación explícita; lista
+            de espera sigue bloqueada.
           </p>
         </div>
         <span className="demi-mode">Modo {config.mode}</span>
