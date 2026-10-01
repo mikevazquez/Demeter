@@ -7,8 +7,10 @@ import type { AssistantStudioContext } from "./read-tools";
 import type {
   ExecuteBookingArgs,
   ExecuteCancellationArgs,
+  ExecuteRescheduleArgs,
   PrepareBookingArgs,
   PrepareCancellationArgs,
+  PrepareRescheduleArgs,
 } from "./tool-contracts";
 
 type AssistantActionToolContext = {
@@ -406,6 +408,7 @@ async function executeBooking(
 
 type CancellationSnapshot = {
   reservationId: string;
+  sessionId: string;
   status: string;
   summary: {
     activity: string;
@@ -512,6 +515,7 @@ async function getCancellationSnapshot(
 
   return {
     reservationId: reservation.id,
+    sessionId: reservation.session_id,
     status: String(reservation.status),
     summary: {
       activity: templateResult.data?.name ?? "Clase",
@@ -783,6 +787,290 @@ async function executeCancellation(
   };
 }
 
+
+async function prepareReschedule(
+  ctx: AssistantActionToolContext,
+  args: PrepareRescheduleArgs,
+) {
+  if (!ctx.studentId) return { ok: false, error: "identity_required" };
+
+  const reservationId = parseOpaqueRef(args.reservation_ref, "reservation");
+  const targetSessionId = parseOpaqueRef(args.target_session_ref, "session");
+  if (!reservationId) return { ok: false, error: "invalid_reservation_ref" };
+  if (!targetSessionId) return { ok: false, error: "invalid_session_ref" };
+
+  const source = await getCancellationSnapshot(ctx, reservationId);
+  if (!source) return { ok: false, error: "reservation_not_found" };
+  if (source.status !== "reserved") {
+    return { ok: false, error: "reservation_not_reschedulable" };
+  }
+  if (source.sessionId === targetSessionId) {
+    return { ok: false, error: "same_session" };
+  }
+
+  const target = await getSessionSummary(ctx, targetSessionId);
+  if (!target) return { ok: false, error: "session_not_found" };
+  if (target.session.requires_resource) {
+    return { ok: false, error: "resource_selection_required" };
+  }
+
+  const { data: eligibility, error: eligibilityError } = await ctx.supabase.rpc(
+    "booking_eligibility",
+    {
+      target_session_id: targetSessionId,
+      target_student_id: ctx.studentId,
+    },
+  );
+  if (eligibilityError) {
+    return { ok: false, error: "booking_eligibility_unavailable" };
+  }
+
+  const eligibilityObject = asObject(eligibility);
+  const reasonCode = String(eligibilityObject?.reason_code ?? "");
+  const canUseReleasedCredit =
+    reasonCode === "no_credits" && source.summary.credit_will_return === true;
+
+  if (eligibilityObject?.eligible !== true && !canUseReleasedCredit) {
+    return {
+      ok: false,
+      error: "reschedule_not_eligible",
+      ...safeBookingReason(reasonCode),
+    };
+  }
+
+  const now = new Date().toISOString();
+  await ctx.supabase
+    .from("assistant_pending_actions")
+    .update({ status: "cancelled", updated_at: now })
+    .eq("studio_id", ctx.studio.id)
+    .eq("conversation_id", ctx.conversationId)
+    .eq("action_type", "booking.reschedule")
+    .eq("status", "pending");
+
+  const secretToken = randomUUID();
+  const tokenHash = createHash("sha256").update(secretToken).digest("hex");
+  const expiresAt = new Date(Date.now() + 10 * 60_000).toISOString();
+
+  const summary = {
+    from: source.summary,
+    to: target.summary,
+    atomic: true,
+    original_preserved_if_failed: true,
+    target_may_use_released_credit: canUseReleasedCredit,
+  };
+
+  const { data: pending, error: pendingError } = await ctx.supabase
+    .from("assistant_pending_actions")
+    .insert({
+      studio_id: ctx.studio.id,
+      conversation_id: ctx.conversationId,
+      action_type: "booking.reschedule",
+      action_token_hash: tokenHash,
+      action_payload: {
+        reservation_id: reservationId,
+        target_session_id: targetSessionId,
+        student_id: ctx.studentId,
+        prepared_turn_id: ctx.turnId,
+        source_consequence_key: cancellationConsequenceKey(source.summary),
+      },
+      confirmation_summary: summary,
+      status: "pending",
+      expires_at: expiresAt,
+    })
+    .select("id")
+    .single();
+
+  if (pendingError || !pending) {
+    return { ok: false, error: "pending_action_create_failed" };
+  }
+
+  return {
+    ok: true,
+    status: "confirmation_required",
+    expires_at: expiresAt,
+    summary,
+  };
+}
+
+async function executeReschedule(
+  ctx: AssistantActionToolContext,
+  args: ExecuteRescheduleArgs,
+) {
+  void args;
+
+  const { data: pending, error: pendingError } = await ctx.supabase
+    .from("assistant_pending_actions")
+    .select(
+      "id,action_type,action_payload,confirmation_summary,status,expires_at,execution_ref",
+    )
+    .eq("studio_id", ctx.studio.id)
+    .eq("conversation_id", ctx.conversationId)
+    .eq("action_type", "booking.reschedule")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (pendingError || !pending) {
+    return { ok: false, error: "pending_action_not_found" };
+  }
+  if (pending.status === "executed") {
+    return {
+      ok: true,
+      status: "executed",
+      already_executed: true,
+      summary: pending.confirmation_summary,
+      reservation_ref: pending.execution_ref ?? null,
+    };
+  }
+  if (pending.status !== "pending") {
+    return { ok: false, error: "pending_action_not_available" };
+  }
+  if (new Date(pending.expires_at).getTime() <= Date.now()) {
+    await ctx.supabase
+      .from("assistant_pending_actions")
+      .update({ status: "expired", updated_at: new Date().toISOString() })
+      .eq("id", pending.id)
+      .eq("studio_id", ctx.studio.id)
+      .eq("status", "pending");
+    return { ok: false, error: "confirmation_expired" };
+  }
+
+  const payload = asObject(pending.action_payload);
+  if (!payload) return { ok: false, error: "pending_action_invalid" };
+  if (String(payload.prepared_turn_id ?? "") === ctx.turnId) {
+    return { ok: false, error: "confirmation_requires_new_turn" };
+  }
+  if (!isExplicitAssistantConfirmation(ctx.currentUserMessage)) {
+    return { ok: false, error: "explicit_confirmation_required" };
+  }
+
+  const studentId = String(payload.student_id ?? "");
+  const reservationId = String(payload.reservation_id ?? "");
+  const targetSessionId = String(payload.target_session_id ?? "");
+  if (!ctx.studentId || studentId !== ctx.studentId) {
+    return { ok: false, error: "conversation_identity_changed" };
+  }
+
+  const source = await getCancellationSnapshot(ctx, reservationId);
+  const target = await getSessionSummary(ctx, targetSessionId);
+  if (!source || source.status !== "reserved") {
+    return { ok: false, error: "reservation_not_reschedulable" };
+  }
+  if (!target) return { ok: false, error: "session_not_found" };
+  if (target.session.requires_resource) {
+    return { ok: false, error: "resource_selection_required" };
+  }
+
+  const previousConsequence = String(payload.source_consequence_key ?? "");
+  const currentConsequence = cancellationConsequenceKey(source.summary);
+  if (previousConsequence !== currentConsequence) {
+    const refreshedExpiry = new Date(Date.now() + 10 * 60_000).toISOString();
+    const refreshedSummary = {
+      from: source.summary,
+      to: target.summary,
+      atomic: true,
+      original_preserved_if_failed: true,
+    };
+
+    await ctx.supabase
+      .from("assistant_pending_actions")
+      .update({
+        action_payload: {
+          ...payload,
+          prepared_turn_id: ctx.turnId,
+          source_consequence_key: currentConsequence,
+        },
+        confirmation_summary: refreshedSummary,
+        expires_at: refreshedExpiry,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", pending.id)
+      .eq("studio_id", ctx.studio.id)
+      .eq("status", "pending");
+
+    return {
+      ok: true,
+      status: "confirmation_required",
+      consequence_changed: true,
+      expires_at: refreshedExpiry,
+      summary: refreshedSummary,
+    };
+  }
+
+  const { data: eligibility, error: eligibilityError } = await ctx.supabase.rpc(
+    "booking_eligibility",
+    {
+      target_session_id: targetSessionId,
+      target_student_id: studentId,
+    },
+  );
+  if (eligibilityError) {
+    return { ok: false, error: "booking_eligibility_unavailable" };
+  }
+
+  const eligibilityObject = asObject(eligibility);
+  const reasonCode = String(eligibilityObject?.reason_code ?? "");
+  const canUseReleasedCredit =
+    reasonCode === "no_credits" && source.summary.credit_will_return === true;
+
+  if (eligibilityObject?.eligible !== true && !canUseReleasedCredit) {
+    return {
+      ok: false,
+      error: "reschedule_no_longer_eligible",
+      original_reservation_preserved: true,
+      ...safeBookingReason(reasonCode),
+    };
+  }
+
+  const { data: result, error: rescheduleError } = await ctx.supabase.rpc(
+    "admin_reschedule_student_reservation",
+    {
+      target_reservation_id: reservationId,
+      target_session_id: targetSessionId,
+      target_reason: "Reagendado por Demi",
+    },
+  );
+
+  const resultObject = asObject(result);
+  if (rescheduleError || !resultObject || resultObject.ok !== true) {
+    return {
+      ok: false,
+      error: "reschedule_execution_failed",
+      original_reservation_preserved: true,
+    };
+  }
+
+  const newReservationId = String(resultObject.target_reservation_id ?? "");
+  const executedAt = new Date().toISOString();
+  const reservationRef = newReservationId
+    ? `reservation:${newReservationId}`
+    : null;
+
+  await ctx.supabase
+    .from("assistant_pending_actions")
+    .update({
+      status: "executed",
+      confirmed_at: executedAt,
+      executed_at: executedAt,
+      execution_ref: reservationRef,
+      updated_at: executedAt,
+    })
+    .eq("id", pending.id)
+    .eq("studio_id", ctx.studio.id)
+    .eq("status", "pending");
+
+  return {
+    ok: true,
+    status: "executed",
+    reservation_ref: reservationRef,
+    source_status: resultObject.source_status,
+    summary: {
+      from: source.summary,
+      to: target.summary,
+    },
+  };
+}
+
 export async function executeAssistantActionTool(
   ctx: AssistantActionToolContext,
   toolName: string,
@@ -797,6 +1085,10 @@ export async function executeAssistantActionTool(
       return prepareCancellation(ctx, args as PrepareCancellationArgs);
     case "execute_cancellation":
       return executeCancellation(ctx, args as ExecuteCancellationArgs);
+    case "prepare_reschedule":
+      return prepareReschedule(ctx, args as PrepareRescheduleArgs);
+    case "execute_reschedule":
+      return executeReschedule(ctx, args as ExecuteRescheduleArgs);
     default:
       return { ok: false, error: "tool_not_allowed" };
   }
