@@ -1,26 +1,16 @@
 import type { Metadata } from "next";
+import { cache } from "react";
 
 import { signOut } from "@/app/auth/actions";
 import PwaBrandingSync from "@/app/components/PwaBrandingSync";
-import { getAdminContext, getAdminDisplayName } from "@/lib/auth/admin-context";
+import { getAdminContext } from "@/lib/auth/admin-context";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { AdminMobileNavigation, AdminNavigation } from "./admin-navigation";
 import "./hoy.css";
 import "./roster-uat.css";
 import "./mobile-nav-overrides.css";
-import "./alumnas/profile-360.css";
-import "./alumnas/admin-ux-04.css";
-import "./alumnas/profile-360-admin-ux-04.css";
-import "./agenda/agenda-calendar.css";
-import "./agenda/session-detail-admin-ux-04.css";
-import "./actividades/actividades.css";
 import "./admin-ux-04-secondary.css";
 import "./admin-ux-04-secondary-detail.css";
-import "./evaluaciones/evaluaciones.css";
-import "./notificaciones/notificaciones.css";
-import "./inteligencia/inteligencia.css";
-import "./productos/packages-v2.css";
-import "./admin-v2-system.css";
 
 type PwaBrand = {
   name: string;
@@ -40,8 +30,10 @@ function pwaBrandQuery(brand: PwaBrand) {
   }).toString();
 }
 
+const getCachedAdminContext = cache(async () => getAdminContext());
+
 export async function generateMetadata(): Promise<Metadata> {
-  const { studio } = await getAdminContext();
+  const { studio } = await getCachedAdminContext();
   const query = pwaBrandQuery(studio);
 
   const appName = studio.name + " Admin";
@@ -87,15 +79,14 @@ const roleLabels: Record<string, string> = {
 };
 
 export default async function AdminLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  const [{ supabase, studio, membership, can }, userName] = await Promise.all([
-    getAdminContext(),
-    getAdminDisplayName(),
-  ]);
+  const { supabase, studio, membership, can, user, profile } = await getCachedAdminContext();
   const pwaQuery = pwaBrandQuery(studio);
   const instructorOnly = can(CAPABILITIES.INSTRUCTOR_PORTAL) && !can(CAPABILITIES.ADMIN_PORTAL);
   const brandLogoUrl = studio.logo_path
     ? supabase.storage.from("studio-branding").getPublicUrl(studio.logo_path).data.publicUrl
     : null;
+
+  const userName = profile?.full_name?.trim() || user.email?.split("@")[0] || "Usuario";
   const userInitials = userName
     .split(/\s+/)
     .slice(0, 2)
