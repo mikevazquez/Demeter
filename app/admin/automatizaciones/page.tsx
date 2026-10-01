@@ -67,8 +67,10 @@ export default async function AutomationsPage({
 }: {
   searchParams: Promise<{ error?: string; saved?: string; tab?: string }>;
 }) {
-  const params = await searchParams;
-  const ctx = await getAdminContext(CAPABILITIES.AUTOMATIONS_READ);
+  const [params, ctx] = await Promise.all([
+    searchParams,
+    getAdminContext(CAPABILITIES.AUTOMATIONS_READ),
+  ]);
   const canManageNotifications = ctx.can(CAPABILITIES.AUTOMATIONS_MANAGE);
 
   const requestedTab = String(params.tab ?? "processes");
