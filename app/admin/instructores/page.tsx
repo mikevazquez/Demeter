@@ -31,10 +31,12 @@ export default async function InstructorsPage({
 }: {
   searchParams: Promise<{ q?: string; status?: string; error?: string }>;
 }) {
-  const params = await searchParams;
+  const [params, { supabase, studio, can }] = await Promise.all([
+    searchParams,
+    getAdminContext(CAPABILITIES.INSTRUCTORS_READ),
+  ]);
   const query = String(params.q ?? "").trim();
   const status = params.status === "inactive" ? "inactive" : "active";
-  const { supabase, studio, can } = await getAdminContext(CAPABILITIES.INSTRUCTORS_READ);
   const canWrite = can(CAPABILITIES.INSTRUCTORS_WRITE);
 
   const { data: instructors } = await supabase
