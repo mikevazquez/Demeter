@@ -119,17 +119,12 @@ export default async function StudentReservePage({
 }: {
   searchParams: Promise<{ date?: string; error?: string; credit?: string }>;
 }) {
-  const query = await searchParams;
+  const [query, { supabase, studio, membership }] = await Promise.all([
+    searchParams,
+    getStudentPortalContext(),
+  ]);
   const rewardMode = query.credit === "reward";
   const rewardSuffix = rewardMode ? "&credit=reward" : "";
-  const { supabase, studio, membership } = await getStudentPortalContext();
-  const { data: globalRestrictionData } = await supabase.rpc(
-    "student_booking_restrictions_snapshot",
-    { p_session_id: null },
-  );
-  const globalRestrictions = (globalRestrictionData ?? []) as NonNullable<
-    StudentSession["eligibility"]["restrictions"]
-  >;
 
   const today = localDateKey(new Date(), studio.timezone);
   const requestedDate = safeDate(query.date, today);
@@ -141,19 +136,31 @@ export default async function StudentReservePage({
   const previousWeekDate = addDays(selectedDate, -7);
   const nextWeekDate = addDays(selectedDate, 7);
 
-  const [{ data: sessions, error }, { data: selectedHolidayData }, { data: holidayWeekData }] =
-    await Promise.all([
-      supabase.rpc("student_schedule_feed", {
-        target_start: selectedDate,
-        target_end: selectedDate,
-        target_discipline_id: null,
-      }),
-      supabase.rpc("student_holiday_snapshot", { target_date: selectedDate }),
-      supabase.rpc("student_holiday_week_snapshot", {
-        target_start: weekStart,
-        target_end: weekEnd,
-      }),
-    ]);
+  const [
+    { data: sessions, error },
+    { data: selectedHolidayData },
+    { data: holidayWeekData },
+    { data: globalRestrictionData },
+    { data: waitlistData },
+    { data: rewardStatusData },
+  ] = await Promise.all([
+    supabase.rpc("student_schedule_feed", {
+      target_start: selectedDate,
+      target_end: selectedDate,
+      target_discipline_id: null,
+    }),
+    supabase.rpc("student_holiday_snapshot", { target_date: selectedDate }),
+    supabase.rpc("student_holiday_week_snapshot", {
+      target_start: weekStart,
+      target_end: weekEnd,
+    }),
+    supabase.rpc("student_booking_restrictions_snapshot", { p_session_id: null }),
+    supabase.rpc("student_waitlist_feed"),
+    supabase.rpc("student_reward_status_snapshot"),
+  ]);
+  const globalRestrictions = (globalRestrictionData ?? []) as NonNullable<
+    StudentSession["eligibility"]["restrictions"]
+  >;
 
   const selectedHolidayBase = (selectedHolidayData as StudentHolidaySnapshot | null) ?? null;
   const selectedHoliday = selectedHolidayBase
@@ -191,10 +198,6 @@ export default async function StudentReservePage({
     requires_resource: resourceRequirementMap.get(item.session_id) ?? false,
   }));
 
-  const [{ data: waitlistData }, { data: rewardStatusData }] = await Promise.all([
-    supabase.rpc("student_waitlist_feed"),
-    supabase.rpc("student_reward_status_snapshot"),
-  ]);
   const waitlistItems = (waitlistData ?? []) as StudentWaitlistItem[];
   const waitlistedSessionIds = new Set(
     waitlistItems.filter((item) => item.status === "active").map((item) => item.session_id),
