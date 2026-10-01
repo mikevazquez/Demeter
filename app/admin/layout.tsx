@@ -21,6 +21,7 @@ import "./evaluaciones/evaluaciones.css";
 import "./notificaciones/notificaciones.css";
 import "./inteligencia/inteligencia.css";
 import "./productos/packages-v2.css";
+import "./admin-v2-light.css";
 
 type PwaBrand = {
   name: string;
