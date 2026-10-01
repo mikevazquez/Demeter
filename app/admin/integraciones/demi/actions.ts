@@ -7,6 +7,7 @@ import { runAssistantTurn } from "@/lib/assistant/orchestrator";
 type SendDemiInput = {
   conversationId?: string | null;
   studentId?: string | null;
+  crmContactId?: string | null;
   message: string;
 };
 
@@ -48,13 +49,19 @@ export async function sendDemiMessage(input: SendDemiInput) {
   }
 
   const requestedStudentId = String(input.studentId ?? "").trim() || null;
+  const requestedCrmContactId = String(input.crmContactId ?? "").trim() || null;
+  if (requestedStudentId && requestedCrmContactId) {
+    return { ok: false as const, error: "invalid_demo_identity" };
+  }
+
   let conversationId = String(input.conversationId ?? "").trim();
   let conversationStudentId: string | null = null;
+  let conversationCrmContactId: string | null = null;
 
   if (conversationId) {
     const { data: existing } = await supabase
       .from("assistant_conversations")
-      .select("id,student_id")
+      .select("id,student_id,context")
       .eq("id", conversationId)
       .eq("studio_id", studio.id)
       .eq("channel", "internal_demo")
@@ -64,7 +71,18 @@ export async function sendDemiMessage(input: SendDemiInput) {
     if (!existing) return { ok: false as const, error: "conversation_not_found" };
 
     conversationStudentId = existing.student_id ?? null;
-    if (requestedStudentId !== conversationStudentId) {
+    const existingContext =
+      existing.context && typeof existing.context === "object" && !Array.isArray(existing.context)
+        ? (existing.context as Record<string, unknown>)
+        : {};
+    conversationCrmContactId =
+      String(existingContext.demo_crm_contact_id ?? "").trim() || null;
+
+    if (conversationCrmContactId) {
+      if (requestedCrmContactId !== conversationCrmContactId) {
+        return { ok: false as const, error: "conversation_identity_mismatch" };
+      }
+    } else if (requestedStudentId !== conversationStudentId) {
       return { ok: false as const, error: "conversation_identity_mismatch" };
     }
   } else {
@@ -82,15 +100,31 @@ export async function sendDemiMessage(input: SendDemiInput) {
       }
     }
 
+    if (requestedCrmContactId) {
+      const { data: contact, error: contactError } = await supabase
+        .from("crm_contacts")
+        .select("id,converted_student_id")
+        .eq("id", requestedCrmContactId)
+        .eq("studio_id", studio.id)
+        .maybeSingle();
+
+      if (contactError || !contact || contact.converted_student_id) {
+        return { ok: false as const, error: "invalid_demo_identity" };
+      }
+    }
+
     const { data: created, error: createError } = await supabase
       .from("assistant_conversations")
       .insert({
         studio_id: studio.id,
         channel: "internal_demo",
         student_id: requestedStudentId,
+        context: requestedCrmContactId
+          ? { demo_crm_contact_id: requestedCrmContactId }
+          : {},
         status: "open",
       })
-      .select("id,student_id")
+      .select("id,student_id,context")
       .single();
 
     if (createError || !created) {
@@ -98,6 +132,7 @@ export async function sendDemiMessage(input: SendDemiInput) {
     }
     conversationId = created.id;
     conversationStudentId = created.student_id ?? null;
+    conversationCrmContactId = requestedCrmContactId;
   }
 
   const { data: inboundTurn, error: turnError } = await supabase
@@ -160,6 +195,7 @@ export async function sendDemiMessage(input: SendDemiInput) {
       conversationId,
       turnId: inboundTurn.id,
       studentId: conversationStudentId,
+      crmContactId: conversationCrmContactId,
       history,
     });
 
