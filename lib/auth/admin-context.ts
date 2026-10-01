@@ -5,7 +5,7 @@ import { CAPABILITIES, type Capability } from "@/lib/auth/capabilities";
 import { STUDIO_CONTEXT_COOKIE } from "@/lib/auth/studio-context-cookie";
 import { createClient } from "@/lib/supabase/server";
 
-async function resolveAdminContext(requiredCapability?: Capability) {
+async function resolveAdminBaseContext() {
   const supabase = await createClient("admin");
   const {
     data: { user },
@@ -81,14 +81,6 @@ async function resolveAdminContext(requiredCapability?: Capability) {
     redirect("/login/studio?error=access");
   }
 
-  if (requiredCapability && !capabilities.has(requiredCapability)) {
-    redirect(
-      capabilities.has(CAPABILITIES.ADMIN_PORTAL)
-        ? "/admin?error=access"
-        : "/admin/mis-clases?error=access",
-    );
-  }
-
   return {
     supabase,
     user,
@@ -103,10 +95,23 @@ async function resolveAdminContext(requiredCapability?: Capability) {
 }
 
 
-// Request-scoped React cache: layout, metadata and page share the same
-// auth/studio/capability resolution without persisting data between requests.
-export const getAdminContext = cache(resolveAdminContext);
+// Request-scoped React cache: every admin surface in the same render shares
+// one auth/studio/capability resolution. Capability checks remain per caller.
+const getAdminBaseContext = cache(resolveAdminBaseContext);
 
+export async function getAdminContext(requiredCapability?: Capability) {
+  const context = await getAdminBaseContext();
+
+  if (requiredCapability && !context.capabilities.has(requiredCapability)) {
+    redirect(
+      context.capabilities.has(CAPABILITIES.ADMIN_PORTAL)
+        ? "/admin?error=access"
+        : "/admin/mis-clases?error=access",
+    );
+  }
+
+  return context;
+}
 
 export const getAdminDisplayName = cache(async () => {
   const { supabase, user } = await getAdminContext();
