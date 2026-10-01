@@ -1,0 +1,661 @@
+/* Studio Flow V2 · visual consistency layer
+   Route-scoped light SaaS baseline for admin screens that still use legacy/dark utilities.
+   This file is imported last from app/admin/layout.tsx so it can normalize presentation
+   without changing domain logic or data flows. */
+
+.admin-shell:has(.admin-ux04-secondary),
+.admin-shell:has(.notification-admin-page),
+.admin-shell:has(.notification-detail-page),
+.admin-shell:has(.admin-v2-light),
+.admin-shell:has(.coach-classes-v2) {
+  --sf-v2-accent: #17a878;
+  --sf-v2-accent-strong: #0f8f66;
+  --sf-v2-accent-soft: #e7f8f1;
+  --sf-v2-text: #10203a;
+  --sf-v2-muted: #687891;
+  --sf-v2-line: #e3eaf1;
+  --sf-v2-bg: #f5f8fb;
+  --sf-v2-card: #ffffff;
+  background: var(--sf-v2-bg);
+  color: var(--sf-v2-text);
+}
+
+.admin-shell:has(.admin-ux04-secondary) .admin-content,
+.admin-shell:has(.notification-admin-page) .admin-content,
+.admin-shell:has(.notification-detail-page) .admin-content,
+.admin-shell:has(.admin-v2-light) .admin-content,
+.admin-shell:has(.coach-classes-v2) .admin-content {
+  background: var(--sf-v2-bg);
+}
+
+.admin-shell:has(.admin-ux04-secondary) .admin-sidebar,
+.admin-shell:has(.notification-admin-page) .admin-sidebar,
+.admin-shell:has(.notification-detail-page) .admin-sidebar,
+.admin-shell:has(.admin-v2-light) .admin-sidebar,
+.admin-shell:has(.coach-classes-v2) .admin-sidebar {
+  border-right-color: var(--sf-v2-line);
+  background: #fff;
+}
+
+.admin-shell:has(.admin-ux04-secondary) .brand-lockup strong,
+.admin-shell:has(.admin-ux04-secondary) .sidebar-user-copy strong,
+.admin-shell:has(.notification-admin-page) .brand-lockup strong,
+.admin-shell:has(.notification-detail-page) .brand-lockup strong,
+.admin-shell:has(.admin-v2-light) .brand-lockup strong,
+.admin-shell:has(.coach-classes-v2) .brand-lockup strong {
+  color: var(--sf-v2-text);
+}
+
+.admin-shell:has(.admin-ux04-secondary) .brand-lockup small,
+.admin-shell:has(.admin-ux04-secondary) .sidebar-user-copy small,
+.admin-shell:has(.admin-ux04-secondary) .sidebar-signout,
+.admin-shell:has(.notification-admin-page) .brand-lockup small,
+.admin-shell:has(.notification-admin-page) .sidebar-user-copy small,
+.admin-shell:has(.notification-admin-page) .sidebar-signout,
+.admin-shell:has(.notification-detail-page) .brand-lockup small,
+.admin-shell:has(.notification-detail-page) .sidebar-user-copy small,
+.admin-shell:has(.notification-detail-page) .sidebar-signout,
+.admin-shell:has(.admin-v2-light) .brand-lockup small,
+.admin-shell:has(.admin-v2-light) .sidebar-user-copy small,
+.admin-shell:has(.admin-v2-light) .sidebar-signout,
+.admin-shell:has(.coach-classes-v2) .brand-lockup small,
+.admin-shell:has(.coach-classes-v2) .sidebar-user-copy small,
+.admin-shell:has(.coach-classes-v2) .sidebar-signout {
+  color: var(--sf-v2-muted);
+}
+
+.admin-shell:has(.admin-ux04-secondary) .admin-nav-item,
+.admin-shell:has(.notification-admin-page) .admin-nav-item,
+.admin-shell:has(.notification-detail-page) .admin-nav-item,
+.admin-shell:has(.admin-v2-light) .admin-nav-item,
+.admin-shell:has(.coach-classes-v2) .admin-nav-item {
+  color: #53637b;
+}
+
+.admin-shell:has(.admin-ux04-secondary) .admin-nav-item:hover,
+.admin-shell:has(.notification-admin-page) .admin-nav-item:hover,
+.admin-shell:has(.notification-detail-page) .admin-nav-item:hover,
+.admin-shell:has(.admin-v2-light) .admin-nav-item:hover,
+.admin-shell:has(.coach-classes-v2) .admin-nav-item:hover {
+  background: #f3f7f8;
+  color: var(--sf-v2-text);
+}
+
+.admin-shell:has(.admin-ux04-secondary) .admin-nav-item.is-active,
+.admin-shell:has(.notification-admin-page) .admin-nav-item.is-active,
+.admin-shell:has(.notification-detail-page) .admin-nav-item.is-active,
+.admin-shell:has(.admin-v2-light) .admin-nav-item.is-active,
+.admin-shell:has(.coach-classes-v2) .admin-nav-item.is-active {
+  background: var(--sf-v2-accent-soft);
+  color: var(--sf-v2-accent-strong);
+}
+
+.admin-shell:has(.admin-ux04-secondary) .admin-nav-item.is-active .nav-icon,
+.admin-shell:has(.notification-admin-page) .admin-nav-item.is-active .nav-icon,
+.admin-shell:has(.notification-detail-page) .admin-nav-item.is-active .nav-icon,
+.admin-shell:has(.admin-v2-light) .admin-nav-item.is-active .nav-icon,
+.admin-shell:has(.coach-classes-v2) .admin-nav-item.is-active .nav-icon {
+  color: var(--sf-v2-accent);
+}
+
+.admin-shell:has(.admin-ux04-secondary) .admin-nav-divider,
+.admin-shell:has(.admin-ux04-secondary) .sidebar-footer,
+.admin-shell:has(.notification-admin-page) .admin-nav-divider,
+.admin-shell:has(.notification-admin-page) .sidebar-footer,
+.admin-shell:has(.notification-detail-page) .admin-nav-divider,
+.admin-shell:has(.notification-detail-page) .sidebar-footer,
+.admin-shell:has(.admin-v2-light) .admin-nav-divider,
+.admin-shell:has(.admin-v2-light) .sidebar-footer,
+.admin-shell:has(.coach-classes-v2) .admin-nav-divider,
+.admin-shell:has(.coach-classes-v2) .sidebar-footer {
+  border-color: var(--sf-v2-line);
+}
+
+.admin-shell:has(.admin-ux04-secondary) .admin-utility-bar,
+.admin-shell:has(.notification-admin-page) .admin-utility-bar,
+.admin-shell:has(.notification-detail-page) .admin-utility-bar,
+.admin-shell:has(.admin-v2-light) .admin-utility-bar,
+.admin-shell:has(.coach-classes-v2) .admin-utility-bar {
+  border-bottom-color: var(--sf-v2-line);
+  background: rgba(255, 255, 255, 0.92);
+}
+
+.admin-shell:has(.admin-ux04-secondary) .admin-global-search,
+.admin-shell:has(.notification-admin-page) .admin-global-search,
+.admin-shell:has(.notification-detail-page) .admin-global-search,
+.admin-shell:has(.admin-v2-light) .admin-global-search,
+.admin-shell:has(.coach-classes-v2) .admin-global-search {
+  border-color: var(--sf-v2-line);
+  background: #f8fafc;
+  color: var(--sf-v2-muted);
+}
+
+.admin-shell:has(.admin-ux04-secondary) .admin-global-search input,
+.admin-shell:has(.notification-admin-page) .admin-global-search input,
+.admin-shell:has(.notification-detail-page) .admin-global-search input,
+.admin-shell:has(.admin-v2-light) .admin-global-search input,
+.admin-shell:has(.coach-classes-v2) .admin-global-search input {
+  color: var(--sf-v2-text);
+}
+
+.admin-shell:has(.admin-ux04-secondary) .admin-user-button,
+.admin-shell:has(.notification-admin-page) .admin-user-button,
+.admin-shell:has(.notification-detail-page) .admin-user-button,
+.admin-shell:has(.admin-v2-light) .admin-user-button,
+.admin-shell:has(.coach-classes-v2) .admin-user-button {
+  border-color: var(--sf-v2-line);
+  background: var(--sf-v2-accent);
+  color: #fff;
+}
+
+/* Shared secondary pages */
+.admin-ux04-secondary,
+.admin-v2-light,
+.coach-classes-v2 {
+  color: var(--sf-v2-text);
+}
+
+.admin-ux04-secondary .dashboard-title,
+.admin-ux04-secondary .module-header h1,
+.admin-ux04-secondary > .topbar .dashboard-title,
+.admin-ux04-secondary h1,
+.admin-ux04-secondary h2,
+.admin-ux04-secondary h3,
+.admin-v2-light .dashboard-title,
+.admin-v2-light h1,
+.admin-v2-light h2,
+.admin-v2-light h3,
+.coach-classes-v2 .dashboard-title,
+.coach-classes-v2 h1,
+.coach-classes-v2 h2,
+.coach-classes-v2 h3 {
+  color: var(--sf-v2-text) !important;
+}
+
+.admin-ux04-secondary p,
+.admin-ux04-secondary small,
+.admin-ux04-secondary .text-zinc-300,
+.admin-ux04-secondary .text-zinc-400,
+.admin-ux04-secondary .text-zinc-500,
+.admin-v2-light p,
+.admin-v2-light small,
+.admin-v2-light .text-zinc-300,
+.admin-v2-light .text-zinc-400,
+.admin-v2-light .text-zinc-500,
+.coach-classes-v2 p,
+.coach-classes-v2 small,
+.coach-classes-v2 .text-zinc-300,
+.coach-classes-v2 .text-zinc-400,
+.coach-classes-v2 .text-zinc-500 {
+  color: var(--sf-v2-muted) !important;
+}
+
+.admin-ux04-secondary .text-white,
+.admin-v2-light .text-white,
+.coach-classes-v2 .text-white {
+  color: var(--sf-v2-text) !important;
+}
+
+.admin-ux04-secondary [class*="border-white"],
+.admin-v2-light [class*="border-white"],
+.coach-classes-v2 [class*="border-white"] {
+  border-color: var(--sf-v2-line) !important;
+}
+
+.admin-ux04-secondary [class*="bg-white/"],
+.admin-ux04-secondary [class*="bg-black/"],
+.admin-v2-light [class*="bg-white/"],
+.admin-v2-light [class*="bg-black/"],
+.coach-classes-v2 [class*="bg-white/"],
+.coach-classes-v2 [class*="bg-black/"] {
+  background-color: #fff !important;
+  background-image: none !important;
+}
+
+.admin-ux04-secondary .panel,
+.admin-ux04-secondary .module-list-row,
+.admin-ux04-secondary .more-row,
+.admin-ux04-secondary .automation-list-row,
+.admin-ux04-secondary .automation-settings-panel,
+.admin-ux04-secondary .automation-summary-card,
+.admin-ux04-secondary .module-create-panel,
+.admin-ux04-secondary [class*="rounded-2xl"][class*="border"],
+.admin-ux04-secondary [class*="rounded-3xl"][class*="border"],
+.admin-v2-light .panel,
+.admin-v2-light [class*="rounded-2xl"][class*="border"],
+.admin-v2-light [class*="rounded-3xl"][class*="border"],
+.coach-classes-v2 .panel,
+.coach-classes-v2 [class*="rounded-2xl"][class*="border"],
+.coach-classes-v2 [class*="rounded-3xl"][class*="border"] {
+  border-color: var(--sf-v2-line) !important;
+  background: #fff !important;
+  box-shadow: 0 10px 30px rgba(44, 64, 86, 0.055) !important;
+}
+
+.admin-ux04-secondary .module-tabs,
+.admin-ux04-secondary .module-search input,
+.admin-ux04-secondary .module-create-panel input,
+.admin-ux04-secondary .module-create-panel textarea,
+.admin-v2-light input,
+.admin-v2-light select,
+.admin-v2-light textarea,
+.coach-classes-v2 input,
+.coach-classes-v2 select,
+.coach-classes-v2 textarea {
+  border-color: #dce4eb !important;
+  background: #fbfcfd !important;
+  color: var(--sf-v2-text) !important;
+  color-scheme: light !important;
+}
+
+.admin-ux04-secondary .module-tabs a,
+.admin-ux04-secondary .module-row-copy small,
+.admin-ux04-secondary .more-row-copy small,
+.admin-ux04-secondary .module-row-meta small,
+.admin-ux04-secondary .module-chevron {
+  color: var(--sf-v2-muted) !important;
+}
+
+.admin-ux04-secondary .module-tabs a.is-active {
+  background: var(--sf-v2-accent-soft) !important;
+  color: var(--sf-v2-accent-strong) !important;
+  box-shadow: inset 0 -2px 0 var(--sf-v2-accent) !important;
+}
+
+.admin-ux04-secondary .module-row-icon,
+.admin-ux04-secondary .more-row-icon {
+  border-color: #d4ebe3 !important;
+  background: var(--sf-v2-accent-soft) !important;
+  color: var(--sf-v2-accent-strong) !important;
+}
+
+.admin-ux04-secondary .module-primary-action,
+.admin-ux04-secondary [class*="bg-[#FF0A8A]"],
+.admin-ux04-secondary [class*="bg-fuchsia-600"],
+.admin-v2-light [class*="bg-fuchsia-600"],
+.coach-classes-v2 [class*="bg-fuchsia-600"] {
+  border-color: var(--sf-v2-accent) !important;
+  background: var(--sf-v2-accent) !important;
+  color: #fff !important;
+  box-shadow: 0 12px 26px rgba(23, 168, 120, 0.17) !important;
+}
+
+.admin-ux04-secondary .eyebrow,
+.admin-v2-light .eyebrow,
+.coach-classes-v2 .eyebrow {
+  color: var(--sf-v2-accent-strong) !important;
+}
+
+.admin-ux04-secondary a[class*="text-zinc"],
+.admin-v2-light a[class*="text-zinc"],
+.coach-classes-v2 a[class*="text-zinc"] {
+  color: #617189 !important;
+}
+
+.admin-ux04-secondary a[class*="text-zinc"]:hover,
+.admin-v2-light a[class*="text-zinc"]:hover,
+.coach-classes-v2 a[class*="text-zinc"]:hover {
+  color: var(--sf-v2-accent-strong) !important;
+}
+
+/* Rewards / challenges */
+.rewards-admin-page > nav {
+  border-color: var(--sf-v2-line) !important;
+  background: #fff !important;
+  box-shadow: 0 8px 24px rgba(44, 64, 86, 0.04);
+}
+
+.rewards-admin-page > nav a {
+  color: #617189 !important;
+}
+
+.rewards-admin-page > nav a[class*="bg-[#FF0A8A]"] {
+  background: var(--sf-v2-accent-soft) !important;
+  color: var(--sf-v2-accent-strong) !important;
+  box-shadow: inset 0 -2px 0 var(--sf-v2-accent) !important;
+}
+
+.rewards-admin-page [class*="text-[#FF0A8A]"],
+.admin-ux04-secondary [class*="text-[#FF0A8A]"],
+.admin-ux04-secondary [class*="text-fuchsia"] {
+  color: var(--sf-v2-accent-strong) !important;
+}
+
+.rewards-admin-page [class*="border-fuchsia"],
+.admin-ux04-secondary [class*="border-fuchsia"] {
+  border-color: #cde8df !important;
+}
+
+.rewards-admin-page [class*="bg-fuchsia"] {
+  background-color: var(--sf-v2-accent-soft) !important;
+  background-image: none !important;
+}
+
+.rewards-admin-page .border-emerald-500\/20,
+.rewards-admin-page [class*="bg-emerald-500"] {
+  border-color: #cde9df !important;
+  background: #edf9f5 !important;
+  color: #15775a !important;
+}
+
+.rewards-admin-page [class*="bg-amber-500"] {
+  border-color: #f0dfbd !important;
+  background: #fff7e9 !important;
+  color: #9a6413 !important;
+}
+
+.rewards-admin-page [class*="bg-rose-500"] {
+  border-color: #efd2d6 !important;
+  background: #fff2f3 !important;
+  color: #a2444e !important;
+}
+
+/* Notifications */
+.notification-admin-page,
+.notification-detail-page {
+  --notification-card: #ffffff !important;
+  --notification-card-2: #f8fafc !important;
+  --notification-line: #e3eaf1 !important;
+  --notification-muted: #687891 !important;
+  --notification-accent: #17a878 !important;
+  color: var(--sf-v2-text);
+}
+
+.notification-admin-page h1,
+.notification-admin-page h2,
+.notification-admin-page h3,
+.notification-detail-page h1,
+.notification-detail-page h2,
+.notification-detail-page h3,
+.notification-page-header h1,
+.notification-detail-header h1,
+.notification-overview-heading h2,
+.notification-section-heading h2,
+.notification-detail-card h2,
+.notification-settings-card h2,
+.notification-process-copy strong {
+  color: var(--sf-v2-text) !important;
+}
+
+.notification-admin-page p,
+.notification-admin-page small,
+.notification-detail-page p,
+.notification-detail-page small,
+.notification-page-header p:not(.notification-eyebrow),
+.notification-detail-header p,
+.notification-overview-heading p,
+.notification-section-heading p,
+.notification-detail-card-heading p,
+.notification-settings-heading p,
+.notification-process-copy small {
+  color: var(--sf-v2-muted) !important;
+}
+
+.notification-eyebrow {
+  color: var(--sf-v2-accent-strong) !important;
+}
+
+.notification-tabs,
+.notification-overview-card,
+.notification-detail-card,
+.notification-settings-card,
+.notification-process-row,
+.notification-message-card,
+.notification-detail-channel,
+.notification-template-card {
+  border-color: var(--sf-v2-line) !important;
+  background: #fff !important;
+  box-shadow: 0 10px 30px rgba(44, 64, 86, 0.05) !important;
+}
+
+.notification-tabs a {
+  color: #66768c !important;
+}
+
+.notification-tabs a.is-active {
+  background: var(--sf-v2-accent-soft) !important;
+  color: var(--sf-v2-accent-strong) !important;
+  box-shadow: inset 0 -2px 0 var(--sf-v2-accent) !important;
+}
+
+.notification-filter-row a {
+  border-color: var(--sf-v2-line) !important;
+  background: #fff !important;
+  color: #66768c !important;
+}
+
+.notification-filter-row a span {
+  background: #f1f5f7 !important;
+  color: #76869b !important;
+}
+
+.notification-filter-row a.is-active {
+  border-color: #bcded2 !important;
+  background: var(--sf-v2-accent-soft) !important;
+  color: var(--sf-v2-accent-strong) !important;
+}
+
+.notification-process-icon,
+.notification-detail-icon {
+  background: #eaf3ff !important;
+  color: #2479dc !important;
+}
+
+.notification-process-icon.marketing {
+  background: #f2eafe !important;
+  color: #6f36c8 !important;
+}
+
+.notification-operation-badge {
+  border-color: #cde8df !important;
+  background: #edf9f5 !important;
+  color: #15775a !important;
+}
+
+.notification-operation-badge.is-paused,
+.notification-readonly-badge {
+  border-color: var(--sf-v2-line) !important;
+  background: #f5f7f9 !important;
+  color: #718096 !important;
+}
+
+.notification-essential-badge {
+  border-color: #f0dfbd !important;
+  background: #fff7e9 !important;
+  color: #9a6413 !important;
+}
+
+.notification-kpis article {
+  border-color: #edf1f4 !important;
+  background: #f8fafc !important;
+}
+
+.notification-kpis strong {
+  color: var(--sf-v2-text) !important;
+}
+
+.notification-kpis span {
+  color: var(--sf-v2-muted) !important;
+}
+
+.notification-recommendation,
+.notification-info-box {
+  border-color: #e4ddf3 !important;
+  background: #f8f5fd !important;
+  color: #6f6682 !important;
+}
+
+.notification-admin-page input,
+.notification-admin-page select,
+.notification-admin-page textarea,
+.notification-detail-page input,
+.notification-detail-page select,
+.notification-detail-page textarea {
+  border-color: #dce4eb !important;
+  background: #fbfcfd !important;
+  color: var(--sf-v2-text) !important;
+  color-scheme: light !important;
+}
+
+/* Coach / Mis clases */
+.coach-classes-v2 {
+  width: min(1040px, 100%);
+  margin-inline: auto;
+  padding: 34px 34px 46px;
+}
+
+.coach-classes-v2 [class*="text-fuchsia"] {
+  color: var(--sf-v2-accent-strong) !important;
+}
+
+.coach-classes-v2 [class*="border-fuchsia"] {
+  border-color: #cde8df !important;
+}
+
+.coach-classes-v2 [class*="bg-fuchsia-500"] {
+  background: var(--sf-v2-accent-soft) !important;
+}
+
+.coach-classes-v2 [class*="border-rose"] {
+  border-color: #efd2d6 !important;
+}
+
+.coach-classes-v2 [class*="bg-rose"] {
+  background: #fff2f3 !important;
+  background-image: none !important;
+}
+
+.coach-classes-v2 [class*="text-rose"] {
+  color: #a2444e !important;
+}
+
+.coach-classes-v2 .primary-button,
+.coach-classes-v2 a[class*="bg-fuchsia-600"] {
+  background: var(--sf-v2-accent) !important;
+  color: #fff !important;
+}
+
+/* Loading and error states */
+.admin-route-state {
+  min-height: min(68vh, 620px);
+  background: transparent;
+}
+
+.admin-state-card {
+  border-color: var(--sf-v2-line, #e3eaf1) !important;
+  background:
+    radial-gradient(circle at 85% 10%, rgba(23, 168, 120, 0.08), transparent 32%),
+    #fff !important;
+  box-shadow: 0 18px 50px rgba(44, 64, 86, 0.09) !important;
+}
+
+.admin-state-eyebrow {
+  color: #0f8f66 !important;
+}
+
+.admin-state-card h1 {
+  color: #10203a !important;
+}
+
+.admin-state-card > p:last-of-type {
+  color: #687891 !important;
+}
+
+.admin-state-spinner {
+  border-color: #e2e8ee !important;
+  border-top-color: #17a878 !important;
+}
+
+.admin-state-action {
+  border-color: #17a878 !important;
+  background: #17a878 !important;
+  color: #fff !important;
+}
+
+/* Kiosk remains camera-first, but the surrounding chrome follows V2. */
+.kiosk-v2 {
+  background: #f5f8fb !important;
+  color: #10203a !important;
+}
+
+.kiosk-v2 > div:first-child {
+  background: radial-gradient(circle at 50% 12%, rgba(23, 168, 120, 0.1), transparent 35%) !important;
+}
+
+.kiosk-v2 header p,
+.kiosk-v2 header a {
+  color: #687891 !important;
+}
+
+.kiosk-v2 header p:first-child {
+  color: #0f8f66 !important;
+}
+
+.kiosk-v2 header p:first-child span {
+  color: #10203a !important;
+}
+
+.kiosk-v2 header a {
+  border-color: #dce4eb !important;
+  background: #fff !important;
+}
+
+.kiosk-v2 section > div:first-child h1 {
+  color: #10203a !important;
+}
+
+.kiosk-v2 section > div:first-child p {
+  color: #687891 !important;
+}
+
+.kiosk-v2 section > div:first-child p:first-child {
+  color: #0f8f66 !important;
+}
+
+@media (max-width: 760px) {
+  .coach-classes-v2 {
+    padding: 20px 14px 94px;
+  }
+
+  .admin-shell:has(.admin-ux04-secondary) .admin-mobile-header,
+  .admin-shell:has(.notification-admin-page) .admin-mobile-header,
+  .admin-shell:has(.notification-detail-page) .admin-mobile-header,
+  .admin-shell:has(.admin-v2-light) .admin-mobile-header,
+  .admin-shell:has(.coach-classes-v2) .admin-mobile-header {
+    border-bottom-color: var(--sf-v2-line);
+    background: rgba(255, 255, 255, 0.96);
+  }
+
+  .admin-shell:has(.admin-ux04-secondary) .admin-mobile-brand strong,
+  .admin-shell:has(.notification-admin-page) .admin-mobile-brand strong,
+  .admin-shell:has(.notification-detail-page) .admin-mobile-brand strong,
+  .admin-shell:has(.admin-v2-light) .admin-mobile-brand strong,
+  .admin-shell:has(.coach-classes-v2) .admin-mobile-brand strong {
+    color: var(--sf-v2-text);
+  }
+
+  .admin-shell:has(.admin-ux04-secondary) .admin-mobile-nav,
+  .admin-shell:has(.notification-admin-page) .admin-mobile-nav,
+  .admin-shell:has(.notification-detail-page) .admin-mobile-nav,
+  .admin-shell:has(.admin-v2-light) .admin-mobile-nav,
+  .admin-shell:has(.coach-classes-v2) .admin-mobile-nav {
+    border-top-color: var(--sf-v2-line);
+    background: rgba(255, 255, 255, 0.98);
+  }
+
+  .admin-shell:has(.admin-ux04-secondary) .admin-mobile-nav a,
+  .admin-shell:has(.notification-admin-page) .admin-mobile-nav a,
+  .admin-shell:has(.notification-detail-page) .admin-mobile-nav a,
+  .admin-shell:has(.admin-v2-light) .admin-mobile-nav a,
+  .admin-shell:has(.coach-classes-v2) .admin-mobile-nav a {
+    color: #718096;
+  }
+
+  .admin-shell:has(.admin-ux04-secondary) .admin-mobile-nav a.is-active,
+  .admin-shell:has(.notification-admin-page) .admin-mobile-nav a.is-active,
+  .admin-shell:has(.notification-detail-page) .admin-mobile-nav a.is-active,
+  .admin-shell:has(.admin-v2-light) .admin-mobile-nav a.is-active,
+  .admin-shell:has(.coach-classes-v2) .admin-mobile-nav a.is-active {
+    color: var(--sf-v2-accent-strong);
+  }
+}
