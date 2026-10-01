@@ -106,3 +106,15 @@ async function resolveAdminContext(requiredCapability?: Capability) {
 // Request-scoped React cache: layout, metadata and page share the same
 // auth/studio/capability resolution without persisting data between requests.
 export const getAdminContext = cache(resolveAdminContext);
+
+
+export const getAdminDisplayName = cache(async () => {
+  const { supabase, user } = await getAdminContext();
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("full_name")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  return profile?.full_name?.trim() || user.email?.split("@")[0] || "Usuario";
+});
