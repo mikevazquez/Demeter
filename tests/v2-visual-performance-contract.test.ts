@@ -31,6 +31,7 @@ describe("Studio Flow V2 visual + performance contract", () => {
   const reserve = source("app/student/reservar/page.tsx");
   const packagePage = source("app/student/paquete/page.tsx");
   const productDetail = source("app/admin/productos/[productId]/page.tsx");
+  const evaluationSchedule = source("app/student/evaluaciones/[invitationId]/programar/page.tsx");
   const adminContext = source("lib/auth/admin-context.ts");
   const balanceMigration = source(
     "supabase/migrations/20261001150000_perf_batch_acquisition_credit_balances.sql",
@@ -110,6 +111,13 @@ describe("Studio Flow V2 visual + performance contract", () => {
     expect(adminContext).toContain("const getAdminBaseContext = cache(resolveAdminBaseContext)");
     expect(adminContext).toContain("export async function getAdminContext");
     expect(adminContext).toContain("getAdminDisplayName");
+  });
+
+  it("parallelizes evaluation purchase prerequisites without changing checkout rules", () => {
+    expect(evaluationSchedule).toContain("Promise.all([");
+    expect(evaluationSchedule).toContain("student_enrollment_checkout_requirement");
+    expect(evaluationSchedule).toContain("student_reward_single_class_price");
+    expect(evaluationSchedule).toContain("product_template_disciplines");
   });
 
   it("collapses product detail metadata into parallel fetch rounds", () => {
