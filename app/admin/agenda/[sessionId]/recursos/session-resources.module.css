@@ -380,3 +380,129 @@
     grid-template-columns: 1fr auto;
   }
 }
+
+
+/* Studio Flow V2 · light session-resource surfaces */
+.page {
+  color: #10203a;
+}
+
+.header h1,
+.panelHeader h2,
+.summary strong,
+.defaultUses strong,
+.resourceCopy strong,
+.assignmentCopy strong {
+  color: #10203a;
+}
+
+.header p,
+.back,
+.panelHeader p,
+.summary span,
+.summary small,
+.defaultUses small,
+.resourceCopy small,
+.assignmentCopy small,
+.mapEmpty {
+  color: #687891;
+}
+
+.back:hover,
+.eyebrow {
+  color: #0f8f66;
+}
+
+.notice,
+.summary article,
+.panel,
+.defaultUses,
+.resourceRow,
+.assignmentRow {
+  border-color: #e3eaf1;
+  background: #fff;
+  color: #10203a;
+  box-shadow: 0 8px 24px rgba(44, 64, 86, 0.04);
+}
+
+.success {
+  border-color: #bfe3d6;
+  background: #e7f8f1;
+  color: #0f8f66;
+}
+
+.error {
+  border-color: #efc7cd;
+  background: #fff0f2;
+  color: #b84c56;
+}
+
+.defaultUses input,
+.capacity input,
+.reassignControls select {
+  border-color: #dce4eb;
+  background: #fbfcfd;
+  color: #10203a;
+}
+
+.defaultUses input:focus,
+.capacity input:focus,
+.reassignControls select:focus {
+  border-color: #78cbb0;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(23, 168, 120, 0.08);
+}
+
+.toggle {
+  accent-color: #17a878;
+}
+
+.usage {
+  background: #e7f8f1;
+  color: #0f8f66;
+}
+
+.map {
+  border-color: #dce4eb;
+  background:
+    linear-gradient(rgba(96, 112, 134, 0.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(96, 112, 134, 0.07) 1px, transparent 1px),
+    #f8fafb;
+}
+
+.mapElement {
+  border-color: #cbd6df;
+  background: #fff;
+  color: #53637b;
+}
+
+.mapElement[data-kind="resource"] {
+  border-color: #bfe3d6;
+  background: #e7f8f1;
+  color: #0f8f66;
+}
+
+.mapElement[data-enabled="false"] {
+  border-color: #d6dee6;
+  background: #eef2f5;
+  color: #8a96a6;
+}
+
+.mapElement[data-full="true"] {
+  border-color: #efc7cd;
+  background: #fff0f2;
+  color: #b84c56;
+}
+
+.save,
+.reassignControls button {
+  border-color: transparent;
+  background: #17a878;
+  color: #fff;
+  box-shadow: 0 10px 24px rgba(23, 168, 120, 0.14);
+}
+
+.reassignControls button:hover,
+.save:hover {
+  background: #0f8f66;
+}
