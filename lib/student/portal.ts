@@ -202,15 +202,20 @@ export const getStudentPortalContext = cache(async () => {
 
   if (account.must_change_password) redirect("/login/student/activar");
 
-  const [snapshotResult, studioResult] = await Promise.all([
+  const [snapshotResult, studioResult, productTermsResult] = await Promise.all([
     supabase.rpc("student_portal_snapshot"),
-    supabase.from("studios")
+    supabase
+      .from("studios")
       .select("name,timezone,slug,primary_color,logo_path")
       .eq("id", membership.studio_id)
       .maybeSingle(),
+    supabase
+      .from("product_templates")
+      .select("id,package_term,reward_credit_wallet")
+      .eq("studio_id", membership.studio_id),
   ]);
 
-  if (snapshotResult.error || studioResult.error) {
+  if (snapshotResult.error || studioResult.error || productTermsResult.error) {
     throw new Error("student_portal_temporarily_unavailable");
   }
 
@@ -219,14 +224,7 @@ export const getStudentPortalContext = cache(async () => {
   if (!snapshot || !studio) redirect("/login/student?error=access");
 
   const baseSnapshot = snapshot as StudentSnapshot;
-  const productIds = [...new Set(baseSnapshot.acquisitions.map((item) => item.product_id))];
-  const { data: productTerms } = productIds.length
-    ? await supabase
-        .from("product_templates")
-        .select("id,package_term,reward_credit_wallet")
-        .eq("studio_id", membership.studio_id)
-        .in("id", productIds)
-    : { data: [] };
+  const productTerms = productTermsResult.data ?? [];
   const productMetaMap = new Map((productTerms ?? []).map((item) => [item.id, item]));
   const enrichedSnapshot: StudentSnapshot = {
     ...baseSnapshot,
