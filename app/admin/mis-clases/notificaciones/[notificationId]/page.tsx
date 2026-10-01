@@ -61,7 +61,7 @@ export default async function CoachNotificationDetailPage({
   const timeLabel = payload.starts_at ? formatTime(payload.starts_at, studio.timezone) : null;
 
   return (
-    <main className="dashboard-shell space-y-5">
+    <main className="dashboard-shell space-y-5 admin-v2-light coach-classes-v2">
       <Link className="back-link compact" href="/admin/mis-clases">
         ← Mis clases
       </Link>
