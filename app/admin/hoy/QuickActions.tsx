@@ -1,7 +1,12 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
-import { createQuickSale, createQuickStudent } from "./quick-actions";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import {
+  createQuickSale,
+  createQuickStudent,
+  loadQuickSaleProducts,
+  searchQuickSaleStudents,
+} from "./quick-actions";
 
 type Student = { id: string; fullName: string };
 type Product = {
@@ -17,10 +22,7 @@ type Product = {
 type Props = {
   canStudents: boolean;
   canSales: boolean;
-  students: Student[];
-  products: Product[];
   locale: string;
-  preferredProductByStudent?: Record<string, string>;
 };
 
 function money(value: number, currency: string, locale: string) {
@@ -34,10 +36,7 @@ function money(value: number, currency: string, locale: string) {
 export default function QuickActions({
   canStudents,
   canSales,
-  students,
-  products,
   locale,
-  preferredProductByStudent = {},
 }: Props) {
   const [open, setOpen] = useState<null | "menu" | "student" | "studentCreated" | "sale">(null);
   const [studentQuery, setStudentQuery] = useState("");
@@ -49,18 +48,60 @@ export default function QuickActions({
   const [payment, setPayment] = useState("");
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
   const [createdStudent, setCreatedStudent] = useState<Student | null>(null);
+  const [students, setStudents] = useState<Student[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [preferredProductByStudent, setPreferredProductByStudent] = useState<Record<string, string>>(
+    {},
+  );
+  const [catalogLoading, setCatalogLoading] = useState(false);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const searchRequestRef = useRef(0);
   const [pending, startTransition] = useTransition();
 
   const selectedProduct = products.find((item) => item.id === productId) ?? null;
   const preferredId = studentId ? preferredProductByStudent[studentId] : undefined;
 
   const studentMatches = useMemo(() => {
-    const query = studentQuery.trim().toLocaleLowerCase("es");
-    if (!query || studentId) return [];
-    return students
-      .filter((student) => student.fullName.toLocaleLowerCase("es").includes(query))
-      .slice(0, 7);
-  }, [studentId, studentQuery, students]);
+    if (studentId) return [];
+    return students;
+  }, [studentId, students]);
+
+  useEffect(() => {
+    if (open !== "sale" || studentId || studentQuery.trim().length < 2) return;
+
+    const requestId = ++searchRequestRef.current;
+    const timer = window.setTimeout(() => {
+      setSearchLoading(true);
+      searchQuickSaleStudents(studentQuery)
+        .then((result) => {
+          if (requestId !== searchRequestRef.current) return;
+          setStudents(result.map(({ id, fullName }) => ({ id, fullName })));
+          setPreferredProductByStudent((current) => ({
+            ...current,
+            ...Object.fromEntries(
+              result
+                .filter((item) => item.preferredProductId)
+                .map((item) => [item.id, item.preferredProductId!]),
+            ),
+          }));
+        })
+        .finally(() => {
+          if (requestId === searchRequestRef.current) setSearchLoading(false);
+        });
+    }, 220);
+
+    return () => window.clearTimeout(timer);
+  }, [open, studentId, studentQuery]);
+
+  async function ensureProductsLoaded() {
+    if (products.length || catalogLoading) return;
+    setCatalogLoading(true);
+    try {
+      setProducts(await loadQuickSaleProducts());
+    } finally {
+      setCatalogLoading(false);
+    }
+  }
 
   const visibleProducts = useMemo(() => {
     if (!studentId) return [];
@@ -161,6 +202,7 @@ export default function QuickActions({
               onClick={() => {
                 setMessage(null);
                 setOpen("sale");
+                void ensureProductsLoaded();
               }}
             >
               Nueva venta
@@ -246,6 +288,7 @@ export default function QuickActions({
                   chooseStudent(createdStudent);
                   setMessage(null);
                   setOpen("sale");
+                  void ensureProductsLoaded();
                 }}
               >
                 Sí, agregar paquete
@@ -299,9 +342,12 @@ export default function QuickActions({
                     setStudentQuery(event.target.value);
                     setStudentId("");
                     setProductId("");
+                    setStudents([]);
                   }}
                 />
-                {studentMatches.length > 0 ? (
+                {searchLoading ? (
+                  <div className="hoy-student-results is-loading">Buscando alumnas…</div>
+                ) : studentMatches.length > 0 ? (
                   <div className="hoy-student-results">
                     {studentMatches.map((student) => (
                       <button type="button" key={student.id} onClick={() => chooseStudent(student)}>
@@ -316,6 +362,9 @@ export default function QuickActions({
               {studentId && !selectedProduct ? (
                 <div className="hoy-package-picker">
                   <span>Paquete</span>
+                  {catalogLoading ? (
+                    <p className="quick-loading">Cargando paquetes…</p>
+                  ) : null}
                   <div className="hoy-package-options">{visibleProducts.map(renderProduct)}</div>
                   {otherProducts.length > 0 ? (
                     <button
