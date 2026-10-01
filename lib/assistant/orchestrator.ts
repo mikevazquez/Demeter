@@ -221,6 +221,17 @@ function formatTimeForReply(value: unknown) {
   return `${normalizedHour}:${minute} ${suffix}`;
 }
 
+function formatMoney(amountMinor: unknown, currency: unknown) {
+  const amount = Number(amountMinor);
+  if (!Number.isFinite(amount)) return null;
+  const currencyCode = String(currency ?? "MXN").toUpperCase();
+  return new Intl.NumberFormat("es-MX", {
+    style: "currency",
+    currency: currencyCode,
+    maximumFractionDigits: amount % 100 === 0 ? 0 : 2,
+  }).format(amount / 100);
+}
+
 function confirmationReply(
   toolName: string,
   result: Record<string, unknown>,
@@ -254,15 +265,11 @@ function confirmationReply(
 
   const summary = asObject(result.summary);
   if (toolName === "execute_booking" && summary) {
-    const paymentText =
-      summary.payment_pending === true
-        ? " Quedó con pago pendiente; la clase debe pagarse antes de marcar la asistencia."
-        : "";
-    const trialText =
-      summary.trial_booking === true
-        ? " Esta reserva de prueba no requiere inscripción. Después de tu primera asistencia, la inscripción sí será necesaria para futuras reservas."
-        : "";
-    return `Listo. Tu reserva de ${String(summary.activity ?? "la clase")} quedó confirmada para el ${formatDateForReply(summary.date)}, de ${formatTimeForReply(summary.starts_at_local)} a ${formatTimeForReply(summary.ends_at_local)}.${paymentText}${trialText}`;
+    if (summary.trial_booking === true) {
+      return `Listo. Tu reserva de ${String(summary.activity ?? "la clase")} quedó confirmada para el ${formatDateForReply(summary.date)}, de ${formatTimeForReply(summary.starts_at_local)} a ${formatTimeForReply(summary.ends_at_local)}. ¿El pago lo harás en efectivo en el estudio o por transferencia?`;
+    }
+
+    return `Listo. Tu reserva de ${String(summary.activity ?? "la clase")} quedó confirmada para el ${formatDateForReply(summary.date)}, de ${formatTimeForReply(summary.starts_at_local)} a ${formatTimeForReply(summary.ends_at_local)}.`;
   }
 
   if (toolName === "execute_cancellation" && summary) {
@@ -427,7 +434,12 @@ export async function runAssistantTurn(input: OrchestratorInput) {
     "Una prospecto/trial solo puede tener una reserva de prueba activa a la vez. Si la herramienta devuelve trial_active_booking_exists, explica que debe usar, cancelar o resolver esa reserva antes de agendar otra.",
     "No inventes ni calcules por tu cuenta cuántos no-shows tiene; usa exclusivamente el resultado de Studio Flow.",
     "Si prepare_booking devuelve onboarding_required para una alumna que ya terminó su clase de prueba, explica el requisito real y no pidas confirmación de reserva.",
-    "Si prepare_booking devuelve payment_pending=true, explica antes de confirmar que la reserva quedará pendiente de pago y que Studio Flow no la considera pagada automáticamente.",
+    "Para una reserva de prueba, jamás le digas a la persona 'pago pendiente', 'commercial_status', 'crédito' ni 'usa 1 crédito'. Son conceptos internos.",
+    "Si prepare_booking devuelve trial_booking=true, antes de confirmar menciona únicamente el precio real de la clase usando amount_minor/currency y pide una sola confirmación. Ejemplo de tono: 'Tu primera clase cuesta $150. ¿Confirmas la reserva?'.",
+    "Después de ejecutar una reserva de prueba, el servidor preguntará si pagará en efectivo en el estudio o por transferencia.",
+    "Si la persona responde efectivo, llama record_trial_payment_preference con cash. Si responde transferencia, llama record_trial_payment_preference con bank_transfer. Elegir método NO significa que el pago ya fue recibido.",
+    "Después de registrar cash, explica de forma natural: su primera clase cuesta el precio real devuelto, no paga inscripción en esa primera clase y, a partir de su siguiente reserva después de asistir, deberá cubrir la inscripción.",
+    "Después de registrar bank_transfer, si transfer_details_configured=false explica que la preferencia quedó registrada pero no inventes datos bancarios; indica que los datos de transferencia deben ser proporcionados/configurados por el estudio.",
     "Para cancelar, primero usa get_student_reservations para localizar la reserva real. Si la persona no expresó un motivo, pregúntalo y no prepares todavía la cancelación.",
     "Nunca inventes ni completes un motivo de cancelación. Usa prepare_cancellation solo con un motivo expresado por la persona y presenta claramente si la cancelación es a tiempo o tardía, si regresa el crédito y cualquier penalización.",
     "Nunca llames execute_cancellation en el mismo turno en que preparaste la cancelación. Debes esperar un NUEVO mensaje con confirmación explícita.",
