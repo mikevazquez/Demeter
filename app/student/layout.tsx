@@ -3,7 +3,7 @@ import Link from "next/link";
 import { cache } from "react";
 
 import { signOut } from "@/app/auth/actions";
-import { getStudentPortalContext } from "@/lib/student/portal";
+import { getStudentShellContext, getStudentStudioContext } from "@/lib/student/portal";
 
 import PendingActionButton from "./components/PendingActionButton";
 import PwaBrandingSync from "@/app/components/PwaBrandingSync";
@@ -28,7 +28,7 @@ function pwaBrandQuery(brand: PwaBrand) {
 }
 
 const getPwaBrand = cache(async (): Promise<PwaBrand> => {
-  const { studio } = await getStudentPortalContext();
+  const { studio } = await getStudentStudioContext();
 
   return {
     name: studio.name,
@@ -76,15 +76,16 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function StudentLayout({ children }: { children: React.ReactNode }) {
-  const [{ snapshot, studio, supabase }, brand] = await Promise.all([
-    getStudentPortalContext(),
+  const [{ student, studio, supabase }, brand] = await Promise.all([
+    getStudentShellContext(),
     getPwaBrand(),
   ]);
+  const studentFirstName = student.full_name.trim().split(/\s+/)[0] || "Alumna";
   const query = pwaBrandQuery(brand);
   const { count: unreadNotificationCount } = await supabase
     .from("app_notifications")
     .select("id", { count: "exact", head: true })
-    .eq("student_id", snapshot.profile.student_id)
+    .eq("student_id", student.id)
     .eq("recipient_kind", "student")
     .is("read_at", null);
 
@@ -131,7 +132,7 @@ export default async function StudentLayout({ children }: { children: React.Reac
               ) : null}
             </Link>
             <div className="hidden text-right sm:block">
-              <p className="text-sm font-medium text-white">{snapshot.profile.first_name}</p>
+              <p className="text-sm font-medium text-white">{studentFirstName}</p>
               <p className="text-xs text-zinc-500">Portal de alumna</p>
             </div>
             <form action={signOut}>
