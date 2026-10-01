@@ -89,18 +89,13 @@ const roleLabels: Record<string, string> = {
 };
 
 export default async function AdminLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  const { supabase, studio, membership, can, user } = await getCachedAdminContext();
+  const { supabase, studio, membership, can, user, profile } = await getCachedAdminContext();
   const pwaQuery = pwaBrandQuery(studio);
   const instructorOnly = can(CAPABILITIES.INSTRUCTOR_PORTAL) && !can(CAPABILITIES.ADMIN_PORTAL);
   const brandLogoUrl = studio.logo_path
     ? supabase.storage.from("studio-branding").getPublicUrl(studio.logo_path).data.publicUrl
     : null;
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("full_name")
-    .eq("id", user.id)
-    .maybeSingle();
   const userName = profile?.full_name?.trim() || user.email?.split("@")[0] || "Usuario";
   const userInitials = userName
     .split(/\s+/)
