@@ -309,6 +309,34 @@ export const assistantActionToolDefinitions: AssistantToolDefinition[] = [
   },
   {
     type: "function",
+    name: "escalate_to_human",
+    description:
+      "Pasa esta conversación a atención humana dentro del mismo canal cuando un pago o comprobante necesita revisión manual, cuando la persona lo pide o cuando Demi no puede resolver el caso con seguridad.",
+    strict: true,
+    parameters: {
+      type: "object",
+      properties: {
+        reason_code: {
+          type: "string",
+          enum: [
+            "transfer_receipt_review",
+            "payment_validation",
+            "user_requested_human",
+            "assistant_cannot_resolve"
+          ],
+        },
+        note: {
+          type: ["string", "null"],
+          description:
+            "Resumen breve y seguro para la persona que dará seguimiento. No incluyas secretos ni datos bancarios completos.",
+        },
+      },
+      required: ["reason_code", "note"],
+      additionalProperties: false,
+    },
+  },
+  {
+    type: "function",
     name: "record_trial_payment_preference",
     description:
       "Registra cómo piensa pagar una persona su clase de prueba ya reservada: efectivo en el estudio o transferencia. Esto NO registra un pago recibido y no debe marcar la reserva como pagada.",
