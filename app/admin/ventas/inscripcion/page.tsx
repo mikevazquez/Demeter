@@ -24,7 +24,7 @@ export default async function EnrollmentPolicyPage({
   const [{ data: policy }, { data: enrollmentProducts }] = await Promise.all([
     ctx.supabase
       .from("enrollment_policies")
-      .select("enabled,required_for_booking,enrollment_product_template_id,rules")
+      .select("enabled,required_for_booking,required_for_package_purchase,required_for_single_class,single_class_grace_count,enrollment_product_template_id,rules")
       .eq("studio_id", ctx.studio.id)
       .maybeSingle(),
     ctx.supabase
@@ -49,9 +49,9 @@ export default async function EnrollmentPolicyPage({
         <p className="mt-4 text-sm text-zinc-400">SF-093 · Política por estudio</p>
         <h1 className="text-3xl font-semibold text-white">Inscripción</h1>
         <p className="mt-1 text-sm leading-6 text-zinc-400">
-          Cada estudio define si utiliza inscripción, qué producto la cobra y su vigencia. Las
-          reglas avanzadas de elegibilidad se administrarán en Configuración/F12 sin hardcodear
-          reglas de un estudio concreto.
+          Cada estudio define si utiliza inscripción, qué producto la cobra y su vigencia. Cuando
+          está habilitada, Studio Flow la exige de forma consistente al reservar, comprar paquetes
+          y comprar clases sueltas.
         </p>
       </header>
 
@@ -74,9 +74,9 @@ export default async function EnrollmentPolicyPage({
           </strong>
         </article>
         <article className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
-          <p className="text-xs uppercase tracking-wide text-zinc-500">Para reservar</p>
+          <p className="text-xs uppercase tracking-wide text-zinc-500">Regla</p>
           <strong className="mt-2 block text-lg text-white">
-            {policy?.required_for_booking ? "Requerida" : "No requerida"}
+            {policy?.enabled ? "Obligatoria" : "No aplica"}
           </strong>
         </article>
         <article className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
@@ -145,27 +145,10 @@ export default async function EnrollmentPolicyPage({
             </select>
           </label>
 
-          <label className="flex items-start gap-3 rounded-xl border border-white/10 p-4 text-sm text-zinc-300">
-            <input
-              name="required_for_booking"
-              type="checkbox"
-              defaultChecked={policy?.required_for_booking ?? false}
-              className="mt-0.5"
-            />
-            <span>
-              <strong className="block text-white">Marcar como requisito para reservar</strong>
-              <span className="mt-1 block text-xs leading-5 text-zinc-500">
-                Cuando está activa, el motor de elegibilidad exige una inscripción vigente en la
-                fecha de la clase antes de permitir la reserva.
-              </span>
-            </span>
-          </label>
-
           <div className="rounded-xl border border-sky-500/20 bg-sky-500/[0.06] p-4 text-xs leading-5 text-sky-100/80">
-            Las excepciones, primera clase/primera compra, renovación y reglas por producto quedan
-            en
-            <code className="mx-1 rounded bg-black/20 px-1.5 py-0.5">rules</code> y tendrán editor
-            completo en F12. Esta pantalla no inventa valores por defecto.
+            Al habilitar la inscripción se vuelve requisito para reservar, comprar un paquete o
+            comprar una clase suelta. No se aplica una clase de gracia: si no está vigente, el
+            checkout ofrece pagar la inscripción sola o incluirla junto con la compra.
           </div>
 
           <div className="text-right">
