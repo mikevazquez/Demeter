@@ -6,17 +6,15 @@ import {
   type BookingRestriction,
   type DocumentCenterItem,
 } from "@/lib/documents";
-import { getStudentPortalContext } from "@/lib/student/portal";
+import { getStudentStudioContext } from "@/lib/student/portal";
 
 export default async function StudentDocumentsPage({
   searchParams,
 }: {
   searchParams: Promise<{ error?: string }>;
 }) {
-  const [query, { supabase }] = await Promise.all([
-    searchParams,
-    getStudentPortalContext(),
-  ]);
+  const query = await searchParams;
+  const { supabase } = await getStudentStudioContext();
   const { data, error } = await supabase.rpc("student_document_center");
 
   const center = (data ?? {}) as {
