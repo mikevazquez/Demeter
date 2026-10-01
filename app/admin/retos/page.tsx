@@ -24,8 +24,10 @@ export default async function ChallengesPage({
 }: {
   searchParams: Promise<{ q?: string; status?: string }>;
 }) {
-  const query = await searchParams;
-  const ctx = await getAdminContext(CAPABILITIES.REWARDS_READ);
+  const [query, ctx] = await Promise.all([
+    searchParams,
+    getAdminContext(CAPABILITIES.REWARDS_READ),
+  ]);
   const search = String(query.q ?? "")
     .trim()
     .toLocaleLowerCase("es-MX");
