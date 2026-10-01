@@ -35,8 +35,10 @@ export default async function StudentProfilePage({
     avatar_error?: string;
   }>;
 }) {
-  const query = await searchParams;
-  const { snapshot, studio, supabase } = await getStudentPortalContext();
+  const [query, { snapshot, studio, supabase }] = await Promise.all([
+    searchParams,
+    getStudentPortalContext(),
+  ]);
   const activePackage = snapshot.acquisitions.find((item) => item.active_now) ?? null;
   const fullName = [snapshot.profile.first_name, snapshot.profile.last_name]
     .filter(Boolean)
