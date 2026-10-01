@@ -323,8 +323,7 @@ export default async function IntelligencePage({
   const needsSales = view === "resumen" || view === "dinero";
   const needsPayments = view === "resumen" || view === "dinero";
   const needsSaleLines = view === "resumen" || view === "dinero";
-  const needsSessions =
-    view === "resumen" || view === "alumnas" || view === "clases";
+  const needsSessions = view === "resumen" || view === "alumnas" || view === "clases";
   const needsTemplates = view === "resumen" || view === "clases";
   const needsProductTemplates = view === "resumen" || view === "alumnas";
   const needsOnboarding = view === "alumnas";
@@ -375,7 +374,9 @@ export default async function IntelligencePage({
     needsSaleLines
       ? supabase
           .from("sale_lines")
-          .select("sale_id,product_template_id,product_name,line_total_minor,refunded_at,created_at")
+          .select(
+            "sale_id,product_template_id,product_name,line_total_minor,refunded_at,created_at",
+          )
           .eq("studio_id", studio.id)
           .is("refunded_at", null)
           .gte("created_at", rangeStartIso)
@@ -391,10 +392,7 @@ export default async function IntelligencePage({
           .order("starts_at")
       : Promise.resolve({ data: [] as SessionRow[] }),
     needsTemplates
-      ? supabase
-          .from("class_templates")
-          .select("id,name,color_hex")
-          .eq("studio_id", studio.id)
+      ? supabase.from("class_templates").select("id,name,color_hex").eq("studio_id", studio.id)
       : Promise.resolve({ data: [] as ClassTemplateRow[] }),
     needsProductTemplates
       ? supabase
