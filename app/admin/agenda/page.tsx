@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 import { CAPABILITIES } from "@/lib/auth/capabilities";
-import { getAdminContext, getAdminDisplayName } from "@/lib/auth/admin-context";
+import { getAdminContext } from "@/lib/auth/admin-context";
 import { cancelSession, updateSession } from "./[sessionId]/actions";
 
 function formatMoney(minor: number, locale: string, currency: string) {
@@ -149,11 +149,10 @@ export default async function AgendaPage({
 }: {
   searchParams: Promise<{ error?: string; created?: string; date?: string; session?: string }>;
 }) {
-  const [params, { supabase, studio, can }, headerName] = await Promise.all([
-    searchParams,
-    getAdminContext(CAPABILITIES.SCHEDULE_READ),
-    getAdminDisplayName(),
-  ]);
+  const params = await searchParams;
+  const { supabase, studio, can, user, profile } = await getAdminContext(
+    CAPABILITIES.SCHEDULE_READ,
+  );
   const canEdit = can(CAPABILITIES.SCHEDULE_WRITE);
   const timeZone = studio.timezone;
   const locale = studio.locale;
@@ -172,6 +171,7 @@ export default async function AgendaPage({
   const weekStartUtc = zonedDateTimeToUtc(`${weekStartKey}T00:00`, timeZone);
   const weekAfterUtc = zonedDateTimeToUtc(`${weekAfterKey}T00:00`, timeZone);
 
+  const headerName = profile?.full_name?.trim() || user.email?.split("@")[0] || "Usuario";
   const headerInitials =
     headerName
       .split(/\s+/)
@@ -216,12 +216,12 @@ export default async function AgendaPage({
       .order("weekday"),
   ]);
 
-  if (canEdit && (schedules ?? []).length) {
+  if (canEdit && schedules?.length && weekAfterKey >= todayKey) {
     await Promise.all(
-      (schedules ?? []).map((schedule) =>
+      schedules.map((schedule) =>
         supabase.rpc("materialize_recurring_schedule", {
           p_schedule_id: schedule.id,
-          p_through: null,
+          p_through: weekAfterKey,
         }),
       ),
     );
