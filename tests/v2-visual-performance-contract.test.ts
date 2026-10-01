@@ -123,10 +123,10 @@ describe("Studio Flow V2 visual + performance contract", () => {
     expect(agenda).toContain('rpc("materialize_recurring_schedule"');
   });
 
-  it("shares one base admin auth/studio context across layout and pages", () => {
-    expect(adminContext).toContain("const getAdminBaseContext = cache(resolveAdminBaseContext)");
-    expect(adminContext).toContain("export async function getAdminContext");
-    expect(adminContext).toContain("getAdminDisplayName");
+  it("shares one cached admin auth/studio context across layout and pages", () => {
+    expect(adminContext).toContain("async function getAdminContextImpl");
+    expect(adminContext).toContain("export const getAdminContext = cache(getAdminContextImpl)");
+    expect(adminContext).toContain("profileResult");
   });
 
   it("parallelizes rewards progress metadata without changing reward rules", () => {
