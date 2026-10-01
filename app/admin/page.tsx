@@ -5,25 +5,6 @@ import { getAdminContext } from "@/lib/auth/admin-context";
 import { TodayClasses, type TodayClassItem } from "./hoy/TodayClasses";
 import QuickActions from "./hoy/QuickActions";
 
-type EligibilityResult = {
-  eligible?: boolean;
-  reason_code?: string | null;
-  available_credits?: number | null;
-  unlimited?: boolean;
-};
-
-const eligibilityCopy: Record<string, string> = {
-  student_not_operable: "perfil no habilitado",
-  session_not_bookable: "clase no disponible",
-  already_reserved: "ya reservada",
-  session_full: "clase llena",
-  no_active_product: "sin paquete activo",
-  enrollment_required: "inscripción no vigente",
-  payment_pending: "pago pendiente",
-  outside_product: "fuera de paquete",
-  no_credits: "sin créditos",
-};
-
 const occupyingReservationStatuses = new Set(["reserved", "attended", "no_show"]);
 
 function formatExpiry(value: string | null, locale: string) {
@@ -408,18 +389,6 @@ export default async function AdminPage({
       sessionReservations.map((reservation) => reservation.student_id).filter(Boolean),
     );
     const candidates = (students ?? []).filter((student) => !bookedIds.has(student.id));
-    const eligibilityEntries = canWriteSchedule
-      ? await Promise.all(
-          candidates.map(async (student) => {
-            const { data } = await supabase.rpc("booking_eligibility", {
-              target_session_id: session.id,
-              target_student_id: student.id,
-            });
-            return [student.id, (data ?? {}) as EligibilityResult] as const;
-          }),
-        )
-      : [];
-    const eligibilityMap = new Map(eligibilityEntries);
     const template = templateMap.get(session.template_id);
     const occupied = sessionReservations.filter((reservation) =>
       occupyingReservationStatuses.has(reservation.status),
@@ -497,22 +466,12 @@ export default async function AdminPage({
           currency: studio.currency ?? "MXN",
         };
       }),
-      candidates: candidates.map((student) => {
-        const eligibility = eligibilityMap.get(student.id);
-        const reason = eligibility?.reason_code
-          ? (eligibilityCopy[eligibility.reason_code] ?? "no elegible")
-          : "no elegible";
-        return {
-          id: student.id,
-          fullName: student.full_name,
-          eligible: eligibility?.eligible === true,
-          detail: eligibility?.eligible
-            ? eligibility.unlimited
-              ? "membresía ilimitada"
-              : `${eligibility.available_credits ?? 0} créditos`
-            : reason,
-        };
-      }),
+      candidates: candidates.map((student) => ({
+        id: student.id,
+        fullName: student.full_name,
+        eligible: true,
+        detail: "Se valida al agregar",
+      })),
     });
   }
 
