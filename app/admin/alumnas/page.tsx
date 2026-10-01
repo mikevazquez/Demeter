@@ -110,24 +110,33 @@ export default async function StudentsPage({
     }
   }
 
-  const { data: students } = await studentsQuery;
-
-  const [{ data: allStudents }, acquisitionResult] = await Promise.all([
-    supabase
-      .from("students")
-      .select("id,lifecycle_status")
-      .eq("studio_id", studio.id)
-      .neq("lifecycle_status", "archived"),
-    canReadProducts
-      ? supabase
-          .from("product_acquisitions")
-          .select(
-            "id,student_id,product_template_id,status,starts_on,expires_on,refunded_at,created_at,unlimited,credit_limit",
-          )
-          .eq("studio_id", studio.id)
-          .order("created_at", { ascending: false })
-      : Promise.resolve({ data: [] }),
-  ]);
+  const duplicateId = String(params.duplicate ?? "").trim();
+  const [{ data: students }, { data: allStudents }, acquisitionResult, { data: duplicateStudent }] =
+    await Promise.all([
+      studentsQuery,
+      supabase
+        .from("students")
+        .select("id,lifecycle_status")
+        .eq("studio_id", studio.id)
+        .neq("lifecycle_status", "archived"),
+      canReadProducts
+        ? supabase
+            .from("product_acquisitions")
+            .select(
+              "id,student_id,product_template_id,status,starts_on,expires_on,refunded_at,created_at,unlimited,credit_limit",
+            )
+            .eq("studio_id", studio.id)
+            .order("created_at", { ascending: false })
+        : Promise.resolve({ data: [] }),
+      duplicateId
+        ? supabase
+            .from("students")
+            .select("id,full_name,lifecycle_status")
+            .eq("id", duplicateId)
+            .eq("studio_id", studio.id)
+            .maybeSingle()
+        : Promise.resolve({ data: null }),
+    ]);
   const allAcquisitions = acquisitionResult.data ?? [];
 
   const acquisitionProductIds = [
@@ -231,16 +240,6 @@ export default async function StudentsPage({
       (visibleBalanceMap.get(row.acquisition_id) ?? 0) + row.quantity,
     );
   }
-
-  const duplicateId = String(params.duplicate ?? "").trim();
-  const { data: duplicateStudent } = duplicateId
-    ? await supabase
-        .from("students")
-        .select("id,full_name,lifecycle_status")
-        .eq("id", duplicateId)
-        .eq("studio_id", studio.id)
-        .maybeSingle()
-    : { data: null };
 
   const errorDialog =
     params.error === "first_name_required"
