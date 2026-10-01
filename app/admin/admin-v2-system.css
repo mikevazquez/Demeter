@@ -699,8 +699,6 @@
   color: var(--muted) !important;
 }
 
-.admin-shell .border-white\/10,
-.admin-shell .border-white\/[0\.06],
 .admin-shell [class*="border-white/"] {
   border-color: var(--line) !important;
 }
