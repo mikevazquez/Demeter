@@ -17,8 +17,10 @@ export default async function DocumentIncidentsPage({
 }: {
   searchParams: Promise<{ saved?: string; error?: string }>;
 }) {
-  const query = await searchParams;
-  const { supabase, studio, can } = await getAdminContext(CAPABILITIES.DOCUMENTS_READ);
+  const [query, { supabase, studio, can }] = await Promise.all([
+    searchParams,
+    getAdminContext(CAPABILITIES.DOCUMENTS_READ),
+  ]);
 
   const [
     { data: incidents },
