@@ -29,13 +29,6 @@ type RosterItem = {
   currency?: string;
 };
 
-type Candidate = {
-  id: string;
-  fullName: string;
-  eligible: boolean;
-  detail: string;
-};
-
 type SessionOperationsProps = {
   sessionId: string;
   returnDate: string;
@@ -43,7 +36,6 @@ type SessionOperationsProps = {
   startsAt: string;
   endsAt: string;
   roster: RosterItem[];
-  candidates: Candidate[];
   available: number;
   canAttendance: boolean;
   canBook: boolean;
@@ -78,7 +70,6 @@ export function SessionOperations({
   startsAt,
   endsAt,
   roster,
-  candidates,
   available,
   canAttendance,
   canBook,
@@ -272,8 +263,6 @@ export function SessionOperations({
                     sessionId={sessionId}
                     returnDate={returnDate}
                     returnTo={returnTo}
-                    candidates={candidates}
-                    canPostCloseAdd={canPostCloseAdd}
                   />
                 ) : null}
               </div>
