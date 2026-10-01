@@ -17,9 +17,11 @@ export default async function StudentCancelReservationPage({
   params: Promise<{ reservationId: string }>;
   searchParams: Promise<{ error?: string }>;
 }) {
-  const { reservationId } = await params;
-  const query = await searchParams;
-  const { supabase, studio } = await getStudentPortalContext();
+  const [{ reservationId }, query, { supabase, studio }] = await Promise.all([
+    params,
+    searchParams,
+    getStudentPortalContext(),
+  ]);
   const [{ data, error }, { data: previewData }, { data: invitationContextData }] =
     await Promise.all([
       supabase.rpc("student_classes_feed"),
