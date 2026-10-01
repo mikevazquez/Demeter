@@ -157,6 +157,10 @@ export type PrepareWaitlistJoinArgs = {
 
 export type ExecuteWaitlistJoinArgs = EmptyArgs;
 
+export type RecordTrialPaymentPreferenceArgs = {
+  payment_method: "cash" | "bank_transfer";
+};
+
 export const assistantActionToolDefinitions: AssistantToolDefinition[] = [
   {
     type: "function",
@@ -285,6 +289,26 @@ export const assistantActionToolDefinitions: AssistantToolDefinition[] = [
       type: "object",
       properties: {},
       required: [],
+      additionalProperties: false,
+    },
+  },
+  {
+    type: "function",
+    name: "record_trial_payment_preference",
+    description:
+      "Registra cómo piensa pagar una persona su clase de prueba ya reservada: efectivo en el estudio o transferencia. Esto NO registra un pago recibido y no debe marcar la reserva como pagada.",
+    strict: true,
+    parameters: {
+      type: "object",
+      properties: {
+        payment_method: {
+          type: "string",
+          enum: ["cash", "bank_transfer"],
+          description:
+            "cash para efectivo en el estudio; bank_transfer para transferencia.",
+        },
+      },
+      required: ["payment_method"],
       additionalProperties: false,
     },
   },
