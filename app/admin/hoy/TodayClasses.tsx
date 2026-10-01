@@ -23,6 +23,13 @@ export type TodayRosterItem = {
   currency?: string;
 };
 
+export type TodayCandidate = {
+  id: string;
+  fullName: string;
+  eligible: boolean;
+  detail: string;
+};
+
 export type TodayClassItem = {
   id: string;
   time: string;
@@ -36,6 +43,7 @@ export type TodayClassItem = {
   color: string;
   sessionStatus: string;
   roster: TodayRosterItem[];
+  candidates: TodayCandidate[];
   available: number;
   evaluationCount: number;
   returnTo: string;
@@ -206,6 +214,7 @@ export function TodayClasses({
                 startsAt={item.startsAt}
                 endsAt={item.endsAt}
                 roster={item.roster}
+                candidates={item.candidates}
                 available={item.available}
                 canAttendance={canAttendance}
                 canBook={canBook}
