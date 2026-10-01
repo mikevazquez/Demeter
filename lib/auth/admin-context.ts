@@ -1,10 +1,11 @@
+import { cache } from "react";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { CAPABILITIES, type Capability } from "@/lib/auth/capabilities";
 import { STUDIO_CONTEXT_COOKIE } from "@/lib/auth/studio-context-cookie";
 import { createClient } from "@/lib/supabase/server";
 
-export async function getAdminContext(requiredCapability?: Capability) {
+async function getAdminContextImpl(requiredCapability?: Capability) {
   const supabase = await createClient("admin");
   const {
     data: { user },
@@ -100,3 +101,5 @@ export async function getAdminContext(requiredCapability?: Capability) {
     },
   };
 }
+
+export const getAdminContext = cache(getAdminContextImpl);
