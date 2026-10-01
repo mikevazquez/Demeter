@@ -6,25 +6,6 @@ import { getAdminContext } from "@/lib/auth/admin-context";
 import { SessionOperations } from "../../hoy/SessionOperations";
 import { cancelSession, setMinimumOverride, updateSession } from "./actions";
 
-type EligibilityResult = {
-  eligible?: boolean;
-  reason_code?: string | null;
-  available_credits?: number | null;
-  unlimited?: boolean;
-};
-
-const eligibilityCopy: Record<string, string> = {
-  student_not_operable: "perfil no habilitado",
-  session_not_bookable: "clase no disponible",
-  already_reserved: "ya reservada",
-  session_full: "clase llena",
-  no_active_product: "sin paquete activo",
-  enrollment_required: "inscripción no vigente",
-  payment_pending: "pago pendiente",
-  outside_product: "fuera de paquete",
-  no_credits: "sin créditos",
-};
-
 function formatExpiry(value: string | null) {
   if (!value) return "Sin vencimiento";
   return `Vence ${new Intl.DateTimeFormat("es-MX", {
@@ -64,9 +45,11 @@ export default async function SessionDetailPage({
   params: Promise<{ sessionId: string }>;
   searchParams: Promise<{ error?: string; created?: string; from?: string }>;
 }) {
-  const { sessionId } = await params;
-  const query = await searchParams;
-  const { supabase, studio, can } = await getAdminContext(CAPABILITIES.SCHEDULE_READ);
+  const [{ sessionId }, query, { supabase, studio, can }] = await Promise.all([
+    params,
+    searchParams,
+    getAdminContext(CAPABILITIES.SCHEDULE_READ),
+  ]);
 
   const { data: session } = await supabase
     .from("class_sessions")
@@ -87,8 +70,6 @@ export default async function SessionDetailPage({
     { data: template },
     { data: spaces },
     { data: instructors },
-    { data: persons },
-    { data: students },
     { data: reservations },
   ] = await Promise.all([
     supabase
@@ -107,14 +88,6 @@ export default async function SessionDetailPage({
       .select("id,person_id")
       .eq("studio_id", studio.id)
       .eq("status", "active"),
-    supabase.from("persons").select("id,first_name,last_name").eq("studio_id", studio.id),
-    supabase
-      .from("students")
-      .select("id,full_name,active,lifecycle_status")
-      .eq("studio_id", studio.id)
-      .eq("active", true)
-      .eq("lifecycle_status", "active")
-      .order("full_name"),
     supabase
       .from("reservations")
       .select("id,student_id,guest_person_id,status,acquisition_id,commercial_status")
@@ -128,13 +101,69 @@ export default async function SessionDetailPage({
       (reservations ?? []).map((reservation) => reservation.student_id).filter(Boolean),
     ),
   ] as string[];
-  const { data: reservationStudents } = reservationStudentIds.length
-    ? await supabase
-        .from("students")
-        .select("id,full_name")
-        .eq("studio_id", studio.id)
-        .in("id", reservationStudentIds)
-    : { data: [] as { id: string; full_name: string }[] };
+  const guestPersonIds = [
+    ...new Set(
+      (reservations ?? []).map((reservation) => reservation.guest_person_id).filter(Boolean),
+    ),
+  ] as string[];
+  const personIds = [
+    ...new Set([
+      ...(instructors ?? []).map((instructor) => instructor.person_id),
+      ...guestPersonIds,
+    ]),
+  ];
+  const reservationIds = (reservations ?? []).map((reservation) => reservation.id);
+  const acquisitionIds = [
+    ...new Set(
+      (reservations ?? []).map((reservation) => reservation.acquisition_id).filter(Boolean),
+    ),
+  ] as string[];
+
+  const [
+    { data: persons },
+    { data: reservationStudents },
+    { data: evaluationInvitations },
+    { data: acquisitions },
+  ] = await Promise.all([
+    personIds.length
+      ? supabase
+          .from("persons")
+          .select("id,first_name,last_name")
+          .eq("studio_id", studio.id)
+          .in("id", personIds)
+      : Promise.resolve({
+          data: [] as { id: string; first_name: string | null; last_name: string | null }[],
+        }),
+    reservationStudentIds.length
+      ? supabase
+          .from("students")
+          .select("id,full_name")
+          .eq("studio_id", studio.id)
+          .in("id", reservationStudentIds)
+      : Promise.resolve({ data: [] as { id: string; full_name: string }[] }),
+    reservationIds.length
+      ? supabase
+          .from("evaluation_invitations")
+          .select("id,reservation_id,status")
+          .in("reservation_id", reservationIds)
+          .in("status", ["scheduled", "in_progress"])
+      : Promise.resolve({
+          data: [] as { id: string; reservation_id: string | null; status: string }[],
+        }),
+    acquisitionIds.length
+      ? supabase
+          .from("product_acquisitions")
+          .select("id,product_template_id,expires_on,unlimited")
+          .in("id", acquisitionIds)
+      : Promise.resolve({
+          data: [] as {
+            id: string;
+            product_template_id: string;
+            expires_on: string | null;
+            unlimited: boolean;
+          }[],
+        }),
+  ]);
 
   const timeZone = studio.timezone ?? "America/Mexico_City";
   const personMap = new Map(
@@ -150,10 +179,9 @@ export default async function SessionDetailPage({
     ]),
   );
   const spaceMap = new Map((spaces ?? []).map((space) => [space.id, space.name]));
-  const studentMap = new Map([
-    ...(students ?? []).map((student) => [student.id, student.full_name] as const),
-    ...(reservationStudents ?? []).map((student) => [student.id, student.full_name] as const),
-  ]);
+  const studentMap = new Map(
+    (reservationStudents ?? []).map((student) => [student.id, student.full_name] as const),
+  );
 
   const dateLabel = new Intl.DateTimeFormat("es-MX", {
     timeZone,
@@ -175,77 +203,41 @@ export default async function SessionDetailPage({
     .format(new Date(session.starts_at))
     .replace(" ", "T");
 
-  const reservationIds = (reservations ?? []).map((reservation) => reservation.id);
-  const { data: evaluationInvitations } = reservationIds.length
-    ? await supabase
-        .from("evaluation_invitations")
-        .select("id,reservation_id,status")
-        .in("reservation_id", reservationIds)
-        .in("status", ["scheduled", "in_progress"])
-    : {
-        data: [] as { id: string; reservation_id: string | null; status: string }[],
-      };
   const evaluationByReservation = new Map(
     (evaluationInvitations ?? [])
       .filter((item) => item.reservation_id)
       .map((item) => [item.reservation_id!, item]),
   );
 
-  const acquisitionIds = [
-    ...new Set(
-      (reservations ?? []).map((reservation) => reservation.acquisition_id).filter(Boolean),
-    ),
-  ] as string[];
-
-  const { data: acquisitions } = acquisitionIds.length
-    ? await supabase
-        .from("product_acquisitions")
-        .select("id,product_template_id,expires_on,unlimited")
-        .in("id", acquisitionIds)
-    : {
-        data: [] as {
-          id: string;
-          product_template_id: string;
-          expires_on: string | null;
-          unlimited: boolean;
-        }[],
-      };
-
   const productIds = [...new Set((acquisitions ?? []).map((item) => item.product_template_id))];
-  const { data: products } = productIds.length
-    ? await supabase.from("product_templates").select("id,name").in("id", productIds)
-    : { data: [] as { id: string; name: string }[] };
+  const meteredAcquisitionIds = (acquisitions ?? [])
+    .filter((item) => !item.unlimited)
+    .map((item) => item.id);
+  const [{ data: products }, { data: balanceRows }] = await Promise.all([
+    productIds.length
+      ? supabase.from("product_templates").select("id,name").in("id", productIds)
+      : Promise.resolve({ data: [] as { id: string; name: string }[] }),
+    meteredAcquisitionIds.length
+      ? supabase.rpc("acquisition_credit_balances", {
+          target_acquisition_ids: meteredAcquisitionIds,
+        })
+      : Promise.resolve({
+          data: [] as { acquisition_id: string; balance: number }[],
+        }),
+  ]);
 
-  const balances = await Promise.all(
-    (acquisitions ?? []).map(async (acquisition) => {
-      if (acquisition.unlimited) return [acquisition.id, null] as const;
-      const { data } = await supabase.rpc("acquisition_credit_balance", {
-        target_acquisition_id: acquisition.id,
-      });
-      return [acquisition.id, typeof data === "number" ? data : 0] as const;
-    }),
-  );
+  const balances = [
+    ...(acquisitions ?? [])
+      .filter((item) => item.unlimited)
+      .map((item) => [item.id, null] as const),
+    ...((balanceRows ?? []) as { acquisition_id: string; balance: number }[]).map(
+      (item) => [item.acquisition_id, item.balance] as const,
+    ),
+  ];
 
   const acquisitionMap = new Map((acquisitions ?? []).map((item) => [item.id, item]));
   const productMap = new Map((products ?? []).map((item) => [item.id, item.name]));
   const balanceMap = new Map(balances);
-
-  const bookedStudentIds = new Set(
-    (reservations ?? []).map((reservation) => reservation.student_id).filter(Boolean),
-  );
-  const candidates = (students ?? []).filter((student) => !bookedStudentIds.has(student.id));
-  const eligibilityEntries = canEdit
-    ? await Promise.all(
-        candidates.map(async (student) => {
-          const { data } = await supabase.rpc("booking_eligibility", {
-            target_session_id: sessionId,
-            target_student_id: student.id,
-          });
-          return [student.id, (data ?? {}) as EligibilityResult] as const;
-        }),
-      )
-    : [];
-  const eligibilityMap = new Map(eligibilityEntries);
 
   const roster = (reservations ?? []).map((reservation) => {
     const isGuest = Boolean(reservation.guest_person_id);
@@ -282,24 +274,6 @@ export default async function SessionDetailPage({
       paymentDueOnAttendance: reservation.commercial_status === "payment_pending",
       individualPriceMinor: template?.drop_in_price_minor ?? null,
       currency: studio.currency ?? "MXN",
-    };
-  });
-
-  const operationCandidates = candidates.map((student) => {
-    const eligibility = eligibilityMap.get(student.id);
-    const reason = eligibility?.reason_code
-      ? (eligibilityCopy[eligibility.reason_code] ?? "no elegible")
-      : "no elegible";
-
-    return {
-      id: student.id,
-      fullName: student.full_name,
-      eligible: eligibility?.eligible === true,
-      detail: eligibility?.eligible
-        ? eligibility.unlimited
-          ? "membresía ilimitada"
-          : `${eligibility.available_credits ?? 0} créditos`
-        : reason,
     };
   });
 
@@ -549,7 +523,6 @@ export default async function SessionDetailPage({
           startsAt={session.starts_at}
           endsAt={session.ends_at}
           roster={roster}
-          candidates={operationCandidates}
           available={available}
           canAttendance={canAttendance && session.status !== "cancelled"}
           canBook={canEdit && session.status === "scheduled"}
