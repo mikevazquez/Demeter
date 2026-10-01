@@ -14,6 +14,7 @@ import type {
   PrepareRescheduleArgs,
   PrepareWaitlistJoinArgs,
   RecordTrialPaymentPreferenceArgs,
+  PrepareStudentAccessActivationArgs,
 } from "./tool-contracts";
 
 type AssistantActionToolContext = {
@@ -23,6 +24,7 @@ type AssistantActionToolContext = {
   turnId: string;
   studentId: string | null;
   crmContactId: string | null;
+  activationUrl: string | null;
   currentUserMessage: string;
 };
 
@@ -1626,6 +1628,224 @@ async function executeWaitlistJoin(
 }
 
 
+
+async function prepareStudentAccessActivation(
+  ctx: AssistantActionToolContext,
+  args: PrepareStudentAccessActivationArgs,
+) {
+  void args;
+  if (!ctx.studentId) return { ok: false, error: "identity_required" };
+
+  const { data, error } = await ctx.supabase.rpc(
+    "assistant_post_trial_requirement",
+    {
+      target_studio_id: ctx.studio.id,
+      target_student_id: ctx.studentId,
+    },
+  );
+
+  const requirement = asObject(data);
+  if (error || !requirement || requirement.ok !== true) {
+    return { ok: false, error: "post_trial_requirement_unavailable" };
+  }
+
+  if (requirement.post_trial !== true) {
+    return { ok: false, error: "post_trial_not_reached" };
+  }
+
+  const accessState = String(requirement.access_state ?? "");
+  if (accessState === "active") {
+    return {
+      ok: true,
+      status: "already_active",
+      summary: requirement,
+    };
+  }
+
+  if (!["not_provisioned", "activation_pending"].includes(accessState)) {
+    return {
+      ok: false,
+      error: "student_access_inconsistent",
+      summary: requirement,
+    };
+  }
+
+  const now = new Date().toISOString();
+  await ctx.supabase
+    .from("assistant_pending_actions")
+    .update({ status: "cancelled", updated_at: now })
+    .eq("studio_id", ctx.studio.id)
+    .eq("conversation_id", ctx.conversationId)
+    .eq("action_type", "account.activate")
+    .eq("status", "pending");
+
+  const secretToken = randomUUID();
+  const tokenHash = createHash("sha256").update(secretToken).digest("hex");
+  const expiresAt = new Date(Date.now() + 10 * 60_000).toISOString();
+
+  const { data: pending, error: pendingError } = await ctx.supabase
+    .from("assistant_pending_actions")
+    .insert({
+      studio_id: ctx.studio.id,
+      conversation_id: ctx.conversationId,
+      action_type: "account.activate",
+      action_token_hash: tokenHash,
+      action_payload: {
+        student_id: ctx.studentId,
+        mode: accessState === "activation_pending" ? "resend" : "provision",
+        prepared_turn_id: ctx.turnId,
+      },
+      confirmation_summary: requirement,
+      status: "pending",
+      expires_at: expiresAt,
+    })
+    .select("id")
+    .single();
+
+  if (pendingError || !pending) {
+    return { ok: false, error: "pending_action_create_failed" };
+  }
+
+  return {
+    ok: true,
+    status: "confirmation_required",
+    expires_at: expiresAt,
+    summary: requirement,
+  };
+}
+
+async function executeStudentAccessActivation(
+  ctx: AssistantActionToolContext,
+) {
+  const { data: pending, error: pendingError } = await ctx.supabase
+    .from("assistant_pending_actions")
+    .select(
+      "id,action_type,action_payload,confirmation_summary,status,expires_at,execution_ref",
+    )
+    .eq("studio_id", ctx.studio.id)
+    .eq("conversation_id", ctx.conversationId)
+    .eq("action_type", "account.activate")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (pendingError || !pending) {
+    return { ok: false, error: "pending_action_not_found" };
+  }
+
+  if (pending.status === "executed") {
+    return {
+      ok: true,
+      status: "executed",
+      already_executed: true,
+      summary: pending.confirmation_summary,
+      execution_ref: pending.execution_ref ?? null,
+    };
+  }
+
+  if (pending.status !== "pending") {
+    return { ok: false, error: "pending_action_not_available" };
+  }
+
+  if (new Date(pending.expires_at).getTime() <= Date.now()) {
+    await ctx.supabase
+      .from("assistant_pending_actions")
+      .update({ status: "expired", updated_at: new Date().toISOString() })
+      .eq("id", pending.id)
+      .eq("studio_id", ctx.studio.id)
+      .eq("status", "pending");
+    return { ok: false, error: "confirmation_expired" };
+  }
+
+  const payload = asObject(pending.action_payload);
+  if (!payload) return { ok: false, error: "pending_action_invalid" };
+
+  if (String(payload.prepared_turn_id ?? "") === ctx.turnId) {
+    return { ok: false, error: "confirmation_requires_new_turn" };
+  }
+
+  if (!isExplicitAssistantConfirmation(ctx.currentUserMessage)) {
+    return { ok: false, error: "explicit_confirmation_required" };
+  }
+
+  const studentId = String(payload.student_id ?? "");
+  const mode = String(payload.mode ?? "");
+  if (!ctx.studentId || studentId !== ctx.studentId) {
+    return { ok: false, error: "conversation_identity_changed" };
+  }
+
+  if (!ctx.activationUrl) {
+    return { ok: false, error: "activation_url_unavailable" };
+  }
+
+  const {
+    data: { session },
+  } = await ctx.supabase.auth.getSession();
+
+  if (!session?.access_token) {
+    return { ok: false, error: "activation_authorization_unavailable" };
+  }
+
+  const body =
+    mode === "resend"
+      ? {
+          studentId,
+          mode: "resend",
+          activationUrl: ctx.activationUrl,
+          delivery: "return_link",
+        }
+      : {
+          studentId,
+          activationUrl: ctx.activationUrl,
+          delivery: "return_link",
+        };
+
+  const { data, error } = await ctx.supabase.functions.invoke(
+    "provision-student-access",
+    {
+      body,
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+      },
+    },
+  );
+
+  const response = asObject(data);
+  if (
+    error ||
+    !response ||
+    response.ok !== true ||
+    typeof response.activationLink !== "string"
+  ) {
+    return {
+      ok: false,
+      error: "student_access_provision_failed",
+      reason_code: String(response?.error ?? "student_access_provision_failed"),
+    };
+  }
+
+  const executedAt = new Date().toISOString();
+  await ctx.supabase
+    .from("assistant_pending_actions")
+    .update({
+      status: "executed",
+      confirmed_at: executedAt,
+      executed_at: executedAt,
+      execution_ref: `student-access:${studentId}`,
+      updated_at: executedAt,
+    })
+    .eq("id", pending.id)
+    .eq("studio_id", ctx.studio.id)
+    .eq("status", "pending");
+
+  return {
+    ok: true,
+    status: "executed",
+    activation_url: response.activationLink,
+    summary: pending.confirmation_summary,
+  };
+}
+
 async function recordTrialPaymentPreference(
   ctx: AssistantActionToolContext,
   args: RecordTrialPaymentPreferenceArgs,
@@ -1696,6 +1916,13 @@ export async function executeAssistantActionTool(
         ctx,
         args as RecordTrialPaymentPreferenceArgs,
       );
+    case "prepare_student_access_activation":
+      return prepareStudentAccessActivation(
+        ctx,
+        args as PrepareStudentAccessActivationArgs,
+      );
+    case "execute_student_access_activation":
+      return executeStudentAccessActivation(ctx);
     default:
       return { ok: false, error: "tool_not_allowed" };
   }
