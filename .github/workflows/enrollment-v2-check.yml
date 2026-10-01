@@ -1,0 +1,25 @@
+name: Enrollment V2 Check
+on:
+  push:
+    branches:
+      - fix/enrollment-v2
+  workflow_dispatch:
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: test-publishable-key
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npx vitest run tests/enrollment-v2-contract.test.ts tests/f9-enrollment-validity-contract.test.ts tests/student-catalog-checkout-prod-fix.test.ts
+      - run: npm run build
