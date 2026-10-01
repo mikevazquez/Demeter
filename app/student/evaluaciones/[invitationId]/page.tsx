@@ -40,9 +40,11 @@ export default async function EvaluationInvitationPage({
   params: Promise<{ invitationId: string }>;
   searchParams: Promise<{ error?: string }>;
 }) {
-  const { invitationId } = await params;
-  const qs = await searchParams;
-  const { supabase, studio } = await getStudentPortalContext();
+  const [{ invitationId }, qs, { supabase, studio }] = await Promise.all([
+    params,
+    searchParams,
+    getStudentPortalContext(),
+  ]);
 
   const { data, error } = await supabase.rpc("student_evaluation_invitation_detail", {
     p_invitation_id: invitationId,
