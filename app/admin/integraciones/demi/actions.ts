@@ -1,5 +1,6 @@
 "use server";
 
+import { headers } from "next/headers";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { runAssistantTurn } from "@/lib/assistant/orchestrator";
@@ -174,6 +175,13 @@ export async function sendDemiMessage(input: SendDemiInput) {
     }));
 
   try {
+    const requestHeaders = await headers();
+    const forwardedHost = requestHeaders.get("x-forwarded-host")?.split(",")[0]?.trim();
+    const host = forwardedHost || requestHeaders.get("host")?.trim();
+    const activationUrl = host
+      ? new URL("/login/student/activar", `https://${host}`).toString()
+      : null;
+
     const result = await runAssistantTurn({
       supabase,
       studio: {
@@ -196,6 +204,7 @@ export async function sendDemiMessage(input: SendDemiInput) {
       turnId: inboundTurn.id,
       studentId: conversationStudentId,
       crmContactId: conversationCrmContactId,
+      activationUrl,
       history,
     });
 
