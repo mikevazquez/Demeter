@@ -12,23 +12,23 @@ describe("ADMIN-UX-04 Alumnas visual homologation", () => {
   const styles = source("app/admin/alumnas/admin-ux-04.css");
   const layout = source("app/admin/layout.tsx");
 
-  it("uses the approved Alumnas visual hierarchy", () => {
-    expect(page).toContain("student-directory-kpis");
-    expect(page).toContain("Alumnas activas");
-    expect(page).toContain("Por vencer · 7 días");
-    expect(page).toContain("Vencidas");
-    expect(page).toContain("Total");
-    expect(styles).toContain(".student-directory-kpis");
-    expect(styles).toContain("grid-template-columns: repeat(4, minmax(0, 1fr))");
+  it("uses the approved compact Alumnas V2 hierarchy", () => {
+    expect(page).toContain("student-directory-filters");
+    expect(page).toContain("student-filter-chip");
+    expect(page).toContain('{ key: "active", label: "Activas", enabled: true }');
+    expect(page).toContain('{ key: "expiring", label: "Por vencer", enabled: canReadProducts }');
+    expect(page).toContain('{ key: "expired", label: "Vencidas", enabled: canReadProducts }');
+    expect(page).not.toContain("student-directory-kpis");
+    expect(styles).toContain(".student-directory-filters");
+    expect(styles).toContain(".student-filter-chip");
     expect(styles).toContain("@media (max-width: 760px)");
-    expect(styles).toContain("grid-template-columns: repeat(2, minmax(0, 1fr))");
   });
 
   it("surfaces real package context without changing business rules", () => {
     expect(page).toContain('from("product_acquisitions")');
     expect(page).toContain("currentAcquisitionFor");
     expect(page).toContain("productNameMap");
-    expect(page).toContain("shortDate(acquisition.expires_on)");
+    expect(page).toContain("shortDate(acquisition.expires_on, studio.locale)");
     expect(page).toContain("canReadProducts");
   });
 
@@ -52,11 +52,11 @@ describe("ADMIN-UX-04 Alumnas visual homologation", () => {
 
   it("keeps new-student creation at the top behind a compact plus action", () => {
     const quickCreateIndex = page.indexOf('id="alta-rapida"');
-    const kpiIndex = page.indexOf('className="student-directory-kpis"');
+    const filtersIndex = page.indexOf('className="student-directory-filters student-directory-crm-toolbar"');
     const directoryIndex = page.indexOf('<section className="panel">');
 
     expect(quickCreateIndex).toBeGreaterThan(0);
-    expect(quickCreateIndex).toBeLessThan(kpiIndex);
+    expect(quickCreateIndex).toBeLessThan(filtersIndex);
     expect(quickCreateIndex).toBeLessThan(directoryIndex);
     expect(page).toContain('className="student-quick-create"');
     expect(page).toContain('aria-label="Nueva alumna"');
