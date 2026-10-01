@@ -11,7 +11,6 @@ import "./roster-uat.css";
 import "./mobile-nav-overrides.css";
 import "./admin-ux-04-secondary.css";
 import "./admin-ux-04-secondary-detail.css";
-import "./admin-v2-system.css";
 
 type PwaBrand = {
   name: string;
