@@ -15,9 +15,11 @@ export default async function ChallengeDetailPage({
   params: Promise<{ ruleId: string }>;
   searchParams: Promise<{ saved?: string; error?: string }>;
 }) {
-  const { ruleId } = await params;
-  const query = await searchParams;
-  const ctx = await getAdminContext(CAPABILITIES.REWARDS_READ);
+  const [{ ruleId }, query, ctx] = await Promise.all([
+    params,
+    searchParams,
+    getAdminContext(CAPABILITIES.REWARDS_READ),
+  ]);
 
   const [{ data: rule }, { data: copyOverride }] = await Promise.all([
     ctx.supabase
