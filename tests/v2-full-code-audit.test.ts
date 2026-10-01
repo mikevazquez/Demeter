@@ -53,7 +53,7 @@ describe("V2 codebase audit inventory", () => {
       .filter((item) => item.count > 0)
       .sort((a, b) => b.count - a.count);
 
-    const customDialogs = adminFiles
+    const customDialogs = allPortalFiles
       .filter((path) => /role=["']dialog["']|aria-modal|fixed\s+inset-0/.test(readFileSync(path, "utf8")))
       .map(rel);
 
