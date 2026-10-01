@@ -302,12 +302,10 @@ export default async function IntelligencePage({
 }: {
   searchParams: Promise<{ view?: string; days?: string }>;
 }) {
-  const [params, { supabase, studio }] = await Promise.all([
-    searchParams,
-    getAdminContext(CAPABILITIES.REPORTS_READ),
-  ]);
+  const params = await searchParams;
   const view = validView(params.view);
   const days = clampDays(params.days);
+  const { supabase, studio } = await getAdminContext(CAPABILITIES.REPORTS_READ);
   const locale = studio.locale;
   const timeZone = studio.timezone;
   const now = new Date();
@@ -320,6 +318,16 @@ export default async function IntelligencePage({
   const previousStartDate = isoDateKey(previousStart);
   const todayDate = isoDateKey(now);
 
+  const needsStudents = view !== "clases";
+  const needsAcquisitions = view === "resumen" || view === "alumnas";
+  const needsSales = view === "resumen" || view === "dinero";
+  const needsPayments = view === "resumen" || view === "dinero";
+  const needsSaleLines = view === "resumen" || view === "dinero";
+  const needsSessions = view === "resumen" || view === "alumnas" || view === "clases";
+  const needsTemplates = view === "resumen" || view === "clases";
+  const needsProductTemplates = view === "resumen" || view === "alumnas";
+  const needsOnboarding = view === "alumnas";
+
   const [
     studentsResult,
     acquisitionsResult,
@@ -331,48 +339,76 @@ export default async function IntelligencePage({
     productTemplatesResult,
     onboardingResult,
   ] = await Promise.all([
-    supabase
-      .from("students")
-      .select("id,full_name,active,lifecycle_status,student_type,trial_status,created_at")
-      .eq("studio_id", studio.id),
-    supabase
-      .from("product_acquisitions")
-      .select(
-        "id,student_id,product_template_id,status,starts_on,expires_on,created_at,refunded_at",
-      )
-      .eq("studio_id", studio.id)
-      .order("created_at", { ascending: true }),
-    supabase
-      .from("sales")
-      .select("id,student_id,folio,status,total_minor,currency,created_at")
-      .eq("studio_id", studio.id)
-      .gte("created_at", rangeStartIso)
-      .order("created_at", { ascending: false }),
-    supabase
-      .from("payments")
-      .select("sale_id,kind,amount_minor,created_at")
-      .eq("studio_id", studio.id)
-      .gte("created_at", rangeStartIso),
-    supabase
-      .from("sale_lines")
-      .select("sale_id,product_template_id,product_name,line_total_minor,refunded_at,created_at")
-      .eq("studio_id", studio.id)
-      .gte("created_at", rangeStartIso),
-    supabase
-      .from("class_sessions")
-      .select("id,template_id,starts_at,capacity,status")
-      .eq("studio_id", studio.id)
-      .gte("starts_at", rangeStartIso)
-      .lt("starts_at", currentEnd.toISOString())
-      .order("starts_at"),
-    supabase.from("class_templates").select("id,name,color_hex").eq("studio_id", studio.id),
-    supabase.from("product_templates").select("id,product_type,name").eq("studio_id", studio.id),
-    supabase
-      .from("reward_onboarding")
-      .select(
-        "student_id,documents_completed_at,profile_completed_at,first_reservation_at,first_attendance_at,app_installed_at,notifications_enabled_at,completed_at",
-      )
-      .eq("studio_id", studio.id),
+    needsStudents
+      ? supabase
+          .from("students")
+          .select("id,full_name,active,lifecycle_status,student_type,trial_status,created_at")
+          .eq("studio_id", studio.id)
+      : Promise.resolve({ data: [] as StudentRow[] }),
+    needsAcquisitions
+      ? supabase
+          .from("product_acquisitions")
+          .select(
+            "id,student_id,product_template_id,status,starts_on,expires_on,created_at,refunded_at",
+          )
+          .eq("studio_id", studio.id)
+          .is("refunded_at", null)
+          .neq("status", "cancelled")
+          .order("created_at", { ascending: true })
+      : Promise.resolve({ data: [] as AcquisitionRow[] }),
+    needsSales
+      ? supabase
+          .from("sales")
+          .select("id,student_id,folio,status,total_minor,currency,created_at")
+          .eq("studio_id", studio.id)
+          .gte("created_at", rangeStartIso)
+          .order("created_at", { ascending: false })
+      : Promise.resolve({ data: [] as SaleRow[] }),
+    needsPayments
+      ? supabase
+          .from("payments")
+          .select("sale_id,kind,amount_minor,created_at")
+          .eq("studio_id", studio.id)
+          .gte("created_at", rangeStartIso)
+      : Promise.resolve({ data: [] as PaymentRow[] }),
+    needsSaleLines
+      ? supabase
+          .from("sale_lines")
+          .select(
+            "sale_id,product_template_id,product_name,line_total_minor,refunded_at,created_at",
+          )
+          .eq("studio_id", studio.id)
+          .is("refunded_at", null)
+          .gte("created_at", rangeStartIso)
+      : Promise.resolve({ data: [] as SaleLineRow[] }),
+    needsSessions
+      ? supabase
+          .from("class_sessions")
+          .select("id,template_id,starts_at,capacity,status")
+          .eq("studio_id", studio.id)
+          .neq("status", "cancelled")
+          .gte("starts_at", rangeStartIso)
+          .lt("starts_at", currentEnd.toISOString())
+          .order("starts_at")
+      : Promise.resolve({ data: [] as SessionRow[] }),
+    needsTemplates
+      ? supabase.from("class_templates").select("id,name,color_hex").eq("studio_id", studio.id)
+      : Promise.resolve({ data: [] as ClassTemplateRow[] }),
+    needsProductTemplates
+      ? supabase
+          .from("product_templates")
+          .select("id,product_type,name")
+          .eq("studio_id", studio.id)
+          .in("product_type", [...commercialProductTypes])
+      : Promise.resolve({ data: [] as ProductTemplateRow[] }),
+    needsOnboarding
+      ? supabase
+          .from("reward_onboarding")
+          .select(
+            "student_id,documents_completed_at,profile_completed_at,first_reservation_at,first_attendance_at,app_installed_at,notifications_enabled_at,completed_at",
+          )
+          .eq("studio_id", studio.id)
+      : Promise.resolve({ data: [] as OnboardingRow[] }),
   ]);
 
   const students = (studentsResult.data ?? []) as StudentRow[];
