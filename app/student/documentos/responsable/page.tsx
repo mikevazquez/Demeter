@@ -3,7 +3,7 @@ import Link from "next/link";
 
 import QueryNotice from "@/app/components/QueryNotice";
 import { safeReservationReturnTo } from "@/lib/documents";
-import { getStudentPortalContext } from "@/lib/student/portal";
+import { getStudentShellContext } from "@/lib/student/portal";
 
 import { registerGuardianAction } from "../actions";
 
@@ -12,13 +12,10 @@ export default async function StudentGuardianPage({
 }: {
   searchParams: Promise<{ created?: string; token?: string; error?: string; returnTo?: string }>;
 }) {
-  const [query, { supabase, snapshot, membership }, requestHeaders] = await Promise.all([
-    searchParams,
-    getStudentPortalContext(),
-    headers(),
-  ]);
+  const query = await searchParams;
   const returnTo = safeReservationReturnTo(query.returnTo);
-  const studentId = snapshot.profile.student_id;
+  const { supabase, student, membership } = await getStudentShellContext();
+  const studentId = student.id;
 
   const [{ data: guardians }, { data: invitations }] = await Promise.all([
     supabase
@@ -39,6 +36,7 @@ export default async function StudentGuardianPage({
       .limit(5),
   ]);
 
+  const requestHeaders = await headers();
   const host = requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host") ?? "";
   const proto = requestHeaders.get("x-forwarded-proto") ?? "https";
   const invitationUrl =
