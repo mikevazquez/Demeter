@@ -11,8 +11,10 @@ export default async function GeneratedRewardsPage({
 }: {
   searchParams: Promise<{ status?: string; origin?: string }>;
 }) {
-  const query = await searchParams;
-  const ctx = await getAdminContext(CAPABILITIES.REWARDS_READ);
+  const [query, ctx] = await Promise.all([
+    searchParams,
+    getAdminContext(CAPABILITIES.REWARDS_READ),
+  ]);
   const status = ["available", "reserved", "redeemed", "expired", "revoked"].includes(
     String(query.status),
   )
