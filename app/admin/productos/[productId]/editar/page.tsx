@@ -96,6 +96,7 @@ export default async function EditProductPage({
               disciplineNames.get(templateById.get(item.template_id)?.discipline_id ?? "") ??
               "Sin disciplina",
           }))}
+          currency={ctx.studio.currency}
         />
 
         <label className="block text-sm text-zinc-300">

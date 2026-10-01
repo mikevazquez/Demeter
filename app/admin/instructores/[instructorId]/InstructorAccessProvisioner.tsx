@@ -87,19 +87,19 @@ export function InstructorAccessProvisioner({
 
   if (credentials) {
     return (
-      <div className="student-list">
-        <div className="notice success">
+      <div className="team-v2-detail-list">
+        <div className="team-v2-notice is-success">
           {mode === "provision"
             ? "Cuenta Coach creada y vinculada. Guarda la contraseña temporal antes de cerrar este panel."
             : "Nueva contraseña temporal generada. La anterior ya no funciona."}
         </div>
-        <div className="student-row">
+        <div className="team-v2-detail-row">
           <div>
             <strong>Correo de acceso</strong>
             <span>{credentials.email}</span>
           </div>
         </div>
-        <div className="student-row">
+        <div className="team-v2-detail-row">
           <div>
             <strong>Contraseña temporal</strong>
             <span className="font-mono break-all">{credentials.temporaryPassword}</span>
@@ -113,9 +113,9 @@ export function InstructorAccessProvisioner({
             Ya la guardé
           </button>
         </div>
-        <p className="text-sm text-zinc-400">
-          Entrégala por un canal privado. El Coach deberá cambiarla en su primer acceso y Studio
-          Flow no volverá a mostrar esta misma contraseña.
+        <p className="team-v2-access-help">
+          Entrégala por un canal privado. El integrante deberá cambiarla en su primer acceso y esta
+          contraseña temporal no volverá a mostrarse.
         </p>
       </div>
     );
@@ -126,17 +126,17 @@ export function InstructorAccessProvisioner({
       <p>
         {mode === "provision" ? (
           <>
-            Se creará una cuenta Auth separada del perfil operativo, vinculada con rol Instructor.
-            El acceso usará <strong>{email || "el correo registrado"}</strong>.
+            Se creará un acceso Coach independiente para{" "}
+            <strong>{email || "el correo registrado"}</strong>.
           </>
         ) : (
           <>
-            La cuenta ya existe y sigue pendiente de activación. Puedes generar una nueva contraseña
+            El acceso ya existe y sigue pendiente de activación. Puedes generar una nueva contraseña
             temporal para <strong>{email}</strong>.
           </>
         )}
       </p>
-      {error ? <div className="notice error">{error}</div> : null}
+      {error ? <div className="team-v2-notice is-error">{error}</div> : null}
       <button className="primary-button" type="button" onClick={run} disabled={isPending}>
         {isPending
           ? mode === "provision"

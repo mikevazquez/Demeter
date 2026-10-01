@@ -98,16 +98,16 @@ export default async function ActivityDetailPage({
       (activity.minimum_review_minutes_before ?? 120) % 60 === 0
         ? (activity.minimum_review_minutes_before ?? 120) / 60
         : (activity.minimum_review_minutes_before ?? 120),
+    allowMinimumReservationOverride: activity.allow_minimum_reservation_override ?? true,
   };
 
   return (
-    <main className="dashboard-shell activities-editor-page">
-      <header className="activities-editor-header">
+    <main className="activities-v2 activities-editor-page">
+      <header className="activities-v2-editor-header">
         <div>
-          <Link className="activities-back-link" href="/admin/actividades">
+          <Link className="activities-v2-back" href="/admin/actividades">
             ← Actividades
           </Link>
-          <p className="eyebrow">EDITAR ACTIVIDAD · {studio.name}</p>
           <h1>{activity.name}</h1>
           <p>
             Puedes entrar directamente a cualquiera de las cuatro etapas sin reconstruir la
@@ -120,7 +120,10 @@ export default async function ActivityDetailPage({
       </header>
 
       <ActivityWizard
+        locale={studio.locale}
+        currency={studio.currency}
         mode="edit"
+        resourcesEnabled
         saveError={Boolean(query.error)}
         initial={initial}
         instructors={(instructors ?? []).map((item) => ({

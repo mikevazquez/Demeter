@@ -3,32 +3,9 @@ import Link from "next/link";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getAdminContext } from "@/lib/auth/admin-context";
 
-import { createStudioExpense, deleteStudioExpense } from "./actions";
-
-type ViewKey =
-  | "resumen"
-  | "dinero"
-  | "alumnas"
-  | "conversion"
-  | "marketing"
-  | "clases"
-  | "retencion"
-  | "finanzas";
+type ViewKey = "resumen" | "dinero" | "alumnas" | "conversion" | "clases";
 
 type Tone = "neutral" | "positive" | "warning" | "danger" | "info";
-
-type DecisionPriority = 1 | 2 | 3;
-
-type IntelligenceDecision = {
-  key: string;
-  priority: DecisionPriority;
-  impact?: number;
-  tone: Tone;
-  title: string;
-  evidence: string;
-  action: string;
-  href: string;
-};
 
 type StudentRow = {
   id: string;
@@ -61,15 +38,10 @@ type SaleRow = {
   created_at: string;
 };
 
-type CollectionSaleRow = SaleRow & {
-  payment_due_on: string | null;
-};
-
 type PaymentRow = {
   sale_id: string;
   kind: string;
   amount_minor: number;
-  effective_on: string | null;
   created_at: string;
 };
 
@@ -121,95 +93,12 @@ type OnboardingRow = {
   completed_at: string | null;
 };
 
-type DomainEventRow = {
-  event_id: string;
-  event_type: string;
-  occurred_at: string;
-  source_entity_id: string | null;
-  payload: Record<string, unknown> | null;
-};
-
-type ConversationRow = {
-  id: string;
-  provider: string;
-  provider_contact_id: string | null;
-  contact_phone: string | null;
-  student_id: string | null;
-  channel: string;
-  source: string | null;
-  campaign: string | null;
-  started_at: string;
-  last_activity_at: string;
-  activity_count: number;
-};
-
-type ExpenseRow = {
-  id: string;
-  category: string;
-  description: string;
-  vendor: string | null;
-  amount_minor: number;
-  currency: string;
-  effective_on: string;
-  notes: string | null;
-  marketing_source: string | null;
-  marketing_campaign: string | null;
-  created_at: string;
-};
-
-const expenseCategoryLabels: Record<string, string> = {
-  rent: "Renta",
-  payroll: "Profesores / nómina",
-  utilities: "Servicios",
-  advertising: "Publicidad",
-  maintenance: "Mantenimiento",
-  software: "Software",
-  supplies: "Insumos",
-  fees: "Comisiones",
-  taxes: "Impuestos",
-  other: "Otros",
-};
-
-const cancellationReasonLabels: Record<string, string> = {
-  schedule_conflict: "Horario / cambio de planes",
-  health: "Salud",
-  work_school: "Trabajo / escuela",
-  transport: "Transporte / distancia",
-  price: "Precio",
-  lost_interest: "Ya no le interesa",
-  booking_error: "Error de reserva",
-  other: "Otro",
-  prefer_not_say: "Prefiere no decir",
-};
-
-function eventPayloadText(event: DomainEventRow, key: string) {
-  const value = event.payload?.[key];
-  return typeof value === "string" && value.trim() ? value.trim() : null;
-}
-
-function isSyntheticDomainEvent(event: DomainEventRow) {
-  const uatCase = eventPayloadText(event, "uat_case");
-  const source = eventPayloadText(event, "source");
-  return Boolean(uatCase || source?.startsWith("uat_"));
-}
-
-function eventStudentId(event: DomainEventRow) {
-  return eventPayloadText(event, "student_id");
-}
-
-function uniqueEventStudents(rows: DomainEventRow[]) {
-  return new Set(rows.map(eventStudentId).filter((value): value is string => Boolean(value)));
-}
-
 const views: { key: ViewKey; label: string }[] = [
-  { key: "resumen", label: "Resumen" },
-  { key: "dinero", label: "Dinero" },
+  { key: "resumen", label: "Ahora" },
+  { key: "dinero", label: "Ventas" },
   { key: "alumnas", label: "Alumnas" },
   { key: "conversion", label: "Conversión" },
-  { key: "marketing", label: "Marketing" },
   { key: "clases", label: "Clases" },
-  { key: "retencion", label: "Retención" },
-  { key: "finanzas", label: "Finanzas" },
 ];
 
 const DAY = 86_400_000;
@@ -222,8 +111,7 @@ const decisionReservationStatuses = new Set([
   "cancelled_on_time",
   "cancelled_late",
 ]);
-const conversionProductTypes = new Set(["package", "membership"]);
-const CONVERSION_MATURITY_DAYS = 7;
+const commercialProductTypes = new Set(["package", "membership", "single_class"]);
 
 function clampDays(value: string | undefined) {
   const parsed = Number(value ?? "30");
@@ -235,18 +123,20 @@ function validView(value: string | undefined): ViewKey {
   return views.some((item) => item.key === value) ? (value as ViewKey) : "resumen";
 }
 
-function money(minor: number, currency = "MXN") {
-  return new Intl.NumberFormat("es-MX", {
+function money(minor: number, currency: string, locale: string) {
+  return new Intl.NumberFormat(locale, {
     style: "currency",
     currency,
     maximumFractionDigits: 0,
   }).format(minor / 100);
 }
 
-function pct(value: number) {
-  return new Intl.NumberFormat("es-MX", {
-    maximumFractionDigits: 1,
-  }).format(value) + "%";
+function pct(value: number, locale: string) {
+  return (
+    new Intl.NumberFormat(locale, {
+      maximumFractionDigits: 1,
+    }).format(value) + "%"
+  );
 }
 
 function safeRate(numerator: number, denominator: number) {
@@ -270,27 +160,6 @@ function isoDateKey(value: Date) {
   return value.toISOString().slice(0, 10);
 }
 
-function dateKeyInTimeZone(value: Date, timeZone: string) {
-  const parts = new Intl.DateTimeFormat("en-CA", {
-    timeZone,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).formatToParts(value);
-  const values = Object.fromEntries(
-    parts
-      .filter((part) => part.type !== "literal")
-      .map((part) => [part.type, part.value]),
-  );
-  return values.year + "-" + values.month + "-" + values.day;
-}
-
-function shiftDateKey(dateKey: string, days: number) {
-  const value = new Date(dateKey + "T12:00:00Z");
-  value.setUTCDate(value.getUTCDate() + days);
-  return isoDateKey(value);
-}
-
 function daysSince(dateKey: string | null, now: Date) {
   if (!dateKey) return null;
   const value = new Date(dateKey + "T12:00:00Z");
@@ -298,24 +167,9 @@ function daysSince(dateKey: string | null, now: Date) {
   return Math.floor((now.getTime() - value.getTime()) / DAY);
 }
 
-function daysUntil(dateKey: string | null, now: Date) {
-  if (!dateKey) return null;
-  const value = new Date(dateKey + "T12:00:00Z");
-  if (Number.isNaN(value.getTime())) return null;
-  return Math.ceil((value.getTime() - now.getTime()) / DAY);
-}
-
 function isBetween(value: string, start: Date, end: Date) {
   const time = new Date(value).getTime();
   return time >= start.getTime() && time < end.getTime();
-}
-
-function paymentEffectiveDateTime(payment: PaymentRow) {
-  return payment.effective_on ? payment.effective_on + "T12:00:00Z" : payment.created_at;
-}
-
-function paymentDateKey(payment: PaymentRow) {
-  return payment.effective_on ?? payment.created_at.slice(0, 10);
 }
 
 function MetricCard({
@@ -371,28 +225,6 @@ function Insight({
   return <div className={"intel-insight is-" + tone}>{content}</div>;
 }
 
-function DecisionCard({ decision }: { decision: IntelligenceDecision }) {
-  const priorityLabel =
-    decision.priority === 1 ? "Ahora" : decision.priority === 2 ? "Esta semana" : "Optimizar";
-
-  return (
-    <Link
-      href={decision.href}
-      className={"intel-decision is-" + decision.tone}
-    >
-      <div className="intel-decision-topline">
-        <span className="intel-decision-priority">{priorityLabel}</span>
-        <span className="intel-chevron" aria-hidden="true">›</span>
-      </div>
-      <strong>{decision.title}</strong>
-      <p>{decision.evidence}</p>
-      <small>
-        <b>Acción:</b> {decision.action}
-      </small>
-    </Link>
-  );
-}
-
 function Section({
   title,
   description,
@@ -442,6 +274,10 @@ function BarRow({
   );
 }
 
+function EmptyMetric({ label }: { label: string }) {
+  return <MetricCard label={label} value="—" delta="Fuente pendiente" tone="warning" />;
+}
+
 function viewHref(view: ViewKey, days: number) {
   return "/admin/inteligencia?view=" + view + "&days=" + days;
 }
@@ -452,17 +288,11 @@ function periodHref(view: ViewKey, days: number) {
 
 function titleFor(view: ViewKey) {
   const map: Record<ViewKey, [string, string]> = {
-    resumen: ["Resumen", "Qué está pasando en el negocio y qué necesita tu atención."],
-    dinero: ["Dinero", "Ingresos cobrados, ventas, productos y cobranza del periodo."],
-    alumnas: ["Alumnas", "Crecimiento, actividad y señales tempranas de abandono."],
-    conversion: ["Conversión", "Dónde se pierden prospectos, qué se recupera y qué conviene hacer."],
-    marketing: ["Marketing", "Qué origen y campaña generan contactos de calidad, alumnas e ingresos atribuibles."],
-    clases: ["Clases", "Qué disciplinas y horarios están usando bien —o mal— la capacidad."],
-    retencion: ["Retención", "Detectar señales antes del abandono y priorizar a quién intervenir."],
-    finanzas: [
-      "Finanzas",
-      "Ingresos, gastos registrados y resultado operativo. La cobertura de gastos debe validarse antes de interpretar rentabilidad.",
-    ],
+    resumen: ["Ahora", "Lo importante del estudio y lo que necesita tu atención."],
+    dinero: ["Ventas", "Cobros, ventas y saldos pendientes del periodo."],
+    alumnas: ["Alumnas", "Actividad, renovación y alumnas que requieren seguimiento."],
+    conversion: ["Conversión", "Del primer contacto y la clase de prueba hasta la compra."],
+    clases: ["Clases", "Ocupación, asistencia, cancelaciones y demanda por horario."],
   };
   return map[view];
 }
@@ -475,40 +305,18 @@ export default async function IntelligencePage({
   const params = await searchParams;
   const view = validView(params.view);
   const days = clampDays(params.days);
-  const { supabase, studio, can } = await getAdminContext(CAPABILITIES.REPORTS_READ);
-  const canWriteFinance = can(CAPABILITIES.SALES_WRITE);
+  const { supabase, studio } = await getAdminContext(CAPABILITIES.REPORTS_READ);
+  const locale = studio.locale;
+  const timeZone = studio.timezone;
   const now = new Date();
   const currentEnd = now;
   const currentStart = new Date(now.getTime() - days * DAY);
   const previousStart = new Date(currentStart.getTime() - days * DAY);
-  const cohortLag = CONVERSION_MATURITY_DAYS * DAY;
-  const currentCohortEnd = new Date(currentEnd.getTime() - cohortLag);
-  const currentCohortStart = new Date(currentStart.getTime() - cohortLag);
-  const previousCohortStart = new Date(previousStart.getTime() - cohortLag);
-  const rangeStartIso = previousCohortStart.toISOString();
-  const behaviorStart = new Date(now.getTime() - 42 * DAY);
-  const eventStart = new Date(
-    Math.min(previousCohortStart.getTime(), behaviorStart.getTime()),
-  );
-  const eventStartIso = eventStart.toISOString();
-  const timeZone = studio.timezone ?? "America/Mexico_City";
-  const todayDate = dateKeyInTimeZone(now, timeZone);
-  const currentStartDate = shiftDateKey(todayDate, -(days - 1));
-  const previousStartDate = shiftDateKey(currentStartDate, -days);
-  const currentCohortStartDate = shiftDateKey(
-    currentStartDate,
-    -CONVERSION_MATURITY_DAYS,
-  );
-  const currentCohortEndDate = shiftDateKey(
-    todayDate,
-    -CONVERSION_MATURITY_DAYS,
-  );
-  const previousCohortStartDate = shiftDateKey(
-    previousStartDate,
-    -CONVERSION_MATURITY_DAYS,
-  );
-  const previousCohortEndDate = shiftDateKey(currentCohortStartDate, -1);
-  const upcomingEnd = new Date(now.getTime() + 14 * DAY);
+  const rangeStartIso = previousStart.toISOString();
+  const currentStartIso = currentStart.toISOString();
+  const currentStartDate = isoDateKey(currentStart);
+  const previousStartDate = isoDateKey(previousStart);
+  const todayDate = isoDateKey(now);
 
   const [
     studentsResult,
@@ -517,14 +325,9 @@ export default async function IntelligencePage({
     paymentsResult,
     linesResult,
     sessionsResult,
-    upcomingSessionsResult,
     templatesResult,
     productTemplatesResult,
     onboardingResult,
-    domainEventsResult,
-    collectionSalesResult,
-    conversationsResult,
-    expensesResult,
   ] = await Promise.all([
     supabase
       .from("students")
@@ -545,11 +348,9 @@ export default async function IntelligencePage({
       .order("created_at", { ascending: false }),
     supabase
       .from("payments")
-      .select("sale_id,kind,amount_minor,effective_on,created_at")
+      .select("sale_id,kind,amount_minor,created_at")
       .eq("studio_id", studio.id)
-      .or(
-        `effective_on.gte.${previousCohortStartDate},and(effective_on.is.null,created_at.gte.${rangeStartIso})`,
-      ),
+      .gte("created_at", rangeStartIso),
     supabase
       .from("sale_lines")
       .select("sale_id,product_template_id,product_name,line_total_minor,refunded_at,created_at")
@@ -562,61 +363,14 @@ export default async function IntelligencePage({
       .gte("starts_at", rangeStartIso)
       .lt("starts_at", currentEnd.toISOString())
       .order("starts_at"),
-    supabase
-      .from("class_sessions")
-      .select("id,template_id,starts_at,capacity,status")
-      .eq("studio_id", studio.id)
-      .gte("starts_at", currentEnd.toISOString())
-      .lt("starts_at", upcomingEnd.toISOString())
-      .neq("status", "cancelled")
-      .order("starts_at"),
-    supabase
-      .from("class_templates")
-      .select("id,name,color_hex")
-      .eq("studio_id", studio.id),
-    supabase
-      .from("product_templates")
-      .select("id,product_type,name")
-      .eq("studio_id", studio.id),
+    supabase.from("class_templates").select("id,name,color_hex").eq("studio_id", studio.id),
+    supabase.from("product_templates").select("id,product_type,name").eq("studio_id", studio.id),
     supabase
       .from("reward_onboarding")
       .select(
         "student_id,documents_completed_at,profile_completed_at,first_reservation_at,first_attendance_at,app_installed_at,notifications_enabled_at,completed_at",
       )
       .eq("studio_id", studio.id),
-    supabase
-      .from("domain_events")
-      .select("event_id,event_type,occurred_at,source_entity_id,payload")
-      .eq("studio_id", studio.id)
-      .in("event_type", [
-        "booking.created",
-        "booking.cancelled",
-        "attendance.finalized",
-      ])
-      .gte("occurred_at", eventStartIso)
-      .lt("occurred_at", currentEnd.toISOString())
-      .order("occurred_at", { ascending: true }),
-    supabase
-      .from("sales")
-      .select("id,student_id,folio,status,total_minor,currency,created_at,payment_due_on")
-      .eq("studio_id", studio.id)
-      .eq("status", "confirmed")
-      .order("payment_due_on", { ascending: true, nullsFirst: false }),
-    supabase
-      .from("crm_conversations")
-      .select(
-        "id,provider,provider_contact_id,contact_phone,student_id,channel,source,campaign,started_at,last_activity_at,activity_count",
-      )
-      .eq("studio_id", studio.id)
-      .lt("started_at", currentEnd.toISOString())
-      .order("started_at", { ascending: true }),
-    supabase
-      .from("studio_expenses")
-      .select("id,category,description,vendor,amount_minor,currency,effective_on,notes,marketing_source,marketing_campaign,created_at")
-      .eq("studio_id", studio.id)
-      .gte("effective_on", previousCohortStartDate)
-      .lte("effective_on", todayDate)
-      .order("effective_on", { ascending: false }),
   ]);
 
   const students = (studentsResult.data ?? []) as StudentRow[];
@@ -625,78 +379,9 @@ export default async function IntelligencePage({
   const payments = (paymentsResult.data ?? []) as PaymentRow[];
   const saleLines = (linesResult.data ?? []) as SaleLineRow[];
   const sessions = (sessionsResult.data ?? []) as SessionRow[];
-  const upcomingSessions = (upcomingSessionsResult.data ?? []) as SessionRow[];
   const templates = (templatesResult.data ?? []) as ClassTemplateRow[];
   const productTemplates = (productTemplatesResult.data ?? []) as ProductTemplateRow[];
   const onboarding = (onboardingResult.data ?? []) as OnboardingRow[];
-  const rawDomainEvents = (domainEventsResult.data ?? []) as DomainEventRow[];
-  const domainEvents = rawDomainEvents.filter(
-    (event) => !isSyntheticDomainEvent(event),
-  );
-  const syntheticDomainEventCount = rawDomainEvents.length - domainEvents.length;
-  const domainEventTimes = domainEvents
-    .map((event) => new Date(event.occurred_at).getTime())
-    .filter((value) => Number.isFinite(value));
-  const earliestDomainEventTime = domainEventTimes.length
-    ? Math.min(...domainEventTimes)
-    : null;
-  const eventHistoryCoversCurrentPeriod =
-    earliestDomainEventTime !== null &&
-    earliestDomainEventTime <= currentStart.getTime();
-  const eventHistoryCoversComparison =
-    earliestDomainEventTime !== null &&
-    earliestDomainEventTime <= previousStart.getTime();
-  const eventHistoryCoversCurrentCohort =
-    earliestDomainEventTime !== null &&
-    earliestDomainEventTime <= currentCohortStart.getTime();
-  const eventHistoryCoversCohortComparison =
-    earliestDomainEventTime !== null &&
-    earliestDomainEventTime <= previousCohortStart.getTime();
-  const eventCoverageStartLabel =
-    earliestDomainEventTime === null
-      ? null
-      : new Intl.DateTimeFormat("es-MX", {
-          timeZone: studio.timezone ?? "America/Mexico_City",
-          day: "numeric",
-          month: "short",
-          year: "numeric",
-        }).format(new Date(earliestDomainEventTime));
-  const collectionSales = (collectionSalesResult.data ?? []) as CollectionSaleRow[];
-  const conversations = (conversationsResult.data ?? []) as ConversationRow[];
-  const conversationTimes = conversations
-    .map((conversation) => new Date(conversation.started_at).getTime())
-    .filter((value) => Number.isFinite(value));
-  const earliestConversationTime = conversationTimes.length
-    ? Math.min(...conversationTimes)
-    : null;
-  const conversationHistoryCoversCurrentCohort =
-    earliestConversationTime !== null &&
-    earliestConversationTime <= currentCohortStart.getTime();
-  const conversationHistoryCoversComparison =
-    earliestConversationTime !== null &&
-    earliestConversationTime <= previousCohortStart.getTime();
-  const expenses = (expensesResult.data ?? []) as ExpenseRow[];
-
-  const collectionSaleIds = collectionSales.map((sale) => sale.id);
-  const [collectionPaymentsResult, collectionLinesResult] = collectionSaleIds.length
-    ? await Promise.all([
-        supabase
-          .from("payments")
-          .select("sale_id,kind,amount_minor,effective_on,created_at")
-          .eq("studio_id", studio.id)
-          .in("sale_id", collectionSaleIds),
-        supabase
-          .from("sale_lines")
-          .select("sale_id,product_template_id,product_name,line_total_minor,refunded_at,created_at")
-          .eq("studio_id", studio.id)
-          .in("sale_id", collectionSaleIds),
-      ])
-    : [
-        { data: [] as PaymentRow[] },
-        { data: [] as SaleLineRow[] },
-      ];
-  const collectionPayments = (collectionPaymentsResult.data ?? []) as PaymentRow[];
-  const collectionLines = (collectionLinesResult.data ?? []) as SaleLineRow[];
 
   const sessionIds = sessions.map((session) => session.id);
   const reservationsResult = sessionIds.length
@@ -707,176 +392,33 @@ export default async function IntelligencePage({
     : { data: [] as ReservationRow[] };
 
   const reservations = (reservationsResult.data ?? []) as ReservationRow[];
-  const upcomingSessionIds = upcomingSessions.map((session) => session.id);
-  const upcomingReservationsResult = upcomingSessionIds.length
-    ? await supabase
-        .from("reservations")
-        .select("id,session_id,student_id,status,booked_at")
-        .in("session_id", upcomingSessionIds)
-        .eq("status", "reserved")
-    : { data: [] as ReservationRow[] };
-  const upcomingReservations = (upcomingReservationsResult.data ?? []) as ReservationRow[];
   const templateMap = new Map(templates.map((item) => [item.id, item]));
   const productTemplateMap = new Map(productTemplates.map((item) => [item.id, item]));
-  const conversionAcquisitions = acquisitions.filter((item) => {
+  const commercialAcquisitions = acquisitions.filter((item) => {
     const productType = productTemplateMap.get(item.product_template_id)?.product_type;
-    return Boolean(productType && conversionProductTypes.has(productType));
+    return Boolean(productType && commercialProductTypes.has(productType));
   });
 
-  const firstConversionAcquisitionByStudent = new Map<string, AcquisitionRow>();
-  for (const acquisition of conversionAcquisitions) {
-    if (acquisition.refunded_at || acquisition.status === "cancelled") continue;
-    const previous = firstConversionAcquisitionByStudent.get(acquisition.student_id);
-    if (
-      !previous ||
-      new Date(acquisition.created_at).getTime() < new Date(previous.created_at).getTime()
-    ) {
-      firstConversionAcquisitionByStudent.set(acquisition.student_id, acquisition);
-    }
-  }
-  const isTrialStudent = (student: StudentRow) =>
-    student.student_type === "trial" || Boolean(student.trial_status);
-  const recentTrialRows = students.filter(
-    (student) => isTrialStudent(student) && isBetween(student.created_at, currentStart, currentEnd),
+  const currentStudents = students.filter((item) =>
+    isBetween(item.created_at, currentStart, currentEnd),
   );
-  const recentTrialIds = new Set(recentTrialRows.map((student) => student.id));
-  const liveTrialReservations = [...reservations, ...upcomingReservations].filter(
-    (reservation) =>
-      Boolean(reservation.student_id && recentTrialIds.has(reservation.student_id)),
-  );
-
-  const liveTrialBooked = new Set<string>();
-  const liveTrialAttended = new Set<string>();
-  const liveTrialCancelled = new Set<string>();
-  const liveTrialNoShow = new Set<string>();
-
-  for (const reservation of liveTrialReservations) {
-    if (!reservation.student_id) continue;
-    liveTrialBooked.add(reservation.student_id);
-    if (reservation.status === "attended") liveTrialAttended.add(reservation.student_id);
-    if (
-      reservation.status === "cancelled_on_time" ||
-      reservation.status === "cancelled_late"
-    ) {
-      liveTrialCancelled.add(reservation.student_id);
-    }
-    if (reservation.status === "no_show") liveTrialNoShow.add(reservation.student_id);
-  }
-
-  for (const student of recentTrialRows) {
-    if (student.trial_status === "attended" || student.trial_status === "converted") {
-      liveTrialAttended.add(student.id);
-    }
-    if (student.trial_status === "cancelled") liveTrialCancelled.add(student.id);
-    if (student.trial_status === "no_show") liveTrialNoShow.add(student.id);
-  }
-
-  const liveTrialConverted = new Set(
-    recentTrialRows
-      .filter(
-        (student) =>
-          student.trial_status === "converted" ||
-          firstConversionAcquisitionByStudent.has(student.id),
-      )
-      .map((student) => student.id),
-  );
-  const liveTrialPending = recentTrialRows.filter(
-    (student) =>
-      student.trial_status === "pending" &&
-      liveTrialBooked.has(student.id) &&
-      !liveTrialAttended.has(student.id) &&
-      !liveTrialCancelled.has(student.id) &&
-      !liveTrialNoShow.has(student.id),
-  ).length;
-
-  const liveTrialProspects = recentTrialRows.length;
-  const liveTrialBookingRate = safeRate(liveTrialBooked.size, liveTrialProspects);
-  const liveTrialAttendanceRate = safeRate(liveTrialAttended.size, liveTrialBooked.size);
-  const liveTrialConversionRate = safeRate(liveTrialConverted.size, liveTrialAttended.size);
-
-  const newCommercialStudentsCurrent = [...firstConversionAcquisitionByStudent.values()].filter(
-    (item) => isBetween(item.created_at, currentStart, currentEnd),
-  );
-  const newCommercialStudentsPrevious = [...firstConversionAcquisitionByStudent.values()].filter(
-    (item) => isBetween(item.created_at, previousStart, currentStart),
-  );
-
-  function reactivationPurchases(rows: AcquisitionRow[]) {
-    const byStudent = new Map<string, AcquisitionRow[]>();
-    for (const acquisition of rows) {
-      if (acquisition.refunded_at || acquisition.status === "cancelled") continue;
-      const list = byStudent.get(acquisition.student_id) ?? [];
-      list.push(acquisition);
-      byStudent.set(acquisition.student_id, list);
-    }
-
-    const reactivations: AcquisitionRow[] = [];
-    for (const list of byStudent.values()) {
-      const sorted = [...list].sort(
-        (a, b) =>
-          new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
-      );
-      let hasPrior = false;
-      let furthestPriorExpiry = Number.NEGATIVE_INFINITY;
-
-      for (const acquisition of sorted) {
-        const purchaseTime = new Date(acquisition.created_at).getTime();
-        if (
-          hasPrior &&
-          Number.isFinite(furthestPriorExpiry) &&
-          purchaseTime > furthestPriorExpiry + 30 * DAY
-        ) {
-          reactivations.push(acquisition);
-        }
-
-        if (acquisition.expires_on) {
-          const expiryTime = new Date(acquisition.expires_on + "T12:00:00Z").getTime();
-          furthestPriorExpiry = Math.max(furthestPriorExpiry, expiryTime);
-        }
-        hasPrior = true;
-      }
-    }
-
-    return reactivations;
-  }
-
-  const reactivationPurchaseRows = reactivationPurchases(conversionAcquisitions);
-
-  function uniqueStudentAcquisitions(rows: AcquisitionRow[]) {
-    const byStudent = new Map<string, AcquisitionRow>();
-    for (const row of rows) {
-      if (!byStudent.has(row.student_id)) byStudent.set(row.student_id, row);
-    }
-    return [...byStudent.values()];
-  }
-
-  const reactivatedStudentsCurrent = uniqueStudentAcquisitions(
-    reactivationPurchaseRows.filter((item) =>
-      isBetween(item.created_at, currentStart, currentEnd),
-    ),
-  );
-  const reactivatedStudentsPrevious = uniqueStudentAcquisitions(
-    reactivationPurchaseRows.filter((item) =>
-      isBetween(item.created_at, previousStart, currentStart),
-    ),
+  const previousStudents = students.filter((item) =>
+    isBetween(item.created_at, previousStart, currentStart),
   );
 
   const currentSales = sales.filter(
     (item) => item.status === "confirmed" && isBetween(item.created_at, currentStart, currentEnd),
   );
   const previousSales = sales.filter(
-    (item) => item.status === "confirmed" && isBetween(item.created_at, previousStart, currentStart),
+    (item) =>
+      item.status === "confirmed" && isBetween(item.created_at, previousStart, currentStart),
   );
 
   const currentPayments = payments.filter((item) =>
-    item.effective_on
-      ? item.effective_on >= currentStartDate && item.effective_on <= todayDate
-      : isBetween(item.created_at, currentStart, currentEnd),
+    isBetween(item.created_at, currentStart, currentEnd),
   );
   const previousPayments = payments.filter((item) =>
-    item.effective_on
-      ? item.effective_on >= previousStartDate && item.effective_on < currentStartDate
-      : isBetween(item.created_at, previousStart, currentStart),
+    isBetween(item.created_at, previousStart, currentStart),
   );
 
   function netPayments(rows: PaymentRow[]) {
@@ -888,89 +430,10 @@ export default async function IntelligencePage({
 
   const currentRevenue = netPayments(currentPayments);
   const previousRevenue = netPayments(previousPayments);
-
-  const currentExpenses = expenses.filter(
-    (item) => item.effective_on >= currentStartDate && item.effective_on <= todayDate,
-  );
-  const previousExpenses = expenses.filter(
-    (item) => item.effective_on >= previousStartDate && item.effective_on < currentStartDate,
-  );
-  const currentExpenseTotal = currentExpenses.reduce(
-    (sum, item) => sum + item.amount_minor,
-    0,
-  );
-  const previousExpenseTotal = previousExpenses.reduce(
-    (sum, item) => sum + item.amount_minor,
-    0,
-  );
-  const currentOperatingResult = currentRevenue - currentExpenseTotal;
-  const previousOperatingResult = previousRevenue - previousExpenseTotal;
-  const currentOperatingMargin = safeRate(currentOperatingResult, currentRevenue);
-  const previousOperatingMargin = safeRate(previousOperatingResult, previousRevenue);
-
-  const financeDecisionTitle =
-    currentRevenue > 0 && currentExpenses.length === 0
-      ? "Todavía no puedo evaluar la rentabilidad"
-      : currentRevenue === 0
-        ? "No hubo ingresos cobrados en el periodo"
-        : previousRevenue > 0 &&
-            currentOperatingMargin < previousOperatingMargin - 10
-          ? "El margen operativo registrado se redujo"
-          : currentOperatingResult < 0
-            ? "Los gastos registrados superan los ingresos"
-            : "La operación registrada se mantiene positiva";
-
-  const financeDecisionBody =
-    currentRevenue > 0 && currentExpenses.length === 0
-      ? "Hay " +
-        money(currentRevenue, studio.currency) +
-        " cobrados, pero no hay gastos capturados. Cualquier margen mostrado estaría artificialmente inflado."
-      : currentRevenue === 0
-        ? "Sin cobros efectivos no hay una base útil para interpretar margen o resultado del periodo."
-        : previousRevenue > 0 &&
-            currentOperatingMargin < previousOperatingMargin - 10
-          ? "El margen sobre gastos registrados pasó de " +
-            pct(previousOperatingMargin) +
-            " a " +
-            pct(currentOperatingMargin) +
-            "."
-          : currentOperatingResult < 0
-            ? "El resultado sobre gastos registrados es " +
-              money(currentOperatingResult, studio.currency) +
-              "."
-            : "Después de los gastos capturados quedan " +
-              money(currentOperatingResult, studio.currency) +
-              ", equivalente a " +
-              pct(currentOperatingMargin) +
-              " de los ingresos cobrados.";
-
-  const financeDecisionAction =
-    currentRevenue > 0 && currentExpenses.length === 0
-      ? "Capturar y validar renta, nómina, servicios, comisiones, publicidad y demás costos antes de tomar decisiones de rentabilidad."
-      : currentRevenue === 0
-        ? "Revisar cobranza e ingresos efectivos antes de analizar costos."
-        : previousRevenue > 0 &&
-            currentOperatingMargin < previousOperatingMargin - 10
-          ? "Identificar qué categoría de gasto creció y si el cambio es temporal o recurrente antes de recortar indiscriminadamente."
-          : currentOperatingResult < 0
-            ? "Revisar primero los gastos de mayor peso y separar costos recurrentes de extraordinarios."
-            : "Mantener la operación y vigilar cambios relevantes; no optimizar por variaciones pequeñas.";
-  const expenseCategoryTotals = new Map<string, number>();
-  for (const expense of currentExpenses) {
-    expenseCategoryTotals.set(
-      expense.category,
-      (expenseCategoryTotals.get(expense.category) ?? 0) + expense.amount_minor,
-    );
-  }
-  const expenseCategoryRows = [...expenseCategoryTotals.entries()]
-    .map(([category, amount]) => ({
-      category,
-      label: expenseCategoryLabels[category] ?? category,
-      amount,
-    }))
-    .sort((a, b) => b.amount - a.amount);
-  const recentExpenses = currentExpenses.slice(0, 8);
   const currentRefunds = currentPayments
+    .filter((item) => item.kind === "refund")
+    .reduce((sum, item) => sum + item.amount_minor, 0);
+  const previousRefunds = previousPayments
     .filter((item) => item.kind === "refund")
     .reduce((sum, item) => sum + item.amount_minor, 0);
   const ticketAverage =
@@ -982,85 +445,33 @@ export default async function IntelligencePage({
       ? previousSales.reduce((sum, item) => sum + item.total_minor, 0) / previousSales.length
       : 0;
 
-  const collectionPaymentBySale = new Map<string, number>();
-  for (const payment of collectionPayments) {
-    collectionPaymentBySale.set(
+  const paymentBySale = new Map<string, number>();
+  for (const payment of payments) {
+    paymentBySale.set(
       payment.sale_id,
-      (collectionPaymentBySale.get(payment.sale_id) ?? 0) +
+      (paymentBySale.get(payment.sale_id) ?? 0) +
         (payment.kind === "refund" ? -payment.amount_minor : payment.amount_minor),
     );
   }
 
-  const collectionCollectibleBySale = new Map<string, number>();
-  for (const line of collectionLines) {
+  const collectibleBySale = new Map<string, number>();
+  for (const line of saleLines) {
     if (line.refunded_at) continue;
-    collectionCollectibleBySale.set(
+    collectibleBySale.set(
       line.sale_id,
-      (collectionCollectibleBySale.get(line.sale_id) ?? 0) + line.line_total_minor,
+      (collectibleBySale.get(line.sale_id) ?? 0) + line.line_total_minor,
     );
   }
 
-  const collectionOpenRows = collectionSales
-    .map((sale) => {
-      const collectible = collectionCollectibleBySale.get(sale.id) ?? sale.total_minor;
-      const paid = collectionPaymentBySale.get(sale.id) ?? 0;
-      return {
-        ...sale,
-        balance: Math.max(collectible - paid, 0),
-      };
-    })
-    .filter((sale) => sale.balance > 0);
-
-  const collectionPending = collectionOpenRows.reduce((sum, sale) => sum + sale.balance, 0);
-  const collectionOverdueRows = collectionOpenRows.filter(
-    (sale) => Boolean(sale.payment_due_on && sale.payment_due_on < todayDate),
-  );
-  const collectionDueTodayRows = collectionOpenRows.filter(
-    (sale) => sale.payment_due_on === todayDate,
-  );
-  const collectionOverdueAmount = collectionOverdueRows.reduce(
-    (sum, sale) => sum + sale.balance,
-    0,
-  );
-  const collectionDueTodayAmount = collectionDueTodayRows.reduce(
-    (sum, sale) => sum + sale.balance,
-    0,
-  );
-
-  const moneyDecisionTitle =
-    collectionOverdueAmount > 0
-      ? "Hay cobranza vencida"
-      : collectionDueTodayAmount > 0
-        ? "Hay cobros que vencen hoy"
-        : previousRevenue > 0 && currentRevenue < previousRevenue * 0.85
-          ? "Los ingresos cobrados bajaron"
-          : "No hay una alerta crítica de dinero";
-
-  const moneyDecisionBody =
-    collectionOverdueAmount > 0
-      ? money(collectionOverdueAmount, studio.currency) +
-        " ya pasaron su promesa de pago."
-      : collectionDueTodayAmount > 0
-        ? money(collectionDueTodayAmount, studio.currency) +
-          " tienen promesa de pago para hoy."
-        : previousRevenue > 0 && currentRevenue < previousRevenue * 0.85
-          ? "Los cobros del periodo están " +
-            Math.abs(((currentRevenue - previousRevenue) / previousRevenue) * 100).toFixed(0) +
-            "% por debajo del periodo anterior."
-          : "Cobranza e ingresos no muestran una desviación que requiera una acción prioritaria.";
-
-  const moneyDecisionAction =
-    collectionOverdueAmount > 0
-      ? "Contactar primero los saldos vencidos y registrar el pago con su fecha efectiva real."
-      : collectionDueTodayAmount > 0
-        ? "Confirmar los pagos de hoy antes de que pasen a vencidos."
-        : previousRevenue > 0 && currentRevenue < previousRevenue * 0.85
-          ? "Separar si la baja viene de menos ventas, menor ticket o pagos todavía pendientes antes de lanzar una promoción."
-          : "Mantener cobranza y seguimiento; no intervenir por variaciones pequeñas.";
+  const pendingCurrent = currentSales.reduce((sum, sale) => {
+    const collectible = collectibleBySale.get(sale.id) ?? sale.total_minor;
+    const paid = paymentBySale.get(sale.id) ?? 0;
+    return sum + Math.max(collectible - paid, 0);
+  }, 0);
 
   function activeCommercialStudentCount(atDate: string) {
     const studentIds = new Set<string>();
-    for (const item of conversionAcquisitions) {
+    for (const item of commercialAcquisitions) {
       if (item.refunded_at || item.status === "cancelled") continue;
       const start = item.starts_on ?? item.created_at.slice(0, 10);
       const end = item.expires_on;
@@ -1075,7 +486,7 @@ export default async function IntelligencePage({
   const previousActiveStudents = activeCommercialStudentCount(currentStartDate);
 
   const acquisitionsByStudent = new Map<string, AcquisitionRow[]>();
-  for (const item of conversionAcquisitions) {
+  for (const item of commercialAcquisitions) {
     if (item.refunded_at || item.status === "cancelled") continue;
     const list = acquisitionsByStudent.get(item.student_id) ?? [];
     list.push(item);
@@ -1093,212 +504,37 @@ export default async function IntelligencePage({
     if (sorted[0]) latestAcquisitionByStudent.set(studentId, sorted[0]);
   }
 
-  const upcomingReservedStudentIds = new Set(
-    upcomingReservations
-      .map((reservation) => reservation.student_id)
-      .filter((value): value is string => Boolean(value)),
-  );
-
-  const activeAcquisitionByStudent = new Map<string, AcquisitionRow>();
-  for (const [studentId, list] of acquisitionsByStudent.entries()) {
-    const active = list
-      .filter((item) => {
-        const start = item.starts_on ?? item.created_at.slice(0, 10);
-        if (start > todayDate) return false;
-        return !item.expires_on || item.expires_on >= todayDate;
-      })
-      .sort((a, b) => {
-        const aExpiry = a.expires_on ?? "9999-12-31";
-        const bExpiry = b.expires_on ?? "9999-12-31";
-        return aExpiry.localeCompare(bExpiry);
-      });
-    if (active[0]) activeAcquisitionByStudent.set(studentId, active[0]);
-  }
-
-  const retentionRecentStart = now.getTime() - 14 * DAY;
-  const retentionBaselineStart = now.getTime() - 42 * DAY;
-  const retentionBaselineEnd = retentionRecentStart;
-  const retentionHistoryCovered =
-    earliestDomainEventTime !== null &&
-    earliestDomainEventTime <= retentionBaselineStart;
-
-  const retentionAttendedEvents = domainEvents.filter(
-    (event) =>
-      event.event_type === "attendance.finalized" &&
-      eventPayloadText(event, "attendance_status") === "attended",
-  );
-  const retentionNoShowEvents = domainEvents.filter(
-    (event) =>
-      event.event_type === "attendance.finalized" &&
-      eventPayloadText(event, "attendance_status") === "no_show",
-  );
-  const retentionCancellationEvents = domainEvents.filter(
-    (event) =>
-      event.event_type === "booking.cancelled" &&
-      eventPayloadText(event, "to_status") !== "cancelled_by_studio",
-  );
-
-  function studentEventCount(
-    rows: DomainEventRow[],
-    studentId: string,
-    startTime: number,
-    endTime: number,
-  ) {
-    return rows.filter((event) => {
-      if (eventStudentId(event) !== studentId) return false;
-      const eventTime = new Date(event.occurred_at).getTime();
-      return eventTime >= startTime && eventTime < endTime;
-    }).length;
-  }
-
-  type RetentionRiskRow = {
-    id: string;
-    name: string;
-    days: number;
-    score: number;
-    state: string;
-    detail: string;
-    recentWeekly: number;
-    baselineWeekly: number;
-  };
-
-  const preventiveRiskStudents: RetentionRiskRow[] = [];
-  const riskStudents: RetentionRiskRow[] = [];
-  const inactiveStudents: RetentionRiskRow[] = [];
-  const abandonedStudents: RetentionRiskRow[] = [];
+  const riskStudents: { id: string; name: string; days: number; state: string }[] = [];
+  const inactiveStudents: { id: string; name: string; days: number; state: string }[] = [];
+  const abandonedStudents: { id: string; name: string; days: number; state: string }[] = [];
 
   for (const student of students) {
-    const activeAcquisition = activeAcquisitionByStudent.get(student.id);
-    const untilExpiry = daysUntil(activeAcquisition?.expires_on ?? null, now);
-
-    if (activeAcquisition) {
-      const recentAttendance = studentEventCount(
-        retentionAttendedEvents,
-        student.id,
-        retentionRecentStart,
-        now.getTime(),
-      );
-      const baselineAttendance = studentEventCount(
-        retentionAttendedEvents,
-        student.id,
-        retentionBaselineStart,
-        retentionBaselineEnd,
-      );
-      const recentWeekly = recentAttendance / 2;
-      const baselineWeekly = baselineAttendance / 4;
-      const frequencyDrop =
-        baselineAttendance >= 4 &&
-        baselineWeekly > 0 &&
-        recentWeekly <= baselineWeekly * 0.5;
-      const recentFriction = retentionHistoryCovered
-        ? studentEventCount(
-            retentionNoShowEvents,
-            student.id,
-            retentionRecentStart,
-            now.getTime(),
-          ) +
-          studentEventCount(
-            retentionCancellationEvents,
-            student.id,
-            retentionRecentStart,
-            now.getTime(),
-          )
-        : 0;
-      const acquisitionAgeDays = Math.floor(
-        (now.getTime() - new Date(activeAcquisition.created_at).getTime()) / DAY,
-      );
-      const isNewAcquisition = acquisitionAgeDays < 7;
-      const signals: string[] = [];
-      let score = 0;
-
-      if (untilExpiry !== null && untilExpiry >= 0 && untilExpiry <= 7) {
-        score += 2;
-        signals.push(
-          untilExpiry === 0
-            ? "vence hoy"
-            : "vence en " + untilExpiry + (untilExpiry === 1 ? " día" : " días"),
-        );
-      }
-
-      if (!upcomingReservedStudentIds.has(student.id)) {
-        score += 1;
-        signals.push("sin próxima reserva");
-      }
-
-      if (retentionHistoryCovered && !isNewAcquisition && recentAttendance === 0) {
-        score += 2;
-        signals.push("14 días sin asistir");
-      } else if (retentionHistoryCovered && frequencyDrop) {
-        const drop = Math.max(
-          0,
-          Math.round((1 - recentWeekly / Math.max(baselineWeekly, 0.01)) * 100),
-        );
-        score += 2;
-        signals.push("frecuencia cayó " + drop + "%");
-      }
-
-      if (retentionHistoryCovered && recentFriction >= 2) {
-        score += 1;
-        signals.push(recentFriction + " cancelaciones/no show recientes");
-      }
-
-      const meaningfulBehaviorSignal =
-        retentionHistoryCovered &&
-        (recentAttendance === 0 || frequencyDrop || recentFriction >= 2);
-      const shouldFlag =
-        score >= 3 &&
-        (meaningfulBehaviorSignal ||
-          (untilExpiry !== null && untilExpiry >= 0 && untilExpiry <= 7));
-
-      if (shouldFlag) {
-        preventiveRiskStudents.push({
-          id: student.id,
-          name: student.full_name,
-          days: untilExpiry ?? 999,
-          score,
-          state: score >= 5 ? "Alta prioridad" : "Vigilar",
-          detail: signals.join(" · "),
-          recentWeekly,
-          baselineWeekly,
-        });
-      }
-    }
-
     const latest = latestAcquisitionByStudent.get(student.id);
     const elapsed = daysSince(latest?.expires_on ?? null, now);
     if (elapsed === null || elapsed < 7) continue;
-    const recoveryRow = {
-      id: student.id,
-      name: student.full_name,
-      days: elapsed,
-      score: elapsed >= 30 ? 5 : elapsed >= 15 ? 4 : 3,
-      recentWeekly: 0,
-      baselineWeekly: 0,
-    };
     if (elapsed >= 30) {
       abandonedStudents.push({
-        ...recoveryRow,
+        id: student.id,
+        name: student.full_name,
+        days: elapsed,
         state: "Abandono",
-        detail: elapsed + " días desde vencimiento",
       });
     } else if (elapsed >= 15) {
       inactiveStudents.push({
-        ...recoveryRow,
+        id: student.id,
+        name: student.full_name,
+        days: elapsed,
         state: "Inactiva",
-        detail: elapsed + " días desde vencimiento",
       });
     } else {
       riskStudents.push({
-        ...recoveryRow,
-        state: "Vencida reciente",
-        detail: elapsed + " días desde vencimiento",
+        id: student.id,
+        name: student.full_name,
+        days: elapsed,
+        state: "En riesgo",
       });
     }
   }
-
-  preventiveRiskStudents.sort(
-    (a, b) => b.score - a.score || a.days - b.days || a.name.localeCompare(b.name),
-  );
 
   const currentSessions = sessions.filter((item) =>
     isBetween(item.starts_at, currentStart, currentEnd),
@@ -1314,95 +550,6 @@ export default async function IntelligencePage({
     reservationsBySession.set(reservation.session_id, list);
   }
 
-  const bookingLifecycleEventsBySession = new Map<string, DomainEventRow[]>();
-  for (const event of domainEvents) {
-    if (event.event_type !== "booking.created" && event.event_type !== "booking.cancelled") {
-      continue;
-    }
-    if (
-      event.event_type === "booking.cancelled" &&
-      eventPayloadText(event, "to_status") === "cancelled_by_studio"
-    ) {
-      continue;
-    }
-    const sessionId = eventPayloadText(event, "session_id");
-    if (!sessionId) continue;
-    const list = bookingLifecycleEventsBySession.get(sessionId) ?? [];
-    list.push(event);
-    bookingLifecycleEventsBySession.set(sessionId, list);
-  }
-
-  function sessionDemandLifecycle(session: SessionRow) {
-    const finalReservations = (reservationsBySession.get(session.id) ?? []).filter((reservation) =>
-      decisionReservationStatuses.has(reservation.status),
-    );
-    const finalOccupied = finalReservations.filter((reservation) =>
-      occupiedStatuses.has(reservation.status),
-    ).length;
-    const finalCancelled = finalReservations.filter((reservation) =>
-      userCancellationStatuses.has(reservation.status),
-    ).length;
-
-    const events = [...(bookingLifecycleEventsBySession.get(session.id) ?? [])].sort(
-      (a, b) =>
-        new Date(a.occurred_at).getTime() - new Date(b.occurred_at).getTime(),
-    );
-    const activeReservationIds = new Set<string>();
-    const createdReservationIds = new Set<string>();
-    const cancelledReservationIds = new Set<string>();
-    let peakReserved = 0;
-    let pendingCancelledSeats = 0;
-    let refilledSeats = 0;
-
-    for (const event of events) {
-      const reservationId =
-        eventPayloadText(event, "reservation_id") ?? "event:" + event.event_id;
-
-      if (event.event_type === "booking.created") {
-        createdReservationIds.add(reservationId);
-        if (!activeReservationIds.has(reservationId)) {
-          activeReservationIds.add(reservationId);
-          if (pendingCancelledSeats > 0) {
-            pendingCancelledSeats -= 1;
-            refilledSeats += 1;
-          }
-        }
-        peakReserved = Math.max(peakReserved, activeReservationIds.size);
-        continue;
-      }
-
-      if (!cancelledReservationIds.has(reservationId)) {
-        cancelledReservationIds.add(reservationId);
-        if (activeReservationIds.delete(reservationId)) {
-          pendingCancelledSeats += 1;
-        }
-      }
-    }
-
-    const bookingAttempts = Math.max(
-      finalReservations.length,
-      createdReservationIds.size,
-    );
-    const cancellations = Math.max(
-      finalCancelled,
-      cancelledReservationIds.size,
-    );
-    const boundedRefilledSeats = Math.min(refilledSeats, cancellations);
-    const recordedPeak = Math.max(peakReserved, finalOccupied);
-
-    return {
-      bookingAttempts,
-      cancellations,
-      peakReserved: recordedPeak,
-      refilledSeats: boundedRefilledSeats,
-      unrecoveredCancellations: Math.max(cancellations - boundedRefilledSeats, 0),
-    };
-  }
-
-  const sessionLifecycleMap = new Map(
-    sessions.map((session) => [session.id, sessionDemandLifecycle(session)]),
-  );
-
   function classMetrics(rows: SessionRow[]) {
     let capacity = 0;
     let occupied = 0;
@@ -1410,20 +557,10 @@ export default async function IntelligencePage({
     let noShow = 0;
     let cancelled = 0;
     let reservationEvents = 0;
-    let bookingAttempts = 0;
-    let peakReserved = 0;
-    let refilledSeats = 0;
-    let lifecycleCancellations = 0;
 
     for (const session of rows) {
       if (session.status === "cancelled") continue;
       capacity += session.capacity ?? 0;
-      const lifecycle = sessionLifecycleMap.get(session.id);
-      bookingAttempts += lifecycle?.bookingAttempts ?? 0;
-      peakReserved += lifecycle?.peakReserved ?? 0;
-      refilledSeats += lifecycle?.refilledSeats ?? 0;
-      lifecycleCancellations += lifecycle?.cancellations ?? 0;
-
       const sessionReservations = reservationsBySession.get(session.id) ?? [];
       for (const reservation of sessionReservations) {
         if (!decisionReservationStatuses.has(reservation.status)) continue;
@@ -1437,20 +574,12 @@ export default async function IntelligencePage({
 
     return {
       occupancy: safeRate(occupied, capacity),
-      peakOccupancy: safeRate(peakReserved, capacity),
-      bookingPressure: safeRate(bookingAttempts, capacity),
       attendance: safeRate(attended, attended + noShow),
-      attendanceCapacity: safeRate(attended, capacity),
       cancellation: safeRate(cancelled, reservationEvents),
-      cancellationRefill: safeRate(refilledSeats, lifecycleCancellations),
       noShow: safeRate(noShow, attended + noShow),
       attended,
       occupied,
       capacity,
-      bookingAttempts,
-      peakReserved,
-      refilledSeats,
-      lifecycleCancellations,
     };
   }
 
@@ -1460,7 +589,6 @@ export default async function IntelligencePage({
   const classAggregate = new Map<
     string,
     {
-      templateId: string;
       name: string;
       capacity: number;
       occupied: number;
@@ -1468,11 +596,6 @@ export default async function IntelligencePage({
       noShow: number;
       cancelled: number;
       total: number;
-      bookingAttempts: number;
-      peakReserved: number;
-      refilledSeats: number;
-      lifecycleCancellations: number;
-      sessionCount: number;
       color: string;
     }
   >();
@@ -1481,31 +604,17 @@ export default async function IntelligencePage({
     if (session.status === "cancelled") continue;
     const template = templateMap.get(session.template_id);
     const key = session.template_id;
-    const lifecycle = sessionLifecycleMap.get(session.id);
-    const current =
-      classAggregate.get(key) ?? {
-        templateId: key,
-        name: template?.name ?? "Clase",
-        capacity: 0,
-        occupied: 0,
-        attended: 0,
-        noShow: 0,
-        cancelled: 0,
-        total: 0,
-        bookingAttempts: 0,
-        peakReserved: 0,
-        refilledSeats: 0,
-        lifecycleCancellations: 0,
-        sessionCount: 0,
-        color: template?.color_hex ?? "#FF0A8A",
-      };
+    const current = classAggregate.get(key) ?? {
+      name: template?.name ?? "Clase",
+      capacity: 0,
+      occupied: 0,
+      attended: 0,
+      noShow: 0,
+      cancelled: 0,
+      total: 0,
+      color: template?.color_hex ?? "#FF0A8A",
+    };
     current.capacity += session.capacity ?? 0;
-    current.sessionCount += 1;
-    current.bookingAttempts += lifecycle?.bookingAttempts ?? 0;
-    current.peakReserved += lifecycle?.peakReserved ?? 0;
-    current.refilledSeats += lifecycle?.refilledSeats ?? 0;
-    current.lifecycleCancellations += lifecycle?.cancellations ?? 0;
-
     for (const reservation of reservationsBySession.get(session.id) ?? []) {
       if (!decisionReservationStatuses.has(reservation.status)) continue;
       current.total += 1;
@@ -1521,129 +630,10 @@ export default async function IntelligencePage({
     .map((item) => ({
       ...item,
       occupancy: safeRate(item.occupied, item.capacity),
-      peakOccupancy: safeRate(item.peakReserved, item.capacity),
-      bookingPressure: safeRate(item.bookingAttempts, item.capacity),
       attendance: safeRate(item.attended, item.attended + item.noShow),
-      attendanceCapacity: safeRate(item.attended, item.capacity),
       cancellation: safeRate(item.cancelled, item.total),
-      cancellationRefill: safeRate(item.refilledSeats, item.lifecycleCancellations),
-      noShowRate: safeRate(item.noShow, item.attended + item.noShow),
     }))
-    .sort((a, b) => b.peakOccupancy - a.peakOccupancy);
-
-  const previousClassAttendance = new Map<
-    string,
-    { attended: number; capacity: number; sessionCount: number }
-  >();
-  for (const session of previousSessions) {
-    if (session.status === "cancelled") continue;
-    const previous =
-      previousClassAttendance.get(session.template_id) ?? {
-        attended: 0,
-        capacity: 0,
-        sessionCount: 0,
-      };
-    previous.capacity += session.capacity ?? 0;
-    previous.sessionCount += 1;
-    for (const reservation of reservationsBySession.get(session.id) ?? []) {
-      if (reservation.status === "attended") previous.attended += 1;
-    }
-    previousClassAttendance.set(session.template_id, previous);
-  }
-
-  const classComparisonRows = classRows
-    .map((row) => {
-      const previous = previousClassAttendance.get(row.templateId);
-      const currentAverage =
-        row.sessionCount > 0 ? row.attended / row.sessionCount : 0;
-      const previousAverage =
-        previous && previous.sessionCount > 0
-          ? previous.attended / previous.sessionCount
-          : 0;
-      const changePct =
-        previousAverage > 0
-          ? ((currentAverage - previousAverage) / previousAverage) * 100
-          : null;
-      return {
-        ...row,
-        currentAverage,
-        previousAverage,
-        previousSessionCount: previous?.sessionCount ?? 0,
-        changePct,
-      };
-    })
-    .filter(
-      (row) =>
-        row.sessionCount >= 3 &&
-        row.previousSessionCount >= 3 &&
-        row.changePct !== null,
-    );
-
-  const classLargestDrop = [...classComparisonRows].sort(
-    (a, b) => (a.changePct ?? 0) - (b.changePct ?? 0),
-  )[0];
-  const classLargestGrowth = [...classComparisonRows].sort(
-    (a, b) => (b.changePct ?? 0) - (a.changePct ?? 0),
-  )[0];
-
-  const currentStudyAttendancePerSession =
-    currentSessions.filter((session) => session.status !== "cancelled").length > 0
-      ? currentClassMetrics.attended /
-        currentSessions.filter((session) => session.status !== "cancelled").length
-      : 0;
-  const previousStudyAttendancePerSession =
-    previousSessions.filter((session) => session.status !== "cancelled").length > 0
-      ? previousClassMetrics.attended /
-        previousSessions.filter((session) => session.status !== "cancelled").length
-      : 0;
-  const studyAttendanceChangePct =
-    previousStudyAttendancePerSession > 0
-      ? ((currentStudyAttendancePerSession - previousStudyAttendancePerSession) /
-          previousStudyAttendancePerSession) *
-        100
-      : null;
-
-  const classDecisionTitle =
-    !eventHistoryCoversComparison || !classComparisonRows.length
-      ? "Todavía no hay una comparación suficiente"
-      : classLargestDrop && (classLargestDrop.changePct ?? 0) <= -15
-        ? "La mayor caída está en " + classLargestDrop.name
-        : classLargestGrowth && (classLargestGrowth.changePct ?? 0) >= 15
-          ? "La señal más fuerte es el crecimiento de " + classLargestGrowth.name
-          : "La ocupación está relativamente estable";
-
-  const classDecisionBody =
-    !eventHistoryCoversComparison || !classComparisonRows.length
-      ? "Necesitamos al menos 3 sesiones comparables por clase en ambos periodos y cobertura completa antes de recomendar cambios."
-      : classLargestDrop && (classLargestDrop.changePct ?? 0) <= -15
-        ? classLargestDrop.name +
-          " promedia " +
-          classLargestDrop.currentAverage.toFixed(1) +
-          " asistencias por sesión frente a " +
-          classLargestDrop.previousAverage.toFixed(1) +
-          " en el periodo anterior (" +
-          Math.abs(classLargestDrop.changePct ?? 0).toFixed(0) +
-          "% menos)."
-        : classLargestGrowth && (classLargestGrowth.changePct ?? 0) >= 15
-          ? classLargestGrowth.name +
-            " promedia " +
-            classLargestGrowth.currentAverage.toFixed(1) +
-            " asistencias por sesión, " +
-            (classLargestGrowth.changePct ?? 0).toFixed(0) +
-            "% más que el periodo anterior."
-          : "Ninguna clase con muestra suficiente se movió más de 15% en asistencia promedio por sesión.";
-
-  const classDecisionAction =
-    !eventHistoryCoversComparison || !classComparisonRows.length
-      ? "No cambiar horarios todavía; seguir acumulando historial comparable."
-      : classLargestDrop && (classLargestDrop.changePct ?? 0) <= -15
-        ? studyAttendanceChangePct !== null &&
-          studyAttendanceChangePct <= -10
-          ? "La caída también se observa a nivel estudio. Antes de cambiar esta clase, revisar calendario, temporada y otros factores comunes."
-          : "La caída parece más concentrada en esta clase. Revisar horario, coach, propuesta/coreografía, cancelaciones y no show antes de hacer una promoción."
-        : classLargestGrowth && (classLargestGrowth.changePct ?? 0) >= 15
-          ? "Validar que el crecimiento se sostenga antes de ampliar capacidad o agregar horario."
-          : "Mantener la programación y vigilar cambios relevantes, no reaccionar a variaciones pequeñas.";
+    .sort((a, b) => b.occupancy - a.occupancy);
 
   const daypart = { Mañana: [0, 0], Tarde: [0, 0], Noche: [0, 0] } as Record<
     string,
@@ -1656,18 +646,20 @@ export default async function IntelligencePage({
     const date = new Date(session.starts_at);
     const hour = Number(
       new Intl.DateTimeFormat("en-US", {
-        timeZone: studio.timezone ?? "America/Mexico_City",
+        timeZone,
         hour: "2-digit",
         hourCycle: "h23",
       }).format(date),
     );
     const part = hour < 12 ? "Mañana" : hour < 17 ? "Tarde" : "Noche";
-    const used = sessionLifecycleMap.get(session.id)?.peakReserved ?? 0;
+    const used = (reservationsBySession.get(session.id) ?? []).filter((item) =>
+      occupiedStatuses.has(item.status),
+    ).length;
     daypart[part][0] += used;
     daypart[part][1] += session.capacity ?? 0;
 
-    const day = new Intl.DateTimeFormat("es-MX", {
-      timeZone: studio.timezone ?? "America/Mexico_City",
+    const day = new Intl.DateTimeFormat(locale, {
+      timeZone,
       weekday: "long",
     }).format(date);
     const current = weekday.get(day) ?? [0, 0];
@@ -1676,814 +668,38 @@ export default async function IntelligencePage({
     weekday.set(day, current);
   }
 
-  const currentConversations = conversations.filter((conversation) =>
-    isBetween(conversation.started_at, currentStart, currentEnd),
-  );
-  const currentCohortConversations = conversations.filter((conversation) =>
-    isBetween(conversation.started_at, currentCohortStart, currentCohortEnd),
-  );
-  const previousCohortConversations = conversations.filter((conversation) =>
-    isBetween(conversation.started_at, previousCohortStart, currentCohortStart),
-  );
-  const pendingConversationRows = conversations.filter((conversation) =>
-    isBetween(conversation.started_at, currentCohortEnd, currentEnd),
-  );
-
-  const conversationStudentByProviderContact = new Map<string, string>();
-  const conversationStudentByPhone = new Map<string, string>();
-  for (const conversation of conversations) {
-    if (!conversation.student_id) continue;
-    if (conversation.provider_contact_id) {
-      conversationStudentByProviderContact.set(
-        conversation.provider + ":" + conversation.provider_contact_id,
-        conversation.student_id,
-      );
-    }
-    if (conversation.contact_phone) {
-      conversationStudentByPhone.set(
-        conversation.provider + ":" + conversation.contact_phone,
-        conversation.student_id,
-      );
-    }
-  }
-
-  function resolvedConversationStudentId(row: ConversationRow) {
-    if (row.student_id) return row.student_id;
-    if (row.provider_contact_id) {
-      const linkedStudent = conversationStudentByProviderContact.get(
-        row.provider + ":" + row.provider_contact_id,
-      );
-      if (linkedStudent) return linkedStudent;
-    }
-    if (row.contact_phone) {
-      const linkedStudent = conversationStudentByPhone.get(
-        row.provider + ":" + row.contact_phone,
-      );
-      if (linkedStudent) return linkedStudent;
-    }
-    return null;
-  }
-
-  function conversationIdentity(row: ConversationRow) {
-    const linkedStudent = resolvedConversationStudentId(row);
-    if (linkedStudent) return "student:" + linkedStudent;
-    if (row.provider_contact_id) {
-      return row.provider + ":contact:" + row.provider_contact_id;
-    }
-    if (row.contact_phone) {
-      return row.provider + ":phone:" + row.contact_phone;
-    }
-    return row.provider + ":conversation:" + row.id;
-  }
-
-  function conversationCohortStats(rows: ConversationRow[]) {
-    const contacts = new Map<
-      string,
-      {
-        startedAt: string;
-        studentId: string | null;
-        conversations: number;
-      }
-    >();
-
-    for (const row of rows) {
-      const key = conversationIdentity(row);
-      const current = contacts.get(key);
-      if (!current) {
-        contacts.set(key, {
-          startedAt: row.started_at,
-          studentId: resolvedConversationStudentId(row),
-          conversations: 1,
-        });
-        continue;
-      }
-
-      current.conversations += 1;
-      if (new Date(row.started_at).getTime() < new Date(current.startedAt).getTime()) {
-        current.startedAt = row.started_at;
-      }
-      current.studentId =
-        current.studentId ?? resolvedConversationStudentId(row);
-    }
-
-    const booked = new Set<string>();
-    const cancelled = new Set<string>();
-    const rebooked = new Set<string>();
-    const noShow = new Set<string>();
-    const attended = new Set<string>();
-    const converted = new Set<string>();
-    let linked = 0;
-
-    for (const [key, contact] of contacts.entries()) {
-      if (!contact.studentId) continue;
-      linked += 1;
-      const startTime = new Date(contact.startedAt).getTime();
-      const windowEndTime =
-        startTime + CONVERSION_MATURITY_DAYS * DAY;
-      const withinConversionWindow = (event: DomainEventRow) => {
-        const eventTime = new Date(event.occurred_at).getTime();
-        return (
-          eventStudentId(event) === contact.studentId &&
-          eventTime >= startTime &&
-          eventTime <= windowEndTime
-        );
-      };
-
-      const bookingEvents = allBookingEvents
-        .filter(withinConversionWindow)
-        .sort(
-          (a, b) =>
-            new Date(a.occurred_at).getTime() - new Date(b.occurred_at).getTime(),
-        );
-      const cancellationEvents = allCancellationEvents
-        .filter(withinConversionWindow)
-        .sort(
-          (a, b) =>
-            new Date(a.occurred_at).getTime() - new Date(b.occurred_at).getTime(),
-        );
-
-      if (bookingEvents.length > 0) booked.add(key);
-      if (cancellationEvents.length > 0) {
-        cancelled.add(key);
-        const firstCancellationAt = new Date(cancellationEvents[0].occurred_at).getTime();
-        if (
-          bookingEvents.some(
-            (event) => new Date(event.occurred_at).getTime() > firstCancellationAt,
-          )
-        ) {
-          rebooked.add(key);
-        }
-      }
-      if (allNoShowEvents.some(withinConversionWindow)) noShow.add(key);
-      if (allAttendedEvents.some(withinConversionWindow)) attended.add(key);
-
-      const conversion = firstConversionAcquisitionByStudent.get(contact.studentId);
-      if (conversion) {
-        const conversionTime = new Date(conversion.created_at).getTime();
-        if (conversionTime >= startTime && conversionTime <= windowEndTime) {
-          converted.add(key);
-        }
-      }
-    }
-
-    return {
-      conversations: rows.length,
-      contacts: contacts.size,
-      linked,
-      booked: booked.size,
-      cancelled: cancelled.size,
-      rebooked: rebooked.size,
-      noShow: noShow.size,
-      attended: attended.size,
-      converted: converted.size,
-      conversationToBookingRate: safeRate(booked.size, contacts.size),
-      bookingToAttendanceRate: safeRate(attended.size, booked.size),
-      attendanceToConversionRate: safeRate(converted.size, attended.size),
-      conversationToConversionRate: safeRate(converted.size, contacts.size),
-    };
-  }
-
-  const currentDomainEvents = domainEvents.filter((event) =>
-    isBetween(event.occurred_at, currentStart, currentEnd),
-  );
-  const previousDomainEvents = domainEvents.filter((event) =>
-    isBetween(event.occurred_at, previousStart, currentStart),
-  );
-
-  function eventsOfType(rows: DomainEventRow[], type: string) {
-    return rows.filter((event) => event.event_type === type);
-  }
-
-  const currentBookingEvents = eventsOfType(currentDomainEvents, "booking.created");
-  const currentCancellationEventsAll = eventsOfType(currentDomainEvents, "booking.cancelled");
-  const currentCancellationEvents = currentCancellationEventsAll.filter(
-    (event) => eventPayloadText(event, "to_status") !== "cancelled_by_studio",
-  );
-  const currentStudioCancellationEvents = currentCancellationEventsAll.filter(
-    (event) => eventPayloadText(event, "to_status") === "cancelled_by_studio",
-  );
-  const currentAttendanceEvents = eventsOfType(currentDomainEvents, "attendance.finalized");
-  const previousAttendanceEvents = eventsOfType(previousDomainEvents, "attendance.finalized");
-
-  const currentAttendedEvents = currentAttendanceEvents.filter(
-    (event) => eventPayloadText(event, "attendance_status") === "attended",
-  );
-  const previousAttendedEvents = previousAttendanceEvents.filter(
-    (event) => eventPayloadText(event, "attendance_status") === "attended",
-  );
-  const currentNoShowEvents = currentAttendanceEvents.filter(
-    (event) => eventPayloadText(event, "attendance_status") === "no_show",
-  );
-  const previousNoShowEvents = previousAttendanceEvents.filter(
-    (event) => eventPayloadText(event, "attendance_status") === "no_show",
-  );
-
-  const currentBookingStudents = uniqueEventStudents(currentBookingEvents);
-  const currentCancelledStudents = uniqueEventStudents(currentCancellationEvents);
-  const currentNoShowStudents = uniqueEventStudents(currentNoShowEvents);
-
-  const showRate = safeRate(
-    currentAttendedEvents.length,
-    currentAttendedEvents.length + currentNoShowEvents.length,
-  );
-  const previousShowRate = safeRate(
-    previousAttendedEvents.length,
-    previousAttendedEvents.length + previousNoShowEvents.length,
-  );
-
-  function recoveryStats(
-    sourceEvents: DomainEventRow[],
-    availableBookingEvents: DomainEventRow[],
-  ) {
-    const eligible = uniqueEventStudents(sourceEvents);
-    const recovered = new Set<string>();
-
-    for (const source of sourceEvents) {
-      const studentId = eventStudentId(source);
-      if (!studentId) continue;
-      const sourceTime = new Date(source.occurred_at).getTime();
-      const rebooked = availableBookingEvents.some(
-        (booking) =>
-          eventStudentId(booking) === studentId &&
-          new Date(booking.occurred_at).getTime() > sourceTime,
-      );
-      if (rebooked) recovered.add(studentId);
-    }
-
-    return {
-      eligible: eligible.size,
-      recovered: recovered.size,
-      rate: safeRate(recovered.size, eligible.size),
-    };
-  }
-
-  const allBookingEvents = eventsOfType(domainEvents, "booking.created");
-  const allCancellationEvents = eventsOfType(domainEvents, "booking.cancelled").filter(
-    (event) => eventPayloadText(event, "to_status") !== "cancelled_by_studio",
-  );
-  const allAttendanceEvents = eventsOfType(domainEvents, "attendance.finalized");
-  const allAttendedEvents = allAttendanceEvents.filter(
-    (event) => eventPayloadText(event, "attendance_status") === "attended",
-  );
-  const allNoShowEvents = allAttendanceEvents.filter(
-    (event) => eventPayloadText(event, "attendance_status") === "no_show",
-  );
-
-  function marketingAttributionKey(source: string | null, campaign: string | null) {
-    const normalizedCampaign = campaign?.trim().toLowerCase();
-    if (normalizedCampaign) return "campaign:" + normalizedCampaign;
-    const normalizedSource = source?.trim().toLowerCase();
-    if (normalizedSource) return "source:" + normalizedSource;
-    return "unattributed";
-  }
-
-  const confirmedSalesByStudent = new Map<string, SaleRow[]>();
-  for (const sale of sales) {
-    if (sale.status !== "confirmed") continue;
-    const list = confirmedSalesByStudent.get(sale.student_id) ?? [];
-    list.push(sale);
-    confirmedSalesByStudent.set(sale.student_id, list);
-  }
-
-  const paymentsBySale = new Map<string, PaymentRow[]>();
-  for (const payment of payments) {
-    const list = paymentsBySale.get(payment.sale_id) ?? [];
-    list.push(payment);
-    paymentsBySale.set(payment.sale_id, list);
-  }
-
-  function collectedRevenueWithinConversionWindow(
-    studentId: string,
-    startedAt: string,
-  ) {
-    const startTime = new Date(startedAt).getTime();
-    const windowEndTime =
-      startTime + CONVERSION_MATURITY_DAYS * DAY;
-    let total = 0;
-
-    for (const sale of confirmedSalesByStudent.get(studentId) ?? []) {
-      const saleTime = new Date(sale.created_at).getTime();
-      if (saleTime < startTime || saleTime > windowEndTime) continue;
-      for (const payment of paymentsBySale.get(sale.id) ?? []) {
-        const paymentTime = new Date(paymentEffectiveDateTime(payment)).getTime();
-        if (paymentTime < startTime || paymentTime > windowEndTime) continue;
-        total += payment.kind === "refund" ? -payment.amount_minor : payment.amount_minor;
-      }
-    }
-
-    return total;
-  }
-
-  type MarketingTouch = {
-    key: string;
-    startedAt: string;
-    studentId: string | null;
-    source: string | null;
-    campaign: string | null;
-  };
-
-  function firstMarketingTouches(rows: ConversationRow[]) {
-    const touches = new Map<string, MarketingTouch>();
-
-    for (const row of rows) {
-      const identity = conversationIdentity(row);
-      const existing = touches.get(identity);
-
-      if (!existing) {
-        touches.set(identity, {
-          key: identity,
-          startedAt: row.started_at,
-          studentId: resolvedConversationStudentId(row),
-          source: row.source,
-          campaign: row.campaign,
-        });
-        continue;
-      }
-
-      if (new Date(row.started_at).getTime() < new Date(existing.startedAt).getTime()) {
-        existing.startedAt = row.started_at;
-      }
-      existing.studentId = existing.studentId ?? row.student_id;
-      existing.source = existing.source ?? row.source;
-      existing.campaign = existing.campaign ?? row.campaign;
-    }
-
-    return [...touches.values()].sort(
-      (a, b) => new Date(a.startedAt).getTime() - new Date(b.startedAt).getTime(),
-    );
-  }
-
-  const allMarketingTouches = firstMarketingTouches(conversations);
-  const currentPeriodMarketingTouches = allMarketingTouches.filter((touch) =>
-    isBetween(touch.startedAt, currentStart, currentEnd),
-  );
-  const currentMarketingTouches = allMarketingTouches.filter((touch) =>
-    isBetween(touch.startedAt, currentCohortStart, currentCohortEnd),
-  );
-  const previousMarketingTouches = allMarketingTouches.filter((touch) =>
-    isBetween(touch.startedAt, previousCohortStart, currentCohortStart),
-  );
-  const pendingMarketingTouches = allMarketingTouches.filter((touch) =>
-    isBetween(touch.startedAt, currentCohortEnd, currentEnd),
-  );
-  const currentMarketingExpenses = expenses.filter(
-    (expense) =>
-      expense.effective_on >= currentCohortStartDate &&
-      expense.effective_on <= currentCohortEndDate,
-  );
-  const previousMarketingExpenses = expenses.filter(
-    (expense) =>
-      expense.effective_on >= previousCohortStartDate &&
-      expense.effective_on <= previousCohortEndDate,
-  );
-
-  function marketingRows(touches: MarketingTouch[], expenseRows: ExpenseRow[]) {
-    const rows = new Map<
-      string,
-      {
-        key: string;
-        label: string;
-        source: string | null;
-        campaign: string | null;
-        contacts: number;
-        linked: number;
-        booked: number;
-        attended: number;
-        converted: number;
-        revenue: number;
-        spend: number;
-      }
-    >();
-
-    for (const touch of touches) {
-      const attributionKey = marketingAttributionKey(touch.source, touch.campaign);
-      const row =
-        rows.get(attributionKey) ?? {
-          key: attributionKey,
-          label: touch.campaign ?? touch.source ?? "Sin atribución",
-          source: touch.source,
-          campaign: touch.campaign,
-          contacts: 0,
-          linked: 0,
-          booked: 0,
-          attended: 0,
-          converted: 0,
-          revenue: 0,
-          spend: 0,
-        };
-
-      row.contacts += 1;
-
-      if (touch.studentId) {
-        row.linked += 1;
-        const startTime = new Date(touch.startedAt).getTime();
-        const windowEndTime =
-          startTime + CONVERSION_MATURITY_DAYS * DAY;
-        const withinTouchWindow = (event: DomainEventRow) => {
-          const eventTime = new Date(event.occurred_at).getTime();
-          return (
-            eventStudentId(event) === touch.studentId &&
-            eventTime >= startTime &&
-            eventTime <= windowEndTime
-          );
-        };
-
-        if (allBookingEvents.some(withinTouchWindow)) row.booked += 1;
-        if (allAttendedEvents.some(withinTouchWindow)) row.attended += 1;
-
-        const conversion = firstConversionAcquisitionByStudent.get(touch.studentId);
-        if (conversion) {
-          const conversionTime = new Date(conversion.created_at).getTime();
-          if (conversionTime >= startTime && conversionTime <= windowEndTime) {
-            row.converted += 1;
-            row.revenue += collectedRevenueWithinConversionWindow(
-              touch.studentId,
-              touch.startedAt,
-            );
-          }
-        }
-      }
-
-      rows.set(attributionKey, row);
-    }
-
-    for (const expense of expenseRows) {
-      if (expense.category !== "advertising") continue;
-      const attributionKey = marketingAttributionKey(
-        expense.marketing_source,
-        expense.marketing_campaign,
-      );
-      const row =
-        rows.get(attributionKey) ?? {
-          key: attributionKey,
-          label:
-            expense.marketing_campaign ??
-            expense.marketing_source ??
-            "Publicidad sin atribución",
-          source: expense.marketing_source,
-          campaign: expense.marketing_campaign,
-          contacts: 0,
-          linked: 0,
-          booked: 0,
-          attended: 0,
-          converted: 0,
-          revenue: 0,
-          spend: 0,
-        };
-      row.spend += expense.amount_minor;
-      rows.set(attributionKey, row);
-    }
-
-    return [...rows.values()]
-      .map((row) => ({
-        ...row,
-        bookingRate: safeRate(row.booked, row.contacts),
-        attendanceRate: safeRate(row.attended, row.booked),
-        conversionRate: safeRate(row.converted, row.contacts),
-        costPerContact: row.contacts > 0 ? row.spend / row.contacts : null,
-        costPerStudent: row.converted > 0 ? row.spend / row.converted : null,
-        roas: row.spend > 0 ? row.revenue / row.spend : null,
-      }))
-      .sort((a, b) => b.contacts - a.contacts || b.revenue - a.revenue);
-  }
-
-  const currentMarketingRows = marketingRows(
-    currentMarketingTouches,
-    currentMarketingExpenses,
-  );
-  const previousMarketingRows = marketingRows(
-    previousMarketingTouches,
-    previousMarketingExpenses,
-  );
-  const currentPeriodMarketingRows = marketingRows(
-    currentPeriodMarketingTouches,
-    currentExpenses,
-  );
-  const currentMarketingDecisionRows = conversationHistoryCoversCurrentCohort
-    ? currentMarketingRows
-    : [];
-  const currentMarketingDecisionSpend = currentMarketingDecisionRows.reduce(
-    (sum, row) => sum + row.spend,
-    0,
-  );
-  const currentMarketingDecisionRevenue = currentMarketingDecisionRows.reduce(
-    (sum, row) => sum + row.revenue,
-    0,
-  );
-  const currentMarketingDecisionContacts = currentMarketingDecisionRows.reduce(
-    (sum, row) => sum + row.contacts,
-    0,
-  );
-  const currentMarketingDecisionConverted = currentMarketingDecisionRows.reduce(
-    (sum, row) => sum + row.converted,
-    0,
-  );
-  const currentMarketingDecisionConversionRate = safeRate(
-    currentMarketingDecisionConverted,
-    currentMarketingDecisionContacts,
-  );
-  const currentMarketingDecisionRoas =
-    currentMarketingDecisionSpend > 0
-      ? currentMarketingDecisionRevenue / currentMarketingDecisionSpend
-      : null;
-  const pendingMarketingContacts = pendingMarketingTouches.length;
-  const currentMarketingSpend = currentMarketingRows.reduce((sum, row) => sum + row.spend, 0);
-  const previousMarketingSpend = previousMarketingRows.reduce((sum, row) => sum + row.spend, 0);
-  const currentMarketingRevenue = currentMarketingRows.reduce((sum, row) => sum + row.revenue, 0);
-  const currentMarketingBooked = currentMarketingRows.reduce((sum, row) => sum + row.booked, 0);
-  const currentMarketingAttended = currentMarketingRows.reduce(
-    (sum, row) => sum + row.attended,
-    0,
-  );
-  const currentMarketingConverted = currentMarketingRows.reduce(
-    (sum, row) => sum + row.converted,
-    0,
-  );
-  const currentMarketingContacts = currentMarketingRows.reduce((sum, row) => sum + row.contacts, 0);
-  const previousMarketingContacts = previousMarketingRows.reduce((sum, row) => sum + row.contacts, 0);
-  const currentMarketingBookingRate = safeRate(
-    currentMarketingBooked,
-    currentMarketingContacts,
-  );
-  const currentMarketingAttendanceRate = safeRate(
-    currentMarketingAttended,
-    currentMarketingBooked,
-  );
-  const currentMarketingConversionRate = safeRate(
-    currentMarketingConverted,
-    currentMarketingContacts,
-  );
-  const currentMarketingRoas =
-    currentMarketingSpend > 0 ? currentMarketingRevenue / currentMarketingSpend : null;
-  const unattributedMarketingContacts =
-    currentPeriodMarketingRows.find((row) => row.key === "unattributed")?.contacts ?? 0;
-  const unattributedMarketingSpend =
-    currentPeriodMarketingRows.find((row) => row.key === "unattributed")?.spend ?? 0;
-
-  const currentConversationCohortAll = conversationCohortStats(currentConversations);
-  const currentConversationCohort = conversationCohortStats(
-    currentCohortConversations,
-  );
-  const previousConversationCohort = conversationCohortStats(
-    previousCohortConversations,
-  );
-  const pendingConversationContacts =
-    conversationCohortStats(pendingConversationRows).contacts;
-  const conversationCohortCurrentCovered =
-    conversationHistoryCoversCurrentCohort &&
-    eventHistoryCoversCurrentCohort;
-  const conversationCohortComparable =
-    conversationHistoryCoversComparison &&
-    eventHistoryCoversCohortComparison &&
-    currentConversationCohort.contacts >= 3 &&
-    previousConversationCohort.contacts >= 3;
-
-  const conversationChannelCounts = new Map<string, number>();
-  for (const conversation of currentConversations) {
-    const label = conversation.channel || "unknown";
-    conversationChannelCounts.set(label, (conversationChannelCounts.get(label) ?? 0) + 1);
-  }
-  const conversationChannelRows = [...conversationChannelCounts.entries()]
-    .map(([label, count]) => ({ label, count }))
-    .sort((a, b) => b.count - a.count);
-
-  const conversationSourceCounts = new Map<string, number>();
-  for (const conversation of currentConversations) {
-    const label = conversation.campaign ?? conversation.source ?? "Sin atribución";
-    conversationSourceCounts.set(label, (conversationSourceCounts.get(label) ?? 0) + 1);
-  }
-  const conversationSourceRows = [...conversationSourceCounts.entries()]
-    .map(([label, count]) => ({ label, count }))
-    .sort((a, b) => b.count - a.count)
-    .slice(0, 6);
-
-  const currentTrialCohortRows = students.filter(
-    (student) =>
-      isBetween(student.created_at, currentCohortStart, currentCohortEnd) &&
-      (student.student_type === "trial" || Boolean(student.trial_status)),
-  );
-  const previousTrialCohortRows = students.filter(
-    (student) =>
-      isBetween(student.created_at, previousCohortStart, currentCohortStart) &&
-      (student.student_type === "trial" || Boolean(student.trial_status)),
-  );
-  const pendingTrialCohortRows = students.filter(
-    (student) =>
-      isBetween(student.created_at, currentCohortEnd, currentEnd) &&
-      (student.student_type === "trial" || Boolean(student.trial_status)),
-  );
-
-  function acquisitionCohortStats(rows: StudentRow[]) {
-    const booked = new Set<string>();
-    const cancelled = new Set<string>();
-    const rebooked = new Set<string>();
-    const noShow = new Set<string>();
-    const attended = new Set<string>();
-    const converted = new Set<string>();
-
-    for (const student of rows) {
-      const createdAt = new Date(student.created_at).getTime();
-      const windowEndTime =
-        createdAt + CONVERSION_MATURITY_DAYS * DAY;
-      const eventWithinWindow = (event: DomainEventRow) => {
-        const eventTime = new Date(event.occurred_at).getTime();
-        return (
-          eventStudentId(event) === student.id &&
-          eventTime >= createdAt &&
-          eventTime <= windowEndTime
-        );
-      };
-
-      const bookingEvents = allBookingEvents
-        .filter(eventWithinWindow)
-        .sort(
-          (a, b) =>
-            new Date(a.occurred_at).getTime() - new Date(b.occurred_at).getTime(),
-        );
-      const cancellationEvents = allCancellationEvents
-        .filter(eventWithinWindow)
-        .sort(
-          (a, b) =>
-            new Date(a.occurred_at).getTime() - new Date(b.occurred_at).getTime(),
-        );
-
-      if (bookingEvents.length > 0) booked.add(student.id);
-      if (cancellationEvents.length > 0) {
-        cancelled.add(student.id);
-        const firstCancellationAt = new Date(cancellationEvents[0].occurred_at).getTime();
-        if (
-          bookingEvents.some(
-            (event) => new Date(event.occurred_at).getTime() > firstCancellationAt,
-          )
-        ) {
-          rebooked.add(student.id);
-        }
-      }
-      if (allNoShowEvents.some(eventWithinWindow)) noShow.add(student.id);
-      if (allAttendedEvents.some(eventWithinWindow)) attended.add(student.id);
-
-      const conversion = firstConversionAcquisitionByStudent.get(student.id);
-      if (conversion) {
-        const conversionTime = new Date(conversion.created_at).getTime();
-        if (conversionTime >= createdAt && conversionTime <= windowEndTime) {
-          converted.add(student.id);
-        }
-      }
-    }
-
-    return {
-      total: rows.length,
-      booked: booked.size,
-      cancelled: cancelled.size,
-      rebooked: rebooked.size,
-      noShow: noShow.size,
-      attended: attended.size,
-      converted: converted.size,
-      bookingRate: safeRate(booked.size, rows.length),
-      attendanceFromBookingRate: safeRate(attended.size, booked.size),
-      conversionFromAttendanceRate: safeRate(converted.size, attended.size),
-      conversionRate: safeRate(converted.size, rows.length),
-    };
-  }
-
-  const currentAcquisitionCohort = acquisitionCohortStats(currentTrialCohortRows);
-  const pendingTrialCohort = pendingTrialCohortRows.length;
-  const cancellationRecovery = recoveryStats(currentCancellationEvents, allBookingEvents);
-  const noShowRecovery = recoveryStats(currentNoShowEvents, allBookingEvents);
-
-  const cancellationReasonCounts = new Map<string, number>();
-  for (const event of currentCancellationEvents) {
-    const rawReason = eventPayloadText(event, "cancellation_reason");
-    const label = !rawReason
-      ? "Sin motivo registrado"
-      : rawReason.startsWith("asistian:")
-        ? "Sin motivo informado · Asistian"
-        : cancellationReasonLabels[rawReason] ?? "Otro / histórico";
-    cancellationReasonCounts.set(label, (cancellationReasonCounts.get(label) ?? 0) + 1);
-  }
-  const cancellationReasonRows = [...cancellationReasonCounts.entries()]
-    .map(([label, count]) => ({ label, count }))
-    .sort((a, b) => b.count - a.count);
-  const topCancellationReason = cancellationReasonRows[0] ?? null;
-  const missingCancellationReasonCount =
-    cancellationReasonCounts.get("Sin motivo registrado") ?? 0;
-
-  const conversionFunnelUsesConversation =
-    conversationCohortCurrentCovered && currentConversationCohort.contacts > 0;
-  const conversionFunnelUsesTrial =
-    !conversionFunnelUsesConversation &&
-    eventHistoryCoversCurrentCohort &&
-    currentAcquisitionCohort.total > 0;
-  const conversionFunnelAvailable =
-    conversionFunnelUsesConversation || conversionFunnelUsesTrial;
-  const conversionFunnelStart = conversionFunnelUsesConversation
-    ? currentConversationCohort.contacts
-    : currentAcquisitionCohort.total;
-  const conversionFunnelBooked = conversionFunnelUsesConversation
-    ? currentConversationCohort.booked
-    : currentAcquisitionCohort.booked;
-  const conversionFunnelAttended = conversionFunnelUsesConversation
-    ? currentConversationCohort.attended
-    : currentAcquisitionCohort.attended;
-  const conversionFunnelConverted = conversionFunnelUsesConversation
-    ? currentConversationCohort.converted
-    : currentAcquisitionCohort.converted;
-  const conversionFunnelCancelled = conversionFunnelUsesConversation
-    ? currentConversationCohort.cancelled
-    : currentAcquisitionCohort.cancelled;
-  const conversionFunnelNoShow = conversionFunnelUsesConversation
-    ? currentConversationCohort.noShow
-    : currentAcquisitionCohort.noShow;
-
-  const conversionStageCandidates = [
-    {
-      key: "booking",
-      label: conversionFunnelUsesConversation
-        ? "conversación → reserva"
-        : "prospecto → reserva",
-      numerator: conversionFunnelBooked,
-      denominator: conversionFunnelStart,
-      rate: safeRate(conversionFunnelBooked, conversionFunnelStart),
-      action:
-        "Revisar seguimiento, horarios ofrecidos y objeciones antes de agendar.",
-    },
-    {
-      key: "attendance",
-      label: "reserva → asistencia",
-      numerator: conversionFunnelAttended,
-      denominator: conversionFunnelBooked,
-      rate: safeRate(conversionFunnelAttended, conversionFunnelBooked),
-      action:
-        conversionFunnelCancelled > conversionFunnelNoShow
-          ? "Revisar motivos de cancelación y facilitar la reagenda antes de perder el interés."
-          : "Reforzar confirmación, recordatorios y recuperación de no show.",
-    },
-    {
-      key: "purchase",
-      label: "asistencia → compra",
-      numerator: conversionFunnelConverted,
-      denominator: conversionFunnelAttended,
-      rate: safeRate(conversionFunnelConverted, conversionFunnelAttended),
-      action:
-        "Revisar el seguimiento después de la primera clase, la oferta presentada y el cierre de paquete o membresía.",
-    },
-  ].filter((stage) => stage.denominator >= 3);
-
-  const conversionBottleneck = [...conversionStageCandidates].sort(
-    (a, b) => a.rate - b.rate,
-  )[0];
-
-  const conversionDiagnosisTitle = !conversionFunnelAvailable
-    ? "Todavía no puedo detectar el cuello de botella"
-    : !conversionBottleneck
-      ? "Necesitamos un poco más de muestra"
-      : conversionBottleneck.rate < 70
-        ? "El cuello de botella está en " + conversionBottleneck.label
-        : "No hay una fuga dominante en el embudo";
-
-  const conversionDiagnosisBody = !conversionFunnelAvailable
-    ? conversations.length === 0
-      ? "Asistian todavía no ha enviado conversaciones y el historial disponible no alcanza para construir un embudo comparable sin inventar datos."
-      : "La cobertura histórica no alcanza toda la cohorte seleccionada. Esperamos una muestra completa antes de emitir una conclusión."
-    : !conversionBottleneck
-      ? "El embudo ya está preparado, pero ninguna etapa tiene todavía al menos 3 personas de base para una recomendación confiable."
-      : conversionBottleneck.rate < 70
-        ? conversionBottleneck.numerator +
-          " de " +
-          conversionBottleneck.denominator +
-          " personas avanzaron en " +
-          conversionBottleneck.label +
-          " (" +
-          pct(conversionBottleneck.rate) +
-          ")."
-        : "Las etapas con muestra suficiente se mantienen arriba de 70%. La etapa relativamente más débil es " +
-          conversionBottleneck.label +
-          " con " +
-          pct(conversionBottleneck.rate) +
-          ".";
-
-  const conversionDiagnosisAction = !conversionFunnelAvailable
-    ? conversations.length === 0
-      ? "Conectar conversation_activity desde Asistian para que Studio Flow pueda detectar dónde se pierden prospectos desde el primer contacto."
-      : "Dejar madurar la cohorte y volver a leer el embudo cuando haya cobertura completa."
-    : conversionBottleneck
-      ? conversionBottleneck.action
-      : "Seguir acumulando casos; no cambiar el proceso todavía con una muestra tan pequeña.";
-
-  const expiredCurrent = conversionAcquisitions.filter(
+  const trialCurrent = currentStudents.filter((item) => item.trial_status);
+  const trialPrevious = previousStudents.filter((item) => item.trial_status);
+  const trialAttended = trialCurrent.filter(
+    (item) => item.trial_status === "attended" || item.trial_status === "converted",
+  ).length;
+  const trialPreviousAttended = trialPrevious.filter(
+    (item) => item.trial_status === "attended" || item.trial_status === "converted",
+  ).length;
+  const trialConverted = trialCurrent.filter((item) => item.trial_status === "converted").length;
+  const trialPreviousConverted = trialPrevious.filter(
+    (item) => item.trial_status === "converted",
+  ).length;
+  const trialNoShow = trialCurrent.filter((item) => item.trial_status === "no_show").length;
+  const trialConversion = safeRate(trialConverted, trialAttended);
+  const previousTrialConversion = safeRate(trialPreviousConverted, trialPreviousAttended);
+
+  const expiredCurrent = commercialAcquisitions.filter(
     (item) =>
       !item.refunded_at &&
       item.status !== "cancelled" &&
-      Boolean(item.expires_on && item.expires_on >= currentStartDate && item.expires_on <= todayDate),
+      Boolean(
+        item.expires_on && item.expires_on >= currentStartDate && item.expires_on <= todayDate,
+      ),
   );
-  const expiredPrevious = conversionAcquisitions.filter(
+  const expiredPrevious = commercialAcquisitions.filter(
     (item) =>
       !item.refunded_at &&
       item.status !== "cancelled" &&
       Boolean(
         item.expires_on &&
-          item.expires_on >= previousStartDate &&
-          item.expires_on < currentStartDate,
+        item.expires_on >= previousStartDate &&
+        item.expires_on < currentStartDate,
       ),
   );
 
@@ -2501,69 +717,32 @@ export default async function IntelligencePage({
       }
     }
 
-    let immediate = 0;
-    let within7 = 0;
-    let within30 = 0;
-    let reactivated = 0;
-    let churnConfirmed = 0;
-    let pendingMaturity = 0;
-
+    let renewed = 0;
     for (const expired of expiryByStudent.values()) {
-      if (!expired.expires_on) continue;
-      const age = daysSince(expired.expires_on, now) ?? 0;
-      if (age < 30) {
-        pendingMaturity += 1;
-        continue;
-      }
-
-      const later = (acquisitionsByStudent.get(expired.student_id) ?? [])
-        .filter((candidate) => {
-          if (candidate.id === expired.id) return false;
-          if (new Date(candidate.created_at).getTime() <= new Date(expired.created_at).getTime()) {
-            return false;
-          }
-          return Boolean(candidate.expires_on && candidate.expires_on > expired.expires_on!);
-        })
-        .sort(
-          (a, b) =>
-            new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
-        )[0];
-
-      if (later) {
-        const expiryTime = new Date(expired.expires_on + "T12:00:00Z").getTime();
-        const renewalTime = new Date(later.created_at).getTime();
-        const gapDays = Math.floor((renewalTime - expiryTime) / DAY);
-
-        if (gapDays <= 0) immediate += 1;
-        else if (gapDays <= 7) within7 += 1;
-        else if (gapDays <= 30) within30 += 1;
-        else reactivated += 1;
-        continue;
-      }
-
-      churnConfirmed += 1;
+      const later = (acquisitionsByStudent.get(expired.student_id) ?? []).some((candidate) => {
+        if (candidate.id === expired.id) return false;
+        if (new Date(candidate.created_at).getTime() <= new Date(expired.created_at).getTime()) {
+          return false;
+        }
+        if (!candidate.expires_on || !expired.expires_on) return false;
+        return candidate.expires_on > expired.expires_on;
+      });
+      if (later) renewed += 1;
     }
 
     const expired = expiryByStudent.size;
-    const renewedWithin30 = immediate + within7 + within30;
-    const matured = renewedWithin30 + reactivated + churnConfirmed;
-
     return {
       expired,
-      immediate,
-      within7,
-      within30,
-      renewedWithin30,
-      reactivated,
-      churnConfirmed,
-      pendingMaturity,
-      matured,
-      rate: safeRate(renewedWithin30, matured),
+      renewed,
+      notRenewed: Math.max(expired - renewed, 0),
+      rate: safeRate(renewed, expired),
     };
   }
 
   const renewal = renewalStats(expiredCurrent);
   const previousRenewal = renewalStats(expiredPrevious);
+  const churn = renewal.expired > 0 ? 100 - renewal.rate : 0;
+  const previousChurn = previousRenewal.expired > 0 ? 100 - previousRenewal.rate : 0;
   const weeklyFrequency =
     activeStudents > 0 ? currentClassMetrics.attended / activeStudents / Math.max(days / 7, 1) : 0;
 
@@ -2574,7 +753,8 @@ export default async function IntelligencePage({
       line.refunded_at ||
       !currentSaleIds.has(line.sale_id) ||
       !isBetween(line.created_at, currentStart, currentEnd)
-    ) continue;
+    )
+      continue;
     productRevenue.set(
       line.product_name,
       (productRevenue.get(line.product_name) ?? 0) + line.line_total_minor,
@@ -2591,14 +771,14 @@ export default async function IntelligencePage({
     const bucketDate = new Date(currentStart.getTime() + index * DAY);
     const key = isoDateKey(bucketDate);
     const amount = currentPayments
-      .filter((item) => paymentDateKey(item) === key)
+      .filter((item) => item.created_at.slice(0, 10) === key)
       .reduce(
         (sum, item) => sum + (item.kind === "refund" ? -item.amount_minor : item.amount_minor),
         0,
       );
     return {
       key,
-      label: new Intl.DateTimeFormat("es-MX", {
+      label: new Intl.DateTimeFormat(locale, {
         day: "numeric",
         month: "short",
       }).format(bucketDate),
@@ -2607,21 +787,9 @@ export default async function IntelligencePage({
   });
   const maxDailyRevenue = Math.max(...periodBuckets.map((item) => item.amount), 1);
 
-  const actionableClassRows = eventHistoryCoversCurrentPeriod
-    ? classRows.filter((row) => row.sessionCount >= 3)
-    : [];
-  const highestDemand = [...actionableClassRows].sort(
-    (a, b) => b.peakOccupancy - a.peakOccupancy,
-  )[0];
-  const lowestDemand = [...actionableClassRows].sort(
-    (a, b) => a.peakOccupancy - b.peakOccupancy,
-  )[0];
-  const highestCancellation = [...actionableClassRows]
-    .filter((row) => row.total >= 5)
-    .sort((a, b) => b.cancellation - a.cancellation)[0];
-  const highestNoShow = [...actionableClassRows]
-    .filter((row) => row.attended + row.noShow >= 5)
-    .sort((a, b) => b.noShowRate - a.noShowRate)[0];
+  const highestDemand = classRows[0];
+  const lowestDemand = [...classRows].sort((a, b) => a.occupancy - b.occupancy)[0];
+  const highestCancellation = [...classRows].sort((a, b) => b.cancellation - a.cancellation)[0];
 
   const onboardingRows = onboarding.filter((row) =>
     students.some((student) => student.id === row.student_id),
@@ -2640,538 +808,13 @@ export default async function IntelligencePage({
     .map((row) => {
       const student = students.find((item) => item.id === row.student_id);
       const completed = onboardingSteps.filter(([, key]) => Boolean(row[key])).length;
-      const nextStep =
-        onboardingSteps.find(([, key]) => !row[key])?.[0] ?? "Revisión manual";
       return {
         studentId: row.student_id,
         name: student?.full_name ?? "Alumna",
         completed,
-        nextStep,
       };
     })
     .sort((a, b) => a.completed - b.completed || a.name.localeCompare(b.name));
-
-  const onboardingBottleneckCounts = new Map<string, number>();
-  for (const item of onboardingPending) {
-    onboardingBottleneckCounts.set(
-      item.nextStep,
-      (onboardingBottleneckCounts.get(item.nextStep) ?? 0) + 1,
-    );
-  }
-  const onboardingBottleneckRows = [...onboardingBottleneckCounts.entries()]
-    .map(([label, count]) => ({ label, count }))
-    .sort((a, b) => b.count - a.count);
-  const topOnboardingBottleneck = onboardingBottleneckRows[0] ?? null;
-
-  const newCommercialStudentIds = new Set(
-    newCommercialStudentsCurrent.map((item) => item.student_id),
-  );
-  const newStudentOnboardingRows = onboardingRows.filter((row) =>
-    newCommercialStudentIds.has(row.student_id),
-  );
-  const newStudentOnboardingComplete = newStudentOnboardingRows.filter(
-    (row) => Boolean(row.completed_at),
-  ).length;
-  const newStudentActivationRate = safeRate(
-    newStudentOnboardingComplete,
-    newCommercialStudentsCurrent.length,
-  );
-
-  const firstAttendanceCurrent = onboardingRows.filter(
-    (row) =>
-      Boolean(row.first_attendance_at) &&
-      isBetween(row.first_attendance_at!, currentStart, currentEnd),
-  );
-  const firstAttendancePrevious = onboardingRows.filter(
-    (row) =>
-      Boolean(row.first_attendance_at) &&
-      isBetween(row.first_attendance_at!, previousStart, currentStart),
-  );
-  const onboardingHistoryCoverage = safeRate(onboardingRows.length, students.length);
-
-  const newlyConfirmedChurn = abandonedStudents.filter((item) => {
-    const latest = latestAcquisitionByStudent.get(item.id);
-    if (!latest?.expires_on) return false;
-    const confirmedAt = new Date(latest.expires_on + "T12:00:00Z").getTime() + 30 * DAY;
-    return confirmedAt >= currentStart.getTime() && confirmedAt < currentEnd.getTime();
-  });
-  const netStudentGrowth =
-    newCommercialStudentsCurrent.length +
-    reactivatedStudentsCurrent.length -
-    newlyConfirmedChurn.length;
-
-  const retentionRecoveryCount =
-    riskStudents.length + inactiveStudents.length + abandonedStudents.length;
-  const retentionDecisionTitle =
-    preventiveRiskStudents.length > 0
-      ? preventiveRiskStudents.length +
-        (preventiveRiskStudents.length === 1
-          ? " alumna necesita prevención"
-          : " alumnas necesitan prevención")
-      : retentionRecoveryCount > 0
-        ? retentionRecoveryCount +
-          (retentionRecoveryCount === 1
-            ? " alumna necesita recuperación"
-            : " alumnas necesitan recuperación")
-        : renewal.matured > 0 &&
-            previousRenewal.matured > 0 &&
-            renewal.rate < previousRenewal.rate - 10
-          ? "La renovación cayó frente al periodo anterior"
-          : "No hay una señal crítica de retención";
-
-  const retentionDecisionBody =
-    preventiveRiskStudents.length > 0
-      ? "Las señales combinan vencimiento cercano, ausencia de próxima reserva y, cuando hay cobertura suficiente, cambios de asistencia o fricción."
-      : retentionRecoveryCount > 0
-        ? "Ya pasaron del punto preventivo: tienen paquetes vencidos y conviene trabajar recuperación antes de que el abandono se consolide."
-        : renewal.matured > 0 &&
-            previousRenewal.matured > 0 &&
-            renewal.rate < previousRenewal.rate - 10
-          ? "La renovación ≤30 días pasó de " +
-            pct(previousRenewal.rate) +
-            " a " +
-            pct(renewal.rate) +
-            "."
-          : "Las señales con evidencia suficiente no muestran una caída relevante que requiera cambiar la estrategia hoy.";
-
-  const retentionDecisionAction =
-    preventiveRiskStudents.length > 0
-      ? "Contactar primero a quienes vencen antes y recuperar una próxima reserva concreta."
-      : retentionRecoveryCount > 0
-        ? "Priorizar las vencidas más recientes; medir cuántas vuelven a reservar y comprar después del seguimiento."
-        : renewal.matured > 0 &&
-            previousRenewal.matured > 0 &&
-            renewal.rate < previousRenewal.rate - 10
-          ? "Revisar qué cambió entre cohortes: frecuencia previa, experiencia inicial y momento de renovación."
-          : "Mantener el seguimiento actual y esperar más evidencia antes de intervenir.";
-
-  const decisions: IntelligenceDecision[] = [];
-  const attendanceDecisionSample =
-    currentAttendedEvents.length + currentNoShowEvents.length;
-  const showRateDrop = previousShowRate - showRate;
-  const conversationBookingDrop =
-    previousConversationCohort.conversationToBookingRate -
-    currentConversationCohort.conversationToBookingRate;
-
-  if (currentRevenue > 0 && currentExpenses.length === 0) {
-    decisions.push({
-      key: "finance-expense-coverage-empty",
-      priority: 2,
-      impact: 75,
-      tone: "warning",
-      title: "Completar gastos del periodo",
-      evidence:
-        "Hay " +
-        money(currentRevenue, studio.currency) +
-        " cobrados, pero no hay gastos registrados. El resultado operativo no es interpretable todavía.",
-      action:
-        "Registrar o validar renta, nómina, servicios, comisiones, publicidad y demás gastos antes de usar el margen para decidir.",
-      href: viewHref("finanzas", days),
-    });
-  }
-
-  if (collectionOverdueAmount > 0) {
-    decisions.push({
-      key: "collections-overdue",
-      priority: 1,
-      impact: 100,
-      tone: "danger",
-      title:
-        "Cobrar " +
-        money(collectionOverdueAmount, studio.currency) +
-        " vencidos",
-      evidence:
-        collectionOverdueRows.length +
-        (collectionOverdueRows.length === 1
-          ? " saldo ya pasó su promesa de pago."
-          : " saldos ya pasaron su promesa de pago."),
-      action: "Abrir cobranza y contactar primero los saldos vencidos.",
-      href: viewHref("dinero", days),
-    });
-  }
-
-  if (collectionOverdueAmount === 0 && collectionDueTodayAmount > 0) {
-    decisions.push({
-      key: "collections-due-today",
-      priority: 1,
-      impact: 90,
-      tone: "warning",
-      title:
-        "Cobrar " +
-        money(collectionDueTodayAmount, studio.currency) +
-        " hoy",
-      evidence:
-        collectionDueTodayRows.length +
-        (collectionDueTodayRows.length === 1
-          ? " promesa de pago vence hoy."
-          : " promesas de pago vencen hoy."),
-      action: "Confirmar el pago hoy y registrar el ingreso con su fecha efectiva real.",
-      href: viewHref("dinero", days),
-    });
-  }
-
-  if (
-    topOnboardingBottleneck &&
-    onboardingPending.length >= 3 &&
-    topOnboardingBottleneck.count / onboardingPending.length >= 0.4
-  ) {
-    decisions.push({
-      key: "onboarding-bottleneck-" + topOnboardingBottleneck.label,
-      priority: 2,
-      tone: "warning",
-      title: "Destrabar onboarding · " + topOnboardingBottleneck.label,
-      evidence:
-        topOnboardingBottleneck.count +
-        " de " +
-        onboardingPending.length +
-        " onboardings pendientes tienen ese paso como siguiente bloqueo.",
-      action: "Abrir Alumnas y resolver primero ese paso común antes de perseguir casos individuales.",
-      href: viewHref("alumnas", days),
-    });
-  }
-
-  if (preventiveRiskStudents.length > 0) {
-    decisions.push({
-      key: "retention-preventive",
-      priority: preventiveRiskStudents.length >= 3 ? 1 : 2,
-      impact: 80,
-      tone: "warning",
-      title:
-        "Intervenir " +
-        preventiveRiskStudents.length +
-        (preventiveRiskStudents.length === 1
-          ? " alumna antes de que venza"
-          : " alumnas antes de que venzan"),
-      evidence:
-        "Vencen en ≤7 días y además no tienen próxima reserva y/o llevan 14 días sin asistir.",
-      action: "Abrir Retención, priorizar las que vencen primero y recuperar su próxima reserva.",
-      href: viewHref("retencion", days),
-    });
-  }
-
-  if (preventiveRiskStudents.length === 0 && riskStudents.length > 0) {
-    decisions.push({
-      key: "retention-recovery",
-      priority: 2,
-      tone: "warning",
-      title:
-        "Recuperar " +
-        riskStudents.length +
-        (riskStudents.length === 1 ? " paquete vencido" : " paquetes vencidos"),
-      evidence:
-        "Llevan entre 7 y 14 días desde vencimiento sin una nueva compra.",
-      action: "Contactar primero a las alumnas con vencimiento más reciente y medir renovación posterior.",
-      href: viewHref("retencion", days),
-    });
-  }
-
-  if (
-    conversationCohortComparable &&
-    conversationBookingDrop >= 5
-  ) {
-    decisions.push({
-      key: "conversion-conversation-booking",
-      priority: conversationBookingDrop >= 10 ? 1 : 2,
-      impact: 70,
-      tone: "danger",
-      title: "Recuperar conversación → reserva",
-      evidence:
-        "La tasa cayó " +
-        conversationBookingDrop.toFixed(1) +
-        " pp: " +
-        pct(previousConversationCohort.conversationToBookingRate) +
-        " → " +
-        pct(currentConversationCohort.conversationToBookingRate) +
-        ".",
-      action: "Comparar origen/campaña y revisar seguimiento, horarios ofrecidos y objeciones.",
-      href: viewHref("conversion", days),
-    });
-  }
-
-  const paidCampaignWithoutConversion = [...currentMarketingDecisionRows]
-    .filter((row) => row.spend > 0 && row.contacts >= 5 && row.converted === 0)
-    .sort((a, b) => b.spend - a.spend)[0];
-  const efficientCampaign = [...currentMarketingDecisionRows]
-    .filter(
-      (row) =>
-        row.spend > 0 &&
-        row.contacts >= 5 &&
-        row.converted >= 2 &&
-        row.roas !== null &&
-        row.roas >= 1.5,
-    )
-    .sort((a, b) => (b.roas ?? 0) - (a.roas ?? 0))[0];
-
-  const marketingDecisionTitle =
-    conversations.length === 0
-      ? "Todavía no puedo evaluar qué marketing trae alumnas"
-      : unattributedMarketingSpend > 0
-        ? "Hay gasto publicitario que no puede medirse"
-        : paidCampaignWithoutConversion
-          ? paidCampaignWithoutConversion.label + " genera contactos pero no alumnas"
-          : efficientCampaign
-            ? "Hay una señal positiva en " + efficientCampaign.label
-            : currentMarketingDecisionContacts < 5
-              ? "La muestra todavía es demasiado pequeña"
-              : "No hay una campaña claramente dominante";
-
-  const marketingDecisionBody =
-    conversations.length === 0
-      ? "Falta recibir conversation_activity desde Asistian para conectar primer contacto, reserva, asistencia y compra."
-      : unattributedMarketingSpend > 0
-        ? money(unattributedMarketingSpend, studio.currency) +
-          " de publicidad del periodo no tienen origen/campaña compatible con la atribución."
-        : paidCampaignWithoutConversion
-          ? paidCampaignWithoutConversion.contacts +
-            " contactos y " +
-            money(paidCampaignWithoutConversion.spend, studio.currency) +
-            " de gasto sin una conversión madura registrada."
-          : efficientCampaign
-            ? efficientCampaign.converted +
-              " alumnas convertidas con ROAS atribuido de " +
-              (efficientCampaign.roas ?? 0).toFixed(1) +
-              "×."
-            : currentMarketingDecisionContacts < 5
-              ? "Todavía no hay al menos 5 contactos maduros para una recomendación confiable."
-              : "Las diferencias actuales no justifican escalar o cortar presupuesto sólo con esta muestra.";
-
-  const marketingDecisionAction =
-    conversations.length === 0
-      ? "Conectar las conversaciones de Asistian antes de optimizar campañas con base en números incompletos."
-      : unattributedMarketingSpend > 0
-        ? "Alinear source/campaign entre Asistian y los gastos para recuperar costo por alumna y ROAS."
-        : paidCampaignWithoutConversion
-          ? "Revisar primero dónde se rompe su embudo antes de aumentar presupuesto: calidad del lead, reserva, asistencia o cierre."
-          : efficientCampaign
-            ? "Mantenerla y escalar sólo de forma gradual si la señal se sostiene con más contactos."
-            : currentMarketingDecisionContacts < 5
-              ? "Seguir acumulando una cohorte comparable; no cortar ni escalar todavía."
-              : "Mantener presupuesto estable y esperar una diferencia más clara.";
-
-  if (unattributedMarketingSpend > 0) {
-    decisions.push({
-      key: "marketing-spend-unattributed",
-      priority: 2,
-      tone: "warning",
-      title: "Asignar gasto publicitario a campaña",
-      evidence:
-        money(unattributedMarketingSpend, studio.currency) +
-        " de publicidad no tienen origen/campaña y no pueden calcular retorno.",
-      action: "Editar el registro del gasto usando los mismos nombres que llegan desde Asistian.",
-      href: viewHref("marketing", days),
-    });
-  }
-
-  if (unattributedMarketingContacts >= 3) {
-    decisions.push({
-      key: "marketing-contacts-unattributed",
-      priority: 3,
-      tone: "info",
-      title: "Mejorar atribución de prospectos",
-      evidence:
-        unattributedMarketingContacts +
-        " contactos del periodo llegaron sin origen/campaña identificable.",
-      action: "Enviar source y campaign en conversation_activity para no perder el origen del lead.",
-      href: viewHref("marketing", days),
-    });
-  }
-
-  if (paidCampaignWithoutConversion) {
-    decisions.push({
-      key: "marketing-paid-no-conversion-" + paidCampaignWithoutConversion.key,
-      priority: 2,
-      tone: "danger",
-      title: "Revisar " + paidCampaignWithoutConversion.label,
-      evidence:
-        money(paidCampaignWithoutConversion.spend, studio.currency) +
-        " de gasto, " +
-        paidCampaignWithoutConversion.contacts +
-        " contactos y ninguna alumna convertida al corte.",
-      action: "Revisar calidad del lead y el punto del embudo antes de aumentar presupuesto.",
-      href: viewHref("marketing", days),
-    });
-  }
-
-  if (efficientCampaign) {
-    decisions.push({
-      key: "marketing-efficient-" + efficientCampaign.key,
-      priority: 3,
-      tone: "positive",
-      title: "Señal positiva en " + efficientCampaign.label,
-      evidence:
-        efficientCampaign.converted +
-        " alumnas convertidas y ROAS atribuido de " +
-        (efficientCampaign.roas ?? 0).toFixed(1) +
-        "× con " +
-        efficientCampaign.contacts +
-        " contactos.",
-      action: "Validar que la calidad se sostenga antes de escalar presupuesto gradualmente.",
-      href: viewHref("marketing", days),
-    });
-  }
-
-  if (
-    eventHistoryCoversComparison &&
-    attendanceDecisionSample >= 5 &&
-    showRateDrop >= 5
-  ) {
-    decisions.push({
-      key: "conversion-show-rate",
-      priority: showRateDrop >= 10 ? 1 : 2,
-      impact: 65,
-      tone: "danger",
-      title: "Reducir no show",
-      evidence:
-        "El show rate cayó " +
-        showRateDrop.toFixed(1) +
-        " pp: " +
-        pct(previousShowRate) +
-        " → " +
-        pct(showRate) +
-        " con " +
-        attendanceDecisionSample +
-        " resultados de asistencia.",
-      action: "Revisar recordatorios y concentrar recuperación en quienes faltaron.",
-      href: viewHref("conversion", days),
-    });
-  }
-
-  if (
-    eventHistoryCoversCurrentPeriod &&
-    noShowRecovery.eligible >= 3 &&
-    noShowRecovery.rate < 50
-  ) {
-    decisions.push({
-      key: "no-show-recovery",
-      priority: 2,
-      tone: "warning",
-      title: "Mejorar recuperación de no show",
-      evidence:
-        noShowRecovery.recovered +
-        " de " +
-        noShowRecovery.eligible +
-        " personas con no show volvieron a reservar (" +
-        pct(noShowRecovery.rate) +
-        ").",
-      action: "Contactar no-shows sin nueva reserva y medir cuántos regresan después del seguimiento.",
-      href: viewHref("conversion", days),
-    });
-  }
-
-  if (
-    eventHistoryCoversCurrentPeriod &&
-    cancellationRecovery.eligible >= 3 &&
-    cancellationRecovery.rate < 50
-  ) {
-    decisions.push({
-      key: "cancellation-recovery",
-      priority: 2,
-      tone: "warning",
-      title: "Recuperar cancelaciones",
-      evidence:
-        cancellationRecovery.recovered +
-        " de " +
-        cancellationRecovery.eligible +
-        " personas que cancelaron volvieron a reservar (" +
-        pct(cancellationRecovery.rate) +
-        ").",
-      action: "Separar por motivo y ofrecer una nueva reserva a quienes aún no regresan.",
-      href: viewHref("conversion", days),
-    });
-  }
-
-  if (
-    highestDemand &&
-    highestDemand.peakOccupancy >= 90 &&
-    highestDemand.attendanceCapacity >= 70
-  ) {
-    decisions.push({
-      key: "class-capacity-" + highestDemand.name,
-      priority: 3,
-      tone: "positive",
-      title: "Evaluar más capacidad en " + highestDemand.name,
-      evidence:
-        pct(highestDemand.peakOccupancy) +
-        " de demanda pico y " +
-        pct(highestDemand.attendanceCapacity) +
-        " de capacidad terminó asistiendo en " +
-        highestDemand.sessionCount +
-        " sesiones.",
-      action: "Revisar presión repetida y abrir capacidad/horario sólo si la asistencia sostiene la demanda.",
-      href: viewHref("clases", days),
-    });
-  }
-
-  if (lowestDemand && lowestDemand.peakOccupancy < 40) {
-    decisions.push({
-      key: "class-low-demand-" + lowestDemand.name,
-      priority: 2,
-      tone: "warning",
-      title: "Revisar " + lowestDemand.name,
-      evidence:
-        pct(lowestDemand.peakOccupancy) +
-        " de demanda pico en " +
-        lowestDemand.sessionCount +
-        " sesiones; ni antes de cancelaciones alcanza presión suficiente.",
-      action: "Comparar día/franja y probar cambio de horario o promoción antes de eliminarla.",
-      href: viewHref("clases", days),
-    });
-  }
-
-  if (highestCancellation && highestCancellation.cancellation >= 20) {
-    const refillLow = highestCancellation.cancellationRefill < 50;
-    decisions.push({
-      key: "class-cancellation-" + highestCancellation.name,
-      priority: refillLow ? 2 : 3,
-      tone: refillLow ? "warning" : "info",
-      title:
-        (refillLow ? "Recuperar lugares perdidos · " : "Cancelación alta, impacto contenido · ") +
-        highestCancellation.name,
-      evidence:
-        pct(highestCancellation.cancellation) +
-        " de cancelación y " +
-        pct(highestCancellation.cancellationRefill) +
-        " de lugares cancelados se recuperaron.",
-      action: refillLow
-        ? "Cruzar motivos con horario y mejorar reagenda/ocupación del lugar liberado."
-        : "Vigilar motivos, pero no cambiar horario sólo por la tasa de cancelación: los lugares se están recuperando.",
-      href: viewHref("clases", days),
-    });
-  }
-
-  if (missingCancellationReasonCount >= 2) {
-    decisions.push({
-      key: "data-cancellation-reasons",
-      priority: 3,
-      tone: "info",
-      title: "Completar causas de cancelación",
-      evidence:
-        missingCancellationReasonCount +
-        " cancelaciones del periodo siguen sin un motivo analizable.",
-      action: "Usar el nuevo selector estructurado y evitar cancelaciones administrativas sin causa.",
-      href: viewHref("conversion", days),
-    });
-  }
-
-  if (conversations.length === 0) {
-    decisions.push({
-      key: "data-asistian-conversations",
-      priority: 3,
-      tone: "info",
-      title: "Activar conversaciones de Asistian",
-      evidence:
-        "El receptor y el embudo ya están preparados, pero todavía no hay conversation_activity en este estudio.",
-      action: "Configurar la automatización de Asistian para enviar actividad entrante al receptor de Studio Flow.",
-      href: "/admin/integraciones/asistian",
-    });
-  }
-
-  decisions.sort(
-    (a, b) =>
-      a.priority - b.priority ||
-      (b.impact ?? 0) - (a.impact ?? 0),
-  );
-  const topDecisions = decisions.slice(0, 2);
 
   const [pageTitle, pageDescription] = titleFor(view);
 
@@ -3179,7 +822,7 @@ export default async function IntelligencePage({
     <main className="intel-page">
       <header className="intel-header">
         <div>
-          <p className="intel-kicker">📊 INTELIGENCIA</p>
+          <p className="intel-kicker">INTELIGENCIA</p>
           <h1>{pageTitle}</h1>
           <p>{pageDescription}</p>
         </div>
@@ -3208,76 +851,86 @@ export default async function IntelligencePage({
         ))}
       </nav>
 
-      {(["resumen", "alumnas", "conversion", "marketing", "clases", "retencion"] as ViewKey[]).includes(view) &&
-      !eventHistoryCoversComparison ? (
-        <div className="intel-source-note">
-          Cobertura histórica limitada:{" "}
-          {eventCoverageStartLabel
-            ? "los eventos inmutables observados comienzan el " + eventCoverageStartLabel
-            : "todavía no hay eventos inmutables registrados"}
-          . No inferimos actividad anterior faltante; las comparaciones y decisiones que dependen de eventos se desactivan cuando el periodo no tiene cobertura suficiente.
-          {syntheticDomainEventCount > 0
-            ? " Además, " +
-              syntheticDomainEventCount +
-              " eventos UAT/sintéticos fueron excluidos de las métricas."
-            : ""}
-        </div>
-      ) : null}
-
       {view === "resumen" ? (
         <>
-          <Section
-            title="🧭 Qué necesita tu atención"
-            description="Sólo mostramos las dos decisiones con mayor impacto. El resto queda en su sección."
-          >
-            <div className="intel-decision-list">
-              {topDecisions.length ? (
-                topDecisions.map((decision) => (
-                  <DecisionCard key={decision.key} decision={decision} />
-                ))
-              ) : (
-                <div className="intel-decision-empty">
-                  <strong>✓ Sin decisiones críticas detectadas</strong>
-                  <p>Las señales con muestra suficiente no requieren una acción prioritaria hoy.</p>
+          <section className="intel-kpi-grid">
+            <MetricCard
+              label="Ingresos cobrados"
+              value={money(currentRevenue, studio.currency, locale)}
+              delta={deltaText(currentRevenue, previousRevenue)}
+              tone={currentRevenue >= previousRevenue ? "positive" : "danger"}
+            />
+            <MetricCard
+              label="Alumnas activas"
+              value={String(activeStudents)}
+              delta={deltaText(activeStudents, previousActiveStudents)}
+              tone="positive"
+            />
+            <MetricCard
+              label="Conversión de prueba"
+              value={pct(trialConversion, locale)}
+              delta={pointsDelta(trialConversion, previousTrialConversion)}
+              tone={trialConversion >= previousTrialConversion ? "positive" : "warning"}
+            />
+            <MetricCard
+              label="Ocupación"
+              value={pct(currentClassMetrics.occupancy, locale)}
+              delta={pointsDelta(currentClassMetrics.occupancy, previousClassMetrics.occupancy)}
+              tone={currentClassMetrics.occupancy >= 70 ? "positive" : "warning"}
+            />
+          </section>
+
+          <div className="intel-two-column">
+            <div className="intel-stack">
+              <Section
+                title="Requiere atención"
+                description="Sólo aparecen señales que justifican una acción concreta."
+              >
+                <div className="intel-insight-list">
+                  {riskStudents.length ? (
+                    <Insight
+                      tone="danger"
+                      title={"🚨 " + riskStudents.length + " alumnas en riesgo"}
+                      body="Su paquete venció hace 7–14 días y todavía no registran una nueva compra."
+                      href="/admin/alumnas"
+                    />
+                  ) : (
+                    <Insight
+                      tone="positive"
+                      title="✓ Sin alumnas en riesgo inmediato"
+                      body="No hay paquetes vencidos dentro de la ventana de 7–14 días."
+                    />
+                  )}
+                  {highestCancellation && highestCancellation.cancellation >= 15 ? (
+                    <Insight
+                      tone="warning"
+                      title={"⚠️ " + highestCancellation.name}
+                      body={
+                        "Es la clase con mayor cancelación del periodo: " +
+                        pct(highestCancellation.cancellation, locale) +
+                        "."
+                      }
+                      href={viewHref("clases", days)}
+                    />
+                  ) : null}
+                  {pendingCurrent > 0 ? (
+                    <Insight
+                      tone="warning"
+                      title="💳 Cobranza pendiente"
+                      body={
+                        money(pendingCurrent, studio.currency, locale) +
+                        " continúan sin cobrar en ventas del periodo."
+                      }
+                      href={viewHref("dinero", days)}
+                    />
+                  ) : null}
                 </div>
-              )}
-            </div>
-          </Section>
+              </Section>
 
-          <Section
-            title="Estado del estudio"
-            description="Tres señales rápidas para entender si algo cambió de forma importante."
-          >
-            <div className="intel-finance-strip">
-              <div>
-                <small>Ingresos cobrados</small>
-                <strong>{money(currentRevenue, studio.currency)}</strong>
-                <span>{deltaText(currentRevenue, previousRevenue)}</span>
-              </div>
-              <div>
-                <small>Alumnas activas</small>
-                <strong>{activeStudents}</strong>
-                <span>
-                  {activeStudents - previousActiveStudents >= 0 ? "↑ " : "↓ "}
-                  {Math.abs(activeStudents - previousActiveStudents)} vs inicio del periodo
-                </span>
-              </div>
-              <div>
-                <small>Show rate</small>
-                <strong>{eventHistoryCoversCurrentPeriod ? pct(showRate) : "—"}</strong>
-                <span>
-                  {eventHistoryCoversComparison
-                    ? pointsDelta(showRate, previousShowRate)
-                    : "Cobertura histórica limitada"}
-                </span>
-              </div>
-            </div>
-          </Section>
-
-          <details className="intel-analysis-details">
-            <summary>Ver contexto adicional</summary>
-            <div className="intel-analysis-details-body">
-              <Section title="Ingresos cobrados por día">
+              <Section
+                title="Movimiento de ingresos"
+                description="Cobros menos reembolsos registrados en el periodo."
+              >
                 <div className="intel-bars">
                   {periodBuckets.slice(-14).map((item) => (
                     <BarRow
@@ -3285,112 +938,108 @@ export default async function IntelligencePage({
                       label={item.label}
                       value={Math.max(item.amount, 0)}
                       max={maxDailyRevenue}
-                      display={money(item.amount, studio.currency)}
+                      display={money(item.amount, studio.currency, locale)}
                     />
                   ))}
                 </div>
               </Section>
-              <div className="intel-source-note">
-                Resumen prioriza decisiones. Para investigar una señal, abre Conversión, Clases, Retención, Marketing o Finanzas.
-              </div>
             </div>
-          </details>
+
+            <div className="intel-stack">
+              <Section
+                title="Conversión de prueba"
+                description="El sistema actual empieza a medir desde la clase de prueba registrada."
+              >
+                <div className="intel-bars">
+                  <BarRow
+                    label="Pruebas registradas"
+                    value={trialCurrent.length}
+                    max={Math.max(trialCurrent.length, 1)}
+                    display={String(trialCurrent.length)}
+                    tone="info"
+                  />
+                  <BarRow
+                    label="Asistieron"
+                    value={trialAttended}
+                    max={Math.max(trialCurrent.length, 1)}
+                    display={String(trialAttended)}
+                    tone="info"
+                  />
+                  <BarRow
+                    label="Se convirtieron"
+                    value={trialConverted}
+                    max={Math.max(trialCurrent.length, 1)}
+                    display={String(trialConverted)}
+                    tone="success"
+                  />
+                </div>
+                <div className="intel-source-note">
+                  Registro → reserva todavía no tiene una fuente de leads previa a la clase de
+                  prueba.
+                </div>
+              </Section>
+
+              <Section title="Clases" description="Señales rápidas de capacidad.">
+                <div className="intel-compact-table">
+                  <div className="intel-table-head">
+                    <span>Clase</span>
+                    <span>Ocup.</span>
+                  </div>
+                  {classRows.slice(0, 4).map((row) => (
+                    <div className="intel-table-row" key={row.name}>
+                      <span>{row.name}</span>
+                      <strong>{pct(row.occupancy, locale)}</strong>
+                    </div>
+                  ))}
+                </div>
+              </Section>
+            </div>
+          </div>
         </>
       ) : null}
 
       {view === "dinero" ? (
         <>
-          <div className="intel-decision-layout">
-            <Section
-              title="💵 Dinero del periodo"
-              description="Cobros efectivos y saldos que todavía necesitan seguimiento."
-            >
-              <div className="intel-finance-strip">
-                <div>
-                  <small>Ingresos cobrados</small>
-                  <strong>{money(currentRevenue, studio.currency)}</strong>
-                  <span>{deltaText(currentRevenue, previousRevenue)}</span>
-                </div>
-                <div>
-                  <small>Por cobrar</small>
-                  <strong>{money(collectionPending, studio.currency)}</strong>
-                  <span>{collectionOpenRows.length} saldos abiertos</span>
-                </div>
-                <div>
-                  <small>Vencido</small>
-                  <strong>{money(collectionOverdueAmount, studio.currency)}</strong>
-                  <span>{collectionOverdueRows.length} compromisos vencidos</span>
-                </div>
-              </div>
-            </Section>
+          <section className="intel-kpi-grid">
+            <MetricCard
+              label="Ingresos cobrados"
+              value={money(currentRevenue, studio.currency, locale)}
+              delta={deltaText(currentRevenue, previousRevenue)}
+              tone={currentRevenue >= previousRevenue ? "positive" : "danger"}
+            />
+            <MetricCard
+              label="Pendiente de cobro"
+              value={money(pendingCurrent, studio.currency, locale)}
+              delta={pendingCurrent > 0 ? "Requiere seguimiento" : "Sin pendientes"}
+              tone={pendingCurrent > 0 ? "warning" : "positive"}
+            />
+            <MetricCard
+              label="Ticket promedio"
+              value={money(ticketAverage, studio.currency, locale)}
+              delta={deltaText(ticketAverage, previousTicketAverage)}
+              tone="neutral"
+            />
+            <MetricCard
+              label="Reembolsos"
+              value={money(currentRefunds, studio.currency, locale)}
+              delta={deltaText(currentRefunds, previousRefunds)}
+              tone={currentRefunds > previousRefunds ? "danger" : "neutral"}
+            />
+          </section>
 
-            <Section
-              title="🧠 Qué está pasando"
-              description="Primero prioriza cobranza; después cambios relevantes en ingresos."
-            >
-              <article
-                className={
-                  "intel-decision-summary " +
-                  (collectionOverdueAmount > 0
-                    ? "is-warning"
-                    : collectionDueTodayAmount > 0 ||
-                        (previousRevenue > 0 && currentRevenue < previousRevenue * 0.85)
-                      ? "is-warning"
-                      : "is-positive")
-                }
-              >
-                <strong>{moneyDecisionTitle}</strong>
-                <p>{moneyDecisionBody}</p>
-                <div>
-                  <small>Recomendación</small>
-                  <b>{moneyDecisionAction}</b>
-                </div>
-              </article>
-
-              <div className="intel-context-callout">
-                <small>Ticket promedio vendido</small>
-                <strong>{money(ticketAverage, studio.currency)}</strong>
-                <span>{deltaText(ticketAverage, previousTicketAverage)}</span>
-              </div>
-            </Section>
-          </div>
-
-          <details className="intel-analysis-details">
-            <summary>Ver ventas y cobranza detallada</summary>
-            <div className="intel-analysis-details-body">
-              <Section title="Cobranza abierta">
-                <div className="intel-risk-list">
-                  {collectionOpenRows.slice(0, 8).map((sale) => {
-                    const student = students.find((item) => item.id === sale.student_id);
-                    const overdue = Boolean(
-                      sale.payment_due_on && sale.payment_due_on < todayDate,
-                    );
-                    const dueToday = sale.payment_due_on === todayDate;
-                    return (
-                      <Link
-                        href={"/admin/ventas/" + sale.id}
-                        key={sale.id}
-                        className="intel-risk-row"
-                      >
-                        <span>
-                          <strong>{student?.full_name ?? "Alumna"}</strong>
-                          <small>
-                            {sale.payment_due_on
-                              ? overdue
-                                ? "Venció " + sale.payment_due_on
-                                : dueToday
-                                  ? "Vence hoy"
-                                  : "Vence " + sale.payment_due_on
-                              : "Sin fecha de promesa"}
-                          </small>
-                        </span>
-                        <b>{money(sale.balance, sale.currency)}</b>
-                      </Link>
-                    );
-                  })}
-                  {!collectionOpenRows.length ? (
-                    <p className="intel-empty">No hay saldos de cobranza abiertos.</p>
-                  ) : null}
+          <div className="intel-two-column">
+            <div className="intel-stack">
+              <Section title="Ingresos cobrados" description="Cobros netos por día.">
+                <div className="intel-bars">
+                  {periodBuckets.slice(-14).map((item) => (
+                    <BarRow
+                      key={item.key}
+                      label={item.label}
+                      value={Math.max(item.amount, 0)}
+                      max={maxDailyRevenue}
+                      display={money(item.amount, studio.currency, locale)}
+                    />
+                  ))}
                 </div>
               </Section>
 
@@ -3411,124 +1060,209 @@ export default async function IntelligencePage({
                       >
                         <span>{sale.folio}</span>
                         <span>{student?.full_name ?? "Alumna"}</span>
-                        <strong>{money(sale.total_minor, sale.currency)}</strong>
+                        <strong>{money(sale.total_minor, sale.currency, locale)}</strong>
                       </Link>
                     );
                   })}
                 </div>
               </Section>
             </div>
-          </details>
+
+            <div className="intel-stack">
+              <Section title="Por producto">
+                <div className="intel-bars">
+                  {productRows.length ? (
+                    productRows.map((item) => (
+                      <BarRow
+                        key={item.name}
+                        label={item.name}
+                        value={item.amount}
+                        max={productRows[0]?.amount ?? 1}
+                        display={money(item.amount, studio.currency, locale)}
+                        tone="success"
+                      />
+                    ))
+                  ) : (
+                    <p className="intel-empty">No hubo líneas de venta en el periodo.</p>
+                  )}
+                </div>
+              </Section>
+
+              <Section title="Cobranza">
+                <div className="intel-insight-list">
+                  <Insight
+                    tone={pendingCurrent > 0 ? "warning" : "positive"}
+                    title={
+                      pendingCurrent > 0
+                        ? "⚠️ Hay saldo pendiente"
+                        : "✓ Ventas del periodo sin saldo pendiente"
+                    }
+                    body={
+                      pendingCurrent > 0
+                        ? money(pendingCurrent, studio.currency, locale) +
+                          " no han sido cobrados todavía."
+                        : "No detectamos saldo abierto en las ventas del periodo."
+                    }
+                    href="/admin/ventas"
+                  />
+                  <Insight
+                    tone={currentRefunds > 0 ? "danger" : "info"}
+                    title="↩ Reembolsos"
+                    body={
+                      money(currentRefunds, studio.currency, locale) + " registrados en el periodo."
+                    }
+                    href="/admin/ventas"
+                  />
+                </div>
+              </Section>
+            </div>
+          </div>
         </>
       ) : null}
 
       {view === "alumnas" ? (
         <>
-          <div className="intel-decision-layout">
-            <Section
-              title="👥 Movimiento de alumnas"
-              description="Sólo los movimientos que cambian realmente la base del estudio."
-            >
-              <div className="intel-funnel-leaks">
-                <div>
-                  <small>Nuevas</small>
-                  <strong>+{newCommercialStudentsCurrent.length}</strong>
-                </div>
-                <div>
-                  <small>Reactivadas</small>
-                  <strong>+{reactivatedStudentsCurrent.length}</strong>
-                </div>
-                <div>
-                  <small>Churn confirmado</small>
-                  <strong>-{newlyConfirmedChurn.length}</strong>
-                </div>
-              </div>
-              <div className="intel-base-balance">
-                <small>Crecimiento neto</small>
-                <strong>
-                  {netStudentGrowth >= 0 ? "+" : ""}
-                  {netStudentGrowth}
-                </strong>
-                <span>{activeStudents} alumnas activas hoy</span>
-              </div>
-            </Section>
+          <section className="intel-kpi-grid">
+            <MetricCard
+              label="Activas"
+              value={String(activeStudents)}
+              delta={deltaText(activeStudents, previousActiveStudents)}
+              tone="positive"
+            />
+            <MetricCard
+              label="Nuevas"
+              value={String(currentStudents.length)}
+              delta={deltaText(currentStudents.length, previousStudents.length)}
+              tone="info"
+            />
+            <MetricCard
+              label="En riesgo"
+              value={String(riskStudents.length)}
+              delta="7–14 días desde vencimiento"
+              tone={riskStudents.length ? "warning" : "positive"}
+            />
+            <MetricCard
+              label="Abandono"
+              value={String(abandonedStudents.length)}
+              delta="30+ días desde vencimiento"
+              tone={abandonedStudents.length ? "danger" : "neutral"}
+            />
+          </section>
 
-            <Section
-              title="🧠 Qué está pasando con onboarding"
-              description="Detecta el primer paso que está frenando a más alumnas."
-            >
-              <article
-                className={
-                  "intel-decision-summary " +
-                  (topOnboardingBottleneck &&
-                  onboardingPending.length >= 3 &&
-                  topOnboardingBottleneck.count / onboardingPending.length >= 0.4
-                    ? "is-warning"
-                    : "is-positive")
-                }
+          <div className="intel-two-column">
+            <div className="intel-stack">
+              <Section title="Estado de alumnas">
+                <div className="intel-bars">
+                  <BarRow
+                    label="Activas"
+                    value={activeStudents}
+                    max={Math.max(students.length, 1)}
+                    display={String(activeStudents)}
+                    tone="success"
+                  />
+                  <BarRow
+                    label="En riesgo"
+                    value={riskStudents.length}
+                    max={Math.max(students.length, 1)}
+                    display={String(riskStudents.length)}
+                    tone="warning"
+                  />
+                  <BarRow
+                    label="Inactivas"
+                    value={inactiveStudents.length}
+                    max={Math.max(students.length, 1)}
+                    display={String(inactiveStudents.length)}
+                    tone="info"
+                  />
+                  <BarRow
+                    label="Abandono"
+                    value={abandonedStudents.length}
+                    max={Math.max(students.length, 1)}
+                    display={String(abandonedStudents.length)}
+                    tone="danger"
+                  />
+                </div>
+              </Section>
+
+              <Section
+                title="Activación del portal"
+                description="Progreso real de los pasos necesarios para completar la activación."
               >
-                <strong>
-                  {topOnboardingBottleneck &&
-                  onboardingPending.length >= 3 &&
-                  topOnboardingBottleneck.count / onboardingPending.length >= 0.4
-                    ? "El cuello de botella está en " + topOnboardingBottleneck.label
-                    : onboardingPending.length > 0
-                      ? "No hay un bloqueo dominante"
-                      : "Onboarding sin bloqueos pendientes"}
-                </strong>
-                <p>
-                  {topOnboardingBottleneck &&
-                  onboardingPending.length >= 3 &&
-                  topOnboardingBottleneck.count / onboardingPending.length >= 0.4
-                    ? topOnboardingBottleneck.count +
-                      " de " +
-                      onboardingPending.length +
-                      " onboardings pendientes se detienen primero en este paso."
-                    : onboardingPending.length > 0
-                      ? "Los casos pendientes están repartidos entre distintos pasos; no conviene rediseñar uno solo todavía."
-                      : "No hay alumnas detenidas en el flujo de onboarding."}
-                </p>
-                <div>
-                  <small>Recomendación</small>
-                  <b>
-                    {topOnboardingBottleneck &&
-                    onboardingPending.length >= 3 &&
-                    topOnboardingBottleneck.count / onboardingPending.length >= 0.4
-                      ? "Resolver primero este paso común y después medir si aumenta la llegada a primera reserva y primera asistencia."
-                      : onboardingPending.length > 0
-                        ? "Atender casos individuales y seguir observando antes de cambiar el flujo completo."
-                        : "Mantener el flujo actual y vigilar si aparece un nuevo punto de fricción."}
-                  </b>
+                <div className="intel-bars">
+                  {onboardingSteps.map(([label, key]) => {
+                    const completed = onboardingRows.filter((row) => Boolean(row[key])).length;
+                    return (
+                      <BarRow
+                        key={key}
+                        label={label}
+                        value={completed}
+                        max={Math.max(onboardingRows.length, 1)}
+                        display={completed + "/" + onboardingRows.length}
+                        tone={
+                          completed === onboardingRows.length && onboardingRows.length > 0
+                            ? "success"
+                            : "info"
+                        }
+                      />
+                    );
+                  })}
+                  <BarRow
+                    label="Onboarding completo"
+                    value={onboardingComplete}
+                    max={Math.max(onboardingRows.length, 1)}
+                    display={onboardingComplete + "/" + onboardingRows.length}
+                    tone="success"
+                  />
                 </div>
-              </article>
-            </Section>
-          </div>
+              </Section>
 
-          <Section
-            title="🚀 Avance del onboarding"
-            description="Una lectura rápida del porcentaje que llegó a cada paso."
-          >
-            <div className="intel-onboarding-steps">
-              {onboardingSteps.map(([label, key]) => {
-                const completed = onboardingRows.filter((row) => Boolean(row[key])).length;
-                const rate = safeRate(completed, onboardingRows.length);
-                return (
-                  <div className="intel-onboarding-step" key={key}>
-                    <span>{label}</span>
-                    <strong>{onboardingRows.length > 0 ? pct(rate) : "—"}</strong>
-                    <small>{completed}/{onboardingRows.length}</small>
-                  </div>
-                );
-              })}
+              <Section
+                title="Frecuencia semanal"
+                description="Asistencias promedio por alumna activa durante el periodo."
+              >
+                <div className="intel-frequency-value">
+                  <strong>{weeklyFrequency.toFixed(1)}</strong>
+                  <span>clases / semana</span>
+                </div>
+              </Section>
             </div>
-          </Section>
 
-          <details className="intel-analysis-details">
-            <summary>Ver análisis detallado</summary>
-            <div className="intel-analysis-details-body">
-              <Section title="Onboarding pendiente">
+            <div className="intel-stack">
+              <Section
+                title="Requieren seguimiento"
+                description="Tocar una alumna abre directamente su perfil."
+              >
                 <div className="intel-risk-list">
-                  {onboardingPending.slice(0, 10).map((item) => (
+                  {[...riskStudents, ...inactiveStudents, ...abandonedStudents]
+                    .sort((a, b) => b.days - a.days)
+                    .slice(0, 8)
+                    .map((item) => (
+                      <Link
+                        href={"/admin/alumnas/" + item.id}
+                        key={item.id}
+                        className="intel-risk-row"
+                      >
+                        <span>
+                          <strong>{item.name}</strong>
+                          <small>{item.days} días desde vencimiento</small>
+                        </span>
+                        <b>{item.state}</b>
+                      </Link>
+                    ))}
+                  {!riskStudents.length && !inactiveStudents.length && !abandonedStudents.length ? (
+                    <p className="intel-empty">
+                      No hay alumnas dentro de estas ventanas de riesgo.
+                    </p>
+                  ) : null}
+                </div>
+              </Section>
+
+              <Section
+                title="Onboarding pendiente"
+                description="Ordenado por quienes tienen menos pasos completados."
+              >
+                <div className="intel-risk-list">
+                  {onboardingPending.slice(0, 8).map((item) => (
                     <Link
                       href={"/admin/alumnas/" + item.studentId}
                       key={item.studentId}
@@ -3536,11 +1270,9 @@ export default async function IntelligencePage({
                     >
                       <span>
                         <strong>{item.name}</strong>
-                        <small>
-                          {item.completed}/6 · siguiente: {item.nextStep}
-                        </small>
+                        <small>{item.completed}/6 pasos completados</small>
                       </span>
-                      <b>{item.nextStep}</b>
+                      <b>Pendiente</b>
                     </Link>
                   ))}
                   {!onboardingPending.length ? (
@@ -3548,879 +1280,257 @@ export default async function IntelligencePage({
                   ) : null}
                 </div>
               </Section>
-
-              <Section title="Alumnas a intervenir">
-                <div className="intel-risk-list">
-                  {[
-                    ...preventiveRiskStudents,
-                    ...[...riskStudents, ...inactiveStudents, ...abandonedStudents].sort(
-                      (a, b) => a.days - b.days,
-                    ),
-                  ]
-                    .slice(0, 10)
-                    .map((item) => (
-                      <Link
-                        href={"/admin/alumnas/" + item.id}
-                        key={item.id + ":" + item.state}
-                        className="intel-risk-row"
-                      >
-                        <span>
-                          <strong>{item.name}</strong>
-                          <small>{item.detail}</small>
-                        </span>
-                        <b>{item.state}</b>
-                      </Link>
-                    ))}
-                </div>
-              </Section>
-
-              <div className="intel-source-note">
-                Nueva alumna = primera compra de paquete o membresía. Reactivación = regreso después de 30+ días. Churn sólo se confirma después de 30 días sin nueva compra.
-              </div>
             </div>
-          </details>
+          </div>
         </>
       ) : null}
 
       {view === "conversion" ? (
         <>
-          <div className="intel-decision-layout">
-            <Section
-              title="💬 Embudo de conversión"
-              description="Personas únicas del periodo seleccionado. Muestra el estado real del proceso hoy, sin esperar a que madure la cohorte."
-            >
-              <div className="intel-funnel">
-                <div className="intel-funnel-stage">
-                  <small>Prospectos</small>
-                  <strong>{liveTrialProspects}</strong>
-                  <span>100%</span>
-                </div>
-                <span className="intel-funnel-arrow" aria-hidden="true">→</span>
-                <div className="intel-funnel-stage">
-                  <small>Reservaron</small>
-                  <strong>{liveTrialBooked.size}</strong>
-                  <span>{liveTrialProspects > 0 ? pct(liveTrialBookingRate) : "—"}</span>
-                </div>
-                <span className="intel-funnel-arrow" aria-hidden="true">→</span>
-                <div className="intel-funnel-stage">
-                  <small>Asistieron</small>
-                  <strong>{liveTrialAttended.size}</strong>
-                  <span>
-                    {liveTrialBooked.size > 0 ? pct(liveTrialAttendanceRate) : "—"}
-                  </span>
-                </div>
-                <span className="intel-funnel-arrow" aria-hidden="true">→</span>
-                <div className="intel-funnel-stage is-success">
-                  <small>Compraron</small>
-                  <strong>{liveTrialConverted.size}</strong>
-                  <span>
-                    {liveTrialAttended.size > 0 ? pct(liveTrialConversionRate) : "—"}
-                  </span>
-                </div>
-              </div>
+          <section className="intel-kpi-grid">
+            <MetricCard
+              label="Pruebas registradas"
+              value={String(trialCurrent.length)}
+              delta={deltaText(trialCurrent.length, trialPrevious.length)}
+              tone="info"
+            />
+            <MetricCard
+              label="Asistieron"
+              value={String(trialAttended)}
+              delta={deltaText(trialAttended, trialPreviousAttended)}
+              tone="positive"
+            />
+            <MetricCard
+              label="Se convirtieron"
+              value={String(trialConverted)}
+              delta={deltaText(trialConverted, trialPreviousConverted)}
+              tone="positive"
+            />
+            <MetricCard
+              label="Conversión"
+              value={pct(trialConversion, locale)}
+              delta={pointsDelta(trialConversion, previousTrialConversion)}
+              tone={trialConversion >= previousTrialConversion ? "positive" : "warning"}
+            />
+          </section>
 
-              <div className="intel-funnel-leaks">
-                <div>
-                  <small>Pendientes de asistir</small>
-                  <strong>{liveTrialPending}</strong>
-                </div>
-                <div>
-                  <small>Cancelaron</small>
-                  <strong>{liveTrialCancelled.size}</strong>
-                </div>
-                <div>
-                  <small>No show</small>
-                  <strong>{liveTrialNoShow.size}</strong>
-                </div>
-              </div>
-
-              <p className="intel-funnel-note">
-                Este embudo es operativo y se actualiza con reservas, asistencia, cancelaciones,
-                no show y compras. La recomendación de abajo conserva la ventana madura de{" "}
-                {CONVERSION_MATURITY_DAYS} días para no sacar conclusiones con casos todavía abiertos.
-              </p>
-            </Section>
-
-            <Section
-              title="🧠 Qué está pasando"
-              description={"Studio Flow interpreta una cohorte madura de " + CONVERSION_MATURITY_DAYS + " días para evitar recomendaciones prematuras."}
-            >
-              <article
-                className={
-                  "intel-decision-summary " +
-                  (!conversionFunnelAvailable
-                    ? "is-info"
-                    : conversionBottleneck && conversionBottleneck.rate < 70
-                      ? "is-warning"
-                      : "is-positive")
-                }
-              >
-                <strong>{conversionDiagnosisTitle}</strong>
-                <p>{conversionDiagnosisBody}</p>
-                <div>
-                  <small>Recomendación</small>
-                  <b>{conversionDiagnosisAction}</b>
-                </div>
-              </article>
-
-              {topCancellationReason && conversionFunnelAvailable ? (
-                <div className="intel-context-callout">
-                  <small>Contexto útil</small>
-                  <strong>
-                    Principal motivo de cancelación: {topCancellationReason.label}
-                  </strong>
-                  <span>
-                    {topCancellationReason.count} de {currentCancellationEvents.length} cancelaciones del periodo.
-                  </span>
-                </div>
-              ) : null}
-
-              {!conversionFunnelUsesConversation && conversations.length === 0 ? (
-                <Link
-                  href="/admin/integraciones/asistian"
-                  className="intel-secondary-action"
-                >
-                  Conectar conversaciones de Asistian →
-                </Link>
-              ) : null}
-            </Section>
-          </div>
-
-          <details className="intel-analysis-details">
-            <summary>Ver análisis detallado</summary>
-            <div className="intel-analysis-details-body">
+          <div className="intel-two-column">
+            <div className="intel-stack">
               <Section
-                title="Fugas y recuperación"
-                description="Detalle operativo para investigar la conclusión; no cambia el embudo principal."
+                title="🎯 Embudo medible hoy"
+                description="La cohorte se toma por la fecha en que se creó la clase de prueba."
               >
                 <div className="intel-bars">
                   <BarRow
-                    label="Cancelaciones del periodo"
-                    value={currentCancellationEvents.length}
-                    max={Math.max(currentCancellationEvents.length, currentNoShowEvents.length, 1)}
-                    display={
-                      currentCancellationEvents.length +
-                      " · " +
-                      currentCancelledStudents.size +
-                      " personas"
-                    }
+                    label="Pruebas registradas"
+                    value={trialCurrent.length}
+                    max={Math.max(trialCurrent.length, 1)}
+                    display={String(trialCurrent.length)}
+                    tone="info"
+                  />
+                  <BarRow
+                    label="Asistieron"
+                    value={trialAttended}
+                    max={Math.max(trialCurrent.length, 1)}
+                    display={String(trialAttended)}
+                    tone="accent"
+                  />
+                  <BarRow
+                    label="Se convirtieron"
+                    value={trialConverted}
+                    max={Math.max(trialCurrent.length, 1)}
+                    display={String(trialConverted)}
+                    tone="success"
+                  />
+                </div>
+              </Section>
+
+              <Section title="Fuente pendiente: leads">
+                <div className="intel-source-note is-large">
+                  Para medir <strong>registro → reserva</strong> necesitamos persistir el lead antes
+                  de que exista una clase de prueba. Hoy Studio Flow comienza a tener trazabilidad
+                  cuando la prueba ya fue creada.
+                </div>
+              </Section>
+            </div>
+
+            <div className="intel-stack">
+              <Section title="🧩 Fugas de la prueba">
+                <div className="intel-insight-list">
+                  <Insight
                     tone="warning"
-                  />
-                  <BarRow
-                    label="Cancelaron y volvieron a reservar"
-                    value={cancellationRecovery.recovered}
-                    max={Math.max(cancellationRecovery.eligible, 1)}
-                    display={
-                      cancellationRecovery.recovered +
-                      "/" +
-                      cancellationRecovery.eligible +
-                      " · " +
-                      pct(cancellationRecovery.rate)
+                    title="⚠️ No show"
+                    body={
+                      trialNoShow + " clases de prueba terminaron en no show durante el periodo."
                     }
-                    tone="success"
                   />
-                  <BarRow
-                    label="No show del periodo"
-                    value={currentNoShowEvents.length}
-                    max={Math.max(currentCancellationEvents.length, currentNoShowEvents.length, 1)}
-                    display={
-                      currentNoShowEvents.length +
-                      " · " +
-                      currentNoShowStudents.size +
-                      " personas"
-                    }
+                  <Insight
                     tone="danger"
-                  />
-                  <BarRow
-                    label="No show y volvieron a reservar"
-                    value={noShowRecovery.recovered}
-                    max={Math.max(noShowRecovery.eligible, 1)}
-                    display={
-                      noShowRecovery.recovered +
-                      "/" +
-                      noShowRecovery.eligible +
-                      " · " +
-                      pct(noShowRecovery.rate)
+                    title="🚨 Asistieron y no compraron"
+                    body={
+                      Math.max(trialAttended - trialConverted, 0) +
+                      " personas asistieron pero todavía no aparecen como convertidas."
                     }
-                    tone="success"
                   />
                 </div>
               </Section>
-
-              <Section title="Motivos de cancelación">
-                <div className="intel-bars">
-                  {cancellationReasonRows.length ? (
-                    cancellationReasonRows.map((item) => (
-                      <BarRow
-                        key={item.label}
-                        label={item.label}
-                        value={item.count}
-                        max={cancellationReasonRows[0]?.count ?? 1}
-                        display={String(item.count)}
-                        tone={item.label === "Sin motivo registrado" ? "danger" : "warning"}
-                      />
-                    ))
-                  ) : (
-                    <p className="intel-empty">No hubo cancelaciones en el periodo.</p>
-                  )}
-                </div>
-              </Section>
-
-              <div className="intel-source-note">
-                La ruta principal es conversación/prospecto → reserva → asistencia → compra. Cancelación, reagenda y no show son fugas o recuperaciones laterales; no se fuerzan como etapas consecutivas del embudo.
-              </div>
             </div>
-          </details>
-        </>
-      ) : null}
-
-      {view === "marketing" ? (
-        <>
-          <div className="intel-decision-layout">
-            <Section
-              title="📣 De contacto a alumna"
-              description={"Cohorte madura con " + CONVERSION_MATURITY_DAYS + " días de observación por persona."}
-            >
-              <div className="intel-funnel">
-                <div className="intel-funnel-stage">
-                  <small>Contactos</small>
-                  <strong>
-                    {conversationHistoryCoversCurrentCohort
-                      ? currentMarketingContacts
-                      : "—"}
-                  </strong>
-                  <span>100%</span>
-                </div>
-                <span className="intel-funnel-arrow" aria-hidden="true">→</span>
-                <div className="intel-funnel-stage">
-                  <small>Agendaron</small>
-                  <strong>
-                    {conversationCohortCurrentCovered
-                      ? currentMarketingBooked
-                      : "—"}
-                  </strong>
-                  <span>
-                    {conversationCohortCurrentCovered && currentMarketingContacts > 0
-                      ? pct(currentMarketingBookingRate)
-                      : "—"}
-                  </span>
-                </div>
-                <span className="intel-funnel-arrow" aria-hidden="true">→</span>
-                <div className="intel-funnel-stage">
-                  <small>Asistieron</small>
-                  <strong>
-                    {conversationCohortCurrentCovered
-                      ? currentMarketingAttended
-                      : "—"}
-                  </strong>
-                  <span>
-                    {conversationCohortCurrentCovered && currentMarketingBooked > 0
-                      ? pct(currentMarketingAttendanceRate)
-                      : "—"}
-                  </span>
-                </div>
-                <span className="intel-funnel-arrow" aria-hidden="true">→</span>
-                <div className="intel-funnel-stage is-success">
-                  <small>Se convirtieron</small>
-                  <strong>
-                    {conversationHistoryCoversCurrentCohort
-                      ? currentMarketingConverted
-                      : "—"}
-                  </strong>
-                  <span>
-                    {conversationHistoryCoversCurrentCohort &&
-                    currentMarketingContacts > 0
-                      ? pct(currentMarketingConversionRate)
-                      : "—"}
-                  </span>
-                </div>
-              </div>
-
-              <div className="intel-funnel-leaks">
-                <div>
-                  <small>Gasto</small>
-                  <strong>{money(currentMarketingSpend, studio.currency)}</strong>
-                </div>
-                <div>
-                  <small>Cobros atribuidos</small>
-                  <strong>
-                    {conversationHistoryCoversCurrentCohort
-                      ? money(currentMarketingRevenue, studio.currency)
-                      : "—"}
-                  </strong>
-                </div>
-                <div>
-                  <small>ROAS</small>
-                  <strong>
-                    {currentMarketingRoas === null ||
-                    !conversationHistoryCoversCurrentCohort
-                      ? "—"
-                      : currentMarketingRoas.toFixed(2) + "×"}
-                  </strong>
-                </div>
-              </div>
-            </Section>
-
-            <Section
-              title="🧠 Qué está pasando"
-              description="La recomendación prioriza calidad de atribución y después desempeño."
-            >
-              <article
-                className={
-                  "intel-decision-summary " +
-                  (conversations.length === 0 ||
-                  unattributedMarketingSpend > 0 ||
-                  paidCampaignWithoutConversion
-                    ? "is-warning"
-                    : efficientCampaign
-                      ? "is-positive"
-                      : "is-info")
-                }
-              >
-                <strong>{marketingDecisionTitle}</strong>
-                <p>{marketingDecisionBody}</p>
-                <div>
-                  <small>Recomendación</small>
-                  <b>{marketingDecisionAction}</b>
-                </div>
-              </article>
-
-              {pendingMarketingContacts > 0 ? (
-                <div className="intel-context-callout">
-                  <small>Cohorte reciente</small>
-                  <strong>{pendingMarketingContacts} contactos aún madurando</strong>
-                  <span>No generan decisiones hasta completar su ventana de observación.</span>
-                </div>
-              ) : null}
-            </Section>
           </div>
-
-          <details className="intel-analysis-details">
-            <summary>Ver campañas y análisis detallado</summary>
-            <div className="intel-analysis-details-body">
-              <Section title="Campañas y orígenes">
-                <div className="intel-campaign-list">
-                  {!conversationHistoryCoversCurrentCohort ? (
-                    <div className="intel-decision-empty">
-                      <strong>Cobertura histórica insuficiente</strong>
-                      <p>No comparamos campañas hasta cubrir la cohorte completa.</p>
-                    </div>
-                  ) : currentMarketingDecisionRows.length ? (
-                    currentMarketingDecisionRows.map((row) => (
-                      <article className="intel-campaign-card" key={row.key}>
-                        <div className="intel-campaign-heading">
-                          <div>
-                            <strong>{row.label}</strong>
-                            <small>
-                              {row.campaign && row.source
-                                ? row.source + " · " + row.campaign
-                                : row.source ?? "Sin atribución"}
-                            </small>
-                          </div>
-                          <span>{row.contacts} contactos</span>
-                        </div>
-                        <div className="intel-campaign-metrics">
-                          <div><small>Reserva</small><b>{eventHistoryCoversCurrentCohort ? pct(row.bookingRate) : "—"}</b></div>
-                          <div><small>Alumna</small><b>{pct(row.conversionRate)}</b></div>
-                          <div><small>Gasto</small><b>{money(row.spend, studio.currency)}</b></div>
-                          <div><small>Costo/alumna</small><b>{row.costPerStudent === null ? "—" : money(row.costPerStudent, studio.currency)}</b></div>
-                          <div><small>Cobros</small><b>{money(row.revenue, studio.currency)}</b></div>
-                          <div><small>ROAS</small><b>{row.roas === null ? "—" : row.roas.toFixed(2) + "×"}</b></div>
-                        </div>
-                      </article>
-                    ))
-                  ) : (
-                    <p className="intel-empty">Todavía no hay campañas atribuibles en la cohorte.</p>
-                  )}
-                </div>
-              </Section>
-
-              <div className="intel-source-note">
-                Atribución no significa causalidad. Una campaña necesita al menos 5 contactos maduros antes de generar una señal de decisión.
-              </div>
-            </div>
-          </details>
         </>
       ) : null}
 
       {view === "clases" ? (
         <>
-          <div className="intel-decision-layout">
-            <Section
-              title="🪑 Asistencia por clase"
-              description="Compara asistencia promedio por sesión contra el periodo anterior. Así una clase no parece peor sólo porque tuvo más o menos sesiones."
-            >
-              <div className="intel-simple-ranking">
-                {classRows.slice(0, 6).map((row) => {
-                  const comparison = classComparisonRows.find(
-                    (item) => item.templateId === row.templateId,
-                  );
-                  const average =
-                    row.sessionCount > 0 ? row.attended / row.sessionCount : 0;
-                  return (
-                    <div className="intel-simple-ranking-row" key={row.templateId}>
-                      <span>
-                        <strong>{row.name}</strong>
-                        <small>
-                          {row.sessionCount} {row.sessionCount === 1 ? "sesión" : "sesiones"}
-                        </small>
-                      </span>
-                      <div>
-                        <b>{average.toFixed(1)}</b>
-                        <small>asist./sesión</small>
-                      </div>
-                      <em
-                        className={
-                          comparison?.changePct === null || comparison?.changePct === undefined
-                            ? "is-neutral"
-                            : comparison.changePct >= 0
-                              ? "is-positive"
-                              : "is-negative"
-                        }
-                      >
-                        {comparison?.changePct === null || comparison?.changePct === undefined
-                          ? "—"
-                          : (comparison.changePct >= 0 ? "↑ " : "↓ ") +
-                            Math.abs(comparison.changePct).toFixed(0) +
-                            "%"}
-                      </em>
-                    </div>
-                  );
-                })}
-                {!classRows.length ? (
-                  <p className="intel-empty">Todavía no hay sesiones para analizar.</p>
-                ) : null}
-              </div>
-              <p className="intel-funnel-note">
-                El porcentaje compara contra el periodo anterior usando sólo clases con al menos 3 sesiones en ambos periodos.
-              </p>
-            </Section>
+          <section className="intel-kpi-grid">
+            <MetricCard
+              label="Ocupación"
+              value={pct(currentClassMetrics.occupancy, locale)}
+              delta={pointsDelta(currentClassMetrics.occupancy, previousClassMetrics.occupancy)}
+              tone={currentClassMetrics.occupancy >= 70 ? "positive" : "warning"}
+            />
+            <MetricCard
+              label="Asistencias"
+              value={String(currentClassMetrics.attended)}
+              delta={deltaText(currentClassMetrics.attended, previousClassMetrics.attended)}
+              tone="neutral"
+            />
+            <MetricCard
+              label="Cancelaciones"
+              value={pct(currentClassMetrics.cancellation, locale)}
+              delta={pointsDelta(
+                currentClassMetrics.cancellation,
+                previousClassMetrics.cancellation,
+              )}
+              tone={currentClassMetrics.cancellation > 15 ? "danger" : "warning"}
+            />
+            <MetricCard
+              label="No show"
+              value={pct(currentClassMetrics.noShow, locale)}
+              delta={pointsDelta(currentClassMetrics.noShow, previousClassMetrics.noShow)}
+              tone={currentClassMetrics.noShow > 10 ? "danger" : "neutral"}
+            />
+          </section>
 
-            <Section
-              title="🧠 Qué está pasando"
-              description="Una conclusión priorizada para decidir si realmente vale la pena mover algo."
-            >
-              <article
-                className={
-                  "intel-decision-summary " +
-                  (!eventHistoryCoversComparison || !classComparisonRows.length
-                    ? "is-info"
-                    : classLargestDrop && (classLargestDrop.changePct ?? 0) <= -15
-                      ? "is-warning"
-                      : "is-positive")
-                }
-              >
-                <strong>{classDecisionTitle}</strong>
-                <p>{classDecisionBody}</p>
-                <div>
-                  <small>Recomendación</small>
-                  <b>{classDecisionAction}</b>
-                </div>
-              </article>
-
-              {studyAttendanceChangePct !== null ? (
-                <div className="intel-context-callout">
-                  <small>Contexto del estudio</small>
-                  <strong>
-                    Asistencia promedio general{" "}
-                    {studyAttendanceChangePct >= 0 ? "subió" : "bajó"}{" "}
-                    {Math.abs(studyAttendanceChangePct).toFixed(0)}%
-                  </strong>
-                  <span>
-                    {currentStudyAttendancePerSession.toFixed(1)} vs{" "}
-                    {previousStudyAttendancePerSession.toFixed(1)} asistencias por sesión.
-                  </span>
-                </div>
-              ) : null}
-            </Section>
-          </div>
-
-          <details className="intel-analysis-details">
-            <summary>Ver análisis detallado</summary>
-            <div className="intel-analysis-details-body">
+          <div className="intel-two-column">
+            <div className="intel-stack">
               <Section
-                title="Demanda, cancelación y no show"
-                description="Detalle para investigar una caída o crecimiento detectado."
+                title="🪑 Rendimiento por clase"
+                description="Demanda, asistencia real y pérdida de capacidad."
               >
                 <div className="intel-data-table">
                   <div className="intel-data-head intel-class-grid">
                     <span>Clase</span>
-                    <span>Pico</span>
-                    <span>Asist./cap.</span>
+                    <span>Ocup.</span>
+                    <span>Asist.</span>
                     <span>Canc.</span>
-                    <span>Recup.</span>
-                    <span>No show</span>
                   </div>
                   {classRows.map((row) => (
-                    <div className="intel-data-row intel-class-grid" key={row.templateId}>
+                    <div className="intel-data-row intel-class-grid" key={row.name}>
                       <span>{row.name}</span>
-                      <strong>
-                        {eventHistoryCoversCurrentPeriod
-                          ? pct(row.peakOccupancy)
-                          : "—"}
-                      </strong>
-                      <span>{pct(row.attendanceCapacity)}</span>
-                      <span>{pct(row.cancellation)}</span>
-                      <span>
-                        {row.lifecycleCancellations > 0
-                          ? pct(row.cancellationRefill)
-                          : "—"}
-                      </span>
-                      <span>{pct(row.noShowRate)}</span>
+                      <strong>{pct(row.occupancy, locale)}</strong>
+                      <span>{pct(row.attendance, locale)}</span>
+                      <span>{pct(row.cancellation, locale)}</span>
                     </div>
                   ))}
                 </div>
               </Section>
 
-              <div className="intel-source-note">
-                Cuando tengamos suficiente historial anual, esta misma conclusión podrá contrastar el comportamiento con el mismo mes de años anteriores para separar una anomalía de un patrón estacional. Hasta entonces no atribuimos una caída a temporada o factores externos sin evidencia.
-              </div>
-            </div>
-          </details>
-        </>
-      ) : null}
-
-      {view === "retencion" ? (
-        <>
-          <div className="intel-decision-layout">
-            <Section
-              title="🫶 Estado de retención"
-              description="Primero prevención; después recuperación. Churn sólo cuando ya existe evidencia suficiente."
-            >
-              <div className="intel-funnel-leaks">
-                <div>
-                  <small>Riesgo preventivo</small>
-                  <strong>{preventiveRiskStudents.length}</strong>
-                </div>
-                <div>
-                  <small>Por recuperar</small>
-                  <strong>{riskStudents.length + inactiveStudents.length}</strong>
-                </div>
-                <div>
-                  <small>Churn confirmado</small>
-                  <strong>{abandonedStudents.length}</strong>
-                </div>
-              </div>
-              <div className="intel-base-balance">
-                <small>Renovación ≤30 días</small>
-                <strong>{renewal.matured > 0 ? pct(renewal.rate) : "—"}</strong>
-                <span>
-                  {renewal.matured > 0
-                    ? renewal.matured + " casos con resultado conocido"
-                    : "La cohorte todavía está madurando"}
-                </span>
-              </div>
-            </Section>
-
-            <Section
-              title="🧠 Qué está pasando"
-              description="Una sola prioridad de retención basada en señales observables."
-            >
-              <article
-                className={
-                  "intel-decision-summary " +
-                  (preventiveRiskStudents.length > 0 || retentionRecoveryCount > 0
-                    ? "is-warning"
-                    : "is-positive")
-                }
-              >
-                <strong>{retentionDecisionTitle}</strong>
-                <p>{retentionDecisionBody}</p>
-                <div>
-                  <small>Recomendación</small>
-                  <b>{retentionDecisionAction}</b>
-                </div>
-              </article>
-
-              {!retentionHistoryCovered ? (
-                <div className="intel-context-callout">
-                  <small>Cobertura conductual</small>
-                  <strong>Historial todavía limitado</strong>
-                  <span>
-                    No inferimos ausencia, caída de frecuencia o fricción antes del historial disponible.
-                  </span>
-                </div>
-              ) : null}
-            </Section>
-          </div>
-
-          <details className="intel-analysis-details">
-            <summary>Ver alumnas y análisis detallado</summary>
-            <div className="intel-analysis-details-body">
-              <Section title="Alumnas a intervenir ahora">
-                <div className="intel-risk-list">
-                  {preventiveRiskStudents.slice(0, 10).map((item) => (
-                    <Link
-                      href={"/admin/alumnas/" + item.id}
-                      key={item.id}
-                      className="intel-risk-row"
-                    >
-                      <span>
-                        <strong>{item.name}</strong>
-                        <small>{item.detail}</small>
-                      </span>
-                      <b>{item.state}</b>
-                    </Link>
-                  ))}
-                  {!preventiveRiskStudents.length ? (
-                    <p className="intel-empty">No hay señales preventivas con suficiente evidencia hoy.</p>
-                  ) : null}
-                </div>
-              </Section>
-
-              <Section title="Recuperación después del vencimiento">
-                <div className="intel-risk-list">
-                  {[...riskStudents, ...inactiveStudents, ...abandonedStudents]
-                    .sort((a, b) => a.days - b.days)
-                    .slice(0, 10)
-                    .map((item) => (
-                      <Link
-                        href={"/admin/alumnas/" + item.id}
-                        key={item.id + ":" + item.state}
-                        className="intel-risk-row"
-                      >
-                        <span>
-                          <strong>{item.name}</strong>
-                          <small>{item.detail}</small>
-                        </span>
-                        <b>{item.state}</b>
-                      </Link>
-                    ))}
-                  {!retentionRecoveryCount ? (
-                    <p className="intel-empty">No hay alumnas vencidas que requieran recuperación.</p>
-                  ) : null}
-                </div>
-              </Section>
-
-              <Section title="Qué pasó después del vencimiento">
+              <Section title="Demanda por horario">
                 <div className="intel-bars">
-                  <BarRow
-                    label="Renovaron ≤30 días"
-                    value={renewal.renewedWithin30}
-                    max={Math.max(renewal.expired, 1)}
-                    display={String(renewal.renewedWithin30)}
-                    tone="success"
-                  />
-                  <BarRow
-                    label="Reactivaron >30 días"
-                    value={renewal.reactivated}
-                    max={Math.max(renewal.expired, 1)}
-                    display={String(renewal.reactivated)}
-                    tone="info"
-                  />
-                  <BarRow
-                    label="Churn confirmado"
-                    value={renewal.churnConfirmed}
-                    max={Math.max(renewal.expired, 1)}
-                    display={String(renewal.churnConfirmed)}
-                    tone="danger"
-                  />
-                  <BarRow
-                    label="Todavía madurando"
-                    value={renewal.pendingMaturity}
-                    max={Math.max(renewal.expired, 1)}
-                    display={String(renewal.pendingMaturity)}
-                    tone="warning"
-                  />
-                </div>
-              </Section>
-            </div>
-          </details>
-        </>
-      ) : null}
-
-      {view === "finanzas" ? (
-        <>
-          <div className="intel-decision-layout">
-            <Section
-              title="💰 Estado financiero"
-              description="Una lectura operativa rápida con los gastos que sí están registrados."
-            >
-              <div className="intel-finance-strip">
-                <div>
-                  <small>Ingresos cobrados</small>
-                  <strong>{money(currentRevenue, studio.currency)}</strong>
-                  <span>{deltaText(currentRevenue, previousRevenue)}</span>
-                </div>
-                <div>
-                  <small>Gastos registrados</small>
-                  <strong>{money(currentExpenseTotal, studio.currency)}</strong>
-                  <span>{currentExpenses.length} movimientos</span>
-                </div>
-                <div>
-                  <small>Resultado registrado</small>
-                  <strong>{money(currentOperatingResult, studio.currency)}</strong>
-                  <span>
-                    {currentRevenue > 0 ? pct(currentOperatingMargin) + " margen" : "—"}
-                  </span>
-                </div>
-              </div>
-              <p className="intel-funnel-note">
-                El resultado sólo usa gastos capturados. No equivale a utilidad contable o fiscal.
-              </p>
-            </Section>
-
-            <Section
-              title="🧠 Qué está pasando"
-              description="La conclusión prioriza primero la calidad de los datos y después el desempeño."
-            >
-              <article
-                className={
-                  "intel-decision-summary " +
-                  (currentRevenue > 0 && currentExpenses.length === 0
-                    ? "is-warning"
-                    : currentOperatingResult < 0 ||
-                        (previousRevenue > 0 &&
-                          currentOperatingMargin < previousOperatingMargin - 10)
-                      ? "is-warning"
-                      : "is-positive")
-                }
-              >
-                <strong>{financeDecisionTitle}</strong>
-                <p>{financeDecisionBody}</p>
-                <div>
-                  <small>Recomendación</small>
-                  <b>{financeDecisionAction}</b>
-                </div>
-              </article>
-
-              {expenseCategoryRows[0] ? (
-                <div className="intel-context-callout">
-                  <small>Mayor categoría de gasto</small>
-                  <strong>{expenseCategoryRows[0].label}</strong>
-                  <span>
-                    {money(expenseCategoryRows[0].amount, studio.currency)} en el periodo.
-                  </span>
-                </div>
-              ) : null}
-            </Section>
-          </div>
-
-          <details className="intel-analysis-details">
-            <summary>Ver gastos y análisis detallado</summary>
-            <div className="intel-analysis-details-body">
-              <Section title="Gastos por categoría">
-                <div className="intel-bars">
-                  {expenseCategoryRows.length ? (
-                    expenseCategoryRows.map((item) => (
+                  {Object.entries(daypart).map(([label, values]) => {
+                    const rate = safeRate(values[0], values[1]);
+                    return (
                       <BarRow
-                        key={item.category}
-                        label={item.label}
-                        value={item.amount}
-                        max={expenseCategoryRows[0]?.amount ?? 1}
-                        display={money(item.amount, studio.currency)}
-                        tone="warning"
+                        key={label}
+                        label={label}
+                        value={rate}
+                        max={100}
+                        display={pct(rate, locale)}
+                        tone={rate >= 75 ? "success" : rate < 45 ? "warning" : "info"}
                       />
-                    ))
-                  ) : (
-                    <p className="intel-empty">No hay gastos registrados en este periodo.</p>
-                  )}
+                    );
+                  })}
                 </div>
               </Section>
 
-              <Section title="Últimos gastos">
-                <div className="intel-expense-list">
-                  {recentExpenses.map((expense) => (
-                    <article className="intel-expense-row" key={expense.id}>
-                      <div>
-                        <strong>{expense.description}</strong>
-                        <small>
-                          {(expenseCategoryLabels[expense.category] ?? expense.category) +
-                            " · " +
-                            expense.effective_on +
-                            (expense.vendor ? " · " + expense.vendor : "")}
-                        </small>
-                      </div>
-                      <div className="intel-expense-amount">
-                        <b>{money(expense.amount_minor, expense.currency)}</b>
-                        {canWriteFinance ? (
-                          <form action={deleteStudioExpense}>
-                            <input type="hidden" name="expense_id" value={expense.id} />
-                            <input type="hidden" name="days" value={String(days)} />
-                            <button type="submit">Eliminar</button>
-                          </form>
-                        ) : null}
-                      </div>
-                    </article>
-                  ))}
-                  {!recentExpenses.length ? (
-                    <p className="intel-empty">Todavía no hay gastos en el periodo seleccionado.</p>
+              <Section title="Demanda por día">
+                <div className="intel-bars">
+                  {[...weekday.entries()].map(([label, values]) => {
+                    const rate = safeRate(values[0], values[1]);
+                    return (
+                      <BarRow
+                        key={label}
+                        label={label}
+                        value={rate}
+                        max={100}
+                        display={pct(rate, locale)}
+                      />
+                    );
+                  })}
+                </div>
+              </Section>
+            </div>
+
+            <div className="intel-stack">
+              <Section title="Señales para decidir">
+                <div className="intel-insight-list">
+                  {highestDemand ? (
+                    <Insight
+                      tone="positive"
+                      title="🔥 Mayor demanda"
+                      body={
+                        highestDemand.name +
+                        " está en " +
+                        pct(highestDemand.occupancy, locale) +
+                        " de ocupación."
+                      }
+                    />
+                  ) : null}
+                  {lowestDemand ? (
+                    <Insight
+                      tone={lowestDemand.occupancy < 40 ? "danger" : "info"}
+                      title="❄️ Menor demanda"
+                      body={
+                        lowestDemand.name +
+                        " está en " +
+                        pct(lowestDemand.occupancy, locale) +
+                        " de ocupación."
+                      }
+                    />
+                  ) : null}
+                  {highestCancellation ? (
+                    <Insight
+                      tone={highestCancellation.cancellation >= 15 ? "warning" : "info"}
+                      title="⚠️ Mayor cancelación"
+                      body={
+                        highestCancellation.name +
+                        " concentra " +
+                        pct(highestCancellation.cancellation, locale) +
+                        " de cancelaciones."
+                      }
+                    />
                   ) : null}
                 </div>
               </Section>
 
-              {canWriteFinance ? (
-                <Section title="＋ Registrar gasto">
-                  <form action={createStudioExpense} className="intel-expense-form">
-                    <input type="hidden" name="days" value={String(days)} />
-                    <label>
-                      Categoría
-                      <select name="category" defaultValue="" required>
-                        <option value="" disabled>Selecciona</option>
-                        {Object.entries(expenseCategoryLabels).map(([value, label]) => (
-                          <option key={value} value={value}>{label}</option>
-                        ))}
-                      </select>
-                    </label>
-                    <label>
-                      Concepto
-                      <input
-                        name="description"
-                        placeholder="Ej. Renta septiembre"
-                        maxLength={140}
-                        required
-                      />
-                    </label>
-                    <div className="intel-expense-form-grid">
-                      <label>
-                        Importe
-                        <input
-                          name="amount"
-                          type="number"
-                          min="0.01"
-                          step="0.01"
-                          inputMode="decimal"
-                          placeholder="0.00"
-                          required
-                        />
-                      </label>
-                      <label>
-                        Fecha efectiva
-                        <input name="effective_on" type="date" defaultValue={todayDate} required />
-                      </label>
-                    </div>
-                    <label>
-                      Proveedor
-                      <input name="vendor" placeholder="Opcional" maxLength={120} />
-                    </label>
-                    <div className="intel-expense-form-grid">
-                      <label>
-                        Origen de marketing
-                        <input
-                          name="marketing_source"
-                          placeholder="Ej. meta_ads"
-                          maxLength={120}
-                        />
-                      </label>
-                      <label>
-                        Campaña
-                        <input
-                          name="marketing_campaign"
-                          placeholder="Ej. pole_septiembre"
-                          maxLength={160}
-                        />
-                      </label>
-                    </div>
-                    <label>
-                      Nota
-                      <textarea name="notes" placeholder="Opcional" maxLength={500} rows={3} />
-                    </label>
-                    <button type="submit" className="primary-button">Guardar gasto</button>
-                  </form>
-                </Section>
-              ) : null}
+              <Section title="Qué revisar">
+                <div className="intel-rule-list">
+                  <div>
+                    <span>&lt;40% por 4+ semanas</span>
+                    <strong>Mover o promover</strong>
+                  </div>
+                  <div>
+                    <span>&gt;15% cancelación</span>
+                    <strong>Revisar horario</strong>
+                  </div>
+                  <div>
+                    <span>&gt;90% ocupación</span>
+                    <strong>Agregar capacidad</strong>
+                  </div>
+                </div>
+              </Section>
             </div>
-          </details>
+          </div>
         </>
       ) : null}
     </main>

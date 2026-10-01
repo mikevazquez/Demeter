@@ -18,9 +18,6 @@ export type TodayRosterItem = {
   attendanceSource?: string | null;
   checkedInAt?: string | null;
   attendanceProvenance?: string | null;
-  paymentDueOnAttendance?: boolean;
-  individualPriceMinor?: number | null;
-  currency?: string;
 };
 
 export type TodayCandidate = {
@@ -58,6 +55,8 @@ type TodayClassesProps = {
   canAttendance: boolean;
   canBook: boolean;
   canCreateStudent: boolean;
+  locale: string;
+  timeZone: string;
   canCorrectCompleted?: boolean;
   serverNow: string;
 };
@@ -68,6 +67,8 @@ export function TodayClasses({
   canAttendance,
   canBook,
   canCreateStudent,
+  locale,
+  timeZone,
   canCorrectCompleted = true,
   serverNow,
 }: TodayClassesProps) {
@@ -162,14 +163,12 @@ export function TodayClasses({
               aria-controls={`session-${item.id}`}
             >
               <span className="today-class-accent" aria-hidden="true" />
-              <span className="today-class-time">
-                <i aria-hidden="true" />
-                {item.time}
-              </span>
+              <span className="today-class-time">{item.time}</span>
               <span className="today-class-copy">
                 <strong>{item.name}</strong>
-                <small>
-                  {item.instructor} · {item.space}
+                <small className="today-class-meta">
+                  {item.instructor}
+                  {item.space !== "Sin espacio" ? ` · ${item.space}` : ""}
                 </small>
                 <span className="today-class-state-row">
                   <span className={`today-class-state is-${phase}`}>{phaseLabel}</span>
@@ -189,7 +188,10 @@ export function TodayClasses({
                 ) : null}
               </span>
               <span className="today-class-capacity">
-                {item.occupied}/{item.capacity}
+                <b>
+                  {item.occupied}/{item.capacity}
+                </b>
+                <small>lugares</small>
                 {item.minimumReservationsEnabled ? (
                   <small className="today-class-minimum-badge">
                     Mín. {item.minimumReservations}
@@ -197,7 +199,7 @@ export function TodayClasses({
                 ) : null}
               </span>
               <span className="today-class-chevron" aria-hidden="true">
-                {isOpen ? "⌃" : "⌄"}
+                {isOpen ? "−" : "+"}
               </span>
             </button>
 
@@ -214,6 +216,8 @@ export function TodayClasses({
                 canAttendance={canAttendance}
                 canBook={canBook}
                 canCreateStudent={canCreateStudent}
+                locale={locale}
+                timeZone={timeZone}
                 canCorrectCompleted={canCorrectCompleted}
                 returnTo={item.returnTo}
                 initiallyOpen

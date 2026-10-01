@@ -310,7 +310,7 @@ describe("SF-167 communication control", () => {
       "utf8",
     );
 
-    expect(listPage).toContain("Horario global de comunicaciones");
+    expect(listPage).toContain("Horario de envío");
     expect(listPage).toContain("automation_communication_settings");
     expect(listPage).toContain("saveGlobalCommunicationWindowAction");
     expect(detailPage).toContain("Control de comunicaciones");

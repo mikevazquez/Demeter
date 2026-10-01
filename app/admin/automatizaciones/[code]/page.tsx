@@ -5,6 +5,7 @@ import { getAdminContext } from "@/lib/auth/admin-context";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { AUTOMATION_CATALOG } from "@/lib/automations/catalog";
 import AutomationNotice from "../AutomationNotice";
+import "../communication-v2.css";
 import {
   activateAutomationAction,
   archiveAutomationAction,
@@ -232,7 +233,7 @@ export default async function AutomationDetailPage({
     eventsByExecution.set(event.execution_id, rows);
   }
 
-  const dateTime = new Intl.DateTimeFormat("es-MX", {
+  const dateTime = new Intl.DateTimeFormat(ctx.studio.locale, {
     dateStyle: "medium",
     timeStyle: "short",
     timeZone: ctx.studio.timezone,
@@ -245,13 +246,10 @@ export default async function AutomationDetailPage({
     canManage && (template.configurationMode === "multiple" || nonArchived.length === 0);
 
   return (
-    <main className="dashboard-shell admin-ux04-secondary-detail automation-detail-page">
+    <main className="communication-v2-detail automation-detail-page">
       <header>
-        <Link
-          href="/admin/automatizaciones"
-          className="mb-3 inline-flex text-sm font-semibold text-zinc-400 transition hover:text-white"
-        >
-          ← Automatizaciones
+        <Link href="/admin/automatizaciones" className="communication-v2-detail-back">
+          ← Comunicación
         </Link>
         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-fuchsia-300">
           {template.category}

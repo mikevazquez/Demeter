@@ -17,7 +17,7 @@ function normalizeSearch(value: string) {
   return value
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
-    .toLocaleLowerCase("es-MX")
+    .toLowerCase()
     .trim();
 }
 
@@ -63,8 +63,8 @@ export function ExistingStudentAddForm({
             setQuery(event.target.value);
             setSelectedStudentId("");
           }}
-          placeholder="Buscar alumna por nombre"
-          aria-label="Buscar alumna por nombre"
+          placeholder="Busca por nombre…"
+          aria-label="Buscar alumna"
           autoComplete="off"
           className="min-h-12 w-full rounded-xl border border-white/15 bg-black/25 px-3.5 text-base text-white outline-none transition placeholder:text-zinc-500 focus:border-fuchsia-500/60"
         />
@@ -106,9 +106,7 @@ export function ExistingStudentAddForm({
                       {candidate.fullName}
                     </span>
                     <small className="max-w-[46%] shrink-0 text-right text-[11px] text-zinc-500">
-                      {canPostCloseAdd
-                        ? "Agregar después del cierre"
-                        : `${candidate.detail}${canFallbackToWalkin ? " · walk-in / venta pendiente" : ""}`}
+                      {canPostCloseAdd ? "Disponible" : candidate.detail}
                     </small>
                   </button>
                 );
@@ -119,24 +117,11 @@ export function ExistingStudentAddForm({
               </div>
             )}
           </div>
-        ) : (
-          <p className="m-0 px-0.5 text-xs text-zinc-500">
-            Escribe el nombre para ver coincidencias.
-          </p>
-        )}
+        ) : null}
       </div>
 
-      {selectedCandidate ? (
-        <div className="flex items-center justify-between gap-3 rounded-xl border border-fuchsia-500/25 bg-fuchsia-500/[0.06] px-3 py-2.5">
-          <span className="text-[11px] text-zinc-500">Seleccionada</span>
-          <strong className="min-w-0 truncate text-xs text-white">
-            {selectedCandidate.fullName}
-          </strong>
-        </div>
-      ) : null}
-
       <button className="primary-button" type="submit" disabled={!selectedStudentId}>
-        Agregar
+        {selectedCandidate ? `Agregar ${selectedCandidate.fullName}` : "Selecciona una alumna"}
       </button>
     </form>
   );

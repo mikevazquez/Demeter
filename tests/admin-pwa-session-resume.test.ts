@@ -36,6 +36,23 @@ describe("independent Admin and Student PWAs", () => {
     expect(proxy).toContain("requestHeaders.set(AUTH_PORTAL_HEADER, portal)");
   });
 
+  it("preserves refreshed cookies and anti-cache headers through the Next.js proxy", () => {
+    const proxy = source("lib/supabase/proxy.ts");
+
+    expect(proxy).toContain("const buildResponse = () =>");
+    expect(proxy).toContain("setAll(cookiesToSet, responseHeaders)");
+    expect(proxy).toContain("request.cookies.set(name, value)");
+    expect(proxy).toContain("response = buildResponse()");
+    expect(proxy).toContain("response.headers.set(name, value)");
+  });
+
+  it("keeps the selected studio durable when reopening the Admin PWA", () => {
+    const contextCookie = source("lib/auth/studio-context-cookie.ts");
+
+    expect(contextCookie).toContain("AUTH_COOKIE_MAX_AGE_SECONDS");
+    expect(contextCookie).toContain("maxAge: AUTH_COOKIE_MAX_AGE_SECONDS");
+  });
+
   it("never redirects a Student session into Admin just because the account differs", () => {
     const portal = source("lib/student/portal.ts");
 

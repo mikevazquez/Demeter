@@ -67,7 +67,7 @@ describe("ADMIN-UX-03 Agenda calendario operativo", () => {
     expect(agenda).not.toContain('id="configuracion-agenda"');
     expect(agenda).toContain('href="/admin/actividades"');
     expect(configuration).toContain('redirect("/admin/actividades")');
-    expect(activitiesWizard).toContain("Horarios y operación");
+    expect(activitiesWizard).toContain("<h2>Horarios</h2>");
     expect(activitiesWizard).toContain("+ Agregar hora");
     expect(activityActions).toContain('.rpc("admin_save_activity"');
     expect(atomicActivitySave).toContain("materialize_recurring_schedule");

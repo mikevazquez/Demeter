@@ -6,10 +6,6 @@ import { CAPABILITIES } from "@/lib/auth/capabilities";
 
 import { refundSaleLineAction, registerSalePaymentAction, voidSaleAction } from "../actions";
 
-function money(value: number, currency: string) {
-  return new Intl.NumberFormat("es-MX", { style: "currency", currency }).format(value / 100);
-}
-
 function statusLabel(status: string) {
   const labels: Record<string, string> = {
     active: "Activo",
@@ -159,6 +155,9 @@ export default async function SaleDetailPage({
             : "Pendiente";
   const canWrite = ctx.can(CAPABILITIES.SALES_WRITE);
 
+  const money = (value: number, currency: string) =>
+    new Intl.NumberFormat(ctx.studio.locale, { style: "currency", currency }).format(value / 100);
+
   const successCopy: Record<string, string> = {
     sale: "Venta confirmada y derecho comercial creado correctamente.",
     payment: "Pago registrado correctamente.",
@@ -167,19 +166,20 @@ export default async function SaleDetailPage({
   };
 
   return (
-    <main className="space-y-6">
-      <header className="flex flex-wrap items-start justify-between gap-4">
+    <main className="sales-v2 sales-v2-detail">
+      <header className="sales-v2-detail-header">
         <div>
-          <Link href="/admin/ventas" className="text-sm text-fuchsia-300 hover:text-fuchsia-200">
-            ← Ventas
+          <Link
+            href={student?.id ? `/admin/alumnas/${student.id}?view=history` : "/admin/alumnas"}
+            className="sales-v2-back"
+          >
+            ← Historial de alumna
           </Link>
-          <p className="mt-4 text-sm text-zinc-400">{sale.folio}</p>
-          <h1 className="text-3xl font-semibold text-white">{student?.full_name ?? "Venta"}</h1>
-          <p className="mt-1 text-sm text-zinc-400">{student?.phone ?? "Sin teléfono"}</p>
+          <p className="sales-v2-folio">{sale.folio}</p>
+          <h1 className="sales-v2-detail-title">{student?.full_name ?? "Venta"}</h1>
+          <p className="sales-v2-detail-subtitle">{student?.phone ?? "Sin teléfono"}</p>
         </div>
-        <span className="rounded-full bg-white/10 px-3 py-1.5 text-sm font-medium text-white">
-          {paymentState}
-        </span>
+        <span className="sales-v2-detail-status">{paymentState}</span>
       </header>
 
       {query.created ? (
@@ -194,7 +194,7 @@ export default async function SaleDetailPage({
         </div>
       ) : null}
 
-      <section className="grid gap-3 md:grid-cols-5">
+      <section className="sales-v2-detail-summary">
         {[
           ["Total vendido", sale.total_minor],
           ["Cobrado", grossPaid],
@@ -389,7 +389,7 @@ export default async function SaleDetailPage({
                     <p className="mt-0.5 text-xs text-zinc-400">Motivo: {payment.reason}</p>
                   ) : null}
                   <p className="text-xs text-zinc-500">
-                    {new Intl.DateTimeFormat("es-MX", {
+                    {new Intl.DateTimeFormat(ctx.studio.locale, {
                       dateStyle: "medium",
                       timeStyle: "short",
                       timeZone: ctx.studio.timezone,
@@ -418,7 +418,7 @@ export default async function SaleDetailPage({
           <form action={registerSalePaymentAction} className="mt-4 grid gap-3 md:grid-cols-2">
             <input type="hidden" name="sale_id" value={sale.id} />
             <label className="grid gap-1.5 text-sm text-zinc-300">
-              Monto en MXN
+              Monto en {sale.currency}
               <input
                 name="payment_amount"
                 required

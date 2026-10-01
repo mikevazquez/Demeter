@@ -1,0 +1,40 @@
+name: V2 Release Candidate Check
+on:
+  push:
+    branches:
+      - release/studio-flow-v2
+  workflow_dispatch:
+jobs:
+  quality:
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: test-publishable-key
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - name: V2 release safety
+        run: npx vitest run tests/v2-release-safety.test.ts
+      - name: B2/V2 functional regression suite
+        run: >
+          npx vitest run
+          tests/admin-ux-02-navigation.test.ts
+          tests/admin-ux-03-agenda-calendar.test.ts
+          tests/admin-ux-04-alumnas-visual.test.ts
+          tests/admin-ux-04-profile360-visual.test.ts
+          tests/packages-02-schedule-restrictions.test.ts
+          tests/products-03-catalog-modes.test.ts
+          tests/sf167-communication-control.test.ts
+          tests/sf168-communication-preferences.test.ts
+          tests/f10-student-portal-contract.test.ts
+          tests/f10-student-home-profile-uat-contract.test.ts
+          tests/f10-student-quick-booking-contract.test.ts
+          tests/student-directory-relationship-status.test.ts
+      - run: npm run build

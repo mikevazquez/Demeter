@@ -19,14 +19,29 @@ describe("ADMIN-UX-02 navigation architecture", () => {
   const agendaConfiguration = source("app/admin/agenda/configuracion/page.tsx");
   const activitiesWizard = source("app/admin/actividades/ActivityWizard.tsx");
 
-  it("uses durable entities as the desktop navigation architecture", () => {
-    for (const label of ["Hoy", "Agenda", "Alumnas", "Productos", "Equipo", "Notificaciones"]) {
+  it("uses the approved V2 desktop navigation labels", () => {
+    for (const label of [
+      "Hoy",
+      "Agenda",
+      "Actividades",
+      "Alumnas",
+      "Inteligencia",
+      "Documentos",
+      "Retos",
+      "Rewards",
+      "Evaluaciones",
+      "Paquetes",
+      "Equipo",
+      "Comunicación",
+    ]) {
       expect(layout).toContain('label: "' + label + '"');
     }
-    expect(layout).not.toContain('label: "Atención"');
-    expect(layout).toContain('label: "Configuración"');
-    expect(layout).not.toContain('label: "Empresa"');
+    expect(layout).toContain('label: "Integraciones"');
+    expect(layout).toContain('label: "Más"');
+    expect(layout).not.toContain('label: "Productos"');
+    expect(layout).not.toContain('label: "Notificaciones"');
     expect(layout).not.toContain('label: "Ventas"');
+    expect(layout).not.toContain('label: "Empresa"');
   });
 
   it("keeps mobile navigation focused on Hoy, Agenda, Alumnas and Más", () => {
@@ -40,15 +55,27 @@ describe("ADMIN-UX-02 navigation architecture", () => {
     expect(styles).toContain("grid-auto-flow: column");
   });
 
-  it("uses Más only for secondary durable destinations", () => {
-    expect(more).toContain('title: "Productos"');
-    expect(more).toContain('title: "Equipo"');
-    expect(more).toContain('title: "Notificaciones"');
-    expect(more).not.toContain('title: "Atención"');
+  it("uses Más for secondary V2 destinations and owner settings", () => {
+    for (const title of [
+      "Actividades",
+      "Inteligencia",
+      "Documentos",
+      "Evaluaciones",
+      "Paquetes",
+      "Equipo",
+      "Comunicación",
+      "Retos",
+      "Rewards",
+      "Integraciones",
+      "Apariencia",
+      "Región y formatos",
+      "Recursos y espacios",
+      "Plan y suscripción",
+    ]) {
+      expect(more).toContain('title: "' + title + '"');
+    }
     expect(more).not.toContain('title: "Ventas"');
     expect(more).not.toContain('title: "Empresa"');
-    expect(more).not.toContain('title: "Reportes"');
-    expect(more).toContain('title: "Configuración"');
     expect(more).toContain("ownerOnly: true");
   });
 
@@ -62,7 +89,7 @@ describe("ADMIN-UX-02 navigation architecture", () => {
     expect(automations).not.toContain("Control AUT-05");
     expect(automations).not.toContain("SF-166");
     expect(automations).not.toContain("{template.code} ·");
-    expect(automations).toContain("Comunicaciones");
+    expect(automations).toContain("<h1>Comunicación</h1>");
   });
 
   it("keeps operational actions contextual instead of turning them into modules", () => {
@@ -72,7 +99,7 @@ describe("ADMIN-UX-02 navigation architecture", () => {
     expect(today).not.toContain(">Crear clase<");
     expect(agenda).toContain('id="clases-programadas"');
     expect(agendaConfiguration).toContain('redirect("/admin/actividades")');
-    expect(activitiesWizard).toContain("Horarios y operación");
+    expect(activitiesWizard).toContain("<h2>Horarios</h2>");
     expect(activitiesWizard).toContain("+ Agregar hora");
     expect(layout).not.toContain('label: "Ventas"');
   });

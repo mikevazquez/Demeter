@@ -386,7 +386,7 @@ export default async function DocumentIncidentsPage({
                       <p className="mt-1 text-xs text-zinc-500">{item.reason}</p>
                       <p className="mt-1 text-[11px] text-zinc-600">
                         Hasta{" "}
-                        {new Intl.DateTimeFormat("es-MX", {
+                        {new Intl.DateTimeFormat(studio.locale, {
                           dateStyle: "medium",
                           timeStyle: "short",
                           timeZone: studio.timezone,

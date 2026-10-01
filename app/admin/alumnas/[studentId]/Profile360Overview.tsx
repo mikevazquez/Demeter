@@ -21,6 +21,7 @@ type Props = {
     phone: string;
     email: string | null;
     createdAt: string;
+    portalEntered: boolean;
   };
   birthDate: string | null;
   levelTitle: string | null;
@@ -28,6 +29,7 @@ type Props = {
   technicalLevels: Array<{ disciplineName: string; levelTitle: string }>;
   showEvaluations: boolean;
   showDocuments: boolean;
+  canSell: boolean;
   currentPackage: {
     name: string;
     unlimited: boolean;
@@ -45,6 +47,8 @@ type Props = {
   } | null;
   alerts: Alert[];
   timeZone: string;
+  locale: string;
+  currency: string;
 };
 
 function initials(name: string) {
@@ -56,17 +60,17 @@ function initials(name: string) {
     .join("");
 }
 
-function formatDate(value: string | null) {
+function formatDate(value: string | null, locale: string) {
   if (!value) return "Sin registrar";
-  return new Intl.DateTimeFormat("es-MX", {
+  return new Intl.DateTimeFormat(locale, {
     day: "numeric",
     month: "short",
     year: "numeric",
   }).format(new Date(value + "T12:00:00Z"));
 }
 
-function formatDateTime(value: string, timeZone: string) {
-  return new Intl.DateTimeFormat("es-MX", {
+function formatDateTime(value: string, timeZone: string, locale: string) {
+  return new Intl.DateTimeFormat(locale, {
     timeZone,
     day: "numeric",
     month: "short",
@@ -75,11 +79,11 @@ function formatDateTime(value: string, timeZone: string) {
   }).format(new Date(value));
 }
 
-function formatMoney(minor: number | null) {
+function formatMoney(minor: number | null, locale: string, currency: string) {
   if (minor === null) return "—";
-  return new Intl.NumberFormat("es-MX", {
+  return new Intl.NumberFormat(locale, {
     style: "currency",
-    currency: "MXN",
+    currency,
     maximumFractionDigits: 0,
   }).format(minor / 100);
 }
@@ -93,12 +97,15 @@ export default function Profile360Overview({
   technicalLevels,
   showEvaluations,
   showDocuments,
+  canSell,
   currentPackage,
   nextClass,
   historicalValueMinor,
   enrollment,
   alerts,
   timeZone,
+  locale,
+  currency,
 }: Props) {
   const href = (view: string) => "/admin/alumnas/" + student.id + "?view=" + view;
   const usedCredits =
@@ -144,9 +151,9 @@ export default function Profile360Overview({
               <span>{student.phone}</span>
               {student.email ? <span>{student.email}</span> : null}
               <span>
-                {birthDate ? formatDate(birthDate) + " · " : ""}
+                {birthDate ? formatDate(birthDate, locale) + " · " : ""}
                 En el estudio desde{" "}
-                {new Intl.DateTimeFormat("es-MX", {
+                {new Intl.DateTimeFormat(locale, {
                   month: "short",
                   year: "numeric",
                 }).format(new Date(student.createdAt))}
@@ -156,7 +163,7 @@ export default function Profile360Overview({
 
           <div className="profile360-approved-meta">
             <span className="profile360-level-pill">
-              {levelTitle ? "Medalla " + levelTitle : "En activación"}
+              {levelTitle ? "Medalla " + levelTitle : "Sin medalla"}
             </span>
             <span
               className={
@@ -165,6 +172,13 @@ export default function Profile360Overview({
               }
             >
               {student.lifecycleStatus === "inactive" ? "Inactiva" : "Activa"}
+            </span>
+            <span
+              className={
+                "profile360-portal-pill " + (student.portalEntered ? "is-entered" : "is-pending")
+              }
+            >
+              {student.portalEntered ? "Portal: ingresó" : "Portal: sin ingresar"}
             </span>
             <Link className="profile360-edit-link" href={href("profile")}>
               Editar
@@ -181,7 +195,7 @@ export default function Profile360Overview({
           Paquetes
         </Link>
         <Link className={activeView === "rewards" ? "is-active" : ""} href={href("rewards")}>
-          Rewards
+          Progreso
         </Link>
         {showEvaluations ? (
           <Link
@@ -196,11 +210,11 @@ export default function Profile360Overview({
             Documentos
           </Link>
         ) : null}
-        <Link className={activeView === "followup" ? "is-active" : ""} href={href("followup")}>
-          Seguimiento
-        </Link>
         <Link className={activeView === "history" ? "is-active" : ""} href={href("history")}>
-          Historial
+          Actividad
+        </Link>
+        <Link className={activeView === "profile" ? "is-active" : ""} href={href("profile")}>
+          Datos
         </Link>
       </nav>
 
@@ -231,7 +245,7 @@ export default function Profile360Overview({
                   <div className="profile360-approved-package-expiry">
                     <strong>
                       {currentPackage.expiresOn
-                        ? formatDate(currentPackage.expiresOn)
+                        ? formatDate(currentPackage.expiresOn, locale)
                         : "Sin fecha"}
                     </strong>
                     <span>vence</span>
@@ -248,7 +262,9 @@ export default function Profile360Overview({
                   <span>Próxima clase</span>
                   <strong>
                     {nextClass
-                      ? nextClass.name + " · " + formatDateTime(nextClass.startsAt, timeZone)
+                      ? nextClass.name +
+                        " · " +
+                        formatDateTime(nextClass.startsAt, timeZone, locale)
                       : "Sin próxima clase"}
                   </strong>
                 </div>
@@ -286,17 +302,20 @@ export default function Profile360Overview({
             </section>
           ) : null}
 
-          <section className="profile360-approved-indicators" aria-label="Indicadores rápidos">
+          <section
+            className="profile360-approved-indicators profile360-statistics"
+            aria-label="Estadísticas"
+          >
             <article>
-              <span>Valor histórico</span>
-              <strong>{formatMoney(historicalValueMinor)}</strong>
+              <span>Compras históricas</span>
+              <strong>{formatMoney(historicalValueMinor, locale, currency)}</strong>
             </article>
             <article>
-              <span>Recompensas</span>
+              <span>Recompensas disponibles</span>
               <strong>{rewardsAvailable === null ? "—" : rewardsAvailable}</strong>
             </article>
             <article>
-              <span>Inscripción</span>
+              <span>Estado de inscripción</span>
               <strong>
                 {enrollment?.status === "active"
                   ? enrollment.expiresOn
@@ -308,9 +327,9 @@ export default function Profile360Overview({
               </strong>
             </article>
             <article>
-              <span>Antigüedad</span>
+              <span>Desde</span>
               <strong>
-                {new Intl.DateTimeFormat("es-MX", {
+                {new Intl.DateTimeFormat(locale, {
                   month: "short",
                   year: "numeric",
                 }).format(new Date(student.createdAt))}

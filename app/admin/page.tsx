@@ -3,6 +3,7 @@ import Link from "next/link";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { TodayClasses, type TodayClassItem } from "./hoy/TodayClasses";
+import QuickActions from "./hoy/QuickActions";
 
 type EligibilityResult = {
   eligible?: boolean;
@@ -25,17 +26,17 @@ const eligibilityCopy: Record<string, string> = {
 
 const occupyingReservationStatuses = new Set(["reserved", "attended", "no_show"]);
 
-function formatExpiry(value: string | null) {
+function formatExpiry(value: string | null, locale: string) {
   if (!value) return "Sin vencimiento";
-  return `Vence ${new Intl.DateTimeFormat("es-MX", {
+  return `Vence ${new Intl.DateTimeFormat(locale, {
     day: "numeric",
     month: "short",
     timeZone: "UTC",
   }).format(new Date(`${value}T12:00:00Z`))}`;
 }
 
-function formatTime(value: string, timeZone: string) {
-  return new Intl.DateTimeFormat("es-MX", {
+function formatTime(value: string, timeZone: string, locale: string) {
+  return new Intl.DateTimeFormat(locale, {
     timeZone,
     hour: "2-digit",
     minute: "2-digit",
@@ -78,8 +79,8 @@ function weekStartMonday(value: Date) {
   return shiftUtcDays(value, weekday === 0 ? -6 : 1 - weekday);
 }
 
-function shortWeekday(value: Date) {
-  return new Intl.DateTimeFormat("es-MX", {
+function shortWeekday(value: Date, locale: string) {
+  return new Intl.DateTimeFormat(locale, {
     timeZone: "UTC",
     weekday: "short",
   })
@@ -88,8 +89,8 @@ function shortWeekday(value: Date) {
     .slice(0, 3);
 }
 
-function shortMonth(value: Date) {
-  return new Intl.DateTimeFormat("es-MX", {
+function shortMonth(value: Date, locale: string) {
+  return new Intl.DateTimeFormat(locale, {
     timeZone: "UTC",
     month: "short",
   })
@@ -97,63 +98,14 @@ function shortMonth(value: Date) {
     .replace(".", "");
 }
 
-function selectedDayLabel(value: Date, isToday: boolean) {
+function selectedDayLabel(value: Date, isToday: boolean, locale: string) {
   if (isToday) return "Clases de hoy";
-  return `Clases del ${new Intl.DateTimeFormat("es-MX", {
+  return `Clases del ${new Intl.DateTimeFormat(locale, {
     timeZone: "UTC",
     weekday: "long",
     day: "numeric",
     month: "long",
   }).format(value)}`;
-}
-
-function KpiIcon({ kind }: { kind: "classes" | "students" | "sales" | "reservations" }) {
-  const common = {
-    width: 22,
-    height: 22,
-    viewBox: "0 0 24 24",
-    fill: "none",
-    stroke: "currentColor",
-    strokeWidth: 1.8,
-    strokeLinecap: "round" as const,
-    strokeLinejoin: "round" as const,
-    "aria-hidden": true,
-  };
-
-  if (kind === "classes") {
-    return (
-      <svg {...common}>
-        <rect x="3" y="5" width="18" height="16" rx="2" />
-        <path d="M7 3v4M17 3v4M3 10h18" />
-      </svg>
-    );
-  }
-
-  if (kind === "students") {
-    return (
-      <svg {...common}>
-        <circle cx="9" cy="8" r="3" />
-        <path d="M3.5 20c.6-4 2.6-6 5.5-6s4.9 2 5.5 6" />
-        <path d="M16 7.5a2.5 2.5 0 0 1 0 5M17 15c2.2.6 3.4 2.3 3.8 5" />
-      </svg>
-    );
-  }
-
-  if (kind === "sales") {
-    return (
-      <svg {...common}>
-        <path d="M5 20V12M12 20V7M19 20V3" />
-      </svg>
-    );
-  }
-
-  return (
-    <svg {...common}>
-      <circle cx="12" cy="12" r="8" />
-      <path d="M12 8v4l3 2" />
-      <path d="M17.5 6.5 19 5" />
-    </svg>
-  );
 }
 
 export default async function AdminPage({
@@ -175,7 +127,8 @@ export default async function AdminPage({
       .slice(0, 2)
       .map((part: string) => part.slice(0, 1).toUpperCase())
       .join("") || "U";
-  const timeZone = studio.timezone ?? "America/Mexico_City";
+  const timeZone = studio.timezone;
+  const locale = studio.locale;
   const now = new Date();
   const todayKey = localDateKey(now, timeZone);
   const selectedDate = parseDateKey(params.date) ?? parseDateKey(todayKey)!;
@@ -196,6 +149,8 @@ export default async function AdminPage({
       .find((item) => item.type === "timeZoneName")?.value ?? "GMT-06:00";
   const offset = offsetName.replace("GMT", "") || "+00:00";
 
+  const todayStart = new Date(`${todayKey}T00:00:00${offset}`);
+  const todayEnd = new Date(todayStart.getTime() + 86400000);
   const selectedStart = new Date(`${selectedKey}T00:00:00${offset}`);
   const selectedEnd = new Date(selectedStart.getTime() + 86400000);
 
@@ -210,6 +165,8 @@ export default async function AdminPage({
     { data: activeProductAcquisitions },
     { data: selectedPayments },
     { data: students },
+    { data: quickSaleProducts },
+    { data: quickSaleHistory },
   ] = await Promise.all([
     supabase
       .from("class_sessions")
@@ -240,6 +197,19 @@ export default async function AdminPage({
       .eq("active", true)
       .eq("lifecycle_status", "active")
       .order("full_name"),
+    supabase
+      .from("product_templates")
+      .select("id,name,price_minor,currency,credit_limit,validity_days,unlimited")
+      .eq("studio_id", studio.id)
+      .in("product_type", ["package", "membership"])
+      .eq("active", true)
+      .order("price_minor"),
+    supabase
+      .from("product_acquisitions")
+      .select("student_id,product_template_id,created_at")
+      .eq("studio_id", studio.id)
+      .order("created_at", { ascending: false })
+      .limit(1000),
   ]);
 
   const activeProductStudentIds = new Set(
@@ -263,9 +233,7 @@ export default async function AdminPage({
       sessionIds.length
         ? supabase
             .from("reservations")
-            .select(
-              "id,session_id,student_id,guest_person_id,status,acquisition_id,booked_at,commercial_status",
-            )
+            .select("id,session_id,student_id,guest_person_id,status,acquisition_id,booked_at")
             .in("session_id", sessionIds)
             .in("status", ["reserved", "attended", "no_show"])
             .order("booked_at")
@@ -278,21 +246,12 @@ export default async function AdminPage({
               status: string;
               acquisition_id: string | null;
               booked_at: string;
-              commercial_status: string | null;
             }[],
           }),
       templateIds.length
-        ? supabase
-            .from("class_templates")
-            .select("id,name,color_hex,drop_in_price_minor")
-            .in("id", templateIds)
+        ? supabase.from("class_templates").select("id,name,color_hex").in("id", templateIds)
         : Promise.resolve({
-            data: [] as {
-              id: string;
-              name: string;
-              color_hex: string | null;
-              drop_in_price_minor: number | null;
-            }[],
+            data: [] as { id: string; name: string; color_hex: string | null }[],
           }),
       instructorIds.length
         ? supabase.from("instructors").select("id,person_id").in("id", instructorIds)
@@ -443,7 +402,7 @@ export default async function AdminPage({
 
     classes.push({
       id: session.id,
-      time: formatTime(session.starts_at, timeZone),
+      time: formatTime(session.starts_at, timeZone, locale),
       startsAt: session.starts_at,
       endsAt: session.ends_at,
       name: template?.name ?? "Clase",
@@ -495,7 +454,9 @@ export default async function AdminPage({
               : acquisition
                 ? `${balance ?? 0} créditos`
                 : "—",
-          expiresLabel: isGuest ? "Misma clase" : formatExpiry(acquisition?.expires_on ?? null),
+          expiresLabel: isGuest
+            ? "Misma clase"
+            : formatExpiry(acquisition?.expires_on ?? null, locale),
           studentId: reservation.student_id,
           evaluationInvitationId: evaluationInvitation?.id ?? null,
           evaluationStatus: evaluationInvitation?.status ?? null,
@@ -506,9 +467,6 @@ export default async function AdminPage({
             new Date(reservation.booked_at).getTime() >= new Date(session.ends_at).getTime()
               ? "Agregada manualmente después del cierre"
               : null,
-          paymentDueOnAttendance: reservation.commercial_status === "payment_pending",
-          individualPriceMinor: template?.drop_in_price_minor ?? null,
-          currency: studio.currency ?? "MXN",
         };
       }),
       candidates: candidates.map((student) => {
@@ -530,24 +488,34 @@ export default async function AdminPage({
     });
   }
 
+  const quickSalePreference: Record<string, string> = {};
+  for (const acquisition of quickSaleHistory ?? []) {
+    const studentId = acquisition.student_id;
+    const templateId = acquisition.product_template_id;
+    if (studentId && templateId && !quickSalePreference[studentId]) {
+      quickSalePreference[studentId] = templateId;
+    }
+  }
+
   const totalDailyCapacity = classes.reduce((sum, item) => sum + item.capacity, 0);
   const totalDailyReservations = classes.reduce((sum, item) => sum + item.occupied, 0);
   const dailyReservationPercentage =
     totalDailyCapacity > 0 ? Math.round((totalDailyReservations / totalDailyCapacity) * 100) : 0;
 
-  const collectedTotalMinor = (selectedPayments ?? []).reduce(
+  const salesTotalMinor = (selectedPayments ?? []).reduce(
     (sum, payment) =>
-      sum + (payment.kind === "refund" ? -(payment.amount_minor ?? 0) : (payment.amount_minor ?? 0)),
+      sum +
+      (payment.kind === "refund" ? -(payment.amount_minor ?? 0) : (payment.amount_minor ?? 0)),
     0,
   );
-  const collectedTotal = new Intl.NumberFormat("es-MX", {
+  const salesTotal = new Intl.NumberFormat(studio.locale, {
     style: "currency",
-    currency: studio.currency ?? "MXN",
+    currency: studio.currency,
     maximumFractionDigits: 0,
-  }).format(collectedTotalMinor / 100);
+  }).format(salesTotalMinor / 100);
 
   return (
-    <main className="dashboard-shell hoy-dashboard hoy-approved">
+    <main className="dashboard-shell hoy-dashboard hoy-approved hoy-v2">
       <header className="hoy-product-header">
         <div className="hoy-product-wordmark" aria-label="Studio Flow">
           <span>
@@ -557,12 +525,27 @@ export default async function AdminPage({
         </div>
         <div className="flex items-center gap-2">
           {canWriteAttendance ? (
-            <Link
-              href="/admin/kiosco"
-              className="rounded-full border border-fuchsia-500/25 bg-fuchsia-500/[0.08] px-3.5 py-2 text-xs font-semibold text-fuchsia-100 transition hover:bg-fuchsia-500/[0.14]"
-            >
+            <Link href="/admin/kiosco" className="hoy-header-action">
               Check-in
             </Link>
+          ) : null}
+          {canWriteStudents || canWriteSales ? (
+            <QuickActions
+              canStudents={canWriteStudents}
+              canSales={canWriteSales}
+              locale={locale}
+              preferredProductByStudent={quickSalePreference}
+              students={(students ?? []).map((item) => ({ id: item.id, fullName: item.full_name }))}
+              products={(quickSaleProducts ?? []).map((item) => ({
+                id: item.id,
+                name: item.name,
+                priceMinor: item.price_minor,
+                currency: item.currency,
+                creditLimit: item.credit_limit,
+                validityDays: item.validity_days,
+                unlimited: item.unlimited,
+              }))}
+            />
           ) : null}
           <span className="hoy-product-avatar" aria-label={headerName}>
             {headerInitials}
@@ -571,8 +554,10 @@ export default async function AdminPage({
       </header>
 
       <header className="hoy-title-block">
-        <h1>{selectedDayLabel(selectedDate, selectedKey === todayKey)}</h1>
-        <p>Administra, conecta, haz fluir.</p>
+        <div>
+          <span className="hoy-eyebrow">{selectedKey === todayKey ? "Hoy" : "Agenda"}</span>
+          <h1>{selectedDayLabel(selectedDate, selectedKey === todayKey, locale)}</h1>
+        </div>
       </header>
 
       {params.error ? (
@@ -587,8 +572,8 @@ export default async function AdminPage({
             ‹
           </Link>
           <strong>
-            {weekStart.getUTCDate()} {shortMonth(weekStart)} — {weekEnd.getUTCDate()}{" "}
-            {shortMonth(weekEnd)}
+            {weekStart.getUTCDate()} {shortMonth(weekStart, locale)} — {weekEnd.getUTCDate()}{" "}
+            {shortMonth(weekEnd, locale)}
           </strong>
           <Link href={`/admin?date=${nextWeekKey}`} aria-label="Semana siguiente">
             ›
@@ -607,7 +592,7 @@ export default async function AdminPage({
                 className={`mock-week-day${isSelected ? " is-selected" : ""}${isToday ? " is-today" : ""}`}
                 aria-current={isSelected ? "date" : undefined}
               >
-                <span>{shortWeekday(day)}</span>
+                <span>{shortWeekday(day, locale)}</span>
                 <strong>{day.getUTCDate()}</strong>
               </Link>
             );
@@ -615,64 +600,21 @@ export default async function AdminPage({
         </nav>
       </section>
 
-      <section className="hoy-kpi-grid" aria-label="Resumen del estudio">
-        <Link className="hoy-kpi-card" href={`/admin?date=${selectedKey}`}>
-          <span className="hoy-kpi-icon">
-            <KpiIcon kind="classes" />
-          </span>
-          <span>
-            <small>{selectedKey === todayKey ? "Clases hoy" : "Clases del día"}</small>
-            <strong>{selectedSessions?.length ?? 0}</strong>
-          </span>
-          <b aria-hidden="true">›</b>
+      <section className="hoy-glance" aria-label="Resumen rápido">
+        <Link href="/admin/alumnas">
+          <strong>{activeStudents}</strong>
+          <span>Alumnas activas</span>
         </Link>
-
-        <Link className="hoy-kpi-card" href="/admin/alumnas">
-          <span className="hoy-kpi-icon">
-            <KpiIcon kind="students" />
-          </span>
-          <span>
-            <small>Alumnas activas</small>
-            <strong>{activeStudents}</strong>
-          </span>
-          <b aria-hidden="true">›</b>
+        <Link href="/admin/ventas">
+          <strong>{salesTotal}</strong>
+          <span>Ventas hoy</span>
         </Link>
-
-        {canWriteSales ? (
-          <Link className="hoy-kpi-card" href="/admin/ventas">
-            <span className="hoy-kpi-icon">
-              <KpiIcon kind="sales" />
-            </span>
-            <span>
-              <small>{selectedKey === todayKey ? "Cobros hoy" : "Cobros del día"}</small>
-              <strong>{collectedTotal}</strong>
-            </span>
-            <b aria-hidden="true">›</b>
-          </Link>
-        ) : (
-          <article className="hoy-kpi-card">
-            <span className="hoy-kpi-icon">
-              <KpiIcon kind="sales" />
-            </span>
-            <span>
-              <small>{selectedKey === todayKey ? "Cobros hoy" : "Cobros del día"}</small>
-              <strong>{collectedTotal}</strong>
-            </span>
-          </article>
-        )}
-
-        <article className="hoy-kpi-card hoy-kpi-reservations">
-          <span className="hoy-kpi-icon">
-            <KpiIcon kind="reservations" />
-          </span>
+        <div>
+          <strong>{dailyReservationPercentage}%</strong>
           <span>
-            <small>Reservas del día</small>
-            <strong>{dailyReservationPercentage}%</strong>
-            <em>
-              {totalDailyReservations}/{totalDailyCapacity} lugares
-            </em>
+            Ocupación · {totalDailyReservations}/{totalDailyCapacity}
           </span>
-        </article>
+        </div>
       </section>
 
       <TodayClasses
@@ -682,6 +624,8 @@ export default async function AdminPage({
         canAttendance={canWriteAttendance}
         canBook={canWriteSchedule}
         canCreateStudent={canWriteStudents}
+        locale={locale}
+        timeZone={timeZone}
         canCorrectCompleted
       />
     </main>

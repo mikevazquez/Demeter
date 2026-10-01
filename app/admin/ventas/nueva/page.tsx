@@ -1,10 +1,12 @@
 import { randomUUID } from "node:crypto";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 
 import StudentOnboardingForm from "../../alumnas/[studentId]/alta/StudentOnboardingForm";
+import { createEnrollmentOnlySaleAction } from "../actions";
 
 function localDate(timeZone: string) {
   const parts = new Intl.DateTimeFormat("en-CA", {
@@ -66,7 +68,7 @@ export default async function NewSalePage({
   const query = await searchParams;
   const { supabase, studio } = await getAdminContext(CAPABILITIES.SALES_WRITE);
   const selectedStudentId = String(query.student_id ?? "").trim();
-  const today = localDate(studio.timezone ?? "America/Mexico_City");
+  const today = localDate(studio.timezone);
 
   const { data: students } = await supabase
     .from("students")
@@ -95,7 +97,7 @@ export default async function NewSalePage({
           .order("price_minor"),
         supabase
           .from("enrollment_policies")
-          .select("enabled,required_for_booking,enrollment_product_template_id")
+          .select("enabled,required_for_package_purchase,enrollment_product_template_id")
           .eq("studio_id", studio.id)
           .maybeSingle(),
         supabase
@@ -114,23 +116,23 @@ export default async function NewSalePage({
       ])
     : [{ data: [] }, { data: null }, { data: [] }, { data: [] }];
 
-  const enrollmentRequired = Boolean(policy?.enabled && policy.required_for_booking);
+  const enrollmentRequired = Boolean(policy?.enabled && policy.required_for_package_purchase);
   const currentEnrollment = (activeEnrollments ?? []).some(
     (item) => item.starts_on <= today && (item.expires_on === null || item.expires_on >= today),
   );
 
   return (
-    <main className="dashboard-shell admin-module-page sale-page">
-      <header className="module-header">
+    <main className="sales-v2 sales-v2-new">
+      <header className="sales-v2-header sales-v2-new-header">
         <div>
           <Link
-            className="back-link compact"
-            href={selectedStudent ? `/admin/alumnas/${selectedStudent.id}` : "/admin"}
+            className="sales-v2-back"
+            href={selectedStudent ? `/admin/alumnas/${selectedStudent.id}` : "/admin/alumnas"}
           >
-            {selectedStudent ? "← Perfil 360" : "← Hoy"}
+            ← Perfil de alumna
           </Link>
-          <h1>Registrar venta</h1>
-          <p>Mismo flujo comercial aprobado: alumna, paquete, condiciones, pago y confirmación.</p>
+          <h1>Nueva venta</h1>
+          <p>Selecciona la alumna y registra lo que compró y cómo pagó.</p>
         </div>
       </header>
 
@@ -144,38 +146,30 @@ export default async function NewSalePage({
         <section className="module-empty">
           No hay alumnas activas disponibles para registrar una venta.
         </section>
-      ) : !selectedStudent ? (
-        <section className="sale-step-card">
-          <div className="sale-step-layout">
-            <span className="sale-step-number">1</span>
-            <div className="sale-step-content">
-              <h2>Selecciona la alumna</h2>
-              <p>Después continuarás con el mismo flujo de venta ya aprobado.</p>
-              <form method="get" className="compact-form mt-4">
-                <label>
-                  <span>Alumna</span>
-                  <select name="student_id" required defaultValue="">
-                    <option value="" disabled>
-                      Selecciona una alumna
-                    </option>
-                    {(students ?? []).map((student) => (
-                      <option key={student.id} value={student.id}>
-                        {student.full_name}
-                        {student.phone ? ` · ${student.phone}` : ""}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <button className="primary-button" type="submit">
-                  Continuar
-                </button>
-              </form>
-            </div>
+      ) : !selectedStudentId ? (
+        <section className="sales-v2-student-picker">
+          <div>
+            <span>Primero</span>
+            <h2>¿A quién le vas a vender?</h2>
+            <p>Busca o selecciona una alumna para continuar.</p>
           </div>
+          <div className="sales-v2-student-picker-list">
+            {(students ?? []).map((student) => (
+              <Link key={student.id} href={`/admin/ventas/nueva?student_id=${student.id}`}>
+                <strong>{student.full_name}</strong>
+                {student.phone ? <small>{student.phone}</small> : null}
+                <span aria-hidden="true">›</span>
+              </Link>
+            ))}
+          </div>
+        </section>
+      ) : !selectedStudent ? (
+        <section className="module-empty">
+          La alumna seleccionada no está disponible para registrar una venta.
         </section>
       ) : (
         <>
-          <section className="sale-context-card">
+          <section className="sales-v2-student-context">
             <div>
               <span>Alumna</span>
               <strong>{selectedStudent.full_name}</strong>
@@ -183,6 +177,76 @@ export default async function NewSalePage({
             </div>
             <Link href="/admin/ventas/nueva">Cambiar alumna</Link>
           </section>
+
+          {!currentEnrollment && (enrollmentProducts ?? []).length > 0 ? (
+            <section className="panel sales-v2-enrollment-only">
+              <p className="eyebrow">INSCRIPCIÓN</p>
+              <h2>¿Solo necesita pagar la inscripción?</h2>
+              <p>Registra la inscripción sin comprar ni modificar ningún paquete de la alumna.</p>
+              <form action={createEnrollmentOnlySaleAction} className="compact-form mt-4">
+                <input type="hidden" name="student_id" value={selectedStudent.id} />
+                <label>
+                  <span>Inscripción</span>
+                  <select
+                    name="enrollment_product_id"
+                    defaultValue={
+                      policy?.enrollment_product_template_id ?? enrollmentProducts?.[0]?.id ?? ""
+                    }
+                    required
+                  >
+                    {(enrollmentProducts ?? []).map((item) => (
+                      <option key={item.id} value={item.id}>
+                        {item.name} ·{" "}
+                        {item.validity_days == null ? "Vitalicia" : `${item.validity_days} días`} ·{" "}
+                        {new Intl.NumberFormat(studio.locale, {
+                          style: "currency",
+                          currency: item.currency,
+                        }).format(item.price_minor / 100)}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  <span>Pago recibido</span>
+                  <input
+                    name="payment_amount"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    required
+                    defaultValue={
+                      ((
+                        enrollmentProducts?.find(
+                          (item) => item.id === policy?.enrollment_product_template_id,
+                        ) ?? enrollmentProducts?.[0]
+                      )?.price_minor ?? 0) / 100
+                    }
+                  />
+                </label>
+                <label>
+                  <span>Cómo pagó</span>
+                  <select name="payment_method" required defaultValue="">
+                    <option value="" disabled>
+                      Seleccionar
+                    </option>
+                    <option value="Efectivo">Efectivo</option>
+                    <option value="Transferencia">Transferencia</option>
+                    <option value="Tarjeta">Tarjeta</option>
+                    <option value="Otro">Otro</option>
+                  </select>
+                </label>
+                <label>
+                  <span>Referencia opcional</span>
+                  <input name="payment_reference" />
+                </label>
+                <label>
+                  <span>Nota opcional</span>
+                  <input name="payment_notes" />
+                </label>
+                <button className="primary-button">Pagar solo inscripción</button>
+              </form>
+            </section>
+          ) : null}
 
           <StudentOnboardingForm
             studentId={selectedStudent.id}

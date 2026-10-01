@@ -66,7 +66,7 @@ export async function saveAsistianServiceMapping(formData: FormData) {
 }
 
 export async function sendAsistianMappingProbe(formData: FormData) {
-  await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
+  const { studio } = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
 
   const webhookUrl = safeWebhookUrl(String(formData.get("test_webhook_url") ?? ""));
   if (!webhookUrl) {
@@ -85,7 +85,7 @@ export async function sendAsistianMappingProbe(formData: FormData) {
       fecha: "22/09/2026",
       hora: "19:30",
       coach: "Mike",
-      ubicacion: "Demeter Fitness Studio",
+      ubicacion: studio.name,
     },
     metadata: {
       source: "studio_flow_mapping_probe",
@@ -156,7 +156,7 @@ export async function sendAsistianHandshake(formData: FormData) {
       fecha: "23/09/2026",
       hora: "18:00",
       coach: "Coach de prueba",
-      ubicacion: "Demeter Fitness Studio",
+      ubicacion: studio.name,
     },
     metadata: {
       source: "studio_flow_reservation_confirmation_handshake",

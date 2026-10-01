@@ -129,7 +129,7 @@ export default async function ReviewDocumentPage({
                 ],
                 [
                   "Entrada en vigor",
-                  new Intl.DateTimeFormat("es-MX", {
+                  new Intl.DateTimeFormat(studio.locale, {
                     dateStyle: "medium",
                     timeStyle: "short",
                     timeZone: studio.timezone,
