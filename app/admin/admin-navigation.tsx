@@ -175,6 +175,7 @@ export function AdminNavigation({ items }: { items: AdminNavItem[] }) {
             {showDivider ? <div className="admin-nav-divider" aria-hidden="true" /> : null}
             <Link
               href={item.href}
+              prefetch={false}
               className={`admin-nav-item${active ? " is-active" : ""}${item.secondary ? " is-secondary" : ""}`}
               aria-current={active ? "page" : undefined}
             >
@@ -203,6 +204,7 @@ export function AdminMobileNavigation({ items }: { items: AdminNavItem[] }) {
           <Link
             key={item.href}
             href={item.href}
+            prefetch={false}
             className={active ? "is-active" : undefined}
             aria-current={active ? "page" : undefined}
           >
