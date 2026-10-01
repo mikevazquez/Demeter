@@ -91,8 +91,8 @@ export default async function DemiDemoPage() {
           <h1>🤖 {config.assistant_name}</h1>
           <p>
             Conversa con el asistente usando datos reales de {studio.name}. Ya puede
-            reservar, cancelar y reagendar en Sandbox con confirmación explícita; lista
-            de espera sigue bloqueada.
+            reservar, cancelar, reagendar y entrar a lista de espera en Sandbox con
+            confirmación explícita.
           </p>
         </div>
         <span className="demi-mode">Modo {config.mode}</span>
@@ -123,8 +123,8 @@ export default async function DemiDemoPage() {
 
       <section className="demi-notice">
         <strong>Regla de la demo:</strong> si Studio Flow no devuelve el dato, Demi debe decir
-        que no lo encontró. Para reservar o cancelar, primero debe validar el estado real y
-        después pedir una confirmación nueva antes de ejecutar.
+        que no lo encontró. Para reservar, cancelar, reagendar o entrar a lista de espera,
+        primero debe validar el estado real y después pedir una confirmación nueva antes de ejecutar.
       </section>
 
       <DemiChat
