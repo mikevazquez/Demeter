@@ -708,6 +708,15 @@
   border-color: var(--line) !important;
 }
 
+/* Legacy white typography must remain readable once its parent surface is light. */
+.admin-shell .text-white {
+  color: var(--text) !important;
+}
+
+.admin-shell [class~="hover:text-white"]:hover {
+  color: var(--accent-strong) !important;
+}
+
 /* Primary/selected fuchsia actions become the neutral Studio Flow accent. */
 .admin-shell .bg-fuchsia-600,
 .admin-shell .bg-fuchsia-500,
@@ -722,7 +731,10 @@
 .admin-shell [class*="bg-[#FF0A8A]"].text-white,
 .admin-shell .primary-button.text-white,
 .admin-shell button[class*="bg-fuchsia"].text-white,
-.admin-shell a[class*="bg-fuchsia"].text-white {
+.admin-shell a[class*="bg-fuchsia"].text-white,
+.admin-shell .primary-button .text-white,
+.admin-shell button[class*="bg-fuchsia"] .text-white,
+.admin-shell a[class*="bg-fuchsia"] .text-white {
   color: #fff !important;
 }
 
