@@ -1,15 +1,12 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 
-import { bookStudentFromToday } from "../actions";
-
-type Candidate = {
-  id: string;
-  fullName: string;
-  eligible: boolean;
-  detail: string;
-};
+import {
+  bookStudentFromToday,
+  searchStudentsForToday,
+  type TodayStudentCandidate,
+} from "../actions";
 
 const walkinFallbackDetails = new Set(["sin paquete activo", "fuera de paquete", "sin créditos"]);
 
@@ -25,28 +22,36 @@ export function ExistingStudentAddForm({
   sessionId,
   returnDate,
   returnTo,
-  candidates,
-  canPostCloseAdd,
 }: {
   sessionId: string;
   returnDate: string;
   returnTo?: string;
-  candidates: Candidate[];
-  canPostCloseAdd: boolean;
 }) {
   const [query, setQuery] = useState("");
   const [selectedStudentId, setSelectedStudentId] = useState("");
+  const [matches, setMatches] = useState<TodayStudentCandidate[]>([]);
+  const [isPending, startTransition] = useTransition();
+  const requestIdRef = useRef(0);
 
   const normalizedQuery = normalizeSearch(query);
-  const matches = useMemo(() => {
-    if (!normalizedQuery) return [];
+  const selectedCandidate = matches.find((candidate) => candidate.id === selectedStudentId);
 
-    return candidates
-      .filter((candidate) => normalizeSearch(candidate.fullName).includes(normalizedQuery))
-      .slice(0, 8);
-  }, [candidates, normalizedQuery]);
+  useEffect(() => {
+    if (normalizedQuery.length < 2) {
+      setMatches([]);
+      return;
+    }
 
-  const selectedCandidate = candidates.find((candidate) => candidate.id === selectedStudentId);
+    const requestId = ++requestIdRef.current;
+    const timer = window.setTimeout(() => {
+      startTransition(async () => {
+        const result = await searchStudentsForToday(sessionId, query);
+        if (requestId === requestIdRef.current) setMatches(result);
+      });
+    }, 220);
+
+    return () => window.clearTimeout(timer);
+  }, [normalizedQuery, query, sessionId]);
 
   return (
     <form action={bookStudentFromToday} className="today-add-form is-existing">
@@ -73,11 +78,20 @@ export function ExistingStudentAddForm({
           <div
             className="grid max-h-60 gap-1.5 overflow-y-auto rounded-xl border border-white/10 bg-black/20 p-1"
             role="listbox"
+            aria-busy={isPending}
           >
-            {matches.length ? (
+            {normalizedQuery.length < 2 ? (
+              <div className="px-3 py-4 text-center text-xs text-zinc-500">
+                Escribe al menos 2 letras.
+              </div>
+            ) : isPending && !matches.length ? (
+              <div className="px-3 py-4 text-center text-xs text-zinc-500">
+                Buscando alumnas…
+              </div>
+            ) : matches.length ? (
               matches.map((candidate) => {
                 const canFallbackToWalkin = walkinFallbackDetails.has(candidate.detail);
-                const disabled = !canPostCloseAdd && !candidate.eligible && !canFallbackToWalkin;
+                const disabled = !candidate.eligible && !canFallbackToWalkin;
                 const selected = candidate.id === selectedStudentId;
 
                 return (
@@ -106,7 +120,7 @@ export function ExistingStudentAddForm({
                       {candidate.fullName}
                     </span>
                     <small className="max-w-[46%] shrink-0 text-right text-[11px] text-zinc-500">
-                      {canPostCloseAdd ? "Disponible" : candidate.detail}
+                      {candidate.detail}
                     </small>
                   </button>
                 );
