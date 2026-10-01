@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 import { documentTypeLabels } from "@/lib/documents";
-import { getStudentPortalContext } from "@/lib/student/portal";
+import { getStudentStudioContext } from "@/lib/student/portal";
 
 type HistoryItem = {
   acceptance_id: string;
@@ -24,7 +24,7 @@ type HistoryItem = {
 };
 
 export default async function StudentDocumentHistoryPage() {
-  const { supabase, studio } = await getStudentPortalContext();
+  const { supabase, studio } = await getStudentStudioContext();
   const { data } = await supabase.rpc("student_document_history");
   const items = (data ?? []) as HistoryItem[];
 

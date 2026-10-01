@@ -134,6 +134,7 @@ export default async function AdminPage({
   const canWriteStudents = can(CAPABILITIES.STUDENTS_WRITE);
   const canWriteSales = can(CAPABILITIES.SALES_WRITE);
   const canWriteAttendance = can(CAPABILITIES.ATTENDANCE_WRITE);
+  const canReadProducts = can(CAPABILITIES.PRODUCTS_READ);
   const [
     { data: serverNow },
     { data: selectedSessions },
@@ -339,19 +340,30 @@ export default async function AdminPage({
   );
 
   const productIds = [...new Set((acquisitions ?? []).map((item) => item.product_template_id))];
-  const [{ data: products }, balances] = await Promise.all([
+  const [{ data: products }, { data: balanceRows }] = await Promise.all([
     productIds.length
       ? supabase.from("product_templates").select("id,name").in("id", productIds)
       : Promise.resolve({ data: [] as { id: string; name: string }[] }),
-    Promise.all(
-      (acquisitions ?? []).map(async (acquisition) => {
-        if (acquisition.unlimited) return [acquisition.id, null] as const;
-        const { data } = await supabase.rpc("acquisition_credit_balance", {
-          target_acquisition_id: acquisition.id,
-        });
-        return [acquisition.id, typeof data === "number" ? data : 0] as const;
-      }),
-    ),
+    canReadProducts && acquisitionIds.length
+      ? supabase
+          .from("credit_ledger")
+          .select("acquisition_id,quantity")
+          .eq("studio_id", studio.id)
+          .in("acquisition_id", acquisitionIds)
+      : Promise.all(
+          (acquisitions ?? []).map(async (acquisition) => {
+            if (acquisition.unlimited) {
+              return { acquisition_id: acquisition.id, quantity: 0 };
+            }
+            const { data } = await supabase.rpc("acquisition_credit_balance", {
+              target_acquisition_id: acquisition.id,
+            });
+            return {
+              acquisition_id: acquisition.id,
+              quantity: typeof data === "number" ? data : 0,
+            };
+          }),
+        ).then((data) => ({ data })),
   ]);
 
   const templateMap = new Map((templates ?? []).map((item) => [item.id, item]));
@@ -374,7 +386,13 @@ export default async function AdminPage({
   ]);
   const acquisitionMap = new Map((acquisitions ?? []).map((item) => [item.id, item]));
   const productMap = new Map((products ?? []).map((item) => [item.id, item.name]));
-  const balanceMap = new Map(balances);
+  const balanceMap = new Map<string, number>();
+  for (const row of balanceRows ?? []) {
+    balanceMap.set(
+      row.acquisition_id,
+      (balanceMap.get(row.acquisition_id) ?? 0) + row.quantity,
+    );
+  }
 
   const reservationsBySession = new Map<string, typeof reservations>();
   for (const reservation of reservations ?? []) {

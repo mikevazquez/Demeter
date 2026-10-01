@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import { formatDateTime, getStudentPortalContext } from "@/lib/student/portal";
+import { formatDateTime, getStudentShellContext } from "@/lib/student/portal";
 
 function notificationLabel(type: string) {
   switch (type) {
@@ -28,12 +28,12 @@ function notificationLabel(type: string) {
 }
 
 export default async function StudentNotificationsPage() {
-  const { supabase, snapshot, studio } = await getStudentPortalContext();
+  const { supabase, student, studio } = await getStudentShellContext();
 
   const { data: notifications } = await supabase
     .from("app_notifications")
     .select("id,title,body,notification_type,created_at,read_at")
-    .eq("student_id", snapshot.profile.student_id)
+    .eq("student_id", student.id)
     .eq("recipient_kind", "student")
     .order("created_at", { ascending: false })
     .limit(50);

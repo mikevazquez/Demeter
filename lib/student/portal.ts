@@ -161,7 +161,7 @@ export type StudentClassFeedItem = {
   credit_restored?: boolean;
 };
 
-export const getStudentPortalContext = cache(async () => {
+export const getStudentAccessContext = cache(async () => {
   const supabase = await createClient("student");
   const {
     data: { user },
@@ -202,26 +202,74 @@ export const getStudentPortalContext = cache(async () => {
 
   if (account.must_change_password) redirect("/login/student/activar");
 
-  const [snapshotResult, studioResult] = await Promise.all([
-    supabase.rpc("student_portal_snapshot"),
-    supabase.from("studios").select("name,timezone").eq("id", membership.studio_id).maybeSingle(),
+  return {
+    supabase,
+    user,
+    account,
+    membership,
+  };
+});
+
+export const getStudentStudioContext = cache(async () => {
+  const access = await getStudentAccessContext();
+  const { data: studio, error } = await access.supabase
+    .from("studios")
+    .select("name,timezone,slug,primary_color,logo_path")
+    .eq("id", access.membership.studio_id)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error("student_portal_temporarily_unavailable");
+  }
+  if (!studio) redirect("/login/student?error=access");
+
+  return {
+    ...access,
+    studio,
+  };
+});
+
+export const getStudentShellContext = cache(async () => {
+  const context = await getStudentStudioContext();
+  const { data: student, error } = await context.supabase
+    .from("students")
+    .select("id,full_name")
+    .eq("studio_id", context.membership.studio_id)
+    .eq("user_id", context.user.id)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error("student_portal_temporarily_unavailable");
+  }
+  if (!student) redirect("/login/student?error=access");
+
+  return {
+    ...context,
+    student,
+  };
+});
+
+export const getStudentPortalContext = cache(async () => {
+  const access = await getStudentAccessContext();
+  const [snapshotResult, studioContext] = await Promise.all([
+    access.supabase.rpc("student_portal_snapshot"),
+    getStudentStudioContext(),
   ]);
 
-  if (snapshotResult.error || studioResult.error) {
+  if (snapshotResult.error) {
     throw new Error("student_portal_temporarily_unavailable");
   }
 
   const snapshot = snapshotResult.data;
-  const studio = studioResult.data;
-  if (!snapshot || !studio) redirect("/login/student?error=access");
+  if (!snapshot) redirect("/login/student?error=access");
 
   const baseSnapshot = snapshot as StudentSnapshot;
   const productIds = [...new Set(baseSnapshot.acquisitions.map((item) => item.product_id))];
   const { data: productTerms } = productIds.length
-    ? await supabase
+    ? await access.supabase
         .from("product_templates")
         .select("id,package_term,reward_credit_wallet")
-        .eq("studio_id", membership.studio_id)
+        .eq("studio_id", access.membership.studio_id)
         .in("id", productIds)
     : { data: [] };
   const productMetaMap = new Map((productTerms ?? []).map((item) => [item.id, item]));
@@ -238,11 +286,8 @@ export const getStudentPortalContext = cache(async () => {
   };
 
   return {
-    supabase,
-    user,
-    account,
-    membership,
-    studio,
+    ...access,
+    studio: studioContext.studio,
     snapshot: enrichedSnapshot,
   };
 });

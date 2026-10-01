@@ -1,4 +1,4 @@
-import { getStudentPortalContext } from "@/lib/student/portal";
+import { getStudentStudioContext } from "@/lib/student/portal";
 
 import NotificationChannelPreferences from "../../components/NotificationChannelPreferences";
 
@@ -9,7 +9,7 @@ type PreferenceSnapshot = {
 };
 
 export default async function StudentNotificationPreferencesPage() {
-  const { supabase, studio, membership } = await getStudentPortalContext();
+  const { supabase, studio, membership } = await getStudentStudioContext();
   const { data } = await supabase.rpc("student_get_notification_channel_preferences");
   const preferences = (data ?? {}) as PreferenceSnapshot;
 

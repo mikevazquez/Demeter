@@ -32,7 +32,7 @@ export function StudentNav() {
               <Link
                 key={item.href}
                 href={item.href}
-                prefetch={item.href === "/student/reservar" ? false : undefined}
+                prefetch={false}
                 className={`block rounded-2xl px-4 py-3 text-sm font-semibold transition ${
                   active
                     ? "bg-fuchsia-600 text-white"
@@ -57,7 +57,7 @@ export function StudentNav() {
             <Link
               key={item.href}
               href={item.href}
-              prefetch={item.href === "/student/reservar" ? false : undefined}
+              prefetch={false}
               className={`rounded-2xl px-2 py-3 text-center text-xs font-semibold transition sm:text-sm ${
                 active ? "bg-fuchsia-600 text-white" : "text-zinc-400"
               }`}

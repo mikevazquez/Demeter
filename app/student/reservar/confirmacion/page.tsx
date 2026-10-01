@@ -2,7 +2,7 @@ import Link from "next/link";
 
 import {
   formatDateTime,
-  getStudentPortalContext,
+  getStudentStudioContext,
   localDateKey,
   type StudentSession,
 } from "@/lib/student/portal";
@@ -13,7 +13,7 @@ export default async function StudentReservationConfirmationPage({
   searchParams: Promise<{ session?: string; reservation?: string; date?: string }>;
 }) {
   const query = await searchParams;
-  const { supabase, studio } = await getStudentPortalContext();
+  const { supabase, studio } = await getStudentStudioContext();
 
   let session: StudentSession | null = null;
   if (query.session) {

@@ -2,7 +2,7 @@ import Link from "next/link";
 
 import {
   bookingReasonCopy,
-  getStudentPortalContext,
+  getStudentStudioContext,
   localDateKey,
   type StudentSession,
 } from "@/lib/student/portal";
@@ -122,7 +122,7 @@ export default async function StudentReservePage({
   const query = await searchParams;
   const rewardMode = query.credit === "reward";
   const rewardSuffix = rewardMode ? "&credit=reward" : "";
-  const { supabase, studio, membership } = await getStudentPortalContext();
+  const { supabase, studio, membership } = await getStudentStudioContext();
 
   const today = localDateKey(new Date(), studio.timezone);
   const requestedDate = safeDate(query.date, today);
