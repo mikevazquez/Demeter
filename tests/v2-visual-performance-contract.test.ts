@@ -44,6 +44,14 @@ describe("Studio Flow V2 visual + performance contract", () => {
     expect(visualSystem).toContain(".sf-admin-loading");
   });
 
+  it("normalizes legacy dark utility islands through the shared admin visual layer", () => {
+    expect(visualSystem).toContain("Legacy utility normalization");
+    expect(visualSystem).toContain('[class*="bg-[#0d0f16]"]');
+    expect(visualSystem).toContain('[class*="bg-black/20"]');
+    expect(visualSystem).toContain(".bg-fuchsia-600");
+    expect(visualSystem).toContain("background-color: var(--accent) !important");
+  });
+
   it("eliminates the remaining dark islands from secondary admin modules", () => {
     expect(secondaryCss).toContain("Studio Flow V2 · light visual consolidation");
     expect(secondaryDetailCss).toContain("Studio Flow V2 · light detail/editor consolidation");
