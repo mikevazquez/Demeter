@@ -151,6 +151,12 @@ export type ExecuteCancellationArgs = EmptyArgs;
 export type PrepareRescheduleArgs = { reservation_ref: string; target_session_ref: string };
 export type ExecuteRescheduleArgs = EmptyArgs;
 
+export type PrepareWaitlistJoinArgs = {
+  session_ref: string;
+};
+
+export type ExecuteWaitlistJoinArgs = EmptyArgs;
+
 export const assistantActionToolDefinitions: AssistantToolDefinition[] = [
   {
     type: "function",
@@ -242,6 +248,38 @@ export const assistantActionToolDefinitions: AssistantToolDefinition[] = [
     name: "execute_reschedule",
     description:
       "Ejecuta el último reagendado pendiente de esta conversación dentro de una sola transacción. Solo úsala después de un NUEVO mensaje con confirmación explícita.",
+    strict: true,
+    parameters: {
+      type: "object",
+      properties: {},
+      required: [],
+      additionalProperties: false,
+    },
+  },
+  {
+    type: "function",
+    name: "prepare_waitlist_join",
+    description:
+      "Prepara el ingreso a la lista de espera de una clase llena. Valida que la clase realmente esté llena, que la persona sea elegible y que no esté ya en la lista. No modifica nada todavía.",
+    strict: true,
+    parameters: {
+      type: "object",
+      properties: {
+        session_ref: {
+          type: "string",
+          description:
+            "Referencia opaca session:<uuid> devuelta por search_class_availability.",
+        },
+      },
+      required: ["session_ref"],
+      additionalProperties: false,
+    },
+  },
+  {
+    type: "function",
+    name: "execute_waitlist_join",
+    description:
+      "Ejecuta el último ingreso pendiente a lista de espera de esta conversación. Solo úsala después de un NUEVO mensaje con confirmación explícita.",
     strict: true,
     parameters: {
       type: "object",
