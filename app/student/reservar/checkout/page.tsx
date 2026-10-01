@@ -38,7 +38,7 @@ export default async function SingleClassCheckoutReturnPage({
     ? await supabase
         .from("online_checkout_attempts")
         .select(
-          "id,session_id,product_name_snapshot,amount_minor,regular_amount_minor,reward_discount_pct,reward_level_title_snapshot,status",
+          "id,session_id,product_name_snapshot,amount_minor,regular_amount_minor,reward_discount_pct,reward_level_title_snapshot,status,extra_fulfillment_snapshot",
         )
         .eq("id", attemptId)
         .eq("provider", "mercado_pago")
@@ -57,6 +57,15 @@ export default async function SingleClassCheckoutReturnPage({
 
   const approved = status === "approved";
   const rejected = status === "rejected" || status === "cancelled";
+  const extraEnrollment =
+    attempt?.extra_fulfillment_snapshot &&
+    typeof attempt.extra_fulfillment_snapshot === "object" &&
+    (attempt.extra_fulfillment_snapshot as { type?: unknown }).type === "enrollment"
+      ? (attempt.extra_fulfillment_snapshot as {
+          name?: string;
+          price_minor?: number;
+        })
+      : null;
 
   return (
     <main className="mx-auto max-w-2xl space-y-6 pb-4">
@@ -91,7 +100,9 @@ export default async function SingleClassCheckoutReturnPage({
 
         <h1 className="mt-2 text-3xl font-semibold text-white">
           {approved
-            ? "Tu clase suelta ya está disponible"
+            ? extraEnrollment
+              ? "Tu clase y tu inscripción ya están listas"
+              : "Tu clase suelta ya está disponible"
             : rejected
               ? "No se realizó la compra"
               : "Estamos verificando con Mercado Pago"}
@@ -99,7 +110,9 @@ export default async function SingleClassCheckoutReturnPage({
 
         <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-zinc-400">
           {approved
-            ? "El pago fue acreditado y Studio Flow agregó el crédito para esta actividad. Ahora reserva tu lugar en la clase."
+            ? extraEnrollment
+              ? "El pago fue acreditado. Studio Flow agregó el crédito de esta clase y activó tu inscripción anual."
+              : "El pago fue acreditado y Studio Flow agregó el crédito para esta actividad. Ahora reserva tu lugar en la clase."
             : rejected
               ? "No se activó ningún crédito. Puedes volver a la clase e intentarlo nuevamente."
               : "No realices otro pago por ahora. Studio Flow activará la clase únicamente cuando Mercado Pago confirme el cobro."}
@@ -129,7 +142,25 @@ export default async function SingleClassCheckoutReturnPage({
                 </div>
               </div>
             ) : (
-              <p className="mt-1 text-xs text-zinc-400">{formatMoney(attempt.amount_minor)} MXN</p>
+              <div className="mt-1 space-y-1 text-xs text-zinc-400">
+                {extraEnrollment?.price_minor ? (
+                  <>
+                    <p>
+                      Clase:{" "}
+                      {formatMoney(attempt.amount_minor - extraEnrollment.price_minor)} MXN
+                    </p>
+                    <p>
+                      {extraEnrollment.name ?? "Inscripción"}:{" "}
+                      {formatMoney(extraEnrollment.price_minor)} MXN
+                    </p>
+                    <p className="font-semibold text-white">
+                      Total: {formatMoney(attempt.amount_minor)} MXN
+                    </p>
+                  </>
+                ) : (
+                  <p>{formatMoney(attempt.amount_minor)} MXN</p>
+                )}
+              </div>
             )}
           </div>
         ) : null}
