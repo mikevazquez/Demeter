@@ -421,27 +421,24 @@ export default async function StudentProfilePage({
   const canReadEvaluations = can(CAPABILITIES.EVALUATIONS_READ);
   const canReadDocuments = can(CAPABILITIES.DOCUMENTS_READ);
   const canArchive = can(CAPABILITIES.STUDENTS_ARCHIVE);
-  const lifecycleEventsResult = canArchive
-    ? await supabase
-        .from("student_lifecycle_events")
-        .select("id, from_status, to_status, created_at")
-        .eq("student_id", student.id)
-        .eq("studio_id", studio.id)
-        .order("created_at", { ascending: false })
-        .limit(12)
-    : { data: [] };
+  const [
+    lifecycleEventsResult,
+    operatingChargesResult,
+    reservationRowsResult,
+    studentSalesResult,
+    enrollmentRowsResult,
+    statusMembershipResult,
+    onboardingResult,
+    rewardCountResult,
+    achievementRowsResult,
+    levelUnlockRowsResult,
+    rewardRowsResult,
+    studentLevelRowsResult,
+    authUserResult,
+  ] = await secondaryReads;
+
   const lifecycleEvents = lifecycleEventsResult.data ?? [];
-  const { data: operatingCharges } = canReadSales
-    ? await supabase
-        .from("student_operating_charges")
-        .select(
-          "id,charge_type,amount_minor,currency,status,created_at,resolved_at,resolution_note,reservation_id",
-        )
-        .eq("studio_id", studio.id)
-        .eq("student_id", student.id)
-        .order("created_at", { ascending: false })
-        .limit(30)
-    : { data: [] };
+  const operatingCharges = operatingChargesResult.data ?? [];
   const pendingOperatingCharges = (operatingCharges ?? []).filter(
     (charge) => charge.status === "pending",
   );
