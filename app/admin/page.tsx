@@ -94,13 +94,8 @@ export default async function AdminPage({
 }: {
   searchParams: Promise<{ error?: string; created?: string; date?: string }>;
 }) {
-  const { supabase, studio, can, user } = await getAdminContext();
+  const { supabase, studio, can, user, profile } = await getAdminContext();
   const params = await searchParams;
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("full_name")
-    .eq("id", user.id)
-    .maybeSingle();
   const headerName = profile?.full_name?.trim() || user.email?.split("@")[0] || "Usuario";
   const headerInitials =
     headerName
