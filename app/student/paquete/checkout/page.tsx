@@ -146,10 +146,12 @@ export default async function StudentCheckoutReturnPage({
 }: {
   searchParams: Promise<{ attempt?: string; outcome?: string }>;
 }) {
-  const query = await searchParams;
+  const [query, { supabase }] = await Promise.all([
+    searchParams,
+    getStudentAccessContext(),
+  ]);
   const attemptId = query.attempt?.trim() ?? "";
   const outcome = safeOutcome(query.outcome);
-  const { supabase } = await getStudentAccessContext();
 
   const { data: attempt } = attemptId
     ? await supabase
