@@ -8,9 +8,11 @@ import type {
   ExecuteBookingArgs,
   ExecuteCancellationArgs,
   ExecuteRescheduleArgs,
+  ExecuteWaitlistJoinArgs,
   PrepareBookingArgs,
   PrepareCancellationArgs,
   PrepareRescheduleArgs,
+  PrepareWaitlistJoinArgs,
 } from "./tool-contracts";
 
 type AssistantActionToolContext = {
@@ -1071,6 +1073,301 @@ async function executeReschedule(
   };
 }
 
+
+function safeWaitlistReason(reason: unknown) {
+  const code = String(reason ?? "waitlist_not_eligible");
+  const messages: Record<string, string> = {
+    session_not_found: "La clase ya no está disponible.",
+    session_not_bookable: "La clase ya no admite lista de espera.",
+    student_not_found: "No pude identificar a la alumna.",
+    student_not_operable: "La cuenta no está habilitada para usar lista de espera.",
+    already_reserved: "Ya tienes una reserva para esa clase.",
+    module_not_enabled: "La lista de espera no está habilitada para este estudio.",
+    seat_available: "Ya hay un lugar disponible; no hace falta entrar a lista de espera.",
+    document_required: "Hay un documento pendiente antes de poder usar la lista de espera.",
+    enrollment_required: "Hace falta completar la inscripción requerida.",
+    payment_pending: "Hay un pago pendiente que bloquea esta acción.",
+    no_active_product: "No hay un paquete o membresía vigente que cubra la clase.",
+    outside_product: "El paquete vigente no aplica para esta actividad.",
+    no_credits: "No hay créditos suficientes para entrar a la lista de espera.",
+    account_restricted: "La cuenta tiene una restricción que impide entrar a la lista.",
+  };
+
+  return {
+    reason_code: code,
+    reason_message:
+      messages[code] ??
+      "Studio Flow indicó que no puedes entrar a la lista de espera de esta clase.",
+  };
+}
+
+async function prepareWaitlistJoin(
+  ctx: AssistantActionToolContext,
+  args: PrepareWaitlistJoinArgs,
+) {
+  if (!ctx.studentId) return { ok: false, error: "identity_required" };
+
+  const sessionId = parseOpaqueRef(args.session_ref, "session");
+  if (!sessionId) return { ok: false, error: "invalid_session_ref" };
+
+  const sessionInfo = await getSessionSummary(ctx, sessionId);
+  if (!sessionInfo) return { ok: false, error: "session_not_found" };
+
+  const { data: preview, error: previewError } = await ctx.supabase.rpc(
+    "admin_waitlist_preview",
+    {
+      target_session_id: sessionId,
+      target_student_id: ctx.studentId,
+    },
+  );
+
+  if (previewError) {
+    return { ok: false, error: "waitlist_preview_unavailable" };
+  }
+
+  const previewObject = asObject(preview);
+  if (!previewObject || previewObject.ok !== true) {
+    return {
+      ok: false,
+      error: "waitlist_not_eligible",
+      ...safeWaitlistReason(previewObject?.reason_code),
+    };
+  }
+
+  const summary = {
+    ...sessionInfo.summary,
+    waitlist: true,
+    class_is_full: true,
+    credit_cost: Number(previewObject.credit_cost ?? sessionInfo.summary.credit_cost ?? 1),
+    credit_charged_now: false,
+  };
+
+  if (previewObject.reused === true) {
+    return {
+      ok: true,
+      status: "already_active",
+      reused: true,
+      summary,
+    };
+  }
+
+  const now = new Date().toISOString();
+  await ctx.supabase
+    .from("assistant_pending_actions")
+    .update({ status: "cancelled", updated_at: now })
+    .eq("studio_id", ctx.studio.id)
+    .eq("conversation_id", ctx.conversationId)
+    .eq("action_type", "waitlist.join")
+    .eq("status", "pending");
+
+  const secretToken = randomUUID();
+  const tokenHash = createHash("sha256").update(secretToken).digest("hex");
+  const expiresAt = new Date(Date.now() + 10 * 60_000).toISOString();
+
+  const { data: pending, error: pendingError } = await ctx.supabase
+    .from("assistant_pending_actions")
+    .insert({
+      studio_id: ctx.studio.id,
+      conversation_id: ctx.conversationId,
+      action_type: "waitlist.join",
+      action_token_hash: tokenHash,
+      action_payload: {
+        session_id: sessionId,
+        student_id: ctx.studentId,
+        prepared_turn_id: ctx.turnId,
+      },
+      confirmation_summary: summary,
+      status: "pending",
+      expires_at: expiresAt,
+    })
+    .select("id")
+    .single();
+
+  if (pendingError || !pending) {
+    return { ok: false, error: "pending_action_create_failed" };
+  }
+
+  return {
+    ok: true,
+    status: "confirmation_required",
+    expires_at: expiresAt,
+    summary,
+  };
+}
+
+async function executeWaitlistJoin(
+  ctx: AssistantActionToolContext,
+  args: ExecuteWaitlistJoinArgs,
+) {
+  void args;
+
+  const { data: pending, error: pendingError } = await ctx.supabase
+    .from("assistant_pending_actions")
+    .select(
+      "id,action_type,action_payload,confirmation_summary,status,expires_at,execution_ref",
+    )
+    .eq("studio_id", ctx.studio.id)
+    .eq("conversation_id", ctx.conversationId)
+    .eq("action_type", "waitlist.join")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (pendingError || !pending) {
+    return { ok: false, error: "pending_action_not_found" };
+  }
+
+  if (pending.status === "executed") {
+    return {
+      ok: true,
+      status: "executed",
+      already_executed: true,
+      summary: pending.confirmation_summary,
+      waitlist_ref: pending.execution_ref ?? null,
+    };
+  }
+
+  if (pending.status !== "pending") {
+    return { ok: false, error: "pending_action_not_available" };
+  }
+
+  if (new Date(pending.expires_at).getTime() <= Date.now()) {
+    await ctx.supabase
+      .from("assistant_pending_actions")
+      .update({ status: "expired", updated_at: new Date().toISOString() })
+      .eq("id", pending.id)
+      .eq("studio_id", ctx.studio.id)
+      .eq("status", "pending");
+    return { ok: false, error: "confirmation_expired" };
+  }
+
+  const payload = asObject(pending.action_payload);
+  if (!payload) return { ok: false, error: "pending_action_invalid" };
+
+  if (String(payload.prepared_turn_id ?? "") === ctx.turnId) {
+    return { ok: false, error: "confirmation_requires_new_turn" };
+  }
+
+  if (!isExplicitAssistantConfirmation(ctx.currentUserMessage)) {
+    return { ok: false, error: "explicit_confirmation_required" };
+  }
+
+  const studentId = String(payload.student_id ?? "");
+  const sessionId = String(payload.session_id ?? "");
+  if (!ctx.studentId || studentId !== ctx.studentId) {
+    return { ok: false, error: "conversation_identity_changed" };
+  }
+
+  const sessionInfo = await getSessionSummary(ctx, sessionId);
+  if (!sessionInfo) return { ok: false, error: "session_not_found" };
+
+  const { data: preview, error: previewError } = await ctx.supabase.rpc(
+    "admin_waitlist_preview",
+    {
+      target_session_id: sessionId,
+      target_student_id: studentId,
+    },
+  );
+
+  if (previewError) {
+    return { ok: false, error: "waitlist_preview_unavailable" };
+  }
+
+  const previewObject = asObject(preview);
+  if (!previewObject || previewObject.ok !== true) {
+    await ctx.supabase
+      .from("assistant_pending_actions")
+      .update({ status: "cancelled", updated_at: new Date().toISOString() })
+      .eq("id", pending.id)
+      .eq("studio_id", ctx.studio.id)
+      .eq("status", "pending");
+
+    return {
+      ok: false,
+      error: "waitlist_no_longer_eligible",
+      ...safeWaitlistReason(previewObject?.reason_code),
+    };
+  }
+
+  if (previewObject.reused === true) {
+    const executedAt = new Date().toISOString();
+    const waitlistRef = previewObject.waitlist_entry_id
+      ? `waitlist:${String(previewObject.waitlist_entry_id)}`
+      : null;
+
+    await ctx.supabase
+      .from("assistant_pending_actions")
+      .update({
+        status: "executed",
+        confirmed_at: executedAt,
+        executed_at: executedAt,
+        execution_ref: waitlistRef,
+        updated_at: executedAt,
+      })
+      .eq("id", pending.id)
+      .eq("studio_id", ctx.studio.id)
+      .eq("status", "pending");
+
+    return {
+      ok: true,
+      status: "executed",
+      already_active: true,
+      waitlist_ref: waitlistRef,
+      summary: {
+        ...sessionInfo.summary,
+        waitlist: true,
+        credit_charged_now: false,
+      },
+    };
+  }
+
+  const { data: joined, error: joinError } = await ctx.supabase.rpc(
+    "admin_join_waitlist",
+    {
+      target_session_id: sessionId,
+      target_student_id: studentId,
+    },
+  );
+
+  const joinedObject = asObject(joined);
+  if (joinError || !joinedObject || joinedObject.ok !== true) {
+    return {
+      ok: false,
+      error: "waitlist_join_failed",
+      ...safeWaitlistReason(joinedObject?.reason_code),
+    };
+  }
+
+  const executedAt = new Date().toISOString();
+  const waitlistRef = joinedObject.waitlist_entry_id
+    ? `waitlist:${String(joinedObject.waitlist_entry_id)}`
+    : null;
+
+  await ctx.supabase
+    .from("assistant_pending_actions")
+    .update({
+      status: "executed",
+      confirmed_at: executedAt,
+      executed_at: executedAt,
+      execution_ref: waitlistRef,
+      updated_at: executedAt,
+    })
+    .eq("id", pending.id)
+    .eq("studio_id", ctx.studio.id)
+    .eq("status", "pending");
+
+  return {
+    ok: true,
+    status: "executed",
+    waitlist_ref: waitlistRef,
+    summary: {
+      ...sessionInfo.summary,
+      waitlist: true,
+      credit_charged_now: false,
+    },
+  };
+}
+
 export async function executeAssistantActionTool(
   ctx: AssistantActionToolContext,
   toolName: string,
@@ -1089,6 +1386,10 @@ export async function executeAssistantActionTool(
       return prepareReschedule(ctx, args as PrepareRescheduleArgs);
     case "execute_reschedule":
       return executeReschedule(ctx, args as ExecuteRescheduleArgs);
+    case "prepare_waitlist_join":
+      return prepareWaitlistJoin(ctx, args as PrepareWaitlistJoinArgs);
+    case "execute_waitlist_join":
+      return executeWaitlistJoin(ctx, args as ExecuteWaitlistJoinArgs);
     default:
       return { ok: false, error: "tool_not_allowed" };
   }
