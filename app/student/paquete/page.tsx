@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { PurchaseEnrollmentButton } from "@/app/student/paquete/purchase-enrollment-button";
 import { PurchasePackageButton } from "@/app/student/paquete/purchase-package-button";
 import {
   formatDate,
@@ -101,6 +102,25 @@ export default async function StudentPackagePage() {
     ? daysRemaining(activePackage.expires_on, studio.timezone)
     : null;
 
+  const { data: enrollmentOptionData } = await supabase.rpc(
+    "student_enrollment_purchase_option",
+  );
+  const enrollmentOption =
+    enrollmentOptionData && typeof enrollmentOptionData === "object"
+      ? (enrollmentOptionData as {
+          enabled?: boolean;
+          missing?: boolean;
+          configured?: boolean;
+          product?: {
+            id?: string;
+            name?: string;
+            price_minor?: number;
+            currency?: string;
+            validity_days?: number | null;
+          } | null;
+        })
+      : null;
+
   const { data: purchasableProductRows } = await supabase
     .from("product_templates")
     .select(
@@ -180,6 +200,42 @@ export default async function StudentPackagePage() {
           entrenando.
         </p>
       </header>
+
+      {enrollmentOption?.enabled &&
+      enrollmentOption.missing &&
+      enrollmentOption.configured &&
+      enrollmentOption.product?.id ? (
+        <section
+          id="inscripcion"
+          className="scroll-mt-6 rounded-3xl border border-fuchsia-500/25 bg-fuchsia-500/[0.06] p-5 sm:p-6"
+        >
+          <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+            <div className="max-w-xl">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-fuchsia-300">
+                Inscripción requerida
+              </p>
+              <h2 className="mt-1 text-xl font-semibold text-white">
+                {enrollmentOption.product.name ?? "Inscripción"}
+              </h2>
+              <p className="mt-2 text-sm leading-6 text-zinc-400">
+                Para continuar reservando necesitas activar tu inscripción. El pago se confirma
+                directamente con Mercado Pago; después podrás continuar con tus documentos y
+                reservas.
+              </p>
+              <p className="mt-3 text-2xl font-semibold text-white">
+                {formatMoney(
+                  Number(enrollmentOption.product.price_minor ?? 0),
+                  enrollmentOption.product.currency ?? studio.currency,
+                )}
+              </p>
+            </div>
+            <PurchaseEnrollmentButton
+              productTemplateId={enrollmentOption.product.id}
+              productName={enrollmentOption.product.name ?? "Inscripción"}
+            />
+          </div>
+        </section>
+      ) : null}
 
       {activePackage ? (
         <>
