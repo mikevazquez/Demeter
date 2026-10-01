@@ -66,8 +66,11 @@ function toolLabel(name: string) {
     get_commercial_options: "Consultó paquetes y precios",
     get_studio_information: "Consultó información del estudio",
     get_policy_information: "Consultó políticas",
+    get_student_reservations: "Consultó reservas activas",
     prepare_booking: "Validó y preparó la reserva",
     execute_booking: "Ejecutó la reserva confirmada",
+    prepare_cancellation: "Calculó y preparó la cancelación",
+    execute_cancellation: "Ejecutó la cancelación confirmada",
   };
   return labels[name] ?? name;
 }
@@ -334,7 +337,8 @@ export default function DemiChat({
             <li>Sin acceso SQL para el modelo</li>
             <li>Tenant tomado del contexto autenticado</li>
             <li>Reservas en dos pasos: preparar → confirmar → ejecutar</li>
-            <li>Cancelación, reagendado y lista de espera siguen bloqueados</li>
+            <li>Cancelaciones: motivo → consecuencia → confirmar → ejecutar</li>
+            <li>Reagendado y lista de espera siguen bloqueados</li>
             <li>store:false en OpenAI</li>
           </ul>
         </div>
