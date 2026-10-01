@@ -22,7 +22,7 @@ describe("Admin session controls regression", () => {
     expect(today).toContain('.in("id", reservationStudentIds)');
     expect(today).toContain("...(reservationStudents ?? [])");
     expect(sessionDetail).toContain("reservationStudentIds");
-    expect(sessionDetail).toContain("...(reservationStudents ?? [])");
+    expect(sessionDetail).toContain("(reservationStudents ?? []).map");
   });
 
   it("keeps reserved student names visible on the light Today roster", () => {
