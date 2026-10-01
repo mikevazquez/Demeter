@@ -112,12 +112,8 @@ export default async function StudentsPage({
 
   const duplicateId = String(params.duplicate ?? "").trim();
   const needsAllStudentsQuery = Boolean(query) || status === "active" || status === "inactive";
-  const [
-    { data: students },
-    allStudentsResult,
-    acquisitionResult,
-    { data: duplicateStudent },
-  ] = await Promise.all([
+  const [{ data: students }, allStudentsResult, acquisitionResult, { data: duplicateStudent }] =
+    await Promise.all([
       studentsQuery,
       needsAllStudentsQuery
         ? supabase
@@ -196,8 +192,8 @@ export default async function StudentsPage({
   }).length;
   const expiredStudentsCount = (allStudents ?? []).filter((student) => {
     if (currentAcquisitionFor(student.id)) return false;
-    return (acquisitionsByStudent.get(student.id) ?? []).some(
-      (item) => Boolean(item.expires_on && item.expires_on < today),
+    return (acquisitionsByStudent.get(student.id) ?? []).some((item) =>
+      Boolean(item.expires_on && item.expires_on < today),
     );
   }).length;
 
@@ -213,8 +209,8 @@ export default async function StudentsPage({
 
     if (status === "expired") {
       if (currentAcquisitionFor(student.id)) return false;
-      return (acquisitionsByStudent.get(student.id) ?? []).some(
-        (item) => Boolean(item.expires_on && item.expires_on < today),
+      return (acquisitionsByStudent.get(student.id) ?? []).some((item) =>
+        Boolean(item.expires_on && item.expires_on < today),
       );
     }
 
