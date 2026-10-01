@@ -142,16 +142,16 @@ export default async function StudentReservePage({
   ] = await Promise.all([
     supabase.rpc("student_booking_restrictions_snapshot", { p_session_id: null }),
     supabase.rpc("student_schedule_feed", {
-        target_start: selectedDate,
-        target_end: selectedDate,
-        target_discipline_id: null,
-      }),
-      supabase.rpc("student_holiday_snapshot", { target_date: selectedDate }),
-      supabase.rpc("student_holiday_week_snapshot", {
-        target_start: weekStart,
-        target_end: weekEnd,
-      }),
-    ]);
+      target_start: selectedDate,
+      target_end: selectedDate,
+      target_discipline_id: null,
+    }),
+    supabase.rpc("student_holiday_snapshot", { target_date: selectedDate }),
+    supabase.rpc("student_holiday_week_snapshot", {
+      target_start: weekStart,
+      target_end: weekEnd,
+    }),
+  ]);
   const globalRestrictions = (globalRestrictionData ?? []) as NonNullable<
     StudentSession["eligibility"]["restrictions"]
   >;
