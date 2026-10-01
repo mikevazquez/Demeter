@@ -183,13 +183,31 @@ export default async function StudentReservePage({
 
   const baseItems = (sessions ?? []) as StudentSession[];
   const sessionIds = baseItems.map((item) => item.session_id);
-  const { data: resourceRequirements } = sessionIds.length
-    ? await supabase
-        .from("class_sessions")
-        .select("id,requires_resource")
-        .eq("studio_id", membership.studio_id)
-        .in("id", sessionIds)
-    : { data: [] as { id: string; requires_resource: boolean }[] };
+  const activityNames = [...new Set(baseItems.map((item) => item.activity))];
+  const [{ data: resourceRequirements }, { data: activityStyles }] = await Promise.all([
+    sessionIds.length
+      ? supabase
+          .from("class_sessions")
+          .select("id,requires_resource")
+          .eq("studio_id", membership.studio_id)
+          .in("id", sessionIds)
+      : Promise.resolve({
+          data: [] as { id: string; requires_resource: boolean }[],
+        }),
+    activityNames.length
+      ? supabase
+          .from("class_templates")
+          .select("name,color_hex,drop_in_price_minor")
+          .eq("studio_id", membership.studio_id)
+          .in("name", activityNames)
+      : Promise.resolve({
+          data: [] as {
+            name: string;
+            color_hex: string | null;
+            drop_in_price_minor: number | null;
+          }[],
+        }),
+  ]);
   const resourceRequirementMap = new Map(
     (resourceRequirements ?? []).map((item) => [item.id, item.requires_resource]),
   );
@@ -203,20 +221,6 @@ export default async function StudentReservePage({
     waitlistItems.filter((item) => item.status === "active").map((item) => item.session_id),
   );
   const levelTitle = (rewardStatusData as RewardStatusSnapshot | null)?.level_title ?? null;
-  const activityNames = [...new Set(items.map((item) => item.activity))];
-  const { data: activityStyles } = activityNames.length
-    ? await supabase
-        .from("class_templates")
-        .select("name,color_hex,drop_in_price_minor")
-        .eq("studio_id", membership.studio_id)
-        .in("name", activityNames)
-    : {
-        data: [] as {
-          name: string;
-          color_hex: string | null;
-          drop_in_price_minor: number | null;
-        }[],
-      };
   const activityStyleMap = new Map(
     (activityStyles ?? []).map((item) => [
       item.name,
