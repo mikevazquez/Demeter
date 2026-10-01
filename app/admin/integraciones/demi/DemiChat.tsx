@@ -83,13 +83,15 @@ export default function DemiChat({
   assistantName,
   openAIConfigured,
   students,
+  prospects,
 }: {
   assistantName: string;
   openAIConfigured: boolean;
   students: Array<{ id: string; name: string }>;
+  prospects: Array<{ id: string; name: string; lifecycleStatus: string }>;
 }) {
   const [conversationId, setConversationId] = useState<string | null>(null);
-  const [studentId, setStudentId] = useState("");
+  const [identityValue, setIdentityValue] = useState("");
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [isPending, startTransition] = useTransition();
@@ -109,9 +111,9 @@ export default function DemiChat({
     setMessage("");
   }
 
-  function changeIdentity(nextStudentId: string) {
+  function changeIdentity(nextIdentityValue: string) {
     if (isPending) return;
-    setStudentId(nextStudentId);
+    setIdentityValue(nextIdentityValue);
     setConversationId(null);
     setMessages([]);
     setMessage("");
@@ -130,9 +132,11 @@ export default function DemiChat({
     setMessage("");
 
     startTransition(async () => {
+      const [identityKind, identityId] = identityValue.split(":", 2);
       const result = await sendDemiMessage({
         conversationId,
-        studentId: studentId || null,
+        studentId: identityKind === "student" && identityId ? identityId : null,
+        crmContactId: identityKind === "crm" && identityId ? identityId : null,
         message: text,
       });
 
@@ -184,20 +188,31 @@ export default function DemiChat({
           <label htmlFor="demi-demo-identity">Simular WhatsApp de</label>
           <select
             id="demi-demo-identity"
-            value={studentId}
+            value={identityValue}
             onChange={(event) => changeIdentity(event.target.value)}
             disabled={isPending}
           >
             <option value="">Sin identidad · solo consultas</option>
-            {students.map((student) => (
-              <option key={student.id} value={student.id}>
-                {student.name}
-              </option>
-            ))}
+            {prospects.length ? (
+              <optgroup label="Prospectos CRM">
+                {prospects.map((prospect) => (
+                  <option key={prospect.id} value={`crm:${prospect.id}`}>
+                    {prospect.name} · {prospect.lifecycleStatus}
+                  </option>
+                ))}
+              </optgroup>
+            ) : null}
+            <optgroup label="Alumnas">
+              {students.map((student) => (
+                <option key={student.id} value={`student:${student.id}`}>
+                  {student.name}
+                </option>
+              ))}
+            </optgroup>
           </select>
           <small>
-            En WhatsApp real Studio Flow identificará a la persona por el número; este selector
-            existe solo para UAT.
+            En WhatsApp real Studio Flow resolverá prospecto o alumna por el número; este
+            selector existe solo para UAT.
           </small>
         </div>
 
@@ -208,8 +223,8 @@ export default function DemiChat({
               <strong>Prueba una conversación real</strong>
               <p>
                 Pregunta por horarios, disponibilidad, actividades, precios, ubicación o
-                políticas. Si seleccionas una identidad también puedes probar una reserva con
-                confirmación.
+                políticas. También puedes seleccionar un prospecto CRM para probar onboarding
+                y reserva de clase de prueba.
               </p>
               <div className="demi-prompts">
                 {[
