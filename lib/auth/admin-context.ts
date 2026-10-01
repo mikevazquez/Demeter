@@ -1,10 +1,11 @@
+import { cache } from "react";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { CAPABILITIES, type Capability } from "@/lib/auth/capabilities";
 import { STUDIO_CONTEXT_COOKIE } from "@/lib/auth/studio-context-cookie";
 import { createClient } from "@/lib/supabase/server";
 
-export async function getAdminContext(requiredCapability?: Capability) {
+async function resolveAdminContext(requiredCapability?: Capability) {
   const supabase = await createClient("admin");
   const {
     data: { user },
@@ -100,3 +101,8 @@ export async function getAdminContext(requiredCapability?: Capability) {
     },
   };
 }
+
+
+// Request-scoped React cache: layout, metadata and page share the same
+// auth/studio/capability resolution without persisting data between requests.
+export const getAdminContext = cache(resolveAdminContext);
