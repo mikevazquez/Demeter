@@ -21,6 +21,7 @@ type AssistantActionToolContext = {
   conversationId: string;
   turnId: string;
   studentId: string | null;
+  crmContactId: string | null;
   currentUserMessage: string;
 };
 
@@ -142,7 +143,7 @@ async function getSessionSummary(
     await Promise.all([
       ctx.supabase
         .from("class_templates")
-        .select("name,credit_cost")
+        .select("name,credit_cost,drop_in_price_minor")
         .eq("id", session.template_id)
         .eq("studio_id", ctx.studio.id)
         .maybeSingle(),
@@ -175,6 +176,11 @@ async function getSessionSummary(
       starts_at_local: start.time,
       ends_at_local: end.time,
       credit_cost: Math.max(Number(template?.credit_cost ?? 1), 1),
+      drop_in_price_minor:
+        template?.drop_in_price_minor == null
+          ? null
+          : Number(template.drop_in_price_minor),
+      currency: ctx.studio.currency,
       location: location?.name ?? null,
       space: space?.name ?? null,
       timezone: ctx.studio.timezone,
@@ -186,8 +192,57 @@ async function prepareBooking(
   ctx: AssistantActionToolContext,
   args: PrepareBookingArgs,
 ) {
-  if (!ctx.studentId) {
+  let studentId = ctx.studentId;
+  let resolvedStudentType: string | null = null;
+
+  if (!studentId && ctx.crmContactId) {
+    const { data: ensured, error: ensureError } = await ctx.supabase.rpc(
+      "assistant_ensure_trial_student",
+      {
+        target_studio_id: ctx.studio.id,
+        target_crm_contact_id: ctx.crmContactId,
+      },
+    );
+
+    const ensuredObject = asObject(ensured);
+    if (ensureError || !ensuredObject || ensuredObject.ok !== true) {
+      return {
+        ok: false,
+        error: "trial_identity_create_failed",
+        reason_code: String(ensuredObject?.reason_code ?? "trial_identity_create_failed"),
+      };
+    }
+
+    studentId = String(ensuredObject.student_id ?? "") || null;
+    resolvedStudentType = String(ensuredObject.student_type ?? "") || "trial";
+
+    if (!studentId) {
+      return { ok: false, error: "trial_identity_create_failed" };
+    }
+
+    ctx.studentId = studentId;
+    await ctx.supabase
+      .from("assistant_conversations")
+      .update({
+        student_id: studentId,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", ctx.conversationId)
+      .eq("studio_id", ctx.studio.id);
+  }
+
+  if (!studentId) {
     return { ok: false, error: "identity_required" };
+  }
+
+  if (!resolvedStudentType) {
+    const { data: student } = await ctx.supabase
+      .from("students")
+      .select("student_type")
+      .eq("id", studentId)
+      .eq("studio_id", ctx.studio.id)
+      .maybeSingle();
+    resolvedStudentType = student?.student_type ?? null;
   }
 
   const sessionId = parseOpaqueRef(args.session_ref, "session");
@@ -213,7 +268,7 @@ async function prepareBooking(
     "booking_eligibility",
     {
       target_session_id: sessionId,
-      target_student_id: ctx.studentId,
+      target_student_id: studentId,
     },
   );
 
@@ -222,13 +277,45 @@ async function prepareBooking(
   }
 
   const eligibilityObject = asObject(eligibility);
-  if (!eligibilityObject || eligibilityObject.eligible !== true) {
+  const eligibilityReason = String(eligibilityObject?.reason_code ?? "");
+  const commercialPendingReasons = new Set([
+    "no_active_product",
+    "outside_product",
+    "outside_product_schedule",
+    "no_credits",
+    "payment_pending",
+    "enrollment_required",
+  ]);
+  const commercialPending =
+    eligibilityObject?.eligible !== true &&
+    resolvedStudentType === "trial" &&
+    commercialPendingReasons.has(eligibilityReason);
+
+  if (!eligibilityObject || (eligibilityObject.eligible !== true && !commercialPending)) {
+    const safeReason = safeBookingReason(eligibilityReason);
     return {
       ok: false,
-      error: "booking_not_eligible",
-      ...safeBookingReason(eligibilityObject?.reason_code),
+      error:
+        ["document_required", "birth_date_required", "guardian_required"].includes(
+          eligibilityReason,
+        )
+          ? "onboarding_required"
+          : "booking_not_eligible",
+      onboarding_required: [
+        "document_required",
+        "birth_date_required",
+        "guardian_required",
+      ].includes(eligibilityReason),
+      ...safeReason,
     };
   }
+
+  const confirmationSummary = {
+    ...sessionInfo.summary,
+    commercial_status: commercialPending ? "payment_pending" : "package_covered",
+    payment_pending: commercialPending,
+    eligibility_reason: commercialPending ? eligibilityReason : null,
+  };
 
   const now = new Date().toISOString();
   await ctx.supabase
@@ -252,10 +339,11 @@ async function prepareBooking(
       action_token_hash: tokenHash,
       action_payload: {
         session_id: sessionId,
-        student_id: ctx.studentId,
+        student_id: studentId,
+        commercial_pending: commercialPending,
         prepared_turn_id: ctx.turnId,
       },
-      confirmation_summary: sessionInfo.summary,
+      confirmation_summary: confirmationSummary,
       status: "pending",
       expires_at: expiresAt,
     })
@@ -270,7 +358,7 @@ async function prepareBooking(
     ok: true,
     status: "confirmation_required",
     expires_at: expiresAt,
-    summary: sessionInfo.summary,
+    summary: confirmationSummary,
   };
 }
 
@@ -357,7 +445,65 @@ async function executeBooking(
   }
 
   const eligibilityObject = asObject(eligibility);
-  if (!eligibilityObject || eligibilityObject.eligible !== true) {
+  const eligibilityReason = String(eligibilityObject?.reason_code ?? "");
+  const requestedCommercialPending = payload.commercial_pending === true;
+  const commercialPendingReasons = new Set([
+    "no_active_product",
+    "outside_product",
+    "outside_product_schedule",
+    "no_credits",
+    "payment_pending",
+    "enrollment_required",
+  ]);
+  const canBookCommercialPending =
+    requestedCommercialPending &&
+    eligibilityObject?.eligible !== true &&
+    commercialPendingReasons.has(eligibilityReason);
+
+  let reservationId: string | null = null;
+  let finalCommercialStatus = "package_covered";
+
+  if (eligibilityObject?.eligible === true) {
+    const { data, error: bookingError } = await ctx.supabase.rpc(
+      "admin_book_student",
+      {
+        target_session_id: sessionId,
+        target_student_id: studentId,
+      },
+    );
+
+    if (bookingError || !data) {
+      return { ok: false, error: "booking_execution_failed" };
+    }
+    reservationId = String(data);
+  } else if (canBookCommercialPending) {
+    const { data, error: pendingBookingError } = await ctx.supabase.rpc(
+      "assistant_book_payment_pending",
+      {
+        target_studio_id: ctx.studio.id,
+        target_session_id: sessionId,
+        target_student_id: studentId,
+        target_assistant_conversation_id: ctx.conversationId,
+      },
+    );
+    const pendingBooking = asObject(data);
+
+    if (
+      pendingBookingError ||
+      !pendingBooking ||
+      pendingBooking.ok !== true ||
+      !pendingBooking.reservation_id
+    ) {
+      return {
+        ok: false,
+        error: "booking_execution_failed",
+        ...safeBookingReason(pendingBooking?.reason_code ?? eligibilityReason),
+      };
+    }
+
+    reservationId = String(pendingBooking.reservation_id);
+    finalCommercialStatus = "payment_pending";
+  } else {
     await ctx.supabase
       .from("assistant_pending_actions")
       .update({ status: "cancelled", updated_at: new Date().toISOString() })
@@ -368,24 +514,16 @@ async function executeBooking(
     return {
       ok: false,
       error: "booking_no_longer_eligible",
-      ...safeBookingReason(eligibilityObject?.reason_code),
+      ...safeBookingReason(eligibilityReason),
     };
   }
 
-  const { data: reservationId, error: bookingError } = await ctx.supabase.rpc(
-    "admin_book_student",
-    {
-      target_session_id: sessionId,
-      target_student_id: studentId,
-    },
-  );
-
-  if (bookingError || !reservationId) {
+  if (!reservationId) {
     return { ok: false, error: "booking_execution_failed" };
   }
 
   const executedAt = new Date().toISOString();
-  const reservationRef = `reservation:${String(reservationId)}`;
+  const reservationRef = `reservation:${reservationId}`;
   await ctx.supabase
     .from("assistant_pending_actions")
     .update({
@@ -403,7 +541,12 @@ async function executeBooking(
     ok: true,
     status: "executed",
     reservation_ref: reservationRef,
-    summary: sessionInfo.summary,
+    commercial_status: finalCommercialStatus,
+    summary: {
+      ...sessionInfo.summary,
+      commercial_status: finalCommercialStatus,
+      payment_pending: finalCommercialStatus === "payment_pending",
+    },
   };
 }
 
