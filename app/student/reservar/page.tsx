@@ -2,7 +2,7 @@ import Link from "next/link";
 
 import {
   bookingReasonCopy,
-  getStudentPortalContext,
+  getStudentStudioContext,
   localDateKey,
   type StudentSession,
 } from "@/lib/student/portal";
@@ -119,12 +119,10 @@ export default async function StudentReservePage({
 }: {
   searchParams: Promise<{ date?: string; error?: string; credit?: string }>;
 }) {
-  const [query, { supabase, studio, membership }] = await Promise.all([
-    searchParams,
-    getStudentPortalContext(),
-  ]);
+  const query = await searchParams;
   const rewardMode = query.credit === "reward";
   const rewardSuffix = rewardMode ? "&credit=reward" : "";
+  const { supabase, studio, membership } = await getStudentStudioContext();
 
   const today = localDateKey(new Date(), studio.timezone);
   const requestedDate = safeDate(query.date, today);
@@ -137,13 +135,12 @@ export default async function StudentReservePage({
   const nextWeekDate = addDays(selectedDate, 7);
 
   const [
+    { data: globalRestrictionData },
     { data: sessions, error },
     { data: selectedHolidayData },
     { data: holidayWeekData },
-    { data: globalRestrictionData },
-    { data: waitlistData },
-    { data: rewardStatusData },
   ] = await Promise.all([
+    supabase.rpc("student_booking_restrictions_snapshot", { p_session_id: null }),
     supabase.rpc("student_schedule_feed", {
       target_start: selectedDate,
       target_end: selectedDate,
@@ -154,9 +151,6 @@ export default async function StudentReservePage({
       target_start: weekStart,
       target_end: weekEnd,
     }),
-    supabase.rpc("student_booking_restrictions_snapshot", { p_session_id: null }),
-    supabase.rpc("student_waitlist_feed"),
-    supabase.rpc("student_reward_status_snapshot"),
   ]);
   const globalRestrictions = (globalRestrictionData ?? []) as NonNullable<
     StudentSession["eligibility"]["restrictions"]
@@ -183,31 +177,18 @@ export default async function StudentReservePage({
 
   const baseItems = (sessions ?? []) as StudentSession[];
   const sessionIds = baseItems.map((item) => item.session_id);
-  const activityNames = [...new Set(baseItems.map((item) => item.activity))];
-  const [{ data: resourceRequirements }, { data: activityStyles }] = await Promise.all([
-    sessionIds.length
-      ? supabase
-          .from("class_sessions")
-          .select("id,requires_resource")
-          .eq("studio_id", membership.studio_id)
-          .in("id", sessionIds)
-      : Promise.resolve({
-          data: [] as { id: string; requires_resource: boolean }[],
-        }),
-    activityNames.length
-      ? supabase
-          .from("class_templates")
-          .select("name,color_hex,drop_in_price_minor")
-          .eq("studio_id", membership.studio_id)
-          .in("name", activityNames)
-      : Promise.resolve({
-          data: [] as {
-            name: string;
-            color_hex: string | null;
-            drop_in_price_minor: number | null;
-          }[],
-        }),
-  ]);
+  const [{ data: resourceRequirements }, { data: waitlistData }, { data: rewardStatusData }] =
+    await Promise.all([
+      sessionIds.length
+        ? supabase
+            .from("class_sessions")
+            .select("id,requires_resource")
+            .eq("studio_id", membership.studio_id)
+            .in("id", sessionIds)
+        : Promise.resolve({ data: [] as { id: string; requires_resource: boolean }[] }),
+      supabase.rpc("student_waitlist_feed"),
+      supabase.rpc("student_reward_status_snapshot"),
+    ]);
   const resourceRequirementMap = new Map(
     (resourceRequirements ?? []).map((item) => [item.id, item.requires_resource]),
   );
@@ -221,6 +202,20 @@ export default async function StudentReservePage({
     waitlistItems.filter((item) => item.status === "active").map((item) => item.session_id),
   );
   const levelTitle = (rewardStatusData as RewardStatusSnapshot | null)?.level_title ?? null;
+  const activityNames = [...new Set(items.map((item) => item.activity))];
+  const { data: activityStyles } = activityNames.length
+    ? await supabase
+        .from("class_templates")
+        .select("name,color_hex,drop_in_price_minor")
+        .eq("studio_id", membership.studio_id)
+        .in("name", activityNames)
+    : {
+        data: [] as {
+          name: string;
+          color_hex: string | null;
+          drop_in_price_minor: number | null;
+        }[],
+      };
   const activityStyleMap = new Map(
     (activityStyles ?? []).map((item) => [
       item.name,
