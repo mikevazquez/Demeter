@@ -196,7 +196,7 @@ export function KioskScanner({ studioName }: { studioName: string }) {
         : "border-rose-400/25 bg-rose-500/[0.1]";
 
   return (
-    <main className="fixed inset-0 z-[300] overflow-auto bg-[#07070a] text-white">
+    <main className="kiosk-v2 fixed inset-0 z-[300] overflow-auto bg-[#07070a] text-white">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_15%,rgba(255,10,138,0.15),transparent_35%)]" />
 
       <div className="relative mx-auto flex min-h-screen w-full max-w-5xl flex-col px-5 py-6 sm:px-8">
