@@ -123,6 +123,19 @@ export default async function SessionDetailPage({
       .order("booked_at"),
   ]);
 
+  const reservationStudentIds = [
+    ...new Set(
+      (reservations ?? []).map((reservation) => reservation.student_id).filter(Boolean),
+    ),
+  ] as string[];
+  const { data: reservationStudents } = reservationStudentIds.length
+    ? await supabase
+        .from("students")
+        .select("id,full_name")
+        .eq("studio_id", studio.id)
+        .in("id", reservationStudentIds)
+    : { data: [] as { id: string; full_name: string }[] };
+
   const timeZone = studio.timezone ?? "America/Mexico_City";
   const personMap = new Map(
     (persons ?? []).map((person) => [
@@ -137,7 +150,10 @@ export default async function SessionDetailPage({
     ]),
   );
   const spaceMap = new Map((spaces ?? []).map((space) => [space.id, space.name]));
-  const studentMap = new Map((students ?? []).map((student) => [student.id, student.full_name]));
+  const studentMap = new Map([
+    ...(students ?? []).map((student) => [student.id, student.full_name] as const),
+    ...(reservationStudents ?? []).map((student) => [student.id, student.full_name] as const),
+  ]);
 
   const dateLabel = new Intl.DateTimeFormat("es-MX", {
     timeZone,

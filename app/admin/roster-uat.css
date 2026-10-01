@@ -704,3 +704,9 @@
     grid-template-columns: 1fr;
   }
 }
+
+
+/* SF V2 · roster text on light Today cards */
+.hoy-approved .today-student-name-line strong {
+  color: #172033;
+}

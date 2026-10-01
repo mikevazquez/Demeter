@@ -233,7 +233,7 @@ export default async function AdminPage({
       sessionIds.length
         ? supabase
             .from("reservations")
-            .select("id,session_id,student_id,guest_person_id,status,acquisition_id,booked_at")
+            .select("id,session_id,student_id,guest_person_id,status,acquisition_id,booked_at,commercial_status")
             .in("session_id", sessionIds)
             .in("status", ["reserved", "attended", "no_show"])
             .order("booked_at")
@@ -246,12 +246,21 @@ export default async function AdminPage({
               status: string;
               acquisition_id: string | null;
               booked_at: string;
+              commercial_status: string | null;
             }[],
           }),
       templateIds.length
-        ? supabase.from("class_templates").select("id,name,color_hex").in("id", templateIds)
+        ? supabase
+            .from("class_templates")
+            .select("id,name,color_hex,drop_in_price_minor")
+            .in("id", templateIds)
         : Promise.resolve({
-            data: [] as { id: string; name: string; color_hex: string | null }[],
+            data: [] as {
+              id: string;
+              name: string;
+              color_hex: string | null;
+              drop_in_price_minor: number | null;
+            }[],
           }),
       instructorIds.length
         ? supabase.from("instructors").select("id,person_id").in("id", instructorIds)
@@ -282,6 +291,19 @@ export default async function AdminPage({
     : {
         data: [] as { id: string; first_name: string | null; last_name: string | null }[],
       };
+
+  const reservationStudentIds = [
+    ...new Set(
+      (reservations ?? []).map((reservation) => reservation.student_id).filter(Boolean),
+    ),
+  ] as string[];
+  const { data: reservationStudents } = reservationStudentIds.length
+    ? await supabase
+        .from("students")
+        .select("id,full_name")
+        .eq("studio_id", studio.id)
+        .in("id", reservationStudentIds)
+    : { data: [] as { id: string; full_name: string }[] };
 
   const reservationIds = (reservations ?? []).map((reservation) => reservation.id);
   const { data: attendanceCheckins } = reservationIds.length
@@ -363,7 +385,10 @@ export default async function AdminPage({
     ]),
   );
   const spaceMap = new Map((spaces ?? []).map((space) => [space.id, space.name]));
-  const studentMap = new Map((students ?? []).map((student) => [student.id, student.full_name]));
+  const studentMap = new Map([
+    ...(students ?? []).map((student) => [student.id, student.full_name] as const),
+    ...(reservationStudents ?? []).map((student) => [student.id, student.full_name] as const),
+  ]);
   const acquisitionMap = new Map((acquisitions ?? []).map((item) => [item.id, item]));
   const productMap = new Map((products ?? []).map((item) => [item.id, item.name]));
   const balanceMap = new Map(balances);
@@ -467,6 +492,9 @@ export default async function AdminPage({
             new Date(reservation.booked_at).getTime() >= new Date(session.ends_at).getTime()
               ? "Agregada manualmente después del cierre"
               : null,
+          paymentDueOnAttendance: reservation.commercial_status === "payment_pending",
+          individualPriceMinor: template?.drop_in_price_minor ?? null,
+          currency: studio.currency ?? "MXN",
         };
       }),
       candidates: candidates.map((student) => {
