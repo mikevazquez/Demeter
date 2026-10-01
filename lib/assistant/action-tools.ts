@@ -120,7 +120,7 @@ const BOOKING_REASON_MESSAGES: Record<string, string> = {
   trial_completed_enrollment_required:
     "Ya asististe a tu primera clase de prueba. Para volver a reservar necesitas completar la inscripción.",
   trial_prepayment_required:
-    "Ya acumulaste 2 no-shows. Para volver a agendar necesitas pagar la clase por adelantado.",
+    "Como en dos ocasiones anteriores reservaste una clase y no pudiste asistir, para volver a agendar necesitamos el pago anticipado de la siguiente clase.",
 };
 
 function safeBookingReason(reason: unknown) {
