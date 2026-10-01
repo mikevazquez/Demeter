@@ -20,6 +20,31 @@ function rel(path: string) {
   return relative(process.cwd(), path).replaceAll("\\", "/");
 }
 
+function hasAwaitInsideForBlock(source: string) {
+  const lines = source.split("\n");
+  for (let start = 0; start < lines.length; start += 1) {
+    if (!/^\s*for\s*\([^)]*\)\s*\{/.test(lines[start])) continue;
+
+    let depth = 0;
+    let opened = false;
+    for (let index = start; index < lines.length; index += 1) {
+      const line = lines[index];
+      for (const char of line) {
+        if (char === "{") {
+          depth += 1;
+          opened = true;
+        } else if (char === "}") {
+          depth -= 1;
+        }
+      }
+
+      if (index > start && /\bawait\b/.test(line)) return true;
+      if (opened && depth <= 0) break;
+    }
+  }
+  return false;
+}
+
 describe("V2 codebase audit inventory", () => {
   it("prints visual and performance findings for the full app surface", () => {
     const adminFiles = filesUnder("app/admin");
@@ -82,10 +107,7 @@ describe("V2 codebase audit inventory", () => {
       .map(rel);
 
     const awaitInsideLoop = pageFiles
-      .filter((path) => {
-        const source = readFileSync(path, "utf8");
-        return /for\s*\([^)]*\)\s*\{[\s\S]{0,1200}?await\s/.test(source);
-      })
+      .filter((path) => hasAwaitInsideForBlock(readFileSync(path, "utf8")))
       .map(rel);
 
     const heavyPages = pageFiles
