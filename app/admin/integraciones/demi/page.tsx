@@ -29,6 +29,7 @@ export default async function DemiDemoPage() {
     { data: monthCalls },
     { count: conversations },
     { data: students },
+    { data: prospectContacts },
   ] = await Promise.all([
       supabase
         .from("assistant_configs")
@@ -54,6 +55,14 @@ export default async function DemiDemoPage() {
         .eq("lifecycle_status", "active")
         .order("full_name")
         .limit(60),
+      supabase
+        .from("crm_contacts")
+        .select("id,person_id,lifecycle_status")
+        .eq("studio_id", studio.id)
+        .is("converted_student_id", null)
+        .in("lifecycle_status", ["prospect", "trial"])
+        .order("created_at", { ascending: false })
+        .limit(40),
     ]);
 
   if (!config) {
@@ -69,6 +78,40 @@ export default async function DemiDemoPage() {
       </main>
     );
   }
+
+  const prospectPersonIds = (prospectContacts ?? [])
+    .map((contact) => contact.person_id)
+    .filter((id): id is string => Boolean(id));
+
+  const { data: prospectPersons } = prospectPersonIds.length
+    ? await supabase
+        .from("persons")
+        .select("id,first_name,last_name")
+        .eq("studio_id", studio.id)
+        .in("id", prospectPersonIds)
+    : { data: [] as Array<{ id: string; first_name: string; last_name: string | null }> };
+
+  const prospectPersonMap = new Map(
+    (prospectPersons ?? []).map((person) => [person.id, person]),
+  );
+
+  const prospects = (prospectContacts ?? [])
+    .map((contact) => {
+      const person = prospectPersonMap.get(contact.person_id);
+      if (!person) return null;
+      const name = [person.first_name, person.last_name].filter(Boolean).join(" ").trim();
+      return {
+        id: contact.id,
+        name: name || "Prospecto",
+        lifecycleStatus: contact.lifecycle_status,
+      };
+    })
+    .filter(
+      (
+        prospect,
+      ): prospect is { id: string; name: string; lifecycleStatus: string } =>
+        Boolean(prospect),
+    );
 
   const spent = (monthCalls ?? []).reduce(
     (total, row) => total + Number(row.estimated_cost_usd_micros ?? 0),
@@ -134,6 +177,7 @@ export default async function DemiDemoPage() {
           id: student.id,
           name: student.full_name,
         }))}
+        prospects={prospects}
       />
     </main>
   );
