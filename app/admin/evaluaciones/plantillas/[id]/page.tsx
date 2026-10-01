@@ -55,9 +55,11 @@ export default async function EvaluationTemplateEditorPage({
   params: Promise<{ id: string }>;
   searchParams: Promise<{ error?: string; step?: string }>;
 }) {
-  const { id } = await params;
-  const qs = await searchParams;
-  const ctx = await getAdminContext(CAPABILITIES.EVALUATIONS_CONFIGURE);
+  const [{ id }, qs, ctx] = await Promise.all([
+    params,
+    searchParams,
+    getAdminContext(CAPABILITIES.EVALUATIONS_CONFIGURE),
+  ]);
 
   const { data: template } = await ctx.supabase
     .from("evaluation_templates")
