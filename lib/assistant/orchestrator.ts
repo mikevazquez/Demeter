@@ -266,7 +266,12 @@ function confirmationReply(
   const summary = asObject(result.summary);
   if (toolName === "execute_booking" && summary) {
     if (summary.trial_booking === true) {
-      return `Listo. Tu reserva de ${String(summary.activity ?? "la clase")} quedó confirmada para el ${formatDateForReply(summary.date)}, de ${formatTimeForReply(summary.starts_at_local)} a ${formatTimeForReply(summary.ends_at_local)}. ¿El pago lo harás en efectivo en el estudio o por transferencia?`;
+      const price =
+        formatMoney(
+          summary.amount_minor ?? summary.drop_in_price_minor,
+          summary.currency,
+        ) ?? "el costo de la clase";
+      return `Listo. Tu reserva de ${String(summary.activity ?? "la clase")} quedó confirmada para el ${formatDateForReply(summary.date)}, de ${formatTimeForReply(summary.starts_at_local)} a ${formatTimeForReply(summary.ends_at_local)}. ¿El pago de ${price} lo harás en efectivo en el estudio o por transferencia?`;
     }
 
     return `Listo. Tu reserva de ${String(summary.activity ?? "la clase")} quedó confirmada para el ${formatDateForReply(summary.date)}, de ${formatTimeForReply(summary.starts_at_local)} a ${formatTimeForReply(summary.ends_at_local)}.`;
