@@ -55,16 +55,8 @@ export default async function StudentRewardsProgressPage({
   const tab = ["summary", "achievements", "rewards", "history"].includes(String(query.tab))
     ? String(query.tab)
     : "summary";
-  const { data: student } = await ctx.supabase
-    .from("students")
-    .select("id,full_name,lifecycle_status,active,created_at")
-    .eq("id", studentId)
-    .eq("studio_id", ctx.studio.id)
-    .maybeSingle();
-
-  if (!student) notFound();
-
   const [
+    studentResult,
     programParticipationsResult,
     ruleParticipationsResult,
     evaluationsResult,
@@ -73,24 +65,30 @@ export default async function StudentRewardsProgressPage({
     programEventsResult,
   ] = await Promise.all([
     ctx.supabase
+      .from("students")
+      .select("id,full_name,lifecycle_status,active,created_at")
+      .eq("id", studentId)
+      .eq("studio_id", ctx.studio.id)
+      .maybeSingle(),
+    ctx.supabase
       .from("reward_program_participations")
       .select(
         "id,program_id,program_version_number,status,current_level_order,joined_at,completed_at,closed_at,updated_at",
       )
       .eq("studio_id", ctx.studio.id)
-      .eq("student_id", student.id)
+      .eq("student_id", studentId)
       .order("updated_at", { ascending: false }),
     ctx.supabase
       .from("reward_participations")
       .select("id,rule_id,joined_version_number,status,joined_at,fulfilled_at,closed_at,updated_at")
       .eq("studio_id", ctx.studio.id)
-      .eq("student_id", student.id)
+      .eq("student_id", studentId)
       .order("updated_at", { ascending: false }),
     ctx.supabase
       .from("reward_progress_evaluations")
       .select("id,rule_id,version_number,condition_results,progress,fulfilled,evaluated_at")
       .eq("studio_id", ctx.studio.id)
-      .eq("student_id", student.id)
+      .eq("student_id", studentId)
       .order("evaluated_at", { ascending: false })
       .limit(300),
     ctx.supabase
@@ -99,7 +97,7 @@ export default async function StudentRewardsProgressPage({
         "id,rule_id,version_number,achievement_key,level_key,title_snapshot,badge_snapshot,unlocked_at",
       )
       .eq("studio_id", ctx.studio.id)
-      .eq("student_id", student.id)
+      .eq("student_id", studentId)
       .order("unlocked_at", { ascending: false }),
     ctx.supabase
       .from("reward_instances")
@@ -107,16 +105,18 @@ export default async function StudentRewardsProgressPage({
         "id,rule_id,version_number,status,kind,benefit_definition,origin_snapshot,created_at,expires_at,redeemed_at,revoked_at,revoked_reason",
       )
       .eq("studio_id", ctx.studio.id)
-      .eq("student_id", student.id)
+      .eq("student_id", studentId)
       .order("created_at", { ascending: false }),
     ctx.supabase
       .from("reward_program_events")
       .select("id,program_id,program_version_number,level_id,event_type,details,occurred_at")
       .eq("studio_id", ctx.studio.id)
-      .eq("student_id", student.id)
+      .eq("student_id", studentId)
       .order("occurred_at", { ascending: false })
       .limit(150),
   ]);
+  const student = studentResult.data;
+  if (!student) notFound();
 
   const programParticipations = programParticipationsResult.data ?? [];
   const ruleParticipations = ruleParticipationsResult.data ?? [];
