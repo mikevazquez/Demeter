@@ -5,25 +5,6 @@ import { getAdminContext } from "@/lib/auth/admin-context";
 import { TodayClasses, type TodayClassItem } from "./hoy/TodayClasses";
 import QuickActions from "./hoy/QuickActions";
 
-type EligibilityResult = {
-  eligible?: boolean;
-  reason_code?: string | null;
-  available_credits?: number | null;
-  unlimited?: boolean;
-};
-
-const eligibilityCopy: Record<string, string> = {
-  student_not_operable: "perfil no habilitado",
-  session_not_bookable: "clase no disponible",
-  already_reserved: "ya reservada",
-  session_full: "clase llena",
-  no_active_product: "sin paquete activo",
-  enrollment_required: "inscripción no vigente",
-  payment_pending: "pago pendiente",
-  outside_product: "fuera de paquete",
-  no_credits: "sin créditos",
-};
-
 const occupyingReservationStatuses = new Set(["reserved", "attended", "no_show"]);
 
 function formatExpiry(value: string | null, locale: string) {
@@ -113,13 +94,8 @@ export default async function AdminPage({
 }: {
   searchParams: Promise<{ error?: string; created?: string; date?: string }>;
 }) {
-  const { supabase, studio, can, user } = await getAdminContext();
+  const { supabase, studio, can, user, profile } = await getAdminContext();
   const params = await searchParams;
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("full_name")
-    .eq("id", user.id)
-    .maybeSingle();
   const headerName = profile?.full_name?.trim() || user.email?.split("@")[0] || "Usuario";
   const headerInitials =
     headerName
@@ -158,9 +134,8 @@ export default async function AdminPage({
   const canWriteStudents = can(CAPABILITIES.STUDENTS_WRITE);
   const canWriteSales = can(CAPABILITIES.SALES_WRITE);
   const canWriteAttendance = can(CAPABILITIES.ATTENDANCE_WRITE);
-  const { data: serverNow } = await supabase.rpc("current_server_time");
-
   const [
+    { data: serverNow },
     { data: selectedSessions },
     { data: activeProductAcquisitions },
     { data: selectedPayments },
@@ -168,6 +143,7 @@ export default async function AdminPage({
     { data: quickSaleProducts },
     { data: quickSaleHistory },
   ] = await Promise.all([
+    supabase.rpc("current_server_time"),
     supabase
       .from("class_sessions")
       .select(
@@ -282,94 +258,101 @@ export default async function AdminPage({
     ]),
   ];
 
-  const { data: persons } = personIds.length
-    ? await supabase
-        .from("persons")
-        .select("id,first_name,last_name")
-        .eq("studio_id", studio.id)
-        .in("id", personIds)
-    : {
-        data: [] as { id: string; first_name: string | null; last_name: string | null }[],
-      };
-
   const reservationStudentIds = [
     ...new Set(
       (reservations ?? []).map((reservation) => reservation.student_id).filter(Boolean),
     ),
   ] as string[];
-  const { data: reservationStudents } = reservationStudentIds.length
-    ? await supabase
-        .from("students")
-        .select("id,full_name")
-        .eq("studio_id", studio.id)
-        .in("id", reservationStudentIds)
-    : { data: [] as { id: string; full_name: string }[] };
-
   const reservationIds = (reservations ?? []).map((reservation) => reservation.id);
-  const { data: attendanceCheckins } = reservationIds.length
-    ? await supabase
-        .from("attendance_checkins")
-        .select("reservation_id,source,checked_in_at")
-        .in("reservation_id", reservationIds)
-    : {
-        data: [] as {
-          reservation_id: string;
-          source: string;
-          checked_in_at: string;
-        }[],
-      };
+  const acquisitionIds = [
+    ...new Set(
+      (reservations ?? []).map((reservation) => reservation.acquisition_id).filter(Boolean),
+    ),
+  ] as string[];
+
+  const [
+    { data: persons },
+    { data: reservationStudents },
+    { data: attendanceCheckins },
+    { data: evaluationInvitations },
+    { data: acquisitions },
+  ] = await Promise.all([
+    personIds.length
+      ? supabase
+          .from("persons")
+          .select("id,first_name,last_name")
+          .eq("studio_id", studio.id)
+          .in("id", personIds)
+      : Promise.resolve({
+          data: [] as { id: string; first_name: string | null; last_name: string | null }[],
+        }),
+    reservationStudentIds.length
+      ? supabase
+          .from("students")
+          .select("id,full_name")
+          .eq("studio_id", studio.id)
+          .in("id", reservationStudentIds)
+      : Promise.resolve({ data: [] as { id: string; full_name: string }[] }),
+    reservationIds.length
+      ? supabase
+          .from("attendance_checkins")
+          .select("reservation_id,source,checked_in_at")
+          .in("reservation_id", reservationIds)
+      : Promise.resolve({
+          data: [] as {
+            reservation_id: string;
+            source: string;
+            checked_in_at: string;
+          }[],
+        }),
+    reservationIds.length
+      ? supabase
+          .from("evaluation_invitations")
+          .select("id,reservation_id,status")
+          .in("reservation_id", reservationIds)
+          .in("status", ["scheduled", "in_progress"])
+      : Promise.resolve({
+          data: [] as { id: string; reservation_id: string | null; status: string }[],
+        }),
+    acquisitionIds.length
+      ? supabase
+          .from("product_acquisitions")
+          .select("id,product_template_id,expires_on,unlimited")
+          .in("id", acquisitionIds)
+      : Promise.resolve({
+          data: [] as {
+            id: string;
+            product_template_id: string;
+            expires_on: string | null;
+            unlimited: boolean;
+          }[],
+        }),
+  ]);
+
   const checkinByReservation = new Map(
     (attendanceCheckins ?? []).map((item) => [item.reservation_id, item]),
   );
-
-  const { data: evaluationInvitations } = reservationIds.length
-    ? await supabase
-        .from("evaluation_invitations")
-        .select("id,reservation_id,status")
-        .in("reservation_id", reservationIds)
-        .in("status", ["scheduled", "in_progress"])
-    : {
-        data: [] as { id: string; reservation_id: string | null; status: string }[],
-      };
   const evaluationByReservation = new Map(
     (evaluationInvitations ?? [])
       .filter((item) => item.reservation_id)
       .map((item) => [item.reservation_id!, item]),
   );
 
-  const acquisitionIds = [
-    ...new Set(
-      (reservations ?? []).map((reservation) => reservation.acquisition_id).filter(Boolean),
-    ),
-  ] as string[];
-  const { data: acquisitions } = acquisitionIds.length
-    ? await supabase
-        .from("product_acquisitions")
-        .select("id,product_template_id,expires_on,unlimited")
-        .in("id", acquisitionIds)
-    : {
-        data: [] as {
-          id: string;
-          product_template_id: string;
-          expires_on: string | null;
-          unlimited: boolean;
-        }[],
-      };
-
   const productIds = [...new Set((acquisitions ?? []).map((item) => item.product_template_id))];
-  const { data: products } = productIds.length
-    ? await supabase.from("product_templates").select("id,name").in("id", productIds)
-    : { data: [] as { id: string; name: string }[] };
-
-  const balances = await Promise.all(
-    (acquisitions ?? []).map(async (acquisition) => {
-      if (acquisition.unlimited) return [acquisition.id, null] as const;
-      const { data } = await supabase.rpc("acquisition_credit_balance", {
-        target_acquisition_id: acquisition.id,
-      });
-      return [acquisition.id, typeof data === "number" ? data : 0] as const;
-    }),
-  );
+  const [{ data: products }, balances] = await Promise.all([
+    productIds.length
+      ? supabase.from("product_templates").select("id,name").in("id", productIds)
+      : Promise.resolve({ data: [] as { id: string; name: string }[] }),
+    Promise.all(
+      (acquisitions ?? []).map(async (acquisition) => {
+        if (acquisition.unlimited) return [acquisition.id, null] as const;
+        const { data } = await supabase.rpc("acquisition_credit_balance", {
+          target_acquisition_id: acquisition.id,
+        });
+        return [acquisition.id, typeof data === "number" ? data : 0] as const;
+      }),
+    ),
+  ]);
 
   const templateMap = new Map((templates ?? []).map((item) => [item.id, item]));
   const personMap = new Map(
@@ -408,18 +391,6 @@ export default async function AdminPage({
       sessionReservations.map((reservation) => reservation.student_id).filter(Boolean),
     );
     const candidates = (students ?? []).filter((student) => !bookedIds.has(student.id));
-    const eligibilityEntries = canWriteSchedule
-      ? await Promise.all(
-          candidates.map(async (student) => {
-            const { data } = await supabase.rpc("booking_eligibility", {
-              target_session_id: session.id,
-              target_student_id: student.id,
-            });
-            return [student.id, (data ?? {}) as EligibilityResult] as const;
-          }),
-        )
-      : [];
-    const eligibilityMap = new Map(eligibilityEntries);
     const template = templateMap.get(session.template_id);
     const occupied = sessionReservations.filter((reservation) =>
       occupyingReservationStatuses.has(reservation.status),
@@ -497,22 +468,12 @@ export default async function AdminPage({
           currency: studio.currency ?? "MXN",
         };
       }),
-      candidates: candidates.map((student) => {
-        const eligibility = eligibilityMap.get(student.id);
-        const reason = eligibility?.reason_code
-          ? (eligibilityCopy[eligibility.reason_code] ?? "no elegible")
-          : "no elegible";
-        return {
-          id: student.id,
-          fullName: student.full_name,
-          eligible: eligibility?.eligible === true,
-          detail: eligibility?.eligible
-            ? eligibility.unlimited
-              ? "membresía ilimitada"
-              : `${eligibility.available_credits ?? 0} créditos`
-            : reason,
-        };
-      }),
+      candidates: candidates.map((student) => ({
+        id: student.id,
+        fullName: student.full_name,
+        eligible: true,
+        detail: "Se valida al agregar",
+      })),
     });
   }
 

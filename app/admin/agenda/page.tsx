@@ -150,7 +150,9 @@ export default async function AgendaPage({
   searchParams: Promise<{ error?: string; created?: string; date?: string; session?: string }>;
 }) {
   const params = await searchParams;
-  const { supabase, studio, can, user } = await getAdminContext(CAPABILITIES.SCHEDULE_READ);
+  const { supabase, studio, can, user, profile } = await getAdminContext(
+    CAPABILITIES.SCHEDULE_READ,
+  );
   const canEdit = can(CAPABILITIES.SCHEDULE_WRITE);
   const timeZone = studio.timezone;
   const locale = studio.locale;
@@ -169,11 +171,6 @@ export default async function AgendaPage({
   const weekStartUtc = zonedDateTimeToUtc(`${weekStartKey}T00:00`, timeZone);
   const weekAfterUtc = zonedDateTimeToUtc(`${weekAfterKey}T00:00`, timeZone);
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("full_name")
-    .eq("id", user.id)
-    .maybeSingle();
   const headerName = profile?.full_name?.trim() || user.email?.split("@")[0] || "Usuario";
   const headerInitials =
     headerName
@@ -219,13 +216,15 @@ export default async function AgendaPage({
       .order("weekday"),
   ]);
 
-  if (canEdit) {
-    for (const schedule of schedules ?? []) {
-      await supabase.rpc("materialize_recurring_schedule", {
-        p_schedule_id: schedule.id,
-        p_through: null,
-      });
-    }
+  if (canEdit && schedules?.length) {
+    await Promise.all(
+      schedules.map((schedule) =>
+        supabase.rpc("materialize_recurring_schedule", {
+          p_schedule_id: schedule.id,
+          p_through: null,
+        }),
+      ),
+    );
   }
 
   const { data: sessions } = await supabase

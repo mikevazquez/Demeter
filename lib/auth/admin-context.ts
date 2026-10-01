@@ -1,10 +1,11 @@
+import { cache } from "react";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { CAPABILITIES, type Capability } from "@/lib/auth/capabilities";
 import { STUDIO_CONTEXT_COOKIE } from "@/lib/auth/studio-context-cookie";
 import { createClient } from "@/lib/supabase/server";
 
-export async function getAdminContext(requiredCapability?: Capability) {
+async function getAdminContextImpl(requiredCapability?: Capability) {
   const supabase = await createClient("admin");
   const {
     data: { user },
@@ -16,13 +17,14 @@ export async function getAdminContext(requiredCapability?: Capability) {
   }
   if (!user) redirect("/login/studio");
 
-  const [accountResult, membershipsResult] = await Promise.all([
+  const [accountResult, membershipsResult, profileResult] = await Promise.all([
     supabase.from("user_accounts").select("status").eq("id", user.id).maybeSingle(),
     supabase
       .from("studio_memberships")
       .select("studio_id, role, active, person_id")
       .eq("user_id", user.id)
       .eq("active", true),
+    supabase.from("profiles").select("full_name").eq("id", user.id).maybeSingle(),
   ]);
 
   if (accountResult.error || membershipsResult.error) {
@@ -94,9 +96,12 @@ export async function getAdminContext(requiredCapability?: Capability) {
     account,
     membership,
     studio,
+    profile: profileResult.data,
     capabilities,
     can(capability: Capability) {
       return capabilities.has(capability);
     },
   };
 }
+
+export const getAdminContext = cache(getAdminContextImpl);
