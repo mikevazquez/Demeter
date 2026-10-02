@@ -144,7 +144,7 @@ export default async function AdminPage({
     supabase
       .from("class_sessions")
       .select(
-        "id,starts_at,ends_at,capacity,status,template_id,instructor_id,space_id,minimum_reservations_enabled,minimum_reservations,minimum_review_status",
+        "id,starts_at,ends_at,capacity,status,template_id,instructor_id,space_id,requires_resource,minimum_reservations_enabled,minimum_reservations,minimum_review_status",
       )
       .eq("studio_id", studio.id)
       .gte("starts_at", selectedStart.toISOString())
@@ -252,6 +252,7 @@ export default async function AdminPage({
     { data: reservationStudents },
     { data: attendanceCheckins },
     { data: evaluationInvitations },
+    { data: resourceAssignments },
     { data: acquisitions },
   ] = await Promise.all([
     personIds.length
@@ -291,6 +292,15 @@ export default async function AdminPage({
       : Promise.resolve({
           data: [] as { id: string; reservation_id: string | null; status: string }[],
         }),
+    reservationIds.length
+      ? supabase
+          .from("reservation_resource_assignments")
+          .select("reservation_id,resource_id")
+          .in("reservation_id", reservationIds)
+          .is("released_at", null)
+      : Promise.resolve({
+          data: [] as { reservation_id: string; resource_id: string }[],
+        }),
     acquisitionIds.length
       ? supabase
           .from("product_acquisitions")
@@ -313,6 +323,30 @@ export default async function AdminPage({
     (evaluationInvitations ?? [])
       .filter((item) => item.reservation_id)
       .map((item) => [item.reservation_id!, item]),
+  );
+
+  const assignedResourceIds = [
+    ...new Set((resourceAssignments ?? []).map((item) => item.resource_id).filter(Boolean)),
+  ] as string[];
+  const { data: assignedResources } = assignedResourceIds.length
+    ? await supabase
+        .from("resources")
+        .select("id,name,short_label")
+        .in("id", assignedResourceIds)
+    : {
+        data: [] as { id: string; name: string; short_label: string | null }[],
+      };
+  const resourceNameById = new Map(
+    (assignedResources ?? []).map((resource) => [
+      resource.id,
+      resource.short_label?.trim() || resource.name,
+    ]),
+  );
+  const resourceNameByReservation = new Map(
+    (resourceAssignments ?? []).map((assignment) => [
+      assignment.reservation_id,
+      resourceNameById.get(assignment.resource_id) ?? null,
+    ]),
   );
 
   const productIds = [...new Set((acquisitions ?? []).map((item) => item.product_template_id))];
@@ -448,6 +482,10 @@ export default async function AdminPage({
           paymentDueOnAttendance: reservation.commercial_status === "payment_pending",
           individualPriceMinor: template?.drop_in_price_minor ?? null,
           currency: studio.currency ?? "MXN",
+          resourceRequired: session.requires_resource,
+          resourceName: session.requires_resource
+            ? (resourceNameByReservation.get(reservation.id) ?? null)
+            : null,
         };
       }),
     });
