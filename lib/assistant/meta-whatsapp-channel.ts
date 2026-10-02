@@ -295,6 +295,131 @@ export async function sendMetaWhatsAppText(input: {
 
   const endpoint =
     `https://graph.facebook.com/${input.config.graphApiVersion}/${input.config.phoneNumberId}/messages`;
+  const fetcher = input.fetcher ?? fetch;
+  const retryDelaysMs = [250, 500, 1000, 2000];
+
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 10_000);
+
+    try {
+      const response = await fetcher(endpoint, {
+        method: "POST",
+        headers: {
+          authorization: `Bearer ${input.config.accessToken}`,
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({
+          messaging_product: "whatsapp",
+          recipient_type: "individual",
+          to: recipient,
+          type: "text",
+          text: {
+            preview_url: false,
+            body: text.slice(0, 4096),
+          },
+        }),
+        signal: controller.signal,
+      });
+
+      let responseBody: unknown = {};
+      try {
+        responseBody = await response.json();
+      } catch {
+        responseBody = {};
+      }
+
+      if (!response.ok) {
+        const retryable = retryableHttpStatus(response.status);
+        const canRetryInline =
+          retryable &&
+          (response.status === 429 || response.status >= 500) &&
+          attempt < retryDelaysMs.length;
+
+        if (canRetryInline) {
+          await new Promise<void>((resolve) =>
+            setTimeout(resolve, retryDelaysMs[attempt]),
+          );
+          continue;
+        }
+
+        return {
+          status: "error",
+          errorCode: `meta_whatsapp_http_${response.status}`,
+          retryable,
+          httpStatus: response.status,
+          responseSnapshot: metaErrorSnapshot(responseBody),
+        };
+      }
+
+      const body = isObject(responseBody) ? responseBody : {};
+      const messages = Array.isArray(body.messages) ? body.messages : [];
+      const firstMessage = isObject(messages[0]) ? messages[0] : {};
+      const providerMessageId = safeText(firstMessage.id);
+
+      if (!providerMessageId) {
+        return {
+          status: "error",
+          errorCode: "meta_whatsapp_message_id_missing",
+          retryable: true,
+          httpStatus: response.status,
+          responseSnapshot: {},
+        };
+      }
+
+      return {
+        status: "accepted",
+        providerMessageId,
+        httpStatus: response.status,
+        responseSnapshot: {
+          accepted: true,
+          provider_message_id: providerMessageId,
+        },
+      };
+    } catch (error) {
+      const timedOut = error instanceof Error && error.name === "AbortError";
+      return {
+        status: "error",
+        errorCode: timedOut
+          ? "meta_whatsapp_timeout"
+          : "meta_whatsapp_network_error",
+        retryable: true,
+        responseSnapshot: {},
+      };
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  return {
+    status: "error",
+    errorCode: "meta_whatsapp_retry_exhausted",
+    retryable: true,
+    responseSnapshot: {},
+  };
+}): Promise<MetaTextDeliveryResult> {
+  const recipient = input.recipientWaId.replace(/\D/g, "");
+  const text = input.text.trim();
+
+  if (!/^[1-9][0-9]{7,14}$/.test(recipient)) {
+    return {
+      status: "error",
+      errorCode: "whatsapp_recipient_invalid",
+      retryable: false,
+      responseSnapshot: {},
+    };
+  }
+  if (!text) {
+    return {
+      status: "error",
+      errorCode: "whatsapp_text_empty",
+      retryable: false,
+      responseSnapshot: {},
+    };
+  }
+
+  const endpoint =
+    `https://graph.facebook.com/${input.config.graphApiVersion}/${input.config.phoneNumberId}/messages`;
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 10_000);
 
