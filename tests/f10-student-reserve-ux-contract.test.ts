@@ -9,6 +9,9 @@ function source(path: string) {
 
 describe("F10 student reserve UAT contracts", () => {
   const reservePage = source("app/student/reservar/page.tsx");
+  const scheduleMigration = source(
+    "supabase/migrations/20261002014000_student_schedule_keep_cancelled_visible.sql",
+  );
 
   it("keeps the date selector anchored to a Monday-Sunday week", () => {
     expect(reservePage).toContain("const weekStart = startOfWeek(selectedDate)");
@@ -16,6 +19,15 @@ describe("F10 student reserve UAT contracts", () => {
     expect(reservePage).toContain('aria-label="Semana anterior"');
     expect(reservePage).toContain('aria-label="Semana siguiente"');
     expect(reservePage).toContain("addDays(weekStart, index)");
+  });
+
+  it("keeps cancelled classes visible in the selected day agenda without booking actions", () => {
+    expect(scheduleMigration).toContain("'status', cs.status::text");
+    expect(scheduleMigration).toContain("cs.status = 'cancelled'");
+    expect(scheduleMigration).toContain("cs.starts_at >= v_from");
+    expect(reservePage).toContain('session.status === "cancelled"');
+    expect(reservePage).toContain("Clase cancelada por el estudio");
+    expect(reservePage).toContain("ya no admite reservas");
   });
 
   it("shows every class for the selected day without discipline filters", () => {
