@@ -27,6 +27,8 @@ type RosterItem = {
   paymentDueOnAttendance?: boolean;
   individualPriceMinor?: number | null;
   currency?: string;
+  resourceName?: string | null;
+  resourceRequired?: boolean;
 };
 
 type SessionOperationsProps = {
@@ -299,6 +301,15 @@ export function SessionOperations({
                           ) : item.evaluationStatus === "in_progress" ? (
                             <span className="today-evaluation-tag is-active">
                               Evaluación en curso
+                            </span>
+                          ) : null}
+                          {item.resourceRequired ? (
+                            <span
+                              className={`today-resource-tag${item.resourceName ? "" : " is-missing"}`}
+                            >
+                              {item.resourceName
+                                ? `Recurso · ${item.resourceName}`
+                                : "Sin recurso asignado"}
                             </span>
                           ) : null}
                         </div>
