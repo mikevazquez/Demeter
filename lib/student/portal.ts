@@ -98,6 +98,7 @@ export type StudentSnapshot = {
 
 export type StudentSession = {
   session_id: string;
+  status: string;
   starts_at: string;
   ends_at: string;
   capacity: number;
