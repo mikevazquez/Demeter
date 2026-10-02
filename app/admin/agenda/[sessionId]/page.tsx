@@ -117,6 +117,7 @@ export default async function SessionDetailPage({
     { data: persons },
     { data: reservationStudents },
     { data: evaluationInvitations },
+    { data: resourceAssignments },
     { data: acquisitions },
   ] = await Promise.all([
     personIds.length
@@ -143,6 +144,15 @@ export default async function SessionDetailPage({
           .in("status", ["scheduled", "in_progress"])
       : Promise.resolve({
           data: [] as { id: string; reservation_id: string | null; status: string }[],
+        }),
+    reservationIds.length
+      ? supabase
+          .from("reservation_resource_assignments")
+          .select("reservation_id,resource_id")
+          .in("reservation_id", reservationIds)
+          .is("released_at", null)
+      : Promise.resolve({
+          data: [] as { reservation_id: string; resource_id: string }[],
         }),
     acquisitionIds.length
       ? supabase
@@ -201,6 +211,30 @@ export default async function SessionDetailPage({
     (evaluationInvitations ?? [])
       .filter((item) => item.reservation_id)
       .map((item) => [item.reservation_id!, item]),
+  );
+
+  const assignedResourceIds = [
+    ...new Set((resourceAssignments ?? []).map((item) => item.resource_id).filter(Boolean)),
+  ] as string[];
+  const { data: assignedResources } = assignedResourceIds.length
+    ? await supabase
+        .from("resources")
+        .select("id,name,short_label")
+        .in("id", assignedResourceIds)
+    : {
+        data: [] as { id: string; name: string; short_label: string | null }[],
+      };
+  const resourceNameById = new Map(
+    (assignedResources ?? []).map((resource) => [
+      resource.id,
+      resource.short_label?.trim() || resource.name,
+    ]),
+  );
+  const resourceNameByReservation = new Map(
+    (resourceAssignments ?? []).map((assignment) => [
+      assignment.reservation_id,
+      resourceNameById.get(assignment.resource_id) ?? null,
+    ]),
   );
 
   const productIds = [...new Set((acquisitions ?? []).map((item) => item.product_template_id))];
@@ -268,6 +302,10 @@ export default async function SessionDetailPage({
       paymentDueOnAttendance: reservation.commercial_status === "payment_pending",
       individualPriceMinor: template?.drop_in_price_minor ?? null,
       currency: studio.currency ?? "MXN",
+      resourceRequired: session.requires_resource,
+      resourceName: session.requires_resource
+        ? (resourceNameByReservation.get(reservation.id) ?? null)
+        : null,
     };
   });
 
