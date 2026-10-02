@@ -432,23 +432,15 @@ export async function getCommercialOptions(
 }
 
 export async function getStudioInformation(ctx: AssistantToolContext) {
-  const [{ data: locations, error: locationError }, { data: contact, error: contactError }] =
-    await Promise.all([
-      ctx.supabase
-        .from("studio_locations")
-        .select("name,address")
-        .eq("studio_id", ctx.studio.id)
-        .eq("active", true)
-        .order("created_at")
-        .limit(10),
-      ctx.supabase
-        .from("studio_contact_channels")
-        .select("whatsapp_attention_e164")
-        .eq("studio_id", ctx.studio.id)
-        .maybeSingle(),
-    ]);
+  const { data: locations, error: locationError } = await ctx.supabase
+    .from("studio_locations")
+    .select("name,address")
+    .eq("studio_id", ctx.studio.id)
+    .eq("active", true)
+    .order("created_at")
+    .limit(10);
 
-  if (locationError || contactError) {
+  if (locationError) {
     return { ok: false, error: "studio_information_unavailable" };
   }
 
@@ -457,8 +449,11 @@ export async function getStudioInformation(ctx: AssistantToolContext) {
     name: ctx.studio.name,
     timezone: ctx.studio.timezone,
     currency: ctx.studio.currency,
-    locations: locations ?? [],
-    whatsapp_attention: contact?.whatsapp_attention_e164 ?? null,
+    locations: (locations ?? []).map((location) => ({
+      name: location.name,
+      address: location.address,
+      address_configured: Boolean(location.address?.trim()),
+    })),
   };
 }
 
