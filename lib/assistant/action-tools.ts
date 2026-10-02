@@ -1416,13 +1416,17 @@ async function prepareReschedule(
     return { ok: false, error: "resource_selection_required" };
   }
 
-  const { data: eligibility, error: eligibilityError } = await ctx.supabase.rpc(
-    "booking_eligibility",
-    {
-      target_session_id: targetSessionId,
-      target_student_id: ctx.studentId,
-    },
-  );
+  const eligibilityRequest = ctx.serviceMode
+    ? await ctx.supabase.rpc("service_booking_eligibility", {
+        target_studio_id: ctx.studio.id,
+        target_session_id: targetSessionId,
+        target_student_id: ctx.studentId,
+      })
+    : await ctx.supabase.rpc("booking_eligibility", {
+        target_session_id: targetSessionId,
+        target_student_id: ctx.studentId,
+      });
+  const { data: eligibility, error: eligibilityError } = eligibilityRequest;
   if (eligibilityError) {
     return { ok: false, error: "booking_eligibility_unavailable" };
   }
@@ -1599,13 +1603,17 @@ async function executeReschedule(
     };
   }
 
-  const { data: eligibility, error: eligibilityError } = await ctx.supabase.rpc(
-    "booking_eligibility",
-    {
-      target_session_id: targetSessionId,
-      target_student_id: studentId,
-    },
-  );
+  const eligibilityRequest = ctx.serviceMode
+    ? await ctx.supabase.rpc("service_booking_eligibility", {
+        target_studio_id: ctx.studio.id,
+        target_session_id: targetSessionId,
+        target_student_id: studentId,
+      })
+    : await ctx.supabase.rpc("booking_eligibility", {
+        target_session_id: targetSessionId,
+        target_student_id: studentId,
+      });
+  const { data: eligibility, error: eligibilityError } = eligibilityRequest;
   if (eligibilityError) {
     return { ok: false, error: "booking_eligibility_unavailable" };
   }
@@ -1624,15 +1632,21 @@ async function executeReschedule(
     };
   }
 
-  const { data: result, error: rescheduleError } = await ctx.supabase.rpc(
-    "admin_reschedule_student_reservation",
-    {
-      target_reservation_id: reservationId,
-      target_session_id: targetSessionId,
-      target_reason: "Reagendado por Demi",
-    },
-  );
+  const rescheduleRequest = ctx.serviceMode
+    ? await ctx.supabase.rpc("service_reschedule_student_reservation", {
+        target_studio_id: ctx.studio.id,
+        target_student_id: studentId,
+        target_reservation_id: reservationId,
+        target_session_id: targetSessionId,
+        target_reason: "Reagendado por Demi",
+      })
+    : await ctx.supabase.rpc("admin_reschedule_student_reservation", {
+        target_reservation_id: reservationId,
+        target_session_id: targetSessionId,
+        target_reason: "Reagendado por Demi",
+      });
 
+  const { data: result, error: rescheduleError } = rescheduleRequest;
   const resultObject = asObject(result);
   if (rescheduleError || !resultObject || resultObject.ok !== true) {
     return {
