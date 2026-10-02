@@ -30,7 +30,7 @@ export const assistantReadToolDefinitions: AssistantToolDefinition[] = [
     type: "function",
     name: "search_class_availability",
     description:
-      "Consulta clases reales y lugares disponibles en Studio Flow. Úsala siempre para preguntas de horarios, fechas, 'hoy', 'mañana', horas concretas o disponibilidad. Nunca inventes una clase.",
+      "Consulta clases reales y lugares disponibles en Studio Flow. Úsala siempre para preguntas de horarios, fechas, 'hoy', 'mañana', horas concretas o disponibilidad. No devuelve precios comerciales; para precios usa get_commercial_options. Nunca inventes una clase.",
     strict: true,
     parameters: {
       type: "object",
