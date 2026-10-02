@@ -11,6 +11,7 @@ export type MetaWhatsAppWebhookConfig = {
   graphApiVersion: string;
   appSecret: string;
   verifyToken: string;
+  pilotWaIds: string[];
 };
 
 export type MetaInboundMessage = {
@@ -78,6 +79,7 @@ function parseWebhookConfig(value: unknown): MetaWhatsAppWebhookConfig | null {
     graphApiVersion,
     appSecret,
     verifyToken,
+    pilotWaIds: [],
   };
 }
 
@@ -85,13 +87,30 @@ export async function loadMetaWhatsAppWebhookConfig(
   supabase: SupabaseClient,
   studioId: string,
 ) {
-  const { data, error } = await supabase.rpc(
-    "service_get_meta_whatsapp_webhook_config",
-    { target_studio_id: studioId },
-  );
+  const [{ data, error }, { data: pilotIds, error: pilotError }] =
+    await Promise.all([
+      supabase.rpc("service_get_meta_whatsapp_webhook_config", {
+        target_studio_id: studioId,
+      }),
+      supabase.rpc("service_get_meta_whatsapp_pilot_wa_ids", {
+        target_studio_id: studioId,
+      }),
+    ]);
 
-  if (error) throw new Error("meta_whatsapp_webhook_config_lookup_failed");
-  return parseWebhookConfig(data);
+  if (error || pilotError) {
+    throw new Error("meta_whatsapp_webhook_config_lookup_failed");
+  }
+
+  const config = parseWebhookConfig(data);
+  if (!config) return null;
+
+  config.pilotWaIds = Array.isArray(pilotIds)
+    ? pilotIds
+        .map((value) => String(value ?? "").replace(/\D/g, ""))
+        .filter((value) => /^[1-9][0-9]{7,14}$/.test(value))
+    : [];
+
+  return config;
 }
 
 function constantTimeTextEqual(left: string, right: string) {
