@@ -76,9 +76,16 @@ describe("Demi Meta WhatsApp inbound contract", () => {
   it("limits pilot mode to explicitly authorized WhatsApp contacts", () => {
     expect(channel).toContain("service_get_meta_whatsapp_pilot_wa_ids");
     expect(channel).toContain("pilotWaIds");
-    expect(route).toContain('if (liveMode === "pilot")');
+    expect(route).toContain('liveMode === "pilot"');
     expect(route).toContain('"pilot_contact_not_allowed"');
     expect(route).toContain("webhookConfig.pilotWaIds.includes");
+  });
+
+  it("self-heals the Meta Phone Number ID only for the guarded pilot contact", () => {
+    expect(route).toContain("pilotContactAllowed");
+    expect(route).toContain("service_sync_meta_whatsapp_phone_number_id");
+    expect(route).toContain('"phone_number_synced"');
+    expect(route).toContain('"phone_number_sync_failed"');
   });
 
   it("does not persist real inbound content while Demi is demo/off", () => {
