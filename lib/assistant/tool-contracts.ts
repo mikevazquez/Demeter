@@ -76,7 +76,7 @@ export const assistantReadToolDefinitions: AssistantToolDefinition[] = [
     type: "function",
     name: "get_activity_catalog",
     description:
-      "Consulta las actividades y disciplinas reales configuradas por el estudio, con descripción y precio de clase suelta cuando exista.",
+      "Consulta las actividades y disciplinas reales configuradas por el estudio. Para precios usa get_commercial_options.",
     strict: true,
     parameters: {
       type: "object",
