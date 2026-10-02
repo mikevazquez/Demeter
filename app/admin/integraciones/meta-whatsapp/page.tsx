@@ -4,7 +4,11 @@ import { headers } from "next/headers";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getAdminContext } from "@/lib/auth/admin-context";
 
-import { saveMetaWhatsAppInbound } from "./actions";
+import {
+  activateMetaWhatsAppPilot,
+  disableMetaWhatsAppPilot,
+  saveMetaWhatsAppInbound,
+} from "./actions";
 import "../integrations-v2.css";
 
 function asObject(value: unknown) {
@@ -16,7 +20,12 @@ function asObject(value: unknown) {
 export default async function MetaWhatsAppIntegrationPage() {
   const { supabase, studio } = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
 
-  const [{ data: provider }, { data: inboundSummary }] = await Promise.all([
+  const [
+    { data: provider },
+    { data: inboundSummary },
+    { data: pilotSummary },
+    { data: assistantConfig },
+  ] = await Promise.all([
     supabase
       .from("notification_studio_channel_providers")
       .select("provider_key,adapter_key,enabled,is_default,updated_at")
@@ -27,6 +36,14 @@ export default async function MetaWhatsAppIntegrationPage() {
     supabase.rpc("admin_get_meta_whatsapp_inbound_summary", {
       target_studio_id: studio.id,
     }),
+    supabase.rpc("admin_get_meta_whatsapp_pilot_summary", {
+      target_studio_id: studio.id,
+    }),
+    supabase
+      .from("assistant_configs")
+      .select("mode")
+      .eq("studio_id", studio.id)
+      .maybeSingle(),
   ]);
 
   const active = Boolean(provider?.enabled);
@@ -34,6 +51,13 @@ export default async function MetaWhatsAppIntegrationPage() {
   const webhookConfigured = inbound?.webhook_configured === true;
   const verifyToken =
     typeof inbound?.verify_token === "string" ? inbound.verify_token : "";
+  const pilot = asObject(pilotSummary);
+  const pilotContactConfigured = pilot?.pilot_contact_configured === true;
+  const pilotContactMasked =
+    typeof pilot?.pilot_contact_masked === "string"
+      ? pilot.pilot_contact_masked
+      : null;
+  const pilotActive = assistantConfig?.mode === "pilot";
   const serviceRoleConfigured = Boolean(
     process.env.SUPABASE_SERVICE_ROLE_KEY?.trim(),
   );
@@ -243,6 +267,73 @@ export default async function MetaWhatsAppIntegrationPage() {
             Antes del UAT real, agrega SUPABASE_SERVICE_ROLE_KEY únicamente al entorno
             Preview de Vercel. Hazlo directamente en Vercel; no compartas la llave por chat.
           </div>
+        ) : null}
+      </section>
+
+      <section className="integration-detail-v2-card">
+        <div className="integration-detail-v2-card-heading">
+          <div>
+            <h2>Piloto controlado de Demi</h2>
+            <p>
+              Solo el número de prueba configurado aquí puede activar a Demi mientras
+              el modo piloto esté encendido. Los demás mensajes de WhatsApp se ignoran
+              sin crear conversación ni respuesta.
+            </p>
+          </div>
+        </div>
+
+        <div className="integration-detail-v2-list">
+          <div className="integration-detail-v2-row">
+            <span className="integration-detail-v2-row-copy">
+              <strong>Estado del piloto</strong>
+              <small>
+                {pilotActive
+                  ? `Activo solo para ${pilotContactMasked ?? "el número autorizado"}.`
+                  : pilotContactConfigured
+                    ? `Número guardado: ${pilotContactMasked}. Demi sigue apagada para WhatsApp.`
+                    : "Todavía no hay un número de prueba autorizado."}
+              </small>
+            </span>
+            <span
+              className={`integrations-v2-status ${
+                pilotActive ? "is-active" : "is-available"
+              }`}
+            >
+              {pilotActive ? "Piloto activo" : "Seguro"}
+            </span>
+          </div>
+        </div>
+
+        <form className="integration-detail-v2-form" action={activateMetaWhatsAppPilot}>
+          <label className="integration-detail-v2-field">
+            <span>Número de WhatsApp para el UAT</span>
+            <input
+              type="tel"
+              name="pilot_phone"
+              required
+              inputMode="tel"
+              autoComplete="tel"
+              placeholder="Ej. 3312345678"
+            />
+            <small>
+              Si es un número de México puedes escribir solo los 10 dígitos. Para otro
+              país usa el código de país. Se usa únicamente como lista permitida del piloto.
+            </small>
+          </label>
+
+          <button className="integration-detail-v2-button" type="submit">
+            {pilotActive
+              ? "Cambiar número autorizado"
+              : "Guardar número y activar piloto"}
+          </button>
+        </form>
+
+        {pilotActive ? (
+          <form action={disableMetaWhatsAppPilot}>
+            <button className="integration-detail-v2-button" type="submit">
+              Desactivar piloto de WhatsApp
+            </button>
+          </form>
         ) : null}
       </section>
 
