@@ -405,40 +405,72 @@ export async function POST(request: Request) {
   }
 
   for (const message of messages) {
-    if (message.phoneNumberId !== webhookConfig.phoneNumberId) {
+    const rawWaId = message.fromWaId.replace(/\D/g, "");
+    const canonicalWaId = /^521[0-9]{10}$/.test(rawWaId)
+      ? `52${rawWaId.slice(3)}`
+      : rawWaId;
+    const pilotContactAllowed =
+      liveMode === "pilot" &&
+      webhookConfig.pilotWaIds.includes(canonicalWaId);
+
+    if (liveMode === "pilot" && !pilotContactAllowed) {
       console.info("demi_meta_webhook", {
         stage: "pre_capture",
-        outcome: "phone_number_mismatch",
+        outcome: "pilot_contact_not_allowed",
+        pilot_allowlist_count: webhookConfig.pilotWaIds.length,
       });
       outcomes.push({
         provider_message_id: message.providerMessageId,
-        outcome: "phone_number_mismatch",
+        outcome: "pilot_contact_not_allowed",
       });
       continue;
     }
 
-    if (liveMode === "pilot") {
-      const rawWaId = message.fromWaId.replace(/\D/g, "");
-      const canonicalWaId = /^521[0-9]{10}$/.test(rawWaId)
-        ? `52${rawWaId.slice(3)}`
-        : rawWaId;
+    if (pilotContactAllowed) {
+      console.info("demi_meta_webhook", {
+        stage: "pre_capture",
+        outcome: "pilot_contact_allowed",
+      });
+    }
 
-      if (!webhookConfig.pilotWaIds.includes(canonicalWaId)) {
+    if (message.phoneNumberId !== webhookConfig.phoneNumberId) {
+      if (!pilotContactAllowed) {
         console.info("demi_meta_webhook", {
           stage: "pre_capture",
-          outcome: "pilot_contact_not_allowed",
-          pilot_allowlist_count: webhookConfig.pilotWaIds.length,
+          outcome: "phone_number_mismatch",
         });
         outcomes.push({
           provider_message_id: message.providerMessageId,
-          outcome: "pilot_contact_not_allowed",
+          outcome: "phone_number_mismatch",
         });
         continue;
       }
 
+      const { error: syncError } = await supabase.rpc(
+        "service_sync_meta_whatsapp_phone_number_id",
+        {
+          target_studio_id: studioId,
+          target_phone_number_id: message.phoneNumberId,
+        },
+      );
+
+      if (syncError) {
+        retryableFailure = true;
+        console.info("demi_meta_webhook", {
+          stage: "pre_capture",
+          outcome: "phone_number_sync_failed",
+        });
+        outcomes.push({
+          provider_message_id: message.providerMessageId,
+          outcome: "phone_number_sync_failed",
+        });
+        continue;
+      }
+
+      webhookConfig.phoneNumberId = message.phoneNumberId;
       console.info("demi_meta_webhook", {
         stage: "pre_capture",
-        outcome: "pilot_contact_allowed",
+        outcome: "phone_number_synced",
       });
     }
 
