@@ -221,8 +221,6 @@ export async function searchClassAvailability(
       date: localStart.date,
       starts_at_local: localStart.time,
       ends_at_local: localEnd.time,
-      capacity: session.capacity,
-      spots_available: available,
       is_full: available <= 0,
       location: location?.name ?? null,
       address: location?.address ?? null,
