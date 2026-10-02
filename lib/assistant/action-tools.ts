@@ -1406,6 +1406,17 @@ async function prepareReschedule(
   if (source.status !== "reserved") {
     return { ok: false, error: "reservation_not_reschedulable" };
   }
+  if (source.summary.late === true) {
+    return {
+      ok: false,
+      error: "reschedule_cutoff_passed",
+      reason_code: "reschedule_cutoff_passed",
+      reason_message:
+        "Ya faltan menos de 5 horas para la clase original, así que ya no puede reagendarse. Si deseas cancelarla, aplicará la política de cancelación tardía.",
+      cancellation_cutoff_minutes:
+        source.summary.cancellation_cutoff_minutes,
+    };
+  }
   if (source.sessionId === targetSessionId) {
     return { ok: false, error: "same_session" };
   }
@@ -1561,6 +1572,25 @@ async function executeReschedule(
   const target = await getSessionSummary(ctx, targetSessionId);
   if (!source || source.status !== "reserved") {
     return { ok: false, error: "reservation_not_reschedulable" };
+  }
+  if (source.summary.late === true) {
+    await ctx.supabase
+      .from("assistant_pending_actions")
+      .update({ status: "cancelled", updated_at: new Date().toISOString() })
+      .eq("id", pending.id)
+      .eq("studio_id", ctx.studio.id)
+      .eq("status", "pending");
+
+    return {
+      ok: false,
+      error: "reschedule_cutoff_passed",
+      reason_code: "reschedule_cutoff_passed",
+      reason_message:
+        "Ya faltan menos de 5 horas para la clase original, así que ya no puede reagendarse. Si deseas cancelarla, aplicará la política de cancelación tardía.",
+      original_reservation_preserved: true,
+      cancellation_cutoff_minutes:
+        source.summary.cancellation_cutoff_minutes,
+    };
   }
   if (!target) return { ok: false, error: "session_not_found" };
   if (target.session.requires_resource) {
