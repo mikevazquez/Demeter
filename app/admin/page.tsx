@@ -171,7 +171,7 @@ export default async function AdminPage({
     supabase
       .from("class_sessions")
       .select(
-        "id,starts_at,ends_at,capacity,status,template_id,instructor_id,space_id,minimum_reservations_enabled,minimum_reservations,minimum_review_status",
+        "id,starts_at,ends_at,capacity,status,template_id,instructor_id,space_id,requires_resource,minimum_reservations_enabled,minimum_reservations,minimum_review_status",
       )
       .eq("studio_id", studio.id)
       .gte("starts_at", selectedStart.toISOString())
@@ -284,35 +284,71 @@ export default async function AdminPage({
       };
 
   const reservationIds = (reservations ?? []).map((reservation) => reservation.id);
-  const { data: attendanceCheckins } = reservationIds.length
-    ? await supabase
-        .from("attendance_checkins")
-        .select("reservation_id,source,checked_in_at")
-        .in("reservation_id", reservationIds)
-    : {
-        data: [] as {
-          reservation_id: string;
-          source: string;
-          checked_in_at: string;
-        }[],
-      };
+  const [{ data: attendanceCheckins }, { data: evaluationInvitations }, { data: resourceAssignments }] =
+    await Promise.all([
+      reservationIds.length
+        ? supabase
+            .from("attendance_checkins")
+            .select("reservation_id,source,checked_in_at")
+            .in("reservation_id", reservationIds)
+        : Promise.resolve({
+            data: [] as {
+              reservation_id: string;
+              source: string;
+              checked_in_at: string;
+            }[],
+          }),
+      reservationIds.length
+        ? supabase
+            .from("evaluation_invitations")
+            .select("id,reservation_id,status")
+            .in("reservation_id", reservationIds)
+            .in("status", ["scheduled", "in_progress"])
+        : Promise.resolve({
+            data: [] as { id: string; reservation_id: string | null; status: string }[],
+          }),
+      reservationIds.length
+        ? supabase
+            .from("reservation_resource_assignments")
+            .select("reservation_id,resource_id")
+            .in("reservation_id", reservationIds)
+            .is("released_at", null)
+        : Promise.resolve({
+            data: [] as { reservation_id: string; resource_id: string }[],
+          }),
+    ]);
+
   const checkinByReservation = new Map(
     (attendanceCheckins ?? []).map((item) => [item.reservation_id, item]),
   );
-
-  const { data: evaluationInvitations } = reservationIds.length
-    ? await supabase
-        .from("evaluation_invitations")
-        .select("id,reservation_id,status")
-        .in("reservation_id", reservationIds)
-        .in("status", ["scheduled", "in_progress"])
-    : {
-        data: [] as { id: string; reservation_id: string | null; status: string }[],
-      };
   const evaluationByReservation = new Map(
     (evaluationInvitations ?? [])
       .filter((item) => item.reservation_id)
       .map((item) => [item.reservation_id!, item]),
+  );
+
+  const assignedResourceIds = [
+    ...new Set((resourceAssignments ?? []).map((item) => item.resource_id).filter(Boolean)),
+  ] as string[];
+  const { data: assignedResources } = assignedResourceIds.length
+    ? await supabase
+        .from("resources")
+        .select("id,name,short_label")
+        .in("id", assignedResourceIds)
+    : {
+        data: [] as { id: string; name: string; short_label: string | null }[],
+      };
+  const resourceNameById = new Map(
+    (assignedResources ?? []).map((resource) => [
+      resource.id,
+      resource.short_label?.trim() || resource.name,
+    ]),
+  );
+  const resourceNameByReservation = new Map(
+    (resourceAssignments ?? []).map((assignment) => [
+      assignment.reservation_id,
+      resourceNameById.get(assignment.resource_id) ?? null,
+    ]),
   );
 
   const acquisitionIds = [
@@ -467,6 +503,10 @@ export default async function AdminPage({
             new Date(reservation.booked_at).getTime() >= new Date(session.ends_at).getTime()
               ? "Agregada manualmente después del cierre"
               : null,
+          resourceRequired: session.requires_resource,
+          resourceName: session.requires_resource
+            ? (resourceNameByReservation.get(reservation.id) ?? null)
+            : null,
         };
       }),
       candidates: candidates.map((student) => {
