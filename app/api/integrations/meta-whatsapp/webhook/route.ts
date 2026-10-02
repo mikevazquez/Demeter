@@ -359,8 +359,17 @@ export async function POST(request: Request) {
 
   const messages = extractMetaInboundMessages(body);
   if (!messages.length) {
+    console.info("demi_meta_webhook", {
+      stage: "parsed",
+      outcome: "no_messages",
+    });
     return json({ ok: true, accepted: true, messages: 0 });
   }
+
+  console.info("demi_meta_webhook", {
+    stage: "parsed",
+    message_count: messages.length,
+  });
 
   let runtimeContext;
   try {
@@ -397,6 +406,10 @@ export async function POST(request: Request) {
 
   for (const message of messages) {
     if (message.phoneNumberId !== webhookConfig.phoneNumberId) {
+      console.info("demi_meta_webhook", {
+        stage: "pre_capture",
+        outcome: "phone_number_mismatch",
+      });
       outcomes.push({
         provider_message_id: message.providerMessageId,
         outcome: "phone_number_mismatch",
@@ -411,12 +424,22 @@ export async function POST(request: Request) {
         : rawWaId;
 
       if (!webhookConfig.pilotWaIds.includes(canonicalWaId)) {
+        console.info("demi_meta_webhook", {
+          stage: "pre_capture",
+          outcome: "pilot_contact_not_allowed",
+          pilot_allowlist_count: webhookConfig.pilotWaIds.length,
+        });
         outcomes.push({
           provider_message_id: message.providerMessageId,
           outcome: "pilot_contact_not_allowed",
         });
         continue;
       }
+
+      console.info("demi_meta_webhook", {
+        stage: "pre_capture",
+        outcome: "pilot_contact_allowed",
+      });
     }
 
     let event;
