@@ -25,6 +25,7 @@ type AssistantActionToolContext = {
   studentId: string | null;
   crmContactId: string | null;
   activationUrl: string | null;
+  serviceMode?: boolean;
   currentUserMessage: string;
 };
 
@@ -32,6 +33,145 @@ function asObject(value: unknown) {
   return value && typeof value === "object" && !Array.isArray(value)
     ? (value as Record<string, unknown>)
     : null;
+}
+
+function studentAuthEmailFromPhone(phone: string) {
+  const digits = phone.replace(/\D/g, "");
+  if (!/^[1-9][0-9]{7,14}$/.test(digits)) return null;
+  return `student.${digits}@auth.studioflow.invalid`;
+}
+
+function buildStudentActivationLink(baseUrl: string, tokenHash: string) {
+  const activationLink = new URL(baseUrl);
+  activationLink.searchParams.set("token_hash", tokenHash);
+  activationLink.searchParams.set("type", "recovery");
+  return activationLink.toString();
+}
+
+async function provisionStudentAccessWithServiceClient(
+  ctx: AssistantActionToolContext,
+  studentId: string,
+  mode: "provision" | "resend",
+) {
+  if (!ctx.activationUrl) {
+    return {
+      generated: false,
+      error: "activation_url_unavailable",
+      activation_url: null as string | null,
+    };
+  }
+
+  const { data: student, error: studentError } = await ctx.supabase
+    .from("students")
+    .select("id,user_id,phone,full_name,active,lifecycle_status")
+    .eq("id", studentId)
+    .eq("studio_id", ctx.studio.id)
+    .maybeSingle();
+
+  if (studentError || !student) {
+    return {
+      generated: false,
+      error: "student_access_lookup_failed",
+      activation_url: null as string | null,
+    };
+  }
+
+  if (!student.active || student.lifecycle_status !== "active") {
+    return {
+      generated: false,
+      error: "student_not_active",
+      activation_url: null as string | null,
+    };
+  }
+
+  const authEmail = studentAuthEmailFromPhone(String(student.phone ?? ""));
+  if (!authEmail) {
+    return {
+      generated: false,
+      error: "student_phone_invalid",
+      activation_url: null as string | null,
+    };
+  }
+
+  let userId = student.user_id as string | null;
+
+  if (!userId) {
+    const internalPassword = `Sf!${randomUUID()}A9`;
+    const { data: created, error: createError } =
+      await ctx.supabase.auth.admin.createUser({
+        email: authEmail,
+        password: internalPassword,
+        email_confirm: true,
+        user_metadata: {
+          full_name: student.full_name,
+          login_phone: student.phone,
+        },
+      });
+
+    if (createError || !created.user) {
+      return {
+        generated: false,
+        error: "auth_create_failed",
+        activation_url: null as string | null,
+      };
+    }
+
+    userId = created.user.id;
+
+    const { error: linkError } = await ctx.supabase.rpc(
+      "service_link_student_access",
+      {
+        target_student_id: studentId,
+        target_user_id: userId,
+      },
+    );
+
+    if (linkError) {
+      await ctx.supabase.auth.admin.deleteUser(userId);
+      return {
+        generated: false,
+        error: "student_access_link_failed",
+        activation_url: null as string | null,
+      };
+    }
+  } else if (mode === "provision") {
+    return {
+      generated: false,
+      already_has_access: true,
+      activation_url: null as string | null,
+    };
+  }
+
+  const { data: activationData, error: activationError } =
+    await ctx.supabase.auth.admin.generateLink({
+      type: "recovery",
+      email: authEmail,
+      options: { redirectTo: ctx.activationUrl },
+    });
+
+  if (activationError || !activationData.properties?.action_link) {
+    return {
+      generated: false,
+      error: "activation_link_failed",
+      activation_url: null as string | null,
+    };
+  }
+
+  const generatedActionLink = new URL(activationData.properties.action_link);
+  const tokenHash = generatedActionLink.searchParams.get("token");
+  if (!tokenHash) {
+    return {
+      generated: false,
+      error: "activation_link_failed",
+      activation_url: null as string | null,
+    };
+  }
+
+  return {
+    generated: true,
+    already_has_access: false,
+    activation_url: buildStudentActivationLink(ctx.activationUrl, tokenHash),
+  };
 }
 
 function parseOpaqueRef(value: unknown, prefix: string) {
@@ -496,6 +636,10 @@ async function provisionTrialActivationLink(
   ctx: AssistantActionToolContext,
   studentId: string,
 ) {
+  if (ctx.serviceMode) {
+    return provisionStudentAccessWithServiceClient(ctx, studentId, "provision");
+  }
+
   if (!ctx.activationUrl) {
     return {
       generated: false,
