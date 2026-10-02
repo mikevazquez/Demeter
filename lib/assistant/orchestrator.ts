@@ -73,6 +73,7 @@ type OrchestratorInput = {
   studentId: string | null;
   crmContactId: string | null;
   activationUrl: string | null;
+  serviceMode?: boolean;
   history: HistoryMessage[];
 };
 
@@ -162,6 +163,7 @@ async function ensureHumanHandoffForReply(
         studentId: input.studentId,
         crmContactId: input.crmContactId,
         activationUrl: input.activationUrl,
+        serviceMode: input.serviceMode === true,
         currentUserMessage,
       },
       "escalate_to_human",
@@ -454,6 +456,7 @@ async function tryServerSideConfirmation(
         studentId: input.studentId,
         crmContactId: input.crmContactId,
         activationUrl: input.activationUrl,
+        serviceMode: input.serviceMode === true,
         currentUserMessage,
       },
       toolName,
@@ -546,6 +549,7 @@ async function tryServerSidePostTrialEnrollmentMethod(
         studentId: input.studentId,
         crmContactId: input.crmContactId,
         activationUrl: input.activationUrl,
+        serviceMode: input.serviceMode === true,
         currentUserMessage,
       },
       "resolve_post_trial_enrollment_method",
