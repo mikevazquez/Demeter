@@ -1,7 +1,7 @@
 import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { SearchClassAvailabilityArgs } from "./tool-contracts";
+import type { CommercialOptionsArgs, SearchClassAvailabilityArgs } from "./tool-contracts";
 
 export type AssistantStudioContext = {
   id: string;
@@ -61,6 +61,14 @@ function sessionRef(id: string) {
 
 function reservationRef(id: string) {
   return `reservation:${id}`;
+}
+
+function sessionIdFromRef(value: string | null) {
+  if (!value) return null;
+  const match = /^session:([0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/i.exec(
+    value.trim(),
+  );
+  return match?.[1] ?? null;
 }
 
 export async function searchClassAvailability(
@@ -271,7 +279,56 @@ export async function getActivityCatalog(ctx: AssistantToolContext) {
   };
 }
 
-export async function getCommercialOptions(ctx: AssistantToolContext) {
+export async function getCommercialOptions(
+  ctx: AssistantToolContext,
+  rawArgs: CommercialOptionsArgs,
+) {
+  const requestedSessionRef = rawArgs.session_ref?.trim() || null;
+  let sessionScope:
+    | {
+        session_ref: string;
+        template_id: string;
+        discipline_id: string;
+        recurring_schedule_id: string | null;
+        activity: string;
+      }
+    | null = null;
+
+  if (requestedSessionRef) {
+    const sessionId = sessionIdFromRef(requestedSessionRef);
+    if (!sessionId) return { ok: false, error: "invalid_session_ref" };
+
+    const { data: session, error: sessionError } = await ctx.supabase
+      .from("class_sessions")
+      .select("id,template_id,recurring_schedule_id")
+      .eq("studio_id", ctx.studio.id)
+      .eq("id", sessionId)
+      .maybeSingle();
+
+    if (sessionError) return { ok: false, error: "commercial_options_unavailable" };
+    if (!session) return { ok: false, error: "session_not_found" };
+
+    const { data: template, error: templateError } = await ctx.supabase
+      .from("class_templates")
+      .select("id,name,discipline_id")
+      .eq("studio_id", ctx.studio.id)
+      .eq("id", session.template_id)
+      .maybeSingle();
+
+    if (templateError) return { ok: false, error: "commercial_options_unavailable" };
+    if (!template?.discipline_id) {
+      return { ok: false, error: "session_commercial_scope_unavailable" };
+    }
+
+    sessionScope = {
+      session_ref: requestedSessionRef,
+      template_id: template.id,
+      discipline_id: template.discipline_id,
+      recurring_schedule_id: session.recurring_schedule_id,
+      activity: template.name,
+    };
+  }
+
   const { data, error } = await ctx.supabase
     .from("product_templates")
     .select(
@@ -284,23 +341,90 @@ export async function getCommercialOptions(ctx: AssistantToolContext) {
 
   if (error) return { ok: false, error: "commercial_options_unavailable" };
 
+  let products = (data ?? []).filter((item) => !item.reward_credit_wallet);
+
+  if (sessionScope && products.length) {
+    const productIds = products.map((item) => item.id);
+    const [activitiesResult, disciplinesResult, schedulesResult] = await Promise.all([
+      ctx.supabase
+        .from("product_template_activities")
+        .select("product_template_id,class_template_id")
+        .eq("studio_id", ctx.studio.id)
+        .in("product_template_id", productIds),
+      ctx.supabase
+        .from("product_template_disciplines")
+        .select("product_template_id,discipline_id")
+        .eq("studio_id", ctx.studio.id)
+        .in("product_template_id", productIds),
+      ctx.supabase
+        .from("product_template_schedules")
+        .select("product_template_id,recurring_schedule_id")
+        .eq("studio_id", ctx.studio.id)
+        .in("product_template_id", productIds),
+    ]);
+
+    if (activitiesResult.error || disciplinesResult.error || schedulesResult.error) {
+      return { ok: false, error: "commercial_compatibility_unavailable" };
+    }
+
+    const activityScopedProducts = new Set(
+      (activitiesResult.data ?? []).map((item) => item.product_template_id),
+    );
+    const activityMatches = new Set(
+      (activitiesResult.data ?? [])
+        .filter((item) => item.class_template_id === sessionScope!.template_id)
+        .map((item) => item.product_template_id),
+    );
+    const disciplineMatches = new Set(
+      (disciplinesResult.data ?? [])
+        .filter((item) => item.discipline_id === sessionScope!.discipline_id)
+        .map((item) => item.product_template_id),
+    );
+    const scheduleScopedProducts = new Set(
+      (schedulesResult.data ?? []).map((item) => item.product_template_id),
+    );
+    const scheduleMatches = new Set(
+      (schedulesResult.data ?? [])
+        .filter(
+          (item) =>
+            sessionScope!.recurring_schedule_id != null &&
+            item.recurring_schedule_id === sessionScope!.recurring_schedule_id,
+        )
+        .map((item) => item.product_template_id),
+    );
+
+    products = products.filter((item) => {
+      const scopeMatch =
+        activityMatches.has(item.id) ||
+        (!activityScopedProducts.has(item.id) && disciplineMatches.has(item.id));
+      const scheduleMatch =
+        !scheduleScopedProducts.has(item.id) || scheduleMatches.has(item.id);
+      return scopeMatch && scheduleMatch;
+    });
+  }
+
   return {
     ok: true,
-    options: (data ?? [])
-      .filter((item) => !item.reward_credit_wallet)
-      .map((item) => ({
-        product_ref: `product:${item.id}`,
-        name: item.name,
-        description: item.description,
-        product_type: item.product_type,
-        price_minor: item.price_minor,
-        currency: item.currency,
-        credit_limit: item.credit_limit,
-        validity_days: item.validity_days,
-        unlimited: item.unlimited,
-        package_term: item.package_term,
-        online_purchasable: item.online_purchasable,
-      })),
+    ...(sessionScope
+      ? {
+          session_ref: sessionScope.session_ref,
+          activity: sessionScope.activity,
+          compatibility_filtered: true,
+        }
+      : { compatibility_filtered: false }),
+    options: products.map((item) => ({
+      product_ref: `product:${item.id}`,
+      name: item.name,
+      description: item.description,
+      product_type: item.product_type,
+      price_minor: item.price_minor,
+      currency: item.currency,
+      credit_limit: item.credit_limit,
+      validity_days: item.validity_days,
+      unlimited: item.unlimited,
+      package_term: item.package_term,
+      online_purchasable: item.online_purchasable,
+    })),
   };
 }
 
@@ -492,7 +616,7 @@ export async function executeAssistantReadTool(
     case "get_activity_catalog":
       return getActivityCatalog(ctx);
     case "get_commercial_options":
-      return getCommercialOptions(ctx);
+      return getCommercialOptions(ctx, args as CommercialOptionsArgs);
     case "get_studio_information":
       return getStudioInformation(ctx);
     case "get_policy_information":
