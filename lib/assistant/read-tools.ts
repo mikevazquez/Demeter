@@ -104,6 +104,7 @@ export async function searchClassAvailability(
     .select("id,template_id,starts_at,ends_at,capacity,status,location_id,space_id")
     .eq("studio_id", ctx.studio.id)
     .eq("status", "scheduled")
+    .eq("assistant_visible", true)
     .gte("starts_at", coarseStart)
     .lt("starts_at", coarseEnd)
     .order("starts_at", { ascending: true })
