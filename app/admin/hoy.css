@@ -3009,3 +3009,27 @@
   font-weight: 800;
   cursor: pointer;
 }
+
+
+/* Roster · selected physical resource */
+.today-resource-tag {
+  display: inline-flex;
+  align-items: center;
+  width: max-content;
+  max-width: 100%;
+  min-height: 24px;
+  padding: 3px 9px;
+  border: 1px solid #d9c8ef;
+  border-radius: 999px;
+  background: #f5effc;
+  color: #5d2b85;
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.today-resource-tag.is-missing {
+  border-color: #efc7cd;
+  background: #fff0f1;
+  color: #9f3142;
+}
