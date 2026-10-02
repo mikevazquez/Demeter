@@ -23,6 +23,8 @@ type RosterItem = {
   attendanceSource?: string | null;
   checkedInAt?: string | null;
   attendanceProvenance?: string | null;
+  resourceName?: string | null;
+  resourceRequired?: boolean;
 };
 
 type Candidate = {
@@ -288,6 +290,15 @@ export function SessionOperations({
                           ) : item.evaluationStatus === "in_progress" ? (
                             <span className="today-evaluation-tag is-active">
                               Evaluación en curso
+                            </span>
+                          ) : null}
+                          {item.resourceRequired ? (
+                            <span
+                              className={`today-resource-tag${item.resourceName ? "" : " is-missing"}`}
+                            >
+                              {item.resourceName
+                                ? `Recurso · ${item.resourceName}`
+                                : "Sin recurso asignado"}
                             </span>
                           ) : null}
                         </div>
