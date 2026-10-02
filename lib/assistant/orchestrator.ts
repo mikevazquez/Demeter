@@ -116,6 +116,89 @@ function asObject(value: unknown) {
     : null;
 }
 
+function replyClaimsHumanHandoff(reply: string) {
+  const normalized = reply
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLocaleLowerCase("es-MX");
+  return normalized.includes("atencion humana");
+}
+
+async function ensureHumanHandoffForReply(
+  input: OrchestratorInput,
+  trace: AssistantTrace,
+  reply: string,
+  modelCallId: string | null,
+) {
+  if (!replyClaimsHumanHandoff(reply)) return reply;
+
+  const alreadyExecuted = trace.toolCalls.some(
+    (tool) => tool.name === "escalate_to_human" && tool.status === "executed",
+  );
+  if (alreadyExecuted) return reply;
+
+  const currentUserMessage =
+    [...input.history].reverse().find((message) => message.role === "user")
+      ?.content ?? "";
+  const args = {
+    reason_code: "assistant_cannot_resolve",
+    note: currentUserMessage.trim()
+      ? `Demi no tiene información confirmada para resolver esta consulta: ${currentUserMessage
+          .trim()
+          .slice(0, 500)}`
+      : "Demi no tiene información confirmada para resolver esta consulta.",
+  };
+
+  const startedAt = Date.now();
+  let result: unknown;
+  let toolStatus: "executed" | "blocked" | "error" = "executed";
+  try {
+    result = await executeAssistantActionTool(
+      {
+        supabase: input.supabase,
+        studio: input.studio,
+        conversationId: input.conversationId,
+        turnId: input.turnId,
+        studentId: input.studentId,
+        crmContactId: input.crmContactId,
+        activationUrl: input.activationUrl,
+        currentUserMessage,
+      },
+      "escalate_to_human",
+      args,
+    );
+    if (asObject(result)?.ok === false) toolStatus = "blocked";
+  } catch {
+    result = { ok: false, error: "tool_execution_failed" };
+    toolStatus = "error";
+  }
+
+  const resultObject = asObject(result) ?? { ok: false, error: "invalid_tool_result" };
+  await input.supabase.from("assistant_tool_executions").insert({
+    studio_id: input.studio.id,
+    conversation_id: input.conversationId,
+    turn_id: input.turnId,
+    model_call_id: modelCallId,
+    tool_call_id: `server-handoff-guard:${input.turnId}`,
+    tool_name: "escalate_to_human",
+    schema_version: 1,
+    permission_class: "B",
+    request_json: args,
+    result_json: resultObject,
+    status:
+      toolStatus === "executed" && resultObject.ok === true
+        ? "executed"
+        : toolStatus,
+    duration_ms: Date.now() - startedAt,
+  });
+
+  trace.toolCalls.push({ name: "escalate_to_human", status: toolStatus });
+
+  if (toolStatus === "executed" && resultObject.ok === true) return reply;
+
+  return "No tengo información confirmada para responder eso y en este momento no pude abrir la revisión humana automáticamente.";
+}
+
 async function spentUsdMicros(
   supabase: SupabaseClient,
   studioId: string,
@@ -614,6 +697,7 @@ export async function runAssistantTurn(input: OrchestratorInput) {
     "Si elige transferencia, Studio Flow puede reservar la clase de forma condicionada. Pide que envíe el comprobante por este mismo chat y explica que la reserva queda sujeta a validación del pago.",
     "Si elige pagar desde la app, no reserves todavía: Studio Flow le dará acceso para pagar la inscripción online. Una vez aprobado el pago podrá reservar normalmente.",
     "Nunca le digas 'contacta al estudio': este chat ya es el canal del estudio. Si hace falta revisión manual, usa escalate_to_human y di que lo pasarás a atención humana dentro de este mismo chat.",
+    "Nunca prometas 'atención humana', 'lo pasaré con una persona' ni una escalación equivalente solo en texto. Debes llamar escalate_to_human en ese mismo turno antes de afirmar que la conversación fue escalada.",
     "Los documentos se muestran y se exigen después de que la inscripción quede activa. Antes de ese momento no los menciones en la conversación.",
     "Para una reserva de prueba, jamás le digas a la persona 'pago pendiente', 'commercial_status', 'crédito' ni 'usa 1 crédito'. Son conceptos internos.",
     "Si prepare_booking devuelve trial_booking=true, antes de confirmar menciona únicamente el precio real de la clase usando amount_minor/currency y pide una sola confirmación. Ejemplo de tono: 'Tu primera clase cuesta $150. ¿Confirmas la reserva?'.",
@@ -784,7 +868,13 @@ export async function runAssistantTurn(input: OrchestratorInput) {
     if (functionCalls.length === 0) {
       const text = outputText(output);
       if (!text) throw new Error("assistant_empty_response");
-      return { reply: text, trace };
+      const safeReply = await ensureHumanHandoffForReply(
+        input,
+        trace,
+        text,
+        modelCallId,
+      );
+      return { reply: safeReply, trace };
     }
     if (functionCalls.length > 1) {
       throw new Error("assistant_parallel_tool_call_blocked");
