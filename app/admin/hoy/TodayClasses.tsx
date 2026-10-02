@@ -21,6 +21,8 @@ export type TodayRosterItem = {
   paymentDueOnAttendance?: boolean;
   individualPriceMinor?: number | null;
   currency?: string;
+  resourceName?: string | null;
+  resourceRequired?: boolean;
 };
 
 export type TodayClassItem = {
