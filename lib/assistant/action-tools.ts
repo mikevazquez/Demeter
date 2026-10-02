@@ -1334,14 +1334,19 @@ async function executeCancellation(
     };
   }
 
-  const { data: cancellation, error: cancellationError } = await ctx.supabase.rpc(
-    "cancel_reservation",
-    {
-      target_reservation_id: reservationId,
-      target_reason: reason,
-    },
-  );
+  const cancellationRequest = ctx.serviceMode
+    ? await ctx.supabase.rpc("service_cancel_reservation", {
+        target_studio_id: ctx.studio.id,
+        target_student_id: ctx.studentId,
+        target_reservation_id: reservationId,
+        target_reason: reason,
+      })
+    : await ctx.supabase.rpc("cancel_reservation", {
+        target_reservation_id: reservationId,
+        target_reason: reason,
+      });
 
+  const { data: cancellation, error: cancellationError } = cancellationRequest;
   const cancellationObject = asObject(cancellation);
   if (
     cancellationError ||
