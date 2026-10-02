@@ -2081,6 +2081,43 @@ async function executeStudentAccessActivation(
     return { ok: false, error: "activation_url_unavailable" };
   }
 
+  if (ctx.serviceMode) {
+    const provision = await provisionStudentAccessWithServiceClient(
+      ctx,
+      studentId,
+      mode === "resend" ? "resend" : "provision",
+    );
+
+    if (!provision.generated || !provision.activation_url) {
+      return {
+        ok: false,
+        error: "student_access_provision_failed",
+        reason_code: provision.error ?? "student_access_provision_failed",
+      };
+    }
+
+    const executedAt = new Date().toISOString();
+    await ctx.supabase
+      .from("assistant_pending_actions")
+      .update({
+        status: "executed",
+        confirmed_at: executedAt,
+        executed_at: executedAt,
+        execution_ref: `student-access:${studentId}`,
+        updated_at: executedAt,
+      })
+      .eq("id", pending.id)
+      .eq("studio_id", ctx.studio.id)
+      .eq("status", "pending");
+
+    return {
+      ok: true,
+      status: "executed",
+      activation_url: provision.activation_url,
+      summary: pending.confirmation_summary,
+    };
+  }
+
   const {
     data: { session },
   } = await ctx.supabase.auth.getSession();
@@ -2291,52 +2328,68 @@ async function resolvePostTrialEnrollmentMethod(
   if (accessState === "active") {
     directUrl = `${appOrigin}/student/paquete?inscripcion=1`;
   } else if (["not_provisioned", "activation_pending"].includes(accessState)) {
-    const {
-      data: { session },
-    } = await ctx.supabase.auth.getSession();
+    if (ctx.serviceMode) {
+      const provision = await provisionStudentAccessWithServiceClient(
+        ctx,
+        studentId,
+        accessState === "activation_pending" ? "resend" : "provision",
+      );
+      if (!provision.generated || !provision.activation_url) {
+        return {
+          ok: false,
+          error: "student_access_provision_failed",
+          reason_code: provision.error ?? "student_access_provision_failed",
+        };
+      }
+      activationLink = provision.activation_url;
+    } else {
+      const {
+        data: { session },
+      } = await ctx.supabase.auth.getSession();
 
-    if (!session?.access_token) {
-      return { ok: false, error: "activation_authorization_unavailable" };
-    }
+      if (!session?.access_token) {
+        return { ok: false, error: "activation_authorization_unavailable" };
+      }
 
-    const body =
-      accessState === "activation_pending"
-        ? {
-            studentId,
-            mode: "resend",
-            activationUrl: ctx.activationUrl,
-            delivery: "return_link",
-          }
-        : {
-            studentId,
-            activationUrl: ctx.activationUrl,
-            delivery: "return_link",
-          };
+      const body =
+        accessState === "activation_pending"
+          ? {
+              studentId,
+              mode: "resend",
+              activationUrl: ctx.activationUrl,
+              delivery: "return_link",
+            }
+          : {
+              studentId,
+              activationUrl: ctx.activationUrl,
+              delivery: "return_link",
+            };
 
-    const { data, error } = await ctx.supabase.functions.invoke(
-      "provision-student-access",
-      {
-        body,
-        headers: { Authorization: `Bearer ${session.access_token}` },
-      },
-    );
+      const { data, error } = await ctx.supabase.functions.invoke(
+        "provision-student-access",
+        {
+          body,
+          headers: { Authorization: `Bearer ${session.access_token}` },
+        },
+      );
 
-    const provision = asObject(data);
-    if (error || !provision || provision.ok !== true) {
-      return {
-        ok: false,
-        error: "student_access_provision_failed",
-        reason_code: String(provision?.error ?? "student_access_provision_failed"),
-      };
-    }
+      const provision = asObject(data);
+      if (error || !provision || provision.ok !== true) {
+        return {
+          ok: false,
+          error: "student_access_provision_failed",
+          reason_code: String(provision?.error ?? "student_access_provision_failed"),
+        };
+      }
 
-    activationLink =
-      typeof provision.activationLink === "string"
-        ? provision.activationLink
-        : null;
+      activationLink =
+        typeof provision.activationLink === "string"
+          ? provision.activationLink
+          : null;
 
-    if (!activationLink && provision.mustChangePassword !== false) {
-      return { ok: false, error: "activation_link_missing" };
+      if (!activationLink && provision.mustChangePassword !== false) {
+        return { ok: false, error: "activation_link_missing" };
+      }
     }
   } else {
     return { ok: false, error: "student_access_inconsistent" };
