@@ -308,52 +308,56 @@ export default async function StudentClassesPage({
                 <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-500">
                   Tu próxima clase
                 </p>
-                <article
-                  data-density="compact"
-                  className="rounded-3xl border border-fuchsia-500/20 bg-gradient-to-br from-fuchsia-500/[0.1] via-white/[0.035] to-transparent px-4 py-4"
-                >
-                  <div className="grid grid-cols-[1fr_auto] items-center gap-3">
-                    <Link
-                      href={`/student/mis-clases/${nextClass.reservation_id}`}
-                      className="min-w-0"
-                    >
-                      <div className="flex flex-wrap items-center gap-2">
-                        <h2 className="truncate text-base font-semibold text-white">
-                          {nextClass.activity}
-                        </h2>
-                        <span className="rounded-full border border-emerald-500/25 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-300">
-                          Confirmada
-                        </span>
-                      </div>
-                      <p className="mt-1 text-xs font-medium text-fuchsia-300">
-                        {nextClass.discipline}
-                      </p>
-                      <p className="mt-1.5 text-xs text-zinc-300">
-                        {formatDateTime(nextClass.starts_at, studio.timezone)}
-                      </p>
-                      <p className="mt-0.5 truncate text-[11px] text-zinc-500">
-                        {[nextClass.coach, nextClass.space].filter(Boolean).join(" · ") ||
-                          "Ver detalles de la clase"}
-                      </p>
-                    </Link>
-                    <Link
-                      href={`/student/mis-clases/${nextClass.reservation_id}`}
-                      aria-label={`Ver detalles de ${nextClass.activity}`}
-                      className="text-xl text-zinc-500"
-                    >
-                      ›
-                    </Link>
-                  </div>
+                {nextClass.status === "cancelled_by_studio" ? (
+                  <ClassRow item={nextClass} timezone={studio.timezone} />
+                ) : (
+                  <article
+                    data-density="compact"
+                    className="rounded-3xl border border-fuchsia-500/20 bg-gradient-to-br from-fuchsia-500/[0.1] via-white/[0.035] to-transparent px-4 py-4"
+                  >
+                    <div className="grid grid-cols-[1fr_auto] items-center gap-3">
+                      <Link
+                        href={`/student/mis-clases/${nextClass.reservation_id}`}
+                        className="min-w-0"
+                      >
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h2 className="truncate text-base font-semibold text-white">
+                            {nextClass.activity}
+                          </h2>
+                          <span className="rounded-full border border-emerald-500/25 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-300">
+                            Confirmada
+                          </span>
+                        </div>
+                        <p className="mt-1 text-xs font-medium text-fuchsia-300">
+                          {nextClass.discipline}
+                        </p>
+                        <p className="mt-1.5 text-xs text-zinc-300">
+                          {formatDateTime(nextClass.starts_at, studio.timezone)}
+                        </p>
+                        <p className="mt-0.5 truncate text-[11px] text-zinc-500">
+                          {[nextClass.coach, nextClass.space].filter(Boolean).join(" · ") ||
+                            "Ver detalles de la clase"}
+                        </p>
+                      </Link>
+                      <Link
+                        href={`/student/mis-clases/${nextClass.reservation_id}`}
+                        aria-label={`Ver detalles de ${nextClass.activity}`}
+                        className="text-xl text-zinc-500"
+                      >
+                        ›
+                      </Link>
+                    </div>
 
-                  <div className="mt-3 flex justify-end border-t border-white/10 pt-3">
-                    <Link
-                      href={`/student/mis-clases/${nextClass.reservation_id}/cancelar`}
-                      className="inline-flex min-h-9 items-center justify-center rounded-xl border border-rose-500/30 bg-rose-500/[0.06] px-3 py-2 text-xs font-semibold text-rose-200 transition hover:bg-rose-500/[0.12]"
-                    >
-                      Cancelar
-                    </Link>
-                  </div>
-                </article>
+                    <div className="mt-3 flex justify-end border-t border-white/10 pt-3">
+                      <Link
+                        href={`/student/mis-clases/${nextClass.reservation_id}/cancelar`}
+                        className="inline-flex min-h-9 items-center justify-center rounded-xl border border-rose-500/30 bg-rose-500/[0.06] px-3 py-2 text-xs font-semibold text-rose-200 transition hover:bg-rose-500/[0.12]"
+                      >
+                        Cancelar
+                      </Link>
+                    </div>
+                  </article>
+                )}
               </div>
 
               {followingClasses.length ? (
