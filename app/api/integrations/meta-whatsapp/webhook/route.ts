@@ -381,6 +381,20 @@ export async function POST(request: Request) {
   let retryableFailure = false;
   const outcomes: JsonObject[] = [];
 
+  // While Demi is off/demo, acknowledge Meta without persisting customer content.
+  if (!runAssistant) {
+    return json({
+      ok: true,
+      accepted: true,
+      messages: messages.length,
+      outcomes: messages.map((message) => ({
+        provider_message_id: message.providerMessageId,
+        outcome: "assistant_mode_not_live",
+        mode: liveMode,
+      })),
+    });
+  }
+
   for (const message of messages) {
     if (message.phoneNumberId !== webhookConfig.phoneNumberId) {
       outcomes.push({
@@ -388,6 +402,21 @@ export async function POST(request: Request) {
         outcome: "phone_number_mismatch",
       });
       continue;
+    }
+
+    if (liveMode === "pilot") {
+      const rawWaId = message.fromWaId.replace(/\D/g, "");
+      const canonicalWaId = /^521[0-9]{10}$/.test(rawWaId)
+        ? `52${rawWaId.slice(3)}`
+        : rawWaId;
+
+      if (!webhookConfig.pilotWaIds.includes(canonicalWaId)) {
+        outcomes.push({
+          provider_message_id: message.providerMessageId,
+          outcome: "pilot_contact_not_allowed",
+        });
+        continue;
+      }
     }
 
     let event;
@@ -436,22 +465,6 @@ export async function POST(request: Request) {
       attempt_count: Number(event.attempt_count ?? 0) + 1,
       last_error_code: null,
     });
-
-    if (!runAssistant) {
-      await markEvent(supabase, studioId, event.id, {
-        processing_status: "ignored",
-        processing_result: {
-          outcome: "assistant_mode_not_live",
-          mode: liveMode,
-        },
-        processed_at: new Date().toISOString(),
-      });
-      outcomes.push({
-        provider_message_id: message.providerMessageId,
-        outcome: "assistant_mode_not_live",
-      });
-      continue;
-    }
 
     const { data: preparedData, error: preparedError } = await supabase.rpc(
       "service_prepare_meta_whatsapp_message",
