@@ -11,6 +11,10 @@ export type SearchClassAvailabilityArgs = {
   limit: number;
 };
 
+export type CommercialOptionsArgs = {
+  session_ref: string | null;
+};
+
 export type EmptyArgs = Record<string, never>;
 
 export type AssistantToolDefinition = {
@@ -85,12 +89,18 @@ export const assistantReadToolDefinitions: AssistantToolDefinition[] = [
     type: "function",
     name: "get_commercial_options",
     description:
-      "Consulta paquetes, membresías y precios activos reales de Studio Flow. Úsala para '¿cuánto cuesta?', paquetes o membresías. No inventes promociones.",
+      "Consulta paquetes, membresías y precios activos reales de Studio Flow. Si buscas qué producto permite reservar una clase concreta, envía la session_ref exacta y Studio Flow devolverá únicamente opciones compatibles con esa sesión. Para una consulta comercial general usa session_ref=null. No inventes promociones ni compatibilidades.",
     strict: true,
     parameters: {
       type: "object",
-      properties: {},
-      required: [],
+      properties: {
+        session_ref: {
+          type: ["string", "null"],
+          description:
+            "Referencia session:<uuid> de una clase concreta cuando se necesitan productos que realmente la cubran; null para consultar el catálogo general.",
+        },
+      },
+      required: ["session_ref"],
       additionalProperties: false,
     },
   },
