@@ -73,6 +73,22 @@ describe("Demi Meta WhatsApp inbound contract", () => {
     expect(route).toContain('"assistant_mode_not_live"');
   });
 
+  it("limits pilot mode to explicitly authorized WhatsApp contacts", () => {
+    expect(channel).toContain("service_get_meta_whatsapp_pilot_wa_ids");
+    expect(channel).toContain("pilotWaIds");
+    expect(route).toContain('if (liveMode === "pilot")');
+    expect(route).toContain('"pilot_contact_not_allowed"');
+    expect(route).toContain("webhookConfig.pilotWaIds.includes");
+  });
+
+  it("does not persist real inbound content while Demi is demo/off", () => {
+    const modeGuard = route.indexOf('if (!runAssistant)');
+    const capture = route.indexOf("await captureEvent");
+    expect(modeGuard).toBeGreaterThan(-1);
+    expect(capture).toBeGreaterThan(-1);
+    expect(modeGuard).toBeLessThan(capture);
+  });
+
   it("stops automation while human takeover is open", () => {
     expect(route).toContain("prepared.handoff_open === true");
     expect(route).toContain('"human_takeover_active"');
