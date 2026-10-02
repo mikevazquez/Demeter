@@ -937,6 +937,7 @@ export async function runAssistantTurn(input: OrchestratorInput) {
             studentId: input.studentId,
             crmContactId: input.crmContactId,
             activationUrl: input.activationUrl,
+            serviceMode: input.serviceMode === true,
             currentUserMessage,
           },
           toolName,
