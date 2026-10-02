@@ -1406,17 +1406,6 @@ async function prepareReschedule(
   if (source.status !== "reserved") {
     return { ok: false, error: "reservation_not_reschedulable" };
   }
-  if (source.summary.late === true) {
-    return {
-      ok: false,
-      error: "reschedule_cutoff_passed",
-      reason_code: "reschedule_cutoff_passed",
-      reason_message:
-        "Ya pasó el tiempo permitido para reagendar esta clase. Si deseas cancelarla, aplicará la política de cancelación tardía.",
-      cancellation_cutoff_minutes:
-        source.summary.cancellation_cutoff_minutes,
-    };
-  }
   if (source.sessionId === targetSessionId) {
     return { ok: false, error: "same_session" };
   }
@@ -1473,6 +1462,14 @@ async function prepareReschedule(
     to: target.summary,
     atomic: true,
     original_preserved_if_failed: true,
+    late_reschedule: source.summary.late === true,
+    source_credit_will_return: source.summary.credit_will_return,
+    target_credit_cost: target.summary.credit_cost,
+    additional_credit_required:
+      source.summary.late === true &&
+      source.summary.credit_will_return === false
+        ? target.summary.credit_cost
+        : 0,
     target_may_use_released_credit: canUseReleasedCredit,
   };
 
@@ -1573,25 +1570,6 @@ async function executeReschedule(
   if (!source || source.status !== "reserved") {
     return { ok: false, error: "reservation_not_reschedulable" };
   }
-  if (source.summary.late === true) {
-    await ctx.supabase
-      .from("assistant_pending_actions")
-      .update({ status: "cancelled", updated_at: new Date().toISOString() })
-      .eq("id", pending.id)
-      .eq("studio_id", ctx.studio.id)
-      .eq("status", "pending");
-
-    return {
-      ok: false,
-      error: "reschedule_cutoff_passed",
-      reason_code: "reschedule_cutoff_passed",
-      reason_message:
-        "Ya pasó el tiempo permitido para reagendar esta clase. Si deseas cancelarla, aplicará la política de cancelación tardía.",
-      original_reservation_preserved: true,
-      cancellation_cutoff_minutes:
-        source.summary.cancellation_cutoff_minutes,
-    };
-  }
   if (!target) return { ok: false, error: "session_not_found" };
   if (target.session.requires_resource) {
     return { ok: false, error: "resource_selection_required" };
@@ -1606,6 +1584,14 @@ async function executeReschedule(
       to: target.summary,
       atomic: true,
       original_preserved_if_failed: true,
+      late_reschedule: source.summary.late === true,
+      source_credit_will_return: source.summary.credit_will_return,
+      target_credit_cost: target.summary.credit_cost,
+      additional_credit_required:
+        source.summary.late === true &&
+        source.summary.credit_will_return === false
+          ? target.summary.credit_cost
+          : 0,
     };
 
     await ctx.supabase
