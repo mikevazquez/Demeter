@@ -18,6 +18,8 @@ export type TodayRosterItem = {
   attendanceSource?: string | null;
   checkedInAt?: string | null;
   attendanceProvenance?: string | null;
+  resourceName?: string | null;
+  resourceRequired?: boolean;
 };
 
 export type TodayCandidate = {
