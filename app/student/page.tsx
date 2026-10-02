@@ -7,6 +7,7 @@ import {
   getStudentPortalContext,
   localDateKey,
   type StudentAcquisition,
+  type StudentClassFeedItem,
 } from "@/lib/student/portal";
 
 import StudentNoticeDialog from "./components/StudentNoticeDialog";
@@ -160,6 +161,7 @@ export default async function StudentHomePage({
     evaluationsResult,
     unreadEvaluationResult,
     appNotificationResult,
+    classesResult,
   ] = await Promise.all([
     supabase.rpc("student_reward_status_snapshot"),
     supabase
@@ -187,6 +189,7 @@ export default async function StudentHomePage({
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle(),
+    supabase.rpc("student_classes_feed"),
   ]);
 
   const rewardStatus = (rewardStatusResult.data as RewardStatusSnapshot | null) ?? null;
@@ -271,10 +274,15 @@ export default async function StudentHomePage({
       .filter(Boolean)
       .sort()[0] ?? null;
   const credits = availableCredits(activePackage);
+  const classesFeed =
+    (classesResult.data as {
+      upcoming?: StudentClassFeedItem[];
+    } | null) ?? {};
   const nextClass =
-    [...snapshot.upcoming].sort(
+    [...(classesFeed.upcoming ?? [])].sort(
       (left, right) => Date.parse(left.starts_at) - Date.parse(right.starts_at),
     )[0] ?? null;
+  const nextClassCancelledByStudio = nextClass?.status === "cancelled_by_studio";
 
   const today = localDateKey(new Date(), studio.timezone);
   const daysUntilExpiration = activePackage
@@ -829,7 +837,7 @@ export default async function StudentHomePage({
       >
         <div className="flex items-center justify-between gap-3">
           <p className="text-[9px] font-semibold uppercase tracking-[0.22em] text-zinc-400">
-            Tus clases reservadas
+            Tus próximas clases
           </p>
           {nextClass ? (
             <Link href="/student/mis-clases" className="text-xs font-semibold text-white">
@@ -854,8 +862,15 @@ export default async function StudentHomePage({
                 <h2 className="truncate text-base font-semibold text-white">
                   {nextClass.activity}
                 </h2>
-                <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold text-emerald-300">
-                  Confirmada
+                <span
+                  className={
+                    "rounded-full px-2 py-0.5 text-[10px] font-semibold " +
+                    (nextClassCancelledByStudio
+                      ? "bg-rose-500/15 text-rose-300"
+                      : "bg-emerald-500/15 text-emerald-300")
+                  }
+                >
+                  {nextClassCancelledByStudio ? "Cancelada por el estudio" : "Confirmada"}
                 </span>
               </div>
               <p className="mt-1 text-xs text-zinc-300">
