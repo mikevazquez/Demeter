@@ -332,7 +332,7 @@ export async function getCommercialOptions(
   const { data, error } = await ctx.supabase
     .from("product_templates")
     .select(
-      "id,name,description,product_type,price_minor,currency,credit_limit,validity_days,unlimited,package_term,online_purchasable,reward_credit_wallet",
+      "id,name,description,product_type,price_minor,currency,credit_limit,validity_days,unlimited,package_term,online_purchasable,reward_credit_wallet,assistant_visible",
     )
     .eq("studio_id", ctx.studio.id)
     .eq("active", true)
@@ -341,7 +341,9 @@ export async function getCommercialOptions(
 
   if (error) return { ok: false, error: "commercial_options_unavailable" };
 
-  let products = (data ?? []).filter((item) => !item.reward_credit_wallet);
+  let products = (data ?? []).filter(
+    (item) => !item.reward_credit_wallet && item.assistant_visible !== false,
+  );
 
   if (sessionScope && products.length) {
     const productIds = products.map((item) => item.id);
