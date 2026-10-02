@@ -1412,7 +1412,7 @@ async function prepareReschedule(
       error: "reschedule_cutoff_passed",
       reason_code: "reschedule_cutoff_passed",
       reason_message:
-        "Ya faltan menos de 5 horas para la clase original, así que ya no puede reagendarse. Si deseas cancelarla, aplicará la política de cancelación tardía.",
+        "Ya pasó el tiempo permitido para reagendar esta clase. Si deseas cancelarla, aplicará la política de cancelación tardía.",
       cancellation_cutoff_minutes:
         source.summary.cancellation_cutoff_minutes,
     };
@@ -1586,7 +1586,7 @@ async function executeReschedule(
       error: "reschedule_cutoff_passed",
       reason_code: "reschedule_cutoff_passed",
       reason_message:
-        "Ya faltan menos de 5 horas para la clase original, así que ya no puede reagendarse. Si deseas cancelarla, aplicará la política de cancelación tardía.",
+        "Ya pasó el tiempo permitido para reagendar esta clase. Si deseas cancelarla, aplicará la política de cancelación tardía.",
       original_reservation_preserved: true,
       cancellation_cutoff_minutes:
         source.summary.cancellation_cutoff_minutes,
