@@ -190,26 +190,26 @@ export function KioskScanner({ studioName }: { studioName: string }) {
 
   const feedbackTone =
     feedback?.kind === "success"
-      ? "border-emerald-400/25 bg-emerald-400/[0.11]"
+      ? "border-emerald-200 bg-emerald-50"
       : feedback?.kind === "duplicate"
-        ? "border-fuchsia-400/25 bg-fuchsia-500/[0.1]"
-        : "border-rose-400/25 bg-rose-500/[0.1]";
+        ? "border-amber-200 bg-amber-50"
+        : "border-rose-200 bg-rose-50";
 
   return (
-    <main className="fixed inset-0 z-[300] overflow-auto bg-[#07070a] text-white">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_15%,rgba(255,10,138,0.15),transparent_35%)]" />
+    <main className="fixed inset-0 z-[300] overflow-auto bg-[#f5f8fb] text-[#10203a]">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_15%,rgba(23,168,120,0.08),transparent_38%)]" />
 
       <div className="relative mx-auto flex min-h-screen w-full max-w-5xl flex-col px-5 py-6 sm:px-8">
         <header className="flex items-center justify-between gap-4">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-fuchsia-300">
-              STUDIO <span className="text-white">FLOW</span>
+            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#0f8f66]">
+              STUDIO <span className="text-[#10203a]">FLOW</span>
             </p>
-            <p className="mt-1 text-xs text-zinc-500">{studioName}</p>
+            <p className="mt-1 text-xs text-[#718096]">{studioName}</p>
           </div>
           <a
             href="/admin"
-            className="rounded-full border border-white/10 bg-white/[0.03] px-4 py-2 text-xs font-semibold text-zinc-300 transition hover:border-fuchsia-400/30 hover:text-white"
+            className="rounded-full border border-[#dce4eb] bg-white px-4 py-2 text-xs font-semibold text-[#607086] shadow-sm transition hover:border-[#bfe3d6] hover:text-[#0f8f66]"
           >
             Salir del modo kiosco
           </a>
@@ -217,18 +217,18 @@ export function KioskScanner({ studioName }: { studioName: string }) {
 
         <section className="flex flex-1 flex-col items-center justify-center py-8">
           <div className="w-full max-w-2xl text-center">
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-fuchsia-300">
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#0f8f66]">
               Check-in
             </p>
             <h1 className="mt-3 text-3xl font-semibold tracking-tight sm:text-5xl">
               Escanea tu código QR
             </h1>
-            <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-zinc-400 sm:text-base">
+            <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-[#687891] sm:text-base">
               Acerca el código de tu reserva a la cámara para registrar tu asistencia.
             </p>
           </div>
 
-          <div className="relative mt-8 aspect-[4/3] w-full max-w-2xl overflow-hidden rounded-[2rem] border border-fuchsia-500/25 bg-[#0e0e13] shadow-[0_0_70px_rgba(255,10,138,0.08)]">
+          <div className="relative mt-8 aspect-[4/3] w-full max-w-2xl overflow-hidden rounded-[2rem] border border-[#bfe3d6] bg-[#101820] shadow-[0_22px_70px_rgba(44,64,86,0.12)]">
             <video
               ref={videoRef}
               className="h-full w-full object-cover"
@@ -239,54 +239,54 @@ export function KioskScanner({ studioName }: { studioName: string }) {
             />
 
             <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/35" />
-            <div className="pointer-events-none absolute left-1/2 top-1/2 aspect-square w-[58%] -translate-x-1/2 -translate-y-1/2 rounded-[1.75rem] border border-fuchsia-400/80 shadow-[0_0_32px_rgba(255,10,138,0.22)]">
-              <span className="absolute -left-px -top-px h-10 w-10 rounded-tl-[1.7rem] border-l-4 border-t-4 border-fuchsia-400" />
-              <span className="absolute -right-px -top-px h-10 w-10 rounded-tr-[1.7rem] border-r-4 border-t-4 border-fuchsia-400" />
-              <span className="absolute -bottom-px -left-px h-10 w-10 rounded-bl-[1.7rem] border-b-4 border-l-4 border-fuchsia-400" />
-              <span className="absolute -bottom-px -right-px h-10 w-10 rounded-br-[1.7rem] border-b-4 border-r-4 border-fuchsia-400" />
+            <div className="pointer-events-none absolute left-1/2 top-1/2 aspect-square w-[58%] -translate-x-1/2 -translate-y-1/2 rounded-[1.75rem] border border-emerald-300/90 shadow-[0_0_32px_rgba(23,168,120,0.24)]">
+              <span className="absolute -left-px -top-px h-10 w-10 rounded-tl-[1.7rem] border-l-4 border-t-4 border-emerald-300" />
+              <span className="absolute -right-px -top-px h-10 w-10 rounded-tr-[1.7rem] border-r-4 border-t-4 border-emerald-300" />
+              <span className="absolute -bottom-px -left-px h-10 w-10 rounded-bl-[1.7rem] border-b-4 border-l-4 border-emerald-300" />
+              <span className="absolute -bottom-px -right-px h-10 w-10 rounded-br-[1.7rem] border-b-4 border-r-4 border-emerald-300" />
               {!feedback ? (
-                <span className="absolute left-[8%] right-[8%] top-1/2 h-px bg-fuchsia-300/80 shadow-[0_0_16px_rgba(255,10,138,0.9)]" />
+                <span className="absolute left-[8%] right-[8%] top-1/2 h-px bg-emerald-300/90 shadow-[0_0_16px_rgba(23,168,120,0.85)]" />
               ) : null}
             </div>
 
             {cameraError ? (
-              <div className="absolute inset-0 flex items-center justify-center bg-[#09090d]/95 p-8 text-center">
+              <div className="absolute inset-0 flex items-center justify-center bg-white/95 p-8 text-center">
                 <div>
-                  <p className="text-lg font-semibold text-white">Cámara no disponible</p>
-                  <p className="mt-2 max-w-md text-sm leading-6 text-zinc-400">{cameraError}</p>
+                  <p className="text-lg font-semibold text-[#10203a]">Cámara no disponible</p>
+                  <p className="mt-2 max-w-md text-sm leading-6 text-[#687891]">{cameraError}</p>
                 </div>
               </div>
             ) : null}
 
             {feedback ? (
-              <div className="absolute inset-0 flex items-center justify-center bg-[#09090d]/92 p-6 backdrop-blur-sm">
+              <div className="absolute inset-0 flex items-center justify-center bg-white/90 p-6 backdrop-blur-sm">
                 <div
                   className={`w-full max-w-lg rounded-[2rem] border p-7 text-center ${feedbackTone}`}
                 >
                   <div
                     className={`mx-auto flex h-16 w-16 items-center justify-center rounded-full border text-3xl ${
                       feedback.kind === "success"
-                        ? "border-emerald-300/40 bg-emerald-300/10 text-emerald-200"
+                        ? "border-emerald-200 bg-emerald-100 text-emerald-700"
                         : feedback.kind === "duplicate"
-                          ? "border-fuchsia-300/40 bg-fuchsia-300/10 text-fuchsia-200"
-                          : "border-rose-300/40 bg-rose-300/10 text-rose-200"
+                          ? "border-amber-200 bg-amber-100 text-amber-700"
+                          : "border-rose-200 bg-rose-100 text-rose-700"
                     }`}
                     aria-hidden="true"
                   >
                     {feedback.kind === "error" ? "!" : "✓"}
                   </div>
                   <h2 className="mt-4 text-2xl font-semibold">{feedback.title}</h2>
-                  <p className="mt-2 text-base font-semibold text-white">{feedback.detail}</p>
+                  <p className="mt-2 text-base font-semibold text-[#10203a]">{feedback.detail}</p>
                   {feedback.meta ? (
-                    <p className="mt-1 text-sm text-zinc-400">{feedback.meta}</p>
+                    <p className="mt-1 text-sm text-[#687891]">{feedback.meta}</p>
                   ) : null}
                 </div>
               </div>
             ) : null}
           </div>
 
-          <div className="mt-5 flex items-center gap-2 text-xs text-zinc-500">
-            <span className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.55)]" />
+          <div className="mt-5 flex items-center gap-2 text-xs text-[#718096]">
+            <span className="h-2 w-2 rounded-full bg-[#17a878] shadow-[0_0_10px_rgba(23,168,120,0.35)]" />
             Lector listo
           </div>
         </section>

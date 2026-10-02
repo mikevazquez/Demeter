@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 
+import AdminDialogFrame from "@/app/admin/components/AdminDialogFrame";
 import { getHolidayTheme, holidayOperationLabel } from "@/lib/holidays/theme";
 
 import { saveHolidayOperation } from "./holiday-actions";
@@ -48,6 +49,9 @@ export function HolidayConfigurator({
   const [mode, setMode] = useState(operationMode);
   const [message, setMessage] = useState(studentMessage);
   const [keepIds, setKeepIds] = useState(() => new Set(defaultKeepSessionIds));
+  const [confirmation, setConfirmation] = useState<string | null>(null);
+  const formRef = useRef<HTMLFormElement | null>(null);
+  const confirmedRef = useRef(false);
   const totalReservations = sessions.reduce((sum, session) => sum + session.reservations, 0);
   const affectedSessions =
     mode === "closed"
@@ -71,13 +75,25 @@ export function HolidayConfigurator({
   }, [mode]);
 
   const onSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    if (confirmedRef.current) {
+      confirmedRef.current = false;
+      return;
+    }
     if (mode === "normal" || (affectedSessions === 0 && affectedReservations === 0)) return;
-    const message =
+
+    event.preventDefault();
+    setConfirmation(
       mode === "closed"
-        ? `Este cambio cancelará ${affectedSessions} sesión(es) y afectará ${affectedReservations} reserva(s). Los créditos aplicables se restaurarán. ¿Confirmas el cierre?`
-        : `Este horario especial cancelará ${affectedSessions} sesión(es) y afectará ${affectedReservations} reserva(s). ¿Confirmas el cambio?`;
-    if (!window.confirm(message)) event.preventDefault();
+        ? `Este cambio cancelará ${affectedSessions} sesión(es) y afectará ${affectedReservations} reserva(s). Los créditos aplicables se restaurarán.`
+        : `Este horario especial cancelará ${affectedSessions} sesión(es) y afectará ${affectedReservations} reserva(s).`,
+    );
   };
+
+  function confirmOperation() {
+    confirmedRef.current = true;
+    setConfirmation(null);
+    formRef.current?.requestSubmit();
+  }
 
   return (
     <section
@@ -110,7 +126,12 @@ export function HolidayConfigurator({
         <div className="agenda-holiday-saved">Configuración del festivo guardada.</div>
       ) : null}
 
-      <form action={saveHolidayOperation} onSubmit={onSubmit} className="agenda-holiday-form">
+      <form
+        ref={formRef}
+        action={saveHolidayOperation}
+        onSubmit={onSubmit}
+        className="agenda-holiday-form"
+      >
         <input type="hidden" name="holiday_date" value={holiday.holiday_date} />
 
         <fieldset disabled={!canEdit} className="agenda-holiday-options">
@@ -265,6 +286,32 @@ export function HolidayConfigurator({
           {canEdit ? <button type="submit">Guardar operación</button> : null}
         </div>
       </form>
+
+      {confirmation ? (
+        <AdminDialogFrame
+          eyebrow="Confirmar cambio"
+          title={mode === "closed" ? "¿Cerrar el estudio este día?" : "¿Aplicar horario especial?"}
+          tone="warning"
+          onClose={() => setConfirmation(null)}
+          footer={
+            <>
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={() => setConfirmation(null)}
+              >
+                Volver
+              </button>
+              <button type="button" className="sf-dialog-warning" onClick={confirmOperation}>
+                Confirmar cambio
+              </button>
+            </>
+          }
+        >
+          <p>{confirmation}</p>
+          <p>Las reservas y créditos seguirán las reglas vigentes del estudio.</p>
+        </AdminDialogFrame>
+      ) : null}
     </section>
   );
 }

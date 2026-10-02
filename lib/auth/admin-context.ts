@@ -12,7 +12,10 @@ async function getAdminContextImpl(requiredCapability?: Capability) {
     error: authError,
   } = await supabase.auth.getUser();
 
-  if (authError && (authError.status == null || authError.status === 0 || authError.status >= 500)) {
+  if (
+    authError &&
+    (authError.status == null || authError.status === 0 || authError.status >= 500)
+  ) {
     throw new Error("admin_auth_temporarily_unavailable");
   }
   if (!user) redirect("/login/studio");

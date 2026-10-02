@@ -15,9 +15,11 @@ export default async function AchievementDetailPage({
   params: Promise<{ ruleId: string }>;
   searchParams: Promise<{ saved?: string; error?: string }>;
 }) {
-  const { ruleId } = await params;
-  const query = await searchParams;
-  const ctx = await getAdminContext(CAPABILITIES.REWARDS_READ);
+  const [{ ruleId }, query, ctx] = await Promise.all([
+    params,
+    searchParams,
+    getAdminContext(CAPABILITIES.REWARDS_READ),
+  ]);
   const { data: rule } = await ctx.supabase
     .from("reward_rules")
     .select("id,status,current_version_number,scheduled_start_at,scheduled_end_at,updated_at")

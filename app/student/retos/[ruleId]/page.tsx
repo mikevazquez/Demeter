@@ -112,9 +112,11 @@ export default async function ChallengeDetailPage({
   params: Promise<{ ruleId: string }>;
   searchParams: Promise<{ joined?: string; claimed?: string; error?: string }>;
 }) {
-  const { ruleId } = await params;
-  const query = await searchParams;
-  const portal = await getStudentPortalContext();
+  const [{ ruleId }, query, portal] = await Promise.all([
+    params,
+    searchParams,
+    getStudentPortalContext(),
+  ]);
 
   const { data, error } = await portal.supabase.rpc("student_list_reward_challenges", {
     p_studio_id: portal.membership.studio_id,

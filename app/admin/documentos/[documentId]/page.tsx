@@ -22,24 +22,27 @@ export default async function DocumentDetailPage({
   params: Promise<{ documentId: string }>;
   searchParams: Promise<{ published?: string; retired?: string; error?: string }>;
 }) {
-  const { documentId } = await params;
-  const query = await searchParams;
-  const { supabase, studio, can } = await getAdminContext(CAPABILITIES.DOCUMENTS_READ);
+  const [{ documentId }, query, { supabase, studio, can }] = await Promise.all([
+    params,
+    searchParams,
+    getAdminContext(CAPABILITIES.DOCUMENTS_READ),
+  ]);
 
-  const { data: document } = await supabase
-    .from("studio_documents")
-    .select("id,name,document_type,description,created_at")
-    .eq("id", documentId)
-    .eq("studio_id", studio.id)
-    .maybeSingle();
+  const [{ data: document }, { data: versions }] = await Promise.all([
+    supabase
+      .from("studio_documents")
+      .select("id,name,document_type,description,created_at")
+      .eq("id", documentId)
+      .eq("studio_id", studio.id)
+      .maybeSingle(),
+    supabase
+      .from("document_versions")
+      .select("*")
+      .eq("document_id", documentId)
+      .eq("studio_id", studio.id)
+      .order("version_number", { ascending: false }),
+  ]);
   if (!document) notFound();
-
-  const { data: versions } = await supabase
-    .from("document_versions")
-    .select("*")
-    .eq("document_id", document.id)
-    .eq("studio_id", studio.id)
-    .order("version_number", { ascending: false });
 
   const current =
     (versions ?? []).find((item) => ["active", "scheduled"].includes(item.status)) ??

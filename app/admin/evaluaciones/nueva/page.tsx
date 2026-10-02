@@ -15,8 +15,10 @@ export default async function NewTechnicalEvaluationPage({
 }: {
   searchParams: Promise<{ error?: string }>;
 }) {
-  const qs = await searchParams;
-  const ctx = await getAdminContext(CAPABILITIES.EVALUATIONS_WRITE);
+  const [qs, ctx] = await Promise.all([
+    searchParams,
+    getAdminContext(CAPABILITIES.EVALUATIONS_WRITE),
+  ]);
 
   const [studentsResult, versionsResult, disciplinesResult, linksResult, definitionsResult] =
     await Promise.all([

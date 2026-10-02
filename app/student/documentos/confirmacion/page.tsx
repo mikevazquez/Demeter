@@ -8,10 +8,8 @@ export default async function StudentDocumentConfirmationPage({
 }: {
   searchParams: Promise<{ version?: string; acceptance?: string }>;
 }) {
-  const query = await searchParams;
+  const [query, { supabase }] = await Promise.all([searchParams, getStudentPortalContext()]);
   if (!query.version || !query.acceptance) notFound();
-
-  const { supabase } = await getStudentPortalContext();
   const [{ data: detail }, { data: acceptance }] = await Promise.all([
     supabase.rpc("student_document_detail", { p_version_id: query.version }),
     supabase

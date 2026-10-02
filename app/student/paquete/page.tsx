@@ -123,18 +123,19 @@ export default async function StudentPackagePage() {
       .eq("studio_id", membership.studio_id)
       .eq("active", true),
   ]);
-  const enrollmentOption = (enrollmentOptionData as {
-    enabled?: boolean;
-    missing?: boolean;
-    configured?: boolean;
-    product?: {
-      id: string;
-      name: string;
-      price_minor: number;
-      currency: string;
-      validity_days: number | null;
-    } | null;
-  } | null) ?? null;
+  const enrollmentOption =
+    (enrollmentOptionData as {
+      enabled?: boolean;
+      missing?: boolean;
+      configured?: boolean;
+      product?: {
+        id: string;
+        name: string;
+        price_minor: number;
+        currency: string;
+        validity_days: number | null;
+      } | null;
+    } | null) ?? null;
   const enrollmentMissing = enrollmentOption?.missing === true;
   const enrollmentProduct = enrollmentOption?.product ?? null;
 
@@ -203,12 +204,10 @@ export default async function StudentPackagePage() {
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-200">
             Inscripción requerida
           </p>
-          <h2 className="mt-2 text-xl font-semibold text-white">
-            Tu inscripción no está vigente
-          </h2>
+          <h2 className="mt-2 text-xl font-semibold text-white">Tu inscripción no está vigente</h2>
           <p className="mt-2 text-sm leading-6 text-zinc-300">
-            Necesitas una inscripción vigente para reservar. Puedes pagarla sola ahora o se
-            agregará automáticamente cuando compres un paquete o una clase suelta.
+            Necesitas una inscripción vigente para reservar. Puedes pagarla sola ahora o se agregará
+            automáticamente cuando compres un paquete o una clase suelta.
           </p>
           {enrollmentProduct ? (
             <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/10 bg-black/20 p-4">

@@ -36,53 +36,59 @@ export default async function StudentFirstReservationPage({
   params: Promise<{ studentId: string }>;
   searchParams: Promise<{ error?: string }>;
 }) {
-  const { studentId } = await params;
-  const query = await searchParams;
-  const { supabase, studio, can } = await getAdminContext(CAPABILITIES.SCHEDULE_READ);
+  const [{ studentId }, query, { supabase, studio, can }] = await Promise.all([
+    params,
+    searchParams,
+    getAdminContext(CAPABILITIES.SCHEDULE_READ),
+  ]);
 
-  const { data: student } = await supabase
-    .from("students")
-    .select("id,full_name,active,lifecycle_status")
-    .eq("id", studentId)
-    .eq("studio_id", studio.id)
-    .maybeSingle();
+  const [{ data: student }, { data: sessions }] = await Promise.all([
+    supabase
+      .from("students")
+      .select("id,full_name,active,lifecycle_status")
+      .eq("id", studentId)
+      .eq("studio_id", studio.id)
+      .maybeSingle(),
+    supabase
+      .from("class_sessions")
+      .select("id,template_id,starts_at,capacity,status")
+      .eq("studio_id", studio.id)
+      .eq("status", "scheduled")
+      .gt("starts_at", new Date().toISOString())
+      .order("starts_at")
+      .limit(24),
+  ]);
 
   if (!student) notFound();
 
-  const { data: sessions } = await supabase
-    .from("class_sessions")
-    .select("id,template_id,starts_at,capacity,status")
-    .eq("studio_id", studio.id)
-    .eq("status", "scheduled")
-    .gt("starts_at", new Date().toISOString())
-    .order("starts_at")
-    .limit(24);
-
   const templateIds = [...new Set((sessions ?? []).map((item) => item.template_id))];
-  const { data: templates } = templateIds.length
-    ? await supabase
-        .from("class_templates")
-        .select("id,name,credit_cost")
-        .eq("studio_id", studio.id)
-        .in("id", templateIds)
-    : { data: [] };
+  const sessionIds = (sessions ?? []).map((session) => session.id);
+  const canBook = can(CAPABILITIES.SCHEDULE_WRITE);
+  const [{ data: templates }, { data: eligibilityRows }] = await Promise.all([
+    templateIds.length
+      ? supabase
+          .from("class_templates")
+          .select("id,name,credit_cost")
+          .eq("studio_id", studio.id)
+          .in("id", templateIds)
+      : Promise.resolve({ data: [] as { id: string; name: string; credit_cost: number }[] }),
+    canBook && sessionIds.length
+      ? supabase.rpc("booking_eligibilities", {
+          target_session_ids: sessionIds,
+          target_student_id: student.id,
+        })
+      : Promise.resolve({
+          data: [] as { session_id: string; eligibility: Eligibility }[],
+        }),
+  ]);
 
   const templateMap = new Map((templates ?? []).map((item) => [item.id, item]));
-  const canBook = can(CAPABILITIES.SCHEDULE_WRITE);
-
-  const eligibilityEntries = canBook
-    ? await Promise.all(
-        (sessions ?? []).map(async (session) => {
-          const { data } = await supabase.rpc("booking_eligibility", {
-            target_session_id: session.id,
-            target_student_id: student.id,
-          });
-          return [session.id, (data ?? {}) as Eligibility] as const;
-        }),
-      )
-    : [];
-
-  const eligibilityMap = new Map(eligibilityEntries);
+  const eligibilityMap = new Map(
+    ((eligibilityRows ?? []) as { session_id: string; eligibility: Eligibility }[]).map((item) => [
+      item.session_id,
+      item.eligibility,
+    ]),
+  );
   const timeZone = studio.timezone ?? "America/Mexico_City";
 
   return (

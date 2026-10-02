@@ -20,9 +20,9 @@ describe("Admin session controls regression", () => {
     expect(today).toContain("reservationStudentIds");
     expect(today).toContain("reservationStudents");
     expect(today).toContain('.in("id", reservationStudentIds)');
-    expect(today).toContain("...(reservationStudents ?? [])");
+    expect(today).toContain("(reservationStudents ?? []).map");
     expect(sessionDetail).toContain("reservationStudentIds");
-    expect(sessionDetail).toContain("...(reservationStudents ?? [])");
+    expect(sessionDetail).toContain("(reservationStudents ?? []).map");
   });
 
   it("keeps reserved student names visible on the light Today roster", () => {
@@ -54,7 +54,7 @@ describe("Admin session controls regression", () => {
   });
 
   it("keeps session editing available directly from Agenda", () => {
-    expect(agenda).toContain('href={`/admin/agenda?date=${key}&session=${session.id}`}');
+    expect(agenda).toContain("href={`/admin/agenda?date=${key}&session=${session.id}`}");
     expect(agenda).toContain('className="agenda-session-editor"');
     expect(agenda).toContain("<small>EDITAR SESIÓN</small>");
     expect(agenda).toContain("action={updateSession}");

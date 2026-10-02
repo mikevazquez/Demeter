@@ -17,8 +17,10 @@ export default async function RegionSettingsPage({
 }: {
   searchParams: Promise<{ saved?: string; error?: string }>;
 }) {
-  const params = await searchParams;
-  const ctx = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
+  const [params, ctx] = await Promise.all([
+    searchParams,
+    getAdminContext(CAPABILITIES.SETTINGS_WRITE),
+  ]);
 
   if (ctx.membership.role !== "owner") {
     redirect("/admin?error=access");

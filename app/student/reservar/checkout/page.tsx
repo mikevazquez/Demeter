@@ -21,10 +21,9 @@ export default async function SingleClassCheckoutReturnPage({
 }: {
   searchParams: Promise<{ attempt?: string; outcome?: string }>;
 }) {
-  const query = await searchParams;
+  const [query, { supabase }] = await Promise.all([searchParams, getStudentAccessContext()]);
   const attemptId = query.attempt?.trim() ?? "";
   const outcome = safeOutcome(query.outcome);
-  const { supabase } = await getStudentAccessContext();
 
   let reconciliation: ReconcileResult = null;
   if (attemptId) {
@@ -146,8 +145,7 @@ export default async function SingleClassCheckoutReturnPage({
                 {extraEnrollment?.price_minor ? (
                   <>
                     <p>
-                      Clase:{" "}
-                      {formatMoney(attempt.amount_minor - extraEnrollment.price_minor)} MXN
+                      Clase: {formatMoney(attempt.amount_minor - extraEnrollment.price_minor)} MXN
                     </p>
                     <p>
                       {extraEnrollment.name ?? "Inscripción"}:{" "}

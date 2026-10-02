@@ -30,9 +30,11 @@ export default async function SessionResourcesPage({
   params: Promise<{ sessionId: string }>;
   searchParams: Promise<{ saved?: string; reassigned?: string; error?: string }>;
 }) {
-  const { sessionId } = await params;
-  const query = await searchParams;
-  const { supabase, studio, can } = await getAdminContext(CAPABILITIES.SCHEDULE_READ);
+  const [{ sessionId }, query, { supabase, studio, can }] = await Promise.all([
+    params,
+    searchParams,
+    getAdminContext(CAPABILITIES.SCHEDULE_READ),
+  ]);
 
   const { data: session } = await supabase
     .from("class_sessions")

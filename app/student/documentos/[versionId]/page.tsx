@@ -39,10 +39,12 @@ export default async function StudentDocumentReadPage({
   params: Promise<{ versionId: string }>;
   searchParams: Promise<{ returnTo?: string }>;
 }) {
-  const { versionId } = await params;
-  const query = await searchParams;
+  const [{ versionId }, query, { supabase, studio }] = await Promise.all([
+    params,
+    searchParams,
+    getStudentPortalContext(),
+  ]);
   const returnTo = safeReservationReturnTo(query.returnTo);
-  const { supabase, studio } = await getStudentPortalContext();
   const { data, error } = await supabase.rpc("student_document_detail", {
     p_version_id: versionId,
   });

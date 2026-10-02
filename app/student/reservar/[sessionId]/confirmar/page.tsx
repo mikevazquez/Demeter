@@ -34,11 +34,13 @@ export default async function StudentBookingConfirmPage({
   params: Promise<{ sessionId: string }>;
   searchParams: Promise<{ date?: string; error?: string; resource?: string; credit?: string }>;
 }) {
-  const { sessionId } = await params;
-  const query = await searchParams;
+  const [{ sessionId }, query, { supabase, studio }] = await Promise.all([
+    params,
+    searchParams,
+    getStudentPortalContext(),
+  ]);
   const rewardMode = query.credit === "reward";
   const rewardSuffix = rewardMode ? "&credit=reward" : "";
-  const { supabase, studio } = await getStudentPortalContext();
   const { data, error } = await supabase.rpc("student_session_detail", {
     target_session_id: sessionId,
   });

@@ -76,14 +76,15 @@ export default async function StudentsPage({
     cancelled?: string;
   }>;
 }) {
-  const params = await searchParams;
+  const [params, { supabase, studio, membership, can }] = await Promise.all([
+    searchParams,
+    getAdminContext(CAPABILITIES.STUDENTS_READ),
+  ]);
   const query = String(params.q ?? "").trim();
   const requestedStatus = String(params.status ?? "all");
   const status = ["all", "active", "inactive", "expiring", "expired"].includes(requestedStatus)
     ? requestedStatus
     : "all";
-
-  const { supabase, studio, membership, can } = await getAdminContext(CAPABILITIES.STUDENTS_READ);
   const canEdit = can(CAPABILITIES.STUDENTS_WRITE);
   const canReadProducts = can(CAPABILITIES.PRODUCTS_READ);
   const timeZone = studio.timezone;

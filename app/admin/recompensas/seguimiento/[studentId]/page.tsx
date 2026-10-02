@@ -47,23 +47,16 @@ export default async function StudentRewardsProgressPage({
   params: Promise<{ studentId: string }>;
   searchParams: Promise<{ tab?: string }>;
 }) {
-  const { studentId } = await params;
-  const query = await searchParams;
+  const [{ studentId }, query, ctx] = await Promise.all([
+    params,
+    searchParams,
+    getAdminContext(CAPABILITIES.REWARDS_READ),
+  ]);
   const tab = ["summary", "achievements", "rewards", "history"].includes(String(query.tab))
     ? String(query.tab)
     : "summary";
-
-  const ctx = await getAdminContext(CAPABILITIES.REWARDS_READ);
-  const { data: student } = await ctx.supabase
-    .from("students")
-    .select("id,full_name,lifecycle_status,active,created_at")
-    .eq("id", studentId)
-    .eq("studio_id", ctx.studio.id)
-    .maybeSingle();
-
-  if (!student) notFound();
-
   const [
+    studentResult,
     programParticipationsResult,
     ruleParticipationsResult,
     evaluationsResult,
@@ -72,24 +65,30 @@ export default async function StudentRewardsProgressPage({
     programEventsResult,
   ] = await Promise.all([
     ctx.supabase
+      .from("students")
+      .select("id,full_name,lifecycle_status,active,created_at")
+      .eq("id", studentId)
+      .eq("studio_id", ctx.studio.id)
+      .maybeSingle(),
+    ctx.supabase
       .from("reward_program_participations")
       .select(
         "id,program_id,program_version_number,status,current_level_order,joined_at,completed_at,closed_at,updated_at",
       )
       .eq("studio_id", ctx.studio.id)
-      .eq("student_id", student.id)
+      .eq("student_id", studentId)
       .order("updated_at", { ascending: false }),
     ctx.supabase
       .from("reward_participations")
       .select("id,rule_id,joined_version_number,status,joined_at,fulfilled_at,closed_at,updated_at")
       .eq("studio_id", ctx.studio.id)
-      .eq("student_id", student.id)
+      .eq("student_id", studentId)
       .order("updated_at", { ascending: false }),
     ctx.supabase
       .from("reward_progress_evaluations")
       .select("id,rule_id,version_number,condition_results,progress,fulfilled,evaluated_at")
       .eq("studio_id", ctx.studio.id)
-      .eq("student_id", student.id)
+      .eq("student_id", studentId)
       .order("evaluated_at", { ascending: false })
       .limit(300),
     ctx.supabase
@@ -98,7 +97,7 @@ export default async function StudentRewardsProgressPage({
         "id,rule_id,version_number,achievement_key,level_key,title_snapshot,badge_snapshot,unlocked_at",
       )
       .eq("studio_id", ctx.studio.id)
-      .eq("student_id", student.id)
+      .eq("student_id", studentId)
       .order("unlocked_at", { ascending: false }),
     ctx.supabase
       .from("reward_instances")
@@ -106,16 +105,18 @@ export default async function StudentRewardsProgressPage({
         "id,rule_id,version_number,status,kind,benefit_definition,origin_snapshot,created_at,expires_at,redeemed_at,revoked_at,revoked_reason",
       )
       .eq("studio_id", ctx.studio.id)
-      .eq("student_id", student.id)
+      .eq("student_id", studentId)
       .order("created_at", { ascending: false }),
     ctx.supabase
       .from("reward_program_events")
       .select("id,program_id,program_version_number,level_id,event_type,details,occurred_at")
       .eq("studio_id", ctx.studio.id)
-      .eq("student_id", student.id)
+      .eq("student_id", studentId)
       .order("occurred_at", { ascending: false })
       .limit(150),
   ]);
+  const student = studentResult.data;
+  if (!student) notFound();
 
   const programParticipations = programParticipationsResult.data ?? [];
   const ruleParticipations = ruleParticipationsResult.data ?? [];
@@ -125,27 +126,28 @@ export default async function StudentRewardsProgressPage({
   const programEvents = programEventsResult.data ?? [];
 
   const programIds = [...new Set(programParticipations.map((item) => item.program_id))];
-  const programVersionsResult = programIds.length
-    ? await ctx.supabase
-        .from("reward_program_versions")
-        .select("program_id,version_number,name,progression_mode")
-        .in("program_id", programIds)
-    : { data: [] };
+  const [programVersionsResult, programLevelsResult] = await Promise.all([
+    programIds.length
+      ? ctx.supabase
+          .from("reward_program_versions")
+          .select("program_id,version_number,name,progression_mode")
+          .in("program_id", programIds)
+      : Promise.resolve({ data: [] }),
+    programIds.length
+      ? ctx.supabase
+          .from("reward_program_levels")
+          .select(
+            "id,program_id,program_version_number,level_order,title,rule_id,rule_version_number",
+          )
+          .in("program_id", programIds)
+      : Promise.resolve({ data: [] }),
+  ]);
   const programVersionMap = new Map(
     (programVersionsResult.data ?? []).map((item) => [
       `${item.program_id}:${item.version_number}`,
       item,
     ]),
   );
-
-  const programLevelsResult = programIds.length
-    ? await ctx.supabase
-        .from("reward_program_levels")
-        .select(
-          "id,program_id,program_version_number,level_order,title,rule_id,rule_version_number",
-        )
-        .in("program_id", programIds)
-    : { data: [] };
   const programLevels = programLevelsResult.data ?? [];
 
   const ruleIds = [
@@ -156,22 +158,23 @@ export default async function StudentRewardsProgressPage({
       ...programLevels.map((item) => item.rule_id),
     ]),
   ];
-  const rulesResult = ruleIds.length
-    ? await ctx.supabase
-        .from("reward_rules")
-        .select("id,status,current_version_number")
-        .in("id", ruleIds)
-    : { data: [] };
+  const [rulesResult, ruleVersionsResult] = await Promise.all([
+    ruleIds.length
+      ? ctx.supabase
+          .from("reward_rules")
+          .select("id,status,current_version_number")
+          .in("id", ruleIds)
+      : Promise.resolve({ data: [] }),
+    ruleIds.length
+      ? ctx.supabase
+          .from("reward_rule_versions")
+          .select(
+            "rule_id,version_number,name,family,presentation_definition,condition_definition,reward_definition",
+          )
+          .in("rule_id", ruleIds)
+      : Promise.resolve({ data: [] }),
+  ]);
   const ruleMap = new Map((rulesResult.data ?? []).map((item) => [item.id, item]));
-
-  const ruleVersionsResult = ruleIds.length
-    ? await ctx.supabase
-        .from("reward_rule_versions")
-        .select(
-          "rule_id,version_number,name,family,presentation_definition,condition_definition,reward_definition",
-        )
-        .in("rule_id", ruleIds)
-    : { data: [] };
   const ruleVersionMap = new Map(
     (ruleVersionsResult.data ?? []).map((item) => [`${item.rule_id}:${item.version_number}`, item]),
   );

@@ -10,7 +10,7 @@ function source(path: string) {
 describe("ADMIN-UX-04 Alumnas visual homologation", () => {
   const page = source("app/admin/alumnas/page.tsx");
   const styles = source("app/admin/alumnas/admin-ux-04.css");
-  const layout = source("app/admin/layout.tsx");
+  const layout = source("app/admin/alumnas/layout.tsx");
 
   it("uses the approved compact Alumnas V2 hierarchy", () => {
     expect(page).toContain("student-directory-filters");
@@ -52,7 +52,9 @@ describe("ADMIN-UX-04 Alumnas visual homologation", () => {
 
   it("keeps new-student creation at the top behind a compact plus action", () => {
     const quickCreateIndex = page.indexOf('id="alta-rapida"');
-    const filtersIndex = page.indexOf('className="student-directory-filters student-directory-crm-toolbar"');
+    const filtersIndex = page.indexOf(
+      'className="student-directory-filters student-directory-crm-toolbar"',
+    );
     const directoryIndex = page.indexOf('<section className="panel">');
 
     expect(quickCreateIndex).toBeGreaterThan(0);
@@ -65,10 +67,10 @@ describe("ADMIN-UX-04 Alumnas visual homologation", () => {
   });
 
   it("loads the homologation layer after the existing Profile 360 styles", () => {
-    expect(layout).toContain('import "./alumnas/profile-360.css";');
-    expect(layout).toContain('import "./alumnas/admin-ux-04.css";');
-    expect(layout.indexOf('import "./alumnas/admin-ux-04.css";')).toBeGreaterThan(
-      layout.indexOf('import "./alumnas/profile-360.css";'),
+    expect(layout).toContain('import "./profile-360.css";');
+    expect(layout).toContain('import "./admin-ux-04.css";');
+    expect(layout.indexOf('import "./admin-ux-04.css";')).toBeGreaterThan(
+      layout.indexOf('import "./profile-360.css";'),
     );
   });
 });

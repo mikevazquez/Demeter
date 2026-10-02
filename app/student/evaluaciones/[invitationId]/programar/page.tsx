@@ -86,9 +86,11 @@ export default async function ScheduleEvaluationPage({
   params: Promise<{ invitationId: string }>;
   searchParams: Promise<{ error?: string; session?: string }>;
 }) {
-  const { invitationId } = await params;
-  const qs = await searchParams;
-  const { supabase, studio, membership, snapshot } = await getStudentPortalContext();
+  const [{ invitationId }, qs, { supabase, studio, membership, snapshot }] = await Promise.all([
+    params,
+    searchParams,
+    getStudentPortalContext(),
+  ]);
 
   const { data: invitationData, error: invitationError } = await supabase.rpc(
     "student_evaluation_invitation_detail",
@@ -132,24 +134,28 @@ export default async function ScheduleEvaluationPage({
   let enrollmentRequirement: EnrollmentRequirement | null = null;
 
   if (needsPurchase && selectedSession) {
-    const { data: enrollmentRequirementData } = await supabase.rpc(
-      "student_enrollment_checkout_requirement",
-      { target_session_id: selectedSession.session_id },
-    );
-    enrollmentRequirement = (enrollmentRequirementData as EnrollmentRequirement | null) ?? null;
-    if (selectedSession.drop_in_price_minor != null) {
-      const { data: rewardPriceData } = await supabase.rpc("student_reward_single_class_price", {
+    const [
+      { data: enrollmentRequirementData },
+      { data: rewardPriceData },
+      { data: disciplineProductRows },
+    ] = await Promise.all([
+      supabase.rpc("student_enrollment_checkout_requirement", {
         target_session_id: selectedSession.session_id,
-      });
-      rewardPrice = (rewardPriceData as RewardPricePreview | null) ?? null;
-    }
+      }),
+      selectedSession.drop_in_price_minor != null
+        ? supabase.rpc("student_reward_single_class_price", {
+            target_session_id: selectedSession.session_id,
+          })
+        : Promise.resolve({ data: null }),
+      supabase
+        .from("product_template_disciplines")
+        .select("product_template_id")
+        .eq("studio_id", membership.studio_id)
+        .eq("discipline_id", invitation.discipline_id),
+    ]);
 
-    const { data: disciplineProductRows } = await supabase
-      .from("product_template_disciplines")
-      .select("product_template_id")
-      .eq("studio_id", membership.studio_id)
-      .eq("discipline_id", invitation.discipline_id);
-
+    enrollmentRequirement = (enrollmentRequirementData as EnrollmentRequirement | null) ?? null;
+    rewardPrice = (rewardPriceData as RewardPricePreview | null) ?? null;
     eligibleProductIds = [
       ...new Set((disciplineProductRows ?? []).map((row) => row.product_template_id)),
     ];

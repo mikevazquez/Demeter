@@ -43,14 +43,20 @@ export default async function StudentSessionDetailPage({
   params: Promise<{ sessionId: string }>;
   searchParams: Promise<{ date?: string; credit?: string }>;
 }) {
-  const { sessionId } = await params;
-  const query = await searchParams;
+  const [{ sessionId }, query, { supabase, studio, membership }] = await Promise.all([
+    params,
+    searchParams,
+    getStudentPortalContext(),
+  ]);
   const rewardMode = query.credit === "reward";
   const rewardSuffix = rewardMode ? "&credit=reward" : "";
-  const { supabase, studio, membership } = await getStudentPortalContext();
-  const { data, error } = await supabase.rpc("student_session_detail", {
-    target_session_id: sessionId,
-  });
+  const [{ data, error }, { data: waitlistData }, { data: rewardStatusData }] = await Promise.all([
+    supabase.rpc("student_session_detail", {
+      target_session_id: sessionId,
+    }),
+    supabase.rpc("student_waitlist_feed"),
+    supabase.rpc("student_reward_status_snapshot"),
+  ]);
 
   if (error || !data) notFound();
 
@@ -64,10 +70,6 @@ export default async function StudentSessionDetailPage({
     .limit(1)
     .maybeSingle();
   const activityColor = activityStyle?.color_hex ?? "#FF0A8A";
-  const [{ data: waitlistData }, { data: rewardStatusData }] = await Promise.all([
-    supabase.rpc("student_waitlist_feed"),
-    supabase.rpc("student_reward_status_snapshot"),
-  ]);
   const waitlisted = ((waitlistData ?? []) as StudentWaitlistItem[]).some(
     (item) => item.session_id === session.session_id && item.status === "active",
   );
@@ -80,16 +82,13 @@ export default async function StudentSessionDetailPage({
     reason === "enrollment_required" && enrollmentMode === "package_booking";
   const enrollmentCanBundleSingle =
     reason === "enrollment_required" &&
-    (enrollmentMode === "single_class_booking" ||
-      enrollmentMode === "single_class_next_purchase");
+    (enrollmentMode === "single_class_booking" || enrollmentMode === "single_class_next_purchase");
   const sessionDate = localDateKey(new Date(session.starts_at), studio.timezone);
   const returnDate =
     query.date && /^\d{4}-\d{2}-\d{2}$/.test(query.date) ? query.date : sessionDate;
   const showDropIn =
     !eligible &&
-    Boolean(
-      reason && (DROP_IN_REASONS.has(reason) || enrollmentCanBundleSingle),
-    ) &&
+    Boolean(reason && (DROP_IN_REASONS.has(reason) || enrollmentCanBundleSingle)) &&
     session.drop_in_price_minor != null;
   const [{ data: rewardPriceData }, { data: enrollmentCheckoutData }] = await Promise.all([
     showDropIn
@@ -104,12 +103,13 @@ export default async function StudentSessionDetailPage({
       : Promise.resolve({ data: null }),
   ]);
   const rewardPrice = (rewardPriceData as RewardPricePreview | null) ?? null;
-  const enrollmentCheckout = (enrollmentCheckoutData as {
-    missing?: boolean;
-    name?: string;
-    price_minor?: number;
-    currency?: string;
-  } | null) ?? null;
+  const enrollmentCheckout =
+    (enrollmentCheckoutData as {
+      missing?: boolean;
+      name?: string;
+      price_minor?: number;
+      currency?: string;
+    } | null) ?? null;
   const regularDropInMinor = rewardPrice?.regular_amount_minor ?? session.drop_in_price_minor ?? 0;
   const finalDropInMinor = rewardPrice?.final_amount_minor ?? regularDropInMinor;
   const enrollmentExtraMinor =
@@ -276,7 +276,8 @@ export default async function StudentSessionDetailPage({
               Clase suelta: {formatMoney(finalDropInMinor)} MXN.
               {enrollmentExtraMinor > 0 ? (
                 <>
-                  {" "}Inscripción: {formatMoney(enrollmentExtraMinor)} MXN. Total:{" "}
+                  {" "}
+                  Inscripción: {formatMoney(enrollmentExtraMinor)} MXN. Total:{" "}
                   {formatMoney(checkoutTotalMinor)} MXN.
                 </>
               ) : null}

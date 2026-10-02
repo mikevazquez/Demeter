@@ -42,9 +42,7 @@ describe("Studio Flow V2 release safety", () => {
       "app/admin/inteligencia/page.tsx",
       "app/admin/integraciones/page.tsx",
     ];
-    const source = files
-      .map((path) => readFileSync(join(process.cwd(), path), "utf8"))
-      .join("\n");
+    const source = files.map((path) => readFileSync(join(process.cwd(), path), "utf8")).join("\n");
 
     for (const forbidden of [
       "current_studio_subscription",

@@ -65,8 +65,10 @@ export default async function NewSalePage({
 }: {
   searchParams: Promise<{ student_id?: string; error?: string }>;
 }) {
-  const query = await searchParams;
-  const { supabase, studio } = await getAdminContext(CAPABILITIES.SALES_WRITE);
+  const [query, { supabase, studio }] = await Promise.all([
+    searchParams,
+    getAdminContext(CAPABILITIES.SALES_WRITE),
+  ]);
   const selectedStudentId = String(query.student_id ?? "").trim();
   const today = localDate(studio.timezone);
 

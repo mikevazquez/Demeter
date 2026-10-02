@@ -67,8 +67,10 @@ export default async function AutomationsPage({
 }: {
   searchParams: Promise<{ error?: string; saved?: string; tab?: string }>;
 }) {
-  const params = await searchParams;
-  const ctx = await getAdminContext(CAPABILITIES.AUTOMATIONS_READ);
+  const [params, ctx] = await Promise.all([
+    searchParams,
+    getAdminContext(CAPABILITIES.AUTOMATIONS_READ),
+  ]);
   const canManageNotifications = ctx.can(CAPABILITIES.AUTOMATIONS_MANAGE);
 
   const requestedTab = String(params.tab ?? "processes");
@@ -76,28 +78,28 @@ export default async function AutomationsPage({
     ? (requestedTab as Tab)
     : "processes";
 
-  const [{ data: instances }, { data: communicationSettings }] = await Promise.all([
-    ctx.supabase
-      .from("automation_instances")
-      .select("id,catalog_code,status,current_version_number,updated_at")
-      .eq("studio_id", ctx.studio.id)
-      .neq("status", "archived")
-      .order("updated_at", { ascending: false }),
-    ctx.supabase
-      .from("automation_communication_settings")
-      .select("global_send_window")
-      .eq("studio_id", ctx.studio.id)
-      .maybeSingle(),
-  ]);
-
-  const instanceRows = instances ?? [];
-  const instanceIds = instanceRows.map((item) => item.id);
-  const { data: versions } = instanceIds.length
-    ? await ctx.supabase
+  const [{ data: instances }, { data: communicationSettings }, { data: versionRows }] =
+    await Promise.all([
+      ctx.supabase
+        .from("automation_instances")
+        .select("id,catalog_code,status,current_version_number,updated_at")
+        .eq("studio_id", ctx.studio.id)
+        .neq("status", "archived")
+        .order("updated_at", { ascending: false }),
+      ctx.supabase
+        .from("automation_communication_settings")
+        .select("global_send_window")
+        .eq("studio_id", ctx.studio.id)
+        .maybeSingle(),
+      ctx.supabase
         .from("automation_instance_versions")
         .select("instance_id,version_number,configuration")
-        .in("instance_id", instanceIds)
-    : { data: [] };
+        .eq("studio_id", ctx.studio.id),
+    ]);
+
+  const instanceRows = instances ?? [];
+  const instanceIds = new Set(instanceRows.map((item) => item.id));
+  const versions = (versionRows ?? []).filter((item) => instanceIds.has(item.instance_id));
 
   const latestByCode = new Map<string, (typeof instanceRows)[number]>();
   for (const instance of instanceRows) {

@@ -13,9 +13,11 @@ export default async function ActivityDetailPage({
   params: Promise<{ activityId: string }>;
   searchParams: Promise<{ error?: string }>;
 }) {
-  const { activityId } = await params;
-  const query = await searchParams;
-  const { supabase, studio } = await getAdminContext(CAPABILITIES.SCHEDULE_WRITE);
+  const [{ activityId }, query, { supabase, studio }] = await Promise.all([
+    params,
+    searchParams,
+    getAdminContext(CAPABILITIES.SCHEDULE_WRITE),
+  ]);
 
   const [
     { data: activity },

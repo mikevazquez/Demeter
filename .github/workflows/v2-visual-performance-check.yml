@@ -1,0 +1,26 @@
+name: V2 Visual Performance Check
+
+on:
+  push:
+    branches:
+      - refactor/v2-visual-performance
+  workflow_dispatch:
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: test-publishable-key
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npx vitest run tests/v2-full-code-audit.test.ts tests/v2-visual-performance-contract.test.ts tests/admin-session-controls-regression.test.ts tests/admin-ux-03-agenda-calendar.test.ts tests/admin-ux-04-alumnas-visual.test.ts tests/f10-student-home-profile-uat-contract.test.ts tests/f10-student-quick-booking-contract.test.ts
+      - run: npm run build

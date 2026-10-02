@@ -1,9 +1,5 @@
 export type StudentDirectoryRelationshipStatus =
-  | "active"
-  | "expired"
-  | "trial"
-  | "prospect"
-  | "inactive";
+  "active" | "expired" | "trial" | "prospect" | "inactive";
 
 export function deriveStudentDirectoryRelationshipStatus(input: {
   lifecycleStatus: string;

@@ -134,15 +134,11 @@ export default async function AdminPage({
   const canWriteStudents = can(CAPABILITIES.STUDENTS_WRITE);
   const canWriteSales = can(CAPABILITIES.SALES_WRITE);
   const canWriteAttendance = can(CAPABILITIES.ATTENDANCE_WRITE);
-  const canReadProducts = can(CAPABILITIES.PRODUCTS_READ);
   const [
     { data: serverNow },
     { data: selectedSessions },
     { data: activeProductAcquisitions },
     { data: selectedPayments },
-    { data: students },
-    { data: quickSaleProducts },
-    { data: quickSaleHistory },
   ] = await Promise.all([
     supabase.rpc("current_server_time"),
     supabase
@@ -167,26 +163,6 @@ export default async function AdminPage({
       .select("amount_minor,kind")
       .eq("studio_id", studio.id)
       .eq("effective_on", selectedKey),
-    supabase
-      .from("students")
-      .select("id,full_name")
-      .eq("studio_id", studio.id)
-      .eq("active", true)
-      .eq("lifecycle_status", "active")
-      .order("full_name"),
-    supabase
-      .from("product_templates")
-      .select("id,name,price_minor,currency,credit_limit,validity_days,unlimited")
-      .eq("studio_id", studio.id)
-      .in("product_type", ["package", "membership"])
-      .eq("active", true)
-      .order("price_minor"),
-    supabase
-      .from("product_acquisitions")
-      .select("student_id,product_template_id,created_at")
-      .eq("studio_id", studio.id)
-      .order("created_at", { ascending: false })
-      .limit(1000),
   ]);
 
   const activeProductStudentIds = new Set(
@@ -210,7 +186,9 @@ export default async function AdminPage({
       sessionIds.length
         ? supabase
             .from("reservations")
-            .select("id,session_id,student_id,guest_person_id,status,acquisition_id,booked_at,commercial_status")
+            .select(
+              "id,session_id,student_id,guest_person_id,status,acquisition_id,booked_at,commercial_status",
+            )
             .in("session_id", sessionIds)
             .in("status", ["reserved", "attended", "no_show"])
             .order("booked_at")
@@ -260,9 +238,7 @@ export default async function AdminPage({
   ];
 
   const reservationStudentIds = [
-    ...new Set(
-      (reservations ?? []).map((reservation) => reservation.student_id).filter(Boolean),
-    ),
+    ...new Set((reservations ?? []).map((reservation) => reservation.student_id).filter(Boolean)),
   ] as string[];
   const reservationIds = (reservations ?? []).map((reservation) => reservation.id);
   const acquisitionIds = [
@@ -340,31 +316,30 @@ export default async function AdminPage({
   );
 
   const productIds = [...new Set((acquisitions ?? []).map((item) => item.product_template_id))];
+  const meteredAcquisitionIds = (acquisitions ?? [])
+    .filter((item) => !item.unlimited)
+    .map((item) => item.id);
   const [{ data: products }, { data: balanceRows }] = await Promise.all([
     productIds.length
       ? supabase.from("product_templates").select("id,name").in("id", productIds)
       : Promise.resolve({ data: [] as { id: string; name: string }[] }),
-    canReadProducts && acquisitionIds.length
-      ? supabase
-          .from("credit_ledger")
-          .select("acquisition_id,quantity")
-          .eq("studio_id", studio.id)
-          .in("acquisition_id", acquisitionIds)
-      : Promise.all(
-          (acquisitions ?? []).map(async (acquisition) => {
-            if (acquisition.unlimited) {
-              return { acquisition_id: acquisition.id, quantity: 0 };
-            }
-            const { data } = await supabase.rpc("acquisition_credit_balance", {
-              target_acquisition_id: acquisition.id,
-            });
-            return {
-              acquisition_id: acquisition.id,
-              quantity: typeof data === "number" ? data : 0,
-            };
-          }),
-        ).then((data) => ({ data })),
+    meteredAcquisitionIds.length
+      ? supabase.rpc("acquisition_credit_balances", {
+          target_acquisition_ids: meteredAcquisitionIds,
+        })
+      : Promise.resolve({
+          data: [] as { acquisition_id: string; balance: number }[],
+        }),
   ]);
+
+  const balances = [
+    ...(acquisitions ?? [])
+      .filter((item) => item.unlimited)
+      .map((item) => [item.id, null] as const),
+    ...((balanceRows ?? []) as { acquisition_id: string; balance: number }[]).map(
+      (item) => [item.acquisition_id, item.balance] as const,
+    ),
+  ];
 
   const templateMap = new Map((templates ?? []).map((item) => [item.id, item]));
   const personMap = new Map(
@@ -380,19 +355,12 @@ export default async function AdminPage({
     ]),
   );
   const spaceMap = new Map((spaces ?? []).map((space) => [space.id, space.name]));
-  const studentMap = new Map([
-    ...(students ?? []).map((student) => [student.id, student.full_name] as const),
-    ...(reservationStudents ?? []).map((student) => [student.id, student.full_name] as const),
-  ]);
+  const studentMap = new Map(
+    (reservationStudents ?? []).map((student) => [student.id, student.full_name] as const),
+  );
   const acquisitionMap = new Map((acquisitions ?? []).map((item) => [item.id, item]));
   const productMap = new Map((products ?? []).map((item) => [item.id, item.name]));
-  const balanceMap = new Map<string, number>();
-  for (const row of balanceRows ?? []) {
-    balanceMap.set(
-      row.acquisition_id,
-      (balanceMap.get(row.acquisition_id) ?? 0) + row.quantity,
-    );
-  }
+  const balanceMap = new Map(balances);
 
   const reservationsBySession = new Map<string, typeof reservations>();
   for (const reservation of reservations ?? []) {
@@ -405,10 +373,6 @@ export default async function AdminPage({
 
   for (const session of selectedSessions ?? []) {
     const sessionReservations = reservationsBySession.get(session.id) ?? [];
-    const bookedIds = new Set(
-      sessionReservations.map((reservation) => reservation.student_id).filter(Boolean),
-    );
-    const candidates = (students ?? []).filter((student) => !bookedIds.has(student.id));
     const template = templateMap.get(session.template_id);
     const occupied = sessionReservations.filter((reservation) =>
       occupyingReservationStatuses.has(reservation.status),
@@ -486,22 +450,7 @@ export default async function AdminPage({
           currency: studio.currency ?? "MXN",
         };
       }),
-      candidates: candidates.map((student) => ({
-        id: student.id,
-        fullName: student.full_name,
-        eligible: true,
-        detail: "Se valida al agregar",
-      })),
     });
-  }
-
-  const quickSalePreference: Record<string, string> = {};
-  for (const acquisition of quickSaleHistory ?? []) {
-    const studentId = acquisition.student_id;
-    const templateId = acquisition.product_template_id;
-    if (studentId && templateId && !quickSalePreference[studentId]) {
-      quickSalePreference[studentId] = templateId;
-    }
   }
 
   const totalDailyCapacity = classes.reduce((sum, item) => sum + item.capacity, 0);
@@ -537,22 +486,7 @@ export default async function AdminPage({
             </Link>
           ) : null}
           {canWriteStudents || canWriteSales ? (
-            <QuickActions
-              canStudents={canWriteStudents}
-              canSales={canWriteSales}
-              locale={locale}
-              preferredProductByStudent={quickSalePreference}
-              students={(students ?? []).map((item) => ({ id: item.id, fullName: item.full_name }))}
-              products={(quickSaleProducts ?? []).map((item) => ({
-                id: item.id,
-                name: item.name,
-                priceMinor: item.price_minor,
-                currency: item.currency,
-                creditLimit: item.credit_limit,
-                validityDays: item.validity_days,
-                unlimited: item.unlimited,
-              }))}
-            />
+            <QuickActions canStudents={canWriteStudents} canSales={canWriteSales} locale={locale} />
           ) : null}
           <span className="hoy-product-avatar" aria-label={headerName}>
             {headerInitials}

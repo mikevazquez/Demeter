@@ -58,6 +58,110 @@ function refreshSession(sessionId: string) {
   revalidatePath(`/admin/agenda/${sessionId}`);
 }
 
+const todayEligibilityCopy: Record<string, string> = {
+  student_not_operable: "perfil no habilitado",
+  session_not_bookable: "clase no disponible",
+  already_reserved: "ya reservada",
+  session_full: "clase llena",
+  no_active_product: "sin paquete activo",
+  enrollment_required: "inscripción no vigente",
+  payment_pending: "pago pendiente",
+  outside_product: "fuera de paquete",
+  outside_product_schedule: "fuera de horario",
+  no_credits: "sin créditos",
+};
+
+export type TodayStudentCandidate = {
+  id: string;
+  fullName: string;
+  eligible: boolean;
+  detail: string;
+};
+
+export async function searchStudentsForToday(
+  sessionId: string,
+  search: string,
+): Promise<TodayStudentCandidate[]> {
+  const normalizedSessionId = sessionId.trim();
+  const normalizedSearch = search.trim();
+
+  if (!normalizedSessionId || normalizedSearch.length < 2) return [];
+
+  const { supabase, studio, can } = await getAdminContext();
+  const { data: session } = await supabase
+    .from("class_sessions")
+    .select("id,status")
+    .eq("studio_id", studio.id)
+    .eq("id", normalizedSessionId)
+    .maybeSingle();
+
+  if (!session || session.status === "cancelled") return [];
+
+  const canPostCloseAdd = session.status === "completed" && can(CAPABILITIES.ATTENDANCE_WRITE);
+  if (!canPostCloseAdd && !can(CAPABILITIES.SCHEDULE_WRITE)) return [];
+
+  const [{ data: students }, { data: existingReservations }] = await Promise.all([
+    supabase
+      .from("students")
+      .select("id,full_name")
+      .eq("studio_id", studio.id)
+      .eq("active", true)
+      .eq("lifecycle_status", "active")
+      .ilike("full_name", `%${normalizedSearch}%`)
+      .order("full_name")
+      .limit(12),
+    supabase
+      .from("reservations")
+      .select("student_id")
+      .eq("session_id", normalizedSessionId)
+      .in("status", ["reserved", "attended", "no_show"]),
+  ]);
+
+  const alreadyBooked = new Set(
+    (existingReservations ?? []).flatMap((item) => (item.student_id ? [item.student_id] : [])),
+  );
+  const candidates = (students ?? []).filter((item) => !alreadyBooked.has(item.id)).slice(0, 8);
+
+  if (canPostCloseAdd) {
+    return candidates.map((student) => ({
+      id: student.id,
+      fullName: student.full_name,
+      eligible: true,
+      detail: "Disponible",
+    }));
+  }
+
+  return Promise.all(
+    candidates.map(async (student) => {
+      const { data } = await supabase.rpc("booking_eligibility", {
+        target_session_id: normalizedSessionId,
+        target_student_id: student.id,
+      });
+      const eligibility = (data ?? {}) as {
+        eligible?: boolean;
+        reason_code?: string | null;
+        available_credits?: number | null;
+        unlimited?: boolean;
+      };
+      const reason = eligibility.reason_code
+        ? (todayEligibilityCopy[eligibility.reason_code] ?? "no elegible")
+        : "no elegible";
+
+      return {
+        id: student.id,
+        fullName: student.full_name,
+        eligible: eligibility.eligible === true,
+        detail:
+          eligibility.eligible === true
+            ? eligibility.unlimited
+              ? "membresía ilimitada"
+              : `${eligibility.available_credits ?? 0} créditos`
+            : reason,
+      };
+    }),
+  );
+}
+
 export async function bookStudentFromToday(formData: FormData) {
   const sessionId = String(formData.get("session_id") ?? "");
   const studentId = String(formData.get("student_id") ?? "");

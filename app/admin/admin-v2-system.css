@@ -1,0 +1,819 @@
+/* Studio Flow V2 · shared visual system
+   Visual-only layer. Imported last by AdminLayout so legacy admin surfaces inherit
+   the current light Studio Flow language without changing behavior. */
+
+.admin-shell {
+  --bg: #f5f8fb;
+  --bg-soft: #f8fafc;
+  --surface: #ffffff;
+  --surface-2: #f3f7f8;
+  --surface-3: #edf3f5;
+  --text: #10203a;
+  --muted: #687891;
+  --line: #e3eaf1;
+  --line-strong: #ccd8e2;
+  --accent: #17a878;
+  --accent-strong: #0f8f66;
+  --accent-soft: #e7f8f1;
+  --success: #17a878;
+  --warning: #b96c00;
+  --danger: #c94f58;
+  --shadow: 0 12px 34px rgba(44, 64, 86, 0.07);
+  min-height: 100dvh;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.admin-shell .admin-content {
+  min-height: 100dvh;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.admin-shell .admin-sidebar {
+  border-right-color: var(--line);
+  background: #fff;
+  color: var(--text);
+  box-shadow: 8px 0 28px rgba(44, 64, 86, 0.025);
+}
+
+.admin-shell .brand-lockup strong,
+.admin-shell .sidebar-user-copy strong,
+.admin-shell .dashboard-title,
+.admin-shell .module-header h1,
+.admin-shell .topbar h1,
+.admin-shell .panel h2,
+.admin-shell .panel h3,
+.admin-shell .card h2,
+.admin-shell .card h3 {
+  color: var(--text);
+}
+
+.admin-shell .brand-lockup small,
+.admin-shell .sidebar-user-copy small,
+.admin-shell .topbar p,
+.admin-shell .module-header p {
+  color: var(--muted);
+}
+
+.admin-shell .admin-nav-item {
+  color: #53637b;
+}
+
+.admin-shell .admin-nav-item:hover {
+  background: #f3f7f8;
+  color: var(--text);
+}
+
+.admin-shell .admin-nav-item.is-active {
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
+.admin-shell .admin-nav-item.is-active .nav-icon,
+.admin-shell .admin-mobile-nav a.is-active {
+  color: var(--accent-strong);
+}
+
+.admin-shell .admin-nav-divider,
+.admin-shell .sidebar-footer {
+  border-color: var(--line);
+}
+
+.admin-shell .sidebar-signout {
+  border-color: var(--line);
+  background: #fff;
+  color: var(--muted);
+}
+
+.admin-shell .sidebar-signout:hover {
+  border-color: #cfe8df;
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
+.admin-shell .admin-utility-bar,
+.admin-shell .admin-mobile-header {
+  border-color: var(--line);
+  background: rgba(255, 255, 255, 0.94);
+  color: var(--text);
+  backdrop-filter: blur(14px);
+}
+
+.admin-shell .admin-mobile-brand strong {
+  color: var(--text);
+}
+
+.admin-shell .admin-global-search {
+  border-color: var(--line);
+  background: #f8fafc;
+  color: var(--muted);
+}
+
+.admin-shell .admin-global-search input {
+  color: var(--text);
+}
+
+.admin-shell .admin-global-search input::placeholder {
+  color: #9aa7b7;
+}
+
+.admin-shell .admin-user-button,
+.admin-shell .admin-mobile-user-button {
+  border-color: #cfe8df;
+  background: var(--accent);
+  color: #fff;
+  box-shadow: none;
+}
+
+.admin-shell .admin-mobile-nav {
+  border-top: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.97);
+  box-shadow: 0 -8px 28px rgba(44, 64, 86, 0.06);
+}
+
+.admin-shell .admin-mobile-nav a {
+  color: #718096;
+}
+
+.admin-shell .admin-mobile-nav a.is-active {
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
+/* Generic legacy surfaces */
+.admin-shell .panel,
+.admin-shell .stat-card,
+.admin-shell .card,
+.admin-shell .form-card,
+.admin-shell .table-card,
+.admin-shell .detail-card,
+.admin-shell .module-card {
+  border-color: var(--line);
+  background: #fff;
+  color: var(--text);
+  box-shadow: 0 8px 26px rgba(44, 64, 86, 0.045);
+}
+
+.admin-shell .panel-header,
+.admin-shell .card-header,
+.admin-shell .module-toolbar,
+.admin-shell .table-toolbar {
+  border-color: var(--line);
+}
+
+.admin-shell .eyebrow {
+  color: var(--accent-strong);
+}
+
+.admin-shell .muted,
+.admin-shell .helper,
+.admin-shell .helper-text {
+  color: var(--muted);
+}
+
+.admin-shell .primary-button {
+  border-color: transparent;
+  background: var(--accent);
+  color: #fff;
+  box-shadow: 0 10px 24px rgba(23, 168, 120, 0.15);
+}
+
+.admin-shell .primary-button:hover {
+  background: var(--accent-strong);
+}
+
+.admin-shell .secondary-button,
+.admin-shell .ghost-button {
+  border-color: var(--line);
+  background: #fff;
+  color: #53637b;
+  box-shadow: none;
+}
+
+.admin-shell .secondary-button:hover,
+.admin-shell .ghost-button:hover {
+  border-color: #c9ddd6;
+  background: #f8fbfa;
+  color: var(--accent-strong);
+}
+
+.admin-shell input:not([type="checkbox"]):not([type="radio"]),
+.admin-shell select,
+.admin-shell textarea {
+  border-color: #dce4eb;
+  background-color: #fbfcfd;
+  color: var(--text);
+}
+
+.admin-shell input:not([type="checkbox"]):not([type="radio"]):focus,
+.admin-shell select:focus,
+.admin-shell textarea:focus {
+  border-color: #78cbb0;
+  box-shadow: 0 0 0 3px rgba(23, 168, 120, 0.09);
+}
+
+.admin-shell input::placeholder,
+.admin-shell textarea::placeholder {
+  color: #9aa7b7;
+}
+
+.admin-shell table {
+  color: var(--text);
+}
+
+.admin-shell th {
+  color: #718096;
+}
+
+.admin-shell td,
+.admin-shell th {
+  border-color: var(--line);
+}
+
+/* Unified banners and inline feedback */
+.admin-shell .notice {
+  border: 1px solid #dbe5ec;
+  background: #fff;
+  color: #53637b;
+  box-shadow: 0 6px 18px rgba(44, 64, 86, 0.035);
+}
+
+.admin-shell .notice.success {
+  border-color: #bfe3d6;
+  background: #eaf8f3;
+  color: #0b6b4d;
+}
+
+.admin-shell .notice.error {
+  border-color: #efc7cd;
+  background: #fff1f3;
+  color: #9f3142;
+}
+
+.admin-shell .notice.warning,
+.admin-shell .notice.is-warning {
+  border-color: #efd9ae;
+  background: #fff8e9;
+  color: #8d5a00;
+}
+
+.admin-shell .notice.info,
+.admin-shell .notice.is-info {
+  border-color: #cbdff6;
+  background: #eef6ff;
+  color: #255f9e;
+}
+
+/* Route loading/error state */
+.admin-shell .admin-route-state {
+  min-height: min(70vh, 680px);
+  padding: 36px 20px;
+}
+
+.admin-shell .admin-state-card {
+  width: min(100%, 560px);
+  padding: 28px;
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  background: #fff;
+  color: var(--text);
+  box-shadow: 0 22px 65px rgba(44, 64, 86, 0.1);
+}
+
+.admin-shell .admin-state-eyebrow {
+  color: var(--accent-strong);
+}
+
+.admin-shell .admin-state-card h1 {
+  color: var(--text);
+}
+
+.admin-shell .admin-state-card > p:last-of-type {
+  color: var(--muted);
+}
+
+.admin-shell .admin-state-spinner {
+  border-color: #dce7e3;
+  border-top-color: var(--accent);
+}
+
+.admin-shell .admin-state-action {
+  border: 0;
+  background: var(--accent);
+  color: #fff;
+  box-shadow: 0 10px 24px rgba(23, 168, 120, 0.16);
+}
+
+/* Shared admin dialog */
+.sf-admin-dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(16, 32, 58, 0.28);
+  backdrop-filter: blur(6px);
+}
+
+.sf-admin-dialog {
+  width: min(100%, 460px);
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  background: #fff;
+  color: var(--text);
+  box-shadow: 0 28px 80px rgba(16, 32, 58, 0.18);
+}
+
+.sf-admin-dialog-body {
+  padding: 24px;
+}
+
+.sf-admin-dialog-icon {
+  width: 46px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  margin-bottom: 18px;
+  border-radius: 15px;
+  font-size: 18px;
+  font-weight: 850;
+}
+
+.sf-admin-dialog-icon.is-success {
+  border: 1px solid #bfe3d6;
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
+.sf-admin-dialog-icon.is-warning {
+  border: 1px solid #efd9ae;
+  background: #fff7e6;
+  color: #a06000;
+}
+
+.sf-admin-dialog-icon.is-error {
+  border: 1px solid #efc7cd;
+  background: #fff0f2;
+  color: #b03d4d;
+}
+
+.sf-admin-dialog-icon.is-info {
+  border: 1px solid #cbdff6;
+  background: #eef6ff;
+  color: #2479dc;
+}
+
+.sf-admin-dialog-eyebrow {
+  margin: 0;
+  color: var(--accent-strong);
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.sf-admin-dialog-eyebrow.is-warning {
+  color: #9a6000;
+}
+.sf-admin-dialog-eyebrow.is-error {
+  color: #ad3d4c;
+}
+.sf-admin-dialog-eyebrow.is-info {
+  color: #2869ab;
+}
+
+.sf-admin-dialog-title {
+  margin: 5px 0 0;
+  color: var(--text);
+  font-size: 24px;
+  line-height: 1.08;
+  letter-spacing: -0.025em;
+}
+
+.sf-admin-dialog-copy {
+  margin-top: 10px;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.sf-admin-dialog-copy strong {
+  color: var(--text) !important;
+}
+
+.sf-admin-dialog-action {
+  width: 100%;
+  min-height: 48px;
+  margin-top: 20px;
+  border: 0;
+  border-radius: 14px;
+  background: var(--accent);
+  color: #fff;
+  font-weight: 850;
+  box-shadow: 0 10px 24px rgba(23, 168, 120, 0.14);
+}
+
+/* Pending class payment modal */
+.admin-shell .today-payment-backdrop {
+  background: rgba(16, 32, 58, 0.28);
+  backdrop-filter: blur(6px);
+}
+
+.admin-shell .today-payment-dialog {
+  border-color: var(--line);
+  background: #fff;
+  color: var(--text);
+  box-shadow: 0 28px 80px rgba(16, 32, 58, 0.18);
+}
+
+.admin-shell .today-payment-dialog > header {
+  border-bottom-color: var(--line);
+}
+
+.admin-shell .today-payment-dialog h3,
+.admin-shell .today-payment-amount strong {
+  color: var(--text);
+}
+
+.admin-shell .today-payment-dialog header p,
+.admin-shell .today-payment-field > span,
+.admin-shell .today-payment-amount > span {
+  color: var(--muted);
+}
+
+.admin-shell .today-payment-eyebrow {
+  color: var(--accent-strong);
+}
+
+.admin-shell .today-payment-close,
+.admin-shell .today-payment-cancel {
+  border-color: var(--line);
+  background: #f7f9fb;
+  color: #607086;
+}
+
+.admin-shell .today-payment-confirm {
+  border: 0;
+  background: var(--accent);
+  color: #fff;
+}
+
+.admin-shell .today-payment-pending-tag {
+  border-color: #efd9ae;
+  background: #fff8e9;
+  color: #8d5a00;
+}
+
+/* Generic empty states */
+.admin-shell [class*="empty"] {
+  border-color: #d7e1e9;
+}
+
+@media (max-width: 760px) {
+  .admin-shell .admin-mobile-header {
+    background: rgba(255, 255, 255, 0.97);
+  }
+
+  .sf-admin-dialog-backdrop {
+    align-items: flex-end;
+    padding: 12px;
+  }
+
+  .sf-admin-dialog {
+    border-radius: 24px 24px 18px 18px;
+  }
+
+  .sf-admin-dialog-body {
+    padding: 20px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .admin-shell *,
+  .sf-admin-dialog-backdrop * {
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Route skeletons: render structure immediately while server data resolves. */
+.sf-admin-loading {
+  width: min(1040px, 100%);
+  min-height: calc(100dvh - 54px);
+  display: grid;
+  align-content: start;
+  gap: 18px;
+  margin: 0 auto;
+  padding: 34px 34px 46px;
+}
+
+.sf-admin-loading-header {
+  display: grid;
+  gap: 9px;
+}
+
+.sf-admin-loading-toolbar {
+  display: flex;
+  gap: 10px;
+}
+
+.sf-admin-loading-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.sf-admin-loading-list {
+  display: grid;
+  gap: 10px;
+}
+
+.sf-skeleton {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  border: 1px solid #e5ebf0;
+  border-radius: 14px;
+  background: #eef3f6;
+}
+
+.sf-skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.72), transparent);
+  animation: sf-skeleton-shimmer 1.3s ease-in-out infinite;
+}
+
+.sf-skeleton-kicker {
+  width: 76px;
+  height: 12px;
+  border: 0;
+}
+
+.sf-skeleton-title {
+  width: min(320px, 68vw);
+  height: 40px;
+}
+
+.sf-skeleton-control {
+  width: 190px;
+  height: 44px;
+}
+
+.sf-skeleton-control.is-short {
+  width: 120px;
+}
+
+.sf-skeleton-card {
+  min-height: 104px;
+  border-radius: 18px;
+  background: #fff;
+}
+
+.sf-skeleton-row {
+  min-height: 76px;
+  border-radius: 18px;
+  background: #fff;
+}
+
+@keyframes sf-skeleton-shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@media (max-width: 760px) {
+  .sf-admin-loading {
+    gap: 13px;
+    padding: 22px 14px 100px;
+  }
+
+  .sf-admin-loading-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .sf-skeleton-card {
+    min-height: 86px;
+  }
+
+  .sf-skeleton-row {
+    min-height: 70px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sf-skeleton::after {
+    animation: none;
+    display: none;
+  }
+}
+
+.sf-admin-dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+.sf-admin-dialog-footer button,
+.sf-admin-dialog-footer .primary-button,
+.sf-admin-dialog-footer .secondary-button,
+.sf-admin-dialog-footer .ghost-button {
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: 13px;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.sf-admin-dialog-footer .sf-dialog-danger {
+  border: 0;
+  background: #c94f58;
+  color: #fff;
+}
+
+.sf-admin-dialog-footer .sf-dialog-warning {
+  border: 0;
+  background: #b96c00;
+  color: #fff;
+}
+
+.sf-admin-dialog-footer .sf-dialog-confirm {
+  border: 0;
+  background: var(--accent);
+  color: #fff;
+}
+
+@media (max-width: 560px) {
+  .sf-admin-dialog-footer {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .sf-admin-dialog-footer > * {
+    width: 100%;
+  }
+}
+
+/* Legacy utility normalization
+   Some older admin modules still carry dark Tailwind utilities inline. Keep their
+   semantics and structure, but render them through the shared light V2 language. */
+.admin-shell [class*="bg-[#0d0f16]"],
+.admin-shell [class*="bg-[#11131b]"],
+.admin-shell [class*="bg-[#0e0f16]"],
+.admin-shell [class*="bg-zinc-950"],
+.admin-shell [class*="bg-black/10"],
+.admin-shell [class*="bg-black/15"],
+.admin-shell [class*="bg-black/20"],
+.admin-shell [class*="bg-black/30"],
+.admin-shell [class*="bg-white/[0.02]"],
+.admin-shell [class*="bg-white/[0.03]"],
+.admin-shell [class*="bg-white/[0.04]"],
+.admin-shell [class*="bg-white/[0.05]"] {
+  border-color: var(--line) !important;
+  background-color: #fff !important;
+  background-image: none !important;
+  color: var(--text) !important;
+  box-shadow: 0 8px 26px rgba(44, 64, 86, 0.045);
+}
+
+.admin-shell [class*="bg-[#0d0f16]"] .text-white,
+.admin-shell [class*="bg-[#11131b]"] .text-white,
+.admin-shell [class*="bg-[#0e0f16]"] .text-white,
+.admin-shell [class*="bg-zinc-950"] .text-white,
+.admin-shell [class*="bg-black/10"] .text-white,
+.admin-shell [class*="bg-black/15"] .text-white,
+.admin-shell [class*="bg-black/20"] .text-white,
+.admin-shell [class*="bg-black/30"] .text-white,
+.admin-shell [class*="bg-white/[0.02]"] .text-white,
+.admin-shell [class*="bg-white/[0.03]"] .text-white,
+.admin-shell [class*="bg-white/[0.04]"] .text-white,
+.admin-shell [class*="bg-white/[0.05]"] .text-white {
+  color: var(--text) !important;
+}
+
+.admin-shell .text-zinc-300,
+.admin-shell .text-zinc-400,
+.admin-shell .text-zinc-500,
+.admin-shell .text-zinc-600 {
+  color: var(--muted) !important;
+}
+
+.admin-shell [class*="border-white/"] {
+  border-color: var(--line) !important;
+}
+
+.admin-shell .divide-white\/10 > :not([hidden]) ~ :not([hidden]),
+.admin-shell [class*="divide-white/"] > :not([hidden]) ~ :not([hidden]) {
+  border-color: var(--line) !important;
+}
+
+/* Legacy white typography must remain readable once its parent surface is light. */
+.admin-shell .text-white {
+  color: var(--text) !important;
+}
+
+.admin-shell [class~="hover:text-white"]:hover {
+  color: var(--accent-strong) !important;
+}
+
+/* Primary/selected fuchsia actions become the neutral Studio Flow accent. */
+.admin-shell .bg-fuchsia-600,
+.admin-shell .bg-fuchsia-500,
+.admin-shell [class*="bg-[#FF0A8A]"] {
+  background-color: var(--accent) !important;
+  background-image: none !important;
+  color: #fff !important;
+}
+
+.admin-shell .bg-fuchsia-600.text-white,
+.admin-shell .bg-fuchsia-500.text-white,
+.admin-shell [class*="bg-[#FF0A8A]"].text-white,
+.admin-shell .primary-button.text-white,
+.admin-shell button[class*="bg-fuchsia"].text-white,
+.admin-shell a[class*="bg-fuchsia"].text-white,
+.admin-shell .primary-button .text-white,
+.admin-shell button[class*="bg-fuchsia"] .text-white,
+.admin-shell a[class*="bg-fuchsia"] .text-white {
+  color: #fff !important;
+}
+
+.admin-shell .text-fuchsia-200,
+.admin-shell .text-fuchsia-300,
+.admin-shell .text-fuchsia-400,
+.admin-shell [class*="text-[#FF0A8A]"] {
+  color: var(--accent-strong) !important;
+}
+
+.admin-shell [class*="border-fuchsia"] {
+  border-color: #cbe6dc !important;
+}
+
+.admin-shell [class*="bg-fuchsia-500/"],
+.admin-shell [class*="bg-fuchsia-400/"] {
+  background-color: var(--accent-soft) !important;
+  background-image: none !important;
+}
+
+/* Preserve semantic states, but use light surfaces instead of neon-on-dark cards. */
+.admin-shell [class*="bg-emerald-500/"] {
+  border-color: #bfe3d6 !important;
+  background-color: #eaf8f3 !important;
+  color: #0b6b4d !important;
+}
+.admin-shell [class*="bg-amber-400/"],
+.admin-shell [class*="bg-amber-500/"] {
+  border-color: #efd9ae !important;
+  background-color: #fff8e9 !important;
+  color: #8d5a00 !important;
+}
+.admin-shell [class*="bg-rose-400/"],
+.admin-shell [class*="bg-rose-500/"] {
+  border-color: #efc7cd !important;
+  background-color: #fff1f3 !important;
+  color: #9f3142 !important;
+}
+.admin-shell [class*="bg-sky-500/"],
+.admin-shell [class*="bg-cyan-400/"] {
+  border-color: #cbdff6 !important;
+  background-color: #eef6ff !important;
+  color: #255f9e !important;
+}
+.admin-shell [class*="bg-violet-500/"] {
+  border-color: #ded3ef !important;
+  background-color: #f5f0fb !important;
+  color: #6f36a7 !important;
+}
+
+.admin-shell [class*="bg-emerald-500/"] .text-white,
+.admin-shell [class*="bg-amber-400/"] .text-white,
+.admin-shell [class*="bg-amber-500/"] .text-white,
+.admin-shell [class*="bg-rose-400/"] .text-white,
+.admin-shell [class*="bg-rose-500/"] .text-white,
+.admin-shell [class*="bg-sky-500/"] .text-white,
+.admin-shell [class*="bg-cyan-400/"] .text-white,
+.admin-shell [class*="bg-violet-500/"] .text-white {
+  color: currentColor !important;
+}
+
+/* Legacy form labels and fieldsets should read like the V2 guided forms. */
+.admin-shell label.text-zinc-300,
+.admin-shell legend.text-white {
+  color: #52637a !important;
+}
+
+.admin-shell fieldset[class*="border-white/"],
+.admin-shell label[class*="border-white/"] {
+  border-color: var(--line) !important;
+  background-color: #fff !important;
+}
+
+.admin-shell details[class*="border-rose"] {
+  border-color: #efc7cd !important;
+  background: #fff7f8 !important;
+}

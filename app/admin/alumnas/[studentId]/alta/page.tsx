@@ -66,9 +66,11 @@ export default async function StudentOnboardingPage({
   params: Promise<{ studentId: string }>;
   searchParams: Promise<{ error?: string; completed?: string; sale?: string }>;
 }) {
-  const { studentId } = await params;
-  const query = await searchParams;
-  const { supabase, studio, can } = await getAdminContext(CAPABILITIES.STUDENTS_READ);
+  const [{ studentId }, query, { supabase, studio, can }] = await Promise.all([
+    params,
+    searchParams,
+    getAdminContext(CAPABILITIES.STUDENTS_READ),
+  ]);
 
   const { data: student } = await supabase
     .from("students")

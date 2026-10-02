@@ -23,9 +23,11 @@ export default async function ProductDetailPage({
   params: Promise<{ productId: string }>;
   searchParams: Promise<{ status?: string }>;
 }) {
-  const { productId } = await params;
-  const { status } = await searchParams;
-  const ctx = await getAdminContext("products.read");
+  const [{ productId }, { status }, ctx] = await Promise.all([
+    params,
+    searchParams,
+    getAdminContext("products.read"),
+  ]);
   const { data: product } = await ctx.supabase
     .from("product_templates")
     .select(
@@ -37,39 +39,47 @@ export default async function ProductDetailPage({
   if (!product) notFound();
 
   const productDisciplines: ProductDiscipline[] = product.product_template_disciplines ?? [];
-  const { data: activityLinks } = await ctx.supabase
-    .from("product_template_activities")
-    .select("class_template_id")
-    .eq("studio_id", ctx.studio.id)
-    .eq("product_template_id", product.id);
-  const activityIds = (activityLinks ?? []).map((item) => item.class_template_id);
-  const { data: linkedActivities } = activityIds.length
-    ? await ctx.supabase
-        .from("class_templates")
-        .select("id,name")
-        .eq("studio_id", ctx.studio.id)
-        .in("id", activityIds)
-    : { data: [] as { id: string; name: string }[] };
-  const isActivityScoped = Boolean(linkedActivities?.length);
   const isEnrollment = product.product_type === "enrollment";
   const isPackageLike = product.product_type === "package" || product.product_type === "membership";
-  const { data: scheduleLinks } = isPackageLike
-    ? await ctx.supabase
-        .from("product_template_schedules")
-        .select("recurring_schedule_id")
-        .eq("studio_id", ctx.studio.id)
-        .eq("product_template_id", product.id)
-    : { data: [] as { recurring_schedule_id: string }[] };
+
+  const [{ data: activityLinks }, { data: scheduleLinks }] = await Promise.all([
+    ctx.supabase
+      .from("product_template_activities")
+      .select("class_template_id")
+      .eq("studio_id", ctx.studio.id)
+      .eq("product_template_id", product.id),
+    isPackageLike
+      ? ctx.supabase
+          .from("product_template_schedules")
+          .select("recurring_schedule_id")
+          .eq("studio_id", ctx.studio.id)
+          .eq("product_template_id", product.id)
+      : Promise.resolve({ data: [] as { recurring_schedule_id: string }[] }),
+  ]);
+
+  const activityIds = (activityLinks ?? []).map((item) => item.class_template_id);
   const scheduleIds = (scheduleLinks ?? []).map((item) => item.recurring_schedule_id);
-  const { data: scheduleRows } = scheduleIds.length
-    ? await ctx.supabase
-        .from("recurring_schedules")
-        .select("id,weekday,local_time,template_id")
-        .eq("studio_id", ctx.studio.id)
-        .in("id", scheduleIds)
-        .order("weekday")
-        .order("local_time")
-    : { data: [] as { id: string; weekday: number; local_time: string; template_id: string }[] };
+  const [{ data: linkedActivities }, { data: scheduleRows }] = await Promise.all([
+    activityIds.length
+      ? ctx.supabase
+          .from("class_templates")
+          .select("id,name")
+          .eq("studio_id", ctx.studio.id)
+          .in("id", activityIds)
+      : Promise.resolve({ data: [] as { id: string; name: string }[] }),
+    scheduleIds.length
+      ? ctx.supabase
+          .from("recurring_schedules")
+          .select("id,weekday,local_time,template_id")
+          .eq("studio_id", ctx.studio.id)
+          .in("id", scheduleIds)
+          .order("weekday")
+          .order("local_time")
+      : Promise.resolve({
+          data: [] as { id: string; weekday: number; local_time: string; template_id: string }[],
+        }),
+  ]);
+  const isActivityScoped = Boolean(linkedActivities?.length);
   const scheduleTemplateIds = [...new Set((scheduleRows ?? []).map((item) => item.template_id))];
   const { data: scheduleTemplates } = scheduleTemplateIds.length
     ? await ctx.supabase

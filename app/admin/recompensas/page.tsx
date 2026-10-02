@@ -16,47 +16,50 @@ import {
 export default async function RewardsControlCenterPage() {
   const ctx = await getAdminContext(CAPABILITIES.REWARDS_READ);
 
-  const [programsResult, rulesResult, rewardsResult, programEventsResult, onboardingResult] =
-    await Promise.all([
-      ctx.supabase
-        .from("reward_programs")
-        .select("id,status,latest_version_number,published_version_number,updated_at")
-        .eq("studio_id", ctx.studio.id)
-        .order("updated_at", { ascending: false }),
-      ctx.supabase
-        .from("reward_rules")
-        .select("id,status,current_version_number,updated_at")
-        .eq("studio_id", ctx.studio.id)
-        .order("updated_at", { ascending: false }),
-      ctx.supabase
-        .from("reward_instances")
-        .select("id,status,kind,benefit_definition,student_id,expires_at,created_at")
-        .eq("studio_id", ctx.studio.id)
-        .order("created_at", { ascending: false })
-        .limit(100),
-      ctx.supabase
-        .from("reward_program_events")
-        .select("id,event_type,program_id,student_id,details,occurred_at")
-        .eq("studio_id", ctx.studio.id)
-        .order("occurred_at", { ascending: false })
-        .limit(8),
-      ctx.supabase
-        .from("reward_onboarding")
-        .select(
-          "student_id,documents_completed_at,profile_completed_at,app_installed_at,notifications_enabled_at,first_reservation_at,first_attendance_at,access_unlocked_at",
-        )
-        .eq("studio_id", ctx.studio.id),
-    ]);
+  const [
+    programsResult,
+    rulesResult,
+    versionsResult,
+    rewardsResult,
+    programEventsResult,
+    onboardingResult,
+  ] = await Promise.all([
+    ctx.supabase
+      .from("reward_programs")
+      .select("id,status,latest_version_number,published_version_number,updated_at")
+      .eq("studio_id", ctx.studio.id)
+      .order("updated_at", { ascending: false }),
+    ctx.supabase
+      .from("reward_rules")
+      .select("id,status,current_version_number,updated_at")
+      .eq("studio_id", ctx.studio.id)
+      .order("updated_at", { ascending: false }),
+    ctx.supabase
+      .from("reward_rule_versions")
+      .select("rule_id,version_number,name,family,reward_definition")
+      .eq("studio_id", ctx.studio.id),
+    ctx.supabase
+      .from("reward_instances")
+      .select("id,status,kind,benefit_definition,student_id,expires_at,created_at")
+      .eq("studio_id", ctx.studio.id)
+      .order("created_at", { ascending: false })
+      .limit(100),
+    ctx.supabase
+      .from("reward_program_events")
+      .select("id,event_type,program_id,student_id,details,occurred_at")
+      .eq("studio_id", ctx.studio.id)
+      .order("occurred_at", { ascending: false })
+      .limit(8),
+    ctx.supabase
+      .from("reward_onboarding")
+      .select(
+        "student_id,documents_completed_at,profile_completed_at,app_installed_at,notifications_enabled_at,first_reservation_at,first_attendance_at,access_unlocked_at",
+      )
+      .eq("studio_id", ctx.studio.id),
+  ]);
 
   const programs = programsResult.data ?? [];
   const rules = rulesResult.data ?? [];
-  const ruleIds = rules.map((rule) => rule.id);
-  const versionsResult = ruleIds.length
-    ? await ctx.supabase
-        .from("reward_rule_versions")
-        .select("rule_id,version_number,name,family,reward_definition")
-        .in("rule_id", ruleIds)
-    : { data: [] };
   const versions = versionsResult.data ?? [];
   const currentVersions = new Map(
     versions.map((version) => [`${version.rule_id}:${version.version_number}`, version]),

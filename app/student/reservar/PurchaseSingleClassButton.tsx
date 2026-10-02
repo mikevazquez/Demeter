@@ -96,9 +96,7 @@ export default function PurchaseSingleClassButton({
         disabled={isPending}
         className="min-h-11 rounded-2xl bg-fuchsia-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-fuchsia-500 disabled:cursor-wait disabled:opacity-60"
       >
-        {isPending
-          ? "Abriendo pago seguro…"
-          : `Comprar · ${checkoutTotalLabel ?? priceLabel}`}
+        {isPending ? "Abriendo pago seguro…" : `Comprar · ${checkoutTotalLabel ?? priceLabel}`}
       </button>
       {errorMessage ? <p className="mt-2 max-w-xs text-xs text-rose-300">{errorMessage}</p> : null}
     </div>

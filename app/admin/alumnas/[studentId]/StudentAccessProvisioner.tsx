@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
+import AdminDialogFrame from "@/app/admin/components/AdminDialogFrame";
 import LoadingSpinner from "@/app/admin/components/LoadingSpinner";
 import {
   provisionStudentAccess,
@@ -187,13 +188,14 @@ export function StudentTemporaryPasswordResetter({
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [temporaryPassword, setTemporaryPassword] = useState<string | null>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   function run() {
-    const confirmed = window.confirm(
-      "Se reemplazará la contraseña actual de la alumna. La contraseña anterior dejará de funcionar inmediatamente.",
-    );
-    if (!confirmed) return;
+    setConfirmOpen(true);
+  }
 
+  function confirmReset() {
+    setConfirmOpen(false);
     setError(null);
     setCopied(false);
     startTransition(async () => {
@@ -266,28 +268,58 @@ export function StudentTemporaryPasswordResetter({
   }
 
   return (
-    <div className="compact-form">
-      <p>
-        Si la alumna olvidó su contraseña, puedes generar una temporal para <strong>{phone}</strong>
-        . La contraseña actual dejará de funcionar y se le pedirá crear una nueva al entrar.
-      </p>
-      {error ? <div className="notice error">{error}</div> : null}
-      <button
-        className="secondary-button"
-        type="button"
-        onClick={run}
-        disabled={isPending}
-        aria-busy={isPending}
-      >
-        {isPending ? (
-          <span className="inline-flex items-center justify-center gap-2">
-            <LoadingSpinner />
-            <span>Generando contraseña…</span>
-          </span>
-        ) : (
-          "Generar contraseña temporal"
-        )}
-      </button>
-    </div>
+    <>
+      <div className="compact-form">
+        <p>
+          Si la alumna olvidó su contraseña, puedes generar una temporal para{" "}
+          <strong>{phone}</strong>. La contraseña actual dejará de funcionar y se le pedirá crear
+          una nueva al entrar.
+        </p>
+        {error ? <div className="notice error">{error}</div> : null}
+        <button
+          className="secondary-button"
+          type="button"
+          onClick={run}
+          disabled={isPending}
+          aria-busy={isPending}
+        >
+          {isPending ? (
+            <span className="inline-flex items-center justify-center gap-2">
+              <LoadingSpinner />
+              <span>Generando contraseña…</span>
+            </span>
+          ) : (
+            "Generar contraseña temporal"
+          )}
+        </button>
+      </div>
+
+      {confirmOpen ? (
+        <AdminDialogFrame
+          eyebrow="Confirmar cambio de acceso"
+          title="¿Generar una nueva contraseña temporal?"
+          tone="danger"
+          onClose={() => setConfirmOpen(false)}
+          footer={
+            <>
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={() => setConfirmOpen(false)}
+              >
+                Cancelar
+              </button>
+              <button type="button" className="sf-dialog-danger" onClick={confirmReset}>
+                Generar contraseña
+              </button>
+            </>
+          }
+        >
+          <p>
+            Se reemplazará la contraseña actual de la alumna y dejará de funcionar inmediatamente.
+          </p>
+        </AdminDialogFrame>
+      ) : null}
+    </>
   );
 }
