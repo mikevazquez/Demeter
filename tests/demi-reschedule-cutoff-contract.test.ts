@@ -10,30 +10,36 @@ describe("Demi reschedule cutoff policy", () => {
   const actions = source("lib/assistant/action-tools.ts");
   const orchestrator = source("lib/assistant/orchestrator.ts");
 
-  it("blocks preparing a reschedule after the source cancellation cutoff", () => {
+  it("allows late reschedules but marks the extra credit consequence", () => {
     const prepare = actions.slice(
       actions.indexOf("async function prepareReschedule"),
       actions.indexOf("async function executeReschedule"),
     );
 
-    expect(prepare).toContain("source.summary.late === true");
-    expect(prepare).toContain('"reschedule_cutoff_passed"');
+    expect(prepare).not.toContain('"reschedule_cutoff_passed"');
+    expect(prepare).toContain("late_reschedule: source.summary.late === true");
+    expect(prepare).toContain("additional_credit_required");
+    expect(prepare).toContain("source.summary.credit_will_return === false");
   });
 
-  it("rechecks the cutoff at confirmation and preserves the original booking", () => {
+  it("rechecks consequences at confirmation and requires a new confirmation if they changed", () => {
     const execute = actions.slice(
       actions.indexOf("async function executeReschedule"),
       actions.indexOf("function safeWaitlistReason"),
     );
 
-    expect(execute).toContain("source.summary.late === true");
+    expect(execute).not.toContain('"reschedule_cutoff_passed"');
+    expect(execute).toContain("previousConsequence !== currentConsequence");
+    expect(execute).toContain("consequence_changed: true");
     expect(execute).toContain("original_reservation_preserved: true");
-    expect(execute).toContain('status: "cancelled"');
   });
 
-  it("forbids using a reschedule to bypass late cancellation policy", () => {
+  it("treats a late reschedule as late cancellation plus a new booking", () => {
     expect(orchestrator).toContain(
-      "Nunca uses un reagendado para evitar una cancelación tardía",
+      "Si ya es cancelación tardía, sí se puede reagendar",
+    );
+    expect(orchestrator).toContain(
+      "el crédito de la clase original no regresa y la nueva reserva usa otro crédito disponible",
     );
   });
 });
