@@ -545,13 +545,17 @@ async function prepareBooking(
     return { ok: false, error: "identity_required" };
   }
 
-  const { data: eligibility, error: eligibilityError } = await ctx.supabase.rpc(
-    "booking_eligibility",
-    {
-      target_session_id: sessionId,
-      target_student_id: studentId,
-    },
-  );
+  const eligibilityRequest = ctx.serviceMode
+    ? await ctx.supabase.rpc("service_booking_eligibility", {
+        target_studio_id: ctx.studio.id,
+        target_session_id: sessionId,
+        target_student_id: studentId,
+      })
+    : await ctx.supabase.rpc("booking_eligibility", {
+        target_session_id: sessionId,
+        target_student_id: studentId,
+      });
+  const { data: eligibility, error: eligibilityError } = eligibilityRequest;
 
   if (eligibilityError) {
     return { ok: false, error: "booking_eligibility_unavailable" };
@@ -876,13 +880,17 @@ async function executeBooking(
   } else {
     if (!studentId) return { ok: false, error: "conversation_identity_changed" };
 
-    const { data: eligibility, error: eligibilityError } = await ctx.supabase.rpc(
-      "booking_eligibility",
-      {
-        target_session_id: sessionId,
-        target_student_id: studentId,
-      },
-    );
+    const eligibilityRequest = ctx.serviceMode
+      ? await ctx.supabase.rpc("service_booking_eligibility", {
+          target_studio_id: ctx.studio.id,
+          target_session_id: sessionId,
+          target_student_id: studentId,
+        })
+      : await ctx.supabase.rpc("booking_eligibility", {
+          target_session_id: sessionId,
+          target_student_id: studentId,
+        });
+    const { data: eligibility, error: eligibilityError } = eligibilityRequest;
     if (eligibilityError) {
       return { ok: false, error: "booking_eligibility_unavailable" };
     }
@@ -904,19 +912,44 @@ async function executeBooking(
       };
     }
 
-    const { data, error: bookingError } = await ctx.supabase.rpc(
-      "admin_book_student",
-      {
-        target_session_id: sessionId,
-        target_student_id: studentId,
-      },
-    );
+    if (ctx.serviceMode) {
+      const { data, error: bookingError } = await ctx.supabase.rpc(
+        "service_book_student",
+        {
+          target_studio_id: ctx.studio.id,
+          target_session_id: sessionId,
+          target_student_id: studentId,
+        },
+      );
+      const bookingResult = asObject(data);
+      if (
+        bookingError ||
+        !bookingResult ||
+        bookingResult.eligible !== true ||
+        !bookingResult.reservation_id
+      ) {
+        return {
+          ok: false,
+          error: "booking_execution_failed",
+          ...safeBookingReason(bookingResult?.reason_code),
+        };
+      }
+      reservationId = String(bookingResult.reservation_id);
+    } else {
+      const { data, error: bookingError } = await ctx.supabase.rpc(
+        "admin_book_student",
+        {
+          target_session_id: sessionId,
+          target_student_id: studentId,
+        },
+      );
 
-    if (bookingError || !data) {
-      return { ok: false, error: "booking_execution_failed" };
+      if (bookingError || !data) {
+        return { ok: false, error: "booking_execution_failed" };
+      }
+
+      reservationId = String(data);
     }
-
-    reservationId = String(data);
   }
 
   if (!reservationId) {
