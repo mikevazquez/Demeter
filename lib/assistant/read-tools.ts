@@ -127,7 +127,7 @@ export async function searchClassAvailability(
         ? ctx.supabase
             .from("class_templates")
             .select(
-              "id,name,discipline_id,description,drop_in_price_minor,active,credit_cost",
+              "id,name,discipline_id,description,active,credit_cost",
             )
             .eq("studio_id", ctx.studio.id)
             .in("id", templateIds)
@@ -227,7 +227,6 @@ export async function searchClassAvailability(
       location: location?.name ?? null,
       address: location?.address ?? null,
       space: session.space_id ? spaceMap.get(session.space_id) ?? null : null,
-      drop_in_price_minor: template.drop_in_price_minor,
       currency: ctx.studio.currency,
       credit_cost: template.credit_cost,
     });
@@ -246,7 +245,7 @@ export async function searchClassAvailability(
 export async function getActivityCatalog(ctx: AssistantToolContext) {
   const { data: templates, error } = await ctx.supabase
     .from("class_templates")
-    .select("id,name,discipline_id,description,drop_in_price_minor,credit_cost")
+    .select("id,name,discipline_id,description,credit_cost")
     .eq("studio_id", ctx.studio.id)
     .eq("active", true)
     .order("name")
@@ -273,7 +272,6 @@ export async function getActivityCatalog(ctx: AssistantToolContext) {
       activity: item.name,
       discipline: item.discipline_id ? disciplineMap.get(item.discipline_id) ?? null : null,
       description: item.description,
-      drop_in_price_minor: item.drop_in_price_minor,
       currency: ctx.studio.currency,
       credit_cost: item.credit_cost,
     })),
