@@ -10,6 +10,10 @@ function source(path: string) {
 describe("F10/N14 student home and profile UAT contracts", () => {
   const homePage = source("app/student/page.tsx");
   const profilePage = source("app/student/perfil/page.tsx");
+  const classesPage = source("app/student/mis-clases/page.tsx");
+  const cancelledClassMigration = source(
+    "supabase/migrations/20261002005949_student_cancelled_class_visibility.sql",
+  );
   const actions = source("app/student/actions.ts");
   const profileMigration = source(
     "supabase/migrations/20260916040850_f10_profile_identity_readonly.sql",
@@ -29,6 +33,17 @@ describe("F10/N14 student home and profile UAT contracts", () => {
     expect(homePage).toContain('href="/student/mis-clases"');
     expect(homePage).not.toContain('supabase.rpc("student_schedule_feed"');
     expect(homePage).not.toContain("cancelStudentReservationAction");
+  });
+
+  it("keeps future studio-cancelled classes visible and explicitly marked", () => {
+    expect(cancelledClassMigration).toContain("r.status = 'cancelled_by_studio'");
+    expect(cancelledClassMigration).toContain("cs.status = 'cancelled'");
+    expect(cancelledClassMigration).toContain("cs.ends_at > now()");
+    expect(homePage).toContain('supabase.rpc("student_classes_feed")');
+    expect(homePage).toContain('nextClass?.status === "cancelled_by_studio"');
+    expect(homePage).toContain("Cancelada por el estudio");
+    expect(classesPage).toContain('nextClass.status === "cancelled_by_studio"');
+    expect(classesPage).toContain("<ClassRow item={nextClass}");
   });
 
   it("keeps the canonical cancellation engine available in the dedicated flow", () => {
