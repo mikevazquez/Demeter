@@ -8,34 +8,33 @@ function source(path: string) {
 
 describe("Demi bank transfer flow", () => {
   const contracts = source("lib/assistant/tool-contracts.ts");
-  const readTools = source("lib/assistant/read-tools.ts");
+  const actions = source("lib/assistant/action-tools.ts");
   const orchestrator = source("lib/assistant/orchestrator.ts");
   const migration = source(
     "supabase/migrations/20261003011000_studio_bank_transfer_settings.sql",
   );
+  const provisionalMigration = source(
+    "supabase/migrations/20261003014000_demi_provisional_transfer_packages.sql",
+  );
   const paymentPage = source("app/admin/configuracion/pagos/page.tsx");
 
-  it("exposes a dedicated bank transfer instructions tool", () => {
-    expect(contracts).toContain('name: "get_bank_transfer_instructions"');
-    expect(readTools).toContain("service_get_bank_transfer_settings");
-    expect(readTools).toContain('payment_status: "pending_validation"');
-    expect(readTools).toContain("credits_activate_before_validation: false");
+  it("prepares a selected package with real configured bank details", () => {
+    expect(contracts).toContain('name: "prepare_bank_transfer_purchase"');
+    expect(actions).toContain("service_prepare_transfer_purchase");
+    expect(provisionalMigration).toContain("product_not_compatible");
+    expect(provisionalMigration).toContain("'receipt_required',true");
   });
 
-  it("only returns bank details for a compatible selected package", () => {
-    expect(readTools).toContain("getCommercialOptions");
-    expect(readTools).toContain("product_not_compatible");
-    expect(readTools).toContain('receipt_required: true');
-  });
-
-  it("tells Demi to request the receipt without activating credits", () => {
+  it("tells Demi to request the receipt and explain provisional activation", () => {
     expect(orchestrator).toContain(
-      "Cuando ya haya elegido el paquete, llama get_bank_transfer_instructions",
+      "llama prepare_bank_transfer_purchase",
     );
     expect(orchestrator).toContain(
-      "No actives créditos, no afirmes que el pago fue recibido",
+      "el paquete se activará de forma provisional",
     );
-    expect(orchestrator).toContain("transfer_receipt_review");
+    expect(orchestrator).toContain(
+      "puede ser revocado si la transferencia no se confirma correctamente",
+    );
   });
 
   it("keeps bank settings server/admin only", () => {
@@ -48,8 +47,11 @@ describe("Demi bank transfer flow", () => {
     expect(migration).toContain("to service_role;");
   });
 
-  it("provides an owner settings page for real bank details", () => {
+  it("provides an owner settings and review page", () => {
     expect(paymentPage).toContain("Pagos y transferencias");
     expect(paymentPage).toContain("studio_bank_transfer_settings");
+    expect(paymentPage).toContain("Comprobantes pendientes de validación");
+    expect(paymentPage).toContain("Validar transferencia");
+    expect(paymentPage).toContain("Rechazar y revocar");
   });
 });
