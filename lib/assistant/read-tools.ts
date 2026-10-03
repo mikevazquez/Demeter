@@ -603,7 +603,7 @@ export async function getStudentPackageStatus(ctx: AssistantToolContext) {
       credit_limit: item.credit_limit,
       starts_on: item.starts_on,
       expires_on: item.expires_on,
-      depleted: !item.unlimited && availableCredits <= 0,
+      depleted: !item.unlimited && (availableCredits ?? 0) <= 0,
     };
   });
 
