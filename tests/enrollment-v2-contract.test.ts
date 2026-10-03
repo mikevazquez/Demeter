@@ -26,6 +26,8 @@ describe("Enrollment V2", () => {
   const edge = source("supabase/functions/create-mercadopago-order/index.ts");
   const packageCheckout = source("app/student/paquete/checkout/page.tsx");
   const singleCheckout = source("app/student/reservar/checkout/page.tsx");
+  const profile360 = source("app/admin/alumnas/[studentId]/Profile360Overview.tsx");
+  const newSalePage = source("app/admin/ventas/nueva/page.tsx");
 
   it("uses one mandatory rule whenever enrollment is enabled", () => {
     expect(migration).toContain("required_for_package_purchase");
@@ -98,5 +100,12 @@ describe("Enrollment V2", () => {
     expect(migration).toContain(
       "grant execute on function public.student_create_enrollment_checkout_attempt(uuid,uuid)",
     );
+  });
+
+  it("lets admins start a standalone enrollment directly from Profile 360", () => {
+    expect(profile360).toContain("Agregar inscripción");
+    expect(profile360).toContain("/admin/ventas/nueva?student_id=");
+    expect(newSalePage).toContain("createEnrollmentOnlySaleAction");
+    expect(newSalePage).toContain("Pagar solo inscripción");
   });
 });
