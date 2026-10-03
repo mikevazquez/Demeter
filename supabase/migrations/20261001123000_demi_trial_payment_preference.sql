@@ -92,7 +92,4 @@ revoke all on function public.assistant_record_trial_payment_preference(uuid,uui
 grant execute on function public.assistant_record_trial_payment_preference(uuid,uuid,text)
   to authenticated,service_role;
 
-update public.class_templates
-set drop_in_price_minor=15000
-where studio_id='9fe23cfa-fb47-4670-afeb-ed4a56433772'
-  and id='1075cb41-75e4-4190-81f6-4be0ed007ce6';
+-- Trial pricing remains studio configuration; no environment-specific class template is modified here.
