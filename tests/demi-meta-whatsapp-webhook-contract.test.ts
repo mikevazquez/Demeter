@@ -137,7 +137,7 @@ describe("Meta inbound admin setup contract", () => {
     expect(page).toContain(
       "/api/integrations/meta-whatsapp/webhook?studio=",
     );
-    expect(page).toContain("Callback URL de este Preview");
+    expect(page).toContain("Callback URL de este entorno");
     expect(page).toContain(
       "No lo pegues en el chat",
     );
