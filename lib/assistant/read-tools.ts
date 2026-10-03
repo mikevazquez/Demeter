@@ -507,6 +507,106 @@ export async function getPolicyInformation(ctx: AssistantToolContext) {
   };
 }
 
+export async function getStudentPackageStatus(ctx: AssistantToolContext) {
+  if (!ctx.studentId) {
+    return { ok: false, error: "identity_required" };
+  }
+
+  const today = localParts(new Date().toISOString(), ctx.studio.timezone).date;
+  const { data: acquisitions, error: acquisitionsError } = await ctx.supabase
+    .from("product_acquisitions")
+    .select(
+      "id,product_template_id,status,starts_on,expires_on,credit_limit,unlimited,access_blocked,created_at",
+    )
+    .eq("studio_id", ctx.studio.id)
+    .eq("student_id", ctx.studentId)
+    .eq("status", "active")
+    .order("created_at", { ascending: false })
+    .limit(20);
+
+  if (acquisitionsError) {
+    return { ok: false, error: "package_status_unavailable" };
+  }
+
+  const current = (acquisitions ?? []).filter((item) => {
+    if (item.access_blocked) return false;
+    if (item.starts_on && item.starts_on > today) return false;
+    if (item.expires_on && item.expires_on < today) return false;
+    return true;
+  });
+
+  if (!current.length) {
+    return {
+      ok: true,
+      current_package: null,
+      packages: [],
+    };
+  }
+
+  const acquisitionIds = current.map((item) => item.id);
+  const productIds = [
+    ...new Set(current.map((item) => item.product_template_id).filter(Boolean)),
+  ] as string[];
+
+  const [productsResult, ledgerResult] = await Promise.all([
+    productIds.length
+      ? ctx.supabase
+          .from("product_templates")
+          .select("id,name")
+          .eq("studio_id", ctx.studio.id)
+          .in("id", productIds)
+      : Promise.resolve({ data: [], error: null }),
+    ctx.supabase
+      .from("credit_ledger")
+      .select("acquisition_id,quantity")
+      .eq("studio_id", ctx.studio.id)
+      .in("acquisition_id", acquisitionIds),
+  ]);
+
+  if (productsResult.error || ledgerResult.error) {
+    return { ok: false, error: "package_status_unavailable" };
+  }
+
+  const productMap = new Map(
+    (productsResult.data ?? []).map((item) => [item.id, item.name]),
+  );
+  const balanceMap = new Map<string, number>();
+  for (const movement of ledgerResult.data ?? []) {
+    balanceMap.set(
+      movement.acquisition_id,
+      (balanceMap.get(movement.acquisition_id) ?? 0) +
+        Number(movement.quantity ?? 0),
+    );
+  }
+
+  const packages = current.map((item) => {
+    const availableCredits = item.unlimited
+      ? null
+      : Math.max(balanceMap.get(item.id) ?? 0, 0);
+
+    return {
+      name: productMap.get(item.product_template_id) ?? "Paquete",
+      unlimited: item.unlimited,
+      available_credits: availableCredits,
+      credit_limit: item.credit_limit,
+      starts_on: item.starts_on,
+      expires_on: item.expires_on,
+      depleted: !item.unlimited && (availableCredits ?? 0) <= 0,
+    };
+  });
+
+  const currentPackage =
+    packages.find((item) => item.unlimited || (item.available_credits ?? 0) > 0) ??
+    packages[0] ??
+    null;
+
+  return {
+    ok: true,
+    current_package: currentPackage,
+    packages,
+  };
+}
+
 export async function getStudentReservations(ctx: AssistantToolContext) {
   if (!ctx.studentId) {
     return { ok: false, error: "identity_required" };
@@ -639,6 +739,8 @@ export async function executeAssistantReadTool(
       return getStudioInformation(ctx);
     case "get_policy_information":
       return getPolicyInformation(ctx);
+    case "get_student_package_status":
+      return getStudentPackageStatus(ctx);
     case "get_student_reservations":
       return getStudentReservations(ctx);
     default:
