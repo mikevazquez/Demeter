@@ -198,6 +198,11 @@ export type PrepareWaitlistJoinArgs = {
   session_ref: string;
 };
 
+export type PrepareBankTransferPurchaseArgs = {
+  session_ref: string;
+  product_ref: string;
+};
+
 export type ExecuteWaitlistJoinArgs = EmptyArgs;
 
 export type RecordTrialPaymentPreferenceArgs = {
@@ -354,6 +359,29 @@ export const assistantActionToolDefinitions: AssistantToolDefinition[] = [
       type: "object",
       properties: {},
       required: [],
+      additionalProperties: false,
+    },
+  },
+  {
+    type: "function",
+    name: "prepare_bank_transfer_purchase",
+    description:
+      "Prepara una compra por transferencia después de que la persona eligió un paquete concreto para una clase. Valida compatibilidad, guarda la intención pendiente y devuelve monto y datos bancarios reales. No activa créditos todavía; la activación provisional ocurre cuando llega el comprobante por WhatsApp.",
+    strict: true,
+    parameters: {
+      type: "object",
+      properties: {
+        session_ref: {
+          type: "string",
+          description: "Referencia session:<uuid> de la clase objetivo.",
+        },
+        product_ref: {
+          type: "string",
+          description:
+            "Referencia product:<uuid> exacta del paquete seleccionado de get_commercial_options.",
+        },
+      },
+      required: ["session_ref", "product_ref"],
       additionalProperties: false,
     },
   },
