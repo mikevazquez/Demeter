@@ -9,7 +9,7 @@ function source(path: string) {
 describe("Demi WhatsApp service reschedule bridge", () => {
   const actions = source("lib/assistant/action-tools.ts");
   const migration = source(
-    "supabase/migrations/20261002231000_demi_service_reschedule_runtime.sql",
+    "supabase/migrations/20261003172500_demi_service_reschedule_runtime.sql",
   );
 
   it("uses service eligibility and service reschedule in WhatsApp mode", () => {
