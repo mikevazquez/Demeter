@@ -132,6 +132,19 @@ export const assistantReadToolDefinitions: AssistantToolDefinition[] = [
   },
   {
     type: "function",
+    name: "get_student_package_status",
+    description:
+      "Consulta el paquete activo real de la persona identificada, sus créditos disponibles y su vigencia. Úsala cuando pregunte cuántas clases le quedan, saldo de clases, paquete actual, vigencia o fecha de vencimiento. No inventes créditos ni escales a atención humana sin intentar esta consulta.",
+    strict: true,
+    parameters: {
+      type: "object",
+      properties: {},
+      required: [],
+      additionalProperties: false,
+    },
+  },
+  {
+    type: "function",
     name: "get_student_reservations",
     description:
       "Consulta las próximas reservas activas de la persona identificada en esta conversación. Úsala antes de cancelar o reagendar para localizar la reserva exacta. No inventes reservas.",
