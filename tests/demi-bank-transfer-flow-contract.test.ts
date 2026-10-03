@@ -11,10 +11,10 @@ describe("Demi bank transfer flow", () => {
   const actions = source("lib/assistant/action-tools.ts");
   const orchestrator = source("lib/assistant/orchestrator.ts");
   const migration = source(
-    "supabase/migrations/20261003011000_studio_bank_transfer_settings.sql",
+    "supabase/migrations/20261003172700_studio_bank_transfer_settings.sql",
   );
   const provisionalMigration = source(
-    "supabase/migrations/20261003014000_demi_provisional_transfer_packages.sql",
+    "supabase/migrations/20261003172800_demi_provisional_transfer_packages.sql",
   );
   const paymentPage = source("app/admin/configuracion/pagos/page.tsx");
 
