@@ -255,6 +255,10 @@ const BOOKING_REASON_MESSAGES: Record<string, string> = {
   outside_product_schedule: "El paquete vigente no aplica para este horario.",
   session_full: "La clase ya está llena.",
   no_credits: "No hay créditos suficientes para reservar.",
+  resource_required: "Esta clase requiere seleccionar un recurso.",
+  resource_not_available: "El recurso seleccionado ya no está disponible.",
+  resource_full: "El recurso seleccionado ya no tiene disponibilidad.",
+  resource_unavailable: "No hay recursos disponibles para esta clase.",
   account_restricted: "La cuenta tiene una restricción que impide reservar.",
   trial_active_booking_exists:
     "Ya tienes una clase de prueba reservada. Solo puedes tener una reserva de prueba activa a la vez.",
@@ -1076,7 +1080,9 @@ async function executeBooking(
   if (!sessionInfo) {
     return { ok: false, error: "session_not_found" };
   }
-  if (sessionInfo.session.requires_resource) {
+  const resourceId = String(payload.resource_id ?? "") || null;
+  const resourceLabel = String(payload.resource_label ?? "") || null;
+  if (sessionInfo.session.requires_resource && !resourceId) {
     return { ok: false, error: "resource_selection_required" };
   }
 
@@ -1085,16 +1091,29 @@ async function executeBooking(
   let finalStudentId = studentId;
 
   if (trialException) {
-    const { data: trialBooking, error: trialBookingError } = await ctx.supabase.rpc(
-      "assistant_confirm_trial_booking",
-      {
-        target_studio_id: ctx.studio.id,
-        target_session_id: sessionId,
-        target_student_id: studentId,
-        target_crm_contact_id: crmContactId,
-        target_assistant_conversation_id: ctx.conversationId,
-      },
-    );
+    const trialBookingRequest =
+      resourceId && ctx.serviceMode
+        ? await ctx.supabase.rpc("service_confirm_trial_booking_with_resource", {
+            target_studio_id: ctx.studio.id,
+            target_session_id: sessionId,
+            target_student_id: studentId,
+            target_crm_contact_id: crmContactId,
+            target_assistant_conversation_id: ctx.conversationId,
+            target_resource_id: resourceId,
+          })
+        : resourceId
+          ? {
+              data: null,
+              error: new Error("resource_booking_requires_service_mode"),
+            }
+          : await ctx.supabase.rpc("assistant_confirm_trial_booking", {
+              target_studio_id: ctx.studio.id,
+              target_session_id: sessionId,
+              target_student_id: studentId,
+              target_crm_contact_id: crmContactId,
+              target_assistant_conversation_id: ctx.conversationId,
+            });
+    const { data: trialBooking, error: trialBookingError } = trialBookingRequest;
 
     const trialBookingObject = asObject(trialBooking);
     if (
@@ -1191,14 +1210,19 @@ async function executeBooking(
     }
 
     if (ctx.serviceMode) {
-      const { data, error: bookingError } = await ctx.supabase.rpc(
-        "service_book_student",
-        {
-          target_studio_id: ctx.studio.id,
-          target_session_id: sessionId,
-          target_student_id: studentId,
-        },
-      );
+      const bookingRequest = resourceId
+        ? await ctx.supabase.rpc("service_book_student_with_resource", {
+            target_studio_id: ctx.studio.id,
+            target_session_id: sessionId,
+            target_student_id: studentId,
+            target_resource_id: resourceId,
+          })
+        : await ctx.supabase.rpc("service_book_student", {
+            target_studio_id: ctx.studio.id,
+            target_session_id: sessionId,
+            target_student_id: studentId,
+          });
+      const { data, error: bookingError } = bookingRequest;
       const bookingResult = asObject(data);
       if (
         bookingError ||
@@ -1214,19 +1238,43 @@ async function executeBooking(
       }
       reservationId = String(bookingResult.reservation_id);
     } else {
-      const { data, error: bookingError } = await ctx.supabase.rpc(
-        "admin_book_student",
-        {
-          target_session_id: sessionId,
-          target_student_id: studentId,
-        },
-      );
+      if (resourceId) {
+        const { data, error: bookingError } = await ctx.supabase.rpc(
+          "student_book_session_with_resource",
+          {
+            target_session_id: sessionId,
+            target_resource_id: resourceId,
+          },
+        );
+        const bookingResult = asObject(data);
+        if (
+          bookingError ||
+          !bookingResult ||
+          bookingResult.eligible !== true ||
+          !bookingResult.reservation_id
+        ) {
+          return {
+            ok: false,
+            error: "booking_execution_failed",
+            ...safeBookingReason(bookingResult?.reason_code),
+          };
+        }
+        reservationId = String(bookingResult.reservation_id);
+      } else {
+        const { data, error: bookingError } = await ctx.supabase.rpc(
+          "admin_book_student",
+          {
+            target_session_id: sessionId,
+            target_student_id: studentId,
+          },
+        );
 
-      if (bookingError || !data) {
-        return { ok: false, error: "booking_execution_failed" };
+        if (bookingError || !data) {
+          return { ok: false, error: "booking_execution_failed" };
+        }
+
+        reservationId = String(data);
       }
-
-      reservationId = String(data);
     }
   }
 
@@ -1277,6 +1325,12 @@ async function executeBooking(
       commercial_status: finalCommercialStatus,
       payment_pending: finalCommercialStatus === "payment_pending",
       trial_booking: trialException,
+      selected_resource: resourceId
+        ? {
+            resource_id: resourceId,
+            label: resourceLabel,
+          }
+        : null,
     },
   };
 }
