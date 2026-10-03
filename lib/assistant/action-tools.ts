@@ -16,6 +16,7 @@ import type {
   RecordTrialPaymentPreferenceArgs,
   PrepareStudentAccessActivationArgs,
   SelectResourceOptionArgs,
+  PrepareBankTransferPurchaseArgs,
 } from "./tool-contracts";
 
 type AssistantActionToolContext = {
@@ -3065,6 +3066,56 @@ async function resolvePostTrialEnrollmentMethod(
   };
 }
 
+async function prepareBankTransferPurchase(
+  ctx: AssistantActionToolContext,
+  args: PrepareBankTransferPurchaseArgs,
+) {
+  if (!ctx.serviceMode) {
+    return { ok: false, error: "bank_transfer_purchase_requires_service_mode" };
+  }
+  if (!ctx.studentId) {
+    return { ok: false, error: "identity_required" };
+  }
+
+  const sessionId = parseOpaqueRef(args.session_ref, "session");
+  const productId = parseOpaqueRef(args.product_ref, "product");
+  if (!sessionId) return { ok: false, error: "invalid_session_ref" };
+  if (!productId) return { ok: false, error: "invalid_product_ref" };
+
+  const { data, error } = await ctx.supabase.rpc(
+    "service_prepare_transfer_purchase",
+    {
+      target_studio_id: ctx.studio.id,
+      target_conversation_id: ctx.conversationId,
+      target_student_id: ctx.studentId,
+      target_session_id: sessionId,
+      target_product_template_id: productId,
+    },
+  );
+
+  const result = asObject(data);
+  if (error || !result || result.ok !== true) {
+    return {
+      ok: false,
+      error: "bank_transfer_purchase_prepare_failed",
+      reason_code: String(
+        result?.reason_code ?? "bank_transfer_purchase_prepare_failed",
+      ),
+    };
+  }
+
+  return {
+    ok: true,
+    status: "awaiting_receipt",
+    intent_id: result.intent_id,
+    package: result.package,
+    bank_details: result.bank_details,
+    receipt_required: result.receipt_required === true,
+    revocable_until_validated: result.revocable_until_validated === true,
+    activation_rule: result.activation_rule,
+  };
+}
+
 async function escalateToHuman(
   ctx: AssistantActionToolContext,
   args: Record<string, unknown>,
@@ -3155,6 +3206,11 @@ export async function executeAssistantActionTool(
       return prepareWaitlistJoin(ctx, args as PrepareWaitlistJoinArgs);
     case "execute_waitlist_join":
       return executeWaitlistJoin(ctx, args as ExecuteWaitlistJoinArgs);
+    case "prepare_bank_transfer_purchase":
+      return prepareBankTransferPurchase(
+        ctx,
+        args as PrepareBankTransferPurchaseArgs,
+      );
     case "record_trial_payment_preference":
       return recordTrialPaymentPreference(
         ctx,
