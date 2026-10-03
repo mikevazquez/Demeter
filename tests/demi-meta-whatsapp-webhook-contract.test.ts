@@ -100,8 +100,11 @@ describe("Demi Meta WhatsApp inbound contract", () => {
     expect(modeGuard).toBeLessThan(capture);
   });
 
-  it("stops automation while human takeover is open", () => {
+  it("keeps transfer review non-blocking but stops for real human takeover", () => {
     expect(route).toContain("prepared.handoff_open === true");
+    expect(route).toContain("hasBlockingOpenHandoff");
+    expect(route).toContain('handoff.reason_code !== "transfer_receipt_review"');
+    expect(route).toContain('"non_blocking_transfer_review"');
     expect(route).toContain('"human_takeover_active"');
     expect(route).toContain('"whatsapp_media_review"');
   });
