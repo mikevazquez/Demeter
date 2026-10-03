@@ -10,7 +10,7 @@ describe("Demi reservation confirmation QR", () => {
   const meta = source("supabase/functions/_shared/meta-whatsapp.ts");
   const payload = source("supabase/functions/_shared/meta-whatsapp-template.ts");
   const migration = source(
-    "supabase/migrations/20261003052000_demi_reservation_qr_whatsapp.sql",
+    "supabase/migrations/20261003173200_demi_reservation_qr_whatsapp.sql",
   );
 
   it("resolves the canonical per-reservation check-in credential service-side", () => {
