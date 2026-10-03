@@ -15,11 +15,6 @@ export type CommercialOptionsArgs = {
   session_ref: string | null;
 };
 
-export type BankTransferInstructionsArgs = {
-  session_ref: string;
-  product_ref: string;
-};
-
 export type EmptyArgs = Record<string, never>;
 
 export type AssistantToolDefinition = {
@@ -106,30 +101,6 @@ export const assistantReadToolDefinitions: AssistantToolDefinition[] = [
         },
       },
       required: ["session_ref"],
-      additionalProperties: false,
-    },
-  },
-  {
-    type: "function",
-    name: "get_bank_transfer_instructions",
-    description:
-      "Obtiene los datos bancarios reales configurados por el estudio y el monto exacto de un paquete compatible previamente seleccionado. Úsala solo después de que la persona haya elegido transferencia y un paquete concreto. No inventes ni completes datos bancarios.",
-    strict: true,
-    parameters: {
-      type: "object",
-      properties: {
-        session_ref: {
-          type: "string",
-          description:
-            "Referencia session:<uuid> de la clase para la que se eligió el paquete.",
-        },
-        product_ref: {
-          type: "string",
-          description:
-            "Referencia product:<uuid> exacta de una opción devuelta por get_commercial_options para esa sesión.",
-        },
-      },
-      required: ["session_ref", "product_ref"],
       additionalProperties: false,
     },
   },
