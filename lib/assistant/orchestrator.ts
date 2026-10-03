@@ -410,6 +410,228 @@ function confirmationReply(
   return "Listo. La acción quedó confirmada.";
 }
 
+function normalizePackageChoice(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLocaleLowerCase("es-MX")
+    .replace(/[·•]/g, " ")
+    .replace(/[^a-z0-9$., ]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function matchTransferPackageOption(
+  userMessage: string,
+  rawOptions: unknown,
+) {
+  if (!Array.isArray(rawOptions)) return null;
+  const options = rawOptions
+    .map((item) => asObject(item))
+    .filter((item): item is Record<string, unknown> => Boolean(item));
+
+  if (!options.length) return null;
+
+  const normalized = normalizePackageChoice(userMessage);
+  if (!normalized) return null;
+
+  const optionNumber = normalized.match(/^([1-9][0-9]?)$/);
+  if (optionNumber) {
+    const selected = options.find(
+      (item) => Number(item.option_number) === Number(optionNumber[1]),
+    );
+    if (selected) return selected;
+  }
+
+  if (normalized.includes("ilimitado")) {
+    const matches = options.filter((item) => item.unlimited === true);
+    if (matches.length === 1) return matches[0];
+  }
+
+  const classMatch = normalized.match(/\b(\d{1,3})\s*(?:clase|clases)\b/);
+  if (classMatch) {
+    const creditCount = Number(classMatch[1]);
+    const matches = options.filter(
+      (item) =>
+        item.unlimited !== true &&
+        Number(item.credit_limit) === creditCount,
+    );
+    if (matches.length === 1) return matches[0];
+  }
+
+  const nameMatches = options.filter((item) => {
+    const name = normalizePackageChoice(String(item.name ?? ""));
+    return Boolean(name) && (normalized === name || normalized.includes(name));
+  });
+  if (nameMatches.length === 1) return nameMatches[0];
+
+  return null;
+}
+
+async function tryServerSideTransferPackageChoice(
+  input: OrchestratorInput,
+  trace: AssistantTrace,
+) {
+  const currentUserMessage =
+    [...input.history].reverse().find((message) => message.role === "user")
+      ?.content ?? "";
+
+  const { data: pending, error } = await input.supabase
+    .from("assistant_pending_actions")
+    .select("id,action_payload,expires_at")
+    .eq("studio_id", input.studio.id)
+    .eq("conversation_id", input.conversationId)
+    .eq("action_type", "commerce.transfer_package_choice")
+    .eq("status", "pending")
+    .gt("expires_at", new Date().toISOString())
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error || !pending) return null;
+
+  const payload = asObject(pending.action_payload);
+  if (!payload) return null;
+
+  const selected = matchTransferPackageOption(
+    currentUserMessage,
+    payload.options,
+  );
+  if (!selected) return null;
+
+  const sessionRef = String(payload.session_ref ?? "").trim();
+  const productRef = String(selected.product_ref ?? "").trim();
+  if (!sessionRef || !productRef) return null;
+
+  const args = {
+    session_ref: sessionRef,
+    product_ref: productRef,
+  };
+  const startedAt = Date.now();
+
+  let result: unknown;
+  let toolStatus: "executed" | "blocked" | "error" = "executed";
+  try {
+    result = await executeAssistantActionTool(
+      {
+        supabase: input.supabase,
+        studio: input.studio,
+        conversationId: input.conversationId,
+        turnId: input.turnId,
+        studentId: input.studentId,
+        crmContactId: input.crmContactId,
+        activationUrl: input.activationUrl,
+        serviceMode: input.serviceMode === true,
+        currentUserMessage,
+      },
+      "prepare_bank_transfer_purchase",
+      args,
+    );
+    if (asObject(result)?.ok === false) toolStatus = "blocked";
+  } catch {
+    result = { ok: false, error: "tool_execution_failed" };
+    toolStatus = "error";
+  }
+
+  const resultObject =
+    asObject(result) ?? { ok: false, error: "invalid_tool_result" };
+  const bankDetails = asObject(resultObject.bank_details);
+  const auditResult = {
+    ...resultObject,
+    bank_details: bankDetails
+      ? {
+          configured: true,
+          bank_name_present: Boolean(bankDetails.bank_name),
+          account_holder_present: Boolean(bankDetails.account_holder),
+          clabe_present: Boolean(bankDetails.clabe),
+          account_number_present: Boolean(bankDetails.account_number),
+          card_number_present: Boolean(bankDetails.card_number),
+          instructions_present: Boolean(bankDetails.instructions),
+        }
+      : null,
+  };
+
+  await input.supabase.from("assistant_tool_executions").insert({
+    studio_id: input.studio.id,
+    conversation_id: input.conversationId,
+    turn_id: input.turnId,
+    model_call_id: null,
+    tool_call_id: `server-transfer-package:${input.turnId}`,
+    tool_name: "prepare_bank_transfer_purchase",
+    schema_version: 1,
+    permission_class: "B",
+    request_json: args,
+    result_json: auditResult,
+    status: toolStatus === "executed" ? "prepared" : toolStatus,
+    duration_ms: Date.now() - startedAt,
+  });
+
+  trace.toolCalls.push({
+    name: "prepare_bank_transfer_purchase",
+    status: toolStatus,
+  });
+
+  if (resultObject.ok !== true || !bankDetails) {
+    const reason = String(resultObject.reason_message ?? "").trim();
+    return {
+      reply:
+        reason ||
+        "No pude preparar la transferencia con ese paquete. No se activó ningún crédito ni se hizo ningún cobro.",
+      trace,
+    };
+  }
+
+  await input.supabase
+    .from("assistant_pending_actions")
+    .update({
+      status: "executed",
+      confirmed_at: new Date().toISOString(),
+      executed_at: new Date().toISOString(),
+      execution_ref: `transfer-intent:${String(resultObject.intent_id ?? "")}`,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", pending.id)
+    .eq("studio_id", input.studio.id)
+    .eq("status", "pending");
+
+  const selectedPackage = asObject(resultObject.package) ?? selected;
+  const packageName = String(
+    selectedPackage.name ?? selected.name ?? "el paquete",
+  );
+  const amount =
+    formatMoney(
+      selectedPackage.amount_minor ?? selectedPackage.price_minor,
+      selectedPackage.currency ?? input.studio.currency,
+    ) ?? "el monto indicado";
+
+  const bankLines = [
+    bankDetails.bank_name
+      ? `Banco: ${String(bankDetails.bank_name)}`
+      : null,
+    bankDetails.account_holder
+      ? `Titular: ${String(bankDetails.account_holder)}`
+      : null,
+    bankDetails.clabe ? `CLABE: ${String(bankDetails.clabe)}` : null,
+    bankDetails.account_number
+      ? `Cuenta: ${String(bankDetails.account_number)}`
+      : null,
+    bankDetails.card_number
+      ? `Tarjeta para transferencia: ${String(bankDetails.card_number)}`
+      : null,
+    bankDetails.instructions
+      ? String(bankDetails.instructions)
+      : null,
+  ].filter(Boolean);
+
+  return {
+    reply:
+      `Perfecto. Para ${packageName} por ${amount}, realiza la transferencia con estos datos:\n\n` +
+      bankLines.join("\n") +
+      "\n\nEnvíame el comprobante por este mismo WhatsApp. En cuanto lo reciba, el paquete se activará de forma provisional para que puedas continuar. El pago quedará pendiente de validación y el paquete puede ser revocado si la transferencia no se confirma correctamente.",
+    trace,
+  };
+}
+
 async function tryServerSideConfirmation(
   input: OrchestratorInput,
   trace: AssistantTrace,
@@ -653,6 +875,12 @@ export async function runAssistantTurn(input: OrchestratorInput) {
   const enrollmentMethod = await tryServerSidePostTrialEnrollmentMethod(input, trace);
   if (enrollmentMethod) return enrollmentMethod;
 
+  const transferPackageChoice = await tryServerSideTransferPackageChoice(
+    input,
+    trace,
+  );
+  if (transferPackageChoice) return transferPackageChoice;
+
   const serverConfirmation = await tryServerSideConfirmation(input, trace);
   if (serverConfirmation) return serverConfirmation;
 
@@ -688,7 +916,8 @@ export async function runAssistantTurn(input: OrchestratorInput) {
     "Si prepare_booking devuelve reason_code=no_active_product o reason_code=no_credits y necesitas explicar qué puede comprar para ESA clase, llama get_commercial_options con la misma session_ref exacta. Nunca consultes el catálogo general para resolver una reserva concreta.",
     "Si prepare_booking o prepare_reschedule falla por falta de créditos y get_commercial_options devuelve opciones compatibles, además de mostrar los productos explica las payment_options devueltas. Si existe app_mercado_pago, di que puede pagar desde la app con Mercado Pago. Si existe bank_transfer, ofrece transferencia. No menciones métodos que no aparezcan en payment_options y no inventes datos bancarios.",
     "Cuando haya más de un método digital disponible, termina preguntando cuál prefiere, por ejemplo: 'Puedes pagarlo desde la app con Mercado Pago o por transferencia. ¿Cuál prefieres?'.",
-    "Si la persona elige transferencia, primero asegúrate de que haya elegido un paquete concreto de las opciones compatibles. Cuando ya haya elegido el paquete, llama prepare_bank_transfer_purchase con la session_ref y product_ref exactas. Comparte el monto exacto y únicamente los datos bancarios devueltos por esa herramienta.",
+    "Cuando la persona elija transferencia y todavía deba escoger paquete, llama prepare_transfer_package_choice ANTES de responder, usando la session_ref exacta y únicamente los product_ref de los paquetes que vas a mostrar. Después muestra solo las options devueltas por esa herramienta y pregunta cuál prefiere. Ese estado dura hasta 24 horas para que una respuesta posterior como '8 clases' continúe el mismo pago sin reconstruir reservas.",
+    "Si la persona ya eligió un paquete concreto en el mismo mensaje en que eligió transferencia, puedes llamar directamente prepare_bank_transfer_purchase con la session_ref y product_ref exactas.",
     "Después de compartir los datos bancarios, pide que envíe el comprobante por este mismo WhatsApp. Explica que al recibir el comprobante el paquete se activará de forma provisional para que pueda continuar, pero quedará pendiente de validación y puede ser revocado si la transferencia no se confirma correctamente.",
     "Nunca afirmes que la transferencia fue validada solo porque llegó un comprobante. La validación definitiva es posterior.",
     "Cuando get_commercial_options devuelva compatibility_filtered=true, menciona únicamente opciones de ese resultado. Nunca sugieras un producto de otra actividad o disciplina. Si no hay opciones compatibles, dilo claramente.",
