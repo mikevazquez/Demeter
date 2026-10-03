@@ -3090,7 +3090,7 @@ async function prepareTransferPackageChoice(
     return { ok: false, error: "transfer_package_options_required" };
   }
 
-  const commercial = await getCommercialOptions(
+  const commercialRaw = await getCommercialOptions(
     {
       supabase: ctx.supabase,
       studio: ctx.studio,
@@ -3098,18 +3098,32 @@ async function prepareTransferPackageChoice(
     },
     { session_ref: args.session_ref },
   );
+  const commercial = asObject(commercialRaw);
 
-  if (!commercial.ok) return commercial;
+  if (!commercial || commercial.ok !== true) {
+    return commercialRaw;
+  }
 
-  const transferAvailable = commercial.payment_options?.some(
-    (item) => item.code === "bank_transfer",
+  const paymentOptions = Array.isArray(commercial.payment_options)
+    ? commercial.payment_options
+        .map((item) => asObject(item))
+        .filter((item): item is Record<string, unknown> => Boolean(item))
+    : [];
+  const transferAvailable = paymentOptions.some(
+    (item) => String(item.code ?? "") === "bank_transfer",
   );
   if (!transferAvailable) {
     return { ok: false, error: "bank_transfer_not_available" };
   }
 
-  const selectedOptions = (commercial.options ?? []).filter((item) =>
-    requestedRefs.includes(item.product_ref),
+  const commercialOptions = Array.isArray(commercial.options)
+    ? commercial.options
+        .map((item) => asObject(item))
+        .filter((item): item is Record<string, unknown> => Boolean(item))
+    : [];
+
+  const selectedOptions = commercialOptions.filter((item) =>
+    requestedRefs.includes(String(item.product_ref ?? "")),
   );
 
   if (!selectedOptions.length) {
@@ -3130,13 +3144,15 @@ async function prepareTransferPackageChoice(
   const tokenHash = createHash("sha256").update(secretToken).digest("hex");
   const options = selectedOptions.map((item, index) => ({
     option_number: index + 1,
-    product_ref: item.product_ref,
-    name: item.name,
-    price_minor: item.price_minor,
-    currency: item.currency,
-    credit_limit: item.credit_limit,
-    unlimited: item.unlimited,
-    package_term: item.package_term,
+    product_ref: String(item.product_ref ?? ""),
+    name: String(item.name ?? ""),
+    price_minor: Number(item.price_minor ?? 0),
+    currency: String(item.currency ?? ctx.studio.currency),
+    credit_limit:
+      item.credit_limit == null ? null : Number(item.credit_limit),
+    unlimited: item.unlimited === true,
+    package_term:
+      item.package_term == null ? null : String(item.package_term),
   }));
 
   const { error } = await ctx.supabase.from("assistant_pending_actions").insert({
