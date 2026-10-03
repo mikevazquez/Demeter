@@ -1992,6 +1992,189 @@ async function executeReschedule(
 }
 
 
+async function selectResourceOption(
+  ctx: AssistantActionToolContext,
+  args: SelectResourceOptionArgs,
+) {
+  const optionNumber = Number(args.option_number);
+  if (!Number.isInteger(optionNumber) || optionNumber < 1) {
+    return { ok: false, error: "invalid_resource_option" };
+  }
+
+  const { data: pending, error: pendingError } = await ctx.supabase
+    .from("assistant_pending_actions")
+    .select(
+      "id,action_type,action_payload,confirmation_summary,status,expires_at",
+    )
+    .eq("studio_id", ctx.studio.id)
+    .eq("conversation_id", ctx.conversationId)
+    .in("action_type", ["booking.create", "booking.reschedule"])
+    .eq("status", "pending")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (pendingError || !pending) {
+    return { ok: false, error: "resource_selection_not_found" };
+  }
+
+  if (new Date(pending.expires_at).getTime() <= Date.now()) {
+    await ctx.supabase
+      .from("assistant_pending_actions")
+      .update({ status: "expired", updated_at: new Date().toISOString() })
+      .eq("id", pending.id)
+      .eq("studio_id", ctx.studio.id)
+      .eq("status", "pending");
+    return { ok: false, error: "resource_selection_expired" };
+  }
+
+  const payload = asObject(pending.action_payload);
+  if (!payload || payload.stage !== "resource_selection") {
+    return { ok: false, error: "resource_selection_not_available" };
+  }
+
+  const sessionId =
+    pending.action_type === "booking.reschedule"
+      ? String(payload.target_session_id ?? "")
+      : String(payload.session_id ?? "");
+
+  if (!sessionId) {
+    return { ok: false, error: "resource_selection_invalid" };
+  }
+
+  const storedOptions = Array.isArray(payload.resource_options)
+    ? payload.resource_options
+        .map((item) => asObject(item))
+        .filter((item): item is Record<string, unknown> => Boolean(item))
+    : [];
+  const selected = storedOptions.find(
+    (item) => Number(item.option_number) === optionNumber,
+  );
+
+  if (!selected) {
+    return {
+      ok: false,
+      error: "invalid_resource_option",
+      reason_message: "Elige uno de los números de recurso que te mostré.",
+    };
+  }
+
+  const current = await getAvailableResourceOptions(ctx, sessionId);
+  if (!current.ok) return current;
+  const selectedResourceId = String(selected.resource_id ?? "");
+  const currentSelected = current.options.find(
+    (option) => option.resource_id === selectedResourceId,
+  );
+
+  if (!currentSelected) {
+    if (!current.options.length) {
+      await ctx.supabase
+        .from("assistant_pending_actions")
+        .update({ status: "cancelled", updated_at: new Date().toISOString() })
+        .eq("id", pending.id)
+        .eq("studio_id", ctx.studio.id)
+        .eq("status", "pending");
+
+      return {
+        ok: false,
+        error: "resource_unavailable",
+        reason_message:
+          "Ese recurso ya no está disponible y no quedan otros recursos libres para esta clase.",
+      };
+    }
+
+    const safeOptions = current.options.map((option) => ({
+      option_number: option.option_number,
+      label: option.label,
+      short_label: option.short_label,
+      type_name: option.type_name,
+    }));
+    const currentSummary = asObject(pending.confirmation_summary) ?? {};
+
+    await ctx.supabase
+      .from("assistant_pending_actions")
+      .update({
+        action_payload: {
+          ...payload,
+          prepared_turn_id: ctx.turnId,
+          resource_options: current.options.map((option) => ({
+            option_number: option.option_number,
+            resource_id: option.resource_id,
+            label: option.label,
+            short_label: option.short_label,
+            type_name: option.type_name,
+          })),
+        },
+        confirmation_summary: {
+          ...currentSummary,
+          resource_selection_required: true,
+          resource_options: safeOptions,
+        },
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", pending.id)
+      .eq("studio_id", ctx.studio.id)
+      .eq("status", "pending");
+
+    return {
+      ok: true,
+      status: "resource_selection_required",
+      resource_changed: true,
+      resource_options: safeOptions,
+      summary: {
+        ...currentSummary,
+        resource_selection_required: true,
+        resource_options: safeOptions,
+      },
+    };
+  }
+
+  const currentSummary = asObject(pending.confirmation_summary) ?? {};
+  const selectedSummary = {
+    option_number: currentSelected.option_number,
+    label: currentSelected.label,
+    short_label: currentSelected.short_label,
+    type_name: currentSelected.type_name,
+  };
+  const updatedPayload = {
+    ...payload,
+    stage: "confirmation",
+    prepared_turn_id: ctx.turnId,
+    resource_id: currentSelected.resource_id,
+    resource_label: currentSelected.label,
+  };
+  const updatedSummary = {
+    ...currentSummary,
+    resource_selection_required: false,
+    selected_resource: selectedSummary,
+  };
+  const refreshedExpiry = new Date(Date.now() + 10 * 60_000).toISOString();
+
+  const { error: updateError } = await ctx.supabase
+    .from("assistant_pending_actions")
+    .update({
+      action_payload: updatedPayload,
+      confirmation_summary: updatedSummary,
+      expires_at: refreshedExpiry,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", pending.id)
+    .eq("studio_id", ctx.studio.id)
+    .eq("status", "pending");
+
+  if (updateError) {
+    return { ok: false, error: "resource_selection_update_failed" };
+  }
+
+  return {
+    ok: true,
+    status: "confirmation_required",
+    expires_at: refreshedExpiry,
+    selected_resource: selectedSummary,
+    summary: updatedSummary,
+  };
+}
+
 function safeWaitlistReason(reason: unknown) {
   const code = String(reason ?? "waitlist_not_eligible");
   const messages: Record<string, string> = {
@@ -2884,6 +3067,8 @@ export async function executeAssistantActionTool(
       return prepareReschedule(ctx, args as PrepareRescheduleArgs);
     case "execute_reschedule":
       return executeReschedule(ctx, args as ExecuteRescheduleArgs);
+    case "select_resource_option":
+      return selectResourceOption(ctx, args as SelectResourceOptionArgs);
     case "prepare_waitlist_join":
       return prepareWaitlistJoin(ctx, args as PrepareWaitlistJoinArgs);
     case "execute_waitlist_join":
