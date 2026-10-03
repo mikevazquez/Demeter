@@ -1276,6 +1276,119 @@ export default async function StudentProfilePage({
           </div>
 
           {canReadSales ? (
+            <div id="transferencias" className="profile360-package-group scroll-mt-6">
+              <div className="profile360-package-group-heading">
+                <strong>Pagos por transferencia</strong>
+                <span>
+                  {pendingTransferReviews.length
+                    ? `${pendingTransferReviews.length} pendiente${
+                        pendingTransferReviews.length === 1 ? "" : "s"
+                      }`
+                    : "Sin pendientes"}
+                </span>
+              </div>
+
+              {transferPurchaseRows.length ? (
+                <div className="grid gap-3">
+                  {transferPurchaseRows.map((item) => {
+                    const amount = new Intl.NumberFormat(locale, {
+                      style: "currency",
+                      currency: item.currency ?? currency,
+                    }).format(Number(item.amount_minor ?? 0) / 100);
+                    const packageName =
+                      productMap.get(item.product_template_id)?.name ?? "Paquete";
+                    const statusLabel =
+                      item.status === "provisional_active"
+                        ? "Pendiente de validar"
+                        : item.status === "validated"
+                          ? "Validada"
+                          : item.status === "rejected"
+                            ? "Rechazada"
+                            : item.status === "awaiting_receipt"
+                              ? "Esperando comprobante"
+                              : item.status === "cancelled"
+                                ? "Cancelada"
+                                : item.status === "expired"
+                                  ? "Vencida"
+                                  : item.status;
+                    const eventAt =
+                      item.receipt_received_at ??
+                      item.validated_at ??
+                      item.rejected_at ??
+                      item.created_at;
+
+                    return (
+                      <article
+                        key={item.id}
+                        className="rounded-2xl border border-white/10 bg-white/[0.03] p-4"
+                      >
+                        <div className="flex flex-wrap items-start justify-between gap-3">
+                          <div>
+                            <strong className="text-sm text-white">{packageName}</strong>
+                            <p className="mt-1 text-xs text-zinc-400">{amount}</p>
+                            <p className="mt-1 text-xs text-zinc-500">
+                              {item.receipt_received_at
+                                ? "Comprobante recibido · "
+                                : "Solicitud creada · "}
+                              {formatDateTime(eventAt, timeZone, locale)}
+                            </p>
+                            {item.review_note ? (
+                              <p className="mt-2 text-xs text-zinc-400">{item.review_note}</p>
+                            ) : null}
+                          </div>
+                          <span
+                            className={
+                              item.status === "validated"
+                                ? "text-xs font-semibold text-emerald-300"
+                                : item.status === "provisional_active"
+                                  ? "text-xs font-semibold text-amber-300"
+                                  : item.status === "rejected"
+                                    ? "text-xs font-semibold text-rose-300"
+                                    : "text-xs font-semibold text-zinc-400"
+                            }
+                          >
+                            {statusLabel}
+                          </span>
+                        </div>
+
+                        {item.status === "provisional_active" && canManageSales ? (
+                          <form
+                            action={reviewStudentTransferPurchaseAction}
+                            className="mt-4 flex flex-wrap gap-2"
+                          >
+                            <input type="hidden" name="student_id" value={student.id} />
+                            <input type="hidden" name="intent_id" value={item.id} />
+                            <PendingActionButton
+                              name="decision"
+                              value="approved"
+                              pendingLabel="Validando…"
+                              className="primary-button"
+                            >
+                              Validar transferencia
+                            </PendingActionButton>
+                            <PendingActionButton
+                              name="decision"
+                              value="rejected"
+                              pendingLabel="Revocando…"
+                              className="ghost-button"
+                            >
+                              Rechazar y revocar
+                            </PendingActionButton>
+                          </form>
+                        ) : null}
+                      </article>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="empty-state">
+                  No hay pagos por transferencia asociados a esta alumna.
+                </div>
+              )}
+            </div>
+          ) : null}
+
+          {canReadSales ? (
             <div className="profile360-package-group">
               <div className="profile360-package-group-heading">
                 <strong>Penalizaciones operativas</strong>
