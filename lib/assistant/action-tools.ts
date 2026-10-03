@@ -609,15 +609,6 @@ async function prepareBooking(
     return { ok: false, error: "session_not_found" };
   }
 
-  if (sessionInfo.session.requires_resource) {
-    return {
-      ok: false,
-      error: "resource_selection_required",
-      message:
-        "Esta clase requiere seleccionar un recurso antes de reservar. El flujo de recursos todavía no está habilitado para Demi.",
-    };
-  }
-
   const studentId = ctx.studentId;
   let resolvedStudentType: string | null = null;
 
@@ -752,6 +743,21 @@ async function prepareBooking(
       enrollment_required_now: false,
     };
 
+    if (sessionInfo.session.requires_resource) {
+      return createResourceSelectionPending(ctx, {
+        actionType: "booking.create",
+        sessionId,
+        payload: {
+          session_id: sessionId,
+          student_id: studentId,
+          crm_contact_id: studentId ? null : ctx.crmContactId,
+          trial_exception: true,
+          commercial_pending: true,
+        },
+        summary: confirmationSummary,
+      });
+    }
+
     const now = new Date().toISOString();
     await ctx.supabase
       .from("assistant_pending_actions")
@@ -847,6 +853,20 @@ async function prepareBooking(
     payment_pending: false,
     trial_booking: false,
   };
+
+  if (sessionInfo.session.requires_resource) {
+    return createResourceSelectionPending(ctx, {
+      actionType: "booking.create",
+      sessionId,
+      payload: {
+        session_id: sessionId,
+        student_id: studentId,
+        trial_exception: false,
+        commercial_pending: false,
+      },
+      summary: confirmationSummary,
+    });
+  }
 
   const now = new Date().toISOString();
   await ctx.supabase
