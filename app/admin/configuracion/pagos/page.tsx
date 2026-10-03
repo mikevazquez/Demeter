@@ -17,7 +17,7 @@ const errorCopy: Record<string, string> = {
 export default async function PaymentSettingsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ saved?: string; error?: string }>;
+  searchParams: Promise<{ saved?: string; error?: string; reviewed?: string }>;
 }) {
   const params = await searchParams;
   const ctx = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
