@@ -1,8 +1,32 @@
 "use client";
 
+import type { FormEvent, InvalidEvent } from "react";
 import { useFormStatus } from "react-dom";
 
 import { saveStudioBankTransferSettingsAction } from "./actions";
+
+function normalizeDigits(
+  event: FormEvent<HTMLInputElement>,
+  maxLength: number,
+) {
+  const input = event.currentTarget;
+  input.value = input.value.replace(/\D/g, "").slice(0, maxLength);
+  input.setCustomValidity("");
+}
+
+function requireExactDigits(
+  event: InvalidEvent<HTMLInputElement>,
+  label: string,
+  digits: number,
+) {
+  const input = event.currentTarget;
+  const actual = input.value.replace(/\D/g, "").length;
+  input.setCustomValidity(
+    actual
+      ? `${label} debe tener ${digits} dígitos. Actualmente tiene ${actual}.`
+      : `${label} debe tener ${digits} dígitos.`,
+  );
+}
 
 function SubmitButton() {
   const { pending } = useFormStatus();
