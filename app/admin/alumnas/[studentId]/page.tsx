@@ -10,6 +10,7 @@ import StudentDocumentsPanel from "./StudentDocumentsPanel";
 import { notFound } from "next/navigation";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getAdminContext } from "@/lib/auth/admin-context";
+import { createServiceClient } from "@/lib/supabase/service";
 import {
   unlockMedalsAccess,
   updateCommunicationPreferences,
@@ -341,7 +342,7 @@ export default async function StudentProfilePage({
     ? await supabase
         .from("assistant_transfer_purchase_intents")
         .select(
-          "id,status,product_template_id,amount_minor,currency,receipt_received_at,created_at,validated_at,rejected_at,review_note,sale_id,acquisition_id",
+          "id,status,product_template_id,amount_minor,currency,receipt_received_at,receipt_storage_path,receipt_mime_type,receipt_file_size,receipt_stored_at,created_at,validated_at,rejected_at,review_note,sale_id,acquisition_id",
         )
         .eq("studio_id", studio.id)
         .eq("student_id", student.id)
@@ -349,6 +350,31 @@ export default async function StudentProfilePage({
         .limit(20)
     : { data: [] };
   const transferPurchaseRows = transferPurchases ?? [];
+  const transferReceiptUrlMap = new Map<string, string>();
+  if (canReadSales) {
+    const receiptRows = transferPurchaseRows.filter(
+      (item) => typeof item.receipt_storage_path === "string" && item.receipt_storage_path,
+    );
+    if (receiptRows.length) {
+      const serviceClient = createServiceClient();
+      const signed = await Promise.all(
+        receiptRows.map(async (item) => {
+          const path = String(item.receipt_storage_path);
+          const { data, error } = await serviceClient.storage
+            .from("transfer-receipts")
+            .createSignedUrl(path, 600);
+          return {
+            id: item.id,
+            signedUrl: error ? null : (data?.signedUrl ?? null),
+          };
+        }),
+      );
+
+      for (const item of signed) {
+        if (item.signedUrl) transferReceiptUrlMap.set(item.id, item.signedUrl);
+      }
+    }
+  }
   const pendingTransferReviews = transferPurchaseRows.filter(
     (item) => item.status === "provisional_active",
   );
@@ -1366,6 +1392,32 @@ export default async function StudentProfilePage({
                             </p>
                             {item.review_note ? (
                               <p className="mt-2 text-xs text-zinc-400">{item.review_note}</p>
+                            ) : null}
+                            {transferReceiptUrlMap.get(item.id) ? (
+                              <div className="mt-3 overflow-hidden rounded-2xl border border-white/10 bg-black/30">
+                                <iframe
+                                  title={`Comprobante de transferencia de ${packageName}`}
+                                  src={transferReceiptUrlMap.get(item.id)}
+                                  className="h-72 w-full bg-white"
+                                />
+                                <div className="flex items-center justify-between gap-3 px-3 py-2">
+                                  <span className="text-[11px] text-zinc-500">
+                                    Comprobante guardado de forma privada
+                                  </span>
+                                  <a
+                                    href={transferReceiptUrlMap.get(item.id)}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="text-xs font-semibold text-fuchsia-300 hover:text-fuchsia-200"
+                                  >
+                                    Abrir
+                                  </a>
+                                </div>
+                              </div>
+                            ) : item.receipt_received_at ? (
+                              <p className="mt-3 text-xs text-amber-300">
+                                Comprobante recibido; el archivo todavía no está disponible para vista.
+                              </p>
                             ) : null}
                           </div>
                           <span
