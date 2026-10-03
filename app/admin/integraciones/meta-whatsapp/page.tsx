@@ -173,11 +173,11 @@ export default async function MetaWhatsAppIntegrationPage() {
 
           <div className="integration-detail-v2-row">
             <span className="integration-detail-v2-row-copy">
-              <strong>Acceso seguro a Sandbox</strong>
+              <strong>Acceso seguro al entorno</strong>
               <small>
                 {serviceRoleConfigured
-                  ? "La ruta entrante puede operar con el contexto de servicio del Sandbox."
-                  : "Falta SUPABASE_SERVICE_ROLE_KEY en el entorno Preview de Vercel."}
+                  ? "La ruta entrante puede operar con el contexto de servicio configurado para este entorno."
+                  : "Falta SUPABASE_SERVICE_ROLE_KEY en este entorno de Vercel."}
               </small>
             </span>
             <span
@@ -194,8 +194,8 @@ export default async function MetaWhatsAppIntegrationPage() {
               <strong>Motor de Demi</strong>
               <small>
                 {openAIConfigured
-                  ? "OpenAI está disponible en el entorno Preview."
-                  : "Falta OPENAI_API_KEY en el entorno Preview."}
+                  ? "OpenAI está disponible en este entorno."
+                  : "Falta OPENAI_API_KEY en este entorno."}
               </small>
             </span>
             <span
@@ -246,11 +246,10 @@ export default async function MetaWhatsAppIntegrationPage() {
         {callbackUrl ? (
           <div className="integration-detail-v2-list">
             <label className="integration-detail-v2-field">
-              <span>Callback URL de este Preview</span>
+              <span>Callback URL de este entorno</span>
               <input type="text" readOnly value={callbackUrl} />
               <small>
-                Usa esta URL en Meta únicamente para el UAT de Sandbox. No corresponde a
-                Production.
+                Configura en Meta la URL correspondiente a este entorno. Antes de activarla, verifica que el estudio y las credenciales sean los correctos.
               </small>
             </label>
             {verifyToken ? (
@@ -264,8 +263,7 @@ export default async function MetaWhatsAppIntegrationPage() {
 
         {!serviceRoleConfigured ? (
           <div className="integration-detail-v2-notice is-error">
-            Antes del UAT real, agrega SUPABASE_SERVICE_ROLE_KEY únicamente al entorno
-            Preview de Vercel. Hazlo directamente en Vercel; no compartas la llave por chat.
+            Agrega SUPABASE_SERVICE_ROLE_KEY directamente en el entorno correcto de Vercel. No compartas la llave por chat.
           </div>
         ) : null}
       </section>
@@ -306,7 +304,7 @@ export default async function MetaWhatsAppIntegrationPage() {
 
         <form className="integration-detail-v2-form" action={activateMetaWhatsAppPilot}>
           <label className="integration-detail-v2-field">
-            <span>Número de WhatsApp para el UAT</span>
+            <span>Número de WhatsApp para el piloto</span>
             <input
               type="tel"
               name="pilot_phone"
