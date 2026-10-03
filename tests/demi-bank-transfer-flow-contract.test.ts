@@ -27,7 +27,7 @@ describe("Demi bank transfer flow", () => {
 
   it("tells Demi to request the receipt and explain provisional activation", () => {
     expect(orchestrator).toContain(
-      "llama prepare_bank_transfer_purchase",
+      "prepare_bank_transfer_purchase con la session_ref y product_ref exactas",
     );
     expect(orchestrator).toContain(
       "el paquete se activará de forma provisional",
@@ -47,11 +47,12 @@ describe("Demi bank transfer flow", () => {
     expect(migration).toContain("to service_role;");
   });
 
-  it("provides an owner settings and review page", () => {
+  it("keeps transfer settings centralized while routing each review to the student's Profile 360", () => {
     expect(paymentPage).toContain("Pagos y transferencias");
     expect(paymentPage).toContain("studio_bank_transfer_settings");
-    expect(paymentPage).toContain("Comprobantes pendientes de validación");
-    expect(paymentPage).toContain("Validar transferencia");
-    expect(paymentPage).toContain("Rechazar y revocar");
+    expect(paymentPage).toContain("Transferencias pendientes");
+    expect(paymentPage).toContain("Cada pago se valida y conserva dentro del Perfil 360 de la alumna");
+    expect(paymentPage).toContain("Abrir perfil de la alumna");
+    expect(paymentPage).toContain("?view=packages#transferencias");
   });
 });
