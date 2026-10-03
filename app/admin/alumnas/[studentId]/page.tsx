@@ -10,11 +10,13 @@ import StudentDocumentsPanel from "./StudentDocumentsPanel";
 import { notFound } from "next/navigation";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getAdminContext } from "@/lib/auth/admin-context";
+import { createServiceClient } from "@/lib/supabase/service";
 import {
   unlockMedalsAccess,
   updateCommunicationPreferences,
   updateDynamicProfileFields,
   updateStudent,
+  reviewStudentTransferPurchaseAction,
 } from "./actions";
 
 const structuralFieldKeys = new Set(["first_name", "last_name", "phone", "email"]);
@@ -149,6 +151,7 @@ export default async function StudentProfilePage({
     evaluation_error?: string;
     document_result?: string;
     document_error?: string;
+    transfer_review?: string;
     view?: string;
   }>;
 }) {
@@ -194,6 +197,7 @@ export default async function StudentProfilePage({
   const canEdit = can(CAPABILITIES.STUDENTS_WRITE);
   const canReadSchedule = can(CAPABILITIES.SCHEDULE_READ);
   const canReadSales = can(CAPABILITIES.SALES_READ);
+  const canManageSales = can(CAPABILITIES.SALES_WRITE);
   const canReadRewards = can(CAPABILITIES.REWARDS_READ);
   const canManageRewards = can(CAPABILITIES.REWARDS_MANAGE);
   const canReadEvaluations = can(CAPABILITIES.EVALUATIONS_READ);
@@ -441,6 +445,46 @@ export default async function StudentProfilePage({
   const operatingCharges = operatingChargesResult.data ?? [];
   const pendingOperatingCharges = (operatingCharges ?? []).filter(
     (charge) => charge.status === "pending",
+  );
+  const { data: transferPurchases } = canReadSales
+    ? await supabase
+        .from("assistant_transfer_purchase_intents")
+        .select(
+          "id,status,product_template_id,amount_minor,currency,receipt_received_at,receipt_storage_path,receipt_mime_type,receipt_file_size,receipt_stored_at,created_at,validated_at,rejected_at,review_note,sale_id,acquisition_id",
+        )
+        .eq("studio_id", studio.id)
+        .eq("student_id", student.id)
+        .order("created_at", { ascending: false })
+        .limit(20)
+    : { data: [] };
+  const transferPurchaseRows = transferPurchases ?? [];
+  const transferReceiptUrlMap = new Map<string, string>();
+  if (canReadSales) {
+    const receiptRows = transferPurchaseRows.filter(
+      (item) => typeof item.receipt_storage_path === "string" && item.receipt_storage_path,
+    );
+    if (receiptRows.length) {
+      const serviceClient = createServiceClient();
+      const signed = await Promise.all(
+        receiptRows.map(async (item) => {
+          const path = String(item.receipt_storage_path);
+          const { data, error } = await serviceClient.storage
+            .from("transfer-receipts")
+            .createSignedUrl(path, 600);
+          return {
+            id: item.id,
+            signedUrl: error ? null : (data?.signedUrl ?? null),
+          };
+        }),
+      );
+
+      for (const item of signed) {
+        if (item.signedUrl) transferReceiptUrlMap.set(item.id, item.signedUrl);
+      }
+    }
+  }
+  const pendingTransferReviews = transferPurchaseRows.filter(
+    (item) => item.status === "provisional_active",
   );
   const timeZone = studio.timezone;
   const locale = studio.locale;
@@ -838,6 +882,38 @@ export default async function StudentProfilePage({
     });
   }
 
+  for (const transfer of transferPurchaseRows) {
+    const amount = new Intl.NumberFormat(locale, {
+      style: "currency",
+      currency: transfer.currency ?? currency,
+    }).format(Number(transfer.amount_minor ?? 0) / 100);
+    const packageName =
+      productMap.get(transfer.product_template_id)?.name ?? "Paquete";
+    const title =
+      transfer.status === "validated"
+        ? "Transferencia validada"
+        : transfer.status === "rejected"
+          ? "Transferencia rechazada"
+          : transfer.status === "provisional_active"
+            ? "Comprobante de transferencia recibido"
+            : transfer.status === "awaiting_receipt"
+              ? "Transferencia pendiente de comprobante"
+              : "Movimiento de transferencia";
+
+    profileHistoryEvents.push({
+      id: "transfer:" + transfer.id,
+      at:
+        transfer.validated_at ??
+        transfer.rejected_at ??
+        transfer.receipt_received_at ??
+        transfer.created_at,
+      kind: "sale",
+      title,
+      detail: `${packageName} · ${amount}`,
+      href: `/admin/alumnas/${student.id}?view=packages#transferencias`,
+    });
+  }
+
   for (const achievement of rewardAchievements) {
     profileHistoryEvents.push({
       id: "reward:" + achievement.id,
@@ -902,6 +978,15 @@ export default async function StudentProfilePage({
       detail: "No hay una reserva futura asociada al paquete actual.",
     });
   }
+  if (pendingTransferReviews.length > 0) {
+    alerts.push({
+      title: "Transferencia pendiente de validar",
+      detail:
+        pendingTransferReviews.length === 1
+          ? "Hay un comprobante asociado a esta alumna pendiente de validación."
+          : `Hay ${pendingTransferReviews.length} comprobantes asociados a esta alumna pendientes de validación.`,
+    });
+  }
   if (currentAcquisition?.access_blocked || pendingBalanceMinor > 0) {
     alerts.push({
       title: "Saldo pendiente",
@@ -940,6 +1025,7 @@ export default async function StudentProfilePage({
     acquisition_not_editable: "Esta adquisición ya no puede modificarse.",
     communication_preferences:
       "No se pudieron guardar las preferencias de comunicación. Inténtalo de nuevo.",
+    transfer_review: "No se pudo actualizar la validación de la transferencia.",
   };
 
   return (
@@ -993,6 +1079,18 @@ export default async function StudentProfilePage({
       {query.error ? (
         <div className="notice error">
           {errorCopy[query.error] ?? "No se pudo guardar el cambio."}
+        </div>
+      ) : null}
+
+      {query.transfer_review === "approved" ? (
+        <div className="notice success">
+          Transferencia validada. El paquete de esta alumna quedó confirmado.
+        </div>
+      ) : null}
+
+      {query.transfer_review === "rejected" ? (
+        <div className="notice success">
+          Transferencia rechazada. El paquete provisional fue revocado y el historial se conservó.
         </div>
       ) : null}
 
@@ -1272,6 +1370,145 @@ export default async function StudentProfilePage({
               </p>
             </div>
           </div>
+
+          {canReadSales ? (
+            <div id="transferencias" className="profile360-package-group scroll-mt-6">
+              <div className="profile360-package-group-heading">
+                <strong>Pagos por transferencia</strong>
+                <span>
+                  {pendingTransferReviews.length
+                    ? `${pendingTransferReviews.length} pendiente${
+                        pendingTransferReviews.length === 1 ? "" : "s"
+                      }`
+                    : "Sin pendientes"}
+                </span>
+              </div>
+
+              {transferPurchaseRows.length ? (
+                <div className="grid gap-3">
+                  {transferPurchaseRows.map((item) => {
+                    const amount = new Intl.NumberFormat(locale, {
+                      style: "currency",
+                      currency: item.currency ?? currency,
+                    }).format(Number(item.amount_minor ?? 0) / 100);
+                    const packageName =
+                      productMap.get(item.product_template_id)?.name ?? "Paquete";
+                    const statusLabel =
+                      item.status === "provisional_active"
+                        ? "Pendiente de validar"
+                        : item.status === "validated"
+                          ? "Validada"
+                          : item.status === "rejected"
+                            ? "Rechazada"
+                            : item.status === "awaiting_receipt"
+                              ? "Esperando comprobante"
+                              : item.status === "cancelled"
+                                ? "Cancelada"
+                                : item.status === "expired"
+                                  ? "Vencida"
+                                  : item.status;
+                    const eventAt =
+                      item.receipt_received_at ??
+                      item.validated_at ??
+                      item.rejected_at ??
+                      item.created_at;
+
+                    return (
+                      <article
+                        key={item.id}
+                        className="rounded-2xl border border-white/10 bg-white/[0.03] p-4"
+                      >
+                        <div className="flex flex-wrap items-start justify-between gap-3">
+                          <div>
+                            <strong className="text-sm text-white">{packageName}</strong>
+                            <p className="mt-1 text-xs text-zinc-400">{amount}</p>
+                            <p className="mt-1 text-xs text-zinc-500">
+                              {item.receipt_received_at
+                                ? "Comprobante recibido · "
+                                : "Solicitud creada · "}
+                              {formatDateTime(eventAt, timeZone, locale)}
+                            </p>
+                            {item.review_note ? (
+                              <p className="mt-2 text-xs text-zinc-400">{item.review_note}</p>
+                            ) : null}
+                            {transferReceiptUrlMap.get(item.id) ? (
+                              <div className="mt-3 overflow-hidden rounded-2xl border border-white/10 bg-black/30">
+                                <iframe
+                                  title={`Comprobante de transferencia de ${packageName}`}
+                                  src={transferReceiptUrlMap.get(item.id)}
+                                  className="h-72 w-full bg-white"
+                                />
+                                <div className="flex items-center justify-between gap-3 px-3 py-2">
+                                  <span className="text-[11px] text-zinc-500">
+                                    Comprobante guardado de forma privada
+                                  </span>
+                                  <a
+                                    href={transferReceiptUrlMap.get(item.id)}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="text-xs font-semibold text-fuchsia-300 hover:text-fuchsia-200"
+                                  >
+                                    Abrir
+                                  </a>
+                                </div>
+                              </div>
+                            ) : item.receipt_received_at ? (
+                              <p className="mt-3 text-xs text-amber-300">
+                                Comprobante recibido; el archivo todavía no está disponible para vista.
+                              </p>
+                            ) : null}
+                          </div>
+                          <span
+                            className={
+                              item.status === "validated"
+                                ? "text-xs font-semibold text-emerald-300"
+                                : item.status === "provisional_active"
+                                  ? "text-xs font-semibold text-amber-300"
+                                  : item.status === "rejected"
+                                    ? "text-xs font-semibold text-rose-300"
+                                    : "text-xs font-semibold text-zinc-400"
+                            }
+                          >
+                            {statusLabel}
+                          </span>
+                        </div>
+
+                        {item.status === "provisional_active" && canManageSales ? (
+                          <form
+                            action={reviewStudentTransferPurchaseAction}
+                            className="mt-4 flex flex-wrap gap-2"
+                          >
+                            <input type="hidden" name="student_id" value={student.id} />
+                            <input type="hidden" name="intent_id" value={item.id} />
+                            <PendingActionButton
+                              name="decision"
+                              value="approved"
+                              pendingLabel="Validando…"
+                              className="primary-button"
+                            >
+                              Validar transferencia
+                            </PendingActionButton>
+                            <PendingActionButton
+                              name="decision"
+                              value="rejected"
+                              pendingLabel="Revocando…"
+                              className="ghost-button"
+                            >
+                              Rechazar y revocar
+                            </PendingActionButton>
+                          </form>
+                        ) : null}
+                      </article>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="empty-state">
+                  No hay pagos por transferencia asociados a esta alumna.
+                </div>
+              )}
+            </div>
+          ) : null}
 
           {canReadSales ? (
             <div className="profile360-package-group">
