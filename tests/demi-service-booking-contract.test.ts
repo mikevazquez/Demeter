@@ -9,7 +9,7 @@ function source(path: string) {
 describe("Demi WhatsApp service booking bridge", () => {
   const actions = source("lib/assistant/action-tools.ts");
   const migration = source(
-    "supabase/migrations/20261002224000_demi_service_booking_runtime.sql",
+    "supabase/migrations/20261003172200_demi_service_booking_runtime.sql",
   );
 
   it("uses service-only eligibility for WhatsApp runtime", () => {
