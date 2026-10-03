@@ -7,6 +7,8 @@ export const META_WHATSAPP_TEMPLATE_KEYS = [
   "waitlist_promoted",
   "class_reminder",
   "class_cancelled_coach",
+  "class_cancelled_student",
+  "class_rescheduled",
 ] as const;
 
 export type MetaWhatsAppTemplateKey = (typeof META_WHATSAPP_TEMPLATE_KEYS)[number];
@@ -31,6 +33,15 @@ const PARAMETER_ORDER: Record<MetaWhatsAppTemplateKey, readonly string[]> = {
     "hora",
     "minimo_reservas",
     "reservas_al_revisar",
+  ],
+  class_cancelled_student: ["nombre", "clase", "fecha", "hora"],
+  class_rescheduled: [
+    "nombre",
+    "clase",
+    "fecha_anterior",
+    "hora_anterior",
+    "fecha_nueva",
+    "hora_nueva",
   ],
 };
 
@@ -65,6 +76,7 @@ export function buildMetaWhatsAppTemplatePayload(input: {
   metaTemplateName: string;
   languageCode: string;
   variables: Record<string, unknown>;
+  headerImageId?: string | null;
 }) {
   const mapped =
     input.internalTemplate === "student_welcome"
@@ -81,6 +93,29 @@ export function buildMetaWhatsAppTemplatePayload(input: {
     text: asTemplateText(mapped[key]),
   }));
 
+  const components: Array<Record<string, unknown>> = [];
+
+  if (input.headerImageId) {
+    components.push({
+      type: "header",
+      parameters: [
+        {
+          type: "image",
+          image: {
+            id: input.headerImageId,
+          },
+        },
+      ],
+    });
+  }
+
+  if (parameters.length) {
+    components.push({
+      type: "body",
+      parameters,
+    });
+  }
+
   return {
     messaging_product: "whatsapp",
     recipient_type: "individual",
@@ -91,16 +126,7 @@ export function buildMetaWhatsAppTemplatePayload(input: {
       language: {
         code: input.languageCode,
       },
-      ...(parameters.length
-        ? {
-            components: [
-              {
-                type: "body" as const,
-                parameters,
-              },
-            ],
-          }
-        : {}),
+      ...(components.length ? { components } : {}),
     },
   };
 }
