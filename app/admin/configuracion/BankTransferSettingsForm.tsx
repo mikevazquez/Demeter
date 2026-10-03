@@ -1,6 +1,6 @@
 "use client";
 
-import type { FormEvent, InvalidEvent } from "react";
+import type { FormEvent } from "react";
 import { useState } from "react";
 import { useFormStatus } from "react-dom";
 
@@ -16,7 +16,7 @@ function normalizeDigits(
 }
 
 function requireExactDigits(
-  event: InvalidEvent<HTMLInputElement>,
+  event: FormEvent<HTMLInputElement>,
   label: string,
   digits: number,
 ) {
@@ -30,7 +30,7 @@ function requireExactDigits(
 }
 
 function requireDigitRange(
-  event: InvalidEvent<HTMLInputElement>,
+  event: FormEvent<HTMLInputElement>,
   label: string,
   min: number,
   max: number,
