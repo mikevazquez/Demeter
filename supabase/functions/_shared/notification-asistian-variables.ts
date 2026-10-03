@@ -4,6 +4,25 @@ function safeText(value: unknown) {
   return typeof value === "string" && value.trim() ? value.trim() : null;
 }
 
+function dedupeLocationLabel(value: unknown) {
+  const raw = safeText(value);
+  if (!raw) return null;
+
+  const seen = new Set<string>();
+  const parts = raw
+    .split("·")
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .filter((part) => {
+      const key = part.toLocaleLowerCase("es-MX");
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+
+  return parts.join(" · ") || null;
+}
+
 function safeNumber(value: unknown) {
   if (typeof value === "number" && Number.isFinite(value)) return value;
   if (typeof value === "string" && value.trim()) {
@@ -90,7 +109,7 @@ export function buildAsistianVariables(
       return {
         ...common,
         coach: safeText(variables.coach),
-        ubicacion: safeText(variables.location),
+        ubicacion: dedupeLocationLabel(variables.location),
         creditos_restantes: safeNumber(variables.credits_remaining),
       };
 
