@@ -174,6 +174,11 @@ export type PrepareBankTransferPurchaseArgs = {
   product_ref: string;
 };
 
+export type PrepareTransferPackageChoiceArgs = {
+  session_ref: string;
+  product_refs: string[];
+};
+
 export type ExecuteWaitlistJoinArgs = EmptyArgs;
 
 export type RecordTrialPaymentPreferenceArgs = {
@@ -330,6 +335,32 @@ export const assistantActionToolDefinitions: AssistantToolDefinition[] = [
       type: "object",
       properties: {},
       required: [],
+      additionalProperties: false,
+    },
+  },
+  {
+    type: "function",
+    name: "prepare_transfer_package_choice",
+    description:
+      "Guarda de forma persistente que la persona eligió transferencia y está eligiendo un paquete para una clase concreta. Llámala ANTES de mostrar la lista de paquetes y preguntar cuál prefiere. Pasa exactamente los product_ref de las opciones que vas a mostrar; así una respuesta posterior como '8 clases' continúa el flujo aunque pasen horas.",
+    strict: true,
+    parameters: {
+      type: "object",
+      properties: {
+        session_ref: {
+          type: "string",
+          description: "Referencia session:<uuid> de la clase objetivo.",
+        },
+        product_refs: {
+          type: "array",
+          minItems: 1,
+          maxItems: 10,
+          items: { type: "string" },
+          description:
+            "Referencias product:<uuid> exactas de los paquetes compatibles que se mostrarán a la persona.",
+        },
+      },
+      required: ["session_ref", "product_refs"],
       additionalProperties: false,
     },
   },
