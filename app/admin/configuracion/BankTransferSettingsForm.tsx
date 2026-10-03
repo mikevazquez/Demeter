@@ -1,6 +1,7 @@
 "use client";
 
 import type { FormEvent, InvalidEvent } from "react";
+import { useState } from "react";
 import { useFormStatus } from "react-dom";
 
 import { saveStudioBankTransferSettingsAction } from "./actions";
@@ -25,6 +26,19 @@ function requireExactDigits(
     actual
       ? `${label} debe tener ${digits} dígitos. Actualmente tiene ${actual}.`
       : `${label} debe tener ${digits} dígitos.`,
+  );
+}
+
+function requireDigitRange(
+  event: InvalidEvent<HTMLInputElement>,
+  label: string,
+  min: number,
+  max: number,
+) {
+  const input = event.currentTarget;
+  const actual = input.value.replace(/\D/g, "").length;
+  input.setCustomValidity(
+    `${label} debe tener entre ${min} y ${max} dígitos. Actualmente tiene ${actual}.`,
   );
 }
 
@@ -55,11 +69,41 @@ export function BankTransferSettingsForm({
   cardNumber: string;
   instructions: string;
 }) {
+  const [transferEnabled, setTransferEnabled] = useState(enabled);
+
+  function validateBeforeSubmit(event: FormEvent<HTMLFormElement>) {
+    const form = event.currentTarget;
+    const data = new FormData(form);
+
+    if (!transferEnabled) return;
+
+    const clabe = String(data.get("clabe") ?? "").replace(/\D/g, "");
+    const account = String(data.get("account_number") ?? "").replace(/\D/g, "");
+    const card = String(data.get("card_number") ?? "").replace(/\D/g, "");
+
+    if (!clabe && !account && !card) {
+      event.preventDefault();
+      const clabeInput = form.elements.namedItem("clabe") as HTMLInputElement | null;
+      clabeInput?.setCustomValidity(
+        "Captura una CLABE, un número de cuenta o un número de tarjeta para transferencia.",
+      );
+      clabeInput?.reportValidity();
+    }
+  }
+
   return (
-    <form action={saveStudioBankTransferSettingsAction} className="advanced-v2-form">
+    <form
+      action={saveStudioBankTransferSettingsAction}
+      className="advanced-v2-form"
+      onSubmit={validateBeforeSubmit}
+    >
       <label className="advanced-v2-field">
         <span>Transferencia bancaria</span>
-        <select name="enabled" defaultValue={enabled ? "1" : "0"}>
+        <select
+          name="enabled"
+          defaultValue={enabled ? "1" : "0"}
+          onChange={(event) => setTransferEnabled(event.currentTarget.value === "1")}
+        >
           <option value="1">Activa</option>
           <option value="0">Desactivada</option>
         </select>
@@ -68,12 +112,24 @@ export function BankTransferSettingsForm({
 
       <label className="advanced-v2-field">
         <span>Banco</span>
-        <input name="bank_name" defaultValue={bankName} maxLength={80} autoComplete="off" />
+        <input
+          name="bank_name"
+          defaultValue={bankName}
+          maxLength={80}
+          autoComplete="off"
+          required={transferEnabled}
+        />
       </label>
 
       <label className="advanced-v2-field">
         <span>Titular de la cuenta</span>
-        <input name="account_holder" defaultValue={accountHolder} maxLength={120} autoComplete="off" />
+        <input
+          name="account_holder"
+          defaultValue={accountHolder}
+          maxLength={120}
+          autoComplete="off"
+          required={transferEnabled}
+        />
       </label>
 
       <label className="advanced-v2-field">
@@ -82,8 +138,11 @@ export function BankTransferSettingsForm({
           name="clabe"
           defaultValue={clabe}
           inputMode="numeric"
-          maxLength={24}
+          pattern="[0-9]{18}"
+          maxLength={18}
           autoComplete="off"
+          onInput={(event) => normalizeDigits(event, 18)}
+          onInvalid={(event) => requireExactDigits(event, "La CLABE", 18)}
         />
         <small>18 dígitos. Demi la compartirá únicamente cuando la alumna elija transferencia.</small>
       </label>
@@ -94,8 +153,13 @@ export function BankTransferSettingsForm({
           name="account_number"
           defaultValue={accountNumber}
           inputMode="numeric"
-          maxLength={28}
+          pattern="[0-9]{4,20}"
+          maxLength={20}
           autoComplete="off"
+          onInput={(event) => normalizeDigits(event, 20)}
+          onInvalid={(event) =>
+            requireDigitRange(event, "El número de cuenta", 4, 20)
+          }
         />
       </label>
 
@@ -105,8 +169,13 @@ export function BankTransferSettingsForm({
           name="card_number"
           defaultValue={cardNumber}
           inputMode="numeric"
-          maxLength={28}
+          pattern="[0-9]{12,19}"
+          maxLength={19}
           autoComplete="off"
+          onInput={(event) => normalizeDigits(event, 19)}
+          onInvalid={(event) =>
+            requireDigitRange(event, "El número de tarjeta", 12, 19)
+          }
         />
       </label>
 
