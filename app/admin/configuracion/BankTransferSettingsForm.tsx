@@ -58,8 +58,7 @@ export function BankTransferSettingsForm({
           name="clabe"
           defaultValue={clabe}
           inputMode="numeric"
-          pattern="[0-9]{18}"
-          maxLength={18}
+          maxLength={24}
           autoComplete="off"
         />
         <small>18 dígitos. Demi la compartirá únicamente cuando la alumna elija transferencia.</small>
@@ -71,8 +70,7 @@ export function BankTransferSettingsForm({
           name="account_number"
           defaultValue={accountNumber}
           inputMode="numeric"
-          pattern="[0-9]{4,20}"
-          maxLength={20}
+          maxLength={28}
           autoComplete="off"
         />
       </label>
@@ -83,8 +81,7 @@ export function BankTransferSettingsForm({
           name="card_number"
           defaultValue={cardNumber}
           inputMode="numeric"
-          pattern="[0-9]{12,19}"
-          maxLength={19}
+          maxLength={28}
           autoComplete="off"
         />
       </label>
