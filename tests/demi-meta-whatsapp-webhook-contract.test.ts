@@ -81,11 +81,15 @@ describe("Demi Meta WhatsApp inbound contract", () => {
     expect(route).toContain("webhookConfig.pilotWaIds.includes");
   });
 
-  it("self-heals the Meta Phone Number ID only for the guarded pilot contact", () => {
+  it("self-heals Meta channel identity only for the guarded pilot contact", () => {
     expect(route).toContain("pilotContactAllowed");
     expect(route).toContain("service_sync_meta_whatsapp_phone_number_id");
+    expect(route).toContain("service_sync_meta_whatsapp_waba_id");
     expect(route).toContain('"phone_number_synced"');
     expect(route).toContain('"phone_number_sync_failed"');
+    expect(route).toContain('"waba_synced"');
+    expect(channel).toContain("wabaId");
+    expect(channel).toContain("safeText(entry.id)");
   });
 
   it("does not persist real inbound content while Demi is demo/off", () => {
