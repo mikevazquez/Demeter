@@ -12,16 +12,11 @@ security definer
 set search_path = ''
 as $function$
 declare
-  v_role text := coalesce(current_setting('request.jwt.claim.role', true), '');
   v_reservation public.reservations%rowtype;
   v_session public.class_sessions%rowtype;
   v_token_row public.reservation_checkin_tokens%rowtype;
   v_token text;
 begin
-  if v_role <> 'service_role' then
-    raise exception 'forbidden';
-  end if;
-
   select *
     into v_reservation
   from public.reservations
