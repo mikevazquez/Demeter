@@ -191,3 +191,64 @@ export async function saveStudioRegionalSettingsAction(formData: FormData) {
   revalidatePath("/admin/configuracion/region");
   redirect(regionalConfigurationPath(formData, { saved: "regional" }));
 }
+
+
+export async function saveStudioBankTransferSettingsAction(formData: FormData) {
+  const ctx = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
+
+  if (ctx.membership.role !== "owner") {
+    redirect("/admin?error=access");
+  }
+
+  const enabled = String(formData.get("enabled") ?? "") === "1";
+  const bankName = String(formData.get("bank_name") ?? "").trim();
+  const accountHolder = String(formData.get("account_holder") ?? "").trim();
+  const clabe = String(formData.get("clabe") ?? "").replace(/\D/g, "");
+  const accountNumber = String(formData.get("account_number") ?? "").replace(/\D/g, "");
+  const cardNumber = String(formData.get("card_number") ?? "").replace(/\D/g, "");
+  const instructions = String(formData.get("instructions") ?? "").trim();
+
+  const hasDestination = Boolean(clabe || accountNumber || cardNumber);
+  const invalid =
+    (enabled && (!bankName || !accountHolder || !hasDestination)) ||
+    (clabe && !/^[0-9]{18}$/.test(clabe)) ||
+    (accountNumber && !/^[0-9]{4,20}$/.test(accountNumber)) ||
+    (cardNumber && !/^[0-9]{12,19}$/.test(cardNumber)) ||
+    bankName.length > 80 ||
+    accountHolder.length > 120 ||
+    instructions.length > 300;
+
+  if (invalid) {
+    redirect("/admin/configuracion/pagos?error=transfer");
+  }
+
+  const { error } = await ctx.supabase
+    .from("studio_bank_transfer_settings")
+    .upsert(
+      {
+        studio_id: ctx.studio.id,
+        enabled,
+        bank_name: bankName || null,
+        account_holder: accountHolder || null,
+        clabe: clabe || null,
+        account_number: accountNumber || null,
+        card_number: cardNumber || null,
+        instructions: instructions || null,
+        updated_at: new Date().toISOString(),
+        updated_by: ctx.user.id,
+      },
+      { onConflict: "studio_id" },
+    );
+
+  if (error) {
+    console.error("[studio.payments] Bank transfer settings save failed", {
+      code: error.code,
+      message: error.message.slice(0, 160),
+    });
+    redirect("/admin/configuracion/pagos?error=transfer_save");
+  }
+
+  revalidatePath("/admin/configuracion/pagos");
+  revalidatePath("/admin/mas");
+  redirect("/admin/configuracion/pagos?saved=transfer");
+}
