@@ -402,6 +402,25 @@ export async function getCommercialOptions(
     });
   }
 
+  const { data: paymentMethods, error: paymentMethodsError } =
+    await ctx.supabase
+      .from("studio_payment_methods")
+      .select("code,name,category,active,sort_order")
+      .eq("studio_id", ctx.studio.id)
+      .eq("active", true)
+      .order("sort_order", { ascending: true });
+
+  if (paymentMethodsError) {
+    return { ok: false, error: "commercial_payment_methods_unavailable" };
+  }
+
+  const onlineCheckoutAvailable = products.some(
+    (item) => item.online_purchasable === true,
+  );
+  const bankTransfer = (paymentMethods ?? []).find(
+    (item) => item.code === "bank_transfer" || item.category === "transfer",
+  );
+
   return {
     ok: true,
     ...(sessionScope
@@ -411,6 +430,28 @@ export async function getCommercialOptions(
           compatibility_filtered: true,
         }
       : { compatibility_filtered: false }),
+    payment_options: [
+      ...(onlineCheckoutAvailable
+        ? [
+            {
+              code: "app_mercado_pago",
+              label: "App / Mercado Pago",
+              channel: "app",
+              provider: "mercado_pago",
+            },
+          ]
+        : []),
+      ...(bankTransfer
+        ? [
+            {
+              code: "bank_transfer",
+              label: bankTransfer.name || "Transferencia",
+              channel: "transfer",
+              provider: null,
+            },
+          ]
+        : []),
+    ],
     options: products.map((item) => ({
       product_ref: `product:${item.id}`,
       name: item.name,
