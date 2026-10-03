@@ -130,11 +130,11 @@ export default async function DemiDemoPage() {
           <Link className="demi-back" href="/admin/integraciones">
             ← Integraciones
           </Link>
-          <div className="demi-eyebrow">Sandbox · interno</div>
+          <div className="demi-eyebrow">Asistente interno</div>
           <h1>🤖 {config.assistant_name}</h1>
           <p>
             Conversa con el asistente usando datos reales de {studio.name}. Ya puede
-            reservar, cancelar, reagendar y entrar a lista de espera en Sandbox con
+            reservar, cancelar, reagendar y entrar a lista de espera con
             confirmación explícita.
           </p>
         </div>
