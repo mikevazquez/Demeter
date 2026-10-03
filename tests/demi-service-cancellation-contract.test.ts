@@ -9,7 +9,7 @@ function source(path: string) {
 describe("Demi WhatsApp service cancellation bridge", () => {
   const actions = source("lib/assistant/action-tools.ts");
   const migration = source(
-    "supabase/migrations/20261002225500_demi_service_cancellation_runtime.sql",
+    "supabase/migrations/20261003172400_demi_service_cancellation_runtime.sql",
   );
 
   it("uses the service cancellation RPC in service mode", () => {
