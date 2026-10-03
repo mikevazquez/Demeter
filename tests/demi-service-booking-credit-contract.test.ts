@@ -8,7 +8,7 @@ function source(path: string) {
 
 describe("Demi service booking credit revalidation", () => {
   const migration = source(
-    "supabase/migrations/20261002224500_demi_service_booking_credit_fix.sql",
+    "supabase/migrations/20261003172300_demi_service_booking_credit_fix.sql",
   );
 
   it("recomputes package credits directly under the acquisition lock", () => {
