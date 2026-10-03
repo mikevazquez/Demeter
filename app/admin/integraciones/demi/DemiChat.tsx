@@ -35,7 +35,7 @@ const ERROR_COPY: Record<string, string> = {
   turn_create_failed: "No se pudo guardar tu mensaje.",
   conversation_history_failed: "No se pudo recuperar el contexto de la conversación.",
   openai_not_configured:
-    "La interfaz ya está lista, pero falta configurar OPENAI_API_KEY en el entorno Preview de Vercel.",
+    "La interfaz ya está lista, pero falta configurar OPENAI_API_KEY en este entorno de Vercel.",
   assistant_budget_exceeded:
     "Demi alcanzó el límite de gasto configurado para esta demo.",
   openai_network_error: "No se pudo conectar con OpenAI.",
@@ -182,7 +182,7 @@ export default function DemiChat({
           </div>
           <div>
             <strong>{assistantName}</strong>
-            <span>{isPending ? "consultando Studio Flow…" : "demo · Sandbox"}</span>
+            <span>{isPending ? "consultando Studio Flow…" : "asistente interno"}</span>
           </div>
           <button type="button" onClick={resetConversation} disabled={isPending}>
             Nueva
@@ -312,7 +312,7 @@ export default function DemiChat({
           <p>
             {openAIConfigured
               ? "La llave está disponible únicamente en el servidor."
-              : "La demo visual funciona, pero no puede conversar hasta configurar la llave en Preview."}
+              : "La interfaz funciona, pero no puede conversar hasta configurar la llave del servidor."}
           </p>
         </div>
 
