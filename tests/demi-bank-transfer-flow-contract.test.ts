@@ -45,13 +45,16 @@ describe("Demi bank transfer flow", () => {
     expect(migration).toContain("to service_role;");
   });
 
-  it("keeps transfer settings centralized while routing each review to the student's Profile 360", () => {
-    expect(paymentPage).toContain("Pagos y transferencias");
-    expect(paymentPage).toContain("studio_bank_transfer_settings");
-    expect(paymentPage).toContain("Transferencias pendientes");
-    expect(paymentPage).toContain("Cada pago se valida y conserva dentro");
-    expect(paymentPage).toContain("Perfil 360 de la alumna.");
-    expect(paymentPage).toContain("Abrir perfil de la alumna");
-    expect(paymentPage).toContain("?view=packages#transferencias");
-  });
+  it(
+    "keeps transfer settings centralized while routing each review to the student's Profile 360",
+    () => {
+      expect(paymentPage).toContain("Pagos y transferencias");
+      expect(paymentPage).toContain("studio_bank_transfer_settings");
+      expect(paymentPage).toContain("Transferencias pendientes");
+      expect(paymentPage).toContain("Cada pago se valida y conserva dentro");
+      expect(paymentPage).toContain("Perfil 360 de la alumna.");
+      expect(paymentPage).toContain("Abrir perfil de la alumna");
+      expect(paymentPage).toContain("?view=packages#transferencias");
+    },
+  );
 });
