@@ -20,21 +20,13 @@ describe("Demi persistent transfer package choice", () => {
 
   it("resolves a delayed reply like 8 clases from the stored shortlist", () => {
     expect(orchestrator).toContain("tryServerSideTransferPackageChoice");
-    expect(orchestrator).toContain(
-      "matchTransferPackageOption",
-    );
-    expect(orchestrator).toContain(
-      "prepare_bank_transfer_purchase",
-    );
+    expect(orchestrator).toContain("matchTransferPackageOption");
+    expect(orchestrator).toContain("prepare_bank_transfer_purchase");
   });
 
   it("does not require the original reservation to still be in short history", () => {
-    expect(orchestrator).toContain(
-      "Ese estado dura hasta 24 horas",
-    );
-    expect(orchestrator).toContain(
-      "server-transfer-package:",
-    );
+    expect(orchestrator).toContain("Ese estado dura hasta 24 horas");
+    expect(orchestrator).toContain("server-transfer-package:");
   });
 
   it("redacts bank details from the tool audit", () => {

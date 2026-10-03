@@ -8,9 +8,7 @@ function source(path: string) {
 
 describe("Demi outbound WhatsApp notifications", () => {
   const metaTemplate = source("supabase/functions/_shared/meta-whatsapp-template.ts");
-  const variables = source(
-    "supabase/functions/_shared/notification-asistian-variables.ts",
-  );
+  const variables = source("supabase/functions/_shared/notification-asistian-variables.ts");
   const migration = source(
     "supabase/migrations/20261003173100_meta_whatsapp_demi_operational_templates.sql",
   );
@@ -20,9 +18,7 @@ describe("Demi outbound WhatsApp notifications", () => {
   it("supports Meta templates for class cancellation and schedule changes", () => {
     expect(metaTemplate).toContain('"class_cancelled_student"');
     expect(metaTemplate).toContain('"class_rescheduled"');
-    expect(metaTemplate).toContain(
-      'class_cancelled_student: ["nombre", "clase", "fecha", "hora"]',
-    );
+    expect(metaTemplate).toContain('class_cancelled_student: ["nombre", "clase", "fecha", "hora"]');
     expect(metaTemplate).toContain('"fecha_anterior"');
     expect(metaTemplate).toContain('"fecha_nueva"');
   });

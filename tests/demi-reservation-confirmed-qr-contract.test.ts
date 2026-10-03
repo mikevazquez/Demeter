@@ -9,9 +9,7 @@ function source(path: string) {
 describe("Demi reservation confirmation QR", () => {
   const meta = source("supabase/functions/_shared/meta-whatsapp.ts");
   const payload = source("supabase/functions/_shared/meta-whatsapp-template.ts");
-  const migration = source(
-    "supabase/migrations/20261003173200_demi_reservation_qr_whatsapp.sql",
-  );
+  const migration = source("supabase/migrations/20261003173200_demi_reservation_qr_whatsapp.sql");
 
   it("resolves the canonical per-reservation check-in credential service-side", () => {
     expect(migration).toContain("service_get_reservation_checkin_token");

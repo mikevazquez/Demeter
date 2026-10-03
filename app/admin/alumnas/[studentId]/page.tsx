@@ -887,8 +887,7 @@ export default async function StudentProfilePage({
       style: "currency",
       currency: transfer.currency ?? currency,
     }).format(Number(transfer.amount_minor ?? 0) / 100);
-    const packageName =
-      productMap.get(transfer.product_template_id)?.name ?? "Paquete";
+    const packageName = productMap.get(transfer.product_template_id)?.name ?? "Paquete";
     const title =
       transfer.status === "validated"
         ? "Transferencia validada"
@@ -1391,8 +1390,7 @@ export default async function StudentProfilePage({
                       style: "currency",
                       currency: item.currency ?? currency,
                     }).format(Number(item.amount_minor ?? 0) / 100);
-                    const packageName =
-                      productMap.get(item.product_template_id)?.name ?? "Paquete";
+                    const packageName = productMap.get(item.product_template_id)?.name ?? "Paquete";
                     const statusLabel =
                       item.status === "provisional_active"
                         ? "Pendiente de validar"
@@ -1454,7 +1452,8 @@ export default async function StudentProfilePage({
                               </div>
                             ) : item.receipt_received_at ? (
                               <p className="mt-3 text-xs text-amber-300">
-                                Comprobante recibido; el archivo todavía no está disponible para vista.
+                                Comprobante recibido; el archivo todavía no está disponible para
+                                vista.
                               </p>
                             ) : null}
                           </div>

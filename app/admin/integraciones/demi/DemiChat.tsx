@@ -36,8 +36,7 @@ const ERROR_COPY: Record<string, string> = {
   conversation_history_failed: "No se pudo recuperar el contexto de la conversación.",
   openai_not_configured:
     "La interfaz ya está lista, pero falta configurar OPENAI_API_KEY en este entorno de Vercel.",
-  assistant_budget_exceeded:
-    "Demi alcanzó el límite de gasto configurado para esta demo.",
+  assistant_budget_exceeded: "Demi alcanzó el límite de gasto configurado para esta demo.",
   openai_network_error: "No se pudo conectar con OpenAI.",
   openai_request_failed: "OpenAI rechazó la solicitud.",
   assistant_empty_response: "Demi no devolvió una respuesta utilizable.",
@@ -103,9 +102,8 @@ export default function DemiChat({
 
   const lastTrace = useMemo(
     () =>
-      [...messages]
-        .reverse()
-        .find((item) => item.role === "assistant" && item.trace)?.trace ?? null,
+      [...messages].reverse().find((item) => item.role === "assistant" && item.trace)?.trace ??
+      null,
     [messages],
   );
 
@@ -130,10 +128,7 @@ export default function DemiChat({
     if (!text || isPending) return;
 
     const localId = crypto.randomUUID();
-    setMessages((current) => [
-      ...current,
-      { id: localId, role: "user", content: text },
-    ]);
+    setMessages((current) => [...current, { id: localId, role: "user", content: text }]);
     setMessage("");
 
     startTransition(async () => {
@@ -216,8 +211,8 @@ export default function DemiChat({
             </optgroup>
           </select>
           <small>
-            En WhatsApp real Studio Flow resolverá prospecto o alumna por el número; este
-            selector existe solo para UAT.
+            En WhatsApp real Studio Flow resolverá prospecto o alumna por el número; este selector
+            existe solo para UAT.
           </small>
         </div>
 
@@ -227,9 +222,9 @@ export default function DemiChat({
               <div aria-hidden="true">💬</div>
               <strong>Prueba una conversación real</strong>
               <p>
-                Pregunta por horarios, disponibilidad, actividades, precios, ubicación o
-                políticas. También puedes seleccionar un prospecto CRM para probar onboarding
-                y reserva de clase de prueba.
+                Pregunta por horarios, disponibilidad, actividades, precios, ubicación o políticas.
+                También puedes seleccionar un prospecto CRM para probar onboarding y reserva de
+                clase de prueba.
               </p>
               <div className="demi-prompts">
                 {[
@@ -239,11 +234,7 @@ export default function DemiChat({
                   "¿Dónde están?",
                   "Quiero reservar Pole Fitness mañana a las 5",
                 ].map((prompt) => (
-                  <button
-                    key={prompt}
-                    type="button"
-                    onClick={() => setMessage(prompt)}
-                  >
+                  <button key={prompt} type="button" onClick={() => setMessage(prompt)}>
                     {prompt}
                   </button>
                 ))}
@@ -252,10 +243,7 @@ export default function DemiChat({
           ) : (
             <div className="demi-message-list">
               {messages.map((item) => (
-                <article
-                  key={item.id}
-                  className={"demi-message is-" + item.role}
-                >
+                <article key={item.id} className={"demi-message is-" + item.role}>
                   <p>{item.content}</p>
                   {item.trace ? (
                     <details className="demi-message-trace">
@@ -322,8 +310,8 @@ export default function DemiChat({
             <>
               <strong>{lastTrace.model}</strong>
               <p>
-                {lastTrace.modelCalls} llamada{lastTrace.modelCalls === 1 ? "" : "s"} al
-                modelo · {lastTrace.toolCalls.length} tool
+                {lastTrace.modelCalls} llamada{lastTrace.modelCalls === 1 ? "" : "s"} al modelo ·{" "}
+                {lastTrace.toolCalls.length} tool
                 {lastTrace.toolCalls.length === 1 ? "" : "s"}
               </p>
               <dl>

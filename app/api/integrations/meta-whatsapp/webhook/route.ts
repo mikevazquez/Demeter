@@ -14,8 +14,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const UUID_RE =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 type JsonObject = Record<string, unknown>;
 
@@ -86,9 +85,7 @@ async function captureEvent(input: {
     body_preview: input.text.slice(0, 500),
     media_id: input.mediaId,
     provider_timestamp: providerTimestamp(input.timestamp),
-    payload_fingerprint: sha256Hex(
-      `${input.rawBody}\nmessage:${input.providerMessageId}`,
-    ),
+    payload_fingerprint: sha256Hex(`${input.rawBody}\nmessage:${input.providerMessageId}`),
     processing_status: "captured",
   };
 
@@ -129,11 +126,7 @@ async function loadRuntimeContext(
 ) {
   const [{ data: studio, error: studioError }, { data: config, error: configError }] =
     await Promise.all([
-      supabase
-        .from("studios")
-        .select("id,name,timezone,currency")
-        .eq("id", studioId)
-        .maybeSingle(),
+      supabase.from("studios").select("id,name,timezone,currency").eq("id", studioId).maybeSingle(),
       supabase
         .from("assistant_configs")
         .select(
@@ -165,9 +158,7 @@ async function hasBlockingOpenHandoff(input: {
     throw new Error("assistant_handoff_lookup_failed");
   }
 
-  return (data ?? []).some(
-    (handoff) => handoff.reason_code !== "transfer_receipt_review",
-  );
+  return (data ?? []).some((handoff) => handoff.reason_code !== "transfer_receipt_review");
 }
 
 async function createMediaHandoff(input: {
@@ -202,25 +193,18 @@ async function activateTransferReceiptIfPending(input: {
   messageType: string;
   webhookConfig: MetaWhatsAppWebhookConfig;
 }) {
-  if (
-    !input.studentId ||
-    !input.mediaId ||
-    !["image", "document"].includes(input.messageType)
-  ) {
+  if (!input.studentId || !input.mediaId || !["image", "document"].includes(input.messageType)) {
     return { handled: false as const };
   }
 
-  const { data, error } = await input.supabase.rpc(
-    "service_activate_transfer_receipt",
-    {
-      target_studio_id: input.studioId,
-      target_conversation_id: input.conversationId,
-      target_student_id: input.studentId,
-      target_event_id: input.eventId,
-      target_provider_message_id: input.providerMessageId,
-      target_media_id: input.mediaId,
-    },
-  );
+  const { data, error } = await input.supabase.rpc("service_activate_transfer_receipt", {
+    target_studio_id: input.studioId,
+    target_conversation_id: input.conversationId,
+    target_student_id: input.studentId,
+    target_event_id: input.eventId,
+    target_provider_message_id: input.providerMessageId,
+    target_media_id: input.mediaId,
+  });
 
   const result = isObject(data) ? data : null;
   if (error) {
@@ -261,8 +245,7 @@ async function activateTransferReceiptIfPending(input: {
         : media.mimeType === "image/webp"
           ? "webp"
           : "jpg";
-  const storagePath =
-    `${input.studioId}/${input.studentId}/${intentId}/receipt.${extension}`;
+  const storagePath = `${input.studioId}/${input.studentId}/${intentId}/receipt.${extension}`;
 
   const { error: storageError } = await input.supabase.storage
     .from("transfer-receipts")
@@ -307,11 +290,7 @@ async function activateTransferReceiptIfPending(input: {
     },
   );
 
-  if (
-    handoffError ||
-    !isObject(handoffData) ||
-    handoffData.ok !== true
-  ) {
+  if (handoffError || !isObject(handoffData) || handoffData.ok !== true) {
     throw new Error("transfer_receipt_handoff_failed");
   }
 
@@ -459,11 +438,7 @@ export async function GET(request: Request) {
   const token = url.searchParams.get("hub.verify_token");
   const challenge = url.searchParams.get("hub.challenge");
 
-  if (
-    mode !== "subscribe" ||
-    !challenge ||
-    !verifyMetaWebhookToken(config.verifyToken, token)
-  ) {
+  if (mode !== "subscribe" || !challenge || !verifyMetaWebhookToken(config.verifyToken, token)) {
     return new Response("forbidden", { status: 403 });
   }
 
@@ -533,8 +508,7 @@ export async function POST(request: Request) {
   } catch (error) {
     return json(
       {
-        error:
-          error instanceof Error ? error.message : "assistant_runtime_unavailable",
+        error: error instanceof Error ? error.message : "assistant_runtime_unavailable",
       },
       503,
     );
@@ -562,12 +536,9 @@ export async function POST(request: Request) {
 
   for (const message of messages) {
     const rawWaId = message.fromWaId.replace(/\D/g, "");
-    const canonicalWaId = /^521[0-9]{10}$/.test(rawWaId)
-      ? `52${rawWaId.slice(3)}`
-      : rawWaId;
+    const canonicalWaId = /^521[0-9]{10}$/.test(rawWaId) ? `52${rawWaId.slice(3)}` : rawWaId;
     const pilotContactAllowed =
-      liveMode === "pilot" &&
-      webhookConfig.pilotWaIds.includes(canonicalWaId);
+      liveMode === "pilot" && webhookConfig.pilotWaIds.includes(canonicalWaId);
 
     if (liveMode === "pilot" && !pilotContactAllowed) {
       console.info("demi_meta_webhook", {
@@ -636,9 +607,7 @@ export async function POST(request: Request) {
       continue;
     }
 
-    if (
-      ["processed", "ignored", "human_review"].includes(event.processing_status)
-    ) {
+    if (["processed", "ignored", "human_review"].includes(event.processing_status)) {
       outcomes.push({
         provider_message_id: message.providerMessageId,
         outcome: "duplicate_already_handled",
@@ -670,8 +639,7 @@ export async function POST(request: Request) {
         target_profile_name: message.profileName,
         target_message_type: message.messageType,
         target_message_text: message.text,
-        target_activity_at:
-          providerTimestamp(message.timestamp) ?? new Date().toISOString(),
+        target_activity_at: providerTimestamp(message.timestamp) ?? new Date().toISOString(),
       },
     );
 
@@ -690,9 +658,7 @@ export async function POST(request: Request) {
       continue;
     }
 
-    const conversationId = String(
-      prepared.assistant_conversation_id ?? "",
-    ).trim();
+    const conversationId = String(prepared.assistant_conversation_id ?? "").trim();
     const inboundTurnId = String(prepared.inbound_turn_id ?? "").trim();
     const studentId = String(prepared.student_id ?? "").trim() || null;
     const crmContactId = String(prepared.crm_contact_id ?? "").trim() || null;
@@ -745,9 +711,8 @@ export async function POST(request: Request) {
     }
 
     if (message.mediaId || !["text", "button", "interactive"].includes(message.messageType)) {
-      let transferReceipt:
-        | Awaited<ReturnType<typeof activateTransferReceiptIfPending>>
-        | null = null;
+      let transferReceipt: Awaited<ReturnType<typeof activateTransferReceiptIfPending>> | null =
+        null;
 
       try {
         transferReceipt = await activateTransferReceiptIfPending({
@@ -797,8 +762,7 @@ export async function POST(request: Request) {
           continue;
         }
 
-        reply =
-          "Recibí tu archivo. Lo pasé a revisión humana dentro de este mismo chat.";
+        reply = "Recibí tu archivo. Lo pasé a revisión humana dentro de este mismo chat.";
         deterministicOutcome = "media_handoff";
       }
 
@@ -897,29 +861,18 @@ export async function POST(request: Request) {
           assistant_name: runtimeContext.config.assistant_name,
           model: runtimeContext.config.model,
           reasoning_effort: runtimeContext.config.reasoning_effort as
-            | "none"
-            | "low"
-            | "medium"
-            | "high",
-          personality_instructions:
-            runtimeContext.config.personality_instructions,
-          monthly_budget_usd_micros:
-            runtimeContext.config.monthly_budget_usd_micros,
-          conversation_budget_usd_micros:
-            runtimeContext.config.conversation_budget_usd_micros,
-          max_model_calls_per_turn:
-            runtimeContext.config.max_model_calls_per_turn,
-          max_tool_calls_per_turn:
-            runtimeContext.config.max_tool_calls_per_turn,
+            "none" | "low" | "medium" | "high",
+          personality_instructions: runtimeContext.config.personality_instructions,
+          monthly_budget_usd_micros: runtimeContext.config.monthly_budget_usd_micros,
+          conversation_budget_usd_micros: runtimeContext.config.conversation_budget_usd_micros,
+          max_model_calls_per_turn: runtimeContext.config.max_model_calls_per_turn,
+          max_tool_calls_per_turn: runtimeContext.config.max_tool_calls_per_turn,
         },
         conversationId,
         turnId: inboundTurnId,
         studentId,
         crmContactId,
-        activationUrl: new URL(
-          "/login/student/activar",
-          request.url,
-        ).toString(),
+        activationUrl: new URL("/login/student/activar", request.url).toString(),
         serviceMode: true,
         history,
       });
@@ -930,8 +883,7 @@ export async function POST(request: Request) {
         processing_result: {
           outcome: "assistant_failed",
         },
-        last_error_code:
-          error instanceof Error ? error.message : "assistant_failed",
+        last_error_code: error instanceof Error ? error.message : "assistant_failed",
       });
       continue;
     }

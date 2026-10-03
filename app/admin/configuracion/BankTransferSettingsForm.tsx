@@ -6,20 +6,13 @@ import { useFormStatus } from "react-dom";
 
 import { saveStudioBankTransferSettingsAction } from "./actions";
 
-function normalizeDigits(
-  event: FormEvent<HTMLInputElement>,
-  maxLength: number,
-) {
+function normalizeDigits(event: FormEvent<HTMLInputElement>, maxLength: number) {
   const input = event.currentTarget;
   input.value = input.value.replace(/\D/g, "").slice(0, maxLength);
   input.setCustomValidity("");
 }
 
-function requireExactDigits(
-  event: FormEvent<HTMLInputElement>,
-  label: string,
-  digits: number,
-) {
+function requireExactDigits(event: FormEvent<HTMLInputElement>, label: string, digits: number) {
   const input = event.currentTarget;
   const actual = input.value.replace(/\D/g, "").length;
   input.setCustomValidity(
@@ -144,7 +137,9 @@ export function BankTransferSettingsForm({
           onInput={(event) => normalizeDigits(event, 18)}
           onInvalid={(event) => requireExactDigits(event, "La CLABE", 18)}
         />
-        <small>18 dígitos. Demi la compartirá únicamente cuando la alumna elija transferencia.</small>
+        <small>
+          18 dígitos. Demi la compartirá únicamente cuando la alumna elija transferencia.
+        </small>
       </label>
 
       <label className="advanced-v2-field">
@@ -157,9 +152,7 @@ export function BankTransferSettingsForm({
           maxLength={20}
           autoComplete="off"
           onInput={(event) => normalizeDigits(event, 20)}
-          onInvalid={(event) =>
-            requireDigitRange(event, "El número de cuenta", 4, 20)
-          }
+          onInvalid={(event) => requireDigitRange(event, "El número de cuenta", 4, 20)}
         />
       </label>
 
@@ -173,9 +166,7 @@ export function BankTransferSettingsForm({
           maxLength={19}
           autoComplete="off"
           onInput={(event) => normalizeDigits(event, 19)}
-          onInvalid={(event) =>
-            requireDigitRange(event, "El número de tarjeta", 12, 19)
-          }
+          onInvalid={(event) => requireDigitRange(event, "El número de tarjeta", 12, 19)}
         />
       </label>
 

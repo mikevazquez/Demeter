@@ -467,9 +467,9 @@ export default async function NotificationsPage({
           </section>
 
           <div className="notification-info-box">
-            WhatsApp usa plantillas aprobadas por el proveedor conectado. Push e Inbox admiten contenido
-            editable desde Studio Flow. Email queda preparado, pero su proveedor todavía no está
-            configurado.
+            WhatsApp usa plantillas aprobadas por el proveedor conectado. Push e Inbox admiten
+            contenido editable desde Studio Flow. Email queda preparado, pero su proveedor todavía
+            no está configurado.
           </div>
         </>
       ) : null}

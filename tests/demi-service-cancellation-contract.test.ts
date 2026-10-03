@@ -18,15 +18,9 @@ describe("Demi WhatsApp service cancellation bridge", () => {
   });
 
   it("keeps the service cancellation RPC restricted and preserves cancellation rules", () => {
-    expect(migration).toContain(
-      "private.reservation_cancellation_outcome",
-    );
-    expect(migration).toContain(
-      "private.reservation_credit_should_consume",
-    );
-    expect(migration).toContain(
-      "revoke all on function public.service_cancel_reservation",
-    );
+    expect(migration).toContain("private.reservation_cancellation_outcome");
+    expect(migration).toContain("private.reservation_credit_should_consume");
+    expect(migration).toContain("revoke all on function public.service_cancel_reservation");
     expect(migration).toContain("to service_role;");
   });
 });

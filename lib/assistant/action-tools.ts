@@ -100,16 +100,15 @@ async function provisionStudentAccessWithServiceClient(
 
   if (!userId) {
     const internalPassword = `Sf!${randomUUID()}A9`;
-    const { data: created, error: createError } =
-      await ctx.supabase.auth.admin.createUser({
-        email: authEmail,
-        password: internalPassword,
-        email_confirm: true,
-        user_metadata: {
-          full_name: student.full_name,
-          login_phone: student.phone,
-        },
-      });
+    const { data: created, error: createError } = await ctx.supabase.auth.admin.createUser({
+      email: authEmail,
+      password: internalPassword,
+      email_confirm: true,
+      user_metadata: {
+        full_name: student.full_name,
+        login_phone: student.phone,
+      },
+    });
 
     if (createError || !created.user) {
       return {
@@ -121,13 +120,10 @@ async function provisionStudentAccessWithServiceClient(
 
     userId = created.user.id;
 
-    const { error: linkError } = await ctx.supabase.rpc(
-      "service_link_student_access",
-      {
-        target_student_id: studentId,
-        target_user_id: userId,
-      },
-    );
+    const { error: linkError } = await ctx.supabase.rpc("service_link_student_access", {
+      target_student_id: studentId,
+      target_user_id: userId,
+    });
 
     if (linkError) {
       await ctx.supabase.auth.admin.deleteUser(userId);
@@ -275,51 +271,44 @@ function safeBookingReason(reason: unknown) {
   return {
     reason_code: code,
     reason_message:
-      BOOKING_REASON_MESSAGES[code] ??
-      "Studio Flow indicó que esta reserva no puede realizarse.",
+      BOOKING_REASON_MESSAGES[code] ?? "Studio Flow indicó que esta reserva no puede realizarse.",
   };
 }
 
-async function getSessionSummary(
-  ctx: AssistantActionToolContext,
-  sessionId: string,
-) {
+async function getSessionSummary(ctx: AssistantActionToolContext, sessionId: string) {
   const { data: session, error: sessionError } = await ctx.supabase
     .from("class_sessions")
-    .select(
-      "id,template_id,starts_at,ends_at,status,requires_resource,location_id,space_id",
-    )
+    .select("id,template_id,starts_at,ends_at,status,requires_resource,location_id,space_id")
     .eq("id", sessionId)
     .eq("studio_id", ctx.studio.id)
     .maybeSingle();
 
   if (sessionError || !session) return null;
 
-  const [{ data: template }, { data: location }, { data: space }] =
-    await Promise.all([
-      ctx.supabase
-        .from("class_templates")
-        .select("name,credit_cost,drop_in_price_minor")
-        .eq("id", session.template_id)
-        .eq("studio_id", ctx.studio.id)
-        .maybeSingle(),
-      session.location_id
-        ? ctx.supabase
-            .from("studio_locations")
-            .select("name")
-            .eq("id", session.location_id)
-            .eq("studio_id", ctx.studio.id)
-            .maybeSingle()
-        : Promise.resolve({ data: null, error: null }),
-      session.space_id
-        ? ctx.supabase
-            .from("spaces")
-            .select("name")
-            .eq("id", session.space_id)
-            .eq("studio_id", ctx.studio.id)
-            .maybeSingle()
-        : Promise.resolve({ data: null, error: null }),
-    ]);
+  const [{ data: template }, { data: location }, { data: space }] = await Promise.all([
+    ctx.supabase
+      .from("class_templates")
+      .select("name,credit_cost,drop_in_price_minor")
+      .eq("id", session.template_id)
+      .eq("studio_id", ctx.studio.id)
+      .maybeSingle(),
+    session.location_id
+      ? ctx.supabase
+          .from("studio_locations")
+          .select("name")
+          .eq("id", session.location_id)
+          .eq("studio_id", ctx.studio.id)
+          .maybeSingle()
+      : Promise.resolve({ data: null, error: null }),
+    session.space_id
+      ? ctx.supabase
+          .from("spaces")
+          .select("name")
+          .eq("id", session.space_id)
+          .eq("studio_id", ctx.studio.id)
+          .maybeSingle()
+      : Promise.resolve({ data: null, error: null }),
+  ]);
 
   const start = localParts(session.starts_at, ctx.studio.timezone);
   const end = localParts(session.ends_at, ctx.studio.timezone);
@@ -333,9 +322,7 @@ async function getSessionSummary(
       ends_at_local: end.time,
       credit_cost: Math.max(Number(template?.credit_cost ?? 1), 1),
       drop_in_price_minor:
-        template?.drop_in_price_minor == null
-          ? null
-          : Number(template.drop_in_price_minor),
+        template?.drop_in_price_minor == null ? null : Number(template.drop_in_price_minor),
       currency: ctx.studio.currency,
       location: location?.name ?? null,
       space: space?.name ?? null,
@@ -380,10 +367,9 @@ async function getAvailableResourceOptions(
   }
 
   if (!ctx.serviceMode) {
-    const { data, error } = await ctx.supabase.rpc(
-      "student_session_resource_map",
-      { target_session_id: sessionId },
-    );
+    const { data, error } = await ctx.supabase.rpc("student_session_resource_map", {
+      target_session_id: sessionId,
+    });
     const result = asObject(data);
     if (error || !result) {
       return { ok: false, error: "resource_options_unavailable" };
@@ -394,18 +380,12 @@ async function getAvailableResourceOptions(
       .map((item) => asObject(item))
       .filter(
         (item): item is Record<string, unknown> =>
-          Boolean(item) &&
-          item!.enabled === true &&
-          Number(item!.available ?? 0) > 0,
+          Boolean(item) && item!.enabled === true && Number(item!.available ?? 0) > 0,
       )
       .map((item) => ({
         resource_id: String(item.resource_id ?? ""),
-        label:
-          String(item.name ?? "").trim() ||
-          String(item.short_label ?? "").trim() ||
-          "Recurso",
-        short_label:
-          typeof item.short_label === "string" ? item.short_label : null,
+        label: String(item.name ?? "").trim() || String(item.short_label ?? "").trim() || "Recurso",
+        short_label: typeof item.short_label === "string" ? item.short_label : null,
         type_name: typeof item.type_name === "string" ? item.type_name : null,
       }))
       .filter((item) => Boolean(item.resource_id))
@@ -471,25 +451,16 @@ async function getAvailableResourceOptions(
   const typeMap = new Map((types ?? []).map((item) => [item.id, item.name]));
   const used = new Map<string, number>();
   for (const assignment of assignmentsResult.data ?? []) {
-    used.set(
-      assignment.resource_id,
-      (used.get(assignment.resource_id) ?? 0) + 1,
-    );
+    used.set(assignment.resource_id, (used.get(assignment.resource_id) ?? 0) + 1);
   }
 
-  const settingMap = new Map(
-    enabledSettings.map((item) => [item.resource_id, item]),
-  );
+  const settingMap = new Map(enabledSettings.map((item) => [item.resource_id, item]));
 
   const available = resources
     .filter((resource) => {
       const setting = settingMap.get(resource.id);
       const capacity = Math.max(
-        Number(
-          setting?.capacity_override ??
-            session.resource_uses_per_item ??
-            1,
-        ),
+        Number(setting?.capacity_override ?? session.resource_uses_per_item ?? 1),
         1,
       );
       return (used.get(resource.id) ?? 0) < capacity;
@@ -502,7 +473,7 @@ async function getAvailableResourceOptions(
         "Recurso",
       short_label: resource.short_label ?? null,
       type_name: resource.resource_type_id
-        ? typeMap.get(resource.resource_type_id) ?? null
+        ? (typeMap.get(resource.resource_type_id) ?? null)
         : null,
     }))
     .sort((a, b) => a.label.localeCompare(b.label, "es-MX"))
@@ -530,8 +501,7 @@ async function createResourceSelectionPending(
       ok: false,
       error: "resource_unavailable",
       reason_code: "resource_unavailable",
-      reason_message:
-        "La clase requiere un recurso, pero ahora mismo no hay ninguno disponible.",
+      reason_message: "La clase requiere un recurso, pero ahora mismo no hay ninguno disponible.",
     };
   }
 
@@ -601,10 +571,7 @@ async function createResourceSelectionPending(
   };
 }
 
-async function prepareBooking(
-  ctx: AssistantActionToolContext,
-  args: PrepareBookingArgs,
-) {
+async function prepareBooking(ctx: AssistantActionToolContext, args: PrepareBookingArgs) {
   const sessionId = parseOpaqueRef(args.session_ref, "session");
   if (!sessionId) {
     return { ok: false, error: "invalid_session_ref" };
@@ -668,11 +635,13 @@ async function prepareBooking(
       }
 
       if (reasonCode === "trial_completed_enrollment_required" && studentId) {
-        const { data: requirementData, error: requirementError } =
-          await ctx.supabase.rpc("assistant_post_trial_requirement", {
+        const { data: requirementData, error: requirementError } = await ctx.supabase.rpc(
+          "assistant_post_trial_requirement",
+          {
             target_studio_id: ctx.studio.id,
             target_student_id: studentId,
-          });
+          },
+        );
 
         const requirement = asObject(requirementData);
         if (requirementError || !requirement || requirement.ok !== true) {
@@ -838,12 +807,11 @@ async function prepareBooking(
     const safeReason = safeBookingReason(eligibilityReason);
     return {
       ok: false,
-      error:
-        ["document_required", "birth_date_required", "guardian_required"].includes(
-          eligibilityReason,
-        )
-          ? "onboarding_required"
-          : "booking_not_eligible",
+      error: ["document_required", "birth_date_required", "guardian_required"].includes(
+        eligibilityReason,
+      )
+        ? "onboarding_required"
+        : "booking_not_eligible",
       onboarding_required: [
         "document_required",
         "birth_date_required",
@@ -920,10 +888,7 @@ async function prepareBooking(
   };
 }
 
-async function provisionTrialActivationLink(
-  ctx: AssistantActionToolContext,
-  studentId: string,
-) {
+async function provisionTrialActivationLink(ctx: AssistantActionToolContext, studentId: string) {
   if (ctx.serviceMode) {
     return provisionStudentAccessWithServiceClient(ctx, studentId, "provision");
   }
@@ -971,25 +936,20 @@ async function provisionTrialActivationLink(
     };
   }
 
-  const { data, error } = await ctx.supabase.functions.invoke(
-    "provision-student-access",
-    {
-      body: {
-        studentId,
-        activationUrl: ctx.activationUrl,
-        delivery: "return_link",
-      },
-      headers: {
-        Authorization: `Bearer ${session.access_token}`,
-      },
+  const { data, error } = await ctx.supabase.functions.invoke("provision-student-access", {
+    body: {
+      studentId,
+      activationUrl: ctx.activationUrl,
+      delivery: "return_link",
     },
-  );
+    headers: {
+      Authorization: `Bearer ${session.access_token}`,
+    },
+  });
 
   const response = asObject(data);
   const activationUrl =
-    typeof response?.activationLink === "string"
-      ? String(response.activationLink)
-      : null;
+    typeof response?.activationLink === "string" ? String(response.activationLink) : null;
 
   if (error || !response || response.ok !== true || !activationUrl) {
     return {
@@ -1006,17 +966,12 @@ async function provisionTrialActivationLink(
   };
 }
 
-async function executeBooking(
-  ctx: AssistantActionToolContext,
-  args: ExecuteBookingArgs,
-) {
+async function executeBooking(ctx: AssistantActionToolContext, args: ExecuteBookingArgs) {
   void args;
 
   const { data: pending, error: pendingError } = await ctx.supabase
     .from("assistant_pending_actions")
-    .select(
-      "id,action_type,action_payload,confirmation_summary,status,expires_at,execution_ref",
-    )
+    .select("id,action_type,action_payload,confirmation_summary,status,expires_at,execution_ref")
     .eq("studio_id", ctx.studio.id)
     .eq("conversation_id", ctx.conversationId)
     .eq("action_type", "booking.create")
@@ -1124,9 +1079,7 @@ async function executeBooking(
       trialBookingObject.ok !== true ||
       !trialBookingObject.reservation_id
     ) {
-      const reasonCode = String(
-        trialBookingObject?.reason_code ?? "booking_execution_failed",
-      );
+      const reasonCode = String(trialBookingObject?.reason_code ?? "booking_execution_failed");
 
       await ctx.supabase
         .from("assistant_pending_actions")
@@ -1143,9 +1096,7 @@ async function executeBooking(
           reason_message: BOOKING_REASON_MESSAGES.trial_prepayment_required,
           prepayment_required: true,
           no_show_count: Number(trialBookingObject?.no_show_count ?? 2),
-          prepayment_threshold: Number(
-            trialBookingObject?.prepayment_threshold ?? 2,
-          ),
+          prepayment_threshold: Number(trialBookingObject?.prepayment_threshold ?? 2),
           amount_minor:
             trialBookingObject?.amount_minor == null
               ? sessionInfo.summary.drop_in_price_minor
@@ -1263,13 +1214,10 @@ async function executeBooking(
         }
         reservationId = String(bookingResult.reservation_id);
       } else {
-        const { data, error: bookingError } = await ctx.supabase.rpc(
-          "admin_book_student",
-          {
-            target_session_id: sessionId,
-            target_student_id: studentId,
-          },
-        );
+        const { data, error: bookingError } = await ctx.supabase.rpc("admin_book_student", {
+          target_session_id: sessionId,
+          target_student_id: studentId,
+        });
 
         if (bookingError || !data) {
           return { ok: false, error: "booking_execution_failed" };
@@ -1284,14 +1232,12 @@ async function executeBooking(
     return { ok: false, error: "booking_execution_failed" };
   }
 
-  let accessProvision:
-    | {
-        generated: boolean;
-        already_has_access?: boolean;
-        error?: string;
-        activation_url: string | null;
-      }
-    | null = null;
+  let accessProvision: {
+    generated: boolean;
+    already_has_access?: boolean;
+    error?: string;
+    activation_url: string | null;
+  } | null = null;
 
   if (trialException && finalStudentId) {
     accessProvision = await provisionTrialActivationLink(ctx, finalStudentId);
@@ -1428,18 +1374,11 @@ async function getCancellationSnapshot(
     return null;
   }
 
-  const cutoffMinutes = Math.max(
-    Number(policyResult.data?.cancellation_cutoff_minutes ?? 0),
-    0,
-  );
-  const late =
-    Date.now() >
-    new Date(session.starts_at).getTime() - cutoffMinutes * 60_000;
+  const cutoffMinutes = Math.max(Number(policyResult.data?.cancellation_cutoff_minutes ?? 0), 0);
+  const late = Date.now() > new Date(session.starts_at).getTime() - cutoffMinutes * 60_000;
   const unlimited = Boolean(acquisitionResult.data?.unlimited);
   const creditCost = Math.max(Number(reservation.credits_held ?? 1), 1);
-  const lateConsumesCredit = Boolean(
-    policyResult.data?.late_cancellation_consumes_credit,
-  );
+  const lateConsumesCredit = Boolean(policyResult.data?.late_cancellation_consumes_credit);
 
   const start = localParts(session.starts_at, ctx.studio.timezone);
   const end = localParts(session.ends_at, ctx.studio.timezone);
@@ -1461,12 +1400,7 @@ async function getCancellationSnapshot(
       credit_will_return: unlimited ? null : !(late && lateConsumesCredit),
       unlimited_penalty_minor:
         unlimited && late
-          ? Math.max(
-              Number(
-                policyResult.data?.unlimited_late_cancellation_penalty_minor ?? 0,
-              ),
-              0,
-            )
+          ? Math.max(Number(policyResult.data?.unlimited_late_cancellation_penalty_minor ?? 0), 0)
           : 0,
       currency: ctx.studio.currency,
       cancellation_cutoff_minutes: cutoffMinutes,
@@ -1483,10 +1417,7 @@ function cancellationConsequenceKey(snapshot: CancellationSnapshot["summary"]) {
   });
 }
 
-async function prepareCancellation(
-  ctx: AssistantActionToolContext,
-  args: PrepareCancellationArgs,
-) {
+async function prepareCancellation(ctx: AssistantActionToolContext, args: PrepareCancellationArgs) {
   if (!ctx.studentId) {
     return { ok: false, error: "identity_required" };
   }
@@ -1560,17 +1491,12 @@ async function prepareCancellation(
   };
 }
 
-async function executeCancellation(
-  ctx: AssistantActionToolContext,
-  args: ExecuteCancellationArgs,
-) {
+async function executeCancellation(ctx: AssistantActionToolContext, args: ExecuteCancellationArgs) {
   void args;
 
   const { data: pending, error: pendingError } = await ctx.supabase
     .from("assistant_pending_actions")
-    .select(
-      "id,action_type,action_payload,confirmation_summary,status,expires_at,execution_ref",
-    )
+    .select("id,action_type,action_payload,confirmation_summary,status,expires_at,execution_ref")
     .eq("studio_id", ctx.studio.id)
     .eq("conversation_id", ctx.conversationId)
     .eq("action_type", "booking.cancel")
@@ -1682,16 +1608,10 @@ async function executeCancellation(
 
   const { data: cancellation, error: cancellationError } = cancellationRequest;
   const cancellationObject = asObject(cancellation);
-  if (
-    cancellationError ||
-    !cancellationObject ||
-    cancellationObject.ok !== true
-  ) {
+  if (cancellationError || !cancellationObject || cancellationObject.ok !== true) {
     return {
       ok: false,
-      error:
-        String(cancellationObject?.reason_code ?? "") ||
-        "cancellation_execution_failed",
+      error: String(cancellationObject?.reason_code ?? "") || "cancellation_execution_failed",
     };
   }
 
@@ -1723,11 +1643,7 @@ async function executeCancellation(
   };
 }
 
-
-async function prepareReschedule(
-  ctx: AssistantActionToolContext,
-  args: PrepareRescheduleArgs,
-) {
+async function prepareReschedule(ctx: AssistantActionToolContext, args: PrepareRescheduleArgs) {
   if (!ctx.studentId) return { ok: false, error: "identity_required" };
 
   const reservationId = parseOpaqueRef(args.reservation_ref, "reservation");
@@ -1796,8 +1712,7 @@ async function prepareReschedule(
     source_credit_will_return: source.summary.credit_will_return,
     target_credit_cost: target.summary.credit_cost,
     additional_credit_required:
-      source.summary.late === true &&
-      source.summary.credit_will_return === false
+      source.summary.late === true && source.summary.credit_will_return === false
         ? target.summary.credit_cost
         : 0,
     target_may_use_released_credit: canUseReleasedCredit,
@@ -1850,17 +1765,12 @@ async function prepareReschedule(
   };
 }
 
-async function executeReschedule(
-  ctx: AssistantActionToolContext,
-  args: ExecuteRescheduleArgs,
-) {
+async function executeReschedule(ctx: AssistantActionToolContext, args: ExecuteRescheduleArgs) {
   void args;
 
   const { data: pending, error: pendingError } = await ctx.supabase
     .from("assistant_pending_actions")
-    .select(
-      "id,action_type,action_payload,confirmation_summary,status,expires_at,execution_ref",
-    )
+    .select("id,action_type,action_payload,confirmation_summary,status,expires_at,execution_ref")
     .eq("studio_id", ctx.studio.id)
     .eq("conversation_id", ctx.conversationId)
     .eq("action_type", "booking.reschedule")
@@ -1935,8 +1845,7 @@ async function executeReschedule(
       source_credit_will_return: source.summary.credit_will_return,
       target_credit_cost: target.summary.credit_cost,
       additional_credit_required:
-        source.summary.late === true &&
-        source.summary.credit_will_return === false
+        source.summary.late === true && source.summary.credit_will_return === false
           ? target.summary.credit_cost
           : 0,
       selected_resource: currentPendingSummary.selected_resource ?? null,
@@ -1998,17 +1907,14 @@ async function executeReschedule(
 
   const rescheduleRequest = ctx.serviceMode
     ? resourceId
-      ? await ctx.supabase.rpc(
-          "service_reschedule_student_reservation_with_resource",
-          {
-            target_studio_id: ctx.studio.id,
-            target_student_id: studentId,
-            target_reservation_id: reservationId,
-            target_session_id: targetSessionId,
-            target_resource_id: resourceId,
-            target_reason: "Reagendado por Demi",
-          },
-        )
+      ? await ctx.supabase.rpc("service_reschedule_student_reservation_with_resource", {
+          target_studio_id: ctx.studio.id,
+          target_student_id: studentId,
+          target_reservation_id: reservationId,
+          target_session_id: targetSessionId,
+          target_resource_id: resourceId,
+          target_reason: "Reagendado por Demi",
+        })
       : await ctx.supabase.rpc("service_reschedule_student_reservation", {
           target_studio_id: ctx.studio.id,
           target_student_id: studentId,
@@ -2040,9 +1946,7 @@ async function executeReschedule(
 
   const newReservationId = String(resultObject.target_reservation_id ?? "");
   const executedAt = new Date().toISOString();
-  const reservationRef = newReservationId
-    ? `reservation:${newReservationId}`
-    : null;
+  const reservationRef = newReservationId ? `reservation:${newReservationId}` : null;
 
   await ctx.supabase
     .from("assistant_pending_actions")
@@ -2075,7 +1979,6 @@ async function executeReschedule(
   };
 }
 
-
 async function selectResourceOption(
   ctx: AssistantActionToolContext,
   args: SelectResourceOptionArgs,
@@ -2087,9 +1990,7 @@ async function selectResourceOption(
 
   const { data: pending, error: pendingError } = await ctx.supabase
     .from("assistant_pending_actions")
-    .select(
-      "id,action_type,action_payload,confirmation_summary,status,expires_at",
-    )
+    .select("id,action_type,action_payload,confirmation_summary,status,expires_at")
     .eq("studio_id", ctx.studio.id)
     .eq("conversation_id", ctx.conversationId)
     .in("action_type", ["booking.create", "booking.reschedule"])
@@ -2131,9 +2032,7 @@ async function selectResourceOption(
         .map((item) => asObject(item))
         .filter((item): item is Record<string, unknown> => Boolean(item))
     : [];
-  const selected = storedOptions.find(
-    (item) => Number(item.option_number) === optionNumber,
-  );
+  const selected = storedOptions.find((item) => Number(item.option_number) === optionNumber);
 
   if (!selected) {
     return {
@@ -2286,10 +2185,7 @@ function safeWaitlistReason(reason: unknown) {
   };
 }
 
-async function prepareWaitlistJoin(
-  ctx: AssistantActionToolContext,
-  args: PrepareWaitlistJoinArgs,
-) {
+async function prepareWaitlistJoin(ctx: AssistantActionToolContext, args: PrepareWaitlistJoinArgs) {
   if (!ctx.studentId) return { ok: false, error: "identity_required" };
 
   const sessionId = parseOpaqueRef(args.session_ref, "session");
@@ -2298,13 +2194,10 @@ async function prepareWaitlistJoin(
   const sessionInfo = await getSessionSummary(ctx, sessionId);
   if (!sessionInfo) return { ok: false, error: "session_not_found" };
 
-  const { data: preview, error: previewError } = await ctx.supabase.rpc(
-    "admin_waitlist_preview",
-    {
-      target_session_id: sessionId,
-      target_student_id: ctx.studentId,
-    },
-  );
+  const { data: preview, error: previewError } = await ctx.supabase.rpc("admin_waitlist_preview", {
+    target_session_id: sessionId,
+    target_student_id: ctx.studentId,
+  });
 
   if (previewError) {
     return { ok: false, error: "waitlist_preview_unavailable" };
@@ -2380,17 +2273,12 @@ async function prepareWaitlistJoin(
   };
 }
 
-async function executeWaitlistJoin(
-  ctx: AssistantActionToolContext,
-  args: ExecuteWaitlistJoinArgs,
-) {
+async function executeWaitlistJoin(ctx: AssistantActionToolContext, args: ExecuteWaitlistJoinArgs) {
   void args;
 
   const { data: pending, error: pendingError } = await ctx.supabase
     .from("assistant_pending_actions")
-    .select(
-      "id,action_type,action_payload,confirmation_summary,status,expires_at,execution_ref",
-    )
+    .select("id,action_type,action_payload,confirmation_summary,status,expires_at,execution_ref")
     .eq("studio_id", ctx.studio.id)
     .eq("conversation_id", ctx.conversationId)
     .eq("action_type", "waitlist.join")
@@ -2446,13 +2334,10 @@ async function executeWaitlistJoin(
   const sessionInfo = await getSessionSummary(ctx, sessionId);
   if (!sessionInfo) return { ok: false, error: "session_not_found" };
 
-  const { data: preview, error: previewError } = await ctx.supabase.rpc(
-    "admin_waitlist_preview",
-    {
-      target_session_id: sessionId,
-      target_student_id: studentId,
-    },
-  );
+  const { data: preview, error: previewError } = await ctx.supabase.rpc("admin_waitlist_preview", {
+    target_session_id: sessionId,
+    target_student_id: studentId,
+  });
 
   if (previewError) {
     return { ok: false, error: "waitlist_preview_unavailable" };
@@ -2506,13 +2391,10 @@ async function executeWaitlistJoin(
     };
   }
 
-  const { data: joined, error: joinError } = await ctx.supabase.rpc(
-    "admin_join_waitlist",
-    {
-      target_session_id: sessionId,
-      target_student_id: studentId,
-    },
-  );
+  const { data: joined, error: joinError } = await ctx.supabase.rpc("admin_join_waitlist", {
+    target_session_id: sessionId,
+    target_student_id: studentId,
+  });
 
   const joinedObject = asObject(joined);
   if (joinError || !joinedObject || joinedObject.ok !== true) {
@@ -2553,8 +2435,6 @@ async function executeWaitlistJoin(
   };
 }
 
-
-
 async function prepareStudentAccessActivation(
   ctx: AssistantActionToolContext,
   args: PrepareStudentAccessActivationArgs,
@@ -2562,13 +2442,10 @@ async function prepareStudentAccessActivation(
   void args;
   if (!ctx.studentId) return { ok: false, error: "identity_required" };
 
-  const { data, error } = await ctx.supabase.rpc(
-    "assistant_post_trial_requirement",
-    {
-      target_studio_id: ctx.studio.id,
-      target_student_id: ctx.studentId,
-    },
-  );
+  const { data, error } = await ctx.supabase.rpc("assistant_post_trial_requirement", {
+    target_studio_id: ctx.studio.id,
+    target_student_id: ctx.studentId,
+  });
 
   const requirement = asObject(data);
   if (error || !requirement || requirement.ok !== true) {
@@ -2640,14 +2517,10 @@ async function prepareStudentAccessActivation(
   };
 }
 
-async function executeStudentAccessActivation(
-  ctx: AssistantActionToolContext,
-) {
+async function executeStudentAccessActivation(ctx: AssistantActionToolContext) {
   const { data: pending, error: pendingError } = await ctx.supabase
     .from("assistant_pending_actions")
-    .select(
-      "id,action_type,action_payload,confirmation_summary,status,expires_at,execution_ref",
-    )
+    .select("id,action_type,action_payload,confirmation_summary,status,expires_at,execution_ref")
     .eq("studio_id", ctx.studio.id)
     .eq("conversation_id", ctx.conversationId)
     .eq("action_type", "account.activate")
@@ -2763,23 +2636,15 @@ async function executeStudentAccessActivation(
           delivery: "return_link",
         };
 
-  const { data, error } = await ctx.supabase.functions.invoke(
-    "provision-student-access",
-    {
-      body,
-      headers: {
-        Authorization: `Bearer ${session.access_token}`,
-      },
+  const { data, error } = await ctx.supabase.functions.invoke("provision-student-access", {
+    body,
+    headers: {
+      Authorization: `Bearer ${session.access_token}`,
     },
-  );
+  });
 
   const response = asObject(data);
-  if (
-    error ||
-    !response ||
-    response.ok !== true ||
-    typeof response.activationLink !== "string"
-  ) {
+  if (error || !response || response.ok !== true || typeof response.activationLink !== "string") {
     return {
       ok: false,
       error: "student_access_provision_failed",
@@ -2808,7 +2673,6 @@ async function executeStudentAccessActivation(
     summary: pending.confirmation_summary,
   };
 }
-
 
 export function parsePostTrialEnrollmentMethod(value: string) {
   const normalized = normalizeConfirmation(value);
@@ -2892,16 +2756,13 @@ async function resolvePostTrialEnrollmentMethod(
   }
 
   if (method === "cash" || method === "bank_transfer") {
-    const { data, error } = await ctx.supabase.rpc(
-      "assistant_create_post_trial_reservation",
-      {
-        target_studio_id: ctx.studio.id,
-        target_conversation_id: ctx.conversationId,
-        target_student_id: studentId,
-        target_session_id: sessionId,
-        target_payment_method: method,
-      },
-    );
+    const { data, error } = await ctx.supabase.rpc("assistant_create_post_trial_reservation", {
+      target_studio_id: ctx.studio.id,
+      target_conversation_id: ctx.conversationId,
+      target_student_id: studentId,
+      target_session_id: sessionId,
+      target_payment_method: method,
+    });
 
     const result = asObject(data);
     if (error || !result || result.ok !== true) {
@@ -2988,13 +2849,10 @@ async function resolvePostTrialEnrollmentMethod(
               delivery: "return_link",
             };
 
-      const { data, error } = await ctx.supabase.functions.invoke(
-        "provision-student-access",
-        {
-          body,
-          headers: { Authorization: `Bearer ${session.access_token}` },
-        },
-      );
+      const { data, error } = await ctx.supabase.functions.invoke("provision-student-access", {
+        body,
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
 
       const provision = asObject(data);
       if (error || !provision || provision.ok !== true) {
@@ -3006,9 +2864,7 @@ async function resolvePostTrialEnrollmentMethod(
       }
 
       activationLink =
-        typeof provision.activationLink === "string"
-          ? provision.activationLink
-          : null;
+        typeof provision.activationLink === "string" ? provision.activationLink : null;
 
       if (!activationLink && provision.mustChangePassword !== false) {
         return { ok: false, error: "activation_link_missing" };
@@ -3079,11 +2935,7 @@ async function prepareTransferPackageChoice(
   if (!sessionId) return { ok: false, error: "invalid_session_ref" };
 
   const requestedRefs = Array.from(
-    new Set(
-      (args.product_refs ?? [])
-        .map((value) => String(value ?? "").trim())
-        .filter(Boolean),
-    ),
+    new Set((args.product_refs ?? []).map((value) => String(value ?? "").trim()).filter(Boolean)),
   ).slice(0, 10);
 
   if (!requestedRefs.length) {
@@ -3148,11 +3000,9 @@ async function prepareTransferPackageChoice(
     name: String(item.name ?? ""),
     price_minor: Number(item.price_minor ?? 0),
     currency: String(item.currency ?? ctx.studio.currency),
-    credit_limit:
-      item.credit_limit == null ? null : Number(item.credit_limit),
+    credit_limit: item.credit_limit == null ? null : Number(item.credit_limit),
     unlimited: item.unlimited === true,
-    package_term:
-      item.package_term == null ? null : String(item.package_term),
+    package_term: item.package_term == null ? null : String(item.package_term),
   }));
 
   const { error } = await ctx.supabase.from("assistant_pending_actions").insert({
@@ -3208,25 +3058,20 @@ async function prepareBankTransferPurchase(
   if (!sessionId) return { ok: false, error: "invalid_session_ref" };
   if (!productId) return { ok: false, error: "invalid_product_ref" };
 
-  const { data, error } = await ctx.supabase.rpc(
-    "service_prepare_transfer_purchase",
-    {
-      target_studio_id: ctx.studio.id,
-      target_conversation_id: ctx.conversationId,
-      target_student_id: ctx.studentId,
-      target_session_id: sessionId,
-      target_product_template_id: productId,
-    },
-  );
+  const { data, error } = await ctx.supabase.rpc("service_prepare_transfer_purchase", {
+    target_studio_id: ctx.studio.id,
+    target_conversation_id: ctx.conversationId,
+    target_student_id: ctx.studentId,
+    target_session_id: sessionId,
+    target_product_template_id: productId,
+  });
 
   const result = asObject(data);
   if (error || !result || result.ok !== true) {
     return {
       ok: false,
       error: "bank_transfer_purchase_prepare_failed",
-      reason_code: String(
-        result?.reason_code ?? "bank_transfer_purchase_prepare_failed",
-      ),
+      reason_code: String(result?.reason_code ?? "bank_transfer_purchase_prepare_failed"),
     };
   }
 
@@ -3242,10 +3087,7 @@ async function prepareBankTransferPurchase(
   };
 }
 
-async function escalateToHuman(
-  ctx: AssistantActionToolContext,
-  args: Record<string, unknown>,
-) {
+async function escalateToHuman(ctx: AssistantActionToolContext, args: Record<string, unknown>) {
   const reasonCode = String(args.reason_code ?? "human_review").trim() || "human_review";
   const note = String(args.note ?? "").trim() || null;
 
@@ -3274,14 +3116,11 @@ async function recordTrialPaymentPreference(
     return { ok: false, error: "payment_method_not_supported" };
   }
 
-  const { data, error } = await ctx.supabase.rpc(
-    "assistant_record_trial_payment_preference",
-    {
-      target_studio_id: ctx.studio.id,
-      target_assistant_conversation_id: ctx.conversationId,
-      target_payment_preference: method,
-    },
-  );
+  const { data, error } = await ctx.supabase.rpc("assistant_record_trial_payment_preference", {
+    target_studio_id: ctx.studio.id,
+    target_assistant_conversation_id: ctx.conversationId,
+    target_payment_preference: method,
+  });
 
   const result = asObject(data);
   if (error || !result || result.ok !== true) {
@@ -3296,15 +3135,13 @@ async function recordTrialPaymentPreference(
     ok: true,
     status: "recorded",
     payment_method: method,
-    amount_minor:
-      result.amount_minor == null ? null : Number(result.amount_minor),
+    amount_minor: result.amount_minor == null ? null : Number(result.amount_minor),
     currency: String(result.currency ?? ctx.studio.currency),
     first_class_no_enrollment: result.first_class_no_enrollment === true,
     enrollment_required_after_first_attendance:
       result.enrollment_required_after_first_attendance === true,
     marks_payment_received: false,
-    transfer_details_configured:
-      result.transfer_details_configured === true,
+    transfer_details_configured: result.transfer_details_configured === true,
   };
 }
 
@@ -3333,34 +3170,20 @@ export async function executeAssistantActionTool(
     case "execute_waitlist_join":
       return executeWaitlistJoin(ctx, args as ExecuteWaitlistJoinArgs);
     case "prepare_transfer_package_choice":
-      return prepareTransferPackageChoice(
-        ctx,
-        args as PrepareTransferPackageChoiceArgs,
-      );
+      return prepareTransferPackageChoice(ctx, args as PrepareTransferPackageChoiceArgs);
     case "prepare_bank_transfer_purchase":
-      return prepareBankTransferPurchase(
-        ctx,
-        args as PrepareBankTransferPurchaseArgs,
-      );
+      return prepareBankTransferPurchase(ctx, args as PrepareBankTransferPurchaseArgs);
     case "record_trial_payment_preference":
-      return recordTrialPaymentPreference(
-        ctx,
-        args as RecordTrialPaymentPreferenceArgs,
-      );
+      return recordTrialPaymentPreference(ctx, args as RecordTrialPaymentPreferenceArgs);
     case "prepare_student_access_activation":
-      return prepareStudentAccessActivation(
-        ctx,
-        args as PrepareStudentAccessActivationArgs,
-      );
+      return prepareStudentAccessActivation(ctx, args as PrepareStudentAccessActivationArgs);
     case "execute_student_access_activation":
       return executeStudentAccessActivation(ctx);
     case "resolve_post_trial_enrollment_method":
       return resolvePostTrialEnrollmentMethod(
         ctx,
         String((args as Record<string, unknown>).payment_method ?? "") as
-          | "cash"
-          | "bank_transfer"
-          | "app",
+          "cash" | "bank_transfer" | "app",
       );
     case "escalate_to_human":
       return escalateToHuman(ctx, args as Record<string, unknown>);

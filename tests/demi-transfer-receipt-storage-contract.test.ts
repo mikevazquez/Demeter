@@ -10,9 +10,7 @@ describe("Demi transfer receipt storage", () => {
   const webhook = source("app/api/integrations/meta-whatsapp/webhook/route.ts");
   const channel = source("lib/assistant/meta-whatsapp-channel.ts");
   const profile = source("app/admin/alumnas/[studentId]/page.tsx");
-  const migration = source(
-    "supabase/migrations/20261003173300_demi_transfer_receipt_storage.sql",
-  );
+  const migration = source("supabase/migrations/20261003173300_demi_transfer_receipt_storage.sql");
 
   it("stores receipt media in a private dedicated bucket", () => {
     expect(migration).toContain("'transfer-receipts'");

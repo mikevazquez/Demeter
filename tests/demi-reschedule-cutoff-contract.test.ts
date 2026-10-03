@@ -35,9 +35,7 @@ describe("Demi reschedule cutoff policy", () => {
   });
 
   it("treats a late reschedule as late cancellation plus a new booking", () => {
-    expect(orchestrator).toContain(
-      "Si ya es cancelación tardía, sí se puede reagendar",
-    );
+    expect(orchestrator).toContain("Si ya es cancelación tardía, sí se puede reagendar");
     expect(orchestrator).toContain(
       "el crédito de la clase original no regresa y la nueva reserva usa otro crédito disponible",
     );

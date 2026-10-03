@@ -10,9 +10,7 @@ describe("Demi provisional transfer package flow", () => {
   const migration = source(
     "supabase/migrations/20261003172800_demi_provisional_transfer_packages.sql",
   );
-  const webhook = source(
-    "app/api/integrations/meta-whatsapp/webhook/route.ts",
-  );
+  const webhook = source("app/api/integrations/meta-whatsapp/webhook/route.ts");
   const actions = source("lib/assistant/action-tools.ts");
   const contracts = source("lib/assistant/tool-contracts.ts");
   const orchestrator = source("lib/assistant/orchestrator.ts");
@@ -29,15 +27,11 @@ describe("Demi provisional transfer package flow", () => {
     expect(webhook).toContain('["image", "document"]');
     expect(webhook).toContain("transfer_receipt_provisional");
     expect(migration).toContain("'provisional_active'");
-    expect(migration).toContain(
-      "Activación provisional por comprobante de transferencia",
-    );
+    expect(migration).toContain("Activación provisional por comprobante de transferencia");
   });
 
   it("warns that provisional access can be revoked", () => {
-    expect(webhook).toContain(
-      "el paquete puede ser revocado",
-    );
+    expect(webhook).toContain("el paquete puede ser revocado");
     expect(orchestrator).toContain(
       "puede ser revocado si la transferencia no se confirma correctamente",
     );

@@ -89,19 +89,15 @@ function parseWebhookConfig(value: unknown): MetaWhatsAppWebhookConfig | null {
   };
 }
 
-export async function loadMetaWhatsAppWebhookConfig(
-  supabase: SupabaseClient,
-  studioId: string,
-) {
-  const [{ data, error }, { data: pilotIds, error: pilotError }] =
-    await Promise.all([
-      supabase.rpc("service_get_meta_whatsapp_webhook_config", {
-        target_studio_id: studioId,
-      }),
-      supabase.rpc("service_get_meta_whatsapp_pilot_wa_ids", {
-        target_studio_id: studioId,
-      }),
-    ]);
+export async function loadMetaWhatsAppWebhookConfig(supabase: SupabaseClient, studioId: string) {
+  const [{ data, error }, { data: pilotIds, error: pilotError }] = await Promise.all([
+    supabase.rpc("service_get_meta_whatsapp_webhook_config", {
+      target_studio_id: studioId,
+    }),
+    supabase.rpc("service_get_meta_whatsapp_pilot_wa_ids", {
+      target_studio_id: studioId,
+    }),
+  ]);
 
   if (error || pilotError) {
     throw new Error("meta_whatsapp_webhook_config_lookup_failed");
@@ -147,7 +143,6 @@ export function sha256Hex(value: string) {
   return createHash("sha256").update(value).digest("hex");
 }
 
-
 export type MetaDownloadedMedia = {
   bytes: Uint8Array;
   mimeType: "image/jpeg" | "image/png" | "image/webp" | "application/pdf";
@@ -157,9 +152,9 @@ export type MetaDownloadedMedia = {
 function receiptMimeType(value: unknown): MetaDownloadedMedia["mimeType"] | null {
   const normalized = safeText(value)?.toLowerCase();
   return normalized === "image/jpeg" ||
-      normalized === "image/png" ||
-      normalized === "image/webp" ||
-      normalized === "application/pdf"
+    normalized === "image/png" ||
+    normalized === "image/webp" ||
+    normalized === "application/pdf"
     ? normalized
     : null;
 }
@@ -257,9 +252,7 @@ function messageText(message: JsonObject, type: string) {
 
   if (type === "interactive") {
     const interactive = isObject(message.interactive) ? message.interactive : {};
-    const buttonReply = isObject(interactive.button_reply)
-      ? interactive.button_reply
-      : {};
+    const buttonReply = isObject(interactive.button_reply) ? interactive.button_reply : {};
     const listReply = isObject(interactive.list_reply) ? interactive.list_reply : {};
     return (
       safeText(buttonReply.title) ??
@@ -281,9 +274,7 @@ function messageText(message: JsonObject, type: string) {
     const caption = safeText(document.caption);
     const filename = safeText(document.filename);
     const details = [filename, caption].filter(Boolean).join(" · ");
-    return details
-      ? `[documento recibido] ${details}`
-      : "[documento recibido]";
+    return details ? `[documento recibido] ${details}` : "[documento recibido]";
   }
 
   if (type === "audio") return "[audio recibido]";
@@ -354,8 +345,7 @@ function metaErrorSnapshot(value: unknown): JsonObject {
       message: safeText(error.message),
       type: safeText(error.type),
       code: typeof error.code === "number" ? error.code : null,
-      error_subcode:
-        typeof error.error_subcode === "number" ? error.error_subcode : null,
+      error_subcode: typeof error.error_subcode === "number" ? error.error_subcode : null,
       fbtrace_id: safeText(error.fbtrace_id),
     },
   };
@@ -388,8 +378,7 @@ export async function sendMetaWhatsAppText(input: {
     };
   }
 
-  const endpoint =
-    `https://graph.facebook.com/${input.config.graphApiVersion}/${input.config.phoneNumberId}/messages`;
+  const endpoint = `https://graph.facebook.com/${input.config.graphApiVersion}/${input.config.phoneNumberId}/messages`;
   const fetcher = input.fetcher ?? fetch;
   const retryDelaysMs = [250, 500, 1000, 2000];
 
@@ -432,9 +421,7 @@ export async function sendMetaWhatsAppText(input: {
           attempt < retryDelaysMs.length;
 
         if (canRetryInline) {
-          await new Promise<void>((resolve) =>
-            setTimeout(resolve, retryDelaysMs[attempt]),
-          );
+          await new Promise<void>((resolve) => setTimeout(resolve, retryDelaysMs[attempt]));
           continue;
         }
 
@@ -475,9 +462,7 @@ export async function sendMetaWhatsAppText(input: {
       const timedOut = error instanceof Error && error.name === "AbortError";
       return {
         status: "error",
-        errorCode: timedOut
-          ? "meta_whatsapp_timeout"
-          : "meta_whatsapp_network_error",
+        errorCode: timedOut ? "meta_whatsapp_timeout" : "meta_whatsapp_network_error",
         retryable: true,
         responseSnapshot: {},
       };

@@ -32,9 +32,7 @@ export default async function PaymentSettingsPage({
       .maybeSingle(),
     ctx.supabase
       .from("assistant_transfer_purchase_intents")
-      .select(
-        "id,student_id,product_template_id,amount_minor,currency,receipt_received_at,status",
-      )
+      .select("id,student_id,product_template_id,amount_minor,currency,receipt_received_at,status")
       .eq("studio_id", ctx.studio.id)
       .eq("status", "provisional_active")
       .order("receipt_received_at", { ascending: true }),
@@ -102,7 +100,8 @@ export default async function PaymentSettingsPage({
         <div className="advanced-v2-field">
           <span>Transferencias pendientes</span>
           <small>
-            Esta lista es solo un acceso rápido. Cada pago se valida y conserva dentro del Perfil 360 de la alumna.
+            Esta lista es solo un acceso rápido. Cada pago se valida y conserva dentro del Perfil
+            360 de la alumna.
           </small>
         </div>
 

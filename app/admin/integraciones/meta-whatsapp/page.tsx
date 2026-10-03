@@ -39,28 +39,19 @@ export default async function MetaWhatsAppIntegrationPage() {
     supabase.rpc("admin_get_meta_whatsapp_pilot_summary", {
       target_studio_id: studio.id,
     }),
-    supabase
-      .from("assistant_configs")
-      .select("mode")
-      .eq("studio_id", studio.id)
-      .maybeSingle(),
+    supabase.from("assistant_configs").select("mode").eq("studio_id", studio.id).maybeSingle(),
   ]);
 
   const active = Boolean(provider?.enabled);
   const inbound = asObject(inboundSummary);
   const webhookConfigured = inbound?.webhook_configured === true;
-  const verifyToken =
-    typeof inbound?.verify_token === "string" ? inbound.verify_token : "";
+  const verifyToken = typeof inbound?.verify_token === "string" ? inbound.verify_token : "";
   const pilot = asObject(pilotSummary);
   const pilotContactConfigured = pilot?.pilot_contact_configured === true;
   const pilotContactMasked =
-    typeof pilot?.pilot_contact_masked === "string"
-      ? pilot.pilot_contact_masked
-      : null;
+    typeof pilot?.pilot_contact_masked === "string" ? pilot.pilot_contact_masked : null;
   const pilotActive = assistantConfig?.mode === "pilot";
-  const serviceRoleConfigured = Boolean(
-    process.env.SUPABASE_SERVICE_ROLE_KEY?.trim(),
-  );
+  const serviceRoleConfigured = Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY?.trim());
   const openAIConfigured = Boolean(process.env.OPENAI_API_KEY?.trim());
 
   const requestHeaders = await headers();
@@ -98,9 +89,7 @@ export default async function MetaWhatsAppIntegrationPage() {
         </article>
         <article>
           <span>Runtime Demi</span>
-          <strong>
-            {serviceRoleConfigured && openAIConfigured ? "Listo" : "Incompleto"}
-          </strong>
+          <strong>{serviceRoleConfigured && openAIConfigured ? "Listo" : "Incompleto"}</strong>
         </article>
       </section>
 
@@ -146,8 +135,8 @@ export default async function MetaWhatsAppIntegrationPage() {
           <div>
             <h2>Demi · recepción en WhatsApp</h2>
             <p>
-              Configura aquí el webhook entrante de Meta. El App Secret se guarda cifrado y
-              nunca se muestra después de guardarlo.
+              Configura aquí el webhook entrante de Meta. El App Secret se guarda cifrado y nunca se
+              muestra después de guardarlo.
             </p>
           </div>
         </div>
@@ -219,8 +208,8 @@ export default async function MetaWhatsAppIntegrationPage() {
               placeholder={webhookConfigured ? "••••••••••••••••" : "Pégalo aquí desde Meta"}
             />
             <small>
-              Escríbelo directamente aquí. No lo pegues en el chat ni se almacenará en el
-              historial de Demi.
+              Escríbelo directamente aquí. No lo pegues en el chat ni se almacenará en el historial
+              de Demi.
             </small>
           </label>
 
@@ -233,13 +222,13 @@ export default async function MetaWhatsAppIntegrationPage() {
               autoComplete="off"
               placeholder="Déjalo vacío para generar uno"
             />
-            <small>
-              Este token sí se puede copiar a Meta para validar el webhook.
-            </small>
+            <small>Este token sí se puede copiar a Meta para validar el webhook.</small>
           </label>
 
           <button className="integration-detail-v2-button" type="submit">
-            {webhookConfigured ? "Actualizar configuración entrante" : "Guardar configuración entrante"}
+            {webhookConfigured
+              ? "Actualizar configuración entrante"
+              : "Guardar configuración entrante"}
           </button>
         </form>
 
@@ -249,7 +238,8 @@ export default async function MetaWhatsAppIntegrationPage() {
               <span>Callback URL de este entorno</span>
               <input type="text" readOnly value={callbackUrl} />
               <small>
-                Configura en Meta la URL correspondiente a este entorno. Antes de activarla, verifica que el estudio y las credenciales sean los correctos.
+                Configura en Meta la URL correspondiente a este entorno. Antes de activarla,
+                verifica que el estudio y las credenciales sean los correctos.
               </small>
             </label>
             {verifyToken ? (
@@ -263,7 +253,8 @@ export default async function MetaWhatsAppIntegrationPage() {
 
         {!serviceRoleConfigured ? (
           <div className="integration-detail-v2-notice is-error">
-            Agrega SUPABASE_SERVICE_ROLE_KEY directamente en el entorno correcto de Vercel. No compartas la llave por chat.
+            Agrega SUPABASE_SERVICE_ROLE_KEY directamente en el entorno correcto de Vercel. No
+            compartas la llave por chat.
           </div>
         ) : null}
       </section>
@@ -273,9 +264,9 @@ export default async function MetaWhatsAppIntegrationPage() {
           <div>
             <h2>Piloto controlado de Demi</h2>
             <p>
-              Solo el número de prueba configurado aquí puede activar a Demi mientras
-              el modo piloto esté encendido. Los demás mensajes de WhatsApp se ignoran
-              sin crear conversación ni respuesta.
+              Solo el número de prueba configurado aquí puede activar a Demi mientras el modo piloto
+              esté encendido. Los demás mensajes de WhatsApp se ignoran sin crear conversación ni
+              respuesta.
             </p>
           </div>
         </div>
@@ -293,9 +284,7 @@ export default async function MetaWhatsAppIntegrationPage() {
               </small>
             </span>
             <span
-              className={`integrations-v2-status ${
-                pilotActive ? "is-active" : "is-available"
-              }`}
+              className={`integrations-v2-status ${pilotActive ? "is-active" : "is-available"}`}
             >
               {pilotActive ? "Piloto activo" : "Seguro"}
             </span>
@@ -314,15 +303,13 @@ export default async function MetaWhatsAppIntegrationPage() {
               placeholder="Ej. 3312345678"
             />
             <small>
-              Si es un número de México puedes escribir solo los 10 dígitos. Para otro
-              país usa el código de país. Se usa únicamente como lista permitida del piloto.
+              Si es un número de México puedes escribir solo los 10 dígitos. Para otro país usa el
+              código de país. Se usa únicamente como lista permitida del piloto.
             </small>
           </label>
 
           <button className="integration-detail-v2-button" type="submit">
-            {pilotActive
-              ? "Cambiar número autorizado"
-              : "Guardar número y activar piloto"}
+            {pilotActive ? "Cambiar número autorizado" : "Guardar número y activar piloto"}
           </button>
         </form>
 

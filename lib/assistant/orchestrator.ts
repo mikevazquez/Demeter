@@ -13,10 +13,7 @@ import {
   isExplicitAssistantConfirmation,
   parsePostTrialEnrollmentMethod,
 } from "./action-tools";
-import {
-  executeAssistantReadTool,
-  type AssistantStudioContext,
-} from "./read-tools";
+import { executeAssistantReadTool, type AssistantStudioContext } from "./read-tools";
 
 type AssistantConfig = {
   assistant_name: string;
@@ -139,8 +136,7 @@ async function ensureHumanHandoffForReply(
   if (alreadyExecuted) return reply;
 
   const currentUserMessage =
-    [...input.history].reverse().find((message) => message.role === "user")
-      ?.content ?? "";
+    [...input.history].reverse().find((message) => message.role === "user")?.content ?? "";
   const args = {
     reason_code: "assistant_cannot_resolve",
     note: currentUserMessage.trim()
@@ -187,10 +183,7 @@ async function ensureHumanHandoffForReply(
     permission_class: "B",
     request_json: args,
     result_json: resultObject,
-    status:
-      toolStatus === "executed" && resultObject.ok === true
-        ? "executed"
-        : toolStatus,
+    status: toolStatus === "executed" && resultObject.ok === true ? "executed" : toolStatus,
     duration_ms: Date.now() - startedAt,
   });
 
@@ -201,11 +194,7 @@ async function ensureHumanHandoffForReply(
   return "No tengo información confirmada para responder eso y en este momento no pude abrir la revisión humana automáticamente.";
 }
 
-async function spentUsdMicros(
-  supabase: SupabaseClient,
-  studioId: string,
-  conversationId: string,
-) {
+async function spentUsdMicros(supabase: SupabaseClient, studioId: string, conversationId: string) {
   const monthStart = new Date();
   monthStart.setUTCDate(1);
   monthStart.setUTCHours(0, 0, 0, 0);
@@ -228,9 +217,7 @@ async function spentUsdMicros(
 
   return {
     monthly: sum(monthRows as Array<{ estimated_cost_usd_micros: number }> | null),
-    conversation: sum(
-      conversationRows as Array<{ estimated_cost_usd_micros: number }> | null,
-    ),
+    conversation: sum(conversationRows as Array<{ estimated_cost_usd_micros: number }> | null),
   };
 }
 
@@ -285,7 +272,6 @@ async function logModelCall(input: {
   return data?.id ?? null;
 }
 
-
 function formatDateForReply(dateKey: unknown) {
   const value = String(dateKey ?? "").trim();
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
@@ -319,10 +305,7 @@ function formatMoney(amountMinor: unknown, currency: unknown) {
   }).format(amount / 100);
 }
 
-function confirmationReply(
-  toolName: string,
-  result: Record<string, unknown>,
-) {
+function confirmationReply(toolName: string, result: Record<string, unknown>) {
   if (result.ok !== true) {
     if (result.original_reservation_preserved === true) {
       return "No pude completar el cambio y tu reserva original permanece intacta. No se hizo ningún movimiento.";
@@ -331,10 +314,7 @@ function confirmationReply(
     return reasonMessage || "No pude completar la acción. No se hizo ningún cambio.";
   }
 
-  if (
-    result.status === "confirmation_required" &&
-    result.consequence_changed === true
-  ) {
+  if (result.status === "confirmation_required" && result.consequence_changed === true) {
     const summary = asObject(result.summary);
     if (toolName === "execute_cancellation" && summary) {
       const creditText =
@@ -354,10 +334,8 @@ function confirmationReply(
   if (toolName === "execute_booking" && summary) {
     if (summary.trial_booking === true) {
       const price =
-        formatMoney(
-          summary.amount_minor ?? summary.drop_in_price_minor,
-          summary.currency,
-        ) ?? "el costo de la clase";
+        formatMoney(summary.amount_minor ?? summary.drop_in_price_minor, summary.currency) ??
+        "el costo de la clase";
       const activationUrl = String(result.activation_url ?? "").trim();
       const accessText = activationUrl
         ? ` También te habilité el acceso a la app. Crea tu contraseña aquí: ${activationUrl}`
@@ -421,10 +399,7 @@ function normalizePackageChoice(value: string) {
     .trim();
 }
 
-function matchTransferPackageOption(
-  userMessage: string,
-  rawOptions: unknown,
-) {
+function matchTransferPackageOption(userMessage: string, rawOptions: unknown) {
   if (!Array.isArray(rawOptions)) return null;
   const options = rawOptions
     .map((item) => asObject(item))
@@ -437,9 +412,7 @@ function matchTransferPackageOption(
 
   const optionNumber = normalized.match(/^([1-9][0-9]?)$/);
   if (optionNumber) {
-    const selected = options.find(
-      (item) => Number(item.option_number) === Number(optionNumber[1]),
-    );
+    const selected = options.find((item) => Number(item.option_number) === Number(optionNumber[1]));
     if (selected) return selected;
   }
 
@@ -452,9 +425,7 @@ function matchTransferPackageOption(
   if (classMatch) {
     const creditCount = Number(classMatch[1]);
     const matches = options.filter(
-      (item) =>
-        item.unlimited !== true &&
-        Number(item.credit_limit) === creditCount,
+      (item) => item.unlimited !== true && Number(item.credit_limit) === creditCount,
     );
     if (matches.length === 1) return matches[0];
   }
@@ -468,13 +439,9 @@ function matchTransferPackageOption(
   return null;
 }
 
-async function tryServerSideTransferPackageChoice(
-  input: OrchestratorInput,
-  trace: AssistantTrace,
-) {
+async function tryServerSideTransferPackageChoice(input: OrchestratorInput, trace: AssistantTrace) {
   const currentUserMessage =
-    [...input.history].reverse().find((message) => message.role === "user")
-      ?.content ?? "";
+    [...input.history].reverse().find((message) => message.role === "user")?.content ?? "";
 
   const { data: pending, error } = await input.supabase
     .from("assistant_pending_actions")
@@ -493,10 +460,7 @@ async function tryServerSideTransferPackageChoice(
   const payload = asObject(pending.action_payload);
   if (!payload) return null;
 
-  const selected = matchTransferPackageOption(
-    currentUserMessage,
-    payload.options,
-  );
+  const selected = matchTransferPackageOption(currentUserMessage, payload.options);
   if (!selected) return null;
 
   const sessionRef = String(payload.session_ref ?? "").trim();
@@ -533,8 +497,7 @@ async function tryServerSideTransferPackageChoice(
     toolStatus = "error";
   }
 
-  const resultObject =
-    asObject(result) ?? { ok: false, error: "invalid_tool_result" };
+  const resultObject = asObject(result) ?? { ok: false, error: "invalid_tool_result" };
   const bankDetails = asObject(resultObject.bank_details);
   const auditResult = {
     ...resultObject,
@@ -595,9 +558,7 @@ async function tryServerSideTransferPackageChoice(
     .eq("status", "pending");
 
   const selectedPackage = asObject(resultObject.package) ?? selected;
-  const packageName = String(
-    selectedPackage.name ?? selected.name ?? "el paquete",
-  );
+  const packageName = String(selectedPackage.name ?? selected.name ?? "el paquete");
   const amount =
     formatMoney(
       selectedPackage.amount_minor ?? selectedPackage.price_minor,
@@ -605,22 +566,14 @@ async function tryServerSideTransferPackageChoice(
     ) ?? "el monto indicado";
 
   const bankLines = [
-    bankDetails.bank_name
-      ? `Banco: ${String(bankDetails.bank_name)}`
-      : null,
-    bankDetails.account_holder
-      ? `Titular: ${String(bankDetails.account_holder)}`
-      : null,
+    bankDetails.bank_name ? `Banco: ${String(bankDetails.bank_name)}` : null,
+    bankDetails.account_holder ? `Titular: ${String(bankDetails.account_holder)}` : null,
     bankDetails.clabe ? `CLABE: ${String(bankDetails.clabe)}` : null,
-    bankDetails.account_number
-      ? `Cuenta: ${String(bankDetails.account_number)}`
-      : null,
+    bankDetails.account_number ? `Cuenta: ${String(bankDetails.account_number)}` : null,
     bankDetails.card_number
       ? `Tarjeta para transferencia: ${String(bankDetails.card_number)}`
       : null,
-    bankDetails.instructions
-      ? String(bankDetails.instructions)
-      : null,
+    bankDetails.instructions ? String(bankDetails.instructions) : null,
   ].filter(Boolean);
 
   return {
@@ -632,13 +585,9 @@ async function tryServerSideTransferPackageChoice(
   };
 }
 
-async function tryServerSideConfirmation(
-  input: OrchestratorInput,
-  trace: AssistantTrace,
-) {
+async function tryServerSideConfirmation(input: OrchestratorInput, trace: AssistantTrace) {
   const currentUserMessage =
-    [...input.history].reverse().find((message) => message.role === "user")
-      ?.content ?? "";
+    [...input.history].reverse().find((message) => message.role === "user")?.content ?? "";
 
   if (!isExplicitAssistantConfirmation(currentUserMessage)) return null;
 
@@ -733,14 +682,12 @@ async function tryServerSideConfirmation(
   };
 }
 
-
 async function tryServerSidePostTrialEnrollmentMethod(
   input: OrchestratorInput,
   trace: AssistantTrace,
 ) {
   const currentUserMessage =
-    [...input.history].reverse().find((message) => message.role === "user")
-      ?.content ?? "";
+    [...input.history].reverse().find((message) => message.role === "user")?.content ?? "";
   const method = parsePostTrialEnrollmentMethod(currentUserMessage);
   if (!method) return null;
 
@@ -821,10 +768,7 @@ async function tryServerSidePostTrialEnrollmentMethod(
   }
 
   const price =
-    formatMoney(
-      resultObject.enrollment_amount_minor,
-      resultObject.currency,
-    ) ?? "la inscripción";
+    formatMoney(resultObject.enrollment_amount_minor, resultObject.currency) ?? "la inscripción";
   const summary = asObject(resultObject.summary);
   const target = summary ? asObject(summary.target_session) : null;
   const classText = target
@@ -875,10 +819,7 @@ export async function runAssistantTurn(input: OrchestratorInput) {
   const enrollmentMethod = await tryServerSidePostTrialEnrollmentMethod(input, trace);
   if (enrollmentMethod) return enrollmentMethod;
 
-  const transferPackageChoice = await tryServerSideTransferPackageChoice(
-    input,
-    trace,
-  );
+  const transferPackageChoice = await tryServerSideTransferPackageChoice(input, trace);
   if (transferPackageChoice) return transferPackageChoice;
 
   const serverConfirmation = await tryServerSideConfirmation(input, trace);
@@ -889,10 +830,7 @@ export async function runAssistantTurn(input: OrchestratorInput) {
     throw new Error("openai_not_configured");
   }
 
-  const tools = [
-    ...assistantReadToolDefinitions,
-    ...assistantActionToolDefinitions,
-  ];
+  const tools = [...assistantReadToolDefinitions, ...assistantActionToolDefinitions];
   const instructions = [
     `Eres ${input.config.assistant_name}, el asistente conversacional de ${input.studio.name}.`,
     "Habla en español de México, de forma breve, cálida y natural.",
@@ -976,11 +914,7 @@ export async function runAssistantTurn(input: OrchestratorInput) {
   let toolCallsThisTurn = 0;
 
   for (let attempt = 0; attempt < input.config.max_model_calls_per_turn; attempt += 1) {
-    const spend = await spentUsdMicros(
-      input.supabase,
-      input.studio.id,
-      input.conversationId,
-    );
+    const spend = await spentUsdMicros(input.supabase, input.studio.id, input.conversationId);
     if (budgetExceeded(spend, input.config)) {
       await logModelCall({
         supabase: input.supabase,
@@ -1111,12 +1045,7 @@ export async function runAssistantTurn(input: OrchestratorInput) {
     if (functionCalls.length === 0) {
       const text = outputText(output);
       if (!text) throw new Error("assistant_empty_response");
-      const safeReply = await ensureHumanHandoffForReply(
-        input,
-        trace,
-        text,
-        modelCallId,
-      );
+      const safeReply = await ensureHumanHandoffForReply(input, trace, text, modelCallId);
       return { reply: safeReply, trace };
     }
     if (functionCalls.length > 1) {
@@ -1165,8 +1094,7 @@ export async function runAssistantTurn(input: OrchestratorInput) {
         );
       } else {
         const currentUserMessage =
-          [...input.history].reverse().find((message) => message.role === "user")
-            ?.content ?? "";
+          [...input.history].reverse().find((message) => message.role === "user")?.content ?? "";
         result = await executeAssistantActionTool(
           {
             supabase: input.supabase,

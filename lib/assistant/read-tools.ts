@@ -65,9 +65,10 @@ function reservationRef(id: string) {
 
 function sessionIdFromRef(value: string | null) {
   if (!value) return null;
-  const match = /^session:([0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/i.exec(
-    value.trim(),
-  );
+  const match =
+    /^session:([0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/i.exec(
+      value.trim(),
+    );
   return match?.[1] ?? null;
 }
 
@@ -87,8 +88,7 @@ export async function searchClassAvailability(
 
   const requestedDays =
     Math.round(
-      (Date.parse(`${rawArgs.date_to}T12:00:00Z`) -
-        Date.parse(`${rawArgs.date_from}T12:00:00Z`)) /
+      (Date.parse(`${rawArgs.date_to}T12:00:00Z`) - Date.parse(`${rawArgs.date_from}T12:00:00Z`)) /
         86_400_000,
     ) + 1;
   if (requestedDays > 14) {
@@ -121,40 +121,37 @@ export async function searchClassAvailability(
   ] as string[];
   const sessionIds = (sessions ?? []).map((item) => item.id);
 
-  const [templatesResult, locationsResult, spacesResult, reservationsResult] =
-    await Promise.all([
-      templateIds.length
-        ? ctx.supabase
-            .from("class_templates")
-            .select(
-              "id,name,discipline_id,description,active,credit_cost",
-            )
-            .eq("studio_id", ctx.studio.id)
-            .in("id", templateIds)
-        : Promise.resolve({ data: [], error: null }),
-      locationIds.length
-        ? ctx.supabase
-            .from("studio_locations")
-            .select("id,name,address")
-            .eq("studio_id", ctx.studio.id)
-            .in("id", locationIds)
-        : Promise.resolve({ data: [], error: null }),
-      spaceIds.length
-        ? ctx.supabase
-            .from("spaces")
-            .select("id,name")
-            .eq("studio_id", ctx.studio.id)
-            .in("id", spaceIds)
-        : Promise.resolve({ data: [], error: null }),
-      sessionIds.length
-        ? ctx.supabase
-            .from("reservations")
-            .select("session_id,status")
-            .eq("studio_id", ctx.studio.id)
-            .in("session_id", sessionIds)
-            .eq("status", "reserved")
-        : Promise.resolve({ data: [], error: null }),
-    ]);
+  const [templatesResult, locationsResult, spacesResult, reservationsResult] = await Promise.all([
+    templateIds.length
+      ? ctx.supabase
+          .from("class_templates")
+          .select("id,name,discipline_id,description,active,credit_cost")
+          .eq("studio_id", ctx.studio.id)
+          .in("id", templateIds)
+      : Promise.resolve({ data: [], error: null }),
+    locationIds.length
+      ? ctx.supabase
+          .from("studio_locations")
+          .select("id,name,address")
+          .eq("studio_id", ctx.studio.id)
+          .in("id", locationIds)
+      : Promise.resolve({ data: [], error: null }),
+    spaceIds.length
+      ? ctx.supabase
+          .from("spaces")
+          .select("id,name")
+          .eq("studio_id", ctx.studio.id)
+          .in("id", spaceIds)
+      : Promise.resolve({ data: [], error: null }),
+    sessionIds.length
+      ? ctx.supabase
+          .from("reservations")
+          .select("session_id,status")
+          .eq("studio_id", ctx.studio.id)
+          .in("session_id", sessionIds)
+          .eq("status", "reserved")
+      : Promise.resolve({ data: [], error: null }),
+  ]);
 
   if (
     templatesResult.error ||
@@ -181,9 +178,7 @@ export async function searchClassAvailability(
 
   const templateMap = new Map(templates.map((item) => [item.id, item]));
   const disciplineMap = new Map((disciplines ?? []).map((item) => [item.id, item.name]));
-  const locationMap = new Map(
-    (locationsResult.data ?? []).map((item) => [item.id, item]),
-  );
+  const locationMap = new Map((locationsResult.data ?? []).map((item) => [item.id, item]));
   const spaceMap = new Map((spacesResult.data ?? []).map((item) => [item.id, item.name]));
   const reservationCount = new Map<string, number>();
   for (const item of reservationsResult.data ?? []) {
@@ -197,7 +192,7 @@ export async function searchClassAvailability(
     const template = templateMap.get(session.template_id);
     if (!template?.active) continue;
     const discipline = template.discipline_id
-      ? disciplineMap.get(template.discipline_id) ?? null
+      ? (disciplineMap.get(template.discipline_id) ?? null)
       : null;
     if (activityNeedle) {
       const haystack = normalize(`${template.name} ${discipline ?? ""}`);
@@ -224,7 +219,7 @@ export async function searchClassAvailability(
       is_full: available <= 0,
       location: location?.name ?? null,
       address: location?.address ?? null,
-      space: session.space_id ? spaceMap.get(session.space_id) ?? null : null,
+      space: session.space_id ? (spaceMap.get(session.space_id) ?? null) : null,
       currency: ctx.studio.currency,
       credit_cost: template.credit_cost,
     });
@@ -268,7 +263,7 @@ export async function getActivityCatalog(ctx: AssistantToolContext) {
     ok: true,
     activities: (templates ?? []).map((item) => ({
       activity: item.name,
-      discipline: item.discipline_id ? disciplineMap.get(item.discipline_id) ?? null : null,
+      discipline: item.discipline_id ? (disciplineMap.get(item.discipline_id) ?? null) : null,
       description: item.description,
       currency: ctx.studio.currency,
       credit_cost: item.credit_cost,
@@ -281,15 +276,13 @@ export async function getCommercialOptions(
   rawArgs: CommercialOptionsArgs,
 ) {
   const requestedSessionRef = rawArgs.session_ref?.trim() || null;
-  let sessionScope:
-    | {
-        session_ref: string;
-        template_id: string;
-        discipline_id: string;
-        recurring_schedule_id: string | null;
-        activity: string;
-      }
-    | null = null;
+  let sessionScope: {
+    session_ref: string;
+    template_id: string;
+    discipline_id: string;
+    recurring_schedule_id: string | null;
+    activity: string;
+  } | null = null;
 
   if (requestedSessionRef) {
     const sessionId = sessionIdFromRef(requestedSessionRef);
@@ -396,27 +389,23 @@ export async function getCommercialOptions(
       const scopeMatch =
         activityMatches.has(item.id) ||
         (!activityScopedProducts.has(item.id) && disciplineMatches.has(item.id));
-      const scheduleMatch =
-        !scheduleScopedProducts.has(item.id) || scheduleMatches.has(item.id);
+      const scheduleMatch = !scheduleScopedProducts.has(item.id) || scheduleMatches.has(item.id);
       return scopeMatch && scheduleMatch;
     });
   }
 
-  const { data: paymentMethods, error: paymentMethodsError } =
-    await ctx.supabase
-      .from("studio_payment_methods")
-      .select("code,name,category,active,sort_order")
-      .eq("studio_id", ctx.studio.id)
-      .eq("active", true)
-      .order("sort_order", { ascending: true });
+  const { data: paymentMethods, error: paymentMethodsError } = await ctx.supabase
+    .from("studio_payment_methods")
+    .select("code,name,category,active,sort_order")
+    .eq("studio_id", ctx.studio.id)
+    .eq("active", true)
+    .order("sort_order", { ascending: true });
 
   if (paymentMethodsError) {
     return { ok: false, error: "commercial_payment_methods_unavailable" };
   }
 
-  const onlineCheckoutAvailable = products.some(
-    (item) => item.online_purchasable === true,
-  );
+  const onlineCheckoutAvailable = products.some((item) => item.online_purchasable === true);
   const bankTransfer = (paymentMethods ?? []).find(
     (item) => item.code === "bank_transfer" || item.category === "transfer",
   );
@@ -512,8 +501,7 @@ export async function getPolicyInformation(ctx: AssistantToolContext) {
     cancellation_cutoff_minutes: data.cancellation_cutoff_minutes,
     late_cancellation_consumes_credit: data.late_cancellation_consumes_credit,
     no_show_consumes_credit: data.no_show_consumes_credit,
-    unlimited_late_cancellation_penalty_minor:
-      data.unlimited_late_cancellation_penalty_minor,
+    unlimited_late_cancellation_penalty_minor: data.unlimited_late_cancellation_penalty_minor,
     unlimited_no_show_penalty_minor: data.unlimited_no_show_penalty_minor,
     currency: ctx.studio.currency,
   };
@@ -605,38 +593,33 @@ export async function getStudentReservations(ctx: AssistantToolContext) {
   }
 
   const sessionMap = new Map((sessions ?? []).map((item) => [item.id, item]));
-  const templateMap = new Map(
-    (templatesResult.data ?? []).map((item) => [item.id, item.name]),
-  );
-  const spaceMap = new Map(
-    (spacesResult.data ?? []).map((item) => [item.id, item.name]),
-  );
-  const locationMap = new Map(
-    (locationsResult.data ?? []).map((item) => [item.id, item.name]),
-  );
+  const templateMap = new Map((templatesResult.data ?? []).map((item) => [item.id, item.name]));
+  const spaceMap = new Map((spacesResult.data ?? []).map((item) => [item.id, item.name]));
+  const locationMap = new Map((locationsResult.data ?? []).map((item) => [item.id, item.name]));
 
   return {
     ok: true,
-    reservations: filteredReservations.slice(0, 20).map((reservation) => {
-      const session = sessionMap.get(reservation.session_id);
-      if (!session) return null;
-      const start = localParts(session.starts_at, ctx.studio.timezone);
-      const end = localParts(session.ends_at, ctx.studio.timezone);
+    reservations: filteredReservations
+      .slice(0, 20)
+      .map((reservation) => {
+        const session = sessionMap.get(reservation.session_id);
+        if (!session) return null;
+        const start = localParts(session.starts_at, ctx.studio.timezone);
+        const end = localParts(session.ends_at, ctx.studio.timezone);
 
-      return {
-        reservation_ref: reservationRef(reservation.id),
-        activity: templateMap.get(session.template_id) ?? "Clase",
-        date: start.date,
-        starts_at_local: start.time,
-        ends_at_local: end.time,
-        location: session.location_id
-          ? locationMap.get(session.location_id) ?? null
-          : null,
-        space: session.space_id ? spaceMap.get(session.space_id) ?? null : null,
-        credit_cost: Math.max(Number(reservation.credits_held ?? 1), 1),
-        status: reservation.status,
-      };
-    }).filter(Boolean),
+        return {
+          reservation_ref: reservationRef(reservation.id),
+          activity: templateMap.get(session.template_id) ?? "Clase",
+          date: start.date,
+          starts_at_local: start.time,
+          ends_at_local: end.time,
+          location: session.location_id ? (locationMap.get(session.location_id) ?? null) : null,
+          space: session.space_id ? (spaceMap.get(session.space_id) ?? null) : null,
+          credit_cost: Math.max(Number(reservation.credits_held ?? 1), 1),
+          status: reservation.status,
+        };
+      })
+      .filter(Boolean),
   };
 }
 

@@ -21,9 +21,7 @@ describe("Demi commercial payment options", () => {
     expect(orchestrator).toContain(
       "Si prepare_booking o prepare_reschedule falla por falta de créditos",
     );
-    expect(orchestrator).toContain(
-      "No menciones métodos que no aparezcan en payment_options",
-    );
+    expect(orchestrator).toContain("No menciones métodos que no aparezcan en payment_options");
     expect(orchestrator).toContain(
       "Puedes pagarlo desde la app con Mercado Pago o por transferencia",
     );

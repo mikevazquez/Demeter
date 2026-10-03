@@ -18,9 +18,7 @@ describe("Demi service booking credit revalidation", () => {
   });
 
   it("keeps the service booking RPC restricted to service_role", () => {
-    expect(migration).toContain(
-      "revoke all on function public.service_book_student",
-    );
+    expect(migration).toContain("revoke all on function public.service_book_student");
     expect(migration).toContain("to service_role;");
   });
 });

@@ -31,39 +31,39 @@ export default async function DemiDemoPage() {
     { data: students },
     { data: prospectContacts },
   ] = await Promise.all([
-      supabase
-        .from("assistant_configs")
-        .select(
-          "assistant_name,mode,model,reasoning_effort,monthly_budget_usd_micros,conversation_budget_usd_micros",
-        )
-        .eq("studio_id", studio.id)
-        .maybeSingle(),
-      supabase
-        .from("assistant_model_calls")
-        .select("estimated_cost_usd_micros,input_tokens,output_tokens")
-        .eq("studio_id", studio.id)
-        .gte("created_at", monthStartIso()),
-      supabase
-        .from("assistant_conversations")
-        .select("id", { count: "exact", head: true })
-        .eq("studio_id", studio.id),
-      supabase
-        .from("students")
-        .select("id,full_name")
-        .eq("studio_id", studio.id)
-        .eq("active", true)
-        .eq("lifecycle_status", "active")
-        .order("full_name")
-        .limit(60),
-      supabase
-        .from("crm_contacts")
-        .select("id,person_id,lifecycle_status")
-        .eq("studio_id", studio.id)
-        .is("converted_student_id", null)
-        .in("lifecycle_status", ["prospect", "trial"])
-        .order("created_at", { ascending: false })
-        .limit(40),
-    ]);
+    supabase
+      .from("assistant_configs")
+      .select(
+        "assistant_name,mode,model,reasoning_effort,monthly_budget_usd_micros,conversation_budget_usd_micros",
+      )
+      .eq("studio_id", studio.id)
+      .maybeSingle(),
+    supabase
+      .from("assistant_model_calls")
+      .select("estimated_cost_usd_micros,input_tokens,output_tokens")
+      .eq("studio_id", studio.id)
+      .gte("created_at", monthStartIso()),
+    supabase
+      .from("assistant_conversations")
+      .select("id", { count: "exact", head: true })
+      .eq("studio_id", studio.id),
+    supabase
+      .from("students")
+      .select("id,full_name")
+      .eq("studio_id", studio.id)
+      .eq("active", true)
+      .eq("lifecycle_status", "active")
+      .order("full_name")
+      .limit(60),
+    supabase
+      .from("crm_contacts")
+      .select("id,person_id,lifecycle_status")
+      .eq("studio_id", studio.id)
+      .is("converted_student_id", null)
+      .in("lifecycle_status", ["prospect", "trial"])
+      .order("created_at", { ascending: false })
+      .limit(40),
+  ]);
 
   if (!config) {
     return (
@@ -91,9 +91,7 @@ export default async function DemiDemoPage() {
         .in("id", prospectPersonIds)
     : { data: [] as Array<{ id: string; first_name: string; last_name: string | null }> };
 
-  const prospectPersonMap = new Map(
-    (prospectPersons ?? []).map((person) => [person.id, person]),
-  );
+  const prospectPersonMap = new Map((prospectPersons ?? []).map((person) => [person.id, person]));
 
   const prospects = (prospectContacts ?? [])
     .map((contact) => {
@@ -106,11 +104,8 @@ export default async function DemiDemoPage() {
         lifecycleStatus: contact.lifecycle_status,
       };
     })
-    .filter(
-      (
-        prospect,
-      ): prospect is { id: string; name: string; lifecycleStatus: string } =>
-        Boolean(prospect),
+    .filter((prospect): prospect is { id: string; name: string; lifecycleStatus: string } =>
+      Boolean(prospect),
     );
 
   const spent = (monthCalls ?? []).reduce(
@@ -133,9 +128,8 @@ export default async function DemiDemoPage() {
           <div className="demi-eyebrow">Asistente interno</div>
           <h1>🤖 {config.assistant_name}</h1>
           <p>
-            Conversa con el asistente usando datos reales de {studio.name}. Ya puede
-            reservar, cancelar, reagendar y entrar a lista de espera con
-            confirmación explícita.
+            Conversa con el asistente usando datos reales de {studio.name}. Ya puede reservar,
+            cancelar, reagendar y entrar a lista de espera con confirmación explícita.
           </p>
         </div>
         <span className="demi-mode">Modo {config.mode}</span>
@@ -165,9 +159,9 @@ export default async function DemiDemoPage() {
       </section>
 
       <section className="demi-notice">
-        <strong>Regla de la demo:</strong> si Studio Flow no devuelve el dato, Demi debe decir
-        que no lo encontró. Para reservar, cancelar, reagendar o entrar a lista de espera,
-        primero debe validar el estado real y después pedir una confirmación nueva antes de ejecutar.
+        <strong>Regla de la demo:</strong> si Studio Flow no devuelve el dato, Demi debe decir que
+        no lo encontró. Para reservar, cancelar, reagendar o entrar a lista de espera, primero debe
+        validar el estado real y después pedir una confirmación nueva antes de ejecutar.
       </section>
 
       <DemiChat

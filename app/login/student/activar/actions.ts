@@ -80,9 +80,7 @@ export async function completeStudentPasswordActivation(formData: FormData) {
     redirect(activationErrorUrl(tokenHash, type, "save"));
   }
 
-  const { data: enrollmentOption } = await supabase.rpc(
-    "student_enrollment_purchase_option",
-  );
+  const { data: enrollmentOption } = await supabase.rpc("student_enrollment_purchase_option");
   const enrollmentState =
     enrollmentOption && typeof enrollmentOption === "object"
       ? (enrollmentOption as {

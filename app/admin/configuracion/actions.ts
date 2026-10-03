@@ -192,7 +192,6 @@ export async function saveStudioRegionalSettingsAction(formData: FormData) {
   redirect(regionalConfigurationPath(formData, { saved: "regional" }));
 }
 
-
 export async function saveStudioBankTransferSettingsAction(formData: FormData) {
   const ctx = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
 
@@ -222,23 +221,21 @@ export async function saveStudioBankTransferSettingsAction(formData: FormData) {
     redirect("/admin/configuracion/pagos?error=transfer");
   }
 
-  const { error } = await ctx.supabase
-    .from("studio_bank_transfer_settings")
-    .upsert(
-      {
-        studio_id: ctx.studio.id,
-        enabled,
-        bank_name: bankName || null,
-        account_holder: accountHolder || null,
-        clabe: clabe || null,
-        account_number: accountNumber || null,
-        card_number: cardNumber || null,
-        instructions: instructions || null,
-        updated_at: new Date().toISOString(),
-        updated_by: ctx.user.id,
-      },
-      { onConflict: "studio_id" },
-    );
+  const { error } = await ctx.supabase.from("studio_bank_transfer_settings").upsert(
+    {
+      studio_id: ctx.studio.id,
+      enabled,
+      bank_name: bankName || null,
+      account_holder: accountHolder || null,
+      clabe: clabe || null,
+      account_number: accountNumber || null,
+      card_number: cardNumber || null,
+      instructions: instructions || null,
+      updated_at: new Date().toISOString(),
+      updated_by: ctx.user.id,
+    },
+    { onConflict: "studio_id" },
+  );
 
   if (error) {
     console.error("[studio.payments] Bank transfer settings save failed", {

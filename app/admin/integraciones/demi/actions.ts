@@ -76,8 +76,7 @@ export async function sendDemiMessage(input: SendDemiInput) {
       existing.context && typeof existing.context === "object" && !Array.isArray(existing.context)
         ? (existing.context as Record<string, unknown>)
         : {};
-    conversationCrmContactId =
-      String(existingContext.demo_crm_contact_id ?? "").trim() || null;
+    conversationCrmContactId = String(existingContext.demo_crm_contact_id ?? "").trim() || null;
 
     if (conversationCrmContactId) {
       if (requestedCrmContactId !== conversationCrmContactId) {
@@ -120,9 +119,7 @@ export async function sendDemiMessage(input: SendDemiInput) {
         studio_id: studio.id,
         channel: "internal_demo",
         student_id: requestedStudentId,
-        context: requestedCrmContactId
-          ? { demo_crm_contact_id: requestedCrmContactId }
-          : {},
+        context: requestedCrmContactId ? { demo_crm_contact_id: requestedCrmContactId } : {},
         status: "open",
       })
       .select("id,student_id,context")

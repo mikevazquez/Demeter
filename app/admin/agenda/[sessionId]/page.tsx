@@ -217,10 +217,7 @@ export default async function SessionDetailPage({
     ...new Set((resourceAssignments ?? []).map((item) => item.resource_id).filter(Boolean)),
   ] as string[];
   const { data: assignedResources } = assignedResourceIds.length
-    ? await supabase
-        .from("resources")
-        .select("id,name,short_label")
-        .in("id", assignedResourceIds)
+    ? await supabase.from("resources").select("id,name,short_label").in("id", assignedResourceIds)
     : {
         data: [] as { id: string; name: string; short_label: string | null }[],
       };

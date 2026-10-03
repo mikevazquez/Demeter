@@ -138,13 +138,10 @@ async function reservationQrPng(input: {
   studioId: string;
   reservationId: string;
 }) {
-  const { data, error } = await input.adminClient.rpc(
-    "service_get_reservation_checkin_token",
-    {
-      target_studio_id: input.studioId,
-      target_reservation_id: input.reservationId,
-    },
-  );
+  const { data, error } = await input.adminClient.rpc("service_get_reservation_checkin_token", {
+    target_studio_id: input.studioId,
+    target_reservation_id: input.reservationId,
+  });
 
   const payload = isObject(data) ? data : null;
   const token = safeText(payload?.token);
@@ -166,14 +163,9 @@ async function uploadMetaWhatsAppImage(input: {
 }) {
   const form = new FormData();
   form.append("messaging_product", "whatsapp");
-  form.append(
-    "file",
-    new Blob([input.bytes], { type: "image/png" }),
-    "reservation-checkin-qr.png",
-  );
+  form.append("file", new Blob([input.bytes], { type: "image/png" }), "reservation-checkin-qr.png");
 
-  const endpoint =
-    `https://graph.facebook.com/${input.connection.graphApiVersion}/${input.connection.phoneNumberId}/media`;
+  const endpoint = `https://graph.facebook.com/${input.connection.graphApiVersion}/${input.connection.phoneNumberId}/media`;
   const response = await (input.fetcher ?? fetch)(endpoint, {
     method: "POST",
     headers: { authorization: `Bearer ${input.connection.accessToken}` },
@@ -267,10 +259,7 @@ export async function sendMetaWhatsAppTemplate(
 
   let headerImageId: string | null = null;
 
-  if (
-    internalTemplate === "reservation_confirmed" &&
-    reservationQrTemplate(metaTemplateName)
-  ) {
+  if (internalTemplate === "reservation_confirmed" && reservationQrTemplate(metaTemplateName)) {
     const reservationId = safeUuid(input.variables.reservation_id);
     if (!reservationId) {
       return {

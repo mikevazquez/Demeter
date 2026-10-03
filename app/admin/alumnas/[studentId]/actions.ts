@@ -516,21 +516,14 @@ export async function invalidateStudentDocumentAcceptanceAction(formData: FormDa
   redirect(`/admin/alumnas/${studentId}?view=documents&document_result=invalidated`);
 }
 
-
 export async function reviewStudentTransferPurchaseAction(formData: FormData) {
   const studentId = String(formData.get("student_id") ?? "").trim();
   const intentId = String(formData.get("intent_id") ?? "").trim();
   const decision = String(formData.get("decision") ?? "").trim();
   const note = String(formData.get("note") ?? "").trim();
 
-  if (
-    !studentId ||
-    !intentId ||
-    !["approved", "rejected"].includes(decision)
-  ) {
-    redirect(
-      `/admin/alumnas/${studentId}?view=packages&error=transfer_review#transferencias`,
-    );
+  if (!studentId || !intentId || !["approved", "rejected"].includes(decision)) {
+    redirect(`/admin/alumnas/${studentId}?view=packages&error=transfer_review#transferencias`);
   }
 
   const { supabase, studio } = await getAdminContext(CAPABILITIES.SALES_WRITE);
@@ -544,9 +537,7 @@ export async function reviewStudentTransferPurchaseAction(formData: FormData) {
     .maybeSingle();
 
   if (!intent || intent.status !== "provisional_active") {
-    redirect(
-      `/admin/alumnas/${studentId}?view=packages&error=transfer_review#transferencias`,
-    );
+    redirect(`/admin/alumnas/${studentId}?view=packages&error=transfer_review#transferencias`);
   }
 
   const { data, error } = await supabase.rpc("admin_review_transfer_purchase", {
@@ -556,14 +547,10 @@ export async function reviewStudentTransferPurchaseAction(formData: FormData) {
   });
 
   const result =
-    data && typeof data === "object" && !Array.isArray(data)
-      ? (data as { ok?: boolean })
-      : null;
+    data && typeof data === "object" && !Array.isArray(data) ? (data as { ok?: boolean }) : null;
 
   if (error || result?.ok !== true) {
-    redirect(
-      `/admin/alumnas/${studentId}?view=packages&error=transfer_review#transferencias`,
-    );
+    redirect(`/admin/alumnas/${studentId}?view=packages&error=transfer_review#transferencias`);
   }
 
   revalidatePath(`/admin/alumnas/${studentId}`);

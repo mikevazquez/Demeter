@@ -61,14 +61,7 @@ export const assistantReadToolDefinitions: AssistantToolDefinition[] = [
           description: "Máximo de resultados. Usa normalmente 10 y nunca más de 20.",
         },
       },
-      required: [
-        "activity_query",
-        "date_from",
-        "date_to",
-        "after_time",
-        "before_time",
-        "limit",
-      ],
+      required: ["activity_query", "date_from", "date_to", "after_time", "before_time", "limit"],
       additionalProperties: false,
     },
   },
@@ -107,8 +100,7 @@ export const assistantReadToolDefinitions: AssistantToolDefinition[] = [
   {
     type: "function",
     name: "get_studio_information",
-    description:
-      "Consulta nombre, ubicación/dirección y datos públicos de atención del estudio.",
+    description: "Consulta nombre, ubicación/dirección y datos públicos de atención del estudio.",
     strict: true,
     parameters: {
       type: "object",
@@ -231,8 +223,7 @@ export const assistantActionToolDefinitions: AssistantToolDefinition[] = [
       properties: {
         reservation_ref: {
           type: "string",
-          description:
-            "Referencia opaca reservation:<uuid> devuelta por get_student_reservations.",
+          description: "Referencia opaca reservation:<uuid> devuelta por get_student_reservations.",
         },
         reason: {
           type: "string",
@@ -317,8 +308,7 @@ export const assistantActionToolDefinitions: AssistantToolDefinition[] = [
       properties: {
         session_ref: {
           type: "string",
-          description:
-            "Referencia opaca session:<uuid> devuelta por search_class_availability.",
+          description: "Referencia opaca session:<uuid> devuelta por search_class_availability.",
         },
       },
       required: ["session_ref"],
@@ -402,7 +392,7 @@ export const assistantActionToolDefinitions: AssistantToolDefinition[] = [
             "transfer_receipt_review",
             "payment_validation",
             "user_requested_human",
-            "assistant_cannot_resolve"
+            "assistant_cannot_resolve",
           ],
         },
         note: {
@@ -427,8 +417,7 @@ export const assistantActionToolDefinitions: AssistantToolDefinition[] = [
         payment_method: {
           type: "string",
           enum: ["cash", "bank_transfer"],
-          description:
-            "cash para efectivo en el estudio; bank_transfer para transferencia.",
+          description: "cash para efectivo en el estudio; bank_transfer para transferencia.",
         },
       },
       required: ["payment_method"],
