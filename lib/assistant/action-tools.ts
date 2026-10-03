@@ -3,7 +3,7 @@ import "server-only";
 import { createHash, randomUUID } from "node:crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-import type { AssistantStudioContext } from "./read-tools";
+import { getCommercialOptions, type AssistantStudioContext } from "./read-tools";
 import type {
   ExecuteBookingArgs,
   ExecuteCancellationArgs,
@@ -17,6 +17,7 @@ import type {
   PrepareStudentAccessActivationArgs,
   SelectResourceOptionArgs,
   PrepareBankTransferPurchaseArgs,
+  PrepareTransferPackageChoiceArgs,
 } from "./tool-contracts";
 
 type AssistantActionToolContext = {
@@ -3066,6 +3067,115 @@ async function resolvePostTrialEnrollmentMethod(
   };
 }
 
+async function prepareTransferPackageChoice(
+  ctx: AssistantActionToolContext,
+  args: PrepareTransferPackageChoiceArgs,
+) {
+  if (!ctx.studentId) {
+    return { ok: false, error: "identity_required" };
+  }
+
+  const sessionId = parseOpaqueRef(args.session_ref, "session");
+  if (!sessionId) return { ok: false, error: "invalid_session_ref" };
+
+  const requestedRefs = Array.from(
+    new Set(
+      (args.product_refs ?? [])
+        .map((value) => String(value ?? "").trim())
+        .filter(Boolean),
+    ),
+  ).slice(0, 10);
+
+  if (!requestedRefs.length) {
+    return { ok: false, error: "transfer_package_options_required" };
+  }
+
+  const commercial = await getCommercialOptions(
+    {
+      supabase: ctx.supabase,
+      studio: ctx.studio,
+      studentId: ctx.studentId,
+    },
+    { session_ref: args.session_ref },
+  );
+
+  if (!commercial.ok) return commercial;
+
+  const transferAvailable = commercial.payment_options?.some(
+    (item) => item.code === "bank_transfer",
+  );
+  if (!transferAvailable) {
+    return { ok: false, error: "bank_transfer_not_available" };
+  }
+
+  const selectedOptions = (commercial.options ?? []).filter((item) =>
+    requestedRefs.includes(item.product_ref),
+  );
+
+  if (!selectedOptions.length) {
+    return { ok: false, error: "transfer_package_options_invalid" };
+  }
+
+  const now = new Date().toISOString();
+  await ctx.supabase
+    .from("assistant_pending_actions")
+    .update({ status: "cancelled", updated_at: now })
+    .eq("studio_id", ctx.studio.id)
+    .eq("conversation_id", ctx.conversationId)
+    .eq("action_type", "commerce.transfer_package_choice")
+    .eq("status", "pending");
+
+  const expiresAt = new Date(Date.now() + 24 * 60 * 60_000).toISOString();
+  const secretToken = randomUUID();
+  const tokenHash = createHash("sha256").update(secretToken).digest("hex");
+  const options = selectedOptions.map((item, index) => ({
+    option_number: index + 1,
+    product_ref: item.product_ref,
+    name: item.name,
+    price_minor: item.price_minor,
+    currency: item.currency,
+    credit_limit: item.credit_limit,
+    unlimited: item.unlimited,
+    package_term: item.package_term,
+  }));
+
+  const { error } = await ctx.supabase.from("assistant_pending_actions").insert({
+    studio_id: ctx.studio.id,
+    conversation_id: ctx.conversationId,
+    action_type: "commerce.transfer_package_choice",
+    action_token_hash: tokenHash,
+    action_payload: {
+      stage: "package_choice",
+      session_ref: args.session_ref,
+      session_id: sessionId,
+      student_id: ctx.studentId,
+      payment_method: "bank_transfer",
+      options,
+      prepared_turn_id: ctx.turnId,
+    },
+    confirmation_summary: {
+      session_ref: args.session_ref,
+      payment_method: "bank_transfer",
+      options,
+    },
+    status: "pending",
+    expires_at: expiresAt,
+  });
+
+  if (error) {
+    return { ok: false, error: "transfer_package_choice_create_failed" };
+  }
+
+  return {
+    ok: true,
+    status: "package_choice_required",
+    expires_at: expiresAt,
+    payment_method: "bank_transfer",
+    session_ref: args.session_ref,
+    options,
+  };
+}
+
 async function prepareBankTransferPurchase(
   ctx: AssistantActionToolContext,
   args: PrepareBankTransferPurchaseArgs,
@@ -3206,6 +3316,11 @@ export async function executeAssistantActionTool(
       return prepareWaitlistJoin(ctx, args as PrepareWaitlistJoinArgs);
     case "execute_waitlist_join":
       return executeWaitlistJoin(ctx, args as ExecuteWaitlistJoinArgs);
+    case "prepare_transfer_package_choice":
+      return prepareTransferPackageChoice(
+        ctx,
+        args as PrepareTransferPackageChoiceArgs,
+      );
     case "prepare_bank_transfer_purchase":
       return prepareBankTransferPurchase(
         ctx,
