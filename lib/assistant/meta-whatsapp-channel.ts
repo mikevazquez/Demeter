@@ -18,6 +18,7 @@ export type MetaInboundMessage = {
   providerMessageId: string;
   fromWaId: string;
   phoneNumberId: string;
+  wabaId: string | null;
   profileName: string | null;
   timestamp: string | null;
   messageType: string;
@@ -218,6 +219,7 @@ export function extractMetaInboundMessages(body: unknown): MetaInboundMessage[] 
 
   for (const rawEntry of entries) {
     const entry = isObject(rawEntry) ? rawEntry : {};
+    const wabaId = safeText(entry.id);
     const changes = Array.isArray(entry.changes) ? entry.changes : [];
 
     for (const rawChange of changes) {
@@ -239,6 +241,7 @@ export function extractMetaInboundMessages(body: unknown): MetaInboundMessage[] 
           providerMessageId,
           fromWaId,
           phoneNumberId,
+          wabaId,
           profileName: profileNameForWaId(value, fromWaId),
           timestamp: safeText(message.timestamp),
           messageType,
