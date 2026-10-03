@@ -13,7 +13,7 @@ describe("Demi Meta WhatsApp inbound contract", () => {
   );
   const channel = source("lib/assistant/meta-whatsapp-channel.ts");
   const migration = source(
-    "supabase/migrations/20261002143000_demi_meta_whatsapp_inbound.sql",
+    "supabase/migrations/20261003171900_demi_meta_whatsapp_inbound.sql",
   );
 
   it("validates Meta verification and signed webhook payloads", () => {
