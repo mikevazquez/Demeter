@@ -252,3 +252,48 @@ export async function saveStudioBankTransferSettingsAction(formData: FormData) {
   revalidatePath("/admin/mas");
   redirect("/admin/configuracion/pagos?saved=transfer");
 }
+
+
+export async function reviewTransferPurchaseAction(formData: FormData) {
+  const ctx = await getAdminContext(CAPABILITIES.SALES_WRITE);
+
+  const intentId = String(formData.get("intent_id") ?? "").trim();
+  const decision = String(formData.get("decision") ?? "").trim();
+  const note = String(formData.get("note") ?? "").trim();
+
+  if (
+    !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(intentId) ||
+    !["approved", "rejected"].includes(decision)
+  ) {
+    redirect("/admin/configuracion/pagos?error=review");
+  }
+
+  const { data, error } = await ctx.supabase.rpc(
+    "admin_review_transfer_purchase",
+    {
+      target_intent_id: intentId,
+      target_decision: decision,
+      target_note: note || null,
+    },
+  );
+
+  const result =
+    data && typeof data === "object" && !Array.isArray(data)
+      ? (data as { ok?: boolean })
+      : null;
+
+  if (error || result?.ok !== true) {
+    console.error("[studio.payments] Transfer review failed", {
+      code: error?.code ?? "review_failed",
+      message: error?.message?.slice(0, 160) ?? "review_failed",
+    });
+    redirect("/admin/configuracion/pagos?error=review");
+  }
+
+  revalidatePath("/admin/configuracion/pagos");
+  revalidatePath("/admin/alumnas");
+  revalidatePath("/admin/hoy");
+  redirect(
+    `/admin/configuracion/pagos?reviewed=${decision === "approved" ? "approved" : "rejected"}`,
+  );
+}
