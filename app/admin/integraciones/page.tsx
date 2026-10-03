@@ -156,7 +156,7 @@ export default async function IntegrationsPage() {
             description="Asistente conversacional propio de Studio Flow."
             detail={
               demiConfig
-                ? `${demiConfig.model} · modo ${demiConfig.mode} · Sandbox`
+                ? `${demiConfig.model} · modo ${demiConfig.mode}`
                 : "Configura el asistente para este estudio"
             }
             status={demiConfig?.mode === "demo" ? "Demo" : "Configurar"}
