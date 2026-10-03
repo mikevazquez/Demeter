@@ -221,21 +221,3 @@ create policy assistant_pending_actions_admin on public.assistant_pending_action
 for all to authenticated
 using (private.has_capability(studio_id,'settings.write'))
 with check (private.has_capability(studio_id,'settings.write'));
-
-insert into public.assistant_configs(
-  studio_id,assistant_name,mode,model,reasoning_effort,
-  monthly_budget_usd_micros,conversation_budget_usd_micros
-)
-values (
-  '9fe23cfa-fb47-4670-afeb-ed4a56433772',
-  'Demi','demo','gpt-5.6-luna','medium',
-  2000000,100000
-)
-on conflict (studio_id) do update
-set assistant_name=excluded.assistant_name,
-    mode=excluded.mode,
-    model=excluded.model,
-    reasoning_effort=excluded.reasoning_effort,
-    monthly_budget_usd_micros=coalesce(public.assistant_configs.monthly_budget_usd_micros,excluded.monthly_budget_usd_micros),
-    conversation_budget_usd_micros=coalesce(public.assistant_configs.conversation_budget_usd_micros,excluded.conversation_budget_usd_micros),
-    updated_at=clock_timestamp();
