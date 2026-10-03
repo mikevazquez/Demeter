@@ -149,6 +149,27 @@ async function loadRuntimeContext(
   return { studio, config };
 }
 
+async function hasBlockingOpenHandoff(input: {
+  supabase: ReturnType<typeof createServiceClient>;
+  studioId: string;
+  conversationId: string;
+}) {
+  const { data, error } = await input.supabase
+    .from("assistant_handoffs")
+    .select("reason_code")
+    .eq("studio_id", input.studioId)
+    .eq("conversation_id", input.conversationId)
+    .eq("status", "open");
+
+  if (error) {
+    throw new Error("assistant_handoff_lookup_failed");
+  }
+
+  return (data ?? []).some(
+    (handoff) => handoff.reason_code !== "transfer_receipt_review",
+  );
+}
+
 async function createMediaHandoff(input: {
   supabase: ReturnType<typeof createServiceClient>;
   studioId: string;
@@ -719,16 +740,40 @@ export async function POST(request: Request) {
     }
 
     if (prepared.handoff_open === true) {
-      await markEvent(supabase, studioId, event.id, {
-        processing_status: "human_review",
-        processing_result: { outcome: "human_takeover_active" },
-        processed_at: new Date().toISOString(),
+      let blockingHandoff = true;
+      try {
+        blockingHandoff = await hasBlockingOpenHandoff({
+          supabase,
+          studioId,
+          conversationId,
+        });
+      } catch {
+        retryableFailure = true;
+        await markEvent(supabase, studioId, event.id, {
+          processing_status: "error",
+          processing_result: { outcome: "handoff_lookup_failed" },
+          last_error_code: "assistant_handoff_lookup_failed",
+        });
+        continue;
+      }
+
+      if (blockingHandoff) {
+        await markEvent(supabase, studioId, event.id, {
+          processing_status: "human_review",
+          processing_result: { outcome: "human_takeover_active" },
+          processed_at: new Date().toISOString(),
+        });
+        outcomes.push({
+          provider_message_id: message.providerMessageId,
+          outcome: "human_takeover_active",
+        });
+        continue;
+      }
+
+      console.info("demi_meta_webhook", {
+        stage: "handoff",
+        outcome: "non_blocking_transfer_review",
       });
-      outcomes.push({
-        provider_message_id: message.providerMessageId,
-        outcome: "human_takeover_active",
-      });
-      continue;
     }
 
     if (message.mediaId || !["text", "button", "interactive"].includes(message.messageType)) {
