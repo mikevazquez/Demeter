@@ -131,6 +131,34 @@ export function buildAsistianVariables(
         mensaje: "La clase fue cancelada. No necesitas asistir.",
       };
 
+    case "class_cancelled_student":
+      return {
+        nombre: safeText(variables.recipient_name) ?? "Alumna",
+        clase: safeText(variables.class_name) ?? "Clase",
+        fecha: starts.fecha,
+        hora: starts.hora,
+      };
+
+    case "class_rescheduled": {
+      const oldStarts = formatNotificationDateTimeParts(
+        variables.old_starts_at,
+        variables.studio_timezone,
+      );
+      const newStarts = formatNotificationDateTimeParts(
+        variables.session_starts_at ?? variables.new_starts_at,
+        variables.studio_timezone,
+      );
+
+      return {
+        nombre: safeText(variables.recipient_name) ?? "Alumna",
+        clase: safeText(variables.class_name) ?? "Clase",
+        fecha_anterior: oldStarts.fecha,
+        hora_anterior: oldStarts.hora,
+        fecha_nueva: newStarts.fecha,
+        hora_nueva: newStarts.hora,
+      };
+    }
+
     default:
       return variables;
   }
