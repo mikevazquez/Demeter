@@ -47,9 +47,8 @@ describe("Demi bank transfer flow", () => {
     expect(paymentPage).toContain("Pagos y transferencias");
     expect(paymentPage).toContain("studio_bank_transfer_settings");
     expect(paymentPage).toContain("Transferencias pendientes");
-    expect(paymentPage).toContain(
-      "Cada pago se valida y conserva dentro del Perfil 360 de la alumna",
-    );
+    expect(paymentPage).toContain("Cada pago se valida y conserva dentro");
+    expect(paymentPage).toContain("Perfil 360 de la alumna.");
     expect(paymentPage).toContain("Abrir perfil de la alumna");
     expect(paymentPage).toContain("?view=packages#transferencias");
   });
