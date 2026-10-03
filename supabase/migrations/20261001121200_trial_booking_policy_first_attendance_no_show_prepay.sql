@@ -13,32 +13,7 @@ alter table public.trial_booking_policies enable row level security;
 revoke all on public.trial_booking_policies from anon, authenticated;
 grant all on public.trial_booking_policies to service_role;
 
-insert into public.trial_booking_policies(
-  studio_id,
-  enabled,
-  allow_without_enrollment_until_first_attendance,
-  max_active_trial_reservations,
-  prepayment_after_no_shows,
-  require_payment_before_attendance
-)
-select
-  '9fe23cfa-fb47-4670-afeb-ed4a56433772'::uuid,
-  true,
-  true,
-  1,
-  2,
-  true
-where exists (
-  select 1 from public.studios
-  where id='9fe23cfa-fb47-4670-afeb-ed4a56433772'::uuid
-)
-on conflict(studio_id) do update set
-  enabled=excluded.enabled,
-  allow_without_enrollment_until_first_attendance=excluded.allow_without_enrollment_until_first_attendance,
-  max_active_trial_reservations=excluded.max_active_trial_reservations,
-  prepayment_after_no_shows=excluded.prepayment_after_no_shows,
-  require_payment_before_attendance=excluded.require_payment_before_attendance,
-  updated_at=now();
+-- Studio-specific trial policy is configured explicitly per environment after migration.
 
 create or replace function public.assistant_trial_booking_preview(
   target_studio_id uuid,
