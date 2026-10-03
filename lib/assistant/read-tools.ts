@@ -1,7 +1,11 @@
 import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { CommercialOptionsArgs, SearchClassAvailabilityArgs } from "./tool-contracts";
+import type {
+  BankTransferInstructionsArgs,
+  CommercialOptionsArgs,
+  SearchClassAvailabilityArgs,
+} from "./tool-contracts";
 
 export type AssistantStudioContext = {
   id: string;
@@ -468,6 +472,77 @@ export async function getCommercialOptions(
   };
 }
 
+async function getBankTransferInstructions(
+  ctx: AssistantToolContext,
+  rawArgs: BankTransferInstructionsArgs,
+) {
+  const commercial = await getCommercialOptions(ctx, {
+    session_ref: rawArgs.session_ref,
+  });
+  if (!commercial.ok) return commercial;
+
+  const selected = commercial.options?.find(
+    (item) => item.product_ref === rawArgs.product_ref,
+  );
+  if (!selected) {
+    return {
+      ok: false,
+      error: "product_not_compatible",
+      reason_message:
+        "Ese paquete ya no está disponible para la clase seleccionada.",
+    };
+  }
+
+  const transferAvailable = commercial.payment_options?.some(
+    (item) => item.code === "bank_transfer",
+  );
+  if (!transferAvailable) {
+    return {
+      ok: false,
+      error: "bank_transfer_not_available",
+      reason_message:
+        "La transferencia no está habilitada como método de pago.",
+    };
+  }
+
+  const { data, error } = await ctx.supabase.rpc(
+    "service_get_bank_transfer_settings",
+    { target_studio_id: ctx.studio.id },
+  );
+  const settings =
+    data && typeof data === "object" && !Array.isArray(data)
+      ? (data as Record<string, unknown>)
+      : null;
+
+  if (error || !settings || settings.configured !== true) {
+    return {
+      ok: false,
+      error: "bank_transfer_details_not_configured",
+      reason_message:
+        "La transferencia está habilitada, pero faltan los datos bancarios del estudio.",
+    };
+  }
+
+  return {
+    ok: true,
+    payment_method: "bank_transfer",
+    package: selected,
+    amount_minor: selected.price_minor,
+    currency: selected.currency,
+    bank_details: {
+      bank_name: settings.bank_name ?? null,
+      account_holder: settings.account_holder ?? null,
+      clabe: settings.clabe ?? null,
+      account_number: settings.account_number ?? null,
+      card_number: settings.card_number ?? null,
+      instructions: settings.instructions ?? null,
+    },
+    payment_status: "pending_validation",
+    credits_activate_before_validation: false,
+    receipt_required: true,
+  };
+}
+
 export async function getStudioInformation(ctx: AssistantToolContext) {
   const { data: locations, error: locationError } = await ctx.supabase
     .from("studio_locations")
@@ -652,6 +727,11 @@ export async function executeAssistantReadTool(
       return getActivityCatalog(ctx);
     case "get_commercial_options":
       return getCommercialOptions(ctx, args as CommercialOptionsArgs);
+    case "get_bank_transfer_instructions":
+      return getBankTransferInstructions(
+        ctx,
+        args as BankTransferInstructionsArgs,
+      );
     case "get_studio_information":
       return getStudioInformation(ctx);
     case "get_policy_information":
