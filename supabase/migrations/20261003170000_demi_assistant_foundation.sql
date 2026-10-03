@@ -1,5 +1,5 @@
 -- Demi / Studio Flow conversational assistant foundation.
--- Sandbox-first, additive only. Asistian remains untouched.
+-- Additive only. Asistian remains untouched.
 
 create table if not exists public.assistant_configs (
   studio_id uuid primary key references public.studios(id) on delete cascade,
