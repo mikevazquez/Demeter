@@ -15,6 +15,7 @@ import {
   updateCommunicationPreferences,
   updateDynamicProfileFields,
   updateStudent,
+  reviewStudentTransferPurchaseAction,
 } from "./actions";
 
 const structuralFieldKeys = new Set(["first_name", "last_name", "phone", "email"]);
@@ -149,6 +150,7 @@ export default async function StudentProfilePage({
     evaluation_error?: string;
     document_result?: string;
     document_error?: string;
+    transfer_review?: string;
     view?: string;
   }>;
 }) {
@@ -305,6 +307,7 @@ export default async function StudentProfilePage({
   const canEdit = can(CAPABILITIES.STUDENTS_WRITE);
   const canReadSchedule = can(CAPABILITIES.SCHEDULE_READ);
   const canReadSales = can(CAPABILITIES.SALES_READ);
+  const canManageSales = can(CAPABILITIES.SALES_WRITE);
   const canReadRewards = can(CAPABILITIES.REWARDS_READ);
   const canManageRewards = can(CAPABILITIES.REWARDS_MANAGE);
   const canReadEvaluations = can(CAPABILITIES.EVALUATIONS_READ);
@@ -333,6 +336,21 @@ export default async function StudentProfilePage({
     : { data: [] };
   const pendingOperatingCharges = (operatingCharges ?? []).filter(
     (charge) => charge.status === "pending",
+  );
+  const { data: transferPurchases } = canReadSales
+    ? await supabase
+        .from("assistant_transfer_purchase_intents")
+        .select(
+          "id,status,product_template_id,amount_minor,currency,receipt_received_at,created_at,validated_at,rejected_at,review_note,sale_id,acquisition_id",
+        )
+        .eq("studio_id", studio.id)
+        .eq("student_id", student.id)
+        .order("created_at", { ascending: false })
+        .limit(20)
+    : { data: [] };
+  const transferPurchaseRows = transferPurchases ?? [];
+  const pendingTransferReviews = transferPurchaseRows.filter(
+    (item) => item.status === "provisional_active",
   );
   const timeZone = studio.timezone;
   const locale = studio.locale;
@@ -860,6 +878,15 @@ export default async function StudentProfilePage({
       detail: "No hay una reserva futura asociada al paquete actual.",
     });
   }
+  if (pendingTransferReviews.length > 0) {
+    alerts.push({
+      title: "Transferencia pendiente de validar",
+      detail:
+        pendingTransferReviews.length === 1
+          ? "Hay un comprobante asociado a esta alumna pendiente de validación."
+          : `Hay ${pendingTransferReviews.length} comprobantes asociados a esta alumna pendientes de validación.`,
+    });
+  }
   if (currentAcquisition?.access_blocked || pendingBalanceMinor > 0) {
     alerts.push({
       title: "Saldo pendiente",
@@ -902,6 +929,7 @@ export default async function StudentProfilePage({
     acquisition_not_editable: "Esta adquisición ya no puede modificarse.",
     communication_preferences:
       "No se pudieron guardar las preferencias de comunicación. Inténtalo de nuevo.",
+    transfer_review: "No se pudo actualizar la validación de la transferencia.",
   };
 
   return (
@@ -955,6 +983,18 @@ export default async function StudentProfilePage({
       {query.error ? (
         <div className="notice error">
           {errorCopy[query.error] ?? "No se pudo guardar el cambio."}
+        </div>
+      ) : null}
+
+      {query.transfer_review === "approved" ? (
+        <div className="notice success">
+          Transferencia validada. El paquete de esta alumna quedó confirmado.
+        </div>
+      ) : null}
+
+      {query.transfer_review === "rejected" ? (
+        <div className="notice success">
+          Transferencia rechazada. El paquete provisional fue revocado y el historial se conservó.
         </div>
       ) : null}
 
