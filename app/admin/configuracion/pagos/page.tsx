@@ -5,19 +5,17 @@ import { getAdminContext } from "@/lib/auth/admin-context";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 
 import { BankTransferSettingsForm } from "../BankTransferSettingsForm";
-import { reviewTransferPurchaseAction } from "../actions";
 import "../advanced-v2.css";
 
 const errorCopy: Record<string, string> = {
   transfer: "Revisa los datos bancarios antes de guardar.",
   transfer_save: "No pudimos guardar los datos de transferencia.",
-  review: "No pudimos actualizar la revisión del comprobante.",
 };
 
 export default async function PaymentSettingsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ saved?: string; error?: string; reviewed?: string }>;
+  searchParams: Promise<{ saved?: string; error?: string }>;
 }) {
   const params = await searchParams;
   const ctx = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
@@ -88,18 +86,6 @@ export default async function PaymentSettingsPage({
         </div>
       ) : null}
 
-      {params.reviewed === "approved" ? (
-        <div className="advanced-v2-notice is-success">
-          Transferencia validada. El paquete quedó confirmado.
-        </div>
-      ) : null}
-
-      {params.reviewed === "rejected" ? (
-        <div className="advanced-v2-notice is-success">
-          Transferencia rechazada. El paquete provisional fue revocado sin borrar el historial.
-        </div>
-      ) : null}
-
       <section className="advanced-v2-form-card">
         <BankTransferSettingsForm
           enabled={data?.enabled ?? false}
@@ -114,10 +100,9 @@ export default async function PaymentSettingsPage({
 
       <section className="advanced-v2-form-card" style={{ marginTop: 20 }}>
         <div className="advanced-v2-field">
-          <span>Comprobantes pendientes de validación</span>
+          <span>Transferencias pendientes</span>
           <small>
-            Demi activa estos paquetes de forma provisional al recibir el comprobante.
-            Aquí confirmas si la transferencia realmente llegó.
+            Esta lista es solo un acceso rápido. Cada pago se valida y conserva dentro del Perfil 360 de la alumna.
           </small>
         </div>
 
@@ -152,33 +137,12 @@ export default async function PaymentSettingsPage({
                       : ""}
                   </small>
 
-                  <form
-                    action={reviewTransferPurchaseAction}
-                    style={{ display: "flex", gap: 8, flexWrap: "wrap" }}
+                  <Link
+                    className="advanced-v2-save"
+                    href={`/admin/alumnas/${item.student_id}?view=packages#transferencias`}
                   >
-                    <input type="hidden" name="intent_id" value={item.id} />
-                    <button
-                      className="advanced-v2-save"
-                      type="submit"
-                      name="decision"
-                      value="approved"
-                    >
-                      Validar transferencia
-                    </button>
-                    <button
-                      type="submit"
-                      name="decision"
-                      value="rejected"
-                      style={{
-                        border: "1px solid rgba(0,0,0,.18)",
-                        borderRadius: 12,
-                        padding: "10px 14px",
-                        background: "transparent",
-                      }}
-                    >
-                      Rechazar y revocar
-                    </button>
-                  </form>
+                    Abrir perfil de la alumna
+                  </Link>
                 </article>
               );
             })}
