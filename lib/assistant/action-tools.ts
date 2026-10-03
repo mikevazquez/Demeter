@@ -1913,7 +1913,9 @@ async function executeReschedule(
     return { ok: false, error: "reservation_not_reschedulable" };
   }
   if (!target) return { ok: false, error: "session_not_found" };
-  if (target.session.requires_resource) {
+  const resourceId = String(payload.resource_id ?? "") || null;
+  const resourceLabel = String(payload.resource_label ?? "") || null;
+  if (target.session.requires_resource && !resourceId) {
     return { ok: false, error: "resource_selection_required" };
   }
 
@@ -1921,6 +1923,7 @@ async function executeReschedule(
   const currentConsequence = cancellationConsequenceKey(source.summary);
   if (previousConsequence !== currentConsequence) {
     const refreshedExpiry = new Date(Date.now() + 10 * 60_000).toISOString();
+    const currentPendingSummary = asObject(pending.confirmation_summary) ?? {};
     const refreshedSummary = {
       from: source.summary,
       to: target.summary,
@@ -1934,6 +1937,7 @@ async function executeReschedule(
         source.summary.credit_will_return === false
           ? target.summary.credit_cost
           : 0,
+      selected_resource: currentPendingSummary.selected_resource ?? null,
     };
 
     await ctx.supabase
@@ -1991,18 +1995,35 @@ async function executeReschedule(
   }
 
   const rescheduleRequest = ctx.serviceMode
-    ? await ctx.supabase.rpc("service_reschedule_student_reservation", {
-        target_studio_id: ctx.studio.id,
-        target_student_id: studentId,
-        target_reservation_id: reservationId,
-        target_session_id: targetSessionId,
-        target_reason: "Reagendado por Demi",
-      })
-    : await ctx.supabase.rpc("admin_reschedule_student_reservation", {
-        target_reservation_id: reservationId,
-        target_session_id: targetSessionId,
-        target_reason: "Reagendado por Demi",
-      });
+    ? resourceId
+      ? await ctx.supabase.rpc(
+          "service_reschedule_student_reservation_with_resource",
+          {
+            target_studio_id: ctx.studio.id,
+            target_student_id: studentId,
+            target_reservation_id: reservationId,
+            target_session_id: targetSessionId,
+            target_resource_id: resourceId,
+            target_reason: "Reagendado por Demi",
+          },
+        )
+      : await ctx.supabase.rpc("service_reschedule_student_reservation", {
+          target_studio_id: ctx.studio.id,
+          target_student_id: studentId,
+          target_reservation_id: reservationId,
+          target_session_id: targetSessionId,
+          target_reason: "Reagendado por Demi",
+        })
+    : resourceId
+      ? {
+          data: null,
+          error: new Error("resource_reschedule_requires_service_mode"),
+        }
+      : await ctx.supabase.rpc("admin_reschedule_student_reservation", {
+          target_reservation_id: reservationId,
+          target_session_id: targetSessionId,
+          target_reason: "Reagendado por Demi",
+        });
 
   const { data: result, error: rescheduleError } = rescheduleRequest;
   const resultObject = asObject(result);
@@ -2011,6 +2032,7 @@ async function executeReschedule(
       ok: false,
       error: "reschedule_execution_failed",
       original_reservation_preserved: true,
+      ...safeBookingReason(resultObject?.reason_code),
     };
   }
 
@@ -2041,6 +2063,12 @@ async function executeReschedule(
     summary: {
       from: source.summary,
       to: target.summary,
+      selected_resource: resourceId
+        ? {
+            resource_id: resourceId,
+            label: resourceLabel,
+          }
+        : null,
     },
   };
 }
