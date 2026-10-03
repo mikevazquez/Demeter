@@ -7,6 +7,8 @@ export const META_WHATSAPP_TEMPLATE_KEYS = [
   "waitlist_promoted",
   "class_reminder",
   "class_cancelled_coach",
+  "class_cancelled_student",
+  "class_rescheduled",
 ] as const;
 
 export type MetaWhatsAppTemplateKey = (typeof META_WHATSAPP_TEMPLATE_KEYS)[number];
@@ -31,6 +33,15 @@ const PARAMETER_ORDER: Record<MetaWhatsAppTemplateKey, readonly string[]> = {
     "hora",
     "minimo_reservas",
     "reservas_al_revisar",
+  ],
+  class_cancelled_student: ["nombre", "clase", "fecha", "hora"],
+  class_rescheduled: [
+    "nombre",
+    "clase",
+    "fecha_anterior",
+    "hora_anterior",
+    "fecha_nueva",
+    "hora_nueva",
   ],
 };
 
