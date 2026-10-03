@@ -28,7 +28,7 @@ describe("SF-N14 PORTAL UX-04 Reservar", () => {
   it("renders a compact chronological day schedule", () => {
     expect(reserve).toContain('data-density="compact"');
     expect(reserve).toContain("Clases del día");
-    expect(reserve).toContain("No hay clases disponibles para esta fecha");
+    expect(reserve).toContain("No hay clases para esta fecha");
     expect(reserve).toContain("session.spots_available");
     expect(reserve).toContain("session.capacity");
   });
