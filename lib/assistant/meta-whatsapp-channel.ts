@@ -142,6 +142,92 @@ export function sha256Hex(value: string) {
   return createHash("sha256").update(value).digest("hex");
 }
 
+
+export type MetaDownloadedMedia = {
+  bytes: Uint8Array;
+  mimeType: "image/jpeg" | "image/png" | "image/webp" | "application/pdf";
+  fileSize: number;
+};
+
+function receiptMimeType(value: unknown): MetaDownloadedMedia["mimeType"] | null {
+  const normalized = safeText(value)?.toLowerCase();
+  return normalized === "image/jpeg" ||
+      normalized === "image/png" ||
+      normalized === "image/webp" ||
+      normalized === "application/pdf"
+    ? normalized
+    : null;
+}
+
+export async function downloadMetaWhatsAppMedia(input: {
+  config: MetaWhatsAppWebhookConfig;
+  mediaId: string;
+  fetcher?: typeof fetch;
+}): Promise<MetaDownloadedMedia> {
+  const mediaId = input.mediaId.trim();
+  if (!/^\d+$/.test(mediaId)) {
+    throw new Error("meta_media_id_invalid");
+  }
+
+  const fetcher = input.fetcher ?? fetch;
+  const metadataUrl = new URL(
+    `https://graph.facebook.com/${input.config.graphApiVersion}/${mediaId}`,
+  );
+  metadataUrl.searchParams.set("phone_number_id", input.config.phoneNumberId);
+
+  const metadataResponse = await fetcher(metadataUrl, {
+    headers: {
+      authorization: `Bearer ${input.config.accessToken}`,
+    },
+  });
+
+  let metadataBody: unknown = {};
+  try {
+    metadataBody = await metadataResponse.json();
+  } catch {
+    metadataBody = {};
+  }
+
+  const metadata = isObject(metadataBody) ? metadataBody : {};
+  const downloadUrl = safeText(metadata.url);
+  const mimeType = receiptMimeType(metadata.mime_type);
+  const advertisedSize =
+    typeof metadata.file_size === "number" && Number.isFinite(metadata.file_size)
+      ? metadata.file_size
+      : null;
+
+  if (!metadataResponse.ok || !downloadUrl) {
+    throw new Error("meta_media_metadata_failed");
+  }
+  if (!mimeType) {
+    throw new Error("meta_media_type_unsupported");
+  }
+  if (advertisedSize !== null && advertisedSize > 10 * 1024 * 1024) {
+    throw new Error("meta_media_too_large");
+  }
+
+  const mediaResponse = await fetcher(downloadUrl, {
+    headers: {
+      authorization: `Bearer ${input.config.accessToken}`,
+    },
+  });
+
+  if (!mediaResponse.ok) {
+    throw new Error("meta_media_download_failed");
+  }
+
+  const bytes = new Uint8Array(await mediaResponse.arrayBuffer());
+  if (bytes.byteLength === 0 || bytes.byteLength > 10 * 1024 * 1024) {
+    throw new Error(bytes.byteLength === 0 ? "meta_media_empty" : "meta_media_too_large");
+  }
+
+  return {
+    bytes,
+    mimeType,
+    fileSize: bytes.byteLength,
+  };
+}
+
 function profileNameForWaId(value: JsonObject, waId: string) {
   const contacts = Array.isArray(value.contacts) ? value.contacts : [];
   for (const rawContact of contacts) {
