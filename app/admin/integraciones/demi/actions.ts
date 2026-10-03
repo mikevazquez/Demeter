@@ -45,7 +45,7 @@ export async function sendDemiMessage(input: SendDemiInput) {
   if (configError || !config) {
     return { ok: false as const, error: "assistant_not_configured" };
   }
-  if (config.mode !== "demo") {
+  if (!["demo", "pilot"].includes(config.mode)) {
     return { ok: false as const, error: "assistant_demo_disabled" };
   }
 
