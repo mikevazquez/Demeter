@@ -136,7 +136,7 @@ function Feedback({ error, saved }: { error?: string; saved?: string }) {
 
   const errorCopy: Record<string, string> = {
     notification_whatsapp_provider_managed:
-      "WhatsApp usa una plantilla administrada por Assistian y no se edita desde esta pantalla.",
+      "WhatsApp usa una plantilla aprobada por el proveedor conectado y no se edita desde esta pantalla.",
     notification_message_title_body_required: "El título y el mensaje son obligatorios.",
     notification_timing_out_of_range: "La anticipación debe estar entre 0 minutos y 7 días.",
     notification_process_essential: "Este proceso esencial debe permanecer activo.",
@@ -365,13 +365,13 @@ export default async function NotificationProcessPage({
                   <article key={channel} className="notification-message-card">
                     <div className="notification-message-card-head">
                       <strong>WhatsApp</strong>
-                      <span>{coverage === "none" ? "Inactivo" : "Assistian"}</span>
+                      <span>{coverage === "none" ? "Inactivo" : "Proveedor conectado"}</span>
                     </div>
                     <div className="notification-message-preview">
-                      <strong>Plantilla administrada en Assistian</strong>
+                      <strong>Plantilla aprobada de WhatsApp</strong>
                       <p>
                         Studio Flow envía las variables correctas; el texto aprobado de WhatsApp se
-                        mantiene en el proveedor.
+                        mantiene en el proveedor conectado.
                       </p>
                     </div>
                   </article>
