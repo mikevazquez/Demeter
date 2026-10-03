@@ -89,6 +89,7 @@ describe("Demi Meta WhatsApp inbound contract", () => {
     expect(route).not.toContain("service_sync_meta_whatsapp_phone_number_id");
     expect(route).not.toContain("service_sync_meta_whatsapp_waba_id");
     expect(channel).toContain("wabaId");
+    expect(migration).toContain("'waba_id', v_payload->>'waba_id'");
   });
 
   it("does not persist real inbound content while Demi is demo/off", () => {
@@ -132,7 +133,7 @@ describe("Meta inbound admin setup contract", () => {
     expect(page).not.toContain("value={appSecret}");
   });
 
-  it("shows the Sandbox callback URL without embedding a secret", () => {
+  it("shows the environment callback URL without embedding a secret", () => {
     expect(page).toContain(
       "/api/integrations/meta-whatsapp/webhook?studio=",
     );
