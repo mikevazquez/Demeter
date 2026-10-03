@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
 import QueryNotice from "@/app/components/QueryNotice";
 import {
@@ -21,7 +22,13 @@ export default async function StudentDocumentsPage({
     is_minor?: boolean | null;
     items?: DocumentCenterItem[];
     booking_blockers?: BookingRestriction[];
+    locked_until_enrollment?: boolean;
   };
+
+  if (center.locked_until_enrollment === true) {
+    redirect("/student/paquete#inscripcion");
+  }
+
   const items = center.items ?? [];
   const blockers = center.booking_blockers ?? [];
   const pending = items.filter((item) => !item.satisfied);

@@ -80,5 +80,23 @@ export async function completeStudentPasswordActivation(formData: FormData) {
     redirect(activationErrorUrl(tokenHash, type, "save"));
   }
 
+  const { data: enrollmentOption } = await supabase.rpc("student_enrollment_purchase_option");
+  const enrollmentState =
+    enrollmentOption && typeof enrollmentOption === "object"
+      ? (enrollmentOption as {
+          enabled?: boolean;
+          missing?: boolean;
+          configured?: boolean;
+        })
+      : null;
+
+  if (
+    enrollmentState?.enabled === true &&
+    enrollmentState.missing === true &&
+    enrollmentState.configured === true
+  ) {
+    redirect("/student/paquete#inscripcion");
+  }
+
   redirect("/student");
 }

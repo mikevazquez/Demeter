@@ -59,6 +59,7 @@ export default async function IntegrationsPage() {
     { count: mercadoPagoAttempts },
     { count: onlineProducts },
     { data: whatsappProvider },
+    { data: demiConfig },
   ] = await Promise.all([
     supabase
       .from("asistian_webhook_events")
@@ -86,6 +87,11 @@ export default async function IntegrationsPage() {
       .eq("studio_id", studio.id)
       .eq("channel_key", "whatsapp")
       .eq("provider_key", "meta_whatsapp")
+      .maybeSingle(),
+    supabase
+      .from("assistant_configs")
+      .select("assistant_name,mode,model")
+      .eq("studio_id", studio.id)
       .maybeSingle(),
   ]);
 
@@ -142,6 +148,20 @@ export default async function IntegrationsPage() {
             status={whatsappActive ? "Activo" : "Disponible"}
             tone={whatsappActive ? "active" : "available"}
             href="/admin/integraciones/meta-whatsapp"
+          />
+
+          <IntegrationCard
+            mark="D"
+            name={demiConfig?.assistant_name ?? "Demi"}
+            description="Asistente conversacional propio de Studio Flow."
+            detail={
+              demiConfig
+                ? `${demiConfig.model} · modo ${demiConfig.mode}`
+                : "Configura el asistente para este estudio"
+            }
+            status={demiConfig?.mode === "demo" ? "Demo" : "Configurar"}
+            tone={demiConfig?.mode === "demo" ? "active" : "available"}
+            href="/admin/integraciones/demi"
           />
         </div>
       </section>

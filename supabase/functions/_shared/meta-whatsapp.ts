@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "npm:@supabase/supabase-js@2.116.0";
+import * as QRCode from "npm:qrcode@1.5.4";
 
 import {
   buildMetaWhatsAppTemplatePayload,
@@ -120,6 +121,87 @@ function metaErrorSnapshot(value: unknown): JsonObject {
   };
 }
 
+function safeUuid(value: unknown) {
+  const text = safeText(value);
+  if (!text) return null;
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(text)
+    ? text
+    : null;
+}
+
+function reservationQrTemplate(metaTemplateName: string) {
+  return /(^|_)qr($|_)/i.test(metaTemplateName);
+}
+
+async function reservationQrPng(input: {
+  adminClient: SupabaseClient;
+  studioId: string;
+  reservationId: string;
+}) {
+  const { data, error } = await input.adminClient.rpc("service_get_reservation_checkin_token", {
+    target_studio_id: input.studioId,
+    target_reservation_id: input.reservationId,
+  });
+
+  const payload = isObject(data) ? data : null;
+  const token = safeText(payload?.token);
+  if (error || payload?.ok !== true || !token) return null;
+
+  const png = await QRCode.toBuffer(token, {
+    type: "png",
+    width: 480,
+    margin: 4,
+    errorCorrectionLevel: "M",
+  });
+  return new Uint8Array(png);
+}
+
+async function uploadMetaWhatsAppImage(input: {
+  connection: MetaWhatsAppConnection;
+  bytes: Uint8Array;
+  fetcher?: typeof fetch;
+}) {
+  const form = new FormData();
+  form.append("messaging_product", "whatsapp");
+  form.append("file", new Blob([input.bytes], { type: "image/png" }), "reservation-checkin-qr.png");
+
+  const endpoint = `https://graph.facebook.com/${input.connection.graphApiVersion}/${input.connection.phoneNumberId}/media`;
+  const response = await (input.fetcher ?? fetch)(endpoint, {
+    method: "POST",
+    headers: { authorization: `Bearer ${input.connection.accessToken}` },
+    body: form,
+  });
+
+  let responseBody: unknown = {};
+  try {
+    responseBody = await response.json();
+  } catch {
+    responseBody = {};
+  }
+
+  if (!response.ok) {
+    return {
+      ok: false as const,
+      retryable: retryableHttpStatus(response.status),
+      httpStatus: response.status,
+      responseSnapshot: metaErrorSnapshot(responseBody),
+    };
+  }
+
+  const body = isObject(responseBody) ? responseBody : {};
+  const mediaId = safeText(body.id);
+  if (!mediaId) {
+    return {
+      ok: false as const,
+      retryable: true,
+      httpStatus: response.status,
+      responseSnapshot: {},
+    };
+  }
+
+  return { ok: true as const, mediaId, httpStatus: response.status };
+}
+
 export async function sendMetaWhatsAppTemplate(
   input: MetaWhatsAppDeliveryInput,
 ): Promise<MetaWhatsAppDeliveryResult> {
@@ -175,12 +257,70 @@ export async function sendMetaWhatsAppTemplate(
     };
   }
 
+  let headerImageId: string | null = null;
+
+  if (internalTemplate === "reservation_confirmed" && reservationQrTemplate(metaTemplateName)) {
+    const reservationId = safeUuid(input.variables.reservation_id);
+    if (!reservationId) {
+      return {
+        status: "error",
+        errorCode: "reservation_qr_reservation_id_missing",
+        retryable: false,
+        responseSnapshot: {},
+      };
+    }
+
+    let qrBytes: Uint8Array | null = null;
+    try {
+      qrBytes = await reservationQrPng({
+        adminClient: input.adminClient,
+        studioId: input.studioId,
+        reservationId,
+      });
+    } catch {
+      return {
+        status: "error",
+        errorCode: "reservation_qr_generation_failed",
+        retryable: true,
+        responseSnapshot: {},
+      };
+    }
+
+    if (!qrBytes) {
+      return {
+        status: "skipped",
+        errorCode: "reservation_qr_unavailable",
+        retryable: false,
+        responseSnapshot: {},
+      };
+    }
+
+    const media = await uploadMetaWhatsAppImage({
+      connection,
+      bytes: qrBytes,
+      fetcher: input.fetcher,
+    });
+
+    if (!media.ok) {
+      return {
+        status: "error",
+        errorCode: "reservation_qr_media_upload_failed",
+        retryable: media.retryable,
+        httpStatus: media.httpStatus,
+        responseSnapshot: media.responseSnapshot,
+      };
+    }
+
+    headerImageId = media.mediaId;
+  }
+
   const payload = buildMetaWhatsAppTemplatePayload({
     recipient,
     internalTemplate,
     metaTemplateName,
     languageCode: connection.languageCode,
     variables: input.variables,
+    headerImageId,
   });
 
   const endpoint = `https://graph.facebook.com/${connection.graphApiVersion}/${connection.phoneNumberId}/messages`;

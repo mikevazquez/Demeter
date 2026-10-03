@@ -6,6 +6,7 @@ type ProvisionRequest = {
   studentId?: unknown;
   mode?: unknown;
   activationUrl?: unknown;
+  delivery?: unknown;
 };
 
 function jsonResponse(body: Record<string, unknown>, status = 200) {
@@ -73,6 +74,7 @@ const handler = {
             : "";
     const activationUrl =
       typeof payload.activationUrl === "string" ? payload.activationUrl.trim() : "";
+    const delivery = payload.delivery === "return_link" ? "return_link" : "provider";
     if (!studentId || !mode) return jsonResponse({ error: "invalid_request" }, 400);
 
     if (mode !== "temporary_password") {
@@ -240,6 +242,19 @@ const handler = {
       if (!tokenHash) return jsonResponse({ error: "activation_link_failed" }, 500);
 
       const activationLink = buildStudentActivationLink(activationUrl, tokenHash);
+
+      if (delivery === "return_link") {
+        return jsonResponse({
+          ok: true,
+          phone: student.phone,
+          mustChangePassword: true,
+          activationLinkGenerated: true,
+          activationLink,
+          delivery: "return_link",
+          welcomeDelivery: null,
+        });
+      }
+
       const welcomeEventId = `student_welcome:${student.id}:${student.user_id}:${crypto.randomUUID()}`;
       const { data: welcomeRule } = await adminClient
         .from("notification_rules")
@@ -408,6 +423,19 @@ const handler = {
     }
 
     const activationLink = buildStudentActivationLink(activationUrl, tokenHash);
+
+    if (delivery === "return_link") {
+      return jsonResponse({
+        ok: true,
+        phone: student.phone,
+        mustChangePassword: true,
+        activationLinkGenerated: true,
+        activationLink,
+        delivery: "return_link",
+        welcomeDelivery: null,
+      });
+    }
+
     const welcomeEventId = `student_welcome:${student.id}:${provisionedUser.id}:${crypto.randomUUID()}`;
     const { data: welcomeRule } = await adminClient
       .from("notification_rules")
