@@ -8,7 +8,7 @@ function source(path: string) {
 
 describe("Demi provisional transfer package flow", () => {
   const migration = source(
-    "supabase/migrations/20261003014000_demi_provisional_transfer_packages.sql",
+    "supabase/migrations/20261003172800_demi_provisional_transfer_packages.sql",
   );
   const webhook = source(
     "app/api/integrations/meta-whatsapp/webhook/route.ts",
