@@ -85,6 +85,12 @@ const items: MoreItem[] = [
     ownerOnly: true,
   },
   {
+    title: "Pagos y transferencias",
+    description: "Datos bancarios que Demi comparte cuando una alumna elige transferencia.",
+    href: "/admin/configuracion/pagos",
+    ownerOnly: true,
+  },
+  {
     title: "Recursos y espacios",
     description: "Recursos físicos, mapas y distribución de los espacios.",
     href: "/admin/configuracion/recursos",
