@@ -260,6 +260,7 @@ begin
   return jsonb_build_object(
     'access_token', v_payload->>'access_token',
     'phone_number_id', v_payload->>'phone_number_id',
+    'waba_id', v_payload->>'waba_id',
     'graph_api_version', v_payload->>'graph_api_version',
     'country_calling_code', coalesce(v_payload->>'country_calling_code', '52'),
     'app_secret', v_payload->>'app_secret',
