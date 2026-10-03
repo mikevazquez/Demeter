@@ -168,6 +168,89 @@ async function createMediaHandoff(input: {
   return !error && isObject(data) && data.ok === true;
 }
 
+async function activateTransferReceiptIfPending(input: {
+  supabase: ReturnType<typeof createServiceClient>;
+  studioId: string;
+  conversationId: string;
+  studentId: string | null;
+  eventId: string;
+  providerMessageId: string;
+  mediaId: string | null;
+  messageType: string;
+}) {
+  if (
+    !input.studentId ||
+    !input.mediaId ||
+    !["image", "document"].includes(input.messageType)
+  ) {
+    return { handled: false as const };
+  }
+
+  const { data, error } = await input.supabase.rpc(
+    "service_activate_transfer_receipt",
+    {
+      target_studio_id: input.studioId,
+      target_conversation_id: input.conversationId,
+      target_student_id: input.studentId,
+      target_event_id: input.eventId,
+      target_provider_message_id: input.providerMessageId,
+      target_media_id: input.mediaId,
+    },
+  );
+
+  const result = isObject(data) ? data : null;
+  if (error) {
+    throw new Error("transfer_receipt_activation_failed");
+  }
+
+  if (!result || result.ok !== true) {
+    if (
+      result?.reason_code === "pending_transfer_not_found" ||
+      result?.reason_code === "transfer_intent_expired"
+    ) {
+      return { handled: false as const };
+    }
+    return {
+      handled: false as const,
+      reasonCode: String(result?.reason_code ?? "transfer_receipt_not_activated"),
+    };
+  }
+
+  const packageName = String(result.package_name ?? "tu paquete").trim() || "tu paquete";
+  const intentId = String(result.intent_id ?? "").trim();
+  const saleId = String(result.sale_id ?? "").trim();
+
+  const { data: handoffData, error: handoffError } = await input.supabase.rpc(
+    "assistant_create_handoff",
+    {
+      target_studio_id: input.studioId,
+      target_conversation_id: input.conversationId,
+      target_student_id: input.studentId,
+      target_reason_code: "transfer_receipt_review",
+      target_note:
+        `Comprobante recibido. Paquete activado provisionalmente: ${packageName}. ` +
+        `Intento: ${intentId || "sin referencia"}. Venta: ${saleId || "sin referencia"}. ` +
+        `Validar la transferencia; si falla, revocar el paquete provisional.`,
+    },
+  );
+
+  if (
+    handoffError ||
+    !isObject(handoffData) ||
+    handoffData.ok !== true
+  ) {
+    throw new Error("transfer_receipt_handoff_failed");
+  }
+
+  return {
+    handled: true as const,
+    result,
+    reply:
+      `Recibí tu comprobante. Activé provisionalmente ${packageName} para que puedas continuar. ` +
+      "El pago queda pendiente de validación. Si al revisar la transferencia no se confirma correctamente, el paquete puede ser revocado.",
+  };
+}
+
 async function persistAcceptedReply(input: {
   supabase: ReturnType<typeof createServiceClient>;
   studioId: string;
@@ -582,27 +665,61 @@ export async function POST(request: Request) {
     }
 
     if (message.mediaId || !["text", "button", "interactive"].includes(message.messageType)) {
-      const handedOff = await createMediaHandoff({
-        supabase,
-        studioId,
-        conversationId,
-        studentId,
-        messageType: message.messageType,
-        providerMessageId: message.providerMessageId,
-      });
+      let transferReceipt:
+        | Awaited<ReturnType<typeof activateTransferReceiptIfPending>>
+        | null = null;
 
-      if (!handedOff) {
+      try {
+        transferReceipt = await activateTransferReceiptIfPending({
+          supabase,
+          studioId,
+          conversationId,
+          studentId,
+          eventId: event.id,
+          providerMessageId: message.providerMessageId,
+          mediaId: message.mediaId,
+          messageType: message.messageType,
+        });
+      } catch {
         retryableFailure = true;
         await markEvent(supabase, studioId, event.id, {
           processing_status: "error",
-          processing_result: { outcome: "media_handoff_failed" },
-          last_error_code: "media_handoff_failed",
+          processing_result: { outcome: "transfer_receipt_activation_failed" },
+          last_error_code: "transfer_receipt_activation_failed",
         });
         continue;
       }
 
-      const reply =
-        "Recibí tu archivo. Lo pasé a revisión humana dentro de este mismo chat.";
+      let reply: string;
+      let deterministicOutcome: string;
+
+      if (transferReceipt?.handled) {
+        reply = transferReceipt.reply;
+        deterministicOutcome = "transfer_receipt_provisional";
+      } else {
+        const handedOff = await createMediaHandoff({
+          supabase,
+          studioId,
+          conversationId,
+          studentId,
+          messageType: message.messageType,
+          providerMessageId: message.providerMessageId,
+        });
+
+        if (!handedOff) {
+          retryableFailure = true;
+          await markEvent(supabase, studioId, event.id, {
+            processing_status: "error",
+            processing_result: { outcome: "media_handoff_failed" },
+            last_error_code: "media_handoff_failed",
+          });
+          continue;
+        }
+
+        reply =
+          "Recibí tu archivo. Lo pasé a revisión humana dentro de este mismo chat.";
+        deterministicOutcome = "media_handoff";
+      }
 
       if (sendReplies) {
         const delivery = await sendMetaWhatsAppText({
@@ -639,7 +756,7 @@ export async function POST(request: Request) {
           providerMessageId: delivery.providerMessageId,
           httpStatus: delivery.httpStatus,
           responseSnapshot: delivery.responseSnapshot,
-          trace: { deterministic: "media_handoff" },
+          trace: { deterministic: deterministicOutcome },
         });
       } else {
         await markEvent(supabase, studioId, event.id, {
@@ -653,7 +770,7 @@ export async function POST(request: Request) {
 
       outcomes.push({
         provider_message_id: message.providerMessageId,
-        outcome: "media_handoff",
+        outcome: deterministicOutcome,
       });
       continue;
     }
