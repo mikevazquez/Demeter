@@ -88,6 +88,17 @@ function formatMoney(minor: number | null, locale: string, currency: string) {
   }).format(minor / 100);
 }
 
+function localDate(timeZone: string) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(new Date());
+  const value = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  return `${value.year}-${value.month}-${value.day}`;
+}
+
 export default function Profile360Overview({
   activeView,
   student,
@@ -108,6 +119,11 @@ export default function Profile360Overview({
   currency,
 }: Props) {
   const href = (view: string) => "/admin/alumnas/" + student.id + "?view=" + view;
+  const today = localDate(timeZone);
+  const currentEnrollment =
+    enrollment?.status === "active" &&
+    (!enrollment.startsOn || enrollment.startsOn <= today) &&
+    (!enrollment.expiresOn || enrollment.expiresOn >= today);
   const usedCredits =
     currentPackage && !currentPackage.unlimited && currentPackage.creditLimit !== null
       ? Math.max(0, currentPackage.creditLimit - (currentPackage.availableCredits ?? 0))
@@ -180,6 +196,14 @@ export default function Profile360Overview({
             >
               {student.portalEntered ? "Portal: ingresó" : "Portal: sin ingresar"}
             </span>
+            {canSell && !currentEnrollment ? (
+              <Link
+                className="profile360-edit-link"
+                href={"/admin/ventas/nueva?student_id=" + student.id}
+              >
+                Agregar inscripción
+              </Link>
+            ) : null}
             <Link className="profile360-edit-link" href={href("profile")}>
               Editar
             </Link>
@@ -317,8 +341,8 @@ export default function Profile360Overview({
             <article>
               <span>Estado de inscripción</span>
               <strong>
-                {enrollment?.status === "active"
-                  ? enrollment.expiresOn
+                {currentEnrollment
+                  ? enrollment?.expiresOn
                     ? "Vigente"
                     : "Vitalicia"
                   : enrollment
