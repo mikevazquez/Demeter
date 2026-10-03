@@ -557,6 +557,21 @@ export async function POST(request: Request) {
       });
     }
 
+    if (pilotContactAllowed && message.wabaId && /^\d+$/.test(message.wabaId)) {
+      const { error: wabaSyncError } = await supabase.rpc(
+        "service_sync_meta_whatsapp_waba_id",
+        {
+          target_studio_id: studioId,
+          target_waba_id: message.wabaId,
+        },
+      );
+
+      console.info("demi_meta_webhook", {
+        stage: "pre_capture",
+        outcome: wabaSyncError ? "waba_sync_failed" : "waba_synced",
+      });
+    }
+
     let event;
     try {
       event = await captureEvent({
