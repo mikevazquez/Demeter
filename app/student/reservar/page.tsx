@@ -92,6 +92,9 @@ type HolidayWeekItem = {
 };
 
 function statusClass(session: StudentSession, waitlisted = false) {
+  if (session.status === "cancelled") {
+    return "border-rose-500/30 bg-rose-500/10 text-rose-300";
+  }
   if (session.is_reserved) {
     return "border-emerald-500/25 bg-emerald-500/10 text-emerald-300";
   }
@@ -108,6 +111,7 @@ function statusClass(session: StudentSession, waitlisted = false) {
 }
 
 function statusCopy(session: StudentSession, waitlisted = false) {
+  if (session.status === "cancelled") return "Cancelada";
   if (session.is_reserved) return "Ya reservada";
   if (waitlisted) return "En lista de espera";
   if (session.eligibility?.eligible) return "Disponible";
@@ -235,7 +239,7 @@ export default async function StudentReservePage({
         </p>
         <h1 className="mt-1 text-2xl font-semibold text-white sm:text-3xl">Reservar clase</h1>
         <p className="mt-1.5 text-xs leading-5 text-zinc-400">
-          Elige una fecha para ver todas las clases disponibles de ese día.
+          Elige una fecha para consultar la agenda completa de ese día.
         </p>
       </header>
 
@@ -377,14 +381,16 @@ export default async function StudentReservePage({
           {items.length ? (
             items.map((session) => {
               const timeLabel = timeOnly(session.starts_at, studio.timezone);
-              const eligible = Boolean(session.eligibility?.eligible);
-              const reserved = Boolean(session.is_reserved);
+              const cancelled = session.status === "cancelled";
+              const eligible = !cancelled && Boolean(session.eligibility?.eligible);
+              const reserved = !cancelled && Boolean(session.is_reserved);
               const waitlisted = waitlistedSessionIds.has(session.session_id);
               const full = session.eligibility?.reason_code === "session_full";
               const style = activityStyleMap.get(session.activity);
               const activityColor = style?.color ?? "#FF0A8A";
               const dropInPriceMinor = style?.dropInPriceMinor ?? null;
               const canBuySingleClass =
+                !cancelled &&
                 !reserved &&
                 !eligible &&
                 session.spots_available > 0 &&
@@ -407,8 +413,9 @@ export default async function StudentReservePage({
                     <div>
                       <p className="text-sm font-semibold text-white">{timeLabel}</p>
                       <p className="mt-0.5 text-[10px] text-zinc-600">
-                        {Math.max(session.capacity - session.spots_available, 0)}/{session.capacity}{" "}
-                        reservados
+                        {cancelled
+                          ? "Clase cancelada"
+                          : `${Math.max(session.capacity - session.spots_available, 0)}/${session.capacity} reservados`}
                       </p>
                     </div>
 
@@ -435,7 +442,7 @@ export default async function StudentReservePage({
                       className="flex items-center gap-2"
                     >
                       <span
-                        className={`hidden rounded-full border px-2 py-1 text-[10px] font-semibold sm:inline-flex ${statusClass(
+                        className={`${cancelled ? "inline-flex" : "hidden sm:inline-flex"} rounded-full border px-2 py-1 text-[10px] font-semibold ${statusClass(
                           session,
                           waitlisted,
                         )}`}
@@ -449,7 +456,16 @@ export default async function StudentReservePage({
                   </div>
 
                   <div className="mt-3 border-t border-white/10 pt-3">
-                    {canBuySingleClass ? (
+                    {cancelled ? (
+                      <div className="rounded-xl border border-rose-500/20 bg-rose-500/[0.06] px-3 py-2.5">
+                        <p className="text-xs font-semibold text-rose-200">
+                          Clase cancelada por el estudio
+                        </p>
+                        <p className="mt-0.5 text-[10px] leading-4 text-zinc-500">
+                          Se conserva visible en tu agenda, pero ya no admite reservas.
+                        </p>
+                      </div>
+                    ) : canBuySingleClass ? (
                       <div>
                         <div>
                           <p className="text-[11px] font-semibold text-amber-100">
@@ -511,7 +527,7 @@ export default async function StudentReservePage({
                 ◫
               </div>
               <h3 className="mt-3 text-base font-semibold text-white">
-                No hay clases disponibles para esta fecha
+                No hay clases para esta fecha
               </h3>
               <p className="mx-auto mt-1.5 max-w-sm text-xs leading-5 text-zinc-400">
                 Elige otro día en el calendario para consultar la agenda.
