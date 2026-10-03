@@ -1690,10 +1690,6 @@ async function prepareReschedule(
 
   const target = await getSessionSummary(ctx, targetSessionId);
   if (!target) return { ok: false, error: "session_not_found" };
-  if (target.session.requires_resource) {
-    return { ok: false, error: "resource_selection_required" };
-  }
-
   const eligibilityRequest = ctx.serviceMode
     ? await ctx.supabase.rpc("service_booking_eligibility", {
         target_studio_id: ctx.studio.id,
@@ -1750,6 +1746,20 @@ async function prepareReschedule(
         : 0,
     target_may_use_released_credit: canUseReleasedCredit,
   };
+
+  if (target.session.requires_resource) {
+    return createResourceSelectionPending(ctx, {
+      actionType: "booking.reschedule",
+      sessionId: targetSessionId,
+      payload: {
+        reservation_id: reservationId,
+        target_session_id: targetSessionId,
+        student_id: ctx.studentId,
+        source_consequence_key: cancellationConsequenceKey(source.summary),
+      },
+      summary,
+    });
+  }
 
   const { data: pending, error: pendingError } = await ctx.supabase
     .from("assistant_pending_actions")
