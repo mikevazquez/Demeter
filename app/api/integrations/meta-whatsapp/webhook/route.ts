@@ -1,11 +1,13 @@
 import { runAssistantTurn } from "@/lib/assistant/orchestrator";
 import {
+  downloadMetaWhatsAppMedia,
   extractMetaInboundMessages,
   loadMetaWhatsAppWebhookConfig,
   sendMetaWhatsAppText,
   sha256Hex,
   verifyMetaWebhookSignature,
   verifyMetaWebhookToken,
+  type MetaWhatsAppWebhookConfig,
 } from "@/lib/assistant/meta-whatsapp-channel";
 import { createServiceClient } from "@/lib/supabase/service";
 
@@ -177,6 +179,7 @@ async function activateTransferReceiptIfPending(input: {
   providerMessageId: string;
   mediaId: string | null;
   messageType: string;
+  webhookConfig: MetaWhatsAppWebhookConfig;
 }) {
   if (
     !input.studentId ||
@@ -219,6 +222,55 @@ async function activateTransferReceiptIfPending(input: {
   const packageName = String(result.package_name ?? "tu paquete").trim() || "tu paquete";
   const intentId = String(result.intent_id ?? "").trim();
   const saleId = String(result.sale_id ?? "").trim();
+
+  if (!UUID_RE.test(intentId)) {
+    throw new Error("transfer_receipt_intent_missing");
+  }
+
+  const media = await downloadMetaWhatsAppMedia({
+    config: input.webhookConfig,
+    mediaId: input.mediaId,
+  });
+
+  const extension =
+    media.mimeType === "application/pdf"
+      ? "pdf"
+      : media.mimeType === "image/png"
+        ? "png"
+        : media.mimeType === "image/webp"
+          ? "webp"
+          : "jpg";
+  const storagePath =
+    `${input.studioId}/${input.studentId}/${intentId}/receipt.${extension}`;
+
+  const { error: storageError } = await input.supabase.storage
+    .from("transfer-receipts")
+    .upload(storagePath, media.bytes, {
+      contentType: media.mimeType,
+      upsert: true,
+      cacheControl: "3600",
+    });
+
+  if (storageError) {
+    throw new Error("transfer_receipt_storage_failed");
+  }
+
+  const { error: receiptUpdateError } = await input.supabase
+    .from("assistant_transfer_purchase_intents")
+    .update({
+      receipt_storage_path: storagePath,
+      receipt_mime_type: media.mimeType,
+      receipt_file_size: media.fileSize,
+      receipt_stored_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", intentId)
+    .eq("studio_id", input.studioId)
+    .eq("student_id", input.studentId);
+
+  if (receiptUpdateError) {
+    throw new Error("transfer_receipt_storage_metadata_failed");
+  }
 
   const { data: handoffData, error: handoffError } = await input.supabase.rpc(
     "assistant_create_handoff",
@@ -694,6 +746,7 @@ export async function POST(request: Request) {
           providerMessageId: message.providerMessageId,
           mediaId: message.mediaId,
           messageType: message.messageType,
+          webhookConfig,
         });
       } catch {
         retryableFailure = true;
