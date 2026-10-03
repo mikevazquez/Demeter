@@ -79,6 +79,7 @@ export function buildMetaWhatsAppTemplatePayload(input: {
   metaTemplateName: string;
   languageCode: string;
   variables: Record<string, unknown>;
+  headerImageId?: string | null;
 }) {
   const mapped =
     input.internalTemplate === "student_welcome"
@@ -95,6 +96,29 @@ export function buildMetaWhatsAppTemplatePayload(input: {
     text: asTemplateText(mapped[key]),
   }));
 
+  const components: Array<Record<string, unknown>> = [];
+
+  if (input.headerImageId) {
+    components.push({
+      type: "header",
+      parameters: [
+        {
+          type: "image",
+          image: {
+            id: input.headerImageId,
+          },
+        },
+      ],
+    });
+  }
+
+  if (parameters.length) {
+    components.push({
+      type: "body",
+      parameters,
+    });
+  }
+
   return {
     messaging_product: "whatsapp",
     recipient_type: "individual",
@@ -105,16 +129,7 @@ export function buildMetaWhatsAppTemplatePayload(input: {
       language: {
         code: input.languageCode,
       },
-      ...(parameters.length
-        ? {
-            components: [
-              {
-                type: "body" as const,
-                parameters,
-              },
-            ],
-          }
-        : {}),
+      ...(components.length ? { components } : {}),
     },
   };
 }
