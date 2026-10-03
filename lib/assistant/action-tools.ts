@@ -15,6 +15,7 @@ import type {
   PrepareWaitlistJoinArgs,
   RecordTrialPaymentPreferenceArgs,
   PrepareStudentAccessActivationArgs,
+  SelectResourceOptionArgs,
 } from "./tool-contracts";
 
 type AssistantActionToolContext = {
@@ -333,6 +334,263 @@ async function getSessionSummary(
       location: location?.name ?? null,
       space: space?.name ?? null,
       timezone: ctx.studio.timezone,
+    },
+  };
+}
+
+type AssistantResourceOption = {
+  option_number: number;
+  resource_id: string;
+  label: string;
+  short_label: string | null;
+  type_name: string | null;
+};
+
+async function getAvailableResourceOptions(
+  ctx: AssistantActionToolContext,
+  sessionId: string,
+): Promise<
+  | { ok: true; requires_resource: false; options: AssistantResourceOption[] }
+  | { ok: true; requires_resource: true; options: AssistantResourceOption[] }
+  | { ok: false; error: string }
+> {
+  const { data: session, error: sessionError } = await ctx.supabase
+    .from("class_sessions")
+    .select("id,requires_resource,space_id,resource_uses_per_item")
+    .eq("id", sessionId)
+    .eq("studio_id", ctx.studio.id)
+    .maybeSingle();
+
+  if (sessionError || !session) {
+    return { ok: false, error: "session_not_found" };
+  }
+
+  if (!session.requires_resource) {
+    return { ok: true, requires_resource: false, options: [] };
+  }
+
+  if (!session.space_id) {
+    return { ok: true, requires_resource: true, options: [] };
+  }
+
+  if (!ctx.serviceMode) {
+    const { data, error } = await ctx.supabase.rpc(
+      "student_session_resource_map",
+      { target_session_id: sessionId },
+    );
+    const result = asObject(data);
+    if (error || !result) {
+      return { ok: false, error: "resource_options_unavailable" };
+    }
+
+    const resources = Array.isArray(result.resources) ? result.resources : [];
+    const available = resources
+      .map((item) => asObject(item))
+      .filter(
+        (item): item is Record<string, unknown> =>
+          Boolean(item) &&
+          item!.enabled === true &&
+          Number(item!.available ?? 0) > 0,
+      )
+      .map((item) => ({
+        resource_id: String(item.resource_id ?? ""),
+        label:
+          String(item.name ?? "").trim() ||
+          String(item.short_label ?? "").trim() ||
+          "Recurso",
+        short_label:
+          typeof item.short_label === "string" ? item.short_label : null,
+        type_name: typeof item.type_name === "string" ? item.type_name : null,
+      }))
+      .filter((item) => Boolean(item.resource_id))
+      .sort((a, b) => a.label.localeCompare(b.label, "es-MX"))
+      .map((item, index) => ({ ...item, option_number: index + 1 }));
+
+    return { ok: true, requires_resource: true, options: available };
+  }
+
+  const { data: settings, error: settingsError } = await ctx.supabase
+    .from("session_resources")
+    .select("resource_id,enabled,capacity_override")
+    .eq("studio_id", ctx.studio.id)
+    .eq("session_id", sessionId);
+
+  if (settingsError) {
+    return { ok: false, error: "resource_options_unavailable" };
+  }
+
+  const enabledSettings = (settings ?? []).filter((item) => item.enabled);
+  const resourceIds = enabledSettings.map((item) => item.resource_id);
+  if (!resourceIds.length) {
+    return { ok: true, requires_resource: true, options: [] };
+  }
+
+  const [resourcesResult, assignmentsResult] = await Promise.all([
+    ctx.supabase
+      .from("resources")
+      .select("id,name,short_label,resource_type_id,active")
+      .eq("studio_id", ctx.studio.id)
+      .eq("space_id", session.space_id)
+      .eq("active", true)
+      .in("id", resourceIds),
+    ctx.supabase
+      .from("reservation_resource_assignments")
+      .select("resource_id")
+      .eq("studio_id", ctx.studio.id)
+      .eq("session_id", sessionId)
+      .is("released_at", null)
+      .in("resource_id", resourceIds),
+  ]);
+
+  if (resourcesResult.error || assignmentsResult.error) {
+    return { ok: false, error: "resource_options_unavailable" };
+  }
+
+  const resources = resourcesResult.data ?? [];
+  const typeIds = [
+    ...new Set(resources.map((item) => item.resource_type_id).filter(Boolean)),
+  ] as string[];
+  const { data: types, error: typesError } = typeIds.length
+    ? await ctx.supabase
+        .from("resource_types")
+        .select("id,name")
+        .eq("studio_id", ctx.studio.id)
+        .in("id", typeIds)
+    : { data: [], error: null };
+
+  if (typesError) {
+    return { ok: false, error: "resource_options_unavailable" };
+  }
+
+  const typeMap = new Map((types ?? []).map((item) => [item.id, item.name]));
+  const used = new Map<string, number>();
+  for (const assignment of assignmentsResult.data ?? []) {
+    used.set(
+      assignment.resource_id,
+      (used.get(assignment.resource_id) ?? 0) + 1,
+    );
+  }
+
+  const settingMap = new Map(
+    enabledSettings.map((item) => [item.resource_id, item]),
+  );
+
+  const available = resources
+    .filter((resource) => {
+      const setting = settingMap.get(resource.id);
+      const capacity = Math.max(
+        Number(
+          setting?.capacity_override ??
+            session.resource_uses_per_item ??
+            1,
+        ),
+        1,
+      );
+      return (used.get(resource.id) ?? 0) < capacity;
+    })
+    .map((resource) => ({
+      resource_id: resource.id,
+      label:
+        String(resource.name ?? "").trim() ||
+        String(resource.short_label ?? "").trim() ||
+        "Recurso",
+      short_label: resource.short_label ?? null,
+      type_name: resource.resource_type_id
+        ? typeMap.get(resource.resource_type_id) ?? null
+        : null,
+    }))
+    .sort((a, b) => a.label.localeCompare(b.label, "es-MX"))
+    .map((item, index) => ({ ...item, option_number: index + 1 }));
+
+  return { ok: true, requires_resource: true, options: available };
+}
+
+async function createResourceSelectionPending(
+  ctx: AssistantActionToolContext,
+  input: {
+    actionType: "booking.create" | "booking.reschedule";
+    sessionId: string;
+    payload: Record<string, unknown>;
+    summary: Record<string, unknown>;
+  },
+) {
+  const resourceResult = await getAvailableResourceOptions(ctx, input.sessionId);
+  if (!resourceResult.ok) return resourceResult;
+  if (!resourceResult.requires_resource) {
+    return { ok: false, error: "resource_not_required" };
+  }
+  if (!resourceResult.options.length) {
+    return {
+      ok: false,
+      error: "resource_unavailable",
+      reason_code: "resource_unavailable",
+      reason_message:
+        "La clase requiere un recurso, pero ahora mismo no hay ninguno disponible.",
+    };
+  }
+
+  const now = new Date().toISOString();
+  await ctx.supabase
+    .from("assistant_pending_actions")
+    .update({ status: "cancelled", updated_at: now })
+    .eq("studio_id", ctx.studio.id)
+    .eq("conversation_id", ctx.conversationId)
+    .eq("action_type", input.actionType)
+    .eq("status", "pending");
+
+  const expiresAt = new Date(Date.now() + 10 * 60_000).toISOString();
+  const secretToken = randomUUID();
+  const tokenHash = createHash("sha256").update(secretToken).digest("hex");
+  const safeOptions = resourceResult.options.map((option) => ({
+    option_number: option.option_number,
+    label: option.label,
+    short_label: option.short_label,
+    type_name: option.type_name,
+  }));
+
+  const { data: pending, error: pendingError } = await ctx.supabase
+    .from("assistant_pending_actions")
+    .insert({
+      studio_id: ctx.studio.id,
+      conversation_id: ctx.conversationId,
+      action_type: input.actionType,
+      action_token_hash: tokenHash,
+      action_payload: {
+        ...input.payload,
+        stage: "resource_selection",
+        prepared_turn_id: ctx.turnId,
+        resource_options: resourceResult.options.map((option) => ({
+          option_number: option.option_number,
+          resource_id: option.resource_id,
+          label: option.label,
+          short_label: option.short_label,
+          type_name: option.type_name,
+        })),
+      },
+      confirmation_summary: {
+        ...input.summary,
+        resource_selection_required: true,
+        resource_options: safeOptions,
+      },
+      status: "pending",
+      expires_at: expiresAt,
+    })
+    .select("id")
+    .single();
+
+  if (pendingError || !pending) {
+    return { ok: false, error: "pending_action_create_failed" };
+  }
+
+  return {
+    ok: true,
+    status: "resource_selection_required",
+    expires_at: expiresAt,
+    resource_options: safeOptions,
+    summary: {
+      ...input.summary,
+      resource_selection_required: true,
+      resource_options: safeOptions,
     },
   };
 }
