@@ -814,6 +814,38 @@ export default async function StudentProfilePage({
     });
   }
 
+  for (const transfer of transferPurchaseRows) {
+    const amount = new Intl.NumberFormat(locale, {
+      style: "currency",
+      currency: transfer.currency ?? currency,
+    }).format(Number(transfer.amount_minor ?? 0) / 100);
+    const packageName =
+      productMap.get(transfer.product_template_id)?.name ?? "Paquete";
+    const title =
+      transfer.status === "validated"
+        ? "Transferencia validada"
+        : transfer.status === "rejected"
+          ? "Transferencia rechazada"
+          : transfer.status === "provisional_active"
+            ? "Comprobante de transferencia recibido"
+            : transfer.status === "awaiting_receipt"
+              ? "Transferencia pendiente de comprobante"
+              : "Movimiento de transferencia";
+
+    profileHistoryEvents.push({
+      id: "transfer:" + transfer.id,
+      at:
+        transfer.validated_at ??
+        transfer.rejected_at ??
+        transfer.receipt_received_at ??
+        transfer.created_at,
+      kind: "sale",
+      title,
+      detail: `${packageName} · ${amount}`,
+      href: `/admin/alumnas/${student.id}?view=packages#transferencias`,
+    });
+  }
+
   for (const achievement of rewardAchievements) {
     profileHistoryEvents.push({
       id: "reward:" + achievement.id,
