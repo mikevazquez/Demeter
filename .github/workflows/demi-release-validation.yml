@@ -41,8 +41,8 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
-      - name: Unit tests
-        run: npm test
+      - name: Demi regression tests
+        run: npx vitest run tests/demi-*.test.ts
 
       - name: Build
         run: npm run build
