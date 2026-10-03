@@ -161,6 +161,10 @@ export type ExecuteCancellationArgs = EmptyArgs;
 export type PrepareRescheduleArgs = { reservation_ref: string; target_session_ref: string };
 export type ExecuteRescheduleArgs = EmptyArgs;
 
+export type SelectResourceOptionArgs = {
+  option_number: number;
+};
+
 export type PrepareWaitlistJoinArgs = {
   session_ref: string;
 };
@@ -269,6 +273,26 @@ export const assistantActionToolDefinitions: AssistantToolDefinition[] = [
       type: "object",
       properties: {},
       required: [],
+      additionalProperties: false,
+    },
+  },
+  {
+    type: "function",
+    name: "select_resource_option",
+    description:
+      "Selecciona por número uno de los recursos disponibles que Demi acaba de mostrar para la reserva o reagendado pendiente. Úsala cuando la persona responda con 1, 2, 3, etc. Después devuelve el resumen final para pedir confirmación; no ejecuta todavía la reserva.",
+    strict: true,
+    parameters: {
+      type: "object",
+      properties: {
+        option_number: {
+          type: "integer",
+          minimum: 1,
+          description:
+            "Número de la opción de recurso elegido por la persona, exactamente como se mostró en el mensaje anterior.",
+        },
+      },
+      required: ["option_number"],
       additionalProperties: false,
     },
   },
