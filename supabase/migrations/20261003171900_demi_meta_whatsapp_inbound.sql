@@ -1,5 +1,5 @@
 -- Demi · Meta WhatsApp inbound foundation.
--- Sandbox-first, additive only. Existing Asistian inbound/outbound flows remain untouched.
+-- Additive only. Existing Asistian inbound/outbound flows remain untouched.
 
 create table if not exists public.assistant_whatsapp_events (
   id uuid primary key default gen_random_uuid(),
