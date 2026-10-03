@@ -467,7 +467,7 @@ export default async function NotificationsPage({
           </section>
 
           <div className="notification-info-box">
-            WhatsApp usa plantillas administradas por Assistian. Push e Inbox admiten contenido
+            WhatsApp usa plantillas aprobadas por el proveedor conectado. Push e Inbox admiten contenido
             editable desde Studio Flow. Email queda preparado, pero su proveedor todavía no está
             configurado.
           </div>
@@ -501,7 +501,7 @@ export default async function NotificationsPage({
                 <span className="notification-channel-symbol">◉</span>
                 <span>
                   <strong>WhatsApp</strong>
-                  <small>Mensajes mediante Assistian</small>
+                  <small>Mensajes mediante el proveedor conectado</small>
                 </span>
                 <input
                   type="checkbox"
