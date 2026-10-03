@@ -11,7 +11,7 @@ describe("Demi resource selection flow", () => {
   const contracts = source("lib/assistant/tool-contracts.ts");
   const orchestrator = source("lib/assistant/orchestrator.ts");
   const migration = source(
-    "supabase/migrations/20261003000500_demi_resource_booking_runtime.sql",
+    "supabase/migrations/20261003172600_demi_resource_booking_runtime.sql",
   );
 
   it("offers only currently available resources as numbered options", () => {
