@@ -237,7 +237,7 @@ export const assistantActionToolDefinitions: AssistantToolDefinition[] = [
     type: "function",
     name: "prepare_cancellation",
     description:
-      "Prepara la cancelación de una reserva exacta. Requiere un motivo expresado por la persona, calcula la consecuencia real y pide confirmación. Nunca inventes el motivo.",
+      "Cancela directamente una reserva si está dentro del tiempo permitido. Si la cancelación es tardía, calcula la consecuencia real y devuelve confirmation_required para pedir confirmación antes de ejecutar. Requiere un motivo expresado por la persona y nunca lo inventa.",
     strict: true,
     parameters: {
       type: "object",
@@ -261,7 +261,7 @@ export const assistantActionToolDefinitions: AssistantToolDefinition[] = [
     type: "function",
     name: "execute_cancellation",
     description:
-      "Ejecuta la última cancelación pendiente de esta conversación. Solo úsala después de un NUEVO mensaje con confirmación explícita. El servidor vuelve a validar la consecuencia antes de cancelar.",
+      "Ejecuta la última cancelación tardía pendiente de esta conversación. Úsala solo después de un NUEVO mensaje con confirmación explícita, porque esa cancelación tiene una consecuencia no recuperable. El servidor vuelve a validar la consecuencia antes de cancelar.",
     strict: true,
     parameters: {
       type: "object",
