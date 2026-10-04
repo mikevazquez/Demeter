@@ -8,6 +8,9 @@ on:
 
 jobs:
   validate:
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: test-publishable-key
     if: "!contains(github.event.head_commit.message, '[remove-final-admin-smoke]')"
     runs-on: ubuntu-latest
     timeout-minutes: 20
