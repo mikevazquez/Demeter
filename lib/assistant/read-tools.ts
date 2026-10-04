@@ -567,22 +567,17 @@ export async function getStudentPackageStatus(ctx: AssistantToolContext) {
     return { ok: false, error: "package_status_unavailable" };
   }
 
-  const productMap = new Map(
-    (productsResult.data ?? []).map((item) => [item.id, item.name]),
-  );
+  const productMap = new Map((productsResult.data ?? []).map((item) => [item.id, item.name]));
   const balanceMap = new Map<string, number>();
   for (const movement of ledgerResult.data ?? []) {
     balanceMap.set(
       movement.acquisition_id,
-      (balanceMap.get(movement.acquisition_id) ?? 0) +
-        Number(movement.quantity ?? 0),
+      (balanceMap.get(movement.acquisition_id) ?? 0) + Number(movement.quantity ?? 0),
     );
   }
 
   const packages = current.map((item) => {
-    const availableCredits = item.unlimited
-      ? null
-      : Math.max(balanceMap.get(item.id) ?? 0, 0);
+    const availableCredits = item.unlimited ? null : Math.max(balanceMap.get(item.id) ?? 0, 0);
 
     return {
       name: productMap.get(item.product_template_id) ?? "Paquete",

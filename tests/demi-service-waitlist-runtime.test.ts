@@ -8,12 +8,10 @@ function source(path: string) {
 
 describe("Demi service waitlist runtime", () => {
   const actions = source("lib/assistant/action-tools.ts");
-  const migration = source(
-    "supabase/migrations/20261004014000_demi_service_waitlist_runtime.sql",
-  );
+  const migration = source("supabase/migrations/20261004014000_demi_service_waitlist_runtime.sql");
 
   it("uses service RPCs for WhatsApp waitlist preview and join", () => {
-    expect(actions).toContain('ctx.serviceMode');
+    expect(actions).toContain("ctx.serviceMode");
     expect(actions).toContain('"service_waitlist_preview"');
     expect(actions).toContain('"service_join_waitlist"');
     expect(actions).toContain('"admin_waitlist_preview"');

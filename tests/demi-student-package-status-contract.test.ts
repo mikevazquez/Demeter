@@ -28,11 +28,7 @@ describe("Demi student package status", () => {
   });
 
   it("keeps balance and validity questions inside Studio Flow instead of human handoff", () => {
-    expect(orchestrator).toContain(
-      "llama get_student_package_status antes de responder",
-    );
-    expect(orchestrator).toContain(
-      "no escales a atención humana solo por pedir saldo o vigencia",
-    );
+    expect(orchestrator).toContain("llama get_student_package_status antes de responder");
+    expect(orchestrator).toContain("no escales a atención humana solo por pedir saldo o vigencia");
   });
 });
