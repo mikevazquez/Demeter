@@ -109,7 +109,12 @@ try {
   process.exitCode = 1;
 } finally {
   if (worktreeAdded) {
-    const cleanup = run("git", ["worktree", "remove", "--force", baselineDir], root, { stdio: "ignore" });
+    const cleanup = run(
+      "git",
+      ["worktree", "remove", "--force", baselineDir],
+      root,
+      { stdio: "ignore" },
+    );
     if (cleanup.status !== 0) process.exitCode = 1;
   }
   rmSync(tempRoot, { recursive: true, force: true });
