@@ -23,6 +23,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -43,13 +45,10 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
-      - name: INTEL-13 regression tests
-        if: ${{ github.event_name == 'pull_request' && github.head_ref == 'promote/inteligencia-13-prod' }}
-        run: npx vitest run tests/inteligencia-*.test.ts
-
-      - name: Unit tests
-        run: npm test
-        continue-on-error: ${{ github.event_name == 'pull_request' && github.head_ref == 'promote/inteligencia-13-prod' }}
+      - name: Unit tests (compare with base)
+        env:
+          TEST_BASE_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+        run: node scripts/ci-test-ratchet.mjs "$TEST_BASE_SHA"
 
       - name: Build
         run: npm run build
