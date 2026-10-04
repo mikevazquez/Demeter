@@ -31,6 +31,8 @@ jobs:
             lib/assistant/action-tools.ts \
             lib/assistant/read-tools.ts \
             app/student/mis-clases/[reservationId]/page.tsx \
+            tests/demi-approved-uat-contract.test.ts \
+            tests/demi-approved-uat-contract.test.ts \
             tests/demi-service-waitlist-runtime.test.ts \
             tests/demi-student-package-status-contract.test.ts \
             tests/student-primary-package-selection.test.ts
