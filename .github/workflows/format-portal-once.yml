@@ -1,0 +1,34 @@
+name: Format portal once
+
+on:
+  push:
+    branches:
+      - release/demi-production-candidate
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    if: contains(github.event.head_commit.message, '[run-format-portal]')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: release/demi-production-candidate
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx prettier --write lib/student/portal.ts
+      - run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add lib/student/portal.ts
+          if git diff --cached --quiet; then
+            echo "No formatting changes needed"
+          else
+            git commit -m "chore: format portal [format-portal]"
+            git push origin HEAD:release/demi-production-candidate
+          fi
