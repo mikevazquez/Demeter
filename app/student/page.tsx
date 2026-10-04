@@ -6,6 +6,7 @@ import {
   formatDateTime,
   getStudentPortalContext,
   localDateKey,
+  selectPrimaryStudentPackage,
   type StudentAcquisition,
 } from "@/lib/student/portal";
 
@@ -251,7 +252,7 @@ export default async function StudentHomePage({
     (item) => item.reward_credit_wallet && item.status === "active" && item.active_now,
   );
   const packageAcquisitions = snapshot.acquisitions.filter((item) => !item.reward_credit_wallet);
-  const activePackage = packageAcquisitions.find((item) => item.active_now) ?? null;
+  const activePackage = selectPrimaryStudentPackage(snapshot.acquisitions);
   const rewardCreditsAvailable = rewardCreditWallets.reduce(
     (total, item) => total + (item.available_credits ?? 0),
     0,
