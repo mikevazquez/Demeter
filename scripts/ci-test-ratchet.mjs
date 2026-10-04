@@ -47,22 +47,28 @@ function runTests(cwd, reportPath) {
   return readFileSync(reportPath, "utf8");
 }
 
-function failedTests(reportText, repoRoot) {
+function inspectTests(reportText, repoRoot) {
   const report = JSON.parse(reportText);
+  const tests = new Set();
   const failures = new Set();
   for (const suite of report.testResults ?? []) {
     const file = relative(repoRoot, resolve(suite.name)).split(sep).join("/");
     const assertions = suite.assertionResults ?? [];
     for (const assertion of assertions) {
-      if (assertion.status === "failed") {
-        failures.add(`${file} :: ${assertion.fullName || assertion.title || "(unnamed test)"}`);
-      }
+      const test = `${file} :: ${assertion.fullName || assertion.title || "(unnamed test)"}`;
+      tests.add(test);
+      if (assertion.status === "failed") failures.add(test);
     }
     if (suite.status === "failed" && assertions.length === 0) {
-      failures.add(`${file} :: (suite setup or collection failure)`);
+      const failure = `${file} :: (suite setup or collection failure)`;
+      tests.add(failure);
+      failures.add(failure);
     }
   }
-  return [...failures].sort();
+  return {
+    tests: [...tests].sort(),
+    failures: [...failures].sort(),
+  };
 }
 
 try {
@@ -74,32 +80,43 @@ try {
   requireSuccess("npm", ["ci", "--prefer-offline"], baselineDir);
 
   console.log("Running the base revision's full Vitest suite…");
-  const baseFailures = failedTests(runTests(baselineDir, baselineReport), baselineDir);
+  const baseResults = inspectTests(runTests(baselineDir, baselineReport), baselineDir);
 
   console.log("Running the candidate's full Vitest suite…");
-  const candidateFailures = failedTests(runTests(root, candidateReport), root);
+  const candidateResults = inspectTests(runTests(root, candidateReport), root);
 
-  const baseSet = new Set(baseFailures);
-  const newFailures = candidateFailures.filter((failure) => !baseSet.has(failure));
-  const resolvedFailures = baseFailures.filter((failure) => !candidateFailures.includes(failure));
+  const baseSet = new Set(baseResults.failures);
+  const candidateTestSet = new Set(candidateResults.tests);
+  const newFailures = candidateResults.failures.filter((failure) => !baseSet.has(failure));
+  const resolvedFailures = baseResults.failures.filter(
+    (failure) => !candidateResults.failures.includes(failure),
+  );
+  const removedTests = baseResults.tests.filter((test) => !candidateTestSet.has(test));
 
-  console.log(`Base failures: ${baseFailures.length}`);
-  console.log(`Candidate failures: ${candidateFailures.length}`);
+  console.log(`Base failures: ${baseResults.failures.length}`);
+  console.log(`Candidate failures: ${candidateResults.failures.length}`);
   console.log(`New candidate failures: ${newFailures.length}`);
+  console.log(`Base tests missing from candidate: ${removedTests.length}`);
   if (resolvedFailures.length) {
     console.log(`No longer failing on candidate: ${resolvedFailures.length}`);
     for (const failure of resolvedFailures) console.log(`  ${failure}`);
   }
-  if (baseFailures.length) {
+  if (baseResults.failures.length) {
     console.log("Existing failures inherited from the base (reported, not suppressed):");
-    for (const failure of baseFailures) console.log(`  ${failure}`);
+    for (const failure of baseResults.failures) console.log(`  ${failure}`);
   }
   if (newFailures.length) {
     console.error("The candidate introduced failing tests:");
     for (const failure of newFailures) console.error(`  ${failure}`);
+  }
+  if (removedTests.length) {
+    console.error("The candidate removed or renamed baseline tests:");
+    for (const test of removedTests) console.error(`  ${test}`);
+  }
+  if (newFailures.length || removedTests.length) {
     process.exitCode = 1;
   } else {
-    console.log("Test ratchet passed: the candidate introduces no failing tests.");
+    console.log("Test ratchet passed: no new failures and no baseline tests removed.");
   }
 } catch (error) {
   console.error(error instanceof Error ? error.message : error);
