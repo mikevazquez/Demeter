@@ -35,12 +35,6 @@ jobs:
       - name: Install
         run: npm ci
 
-      - name: Print formatted CI ratchet source
-        run: |
-          echo "RATCHET_FORMAT_BEGIN"
-          npx prettier scripts/ci-test-ratchet.mjs
-          echo "RATCHET_FORMAT_END"
-
       - name: Format check
         run: npm run format:check
         continue-on-error: ${{ github.event_name == 'pull_request' && github.head_ref == 'promote/inteligencia-13-prod' }}

@@ -36,12 +36,9 @@ function requireSuccess(command, args, cwd) {
 }
 
 function runTests(cwd, reportPath) {
-  const result = run(
-    "npm",
-    ["test", "--", "--reporter=json", `--outputFile=${reportPath}`],
-    cwd,
-    { stdio: "ignore" },
-  );
+  const result = run("npm", ["test", "--", "--reporter=json", `--outputFile=${reportPath}`], cwd, {
+    stdio: "ignore",
+  });
   if (result.error) throw result.error;
   // A nonzero result is expected when the compared revision has existing failures.
   if (result.status !== 0 && result.status !== 1) {
@@ -109,12 +106,9 @@ try {
   process.exitCode = 1;
 } finally {
   if (worktreeAdded) {
-    const cleanup = run(
-      "git",
-      ["worktree", "remove", "--force", baselineDir],
-      root,
-      { stdio: "ignore" },
-    );
+    const cleanup = run("git", ["worktree", "remove", "--force", baselineDir], root, {
+      stdio: "ignore",
+    });
     if (cleanup.status !== 0) process.exitCode = 1;
   }
   rmSync(tempRoot, { recursive: true, force: true });
