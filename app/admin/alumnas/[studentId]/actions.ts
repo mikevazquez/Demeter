@@ -515,3 +515,65 @@ export async function invalidateStudentDocumentAcceptanceAction(formData: FormDa
   revalidatePath("/student/reservar");
   redirect(`/admin/alumnas/${studentId}?view=documents&document_result=invalidated`);
 }
+
+
+export async function reviewStudentTransferPurchaseAction(formData: FormData) {
+  const studentId = String(formData.get("student_id") ?? "").trim();
+  const intentId = String(formData.get("intent_id") ?? "").trim();
+  const decision = String(formData.get("decision") ?? "").trim();
+  const note = String(formData.get("note") ?? "").trim();
+
+  if (
+    !studentId ||
+    !intentId ||
+    !["approved", "rejected"].includes(decision)
+  ) {
+    redirect(
+      `/admin/alumnas/${studentId}?view=packages&error=transfer_review#transferencias`,
+    );
+  }
+
+  const { supabase, studio } = await getAdminContext(CAPABILITIES.SALES_WRITE);
+
+  const { data: intent } = await supabase
+    .from("assistant_transfer_purchase_intents")
+    .select("id,student_id,status")
+    .eq("id", intentId)
+    .eq("student_id", studentId)
+    .eq("studio_id", studio.id)
+    .maybeSingle();
+
+  if (!intent || intent.status !== "provisional_active") {
+    redirect(
+      `/admin/alumnas/${studentId}?view=packages&error=transfer_review#transferencias`,
+    );
+  }
+
+  const { data, error } = await supabase.rpc("admin_review_transfer_purchase", {
+    target_intent_id: intentId,
+    target_decision: decision,
+    target_note: note || null,
+  });
+
+  const result =
+    data && typeof data === "object" && !Array.isArray(data)
+      ? (data as { ok?: boolean })
+      : null;
+
+  if (error || result?.ok !== true) {
+    redirect(
+      `/admin/alumnas/${studentId}?view=packages&error=transfer_review#transferencias`,
+    );
+  }
+
+  revalidatePath(`/admin/alumnas/${studentId}`);
+  revalidatePath("/admin/alumnas");
+  revalidatePath("/admin/configuracion/pagos");
+  revalidatePath("/admin/hoy");
+
+  redirect(
+    `/admin/alumnas/${studentId}?view=packages&transfer_review=${
+      decision === "approved" ? "approved" : "rejected"
+    }#transferencias`,
+  );
+}

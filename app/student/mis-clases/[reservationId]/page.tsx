@@ -219,6 +219,16 @@ export default async function StudentReservationDetailPage({
             <dt className="text-[10px] uppercase tracking-[0.14em] text-zinc-500">Espacio</dt>
             <dd className="mt-1 text-xs font-semibold text-white">{item.space ?? "Estudio"}</dd>
           </div>
+          {item.resource_name ? (
+            <div className="col-span-2 bg-[#111218] px-4 py-3">
+              <dt className="text-[10px] uppercase tracking-[0.14em] text-zinc-500">
+                Recurso
+              </dt>
+              <dd className="mt-1 text-xs font-semibold text-fuchsia-200">
+                {item.resource_name}
+              </dd>
+            </div>
+          ) : null}
         </dl>
       </section>
 

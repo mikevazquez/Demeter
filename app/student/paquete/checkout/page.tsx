@@ -23,15 +23,27 @@ function safeOutcome(value: string | undefined): Outcome {
   return value === "success" || value === "failure" || value === "pending" ? value : null;
 }
 
-function statePresentation(status: string, outcome: Outcome): Presentation {
+function statePresentation(
+  status: string,
+  outcome: Outcome,
+  purchaseKind: "enrollment" | "package",
+): Presentation {
   if (status === "approved") {
-    return {
-      tone: "emerald",
-      eyebrow: "Pago confirmado",
-      title: "¡Tu paquete ya está listo!",
-      description:
-        "Mercado Pago confirmó el cobro y Studio Flow activó tu paquete. Ya puedes reservar tus clases.",
-    };
+    return purchaseKind === "enrollment"
+      ? {
+          tone: "emerald",
+          eyebrow: "Pago confirmado",
+          title: "¡Tu inscripción ya está activa!",
+          description:
+            "Mercado Pago confirmó el cobro. Ahora completa los documentos requeridos en tu perfil y después podrás reservar normalmente.",
+        }
+      : {
+          tone: "emerald",
+          eyebrow: "Pago confirmado",
+          title: "¡Tu paquete ya está listo!",
+          description:
+            "Mercado Pago confirmó el cobro y Studio Flow activó tu paquete. Ya puedes reservar tus clases.",
+        };
   }
 
   if (status === "pending") {
@@ -117,6 +129,27 @@ export default async function StudentCheckoutReturnPage({
   const outcome = safeOutcome(query.outcome);
   const { supabase } = await getStudentPortalContext();
 
+  let purchaseKind: "enrollment" | "package" = "package";
+  if (attemptId) {
+    const { data: attempt } = await supabase
+      .from("online_checkout_attempts")
+      .select("product_template_id")
+      .eq("id", attemptId)
+      .maybeSingle();
+
+    if (attempt?.product_template_id) {
+      const { data: product } = await supabase
+        .from("product_templates")
+        .select("product_type")
+        .eq("id", attempt.product_template_id)
+        .maybeSingle();
+
+      if (product?.product_type === "enrollment") {
+        purchaseKind = "enrollment";
+      }
+    }
+  }
+
   let reconciliation: ReconcileResult = null;
   if (attemptId) {
     const { data } = await supabase.functions.invoke("reconcile-mercadopago-order", {
@@ -126,7 +159,7 @@ export default async function StudentCheckoutReturnPage({
   }
 
   const status = reconciliation?.ok ? (reconciliation.status ?? "unknown") : "unknown";
-  const presentation = statePresentation(status, outcome);
+  const presentation = statePresentation(status, outcome, purchaseKind);
   const tone = toneClasses[presentation.tone];
   const refreshHref = attemptId
     ? `/student/paquete/checkout?attempt=${encodeURIComponent(attemptId)}${outcome ? `&outcome=${outcome}` : ""}`
@@ -176,10 +209,10 @@ export default async function StudentCheckoutReturnPage({
         <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-center">
           {status === "approved" ? (
             <Link
-              href="/student/reservar"
+              href={purchaseKind === "enrollment" ? "/student/documentos" : "/student/reservar"}
               className="rounded-2xl bg-fuchsia-600 px-5 py-3 text-sm font-semibold text-white hover:bg-fuchsia-500"
             >
-              Reservar una clase
+              {purchaseKind === "enrollment" ? "Completar documentos" : "Reservar una clase"}
             </Link>
           ) : status === "rejected" || status === "cancelled" ? (
             <Link
