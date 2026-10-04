@@ -186,6 +186,9 @@ export async function searchClassAvailability(
   }
 
   const activityNeedle = rawArgs.activity_query ? normalize(rawArgs.activity_query) : null;
+  const exactTemplateMatchExists = activityNeedle
+    ? templates.some((item) => normalize(item.name) === activityNeedle)
+    : false;
   const matches = [];
 
   for (const session of sessions ?? []) {
@@ -195,8 +198,14 @@ export async function searchClassAvailability(
       ? (disciplineMap.get(template.discipline_id) ?? null)
       : null;
     if (activityNeedle) {
-      const haystack = normalize(`${template.name} ${discipline ?? ""}`);
-      if (!haystack.includes(activityNeedle)) continue;
+      const templateName = normalize(template.name);
+      const disciplineName = normalize(discipline ?? "");
+      const matchesActivity = exactTemplateMatchExists
+        ? templateName === activityNeedle
+        : templateName.includes(activityNeedle) ||
+          disciplineName === activityNeedle ||
+          disciplineName.includes(activityNeedle);
+      if (!matchesActivity) continue;
     }
 
     const localStart = localParts(session.starts_at, ctx.studio.timezone);
