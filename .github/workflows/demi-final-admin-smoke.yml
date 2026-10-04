@@ -1,4 +1,5 @@
 name: Demi final admin smoke
+# rerun after final formatting
 
 on:
   push:
