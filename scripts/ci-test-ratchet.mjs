@@ -51,23 +51,33 @@ function inspectTests(reportText, repoRoot) {
   const report = JSON.parse(reportText);
   const tests = new Set();
   const failures = new Set();
+  const failureDetails = [];
   for (const suite of report.testResults ?? []) {
     const file = relative(repoRoot, resolve(suite.name)).split(sep).join("/");
     const assertions = suite.assertionResults ?? [];
     for (const assertion of assertions) {
       const test = `${file} :: ${assertion.fullName || assertion.title || "(unnamed test)"}`;
       tests.add(test);
-      if (assertion.status === "failed") failures.add(test);
+      if (assertion.status === "failed") {
+        failures.add(test);
+        const detail = assertion.failureMessages?.join("\n") || assertion.message || assertion.failureMessage || JSON.stringify(assertion);
+        failureDetails.push({ test, detail: String(detail).slice(0, 1800) });
+      }
     }
     if (suite.status === "failed" && assertions.length === 0) {
       const failure = `${file} :: (suite setup or collection failure)`;
       tests.add(failure);
       failures.add(failure);
+      failureDetails.push({
+        test: failure,
+        detail: String(suite.message || suite.failureMessage || JSON.stringify(suite)).slice(0, 1800),
+      });
     }
   }
   return {
     tests: [...tests].sort(),
     failures: [...failures].sort(),
+    failureDetails,
   };
 }
 
@@ -104,6 +114,12 @@ try {
   if (baseResults.failures.length) {
     console.log("Existing failures inherited from the base (reported, not suppressed):");
     for (const failure of baseResults.failures) console.log(`  ${failure}`);
+  }
+  if (candidateResults.failureDetails.length) {
+    console.log("Candidate assertion diagnostics (up to 1800 characters each):");
+    for (const failure of candidateResults.failureDetails) {
+      console.log(`--- ${failure.test}\n${failure.detail}`);
+    }
   }
   if (newFailures.length) {
     console.error("The candidate introduced failing tests:");
