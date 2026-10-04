@@ -96,6 +96,21 @@ export type StudentSnapshot = {
   payments: StudentPayment[];
 };
 
+export function selectPrimaryStudentPackage(
+  acquisitions: StudentAcquisition[],
+): StudentAcquisition | null {
+  const packages = acquisitions.filter((item) => !item.reward_credit_wallet);
+  return (
+    packages.find(
+      (item) =>
+        item.active_now &&
+        (item.unlimited || (item.available_credits ?? 0) > 0),
+    ) ??
+    packages.find((item) => item.active_now) ??
+    null
+  );
+}
+
 export type StudentSession = {
   session_id: string;
   starts_at: string;
