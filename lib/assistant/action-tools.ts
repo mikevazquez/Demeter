@@ -2346,13 +2346,17 @@ async function prepareWaitlistJoin(
   const sessionInfo = await getSessionSummary(ctx, sessionId);
   if (!sessionInfo) return { ok: false, error: "session_not_found" };
 
-  const { data: preview, error: previewError } = await ctx.supabase.rpc(
-    "admin_waitlist_preview",
-    {
-      target_session_id: sessionId,
-      target_student_id: ctx.studentId,
-    },
-  );
+  const previewRequest = ctx.serviceMode
+    ? await ctx.supabase.rpc("service_waitlist_preview", {
+        target_studio_id: ctx.studio.id,
+        target_session_id: sessionId,
+        target_student_id: ctx.studentId,
+      })
+    : await ctx.supabase.rpc("admin_waitlist_preview", {
+        target_session_id: sessionId,
+        target_student_id: ctx.studentId,
+      });
+  const { data: preview, error: previewError } = previewRequest;
 
   if (previewError) {
     return { ok: false, error: "waitlist_preview_unavailable" };
@@ -2494,13 +2498,17 @@ async function executeWaitlistJoin(
   const sessionInfo = await getSessionSummary(ctx, sessionId);
   if (!sessionInfo) return { ok: false, error: "session_not_found" };
 
-  const { data: preview, error: previewError } = await ctx.supabase.rpc(
-    "admin_waitlist_preview",
-    {
-      target_session_id: sessionId,
-      target_student_id: studentId,
-    },
-  );
+  const previewRequest = ctx.serviceMode
+    ? await ctx.supabase.rpc("service_waitlist_preview", {
+        target_studio_id: ctx.studio.id,
+        target_session_id: sessionId,
+        target_student_id: studentId,
+      })
+    : await ctx.supabase.rpc("admin_waitlist_preview", {
+        target_session_id: sessionId,
+        target_student_id: studentId,
+      });
+  const { data: preview, error: previewError } = previewRequest;
 
   if (previewError) {
     return { ok: false, error: "waitlist_preview_unavailable" };
@@ -2554,13 +2562,17 @@ async function executeWaitlistJoin(
     };
   }
 
-  const { data: joined, error: joinError } = await ctx.supabase.rpc(
-    "admin_join_waitlist",
-    {
-      target_session_id: sessionId,
-      target_student_id: studentId,
-    },
-  );
+  const joinRequest = ctx.serviceMode
+    ? await ctx.supabase.rpc("service_join_waitlist", {
+        target_studio_id: ctx.studio.id,
+        target_session_id: sessionId,
+        target_student_id: studentId,
+      })
+    : await ctx.supabase.rpc("admin_join_waitlist", {
+        target_session_id: sessionId,
+        target_student_id: studentId,
+      });
+  const { data: joined, error: joinError } = joinRequest;
 
   const joinedObject = asObject(joined);
   if (joinError || !joinedObject || joinedObject.ok !== true) {
