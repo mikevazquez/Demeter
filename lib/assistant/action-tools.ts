@@ -1435,8 +1435,11 @@ async function getCancellationSnapshot(
   const late =
     Date.now() >
     new Date(session.starts_at).getTime() - cutoffMinutes * 60_000;
-  const unlimited = Boolean(acquisitionResult.data?.unlimited);
-  const creditCost = Math.max(Number(reservation.credits_held ?? 1), 1);
+  const usesCredits = Boolean(reservation.acquisition_id);
+  const unlimited = usesCredits && Boolean(acquisitionResult.data?.unlimited);
+  const creditCost = usesCredits
+    ? Math.max(Number(reservation.credits_held ?? 1), 1)
+    : 0;
   const lateConsumesCredit = Boolean(
     policyResult.data?.late_cancellation_consumes_credit,
   );
@@ -1458,7 +1461,11 @@ async function getCancellationSnapshot(
       cancellation_status: late ? "cancelled_late" : "cancelled_on_time",
       late,
       credit_cost: creditCost,
-      credit_will_return: unlimited ? null : !(late && lateConsumesCredit),
+      credit_will_return: usesCredits
+        ? unlimited
+          ? null
+          : !(late && lateConsumesCredit)
+        : null,
       unlimited_penalty_minor:
         unlimited && late
           ? Math.max(
