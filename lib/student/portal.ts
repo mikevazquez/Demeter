@@ -163,6 +163,7 @@ export type StudentClassFeedItem = {
   discipline: string;
   space: string | null;
   coach: string | null;
+  resource_name?: string | null;
   credits_held: number;
   cancelled_at?: string | null;
   cancellation_reason?: string | null;
