@@ -1,0 +1,38 @@
+name: Demi final admin smoke
+
+on:
+  push:
+    branches:
+      - release/demi-production-candidate
+
+jobs:
+  validate:
+    if: "!contains(github.event.head_commit.message, '[remove-final-admin-smoke]')"
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: release/demi-production-candidate
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: Format check
+        run: npx prettier --check lib/assistant app/student tests/demi-*.test.ts tests/asistian-*.test.ts tests/notificaciones01d-asistian-variables.test.ts tests/sf174-*.test.ts tests/student-primary-package-selection.test.ts
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Demi and Asistian regression tests
+        run: npx vitest run tests/demi-*.test.ts tests/asistian-*.test.ts tests/notificaciones01d-asistian-variables.test.ts tests/sf174-*.test.ts tests/student-primary-package-selection.test.ts
+
+      - name: Build
+        run: npm run build
