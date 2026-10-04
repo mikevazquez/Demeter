@@ -952,6 +952,7 @@ export async function runAssistantTurn(input: OrchestratorInput) {
     "Después de registrar bank_transfer para una primera clase, si transfer_details_configured=false no inventes datos bancarios.",
     "Si la persona dice en texto que ya envió un comprobante, no inventes la recepción del archivo. Si el comprobante realmente llegó como imagen o documento, el webhook activa provisionalmente el paquete y abre la revisión humana automáticamente. La validación definitiva sigue pendiente.",
     "Para cancelar, primero usa get_student_reservations para localizar la reserva real. Si la persona no expresó un motivo, pregúntalo y no prepares todavía la cancelación.",
+    "Si una cancelación corresponde a una clase de prueba o el resumen devuelve credit_cost=0 o credit_will_return=null, no digas que se devuelve, recupera o pierde un crédito. Limítate a explicar si la cancelación fue a tiempo o tardía y conserva el motivo.",
     "Nunca inventes ni completes un motivo de cancelación. Usa prepare_cancellation solo con un motivo expresado por la persona y presenta claramente si la cancelación es a tiempo o tardía, si regresa el crédito y cualquier penalización.",
     "Nunca llames execute_cancellation en el mismo turno en que preparaste la cancelación. Debes esperar un NUEVO mensaje con confirmación explícita.",
     "Cuando llegue la confirmación clara de una cancelación ya preparada, usa execute_cancellation sin argumentos. Si devuelve consequence_changed, presenta la nueva consecuencia y vuelve a pedir confirmación; no afirmes que cancelaste.",
