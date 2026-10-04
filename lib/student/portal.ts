@@ -102,9 +102,7 @@ export function selectPrimaryStudentPackage(
   const packages = acquisitions.filter((item) => !item.reward_credit_wallet);
   return (
     packages.find(
-      (item) =>
-        item.active_now &&
-        (item.unlimited || (item.available_credits ?? 0) > 0),
+      (item) => item.active_now && (item.unlimited || (item.available_credits ?? 0) > 0),
     ) ??
     packages.find((item) => item.active_now) ??
     null
