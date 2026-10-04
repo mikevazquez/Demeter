@@ -47,6 +47,12 @@ function runTests(cwd, reportPath) {
   return readFileSync(reportPath, "utf8");
 }
 
+function failureDetail(value) {
+  const messages = Array.isArray(value.failureMessages) ? value.failureMessages.join("\n") : "";
+  const detail = messages || value.message || value.failureMessage || JSON.stringify(value);
+  return String(detail).slice(0, 1800);
+}
+
 function inspectTests(reportText, repoRoot) {
   const report = JSON.parse(reportText);
   const tests = new Set();
@@ -60,18 +66,14 @@ function inspectTests(reportText, repoRoot) {
       tests.add(test);
       if (assertion.status === "failed") {
         failures.add(test);
-        const detail = assertion.failureMessages?.join("\n") || assertion.message || assertion.failureMessage || JSON.stringify(assertion);
-        failureDetails.push({ test, detail: String(detail).slice(0, 1800) });
+        failureDetails.push({ test, detail: failureDetail(assertion) });
       }
     }
     if (suite.status === "failed" && assertions.length === 0) {
       const failure = `${file} :: (suite setup or collection failure)`;
       tests.add(failure);
       failures.add(failure);
-      failureDetails.push({
-        test: failure,
-        detail: String(suite.message || suite.failureMessage || JSON.stringify(suite)).slice(0, 1800),
-      });
+      failureDetails.push({ test: failure, detail: failureDetail(suite) });
     }
   }
   return {
