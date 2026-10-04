@@ -31,8 +31,6 @@ describe("Demi approved UAT behavior", () => {
   });
 
   it("keeps on-time reschedule messaging concise", () => {
-    expect(orchestrator).toContain(
-      "NO menciones créditos, devolución, liberación, reutilización",
-    );
+    expect(orchestrator).toContain("NO menciones créditos, devolución, liberación, reutilización");
   });
 });
