@@ -10,7 +10,7 @@ const stableBlobs: Record<string, string> = {
   "lib/auth/studio-context-cookie.ts": "ed8605c1d786a8b04b4cd6b799c1853621f3d7d0",
   "lib/student/portal.ts": "7de9938908a09254f415160b6a61f29c5d1e9324",
   "lib/supabase/proxy.ts": "e05797beb94e42633777e3c1184bc8b909f570f1",
-  "lib/supabase/server.ts": "8e50d08cdab89aec120e8f5484a8c6d83660ff06",
+  "lib/supabase/server.ts": "947e71a1258ec1a7441c8815739fae98d1d5682b",
   "lib/supabase/client.ts": "877a8544a6dfbf0618242c861b07e07e6a943d02",
   "lib/supabase/session-policy.ts": "024e5bb64e8a3c85bcab52587a917fe7e02ed803",
   "proxy.ts": "b0f3d25849d1a875f5dbdfeede872d4734e90953",
