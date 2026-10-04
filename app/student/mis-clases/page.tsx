@@ -79,6 +79,11 @@ function ClassRow({
           <p className="mt-0.5 truncate text-[11px] text-zinc-500">
             {[item.coach, item.space].filter(Boolean).join(" · ") || item.discipline}
           </p>
+          {item.resource_name ? (
+            <p className="mt-1 text-[11px] font-medium text-fuchsia-300">
+              Recurso · {item.resource_name}
+            </p>
+          ) : null}
         </Link>
 
         <Link
@@ -338,6 +343,11 @@ export default async function StudentClassesPage({
                           {[nextClass.coach, nextClass.space].filter(Boolean).join(" · ") ||
                             "Ver detalles de la clase"}
                         </p>
+                        {nextClass.resource_name ? (
+                          <p className="mt-1 text-[11px] font-medium text-fuchsia-300">
+                            Recurso · {nextClass.resource_name}
+                          </p>
+                        ) : null}
                       </Link>
                       <Link
                         href={`/student/mis-clases/${nextClass.reservation_id}`}
