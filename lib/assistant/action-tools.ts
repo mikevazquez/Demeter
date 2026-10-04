@@ -1516,6 +1516,47 @@ async function prepareCancellation(
     return { ok: false, error: "reservation_not_cancellable" };
   }
 
+  if (!snapshot.summary.late) {
+    const cancellationRequest = ctx.serviceMode
+      ? await ctx.supabase.rpc("service_cancel_reservation", {
+          target_studio_id: ctx.studio.id,
+          target_student_id: ctx.studentId,
+          target_reservation_id: reservationId,
+          target_reason: reason,
+        })
+      : await ctx.supabase.rpc("cancel_reservation", {
+          target_reservation_id: reservationId,
+          target_reason: reason,
+        });
+
+    const { data: cancellation, error: cancellationError } = cancellationRequest;
+    const cancellationObject = asObject(cancellation);
+    if (
+      cancellationError ||
+      !cancellationObject ||
+      cancellationObject.ok !== true
+    ) {
+      return {
+        ok: false,
+        error:
+          String(cancellationObject?.reason_code ?? "") ||
+          "cancellation_execution_failed",
+      };
+    }
+
+    return {
+      ok: true,
+      status: "executed",
+      reservation_ref: `reservation:${reservationId}`,
+      cancellation_status: cancellationObject.status,
+      credit_cost: cancellationObject.credit_cost,
+      summary: {
+        ...snapshot.summary,
+        reason,
+      },
+    };
+  }
+
   const now = new Date().toISOString();
   await ctx.supabase
     .from("assistant_pending_actions")
