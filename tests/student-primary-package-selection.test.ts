@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { selectPrimaryStudentPackage, type StudentAcquisition } from "@/lib/student/portal";
+import { selectPrimaryStudentPackage, type StudentAcquisition } from "../lib/student/portal";
 
 function acquisition(overrides: Partial<StudentAcquisition>): StudentAcquisition {
   return {
