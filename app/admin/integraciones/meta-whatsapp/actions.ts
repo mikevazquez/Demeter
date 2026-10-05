@@ -8,8 +8,10 @@ import {
   sendMetaWhatsAppTemplateTest,
   subscribeMetaWhatsAppApp,
 } from "@/lib/assistant/meta-whatsapp-admin";
+import { loadMetaWhatsAppWebhookConfig } from "@/lib/assistant/meta-whatsapp-channel";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getAdminContext } from "@/lib/auth/admin-context";
+import { createServiceClient } from "@/lib/supabase/service";
 
 function safeCode(error: unknown) {
   const message = error instanceof Error ? error.message : "";
@@ -62,6 +64,51 @@ export async function saveMetaWhatsAppConnection(formData: FormData) {
 
   revalidatePath("/admin/integraciones/meta-whatsapp");
   redirect("/admin/integraciones/meta-whatsapp?inbound=saved");
+}
+
+export async function updateMetaWhatsAppAppSecret(formData: FormData) {
+  const appSecret = String(formData.get("app_secret") ?? "").trim();
+  if (!appSecret) {
+    redirect("/admin/integraciones/meta-whatsapp?secret=error&code=meta_app_secret_invalid");
+  }
+
+  const { supabase, studio } = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
+
+  let current;
+  try {
+    current = await loadMetaWhatsAppWebhookConfig(createServiceClient(), studio.id);
+  } catch {
+    redirect(
+      "/admin/integraciones/meta-whatsapp?secret=error&code=meta_whatsapp_not_configured",
+    );
+  }
+
+  if (!current) {
+    redirect(
+      "/admin/integraciones/meta-whatsapp?secret=error&code=meta_whatsapp_not_configured",
+    );
+  }
+
+  const { error } = await supabase.rpc("admin_set_meta_whatsapp_connection", {
+    target_studio_id: studio.id,
+    target_access_token: current.accessToken,
+    target_phone_number_id: current.phoneNumberId,
+    target_waba_id: current.wabaId,
+    target_graph_api_version: current.graphApiVersion,
+    target_app_secret: appSecret,
+    target_verify_token: current.verifyToken,
+  });
+
+  if (error) {
+    redirect(
+      `/admin/integraciones/meta-whatsapp?secret=error&code=${encodeURIComponent(
+        safeCode(error),
+      )}`,
+    );
+  }
+
+  revalidatePath("/admin/integraciones/meta-whatsapp");
+  redirect("/admin/integraciones/meta-whatsapp?secret=saved");
 }
 
 export async function verifyMetaWhatsAppConnection() {
