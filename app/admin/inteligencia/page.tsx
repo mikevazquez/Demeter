@@ -110,6 +110,7 @@ const decisionReservationStatuses = new Set([
   "no_show",
   "cancelled_on_time",
   "cancelled_late",
+  "cancelled_by_studio",
 ]);
 const commercialProductTypes = new Set(["package", "membership", "single_class"]);
 
