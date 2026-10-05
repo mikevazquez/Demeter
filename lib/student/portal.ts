@@ -98,7 +98,6 @@ export type StudentSnapshot = {
   payments: StudentPayment[];
 };
 
-
 export type StudentSession = {
   session_id: string;
   status: string;
