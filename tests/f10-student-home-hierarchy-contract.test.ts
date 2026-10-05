@@ -4,11 +4,11 @@ import { selectPrimaryStudentPackage } from "../lib/student/package-selection";
 
 function acquisition(
   overrides: Partial<{
-  id: string;
-  reward_credit_wallet: boolean;
-  active_now: boolean;
-  unlimited: boolean;
-  available_credits: number | null;
+    id: string;
+    reward_credit_wallet: boolean;
+    active_now: boolean;
+    unlimited: boolean;
+    available_credits: number | null;
   }> = {},
 ) {
   return {
