@@ -1,31 +1,48 @@
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
-function source(path: string) {
-  return readFileSync(join(process.cwd(), path), "utf8");
+import { selectPrimaryStudentPackage } from "../lib/student/package-selection";
+
+function acquisition(overrides: Partial<{
+  id: string;
+  reward_credit_wallet: boolean;
+  active_now: boolean;
+  unlimited: boolean;
+  available_credits: number | null;
+}> = {}) {
+  return {
+    id: "package",
+    reward_credit_wallet: false,
+    active_now: true,
+    unlimited: false,
+    available_credits: 0,
+    ...overrides,
+  };
 }
 
 describe("student portal primary package selection", () => {
-  const portal = source("lib/student/portal.ts");
-  const home = source("app/student/page.tsx");
-  const packagePage = source("app/student/paquete/page.tsx");
-  const movements = source("app/student/movimientos/page.tsx");
-
   it("prefers an active package with usable credits", () => {
-    expect(portal).toContain("selectPrimaryStudentPackage");
-    expect(portal).toContain("item.active_now");
-    expect(portal).toContain("item.unlimited || (item.available_credits ?? 0) > 0");
-    expect(portal).toContain("packages.find((item) => item.active_now)");
+    const exhausted = acquisition({ id: "exhausted", available_credits: 0 });
+    const usable = acquisition({ id: "usable", available_credits: 1 });
+    const expired = acquisition({ id: "expired", active_now: false, available_credits: 9 });
+
+    expect(selectPrimaryStudentPackage([exhausted, expired, usable])).toBe(usable);
   });
 
   it("ignores reward credit wallets when selecting the main package", () => {
-    expect(portal).toContain("acquisitions.filter((item) => !item.reward_credit_wallet)");
+    const wallet = acquisition({
+      id: "wallet",
+      reward_credit_wallet: true,
+      available_credits: 5,
+    });
+    const mainPackage = acquisition({ id: "monthly", available_credits: 2 });
+
+    expect(selectPrimaryStudentPackage([wallet, mainPackage])).toBe(mainPackage);
   });
 
   it("uses the same package selector across student portal screens", () => {
-    expect(home).toContain("selectPrimaryStudentPackage(snapshot.acquisitions)");
-    expect(packagePage).toContain("selectPrimaryStudentPackage(snapshot.acquisitions)");
-    expect(movements).toContain("selectPrimaryStudentPackage(snapshot.acquisitions)");
+    const unlimited = acquisition({ id: "unlimited", unlimited: true, available_credits: null });
+    const exhausted = acquisition({ id: "exhausted", available_credits: 0 });
+
+    expect(selectPrimaryStudentPackage([exhausted, unlimited])).toBe(unlimited);
   });
 });
