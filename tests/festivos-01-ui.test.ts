@@ -8,32 +8,38 @@ function source(path: string) {
 }
 
 describe("FESTIVOS-01 calendar UX", () => {
-  const adminAgenda = source("app/admin/agenda/page.tsx");
-  const configurator = source("app/admin/agenda/HolidayConfigurator.tsx");
+  const adminHolidays = source("app/admin/configuracion/festivos/page.tsx");
+  const holidayAction = source("app/admin/configuracion/festivos/actions.ts");
   const studentCalendar = source("app/student/reservar/page.tsx");
   const holidayNotice = source("app/student/reservar/HolidayNotice.tsx");
   const studentClasses = source("app/student/mis-clases/page.tsx");
   const studentNav = source("app/student/StudentNav.tsx");
 
   it("integrates holidays into the existing admin Agenda instead of adding a second calendar", () => {
-    expect(adminAgenda).toContain("official_holidays");
-    expect(adminAgenda).toContain("HolidayConfigurator");
-    expect(adminAgenda).toContain("agenda-week-holiday");
+    expect(adminHolidays).toContain('.from("official_holidays")');
+    expect(adminHolidays).toContain('.from("studio_holiday_overrides")');
+    expect(adminHolidays).toContain("Días festivos");
+    expect(adminHolidays).toContain("getAdminContext(CAPABILITIES.SETTINGS_WRITE)");
+    expect(adminHolidays).toContain('ctx.membership.role !== "owner"');
+    expect(adminHolidays).toContain("Estudio cerrado");
+    expect(adminHolidays).toContain("Horario normal");
     expect(studentNav).not.toContain("Festivos");
     expect(studentNav).not.toContain("Días especiales");
   });
 
   it("lets the studio choose normal, closed or special operation", () => {
-    expect(configurator).toContain("Horario normal");
-    expect(configurator).toContain("Estudio cerrado");
-    expect(configurator).toContain("Horario especial");
-    expect(configurator).toContain("keep_session_id");
-    expect(configurator).toContain("Este cambio afectará");
+    expect(adminHolidays).toContain("Marcar como cerrado");
+    expect(adminHolidays).toContain("Marcar como abierto");
+    expect(adminHolidays).toContain("saveOfficialHolidayStatusAction");
+    expect(holidayAction).toContain('p_operation_mode: closed ? "closed" : "normal"');
+    expect(holidayAction).toContain("admin_configure_holiday");
+    expect(holidayAction).toContain('ctx.membership.role !== "owner"');
+    expect(holidayAction).toContain('revalidatePath("/admin/agenda")');
+    expect(holidayAction).toContain('revalidatePath("/student/reservar")');
+    expect(holidayAction).toContain('revalidatePath("/student/mis-clases")');
   });
 
   it("keeps a themed editable message for every holiday", () => {
-    expect(configurator).toContain("Mensaje temático para alumnas");
-    expect(configurator).toContain("student_message");
     expect(holidayNotice).toContain("data-holiday-theme");
     expect(holidayNotice).toContain("holiday.message");
   });

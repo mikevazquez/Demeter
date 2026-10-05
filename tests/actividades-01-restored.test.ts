@@ -34,10 +34,10 @@ describe("ACTIVIDADES-01 restored module", () => {
   });
 
   it("restores the four approved creation stages", () => {
-    expect(wizard).toContain('label: "Información general"');
-    expect(wizard).toContain('label: "Horarios y operación"');
-    expect(wizard).toContain('label: "Venta y acceso"');
-    expect(wizard).toContain('label: "Confirmación"');
+    expect(wizard).toContain('label: "Lo básico"');
+    expect(wizard).toContain('label: "Horarios"');
+    expect(wizard).toContain('label: "Acceso"');
+    expect(wizard).toContain('label: "Revisar"');
     expect(newPage).toContain('mode="create"');
   });
 
@@ -79,9 +79,9 @@ describe("ACTIVIDADES-01 restored module", () => {
   });
 
   it("restores A04 review with inline Edit links", () => {
-    expect(wizard).toContain("Información general");
-    expect(wizard).toContain("Horarios y operación");
-    expect(wizard).toContain("Venta y acceso");
+    expect(wizard).toContain("Lo básico");
+    expect(wizard).toContain("Horarios");
+    expect(wizard).toContain("Acceso");
     expect(wizard).toContain("Editar");
     expect(wizard).toContain("Se creará como activa");
   });

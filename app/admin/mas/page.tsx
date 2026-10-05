@@ -49,7 +49,7 @@ const items: MoreItem[] = [
     capability: CAPABILITIES.INSTRUCTORS_READ,
   },
   {
-    title: "Comunicación",
+    title: "Notificaciones",
     description: "Procesos, marketing, plantillas y horarios de envío.",
     href: "/admin/automatizaciones",
     capability: CAPABILITIES.AUTOMATIONS_READ,
@@ -82,6 +82,12 @@ const items: MoreItem[] = [
     title: "Región y formatos",
     description: "Zona horaria, moneda, formato regional y prefijo telefónico.",
     href: "/admin/configuracion/region",
+    ownerOnly: true,
+  },
+  {
+    title: "Pagos y transferencias",
+    description: "Datos bancarios que Demi comparte cuando una alumna elige transferencia.",
+    href: "/admin/configuracion/pagos",
     ownerOnly: true,
   },
   {

@@ -78,7 +78,7 @@ describe("F10 student auth login contracts", () => {
   it("refreshes the SSR auth client before post-login RLS checks", () => {
     const actions = source("app/auth/actions.ts");
 
-    expect(actions).toContain("const accessClient = await createClient()");
+    expect(actions).toContain("const accessClient = await createClient(authPortal)");
     expect(actions).toContain('.from("user_accounts")');
     expect(actions).toContain('.from("studio_memberships")');
     expect(actions).toContain("Account lookup failed");

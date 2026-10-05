@@ -3,6 +3,8 @@ import { join } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
+import { studentNavigationItems } from "../lib/student/navigation";
+
 function source(path: string) {
   return readFileSync(join(process.cwd(), path), "utf8");
 }
@@ -12,7 +14,6 @@ describe("DOCUMENTOS-01 booking blocker freshness", () => {
   const detail = source("app/student/reservar/[sessionId]/page.tsx");
   const confirm = source("app/student/reservar/[sessionId]/confirmar/page.tsx");
   const refresh = source("app/student/reservar/BookingEligibilityRefresh.tsx");
-  const nav = source("app/student/StudentNav.tsx");
 
   it("keeps eligibility-sensitive reservation screens dynamic", () => {
     for (const file of [reserve, detail, confirm]) {
@@ -29,6 +30,7 @@ describe("DOCUMENTOS-01 booking blocker freshness", () => {
   });
 
   it("does not prefetch the reserve route with stale eligibility", () => {
-    expect(nav).toContain('prefetch={item.href === "/student/reservar" ? false : undefined}');
+    const reserveLink = studentNavigationItems.find((item) => item.href === "/student/reservar");
+    expect(reserveLink?.prefetch).toBe(false);
   });
 });

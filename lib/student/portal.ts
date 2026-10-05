@@ -5,6 +5,8 @@ import { redirect } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/server";
 
+export { selectPrimaryStudentPackage } from "./package-selection";
+
 export type StudentProfile = {
   student_id: string;
   studio_id: string;
@@ -156,6 +158,7 @@ export type StudentClassFeedItem = {
   discipline: string;
   space: string | null;
   coach: string | null;
+  resource_name?: string | null;
   credits_held: number;
   cancelled_at?: string | null;
   cancellation_reason?: string | null;

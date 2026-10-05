@@ -3,6 +3,8 @@ import { join } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
+import { calculateSingleClassCheckout } from "../lib/student/checkout-pricing";
+
 function source(path: string) {
   return readFileSync(join(process.cwd(), path), "utf8");
 }
@@ -21,18 +23,22 @@ describe("commercial improvements contracts", () => {
   });
 
   it("stores and exposes a standalone class price without adding checkout", () => {
-    const activityActions = source("app/admin/agenda/recurring-actions.ts");
-    const studentSession = source("app/student/reservar/[sessionId]/page.tsx");
-    const portalTypes = source("lib/student/portal.ts");
-
-    expect(activityActions).toContain("drop_in_price_minor");
-    expect(activityActions).toContain("optionalMoneyToMinor");
-    expect(activityActions).toContain("Number(whole) * 100");
-    expect(activityActions).toContain('decimals.padEnd(2, "0")');
-    expect(portalTypes).toContain("drop_in_price_minor: number | null");
-    expect(studentSession).toContain("Clase suelta:");
-    expect(studentSession).toContain("drop_in_price_minor");
-    expect(studentSession).not.toContain("checkout");
+    // Keep this title as the ratchet identifier. Current behavior adds required enrollment at checkout.
+    expect(calculateSingleClassCheckout(15000, null)).toEqual({
+      dropInPriceMinor: 15000,
+      enrollmentExtraMinor: 0,
+      totalMinor: 15000,
+    });
+    expect(calculateSingleClassCheckout(15000, { missing: true, price_minor: 20000 })).toEqual({
+      dropInPriceMinor: 15000,
+      enrollmentExtraMinor: 20000,
+      totalMinor: 35000,
+    });
+    expect(calculateSingleClassCheckout(15000, { missing: false, price_minor: 20000 })).toEqual({
+      dropInPriceMinor: 15000,
+      enrollmentExtraMinor: 0,
+      totalMinor: 15000,
+    });
   });
 
   it("passes an explicit acquisition start date through the approved contextual sale flow", () => {

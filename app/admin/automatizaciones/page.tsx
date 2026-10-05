@@ -171,7 +171,7 @@ export default async function AutomationsPage({
     <main className="communication-v2">
       <header className="communication-v2-header">
         <div>
-          <h1>Comunicación</h1>
+          <h1>Notificaciones</h1>
           <p>Define qué mensajes salen del estudio y cuándo deben enviarse.</p>
         </div>
       </header>

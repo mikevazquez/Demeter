@@ -10,6 +10,8 @@ import {
   type StudentSession,
 } from "@/lib/student/portal";
 
+import { calculateSingleClassCheckout } from "@/lib/student/checkout-pricing";
+
 import PurchaseSingleClassButton from "../PurchaseSingleClassButton";
 import WaitlistControl from "../WaitlistControl";
 import { BookingRestrictionCard } from "../BookingRestrictionCard";
@@ -112,11 +114,10 @@ export default async function StudentSessionDetailPage({
     } | null) ?? null;
   const regularDropInMinor = rewardPrice?.regular_amount_minor ?? session.drop_in_price_minor ?? 0;
   const finalDropInMinor = rewardPrice?.final_amount_minor ?? regularDropInMinor;
-  const enrollmentExtraMinor =
-    enrollmentCheckout?.missing && Number.isInteger(enrollmentCheckout.price_minor)
-      ? (enrollmentCheckout.price_minor ?? 0)
-      : 0;
-  const checkoutTotalMinor = finalDropInMinor + enrollmentExtraMinor;
+  const { enrollmentExtraMinor, totalMinor: checkoutTotalMinor } = calculateSingleClassCheckout(
+    finalDropInMinor,
+    enrollmentCheckout,
+  );
   const rewardDiscountPct = rewardPrice?.discount_pct ?? 0;
   const rewardPriceLevelTitle = rewardPrice?.level_title ?? null;
   const durationMinutes = Math.max(

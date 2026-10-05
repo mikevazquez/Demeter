@@ -6,9 +6,12 @@ import {
   formatDateTime,
   getStudentPortalContext,
   localDateKey,
+  selectPrimaryStudentPackage,
   type StudentAcquisition,
   type StudentClassFeedItem,
 } from "@/lib/student/portal";
+
+import { getStudentHomePackageState } from "@/lib/student/home-package-state";
 
 import StudentNoticeDialog from "./components/StudentNoticeDialog";
 
@@ -121,11 +124,6 @@ function dateDistanceInDays(from: string, to: string) {
   const start = Date.parse(`${from}T12:00:00Z`);
   const end = Date.parse(`${to}T12:00:00Z`);
   return Math.round((end - start) / 86_400_000);
-}
-
-function availableCredits(activePackage: StudentAcquisition | null) {
-  if (!activePackage || activePackage.unlimited) return null;
-  return activePackage.available_credits ?? 0;
 }
 
 function unlimitedPackageLabel(activePackage: StudentAcquisition) {
@@ -256,7 +254,7 @@ export default async function StudentHomePage({
     (item) => item.reward_credit_wallet && item.status === "active" && item.active_now,
   );
   const packageAcquisitions = snapshot.acquisitions.filter((item) => !item.reward_credit_wallet);
-  const activePackage = packageAcquisitions.find((item) => item.active_now) ?? null;
+  const activePackage = selectPrimaryStudentPackage(snapshot.acquisitions);
   const rewardCreditsAvailable = rewardCreditWallets.reduce(
     (total, item) => total + (item.available_credits ?? 0),
     0,
@@ -273,7 +271,7 @@ export default async function StudentHomePage({
       .map((item) => item.expires_on)
       .filter(Boolean)
       .sort()[0] ?? null;
-  const credits = availableCredits(activePackage);
+  const { credits, noCredits, canReserve } = getStudentHomePackageState(activePackage);
   const classesFeed =
     (classesResult.data as {
       upcoming?: StudentClassFeedItem[];
@@ -309,8 +307,6 @@ export default async function StudentHomePage({
   );
   const enrollmentMissing = !enrollment?.active_now;
 
-  const noCredits = Boolean(activePackage && !activePackage.unlimited && credits === 0);
-  const canReserve = Boolean(activePackage && (activePackage.unlimited || (credits ?? 0) > 0));
   const compactPackageHeadline = activePackage
     ? activePackage.unlimited
       ? "Ilimitado"

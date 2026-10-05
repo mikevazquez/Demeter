@@ -12,6 +12,7 @@ describe("SF-N14 clean avatar, activity colors and single-class purchase", () =>
   const profile = source("app/student/perfil/page.tsx");
   const studentActions = source("app/student/actions.ts");
   const avatarRoute = source("app/student/perfil/avatar/route.ts");
+  const avatarPicker = source("app/student/perfil/AvatarFilePicker.tsx");
   const agenda = source("app/admin/agenda/page.tsx");
   const activityWizard = source("app/admin/actividades/ActivityWizard.tsx");
   const activityActions = source("app/admin/actividades/actions.ts");
@@ -35,11 +36,12 @@ describe("SF-N14 clean avatar, activity colors and single-class purchase", () =>
     expect(profile).not.toContain("ProfileAvatarUploader");
     expect(profile).not.toContain("createSignedUrl");
     expect(profile).not.toContain('select("avatar_url")');
-    expect(profile).toContain("updateStudentAvatarAction");
+    expect(profile).toContain("AvatarFilePicker");
     expect(profile).toContain('src="/student/perfil/avatar"');
-    expect(studentActions).toContain("updateStudentAvatarAction");
-    expect(studentActions).toContain('.from("profile-avatars")');
-    expect(studentActions).toContain(".upsert(");
+    expect(studentActions).toContain("finalizeStudentAvatarAction");
+    expect(avatarPicker).toContain("finalizeStudentAvatarAction");
+    expect(avatarPicker).toContain('.from("profile-avatars")');
+    expect(avatarPicker).toContain(".upload(");
     expect(avatarRoute).toContain("createSignedUrl");
     expect(avatarRoute).toContain("transparentAvatar");
   });

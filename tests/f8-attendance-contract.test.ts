@@ -3,6 +3,14 @@ import { join } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
+import { canSelectStudentCandidate } from "../lib/admin/student-picker";
+
+import {
+  countBookedReservations,
+  countSeatOccupyingReservations,
+  isSeatOccupyingReservation,
+} from "../lib/reservations/capacity";
+
 function source(path: string) {
   return readFileSync(join(process.cwd(), path), "utf8");
 }
@@ -11,9 +19,13 @@ describe("F8 attendance contracts", () => {
   it("keeps no-show visible in the roster without counting it as occupied capacity", () => {
     const page = source("app/admin/page.tsx");
     const capacityFix = source("supabase/migrations/20260915203911_f8_walkin_capacity_fix.sql");
+    const statuses = ["reserved", "attended", "no_show", "cancelled_on_time", "cancelled_late"];
 
+    expect(statuses.filter(isSeatOccupyingReservation)).toEqual(["reserved", "attended"]);
+    expect(countSeatOccupyingReservations(statuses)).toBe(2);
+    expect(countBookedReservations(statuses)).toBe(3);
     expect(page).toContain('.in("status", ["reserved", "attended", "no_show"])');
-    expect(page).toContain('new Set(["reserved", "attended"])');
+    expect(page).toContain("countBookedReservations(reservationStatuses)");
     expect(capacityFix).toContain("status in ('reserved', 'attended')");
     expect(capacityFix).not.toContain("status in ('reserved', 'attended', 'no_show')");
   });
@@ -32,7 +44,6 @@ describe("F8 attendance contracts", () => {
 
   it("allows an existing student without valid commercial eligibility to join as a walk-in", () => {
     const actions = source("app/admin/actions.ts");
-    const operations = source("app/admin/hoy/SessionOperations.tsx");
     const existingStudentForm = source("app/admin/hoy/ExistingStudentAddForm.tsx");
     const migration = source(
       "supabase/migrations/20260915215839_f8_existing_walkin_without_package.sql",
@@ -41,8 +52,10 @@ describe("F8 attendance contracts", () => {
     expect(actions).toContain("commercialPendingReasons");
     expect(actions).toContain('"no_active_product", "outside_product", "no_credits"');
     expect(actions).toContain('supabase.rpc("add_existing_walkin_student"');
-    expect(existingStudentForm).toContain("walk-in / venta pendiente");
-    expect(existingStudentForm).not.toContain("disabled={!candidate.eligible}");
+    expect(existingStudentForm).toContain("canSelectStudentCandidate(candidate)");
+    expect(canSelectStudentCandidate({ eligible: false, detail: "sin paquete activo" })).toBe(true);
+    expect(canSelectStudentCandidate({ eligible: false, detail: "fuera de paquete" })).toBe(true);
+    expect(canSelectStudentCandidate({ eligible: false, detail: "sin créditos" })).toBe(true);
     expect(migration).toContain("commercial_pending");
     expect(migration).toContain("'attendance.write'");
     expect(migration).toContain("status in ('reserved', 'attended')");

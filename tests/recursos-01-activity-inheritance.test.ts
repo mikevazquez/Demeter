@@ -38,7 +38,8 @@ describe("RECURSOS-01 activity and session inheritance", () => {
 
   it("captures only whether an activity requires a resource", () => {
     expect(activityWizard).toContain("¿Requiere recurso?");
-    expect(activityActions).toContain("p_requires_resource: Boolean(payload.requiresResource)");
+    expect(activityActions).toContain("const requiresResource = Boolean(payload.requiresResource)");
+    expect(activityActions).toContain("p_requires_resource: requiresResource");
     expect(activityWizard).not.toContain("resource_uses_per_item");
     expect(activityWizard).not.toContain("capacity_override");
   });
@@ -64,7 +65,7 @@ describe("RECURSOS-01 activity and session inheritance", () => {
 
   it("requires a physical space before creating resource-based sessions", () => {
     expect(agendaActions).toContain("template.requires_resource && !spaceId");
-    expect(activityActions).toContain("payload.requiresResource && !defaultSpaceId");
+    expect(activityActions).toContain("(requiresResource && !defaultSpaceId)");
     expect(restoredActivities).toContain("resource_activity_requires_space");
     expect(atomicSave).toContain("resource_activity_requires_space");
   });

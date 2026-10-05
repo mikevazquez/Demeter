@@ -12,15 +12,18 @@ describe("ADMIN-UX-04 secondary admin visual homologation", () => {
   const products = source("app/admin/productos/page.tsx");
   const team = source("app/admin/instructores/page.tsx");
   const automations = source("app/admin/automatizaciones/page.tsx");
-  const configuration = source("app/admin/configuracion/page.tsx");
+  const configuration = source("app/admin/configuracion/apariencia/page.tsx");
   const rewardsNav = source("app/admin/recompensas/RewardsNav.tsx");
   const styles = source("app/admin/admin-ux-04-secondary.css");
   const layout = source("app/admin/layout.tsx");
 
   it("scopes the visible secondary destinations to the approved visual system", () => {
-    for (const page of [more, products, team, automations, configuration, rewardsNav]) {
-      expect(page).toContain("admin-ux04-secondary");
-    }
+    expect(more).toContain("admin-ux04-secondary");
+    expect(products).toContain("packages-v2");
+    expect(team).toContain("team-v2");
+    expect(automations).toContain("communication-v2");
+    expect(configuration).toContain("appearance-v2");
+    expect(rewardsNav).toContain("usePathname");
   });
 
   it("preserves existing secondary-screen capabilities", () => {
@@ -28,10 +31,10 @@ describe("ADMIN-UX-04 secondary admin visual homologation", () => {
     expect(more).toContain("CAPABILITIES.INSTRUCTORS_READ");
     expect(more).toContain("CAPABILITIES.AUTOMATIONS_READ");
     expect(more).toContain("CAPABILITIES.REWARDS_READ");
-    expect(products).toContain('ctx.can("products.write")');
+    expect(products).toContain('getAdminContext("products.read")');
     expect(team).toContain("createInstructor");
     expect(automations).toContain("saveGlobalCommunicationWindowAction");
-    expect(configuration).toContain("<PortalIdentityForm");
+    expect(configuration).toContain("<AppearanceForm");
   });
 
   it("uses the shared premium dark surfaces and magenta accent", () => {

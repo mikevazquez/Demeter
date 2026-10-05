@@ -1,6 +1,10 @@
 import Link from "next/link";
 
-import { formatDateTime, getStudentPortalContext } from "@/lib/student/portal";
+import {
+  formatDateTime,
+  getStudentPortalContext,
+  selectPrimaryStudentPackage,
+} from "@/lib/student/portal";
 
 const movementCopy: Record<
   string,
@@ -60,7 +64,7 @@ function quantityCopy(quantity: number) {
 
 export default async function StudentMovementsPage() {
   const { snapshot, studio } = await getStudentPortalContext();
-  const activePackage = snapshot.acquisitions.find((item) => item.active_now) ?? null;
+  const activePackage = selectPrimaryStudentPackage(snapshot.acquisitions);
 
   return (
     <main className="space-y-5 pb-4">

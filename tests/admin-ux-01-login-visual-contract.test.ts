@@ -35,7 +35,7 @@ describe("ADMIN-UX-01 approved login visual contract", () => {
     expect(card).toContain("PhoneIcon");
     expect(card).toContain("LockIcon");
     expect(card).toContain("¿Olvidaste tu contraseña?");
-    expect(card).toContain("Recordarme");
+    expect(card).toContain("Sesión persistente en este dispositivo");
     expect(card).toContain('className="auth-divider"');
     expect(card).toContain('className="auth-switch-button"');
     expect(card).toContain('"Acceso al estudio" : "Soy alumna"');

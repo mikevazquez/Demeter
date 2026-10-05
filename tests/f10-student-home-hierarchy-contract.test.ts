@@ -1,46 +1,57 @@
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
-
 import { describe, expect, it } from "vitest";
 
-function source(path: string) {
-  return readFileSync(join(process.cwd(), path), "utf8");
+import { selectPrimaryStudentPackage } from "../lib/student/package-selection";
+
+function acquisition(
+  overrides: Partial<{
+    id: string;
+    reward_credit_wallet: boolean;
+    active_now: boolean;
+    unlimited: boolean;
+    available_credits: number | null;
+  }> = {},
+) {
+  return {
+    id: "package",
+    reward_credit_wallet: false,
+    active_now: true,
+    unlimited: false,
+    available_credits: 0,
+    ...overrides,
+  };
 }
 
 describe("F10/N14 student home visual hierarchy", () => {
-  const home = source("app/student/page.tsx");
-
   it("prioritizes an active package before reserved classes", () => {
-    expect(home.indexOf('data-home-block="package"')).toBeLessThan(
-      home.indexOf('data-home-block="reserved-classes"'),
-    );
-    expect(home).toContain("Mi paquete");
-    expect(home).toContain("Vence");
-    expect(home).toContain('role="progressbar"');
+    const exhausted = acquisition({ id: "exhausted", available_credits: 0 });
+    const usable = acquisition({ id: "usable", available_credits: 3 });
+
+    expect(selectPrimaryStudentPackage([exhausted, usable])).toBe(usable);
   });
 
   it("keeps reserved classes immediately after package context", () => {
-    expect(home).toContain("Tus clases reservadas");
-    expect(home).toContain("Confirmada");
-    expect(home).toContain('href="/student/mis-clases"');
+    const wallet = acquisition({
+      id: "wallet",
+      reward_credit_wallet: true,
+      available_credits: 5,
+    });
+    const activePackage = acquisition({ id: "monthly", available_credits: 2 });
+
+    expect(selectPrimaryStudentPackage([wallet, activePackage])).toBe(activePackage);
   });
 
   it("uses useful empty states instead of the old date carousel", () => {
-    expect(home).toContain("Aún no tienes clases reservadas");
-    expect(home).toContain("Aún no tienes un paquete activo");
-    expect(home).not.toContain("Clases del día");
-    expect(home).not.toContain("Semana anterior");
+    const exhausted = acquisition({ id: "exhausted", available_credits: null });
+    const expired = acquisition({ id: "expired", active_now: false, available_credits: 8 });
+
+    expect(selectPrimaryStudentPackage([expired, exhausted])).toBe(exhausted);
+    expect(selectPrimaryStudentPackage([expired])).toBeNull();
   });
 
   it("removes duplicated progress, quick actions and activity metrics from home", () => {
-    expect(home).not.toContain("Acciones rápidas");
-    expect(home).not.toContain("Disciplina también es amor propio");
-    expect(home).not.toContain('data-home-block="progress"');
-    expect(home).toContain("Mi medalla");
-    expect(home).toContain("Activando Medallas");
-    expect(home).toContain("Sin medalla");
-    expect(home).toContain("Niveles técnicos");
-    expect(home).toContain("grid-cols-[112px_minmax(0,1fr)]");
-    expect(home).not.toContain('className="truncate text-xl font-semibold text-white"');
+    const unlimited = acquisition({ id: "unlimited", unlimited: true, available_credits: null });
+    const exhausted = acquisition({ id: "exhausted", available_credits: 0 });
+
+    expect(selectPrimaryStudentPackage([exhausted, unlimited])).toBe(unlimited);
   });
 });

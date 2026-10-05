@@ -3,6 +3,10 @@ import { redirect } from "next/navigation";
 
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getAdminContext } from "@/lib/auth/admin-context";
+import {
+  countBookedReservations,
+  countSeatOccupyingReservations,
+} from "@/lib/reservations/capacity";
 import { SessionOperations } from "../../hoy/SessionOperations";
 import { cancelSession, setMinimumOverride, updateSession } from "./actions";
 
@@ -217,10 +221,7 @@ export default async function SessionDetailPage({
     ...new Set((resourceAssignments ?? []).map((item) => item.resource_id).filter(Boolean)),
   ] as string[];
   const { data: assignedResources } = assignedResourceIds.length
-    ? await supabase
-        .from("resources")
-        .select("id,name,short_label")
-        .in("id", assignedResourceIds)
+    ? await supabase.from("resources").select("id,name,short_label").in("id", assignedResourceIds)
     : {
         data: [] as { id: string; name: string; short_label: string | null }[],
       };
@@ -309,9 +310,9 @@ export default async function SessionDetailPage({
     };
   });
 
-  const occupied = (reservations ?? []).filter((reservation) =>
-    ["reserved", "attended", "no_show"].includes(reservation.status),
-  ).length;
+  const reservationStatuses = (reservations ?? []).map((reservation) => reservation.status);
+  const occupied = countSeatOccupyingReservations(reservationStatuses);
+  const bookedReservations = countBookedReservations(reservationStatuses);
   const attended = (reservations ?? []).filter(
     (reservation) => reservation.status === "attended",
   ).length;
@@ -424,8 +425,8 @@ export default async function SessionDetailPage({
         </article>
         <article className="stat-card">
           <span>Reservadas</span>
-          <strong>{occupied}</strong>
-          <small>Lugares activos</small>
+          <strong>{bookedReservations}</strong>
+          <small>Incluye no-shows</small>
         </article>
         <article className="stat-card">
           <span>Asistieron</span>

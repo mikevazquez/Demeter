@@ -7,6 +7,7 @@ import {
   formatMoney,
   getStudentPortalContext,
   localDateKey,
+  selectPrimaryStudentPackage,
   type StudentAcquisition,
 } from "@/lib/student/portal";
 
@@ -93,7 +94,7 @@ function acquisitionTone(status: string) {
 export default async function StudentPackagePage() {
   const { snapshot, studio, supabase, membership } = await getStudentPortalContext();
   const packageAcquisitions = snapshot.acquisitions.filter((item) => !item.reward_credit_wallet);
-  const activePackage = packageAcquisitions.find((item) => item.active_now) ?? null;
+  const activePackage = selectPrimaryStudentPackage(snapshot.acquisitions);
   const others = packageAcquisitions
     .filter((item) => item.id !== activePackage?.id)
     .sort((left, right) => right.expires_on.localeCompare(left.expires_on));

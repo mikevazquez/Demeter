@@ -34,6 +34,7 @@ export type TodayClassItem = {
   instructor: string;
   space: string;
   occupied: number;
+  bookedReservations: number;
   capacity: number;
   color: string;
   sessionStatus: string;

@@ -16,6 +16,8 @@ describe("Studio public branding configuration", () => {
   const root = source("app/page.tsx");
   const tenant = source("app/s/[studioSlug]/page.tsx");
   const configPage = source("app/admin/configuracion/page.tsx");
+  const appearancePage = source("app/admin/configuracion/apariencia/page.tsx");
+  const more = source("app/admin/mas/page.tsx");
   const configForm = source("app/admin/configuracion/PortalIdentityForm.tsx");
   const configActions = source("app/admin/configuracion/actions.ts");
   const adminLayout = source("app/admin/layout.tsx");
@@ -33,7 +35,7 @@ describe("Studio public branding configuration", () => {
     expect(migration).toContain("'owner'::public.studio_role");
     expect(configActions).toContain('ctx.membership.role !== "owner"');
     expect(configActions).toContain("CAPABILITIES.SETTINGS_WRITE");
-    expect(configPage).toContain('ctx.membership.role !== "owner"');
+    expect(appearancePage).toContain('ctx.membership.role !== "owner"');
   });
 
   it("validates and stores logos in the studio-owned folder", () => {
@@ -60,7 +62,8 @@ describe("Studio public branding configuration", () => {
     expect(configForm).toContain("VISTA PREVIA");
     expect(configForm).toContain("Seleccionar logo");
     expect(configForm).toContain("Guardar identidad");
-    expect(adminLayout).toContain('href: "/admin/configuracion"');
+    expect(more).toContain('href: "/admin/configuracion/apariencia"');
+    expect(adminLayout).toContain('"/admin/configuracion"');
     expect(adminLayout).toContain('membership.role === "owner"');
   });
 

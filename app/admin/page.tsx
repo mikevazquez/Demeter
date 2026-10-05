@@ -2,10 +2,12 @@ import Link from "next/link";
 
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getAdminContext } from "@/lib/auth/admin-context";
+import {
+  countBookedReservations,
+  countSeatOccupyingReservations,
+} from "@/lib/reservations/capacity";
 import { TodayClasses, type TodayClassItem } from "./hoy/TodayClasses";
 import QuickActions from "./hoy/QuickActions";
-
-const occupyingReservationStatuses = new Set(["reserved", "attended", "no_show"]);
 
 function formatExpiry(value: string | null, locale: string) {
   if (!value) return "Sin vencimiento";
@@ -329,10 +331,7 @@ export default async function AdminPage({
     ...new Set((resourceAssignments ?? []).map((item) => item.resource_id).filter(Boolean)),
   ] as string[];
   const { data: assignedResources } = assignedResourceIds.length
-    ? await supabase
-        .from("resources")
-        .select("id,name,short_label")
-        .in("id", assignedResourceIds)
+    ? await supabase.from("resources").select("id,name,short_label").in("id", assignedResourceIds)
     : {
         data: [] as { id: string; name: string; short_label: string | null }[],
       };
@@ -408,9 +407,9 @@ export default async function AdminPage({
   for (const session of selectedSessions ?? []) {
     const sessionReservations = reservationsBySession.get(session.id) ?? [];
     const template = templateMap.get(session.template_id);
-    const occupied = sessionReservations.filter((reservation) =>
-      occupyingReservationStatuses.has(reservation.status),
-    ).length;
+    const reservationStatuses = sessionReservations.map((reservation) => reservation.status);
+    const occupied = countSeatOccupyingReservations(reservationStatuses);
+    const bookedReservations = countBookedReservations(reservationStatuses);
 
     classes.push({
       id: session.id,
@@ -423,6 +422,7 @@ export default async function AdminPage({
         : "Sin instructor",
       space: session.space_id ? (spaceMap.get(session.space_id) ?? "Espacio") : "Sin espacio",
       occupied,
+      bookedReservations,
       capacity: session.capacity,
       color: template?.color_hex ?? "#FF0A8A",
       sessionStatus: session.status,
@@ -492,7 +492,7 @@ export default async function AdminPage({
   }
 
   const totalDailyCapacity = classes.reduce((sum, item) => sum + item.capacity, 0);
-  const totalDailyReservations = classes.reduce((sum, item) => sum + item.occupied, 0);
+  const totalDailyReservations = classes.reduce((sum, item) => sum + item.bookedReservations, 0);
   const dailyReservationPercentage =
     totalDailyCapacity > 0 ? Math.round((totalDailyReservations / totalDailyCapacity) * 100) : 0;
 

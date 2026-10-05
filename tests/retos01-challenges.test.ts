@@ -3,18 +3,19 @@ import { join } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
+import { studentNavigationItems } from "../lib/student/navigation";
+
 const read = (path: string) => readFileSync(join(process.cwd(), path), "utf8");
 
 describe("RETOS-01", () => {
   it("exposes Retos as a separate admin and student module", () => {
     const adminLayout = read("app/admin/layout.tsx");
-    const studentNav = read("app/student/StudentNav.tsx");
 
     expect(adminLayout).toContain('{ href: "/admin/retos", label: "Retos", enabled: true }');
     expect(adminLayout).toContain(
       '{ href: "/admin/recompensas", label: "Rewards", enabled: true }',
     );
-    expect(studentNav).toContain('href: "/student/retos"');
+    expect(studentNavigationItems.some((item) => item.href === "/student/retos")).toBe(true);
   });
 
   it("configures individual and competitive challenge modes", () => {

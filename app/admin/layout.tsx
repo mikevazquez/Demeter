@@ -9,6 +9,11 @@ import { AdminMobileNavigation, AdminNavigation } from "./admin-navigation";
 import "./hoy.css";
 import "./roster-uat.css";
 import "./mobile-nav-overrides.css";
+import "./alumnas/profile-360.css";
+import "./alumnas/admin-ux-04.css";
+import "./alumnas/profile-360-admin-ux-04.css";
+import "./agenda/agenda-calendar.css";
+import "./agenda/session-detail-admin-ux-04.css";
 import "./admin-ux-04-secondary.css";
 import "./admin-ux-04-secondary-detail.css";
 import "./admin-v2-system.css";
@@ -143,7 +148,7 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
           ? [{ href: "/admin/instructores", label: "Equipo", enabled: true }]
           : []),
         ...(can(CAPABILITIES.AUTOMATIONS_READ)
-          ? [{ href: "/admin/automatizaciones", label: "Comunicación", enabled: true }]
+          ? [{ href: "/admin/automatizaciones", label: "Notificaciones", enabled: true }]
           : []),
         ...(membership.role === "owner"
           ? [
