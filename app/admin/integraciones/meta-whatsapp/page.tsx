@@ -72,6 +72,7 @@ export default async function MetaWhatsAppIntegrationPage({
       ? await getMetaWhatsAppAdminDiagnostics(studio.id)
       : null;
   const approvedTemplates = diagnostics?.approvedTemplates ?? [];
+  const testReadyTemplates = approvedTemplates.filter((template) => template.testReady);
   const subscribedApps = diagnostics?.subscribedApps ?? [];
   const diagnosticsResult = queryValue(params.diagnostics);
   const subscriptionResult = queryValue(params.subscription);
@@ -394,7 +395,7 @@ export default async function MetaWhatsAppIntegrationPage({
               <strong>Plantillas aprobadas</strong>
               <small>
                 {approvedTemplates.length
-                  ? "Disponibles para pruebas iniciadas por el negocio."
+                  ? `${testReadyTemplates.length} de ${approvedTemplates.length} listas para prueba sin variables.`
                   : "No se detectaron plantillas aprobadas con este token."}
               </small>
             </span>
@@ -422,7 +423,7 @@ export default async function MetaWhatsAppIntegrationPage({
           </form>
         </div>
 
-        {approvedTemplates.length ? (
+        {testReadyTemplates.length ? (
           <form className="integration-detail-v2-form" action={sendMetaWhatsAppTestMessage}>
             <label className="integration-detail-v2-field">
               <span>Número para prueba</span>
@@ -446,7 +447,7 @@ export default async function MetaWhatsAppIntegrationPage({
                 <option value="" disabled>
                   Selecciona una plantilla
                 </option>
-                {approvedTemplates.map((template) => (
+                {testReadyTemplates.map((template) => (
                   <option
                     key={`${template.name}:${template.language}`}
                     value={`${template.name}::${template.language}`}
