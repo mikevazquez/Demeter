@@ -11,6 +11,7 @@ import {
   saveMetaWhatsAppConnection,
   sendMetaWhatsAppTestMessage,
   subscribeCurrentMetaWhatsAppApp,
+  updateMetaWhatsAppAccessToken,
   updateMetaWhatsAppAppSecret,
   verifyMetaWhatsAppConnection,
 } from "./actions";
@@ -79,6 +80,7 @@ export default async function MetaWhatsAppIntegrationPage({
   const subscriptionResult = queryValue(params.subscription);
   const testResult = queryValue(params.test);
   const secretResult = queryValue(params.secret);
+  const tokenResult = queryValue(params.token);
   const resultCode = queryValue(params.code);
 
   const requestHeaders = await headers();
@@ -151,6 +153,14 @@ export default async function MetaWhatsAppIntegrationPage({
       ) : secretResult === "error" ? (
         <div className="integration-detail-v2-notice is-error">
           No se pudo actualizar el App Secret{resultCode ? `: ${resultCode}` : "."}
+        </div>
+      ) : null}
+
+      {tokenResult === "saved" ? (
+        <div className="integration-detail-v2-notice">Token de acceso de Meta actualizado.</div>
+      ) : tokenResult === "error" ? (
+        <div className="integration-detail-v2-notice is-error">
+          No se pudo actualizar el token{resultCode ? `: ${resultCode}` : "."}
         </div>
       ) : null}
 
@@ -317,6 +327,22 @@ export default async function MetaWhatsAppIntegrationPage({
             Guardar conexión segura de Meta
           </button>
         </form>
+
+        {webhookConfigured ? (
+          <form className="integration-detail-v2-form" action={updateMetaWhatsAppAccessToken}>
+            <label className="integration-detail-v2-field">
+              <span>Actualizar token de acceso de WhatsApp</span>
+              <input type="password" name="access_token" required autoComplete="new-password" />
+              <small>
+                Solo reemplaza el token de acceso. Conserva Phone Number ID, WABA ID, versión de
+                Graph API, Meta App Secret, Verify token y configuración del piloto.
+              </small>
+            </label>
+            <button className="integration-detail-v2-button" type="submit">
+              Actualizar solo token de acceso
+            </button>
+          </form>
+        ) : null}
 
         {webhookConfigured ? (
           <form className="integration-detail-v2-form" action={updateMetaWhatsAppAppSecret}>
