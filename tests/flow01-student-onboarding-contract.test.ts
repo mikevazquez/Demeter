@@ -23,7 +23,7 @@ describe("Flow 01 student onboarding", () => {
     const noticeDialog = source("app/admin/components/NoticeDialog.tsx");
     expect(noticeDialog).toContain('aria-modal="true"');
     expect(noticeDialog).toContain('confirmLabel = "Aceptar"');
-    expect(noticeDialog).toContain("backdrop-blur-sm");
+    expect(noticeDialog).toContain('className="sf-admin-dialog-backdrop"');
   });
 
   it("shows student creation validation errors as an in-context popup", () => {
