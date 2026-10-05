@@ -3,6 +3,8 @@ import { join } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
+import { getStudentHomePackageState } from "../lib/student/home-package-state";
+
 function source(path: string) {
   return readFileSync(join(process.cwd(), path), "utf8");
 }
@@ -13,11 +15,26 @@ describe("SF-N14 PORTAL UX-02 home", () => {
   const nav = source("app/student/StudentNav.tsx");
 
   it("covers the approved package and reservation states", () => {
-    expect(home).toContain("Tus clases reservadas");
-    expect(home).toContain("Aún no tienes clases reservadas");
-    expect(home).toContain("Aún no tienes un paquete activo");
-    expect(home).toContain("Comprar paquete");
-    expect(home).toContain("Reservar clase");
+    expect(getStudentHomePackageState(null)).toEqual({
+      credits: null,
+      noCredits: false,
+      canReserve: false,
+    });
+    expect(getStudentHomePackageState({ unlimited: false, available_credits: 0 })).toEqual({
+      credits: 0,
+      noCredits: true,
+      canReserve: false,
+    });
+    expect(getStudentHomePackageState({ unlimited: false, available_credits: 3 })).toEqual({
+      credits: 3,
+      noCredits: false,
+      canReserve: true,
+    });
+    expect(getStudentHomePackageState({ unlimited: true, available_credits: null })).toEqual({
+      credits: null,
+      noCredits: false,
+      canReserve: true,
+    });
   });
 
   it("keeps unlimited packages semantically distinct from credits", () => {
