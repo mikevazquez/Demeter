@@ -41,6 +41,17 @@ describe("Meta WhatsApp admin diagnostics", () => {
     expect(actions).toContain("sendMetaWhatsAppTestMessage");
   });
 
+  it("updates only the App Secret while preserving the stored Meta connection", () => {
+    expect(actions).toContain("updateMetaWhatsAppAppSecret");
+    expect(actions).toContain("loadMetaWhatsAppWebhookConfig");
+    expect(actions).toContain("target_access_token: current.accessToken");
+    expect(actions).toContain("target_phone_number_id: current.phoneNumberId");
+    expect(actions).toContain("target_waba_id: current.wabaId");
+    expect(actions).toContain("target_verify_token: current.verifyToken");
+    expect(page).toContain("Actualizar solo App Secret");
+    expect(page).toContain("Conserva el token de acceso");
+  });
+
   it("keeps diagnostic calls server-only and does not render the stored access token", () => {
     expect(helper).toContain('import "server-only"');
     expect(helper).toContain("authorization: `Bearer ${config.accessToken}`");
