@@ -4,7 +4,6 @@ import { cache } from "react";
 import { redirect } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/server";
-import { selectPrimaryStudentPackage } from "./package-selection";
 
 export { selectPrimaryStudentPackage } from "./package-selection";
 
