@@ -3,6 +3,12 @@
 import { useEffect, useRef, useState, useTransition } from "react";
 
 import {
+  canSearchStudents,
+  canSelectStudentCandidate,
+  hasSelectedStudent,
+  normalizeStudentSearch,
+} from "@/lib/admin/student-picker";
+import {
   bookStudentFromToday,
   searchStudentsForToday,
   type TodayStudentCandidate,
