@@ -114,9 +114,7 @@ export default async function MetaWhatsAppIntegrationPage() {
                   : "El proveedor todavía no está habilitado para este estudio."}
               </small>
             </span>
-            <span
-              className={`integrations-v2-status ${active ? "is-active" : "is-available"}`}
-            >
+            <span className={`integrations-v2-status ${active ? "is-active" : "is-available"}`}>
               {active ? "Activo" : "Configurar"}
             </span>
           </div>
