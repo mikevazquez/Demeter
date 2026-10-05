@@ -78,15 +78,11 @@ export async function updateMetaWhatsAppAppSecret(formData: FormData) {
   try {
     current = await loadMetaWhatsAppWebhookConfig(createServiceClient(), studio.id);
   } catch {
-    redirect(
-      "/admin/integraciones/meta-whatsapp?secret=error&code=meta_whatsapp_not_configured",
-    );
+    redirect("/admin/integraciones/meta-whatsapp?secret=error&code=meta_whatsapp_not_configured");
   }
 
   if (!current) {
-    redirect(
-      "/admin/integraciones/meta-whatsapp?secret=error&code=meta_whatsapp_not_configured",
-    );
+    redirect("/admin/integraciones/meta-whatsapp?secret=error&code=meta_whatsapp_not_configured");
   }
 
   const { error } = await supabase.rpc("admin_set_meta_whatsapp_connection", {
@@ -101,9 +97,7 @@ export async function updateMetaWhatsAppAppSecret(formData: FormData) {
 
   if (error) {
     redirect(
-      `/admin/integraciones/meta-whatsapp?secret=error&code=${encodeURIComponent(
-        safeCode(error),
-      )}`,
+      `/admin/integraciones/meta-whatsapp?secret=error&code=${encodeURIComponent(safeCode(error))}`,
     );
   }
 
