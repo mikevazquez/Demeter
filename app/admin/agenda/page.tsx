@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getAdminContext } from "@/lib/auth/admin-context";
+import { isSeatOccupyingReservation } from "@/lib/reservations/capacity";
 import { cancelSession, updateSession } from "./[sessionId]/actions";
 
 function formatMoney(minor: number, locale: string, currency: string) {
@@ -261,7 +262,7 @@ export default async function AgendaPage({
 
   const occupiedBySession = new Map<string, number>();
   for (const reservation of reservations ?? []) {
-    if (!["reserved", "attended"].includes(reservation.status)) continue;
+    if (!isSeatOccupyingReservation(reservation.status)) continue;
     occupiedBySession.set(
       reservation.session_id,
       (occupiedBySession.get(reservation.session_id) ?? 0) + 1,

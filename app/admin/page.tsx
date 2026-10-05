@@ -2,10 +2,10 @@ import Link from "next/link";
 
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getAdminContext } from "@/lib/auth/admin-context";
+import { countSeatOccupyingReservations } from "@/lib/reservations/capacity";
 import { TodayClasses, type TodayClassItem } from "./hoy/TodayClasses";
 import QuickActions from "./hoy/QuickActions";
 
-const occupyingReservationStatuses = new Set(["reserved", "attended", "no_show"]);
 
 function formatExpiry(value: string | null, locale: string) {
   if (!value) return "Sin vencimiento";
@@ -405,9 +405,9 @@ export default async function AdminPage({
   for (const session of selectedSessions ?? []) {
     const sessionReservations = reservationsBySession.get(session.id) ?? [];
     const template = templateMap.get(session.template_id);
-    const occupied = sessionReservations.filter((reservation) =>
-      occupyingReservationStatuses.has(reservation.status),
-    ).length;
+    const occupied = countSeatOccupyingReservations(
+      sessionReservations.map((reservation) => reservation.status),
+    );
 
     classes.push({
       id: session.id,

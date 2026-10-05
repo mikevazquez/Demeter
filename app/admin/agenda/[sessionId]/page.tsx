@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getAdminContext } from "@/lib/auth/admin-context";
+import { countSeatOccupyingReservations } from "@/lib/reservations/capacity";
 import { SessionOperations } from "../../hoy/SessionOperations";
 import { cancelSession, setMinimumOverride, updateSession } from "./actions";
 
@@ -306,9 +307,9 @@ export default async function SessionDetailPage({
     };
   });
 
-  const occupied = (reservations ?? []).filter((reservation) =>
-    ["reserved", "attended", "no_show"].includes(reservation.status),
-  ).length;
+  const occupied = countSeatOccupyingReservations(
+    (reservations ?? []).map((reservation) => reservation.status),
+  );
   const attended = (reservations ?? []).filter(
     (reservation) => reservation.status === "attended",
   ).length;
