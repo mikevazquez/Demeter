@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { headers } from "next/headers";
 
+import { getMetaWhatsAppAdminDiagnostics } from "@/lib/assistant/meta-whatsapp-admin";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getAdminContext } from "@/lib/auth/admin-context";
 
@@ -8,6 +9,9 @@ import {
   activateMetaWhatsAppPilot,
   disableMetaWhatsAppPilot,
   saveMetaWhatsAppConnection,
+  sendMetaWhatsAppTestMessage,
+  subscribeCurrentMetaWhatsAppApp,
+  verifyMetaWhatsAppConnection,
 } from "./actions";
 import "../integrations-v2.css";
 
@@ -17,7 +21,16 @@ function asObject(value: unknown) {
     : null;
 }
 
-export default async function MetaWhatsAppIntegrationPage() {
+function queryValue(value: string | string[] | undefined) {
+  return Array.isArray(value) ? value[0] : value;
+}
+
+export default async function MetaWhatsAppIntegrationPage({
+  searchParams,
+}: {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const params = (await searchParams) ?? {};
   const { supabase, studio } = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
 
   const [
@@ -54,6 +67,17 @@ export default async function MetaWhatsAppIntegrationPage() {
   const pilotActive = assistantConfig?.mode === "pilot";
   const serviceRoleConfigured = Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY?.trim());
   const openAIConfigured = Boolean(process.env.OPENAI_API_KEY?.trim());
+  const diagnostics =
+    webhookConfigured && serviceRoleConfigured
+      ? await getMetaWhatsAppAdminDiagnostics(studio.id)
+      : null;
+  const approvedTemplates = diagnostics?.approvedTemplates ?? [];
+  const testReadyTemplates = approvedTemplates.filter((template) => template.testReady);
+  const subscribedApps = diagnostics?.subscribedApps ?? [];
+  const diagnosticsResult = queryValue(params.diagnostics);
+  const subscriptionResult = queryValue(params.subscription);
+  const testResult = queryValue(params.test);
+  const resultCode = queryValue(params.code);
 
   const requestHeaders = await headers();
   const forwardedHost = requestHeaders.get("x-forwarded-host")?.split(",")[0]?.trim();
@@ -93,6 +117,32 @@ export default async function MetaWhatsAppIntegrationPage() {
           <strong>{serviceRoleConfigured && openAIConfigured ? "Listo" : "Incompleto"}</strong>
         </article>
       </section>
+
+      {diagnosticsResult === "ok" ? (
+        <div className="integration-detail-v2-notice">
+          Conexión con Meta verificada correctamente.
+        </div>
+      ) : diagnosticsResult === "error" ? (
+        <div className="integration-detail-v2-notice is-error">
+          No se pudo verificar Meta{resultCode ? `: ${resultCode}` : "."}
+        </div>
+      ) : null}
+
+      {subscriptionResult === "ok" ? (
+        <div className="integration-detail-v2-notice">La app quedó suscrita a la WABA.</div>
+      ) : subscriptionResult === "error" ? (
+        <div className="integration-detail-v2-notice is-error">
+          No se pudo suscribir la app{resultCode ? `: ${resultCode}` : "."}
+        </div>
+      ) : null}
+
+      {testResult === "sent" ? (
+        <div className="integration-detail-v2-notice">Meta aceptó el mensaje de prueba.</div>
+      ) : testResult === "error" ? (
+        <div className="integration-detail-v2-notice is-error">
+          La prueba de envío falló{resultCode ? `: ${resultCode}` : "."}
+        </div>
+      ) : null}
 
       <section className="integration-detail-v2-card">
         <div className="integration-detail-v2-card-heading">
@@ -282,6 +332,140 @@ export default async function MetaWhatsAppIntegrationPage() {
             Agrega SUPABASE_SERVICE_ROLE_KEY directamente en el entorno correcto de Vercel. No
             compartas la llave por chat.
           </div>
+        ) : null}
+      </section>
+
+      <section className="integration-detail-v2-card">
+        <div className="integration-detail-v2-card-heading">
+          <div>
+            <h2>Diagnóstico y pruebas de Meta</h2>
+            <p>
+              Studio Flow usa las credenciales cifradas que ya guardaste. No necesitas volver a
+              copiar tokens para verificar, suscribir o enviar una prueba.
+            </p>
+          </div>
+        </div>
+
+        <div className="integration-detail-v2-list">
+          <div className="integration-detail-v2-row">
+            <span className="integration-detail-v2-row-copy">
+              <strong>API del número</strong>
+              <small>
+                {diagnostics?.connected
+                  ? `${diagnostics.verifiedName ?? "WhatsApp"} · ${diagnostics.displayPhoneNumber ?? diagnostics.phoneNumberId ?? "Número configurado"}`
+                  : diagnostics?.errorCode
+                    ? `No disponible: ${diagnostics.errorCode}`
+                    : "Guarda primero la conexión completa de Meta."}
+              </small>
+            </span>
+            <span
+              className={`integrations-v2-status ${
+                diagnostics?.connected ? "is-active" : "is-available"
+              }`}
+            >
+              {diagnostics?.connected ? "Conectada" : "Pendiente"}
+            </span>
+          </div>
+
+          <div className="integration-detail-v2-row">
+            <span className="integration-detail-v2-row-copy">
+              <strong>Calidad del número</strong>
+              <small>
+                {diagnostics?.qualityRating ?? "Meta todavía no devolvió calificación."}
+              </small>
+            </span>
+          </div>
+
+          <div className="integration-detail-v2-row">
+            <span className="integration-detail-v2-row-copy">
+              <strong>Apps suscritas a la WABA</strong>
+              <small>
+                {subscribedApps.length
+                  ? subscribedApps.join(", ")
+                  : "No se detectaron apps suscritas con estas credenciales."}
+              </small>
+            </span>
+            <span
+              className={`integrations-v2-status ${
+                subscribedApps.length ? "is-active" : "is-available"
+              }`}
+            >
+              {subscribedApps.length ? subscribedApps.length : "0"}
+            </span>
+          </div>
+
+          <div className="integration-detail-v2-row">
+            <span className="integration-detail-v2-row-copy">
+              <strong>Plantillas aprobadas</strong>
+              <small>
+                {approvedTemplates.length
+                  ? `${testReadyTemplates.length} de ${approvedTemplates.length} listas para prueba sin variables.`
+                  : "No se detectaron plantillas aprobadas con este token."}
+              </small>
+            </span>
+            <span
+              className={`integrations-v2-status ${
+                approvedTemplates.length ? "is-active" : "is-available"
+              }`}
+            >
+              {approvedTemplates.length}
+            </span>
+          </div>
+        </div>
+
+        <div className="integration-detail-v2-form">
+          <form action={verifyMetaWhatsAppConnection}>
+            <button className="integration-detail-v2-button" type="submit">
+              Verificar conexión
+            </button>
+          </form>
+
+          <form action={subscribeCurrentMetaWhatsAppApp}>
+            <button className="integration-detail-v2-button" type="submit">
+              Suscribir app a la WABA
+            </button>
+          </form>
+        </div>
+
+        {testReadyTemplates.length ? (
+          <form className="integration-detail-v2-form" action={sendMetaWhatsAppTestMessage}>
+            <label className="integration-detail-v2-field">
+              <span>Número para prueba</span>
+              <input
+                type="tel"
+                name="recipient"
+                required
+                inputMode="tel"
+                autoComplete="tel"
+                placeholder="Ej. 3312345678"
+              />
+              <small>
+                Meta enviará una plantilla aprobada usando el número configurado. Para México puedes
+                escribir los 10 dígitos.
+              </small>
+            </label>
+
+            <label className="integration-detail-v2-field">
+              <span>Plantilla aprobada</span>
+              <select name="template_key" required defaultValue="">
+                <option value="" disabled>
+                  Selecciona una plantilla
+                </option>
+                {testReadyTemplates.map((template) => (
+                  <option
+                    key={`${template.name}:${template.language}`}
+                    value={`${template.name}::${template.language}`}
+                  >
+                    {template.name} · {template.language}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <button className="integration-detail-v2-button" type="submit">
+              Enviar mensaje de prueba
+            </button>
+          </form>
         ) : null}
       </section>
 

@@ -26,18 +26,25 @@ export default function PrivacyPage() {
             <h2>1. Responsable</h2>
             <p>
               Demeter Fitness es el nombre comercial del estudio. El tratamiento de datos es
-              responsabilidad de la persona física titular del negocio conforme a sus datos
-              fiscales vigentes.
+              responsabilidad de la persona física titular del negocio conforme a sus datos fiscales
+              vigentes.
             </p>
           </section>
 
           <section className={styles.section}>
             <h2>2. Datos que podemos tratar</h2>
             <ul>
-              <li>Datos de identificación y contacto, como nombre, teléfono y correo electrónico.</li>
+              <li>
+                Datos de identificación y contacto, como nombre, teléfono y correo electrónico.
+              </li>
               <li>Información relacionada con reservas, clases, paquetes, pagos y asistencia.</li>
-              <li>Mensajes, archivos o comprobantes que decidas enviarnos por WhatsApp u otros canales.</li>
-              <li>Datos técnicos necesarios para seguridad, autenticación y operación del servicio.</li>
+              <li>
+                Mensajes, archivos o comprobantes que decidas enviarnos por WhatsApp u otros
+                canales.
+              </li>
+              <li>
+                Datos técnicos necesarios para seguridad, autenticación y operación del servicio.
+              </li>
             </ul>
           </section>
 
@@ -45,7 +52,9 @@ export default function PrivacyPage() {
             <h2>3. Para qué usamos tus datos</h2>
             <ul>
               <li>Atender consultas y dar seguimiento a prospectos y alumnas.</li>
-              <li>Gestionar reservas, cancelaciones, listas de espera, pagos y servicios contratados.</li>
+              <li>
+                Gestionar reservas, cancelaciones, listas de espera, pagos y servicios contratados.
+              </li>
               <li>Enviar confirmaciones, recordatorios y avisos operativos.</li>
               <li>Dar acceso al portal de Demeter Fitness y mantener el historial de servicio.</li>
               <li>Prevenir fraude, abuso y accesos no autorizados.</li>
@@ -57,8 +66,8 @@ export default function PrivacyPage() {
             <h2>4. WhatsApp y automatización</h2>
             <p>
               Cuando nos escribes por WhatsApp, podemos usar herramientas de Meta y sistemas
-              automatizados de Demeter Fitness para recibir, organizar y responder mensajes.
-              Algunas respuestas pueden ser generadas o asistidas por inteligencia artificial.
+              automatizados de Demeter Fitness para recibir, organizar y responder mensajes. Algunas
+              respuestas pueden ser generadas o asistidas por inteligencia artificial.
             </p>
             <p>
               Cuando es necesario para prestar el servicio, determinados datos pueden ser procesados
@@ -109,8 +118,13 @@ export default function PrivacyPage() {
           <div className={styles.notice}>Última actualización: 5 de octubre de 2026.</div>
 
           <div className={styles.links}>
-            <Link className={styles.link} href="/">Volver a Demeter Fitness</Link>
-            <Link className={[styles.link, styles.linkSecondary].join(" ")} href="/eliminacion-datos">
+            <Link className={styles.link} href="/">
+              Volver a Demeter Fitness
+            </Link>
+            <Link
+              className={[styles.link, styles.linkSecondary].join(" ")}
+              href="/eliminacion-datos"
+            >
               Eliminación de datos
             </Link>
           </div>

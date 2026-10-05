@@ -58,7 +58,9 @@ export default function DataDeletionPage() {
           <div className={styles.notice}>Última actualización: 5 de octubre de 2026.</div>
 
           <div className={styles.links}>
-            <Link className={styles.link} href="/privacidad">Ver política de privacidad</Link>
+            <Link className={styles.link} href="/privacidad">
+              Ver política de privacidad
+            </Link>
             <Link className={[styles.link, styles.linkSecondary].join(" ")} href="/">
               Volver a Demeter Fitness
             </Link>

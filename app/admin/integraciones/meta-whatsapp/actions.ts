@@ -3,6 +3,11 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 
+import {
+  getMetaWhatsAppAdminDiagnostics,
+  sendMetaWhatsAppTemplateTest,
+  subscribeMetaWhatsAppApp,
+} from "@/lib/assistant/meta-whatsapp-admin";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getAdminContext } from "@/lib/auth/admin-context";
 
@@ -12,6 +17,13 @@ function safeCode(error: unknown) {
     /(meta_access_token_invalid|meta_phone_number_id_invalid|meta_waba_id_invalid|meta_graph_api_version_invalid|meta_app_secret_invalid|meta_verify_token_invalid|meta_whatsapp_not_configured|meta_whatsapp_connection_incomplete|pilot_phone_invalid|forbidden)/,
   );
   return match?.[1] ?? "save_failed";
+}
+
+function safeMetaAdminCode(error: unknown) {
+  const message = error instanceof Error ? error.message : "";
+  const allowed =
+    /^(meta_graph_http_\d{3}(?:_code_\d+)?(?:_subcode_\d+)?|meta_graph_timeout|meta_whatsapp_not_configured|meta_subscribe_failed|meta_test_phone_invalid|meta_test_template_invalid|meta_test_language_invalid|meta_test_message_id_missing)$/;
+  return allowed.test(message) ? message : "meta_admin_failed";
 }
 
 export async function saveMetaWhatsAppConnection(formData: FormData) {
@@ -50,6 +62,68 @@ export async function saveMetaWhatsAppConnection(formData: FormData) {
 
   revalidatePath("/admin/integraciones/meta-whatsapp");
   redirect("/admin/integraciones/meta-whatsapp?inbound=saved");
+}
+
+export async function verifyMetaWhatsAppConnection() {
+  const { studio } = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
+  const diagnostics = await getMetaWhatsAppAdminDiagnostics(studio.id);
+
+  revalidatePath("/admin/integraciones/meta-whatsapp");
+
+  if (!diagnostics.connected) {
+    redirect(
+      `/admin/integraciones/meta-whatsapp?diagnostics=error&code=${encodeURIComponent(
+        diagnostics.errorCode ?? "meta_admin_failed",
+      )}`,
+    );
+  }
+
+  redirect("/admin/integraciones/meta-whatsapp?diagnostics=ok");
+}
+
+export async function subscribeCurrentMetaWhatsAppApp() {
+  const { studio } = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
+
+  try {
+    await subscribeMetaWhatsAppApp(studio.id);
+  } catch (error) {
+    redirect(
+      `/admin/integraciones/meta-whatsapp?subscription=error&code=${encodeURIComponent(
+        safeMetaAdminCode(error),
+      )}`,
+    );
+  }
+
+  revalidatePath("/admin/integraciones/meta-whatsapp");
+  redirect("/admin/integraciones/meta-whatsapp?subscription=ok");
+}
+
+export async function sendMetaWhatsAppTestMessage(formData: FormData) {
+  const recipient = String(formData.get("recipient") ?? "").trim();
+  const templateKey = String(formData.get("template_key") ?? "").trim();
+  const separator = templateKey.lastIndexOf("::");
+  const templateName = separator > 0 ? templateKey.slice(0, separator) : "";
+  const languageCode = separator > 0 ? templateKey.slice(separator + 2) : "";
+
+  const { studio } = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
+
+  try {
+    await sendMetaWhatsAppTemplateTest({
+      studioId: studio.id,
+      recipient,
+      templateName,
+      languageCode,
+    });
+  } catch (error) {
+    redirect(
+      `/admin/integraciones/meta-whatsapp?test=error&code=${encodeURIComponent(
+        safeMetaAdminCode(error),
+      )}`,
+    );
+  }
+
+  revalidatePath("/admin/integraciones/meta-whatsapp");
+  redirect("/admin/integraciones/meta-whatsapp?test=sent");
 }
 
 export async function activateMetaWhatsAppPilot(formData: FormData) {
