@@ -1,4 +1,4 @@
-const SEAT_OCCUPYING_RESERVATION_STATUSES = new Set(["reserved", "attended"]);
+const SEAT_OCCUPYING_RESERVATION_STATUSES = new Set(["reserved", "attended", "no_show"]);
 const BOOKED_RESERVATION_STATUSES = new Set(["reserved", "attended", "no_show"]);
 
 export function isSeatOccupyingReservation(status: string): boolean {
