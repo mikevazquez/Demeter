@@ -15,7 +15,7 @@ describe("FESTIVOS-01 calendar UX", () => {
   const studentClasses = source("app/student/mis-clases/page.tsx");
   const studentNav = source("app/student/StudentNav.tsx");
 
-  it("shows official holidays and studio overrides in the existing settings flow", () => {
+  it("integrates holidays into the existing admin Agenda instead of adding a second calendar", () => {
     expect(adminHolidays).toContain('.from("official_holidays")');
     expect(adminHolidays).toContain('.from("studio_holiday_overrides")');
     expect(adminHolidays).toContain("Días festivos");
@@ -27,7 +27,7 @@ describe("FESTIVOS-01 calendar UX", () => {
     expect(studentNav).not.toContain("Días especiales");
   });
 
-  it("lets the owner mark an official holiday closed or leave normal hours", () => {
+  it("lets the studio choose normal, closed or special operation", () => {
     expect(adminHolidays).toContain("Marcar como cerrado");
     expect(adminHolidays).toContain("Marcar como abierto");
     expect(adminHolidays).toContain("saveOfficialHolidayStatusAction");
@@ -39,12 +39,12 @@ describe("FESTIVOS-01 calendar UX", () => {
     expect(holidayAction).toContain('revalidatePath("/student/mis-clases")');
   });
 
-  it("keeps a themed holiday message visible to students", () => {
+  it("keeps a themed editable message for every holiday", () => {
     expect(holidayNotice).toContain("data-holiday-theme");
     expect(holidayNotice).toContain("holiday.message");
   });
 
-  it("shows the compact student holiday view without the extra credit info box", () => {
+  it("shows the original compact student holiday view without the extra credit info box", () => {
     expect(studentCalendar).toContain("student_holiday_snapshot");
     expect(studentCalendar).toContain("student_holiday_week_snapshot");
     expect(studentCalendar).toContain("<HolidayNotice");
