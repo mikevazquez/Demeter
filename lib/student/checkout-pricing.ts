@@ -8,7 +8,9 @@ export function calculateSingleClassCheckout(
   enrollment: EnrollmentCheckoutRequirement | null,
 ) {
   const enrollmentExtraMinor =
-    enrollment?.missing && Number.isInteger(enrollment.price_minor) ? (enrollment.price_minor ?? 0) : 0;
+    enrollment?.missing && Number.isInteger(enrollment.price_minor)
+      ? (enrollment.price_minor ?? 0)
+      : 0;
 
   return {
     dropInPriceMinor,
