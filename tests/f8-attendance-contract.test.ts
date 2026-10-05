@@ -3,6 +3,8 @@ import { join } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
+import { canSelectStudentCandidate } from "../lib/admin/student-picker";
+
 import {
   countBookedReservations,
   countSeatOccupyingReservations,
@@ -42,7 +44,6 @@ describe("F8 attendance contracts", () => {
 
   it("allows an existing student without valid commercial eligibility to join as a walk-in", () => {
     const actions = source("app/admin/actions.ts");
-    const operations = source("app/admin/hoy/SessionOperations.tsx");
     const existingStudentForm = source("app/admin/hoy/ExistingStudentAddForm.tsx");
     const migration = source(
       "supabase/migrations/20260915215839_f8_existing_walkin_without_package.sql",
@@ -51,8 +52,10 @@ describe("F8 attendance contracts", () => {
     expect(actions).toContain("commercialPendingReasons");
     expect(actions).toContain('"no_active_product", "outside_product", "no_credits"');
     expect(actions).toContain('supabase.rpc("add_existing_walkin_student"');
-    expect(existingStudentForm).toContain("walk-in / venta pendiente");
-    expect(existingStudentForm).not.toContain("disabled={!candidate.eligible}");
+    expect(existingStudentForm).toContain("canSelectStudentCandidate(candidate)");
+    expect(canSelectStudentCandidate({ eligible: false, detail: "sin paquete activo" })).toBe(true);
+    expect(canSelectStudentCandidate({ eligible: false, detail: "fuera de paquete" })).toBe(true);
+    expect(canSelectStudentCandidate({ eligible: false, detail: "sin créditos" })).toBe(true);
     expect(migration).toContain("commercial_pending");
     expect(migration).toContain("'attendance.write'");
     expect(migration).toContain("status in ('reserved', 'attended')");

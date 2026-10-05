@@ -3,6 +3,8 @@ import { join } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
+import { canSelectStudentCandidate } from "../lib/admin/student-picker";
+
 function source(path: string) {
   return readFileSync(join(process.cwd(), path), "utf8");
 }
@@ -135,18 +137,19 @@ describe("F9 sales contracts", () => {
   it("does not bypass required enrollment through the existing-student walk-in fallback", () => {
     const adminActions = source("app/admin/actions.ts");
     const operations = source("app/admin/hoy/SessionOperations.tsx");
-    const picker = source("app/admin/hoy/ExistingStudentAddForm.tsx");
     const existingStudentForm = source("app/admin/hoy/ExistingStudentAddForm.tsx");
+
     expect(adminActions).toContain(
       'new Set(["no_active_product", "outside_product", "no_credits"])',
     );
     expect(adminActions).not.toContain(
       'new Set(["no_active_product", "outside_product", "no_credits", "enrollment_required"])',
     );
-    expect(existingStudentForm).toContain("walkinFallbackDetails");
     expect(operations).toContain('error === "enrollment_required"');
-    expect(existingStudentForm).toContain(
-      "!canPostCloseAdd && !candidate.eligible && !canFallbackToWalkin",
+    expect(existingStudentForm).toContain("canSelectStudentCandidate(candidate)");
+    expect(canSelectStudentCandidate({ eligible: false, detail: "sin créditos" })).toBe(true);
+    expect(canSelectStudentCandidate({ eligible: false, detail: "inscripción no vigente" })).toBe(
+      false,
     );
   });
 
