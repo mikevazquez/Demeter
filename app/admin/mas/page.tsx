@@ -49,7 +49,7 @@ const items: MoreItem[] = [
     capability: CAPABILITIES.INSTRUCTORS_READ,
   },
   {
-    title: "Comunicación",
+    title: "Notificaciones",
     description: "Procesos, marketing, plantillas y horarios de envío.",
     href: "/admin/automatizaciones",
     capability: CAPABILITIES.AUTOMATIONS_READ,
