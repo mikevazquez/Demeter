@@ -6,7 +6,6 @@ import { countSeatOccupyingReservations } from "@/lib/reservations/capacity";
 import { TodayClasses, type TodayClassItem } from "./hoy/TodayClasses";
 import QuickActions from "./hoy/QuickActions";
 
-
 function formatExpiry(value: string | null, locale: string) {
   if (!value) return "Sin vencimiento";
   return `Vence ${new Intl.DateTimeFormat(locale, {

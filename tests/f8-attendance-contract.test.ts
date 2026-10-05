@@ -3,7 +3,10 @@ import { join } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
-import { countSeatOccupyingReservations, isSeatOccupyingReservation } from "../lib/reservations/capacity";
+import {
+  countSeatOccupyingReservations,
+  isSeatOccupyingReservation,
+} from "../lib/reservations/capacity";
 
 function source(path: string) {
   return readFileSync(join(process.cwd(), path), "utf8");
@@ -13,9 +16,19 @@ describe("F8 attendance contracts", () => {
   it("keeps no-show visible in the roster without counting it as occupied capacity", () => {
     const page = source("app/admin/page.tsx");
     const capacityFix = source("supabase/migrations/20260915203911_f8_walkin_capacity_fix.sql");
-    const statuses = ["reserved", "attended", "no_show", "cancelled_on_time", "cancelled_late"];
+    const statuses = [
+      "reserved",
+      "attended",
+      "no_show",
+      "cancelled_on_time",
+      "cancelled_late",
+    ];
 
-    expect(statuses.filter(isSeatOccupyingReservation)).toEqual(["reserved", "attended", "no_show"]);
+    expect(statuses.filter(isSeatOccupyingReservation)).toEqual([
+      "reserved",
+      "attended",
+      "no_show",
+    ]);
     expect(countSeatOccupyingReservations(statuses)).toBe(3);
     expect(page).toContain('.in("status", ["reserved", "attended", "no_show"])');
     expect(capacityFix).toContain("status in ('reserved', 'attended')");
