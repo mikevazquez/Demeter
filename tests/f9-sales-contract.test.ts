@@ -194,7 +194,7 @@ describe("F9 sales contracts", () => {
     expect(layout).toContain('import "./mobile-nav-overrides.css"');
     expect(mobileSpacing).toContain("env(safe-area-inset-bottom)");
     expect(company).toContain('redirect("/admin/mas")');
-    expect(more).toContain('title: "Productos"');
+    expect(more).toContain('title: "Paquetes"');
     expect(more).toContain('title: "Equipo"');
     expect(more).not.toContain('title: "Ventas"');
     expect(list).toContain("Nueva venta");
