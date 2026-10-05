@@ -119,7 +119,9 @@ export default async function MetaWhatsAppIntegrationPage({
       </section>
 
       {diagnosticsResult === "ok" ? (
-        <div className="integration-detail-v2-notice">Conexión con Meta verificada correctamente.</div>
+        <div className="integration-detail-v2-notice">
+          Conexión con Meta verificada correctamente.
+        </div>
       ) : diagnosticsResult === "error" ? (
         <div className="integration-detail-v2-notice is-error">
           No se pudo verificar Meta{resultCode ? `: ${resultCode}` : "."}
@@ -368,7 +370,9 @@ export default async function MetaWhatsAppIntegrationPage({
           <div className="integration-detail-v2-row">
             <span className="integration-detail-v2-row-copy">
               <strong>Calidad del número</strong>
-              <small>{diagnostics?.qualityRating ?? "Meta todavía no devolvió calificación."}</small>
+              <small>
+                {diagnostics?.qualityRating ?? "Meta todavía no devolvió calificación."}
+              </small>
             </span>
           </div>
 
