@@ -22,7 +22,7 @@ function safeCode(error: unknown) {
 function safeMetaAdminCode(error: unknown) {
   const message = error instanceof Error ? error.message : "";
   const allowed =
-    /^(meta_graph_http_\d{3}|meta_graph_timeout|meta_whatsapp_not_configured|meta_subscribe_failed|meta_test_phone_invalid|meta_test_template_invalid|meta_test_language_invalid|meta_test_message_id_missing)$/;
+    /^(meta_graph_http_\d{3}(?:_code_\d+)?(?:_subcode_\d+)?|meta_graph_timeout|meta_whatsapp_not_configured|meta_subscribe_failed|meta_test_phone_invalid|meta_test_template_invalid|meta_test_language_invalid|meta_test_message_id_missing)$/;
   return allowed.test(message) ? message : "meta_admin_failed";
 }
 
