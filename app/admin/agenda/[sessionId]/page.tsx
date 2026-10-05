@@ -450,7 +450,8 @@ export default async function SessionDetailPage({
               <p className="eyebrow">MÍNIMO DE RESERVAS</p>
               <h2>{minimumStatusCopy(session.minimum_review_status)}</h2>
               <p>
-                Reservas: {bookedReservations}/{session.capacity} · mínimo {session.minimum_reservations}
+                Reservas {bookedReservations}/{session.capacity} · mínimo{" "}
+                {session.minimum_reservations}
               </p>
             </div>
             <span className="admin-minimum-status-pill">
