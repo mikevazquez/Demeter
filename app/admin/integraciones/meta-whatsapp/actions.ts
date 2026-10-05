@@ -54,6 +54,7 @@ export async function saveMetaWhatsAppConnection(formData: FormData) {
   revalidatePath("/admin/integraciones/meta-whatsapp");
   redirect("/admin/integraciones/meta-whatsapp?inbound=saved");
 }
+
 export async function activateMetaWhatsAppPilot(formData: FormData) {
   const phone = String(formData.get("pilot_phone") ?? "").trim();
   if (!phone) {
