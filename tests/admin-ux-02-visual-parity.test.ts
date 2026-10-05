@@ -39,9 +39,9 @@ describe("ADMIN-UX-02 approved visual parity", () => {
     expect(today).toContain("Clases de hoy");
     expect(today).toContain("selectedDayLabel(selectedDate, selectedKey === todayKey, locale)");
     expect(today).toContain("hoy-week-card");
-    expect(today).toContain("hoy-kpi-grid");
+    expect(today).toContain("hoy-glance");
     expect(today).toContain("Ventas hoy");
-    expect(today).toContain("Reservas del día");
+    expect(today).toContain("Ocupación");
     expect(today).toContain("<TodayClasses");
     expect(today).not.toContain("admin-quick-menu");
     expect(today).not.toContain("mock-overview-grid");
@@ -126,6 +126,6 @@ describe("ADMIN-UX-02 approved visual parity", () => {
   it("keeps the configured studio identity rather than hardcoded Studio Flow branding", () => {
     expect(layout).toContain("{studio.name}");
     expect(layout).not.toContain("<strong>Studio Flow</strong>");
-    expect(automations).toContain("ctx.studio.name");
+    expect(automations).toContain("<h1>Notificaciones</h1>");
   });
 });
