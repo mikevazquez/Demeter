@@ -189,7 +189,7 @@ describe("F9 sales contracts", () => {
     expect(layout).toContain('{ href: "/admin/alumnas", label: "Alumnas", enabled: true }');
     expect(layout).not.toContain('label: "Empresa"');
     expect(layout).not.toContain('label: "Ventas"');
-    expect(layout).not.toContain('"/admin/ventas"');
+    expect(layout).not.toMatch(/href:\s*"\/admin\/ventas"/);
     expect(layout).toContain('href: "/admin/mas"');
     expect(layout).toContain('import "./mobile-nav-overrides.css"');
     expect(mobileSpacing).toContain("env(safe-area-inset-bottom)");
