@@ -21,8 +21,8 @@ describe("ADMIN-UX-04 secondary detail/editor visual homologation", () => {
     expect(productDetail).toContain("admin-ux04-secondary-detail product-detail-page");
     expect(productEdit).toContain("admin-ux04-secondary-detail product-editor-page");
     expect(productNew).toContain("admin-ux04-secondary-detail product-editor-page");
-    expect(instructorDetail).toContain("admin-ux04-secondary-detail team-detail-page");
-    expect(automationDetail).toContain("admin-ux04-secondary-detail automation-detail-page");
+    expect(instructorDetail).toContain("<main className=\"team-v2-detail\">");
+    expect(automationDetail).toContain("communication-v2-detail automation-detail-page");
   });
 
   it("keeps Rewards internal screens under the shared approved shell", () => {
