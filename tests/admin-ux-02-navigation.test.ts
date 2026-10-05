@@ -32,14 +32,14 @@ describe("ADMIN-UX-02 navigation architecture", () => {
       "Evaluaciones",
       "Paquetes",
       "Equipo",
-      "Comunicación",
+      "Notificaciones",
     ]) {
       expect(layout).toContain('label: "' + label + '"');
     }
     expect(layout).toContain('label: "Integraciones"');
     expect(layout).toContain('label: "Más"');
     expect(layout).not.toContain('label: "Productos"');
-    expect(layout).not.toContain('label: "Notificaciones"');
+    expect(layout).toContain('label: "Notificaciones"');
     expect(layout).not.toContain('label: "Ventas"');
     expect(layout).not.toContain('label: "Empresa"');
   });
@@ -63,7 +63,7 @@ describe("ADMIN-UX-02 navigation architecture", () => {
       "Evaluaciones",
       "Paquetes",
       "Equipo",
-      "Comunicación",
+      "Notificaciones",
       "Retos",
       "Rewards",
       "Integraciones",
@@ -89,7 +89,7 @@ describe("ADMIN-UX-02 navigation architecture", () => {
     expect(automations).not.toContain("Control AUT-05");
     expect(automations).not.toContain("SF-166");
     expect(automations).not.toContain("{template.code} ·");
-    expect(automations).toContain("<h1>Comunicación</h1>");
+    expect(automations).toContain("<h1>Notificaciones</h1>");
   });
 
   it("keeps operational actions contextual instead of turning them into modules", () => {
