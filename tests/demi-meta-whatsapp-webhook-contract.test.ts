@@ -100,7 +100,7 @@ describe("Meta inbound admin setup contract", () => {
   const page = source("app/admin/integraciones/meta-whatsapp/page.tsx");
   const actions = source("app/admin/integraciones/meta-whatsapp/actions.ts");
 
-  it("accepts complete Meta credentials only through password fields and Vault RPC", () => {
+  it("accepts the App Secret only through a password field and Vault RPC", () => {
     expect(page).toContain('name="access_token"');
     expect(page).toContain('name="app_secret"');
     expect(page).toContain('name="phone_number_id"');
