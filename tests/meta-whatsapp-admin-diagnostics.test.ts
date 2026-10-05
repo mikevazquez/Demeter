@@ -43,7 +43,7 @@ describe("Meta WhatsApp admin diagnostics", () => {
 
   it("keeps diagnostic calls server-only and does not render the stored access token", () => {
     expect(helper).toContain('import "server-only"');
-    expect(helper).toContain('authorization: `Bearer ${config.accessToken}`');
+    expect(helper).toContain("authorization: `Bearer ${config.accessToken}`");
     expect(page).not.toContain("config.accessToken");
   });
 });
