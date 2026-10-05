@@ -197,8 +197,7 @@ describe("F9 sales contracts", () => {
     expect(more).toContain('title: "Paquetes"');
     expect(more).toContain('title: "Equipo"');
     expect(more).not.toContain('title: "Ventas"');
-    expect(list).toContain("Nueva venta");
-    expect(list).toContain("Inscripción");
+    expect(list).toContain('redirect("/admin/alumnas")');
     expect(wizard).toContain("StudentOnboardingForm");
     expect(wizard).toContain('flowContext="sale"');
     expect(sharedSaleForm).toContain("Confirmar venta");
