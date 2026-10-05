@@ -450,7 +450,7 @@ export default async function SessionDetailPage({
               <p className="eyebrow">MÍNIMO DE RESERVAS</p>
               <h2>{minimumStatusCopy(session.minimum_review_status)}</h2>
               <p>
-                {bookedReservations} de {session.capacity} reservados · mínimo {session.minimum_reservations}
+                Reservas: {bookedReservations}/{session.capacity} · mínimo {session.minimum_reservations}
               </p>
             </div>
             <span className="admin-minimum-status-pill">
@@ -508,8 +508,8 @@ export default async function SessionDetailPage({
               <p>
                 La revisión se completó{" "}
                 {formatSessionDateTime(session.minimum_reviewed_at, timeZone)} con{" "}
-                {session.minimum_reservations_at_review ?? bookedReservations} reservas. Esta sesión ya no
-                volverá a evaluarse automáticamente.
+                {session.minimum_reservations_at_review ?? bookedReservations} reservas.
+                Esta sesión ya no volverá a evaluarse automáticamente.
               </p>
             </div>
           ) : null}
