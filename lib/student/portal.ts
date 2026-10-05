@@ -4,6 +4,9 @@ import { cache } from "react";
 import { redirect } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/server";
+import { selectPrimaryStudentPackage } from "./package-selection";
+
+export { selectPrimaryStudentPackage } from "./package-selection";
 
 export type StudentProfile = {
   student_id: string;
@@ -96,18 +99,6 @@ export type StudentSnapshot = {
   payments: StudentPayment[];
 };
 
-export function selectPrimaryStudentPackage(
-  acquisitions: StudentAcquisition[],
-): StudentAcquisition | null {
-  const packages = acquisitions.filter((item) => !item.reward_credit_wallet);
-  return (
-    packages.find(
-      (item) => item.active_now && (item.unlimited || (item.available_credits ?? 0) > 0),
-    ) ??
-    packages.find((item) => item.active_now) ??
-    null
-  );
-}
 
 export type StudentSession = {
   session_id: string;
