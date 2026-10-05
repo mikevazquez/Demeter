@@ -33,12 +33,12 @@ export async function saveMetaWhatsAppConnection(formData: FormData) {
   const { error } = await supabase.rpc(
     "admin_set_meta_whatsapp_connection",
     {
-    target_studio_id: studio.id,
-    target_access_token: accessToken,
-    target_phone_number_id: phoneNumberId,
-    target_waba_id: wabaId,
-    target_graph_api_version: graphApiVersion,
-    target_app_secret: appSecret,
+      target_studio_id: studio.id,
+      target_access_token: accessToken,
+      target_phone_number_id: phoneNumberId,
+      target_waba_id: wabaId,
+      target_graph_api_version: graphApiVersion,
+      target_app_secret: appSecret,
       target_verify_token: verifyToken || null,
     },
   );
