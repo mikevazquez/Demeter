@@ -10,6 +10,7 @@ export type MetaApprovedTemplate = {
   name: string;
   language: string;
   category: string | null;
+  testReady: boolean;
 };
 
 export type MetaWhatsAppAdminDiagnostics = {
@@ -63,7 +64,24 @@ async function graphRequest(
     }
 
     if (!response.ok) {
-      throw new Error(`meta_graph_http_${response.status}`);
+      const errorObject = isObject(body) && isObject(body.error) ? body.error : {};
+      const metaCode =
+        typeof errorObject.code === "number" && Number.isFinite(errorObject.code)
+          ? errorObject.code
+          : null;
+      const subcode =
+        typeof errorObject.error_subcode === "number" && Number.isFinite(errorObject.error_subcode)
+          ? errorObject.error_subcode
+          : null;
+      const suffix = [
+        metaCode !== null ? `code_${metaCode}` : null,
+        subcode !== null ? `subcode_${subcode}` : null,
+      ]
+        .filter(Boolean)
+        .join("_");
+      throw new Error(
+        `meta_graph_http_${response.status}${suffix ? `_${suffix}` : ""}`,
+      );
     }
 
     return isObject(body) ? body : {};
@@ -100,6 +118,20 @@ function subscribedAppNames(body: JsonObject) {
   return [...names].sort((left, right) => left.localeCompare(right));
 }
 
+function componentNeedsParameters(value: unknown) {
+  if (!Array.isArray(value)) return false;
+
+  const placeholder = /{{\s*\d+\s*}}/;
+  const visit = (input: unknown): boolean => {
+    if (typeof input === "string") return placeholder.test(input);
+    if (Array.isArray(input)) return input.some(visit);
+    if (isObject(input)) return Object.values(input).some(visit);
+    return false;
+  };
+
+  return value.some(visit);
+}
+
 function approvedTemplates(body: JsonObject): MetaApprovedTemplate[] {
   const data = Array.isArray(body.data) ? body.data : [];
   const templates: MetaApprovedTemplate[] = [];
@@ -115,6 +147,7 @@ function approvedTemplates(body: JsonObject): MetaApprovedTemplate[] {
       name,
       language,
       category: textValue(row.category),
+      testReady: !componentNeedsParameters(row.components),
     });
   }
 
@@ -137,7 +170,7 @@ export async function getMetaWhatsAppAdminDiagnostics(
       graphRequest(config, `${config.wabaId}/subscribed_apps?limit=50`),
       graphRequest(
         config,
-        `${config.wabaId}/message_templates?limit=100&fields=name,status,language,category`,
+        `${config.wabaId}/message_templates?limit=100&fields=name,status,language,category,components`,
       ),
     ]);
 
