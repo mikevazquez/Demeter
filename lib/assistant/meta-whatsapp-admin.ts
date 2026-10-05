@@ -1,0 +1,225 @@
+import "server-only";
+
+import { loadMetaWhatsAppWebhookConfig, type MetaWhatsAppWebhookConfig } from "@/lib/assistant/meta-whatsapp-channel";
+import { normalizeMexicanPhone } from "@/lib/phone";
+import { createServiceClient } from "@/lib/supabase/service";
+
+type JsonObject = Record<string, unknown>;
+
+export type MetaApprovedTemplate = {
+  name: string;
+  language: string;
+  category: string | null;
+};
+
+export type MetaWhatsAppAdminDiagnostics = {
+  connected: boolean;
+  phoneNumberId: string | null;
+  wabaId: string | null;
+  displayPhoneNumber: string | null;
+  verifiedName: string | null;
+  qualityRating: string | null;
+  subscribedApps: string[];
+  approvedTemplates: MetaApprovedTemplate[];
+  errorCode: string | null;
+};
+
+function isObject(value: unknown): value is JsonObject {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+function textValue(value: unknown) {
+  return typeof value === "string" && value.trim() ? value.trim() : null;
+}
+
+async function graphRequest(
+  config: MetaWhatsAppWebhookConfig,
+  path: string,
+  init?: RequestInit,
+): Promise<JsonObject> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 10_000);
+
+  try {
+    const response = await fetch(
+      `https://graph.facebook.com/${config.graphApiVersion}/${path.replace(/^\//, "")}`,
+      {
+        ...init,
+        headers: {
+          authorization: `Bearer ${config.accessToken}`,
+          "content-type": "application/json",
+          ...(init?.headers ?? {}),
+        },
+        signal: controller.signal,
+        cache: "no-store",
+      },
+    );
+
+    let body: unknown = {};
+    try {
+      body = await response.json();
+    } catch {
+      body = {};
+    }
+
+    if (!response.ok) {
+      throw new Error(`meta_graph_http_${response.status}`);
+    }
+
+    return isObject(body) ? body : {};
+  } catch (error) {
+    if (error instanceof Error && error.name === "AbortError") {
+      throw new Error("meta_graph_timeout");
+    }
+    throw error;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function loadConfig(studioId: string) {
+  const service = createServiceClient();
+  const config = await loadMetaWhatsAppWebhookConfig(service, studioId);
+  if (!config) throw new Error("meta_whatsapp_not_configured");
+  return config;
+}
+
+function subscribedAppNames(body: JsonObject) {
+  const data = Array.isArray(body.data) ? body.data : [];
+  const names = new Set<string>();
+
+  for (const item of data) {
+    const row = isObject(item) ? item : {};
+    const whatsappData = isObject(row.whatsapp_business_api_data)
+      ? row.whatsapp_business_api_data
+      : row;
+    const name = textValue(whatsappData.name);
+    if (name) names.add(name);
+  }
+
+  return [...names].sort((left, right) => left.localeCompare(right));
+}
+
+function approvedTemplates(body: JsonObject): MetaApprovedTemplate[] {
+  const data = Array.isArray(body.data) ? body.data : [];
+  const templates: MetaApprovedTemplate[] = [];
+
+  for (const item of data) {
+    const row = isObject(item) ? item : {};
+    const name = textValue(row.name);
+    const language = textValue(row.language);
+    const status = textValue(row.status)?.toUpperCase();
+    if (!name || !language || status !== "APPROVED") continue;
+
+    templates.push({
+      name,
+      language,
+      category: textValue(row.category),
+    });
+  }
+
+  return templates.sort((left, right) =>
+    `${left.name}:${left.language}`.localeCompare(`${right.name}:${right.language}`),
+  );
+}
+
+export async function getMetaWhatsAppAdminDiagnostics(
+  studioId: string,
+): Promise<MetaWhatsAppAdminDiagnostics> {
+  try {
+    const config = await loadConfig(studioId);
+
+    const [phone, subscriptions, templates] = await Promise.all([
+      graphRequest(
+        config,
+        `${config.phoneNumberId}?fields=id,display_phone_number,verified_name,quality_rating`,
+      ),
+      graphRequest(config, `${config.wabaId}/subscribed_apps?limit=50`),
+      graphRequest(
+        config,
+        `${config.wabaId}/message_templates?limit=100&fields=name,status,language,category`,
+      ),
+    ]);
+
+    return {
+      connected: true,
+      phoneNumberId: config.phoneNumberId,
+      wabaId: config.wabaId,
+      displayPhoneNumber: textValue(phone.display_phone_number),
+      verifiedName: textValue(phone.verified_name),
+      qualityRating: textValue(phone.quality_rating),
+      subscribedApps: subscribedAppNames(subscriptions),
+      approvedTemplates: approvedTemplates(templates),
+      errorCode: null,
+    };
+  } catch (error) {
+    return {
+      connected: false,
+      phoneNumberId: null,
+      wabaId: null,
+      displayPhoneNumber: null,
+      verifiedName: null,
+      qualityRating: null,
+      subscribedApps: [],
+      approvedTemplates: [],
+      errorCode: error instanceof Error ? error.message : "meta_admin_check_failed",
+    };
+  }
+}
+
+export async function subscribeMetaWhatsAppApp(studioId: string) {
+  const config = await loadConfig(studioId);
+  const response = await graphRequest(config, `${config.wabaId}/subscribed_apps`, {
+    method: "POST",
+    body: "{}",
+  });
+
+  if (response.success !== true) {
+    throw new Error("meta_subscribe_failed");
+  }
+
+  return true;
+}
+
+export async function sendMetaWhatsAppTemplateTest(input: {
+  studioId: string;
+  recipient: string;
+  templateName: string;
+  languageCode: string;
+}) {
+  const config = await loadConfig(input.studioId);
+  const normalized = normalizeMexicanPhone(input.recipient);
+  if (!normalized) throw new Error("meta_test_phone_invalid");
+
+  const templateName = input.templateName.trim();
+  const languageCode = input.languageCode.trim();
+
+  if (!/^[a-z0-9_]+$/.test(templateName)) {
+    throw new Error("meta_test_template_invalid");
+  }
+  if (!/^[a-z]{2}(?:_[A-Z]{2})?$/.test(languageCode)) {
+    throw new Error("meta_test_language_invalid");
+  }
+
+  const response = await graphRequest(config, `${config.phoneNumberId}/messages`, {
+    method: "POST",
+    body: JSON.stringify({
+      messaging_product: "whatsapp",
+      to: normalized.replace(/^\+/, ""),
+      type: "template",
+      template: {
+        name: templateName,
+        language: {
+          code: languageCode,
+        },
+      },
+    }),
+  });
+
+  const messages = Array.isArray(response.messages) ? response.messages : [];
+  const first = isObject(messages[0]) ? messages[0] : {};
+  const messageId = textValue(first.id);
+  if (!messageId) throw new Error("meta_test_message_id_missing");
+
+  return messageId;
+}
