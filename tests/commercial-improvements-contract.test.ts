@@ -23,7 +23,7 @@ describe("commercial improvements contracts", () => {
   });
 
   it("stores and exposes a standalone class price without adding checkout", () => {
-    // Keep this title as the ratchet identifier; current behavior adds required enrollment at checkout.
+    // Keep this title as the ratchet identifier. Current behavior adds required enrollment at checkout.
     expect(calculateSingleClassCheckout(15000, null)).toEqual({
       dropInPriceMinor: 15000,
       enrollmentExtraMinor: 0,
