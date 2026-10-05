@@ -99,8 +99,7 @@ export default async function MetaWhatsAppIntegrationPage() {
           <div>
             <h2>Conexión</h2>
             <p>
-              Esta integración entrega los mensajes que Comunicación decide enviar por
-              WhatsApp.
+              Esta integración entrega los mensajes que Comunicación decide enviar por WhatsApp.
             </p>
           </div>
         </div>
@@ -338,9 +337,7 @@ export default async function MetaWhatsAppIntegrationPage() {
           </label>
 
           <button className="integration-detail-v2-button" type="submit">
-            {pilotActive
-              ? "Cambiar número autorizado"
-              : "Guardar número y activar piloto"}
+            {pilotActive ? "Cambiar número autorizado" : "Guardar número y activar piloto"}
           </button>
         </form>
 
@@ -358,8 +355,8 @@ export default async function MetaWhatsAppIntegrationPage() {
           <div>
             <h2>Qué vive aquí</h2>
             <p>
-              Integraciones administra la conexión con Meta; Comunicación administra cuándo y
-              qué se envía.
+              Integraciones administra la conexión con Meta; Comunicación administra cuándo y qué se
+              envía.
             </p>
           </div>
         </div>
