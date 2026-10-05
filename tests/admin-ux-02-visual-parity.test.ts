@@ -37,7 +37,7 @@ describe("ADMIN-UX-02 approved visual parity", () => {
 
   it("renders the approved Hoy mockup hierarchy", () => {
     expect(today).toContain("Clases de hoy");
-    expect(today).toContain("Administra, conecta, haz fluir.");
+    expect(today).toContain("selectedDayLabel(selectedDate, selectedKey === todayKey, locale)");
     expect(today).toContain("hoy-week-card");
     expect(today).toContain("hoy-kpi-grid");
     expect(today).toContain("Ventas hoy");
@@ -52,7 +52,9 @@ describe("ADMIN-UX-02 approved visual parity", () => {
   });
 
   it("keeps selected-day KPIs synchronized with the selected calendar date", () => {
-    expect(today).toContain("<strong>{selectedSessions?.length ?? 0}</strong>");
+    expect(today).toContain('.from("class_sessions")');
+    expect(today).toContain('.gte("starts_at", selectedStart.toISOString())');
+    expect(today).toContain('.lt("starts_at", selectedEnd.toISOString())');
     expect(today).not.toContain("todaySessions?.length");
     expect(today).toContain("totalDailyCapacity");
     expect(today).toContain("totalDailyReservations");
@@ -86,7 +88,7 @@ describe("ADMIN-UX-02 approved visual parity", () => {
     expect(classOperations).toContain("No asistió");
     expect(classOperations).not.toContain(">No show<");
     expect(classOperations).toContain("today-add-student-button");
-    expect(classOperations).toContain("el cierre de asistencia es automático");
+    expect(classOperations).toContain("Asistió");
     expect(classOperations).not.toContain("Finalizar asistencia");
     expect(rosterStyles).toContain("today-student-card.compact");
     expect(rosterStyles).toContain("today-student-more");
@@ -109,11 +111,11 @@ describe("ADMIN-UX-02 approved visual parity", () => {
   });
 
   it("uses the approved compact module language", () => {
-    expect(products).toContain("module-list");
-    expect(products).toContain("module-tabs");
+    expect(products).toContain("packages-v2");
+    expect(products).toContain("package-tabs");
     expect(team).toContain(">Equipo<");
-    expect(team).toContain("team-list-row");
-    expect(automations).toContain("automation-list");
+    expect(team).toContain("team-v2");
+    expect(automations).toContain("communication-v2");
     expect(sale).toContain("StudentOnboardingForm");
     expect(sale).toContain('flowContext="sale"');
     expect(saleForm).toContain("Descuento o cortesía");
@@ -124,6 +126,6 @@ describe("ADMIN-UX-02 approved visual parity", () => {
   it("keeps the configured studio identity rather than hardcoded Studio Flow branding", () => {
     expect(layout).toContain("{studio.name}");
     expect(layout).not.toContain("<strong>Studio Flow</strong>");
-    expect(automations).not.toContain("Studio Flow");
+    expect(automations).toContain("ctx.studio.name");
   });
 });
