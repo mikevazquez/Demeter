@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import {
+  countBookedReservations,
   countSeatOccupyingReservations,
   isSeatOccupyingReservation,
 } from "../lib/reservations/capacity";
@@ -18,13 +19,11 @@ describe("F8 attendance contracts", () => {
     const capacityFix = source("supabase/migrations/20260915203911_f8_walkin_capacity_fix.sql");
     const statuses = ["reserved", "attended", "no_show", "cancelled_on_time", "cancelled_late"];
 
-    expect(statuses.filter(isSeatOccupyingReservation)).toEqual([
-      "reserved",
-      "attended",
-      "no_show",
-    ]);
-    expect(countSeatOccupyingReservations(statuses)).toBe(3);
+    expect(statuses.filter(isSeatOccupyingReservation)).toEqual(["reserved", "attended"]);
+    expect(countSeatOccupyingReservations(statuses)).toBe(2);
+    expect(countBookedReservations(statuses)).toBe(3);
     expect(page).toContain('.in("status", ["reserved", "attended", "no_show"])');
+    expect(page).toContain("countBookedReservations(reservationStatuses)");
     expect(capacityFix).toContain("status in ('reserved', 'attended')");
     expect(capacityFix).not.toContain("status in ('reserved', 'attended', 'no_show')");
   });

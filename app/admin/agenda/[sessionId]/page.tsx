@@ -3,7 +3,10 @@ import { redirect } from "next/navigation";
 
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getAdminContext } from "@/lib/auth/admin-context";
-import { countSeatOccupyingReservations } from "@/lib/reservations/capacity";
+import {
+  countBookedReservations,
+  countSeatOccupyingReservations,
+} from "@/lib/reservations/capacity";
 import { SessionOperations } from "../../hoy/SessionOperations";
 import { cancelSession, setMinimumOverride, updateSession } from "./actions";
 
@@ -307,9 +310,9 @@ export default async function SessionDetailPage({
     };
   });
 
-  const occupied = countSeatOccupyingReservations(
-    (reservations ?? []).map((reservation) => reservation.status),
-  );
+  const reservationStatuses = (reservations ?? []).map((reservation) => reservation.status);
+  const occupied = countSeatOccupyingReservations(reservationStatuses);
+  const bookedReservations = countBookedReservations(reservationStatuses);
   const attended = (reservations ?? []).filter(
     (reservation) => reservation.status === "attended",
   ).length;
@@ -422,8 +425,8 @@ export default async function SessionDetailPage({
         </article>
         <article className="stat-card">
           <span>Reservadas</span>
-          <strong>{occupied}</strong>
-          <small>Lugares activos</small>
+          <strong>{bookedReservations}</strong>
+          <small>Incluye no-shows</small>
         </article>
         <article className="stat-card">
           <span>Asistieron</span>
@@ -447,7 +450,7 @@ export default async function SessionDetailPage({
               <p className="eyebrow">MÍNIMO DE RESERVAS</p>
               <h2>{minimumStatusCopy(session.minimum_review_status)}</h2>
               <p>
-                {occupied} de {session.capacity} reservados · mínimo {session.minimum_reservations}
+                {bookedReservations} de {session.capacity} reservados · mínimo {session.minimum_reservations}
               </p>
             </div>
             <span className="admin-minimum-status-pill">
@@ -458,7 +461,7 @@ export default async function SessionDetailPage({
           <div className="admin-minimum-grid">
             <div>
               <span>Reservas actuales</span>
-              <strong>{occupied}</strong>
+              <strong>{bookedReservations}</strong>
             </div>
             <div>
               <span>Mínimo requerido</span>
@@ -505,7 +508,7 @@ export default async function SessionDetailPage({
               <p>
                 La revisión se completó{" "}
                 {formatSessionDateTime(session.minimum_reviewed_at, timeZone)} con{" "}
-                {session.minimum_reservations_at_review ?? occupied} reservas. Esta sesión ya no
+                {session.minimum_reservations_at_review ?? bookedReservations} reservas. Esta sesión ya no
                 volverá a evaluarse automáticamente.
               </p>
             </div>

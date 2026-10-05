@@ -2,7 +2,10 @@ import Link from "next/link";
 
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getAdminContext } from "@/lib/auth/admin-context";
-import { countSeatOccupyingReservations } from "@/lib/reservations/capacity";
+import {
+  countBookedReservations,
+  countSeatOccupyingReservations,
+} from "@/lib/reservations/capacity";
 import { TodayClasses, type TodayClassItem } from "./hoy/TodayClasses";
 import QuickActions from "./hoy/QuickActions";
 
@@ -404,9 +407,9 @@ export default async function AdminPage({
   for (const session of selectedSessions ?? []) {
     const sessionReservations = reservationsBySession.get(session.id) ?? [];
     const template = templateMap.get(session.template_id);
-    const occupied = countSeatOccupyingReservations(
-      sessionReservations.map((reservation) => reservation.status),
-    );
+    const reservationStatuses = sessionReservations.map((reservation) => reservation.status);
+    const occupied = countSeatOccupyingReservations(reservationStatuses);
+    const bookedReservations = countBookedReservations(reservationStatuses);
 
     classes.push({
       id: session.id,
@@ -419,6 +422,7 @@ export default async function AdminPage({
         : "Sin instructor",
       space: session.space_id ? (spaceMap.get(session.space_id) ?? "Espacio") : "Sin espacio",
       occupied,
+      bookedReservations,
       capacity: session.capacity,
       color: template?.color_hex ?? "#FF0A8A",
       sessionStatus: session.status,
@@ -488,7 +492,7 @@ export default async function AdminPage({
   }
 
   const totalDailyCapacity = classes.reduce((sum, item) => sum + item.capacity, 0);
-  const totalDailyReservations = classes.reduce((sum, item) => sum + item.occupied, 0);
+  const totalDailyReservations = classes.reduce((sum, item) => sum + item.bookedReservations, 0);
   const dailyReservationPercentage =
     totalDailyCapacity > 0 ? Math.round((totalDailyReservations / totalDailyCapacity) * 100) : 0;
 

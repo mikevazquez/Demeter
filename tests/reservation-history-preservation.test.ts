@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import {
+  countBookedReservations,
   countSeatOccupyingReservations,
   isSeatOccupyingReservation,
 } from "../lib/reservations/capacity";
@@ -21,15 +22,12 @@ describe("reservation history preservation", () => {
   it("keeps no-shows in booked-seat counts after attendance closes", () => {
     const statuses = ["reserved", "attended", "no_show", "cancelled_on_time", "cancelled_late"];
 
-    expect(statuses.filter(isSeatOccupyingReservation)).toEqual([
-      "reserved",
-      "attended",
-      "no_show",
-    ]);
-    expect(countSeatOccupyingReservations(statuses)).toBe(3);
-    expect(today).toContain("countSeatOccupyingReservations(");
+    expect(statuses.filter(isSeatOccupyingReservation)).toEqual(["reserved", "attended"]);
+    expect(countSeatOccupyingReservations(statuses)).toBe(2);
+    expect(countBookedReservations(statuses)).toBe(3);
+    expect(today).toContain("countBookedReservations(");
     expect(agenda).toContain("isSeatOccupyingReservation(reservation.status)");
-    expect(sessionDetail).toContain("countSeatOccupyingReservations(");
+    expect(sessionDetail).toContain("countBookedReservations(");
   });
 
   it("keeps cancellations as historical decision data without counting them as occupied seats", () => {
