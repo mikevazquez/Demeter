@@ -2,13 +2,15 @@ import { describe, expect, it } from "vitest";
 
 import { selectPrimaryStudentPackage } from "../lib/student/package-selection";
 
-function acquisition(overrides: Partial<{
-  id: string;
-  reward_credit_wallet: boolean;
-  active_now: boolean;
-  unlimited: boolean;
-  available_credits: number | null;
-}> = {}) {
+function acquisition(
+  overrides: Partial<{
+    id: string;
+    reward_credit_wallet: boolean;
+    active_now: boolean;
+    unlimited: boolean;
+    available_credits: number | null;
+  }> = {},
+) {
   return {
     id: "package",
     reward_credit_wallet: false,
@@ -28,7 +30,11 @@ describe("student home package selection behavior", () => {
   });
 
   it("does not treat reward credit wallets as the primary package", () => {
-    const wallet = acquisition({ id: "wallet", reward_credit_wallet: true, available_credits: 5 });
+    const wallet = acquisition({
+      id: "wallet",
+      reward_credit_wallet: true,
+      available_credits: 5,
+    });
     const packageWithCredits = acquisition({ id: "monthly", available_credits: 2 });
 
     expect(selectPrimaryStudentPackage([wallet, packageWithCredits])).toBe(packageWithCredits);
@@ -49,7 +55,11 @@ describe("student home package selection behavior", () => {
   });
 
   it("returns no package when there are no active non-wallet packages", () => {
-    const wallet = acquisition({ id: "wallet", reward_credit_wallet: true, available_credits: 5 });
+    const wallet = acquisition({
+      id: "wallet",
+      reward_credit_wallet: true,
+      available_credits: 5,
+    });
     const expired = acquisition({ id: "expired", active_now: false, available_credits: 8 });
 
     expect(selectPrimaryStudentPackage([wallet, expired])).toBeNull();
