@@ -112,7 +112,7 @@ describe("ADMIN-UX-02 approved visual parity", () => {
 
   it("uses the approved compact module language", () => {
     expect(products).toContain("packages-v2");
-    expect(products).toContain("package-tabs");
+    expect(products).toContain("package-category-grid");
     expect(team).toContain(">Equipo<");
     expect(team).toContain("team-v2");
     expect(automations).toContain("communication-v2");
