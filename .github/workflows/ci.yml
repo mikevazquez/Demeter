@@ -35,11 +35,6 @@ jobs:
       - name: Install
         run: npm ci
 
-      - name: Temporary Prettier diagnostics
-        run: |
-          npx prettier --write app/admin/integraciones/meta-whatsapp/actions.ts app/admin/integraciones/meta-whatsapp/page.tsx
-          git diff -- app/admin/integraciones/meta-whatsapp/actions.ts app/admin/integraciones/meta-whatsapp/page.tsx
-
       - name: Format check
         run: npm run format:check
         continue-on-error: ${{ github.event_name == 'pull_request' && github.head_ref == 'promote/inteligencia-13-prod' }}
