@@ -320,6 +320,9 @@ export default async function SessionDetailPage({
     (reservation) => reservation.status === "no_show",
   ).length;
   const available = Math.max(session.capacity - occupied, 0);
+  const reservationsAtMinimumReview =
+    session.minimum_reservations_at_review ?? bookedReservations;
+  const minimumReviewCompletedAt = formatSessionDateTime(session.minimum_reviewed_at, timeZone);
 
   const from = validDateKey(query.from) ? query.from! : "";
   const backHref = from ? `/admin?date=${from}` : "/admin";
@@ -450,8 +453,7 @@ export default async function SessionDetailPage({
               <p className="eyebrow">MÍNIMO DE RESERVAS</p>
               <h2>{minimumStatusCopy(session.minimum_review_status)}</h2>
               <p>
-                Reservas {bookedReservations}/{session.capacity} · mínimo{" "}
-                {session.minimum_reservations}
+                Reservas: {bookedReservations} · mínimo {session.minimum_reservations}
               </p>
             </div>
             <span className="admin-minimum-status-pill">
@@ -507,10 +509,7 @@ export default async function SessionDetailPage({
             <div className="admin-minimum-success">
               <span>✓</span>
               <p>
-                La revisión se completó{" "}
-                {formatSessionDateTime(session.minimum_reviewed_at, timeZone)} con{" "}
-                {session.minimum_reservations_at_review ?? bookedReservations} reservas.
-                Esta sesión ya no volverá a evaluarse automáticamente.
+                {`Revisión cerrada: ${minimumReviewCompletedAt} · ${reservationsAtMinimumReview} reservas.`}
               </p>
             </div>
           ) : null}
