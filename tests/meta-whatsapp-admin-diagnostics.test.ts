@@ -41,6 +41,17 @@ describe("Meta WhatsApp admin diagnostics", () => {
     expect(actions).toContain("sendMetaWhatsAppTestMessage");
   });
 
+  it("updates only the access token while preserving the stored Meta connection", () => {
+    expect(actions).toContain("updateMetaWhatsAppAccessToken");
+    expect(actions).toContain("target_access_token: accessToken");
+    expect(actions).toContain("target_phone_number_id: current.phoneNumberId");
+    expect(actions).toContain("target_waba_id: current.wabaId");
+    expect(actions).toContain("target_app_secret: current.appSecret");
+    expect(actions).toContain("target_verify_token: current.verifyToken");
+    expect(page).toContain("Actualizar solo token de acceso");
+    expect(page).toContain("Conserva Phone Number ID");
+  });
+
   it("updates only the App Secret while preserving the stored Meta connection", () => {
     expect(actions).toContain("updateMetaWhatsAppAppSecret");
     expect(actions).toContain("loadMetaWhatsAppWebhookConfig");

@@ -66,6 +66,45 @@ export async function saveMetaWhatsAppConnection(formData: FormData) {
   redirect("/admin/integraciones/meta-whatsapp?inbound=saved");
 }
 
+export async function updateMetaWhatsAppAccessToken(formData: FormData) {
+  const accessToken = String(formData.get("access_token") ?? "").trim();
+  if (!accessToken) {
+    redirect("/admin/integraciones/meta-whatsapp?token=error&code=meta_access_token_invalid");
+  }
+
+  const { supabase, studio } = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
+
+  let current;
+  try {
+    current = await loadMetaWhatsAppWebhookConfig(createServiceClient(), studio.id);
+  } catch {
+    redirect("/admin/integraciones/meta-whatsapp?token=error&code=meta_whatsapp_not_configured");
+  }
+
+  if (!current) {
+    redirect("/admin/integraciones/meta-whatsapp?token=error&code=meta_whatsapp_not_configured");
+  }
+
+  const { error } = await supabase.rpc("admin_set_meta_whatsapp_connection", {
+    target_studio_id: studio.id,
+    target_access_token: accessToken,
+    target_phone_number_id: current.phoneNumberId,
+    target_waba_id: current.wabaId,
+    target_graph_api_version: current.graphApiVersion,
+    target_app_secret: current.appSecret,
+    target_verify_token: current.verifyToken,
+  });
+
+  if (error) {
+    redirect(
+      `/admin/integraciones/meta-whatsapp?token=error&code=${encodeURIComponent(safeCode(error))}`,
+    );
+  }
+
+  revalidatePath("/admin/integraciones/meta-whatsapp");
+  redirect("/admin/integraciones/meta-whatsapp?token=saved");
+}
+
 export async function updateMetaWhatsAppAppSecret(formData: FormData) {
   const appSecret = String(formData.get("app_secret") ?? "").trim();
   if (!appSecret) {
