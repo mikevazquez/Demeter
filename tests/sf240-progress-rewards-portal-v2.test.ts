@@ -3,19 +3,23 @@ import { join } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
+import { studentNavigationItems } from "../lib/student/navigation";
+
 const read = (path: string) => readFileSync(join(process.cwd(), path), "utf8");
 
 describe("SF-240 Progress & Rewards Portal Alumna v2", () => {
   it("preserves the approved student navigation and adds Retos", () => {
-    const nav = read("app/student/StudentNav.tsx");
+    const destinations = studentNavigationItems.map((item) => item.href);
 
-    expect(nav).toContain('href: "/student"');
-    expect(nav).toContain('href: "/student/reservar"');
-    expect(nav).toContain('href: "/student/mis-clases"');
-    expect(nav).toContain('href: "/student/retos"');
-    expect(nav).toContain('href: "/student/perfil"');
-    expect(nav).not.toContain('href: "/student/recompensas"');
-    expect(nav).toContain("grid-cols-5");
+    expect(destinations).toEqual([
+      "/student",
+      "/student/reservar",
+      "/student/mis-clases",
+      "/student/retos",
+      "/student/perfil",
+    ]);
+    expect(destinations).not.toContain("/student/recompensas");
+    expect(studentNavigationItems).toHaveLength(5);
   });
 
   it("keeps Rewards in Perfil while Retos has its own primary destination", () => {
