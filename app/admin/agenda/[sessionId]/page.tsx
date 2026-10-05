@@ -509,7 +509,8 @@ export default async function SessionDetailPage({
             <div className="admin-minimum-success">
               <span>✓</span>
               <p>
-                {`Revisión cerrada: ${minimumReviewCompletedAt} · ${reservationsAtMinimumReview} reservas.`}
+                Revisión cerrada: {minimumReviewCompletedAt} ·{" "}
+                {reservationsAtMinimumReview} reservas.
               </p>
             </div>
           ) : null}
