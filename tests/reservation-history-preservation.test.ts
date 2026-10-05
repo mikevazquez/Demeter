@@ -19,11 +19,15 @@ describe("reservation history preservation", () => {
   const sessionDetail = source("app/admin/agenda/[sessionId]/page.tsx");
   const intelligence = source("app/admin/inteligencia/page.tsx");
 
-  it("keeps no-shows in booked-seat counts after attendance closes", () => {
+  it("keeps no-shows in reservation and occupancy counts after attendance closes", () => {
     const statuses = ["reserved", "attended", "no_show", "cancelled_on_time", "cancelled_late"];
 
-    expect(statuses.filter(isSeatOccupyingReservation)).toEqual(["reserved", "attended"]);
-    expect(countSeatOccupyingReservations(statuses)).toBe(2);
+    expect(statuses.filter(isSeatOccupyingReservation)).toEqual([
+      "reserved",
+      "attended",
+      "no_show",
+    ]);
+    expect(countSeatOccupyingReservations(statuses)).toBe(3);
     expect(countBookedReservations(statuses)).toBe(3);
     expect(today).toContain("countBookedReservations(");
     expect(agenda).toContain("isSeatOccupyingReservation(reservation.status)");
