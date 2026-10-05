@@ -82,8 +82,7 @@ export function ExistingStudentAddForm({
               <div className="px-3 py-4 text-center text-xs text-zinc-500">Buscando alumnas…</div>
             ) : matches.length ? (
               matches.map((candidate) => {
-                const canFallbackToWalkin = walkinFallbackDetails.has(candidate.detail);
-                const disabled = !candidate.eligible && !canFallbackToWalkin;
+                const disabled = !canSelectStudentCandidate(candidate);
                 const selected = candidate.id === selectedStudentId;
 
                 return (
@@ -126,7 +125,11 @@ export function ExistingStudentAddForm({
         ) : null}
       </div>
 
-      <button className="primary-button" type="submit" disabled={!hasSelectedStudent(selectedStudentId)}>
+      <button
+        className="primary-button"
+        type="submit"
+        disabled={!hasSelectedStudent(selectedStudentId)}
+      >
         {selectedCandidate ? `Agregar ${selectedCandidate.fullName}` : "Selecciona una alumna"}
       </button>
     </form>
