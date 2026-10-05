@@ -86,4 +86,10 @@
   background: #11131a;
   color: #fff;
   text-decoration: none;
-  f¶»§q«^
+  font-weight: 700;
+}
+.linkSecondary {
+  background: #fff;
+  color: #11131a;
+  border: 1px solid #dfe2e9;
+}
