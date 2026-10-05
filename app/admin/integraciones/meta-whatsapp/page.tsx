@@ -11,6 +11,7 @@ import {
   saveMetaWhatsAppConnection,
   sendMetaWhatsAppTestMessage,
   subscribeCurrentMetaWhatsAppApp,
+  updateMetaWhatsAppAppSecret,
   verifyMetaWhatsAppConnection,
 } from "./actions";
 import "../integrations-v2.css";
@@ -77,6 +78,7 @@ export default async function MetaWhatsAppIntegrationPage({
   const diagnosticsResult = queryValue(params.diagnostics);
   const subscriptionResult = queryValue(params.subscription);
   const testResult = queryValue(params.test);
+  const secretResult = queryValue(params.secret);
   const resultCode = queryValue(params.code);
 
   const requestHeaders = await headers();
@@ -141,6 +143,14 @@ export default async function MetaWhatsAppIntegrationPage({
       ) : testResult === "error" ? (
         <div className="integration-detail-v2-notice is-error">
           La prueba de envío falló{resultCode ? `: ${resultCode}` : "."}
+        </div>
+      ) : null}
+
+      {secretResult === "saved" ? (
+        <div className="integration-detail-v2-notice">Meta App Secret actualizado.</div>
+      ) : secretResult === "error" ? (
+        <div className="integration-detail-v2-notice is-error">
+          No se pudo actualizar el App Secret{resultCode ? `: ${resultCode}` : "."}
         </div>
       ) : null}
 
@@ -307,6 +317,22 @@ export default async function MetaWhatsAppIntegrationPage({
             Guardar conexión segura de Meta
           </button>
         </form>
+
+        {webhookConfigured ? (
+          <form className="integration-detail-v2-form" action={updateMetaWhatsAppAppSecret}>
+            <label className="integration-detail-v2-field">
+              <span>Actualizar Meta App Secret</span>
+              <input type="password" name="app_secret" required autoComplete="new-password" />
+              <small>
+                Solo reemplaza el App Secret. Conserva el token de acceso, Phone Number ID, WABA ID,
+                versión de Graph API, Verify token y configuración del piloto.
+              </small>
+            </label>
+            <button className="integration-detail-v2-button" type="submit">
+              Actualizar solo App Secret
+            </button>
+          </form>
+        ) : null}
 
         {callbackUrl ? (
           <div className="integration-detail-v2-list">
