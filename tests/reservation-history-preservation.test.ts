@@ -19,13 +19,7 @@ describe("reservation history preservation", () => {
   const intelligence = source("app/admin/inteligencia/page.tsx");
 
   it("keeps no-shows in booked-seat counts after attendance closes", () => {
-    const statuses = [
-      "reserved",
-      "attended",
-      "no_show",
-      "cancelled_on_time",
-      "cancelled_late",
-    ];
+    const statuses = ["reserved", "attended", "no_show", "cancelled_on_time", "cancelled_late"];
 
     expect(statuses.filter(isSeatOccupyingReservation)).toEqual([
       "reserved",
