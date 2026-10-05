@@ -8,16 +8,6 @@ import {
   type TodayStudentCandidate,
 } from "../actions";
 
-const walkinFallbackDetails = new Set(["sin paquete activo", "fuera de paquete", "sin créditos"]);
-
-function normalizeSearch(value: string) {
-  return value
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .trim();
-}
-
 export function ExistingStudentAddForm({
   sessionId,
   returnDate,
@@ -33,11 +23,11 @@ export function ExistingStudentAddForm({
   const [isPending, startTransition] = useTransition();
   const requestIdRef = useRef(0);
 
-  const normalizedQuery = normalizeSearch(query);
+  const normalizedQuery = normalizeStudentSearch(query);
   const selectedCandidate = matches.find((candidate) => candidate.id === selectedStudentId);
 
   useEffect(() => {
-    if (normalizedQuery.length < 2) return;
+    if (!canSearchStudents(query)) return;
 
     const requestId = ++requestIdRef.current;
     const timer = window.setTimeout(() => {
@@ -77,7 +67,7 @@ export function ExistingStudentAddForm({
             role="listbox"
             aria-busy={isPending}
           >
-            {normalizedQuery.length < 2 ? (
+            {!canSearchStudents(query) ? (
               <div className="px-3 py-4 text-center text-xs text-zinc-500">
                 Escribe al menos 2 letras.
               </div>
@@ -129,7 +119,7 @@ export function ExistingStudentAddForm({
         ) : null}
       </div>
 
-      <button className="primary-button" type="submit" disabled={!selectedStudentId}>
+      <button className="primary-button" type="submit" disabled={!hasSelectedStudent(selectedStudentId)}>
         {selectedCandidate ? `Agregar ${selectedCandidate.fullName}` : "Selecciona una alumna"}
       </button>
     </form>
