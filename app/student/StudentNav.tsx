@@ -3,13 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-const items = [
-  { href: "/student", label: "Inicio", icon: "⌂" },
-  { href: "/student/reservar", label: "Reservar", icon: "◫" },
-  { href: "/student/mis-clases", label: "Mis clases", icon: "≡" },
-  { href: "/student/retos", label: "Retos", icon: "♜" },
-  { href: "/student/perfil", label: "Perfil", icon: "○" },
-];
+import { studentNavigationItems as items } from "@/lib/student/navigation";
 
 function isActive(pathname: string, href: string) {
   if (href === "/student") return pathname === href;
@@ -32,7 +26,7 @@ export function StudentNav() {
               <Link
                 key={item.href}
                 href={item.href}
-                prefetch={false}
+                prefetch={item.prefetch}
                 className={`block rounded-2xl px-4 py-3 text-sm font-semibold transition ${
                   active
                     ? "bg-fuchsia-600 text-white"
