@@ -90,7 +90,9 @@ export default async function MetaWhatsAppIntegrationPage() {
         </article>
         <article>
           <span>Runtime Demi</span>
-          <strong>{serviceRoleConfigured && openAIConfigured ? "Listo" : "Incompleto"}</strong>
+          <strong>
+            {serviceRoleConfigured && openAIConfigured ? "Listo" : "Incompleto"}
+          </strong>
         </article>
       </section>
 
@@ -99,7 +101,8 @@ export default async function MetaWhatsAppIntegrationPage() {
           <div>
             <h2>Conexión</h2>
             <p>
-              Esta integración entrega los mensajes que Comunicación decide enviar por WhatsApp.
+              Esta integración entrega los mensajes que Comunicación decide enviar por
+              WhatsApp.
             </p>
           </div>
         </div>
@@ -114,7 +117,9 @@ export default async function MetaWhatsAppIntegrationPage() {
                   : "El proveedor todavía no está habilitado para este estudio."}
               </small>
             </span>
-            <span className={`integrations-v2-status ${active ? "is-active" : "is-available"}`}>
+            <span
+              className={`integrations-v2-status ${active ? "is-active" : "is-available"}`}
+            >
               {active ? "Activo" : "Configurar"}
             </span>
           </div>
@@ -124,7 +129,10 @@ export default async function MetaWhatsAppIntegrationPage() {
               <strong>Mensajes, plantillas y procesos</strong>
               <small>Se administran desde el módulo Comunicación.</small>
             </span>
-            <Link className="integration-detail-v2-button" href="/admin/automatizaciones">
+            <Link
+              className="integration-detail-v2-button"
+              href="/admin/automatizaciones"
+            >
               Ir a Comunicación
             </Link>
           </div>
@@ -136,7 +144,8 @@ export default async function MetaWhatsAppIntegrationPage() {
           <div>
             <h2>Demi · recepción en WhatsApp</h2>
             <p>
-              Guarda las credenciales del número y configura el webhook de Meta. Los secretos se guardan cifrados y nunca se vuelven a mostrar.
+              Guarda las credenciales del número y configura el webhook de Meta. Los secretos se
+              guardan cifrados y nunca se vuelven a mostrar.
             </p>
           </div>
         </div>
@@ -158,7 +167,11 @@ export default async function MetaWhatsAppIntegrationPage() {
                 webhookConfigured ? "is-active" : "is-available"
               }`}
             >
-              {webhookConfigured ? "Configurado" : connectionRepairRequired ? "Reparar conexión" : "Pendiente"}
+              {webhookConfigured
+                ? "Configurado"
+                : connectionRepairRequired
+                  ? "Reparar conexión"
+                  : "Pendiente"}
             </span>
           </div>
 
@@ -202,30 +215,69 @@ export default async function MetaWhatsAppIntegrationPage() {
         <form className="integration-detail-v2-form" action={saveMetaWhatsAppConnection}>
           <label className="integration-detail-v2-field">
             <span>Token de acceso de WhatsApp</span>
-            <input type="password" name="access_token" required autoComplete="new-password" />
-            <small>Usa un token de acceso de sistema de Meta con permisos de WhatsApp Business. Se guarda cifrado y no vuelve a mostrarse.</small>
+            <input
+              type="password"
+              name="access_token"
+              required
+              autoComplete="new-password"
+            />
+            <small>
+              Usa un token de acceso de sistema de Meta con permisos de WhatsApp Business. Se guarda
+              cifrado y no vuelve a mostrarse.
+            </small>
           </label>
           <label className="integration-detail-v2-field">
             <span>Phone Number ID</span>
-            <input type="text" name="phone_number_id" required inputMode="numeric" autoComplete="off" />
+            <input
+              type="text"
+              name="phone_number_id"
+              required
+              inputMode="numeric"
+              autoComplete="off"
+            />
           </label>
           <label className="integration-detail-v2-field">
             <span>WhatsApp Business Account ID</span>
-            <input type="text" name="waba_id" required inputMode="numeric" autoComplete="off" />
+            <input
+              type="text"
+              name="waba_id"
+              required
+              inputMode="numeric"
+              autoComplete="off"
+            />
           </label>
           <label className="integration-detail-v2-field">
             <span>Versión de Graph API</span>
-            <input type="text" name="graph_api_version" required placeholder="vXX.X" autoComplete="off" />
+            <input
+              type="text"
+              name="graph_api_version"
+              required
+              placeholder="vXX.X"
+              autoComplete="off"
+            />
           </label>
           <label className="integration-detail-v2-field">
             <span>Meta App Secret</span>
-            <input type="password" name="app_secret" required autoComplete="new-password" />
+            <input
+              type="password"
+              name="app_secret"
+              required
+              autoComplete="new-password"
+            />
             <small>Escríbelo directamente aquí. No lo compartas por chat.</small>
           </label>
           <label className="integration-detail-v2-field">
             <span>Verify token</span>
-            <input type="text" name="verify_token" defaultValue={verifyToken} autoComplete="off" placeholder="Déjalo vacío para generar uno" />
-            <small>Después copia el token generado a la configuración del webhook en Meta.</small>
+            <input
+              type="text"
+              name="verify_token"
+              defaultValue={verifyToken}
+              autoComplete="off"
+              placeholder="Déjalo vacío para generar uno"
+            />
+            <small>
+              Después copia el token generado a la configuración del webhook en Meta.
+            </small>
           </label>
           <button className="integration-detail-v2-button" type="submit">
             Guardar conexión segura de Meta
@@ -303,13 +355,15 @@ export default async function MetaWhatsAppIntegrationPage() {
               placeholder="Ej. 3312345678"
             />
             <small>
-              Si es un número de México puedes escribir solo los 10 dígitos. Para otro país usa el
-              código de país. Se usa únicamente como lista permitida del piloto.
+              Si es un número de México puedes escribir solo los 10 dígitos. Para otro país usa
+              el código de país. Se usa únicamente como lista permitida del piloto.
             </small>
           </label>
 
           <button className="integration-detail-v2-button" type="submit">
-            {pilotActive ? "Cambiar número autorizado" : "Guardar número y activar piloto"}
+            {pilotActive
+              ? "Cambiar número autorizado"
+              : "Guardar número y activar piloto"}
           </button>
         </form>
 
@@ -327,8 +381,8 @@ export default async function MetaWhatsAppIntegrationPage() {
           <div>
             <h2>Qué vive aquí</h2>
             <p>
-              Integraciones administra la conexión con Meta; Comunicación administra cuándo y qué se
-              envía.
+              Integraciones administra la conexión con Meta; Comunicación administra cuándo y
+              qué se envía.
             </p>
           </div>
         </div>
