@@ -1,6 +1,9 @@
 import "server-only";
 
-import { loadMetaWhatsAppWebhookConfig, type MetaWhatsAppWebhookConfig } from "@/lib/assistant/meta-whatsapp-channel";
+import {
+  loadMetaWhatsAppWebhookConfig,
+  type MetaWhatsAppWebhookConfig,
+} from "@/lib/assistant/meta-whatsapp-channel";
 import { normalizeMexicanPhone } from "@/lib/phone";
 import { createServiceClient } from "@/lib/supabase/service";
 
@@ -79,9 +82,7 @@ async function graphRequest(
       ]
         .filter(Boolean)
         .join("_");
-      throw new Error(
-        `meta_graph_http_${response.status}${suffix ? `_${suffix}` : ""}`,
-      );
+      throw new Error(`meta_graph_http_${response.status}${suffix ? `_${suffix}` : ""}`);
     }
 
     return isObject(body) ? body : {};
