@@ -90,9 +90,7 @@ export default async function MetaWhatsAppIntegrationPage() {
         </article>
         <article>
           <span>Runtime Demi</span>
-          <strong>
-            {serviceRoleConfigured && openAIConfigured ? "Listo" : "Incompleto"}
-          </strong>
+          <strong>{serviceRoleConfigured && openAIConfigured ? "Listo" : "Incompleto"}</strong>
         </article>
       </section>
 
@@ -129,10 +127,7 @@ export default async function MetaWhatsAppIntegrationPage() {
               <strong>Mensajes, plantillas y procesos</strong>
               <small>Se administran desde el módulo Comunicación.</small>
             </span>
-            <Link
-              className="integration-detail-v2-button"
-              href="/admin/automatizaciones"
-            >
+            <Link className="integration-detail-v2-button" href="/admin/automatizaciones">
               Ir a Comunicación
             </Link>
           </div>
@@ -215,12 +210,7 @@ export default async function MetaWhatsAppIntegrationPage() {
         <form className="integration-detail-v2-form" action={saveMetaWhatsAppConnection}>
           <label className="integration-detail-v2-field">
             <span>Token de acceso de WhatsApp</span>
-            <input
-              type="password"
-              name="access_token"
-              required
-              autoComplete="new-password"
-            />
+            <input type="password" name="access_token" required autoComplete="new-password" />
             <small>
               Usa un token de acceso de sistema de Meta con permisos de WhatsApp Business. Se guarda
               cifrado y no vuelve a mostrarse.
@@ -238,13 +228,7 @@ export default async function MetaWhatsAppIntegrationPage() {
           </label>
           <label className="integration-detail-v2-field">
             <span>WhatsApp Business Account ID</span>
-            <input
-              type="text"
-              name="waba_id"
-              required
-              inputMode="numeric"
-              autoComplete="off"
-            />
+            <input type="text" name="waba_id" required inputMode="numeric" autoComplete="off" />
           </label>
           <label className="integration-detail-v2-field">
             <span>Versión de Graph API</span>
@@ -258,12 +242,7 @@ export default async function MetaWhatsAppIntegrationPage() {
           </label>
           <label className="integration-detail-v2-field">
             <span>Meta App Secret</span>
-            <input
-              type="password"
-              name="app_secret"
-              required
-              autoComplete="new-password"
-            />
+            <input type="password" name="app_secret" required autoComplete="new-password" />
             <small>Escríbelo directamente aquí. No lo compartas por chat.</small>
           </label>
           <label className="integration-detail-v2-field">
@@ -275,9 +254,7 @@ export default async function MetaWhatsAppIntegrationPage() {
               autoComplete="off"
               placeholder="Déjalo vacío para generar uno"
             />
-            <small>
-              Después copia el token generado a la configuración del webhook en Meta.
-            </small>
+            <small>Después copia el token generado a la configuración del webhook en Meta.</small>
           </label>
           <button className="integration-detail-v2-button" type="submit">
             Guardar conexión segura de Meta
@@ -355,8 +332,8 @@ export default async function MetaWhatsAppIntegrationPage() {
               placeholder="Ej. 3312345678"
             />
             <small>
-              Si es un número de México puedes escribir solo los 10 dígitos. Para otro país usa
-              el código de país. Se usa únicamente como lista permitida del piloto.
+              Si es un número de México puedes escribir solo los 10 dígitos. Para otro país usa el
+              código de país. Se usa únicamente como lista permitida del piloto.
             </small>
           </label>
 
