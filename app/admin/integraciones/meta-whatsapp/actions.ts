@@ -9,23 +9,33 @@ import { getAdminContext } from "@/lib/auth/admin-context";
 function safeCode(error: unknown) {
   const message = error instanceof Error ? error.message : "";
   const match = message.match(
-    /(meta_app_secret_invalid|meta_verify_token_invalid|meta_whatsapp_not_configured|meta_whatsapp_connection_incomplete|pilot_phone_invalid|forbidden)/,
+    /(meta_access_token_invalid|meta_phone_number_id_invalid|meta_waba_id_invalid|meta_graph_api_version_invalid|meta_app_secret_invalid|meta_verify_token_invalid|meta_whatsapp_not_configured|meta_whatsapp_connection_incomplete|pilot_phone_invalid|forbidden)/,
   );
   return match?.[1] ?? "save_failed";
 }
 
-export async function saveMetaWhatsAppInbound(formData: FormData) {
+export async function saveMetaWhatsAppConnection(formData: FormData) {
+  const accessToken = String(formData.get("access_token") ?? "").trim();
+  const phoneNumberId = String(formData.get("phone_number_id") ?? "").trim();
+  const wabaId = String(formData.get("waba_id") ?? "").trim();
+  const graphApiVersion = String(formData.get("graph_api_version") ?? "").trim();
   const appSecret = String(formData.get("app_secret") ?? "").trim();
   const verifyToken = String(formData.get("verify_token") ?? "").trim();
 
-  if (!appSecret) {
-    redirect("/admin/integraciones/meta-whatsapp?inbound=error&code=meta_app_secret_required");
+  if (!accessToken || !phoneNumberId || !wabaId || !graphApiVersion || !appSecret) {
+    redirect(
+      "/admin/integraciones/meta-whatsapp?inbound=error&code=meta_connection_fields_required",
+    );
   }
 
   const { supabase, studio } = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
 
-  const { error } = await supabase.rpc("admin_set_meta_whatsapp_inbound", {
+  const { error } = await supabase.rpc("admin_set_meta_whatsapp_connection", {
     target_studio_id: studio.id,
+    target_access_token: accessToken,
+    target_phone_number_id: phoneNumberId,
+    target_waba_id: wabaId,
+    target_graph_api_version: graphApiVersion,
     target_app_secret: appSecret,
     target_verify_token: verifyToken || null,
   });

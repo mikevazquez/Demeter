@@ -7,7 +7,7 @@ import { getAdminContext } from "@/lib/auth/admin-context";
 import {
   activateMetaWhatsAppPilot,
   disableMetaWhatsAppPilot,
-  saveMetaWhatsAppInbound,
+  saveMetaWhatsAppConnection,
 } from "./actions";
 import "../integrations-v2.css";
 
@@ -45,6 +45,7 @@ export default async function MetaWhatsAppIntegrationPage() {
   const active = Boolean(provider?.enabled);
   const inbound = asObject(inboundSummary);
   const webhookConfigured = inbound?.webhook_configured === true;
+  const connectionRepairRequired = inbound?.connection_repair_required === true;
   const verifyToken = typeof inbound?.verify_token === "string" ? inbound.verify_token : "";
   const pilot = asObject(pilotSummary);
   const pilotContactConfigured = pilot?.pilot_contact_configured === true;
@@ -135,8 +136,8 @@ export default async function MetaWhatsAppIntegrationPage() {
           <div>
             <h2>Demi · recepción en WhatsApp</h2>
             <p>
-              Configura aquí el webhook entrante de Meta. El App Secret se guarda cifrado y nunca se
-              muestra después de guardarlo.
+              Guarda las credenciales del número y configura el webhook de Meta. Los secretos se
+              guardan cifrados y nunca se vuelven a mostrar.
             </p>
           </div>
         </div>
@@ -147,8 +148,10 @@ export default async function MetaWhatsAppIntegrationPage() {
               <strong>Webhook entrante</strong>
               <small>
                 {webhookConfigured
-                  ? "La verificación y la firma de Meta ya pueden validarse."
-                  : "Falta guardar el App Secret de Meta para habilitar la recepción."}
+                  ? "La conexión y las credenciales del webhook están configuradas."
+                  : connectionRepairRequired
+                    ? "La conexión anterior requiere reemplazarse con las credenciales completas de Meta."
+                    : "Faltan las credenciales de conexión y del webhook de Meta."}
               </small>
             </span>
             <span
@@ -156,7 +159,11 @@ export default async function MetaWhatsAppIntegrationPage() {
                 webhookConfigured ? "is-active" : "is-available"
               }`}
             >
-              {webhookConfigured ? "Configurado" : "Pendiente"}
+              {webhookConfigured
+                ? "Configurado"
+                : connectionRepairRequired
+                  ? "Reparar conexión"
+                  : "Pendiente"}
             </span>
           </div>
 
@@ -197,22 +204,44 @@ export default async function MetaWhatsAppIntegrationPage() {
           </div>
         </div>
 
-        <form className="integration-detail-v2-form" action={saveMetaWhatsAppInbound}>
+        <form className="integration-detail-v2-form" action={saveMetaWhatsAppConnection}>
           <label className="integration-detail-v2-field">
-            <span>Meta App Secret</span>
-            <input
-              type="password"
-              name="app_secret"
-              required
-              autoComplete="new-password"
-              placeholder={webhookConfigured ? "••••••••••••••••" : "Pégalo aquí desde Meta"}
-            />
+            <span>Token de acceso de WhatsApp</span>
+            <input type="password" name="access_token" required autoComplete="new-password" />
             <small>
-              Escríbelo directamente aquí. No lo pegues en el chat ni se almacenará en el historial
-              de Demi.
+              Usa un token de acceso de sistema de Meta con permisos de WhatsApp Business. Se guarda
+              cifrado y no vuelve a mostrarse.
             </small>
           </label>
-
+          <label className="integration-detail-v2-field">
+            <span>Phone Number ID</span>
+            <input
+              type="text"
+              name="phone_number_id"
+              required
+              inputMode="numeric"
+              autoComplete="off"
+            />
+          </label>
+          <label className="integration-detail-v2-field">
+            <span>WhatsApp Business Account ID</span>
+            <input type="text" name="waba_id" required inputMode="numeric" autoComplete="off" />
+          </label>
+          <label className="integration-detail-v2-field">
+            <span>Versión de Graph API</span>
+            <input
+              type="text"
+              name="graph_api_version"
+              required
+              placeholder="vXX.X"
+              autoComplete="off"
+            />
+          </label>
+          <label className="integration-detail-v2-field">
+            <span>Meta App Secret</span>
+            <input type="password" name="app_secret" required autoComplete="new-password" />
+            <small>Escríbelo directamente aquí. No lo compartas por chat.</small>
+          </label>
           <label className="integration-detail-v2-field">
             <span>Verify token</span>
             <input
@@ -222,13 +251,10 @@ export default async function MetaWhatsAppIntegrationPage() {
               autoComplete="off"
               placeholder="Déjalo vacío para generar uno"
             />
-            <small>Este token sí se puede copiar a Meta para validar el webhook.</small>
+            <small>Después copia el token generado a la configuración del webhook en Meta.</small>
           </label>
-
           <button className="integration-detail-v2-button" type="submit">
-            {webhookConfigured
-              ? "Actualizar configuración entrante"
-              : "Guardar configuración entrante"}
+            Guardar conexión segura de Meta
           </button>
         </form>
 

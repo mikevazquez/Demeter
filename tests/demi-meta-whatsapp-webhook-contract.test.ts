@@ -101,15 +101,18 @@ describe("Meta inbound admin setup contract", () => {
   const actions = source("app/admin/integraciones/meta-whatsapp/actions.ts");
 
   it("accepts the App Secret only through a password field and Vault RPC", () => {
-    expect(page).toContain('type="password"');
+    expect(page).toContain('name="access_token"');
     expect(page).toContain('name="app_secret"');
-    expect(actions).toContain('"admin_set_meta_whatsapp_inbound"');
+    expect(page).toContain('name="phone_number_id"');
+    expect(page).toContain('name="waba_id"');
+    expect(actions).toContain('"admin_set_meta_whatsapp_connection"');
+    expect(page).not.toContain("value={accessToken}");
     expect(page).not.toContain("value={appSecret}");
   });
 
   it("shows the environment callback URL without embedding a secret", () => {
     expect(page).toContain("/api/integrations/meta-whatsapp/webhook?studio=");
     expect(page).toContain("Callback URL de este entorno");
-    expect(page).toContain("No lo pegues en el chat");
+    expect(page).toContain("No lo compartas por chat.");
   });
 });
