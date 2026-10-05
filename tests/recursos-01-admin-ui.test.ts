@@ -20,7 +20,7 @@ describe("RECURSOS-01 admin configuration", () => {
     join(process.cwd(), "app/admin/configuracion/recursos/actions.ts"),
     "utf8",
   );
-  const settings = readFileSync(join(process.cwd(), "app/admin/configuracion/page.tsx"), "utf8");
+  const settings = readFileSync(join(process.cwd(), "app/admin/mas/page.tsx"), "utf8");
   const recursosStyles = readFileSync(
     join(process.cwd(), "app/admin/configuracion/recursos/recursos.module.css"),
     "utf8",
@@ -35,8 +35,8 @@ describe("RECURSOS-01 admin configuration", () => {
   );
 
   it("exposes the resource configuration from studio settings", () => {
-    expect(settings).toContain('href="/admin/configuracion/recursos"');
-    expect(settings).toContain("Recursos y mapa");
+    expect(settings).toContain('href: "/admin/configuracion/recursos"');
+    expect(settings).toContain("Recursos y espacios");
   });
 
   it("keeps global resources separate from per-session usage", () => {
