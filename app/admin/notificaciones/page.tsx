@@ -51,6 +51,7 @@ const tabs = [
 ] as const;
 
 const channelLabels: Record<NotificationChannelKey, string> = {
+  inbox: "Inbox",
   push: "Push",
   whatsapp: "WhatsApp",
   email: "Email",
@@ -232,8 +233,8 @@ export default async function NotificationsPage({
                 <span>avisos operativos activos</span>
               </article>
               <article>
-                <strong>3</strong>
-                <span>canales administrables</span>
+                <strong>4</strong>
+                <span>canales por proceso</span>
               </article>
               <article>
                 <strong>{NOTIFICATION_PROCESSES.length - liveProcesses.length}</strong>
@@ -303,7 +304,7 @@ export default async function NotificationsPage({
                     <small>{process.timingLabel}</small>
                   </span>
                   <span className="notification-channel-chips">
-                    {(["push", "whatsapp", "email"] as const).map((channel) => {
+                    {(["inbox", "push", "whatsapp", "email"] as const).map((channel) => {
                       const state = channelState(processRules, channel);
                       return (
                         <span
