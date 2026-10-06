@@ -47,11 +47,14 @@ const ERROR_COPY: Record<string, string> = {
     "Se alcanzó el límite de llamadas al modelo para este turno.",
   reply_persist_failed: "Demi respondió, pero no se pudo guardar la respuesta.",
   assistant_failed: "No se pudo completar la respuesta de Demi.",
-  receipt_identity_required: "Selecciona una alumna e inicia la conversación antes de adjuntar el comprobante.",
+  receipt_identity_required:
+    "Selecciona una alumna e inicia la conversación antes de adjuntar el comprobante.",
   receipt_invalid_file: "Adjunta una imagen o PDF de hasta 10 MB.",
-  receipt_no_pending_transfer: "No hay una transferencia pendiente para asociar a este comprobante.",
+  receipt_no_pending_transfer:
+    "No hay una transferencia pendiente para asociar a este comprobante.",
   receipt_activation_failed: "No se pudo activar provisionalmente el paquete con este comprobante.",
-  receipt_upload_failed: "El paquete se activó, pero no se pudo guardar el comprobante. No continúes con esta prueba.",
+  receipt_upload_failed:
+    "El paquete se activó, pero no se pudo guardar el comprobante. No continúes con esta prueba.",
 };
 
 function moneyFromMicros(value: number) {
@@ -333,16 +336,12 @@ export default function DemiChat({
             id="demi-receipt"
             type="file"
             accept="image/jpeg,image/png,image/webp,application/pdf"
-            disabled={
-              isPending || !conversationId || !identityValue.startsWith("student:")
-            }
+            disabled={isPending || !conversationId || !identityValue.startsWith("student:")}
             onChange={(event) => uploadReceipt(event.target.files?.[0] ?? null)}
           />
           <label
             htmlFor="demi-receipt"
-            aria-disabled={
-              isPending || !conversationId || !identityValue.startsWith("student:")
-            }
+            aria-disabled={isPending || !conversationId || !identityValue.startsWith("student:")}
           >
             Adjuntar comprobante
           </label>
