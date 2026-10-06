@@ -349,7 +349,9 @@ export default async function NotificationProcessPage({
                     </form>
                   ) : channel === "inbox" ? (
                     <span
-                      className={active ? "notification-required-channel" : "notification-readonly-badge"}
+                      className={
+                        active ? "notification-required-channel" : "notification-readonly-badge"
+                      }
                     >
                       {active ? "Fijo" : "Revisar"}
                     </span>
@@ -398,8 +400,10 @@ export default async function NotificationProcessPage({
                       <strong>Plantilla administrada en Meta</strong>
                       <p>
                         Clave enviada por Demeter:{" "}
-                        <code>{policyText(policy, "provider_template_key") || rules[0]?.template_key}</code>.
-                        El nombre y el texto aprobados se administran en Meta.
+                        <code>
+                          {policyText(policy, "provider_template_key") || rules[0]?.template_key}
+                        </code>
+                        . El nombre y el texto aprobados se administran en Meta.
                       </p>
                     </div>
                   </article>
