@@ -98,7 +98,7 @@ export const NOTIFICATION_PROCESSES: readonly NotificationProcessDefinition[] = 
   },
   {
     key: "minimum-cancelled-students",
-    name: "Clase cancelada por mínimo de reservas",
+    name: "Cancelación por mínimo de reservas",
     description: "Avisa a las alumnas cuando una clase no alcanza el mínimo.",
     category: "reservas",
     ruleKeys: ["p0.session.minimum_cancelled_students"],
