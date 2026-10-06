@@ -8,6 +8,7 @@ function source(path: string) {
 
 describe("Demi transfer receipt UAT", () => {
   const actions = source("app/admin/integraciones/demi/actions.ts");
+  const receiptActions = source("app/admin/integraciones/demi/receipt-actions.ts");
   const chat = source("app/admin/integraciones/demi/DemiChat.tsx");
 
   it("runs the internal demo with the same service-only transfer tools as WhatsApp", () => {
@@ -16,11 +17,11 @@ describe("Demi transfer receipt UAT", () => {
   });
 
   it("accepts a receipt file and uses the real provisional activation RPC", () => {
-    expect(actions).toContain("sendDemiReceipt");
-    expect(actions).toContain("service_activate_transfer_receipt");
-    expect(actions).toContain('from("transfer-receipts")');
-    expect(actions).toContain("receipt_storage_path");
-    expect(actions).toContain("transfer_receipt_review");
+    expect(receiptActions).toContain("sendDemiReceipt");
+    expect(receiptActions).toContain("service_activate_transfer_receipt");
+    expect(receiptActions).toContain('from("transfer-receipts")');
+    expect(receiptActions).toContain("receipt_storage_path");
+    expect(receiptActions).toContain("transfer_receipt_review");
   });
 
   it("exposes the receipt control only for an identified student conversation", () => {
