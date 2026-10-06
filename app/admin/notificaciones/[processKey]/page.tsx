@@ -122,10 +122,6 @@ const fallbackMessages: Record<string, { title: string; body: string }> = {
     title: "Clase cancelada",
     body: "La sesión asignada fue cancelada por no alcanzar el mínimo de reservas.",
   },
-  "minimum-cancelled": {
-    title: "Clase cancelada",
-    body: "La sesión fue cancelada por no alcanzar el mínimo de reservas.",
-  },
   "waitlist-promoted": {
     title: "¡Ya tienes lugar!",
     body: "Se liberó un lugar y tu reserva quedó confirmada.",
@@ -310,7 +306,13 @@ export default async function NotificationProcessPage({
               >
                 <div className="notification-detail-channel-head">
                   <span className="notification-channel-symbol" aria-hidden="true">
-                    {channel === "inbox" ? "▣" : channel === "push" ? "⌁" : channel === "whatsapp" ? "◉" : "✉"}
+                    {channel === "inbox"
+                      ? "▣"
+                      : channel === "push"
+                        ? "⌁"
+                        : channel === "whatsapp"
+                          ? "◉"
+                          : "✉"}
                   </span>
                   <div>
                     <strong>{channelLabels[channel]}</strong>
@@ -322,10 +324,10 @@ export default async function NotificationProcessPage({
                         : !globalEnabled
                           ? "Desactivado en Preferencias"
                           : coverage === "some"
-                          ? "Activo para parte de los destinatarios"
-                          : channel === "email"
-                            ? "Proveedor no configurado"
-                            : "Canal disponible"}
+                            ? "Activo para parte de los destinatarios"
+                            : channel === "email"
+                              ? "Proveedor no configurado"
+                              : "Canal disponible"}
                     </small>
                   </div>
                   {canManage && globalEnabled && channel !== "inbox" ? (
@@ -345,8 +347,12 @@ export default async function NotificationProcessPage({
                         <span />
                       </button>
                     </form>
-                   ) : channel === "inbox" ? (
-                    <span className={active ? "notification-required-channel" : "notification-readonly-badge"}>{active ? "Fijo" : "Revisar"}</span>
+                  ) : channel === "inbox" ? (
+                    <span
+                      className={active ? "notification-required-channel" : "notification-readonly-badge"}
+                    >
+                      {active ? "Fijo" : "Revisar"}
+                    </span>
                   ) : (
                     <span className={active ? "channel-dot is-on" : "channel-dot"} />
                   )}
@@ -391,7 +397,8 @@ export default async function NotificationProcessPage({
                     <div className="notification-message-preview">
                       <strong>Plantilla administrada en Meta</strong>
                       <p>
-                        Clave enviada por Demeter: <code>{policyText(policy, "provider_template_key") || rules[0]?.template_key}</code>.
+                        Clave enviada por Demeter:{" "}
+                        <code>{policyText(policy, "provider_template_key") || rules[0]?.template_key}</code>.
                         El nombre y el texto aprobados se administran en Meta.
                       </p>
                     </div>
