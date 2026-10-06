@@ -3035,9 +3035,9 @@
 
 .hoy-priority {
   overflow: hidden;
-  border: 1px solid rgba(255, 170, 0, 0.42);
+  border: 1px solid #b8d9ef;
   border-radius: 16px;
-  background: radial-gradient(circle at 100% 0%, rgba(255, 170, 0, 0.1), transparent 38%), #101317;
+  background: radial-gradient(circle at 100% 0%, rgba(77, 163, 224, 0.1), transparent 38%), #f2f9fe;
 }
 
 .hoy-priority-heading {
@@ -3047,7 +3047,7 @@
   justify-content: space-between;
   gap: 12px;
   padding: 11px 13px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid #dcecf7;
 }
 
 .hoy-priority-heading > div {
@@ -3057,7 +3057,7 @@
 }
 
 .hoy-priority-heading span {
-  color: #ffca68;
+  color: #276b99;
   font-size: 9px;
   font-weight: 850;
   letter-spacing: 0.08em;
@@ -3065,7 +3065,7 @@
 }
 
 .hoy-priority-heading strong {
-  color: #f6f7f9;
+  color: #17364e;
   font-size: 16px;
   line-height: 1.1;
 }
@@ -3075,10 +3075,10 @@
   height: 31px;
   display: grid;
   place-items: center;
-  border: 1px solid rgba(255, 170, 0, 0.38);
+  border: 1px solid #b7d9f0;
   border-radius: 999px;
-  background: rgba(255, 170, 0, 0.1);
-  color: #ffd488 !important;
+  background: #e1f2fc;
+  color: #1e6594 !important;
   font-size: 13px !important;
   letter-spacing: 0 !important;
 }
@@ -3099,11 +3099,11 @@
 }
 
 .hoy-priority-item + .hoy-priority-item {
-  border-top: 1px solid rgba(255, 255, 255, 0.055);
+  border-top: 1px solid #dfedf6;
 }
 
 .hoy-priority-item:hover {
-  background: rgba(255, 170, 0, 0.035);
+  background: rgba(77, 163, 224, 0.06);
 }
 
 .hoy-priority-icon {
@@ -3111,10 +3111,10 @@
   height: 32px;
   display: grid;
   place-items: center;
-  border: 1px solid rgba(255, 170, 0, 0.3);
+  border: 1px solid #c0deef;
   border-radius: 10px;
-  background: rgba(255, 170, 0, 0.08);
-  color: #ffd27a;
+  background: #e6f4fc;
+  color: #216b9b;
   font-size: 14px;
   font-weight: 900;
 }
@@ -3127,7 +3127,7 @@
 
 .hoy-priority-copy strong {
   overflow: hidden;
-  color: #f3f5f8;
+  color: #20384c;
   font-size: 13px;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -3135,20 +3135,20 @@
 
 .hoy-priority-copy small {
   overflow: hidden;
-  color: #b9c0cb;
+  color: #526b80;
   font-size: 10px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .hoy-priority-copy em {
-  color: #7e8998;
+  color: #6f879a;
   font-size: 8px;
   font-style: normal;
 }
 
 .hoy-priority-item > b {
-  color: #d7a84d;
+  color: #347eac;
   font-size: 20px;
   font-weight: 400;
 }
