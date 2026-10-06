@@ -26,6 +26,7 @@ describe("Demi first trial name-first flow", () => {
     expect(migration).toContain("'identity_needs_name', v_identity_needs_name");
     expect(migration).toContain("update public.persons p");
     expect(migration).toContain("miércoles|miercoles");
+    expect(migration).toContain("on conflict (studio_id) do nothing");
     expect(migration.match(/'amount_minor',15000/g)).toHaveLength(2);
   });
 });
