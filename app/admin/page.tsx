@@ -134,7 +134,7 @@ export default async function AdminPage({
 
   const canWriteSchedule = can(CAPABILITIES.SCHEDULE_WRITE);
   const canWriteStudents = can(CAPABILITIES.STUDENTS_WRITE);
-  const canReadSales = can(CAPABILITIES.SALES_READ);
+  const canReadSales = can(CAPABILITIES.SALES_READ) || can(CAPABILITIES.SALES_WRITE);
   const canWriteSales = can(CAPABILITIES.SALES_WRITE);
   const canWriteAttendance = can(CAPABILITIES.ATTENDANCE_WRITE);
   const [
@@ -170,7 +170,9 @@ export default async function AdminPage({
     canReadSales
       ? supabase
           .from("assistant_transfer_purchase_intents")
-          .select("id,student_id,product_template_id,amount_minor,currency,receipt_stored_at,updated_at")
+          .select(
+            "id,student_id,product_template_id,amount_minor,currency,receipt_stored_at,updated_at",
+          )
           .eq("studio_id", studio.id)
           .eq("status", "provisional_active")
           .order("receipt_stored_at", { ascending: true, nullsFirst: false })
