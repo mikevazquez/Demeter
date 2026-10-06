@@ -122,8 +122,7 @@ export default async function StudentsPage({
   }
   if (status === "no_show") {
     studentsQuery = studentsQuery
-      .eq("student_type", "trial")
-      .eq("trial_status", "no_show");
+      .eq("student_type", "trial").eq("trial_status", "no_show");
   }
   if (status === "prospect") {
     studentsQuery = studentsQuery.limit(0);
@@ -383,10 +382,10 @@ export default async function StudentsPage({
 
   const filters = [
     { key: "all", label: "Todas", enabled: true },
-    { key: "active", label: "Alumnas", enabled: true },
+    { key: "active", label: "Activas", enabled: true },
     { key: "inactive", label: "Inactivas", enabled: true },
     { key: "expiring", label: "Por vencer", enabled: canReadProducts },
-    { key: "expired", label: "Exalumnas", enabled: canReadProducts },
+    { key: "expired", label: "Vencidas", enabled: canReadProducts },
     { key: "trial", label: "Alumnas de prueba", enabled: true },
     { key: "no_show", label: "No show", enabled: true },
     { key: "prospect", label: "Prospectos", enabled: true },
