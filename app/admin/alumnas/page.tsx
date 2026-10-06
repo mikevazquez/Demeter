@@ -121,7 +121,9 @@ export default async function StudentsPage({
       .in("trial_status", ["pending", "attended", "cancelled"]);
   }
   if (status === "no_show") {
-    studentsQuery = studentsQuery.eq("student_type", "trial").eq("trial_status", "no_show");
+    studentsQuery = studentsQuery
+      .eq("student_type", "trial")
+      .eq("trial_status", "no_show");
   }
   if (status === "prospect") {
     studentsQuery = studentsQuery.limit(0);
@@ -164,7 +166,9 @@ export default async function StudentsPage({
             .eq("lifecycle_status", "prospect")
             .is("converted_student_id", null)
             .order("created_at", { ascending: false })
-        : Promise.resolve({ data: [] as { id: string; person_id: string; created_at: string }[] }),
+        : Promise.resolve({
+            data: [] as { id: string; person_id: string; created_at: string }[],
+          }),
       canReadProducts
         ? supabase
             .from("product_acquisitions")
@@ -229,7 +233,8 @@ export default async function StudentsPage({
       return {
         id: contact.id,
         created_at: contact.created_at,
-        full_name: [person?.first_name, person?.last_name].filter(Boolean).join(" ") || "Prospecto",
+        full_name:
+          [person?.first_name, person?.last_name].filter(Boolean).join(" ") || "Prospecto",
         phone: phoneByPersonId.get(contact.person_id) ?? "Sin teléfono",
       };
     })
@@ -615,26 +620,28 @@ export default async function StudentsPage({
                 </span>
               </Link>
             ))}
-            {(status === "all" || status === "prospect") ? prospectRows.map((prospect) => (
-              <article className="student-directory-card" key={prospect.id}>
-                <span className="student-avatar" aria-hidden="true">
-                  {initials(prospect.full_name)}
-                </span>
-                <span className="student-directory-main">
-                  <span className="student-directory-identity">
-                    <strong>{prospect.full_name}</strong>
-                  </span>
-                  <span className="student-package-summary">
-                    <b>{prospect.phone}</b>
-                    <small>
-                      Prospecto · recibido{" "}
-                      {shortDate(prospect.created_at.slice(0, 10), studio.locale)}
-                    </small>
-                  </span>
-                  <span className="student-state-pill is-active">Prospecto</span>
-                </span>
-              </article>
-            )) : null}
+            {status === "all" || status === "prospect"
+              ? prospectRows.map((prospect) => (
+                  <article className="student-directory-card" key={prospect.id}>
+                    <span className="student-avatar" aria-hidden="true">
+                      {initials(prospect.full_name)}
+                    </span>
+                    <span className="student-directory-main">
+                      <span className="student-directory-identity">
+                        <strong>{prospect.full_name}</strong>
+                      </span>
+                      <span className="student-package-summary">
+                        <b>{prospect.phone}</b>
+                        <small>
+                          Prospecto · recibido{" "}
+                          {shortDate(prospect.created_at.slice(0, 10), studio.locale)}
+                        </small>
+                      </span>
+                      <span className="student-state-pill is-active">Prospecto</span>
+                    </span>
+                  </article>
+                ))
+              : null}
           </div>
         )}
       </section>
