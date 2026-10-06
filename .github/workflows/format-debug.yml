@@ -1,0 +1,24 @@
+name: Format debug
+
+on:
+  push:
+    branches:
+      - fix/demi-transfer-payment-methods-schema
+
+permissions:
+  contents: read
+
+jobs:
+  format-diff:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Show Prettier diff
+        run: |
+          npx prettier app/admin/integraciones/demi/actions.ts > /tmp/actions.formatted.ts
+          diff -u app/admin/integraciones/demi/actions.ts /tmp/actions.formatted.ts || true
