@@ -1,4 +1,4 @@
-export type NotificationChannelKey = "push" | "whatsapp" | "email";
+export type NotificationChannelKey = "inbox" | "push" | "whatsapp" | "email";
 export type NotificationProcessCategory =
   "reservas" | "paquetes" | "evaluaciones" | "documentos" | "cuenta";
 
@@ -54,10 +54,19 @@ export const NOTIFICATION_PROCESSES: readonly NotificationProcessDefinition[] = 
   {
     key: "class-reminder",
     name: "Recordatorio de clase",
-    description: "Ayuda a reducir inasistencias antes de la clase.",
+    description: "Recuerda una clase reservada antes de que comience.",
     category: "reservas",
-    ruleKeys: ["p0.booking.class_reminder_5h", "p0.session.rescheduled_reminder_5h"],
-    timingLabel: "5 h antes de la clase · configurable",
+    ruleKeys: ["p0.booking.class_reminder_5h"],
+    timingLabel: "Antes de la clase · configurable",
+    recipientLabel: "Alumna con reserva confirmada",
+  },
+  {
+    key: "rescheduled-class-reminder",
+    name: "Recordatorio de clase reprogramada",
+    description: "Recuerda una clase cuyo horario fue modificado.",
+    category: "reservas",
+    ruleKeys: ["p0.session.rescheduled_reminder_5h"],
+    timingLabel: "Antes de la clase · configurable",
     recipientLabel: "Alumna con reserva confirmada",
   },
   {
@@ -88,13 +97,23 @@ export const NOTIFICATION_PROCESSES: readonly NotificationProcessDefinition[] = 
     recipientLabel: "Alumna afectada",
   },
   {
-    key: "minimum-cancelled",
-    name: "Cancelación por mínimo de reservas",
-    description: "Avisa a alumnas y coach cuando una clase no alcanza el mínimo.",
+    key: "minimum-cancelled-students",
+    name: "Clase cancelada por mínimo de reservas",
+    description: "Avisa a las alumnas cuando una clase no alcanza el mínimo.",
     category: "reservas",
-    ruleKeys: ["p0.session.minimum_cancelled_students", "p0.session.minimum_cancelled_coach"],
+    ruleKeys: ["p0.session.minimum_cancelled_students"],
     timingLabel: "Al cancelar la sesión · inmediata",
-    recipientLabel: "Alumnas afectadas y coach",
+    recipientLabel: "Alumnas con reserva afectada",
+    essential: true,
+  },
+  {
+    key: "minimum-cancelled-coach",
+    name: "Aviso al coach por mínimo de reservas",
+    description: "Avisa al coach cuando una clase no alcanza el mínimo.",
+    category: "reservas",
+    ruleKeys: ["p0.session.minimum_cancelled_coach"],
+    timingLabel: "Al cancelar la sesión · inmediata",
+    recipientLabel: "Coach asignado",
     essential: true,
   },
   {
