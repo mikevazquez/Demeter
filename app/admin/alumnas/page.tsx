@@ -84,7 +84,16 @@ export default async function StudentsPage({
   ]);
   const query = String(params.q ?? "").trim();
   const requestedStatus = String(params.status ?? "all");
-  const status = ["all", "active", "inactive", "expiring", "expired", "trial", "no_show", "prospect"].includes(requestedStatus)
+  const status = [
+    "all",
+    "active",
+    "inactive",
+    "expiring",
+    "expired",
+    "trial",
+    "no_show",
+    "prospect",
+  ].includes(requestedStatus)
     ? requestedStatus
     : "all";
   const canEdit = can(CAPABILITIES.STUDENTS_WRITE);
@@ -95,7 +104,9 @@ export default async function StudentsPage({
 
   let studentsQuery = supabase
     .from("students")
-    .select("id, user_id, full_name, email, phone, lifecycle_status, student_type, trial_status, created_at")
+    .select(
+      "id, user_id, full_name, email, phone, lifecycle_status, student_type, trial_status, created_at",
+    )
     .eq("studio_id", studio.id)
     .neq("lifecycle_status", "archived")
     .order("full_name");
@@ -105,7 +116,9 @@ export default async function StudentsPage({
     if (status === "active") studentsQuery = studentsQuery.neq("student_type", "trial");
   }
   if (status === "trial") {
-    studentsQuery = studentsQuery.eq("student_type", "trial").in("trial_status", ["pending", "attended", "cancelled"]);
+    studentsQuery = studentsQuery
+      .eq("student_type", "trial")
+      .in("trial_status", ["pending", "attended", "cancelled"]);
   }
   if (status === "no_show") {
     studentsQuery = studentsQuery.eq("student_type", "trial").eq("trial_status", "no_show");
@@ -124,9 +137,16 @@ export default async function StudentsPage({
   }
 
   const duplicateId = String(params.duplicate ?? "").trim();
-  const needsAllStudentsQuery = Boolean(query) || ["active", "inactive", "trial", "no_show"].includes(status);
+  const needsAllStudentsQuery =
+    Boolean(query) || ["active", "inactive", "trial", "no_show"].includes(status);
   const needsProspectsQuery = status === "all" || status === "prospect";
-  const [{ data: students }, allStudentsResult, { data: prospectContacts }, acquisitionResult, { data: duplicateStudent }] =
+  const [
+    { data: students },
+    allStudentsResult,
+    { data: prospectContacts },
+    acquisitionResult,
+    { data: duplicateStudent },
+  ] =
     await Promise.all([
       studentsQuery,
       needsAllStudentsQuery
@@ -172,14 +192,29 @@ export default async function StudentsPage({
       student_type: student.student_type,
       trial_status: student.trial_status,
     }));
-  const prospectPersonIds = [...new Set((prospectContacts ?? []).map((contact) => contact.person_id))];
+  const prospectPersonIds = [
+    ...new Set((prospectContacts ?? []).map((contact) => contact.person_id)),
+  ];
   const [{ data: prospectPeople }, { data: prospectPhones }] = await Promise.all([
     prospectPersonIds.length
-      ? supabase.from("persons").select("id,first_name,last_name").eq("studio_id", studio.id).in("id", prospectPersonIds)
-      : Promise.resolve({ data: [] as { id: string; first_name: string; last_name: string | null }[] }),
+      ? supabase
+          .from("persons")
+          .select("id,first_name,last_name")
+          .eq("studio_id", studio.id)
+          .in("id", prospectPersonIds)
+      : Promise.resolve({
+          data: [] as { id: string; first_name: string; last_name: string | null }[],
+        }),
     prospectPersonIds.length
-      ? supabase.from("person_contacts").select("person_id,value,is_primary").eq("studio_id", studio.id).eq("kind", "phone").in("person_id", prospectPersonIds)
-      : Promise.resolve({ data: [] as { person_id: string; value: string; is_primary: boolean }[] }),
+      ? supabase
+          .from("person_contacts")
+          .select("person_id,value,is_primary")
+          .eq("studio_id", studio.id)
+          .eq("kind", "phone")
+          .in("person_id", prospectPersonIds)
+      : Promise.resolve({
+          data: [] as { person_id: string; value: string; is_primary: boolean }[],
+        }),
   ]);
   const peopleById = new Map((prospectPeople ?? []).map((person) => [person.id, person]));
   const phoneByPersonId = new Map<string, string>();
@@ -201,7 +236,10 @@ export default async function StudentsPage({
     .filter((prospect) => {
       if (!query) return true;
       const needle = query.toLocaleLowerCase("es-MX");
-      return prospect.full_name.toLocaleLowerCase("es-MX").includes(needle) || prospect.phone.includes(query);
+      return (
+        prospect.full_name.toLocaleLowerCase("es-MX").includes(needle) ||
+        prospect.phone.includes(query)
+      );
     });
   const allAcquisitions = acquisitionResult.data ?? [];
   const acquisitionsByStudent = new Map<
@@ -239,7 +277,9 @@ export default async function StudentsPage({
     (item) => item.lifecycle_status === "active" && item.student_type !== "trial",
   ).length;
   const trialStudentsCount = (allStudents ?? []).filter(
-    (item) => item.student_type === "trial" && ["pending", "attended", "cancelled"].includes(item.trial_status ?? ""),
+    (item) =>
+      item.student_type === "trial" &&
+      ["pending", "attended", "cancelled"].includes(item.trial_status ?? ""),
   ).length;
   const noShowStudentsCount = (allStudents ?? []).filter(
     (item) => item.student_type === "trial" && item.trial_status === "no_show",
@@ -482,7 +522,10 @@ export default async function StudentsPage({
                               : "Vencidas"}
             </h2>
           </div>
-          <span className="count-badge">{filteredStudents.length + ((status === "all" || status === "prospect") ? prospectRows.length : 0)}</span>
+          <span className="count-badge">
+            {filteredStudents.length +
+              (status === "all" || status === "prospect" ? prospectRows.length : 0)}
+          </span>
         </div>
 
         {filteredStudents.length === 0 && prospectRows.length === 0 ? (
@@ -562,7 +605,8 @@ export default async function StudentsPage({
                         : student.lifecycle_status === "inactive" || (!acquisition && hasExpired)
                           ? "Exalumna"
                           : "Alumna";
-                    const state = label === "Exalumna" || label === "No show" ? "inactive" : "active";
+                    const state =
+                      label === "Exalumna" || label === "No show" ? "inactive" : "active";
                     return <span className={`student-state-pill is-${state}`}>{label}</span>;
                   })()}
                 </span>
@@ -573,12 +617,19 @@ export default async function StudentsPage({
             ))}
             {(status === "all" || status === "prospect") ? prospectRows.map((prospect) => (
               <article className="student-directory-card" key={prospect.id}>
-                <span className="student-avatar" aria-hidden="true">{initials(prospect.full_name)}</span>
+                <span className="student-avatar" aria-hidden="true">
+                  {initials(prospect.full_name)}
+                </span>
                 <span className="student-directory-main">
-                  <span className="student-directory-identity"><strong>{prospect.full_name}</strong></span>
+                  <span className="student-directory-identity">
+                    <strong>{prospect.full_name}</strong>
+                  </span>
                   <span className="student-package-summary">
                     <b>{prospect.phone}</b>
-                    <small>Prospecto · recibido {shortDate(prospect.created_at.slice(0, 10), studio.locale)}</small>
+                    <small>
+                      Prospecto · recibido{" "}
+                      {shortDate(prospect.created_at.slice(0, 10), studio.locale)}
+                    </small>
                   </span>
                   <span className="student-state-pill is-active">Prospecto</span>
                 </span>
