@@ -3032,3 +3032,150 @@
   background: #fff0f1;
   color: #9f3142;
 }
+
+.hoy-priority {
+  overflow: hidden;
+  border: 1px solid rgba(255, 170, 0, 0.42);
+  border-radius: 16px;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(255, 170, 0, 0.1), transparent 38%),
+    #101317;
+}
+
+.hoy-priority-heading {
+  min-height: 58px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 13px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.hoy-priority-heading > div {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.hoy-priority-heading span {
+  color: #ffca68;
+  font-size: 9px;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.hoy-priority-heading strong {
+  color: #f6f7f9;
+  font-size: 16px;
+  line-height: 1.1;
+}
+
+.hoy-priority-count {
+  min-width: 31px;
+  height: 31px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255, 170, 0, 0.38);
+  border-radius: 999px;
+  background: rgba(255, 170, 0, 0.1);
+  color: #ffd488 !important;
+  font-size: 13px !important;
+  letter-spacing: 0 !important;
+}
+
+.hoy-priority-list {
+  display: grid;
+}
+
+.hoy-priority-item {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) 18px;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 13px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.hoy-priority-item + .hoy-priority-item {
+  border-top: 1px solid rgba(255, 255, 255, 0.055);
+}
+
+.hoy-priority-item:hover {
+  background: rgba(255, 170, 0, 0.035);
+}
+
+.hoy-priority-icon {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255, 170, 0, 0.3);
+  border-radius: 10px;
+  background: rgba(255, 170, 0, 0.08);
+  color: #ffd27a;
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.hoy-priority-copy {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.hoy-priority-copy strong {
+  overflow: hidden;
+  color: #f3f5f8;
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hoy-priority-copy small {
+  overflow: hidden;
+  color: #b9c0cb;
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hoy-priority-copy em {
+  color: #7e8998;
+  font-size: 8px;
+  font-style: normal;
+}
+
+.hoy-priority-item > b {
+  color: #d7a84d;
+  font-size: 20px;
+  font-weight: 400;
+}
+
+@media (max-width: 760px) {
+  .hoy-priority {
+    grid-column: 1;
+  }
+
+  .hoy-priority-heading {
+    min-height: 54px;
+    padding: 10px 11px;
+  }
+
+  .hoy-priority-heading strong {
+    font-size: 15px;
+  }
+
+  .hoy-priority-item {
+    grid-template-columns: 32px minmax(0, 1fr) 16px;
+    padding: 10px 11px;
+  }
+
+  .hoy-priority-icon {
+    width: 30px;
+    height: 30px;
+  }
+}
