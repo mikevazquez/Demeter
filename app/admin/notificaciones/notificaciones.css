@@ -1232,7 +1232,6 @@ a.notification-process-row:hover {
   }
 }
 
-
 /* Keep secondary text readable on the light notification surfaces. */
 .notification-detail-header > a,
 .notification-general-grid span,
@@ -1259,8 +1258,10 @@ a.notification-process-row:hover {
   background: #f5f7f9 !important;
 }
 
-.notification-detail-channel-grid > article.is-globally-disabled
-  .notification-detail-channel-head strong {
+.notification-detail-channel-grid
+  > article.is-globally-disabled
+  .notification-detail-channel-head
+  strong {
   color: #42536a !important;
 }
 
