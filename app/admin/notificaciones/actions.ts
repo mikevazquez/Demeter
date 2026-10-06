@@ -34,7 +34,7 @@ function requiredProcess(formData: FormData) {
 
 function parseChannel(value: FormDataEntryValue | null): NotificationChannelKey {
   const channel = String(value ?? "").trim();
-  if (channel === "push" || channel === "whatsapp" || channel === "email") return channel;
+  if (channel === "inbox" || channel === "push" || channel === "whatsapp" || channel === "email") return channel;
   throw new Error("notification_channel_invalid");
 }
 
@@ -82,6 +82,10 @@ export async function toggleNotificationChannelAction(formData: FormData) {
   } catch (error) {
     const message = error instanceof Error ? error.message : "notification_channel_invalid";
     redirect(listUrl("procesos", { error: message }));
+  }
+
+  if (channel === "inbox") {
+    redirect(processUrl(process.key, { error: "notification_inbox_required" }));
   }
 
   const enabled = String(formData.get("next_enabled") ?? "") === "true";
