@@ -45,6 +45,8 @@ describe("Demi identity, CRM lifecycle, and first trial flow", () => {
     expect(readTools).toContain("student_type,trial_status");
     expect(readTools).toContain('"trial_no_show"');
     expect(readTools).toContain('"former_student"');
+    expect(route).toContain("getStudentPackageStatus({");
+    expect(route).toContain("studentCategory,");
     expect(migration).toContain("v_student_matches = 1");
     expect(migration).not.toContain("v_student_name_matches");
     expect(migration).toContain("public.person_contacts pc");
