@@ -497,3 +497,42 @@
     grid-template-columns: 1fr;
   }
 }
+
+.demi-attachment {
+  display: grid;
+  gap: 6px;
+  padding: 10px 18px 0;
+  background: rgba(5, 17, 13, 0.98);
+}
+
+.demi-attachment input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.demi-attachment label {
+  width: fit-content;
+  cursor: pointer;
+  border: 1px solid rgba(81, 255, 151, 0.24);
+  border-radius: 999px;
+  padding: 9px 14px;
+  background: rgba(42, 112, 74, 0.18);
+  color: #83f5ae;
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.demi-attachment label[aria-disabled="true"] {
+  cursor: not-allowed;
+  opacity: 0.42;
+}
+
+.demi-attachment small {
+  color: rgba(225, 235, 230, 0.56);
+  font-size: 0.76rem;
+  line-height: 1.35;
+}

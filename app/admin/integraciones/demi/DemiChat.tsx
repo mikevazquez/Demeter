@@ -1,9 +1,10 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useMemo, useRef, useState, useTransition } from "react";
 import type { FormEvent } from "react";
 
 import { sendDemiMessage } from "./actions";
+import { sendDemiReceipt } from "./receipt-actions";
 
 type Trace = {
   model: string;
@@ -47,6 +48,14 @@ const ERROR_COPY: Record<string, string> = {
     "Se alcanzó el límite de llamadas al modelo para este turno.",
   reply_persist_failed: "Demi respondió, pero no se pudo guardar la respuesta.",
   assistant_failed: "No se pudo completar la respuesta de Demi.",
+  receipt_identity_required:
+    "Selecciona una alumna e inicia la conversación antes de adjuntar el comprobante.",
+  receipt_invalid_file: "Adjunta una imagen o PDF de hasta 10 MB.",
+  receipt_no_pending_transfer:
+    "No hay una transferencia pendiente para asociar a este comprobante.",
+  receipt_activation_failed: "No se pudo activar provisionalmente el paquete con este comprobante.",
+  receipt_upload_failed:
+    "El paquete se activó, pero no se pudo guardar el comprobante. No continúes con esta prueba.",
 };
 
 function moneyFromMicros(value: number) {
@@ -99,6 +108,7 @@ export default function DemiChat({
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [isPending, startTransition] = useTransition();
+  const receiptInputRef = useRef<HTMLInputElement | null>(null);
 
   const lastTrace = useMemo(
     () =>
@@ -120,6 +130,52 @@ export default function DemiChat({
     setConversationId(null);
     setMessages([]);
     setMessage("");
+  }
+
+  function uploadReceipt(file: File | null) {
+    if (!file || isPending || !conversationId || !identityValue.startsWith("student:")) return;
+
+    const [, studentId] = identityValue.split(":", 2);
+    if (!studentId) return;
+
+    setMessages((current) => [
+      ...current,
+      {
+        id: crypto.randomUUID(),
+        role: "user",
+        content: `[Comprobante adjunto: ${file.name}]`,
+      },
+    ]);
+
+    startTransition(async () => {
+      const formData = new FormData();
+      formData.set("conversationId", conversationId);
+      formData.set("studentId", studentId);
+      formData.set("file", file);
+
+      const result = await sendDemiReceipt(formData);
+      if (!result.ok) {
+        setMessages((current) => [
+          ...current,
+          {
+            id: crypto.randomUUID(),
+            role: "error",
+            content: ERROR_COPY[result.error] ?? ERROR_COPY.assistant_failed,
+          },
+        ]);
+      } else {
+        setMessages((current) => [
+          ...current,
+          {
+            id: crypto.randomUUID(),
+            role: "assistant",
+            content: result.reply,
+          },
+        ]);
+      }
+
+      if (receiptInputRef.current) receiptInputRef.current.value = "";
+    });
   }
 
   function submit(event: FormEvent<HTMLFormElement>) {
@@ -273,6 +329,26 @@ export default function DemiChat({
               ) : null}
             </div>
           )}
+        </div>
+
+        <div className="demi-attachment">
+          <input
+            ref={receiptInputRef}
+            id="demi-receipt"
+            type="file"
+            accept="image/jpeg,image/png,image/webp,application/pdf"
+            disabled={isPending || !conversationId || !identityValue.startsWith("student:")}
+            onChange={(event) => uploadReceipt(event.target.files?.[0] ?? null)}
+          />
+          <label
+            htmlFor="demi-receipt"
+            aria-disabled={isPending || !conversationId || !identityValue.startsWith("student:")}
+          >
+            Adjuntar comprobante
+          </label>
+          <small>
+            Para UAT: activa provisionalmente el paquete con la misma lógica del WhatsApp real.
+          </small>
         </div>
 
         <form className="demi-composer" onSubmit={submit}>

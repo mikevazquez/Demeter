@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { runAssistantTurn } from "@/lib/assistant/orchestrator";
+import { createServiceClient } from "@/lib/supabase/service";
 
 type SendDemiInput = {
   conversationId?: string | null;
@@ -179,8 +180,9 @@ export async function sendDemiMessage(input: SendDemiInput) {
       ? new URL("/login/student/activar", `https://${host}`).toString()
       : null;
 
+    const assistantSupabase = createServiceClient();
     const result = await runAssistantTurn({
-      supabase,
+      supabase: assistantSupabase,
       studio: {
         id: studio.id,
         name: studio.name,
@@ -202,6 +204,7 @@ export async function sendDemiMessage(input: SendDemiInput) {
       studentId: conversationStudentId,
       crmContactId: conversationCrmContactId,
       activationUrl,
+      serviceMode: true,
       history,
     });
 
