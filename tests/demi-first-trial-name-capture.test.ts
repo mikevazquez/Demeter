@@ -23,6 +23,9 @@ describe("Demi first trial name-first flow", () => {
   it("stores the supplied name on the prospect and prices the first trial at $150", () => {
     expect(migration).toContain("'identity_needs_name', v_identity_needs_name");
     expect(migration).toContain("v_student_matches = 1");
+    expect(migration).toContain("public.person_contacts pc");
+    expect(migration).toContain("insert into public.person_contacts");
+    expect(orchestrator).toContain("número de teléfono normalizado es el identificador único");
     expect(migration).not.toContain("v_student_name_matches");
     expect(migration).toContain("update public.persons p");
     expect(migration).toContain("miércoles|miercoles");
