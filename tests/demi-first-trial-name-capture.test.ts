@@ -51,7 +51,7 @@ describe("Demi identity, CRM lifecycle, and first trial flow", () => {
     expect(directory).toContain('{ key: "trial", label: "Alumnas de prueba", enabled: true }');
     expect(directory).toContain('{ key: "no_show", label: "No show", enabled: true }');
     expect(directory).toContain('{ key: "prospect", label: "Prospectos", enabled: true }');
-    expect(directory).toContain('{ key: "expired", label: "Vencidas", enabled: canReadProducts }')
+    expect(directory).toContain('{ key: "expired", label: "Vencidas", enabled: canReadProducts }');
   });
 
   it("keeps the first-trial price in Studio Flow and stores the prospect's name", () => {
