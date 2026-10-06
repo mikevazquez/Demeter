@@ -148,7 +148,7 @@ export default async function StudentsPage({
     acquisitionResult,
     { data: duplicateStudent },
   ] = await Promise.all([
-      studentsQuery,
+    studentsQuery,
     needsAllStudentsQuery
       ? supabase
           .from("students")
@@ -185,7 +185,7 @@ export default async function StudentsPage({
           .eq("studio_id", studio.id)
           .maybeSingle()
       : Promise.resolve({ data: null }),
-    ]);
+  ]);
   const allStudents =
     allStudentsResult.data ??
     (students ?? []).map((student) => ({
