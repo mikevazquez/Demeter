@@ -21,7 +21,8 @@ describe("Demi student package status", () => {
   it("scopes package reads to the identified student and studio", () => {
     expect(reads).toContain('.eq("studio_id", ctx.studio.id)');
     expect(reads).toContain('.eq("student_id", ctx.studentId)');
-    expect(reads).toContain('.eq("status", "active")');
+    expect(reads).toContain('item.status !== "active"');
+    expect(reads).toContain("hasExpiredPackage");
     expect(reads).toContain("credit_ledger");
     expect(reads).toContain("available_credits");
     expect(reads).toContain("expires_on");
