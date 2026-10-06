@@ -30,7 +30,7 @@ describe("Demi identity, CRM lifecycle, and first trial flow", () => {
 
   it("answers prospect questions and requires a saved name only before booking", () => {
     expect(orchestrator).toContain(
-      "puedes responder su pregunta actual usando las herramientas oficiales",
+      "Puedes responder su pregunta actual usando las herramientas oficiales",
     );
     expect(orchestrator).toContain(
       "no prepares una reserva de prueba hasta que Studio Flow confirme",
