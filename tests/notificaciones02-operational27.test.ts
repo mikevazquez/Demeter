@@ -7,7 +7,7 @@ function source(path: string) {
   return readFileSync(join(process.cwd(), path), "utf8");
 }
 
-describe("NOTIFICACIONES-02 operational action catalog", () => {
+describe("NOTIFICACIONES-02 operational catalog 27", () => {
   const catalog = source("lib/notifications/admin-catalog.ts");
   const migration = source(
     "supabase/migrations/20260924193000_notificaciones02_operational_catalog_27.sql",
@@ -18,7 +18,7 @@ describe("NOTIFICACIONES-02 operational action catalog", () => {
     catalog.indexOf("export type MarketingDefinition"),
   );
 
-  it("exposes each configurable operational action with no placeholders", () => {
+  it("exposes exactly the 27 approved operational processes with no placeholders", () => {
     expect(processSection.match(/\n    key: "/g)?.length).toBe(29);
     expect(processSection).not.toContain("planned: true");
 
@@ -31,7 +31,7 @@ describe("NOTIFICACIONES-02 operational action catalog", () => {
       "Cancelación tardía",
       "No show",
       "Clase cancelada por el estudio",
-      "Clase cancelada por mínimo de reservas",
+      "Cancelación por mínimo de reservas",
       "Aviso al coach por mínimo de reservas",
       "Cambio de horario / sesión",
       "Lugar disponible en lista de espera",
