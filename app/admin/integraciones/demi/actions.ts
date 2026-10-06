@@ -250,12 +250,7 @@ export async function sendDemiMessage(input: SendDemiInput) {
   }
 }
 
-const RECEIPT_MIME_TYPES = new Set([
-  "image/jpeg",
-  "image/png",
-  "image/webp",
-  "application/pdf",
-]);
+const RECEIPT_MIME_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "application/pdf"]);
 
 export async function sendDemiReceipt(formData: FormData) {
   const conversationId = String(formData.get("conversationId") ?? "").trim();
