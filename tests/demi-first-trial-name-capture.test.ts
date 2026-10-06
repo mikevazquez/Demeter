@@ -18,12 +18,12 @@ describe("Demi first trial name-first flow", () => {
     expect(orchestrator).toContain("¿me compartes tu nombre completo?");
     expect(route).toContain("const identityNeedsName = prepared.identity_needs_name === true;");
     expect(route).toContain("        identityNeedsName,");
-    expect(route).toContain("        identityReviewRequired,");
-    expect(orchestrator).toContain("input.identityReviewRequired === true");
   });
 
   it("stores the supplied name on the prospect and prices the first trial at $150", () => {
     expect(migration).toContain("'identity_needs_name', v_identity_needs_name");
+    expect(migration).toContain("v_student_matches = 1");
+    expect(migration).not.toContain("v_student_name_matches");
     expect(migration).toContain("update public.persons p");
     expect(migration).toContain("miércoles|miercoles");
     expect(migration).toContain("on conflict (studio_id) do nothing");
