@@ -862,7 +862,7 @@ export async function runAssistantTurn(input: OrchestratorInput) {
       ? "Mantén las respuestas breves y naturales para WhatsApp. Haz como máximo una pregunta por mensaje. Conserva la disciplina, fecha, horario, objetivo y preferencias ya mencionados; no vuelvas a pedir información que ya proporcionó."
       : "",
     input.crmContactId && !input.studentId
-      ? "Si todavía no sabe qué actividad elegir, orienta con base en su objetivo y en las descripciones de actividades vigentes en Studio Flow. Recomienda únicamente actividades activas y no atribuyas beneficios que la información oficial no confirme."
+      ? "Si todavía no sabe qué actividad elegir, consulta get_activity_catalog y oriéntala con su objetivo y las descripciones vigentes. Recomienda únicamente actividades activas y no atribuyas beneficios que la información oficial no confirme."
       : "",
     input.crmContactId && !input.studentId
       ? "Si expresa que quiere agendar, prioriza buscar opciones reales de esa actividad y ofrece hasta 2 o 3 próximas clases disponibles. Si pidió un horario o fecha concreta, consulta esa opción directamente. No preguntes de nuevo la disciplina, fecha u horario si ya están claros."
