@@ -35,6 +35,11 @@ jobs:
       - name: Install
         run: npm ci
 
+      - name: Format repair preview
+        run: |
+          npx prettier --write app/admin/alumnas/page.tsx lib/assistant/read-tools.ts tests/demi-first-trial-name-capture.test.ts
+          git diff --no-color -- app/admin/alumnas/page.tsx lib/assistant/read-tools.ts tests/demi-first-trial-name-capture.test.ts
+
       - name: Format check
         run: npm run format:check
         continue-on-error: ${{ github.event_name == 'pull_request' && github.head_ref == 'promote/inteligencia-13-prod' }}
