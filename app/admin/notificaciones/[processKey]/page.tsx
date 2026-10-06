@@ -316,7 +316,9 @@ export default async function NotificationProcessPage({
                     <strong>{channelLabels[channel]}</strong>
                     <small>
                       {channel === "inbox"
-                        ? "Siempre activo · no se puede desactivar"
+                        ? active
+                          ? "Activo · canal fijo"
+                          : "No configurado en esta regla"
                         : !globalEnabled
                           ? "Desactivado en Preferencias"
                           : coverage === "some"
@@ -343,8 +345,8 @@ export default async function NotificationProcessPage({
                         <span />
                       </button>
                     </form>
-                  ) : channel === "inbox" ? (
-                    <span className="notification-required-channel">Obligatorio</span>
+                   ) : channel === "inbox" ? (
+                    <span className={active ? "notification-required-channel" : "notification-readonly-badge"}>{active ? "Fijo" : "Revisar"}</span>
                   ) : (
                     <span className={active ? "channel-dot is-on" : "channel-dot"} />
                   )}
