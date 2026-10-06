@@ -148,8 +148,7 @@ export default async function StudentsPage({
     { data: prospectContacts },
     acquisitionResult,
     { data: duplicateStudent },
-  ] =
-    await Promise.all([
+  ] = await Promise.all([
       studentsQuery,
       needsAllStudentsQuery
         ? supabase
