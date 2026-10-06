@@ -65,6 +65,7 @@ describe("NOTIFICACIONES-02 operational action catalog", () => {
       "p0.booking.modified",
       "p0.booking.cancelled_by_student",
       "p0.booking.class_reminder_5h",
+      "p0.session.rescheduled_reminder_5h",
       "p0.booking.cancelled_late",
       "p0.attendance.no_show",
       "p0.session.cancelled_by_studio",
