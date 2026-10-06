@@ -27,6 +27,7 @@ type AssistantActionToolContext = {
   turnId: string;
   studentId: string | null;
   crmContactId: string | null;
+  identityNeedsName?: boolean;
   activationUrl: string | null;
   serviceMode?: boolean;
   currentUserMessage: string;
@@ -572,6 +573,14 @@ async function createResourceSelectionPending(
 }
 
 async function prepareBooking(ctx: AssistantActionToolContext, args: PrepareBookingArgs) {
+  if (ctx.identityNeedsName === true && !ctx.studentId) {
+    return {
+      ok: false,
+      reason_code: "prospect_name_required",
+      reason_message: "Antes de reservar, pide el nombre completo y espera a que Studio Flow lo guarde en el CRM.",
+    };
+  }
+
   const sessionId = parseOpaqueRef(args.session_ref, "session");
   if (!sessionId) {
     return { ok: false, error: "invalid_session_ref" };
