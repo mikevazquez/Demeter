@@ -69,6 +69,7 @@ type OrchestratorInput = {
   turnId: string;
   studentId: string | null;
   crmContactId: string | null;
+  identityNeedsName?: boolean;
   activationUrl: string | null;
   serviceMode?: boolean;
   history: HistoryMessage[];
@@ -815,6 +816,13 @@ export async function runAssistantTurn(input: OrchestratorInput) {
     reasoningTokens: 0,
     estimatedCostUsdMicros: 0,
   };
+
+  if (input.identityNeedsName === true) {
+    return {
+      reply: "Para buscarte correctamente en Studio Flow y registrar tu primera clase, ¿me compartes tu nombre completo?",
+      trace,
+    };
+  }
 
   const enrollmentMethod = await tryServerSidePostTrialEnrollmentMethod(input, trace);
   if (enrollmentMethod) return enrollmentMethod;
