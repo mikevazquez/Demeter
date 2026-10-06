@@ -563,9 +563,9 @@ export default async function StudentsPage({
                   {(() => {
                     const acquisition = currentAcquisitionFor(student.id);
                     if (!acquisition) {
-                      const hasExpired = (acquisitionsByStudent.get(student.id) ?? []).some(
-                        (item) => Boolean(item.expires_on && item.expires_on < today),
-                      );
+                      const hasExpired = (acquisitionsByStudent.get(student.id) ?? []).some((item) =>
+                      Boolean(item.expires_on && item.expires_on < today),
+                    );
                       return (
                         <span
                           className={`student-package-summary${hasExpired ? " is-expired" : ""}`}
