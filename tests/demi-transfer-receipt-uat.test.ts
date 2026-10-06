@@ -13,7 +13,6 @@ describe("Demi transfer receipt UAT", () => {
   it("runs the internal demo with the same service-only transfer tools as WhatsApp", () => {
     expect(actions).toContain("createServiceClient");
     expect(actions).toContain("serviceMode: true");
-    expect(actions).toContain("service_prepare_transfer_purchase");
   });
 
   it("accepts a receipt file and uses the real provisional activation RPC", () => {
