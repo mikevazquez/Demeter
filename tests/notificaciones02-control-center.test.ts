@@ -66,6 +66,14 @@ describe("NOTIFICACIONES-02 control center", () => {
     expect(migration).toContain("coalesce(settings.email_enabled, false)");
   });
 
+  it("shows the mandatory inbox route and allows its message to be configured without a disable switch", () => {
+    expect(detail).toContain('(["inbox", "push", "whatsapp", "email"] as const)');
+    expect(detail).toContain("notification-required-channel");
+    expect(actions).toContain('channel === "inbox"');
+    expect(catalog).toContain('key: "rescheduled-class-reminder"');
+    expect(catalog).toContain('key: "minimum-cancelled-coach"');
+  });
+
   it("keeps WhatsApp provider-managed and does not pretend email delivery exists", () => {
     expect(actions).toContain('channel === "whatsapp"');
     expect(actions).toContain("notification_whatsapp_provider_managed");
