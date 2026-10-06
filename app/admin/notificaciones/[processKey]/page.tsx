@@ -45,6 +45,7 @@ type ControlSnapshot = {
 };
 
 const channelLabels: Record<NotificationChannelKey, string> = {
+  inbox: "Inbox",
   push: "Push",
   whatsapp: "WhatsApp",
   email: "Email",
@@ -109,6 +110,18 @@ const fallbackMessages: Record<string, { title: string; body: string }> = {
     title: "Tu clase es pronto",
     body: "Tienes una clase próxima. Revisa el horario y los detalles en Studio Flow.",
   },
+  "rescheduled-class-reminder": {
+    title: "Tu clase reprogramada es pronto",
+    body: "Revisa el horario actualizado de tu próxima clase en Studio Flow.",
+  },
+  "minimum-cancelled-students": {
+    title: "Clase cancelada",
+    body: "La sesión fue cancelada por no alcanzar el mínimo de reservas.",
+  },
+  "minimum-cancelled-coach": {
+    title: "Clase cancelada",
+    body: "La sesión asignada fue cancelada por no alcanzar el mínimo de reservas.",
+  },
   "minimum-cancelled": {
     title: "Clase cancelada",
     body: "La sesión fue cancelada por no alcanzar el mínimo de reservas.",
@@ -136,7 +149,8 @@ function Feedback({ error, saved }: { error?: string; saved?: string }) {
 
   const errorCopy: Record<string, string> = {
     notification_whatsapp_provider_managed:
-      "WhatsApp usa una plantilla aprobada por el proveedor conectado y no se edita desde esta pantalla.",
+      "WhatsApp usa una plantilla administrada en Meta; el texto se edita y aprueba allí.",
+    notification_inbox_required: "Inbox es obligatorio y no se puede desactivar.",
     notification_message_title_body_required: "El título y el mensaje son obligatorios.",
     notification_timing_out_of_range: "La anticipación debe estar entre 0 minutos y 7 días.",
     notification_process_essential: "Este proceso esencial debe permanecer activo.",
@@ -185,6 +199,7 @@ export default async function NotificationProcessPage({
   };
 
   const globalChannels: Record<NotificationChannelKey, boolean> = {
+    inbox: true,
     push: snapshot.settings.push_enabled,
     whatsapp: snapshot.settings.whatsapp_enabled,
     email: snapshot.settings.email_enabled,
@@ -283,7 +298,7 @@ export default async function NotificationProcessPage({
         </div>
 
         <div className="notification-detail-channel-grid">
-          {(["push", "whatsapp", "email"] as const).map((channel) => {
+          {(["inbox", "push", "whatsapp", "email"] as const).map((channel) => {
             const coverage = channelCoverage(rules, channel);
             const active = coverage !== "none";
             const globalEnabled = globalChannels[channel];
@@ -295,21 +310,23 @@ export default async function NotificationProcessPage({
               >
                 <div className="notification-detail-channel-head">
                   <span className="notification-channel-symbol" aria-hidden="true">
-                    {channel === "push" ? "⌁" : channel === "whatsapp" ? "◉" : "✉"}
+                    {channel === "inbox" ? "▣" : channel === "push" ? "⌁" : channel === "whatsapp" ? "◉" : "✉"}
                   </span>
                   <div>
                     <strong>{channelLabels[channel]}</strong>
                     <small>
-                      {!globalEnabled
-                        ? "Desactivado en Preferencias"
-                        : coverage === "some"
+                      {channel === "inbox"
+                        ? "Siempre activo · no se puede desactivar"
+                        : !globalEnabled
+                          ? "Desactivado en Preferencias"
+                          : coverage === "some"
                           ? "Activo para parte de los destinatarios"
                           : channel === "email"
                             ? "Proveedor no configurado"
                             : "Canal disponible"}
                     </small>
                   </div>
-                  {canManage && globalEnabled ? (
+                  {canManage && globalEnabled && channel !== "inbox" ? (
                     <form action={toggleNotificationChannelAction}>
                       <input type="hidden" name="process_key" value={process.key} />
                       <input type="hidden" name="channel" value={channel} />
@@ -326,6 +343,8 @@ export default async function NotificationProcessPage({
                         <span />
                       </button>
                     </form>
+                  ) : channel === "inbox" ? (
+                    <span className="notification-required-channel">Obligatorio</span>
                   ) : (
                     <span className={active ? "channel-dot is-on" : "channel-dot"} />
                   )}
@@ -351,7 +370,7 @@ export default async function NotificationProcessPage({
           </div>
         ) : (
           <div className="notification-message-grid">
-            {(["push", "whatsapp", "email"] as const).map((channel) => {
+            {(["inbox", "push", "whatsapp", "email"] as const).map((channel) => {
               const coverage = channelCoverage(rules, channel);
               const policy = firstChannelPolicy(rules, channel);
               const title = policyText(policy, "title_template") || fallback.title;
@@ -368,10 +387,10 @@ export default async function NotificationProcessPage({
                       <span>{coverage === "none" ? "Inactivo" : "Proveedor conectado"}</span>
                     </div>
                     <div className="notification-message-preview">
-                      <strong>Plantilla aprobada de WhatsApp</strong>
+                      <strong>Plantilla administrada en Meta</strong>
                       <p>
-                        Studio Flow envía las variables correctas; el texto aprobado de WhatsApp se
-                        mantiene en el proveedor conectado.
+                        Clave enviada por Demeter: <code>{policyText(policy, "provider_template_key") || rules[0]?.template_key}</code>.
+                        El nombre y el texto aprobados se administran en Meta.
                       </p>
                     </div>
                   </article>
