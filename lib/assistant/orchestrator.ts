@@ -845,6 +845,7 @@ export async function runAssistantTurn(input: OrchestratorInput) {
     "No uses Markdown ni dobles asteriscos en las respuestas. Escribe texto limpio estilo WhatsApp; si necesitas énfasis, hazlo con palabras, no con formato.",
     `La fecha local del estudio es ${localDateKey(input.studio.timezone)} y la zona horaria es ${input.studio.timezone}.`,
     "Studio Flow es la única fuente de verdad operativa.",
+    "En WhatsApp, el número de teléfono normalizado es el identificador único. Studio Flow resuelve la identidad únicamente por ese número. El nombre se usa para registrar el prospecto, nunca para cambiar la identidad.",
     input.studentId
       ? "Identidad confirmada por Studio Flow: esta persona es ALUMNA. Atiéndela como alumna y usa su contexto real cuando aplique. No la trates como prospecto, no le vendas una clase de prueba y no le pidas datos que Studio Flow ya conoce."
       : input.crmContactId
