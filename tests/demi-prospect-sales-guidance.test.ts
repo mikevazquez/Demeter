@@ -25,7 +25,9 @@ describe("Demi prospect sales guidance", () => {
 
   it("moves booking intent forward without redundant questions", () => {
     expect(source).toContain("ofrece hasta 2 o 3 próximas clases disponibles");
-    expect(source).toContain("No preguntes de nuevo la disciplina, fecha u horario si ya están claros");
+    expect(source).toContain(
+      "No preguntes de nuevo la disciplina, fecha u horario si ya están claros",
+    );
     expect(source).toContain("No presentes todos los paquetes si no lo pidió");
   });
 });
