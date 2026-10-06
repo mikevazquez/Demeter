@@ -215,6 +215,8 @@ declare
   v_assistant_context jsonb;
   v_new_contact boolean := false;
   v_identity_needs_name boolean := false;
+  v_identity_review_required boolean := false;
+  v_student_name_matches integer := 0;
 begin
   if coalesce((select auth.role()), '') <> 'service_role' then
     raise exception 'forbidden';
@@ -447,6 +449,7 @@ begin
 
   if v_assistant_conversation_id is not null then
     v_identity_needs_name := coalesce((v_assistant_context->>'identity_needs_name')::boolean, false);
+    v_identity_review_required := coalesce((v_assistant_context->>'identity_review_required')::boolean, false);
     if not v_identity_needs_name and v_student_id is null and v_crm_contact_id is not null then
       select exists (
         select 1
@@ -478,15 +481,26 @@ begin
          ) then
         v_name_parts := regexp_split_to_array(trim(v_capture_name), '[[:space:]]+');
         v_full_name := trim(v_capture_name);
-        update public.persons p
-        set first_name = left(v_name_parts[1], 120),
-            last_name = nullif(left(array_to_string(v_name_parts[2:array_length(v_name_parts, 1)], ' '), 180), ''),
-            updated_at = clock_timestamp()
-        where p.id = v_person_id and p.studio_id = target_studio_id;
-        update public.crm_conversations
-        set contact_name = v_full_name, updated_at = clock_timestamp()
-        where studio_id = target_studio_id and id = v_crm_conversation_id;
-        v_identity_needs_name := false;
+        select count(*) into v_student_name_matches
+        from public.students s
+        join public.persons p on p.id = s.person_id and p.studio_id = s.studio_id
+        where s.studio_id = target_studio_id
+          and lower(trim(concat_ws(' ', p.first_name, p.last_name))) = lower(v_full_name);
+
+        if v_student_name_matches > 0 then
+          v_identity_review_required := true;
+          v_identity_needs_name := false;
+        else
+          update public.persons p
+          set first_name = left(v_name_parts[1], 120),
+              last_name = nullif(left(array_to_string(v_name_parts[2:array_length(v_name_parts, 1)], ' '), 180), ''),
+              updated_at = clock_timestamp()
+          where p.id = v_person_id and p.studio_id = target_studio_id;
+          update public.crm_conversations
+          set contact_name = v_full_name, updated_at = clock_timestamp()
+          where studio_id = target_studio_id and id = v_crm_conversation_id;
+          v_identity_needs_name := false;
+        end if;
       end if;
     end if;
   end if;
@@ -519,7 +533,8 @@ begin
             'crm_contact_id', v_crm_contact_id,
             'contact_phone', v_phone,
             'provider', 'meta_whatsapp',
-            'identity_needs_name', v_identity_needs_name
+            'identity_needs_name', v_identity_needs_name,
+            'identity_review_required', v_identity_review_required
           )
         else jsonb_build_object(
           'contact_phone', v_phone,
@@ -536,7 +551,8 @@ begin
           'crm_contact_id', v_crm_contact_id,
           'contact_phone', v_phone,
           'provider', 'meta_whatsapp',
-          'identity_needs_name', v_identity_needs_name
+          'identity_needs_name', v_identity_needs_name,
+          'identity_review_required', v_identity_review_required
         ),
         last_activity_at = greatest(last_activity_at, v_activity_at),
         updated_at = clock_timestamp()
@@ -608,7 +624,8 @@ begin
     'inbound_turn_id', v_inbound_turn_id,
     'handoff_open', v_handoff_open,
     'phone_e164', v_phone,
-    'identity_needs_name', v_identity_needs_name
+    'identity_needs_name', v_identity_needs_name,
+    'identity_review_required', v_identity_review_required
   );
 end;
 $function$;
