@@ -18,6 +18,8 @@ describe("Demi first trial name-first flow", () => {
     expect(orchestrator).toContain("¿me compartes tu nombre completo?");
     expect(route).toContain("const identityNeedsName = prepared.identity_needs_name === true;");
     expect(route).toContain("        identityNeedsName,");
+    expect(route).toContain("        identityReviewRequired,");
+    expect(orchestrator).toContain("input.identityReviewRequired === true");
   });
 
   it("stores the supplied name on the prospect and prices the first trial at $150", () => {
