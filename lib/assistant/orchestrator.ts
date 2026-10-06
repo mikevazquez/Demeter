@@ -70,6 +70,7 @@ type OrchestratorInput = {
   studentId: string | null;
   crmContactId: string | null;
   identityNeedsName?: boolean;
+  identityReviewRequired?: boolean;
   activationUrl: string | null;
   serviceMode?: boolean;
   history: HistoryMessage[];
@@ -820,6 +821,14 @@ export async function runAssistantTurn(input: OrchestratorInput) {
   if (input.identityNeedsName === true) {
     return {
       reply: "Para buscarte correctamente en Studio Flow y registrar tu primera clase, ¿me compartes tu nombre completo?",
+      trace,
+    };
+  }
+
+  if (input.identityReviewRequired === true) {
+    const reply = "Encontré un registro con ese nombre en Studio Flow, pero necesito confirmar que corresponde a este teléfono. Ya pasé la verificación a atención humana en este mismo chat.";
+    return {
+      reply: await ensureHumanHandoffForReply(input, trace, reply, null),
       trace,
     };
   }
