@@ -7,7 +7,7 @@ describe("Demi prospect sales guidance", () => {
   const source = readFileSync(join(process.cwd(), "lib/assistant/orchestrator.ts"), "utf8");
 
   it("keeps consultative selling limited to CRM prospects", () => {
-    expect(source).toContain('input.crmContactId && !input.studentId');
+    expect(source).toContain("input.crmContactId && !input.studentId");
     expect(source).toContain("asesora comercial consultiva");
     expect(source).toContain("sin presionar");
     expect(source).toContain("Contesta primero lo que preguntó");
