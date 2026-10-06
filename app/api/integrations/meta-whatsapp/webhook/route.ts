@@ -1,4 +1,5 @@
 import { runAssistantTurn } from "@/lib/assistant/orchestrator";
+import { getStudentPackageStatus } from "@/lib/assistant/read-tools";
 import {
   downloadMetaWhatsAppMedia,
   extractMetaInboundMessages,
@@ -848,6 +849,39 @@ export async function POST(request: Request) {
         content: item.content,
       }));
 
+    let studentCategory: string | null = null;
+    if (studentId) {
+      try {
+        const studentStatus = await getStudentPackageStatus({
+          supabase,
+          studio: {
+            id: runtimeContext.studio.id,
+            name: runtimeContext.studio.name,
+            timezone: runtimeContext.studio.timezone,
+            currency: runtimeContext.studio.currency,
+          },
+          studentId,
+        });
+        if (studentStatus.ok === true && isObject(studentStatus.student_state)) {
+          const category = String(studentStatus.student_state.category ?? "");
+          if (
+            [
+              "trial_pending",
+              "trial_attended",
+              "trial_cancelled",
+              "trial_no_show",
+              "former_student",
+              "student",
+            ].includes(category)
+          ) {
+            studentCategory = category;
+          }
+        }
+      } catch {
+        studentCategory = null;
+      }
+    }
+
     let assistantResult;
     try {
       assistantResult = await runAssistantTurn({
@@ -872,6 +906,7 @@ export async function POST(request: Request) {
         conversationId,
         turnId: inboundTurnId,
         studentId,
+        studentCategory,
         crmContactId,
         identityNeedsName,
         activationUrl: new URL("/login/student/activar", request.url).toString(),
