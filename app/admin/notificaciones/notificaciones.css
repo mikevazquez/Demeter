@@ -1203,3 +1203,32 @@ a.notification-process-row:hover {
   color: #fff !important;
   box-shadow: 0 10px 24px rgba(23, 168, 120, 0.14) !important;
 }
+
+
+.notification-required-channel {
+  padding: 5px 8px;
+  border: 1px solid rgba(56, 217, 150, 0.2);
+  border-radius: 999px;
+  background: rgba(56, 217, 150, 0.08);
+  color: #72dca9;
+  font-size: 9px;
+  font-weight: 750;
+}
+
+.notification-message-preview code {
+  color: #d7c5ff;
+  font-size: 0.95em;
+  overflow-wrap: anywhere;
+}
+
+.notification-detail-channel-grid,
+.notification-message-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@media (max-width: 760px) {
+  .notification-detail-channel-grid,
+  .notification-message-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
