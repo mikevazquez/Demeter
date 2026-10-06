@@ -522,25 +522,27 @@ export async function getStudentPackageStatus(ctx: AssistantToolContext) {
   }
 
   const today = localParts(new Date().toISOString(), ctx.studio.timezone).date;
-  const [{ data: student, error: studentError }, { data: acquisitions, error: acquisitionsError }] =
-    await Promise.all([
-      ctx.supabase
-        .from("students")
-        .select("lifecycle_status,student_type,trial_status")
-        .eq("studio_id", ctx.studio.id)
-        .eq("id", ctx.studentId)
-        .maybeSingle(),
-      ctx.supabase
-        .from("product_acquisitions")
-        .select(
-          "id,product_template_id,status,starts_on,expires_on,credit_limit,unlimited,access_blocked,created_at",
-        )
-        .eq("studio_id", ctx.studio.id)
-        .eq("student_id", ctx.studentId)
-        .is("refunded_at", null)
-        .order("created_at", { ascending: false })
-        .limit(20),
-    ]);
+  const [
+    { data: student, error: studentError },
+    { data: acquisitions, error: acquisitionsError },
+  ] = await Promise.all([
+    ctx.supabase
+      .from("students")
+      .select("lifecycle_status,student_type,trial_status")
+      .eq("studio_id", ctx.studio.id)
+      .eq("id", ctx.studentId)
+      .maybeSingle(),
+    ctx.supabase
+      .from("product_acquisitions")
+      .select(
+        "id,product_template_id,status,starts_on,expires_on,credit_limit,unlimited,access_blocked,created_at",
+      )
+      .eq("studio_id", ctx.studio.id)
+      .eq("student_id", ctx.studentId)
+      .is("refunded_at", null)
+      .order("created_at", { ascending: false })
+      .limit(20),
+  ]);
 
   if (studentError || acquisitionsError || !student) {
     return { ok: false, error: "package_status_unavailable" };
