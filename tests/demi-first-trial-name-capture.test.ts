@@ -3,19 +3,35 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 describe("Demi identity, CRM lifecycle, and first trial flow", () => {
-  const orchestrator = readFileSync(join(process.cwd(), "lib/assistant/orchestrator.ts"), "utf8");
-  const route = readFileSync(join(process.cwd(), "app/api/integrations/meta-whatsapp/webhook/route.ts"), "utf8");
-  const actionTools = readFileSync(join(process.cwd(), "lib/assistant/action-tools.ts"), "utf8");
+  const orchestrator = readFileSync(
+    join(process.cwd(), "lib/assistant/orchestrator.ts"),
+    "utf8",
+  );
+  const route = readFileSync(
+    join(process.cwd(), "app/api/integrations/meta-whatsapp/webhook/route.ts"),
+    "utf8",
+  );
+  const actionTools = readFileSync(
+    join(process.cwd(), "lib/assistant/action-tools.ts"),
+    "utf8",
+  );
   const readTools = readFileSync(join(process.cwd(), "lib/assistant/read-tools.ts"), "utf8");
-  const directory = readFileSync(join(process.cwd(), "app/admin/alumnas/page.tsx"), "utf8");
+  const directory = readFileSync(
+    join(process.cwd(), "app/admin/alumnas/page.tsx"),
+    "utf8",
+  );
   const migration = readFileSync(
     join(process.cwd(), "supabase/migrations/20261006220000_demi_first_trial_name_capture.sql"),
     "utf8",
   );
 
   it("answers prospect questions and requires a saved name only before booking", () => {
-    expect(orchestrator).toContain("puedes responder su pregunta actual usando las herramientas oficiales");
-    expect(orchestrator).toContain("no prepares una reserva de prueba hasta que Studio Flow confirme");
+    expect(orchestrator).toContain(
+      "puedes responder su pregunta actual usando las herramientas oficiales",
+    );
+    expect(orchestrator).toContain(
+      "no prepares una reserva de prueba hasta que Studio Flow confirme",
+    );
     expect(orchestrator).not.toContain("if (input.identityNeedsName === true) {");
     expect(route).toContain("const identityNeedsName = prepared.identity_needs_name === true;");
     expect(actionTools).toContain('ctx.identityNeedsName === true && !ctx.studentId');
