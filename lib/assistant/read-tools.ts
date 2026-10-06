@@ -540,7 +540,7 @@ export async function getStudentPackageStatus(ctx: AssistantToolContext) {
         .is("refunded_at", null)
         .order("created_at", { ascending: false })
         .limit(20),
-  ]);
+    ]);
 
   if (studentError || acquisitionsError || !student) {
     return { ok: false, error: "package_status_unavailable" };
