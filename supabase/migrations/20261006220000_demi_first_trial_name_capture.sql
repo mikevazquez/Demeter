@@ -276,19 +276,31 @@ begin
     )
   );
 
-  select count(*)
+  select count(distinct s.id)
     into v_student_matches
   from public.students s
   where s.studio_id = target_studio_id
     and (
       case
         when regexp_replace(coalesce(s.phone, ''), '[^0-9]', '', 'g') ~ '^521[0-9]{10}$'
-          then '52' || substring(
-            regexp_replace(coalesce(s.phone, ''), '[^0-9]', '', 'g') from 4
-          )
+          then '52' || substring(regexp_replace(coalesce(s.phone, ''), '[^0-9]', '', 'g') from 4)
         else regexp_replace(coalesce(s.phone, ''), '[^0-9]', '', 'g')
-      end
-    ) = v_match_digits;
+      end = v_match_digits
+      or exists (
+        select 1
+        from public.person_contacts pc
+        where pc.studio_id = target_studio_id
+          and pc.person_id = s.person_id
+          and pc.kind = 'phone'
+          and (
+            case
+              when regexp_replace(coalesce(pc.value, ''), '[^0-9]', '', 'g') ~ '^521[0-9]{10}$'
+                then '52' || substring(regexp_replace(coalesce(pc.value, ''), '[^0-9]', '', 'g') from 4)
+              else regexp_replace(coalesce(pc.value, ''), '[^0-9]', '', 'g')
+            end
+          ) = v_match_digits
+      )
+    );
 
   if v_student_matches = 1 then
     select s.id, s.person_id
@@ -298,12 +310,24 @@ begin
       and (
         case
           when regexp_replace(coalesce(s.phone, ''), '[^0-9]', '', 'g') ~ '^521[0-9]{10}$'
-            then '52' || substring(
-              regexp_replace(coalesce(s.phone, ''), '[^0-9]', '', 'g') from 4
-            )
+            then '52' || substring(regexp_replace(coalesce(s.phone, ''), '[^0-9]', '', 'g') from 4)
           else regexp_replace(coalesce(s.phone, ''), '[^0-9]', '', 'g')
-        end
-      ) = v_match_digits
+        end = v_match_digits
+        or exists (
+          select 1
+          from public.person_contacts pc
+          where pc.studio_id = target_studio_id
+            and pc.person_id = s.person_id
+            and pc.kind = 'phone'
+            and (
+              case
+                when regexp_replace(coalesce(pc.value, ''), '[^0-9]', '', 'g') ~ '^521[0-9]{10}$'
+                  then '52' || substring(regexp_replace(coalesce(pc.value, ''), '[^0-9]', '', 'g') from 4)
+                else regexp_replace(coalesce(pc.value, ''), '[^0-9]', '', 'g')
+              end
+            ) = v_match_digits
+        )
+      )
     limit 1;
 
     if v_person_id is not null then
@@ -327,6 +351,49 @@ begin
       and c.crm_contact_id is not null
     order by c.last_activity_at desc
     limit 1;
+  end if;
+
+  if v_crm_contact_id is null then
+    select c.id, c.person_id
+      into v_crm_contact_id, v_person_id
+    from public.crm_contacts c
+    join public.person_contacts pc
+      on pc.studio_id = c.studio_id
+     and pc.person_id = c.person_id
+     and pc.kind = 'phone'
+    where c.studio_id = target_studio_id
+      and (
+        case
+          when regexp_replace(coalesce(pc.value, ''), '[^0-9]', '', 'g') ~ '^521[0-9]{10}$'
+            then '52' || substring(regexp_replace(coalesce(pc.value, ''), '[^0-9]', '', 'g') from 4)
+          else regexp_replace(coalesce(pc.value, ''), '[^0-9]', '', 'g')
+        end
+      ) = v_match_digits
+    order by c.created_at asc
+    limit 1;
+  end if;
+
+  if v_crm_contact_id is null then
+    select pc.person_id
+      into v_person_id
+    from public.person_contacts pc
+    where pc.studio_id = target_studio_id
+      and pc.kind = 'phone'
+      and (
+        case
+          when regexp_replace(coalesce(pc.value, ''), '[^0-9]', '', 'g') ~ '^521[0-9]{10}$'
+            then '52' || substring(regexp_replace(coalesce(pc.value, ''), '[^0-9]', '', 'g') from 4)
+          else regexp_replace(coalesce(pc.value, ''), '[^0-9]', '', 'g')
+        end
+      ) = v_match_digits
+    limit 1;
+
+    if v_person_id is not null then
+      insert into public.crm_contacts(studio_id, person_id, lifecycle_status, source)
+      values (target_studio_id, v_person_id, 'prospect', 'meta_whatsapp')
+      returning id into v_crm_contact_id;
+      v_new_contact := true;
+    end if;
   end if;
 
   if v_student_id is null and v_crm_contact_id is null then
@@ -367,7 +434,22 @@ begin
       'meta_whatsapp'
     )
     returning id into v_crm_contact_id;
+    insert into public.person_contacts(studio_id, person_id, kind, value, is_primary)
+    values (target_studio_id, v_person_id, 'phone', v_phone, true)
+    on conflict do nothing;
     v_new_contact := true;
+  end if;
+
+  if v_student_id is null and v_crm_contact_id is not null and not v_new_contact then
+    select exists (
+      select 1
+      from public.crm_contacts c
+      join public.persons p on p.id = c.person_id and p.studio_id = c.studio_id
+      where c.id = v_crm_contact_id
+        and c.studio_id = target_studio_id
+        and lower(trim(coalesce(p.first_name, ''))) = 'prospecto'
+        and nullif(trim(coalesce(p.last_name, '')), '') is null
+    ) into v_identity_needs_name;
   end if;
 
   select c.id
