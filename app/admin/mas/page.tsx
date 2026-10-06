@@ -51,7 +51,7 @@ const items: MoreItem[] = [
   {
     title: "Notificaciones",
     description: "Procesos, marketing, plantillas y horarios de envío.",
-    href: "/admin/automatizaciones",
+    href: "/admin/notificaciones",
     capability: CAPABILITIES.AUTOMATIONS_READ,
   },
   {
