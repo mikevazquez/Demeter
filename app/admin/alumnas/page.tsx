@@ -121,8 +121,7 @@ export default async function StudentsPage({
       .in("trial_status", ["pending", "attended", "cancelled"]);
   }
   if (status === "no_show") {
-    studentsQuery = studentsQuery
-      .eq("student_type", "trial").eq("trial_status", "no_show");
+    studentsQuery = studentsQuery.eq("student_type", "trial").eq("trial_status", "no_show");
   }
   if (status === "prospect") {
     studentsQuery = studentsQuery.limit(0);
@@ -189,34 +188,34 @@ export default async function StudentsPage({
   const allStudents =
     allStudentsResult.data ??
     (students ?? []).map((student) => ({
-    id: student.id,
-    lifecycle_status: student.lifecycle_status,
-    student_type: student.student_type,
-    trial_status: student.trial_status,
+      id: student.id,
+      lifecycle_status: student.lifecycle_status,
+      student_type: student.student_type,
+      trial_status: student.trial_status,
     }));
   const prospectPersonIds = [
     ...new Set((prospectContacts ?? []).map((contact) => contact.person_id)),
   ];
   const [{ data: prospectPeople }, { data: prospectPhones }] = await Promise.all([
     prospectPersonIds.length
-    ? supabase
-        .from("persons")
-        .select("id,first_name,last_name")
-        .eq("studio_id", studio.id)
-        .in("id", prospectPersonIds)
-    : Promise.resolve({
-        data: [] as { id: string; first_name: string; last_name: string | null }[],
-      }),
+      ? supabase
+          .from("persons")
+          .select("id,first_name,last_name")
+          .eq("studio_id", studio.id)
+          .in("id", prospectPersonIds)
+      : Promise.resolve({
+          data: [] as { id: string; first_name: string; last_name: string | null }[],
+        }),
     prospectPersonIds.length
-    ? supabase
-        .from("person_contacts")
-        .select("person_id,value,is_primary")
-        .eq("studio_id", studio.id)
-        .eq("kind", "phone")
-        .in("person_id", prospectPersonIds)
-    : Promise.resolve({
-        data: [] as { person_id: string; value: string; is_primary: boolean }[],
-      }),
+      ? supabase
+          .from("person_contacts")
+          .select("person_id,value,is_primary")
+          .eq("studio_id", studio.id)
+          .eq("kind", "phone")
+          .in("person_id", prospectPersonIds)
+      : Promise.resolve({
+          data: [] as { person_id: string; value: string; is_primary: boolean }[],
+        }),
   ]);
   const peopleById = new Map((prospectPeople ?? []).map((person) => [person.id, person]));
   const phoneByPersonId = new Map<string, string>();
