@@ -7,9 +7,7 @@ function source(path: string) {
 }
 
 describe("Demi transfer payment-method schema", () => {
-  const migration = source(
-    "supabase/migrations/20261006043000_studio_payment_methods.sql",
-  );
+  const migration = source("supabase/migrations/20261006043000_studio_payment_methods.sql");
   const transfer = source(
     "supabase/migrations/20261003172800_demi_provisional_transfer_packages.sql",
   );
