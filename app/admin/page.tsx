@@ -134,6 +134,7 @@ export default async function AdminPage({
 
   const canWriteSchedule = can(CAPABILITIES.SCHEDULE_WRITE);
   const canWriteStudents = can(CAPABILITIES.STUDENTS_WRITE);
+  const canReadSales = can(CAPABILITIES.SALES_READ) || can(CAPABILITIES.SALES_WRITE);
   const canWriteSales = can(CAPABILITIES.SALES_WRITE);
   const canWriteAttendance = can(CAPABILITIES.ATTENDANCE_WRITE);
   const [
@@ -141,6 +142,7 @@ export default async function AdminPage({
     { data: selectedSessions },
     { data: activeProductAcquisitions },
     { data: selectedPayments },
+    { data: pendingTransferIntents },
   ] = await Promise.all([
     supabase.rpc("current_server_time"),
     supabase
@@ -165,6 +167,26 @@ export default async function AdminPage({
       .select("amount_minor,kind")
       .eq("studio_id", studio.id)
       .eq("effective_on", selectedKey),
+    canReadSales
+      ? supabase
+          .from("assistant_transfer_purchase_intents")
+          .select(
+            "id,student_id,product_template_id,amount_minor,currency,receipt_stored_at,updated_at",
+          )
+          .eq("studio_id", studio.id)
+          .eq("status", "provisional_active")
+          .order("receipt_stored_at", { ascending: true, nullsFirst: false })
+      : Promise.resolve({
+          data: [] as {
+            id: string;
+            student_id: string;
+            product_template_id: string;
+            amount_minor: number;
+            currency: string;
+            receipt_stored_at: string | null;
+            updated_at: string;
+          }[],
+        }),
   ]);
 
   const activeProductStudentIds = new Set(
@@ -173,6 +195,57 @@ export default async function AdminPage({
     ),
   );
   const activeStudents = activeProductStudentIds.size;
+
+  const pendingTransferStudentIds = [
+    ...new Set((pendingTransferIntents ?? []).map((item) => item.student_id).filter(Boolean)),
+  ] as string[];
+  const pendingTransferProductIds = [
+    ...new Set(
+      (pendingTransferIntents ?? []).map((item) => item.product_template_id).filter(Boolean),
+    ),
+  ] as string[];
+
+  const [{ data: pendingTransferStudents }, { data: pendingTransferProducts }] =
+    pendingTransferStudentIds.length || pendingTransferProductIds.length
+      ? await Promise.all([
+          pendingTransferStudentIds.length
+            ? supabase
+                .from("students")
+                .select("id,full_name")
+                .eq("studio_id", studio.id)
+                .in("id", pendingTransferStudentIds)
+            : Promise.resolve({ data: [] as { id: string; full_name: string }[] }),
+          pendingTransferProductIds.length
+            ? supabase
+                .from("product_templates")
+                .select("id,name")
+                .eq("studio_id", studio.id)
+                .in("id", pendingTransferProductIds)
+            : Promise.resolve({ data: [] as { id: string; name: string }[] }),
+        ])
+      : [
+          { data: [] as { id: string; full_name: string }[] },
+          { data: [] as { id: string; name: string }[] },
+        ];
+
+  const pendingTransferStudentMap = new Map(
+    (pendingTransferStudents ?? []).map((student) => [student.id, student.full_name]),
+  );
+  const pendingTransferProductMap = new Map(
+    (pendingTransferProducts ?? []).map((product) => [product.id, product.name]),
+  );
+  const pendingTransferReviews = (pendingTransferIntents ?? []).map((intent) => ({
+    id: intent.id,
+    studentId: intent.student_id,
+    studentName: pendingTransferStudentMap.get(intent.student_id) ?? "Alumna",
+    packageName: pendingTransferProductMap.get(intent.product_template_id) ?? "Paquete",
+    amount: new Intl.NumberFormat(locale, {
+      style: "currency",
+      currency: intent.currency || studio.currency,
+      maximumFractionDigits: 0,
+    }).format(Number(intent.amount_minor ?? 0) / 100),
+    receivedAt: intent.receipt_stored_at ?? intent.updated_at,
+  }));
 
   const sessionIds = (selectedSessions ?? []).map((session) => session.id);
   const templateIds = [...new Set((selectedSessions ?? []).map((session) => session.template_id))];
@@ -578,6 +651,53 @@ export default async function AdminPage({
           })}
         </nav>
       </section>
+
+      {selectedKey === todayKey && pendingTransferReviews.length > 0 ? (
+        <section className="hoy-priority" aria-label="Pendientes importantes">
+          <div className="hoy-priority-heading">
+            <div>
+              <span>Pendiente importante</span>
+              <strong>
+                {pendingTransferReviews.length === 1
+                  ? "1 pago por validar"
+                  : `${pendingTransferReviews.length} pagos por validar`}
+              </strong>
+            </div>
+            <span className="hoy-priority-count">{pendingTransferReviews.length}</span>
+          </div>
+
+          <div className="hoy-priority-list">
+            {pendingTransferReviews.map((item) => (
+              <Link
+                key={item.id}
+                href={`/admin/alumnas/${item.studentId}?view=packages#transferencias`}
+                className="hoy-priority-item"
+              >
+                <span className="hoy-priority-icon" aria-hidden="true">
+                  $
+                </span>
+                <span className="hoy-priority-copy">
+                  <strong>{item.studentName}</strong>
+                  <small>
+                    {item.packageName} · {item.amount}
+                  </small>
+                  <em>
+                    Comprobante recibido{" "}
+                    {new Intl.DateTimeFormat(locale, {
+                      timeZone,
+                      day: "numeric",
+                      month: "short",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    }).format(new Date(item.receivedAt))}
+                  </em>
+                </span>
+                <b aria-hidden="true">›</b>
+              </Link>
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       <section className="hoy-glance" aria-label="Resumen rápido">
         <Link href="/admin/alumnas">

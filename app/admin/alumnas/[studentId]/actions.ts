@@ -556,6 +556,7 @@ export async function reviewStudentTransferPurchaseAction(formData: FormData) {
   revalidatePath(`/admin/alumnas/${studentId}`);
   revalidatePath("/admin/alumnas");
   revalidatePath("/admin/configuracion/pagos");
+  revalidatePath("/admin");
   revalidatePath("/admin/hoy");
 
   redirect(
