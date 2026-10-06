@@ -77,8 +77,8 @@ describe("NOTIFICACIONES-02 control center", () => {
   it("keeps WhatsApp provider-managed and does not pretend email delivery exists", () => {
     expect(actions).toContain('channel === "whatsapp"');
     expect(actions).toContain("notification_whatsapp_provider_managed");
-    expect(detail).toContain("Plantilla aprobada de WhatsApp");
-    expect(detail).toContain("proveedor conectado");
+    expect(detail).toContain("Plantilla administrada en Meta");
+    expect(detail).toContain("se administran en Meta");
     expect(detail).toContain("Proveedor no configurado");
   });
 
