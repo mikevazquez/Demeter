@@ -577,7 +577,8 @@ async function prepareBooking(ctx: AssistantActionToolContext, args: PrepareBook
     return {
       ok: false,
       reason_code: "prospect_name_required",
-      reason_message: "Antes de reservar, pide el nombre completo y espera a que Studio Flow lo guarde en el CRM.",
+      reason_message:
+        "Antes de reservar, pide el nombre completo y espera a que Studio Flow lo guarde en el CRM.",
     };
   }
 
