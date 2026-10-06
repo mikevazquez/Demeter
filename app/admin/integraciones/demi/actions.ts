@@ -400,18 +400,15 @@ export async function sendDemiReceipt(formData: FormData) {
   const packageName = String(activation.package_name ?? "tu paquete").trim() || "tu paquete";
   const saleId = String(activation.sale_id ?? "").trim();
 
-  const { data: handoffData, error: handoffError } = await service.rpc(
-    "assistant_create_handoff",
-    {
-      target_studio_id: studio.id,
-      target_conversation_id: conversationId,
-      target_student_id: requestedStudentId,
-      target_reason_code: "transfer_receipt_review",
-      target_note:
-        `Comprobante recibido en UAT. Paquete activado provisionalmente: ${packageName}. ` +
-        `Intento: ${intentId}. Venta: ${saleId || "sin referencia"}. Validar transferencia.`,
-    },
-  );
+  const { data: handoffData, error: handoffError } = await service.rpc("assistant_create_handoff", {
+    target_studio_id: studio.id,
+    target_conversation_id: conversationId,
+    target_student_id: requestedStudentId,
+    target_reason_code: "transfer_receipt_review",
+    target_note:
+      `Comprobante recibido en UAT. Paquete activado provisionalmente: ${packageName}. ` +
+      `Intento: ${intentId}. Venta: ${saleId || "sin referencia"}. Validar transferencia.`,
+  });
 
   const handoffOk =
     handoffData &&
