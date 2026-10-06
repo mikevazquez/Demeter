@@ -522,10 +522,8 @@ export async function getStudentPackageStatus(ctx: AssistantToolContext) {
   }
 
   const today = localParts(new Date().toISOString(), ctx.studio.timezone).date;
-  const [
-    { data: student, error: studentError },
-    { data: acquisitions, error: acquisitionsError },
-  ] = await Promise.all([
+  const [{ data: student, error: studentError }, { data: acquisitions, error: acquisitionsError }] =
+    await Promise.all([
     ctx.supabase
       .from("students")
       .select("lifecycle_status,student_type,trial_status")
@@ -554,8 +552,8 @@ export async function getStudentPackageStatus(ctx: AssistantToolContext) {
     if (item.expires_on && item.expires_on < today) return false;
     return true;
   });
-  const hasExpiredPackage = (acquisitions ?? []).some(
-    (item) => Boolean(item.expires_on && item.expires_on < today),
+  const hasExpiredPackage = (acquisitions ?? []).some((item) =>
+    Boolean(item.expires_on && item.expires_on < today),
   );
   let studentCategory = "student";
   if (student.student_type === "trial") {
