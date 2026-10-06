@@ -250,7 +250,6 @@ export async function sendDemiMessage(input: SendDemiInput) {
   }
 }
 
-
 const RECEIPT_MIME_TYPES = new Set([
   "image/jpeg",
   "image/png",
