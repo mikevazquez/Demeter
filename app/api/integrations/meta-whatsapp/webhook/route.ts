@@ -662,6 +662,7 @@ export async function POST(request: Request) {
     const inboundTurnId = String(prepared.inbound_turn_id ?? "").trim();
     const studentId = String(prepared.student_id ?? "").trim() || null;
     const crmContactId = String(prepared.crm_contact_id ?? "").trim() || null;
+    const identityNeedsName = prepared.identity_needs_name === true;
 
     if (!conversationId || !inboundTurnId) {
       retryableFailure = true;
@@ -872,6 +873,7 @@ export async function POST(request: Request) {
         turnId: inboundTurnId,
         studentId,
         crmContactId,
+        identityNeedsName,
         activationUrl: new URL("/login/student/activar", request.url).toString(),
         serviceMode: true,
         history,
