@@ -9,6 +9,7 @@ function source(path: string) {
 describe("Hoy pending transfer reviews", () => {
   const page = source("app/admin/page.tsx");
   const css = source("app/admin/hoy.css");
+  const actions = source("app/admin/alumnas/[studentId]/actions.ts");
 
   it("loads only provisional transfer purchases for review", () => {
     expect(page).toContain('from("assistant_transfer_purchase_intents")');
@@ -24,5 +25,9 @@ describe("Hoy pending transfer reviews", () => {
     expect(page).toContain('className="hoy-priority"');
     expect(css).toContain(".hoy-priority");
     expect(css).toContain(".hoy-priority-item");
+  });
+
+  it("refreshes Hoy after a transfer is approved or rejected", () => {
+    expect(actions).toContain('revalidatePath("/admin")');
   });
 });
