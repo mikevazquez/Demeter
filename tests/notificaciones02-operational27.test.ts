@@ -7,7 +7,7 @@ function source(path: string) {
   return readFileSync(join(process.cwd(), path), "utf8");
 }
 
-describe("NOTIFICACIONES-02 operational catalog 27", () => {
+describe("NOTIFICACIONES-02 operational action catalog", () => {
   const catalog = source("lib/notifications/admin-catalog.ts");
   const migration = source(
     "supabase/migrations/20260924193000_notificaciones02_operational_catalog_27.sql",
@@ -18,8 +18,8 @@ describe("NOTIFICACIONES-02 operational catalog 27", () => {
     catalog.indexOf("export type MarketingDefinition"),
   );
 
-  it("exposes exactly the 27 approved operational processes with no placeholders", () => {
-    expect(processSection.match(/\n    key: "/g)?.length).toBe(27);
+  it("exposes each configurable operational action with no placeholders", () => {
+    expect(processSection.match(/\n    key: "/g)?.length).toBe(29);
     expect(processSection).not.toContain("planned: true");
 
     for (const name of [
@@ -27,10 +27,12 @@ describe("NOTIFICACIONES-02 operational catalog 27", () => {
       "Reserva modificada",
       "Reserva cancelada por alumna",
       "Recordatorio de clase",
+      "Recordatorio de clase reprogramada",
       "Cancelación tardía",
       "No show",
       "Clase cancelada por el estudio",
-      "Cancelación por mínimo de reservas",
+      "Clase cancelada por mínimo de reservas",
+      "Aviso al coach por mínimo de reservas",
       "Cambio de horario / sesión",
       "Lugar disponible en lista de espera",
       "Lugar de lista de espera vencido",
