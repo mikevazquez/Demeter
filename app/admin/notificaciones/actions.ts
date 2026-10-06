@@ -34,7 +34,8 @@ function requiredProcess(formData: FormData) {
 
 function parseChannel(value: FormDataEntryValue | null): NotificationChannelKey {
   const channel = String(value ?? "").trim();
-  if (channel === "inbox" || channel === "push" || channel === "whatsapp" || channel === "email") return channel;
+  if (channel === "inbox" || channel === "push" || channel === "whatsapp" || channel === "email")
+    return channel;
   throw new Error("notification_channel_invalid");
 }
 
