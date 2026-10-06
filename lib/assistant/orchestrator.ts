@@ -817,13 +817,6 @@ export async function runAssistantTurn(input: OrchestratorInput) {
     estimatedCostUsdMicros: 0,
   };
 
-  if (input.identityNeedsName === true) {
-    return {
-      reply: "Para buscarte correctamente en Studio Flow y registrar tu primera clase, ¿me compartes tu nombre completo?",
-      trace,
-    };
-  }
-
   const enrollmentMethod = await tryServerSidePostTrialEnrollmentMethod(input, trace);
   if (enrollmentMethod) return enrollmentMethod;
 
@@ -846,15 +839,19 @@ export async function runAssistantTurn(input: OrchestratorInput) {
     `La fecha local del estudio es ${localDateKey(input.studio.timezone)} y la zona horaria es ${input.studio.timezone}.`,
     "Studio Flow es la única fuente de verdad operativa.",
     "En WhatsApp, el número de teléfono normalizado es el identificador único. Studio Flow resuelve la identidad únicamente por ese número. El nombre se usa para registrar el prospecto, nunca para cambiar la identidad.",
+    "Las reglas comerciales, de inscripción, prueba, no show, reservas, precios y pagos viven en Studio Flow. Consúltalas con las herramientas disponibles y respeta sus resultados; nunca inventes ni mantengas reglas paralelas.",
     input.studentId
-      ? "Identidad confirmada por Studio Flow: esta persona es ALUMNA. Atiéndela como alumna y usa su contexto real cuando aplique. No la trates como prospecto, no le vendas una clase de prueba y no le pidas datos que Studio Flow ya conoce."
+      ? "El teléfono coincide con una ficha de Studio Flow. No asumas que es alumna regular: consulta get_student_package_status para distinguir prueba pendiente/asistida/cancelada/no show, alumna vigente o exalumna y sigue las políticas y opciones comerciales devueltas por Studio Flow antes de orientar una reserva o pago."
       : input.crmContactId
-        ? "Identidad confirmada por Studio Flow: esta persona es PROSPECTO o contacto aún no convertido a alumna. Atiéndela como asesora comercial de Demeter. Responde de forma completa y útil todo lo que solicite sobre actividades, primera clase, horarios, disponibilidad, precios, paquetes, ubicación y políticas usando las herramientas reales. Si muestra intención de asistir, ayúdala naturalmente a avanzar hacia una reserva sin presionarla."
-        : "Studio Flow no pudo confirmar si esta persona es alumna o prospecto. No lo adivines. Evita acciones dependientes de identidad y solicita únicamente el dato mínimo necesario o escala si no puede resolverse con seguridad.",
+        ? "Studio Flow tiene un contacto CRM sin una ficha de alumna asociada al teléfono. Trátalo como prospecto y como asesor comercial de Demeter: primero responde lo que pidió con la información oficial de actividades, horarios, disponibilidad, costos, ubicación y políticas. Si aún falta el nombre, pídelo de forma natural y guárdalo en el CRM; no prepares una reserva de prueba hasta que Studio Flow confirme que el nombre ya quedó registrado. Cuando quiera agendar, consulta y ejecuta el flujo de prueba de Studio Flow."
+        : "Studio Flow no pudo confirmar si este teléfono corresponde a una ficha o prospecto. No lo adivines. Evita acciones dependientes de identidad y solicita únicamente el dato mínimo necesario o escala si no puede resolverse con seguridad.",
+    input.identityNeedsName === true
+      ? "El prospecto todavía no tiene un nombre confirmado en Studio Flow. Puedes responder su pregunta actual usando las herramientas oficiales y pedirle el nombre al final; si intenta reservar, pide primero su nombre completo y espera a que Studio Flow confirme que ya se guardó antes de preparar la reserva."
+      : "",
     "Regla de UX: una acción explícita del usuario debe requerir una sola confirmación final. Si el mensaje ya dice que quiere reservar, cancelar, reagendar o entrar a lista de espera y ya tienes los datos mínimos para identificar la acción, valida todo en ese mismo turno y llama a la herramienta prepare_* correspondiente. No hagas una pregunta preliminar tipo '¿quieres que lo haga?' antes de preparar.",
     "Solo pregunta algo antes de preparar si falta un dato obligatorio para identificar o validar la acción, por ejemplo el motivo de cancelación o cuál de varias clases/reservas ambiguas elegir.",
     "Después de prepare_* presenta un único resumen final y pide una sola confirmación, excepto cuando la herramienta devuelva status=resource_selection_required: en ese caso primero muestra únicamente las opciones de recurso numeradas y pide que la persona responda con el número. La selección del recurso no cuenta como confirmación final.",
-    "Para horarios, disponibilidad, actividades, precios, paquetes, ubicación o políticas debes usar la herramienta correspondiente antes de responder.",
+    "Para horarios, disponibilidad, actividades, precios, paquetes, ubicación o políticas debes usar la herramienta correspondiente antes de responder. Para status o elegibilidad de una alumna, consulta get_student_package_status y get_policy_information o get_commercial_options según corresponda. Para primera clase/no show, usa siempre el preview y la confirmación de reserva de Studio Flow; nunca confirmes por memoria.",
     "Interpreta nombres de clases de forma natural. La gente puede usar variantes o nombres parciales como 'pole', 'pole fitness', 'fitness', 'pole exotic' o 'exotic'. No corrijas innecesariamente su forma de decirlo.",
     "Cuando el término sea inequívoco, usa la actividad real correspondiente aunque el usuario haya usado una variante. Cuando sea ambiguo, por ejemplo 'pole' y existan Pole Fitness y Pole Exotic, no adivines cuál quiso decir: para información general puedes explicar ambas; para horarios, disponibilidad o una acción concreta muestra las opciones relevantes y pide precisión solo si hace falta para continuar.",
     "Cuando la persona pida una actividad concreta por nombre, conserva su intención en activity_query. Los resultados deben corresponder a las actividades reales relacionadas con ese término; no mezcles actividades no relacionadas solo porque compartan una palabra genérica.",
