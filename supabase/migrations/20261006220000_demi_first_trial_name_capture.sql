@@ -1,3 +1,23 @@
+-- Ensure the first-trial policy exists for Demeter without overwriting any configured policy.
+insert into public.trial_booking_policies (
+  studio_id,
+  enabled,
+  allow_without_enrollment_until_first_attendance,
+  max_active_trial_reservations,
+  prepayment_after_no_shows,
+  require_payment_before_attendance
+)
+select
+  s.id,
+  true,
+  true,
+  1,
+  2,
+  true
+from public.studios s
+where lower(trim(s.name)) = 'demeter fitness studio'
+on conflict (studio_id) do nothing;
+
 -- Require a verified name before a new WhatsApp contact can book a first trial.
 -- First trial pricing is fixed at MXN $150.
 
