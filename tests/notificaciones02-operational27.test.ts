@@ -19,7 +19,7 @@ describe("NOTIFICACIONES-02 operational catalog 27", () => {
   );
 
   it("exposes exactly the 27 approved operational processes with no placeholders", () => {
-    expect(processSection.match(/\n    key: "/g)?.length).toBe(27);
+    expect(processSection.match(/\n    key: "/g)?.length).toBe(29);
     expect(processSection).not.toContain("planned: true");
 
     for (const name of [
@@ -27,10 +27,12 @@ describe("NOTIFICACIONES-02 operational catalog 27", () => {
       "Reserva modificada",
       "Reserva cancelada por alumna",
       "Recordatorio de clase",
+      "Recordatorio de clase reprogramada",
       "Cancelación tardía",
       "No show",
       "Clase cancelada por el estudio",
       "Cancelación por mínimo de reservas",
+      "Aviso al coach por mínimo de reservas",
       "Cambio de horario / sesión",
       "Lugar disponible en lista de espera",
       "Lugar de lista de espera vencido",
@@ -63,6 +65,7 @@ describe("NOTIFICACIONES-02 operational catalog 27", () => {
       "p0.booking.modified",
       "p0.booking.cancelled_by_student",
       "p0.booking.class_reminder_5h",
+      "p0.session.rescheduled_reminder_5h",
       "p0.booking.cancelled_late",
       "p0.attendance.no_show",
       "p0.session.cancelled_by_studio",

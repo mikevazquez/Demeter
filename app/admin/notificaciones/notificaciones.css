@@ -1203,3 +1203,86 @@ a.notification-process-row:hover {
   color: #fff !important;
   box-shadow: 0 10px 24px rgba(23, 168, 120, 0.14) !important;
 }
+
+.notification-required-channel {
+  padding: 5px 8px;
+  border: 1px solid rgba(56, 217, 150, 0.2);
+  border-radius: 999px;
+  background: rgba(56, 217, 150, 0.08);
+  color: #72dca9;
+  font-size: 9px;
+  font-weight: 750;
+}
+
+.notification-message-preview code {
+  color: #d7c5ff;
+  font-size: 0.95em;
+  overflow-wrap: anywhere;
+}
+
+.notification-detail-channel-grid,
+.notification-message-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@media (max-width: 760px) {
+  .notification-detail-channel-grid,
+  .notification-message-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Keep secondary text readable on the light notification surfaces. */
+.notification-detail-header > a,
+.notification-general-grid span,
+.notification-detail-channel-head small,
+.notification-message-card-head > span,
+.notification-message-preview p,
+.notification-message-form label > span {
+  color: #607086 !important;
+}
+
+.notification-general-grid strong,
+.notification-detail-channel-head strong,
+.notification-message-card-head > strong,
+.notification-message-preview strong {
+  color: #10203a !important;
+}
+
+.notification-message-preview code {
+  color: #6842a6 !important;
+}
+
+.notification-detail-channel-grid > article.is-globally-disabled {
+  opacity: 1 !important;
+  background: #f5f7f9 !important;
+}
+
+.notification-detail-channel-grid
+  > article.is-globally-disabled
+  .notification-detail-channel-head
+  strong {
+  color: #42536a !important;
+}
+
+.notification-title-with-status > span {
+  background: #f2f5f7 !important;
+  color: #52647c !important;
+}
+
+.notification-title-with-status > span.is-on {
+  background: var(--notification-accent-soft) !important;
+  color: var(--notification-accent-strong) !important;
+}
+
+.notification-required-channel {
+  border-color: #bfe3d6 !important;
+  background: var(--notification-accent-soft) !important;
+  color: #0f6b50 !important;
+}
+
+.notification-readonly-badge {
+  border-color: var(--notification-line) !important;
+  background: #f2f5f7 !important;
+  color: #52647c !important;
+}
