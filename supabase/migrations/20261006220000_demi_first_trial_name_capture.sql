@@ -470,6 +470,7 @@ begin
          and char_length(v_capture_name) between 2 and 180
          and v_capture_name ~ '^[[:alpha:]][[:alpha:] ''’.-]*$'
          and array_length(regexp_split_to_array(v_capture_name, '[[:space:]]+'), 1) between 1 and 6
+         and lower(v_capture_name) !~ '(^|[[:space:]])(lunes|martes|miércoles|miercoles|jueves|viernes|sábado|sabado|domingo|hoy|mañana|manana|ocho|nueve|diez|once|doce|clase|horario|reservar|reserva|pole|fitness|twerk|yoga|heels|espiral|flexibilidad|aérea|aerea)([[:space:]]|$)'
          and not exists (
            select 1 from public.class_templates ct
            where ct.studio_id = target_studio_id
