@@ -3037,9 +3037,7 @@
   overflow: hidden;
   border: 1px solid rgba(255, 170, 0, 0.42);
   border-radius: 16px;
-  background:
-    radial-gradient(circle at 100% 0%, rgba(255, 170, 0, 0.1), transparent 38%),
-    #101317;
+  background: radial-gradient(circle at 100% 0%, rgba(255, 170, 0, 0.1), transparent 38%), #101317;
 }
 
 .hoy-priority-heading {
