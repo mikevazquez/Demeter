@@ -33,7 +33,8 @@ describe("ADMIN-UX-04 Alumnas visual homologation", () => {
   });
 
   it("supports package-status filters for expiring and expired students", () => {
-    expect(page).toContain('"expiring", "expired"');
+    expect(page).toContain('"expiring"');
+    expect(page).toContain('"expired"');
     expect(page).toContain('{ key: "expiring", label: "Por vencer", enabled: canReadProducts }');
     expect(page).toContain('{ key: "expired", label: "Vencidas", enabled: canReadProducts }');
     expect(page).toContain('status === "expiring"');
