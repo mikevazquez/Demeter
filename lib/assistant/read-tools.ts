@@ -555,18 +555,15 @@ export async function getStudentPackageStatus(ctx: AssistantToolContext) {
   const hasExpiredPackage = (acquisitions ?? []).some(
     (item) => Boolean(item.expires_on && item.expires_on < today),
   );
-  const studentCategory =
-    student.student_type === "trial"
-      ? student.trial_status === "no_show"
-        ? "trial_no_show"
-        : student.trial_status === "attended"
-          ? "trial_attended"
-          : student.trial_status === "cancelled"
-            ? "trial_cancelled"
-            : "trial_pending"
-      : student.lifecycle_status === "inactive" || (!current.length && hasExpiredPackage)
-        ? "former_student"
-        : "student";
+  let studentCategory = "student";
+  if (student.student_type === "trial") {
+    if (student.trial_status === "no_show") studentCategory = "trial_no_show";
+    else if (student.trial_status === "attended") studentCategory = "trial_attended";
+    else if (student.trial_status === "cancelled") studentCategory = "trial_cancelled";
+    else studentCategory = "trial_pending";
+  } else if (student.lifecycle_status === "inactive" || (!current.length && hasExpiredPackage)) {
+    studentCategory = "former_student";
+  }
   const studentState = {
     category: studentCategory,
     lifecycle_status: student.lifecycle_status,
