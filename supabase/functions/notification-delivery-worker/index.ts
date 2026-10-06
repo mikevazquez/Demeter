@@ -235,6 +235,16 @@ function renderMessage(delivery: DeliveryRow): RenderedMessage {
         providerTemplateKey: overrideProviderTemplate ?? "reservation_confirmed",
       };
 
+    case "reservation_cancelled_by_student":
+      return {
+        title: "Reserva cancelada",
+        body: `Tu reserva de ${className} quedó cancelada.`,
+        url: "/student",
+        tag: `notification-${delivery.id}`,
+        // This operational notification uses the already approved generic cancellation template.
+        providerTemplateKey: overrideProviderTemplate ?? "reservation_cancelled",
+      };
+
     case "reservation_cancelled":
       return {
         title: "Reserva cancelada",
