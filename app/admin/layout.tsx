@@ -148,7 +148,7 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
           ? [{ href: "/admin/instructores", label: "Equipo", enabled: true }]
           : []),
         ...(can(CAPABILITIES.AUTOMATIONS_READ)
-          ? [{ href: "/admin/automatizaciones", label: "Notificaciones", enabled: true }]
+          ? [{ href: "/admin/notificaciones", label: "Notificaciones", enabled: true }]
           : []),
         ...(membership.role === "owner"
           ? [
@@ -209,7 +209,7 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
                   "/admin/evaluaciones",
                   "/admin/productos",
                   "/admin/instructores",
-                  "/admin/automatizaciones",
+                  "/admin/notificaciones",
                   "/admin/inteligencia",
                   "/admin/configuracion",
                 ],
