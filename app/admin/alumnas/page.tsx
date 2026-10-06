@@ -149,74 +149,74 @@ export default async function StudentsPage({
     { data: duplicateStudent },
   ] = await Promise.all([
       studentsQuery,
-      needsAllStudentsQuery
-        ? supabase
-            .from("students")
-            .select("id,lifecycle_status,student_type,trial_status")
-            .eq("studio_id", studio.id)
-            .neq("lifecycle_status", "archived")
-        : Promise.resolve({ data: null }),
-      needsProspectsQuery
-        ? supabase
-            .from("crm_contacts")
-            .select("id,person_id,created_at")
-            .eq("studio_id", studio.id)
-            .eq("lifecycle_status", "prospect")
-            .is("converted_student_id", null)
-            .order("created_at", { ascending: false })
-        : Promise.resolve({
-            data: [] as { id: string; person_id: string; created_at: string }[],
-          }),
-      canReadProducts
-        ? supabase
-            .from("product_acquisitions")
-            .select(
-              "id,student_id,product_template_id,status,starts_on,expires_on,created_at,unlimited,credit_limit",
-            )
-            .eq("studio_id", studio.id)
-            .is("refunded_at", null)
-            .order("created_at", { ascending: false })
-        : Promise.resolve({ data: [] }),
-      duplicateId
-        ? supabase
-            .from("students")
-            .select("id,full_name,lifecycle_status")
-            .eq("id", duplicateId)
-            .eq("studio_id", studio.id)
-            .maybeSingle()
-        : Promise.resolve({ data: null }),
+    needsAllStudentsQuery
+      ? supabase
+          .from("students")
+          .select("id,lifecycle_status,student_type,trial_status")
+          .eq("studio_id", studio.id)
+          .neq("lifecycle_status", "archived")
+      : Promise.resolve({ data: null }),
+    needsProspectsQuery
+      ? supabase
+          .from("crm_contacts")
+          .select("id,person_id,created_at")
+          .eq("studio_id", studio.id)
+          .eq("lifecycle_status", "prospect")
+          .is("converted_student_id", null)
+          .order("created_at", { ascending: false })
+      : Promise.resolve({
+          data: [] as { id: string; person_id: string; created_at: string }[],
+        }),
+    canReadProducts
+      ? supabase
+          .from("product_acquisitions")
+          .select(
+            "id,student_id,product_template_id,status,starts_on,expires_on,created_at,unlimited,credit_limit",
+          )
+          .eq("studio_id", studio.id)
+          .is("refunded_at", null)
+          .order("created_at", { ascending: false })
+      : Promise.resolve({ data: [] }),
+    duplicateId
+      ? supabase
+          .from("students")
+          .select("id,full_name,lifecycle_status")
+          .eq("id", duplicateId)
+          .eq("studio_id", studio.id)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
     ]);
   const allStudents =
     allStudentsResult.data ??
     (students ?? []).map((student) => ({
-      id: student.id,
-      lifecycle_status: student.lifecycle_status,
-      student_type: student.student_type,
-      trial_status: student.trial_status,
+    id: student.id,
+    lifecycle_status: student.lifecycle_status,
+    student_type: student.student_type,
+    trial_status: student.trial_status,
     }));
   const prospectPersonIds = [
     ...new Set((prospectContacts ?? []).map((contact) => contact.person_id)),
   ];
   const [{ data: prospectPeople }, { data: prospectPhones }] = await Promise.all([
     prospectPersonIds.length
-      ? supabase
-          .from("persons")
-          .select("id,first_name,last_name")
-          .eq("studio_id", studio.id)
-          .in("id", prospectPersonIds)
-      : Promise.resolve({
-          data: [] as { id: string; first_name: string; last_name: string | null }[],
-        }),
+    ? supabase
+        .from("persons")
+        .select("id,first_name,last_name")
+        .eq("studio_id", studio.id)
+        .in("id", prospectPersonIds)
+    : Promise.resolve({
+        data: [] as { id: string; first_name: string; last_name: string | null }[],
+      }),
     prospectPersonIds.length
-      ? supabase
-          .from("person_contacts")
-          .select("person_id,value,is_primary")
-          .eq("studio_id", studio.id)
-          .eq("kind", "phone")
-          .in("person_id", prospectPersonIds)
-      : Promise.resolve({
-          data: [] as { person_id: string; value: string; is_primary: boolean }[],
-        }),
+    ? supabase
+        .from("person_contacts")
+        .select("person_id,value,is_primary")
+        .eq("studio_id", studio.id)
+        .eq("kind", "phone")
+        .in("person_id", prospectPersonIds)
+    : Promise.resolve({
+        data: [] as { person_id: string; value: string; is_primary: boolean }[],
+      }),
   ]);
   const peopleById = new Map((prospectPeople ?? []).map((person) => [person.id, person]));
   const phoneByPersonId = new Map<string, string>();
@@ -231,8 +231,7 @@ export default async function StudentsPage({
       return {
         id: contact.id,
         created_at: contact.created_at,
-        full_name:
-          [person?.first_name, person?.last_name].filter(Boolean).join(" ") || "Prospecto",
+        full_name: [person?.first_name, person?.last_name].filter(Boolean).join(" ") || "Prospecto",
         phone: phoneByPersonId.get(contact.person_id) ?? "Sin teléfono",
       };
     })
@@ -597,8 +596,8 @@ export default async function StudentsPage({
                   })()}
                   {(() => {
                     const acquisition = currentAcquisitionFor(student.id);
-                    const hasExpired = (acquisitionsByStudent.get(student.id) ?? []).some(
-                      (item) => Boolean(item.expires_on && item.expires_on < today),
+                    const hasExpired = (acquisitionsByStudent.get(student.id) ?? []).some((item) =>
+                      Boolean(item.expires_on && item.expires_on < today),
                     );
                     const label =
                       student.student_type === "trial"
