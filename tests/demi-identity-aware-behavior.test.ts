@@ -7,11 +7,11 @@ describe("Demi identity-aware behavior", () => {
 
   it("includes student and prospect identity rules", () => {
     const phrases = [
-      "esta persona es ALUMNA",
-      "No la trates como prospecto",
-      "esta persona es PROSPECTO",
-      "Responde de forma completa y útil todo lo que solicite",
-      "usando las herramientas reales",
+      "número de teléfono normalizado es el identificador único",
+      "Studio Flow consultó su etapa actual al recibir este mensaje",
+      "get_student_package_status",
+      "contacto CRM sin una ficha de alumna",
+      "responde lo que pidió con la información oficial",
       "No lo adivines",
     ];
 
