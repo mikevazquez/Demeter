@@ -3,7 +3,8 @@
 import { useMemo, useRef, useState, useTransition } from "react";
 import type { FormEvent } from "react";
 
-import { sendDemiMessage, sendDemiReceipt } from "./actions";
+import { sendDemiMessage } from "./actions";
+import { sendDemiReceipt } from "./receipt-actions";
 
 type Trace = {
   model: string;
