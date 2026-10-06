@@ -68,6 +68,7 @@ type OrchestratorInput = {
   conversationId: string;
   turnId: string;
   studentId: string | null;
+  studentCategory?: string | null;
   crmContactId: string | null;
   identityNeedsName?: boolean;
   activationUrl: string | null;
@@ -845,7 +846,9 @@ export async function runAssistantTurn(input: OrchestratorInput) {
     "En WhatsApp, el número de teléfono normalizado es el identificador único. Studio Flow resuelve la identidad únicamente por ese número. El nombre se usa para registrar el prospecto, nunca para cambiar la identidad.",
     "Las reglas comerciales, de inscripción, prueba, no show, reservas, precios y pagos viven en Studio Flow. Consúltalas con las herramientas disponibles y respeta sus resultados; nunca inventes ni mantengas reglas paralelas.",
     input.studentId
-      ? "El teléfono coincide con una ficha de Studio Flow. No asumas que es alumna regular: consulta get_student_package_status para distinguir prueba pendiente/asistida/cancelada/no show, alumna vigente o exalumna y sigue las políticas y opciones comerciales devueltas por Studio Flow antes de orientar una reserva o pago."
+      ? input.studentCategory
+        ? `El teléfono coincide con una ficha. Studio Flow consultó su etapa actual al recibir este mensaje: ${input.studentCategory}. Usa esa etapa para tratarla como prueba pendiente/asistida/cancelada/no show, alumna o exalumna. Para condiciones de reserva, inscripción, precio o pago, consulta las reglas y opciones comerciales vigentes de Studio Flow.`
+        : "El teléfono coincide con una ficha pero Studio Flow no pudo determinar su etapa actual. No supongas que es alumna regular; consulta get_student_package_status y las reglas vigentes antes de orientar una reserva o pago."
       : input.crmContactId
         ? "Studio Flow tiene un contacto CRM sin una ficha de alumna asociada al teléfono. Trátalo como prospecto y como asesor comercial de Demeter: primero responde lo que pidió con la información oficial de actividades, horarios, disponibilidad, costos, ubicación y políticas. Si aún falta el nombre, pídelo de forma natural y guárdalo en el CRM; no prepares una reserva de prueba hasta que Studio Flow confirme que el nombre ya quedó registrado. Cuando quiera agendar, consulta y ejecuta el flujo de prueba de Studio Flow."
         : "Studio Flow no pudo confirmar si este teléfono corresponde a una ficha o prospecto. No lo adivines. Evita acciones dependientes de identidad y solicita únicamente el dato mínimo necesario o escala si no puede resolverse con seguridad.",
