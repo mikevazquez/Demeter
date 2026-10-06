@@ -16,6 +16,7 @@ describe("Demi prospect sales guidance", () => {
   it("preserves conversation context and uses current Studio Flow data", () => {
     expect(source).toContain("como máximo una pregunta por mensaje");
     expect(source).toContain("no vuelvas a pedir información que ya proporcionó");
+    expect(source).toContain("get_activity_catalog");
     expect(source).toContain("actividades activas");
     expect(source).toContain("opciones vigentes de Studio Flow");
     expect(source).toContain("No uses listas memorizadas");
