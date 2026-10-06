@@ -522,31 +522,64 @@ export async function getStudentPackageStatus(ctx: AssistantToolContext) {
   }
 
   const today = localParts(new Date().toISOString(), ctx.studio.timezone).date;
-  const { data: acquisitions, error: acquisitionsError } = await ctx.supabase
-    .from("product_acquisitions")
-    .select(
-      "id,product_template_id,status,starts_on,expires_on,credit_limit,unlimited,access_blocked,created_at",
-    )
-    .eq("studio_id", ctx.studio.id)
-    .eq("student_id", ctx.studentId)
-    .eq("status", "active")
-    .order("created_at", { ascending: false })
-    .limit(20);
+  const [{ data: student, error: studentError }, { data: acquisitions, error: acquisitionsError }] =
+    await Promise.all([
+      ctx.supabase
+        .from("students")
+        .select("lifecycle_status,student_type,trial_status")
+        .eq("studio_id", ctx.studio.id)
+        .eq("id", ctx.studentId)
+        .maybeSingle(),
+      ctx.supabase
+        .from("product_acquisitions")
+        .select(
+          "id,product_template_id,status,starts_on,expires_on,credit_limit,unlimited,access_blocked,created_at",
+        )
+        .eq("studio_id", ctx.studio.id)
+        .eq("student_id", ctx.studentId)
+        .is("refunded_at", null)
+        .order("created_at", { ascending: false })
+        .limit(20),
+    ]);
 
-  if (acquisitionsError) {
+  if (studentError || acquisitionsError || !student) {
     return { ok: false, error: "package_status_unavailable" };
   }
 
   const current = (acquisitions ?? []).filter((item) => {
-    if (item.access_blocked) return false;
+    if (item.status !== "active" || item.access_blocked) return false;
     if (item.starts_on && item.starts_on > today) return false;
     if (item.expires_on && item.expires_on < today) return false;
     return true;
   });
+  const hasExpiredPackage = (acquisitions ?? []).some(
+    (item) => Boolean(item.expires_on && item.expires_on < today),
+  );
+  const studentCategory =
+    student.student_type === "trial"
+      ? student.trial_status === "no_show"
+        ? "trial_no_show"
+        : student.trial_status === "attended"
+          ? "trial_attended"
+          : student.trial_status === "cancelled"
+            ? "trial_cancelled"
+            : "trial_pending"
+      : student.lifecycle_status === "inactive" || (!current.length && hasExpiredPackage)
+        ? "former_student"
+        : "student";
+  const studentState = {
+    category: studentCategory,
+    lifecycle_status: student.lifecycle_status,
+    student_type: student.student_type,
+    trial_status: student.trial_status,
+    has_current_package: current.length > 0,
+    has_expired_package: hasExpiredPackage,
+  };
 
   if (!current.length) {
     return {
       ok: true,
+      student_state: studentState,
       current_package: null,
       packages: [],
     };
@@ -606,6 +639,7 @@ export async function getStudentPackageStatus(ctx: AssistantToolContext) {
 
   return {
     ok: true,
+    student_state: studentState,
     current_package: currentPackage,
     packages,
   };
