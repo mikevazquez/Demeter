@@ -24,14 +24,14 @@ describe("Demi identity, CRM lifecycle, and first trial flow", () => {
       "no prepares una reserva de prueba hasta que Studio Flow confirme",
     );
     expect(orchestrator).not.toContain("if (input.identityNeedsName === true) {");
-    expect(route).toContain("const identityNeedsName = prepared.identity_needs_name === true;")
+    expect(route).toContain("const identityNeedsName = prepared.identity_needs_name === true;");
     expect(actionTools).toContain("ctx.identityNeedsName === true && !ctx.studentId");
     expect(actionTools).toContain('reason_code: "prospect_name_required"');
     expect(orchestrator).toContain("reason_code=prospect_name_required");
   });
 
   it("uses phone identity and asks Studio Flow for the person's current lifecycle", () => {
-    expect(orchestrator).toContain("número de teléfono normalizado es el identificador único")
+    expect(orchestrator).toContain("número de teléfono normalizado es el identificador único");
     expect(orchestrator).toContain("get_student_package_status");
     expect(readTools).toContain("student_type,trial_status");
     expect(readTools).toContain('"trial_no_show"');
@@ -48,9 +48,9 @@ describe("Demi identity, CRM lifecycle, and first trial flow", () => {
     expect(directory).toContain('.eq("lifecycle_status", "prospect")');
     expect(directory).toContain('.eq("student_type", "trial")');
     expect(directory).toContain('.eq("trial_status", "no_show")');
-    expect(directory).toContain('{ key: "trial", label: "Alumnas de prueba", enabled: true }')
+    expect(directory).toContain('{ key: "trial", label: "Alumnas de prueba", enabled: true }');
     expect(directory).toContain('{ key: "no_show", label: "No show", enabled: true }');
-    expect(directory).toContain('{ key: "prospect", label: "Prospectos", enabled: true }')
+    expect(directory).toContain('{ key: "prospect", label: "Prospectos", enabled: true }');
     expect(directory).toContain('{ key: "expired", label: "Vencidas", enabled: canReadProducts }')
   });
 
