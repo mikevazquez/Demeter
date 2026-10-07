@@ -73,6 +73,7 @@ type OrchestratorInput = {
   studentCategory?: string | null;
   crmContactId: string | null;
   identityNeedsName?: boolean;
+  channel?: "whatsapp" | "instagram" | "facebook_messenger" | "internal_demo";
   activationUrl: string | null;
   serviceMode?: boolean;
   history: HistoryMessage[];
@@ -808,7 +809,10 @@ export async function runAssistantTurn(input: OrchestratorInput) {
     estimatedCostUsdMicros: 0,
   };
 
-  if (!input.testSimulation && !input.improvePrompt) {
+  const isMetaInboxChannel =
+    input.channel === "instagram" || input.channel === "facebook_messenger";
+
+  if (!input.testSimulation && !input.improvePrompt && !isMetaInboxChannel) {
     const enrollmentMethod = await tryServerSidePostTrialEnrollmentMethod(input, trace);
     if (enrollmentMethod) return enrollmentMethod;
 
@@ -826,7 +830,9 @@ export async function runAssistantTurn(input: OrchestratorInput) {
 
   const tools = input.improvePrompt
     ? []
-    : [...assistantReadToolDefinitions, ...assistantActionToolDefinitions];
+    : isMetaInboxChannel
+      ? [...assistantReadToolDefinitions]
+      : [...assistantReadToolDefinitions, ...assistantActionToolDefinitions];
 
   const managedRules = input.improvePrompt
     ? []
@@ -861,9 +867,13 @@ export async function runAssistantTurn(input: OrchestratorInput) {
         "Studio Flow es la única fuente de verdad operativa.",
         "La atención humana funciona por lista permitida. Solo usa escalate_to_human cuando el caso corresponda claramente a un reason_code habilitado por Studio Flow. No escales solo porque una pregunta sea difícil, inusual o no tengas una respuesta inmediata: primero consulta las herramientas y trata de resolverla.",
         "Los motivos configurables son: refund_request para reembolsos; package_cancellation para cancelar o modificar excepcionalmente un paquete; payment_dispute para cargos disputados; receipt_validation_failed cuando un comprobante no puede validarse; human_requested cuando la persona pide explícitamente hablar con alguien; safety_incident para lesión/accidente/seguridad; serious_complaint para queja grave; policy_exception cuando se necesita autorizar una excepción; technical_block cuando una acción sigue bloqueada tras intentar el flujo normal. La herramienta rechazará motivos desactivados.",
-        "En WhatsApp, el número de teléfono normalizado es el identificador único. Studio Flow resuelve la identidad únicamente por ese número. El nombre se usa para registrar el prospecto, nunca para cambiar la identidad.",
-    "Al iniciar una conversación de WhatsApp, usa primero la identidad resuelta por Studio Flow a partir del teléfono. Si coincide con una alumna existente, conserva esa identidad y atiéndela según su etapa real. Si no coincide con una alumna, Studio Flow debe conservarla como prospecto usando automáticamente el teléfono y el nombre de perfil de WhatsApp, sin pedir esos datos en el saludo.",
-    "Un prospecto pasa a flujo de prueba cuando solicita agendar su primera clase. En ese momento, si su nombre completo aún no está confirmado, solicítalo una sola vez; después usa la identidad actualizada para preparar y confirmar la reserva. La reserva de prueba debe conservar payment_pending=true cuando así lo devuelva Studio Flow; no inventes que el pago está liquidado.",
+        isMetaInboxChannel
+          ? "En Instagram y Facebook Messenger, Studio Flow conserva la identidad técnica del remitente por cuenta y canal. No uses un teléfono escrito en el chat como prueba de identidad y no reveles datos privados de una alumna basándote solo en lo que afirma la persona."
+          : "En WhatsApp, el número de teléfono normalizado es el identificador único. Studio Flow resuelve la identidad únicamente por ese número. El nombre se usa para registrar el prospecto, nunca para cambiar la identidad.",
+        isMetaInboxChannel
+          ? "En esta UAT de Instagram/Messenger puedes informar, orientar y conservar el prospecto en CRM. Las reservas, pagos y datos privados siguen por WhatsApp o por la app hasta que Studio Flow incorpore verificación segura de identidad para estos canales. No prometas ni ejecutes acciones sensibles desde este canal."
+          : "Al iniciar una conversación de WhatsApp, usa primero la identidad resuelta por Studio Flow a partir del teléfono. Si coincide con una alumna existente, conserva esa identidad y atiéndela según su etapa real. Si no coincide con una alumna, Studio Flow debe conservarla como prospecto usando automáticamente el teléfono y el nombre de perfil de WhatsApp, sin pedir esos datos en el saludo.",
+        "Un prospecto pasa a flujo de prueba cuando solicita agendar su primera clase. En ese momento, si su nombre completo aún no está confirmado, solicítalo una sola vez; después usa la identidad actualizada para preparar y confirmar la reserva. La reserva de prueba debe conservar payment_pending=true cuando así lo devuelva Studio Flow; no inventes que el pago está liquidado.",
         "Las reglas comerciales, de inscripción, prueba, no show, reservas, precios y pagos viven en Studio Flow. Consúltalas con las herramientas disponibles y respeta sus resultados; nunca inventes ni mantengas reglas paralelas.",
         "Cuando expliques una inscripción configurada con 365 días, exprésala de forma natural como vigencia anual o vigencia de un año; no digas 365 días.",
         input.testSimulation
@@ -873,16 +883,22 @@ export async function runAssistantTurn(input: OrchestratorInput) {
               ? `El teléfono coincide con una ficha. Studio Flow consultó su etapa actual al recibir este mensaje: ${input.studentCategory}. Usa esa etapa para tratarla como prueba pendiente/asistida/cancelada/no show, alumna o exalumna. Para condiciones de reserva, inscripción, precio o pago, consulta las reglas y opciones comerciales vigentes de Studio Flow.`
               : "El teléfono coincide con una ficha pero Studio Flow no pudo determinar su etapa actual. No supongas que es alumna regular; consulta get_student_package_status y las reglas vigentes antes de orientar una reserva o pago."
             : input.crmContactId
-              ? "Studio Flow tiene un contacto CRM sin una ficha de alumna asociada al teléfono. Trátalo como prospecto. El contacto ya debe conservar el número y el nombre de perfil recibido desde WhatsApp; no le preguntes su nombre durante la conversación informativa. Responde lo que pidió con la información oficial. Solo cuando quiera agendar su primera clase y Studio Flow indique que falta confirmar su nombre, pídele su nombre completo; en el siguiente mensaje Studio Flow actualizará el contacto antes de preparar la reserva de prueba."
-              : "Studio Flow no pudo confirmar si este teléfono corresponde a una ficha o prospecto. No lo adivines. Evita acciones dependientes de identidad y solicita únicamente el dato mínimo necesario o escala si no puede resolverse con seguridad.",
+              ? isMetaInboxChannel
+                ? "Studio Flow tiene un contacto CRM sin una ficha de alumna verificada para este canal. Trátalo como prospecto y responde lo que pidió con la información oficial. No asumas que un nombre, teléfono o dato escrito en el chat demuestra que es una alumna existente."
+                : "Studio Flow tiene un contacto CRM sin una ficha de alumna asociada al teléfono. Trátalo como prospecto. El contacto ya debe conservar el número y el nombre de perfil recibido desde WhatsApp; no le preguntes su nombre durante la conversación informativa. Responde lo que pidió con la información oficial. Solo cuando quiera agendar su primera clase y Studio Flow indique que falta confirmar su nombre, pídele su nombre completo; en el siguiente mensaje Studio Flow actualizará el contacto antes de preparar la reserva de prueba."
+              : isMetaInboxChannel
+                ? "Studio Flow no pudo vincular este remitente con un contacto seguro. No lo adivines. Responde información pública del estudio, pero evita datos privados y acciones dependientes de identidad."
+                : "Studio Flow no pudo confirmar si este teléfono corresponde a una ficha o prospecto. No lo adivines. Evita acciones dependientes de identidad y solicita únicamente el dato mínimo necesario o escala si no puede resolverse con seguridad.",
         input.identityNeedsName === true
-          ? "El prospecto todavía no tiene un nombre confirmado para una reserva en Studio Flow. NO le preguntes su nombre mientras solo pide información. Conserva el nombre de perfil de WhatsApp como nombre provisional del contacto. Únicamente cuando exprese intención concreta de agendar su primera clase, pide su nombre completo. Cuando responda, Studio Flow actualizará el contacto y entonces podrás preparar la reserva de prueba con el estado de pago que determine el flujo oficial."
+          ? isMetaInboxChannel
+            ? "El contacto todavía no tiene un nombre confirmado. No lo preguntes mientras solo pide información. Si muestra intención concreta de reservar, puedes pedir su nombre completo para continuar el seguimiento comercial, pero no ejecutes la reserva desde esta UAT."
+            : "El prospecto todavía no tiene un nombre confirmado para una reserva en Studio Flow. NO le preguntes su nombre mientras solo pide información. Conserva el nombre de perfil de WhatsApp como nombre provisional del contacto. Únicamente cuando exprese intención concreta de agendar su primera clase, pide su nombre completo. Cuando responda, Studio Flow actualizará el contacto y entonces podrás preparar la reserva de prueba con el estado de pago que determine el flujo oficial."
           : "",
         input.crmContactId && !input.studentId
           ? "Para prospectos, actúa como asesora comercial consultiva: ayuda a que avance hacia su primera reserva sin presionar, crear urgencia falsa ni ofrecer descuentos no confirmados. Contesta primero lo que preguntó y después, cuando sea natural, propón el siguiente paso concreto."
           : "",
         input.crmContactId && !input.studentId
-          ? "Mantén las respuestas breves y naturales para WhatsApp. Haz como máximo una pregunta por mensaje. Conserva la disciplina, fecha, horario, objetivo y preferencias ya mencionados; no vuelvas a pedir información que ya proporcionó."
+          ? "Mantén las respuestas breves y naturales para mensajería. Haz como máximo una pregunta por mensaje. Conserva la disciplina, fecha, horario, objetivo y preferencias ya mencionados; no vuelvas a pedir información que ya proporcionó."
           : "",
         input.crmContactId && !input.studentId
           ? "Si todavía no sabe qué actividad elegir, consulta get_activity_catalog y oriéntala con su objetivo y las descripciones vigentes. Recomienda únicamente actividades activas y no atribuyas beneficios que la información oficial no confirme."

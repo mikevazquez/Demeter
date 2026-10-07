@@ -59,6 +59,7 @@ export default async function IntegrationsPage() {
     { count: mercadoPagoAttempts },
     { count: onlineProducts },
     { data: whatsappProvider },
+    { data: metaInboxSummary },
     { data: demiConfig },
   ] = await Promise.all([
     supabase
@@ -88,6 +89,9 @@ export default async function IntegrationsPage() {
       .eq("channel_key", "whatsapp")
       .eq("provider_key", "meta_whatsapp")
       .maybeSingle(),
+    supabase.rpc("admin_get_meta_inbox_connection_summary", {
+      target_studio_id: studio.id,
+    }),
     supabase
       .from("assistant_configs")
       .select("assistant_name,mode,model")
@@ -98,6 +102,9 @@ export default async function IntegrationsPage() {
   const asistianConnected = (asistianEvents ?? 0) > 0 || (asistianMappings ?? 0) > 0;
   const mercadoPagoInUse = (mercadoPagoAttempts ?? 0) > 0;
   const whatsappActive = Boolean(whatsappProvider?.enabled);
+  const metaInboxConnected = Boolean(
+    (metaInboxSummary as { connected?: boolean } | null)?.connected,
+  );
 
   return (
     <main className="integrations-v2">
@@ -163,6 +170,16 @@ export default async function IntegrationsPage() {
             tone={demiConfig?.mode === "demo" ? "active" : "available"}
             href="/admin/integraciones/demi"
           />
+
+          <IntegrationCard
+            mark="IG"
+            name="Meta · Instagram + Facebook"
+            description="Mensajes directos de Instagram y Messenger atendidos por Demi."
+            detail="Un solo asistente, CRM e identidad por canal."
+            status={metaInboxConnected ? "Conectado" : "Configurar"}
+            tone={metaInboxConnected ? "active" : "available"}
+            href="/admin/integraciones/meta-inbox"
+          />
         </div>
       </section>
 
@@ -184,14 +201,6 @@ export default async function IntegrationsPage() {
             tone="soon"
           />
 
-          <IntegrationCard
-            mark="FB"
-            name="Facebook / Instagram"
-            description="Conexiones de Meta para captación, mensajes y futuras automatizaciones."
-            detail="Se integrará aquí cuando el flujo esté disponible."
-            status="Próximamente"
-            tone="soon"
-          />
         </div>
       </section>
 
