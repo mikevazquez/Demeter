@@ -8,11 +8,14 @@ import {
   type PromptVersion,
   type TestPersona,
 } from "@/lib/assistant/prompt-workbench";
-import { saveDemiPrompt, activateDemiPrompt, testDemiPrompt, setDemiHandoffPolicy, reviewDemiLearning } from "./workbench-actions";
+import { saveDemiPrompt, activateDemiPrompt, testDemiPrompt, setDemiHandoffPolicy, reviewDemiLearning, proposeDemiAdminChange, applyDemiAdminChange, rejectDemiAdminChange } from "./workbench-actions";
 
 type Message = { role: "user" | "assistant"; content: string };
 type HandoffPolicy = { id:string; reason_code:string; label:string; description:string; enabled:boolean; blocking:boolean; sort_order:number };
 type LearningProposal = { id:string; title:string; evidence:string; proposed_instruction:string; status:string; created_at:string };
+type AdminPlanAction = { type:string; label:string; [key:string]:unknown };
+type AdminPlan = { summary:string; requires_development:boolean; development_reason:string|null; actions:AdminPlanAction[] };
+type AdminChange = { id:string; instruction:string; summary:string; plan:AdminPlan; status:string; error_code?:string|null; created_at:string; applied_at?:string|null };
 
 export default function DemiWorkbench({
   assistantName,
@@ -23,6 +26,7 @@ export default function DemiWorkbench({
   sandbox,
   handoffPolicies,
   learningProposals,
+  adminChanges,
 }: {
   assistantName: string;
   activeInstructions: string;
@@ -32,10 +36,11 @@ export default function DemiWorkbench({
   sandbox: boolean;
   handoffPolicies: HandoffPolicy[];
   learningProposals: LearningProposal[];
+  adminChanges: AdminChange[];
 }) {
   const router = useRouter();
   const initial = versions[0]?.kind === "draft" ? versions[0] : null;
-  const [tab, setTab] = useState<"instructions" | "improve" | "test" | "learning" | "handoff">("instructions");
+  const [tab, setTab] = useState<"configure" | "instructions" | "improve" | "test" | "learning" | "handoff">("configure");
   const [draft, setDraft] = useState(initial?.instructions ?? activeInstructions);
   const [saved, setSaved] = useState(initial);
   const [history, setHistory] = useState(versions);
@@ -51,6 +56,8 @@ export default function DemiWorkbench({
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
   const [reviewActivation, setReviewActivation] = useState(false);
+  const [adminInstruction, setAdminInstruction] = useState("");
+  const [adminRequest, setAdminRequest] = useState<AdminChange | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     endRef.current?.scrollIntoView({ block: "nearest", behavior: "smooth" });
@@ -93,6 +100,7 @@ export default function DemiWorkbench({
       <nav className="dw-tabs" aria-label="Configuración de Demi">
         {(
           [
+            ["configure", "⚙️ Configurar con Demi"],
             ["instructions", "✍️ Instrucciones"],
             ["improve", "✨ Mejorar con IA"],
             ["test", "💬 Probar a Demi"],
@@ -115,6 +123,125 @@ export default function DemiWorkbench({
       </div>
       {!storageReady && (
         <p className="dw-error">Falta preparar el guardado de instrucciones en este entorno.</p>
+      )}
+
+      {tab === "configure" && (
+        <div className="dw-content">
+          <header>
+            <h2>Dile a Demi qué quieres cambiar</h2>
+            <p>Escríbelo como me lo dirías a mí. Demi revisa la configuración actual, prepara los cambios correctos y te muestra exactamente qué va a modificar antes de aplicarlo.</p>
+          </header>
+          <label htmlFor="demi-admin-instruction">Instrucción administrativa</label>
+          <textarea
+            id="demi-admin-instruction"
+            value={adminInstruction}
+            onChange={(event) => {
+              setAdminInstruction(event.target.value);
+              setAdminRequest(null);
+            }}
+            maxLength={4000}
+            rows={5}
+            disabled={busy}
+            placeholder="Ej. A partir de ahora los prospectos deben pagar su primera clase antes de que Demi les reserve un lugar."
+          />
+          <div className="dw-actions">
+            <button
+              className="dw-primary"
+              type="button"
+              disabled={busy || !adminInstruction.trim() || !openAIConfigured || !storageReady}
+              onClick={() =>
+                perform(async () => {
+                  const result = await proposeDemiAdminChange(adminInstruction);
+                  if (!result.ok) return setError(promptWorkbenchError(result.error));
+                  setAdminRequest(result.request as AdminChange);
+                  setNotice("Cambio analizado. Revísalo antes de aplicarlo.");
+                })
+              }
+            >
+              {busy ? "Analizando…" : "✨ Preparar cambio"}
+            </button>
+          </div>
+          <p className="dw-hint">
+            Las reglas operativas se cambian en Studio Flow; las reglas de conversación se agregan a Demi. Todo queda registrado. Si una petición necesita una capacidad nueva de software, Demi te lo indicará en vez de improvisar.
+          </p>
+
+          {adminRequest && (
+            <section className="dw-admin-plan">
+              <div className="dw-admin-plan-head">
+                <div>
+                  <small>Plan propuesto</small>
+                  <h3>{adminRequest.summary}</h3>
+                </div>
+                <span className={adminRequest.plan.requires_development ? "dw-plan-badge is-warning" : "dw-plan-badge"}>
+                  {adminRequest.plan.requires_development ? "Requiere desarrollo" : "Listo para aplicar"}
+                </span>
+              </div>
+              {adminRequest.plan.requires_development && (
+                <p className="dw-plan-warning">
+                  {adminRequest.plan.development_reason || "Parte de esta instrucción todavía no está parametrizada en Studio Flow."}
+                </p>
+              )}
+              <div className="dw-admin-actions-list">
+                {adminRequest.plan.actions.map((action, index) => (
+                  <article key={index}>
+                    <span>✓</span>
+                    <div><strong>{action.label}</strong><small>{action.type.replaceAll("_", " ")}</small></div>
+                  </article>
+                ))}
+                {!adminRequest.plan.actions.length && <p className="dw-hint">No hay cambios automáticos seguros para aplicar.</p>}
+              </div>
+              <div className="dw-actions">
+                <button
+                  className="dw-primary"
+                  type="button"
+                  disabled={busy || adminRequest.plan.requires_development || !adminRequest.plan.actions.length}
+                  onClick={() =>
+                    perform(async () => {
+                      const result = await applyDemiAdminChange(adminRequest.id);
+                      if (!result.ok) return setError(promptWorkbenchError(result.error));
+                      setNotice("Cambios aplicados. Demi ya usará la nueva configuración.");
+                      setAdminInstruction("");
+                      setAdminRequest(null);
+                      router.refresh();
+                    })
+                  }
+                >
+                  Aplicar cambios
+                </button>
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() =>
+                    perform(async () => {
+                      const result = await rejectDemiAdminChange(adminRequest.id);
+                      if (!result.ok) return setError(promptWorkbenchError(result.error));
+                      setAdminRequest(null);
+                      setNotice("Propuesta descartada.");
+                      router.refresh();
+                    })
+                  }
+                >
+                  Descartar
+                </button>
+              </div>
+            </section>
+          )}
+
+          <details className="dw-history" open>
+            <summary>Historial de cambios ({adminChanges.length})</summary>
+            <p>Cada instrucción queda registrada con su resultado.</p>
+            {adminChanges.map((change) => (
+              <article key={change.id}>
+                <div>
+                  <strong>{change.instruction}</strong>
+                  <small>{new Date(change.created_at).toLocaleString("es-MX")} · {change.status === "applied" ? "Aplicado" : change.status === "proposed" ? "Pendiente" : change.status === "rejected" ? "Descartado" : "Falló"}</small>
+                  <p>{change.summary}</p>
+                </div>
+              </article>
+            ))}
+            {!adminChanges.length && <p className="dw-hint">Todavía no hay cambios hechos desde el portal.</p>}
+          </details>
+        </div>
       )}
 
       {tab === "instructions" && (
