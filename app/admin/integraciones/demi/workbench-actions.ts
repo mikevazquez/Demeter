@@ -250,6 +250,7 @@ export async function proposeDemiAdminChange(instructionInput: string) {
   const [
     { data: config },
     { data: trialPolicy },
+    { data: bookingBehavior },
     { data: handoffPolicies },
     { data: products },
     { data: activities },
@@ -263,6 +264,11 @@ export async function proposeDemiAdminChange(instructionInput: string) {
     supabase
       .from("trial_booking_policies")
       .select("enabled,allow_without_enrollment_until_first_attendance,max_active_trial_reservations,prepayment_after_no_shows,require_payment_before_attendance,require_payment_before_booking")
+      .eq("studio_id", studio.id)
+      .maybeSingle(),
+    supabase
+      .from("assistant_booking_behaviors")
+      .select("prospect_require_payment_before_booking")
       .eq("studio_id", studio.id)
       .maybeSingle(),
     supabase
@@ -296,7 +302,14 @@ export async function proposeDemiAdminChange(instructionInput: string) {
       model: config.model,
       state: {
         studio: { name: studio.name, currency: studio.currency },
-        trial_policy: trialPolicy,
+        studio_flow_rules: {
+          trial_booking_policy: trialPolicy,
+          note: "Restricciones duras. Demi no puede relajarlas ni saltarlas.",
+        },
+        demi_booking_behavior: bookingBehavior,
+        effective_trial_payment_before_booking:
+          trialPolicy?.require_payment_before_booking === true ||
+          bookingBehavior?.prospect_require_payment_before_booking === true,
         handoff_policies: handoffPolicies ?? [],
         products: products ?? [],
         activities: activities ?? [],
