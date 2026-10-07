@@ -129,7 +129,6 @@ export default function DemiWorkbench({
         <div className="dw-content">
           <header>
             <h2>Dile a Demi qué quieres cambiar</h2>
-            <p>Escríbelo como me lo dirías a mí. Demi revisa primero las reglas vigentes de Studio Flow y después propone su comportamiento dentro de esos límites.</p>
           </header>
           <label htmlFor="demi-admin-instruction">Instrucción administrativa</label>
           <textarea
@@ -161,9 +160,6 @@ export default function DemiWorkbench({
               {busy ? "Analizando…" : "✨ Preparar cambio"}
             </button>
           </div>
-          <p className="dw-hint">
-            Studio Flow manda: sus reglas son límites obligatorios y Demi nunca puede saltárselos. Desde aquí puedes hacer que Demi sea más estricta —por ejemplo, exigir pago a prospectos aunque Studio Flow permita reservar sin pago—, pero nunca autorizarle algo que Studio Flow prohíba. Todo queda registrado.
-          </p>
 
           {adminRequest && (
             <section className="dw-admin-plan">
