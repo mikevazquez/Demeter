@@ -207,3 +207,34 @@ export async function testDemiPrompt(input: {
       .eq("workbench_lock_until", lockUntil);
   }
 }
+
+export async function setDemiHandoffPolicy(policyId: string, enabled: boolean) {
+  const { supabase, studio } = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
+  const { error } = await supabase.from("assistant_handoff_policies").update({
+    enabled,
+    updated_at: new Date().toISOString(),
+  }).eq("studio_id", studio.id).eq("id", policyId);
+  if (error) return { ok: false as const, error: "request_failed" };
+  revalidatePath("/admin/integraciones/demi");
+  return { ok: true as const };
+}
+
+export async function reviewDemiLearning(proposalId: string, decision: "approved" | "rejected") {
+  const { supabase, studio, user } = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
+  const { data: proposal, error: readError } = await supabase
+    .from("assistant_learning_proposals")
+    .select("id,proposed_instruction,status")
+    .eq("studio_id", studio.id).eq("id", proposalId).maybeSingle();
+  if (readError || !proposal || proposal.status !== "pending")
+    return { ok: false as const, error: "request_failed" };
+
+  const { error } = await supabase.from("assistant_learning_proposals").update({
+    status: decision,
+    reviewed_at: new Date().toISOString(),
+    reviewed_by: user.id,
+    updated_at: new Date().toISOString(),
+  }).eq("studio_id", studio.id).eq("id", proposalId).eq("status", "pending");
+  if (error) return { ok: false as const, error: "request_failed" };
+  revalidatePath("/admin/integraciones/demi");
+  return { ok: true as const, proposedInstruction: decision === "approved" ? proposal.proposed_instruction : null };
+}

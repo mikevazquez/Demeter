@@ -135,70 +135,10 @@ async function ensureHumanHandoffForReply(
   modelCallId: string | null,
 ) {
   if (input.testSimulation || input.improvePrompt || !replyClaimsHumanHandoff(reply)) return reply;
-
-  const alreadyExecuted = trace.toolCalls.some(
-    (tool) => tool.name === "escalate_to_human" && tool.status === "executed",
-  );
+  const alreadyExecuted = trace.toolCalls.some((tool) => tool.name === "escalate_to_human" && tool.status === "executed");
   if (alreadyExecuted) return reply;
-
-  const currentUserMessage =
-    [...input.history].reverse().find((message) => message.role === "user")?.content ?? "";
-  const args = {
-    reason_code: "assistant_cannot_resolve",
-    note: currentUserMessage.trim()
-      ? `Demi no tiene información confirmada para resolver esta consulta: ${currentUserMessage
-          .trim()
-          .slice(0, 500)}`
-      : "Demi no tiene información confirmada para resolver esta consulta.",
-  };
-
-  const startedAt = Date.now();
-  let result: unknown;
-  let toolStatus: "executed" | "blocked" | "error" = "executed";
-  try {
-    result = await executeAssistantActionTool(
-      {
-        supabase: input.supabase,
-        studio: input.studio,
-        conversationId: input.conversationId,
-        turnId: input.turnId,
-        studentId: input.studentId,
-        crmContactId: input.crmContactId,
-        identityNeedsName: input.identityNeedsName === true,
-        activationUrl: input.activationUrl,
-        serviceMode: input.serviceMode === true,
-        currentUserMessage,
-      },
-      "escalate_to_human",
-      args,
-    );
-    if (asObject(result)?.ok === false) toolStatus = "blocked";
-  } catch {
-    result = { ok: false, error: "tool_execution_failed" };
-    toolStatus = "error";
-  }
-
-  const resultObject = asObject(result) ?? { ok: false, error: "invalid_tool_result" };
-  await input.supabase.from("assistant_tool_executions").insert({
-    studio_id: input.studio.id,
-    conversation_id: input.conversationId,
-    turn_id: input.turnId,
-    model_call_id: modelCallId,
-    tool_call_id: `server-handoff-guard:${input.turnId}`,
-    tool_name: "escalate_to_human",
-    schema_version: 1,
-    permission_class: "B",
-    request_json: args,
-    result_json: resultObject,
-    status: toolStatus === "executed" && resultObject.ok === true ? "executed" : toolStatus,
-    duration_ms: Date.now() - startedAt,
-  });
-
-  trace.toolCalls.push({ name: "escalate_to_human", status: toolStatus });
-
-  if (toolStatus === "executed" && resultObject.ok === true) return reply;
-
-  return "No tengo información confirmada para responder eso y en este momento no pude abrir la revisión humana automáticamente.";
+  // A generic inability is deliberately NOT a handoff reason. Demi must keep trying with Studio Flow.
+  return reply.replace(/atenci[oó]n humana/gi, "una solución con la información disponible");
 }
 
 async function spentUsdMicros(supabase: SupabaseClient, studioId: string, conversationId: string) {
@@ -858,6 +798,8 @@ export async function runAssistantTurn(input: OrchestratorInput) {
         "No uses Markdown ni dobles asteriscos en las respuestas. Escribe texto limpio estilo WhatsApp; si necesitas énfasis, hazlo con palabras, no con formato.",
         `La fecha local del estudio es ${localDateKey(input.studio.timezone)} y la zona horaria es ${input.studio.timezone}.`,
         "Studio Flow es la única fuente de verdad operativa.",
+        "La atención humana funciona por lista permitida. Solo usa escalate_to_human cuando el caso corresponda claramente a un reason_code habilitado por Studio Flow. No escales solo porque una pregunta sea difícil, inusual o no tengas una respuesta inmediata: primero consulta las herramientas y trata de resolverla.",
+        "Los motivos configurables son: refund_request para reembolsos; package_cancellation para cancelar o modificar excepcionalmente un paquete; payment_dispute para cargos disputados; receipt_validation_failed cuando un comprobante no puede validarse; human_requested cuando la persona pide explícitamente hablar con alguien; safety_incident para lesión/accidente/seguridad; serious_complaint para queja grave; policy_exception cuando se necesita autorizar una excepción; technical_block cuando una acción sigue bloqueada tras intentar el flujo normal. La herramienta rechazará motivos desactivados.",
         "En WhatsApp, el número de teléfono normalizado es el identificador único. Studio Flow resuelve la identidad únicamente por ese número. El nombre se usa para registrar el prospecto, nunca para cambiar la identidad.",
     "Al iniciar una conversación de WhatsApp, usa primero la identidad resuelta por Studio Flow a partir del teléfono. Si coincide con una alumna existente, conserva esa identidad y atiéndela según su etapa real. Si no coincide con una alumna, Studio Flow debe conservarla como prospecto usando automáticamente el teléfono y el nombre de perfil de WhatsApp, sin pedir esos datos en el saludo.",
     "Un prospecto pasa a flujo de prueba cuando solicita agendar su primera clase. En ese momento, si su nombre completo aún no está confirmado, solicítalo una sola vez; después usa la identidad actualizada para preparar y confirmar la reserva. La reserva de prueba debe conservar payment_pending=true cuando así lo devuelva Studio Flow; no inventes que el pago está liquidado.",

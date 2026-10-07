@@ -63,6 +63,8 @@ export default async function DemiDemoPage() {
     { data: config },
     { data: monthCalls },
     { data: versions, error: versionsError },
+    { data: handoffPolicies },
+    { data: learningProposals },
     exchangeRate,
   ] = await Promise.all([
     supabase
@@ -80,6 +82,17 @@ export default async function DemiDemoPage() {
     supabase
       .from("assistant_prompt_versions")
       .select("id,kind,instructions,note,created_at")
+      .eq("studio_id", studio.id)
+      .order("created_at", { ascending: false })
+      .limit(50),
+    supabase
+      .from("assistant_handoff_policies")
+      .select("id,reason_code,label,description,enabled,blocking,sort_order")
+      .eq("studio_id", studio.id)
+      .order("sort_order", { ascending: true }),
+    supabase
+      .from("assistant_learning_proposals")
+      .select("id,title,evidence,proposed_instruction,status,created_at")
       .eq("studio_id", studio.id)
       .order("created_at", { ascending: false })
       .limit(50),
@@ -166,6 +179,8 @@ export default async function DemiDemoPage() {
         storageReady={!versionsError}
         openAIConfigured={openAIConfigured}
         sandbox={process.env.NEXT_PUBLIC_SUPABASE_URL?.includes("hedouonyhynuvwbckdlg") === true}
+        handoffPolicies={handoffPolicies ?? []}
+        learningProposals={learningProposals ?? []}
       />
     </main>
   );

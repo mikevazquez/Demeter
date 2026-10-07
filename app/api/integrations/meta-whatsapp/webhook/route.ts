@@ -159,8 +159,21 @@ async function hasBlockingOpenHandoff(input: {
     throw new Error("assistant_handoff_lookup_failed");
   }
 
-  const nonBlockingReasons = new Set(["transfer_receipt_review", "whatsapp_media_review"]);
-  return (data ?? []).some((handoff) => !nonBlockingReasons.has(handoff.reason_code));
+  const reasonCodes = [...new Set((data ?? []).map((handoff) => String(handoff.reason_code ?? "")).filter(Boolean))];
+  if (!reasonCodes.length) return false;
+  const { data: policies, error: policyError } = await input.supabase
+    .from("assistant_handoff_policies")
+    .select("reason_code,enabled,blocking")
+    .eq("studio_id", input.studioId)
+    .in("reason_code", reasonCodes);
+  if (policyError) throw new Error("assistant_handoff_policy_lookup_failed");
+  const byReason = new Map((policies ?? []).map((row) => [row.reason_code, row]));
+  return reasonCodes.some((reason) => {
+    const policy = byReason.get(reason);
+    // Legacy review reasons stay non-blocking. Unknown legacy handoffs remain blocking for safety.
+    if (!policy) return !["transfer_receipt_review", "whatsapp_media_review"].includes(reason);
+    return policy.enabled === true && policy.blocking === true;
+  });
 }
 
 async function createMediaHandoff(input: {
@@ -886,6 +899,31 @@ export async function POST(request: Request) {
         }
       } catch {
         studentCategory = null;
+      }
+    }
+
+    // Learn safely: a user correction becomes a reviewable proposal, never an automatic prompt change.
+    const currentMessage = message.text.trim();
+    const normalizedCorrection = currentMessage.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("es-MX");
+    const correctionSignal = /\b(no,? eso no|eso no es|te equivocaste|esta mal|incorrecto|no es asi|quise decir|me explique mal)\b/.test(normalizedCorrection);
+    if (correctionSignal) {
+      const previousAssistant = [...history].reverse().find((row) => row.role === "assistant")?.content ?? "";
+      if (previousAssistant) {
+        const { data: existingProposal } = await supabase.from("assistant_learning_proposals")
+          .select("id").eq("studio_id", studioId).eq("conversation_id", conversationId)
+          .eq("source_turn_id", inboundTurnId).maybeSingle();
+        if (!existingProposal) {
+          await supabase.from("assistant_learning_proposals").insert({
+            studio_id: studioId,
+            conversation_id: conversationId,
+            source_turn_id: inboundTurnId,
+            category: "correction",
+            title: "Corrección detectada en conversación",
+            evidence: `Demi: ${previousAssistant.slice(0, 700)}\nPersona: ${currentMessage.slice(0, 700)}`,
+            proposed_instruction: `Revisa esta corrección antes de incorporarla: cuando una situación equivalente ocurra, evita repetir la respuesta corregida y prioriza la información vigente de Studio Flow. Corrección de referencia: ${currentMessage.slice(0, 500)}`,
+            status: "pending",
+          });
+        }
       }
     }
 

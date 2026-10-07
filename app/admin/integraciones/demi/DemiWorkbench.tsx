@@ -8,9 +8,11 @@ import {
   type PromptVersion,
   type TestPersona,
 } from "@/lib/assistant/prompt-workbench";
-import { saveDemiPrompt, activateDemiPrompt, testDemiPrompt } from "./workbench-actions";
+import { saveDemiPrompt, activateDemiPrompt, testDemiPrompt, setDemiHandoffPolicy, reviewDemiLearning } from "./workbench-actions";
 
 type Message = { role: "user" | "assistant"; content: string };
+type HandoffPolicy = { id:string; reason_code:string; label:string; description:string; enabled:boolean; blocking:boolean; sort_order:number };
+type LearningProposal = { id:string; title:string; evidence:string; proposed_instruction:string; status:string; created_at:string };
 
 export default function DemiWorkbench({
   assistantName,
@@ -19,6 +21,8 @@ export default function DemiWorkbench({
   openAIConfigured,
   storageReady,
   sandbox,
+  handoffPolicies,
+  learningProposals,
 }: {
   assistantName: string;
   activeInstructions: string;
@@ -26,10 +30,12 @@ export default function DemiWorkbench({
   openAIConfigured: boolean;
   storageReady: boolean;
   sandbox: boolean;
+  handoffPolicies: HandoffPolicy[];
+  learningProposals: LearningProposal[];
 }) {
   const router = useRouter();
   const initial = versions[0]?.kind === "draft" ? versions[0] : null;
-  const [tab, setTab] = useState<"instructions" | "improve" | "test">("instructions");
+  const [tab, setTab] = useState<"instructions" | "improve" | "test" | "learning" | "handoff">("instructions");
   const [draft, setDraft] = useState(initial?.instructions ?? activeInstructions);
   const [saved, setSaved] = useState(initial);
   const [history, setHistory] = useState(versions);
@@ -90,6 +96,8 @@ export default function DemiWorkbench({
             ["instructions", "✍️ Instrucciones"],
             ["improve", "✨ Mejorar con IA"],
             ["test", "💬 Probar a Demi"],
+            ["learning", "🧠 Aprendizaje"],
+            ["handoff", "👤 Atención humana"],
           ] as const
         ).map(([key, label]) => (
           <button type="button" key={key} aria-pressed={tab === key} onClick={() => setTab(key)}>
@@ -329,6 +337,34 @@ export default function DemiWorkbench({
               </div>
             </section>
           )}
+        </div>
+      )}
+
+      {tab === "learning" && (
+        <div className="dw-content">
+          <header><h2>Aprendizajes propuestos</h2><p>Demi puede detectar correcciones, pero nunca cambia sus reglas sola. Tú decides qué incorporar.</p></header>
+          {!learningProposals.length && <p className="dw-hint">Todavía no hay aprendizajes pendientes o revisados.</p>}
+          <div className="dw-settings-list">
+            {learningProposals.map((item) => <article key={item.id} className="dw-setting-card">
+              <div><strong>{item.title}</strong><small>{new Date(item.created_at).toLocaleString("es-MX")} · {item.status === "pending" ? "Pendiente" : item.status === "approved" ? "Aprobado" : "Rechazado"}</small>
+              {item.evidence && <p>{item.evidence}</p>}<p><b>Propuesta:</b> {item.proposed_instruction}</p></div>
+              {item.status === "pending" && <div className="dw-actions">
+                <button className="dw-primary" type="button" disabled={busy} onClick={() => perform(async()=>{const x=await reviewDemiLearning(item.id,"approved"); if(!x.ok)return setError(promptWorkbenchError(x.error)); if(x.proposedInstruction){setDraft((v)=>v+"\n"+x.proposedInstruction); setSaved(null);} setNotice("Aprendizaje aprobado y agregado al borrador. Falta probarlo y activarlo."); router.refresh();})}>Aprobar</button>
+                <button type="button" disabled={busy} onClick={() => perform(async()=>{const x=await reviewDemiLearning(item.id,"rejected"); if(!x.ok)return setError(promptWorkbenchError(x.error)); setNotice("Aprendizaje descartado."); router.refresh();})}>Descartar</button>
+              </div>}
+            </article>)}
+          </div>
+        </div>
+      )}
+      {tab === "handoff" && (
+        <div className="dw-content">
+          <header><h2>Cuándo pasa a una persona</h2><p>Solo los motivos activados permiten una escalación automática. Los demás casos los debe intentar resolver Demi con Studio Flow.</p></header>
+          <div className="dw-settings-list">
+            {handoffPolicies.map((item) => <article key={item.id} className="dw-setting-card">
+              <div><strong>{item.label}</strong><small>{item.blocking ? "Pausa la conversación automática" : "Revisión sin bloquear a Demi"}</small><p>{item.description}</p></div>
+              <label className="dw-switch"><input type="checkbox" checked={item.enabled} disabled={busy} onChange={(e)=>perform(async()=>{const x=await setDemiHandoffPolicy(item.id,e.target.checked); if(!x.ok)return setError(promptWorkbenchError(x.error)); setNotice(e.target.checked ? "Motivo activado." : "Motivo desactivado."); router.refresh();})}/><span>{item.enabled ? "Activo" : "Inactivo"}</span></label>
+            </article>)}
+          </div>
         </div>
       )}
 
