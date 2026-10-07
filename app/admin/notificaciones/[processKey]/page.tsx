@@ -7,6 +7,7 @@ import { getMetaWhatsAppAdminDiagnostics } from "@/lib/assistant/meta-whatsapp-a
 import { createServiceClient } from "@/lib/supabase/service";
 import {
   isMetaWhatsAppTemplateKey,
+  metaWhatsAppStatusLabel,
   metaTemplateKeyForNotification,
   META_WHATSAPP_TEMPLATE_PARAMETERS,
 } from "@/lib/notifications/meta-template-catalog";
@@ -104,47 +105,47 @@ function policyText(policy: Record<string, unknown>, key: string) {
 
 const fallbackMessages: Record<string, { title: string; body: string }> = {
   "reservation-confirmed": {
-    title: "Reserva confirmada",
+    title: "✅ Reserva confirmada",
     body: "Tu lugar quedó reservado. Consulta los detalles en Studio Flow.",
   },
   "reservation-cancelled": {
-    title: "Reserva cancelada",
+    title: "❌ Reserva cancelada",
     body: "Tu reserva fue cancelada. Consulta los detalles en Studio Flow.",
   },
   "reservation-rescheduled": {
-    title: "Cambio de horario",
+    title: "🗓️ Cambio de horario",
     body: "El horario de una de tus clases cambió. Revisa la nueva hora en Studio Flow.",
   },
   "class-reminder": {
-    title: "Tu clase es pronto",
+    title: "⏰ Tu clase es pronto",
     body: "Tienes una clase próxima. Revisa el horario y los detalles en Studio Flow.",
   },
   "rescheduled-class-reminder": {
-    title: "Tu clase reprogramada es pronto",
+    title: "⏰ Tu clase reprogramada es pronto",
     body: "Revisa el horario actualizado de tu próxima clase en Studio Flow.",
   },
   "minimum-cancelled-students": {
-    title: "Clase cancelada",
+    title: "📢 Clase cancelada",
     body: "La sesión fue cancelada por no alcanzar el mínimo de reservas.",
   },
   "minimum-cancelled-coach": {
-    title: "Clase cancelada",
+    title: "📢 Clase cancelada",
     body: "La sesión asignada fue cancelada por no alcanzar el mínimo de reservas.",
   },
   "waitlist-promoted": {
-    title: "¡Ya tienes lugar!",
+    title: "🎉 ¡Ya tienes lugar!",
     body: "Se liberó un lugar y tu reserva quedó confirmada.",
   },
   "evaluation-invitation": {
-    title: "Tienes una evaluación disponible",
+    title: "✨ Tienes una evaluación disponible",
     body: "Ya puedes agendar tu evaluación desde Studio Flow.",
   },
   "evaluation-scheduled": {
-    title: "Evaluación programada",
+    title: "📅 Evaluación programada",
     body: "Tu evaluación quedó programada.",
   },
   "evaluation-completed": {
-    title: "Resultados disponibles",
+    title: "🏅 Resultados disponibles",
     body: "Ya puedes consultar los resultados de tu evaluación.",
   },
 };
@@ -493,27 +494,25 @@ export default async function NotificationProcessPage({
                 <article key={templateKey} className="notification-message-card">
                   <div className="notification-message-card-head">
                     <strong>{templateKey}</strong>
-                    <span>{mappedTemplate?.status ?? "Sin asignar"}</span>
+                    <span>
+                      {mappedTemplate
+                        ? metaWhatsAppStatusLabel(mappedTemplate.status)
+                        : "Sin asignar"}
+                    </span>
                   </div>
-                  {mappedTemplate?.rejectedReason ? (
-                    <p className="notification-feedback is-error">
-                      Motivo de rechazo: {mappedTemplate.rejectedReason}
-                    </p>
-                  ) : null}
                   {candidateTemplates
                     .filter((template) => template.name !== mappedName)
                     .map((template) => (
                       <p key={`${template.name}:${template.language}`}>
                         {template.name} · {template.language} · {template.category} ·{" "}
-                        {template.status}
-                        {template.rejectedReason ? ` · Motivo: ${template.rejectedReason}` : ""}
+                        {metaWhatsAppStatusLabel(template.status)}
                       </p>
                     ))}
                   {mappedName ? (
                     <p>
                       Plantilla asignada: <code>{mappedName}</code> ·{" "}
                       {mappedTemplate
-                        ? `${mappedTemplate.status} · ${mappedTemplate.category} · ${mappedTemplate.language}`
+                        ? `${metaWhatsAppStatusLabel(mappedTemplate.status)} · ${mappedTemplate.category} · ${mappedTemplate.language}`
                         : "No encontrada en Meta"}
                     </p>
                   ) : null}
