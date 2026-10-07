@@ -2,6 +2,48 @@ export type NotificationChannelKey = "inbox" | "push" | "whatsapp" | "email";
 export type NotificationProcessCategory =
   "reservas" | "paquetes" | "evaluaciones" | "documentos" | "cuenta";
 
+export const NOTIFICATION_EMOJI_BY_KEY: Readonly<Record<string, string>> = {
+  "reservation-confirmed": "✅",
+  "reservation-modified": "✏️",
+  "reservation-cancelled": "🚫",
+  "class-reminder": "⏰",
+  "rescheduled-class-reminder": "🗓️",
+  "late-cancellation": "⚠️",
+  "no-show": "👀",
+  "class-cancelled-by-studio": "📢",
+  "minimum-cancelled-students": "📣",
+  "minimum-cancelled-coach": "🧑‍🏫",
+  "session-change": "🔁",
+  "waitlist-promoted": "🎉",
+  "waitlist-expired": "⌛",
+  "package-activated": "🎁",
+  "package-expiring": "⏳",
+  "package-expired": "📦",
+  "credit-restored": "💚",
+  "payment-pending": "💳",
+  "payment-confirmed": "💸",
+  "evaluation-invitation": "✨",
+  "evaluation-reminder": "⏱️",
+  "evaluation-completed": "🏅",
+  "documents-pending": "📄",
+  "document-new-version": "📝",
+  "guardian-signature": "✍️",
+  "account-created": "👋",
+  "password-reset": "🔐",
+  "coach-change": "🤝",
+  "studio-closure": "📅",
+  "inactive-students": "💌",
+  "package-renewal": "🔄",
+  "special-promotions": "✨",
+  birthday: "🎂",
+  challenges: "🏆",
+  events: "🎟️",
+  referrals: "🤸",
+  "package-recovery-1": "💖",
+  "package-recovery-2": "🫶",
+  "manual-campaigns": "📨",
+};
+
 export type NotificationProcessDefinition = {
   key: string;
   name: string;

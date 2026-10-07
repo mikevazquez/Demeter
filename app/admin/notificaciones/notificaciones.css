@@ -2239,3 +2239,16 @@ a.notification-process-row:hover {
     gap: 9px;
   }
 }
+
+/* Use a friendly emoji marker for each automation without changing its state or behavior. */
+.notification-process-icon {
+  font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
+  font-size: 22px;
+  line-height: 1;
+}
+
+.notification-detail-icon {
+  font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
+  font-size: 25px;
+  line-height: 1;
+}

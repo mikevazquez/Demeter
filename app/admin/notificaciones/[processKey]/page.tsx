@@ -13,6 +13,7 @@ import {
 } from "@/lib/notifications/meta-template-catalog";
 import {
   getNotificationProcess,
+  NOTIFICATION_EMOJI_BY_KEY,
   NOTIFICATION_PROCESS_CATEGORIES,
   type NotificationChannelKey,
 } from "@/lib/notifications/admin-catalog";
@@ -294,7 +295,7 @@ export default async function NotificationProcessPage({
         <Link href="/admin/notificaciones?tab=procesos">← Procesos</Link>
         <div className="notification-detail-title-row">
           <span className="notification-detail-icon" aria-hidden="true">
-            ◷
+            {NOTIFICATION_EMOJI_BY_KEY[process.key] ?? "💬"}
           </span>
           <div>
             <span className="notification-category-tag">{processCategoryLabel}</span>

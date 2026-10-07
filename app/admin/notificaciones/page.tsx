@@ -4,6 +4,7 @@ import { getAdminContext } from "@/lib/auth/admin-context";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import {
   MARKETING_COMMUNICATIONS,
+  NOTIFICATION_EMOJI_BY_KEY,
   NOTIFICATION_PROCESS_CATEGORIES,
   NOTIFICATION_PROCESSES,
   type NotificationChannelKey,
@@ -292,15 +293,7 @@ export default async function NotificationsPage({
               const content = (
                 <>
                   <span className="notification-process-icon" aria-hidden="true">
-                    {process.category === "evaluaciones"
-                      ? "⌁"
-                      : process.category === "paquetes"
-                        ? "◇"
-                        : process.category === "documentos"
-                          ? "▤"
-                          : process.category === "cuenta"
-                            ? "○"
-                            : "✓"}
+                    {NOTIFICATION_EMOJI_BY_KEY[process.key] ?? "💬"}
                   </span>
                   <span className="notification-process-copy">
                     <span className="notification-process-title-line">
@@ -390,7 +383,7 @@ export default async function NotificationsPage({
                   className="notification-process-row marketing-row"
                 >
                   <span className="notification-process-icon marketing" aria-hidden="true">
-                    {item.key === "birthday" ? "✦" : item.key === "special-promotions" ? "◇" : "↗"}
+                    {NOTIFICATION_EMOJI_BY_KEY[item.key] ?? "✨"}
                   </span>
                   <span className="notification-process-copy">
                     <strong>{item.name}</strong>
