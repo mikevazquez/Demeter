@@ -3,13 +3,25 @@ import { notFound } from "next/navigation";
 
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
+import { getMetaWhatsAppAdminDiagnostics } from "@/lib/assistant/meta-whatsapp-admin";
+import { createServiceClient } from "@/lib/supabase/service";
+import {
+  isMetaWhatsAppTemplateKey,
+  metaWhatsAppStatusLabel,
+  metaTemplateKeyForNotification,
+  META_WHATSAPP_TEMPLATE_PARAMETERS,
+} from "@/lib/notifications/meta-template-catalog";
 import {
   getNotificationProcess,
+  NOTIFICATION_EMOJI_BY_KEY,
+  NOTIFICATION_PROCESS_CATEGORIES,
   type NotificationChannelKey,
 } from "@/lib/notifications/admin-catalog";
 import {
   saveNotificationLeadTimeAction,
   saveNotificationMessageAction,
+  submitNotificationWhatsAppTemplateAction,
+  mapApprovedNotificationWhatsAppTemplateAction,
   toggleNotificationChannelAction,
   toggleNotificationProcessAction,
 } from "../actions";
@@ -95,47 +107,47 @@ function policyText(policy: Record<string, unknown>, key: string) {
 
 const fallbackMessages: Record<string, { title: string; body: string }> = {
   "reservation-confirmed": {
-    title: "Reserva confirmada",
+    title: "✅ Reserva confirmada",
     body: "Tu lugar quedó reservado. Consulta los detalles en Studio Flow.",
   },
   "reservation-cancelled": {
-    title: "Reserva cancelada",
+    title: "❌ Reserva cancelada",
     body: "Tu reserva fue cancelada. Consulta los detalles en Studio Flow.",
   },
   "reservation-rescheduled": {
-    title: "Cambio de horario",
+    title: "🗓️ Cambio de horario",
     body: "El horario de una de tus clases cambió. Revisa la nueva hora en Studio Flow.",
   },
   "class-reminder": {
-    title: "Tu clase es pronto",
+    title: "⏰ Tu clase es pronto",
     body: "Tienes una clase próxima. Revisa el horario y los detalles en Studio Flow.",
   },
   "rescheduled-class-reminder": {
-    title: "Tu clase reprogramada es pronto",
+    title: "⏰ Tu clase reprogramada es pronto",
     body: "Revisa el horario actualizado de tu próxima clase en Studio Flow.",
   },
   "minimum-cancelled-students": {
-    title: "Clase cancelada",
+    title: "📢 Clase cancelada",
     body: "La sesión fue cancelada por no alcanzar el mínimo de reservas.",
   },
   "minimum-cancelled-coach": {
-    title: "Clase cancelada",
+    title: "📢 Clase cancelada",
     body: "La sesión asignada fue cancelada por no alcanzar el mínimo de reservas.",
   },
   "waitlist-promoted": {
-    title: "¡Ya tienes lugar!",
+    title: "🎉 ¡Ya tienes lugar!",
     body: "Se liberó un lugar y tu reserva quedó confirmada.",
   },
   "evaluation-invitation": {
-    title: "Tienes una evaluación disponible",
+    title: "✨ Tienes una evaluación disponible",
     body: "Ya puedes agendar tu evaluación desde Studio Flow.",
   },
   "evaluation-scheduled": {
-    title: "Evaluación programada",
+    title: "📅 Evaluación programada",
     body: "Tu evaluación quedó programada.",
   },
   "evaluation-completed": {
-    title: "Resultados disponibles",
+    title: "🏅 Resultados disponibles",
     body: "Ya puedes consultar los resultados de tu evaluación.",
   },
 };
@@ -150,6 +162,24 @@ function Feedback({ error, saved }: { error?: string; saved?: string }) {
     notification_message_title_body_required: "El título y el mensaje son obligatorios.",
     notification_timing_out_of_range: "La anticipación debe estar entre 0 minutos y 7 días.",
     notification_process_essential: "Este proceso esencial debe permanecer activo.",
+    notification_email_provider_not_configured:
+      "Email no se puede activar: falta configurar un proveedor de envío.",
+    notification_push_provider_not_configured:
+      "Push no se puede activar: falta la configuración técnica de VAPID.",
+    notification_whatsapp_template_not_approved:
+      "WhatsApp no se puede activar: asigna una plantilla aprobada de Meta a todas las variantes del evento.",
+    notification_whatsapp_template_unsupported:
+      "Este evento aún no tiene variables de WhatsApp compatibles con el motor de envío.",
+    notification_whatsapp_template_mapping_failed:
+      "No se pudo guardar la asignación de la plantilla aprobada.",
+    meta_template_variables_invalid:
+      "Usa todas las variables requeridas y en orden, por ejemplo {{1}}, {{2}}.",
+    meta_template_submission_failed:
+      "Meta no aceptó la solicitud de plantilla. Revisa el contenido e inténtalo de nuevo.",
+    meta_template_name_invalid: "El nombre debe usar minúsculas, números y guion bajo.",
+    meta_template_language_invalid: "Usa un idioma con formato es_MX.",
+    meta_template_category_invalid: "Selecciona una categoría válida de Meta.",
+    meta_template_body_invalid: "El mensaje debe tener entre 1 y 1024 caracteres.",
   };
 
   return (
@@ -172,6 +202,9 @@ export default async function NotificationProcessPage({
   const [{ processKey }, query] = await Promise.all([params, searchParams]);
   const process = getNotificationProcess(processKey);
   if (!process || process.planned || process.ruleKeys.length === 0) notFound();
+  const processCategoryLabel =
+    NOTIFICATION_PROCESS_CATEGORIES.find((category) => category.key === process.category)?.label ??
+    "Proceso";
 
   const ctx = await getAdminContext(CAPABILITIES.AUTOMATIONS_READ);
   const canManage = ctx.can(CAPABILITIES.AUTOMATIONS_MANAGE);
@@ -186,6 +219,11 @@ export default async function NotificationProcessPage({
 
   if (rules.length !== process.ruleKeys.length) notFound();
 
+  const [metaDiagnostics, pushConfig] = await Promise.all([
+    getMetaWhatsAppAdminDiagnostics(ctx.studio.id),
+    createServiceClient().rpc("service_get_push_vapid_config"),
+  ]);
+
   const enabled = rules.every((rule) => rule.enabled);
   const uniqueTemplates = new Set(rules.map((rule) => rule.template_key));
   const canEditSharedMessage = uniqueTemplates.size === 1;
@@ -199,6 +237,47 @@ export default async function NotificationProcessPage({
     push: snapshot.settings.push_enabled,
     whatsapp: snapshot.settings.whatsapp_enabled,
     email: snapshot.settings.email_enabled,
+  };
+
+  const uniqueTemplateKeys = [
+    ...new Set(rules.map((rule) => metaTemplateKeyForNotification(rule.template_key))),
+  ];
+  const hasUnsupportedWhatsAppTemplate = uniqueTemplateKeys.includes(null);
+  const supportedTemplateKeys = uniqueTemplateKeys.filter(
+    (templateKey): templateKey is NonNullable<typeof templateKey> => templateKey !== null,
+  );
+  const whatsappReady =
+    metaDiagnostics.connected &&
+    supportedTemplateKeys.length > 0 &&
+    !hasUnsupportedWhatsAppTemplate &&
+    supportedTemplateKeys.every((templateKey) => {
+      const name = metaDiagnostics.templateMappings[templateKey];
+      return Boolean(
+        name &&
+        metaDiagnostics.templates.some(
+          (template) =>
+            template.name === name &&
+            template.language === metaDiagnostics.templateLanguage &&
+            template.status === "APPROVED" &&
+            template.variableCount === META_WHATSAPP_TEMPLATE_PARAMETERS[templateKey].length,
+        ),
+      );
+    });
+  const pushReady = !pushConfig.error;
+  const readiness: Record<"push" | "whatsapp" | "email", { ready: boolean; label: string }> = {
+    push: {
+      ready: pushReady,
+      label: pushReady
+        ? "Configuración técnica lista · cada destinatario requiere una suscripción"
+        : "Falta configurar VAPID",
+    },
+    whatsapp: {
+      ready: whatsappReady,
+      label: whatsappReady
+        ? "Conexión y plantillas aprobadas"
+        : "Falta una plantilla aprobada y asignada",
+    },
+    email: { ready: false, label: "Proveedor no configurado · falta integración de email" },
   };
 
   const leadTimeRule = rules.find((rule) => rule.timing_strategy_key === "before_session_start");
@@ -216,9 +295,10 @@ export default async function NotificationProcessPage({
         <Link href="/admin/notificaciones?tab=procesos">← Procesos</Link>
         <div className="notification-detail-title-row">
           <span className="notification-detail-icon" aria-hidden="true">
-            ◷
+            {NOTIFICATION_EMOJI_BY_KEY[process.key] ?? "💬"}
           </span>
           <div>
+            <span className="notification-category-tag">{processCategoryLabel}</span>
             <div className="notification-title-with-status">
               <h1>{process.name}</h1>
               <span className={enabled ? "is-on" : undefined}>
@@ -235,7 +315,12 @@ export default async function NotificationProcessPage({
       <section className="notification-detail-card">
         <div className="notification-detail-card-heading">
           <div>
-            <h2>Información general</h2>
+            <div className="notification-section-title">
+              <span className="notification-step-index" aria-hidden="true">
+                01
+              </span>
+              <h2>Información general</h2>
+            </div>
             <p>Qué ocurre y a quién se comunica.</p>
           </div>
 
@@ -288,7 +373,12 @@ export default async function NotificationProcessPage({
       <section className="notification-detail-card">
         <div className="notification-detail-card-heading">
           <div>
-            <h2>Canales de envío</h2>
+            <div className="notification-section-title">
+              <span className="notification-step-index" aria-hidden="true">
+                02
+              </span>
+              <h2>Canales de envío</h2>
+            </div>
             <p>Activa únicamente los canales que aporten valor a este aviso.</p>
           </div>
         </div>
@@ -326,8 +416,10 @@ export default async function NotificationProcessPage({
                           : coverage === "some"
                             ? "Activo para parte de los destinatarios"
                             : channel === "email"
-                              ? "Proveedor no configurado"
-                              : "Canal disponible"}
+                              ? readiness.email.label
+                              : channel === "whatsapp"
+                                ? readiness.whatsapp.label
+                                : readiness.push.label}
                     </small>
                   </div>
                   {canManage && globalEnabled && channel !== "inbox" ? (
@@ -338,6 +430,7 @@ export default async function NotificationProcessPage({
                       <button
                         type="submit"
                         className={active ? "notification-switch is-on" : "notification-switch"}
+                        disabled={!active && !readiness[channel].ready}
                         aria-label={
                           active
                             ? `Desactivar ${channelLabels[channel]}`
@@ -365,10 +458,218 @@ export default async function NotificationProcessPage({
         </div>
       </section>
 
+      <section className="notification-detail-card">
+        <div className="notification-detail-card-heading">
+          <div>
+            <div className="notification-section-title">
+              <span className="notification-step-index" aria-hidden="true">
+                03
+              </span>
+              <h2>Plantillas de WhatsApp</h2>
+            </div>
+            <p>
+              Plantilla administrada en Meta. Las plantillas de WhatsApp se administran en Meta;
+              envía una a revisión y asígnala al evento después de su aprobación.
+            </p>
+          </div>
+          <span
+            className={
+              metaDiagnostics.connected
+                ? "notification-required-channel"
+                : "notification-readonly-badge"
+            }
+          >
+            {metaDiagnostics.connected ? "Meta conectada" : "Meta no disponible"}
+          </span>
+        </div>
+
+        {!metaDiagnostics.connected ? (
+          <div className="notification-info-box">
+            No se pudo validar Meta. Revisa la conexión de WhatsApp en Integraciones.
+          </div>
+        ) : (
+          <div className="notification-message-grid">
+            {supportedTemplateKeys.map((templateKey) => {
+              const supported = isMetaWhatsAppTemplateKey(templateKey);
+              const mappedName = metaDiagnostics.templateMappings[templateKey];
+              const mappedTemplate = mappedName
+                ? metaDiagnostics.templates.find(
+                    (template) =>
+                      template.name === mappedName &&
+                      template.language === metaDiagnostics.templateLanguage,
+                  )
+                : null;
+              const candidateTemplates = metaDiagnostics.templates.filter((template) =>
+                template.name.startsWith(`demeter_${templateKey}_`),
+              );
+              const variables = supported ? META_WHATSAPP_TEMPLATE_PARAMETERS[templateKey] : [];
+              const suggestedName = `demeter_${templateKey}_${new Date().toISOString().slice(0, 10).replaceAll("-", "")}`;
+              const compatibleApproved = metaDiagnostics.templates.filter(
+                (template) =>
+                  template.status === "APPROVED" &&
+                  template.language === metaDiagnostics.templateLanguage &&
+                  template.variableCount === variables.length,
+              );
+
+              return (
+                <article key={templateKey} className="notification-message-card">
+                  <div className="notification-message-card-head">
+                    <strong>{templateKey}</strong>
+                    <span>
+                      {mappedTemplate
+                        ? metaWhatsAppStatusLabel(mappedTemplate.status)
+                        : "Sin asignar"}
+                    </span>
+                  </div>
+                  {candidateTemplates
+                    .filter((template) => template.name !== mappedName)
+                    .map((template) => (
+                      <p key={`${template.name}:${template.language}`}>
+                        {template.name} · {template.language} · {template.category} ·{" "}
+                        {metaWhatsAppStatusLabel(template.status)}
+                      </p>
+                    ))}
+                  {mappedName ? (
+                    <p>
+                      Plantilla asignada: <code>{mappedName}</code> ·{" "}
+                      {mappedTemplate
+                        ? `${metaWhatsAppStatusLabel(mappedTemplate.status)} · ${mappedTemplate.category} · ${mappedTemplate.language}`
+                        : "No encontrada en Meta"}
+                    </p>
+                  ) : null}
+                  {supported ? (
+                    <>
+                      <p>Variables requeridas, en orden: {variables.join(", ") || "ninguna"}</p>
+                      <form
+                        action={submitNotificationWhatsAppTemplateAction}
+                        className="notification-message-form"
+                      >
+                        <input type="hidden" name="process_key" value={process.key} />
+                        <input type="hidden" name="template_key" value={templateKey} />
+                        <label>
+                          <span>Nombre para Meta</span>
+                          <input
+                            name="meta_template_name"
+                            defaultValue={suggestedName}
+                            maxLength={512}
+                            required
+                            pattern="[a-z0-9_]+"
+                          />
+                        </label>
+                        <label>
+                          <span>Idioma</span>
+                          <input
+                            name="language_code"
+                            defaultValue={metaDiagnostics.templateLanguage}
+                            required
+                            pattern="[a-z]{2}_[A-Z]{2}"
+                          />
+                        </label>
+                        <label>
+                          <span>Categoría Meta</span>
+                          <select
+                            name="meta_category"
+                            defaultValue={
+                              templateKey.startsWith("package_recovery_") ||
+                              templateKey === "challenge_invitation" ||
+                              templateKey === "workshop_event" ||
+                              templateKey === "referral_invitation"
+                                ? "MARKETING"
+                                : "UTILITY"
+                            }
+                          >
+                            <option value="UTILITY">Servicio / utilidad</option>
+                            <option value="MARKETING">Marketing</option>
+                          </select>
+                        </label>
+                        <label>
+                          <span>
+                            Texto de la plantilla · incluye todas las variables en orden; puedes
+                            reutilizarlas
+                          </span>
+                          <textarea
+                            name="meta_body"
+                            rows={4}
+                            required
+                            maxLength={1024}
+                            placeholder={variables.map((_, index) => `{{${index + 1}}}`).join(" ")}
+                          />
+                        </label>
+                        <button type="submit">Enviar a revisión de Meta</button>
+                      </form>
+                      {compatibleApproved.length ? (
+                        <form
+                          action={mapApprovedNotificationWhatsAppTemplateAction}
+                          className="notification-message-form"
+                        >
+                          <input type="hidden" name="process_key" value={process.key} />
+                          <input type="hidden" name="template_key" value={templateKey} />
+                          <label>
+                            <span>Plantilla aprobada para usar</span>
+                            <select
+                              name="meta_template_name"
+                              defaultValue={
+                                mappedName &&
+                                compatibleApproved.some((item) => item.name === mappedName)
+                                  ? mappedName
+                                  : ""
+                              }
+                              required
+                            >
+                              <option value="" disabled>
+                                Selecciona una plantilla aprobada
+                              </option>
+                              {compatibleApproved.map((template) => (
+                                <option
+                                  key={`${template.name}:${template.language}`}
+                                  value={template.name}
+                                >
+                                  {template.name} · {template.language}
+                                </option>
+                              ))}
+                            </select>
+                          </label>
+                          <input
+                            type="hidden"
+                            name="language_code"
+                            value={metaDiagnostics.templateLanguage}
+                          />
+                          <button type="submit">Asignar al evento</button>
+                        </form>
+                      ) : (
+                        <div className="notification-info-box">
+                          Todavía no hay una plantilla aprobada con las variables requeridas.
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <div className="notification-info-box">
+                      Este tipo de notificación aún no tiene variables de WhatsApp habilitadas en el
+                      motor de envío.
+                    </div>
+                  )}
+                </article>
+              );
+            })}
+          </div>
+        )}
+        {hasUnsupportedWhatsAppTemplate ? (
+          <div className="notification-info-box">
+            Algunas variantes de este evento todavía no tienen integración WhatsApp disponible en el
+            motor de envío; el canal seguirá bloqueado.
+          </div>
+        ) : null}
+      </section>
+
       <section id="mensajes" className="notification-detail-card">
         <div className="notification-detail-card-heading">
           <div>
-            <h2>Mensaje por canal</h2>
+            <div className="notification-section-title">
+              <span className="notification-step-index" aria-hidden="true">
+                04
+              </span>
+              <h2>Mensaje por canal</h2>
+            </div>
             <p>Edita lo visible sin exponer la lógica interna del motor.</p>
           </div>
         </div>
@@ -469,15 +770,20 @@ export default async function NotificationProcessPage({
         <section className="notification-detail-card">
           <div className="notification-detail-card-heading">
             <div>
-              <h2>Configuración avanzada</h2>
-              <p>Ajusta la anticipación sin tocar reglas técnicas.</p>
+              <div className="notification-section-title">
+                <span className="notification-step-index" aria-hidden="true">
+                  05
+                </span>
+                <h2>Horario de envío</h2>
+              </div>
+              <p>Ajusta con cuánta anticipación se envía este recordatorio.</p>
             </div>
           </div>
 
           <form action={saveNotificationLeadTimeAction} className="notification-advanced-form">
             <input type="hidden" name="process_key" value={process.key} />
             <label className="notification-field">
-              <span>Minutos antes de la clase</span>
+              <span>Enviar con cuántos minutos de anticipación</span>
               <input
                 type="number"
                 name="minutes_before"

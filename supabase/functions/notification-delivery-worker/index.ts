@@ -3,6 +3,7 @@ import type { SupabaseClient } from "npm:@supabase/supabase-js@2.116.0";
 import { sendPushNotification, WebPushError } from "npm:@mmmike/web-push@1.3.0/send";
 import { sendAsistianWebhook } from "../_shared/asistian-messaging.ts";
 import { sendMetaWhatsAppTemplate } from "../_shared/meta-whatsapp.ts";
+import { isMetaWhatsAppTemplateKey } from "../_shared/meta-whatsapp-template.ts";
 import {
   buildAsistianVariables,
   formatNotificationDateTimeParts,
@@ -191,7 +192,7 @@ function formatSessionStart(variables: JsonObject) {
   }
 }
 
-function renderMessage(delivery: DeliveryRow): RenderedMessage {
+function renderMessageContent(delivery: DeliveryRow): RenderedMessage {
   const variables = delivery.template_variables ?? {};
   const policy = delivery.channel_policy ?? {};
 
@@ -218,7 +219,9 @@ function renderMessage(delivery: DeliveryRow): RenderedMessage {
     case "class_reminder":
       return {
         title: "Tu clase es pronto",
-        body: startLabel ? `${className} comienza ${startLabel}.` : `${className} comienza pronto.`,
+        body: startLabel
+          ? `¡Ya casi es hora! ⏰ ${className} comienza ${startLabel}. Alista todo, te esperamos con gusto 💚`
+          : `¡Ya casi es hora! ⏰ ${className} comienza pronto. Alista todo, te esperamos con gusto 💚`,
         url: delivery.recipient_type === "student" ? "/student" : "/admin/mis-clases",
         tag: `notification-${delivery.id}`,
         providerTemplateKey: overrideProviderTemplate ?? "class_reminder",
@@ -228,8 +231,8 @@ function renderMessage(delivery: DeliveryRow): RenderedMessage {
       return {
         title: "Reserva confirmada",
         body: startLabel
-          ? `Tu lugar en ${className} quedó reservado para ${startLabel}.`
-          : `Tu lugar en ${className} quedó reservado.`,
+          ? `¡Qué emoción! 🎉 Tu lugar en ${className} quedó reservado para ${startLabel}. ¡Nos encantará verte! 💚`
+          : `¡Qué emoción! 🎉 Tu lugar en ${className} quedó reservado. ¡Nos encantará verte! 💚`,
         url: "/student",
         tag: `notification-${delivery.id}`,
         providerTemplateKey: overrideProviderTemplate ?? "reservation_confirmed",
@@ -238,7 +241,7 @@ function renderMessage(delivery: DeliveryRow): RenderedMessage {
     case "reservation_cancelled_by_student":
       return {
         title: "Reserva cancelada",
-        body: `Tu reserva de ${className} quedó cancelada.`,
+        body: `Tu reserva de ${className} quedó cancelada 😔. Si quieres buscar otra clase, aquí estamos para ayudarte 💚`,
         url: "/student",
         tag: `notification-${delivery.id}`,
         // This operational notification uses the already approved generic cancellation template.
@@ -248,7 +251,7 @@ function renderMessage(delivery: DeliveryRow): RenderedMessage {
     case "reservation_cancelled":
       return {
         title: "Reserva cancelada",
-        body: `Tu reserva de ${className} fue cancelada.`,
+        body: `Tu reserva de ${className} fue cancelada 😔. Revisa en Demeter el estado de tu crédito; si tienes dudas, aquí estamos para ayudarte 💚`,
         url: "/student",
         tag: `notification-${delivery.id}`,
         providerTemplateKey: overrideProviderTemplate ?? "reservation_cancelled",
@@ -258,8 +261,8 @@ function renderMessage(delivery: DeliveryRow): RenderedMessage {
       return {
         title: "¡Ya tienes lugar!",
         body: startLabel
-          ? `Se liberó un lugar en ${className} para ${startLabel}.`
-          : `Se liberó un lugar en ${className}.`,
+          ? `¡Buenas noticias! 🎉 Se liberó un lugar en ${className} para ${startLabel}. Tu reserva ya está confirmada; ¡te esperamos! 💚`
+          : `¡Buenas noticias! 🎉 Se liberó un lugar en ${className}. Tu reserva ya está confirmada; ¡te esperamos! 💚`,
         url: "/student",
         tag: `notification-${delivery.id}`,
         providerTemplateKey: overrideProviderTemplate ?? "waitlist_promoted",
@@ -268,7 +271,7 @@ function renderMessage(delivery: DeliveryRow): RenderedMessage {
     case "student_welcome":
       return {
         title: `Bienvenida a ${studioName}`,
-        body: "Tu acceso a Studio Flow está listo.",
+        body: "¡Qué gusto tenerte en Demeter! 👋 Tu acceso ya está listo. Actívalo y nos encantará acompañarte en tus clases 💚",
         url: "/student",
         tag: `notification-${delivery.id}`,
         providerTemplateKey: overrideProviderTemplate ?? "student_welcome",
@@ -278,8 +281,8 @@ function renderMessage(delivery: DeliveryRow): RenderedMessage {
       return {
         title: "Clase cancelada",
         body: startLabel
-          ? `${className} de ${startLabel} fue cancelada.`
-          : `${className} fue cancelada.`,
+          ? `${className} de ${startLabel} fue cancelada 📣. Gracias por estar al pendiente; revisa tu agenda actualizada 🙌`
+          : `${className} fue cancelada 📣. Gracias por estar al pendiente; revisa tu agenda actualizada 🙌`,
         url: "/admin/mis-clases",
         tag: `notification-${delivery.id}`,
         providerTemplateKey: overrideProviderTemplate ?? "class_cancelled_coach",
@@ -294,10 +297,10 @@ function renderMessage(delivery: DeliveryRow): RenderedMessage {
         title: "Cambio de horario",
         body:
           oldLabel && startLabel
-            ? `${className} cambió de ${oldLabel} a ${startLabel}.`
+            ? `¡Actualizamos el horario de ${className}! 🗓️ Ahora nos vemos de ${oldLabel} a ${startLabel}. ¡Revisa tu agenda y aquí estamos si necesitas ayuda! 💚`
             : startLabel
-              ? `${className} ahora será ${startLabel}.`
-              : `El horario de ${className} cambió.`,
+              ? `¡Actualizamos el horario de ${className}! 🗓️ Ahora nos vemos ${startLabel}. Revisa tu agenda y aquí estamos si necesitas ayuda 💚`
+              : `¡Actualizamos el horario de ${className}! 🗓️ Revisa los detalles en tu agenda; si tienes dudas, aquí estamos para ayudarte 💚`,
         url: "/student",
         tag: `notification-${delivery.id}`,
         providerTemplateKey: overrideProviderTemplate ?? "class_rescheduled",
@@ -308,8 +311,8 @@ function renderMessage(delivery: DeliveryRow): RenderedMessage {
       return {
         title: "Tu clase fue cancelada",
         body: startLabel
-          ? `${className} de ${startLabel} se canceló por no alcanzar el mínimo de reservas. Tu crédito fue restaurado cuando correspondía.`
-          : `${className} se canceló por no alcanzar el mínimo de reservas. Tu crédito fue restaurado cuando correspondía.`,
+          ? `Lo sentimos 😔 ${className} de ${startLabel} tuvo que cancelarse porque no se reunió el grupo mínimo. Revisa en Demeter el estado de tu crédito; si necesitas apoyo, escríbenos 💚`
+          : `Lo sentimos 😔 ${className} tuvo que cancelarse porque no se reunió el grupo mínimo. Revisa en Demeter el estado de tu crédito; si necesitas apoyo, escríbenos 💚`,
         url: "/student",
         tag: `notification-${delivery.id}`,
         providerTemplateKey: overrideProviderTemplate ?? "class_cancelled_student",
@@ -320,8 +323,8 @@ function renderMessage(delivery: DeliveryRow): RenderedMessage {
       return {
         title: "Tu evaluación es pronto",
         body: startLabel
-          ? `Tienes una evaluación de ${discipline} el ${startLabel}.`
-          : `Tienes una evaluación de ${discipline} programada pronto.`,
+          ? `¡Tu evaluación de ${discipline} ya casi llega! ⏰ Te esperamos el ${startLabel}. ¡Qué emoción ver todo lo que has avanzado! 💚`
+          : `¡Tu evaluación de ${discipline} ya casi llega! ⏰ Te esperamos pronto. ¡Qué emoción ver todo lo que has avanzado! 💚`,
         url: "/student/evaluaciones",
         tag: `notification-${delivery.id}`,
         providerTemplateKey: overrideProviderTemplate ?? "evaluation_reminder",
@@ -331,7 +334,7 @@ function renderMessage(delivery: DeliveryRow): RenderedMessage {
     case "package_activated":
       return {
         title: "Paquete activo",
-        body: `Tu paquete quedó activo desde ${safeText(variables.starts_on) ?? "hoy"} y vence el ${safeText(variables.expires_on) ?? "la fecha indicada"}.`,
+        body: `¡Qué emoción seguir entrenando contigo! 🎉 Tu paquete está activo desde ${safeText(variables.starts_on) ?? "hoy"} y vence el ${safeText(variables.expires_on) ?? "la fecha indicada"}. ¡Disfruta cada clase! 💚`,
         url: "/student/paquete",
         tag: `notification-${delivery.id}`,
         providerTemplateKey: overrideProviderTemplate ?? "package_activated",
@@ -340,7 +343,7 @@ function renderMessage(delivery: DeliveryRow): RenderedMessage {
     case "package_expired":
       return {
         title: "Paquete vencido",
-        body: `Tu paquete venció el ${safeText(variables.expires_on) ?? "la fecha indicada"}. Consulta las opciones disponibles para seguir reservando.`,
+        body: `Tu paquete terminó su vigencia el ${safeText(variables.expires_on) ?? "la fecha indicada"} ⌛. Nos encantará verte de nuevo; revisa en Demeter las opciones para seguir entrenando 💚`,
         url: "/student/paquete",
         tag: `notification-${delivery.id}`,
         providerTemplateKey: overrideProviderTemplate ?? "package_expired",
@@ -349,7 +352,7 @@ function renderMessage(delivery: DeliveryRow): RenderedMessage {
     case "package_expiring":
       return {
         title: "Tu paquete está por vencer",
-        body: `Tu paquete vence el ${safeText(variables.expires_on) ?? "la fecha indicada"}.`,
+        body: `Tu paquete está por vencer ⏳. Revisa su vigencia en Demeter y, si quieres seguir reservando, aquí estamos para ayudarte 💚`,
         url: "/student/paquete",
         tag: `notification-${delivery.id}`,
         providerTemplateKey: overrideProviderTemplate ?? "package_expiring",
@@ -358,7 +361,7 @@ function renderMessage(delivery: DeliveryRow): RenderedMessage {
     case "session_cancelled_by_studio":
       return {
         title: "Clase cancelada por el estudio",
-        body: `${className} fue cancelada por el estudio.`,
+        body: `Lo sentimos 😔 ${className} tuvo que cancelarse. Revisa en Demeter el estado de tu reserva y crédito; si necesitas ayuda, aquí estamos 💚`,
         url: "/student/mis-clases",
         tag: `notification-${delivery.id}`,
         providerTemplateKey: overrideProviderTemplate ?? "class_cancelled_student",
@@ -368,7 +371,7 @@ function renderMessage(delivery: DeliveryRow): RenderedMessage {
       const discipline = safeText(variables.discipline_name) ?? "tu disciplina";
       return {
         title: "Tienes una evaluación disponible",
-        body: `Ya puedes agendar tu evaluación de ${discipline} desde Studio Flow.`,
+        body: `¡Ya puedes agendar tu evaluación de ${discipline}! ✨ Entra a Demeter y elige el horario que mejor te quede. ¡Vamos contigo! 💚`,
         url: "/student",
         tag: `notification-${delivery.id}`,
         providerTemplateKey: overrideProviderTemplate ?? "evaluation_invitation",
@@ -380,8 +383,8 @@ function renderMessage(delivery: DeliveryRow): RenderedMessage {
       return {
         title: "Evaluación programada",
         body: startLabel
-          ? `Tu evaluación de ${discipline} quedó programada para ${startLabel}.`
-          : `Tu evaluación de ${discipline} quedó programada.`,
+          ? `¡Listo! 🎉 Tu evaluación de ${discipline} quedó programada para ${startLabel}. ¡Te deseamos mucho éxito! 💚`
+          : `¡Listo! 🎉 Tu evaluación de ${discipline} quedó programada. ¡Te deseamos mucho éxito! 💚`,
         url: "/student",
         tag: `notification-${delivery.id}`,
         providerTemplateKey: overrideProviderTemplate ?? "evaluation_scheduled",
@@ -392,16 +395,179 @@ function renderMessage(delivery: DeliveryRow): RenderedMessage {
       const discipline = safeText(variables.discipline_name) ?? "tu disciplina";
       return {
         title: "Resultados de evaluación disponibles",
-        body: `Ya puedes consultar los resultados de tu evaluación de ${discipline} en Studio Flow.`,
+        body: `¡Ya están listos los resultados de tu evaluación de ${discipline}! 🏅 Revísalos en Demeter cuando puedas. ¡Felicidades por tu esfuerzo! 💚`,
         url: "/student",
         tag: `notification-${delivery.id}`,
         providerTemplateKey: overrideProviderTemplate ?? "evaluation_completed",
       };
     }
 
+    case "challenge_invitation":
+      return {
+        title: "Nuevo reto disponible",
+        body: `¡Hay un nuevo reto para ti! 🏆 ${safeText(variables.challenge_name) ?? "Anímate a participar"}. Nos encantará acompañarte 💚`,
+        url: "/student",
+        tag: `notification-${delivery.id}`,
+        providerTemplateKey: overrideProviderTemplate ?? "challenge_invitation",
+      };
+
+    case "workshop_event":
+      return {
+        title: "Nuevo evento en Demeter",
+        body: `¡Tenemos un plan especial! 🎟️ ${safeText(variables.event_name) ?? "Un taller para disfrutar"} · ${safeText(variables.event_date) ?? "próximamente"}. Revisa los detalles en Demeter 💚`,
+        url: "/student",
+        tag: `notification-${delivery.id}`,
+        providerTemplateKey: overrideProviderTemplate ?? "workshop_event",
+      };
+
+    case "referral_invitation":
+      return {
+        title: "Invita a alguien a Demeter",
+        body: "¿Con quién te gustaría compartir tu pasión por el movimiento? 🤸 Invita a alguien especial a conocer Demeter; nos encantará recibirle 💚",
+        url: "/student",
+        tag: `notification-${delivery.id}`,
+        providerTemplateKey: overrideProviderTemplate ?? "referral_invitation",
+      };
+
+    case "package_recovery_1":
+      return {
+        title: "Vuelve a tus clases",
+        body: "¡Te extrañamos en el estudio! 💖 Si te gustaría volver a tus clases, escríbenos y buscamos juntas una opción que te funcione 💚",
+        url: "/student/paquete",
+        tag: `notification-${delivery.id}`,
+        providerTemplateKey: overrideProviderTemplate ?? "package_recovery_1",
+      };
+
+    case "package_recovery_2":
+      return {
+        title: "Te esperamos de vuelta",
+        body: "Nos encantaría volver a verte por aquí 🫶 Cuando quieras retomar, escríbenos y con gusto te contamos las opciones disponibles 💚",
+        url: "/student/paquete",
+        tag: `notification-${delivery.id}`,
+        providerTemplateKey: overrideProviderTemplate ?? "package_recovery_2",
+      };
+
     default:
+      if (isMetaWhatsAppTemplateKey(delivery.template_key)) {
+        const providerAliases: Record<string, string> = {
+          account_created: "student_welcome",
+          late_cancellation: "reservation_cancelled",
+          reservation_modified: "class_rescheduled",
+        };
+        const providerTemplateKey = providerAliases[delivery.template_key] ?? delivery.template_key;
+        const labels: Record<string, string> = {
+          account_created: "💚 ¡Qué gusto tenerte aquí!",
+          attendance_no_show: "💚 Te esperamos en clase",
+          credit_restored: "🎁 ¡Buenas noticias!",
+          document_new_version: "📄 Actualizamos un documento",
+          documents_pending: "📝 Dejemos todo listo",
+          evaluation_completed: "🏅 ¡Ya están tus resultados!",
+          evaluation_invitation: "✨ Da tu siguiente paso",
+          evaluation_scheduled: "🎉 Evaluación programada",
+          guardian_signature_pending: "✍️ Falta una firma",
+          late_cancellation: "⏰ Tu cancelación quedó registrada",
+          package_activated: "🎉 ¡A disfrutar tu paquete!",
+          package_expired: "💚 Nos encantará verte de nuevo",
+          package_expiring: "⏳ Tu paquete está por vencer",
+          password_reset: "🔐 Tu acceso está listo",
+          payment_confirmed: "✅ ¡Pago recibido!",
+          payment_pending: "💳 Te ayudamos con tu pago",
+          reservation_modified: "🗓️ Actualizamos tu reserva",
+          session_coach_changed: "👩‍🏫 Tenemos una actualización",
+          studio_closure: "📢 Un aviso sobre tu clase",
+          waitlist_expired: "💚 ¿Buscamos otra clase?",
+        };
+        const label = labels[delivery.template_key] ?? "💚 Tenemos una actualización para ti";
+        const bodies: Record<string, string> = {
+          account_created:
+            "¡Qué gusto tenerte en Demeter! 👋 Tu cuenta ya está lista. Actívala y nos encantará acompañarte en tus clases 💚",
+          attendance_no_show: `Hoy no pudimos verte en ${className} 😔. Cuando quieras, aquí estamos para ayudarte a encontrar tu próxima clase 💚`,
+          credit_restored:
+            "¡Buenas noticias! 🎁 El crédito de tu reserva ya volvió a tu paquete. ¡Te esperamos pronto en clase! 💚",
+          document_new_version:
+            "Actualizamos un documento del estudio 📄 Cuando tengas un momento, revísalo en Demeter. Si necesitas ayuda, aquí estamos 💚",
+          documents_pending:
+            "Te falta completar un documento para dejar todo listo 📝 Entra a Demeter cuando puedas; si necesitas apoyo, aquí estamos 💚",
+          evaluation_completed: `¡Ya están listos los resultados de tu evaluación de ${safeText(variables.discipline_name) ?? "tu disciplina"}! 🏅 Revísalos en Demeter. ¡Felicidades por tu esfuerzo! 💚`,
+          evaluation_invitation: `¡Ya puedes agendar tu evaluación de ${safeText(variables.discipline_name) ?? "tu disciplina"}! ✨ Elige el horario que mejor te quede; ¡vamos contigo! 💚`,
+          evaluation_scheduled: `¡Listo! 🎉 Tu evaluación quedó programada${startLabel ? ` para ${startLabel}` : ""}. ¡Te deseamos mucho éxito! 💚`,
+          guardian_signature_pending:
+            "Para completar el proceso, falta la firma de tu responsable ✍️ Cuando puedan, revisen el documento en Demeter. Si necesitan apoyo, aquí estamos 💚",
+          late_cancellation: `Tu reserva de ${className} quedó cancelada ⏰. Revisa en Demeter el estado de tu crédito; si tienes dudas, escríbenos y te ayudamos 💚`,
+          package_activated: `¡Qué emoción seguir entrenando contigo! 🎉 Tu paquete está activo y vence el ${safeText(variables.expires_on) ?? "la fecha indicada"}. ¡Disfruta cada clase! 💚`,
+          package_expired:
+            "Tu paquete terminó su vigencia, pero nos encantará verte de nuevo 💚 Revisa en Demeter las opciones para seguir entrenando ✨",
+          package_expiring:
+            "Tu paquete está por vencer ⏳ Revisa su vigencia en Demeter y, si quieres seguir reservando, aquí estamos para ayudarte 💚",
+          password_reset:
+            "Solicitaste un nuevo acceso temporal 🔐 Entra con el enlace recibido y cambia tu contraseña. Si no fuiste tú, avísanos de inmediato.",
+          payment_confirmed:
+            "¡Listo, tu pago quedó registrado! ✅ Gracias por tu confianza. Puedes consultar los detalles en Demeter 💚",
+          payment_pending:
+            "Tu pago sigue pendiente 💳 Si ya lo realizaste, comparte tu comprobante y con gusto te ayudamos a revisarlo 💚",
+          reservation_modified: `¡Actualizamos tu reserva de ${className}! 🗓️ Revisa los detalles en Demeter; si necesitas ayuda, aquí estamos 💚`,
+          session_coach_changed: `Tenemos una actualización para ti 👩‍🏫 Cambió el coach de ${className}. Revisa tu agenda; ¡te esperamos con gusto! 💚`,
+          studio_closure: `Hay un cambio en el estudio que afecta tu clase ${className} 📢 Revisa los detalles de tu reserva en Demeter; si necesitas apoyo, escríbenos 💚`,
+          waitlist_expired: `Esta vez no se liberó un lugar a tiempo para ${className} 🥺 Puedes revisar otras opciones en Demeter; nos encantará verte en otra clase 💚`,
+        };
+        return {
+          title: label,
+          body:
+            bodies[delivery.template_key] ??
+            `¡Tenemos una actualización para ti! 💚 Revisa los detalles en ${studioName}.`,
+          url: delivery.recipient_type === "student" ? "/student" : "/admin",
+          tag: `notification-${delivery.id}`,
+          providerTemplateKey,
+        };
+      }
       throw new Error(`notification_template_unsupported:${delivery.template_key}`);
   }
+}
+
+const PUSH_EMOJI_BY_TEMPLATE: Record<string, string> = {
+  account_created: "👋",
+  attendance_no_show: "⚠️",
+  reservation_cancelled: "❌",
+  reservation_cancelled_by_student: "❌",
+  late_cancellation: "⏰",
+  class_reminder: "⏰",
+  reservation_confirmed: "✅",
+  reservation_modified: "📝",
+  waitlist_promoted: "🎉",
+  credit_restored: "🎁",
+  document_new_version: "📄",
+  documents_pending: "📝",
+  evaluation_completed: "🏅",
+  evaluation_invitation: "✨",
+  evaluation_reminder: "📝",
+  evaluation_scheduled: "📅",
+  guardian_signature_pending: "✍️",
+  package_activated: "🎉",
+  package_expired: "⌛",
+  package_expiring: "⏳",
+  password_reset: "🔐",
+  payment_confirmed: "✅",
+  payment_pending: "💳",
+  session_cancelled_by_studio: "📢",
+  session_coach_changed: "👩‍🏫",
+  class_cancelled_coach: "📢",
+  class_cancelled_student: "❌",
+  class_rescheduled: "🗓️",
+  studio_closure: "📢",
+  waitlist_expired: "⏳",
+};
+
+function withPushEmoji(title: string, templateKey: string) {
+  const value = title.trim();
+  if (/^\p{Extended_Pictographic}/u.test(value)) return value;
+  return `${PUSH_EMOJI_BY_TEMPLATE[templateKey] ?? "📨"} ${value}`;
+}
+
+function renderMessage(delivery: DeliveryRow): RenderedMessage {
+  const message = renderMessageContent(delivery);
+  return delivery.channel_key === "push"
+    ? { ...message, title: withPushEmoji(message.title, delivery.template_key) }
+    : message;
 }
 
 async function loadDelivery(adminClient: SupabaseClient, deliveryId: string): Promise<DeliveryRow> {

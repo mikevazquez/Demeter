@@ -4,7 +4,10 @@ import { notFound } from "next/navigation";
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getAutomationTemplate, type AutomationCatalogCode } from "@/lib/automations/catalog";
-import { getMarketingCommunication } from "@/lib/notifications/admin-catalog";
+import {
+  getMarketingCommunication,
+  NOTIFICATION_EMOJI_BY_KEY,
+} from "@/lib/notifications/admin-catalog";
 import {
   saveMarketingAutomationConfigurationAction,
   saveMarketingCommunicationAction,
@@ -130,7 +133,7 @@ export default async function MarketingDetailPage({
         <Link href="/admin/notificaciones?tab=marketing">← Marketing</Link>
         <div className="notification-detail-title-row">
           <span className="notification-detail-icon" aria-hidden="true">
-            ↗
+            {NOTIFICATION_EMOJI_BY_KEY[item.key] ?? "✨"}
           </span>
           <div>
             <div className="notification-title-with-status">
@@ -242,6 +245,14 @@ export default async function MarketingDetailPage({
               </p>
             </div>
           </div>
+
+          {item.whatsappTemplateKey ? (
+            <div className="notification-info-box">
+              WhatsApp utilizará la plantilla de Meta <strong>{item.whatsappTemplateName}</strong>
+              {" · "}es_MX. El contenido aprobado se administra en Meta; Studio Flow completa sus
+              variables al ocurrir el evento.
+            </div>
+          ) : null}
 
           <div className="notification-message-form marketing-message-editor">
             <label>

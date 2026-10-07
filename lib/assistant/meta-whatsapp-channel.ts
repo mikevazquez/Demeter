@@ -13,6 +13,9 @@ export type MetaWhatsAppWebhookConfig = {
   appSecret: string;
   verifyToken: string;
   pilotWaIds: string[];
+  languageCode: string;
+  countryCallingCode: string;
+  templates: Record<string, string>;
 };
 
 export type MetaInboundMessage = {
@@ -63,6 +66,18 @@ function parseWebhookConfig(value: unknown): MetaWhatsAppWebhookConfig | null {
   const graphApiVersion = safeText(value.graph_api_version);
   const appSecret = safeText(value.app_secret);
   const verifyToken = safeText(value.verify_token);
+  const languageCode = safeText(value.language_code) ?? "es_MX";
+  const countryCallingCode = safeText(value.country_calling_code) ?? "52";
+  const templatesValue = isObject(value.templates) ? value.templates : {};
+  const templates = Object.fromEntries(
+    Object.entries(templatesValue).flatMap(([key, template]) => {
+      const safeKey = safeText(key);
+      const safeTemplate = safeText(template);
+      return safeKey && safeTemplate && /^[a-z0-9_]+$/.test(safeTemplate)
+        ? [[safeKey, safeTemplate]]
+        : [];
+    }),
+  );
 
   if (
     !accessToken ||
@@ -86,6 +101,9 @@ function parseWebhookConfig(value: unknown): MetaWhatsAppWebhookConfig | null {
     appSecret,
     verifyToken,
     pilotWaIds: [],
+    languageCode,
+    countryCallingCode,
+    templates,
   };
 }
 
