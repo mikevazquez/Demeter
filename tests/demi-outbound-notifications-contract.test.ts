@@ -87,6 +87,8 @@ describe("Demi outbound WhatsApp notifications", () => {
     expect(notificationEngine).toContain('rule.timing_strategy_key === "after_event"');
     expect(deliveryWorker).toContain("packageRecoveryStillEligible");
     expect(deliveryWorker).toContain('"package_renewed_before_recovery"');
+    expect(marketingPage).toContain("const packageRecoveryFirstDelay");
+    expect(marketingPage).toContain("packageRecoveryFirstDelay * 2");
   });
 
   it("keeps student-facing push copy warm and uses emojis in the message body", () => {
