@@ -60,8 +60,10 @@ describe("Demi Meta Inbox multichannel contract", () => {
 
   it("keeps the first UAT read-only for sensitive customer actions", () => {
     expect(orchestrator).toContain("isMetaInboxChannel");
+    expect(orchestrator).toContain("isMetaInboxChannel");
+    expect(orchestrator).toContain("? [...assistantReadToolDefinitions]");
     expect(orchestrator).toContain(
-      "isMetaInboxChannel ? [...assistantReadToolDefinitions]",
+      ": [...assistantReadToolDefinitions, ...assistantActionToolDefinitions]",
     );
     expect(orchestrator).toContain(
       "reservas, pagos y datos privados siguen por WhatsApp o por la app",
