@@ -13,6 +13,7 @@ import {
 } from "@/lib/notifications/meta-template-catalog";
 import {
   getNotificationProcess,
+  NOTIFICATION_PROCESS_CATEGORIES,
   type NotificationChannelKey,
 } from "@/lib/notifications/admin-catalog";
 import {
@@ -200,6 +201,9 @@ export default async function NotificationProcessPage({
   const [{ processKey }, query] = await Promise.all([params, searchParams]);
   const process = getNotificationProcess(processKey);
   if (!process || process.planned || process.ruleKeys.length === 0) notFound();
+  const processCategoryLabel =
+    NOTIFICATION_PROCESS_CATEGORIES.find((category) => category.key === process.category)?.label ??
+    "Proceso";
 
   const ctx = await getAdminContext(CAPABILITIES.AUTOMATIONS_READ);
   const canManage = ctx.can(CAPABILITIES.AUTOMATIONS_MANAGE);
@@ -293,6 +297,7 @@ export default async function NotificationProcessPage({
             ◷
           </span>
           <div>
+            <span className="notification-category-tag">{processCategoryLabel}</span>
             <div className="notification-title-with-status">
               <h1>{process.name}</h1>
               <span className={enabled ? "is-on" : undefined}>
@@ -309,7 +314,12 @@ export default async function NotificationProcessPage({
       <section className="notification-detail-card">
         <div className="notification-detail-card-heading">
           <div>
-            <h2>Información general</h2>
+            <div className="notification-section-title">
+              <span className="notification-step-index" aria-hidden="true">
+                01
+              </span>
+              <h2>Información general</h2>
+            </div>
             <p>Qué ocurre y a quién se comunica.</p>
           </div>
 
@@ -362,7 +372,12 @@ export default async function NotificationProcessPage({
       <section className="notification-detail-card">
         <div className="notification-detail-card-heading">
           <div>
-            <h2>Canales de envío</h2>
+            <div className="notification-section-title">
+              <span className="notification-step-index" aria-hidden="true">
+                02
+              </span>
+              <h2>Canales de envío</h2>
+            </div>
             <p>Activa únicamente los canales que aporten valor a este aviso.</p>
           </div>
         </div>
@@ -445,7 +460,12 @@ export default async function NotificationProcessPage({
       <section className="notification-detail-card">
         <div className="notification-detail-card-heading">
           <div>
-            <h2>Plantillas de WhatsApp</h2>
+            <div className="notification-section-title">
+              <span className="notification-step-index" aria-hidden="true">
+                03
+              </span>
+              <h2>Plantillas de WhatsApp</h2>
+            </div>
             <p>
               Plantilla administrada en Meta. Las plantillas de WhatsApp se administran en Meta;
               envía una a revisión y asígnala al evento después de su aprobación.
@@ -643,7 +663,12 @@ export default async function NotificationProcessPage({
       <section id="mensajes" className="notification-detail-card">
         <div className="notification-detail-card-heading">
           <div>
-            <h2>Mensaje por canal</h2>
+            <div className="notification-section-title">
+              <span className="notification-step-index" aria-hidden="true">
+                04
+              </span>
+              <h2>Mensaje por canal</h2>
+            </div>
             <p>Edita lo visible sin exponer la lógica interna del motor.</p>
           </div>
         </div>
@@ -744,15 +769,20 @@ export default async function NotificationProcessPage({
         <section className="notification-detail-card">
           <div className="notification-detail-card-heading">
             <div>
-              <h2>Configuración avanzada</h2>
-              <p>Ajusta la anticipación sin tocar reglas técnicas.</p>
+              <div className="notification-section-title">
+                <span className="notification-step-index" aria-hidden="true">
+                  05
+                </span>
+                <h2>Horario de envío</h2>
+              </div>
+              <p>Ajusta con cuánta anticipación se envía este recordatorio.</p>
             </div>
           </div>
 
           <form action={saveNotificationLeadTimeAction} className="notification-advanced-form">
             <input type="hidden" name="process_key" value={process.key} />
             <label className="notification-field">
-              <span>Minutos antes de la clase</span>
+              <span>Enviar con cuántos minutos de anticipación</span>
               <input
                 type="number"
                 name="minutes_before"
