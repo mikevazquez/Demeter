@@ -1,6 +1,7 @@
 import { runAssistantTurn } from "@/lib/assistant/orchestrator";
 import { getStudentPackageStatus } from "@/lib/assistant/read-tools";
 import { readTransferReceipt } from "@/lib/assistant/receipt-reader";
+import { provisionStudentAccessWithServiceClient } from "@/lib/assistant/student-access";
 import {
   downloadMetaWhatsAppMedia,
   extractMetaInboundMessages,
@@ -208,6 +209,7 @@ async function activateTransferReceiptIfPending(input: {
   mediaId: string | null;
   messageType: string;
   webhookConfig: MetaWhatsAppWebhookConfig;
+  activationUrl: string;
 }) {
   if (!input.studentId || !input.mediaId || !["image", "document"].includes(input.messageType)) {
     return { handled: false as const };
@@ -393,11 +395,28 @@ async function activateTransferReceiptIfPending(input: {
     });
   }
 
+  let accessText = "";
+  if (isTrialPayment) {
+    const access = await provisionStudentAccessWithServiceClient({
+      supabase: input.supabase,
+      studioId: input.studioId,
+      studentId: input.studentId,
+      activationUrl: input.activationUrl,
+      mode: "provision",
+    });
+
+    if (access.generated === true && access.activation_url) {
+      accessText = ` Crea tu contraseña para entrar a la app aquí: ${access.activation_url}`;
+    } else if (access.already_has_access === true) {
+      accessText = " Tu acceso a la app ya está habilitado.";
+    }
+  }
+
   return {
     handled: true as const,
     result,
     reply: isTrialPayment
-      ? `Recibí tu comprobante y el monto coincide. Tu primera clase de ${label} quedó confirmada. La transferencia queda pendiente de validación.`
+      ? `Recibí tu comprobante y el monto coincide. Tu primera clase de ${label} quedó confirmada. La transferencia queda pendiente de validación.${accessText}`
       : `Recibí tu comprobante y el monto coincide con ${label}. Activé tu paquete provisionalmente para que puedas continuar. El pago queda pendiente de validación.`,
   };
 }
@@ -825,6 +844,7 @@ export async function POST(request: Request) {
           mediaId: message.mediaId,
           messageType: message.messageType,
           webhookConfig,
+          activationUrl: new URL("/login/student/activar", request.url).toString(),
         });
       } catch {
         retryableFailure = true;
