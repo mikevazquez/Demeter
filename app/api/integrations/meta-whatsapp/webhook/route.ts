@@ -159,8 +159,21 @@ async function hasBlockingOpenHandoff(input: {
     throw new Error("assistant_handoff_lookup_failed");
   }
 
-  const nonBlockingReasons = new Set(["transfer_receipt_review", "whatsapp_media_review"]);
-  return (data ?? []).some((handoff) => !nonBlockingReasons.has(handoff.reason_code));
+  const reasonCodes = [...new Set((data ?? []).map((handoff) => String(handoff.reason_code ?? "")).filter(Boolean))];
+  if (!reasonCodes.length) return false;
+  const { data: policies, error: policyError } = await input.supabase
+    .from("assistant_handoff_policies")
+    .select("reason_code,enabled,blocking")
+    .eq("studio_id", input.studioId)
+    .in("reason_code", reasonCodes);
+  if (policyError) throw new Error("assistant_handoff_policy_lookup_failed");
+  const byReason = new Map((policies ?? []).map((row) => [row.reason_code, row]));
+  return reasonCodes.some((reason) => {
+    const policy = byReason.get(reason);
+    // Legacy review reasons stay non-blocking. Unknown legacy handoffs remain blocking for safety.
+    if (!policy) return !["transfer_receipt_review", "whatsapp_media_review"].includes(reason);
+    return policy.enabled === true && policy.blocking === true;
+  });
 }
 
 async function createMediaHandoff(input: {
