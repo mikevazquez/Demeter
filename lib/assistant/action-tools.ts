@@ -572,6 +572,36 @@ async function createResourceSelectionPending(
   };
 }
 
+async function getDemiTrialPrepaymentRequirement(ctx: AssistantActionToolContext) {
+  const [{ data: studioPolicy, error: studioPolicyError }, { data: demiBehavior, error: demiBehaviorError }] =
+    await Promise.all([
+      ctx.supabase
+        .from("trial_booking_policies")
+        .select("require_payment_before_booking")
+        .eq("studio_id", ctx.studio.id)
+        .maybeSingle(),
+      ctx.supabase
+        .from("assistant_booking_behaviors")
+        .select("prospect_require_payment_before_booking")
+        .eq("studio_id", ctx.studio.id)
+        .maybeSingle(),
+    ]);
+
+  if (studioPolicyError || demiBehaviorError) {
+    return { ok: false as const, error: "trial_booking_policy_unavailable" };
+  }
+
+  const studioRequiresPayment = studioPolicy?.require_payment_before_booking === true;
+  const demiRequiresPayment = demiBehavior?.prospect_require_payment_before_booking === true;
+
+  return {
+    ok: true as const,
+    studioRequiresPayment,
+    demiRequiresPayment,
+    effectiveRequiresPayment: studioRequiresPayment || demiRequiresPayment,
+  };
+}
+
 async function prepareBooking(ctx: AssistantActionToolContext, args: PrepareBookingArgs) {
   if (ctx.identityNeedsName === true && !ctx.studentId) {
     return {
@@ -609,18 +639,10 @@ async function prepareBooking(ctx: AssistantActionToolContext, args: PrepareBook
     Boolean(ctx.crmContactId && !studentId) || resolvedStudentType === "trial";
 
   if (shouldEvaluateTrial) {
-    const { data: trialPolicy, error: trialPolicyError } = await ctx.supabase
-      .from("trial_booking_policies")
-      .select("require_payment_before_booking")
-      .eq("studio_id", ctx.studio.id)
-      .maybeSingle();
+    const prepaymentPolicy = await getDemiTrialPrepaymentRequirement(ctx);
+    if (!prepaymentPolicy.ok) return prepaymentPolicy;
 
-    if (trialPolicyError) {
-      return { ok: false, error: "trial_booking_policy_unavailable" };
-    }
-
-    const requirePaymentBeforeBooking =
-      trialPolicy?.require_payment_before_booking === true;
+    const requirePaymentBeforeBooking = prepaymentPolicy.effectiveRequiresPayment;
 
     const { data: preview, error: previewError } = await ctx.supabase.rpc(
       "assistant_trial_booking_preview",
@@ -1080,17 +1102,10 @@ async function executeBooking(ctx: AssistantActionToolContext, args: ExecuteBook
   let finalStudentId = studentId;
 
   if (trialException) {
-    const { data: trialPolicy, error: trialPolicyError } = await ctx.supabase
-      .from("trial_booking_policies")
-      .select("require_payment_before_booking")
-      .eq("studio_id", ctx.studio.id)
-      .maybeSingle();
+    const prepaymentPolicy = await getDemiTrialPrepaymentRequirement(ctx);
+    if (!prepaymentPolicy.ok) return prepaymentPolicy;
 
-    if (trialPolicyError) {
-      return { ok: false, error: "trial_booking_policy_unavailable" };
-    }
-
-    if (trialPolicy?.require_payment_before_booking === true) {
+    if (prepaymentPolicy.effectiveRequiresPayment) {
       if (!ctx.serviceMode) {
         return { ok: false, error: "trial_prepay_requires_service_mode" };
       }
