@@ -8,14 +8,47 @@ import type { PromptVersion } from "@/lib/assistant/prompt-workbench";
 import "./workbench.css";
 import "./demi.css";
 
-function money(value: number | null) {
+const USD_TO_MXN_FALLBACK = 18.5;
+
+async function getUsdToMxnRate() {
+  try {
+    const response = await fetch("https://open.er-api.com/v6/latest/USD", {
+      next: { revalidate: 86_400 },
+    });
+    if (!response.ok) throw new Error("exchange_rate_unavailable");
+
+    const data = (await response.json()) as {
+      result?: string;
+      time_last_update_utc?: string;
+      rates?: { MXN?: number };
+    };
+    const rate = Number(data.rates?.MXN);
+    if (data.result !== "success" || !Number.isFinite(rate) || rate <= 0) {
+      throw new Error("exchange_rate_invalid");
+    }
+
+    return {
+      rate,
+      updatedAt: data.time_last_update_utc ?? "actualización diaria",
+      fallback: false,
+    };
+  } catch {
+    return {
+      rate: USD_TO_MXN_FALLBACK,
+      updatedAt: "tipo de cambio de referencia",
+      fallback: true,
+    };
+  }
+}
+
+function money(value: number | null, usdToMxn: number) {
   if (value == null) return "Sin límite";
-  return new Intl.NumberFormat("en-US", {
+  return new Intl.NumberFormat("es-MX", {
     style: "currency",
-    currency: "USD",
+    currency: "MXN",
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
-  }).format(value / 1_000_000);
+  }).format((value / 1_000_000) * usdToMxn);
 }
 
 function monthStartIso() {
@@ -26,27 +59,32 @@ function monthStartIso() {
 export default async function DemiDemoPage() {
   const { supabase, studio } = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
 
-  const [{ data: config }, { data: monthCalls }, { data: versions, error: versionsError }] =
-    await Promise.all([
-      supabase
-        .from("assistant_configs")
-        .select(
-          "assistant_name,mode,model,reasoning_effort,personality_instructions,monthly_budget_usd_micros,conversation_budget_usd_micros",
-        )
-        .eq("studio_id", studio.id)
-        .maybeSingle(),
-      supabase
-        .from("assistant_model_calls")
-        .select("estimated_cost_usd_micros,input_tokens,output_tokens")
-        .eq("studio_id", studio.id)
-        .gte("created_at", monthStartIso()),
-      supabase
-        .from("assistant_prompt_versions")
-        .select("id,kind,instructions,note,created_at")
-        .eq("studio_id", studio.id)
-        .order("created_at", { ascending: false })
-        .limit(50),
-    ]);
+  const [
+    { data: config },
+    { data: monthCalls },
+    { data: versions, error: versionsError },
+    exchangeRate,
+  ] = await Promise.all([
+    supabase
+      .from("assistant_configs")
+      .select(
+        "assistant_name,mode,model,reasoning_effort,personality_instructions,monthly_budget_usd_micros,conversation_budget_usd_micros",
+      )
+      .eq("studio_id", studio.id)
+      .maybeSingle(),
+    supabase
+      .from("assistant_model_calls")
+      .select("estimated_cost_usd_micros,input_tokens,output_tokens")
+      .eq("studio_id", studio.id)
+      .gte("created_at", monthStartIso()),
+    supabase
+      .from("assistant_prompt_versions")
+      .select("id,kind,instructions,note,created_at")
+      .eq("studio_id", studio.id)
+      .order("created_at", { ascending: false })
+      .limit(50),
+    getUsdToMxnRate(),
+  ]);
 
   if (!config) {
     return (
@@ -97,8 +135,8 @@ export default async function DemiDemoPage() {
         </article>
         <article>
           <span>Gasto del mes</span>
-          <strong>{money(spent)}</strong>
-          <small>Límite {money(config.monthly_budget_usd_micros)}</small>
+          <strong>{money(spent, exchangeRate.rate)}</strong>
+          <small>Límite aprox. {money(config.monthly_budget_usd_micros, exchangeRate.rate)}</small>
         </article>
         <article>
           <span>Tokens del mes</span>
@@ -107,10 +145,19 @@ export default async function DemiDemoPage() {
         </article>
         <article>
           <span>Límite por conversación</span>
-          <strong>{money(config.conversation_budget_usd_micros)}</strong>
+          <strong>{money(config.conversation_budget_usd_micros, exchangeRate.rate)}</strong>
           <small>Incluye las pruebas de instrucciones</small>
         </article>
       </section>
+
+      <p className="demi-cost-note">
+        Montos estimados de uso de OpenAI en MXN. Tipo de cambio de referencia: 1 USD ={" "}
+        {new Intl.NumberFormat("es-MX", { maximumFractionDigits: 4 }).format(exchangeRate.rate)} MXN
+        {exchangeRate.fallback ? " (respaldo)" : ` · actualizado ${exchangeRate.updatedAt}`} ·{" "}
+        <a href="https://www.exchangerate-api.com" target="_blank" rel="noreferrer">
+          fuente del tipo de cambio
+        </a>
+      </p>
 
       <DemiWorkbench
         assistantName={config.assistant_name}
