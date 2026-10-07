@@ -45,14 +45,12 @@ Al abrirla:
 
 ## Ventana de check-in
 
-Debe ser configurable por estudio.
+Para Demeter, el check-in por QR:
 
-Valor inicial sugerido para el MVP futuro:
+- abre 20 minutos antes del inicio de la clase;
+- se cierra 30 minutos después del inicio.
 
-- desde 30 minutos antes del inicio;
-- hasta 20 minutos después del inicio.
-
-La validación debe ocurrir en backend, no sólo en UI.
+La ventana se calcula desde `starts_at`, sin depender de la duración de la clase. El backend valida ambos límites y no sólo la interfaz.
 
 ## Casos inválidos
 
