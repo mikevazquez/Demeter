@@ -21,7 +21,8 @@ Limitación explícita: la simulación verifica el comportamiento conversacional
 
 ## Validación ejecutada
 
-- TypeScript, ESLint de los archivos cambiados y compilación Next.js.
+- TypeScript, ESLint y compilación Next.js. Se corrigió únicamente la sangría heredada de `SessionOperations.tsx` que bloqueaba la comprobación global de formato.
+- Renderizado del componente real: editor, prompt activo y tres secciones presentes. La revisión visual con navegador no pudo ejecutarse por un fallo de descarga de Chromium; la conversación real autenticada queda para el UAT del usuario.
 - 7 pruebas de comportamiento: entrada del prompt; aislamiento de los atajos; intercepción de reservas; atención humana; modelo/borrador y mejora sin herramientas; presupuesto; reservas y cancelaciones ficticias sin escrituras de negocio.
 - Suite completa comparada contra `d64363baca7b84f18c7cea7450d03f5e12a7e839`: 76 fallos previos, ninguna regresión nueva y ningún test previo eliminado.
 - UAT transaccional en sandbox, con rollback: guardar borrador conserva versión activa, activación cambia instrucciones y registra histórico, conflicto concurrente bloqueado, borrado del histórico y acceso anónimo denegados.
