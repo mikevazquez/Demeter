@@ -79,4 +79,12 @@ describe("Demi outbound WhatsApp notifications", () => {
     expect(marketingCatalog).toContain('automationCodes: ["AUT-CAT-16"]');
     expect(marketingCatalog).toContain("planned: true");
   });
+
+  it("keeps student-facing push copy warm and uses emojis in the message body", () => {
+    expect(deliveryWorker).toContain("Alista todo, te esperamos con gusto 💚");
+    expect(deliveryWorker).toContain("¡Nos encantará verte! 💚");
+    expect(deliveryWorker).toContain("aquí estamos para ayudarte 💚");
+    expect(deliveryWorker).not.toContain("la reserva quedó registrada como no show");
+    expect(deliveryWorker).toContain("💚 Tenemos una actualización para ti");
+  });
 });
