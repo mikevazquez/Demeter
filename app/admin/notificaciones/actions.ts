@@ -15,6 +15,7 @@ import {
   metaTemplateKeyForNotification,
   META_WHATSAPP_TEMPLATE_PARAMETERS,
 } from "@/lib/notifications/meta-template-catalog";
+import { getChannelReadiness, type OutboundChannel } from "@/lib/notifications/channel-readiness";
 import { getAutomationTemplate, type AutomationCatalogCode } from "@/lib/automations/catalog";
 import {
   getMarketingCommunication,
@@ -383,6 +384,142 @@ function marketingUrl(marketingKey: string, params: Record<string, string> = {})
   return `/admin/notificaciones/marketing/${encodeURIComponent(marketingKey)}${suffix}`;
 }
 
+const PACKAGE_RECOVERY_RULES = new Map([
+  ["marketing.package_recovery_1", "package-recovery-1"],
+  ["marketing.package_recovery_2", "package-recovery-2"],
+]);
+
+export async function savePackageRecoveryDelayAction(formData: FormData) {
+  const marketingKey = String(formData.get("marketing_key") ?? "").trim();
+  if (!["package-recovery-1", "package-recovery-2"].includes(marketingKey)) {
+    redirect(listUrl("marketing", { error: "package_recovery_rule_invalid" }));
+  }
+
+  const days = Number(String(formData.get("first_delay_days") ?? "").trim());
+  if (!Number.isInteger(days) || days < 1 || days > 90) {
+    redirect(marketingUrl(marketingKey, { error: "package_recovery_delay_out_of_range" }));
+  }
+
+  const { supabase, studio } = await getAdminContext(CAPABILITIES.AUTOMATIONS_MANAGE);
+  const { error } = await supabase.rpc("admin_update_package_recovery_delay", {
+    p_studio_id: studio.id,
+    p_first_days: days,
+  });
+  if (error) redirect(marketingUrl(marketingKey, { error: error.message }));
+
+  revalidatePath("/admin/notificaciones");
+  revalidatePath(marketingUrl("package-recovery-1"));
+  revalidatePath(marketingUrl("package-recovery-2"));
+  redirect(marketingUrl(marketingKey, { saved: "package_recovery_delay" }));
+}
+
+export async function updatePackageRecoveryRuleAction(formData: FormData) {
+  const ruleKey = String(formData.get("rule_key") ?? "").trim();
+  const marketingKey = PACKAGE_RECOVERY_RULES.get(ruleKey);
+  const operation = String(formData.get("operation") ?? "").trim();
+  if (!marketingKey || !["enabled", "channel"].includes(operation)) {
+    redirect(listUrl("marketing", { error: "package_recovery_rule_invalid" }));
+  }
+
+  const { supabase, studio } = await getAdminContext(CAPABILITIES.AUTOMATIONS_MANAGE);
+  const enabled = String(formData.get("next_enabled") ?? "") === "true";
+  const channel = String(formData.get("channel") ?? "").trim();
+
+  const [{ data: rawSnapshot }, pushConfig, diagnostics] = await Promise.all([
+    supabase.rpc("admin_notification_rules_snapshot", { p_studio_id: studio.id }),
+    operation === "enabled" || (operation === "channel" && channel === "push")
+      ? createServiceClient().rpc("service_get_push_vapid_config")
+      : Promise.resolve({ error: null }),
+    operation === "enabled" || (operation === "channel" && channel === "whatsapp")
+      ? getMetaWhatsAppAdminDiagnostics(studio.id)
+      : Promise.resolve(null),
+  ]);
+  const snapshot =
+    rawSnapshot && typeof rawSnapshot === "object" && !Array.isArray(rawSnapshot)
+      ? (rawSnapshot as {
+          rules?: Array<Record<string, unknown>>;
+          settings?: Record<string, unknown>;
+        })
+      : {};
+  const rule = snapshot.rules?.find((row) => row.rule_key === ruleKey);
+  if (!rule) redirect(marketingUrl(marketingKey, { error: "package_recovery_rule_not_seeded" }));
+
+  const templateKey = metaTemplateKeyForNotification(String(rule.template_key ?? ""));
+  const templateName = templateKey ? diagnostics?.templateMappings[templateKey] : null;
+  const template = templateName
+    ? diagnostics?.templates.find(
+        (candidate) =>
+          candidate.name === templateName && candidate.language === diagnostics?.templateLanguage,
+      )
+    : null;
+  const readiness = getChannelReadiness({
+    globalEnabled: {
+      push: snapshot.settings?.push_enabled !== false,
+      whatsapp: snapshot.settings?.whatsapp_enabled === true,
+      email: snapshot.settings?.email_enabled === true,
+    },
+    pushProviderConfigured: !pushConfig.error,
+    whatsappConnected: diagnostics?.connected === true,
+    whatsappTemplateName: templateName ?? null,
+    whatsappTemplateLanguage: template?.language ?? diagnostics?.templateLanguage ?? "",
+    whatsappTemplateStatus: template?.status ?? null,
+    whatsappTemplateVariables: template?.variableCount ?? null,
+    expectedWhatsappVariables:
+      templateKey && isMetaWhatsAppTemplateKey(templateKey)
+        ? META_WHATSAPP_TEMPLATE_PARAMETERS[templateKey].length
+        : null,
+    emailProviderConfigured: false,
+  });
+
+  if (operation === "channel") {
+    if (!(channel === "push" || channel === "whatsapp" || channel === "email")) {
+      redirect(marketingUrl(marketingKey, { error: "notification_channel_invalid" }));
+    }
+    if (enabled && !readiness[channel].ready) {
+      redirect(marketingUrl(marketingKey, { error: `channel_not_ready_${channel}` }));
+    }
+    const { error } = await supabase.rpc("admin_set_notification_rules_channel", {
+      p_studio_id: studio.id,
+      p_rule_keys: [ruleKey],
+      p_channel_key: channel,
+      p_enabled: enabled,
+    });
+    if (error) redirect(marketingUrl(marketingKey, { error: error.message }));
+  } else {
+    if (enabled) {
+      const channels = Array.isArray(rule.channels) ? rule.channels : [];
+      const selected = channels
+        .map((item) =>
+          item && typeof item === "object"
+            ? String((item as Record<string, unknown>).channel_key ?? "")
+            : "",
+        )
+        .filter((item) => item && item !== "inbox");
+      if (selected.some((item) => item === "push" && !readiness.push.ready)) {
+        redirect(marketingUrl(marketingKey, { error: "channel_not_ready_push" }));
+      }
+      if (selected.some((item) => item === "whatsapp" && !readiness.whatsapp.ready)) {
+        redirect(marketingUrl(marketingKey, { error: "channel_not_ready_whatsapp" }));
+      }
+      if (selected.some((item) => item === "email" && !readiness.email.ready)) {
+        redirect(marketingUrl(marketingKey, { error: "channel_not_ready_email" }));
+      }
+    }
+    const { error } = await supabase.rpc("admin_set_notification_rules_enabled", {
+      p_studio_id: studio.id,
+      p_rule_keys: [ruleKey],
+      p_enabled: enabled,
+    });
+    if (error) redirect(marketingUrl(marketingKey, { error: error.message }));
+  }
+
+  revalidatePath("/admin/notificaciones");
+  revalidatePath(marketingUrl(marketingKey));
+  redirect(
+    marketingUrl(marketingKey, { saved: `${operation}_${enabled ? "enabled" : "disabled"}` }),
+  );
+}
+
 function parseMarketingCatalogCode(value: FormDataEntryValue | null): AutomationCatalogCode | null {
   const code = String(value ?? "").trim() as AutomationCatalogCode;
   try {
@@ -459,6 +596,56 @@ export async function saveMarketingCommunicationAction(formData: FormData) {
   }
 
   const { supabase, studio } = await getAdminContext(CAPABILITIES.AUTOMATIONS_MANAGE);
+  const selectedChannels: OutboundChannel[] = ["push", "whatsapp", "email"].filter((channel) =>
+    formData.has(`${channel}_enabled`),
+  ) as OutboundChannel[];
+  if (selectedChannels.length) {
+    const [{ data: rawSnapshot }, pushConfig, diagnostics] = await Promise.all([
+      supabase.rpc("admin_notification_rules_snapshot", { p_studio_id: studio.id }),
+      formData.has("push_enabled")
+        ? createServiceClient().rpc("service_get_push_vapid_config")
+        : Promise.resolve({ error: null }),
+      formData.has("whatsapp_enabled")
+        ? getMetaWhatsAppAdminDiagnostics(studio.id)
+        : Promise.resolve(null),
+    ]);
+    const snapshot =
+      rawSnapshot && typeof rawSnapshot === "object" && !Array.isArray(rawSnapshot)
+        ? (rawSnapshot as { settings?: Record<string, unknown> })
+        : {};
+    const settings = snapshot.settings ?? {};
+    const templateKey = item.whatsappTemplateKey;
+    const templateName = templateKey ? diagnostics?.templateMappings[templateKey] : null;
+    const template = templateName
+      ? diagnostics?.templates.find(
+          (candidate) =>
+            candidate.name === templateName && candidate.language === diagnostics?.templateLanguage,
+        )
+      : null;
+    const readiness = getChannelReadiness({
+      globalEnabled: {
+        push: settings.push_enabled !== false,
+        whatsapp: settings.whatsapp_enabled === true,
+        email: settings.email_enabled === true,
+      },
+      pushProviderConfigured: !pushConfig.error,
+      whatsappConnected: diagnostics?.connected === true,
+      whatsappTemplateName: templateName ?? null,
+      whatsappTemplateLanguage: template?.language ?? diagnostics?.templateLanguage ?? "",
+      whatsappTemplateStatus: template?.status ?? null,
+      whatsappTemplateVariables: template?.variableCount ?? null,
+      expectedWhatsappVariables:
+        templateKey && isMetaWhatsAppTemplateKey(templateKey)
+          ? META_WHATSAPP_TEMPLATE_PARAMETERS[templateKey].length
+          : null,
+      emailProviderConfigured: false,
+    });
+    const unavailable = selectedChannels.find((channel) => !readiness[channel].ready);
+    if (unavailable) {
+      redirect(marketingUrl(marketingKey, { error: `channel_not_ready_${unavailable}` }));
+    }
+  }
+
   const { error } = await supabase.rpc("admin_save_notification_marketing_config", {
     p_studio_id: studio.id,
     p_marketing_key: marketingKey,

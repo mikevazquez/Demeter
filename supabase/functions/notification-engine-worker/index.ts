@@ -1,5 +1,6 @@
 import { withSupabase } from "npm:@supabase/server@1.7.0";
 import type { SupabaseClient } from "npm:@supabase/supabase-js@2.116.0";
+import { packageRecoveryTiming } from "../_shared/package-recovery-timing.ts";
 
 const WORKER_ID_PREFIX = "notification-engine-worker";
 const DEFAULT_BATCH_SIZE = 25;
@@ -286,9 +287,38 @@ async function buildContext(
   event: DomainEvent,
 ): Promise<EventContext> {
   const reservationContext = await loadReservationContext(adminClient, event);
+  const payload = { ...event.payload };
+  if (event.event_type === "package.expired_due") {
+    const acquisitionId =
+      safeText(event.payload.acquisition_id) ??
+      (event.source_entity_type === "product_acquisition" ? event.source_entity_id : null);
+    if (acquisitionId) {
+      const { data: acquisition, error: acquisitionError } = await adminClient
+        .from("product_acquisitions")
+        .select("product_template_id,expires_on")
+        .eq("id", acquisitionId)
+        .eq("studio_id", event.studio_id)
+        .maybeSingle();
+
+      if (acquisitionError) throw new Error("package_recovery_context_lookup_failed");
+      if (acquisition) {
+        payload.acquisition_id = acquisitionId;
+        payload.expires_on = safeText(acquisition.expires_on) ?? payload.expires_on;
+        const { data: product, error: productError } = await adminClient
+          .from("product_templates")
+          .select("name")
+          .eq("id", acquisition.product_template_id)
+          .eq("studio_id", event.studio_id)
+          .maybeSingle();
+
+        if (productError) throw new Error("package_recovery_product_lookup_failed");
+        payload.previous_package_name = safeText(product?.name);
+      }
+    }
+  }
   return {
     event,
-    payload: event.payload,
+    payload,
     ...reservationContext,
   };
 }
@@ -299,6 +329,26 @@ async function resolveRecipients(
   context: EventContext,
 ): Promise<Recipient[]> {
   switch (rule.recipient_strategy_key) {
+    case "payload_student": {
+      const student = context.student;
+      const studentId = safeText(student?.id) ?? safeText(context.payload.student_id);
+      if (!student || !studentId) return [];
+      return [
+        {
+          recipientType: "student",
+          recipientEntityId: studentId,
+          recipientUserId: safeText(student.user_id),
+          snapshot: {
+            student_id: studentId,
+            user_id: safeText(student.user_id),
+            full_name: safeText(student.full_name),
+            email: safeText(student.email),
+            phone: safeText(student.phone),
+          },
+        },
+      ];
+    }
+
     case "reservation_student": {
       const reservation = context.reservation;
       const student = context.student;
@@ -669,6 +719,13 @@ function resolveTiming(
     };
   }
 
+  if (rule.timing_strategy_key === "after_event") {
+    const daysAfter = safeNumber(rule.timing_config.days_after);
+    const expiresOn = safeText(context.payload.expires_on);
+    const timezone = safeText(context.studio?.timezone) ?? "America/Mexico_City";
+    return packageRecoveryTiming({ expiresOn, daysAfter, timezone, now });
+  }
+
   throw new Error(`unsupported_timing_strategy:${rule.timing_strategy_key}`);
 }
 
@@ -969,6 +1026,19 @@ async function loadRules(
 }
 
 async function proactivelyInvalidate(adminClient: SupabaseClient, event: DomainEvent) {
+  if (event.event_type === "package.activated") {
+    const studentId = safeText(event.payload.student_id);
+    if (!studentId) return 0;
+
+    const { data, error } = await adminClient.rpc("system_cancel_package_recovery_notifications", {
+      p_studio_id: event.studio_id,
+      p_student_id: studentId,
+    });
+
+    if (error) throw new Error("package_recovery_invalidation_failed");
+    return Number(data ?? 0);
+  }
+
   if (event.event_type === "booking.cancelled" && event.source_entity_type === "reservation") {
     const { data, error } = await adminClient.rpc(
       "system_cancel_pending_notifications_for_source",

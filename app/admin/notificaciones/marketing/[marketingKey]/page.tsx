@@ -3,15 +3,24 @@ import { notFound } from "next/navigation";
 
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
+import { getMetaWhatsAppAdminDiagnostics } from "@/lib/assistant/meta-whatsapp-admin";
 import { getAutomationTemplate, type AutomationCatalogCode } from "@/lib/automations/catalog";
 import {
   getMarketingCommunication,
   NOTIFICATION_EMOJI_BY_KEY,
 } from "@/lib/notifications/admin-catalog";
+import { getChannelReadiness } from "@/lib/notifications/channel-readiness";
 import {
+  isMetaWhatsAppTemplateKey,
+  META_WHATSAPP_TEMPLATE_PARAMETERS,
+} from "@/lib/notifications/meta-template-catalog";
+import { createServiceClient } from "@/lib/supabase/service";
+import {
+  savePackageRecoveryDelayAction,
   saveMarketingAutomationConfigurationAction,
   saveMarketingCommunicationAction,
   transitionMarketingAutomationAction,
+  updatePackageRecoveryRuleAction,
 } from "../../actions";
 
 type MarketingConfig = {
@@ -26,6 +35,15 @@ type MarketingConfig = {
   body_template: string | null;
   cta_label: string | null;
   cta_href: string | null;
+};
+
+type RuleSnapshot = {
+  rule_key: string;
+  event_type: string;
+  enabled: boolean;
+  timing_config: Record<string, unknown>;
+  template_key: string;
+  channels: Array<{ channel_key: string; is_required: boolean }>;
 };
 
 const audienceLabels: Record<string, string> = {
@@ -69,7 +87,13 @@ export default async function MarketingDetailPage({
   const ctx = await getAdminContext(CAPABILITIES.AUTOMATIONS_READ);
   const canManage = ctx.can(CAPABILITIES.AUTOMATIONS_MANAGE);
 
-  const [{ data: rawMarketing }, { data: instances }] = await Promise.all([
+  const [
+    { data: rawMarketing },
+    { data: instances },
+    { data: rawSnapshot },
+    metaDiagnostics,
+    pushConfig,
+  ] = await Promise.all([
     ctx.supabase.rpc("admin_notification_marketing_snapshot", {
       p_studio_id: ctx.studio.id,
     }),
@@ -82,10 +106,61 @@ export default async function MarketingDetailPage({
           .neq("status", "archived")
           .order("created_at", { ascending: false })
       : Promise.resolve({ data: [] }),
+    ctx.supabase.rpc("admin_notification_rules_snapshot", {
+      p_studio_id: ctx.studio.id,
+    }),
+    getMetaWhatsAppAdminDiagnostics(ctx.studio.id),
+    createServiceClient().rpc("service_get_push_vapid_config"),
   ]);
 
   const configs = Array.isArray(rawMarketing) ? (rawMarketing as MarketingConfig[]) : [];
   const savedConfig = configs.find((config) => config.marketing_key === item.key) ?? null;
+  const snapshot =
+    rawSnapshot && typeof rawSnapshot === "object" && !Array.isArray(rawSnapshot)
+      ? (rawSnapshot as { settings?: Record<string, unknown>; rules?: RuleSnapshot[] })
+      : {};
+  const settings = snapshot.settings ?? {};
+  const eventRules = (snapshot.rules ?? []).filter((rule) =>
+    item.eventDrivenRuleKeys?.includes(rule.rule_key),
+  );
+  const packageRecoveryFirstDelay = Math.max(
+    1,
+    Math.round(
+      Number(
+        (snapshot.rules ?? []).find((rule) => rule.rule_key === "marketing.package_recovery_1")
+          ?.timing_config.days_after ?? 7,
+      ),
+    ),
+  );
+  const whatsappTemplateKey = item.whatsappTemplateKey;
+  const whatsappTemplateName = whatsappTemplateKey
+    ? metaDiagnostics.templateMappings[whatsappTemplateKey]
+    : null;
+  const whatsappTemplate = whatsappTemplateName
+    ? metaDiagnostics.templates.find(
+        (template) =>
+          template.name === whatsappTemplateName &&
+          template.language === metaDiagnostics.templateLanguage,
+      )
+    : null;
+  const readiness = getChannelReadiness({
+    globalEnabled: {
+      push: settings.push_enabled !== false,
+      whatsapp: settings.whatsapp_enabled === true,
+      email: settings.email_enabled === true,
+    },
+    pushProviderConfigured: !pushConfig.error,
+    whatsappConnected: metaDiagnostics.connected,
+    whatsappTemplateName,
+    whatsappTemplateLanguage: whatsappTemplate?.language ?? metaDiagnostics.templateLanguage,
+    whatsappTemplateStatus: whatsappTemplate?.status ?? null,
+    whatsappTemplateVariables: whatsappTemplate?.variableCount ?? null,
+    expectedWhatsappVariables:
+      whatsappTemplateKey && isMetaWhatsAppTemplateKey(whatsappTemplateKey)
+        ? META_WHATSAPP_TEMPLATE_PARAMETERS[whatsappTemplateKey].length
+        : null,
+    emailProviderConfigured: false,
+  });
   const instanceRows = instances ?? [];
   const instanceIds = instanceRows.map((instance) => instance.id);
 
@@ -113,16 +188,33 @@ export default async function MarketingDetailPage({
   }
 
   const anyActive = instanceRows.some((instance) => instance.status === "active");
-  const runtimeLabel = item.automationCodes?.length
-    ? anyActive
+  const eventRuleActive = eventRules.some((rule) => rule.enabled);
+  const runtimeLabel = item.eventDrivenRuleKeys?.length
+    ? eventRuleActive
       ? "Automatización activa"
-      : instanceRows.length
-        ? "Automatización pausada"
-        : "Sin automatización activa"
-    : "Borrador";
+      : eventRules.length
+        ? "Automatización desactivada"
+        : "Regla pendiente de instalar"
+    : item.automationCodes?.length
+      ? anyActive
+        ? "Automatización activa"
+        : instanceRows.length
+          ? "Automatización pausada"
+          : "Sin automatización activa"
+      : "Borrador";
 
+  const readinessErrorCopy: Record<string, string> = {
+    channel_not_ready_push: "No se puede seleccionar Push: falta habilitarlo o configurar VAPID.",
+    channel_not_ready_whatsapp:
+      "No se puede seleccionar WhatsApp: conecta Meta y asigna una plantilla aprobada compatible.",
+    channel_not_ready_email: "No se puede seleccionar Email: falta configurar un proveedor.",
+    package_recovery_delay_out_of_range: "El tiempo debe estar entre 1 y 90 días.",
+    package_recovery_rules_not_seeded: "Las reglas de recuperación aún no están instaladas.",
+    package_recovery_rule_not_seeded: "Esta regla aún no está instalada en el estudio.",
+  };
   const feedback = query.error
-    ? "No se pudo guardar el cambio. Revisa los datos e inténtalo de nuevo."
+    ? (readinessErrorCopy[query.error] ??
+      "No se pudo guardar el cambio. Revisa los datos e inténtalo de nuevo.")
     : query.saved
       ? "Cambios guardados correctamente."
       : null;
@@ -155,180 +247,335 @@ export default async function MarketingDetailPage({
         </div>
       ) : null}
 
-      <form action={saveMarketingCommunicationAction} className="notification-preferences">
-        <input type="hidden" name="marketing_key" value={item.key} />
-
-        <section className="notification-detail-card">
+      {item.eventDrivenRuleKeys?.length ? (
+        <section className="notification-detail-card package-recovery-runtime">
           <div className="notification-detail-card-heading">
             <div>
-              <h2>Audiencia</h2>
-              <p>Define a quién está dirigido este mensaje.</p>
-            </div>
-          </div>
-
-          <label className="notification-field">
-            <span>Segmento</span>
-            <select
-              name="audience_key"
-              defaultValue={savedConfig?.audience_key ?? item.defaultAudience}
-              disabled={!canManage}
-            >
-              {Object.entries(audienceLabels).map(([key, label]) => (
-                <option key={key} value={key}>
-                  {label}
-                </option>
-              ))}
-            </select>
-          </label>
-        </section>
-
-        <section className="notification-detail-card">
-          <div className="notification-detail-card-heading">
-            <div>
-              <h2>Canales</h2>
-              <p>Elige por dónde quieres comunicarte con este segmento.</p>
-            </div>
-          </div>
-
-          <div className="notification-channel-settings-grid">
-            <label>
-              <span className="notification-channel-symbol">⌁</span>
-              <span>
-                <strong>Push</strong>
-                <small>Notificación dentro de Studio Flow</small>
-              </span>
-              <input
-                type="checkbox"
-                name="push_enabled"
-                defaultChecked={savedConfig?.push_enabled ?? true}
-                disabled={!canManage}
-              />
-            </label>
-
-            <label>
-              <span className="notification-channel-symbol">◉</span>
-              <span>
-                <strong>WhatsApp</strong>
-                <small>Sujeto a consentimiento y plantilla disponible</small>
-              </span>
-              <input
-                type="checkbox"
-                name="whatsapp_enabled"
-                defaultChecked={savedConfig?.whatsapp_enabled ?? false}
-                disabled={!canManage}
-              />
-            </label>
-
-            <label>
-              <span className="notification-channel-symbol">✉</span>
-              <span>
-                <strong>Email</strong>
-                <small>Proveedor todavía no configurado</small>
-              </span>
-              <input
-                type="checkbox"
-                name="email_enabled"
-                defaultChecked={savedConfig?.email_enabled ?? false}
-                disabled={!canManage}
-              />
-            </label>
-          </div>
-        </section>
-
-        <section className="notification-detail-card" id="mensaje">
-          <div className="notification-detail-card-heading">
-            <div>
-              <h2>Mensaje</h2>
+              <h2>Automatizaciones de recuperación</h2>
               <p>
-                Este contenido queda guardado como borrador hasta que el flujo esté listo para
-                enviar.
+                Se disparan al vencer un paquete. Los dos mensajes usan el mismo evento y se
+                cancelan si la alumna renueva antes de que se envíen.
               </p>
             </div>
           </div>
 
-          {item.whatsappTemplateKey ? (
+          {eventRules.length === 0 ? (
             <div className="notification-info-box">
-              WhatsApp utilizará la plantilla de Meta <strong>{item.whatsappTemplateName}</strong>
-              {" · "}es_MX. El contenido aprobado se administra en Meta; Studio Flow completa sus
-              variables al ocurrir el evento.
+              Las reglas se instalarán con la siguiente migración del sandbox. Por ahora no se puede
+              activar ningún envío.
+            </div>
+          ) : (
+            <>
+              <form action={savePackageRecoveryDelayAction} className="notification-message-form">
+                <input type="hidden" name="marketing_key" value={item.key} />
+                <label>
+                  <span>Primer mensaje · días después del vencimiento</span>
+                  <input
+                    type="number"
+                    name="first_delay_days"
+                    min={1}
+                    max={90}
+                    defaultValue={packageRecoveryFirstDelay}
+                    disabled={!canManage}
+                  />
+                </label>
+                <p className="marketing-runtime-note">
+                  El seguimiento se programará automáticamente al doble:{" "}
+                  {packageRecoveryFirstDelay * 2} días después del vencimiento.
+                </p>
+                {canManage ? <button type="submit">Guardar tiempos</button> : null}
+              </form>
+
+              <div className="marketing-runtime-grid">
+                {eventRules.map((rule) => {
+                  const selected = new Set(rule.channels.map((channel) => channel.channel_key));
+                  const whatsappState = whatsappTemplate?.status ?? null;
+                  const channelOptions = [
+                    { key: "push", label: "Push", state: readiness.push },
+                    { key: "whatsapp", label: "WhatsApp", state: readiness.whatsapp },
+                    { key: "email", label: "Email", state: readiness.email },
+                  ];
+                  return (
+                    <article key={rule.rule_key} className="marketing-runtime-card">
+                      <div className="notification-message-card-head">
+                        <div>
+                          <strong>
+                            {rule.rule_key.endsWith("_1")
+                              ? "💖 Primer mensaje de recuperación"
+                              : "🫶 Seguimiento de recuperación"}
+                          </strong>
+                          <p>
+                            Al vencer el paquete · {Number(rule.timing_config.days_after ?? 0)} días
+                            después · una ejecución por vencimiento
+                          </p>
+                        </div>
+                        <span className={rule.enabled ? "is-live" : undefined}>
+                          {rule.enabled ? "Activa" : "Desactivada"}
+                        </span>
+                      </div>
+
+                      <div className="notification-info-box">
+                        <strong>Mensaje Push</strong>
+                        <p>
+                          {rule.rule_key.endsWith("_1")
+                            ? "¡Te extrañamos en el estudio! 💖 Si te gustaría volver a tus clases, escríbenos y buscamos juntas una opción que te funcione 💚"
+                            : "Nos encantaría volver a verte por aquí 🫶 Cuando quieras retomar, escríbenos y con gusto te contamos las opciones disponibles 💚"}
+                        </p>
+                        <small>
+                          WhatsApp usa la plantilla aprobada de Meta y reemplaza sus variables al
+                          enviar. Inbox comparte el mensaje de Studio Flow.
+                        </small>
+                      </div>
+
+                      <div className="notification-channel-settings-grid">
+                        <div className="notification-info-box">
+                          Inbox · siempre disponible y obligatorio
+                        </div>
+                        {channelOptions.map(({ key, label, state }) => (
+                          <div key={key} className="notification-info-box">
+                            <strong>{label}</strong>
+                            <p>
+                              {selected.has(key) ? "Seleccionado" : "Desactivado"} · {state.label}
+                            </p>
+                            {key === "whatsapp" ? (
+                              <p>
+                                Plantilla Meta: {whatsappTemplateName ?? "Sin asignar"} ·{" "}
+                                {whatsappState === "APPROVED"
+                                  ? "Aprobada"
+                                  : whatsappState === "REJECTED"
+                                    ? "Rechazada"
+                                    : "Pendiente"}
+                              </p>
+                            ) : null}
+                            {canManage ? (
+                              <form action={updatePackageRecoveryRuleAction}>
+                                <input type="hidden" name="rule_key" value={rule.rule_key} />
+                                <input type="hidden" name="operation" value="channel" />
+                                <input type="hidden" name="channel" value={key} />
+                                <input
+                                  type="hidden"
+                                  name="next_enabled"
+                                  value={String(!selected.has(key))}
+                                />
+                                <button type="submit" disabled={!selected.has(key) && !state.ready}>
+                                  {selected.has(key) ? `Desactivar ${label}` : `Activar ${label}`}
+                                </button>
+                              </form>
+                            ) : null}
+                          </div>
+                        ))}
+                      </div>
+
+                      {canManage ? (
+                        <form
+                          action={updatePackageRecoveryRuleAction}
+                          className="marketing-runtime-actions"
+                        >
+                          <input type="hidden" name="rule_key" value={rule.rule_key} />
+                          <input type="hidden" name="operation" value="enabled" />
+                          <input type="hidden" name="next_enabled" value={String(!rule.enabled)} />
+                          <button
+                            type="submit"
+                            className={rule.enabled ? "is-pause" : "is-activate"}
+                          >
+                            {rule.enabled ? "Desactivar automatización" : "Activar automatización"}
+                          </button>
+                        </form>
+                      ) : null}
+                    </article>
+                  );
+                })}
+              </div>
+            </>
+          )}
+        </section>
+      ) : null}
+
+      {!item.eventDrivenRuleKeys?.length ? (
+        <form action={saveMarketingCommunicationAction} className="notification-preferences">
+          <input type="hidden" name="marketing_key" value={item.key} />
+
+          <section className="notification-detail-card">
+            <div className="notification-detail-card-heading">
+              <div>
+                <h2>Audiencia</h2>
+                <p>Define a quién está dirigido este mensaje.</p>
+              </div>
+            </div>
+
+            <label className="notification-field">
+              <span>Segmento</span>
+              <select
+                name="audience_key"
+                defaultValue={savedConfig?.audience_key ?? item.defaultAudience}
+                disabled={!canManage}
+              >
+                {Object.entries(audienceLabels).map(([key, label]) => (
+                  <option key={key} value={key}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </section>
+
+          <section className="notification-detail-card">
+            <div className="notification-detail-card-heading">
+              <div>
+                <h2>Canales</h2>
+                <p>Selecciona canales con proveedor y configuración disponibles.</p>
+              </div>
+            </div>
+
+            <div className="notification-channel-settings-grid">
+              <label>
+                <span className="notification-channel-symbol">⌁</span>
+                <span>
+                  <strong>Push</strong>
+                  <small>Notificación dentro de Studio Flow</small>
+                </span>
+                <small className="notification-channel-readiness">
+                  {readiness.push.label}. {readiness.push.detail}
+                </small>
+                <input
+                  type="checkbox"
+                  name="push_enabled"
+                  defaultChecked={savedConfig?.push_enabled ?? true}
+                  disabled={!canManage || !readiness.push.ready}
+                />
+              </label>
+
+              <label>
+                <span className="notification-channel-symbol">◉</span>
+                <span>
+                  <strong>WhatsApp</strong>
+                  <small>Sujeto a consentimiento y plantilla disponible</small>
+                </span>
+                <small className="notification-channel-readiness">
+                  {readiness.whatsapp.label}. {readiness.whatsapp.detail}
+                </small>
+                <input
+                  type="checkbox"
+                  name="whatsapp_enabled"
+                  defaultChecked={savedConfig?.whatsapp_enabled ?? false}
+                  disabled={!canManage || !readiness.whatsapp.ready}
+                />
+              </label>
+
+              <label>
+                <span className="notification-channel-symbol">✉</span>
+                <span>
+                  <strong>Email</strong>
+                  <small>Proveedor todavía no configurado</small>
+                </span>
+                <small className="notification-channel-readiness">
+                  {readiness.email.label}. {readiness.email.detail}
+                </small>
+                <input
+                  type="checkbox"
+                  name="email_enabled"
+                  defaultChecked={savedConfig?.email_enabled ?? false}
+                  disabled={!canManage || !readiness.email.ready}
+                />
+              </label>
+            </div>
+          </section>
+
+          <section className="notification-detail-card" id="mensaje">
+            <div className="notification-detail-card-heading">
+              <div>
+                <h2>Mensaje</h2>
+                <p>
+                  Este contenido queda guardado como borrador hasta que el flujo esté listo para
+                  enviar.
+                </p>
+              </div>
+            </div>
+
+            {item.whatsappTemplateKey ? (
+              <div className="notification-info-box">
+                WhatsApp utilizará la plantilla de Meta <strong>{item.whatsappTemplateName}</strong>
+                {" · "}es_MX. El contenido aprobado se administra en Meta; Studio Flow completa sus
+                variables al ocurrir el evento.
+              </div>
+            ) : null}
+
+            <div className="notification-message-form marketing-message-editor">
+              <label>
+                <span>Título</span>
+                <input
+                  name="title_template"
+                  defaultValue={savedConfig?.title_template ?? item.defaultTitle}
+                  maxLength={120}
+                  disabled={!canManage}
+                />
+              </label>
+
+              <label>
+                <span>Mensaje</span>
+                <textarea
+                  name="body_template"
+                  defaultValue={savedConfig?.body_template ?? item.defaultBody}
+                  rows={4}
+                  maxLength={700}
+                  disabled={!canManage}
+                />
+              </label>
+
+              <div className="marketing-cta-grid">
+                <label>
+                  <span>Texto del botón · opcional</span>
+                  <input
+                    name="cta_label"
+                    defaultValue={savedConfig?.cta_label ?? ""}
+                    placeholder="Reservar ahora"
+                    maxLength={50}
+                    disabled={!canManage}
+                  />
+                </label>
+                <label>
+                  <span>Enlace · opcional</span>
+                  <input
+                    name="cta_href"
+                    defaultValue={savedConfig?.cta_href ?? ""}
+                    placeholder="/alumna/reservar"
+                    maxLength={300}
+                    disabled={!canManage}
+                  />
+                </label>
+              </div>
+            </div>
+          </section>
+
+          <section className="notification-detail-card">
+            <div className="notification-detail-card-heading">
+              <div>
+                <h2>Horario</h2>
+                <p>Respeta además el límite global configurado en Preferencias.</p>
+              </div>
+            </div>
+
+            <label className="notification-field">
+              <span>Ventana de envío · opcional</span>
+              <input
+                name="send_window"
+                defaultValue={savedConfig?.send_window ?? ""}
+                placeholder="08:00-21:00"
+                disabled={!canManage}
+              />
+              <small>Si la dejas vacía, se usa la ventana global de Marketing.</small>
+            </label>
+          </section>
+
+          {canManage ? (
+            <div className="notification-form-actions marketing-save-bar">
+              <button type="submit">Guardar cambios</button>
             </div>
           ) : null}
+        </form>
+      ) : null}
 
-          <div className="notification-message-form marketing-message-editor">
-            <label>
-              <span>Título</span>
-              <input
-                name="title_template"
-                defaultValue={savedConfig?.title_template ?? item.defaultTitle}
-                maxLength={120}
-                disabled={!canManage}
-              />
-            </label>
-
-            <label>
-              <span>Mensaje</span>
-              <textarea
-                name="body_template"
-                defaultValue={savedConfig?.body_template ?? item.defaultBody}
-                rows={4}
-                maxLength={700}
-                disabled={!canManage}
-              />
-            </label>
-
-            <div className="marketing-cta-grid">
-              <label>
-                <span>Texto del botón · opcional</span>
-                <input
-                  name="cta_label"
-                  defaultValue={savedConfig?.cta_label ?? ""}
-                  placeholder="Reservar ahora"
-                  maxLength={50}
-                  disabled={!canManage}
-                />
-              </label>
-              <label>
-                <span>Enlace · opcional</span>
-                <input
-                  name="cta_href"
-                  defaultValue={savedConfig?.cta_href ?? ""}
-                  placeholder="/alumna/reservar"
-                  maxLength={300}
-                  disabled={!canManage}
-                />
-              </label>
-            </div>
-          </div>
-        </section>
-
-        <section className="notification-detail-card">
-          <div className="notification-detail-card-heading">
-            <div>
-              <h2>Horario</h2>
-              <p>Respeta además el límite global configurado en Preferencias.</p>
-            </div>
-          </div>
-
-          <label className="notification-field">
-            <span>Ventana de envío · opcional</span>
-            <input
-              name="send_window"
-              defaultValue={savedConfig?.send_window ?? ""}
-              placeholder="08:00-21:00"
-              disabled={!canManage}
-            />
-            <small>Si la dejas vacía, se usa la ventana global de Marketing.</small>
-          </label>
-        </section>
-
-        {canManage ? (
-          <div className="notification-form-actions marketing-save-bar">
-            <button type="submit">Guardar cambios</button>
-          </div>
-        ) : null}
-      </form>
-
-      {item.automationCodes?.length ? (
+      {!item.eventDrivenRuleKeys?.length && item.automationCodes?.length ? (
         <section className="notification-detail-card">
           <div className="notification-detail-card-heading">
             <div>
@@ -428,13 +675,13 @@ export default async function MarketingDetailPage({
             </div>
           )}
         </section>
-      ) : (
+      ) : !item.eventDrivenRuleKeys?.length ? (
         <div className="notification-info-box">
           Puedes editar y guardar esta comunicación desde ahora. Como su disparador todavía no está
           conectado al motor, permanece en <strong>Borrador</strong> y no enviará mensajes
           accidentalmente.
         </div>
-      )}
+      ) : null}
     </main>
   );
 }

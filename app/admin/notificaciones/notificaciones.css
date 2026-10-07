@@ -1900,6 +1900,14 @@ a.notification-process-row:hover {
   background: #fff !important;
 }
 
+.notification-channel-settings-grid .notification-channel-readiness {
+  grid-column: 2 / 4;
+  align-self: start;
+  color: #64748b !important;
+  font-size: 10px;
+  line-height: 1.45;
+}
+
 @media (max-width: 900px) {
   .notification-process-row {
     grid-template-columns: 44px minmax(0, 1fr) auto 16px;
