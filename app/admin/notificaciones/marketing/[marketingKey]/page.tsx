@@ -3,11 +3,18 @@ import { notFound } from "next/navigation";
 
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
+import { getMetaWhatsAppAdminDiagnostics } from "@/lib/assistant/meta-whatsapp-admin";
 import { getAutomationTemplate, type AutomationCatalogCode } from "@/lib/automations/catalog";
 import {
   getMarketingCommunication,
   NOTIFICATION_EMOJI_BY_KEY,
 } from "@/lib/notifications/admin-catalog";
+import { getChannelReadiness } from "@/lib/notifications/channel-readiness";
+import {
+  isMetaWhatsAppTemplateKey,
+  META_WHATSAPP_TEMPLATE_PARAMETERS,
+} from "@/lib/notifications/meta-template-catalog";
+import { createServiceClient } from "@/lib/supabase/service";
 import {
   saveMarketingAutomationConfigurationAction,
   saveMarketingCommunicationAction,
@@ -69,7 +76,13 @@ export default async function MarketingDetailPage({
   const ctx = await getAdminContext(CAPABILITIES.AUTOMATIONS_READ);
   const canManage = ctx.can(CAPABILITIES.AUTOMATIONS_MANAGE);
 
-  const [{ data: rawMarketing }, { data: instances }] = await Promise.all([
+  const [
+    { data: rawMarketing },
+    { data: instances },
+    { data: rawSnapshot },
+    metaDiagnostics,
+    pushConfig,
+  ] = await Promise.all([
     ctx.supabase.rpc("admin_notification_marketing_snapshot", {
       p_studio_id: ctx.studio.id,
     }),
@@ -82,10 +95,49 @@ export default async function MarketingDetailPage({
           .neq("status", "archived")
           .order("created_at", { ascending: false })
       : Promise.resolve({ data: [] }),
+    ctx.supabase.rpc("admin_notification_rules_snapshot", {
+      p_studio_id: ctx.studio.id,
+    }),
+    getMetaWhatsAppAdminDiagnostics(ctx.studio.id),
+    createServiceClient().rpc("service_get_push_vapid_config"),
   ]);
 
   const configs = Array.isArray(rawMarketing) ? (rawMarketing as MarketingConfig[]) : [];
   const savedConfig = configs.find((config) => config.marketing_key === item.key) ?? null;
+  const snapshot =
+    rawSnapshot && typeof rawSnapshot === "object" && !Array.isArray(rawSnapshot)
+      ? (rawSnapshot as { settings?: Record<string, unknown> })
+      : {};
+  const settings = snapshot.settings ?? {};
+  const whatsappTemplateKey = item.whatsappTemplateKey;
+  const whatsappTemplateName = whatsappTemplateKey
+    ? metaDiagnostics.templateMappings[whatsappTemplateKey]
+    : null;
+  const whatsappTemplate = whatsappTemplateName
+    ? metaDiagnostics.templates.find(
+        (template) =>
+          template.name === whatsappTemplateName &&
+          template.language === metaDiagnostics.templateLanguage,
+      )
+    : null;
+  const readiness = getChannelReadiness({
+    globalEnabled: {
+      push: settings.push_enabled !== false,
+      whatsapp: settings.whatsapp_enabled === true,
+      email: settings.email_enabled === true,
+    },
+    pushProviderConfigured: !pushConfig.error,
+    whatsappConnected: metaDiagnostics.connected,
+    whatsappTemplateName,
+    whatsappTemplateLanguage: whatsappTemplate?.language ?? metaDiagnostics.templateLanguage,
+    whatsappTemplateStatus: whatsappTemplate?.status ?? null,
+    whatsappTemplateVariables: whatsappTemplate?.variableCount ?? null,
+    expectedWhatsappVariables:
+      whatsappTemplateKey && isMetaWhatsAppTemplateKey(whatsappTemplateKey)
+      ? META_WHATSAPP_TEMPLATE_PARAMETERS[whatsappTemplateKey].length
+      : null,
+    emailProviderConfigured: false,
+  });
   const instanceRows = instances ?? [];
   const instanceIds = instanceRows.map((instance) => instance.id);
 
@@ -121,8 +173,15 @@ export default async function MarketingDetailPage({
         : "Sin automatización activa"
     : "Borrador";
 
+  const readinessErrorCopy: Record<string, string> = {
+    channel_not_ready_push: "No se puede seleccionar Push: falta habilitarlo o configurar VAPID.",
+    channel_not_ready_whatsapp:
+      "No se puede seleccionar WhatsApp: conecta Meta y asigna una plantilla aprobada compatible.",
+    channel_not_ready_email: "No se puede seleccionar Email: falta configurar un proveedor.",
+  };
   const feedback = query.error
-    ? "No se pudo guardar el cambio. Revisa los datos e inténtalo de nuevo."
+    ? readinessErrorCopy[query.error] ??
+      "No se pudo guardar el cambio. Revisa los datos e inténtalo de nuevo."
     : query.saved
       ? "Cambios guardados correctamente."
       : null;
@@ -186,7 +245,7 @@ export default async function MarketingDetailPage({
           <div className="notification-detail-card-heading">
             <div>
               <h2>Canales</h2>
-              <p>Elige por dónde quieres comunicarte con este segmento.</p>
+                <p>Selecciona canales con proveedor y configuración disponibles.</p>
             </div>
           </div>
 
@@ -197,11 +256,14 @@ export default async function MarketingDetailPage({
                 <strong>Push</strong>
                 <small>Notificación dentro de Studio Flow</small>
               </span>
+              <small className="notification-channel-readiness">
+                {readiness.push.label}. {readiness.push.detail}
+              </small>
               <input
                 type="checkbox"
                 name="push_enabled"
                 defaultChecked={savedConfig?.push_enabled ?? true}
-                disabled={!canManage}
+                disabled={!canManage || !readiness.push.ready}
               />
             </label>
 
@@ -211,11 +273,14 @@ export default async function MarketingDetailPage({
                 <strong>WhatsApp</strong>
                 <small>Sujeto a consentimiento y plantilla disponible</small>
               </span>
+              <small className="notification-channel-readiness">
+                {readiness.whatsapp.label}. {readiness.whatsapp.detail}
+              </small>
               <input
                 type="checkbox"
                 name="whatsapp_enabled"
                 defaultChecked={savedConfig?.whatsapp_enabled ?? false}
-                disabled={!canManage}
+                disabled={!canManage || !readiness.whatsapp.ready}
               />
             </label>
 
@@ -225,11 +290,14 @@ export default async function MarketingDetailPage({
                 <strong>Email</strong>
                 <small>Proveedor todavía no configurado</small>
               </span>
+              <small className="notification-channel-readiness">
+                {readiness.email.label}. {readiness.email.detail}
+              </small>
               <input
                 type="checkbox"
                 name="email_enabled"
                 defaultChecked={savedConfig?.email_enabled ?? false}
-                disabled={!canManage}
+                disabled={!canManage || !readiness.email.ready}
               />
             </label>
           </div>
