@@ -339,6 +339,7 @@ export type MarketingDefinition = {
   description: string;
   category: "recuperacion" | "promociones" | "fidelizacion";
   automationCodes?: readonly string[];
+  eventDrivenRuleKeys?: readonly string[];
   /** Internal key mapped to an approved Meta Cloud API template. */
   whatsappTemplateKey?: string;
   whatsappTemplateName?: string;
@@ -436,8 +437,7 @@ export const MARKETING_COMMUNICATIONS: readonly MarketingDefinition[] = [
     name: "Recuperación de paquete · primer mensaje",
     description: "Contacta a exalumnas después del vencimiento del paquete.",
     category: "recuperacion",
-    planned: true,
-    automationCodes: ["AUT-CAT-15"],
+    eventDrivenRuleKeys: ["marketing.package_recovery_1"],
     whatsappTemplateKey: "package_recovery_1",
     whatsappTemplateName: "demeter_recuperacion_paquete_1",
     defaultAudience: "package_expired",
@@ -449,8 +449,7 @@ export const MARKETING_COMMUNICATIONS: readonly MarketingDefinition[] = [
     name: "Recuperación de paquete · seguimiento",
     description: "Envía un segundo seguimiento después del primer contacto.",
     category: "recuperacion",
-    planned: true,
-    automationCodes: ["AUT-CAT-16"],
+    eventDrivenRuleKeys: ["marketing.package_recovery_2"],
     whatsappTemplateKey: "package_recovery_2",
     whatsappTemplateName: "demeter_recuperacion_paquete_2",
     defaultAudience: "package_expired",
