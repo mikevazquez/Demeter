@@ -315,6 +315,55 @@ function renderMessage(delivery: DeliveryRow): RenderedMessage {
         providerTemplateKey: overrideProviderTemplate ?? "class_cancelled_student",
       };
 
+    case "evaluation_reminder": {
+      const discipline = safeText(variables.discipline_name) ?? "tu disciplina";
+      return {
+        title: "Tu evaluación es pronto",
+        body: startLabel
+          ? `Tienes una evaluación de ${discipline} el ${startLabel}.`
+          : `Tienes una evaluación de ${discipline} programada pronto.`,
+        url: "/student/evaluaciones",
+        tag: `notification-${delivery.id}`,
+        providerTemplateKey: overrideProviderTemplate ?? "evaluation_reminder",
+      };
+    }
+
+    case "package_activated":
+      return {
+        title: "Paquete activo",
+        body: `Tu paquete quedó activo desde ${safeText(variables.starts_on) ?? "hoy"} y vence el ${safeText(variables.expires_on) ?? "la fecha indicada"}.`,
+        url: "/student/paquete",
+        tag: `notification-${delivery.id}`,
+        providerTemplateKey: overrideProviderTemplate ?? "package_activated",
+      };
+
+    case "package_expired":
+      return {
+        title: "Paquete vencido",
+        body: `Tu paquete venció el ${safeText(variables.expires_on) ?? "la fecha indicada"}. Consulta las opciones disponibles para seguir reservando.`,
+        url: "/student/paquete",
+        tag: `notification-${delivery.id}`,
+        providerTemplateKey: overrideProviderTemplate ?? "package_expired",
+      };
+
+    case "package_expiring":
+      return {
+        title: "Tu paquete está por vencer",
+        body: `Tu paquete vence el ${safeText(variables.expires_on) ?? "la fecha indicada"}.`,
+        url: "/student/paquete",
+        tag: `notification-${delivery.id}`,
+        providerTemplateKey: overrideProviderTemplate ?? "package_expiring",
+      };
+
+    case "session_cancelled_by_studio":
+      return {
+        title: "Clase cancelada por el estudio",
+        body: `${className} fue cancelada por el estudio.`,
+        url: "/student/mis-clases",
+        tag: `notification-${delivery.id}`,
+        providerTemplateKey: overrideProviderTemplate ?? "class_cancelled_student",
+      };
+
     case "evaluation_invitation": {
       const discipline = safeText(variables.discipline_name) ?? "tu disciplina";
       return {
