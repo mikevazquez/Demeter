@@ -175,12 +175,12 @@ export type PrepareWaitlistJoinArgs = {
 };
 
 export type PrepareBankTransferPurchaseArgs = {
-  session_ref?: string;
+  session_ref: string | null;
   product_ref: string;
 };
 
 export type PrepareTransferPackageChoiceArgs = {
-  session_ref?: string;
+  session_ref: string | null;
   product_refs: string[];
 };
 
@@ -351,8 +351,8 @@ export const assistantActionToolDefinitions: AssistantToolDefinition[] = [
       type: "object",
       properties: {
         session_ref: {
-          type: "string",
-          description: "Referencia session:<uuid> de la clase objetivo cuando exista. Omítela si la persona solo quiere comprar el paquete.",
+          type: ["string", "null"],
+          description: "Referencia session:<uuid> de la clase objetivo cuando exista; null si la persona solo quiere comprar el paquete.",
         },
         product_refs: {
           type: "array",
@@ -363,7 +363,7 @@ export const assistantActionToolDefinitions: AssistantToolDefinition[] = [
             "Referencias product:<uuid> exactas de los paquetes compatibles que se mostrarán a la persona.",
         },
       },
-      required: ["product_refs"],
+      required: ["session_ref", "product_refs"],
       additionalProperties: false,
     },
   },
@@ -377,8 +377,8 @@ export const assistantActionToolDefinitions: AssistantToolDefinition[] = [
       type: "object",
       properties: {
         session_ref: {
-          type: "string",
-          description: "Referencia session:<uuid> de la clase objetivo.",
+          type: ["string", "null"],
+          description: "Referencia session:<uuid> de la clase objetivo; null si la compra no está ligada a una clase.",
         },
         product_ref: {
           type: "string",
@@ -386,7 +386,7 @@ export const assistantActionToolDefinitions: AssistantToolDefinition[] = [
             "Referencia product:<uuid> exacta del paquete seleccionado de get_commercial_options.",
         },
       },
-      required: ["product_ref"],
+      required: ["session_ref", "product_ref"],
       additionalProperties: false,
     },
   },
