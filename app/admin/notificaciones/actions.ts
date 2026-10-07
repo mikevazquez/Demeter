@@ -5,6 +5,16 @@ import { redirect } from "next/navigation";
 
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
+import {
+  getMetaWhatsAppAdminDiagnostics,
+  submitMetaWhatsAppTemplate,
+} from "@/lib/assistant/meta-whatsapp-admin";
+import { createServiceClient } from "@/lib/supabase/service";
+import {
+  isMetaWhatsAppTemplateKey,
+  metaTemplateKeyForNotification,
+  META_WHATSAPP_TEMPLATE_PARAMETERS,
+} from "@/lib/notifications/meta-template-catalog";
 import { getAutomationTemplate, type AutomationCatalogCode } from "@/lib/automations/catalog";
 import {
   getMarketingCommunication,
@@ -92,6 +102,55 @@ export async function toggleNotificationChannelAction(formData: FormData) {
   const enabled = String(formData.get("next_enabled") ?? "") === "true";
   const { supabase, studio } = await getAdminContext(CAPABILITIES.AUTOMATIONS_MANAGE);
 
+  if (enabled && channel === "email") {
+    redirect(processUrl(process.key, { error: "notification_email_provider_not_configured" }));
+  }
+
+  if (enabled && channel === "push") {
+    const { error: vapidError } = await createServiceClient().rpc("service_get_push_vapid_config");
+    if (vapidError) {
+      redirect(processUrl(process.key, { error: "notification_push_provider_not_configured" }));
+    }
+  }
+
+  if (enabled && channel === "whatsapp") {
+    const [{ data: snapshot }, diagnostics] = await Promise.all([
+      supabase.rpc("admin_notification_rules_snapshot", { p_studio_id: studio.id }),
+      getMetaWhatsAppAdminDiagnostics(studio.id),
+    ]);
+    const snapshotRules =
+      snapshot &&
+      typeof snapshot === "object" &&
+      Array.isArray((snapshot as Record<string, unknown>).rules)
+        ? ((snapshot as Record<string, unknown>).rules as Array<Record<string, unknown>>)
+        : [];
+    const templateKeys = process.ruleKeys.map((ruleKey) => {
+      const rule = snapshotRules.find((row) => row.rule_key === ruleKey);
+      return typeof rule?.template_key === "string"
+        ? metaTemplateKeyForNotification(rule.template_key)
+        : null;
+    });
+    const allMappedAndApproved =
+      diagnostics.connected &&
+      templateKeys.length > 0 &&
+      templateKeys.every((templateKey) => {
+        if (!templateKey) return false;
+        if (!isMetaWhatsAppTemplateKey(templateKey)) return false;
+        const metaName = diagnostics.templateMappings[templateKey];
+        if (!metaName) return false;
+        return diagnostics.templates.some(
+          (template) =>
+            template.name === metaName &&
+            template.language === diagnostics.templateLanguage &&
+            template.status === "APPROVED" &&
+            template.variableCount === META_WHATSAPP_TEMPLATE_PARAMETERS[templateKey].length,
+        );
+      });
+    if (!allMappedAndApproved) {
+      redirect(processUrl(process.key, { error: "notification_whatsapp_template_not_approved" }));
+    }
+  }
+
   const { error } = await supabase.rpc("admin_set_notification_rules_channel", {
     p_studio_id: studio.id,
     p_rule_keys: [...process.ruleKeys],
@@ -109,6 +168,113 @@ export async function toggleNotificationChannelAction(formData: FormData) {
       saved: enabled ? `${channel}_enabled` : `${channel}_disabled`,
     }),
   );
+}
+
+export async function submitNotificationWhatsAppTemplateAction(formData: FormData) {
+  let process;
+  try {
+    process = requiredProcess(formData);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "notification_process_unavailable";
+    redirect(listUrl("procesos", { error: message }));
+  }
+
+  const templateKey = String(formData.get("template_key") ?? "").trim();
+  const name = String(formData.get("meta_template_name") ?? "")
+    .trim()
+    .toLowerCase();
+  const languageCode = String(formData.get("language_code") ?? "").trim();
+  const category = String(formData.get("meta_category") ?? "UTILITY")
+    .trim()
+    .toUpperCase();
+  const body = String(formData.get("meta_body") ?? "").trim();
+  if (!isMetaWhatsAppTemplateKey(templateKey)) {
+    redirect(processUrl(process.key, { error: "notification_whatsapp_template_unsupported" }));
+  }
+  if (category !== "UTILITY" && category !== "MARKETING") {
+    redirect(processUrl(process.key, { error: "meta_template_category_invalid" }));
+  }
+
+  const { studio } = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
+  try {
+    await submitMetaWhatsAppTemplate({
+      studioId: studio.id,
+      name,
+      languageCode,
+      category,
+      body,
+      expectedVariables: META_WHATSAPP_TEMPLATE_PARAMETERS[templateKey].length,
+    });
+  } catch (error) {
+    const code = error instanceof Error ? error.message : "meta_template_submission_failed";
+    const safe =
+      /^meta_(?:template_[a-z_]+|graph_http_\d{3}(?:_code_\d+)?(?:_subcode_\d+)?|graph_timeout|whatsapp_not_configured)$/.test(
+        code,
+      )
+        ? code
+        : "meta_template_submission_failed";
+    redirect(processUrl(process.key, { error: safe }));
+  }
+
+  refresh(process.key);
+  redirect(processUrl(process.key, { saved: "whatsapp_template_submitted" }));
+}
+
+export async function mapApprovedNotificationWhatsAppTemplateAction(formData: FormData) {
+  let process;
+  try {
+    process = requiredProcess(formData);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "notification_process_unavailable";
+    redirect(listUrl("procesos", { error: message }));
+  }
+
+  const templateKey = String(formData.get("template_key") ?? "").trim();
+  const templateName = String(formData.get("meta_template_name") ?? "").trim();
+  const languageCode = String(formData.get("language_code") ?? "").trim();
+  if (!isMetaWhatsAppTemplateKey(templateKey) || !/^[a-z0-9_]+$/.test(templateName)) {
+    redirect(processUrl(process.key, { error: "notification_whatsapp_template_invalid" }));
+  }
+
+  const { supabase, studio } = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
+  const diagnostics = await getMetaWhatsAppAdminDiagnostics(studio.id);
+  const approved = diagnostics.templates.some(
+    (template) =>
+      template.name === templateName &&
+      template.language === languageCode &&
+      template.status === "APPROVED" &&
+      template.variableCount === META_WHATSAPP_TEMPLATE_PARAMETERS[templateKey].length,
+  );
+  if (!diagnostics.connected || languageCode !== diagnostics.templateLanguage || !approved) {
+    redirect(processUrl(process.key, { error: "notification_whatsapp_template_not_approved" }));
+  }
+
+  const { data: connection, error: connectionError } = await supabase.rpc(
+    "admin_get_meta_whatsapp_connection_summary",
+    { target_studio_id: studio.id },
+  );
+  const current =
+    connection && typeof connection === "object" ? (connection as Record<string, unknown>) : {};
+  const currentTemplates =
+    current.templates && typeof current.templates === "object" && !Array.isArray(current.templates)
+      ? (current.templates as Record<string, string>)
+      : {};
+  if (connectionError || current.connected !== true) {
+    redirect(processUrl(process.key, { error: "meta_whatsapp_not_configured" }));
+  }
+
+  const { error } = await supabase.rpc("admin_update_meta_whatsapp_templates", {
+    target_studio_id: studio.id,
+    target_language_code: languageCode,
+    target_country_calling_code:
+      typeof current.country_calling_code === "string" ? current.country_calling_code : "52",
+    target_templates: { ...currentTemplates, [templateKey]: templateName },
+  });
+  if (error)
+    redirect(processUrl(process.key, { error: "notification_whatsapp_template_mapping_failed" }));
+
+  refresh(process.key);
+  redirect(processUrl(process.key, { saved: "whatsapp_template_mapped" }));
 }
 
 export async function saveNotificationMessageAction(formData: FormData) {
