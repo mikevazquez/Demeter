@@ -3,6 +3,7 @@ import type { SupabaseClient } from "npm:@supabase/supabase-js@2.116.0";
 import { sendPushNotification, WebPushError } from "npm:@mmmike/web-push@1.3.0/send";
 import { sendAsistianWebhook } from "../_shared/asistian-messaging.ts";
 import { sendMetaWhatsAppTemplate } from "../_shared/meta-whatsapp.ts";
+import { isMetaWhatsAppTemplateKey } from "../_shared/meta-whatsapp-template.ts";
 import {
   buildAsistianVariables,
   formatNotificationDateTimeParts,
@@ -445,6 +446,38 @@ function renderMessage(delivery: DeliveryRow): RenderedMessage {
       };
 
     default:
+      if (isMetaWhatsAppTemplateKey(delivery.template_key)) {
+        const providerAliases: Record<string, string> = {
+          account_created: "student_welcome",
+          late_cancellation: "reservation_cancelled",
+          reservation_modified: "class_rescheduled",
+        };
+        const providerTemplateKey = providerAliases[delivery.template_key] ?? delivery.template_key;
+        const labels: Record<string, string> = {
+          attendance_no_show: "Asistencia",
+          credit_restored: "Crédito restaurado",
+          document_new_version: "Documento actualizado",
+          documents_pending: "Documentos pendientes",
+          evaluation_completed: "Evaluación completada",
+          evaluation_invitation: "Evaluación disponible",
+          evaluation_scheduled: "Evaluación programada",
+          guardian_signature_pending: "Firma pendiente",
+          password_reset: "Acceso a tu cuenta",
+          payment_confirmed: "Pago confirmado",
+          payment_pending: "Pago pendiente",
+          session_coach_changed: "Cambio de coach",
+          studio_closure: "Aviso del estudio",
+          waitlist_expired: "Lista de espera",
+        };
+        const label = labels[delivery.template_key] ?? "Actualización";
+        return {
+          title: label,
+          body: `${studioName} tiene una actualización para ti.`,
+          url: delivery.recipient_type === "student" ? "/student" : "/admin",
+          tag: `notification-${delivery.id}`,
+          providerTemplateKey,
+        };
+      }
       throw new Error(`notification_template_unsupported:${delivery.template_key}`);
   }
 }
