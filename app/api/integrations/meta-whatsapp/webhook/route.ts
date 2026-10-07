@@ -1,5 +1,6 @@
 import { runAssistantTurn } from "@/lib/assistant/orchestrator";
 import { getStudentPackageStatus } from "@/lib/assistant/read-tools";
+import { readTransferReceipt } from "@/lib/assistant/receipt-reader";
 import {
   downloadMetaWhatsAppMedia,
   extractMetaInboundMessages,
@@ -212,6 +213,55 @@ async function activateTransferReceiptIfPending(input: {
     return { handled: false as const };
   }
 
+  const { data: pendingIntent, error: pendingError } = await input.supabase
+    .from("assistant_transfer_purchase_intents")
+    .select("id,amount_minor,currency,status,expires_at")
+    .eq("studio_id", input.studioId)
+    .eq("conversation_id", input.conversationId)
+    .eq("student_id", input.studentId)
+    .eq("status", "pending_receipt")
+    .gt("expires_at", new Date().toISOString())
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (pendingError) throw new Error("transfer_intent_lookup_failed");
+  if (!pendingIntent) return { handled: false as const };
+
+  const media = await downloadMetaWhatsAppMedia({ config: input.webhookConfig, mediaId: input.mediaId });
+  const reading = await readTransferReceipt({ bytes: media.bytes, mimeType: media.mimeType });
+  const expectedAmount = Number(pendingIntent.amount_minor);
+  const expectedCurrency = String(pendingIntent.currency ?? "MXN").toUpperCase();
+  const amountMatches =
+    reading.amountMinor != null &&
+    reading.confidence >= 0.75 &&
+    reading.amountMinor === expectedAmount &&
+    (!reading.currency || reading.currency === expectedCurrency);
+
+  await input.supabase.from("assistant_transfer_purchase_intents").update({
+    receipt_detected_amount_minor: reading.amountMinor,
+    receipt_detected_currency: reading.currency,
+    receipt_detected_date: reading.date,
+    receipt_detected_reference: reading.reference,
+    receipt_detected_bank: reading.bank,
+    receipt_read_confidence: reading.confidence,
+    receipt_amount_matches: amountMatches,
+    receipt_read_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  }).eq("id", pendingIntent.id).eq("studio_id", input.studioId);
+
+  if (!amountMatches) {
+    const detected = reading.amountMinor == null ? null : new Intl.NumberFormat("es-MX", { style: "currency", currency: expectedCurrency }).format(reading.amountMinor / 100);
+    const expected = new Intl.NumberFormat("es-MX", { style: "currency", currency: expectedCurrency }).format(expectedAmount / 100);
+    return {
+      handled: true as const,
+      result: { ok: false, reason_code: reading.amountMinor == null ? "receipt_amount_unreadable" : "receipt_amount_mismatch" },
+      reply: detected
+        ? `Recibí tu comprobante, pero el monto que pude leer (${detected}) no coincide con el paquete pendiente (${expected}). No activé el paquete. Puedes enviarme el comprobante correcto.`
+        : "Recibí tu comprobante, pero no pude leer el monto con suficiente seguridad. No activé el paquete y lo dejé pendiente para revisión.",
+    };
+  }
+
   const { data, error } = await input.supabase.rpc("service_activate_transfer_receipt", {
     target_studio_id: input.studioId,
     target_conversation_id: input.conversationId,
@@ -220,101 +270,44 @@ async function activateTransferReceiptIfPending(input: {
     target_provider_message_id: input.providerMessageId,
     target_media_id: input.mediaId,
   });
-
   const result = isObject(data) ? data : null;
-  if (error) {
-    throw new Error("transfer_receipt_activation_failed");
-  }
-
-  if (!result || result.ok !== true) {
-    if (
-      result?.reason_code === "pending_transfer_not_found" ||
-      result?.reason_code === "transfer_intent_expired"
-    ) {
-      return { handled: false as const };
-    }
-    return {
-      handled: false as const,
-      reasonCode: String(result?.reason_code ?? "transfer_receipt_not_activated"),
-    };
-  }
+  if (error) throw new Error("transfer_receipt_activation_failed");
+  if (!result || result.ok !== true) return { handled: false as const, reasonCode: String(result?.reason_code ?? "transfer_receipt_not_activated") };
 
   const packageName = String(result.package_name ?? "tu paquete").trim() || "tu paquete";
   const intentId = String(result.intent_id ?? "").trim();
   const saleId = String(result.sale_id ?? "").trim();
+  if (!UUID_RE.test(intentId)) throw new Error("transfer_receipt_intent_missing");
 
-  if (!UUID_RE.test(intentId)) {
-    throw new Error("transfer_receipt_intent_missing");
-  }
-
-  const media = await downloadMetaWhatsAppMedia({
-    config: input.webhookConfig,
-    mediaId: input.mediaId,
-  });
-
-  const extension =
-    media.mimeType === "application/pdf"
-      ? "pdf"
-      : media.mimeType === "image/png"
-        ? "png"
-        : media.mimeType === "image/webp"
-          ? "webp"
-          : "jpg";
+  const extension = media.mimeType === "application/pdf" ? "pdf" : media.mimeType === "image/png" ? "png" : media.mimeType === "image/webp" ? "webp" : "jpg";
   const storagePath = `${input.studioId}/${input.studentId}/${intentId}/receipt.${extension}`;
+  const { error: storageError } = await input.supabase.storage.from("transfer-receipts").upload(storagePath, media.bytes, { contentType: media.mimeType, upsert: true, cacheControl: "3600" });
+  if (storageError) throw new Error("transfer_receipt_storage_failed");
 
-  const { error: storageError } = await input.supabase.storage
-    .from("transfer-receipts")
-    .upload(storagePath, media.bytes, {
-      contentType: media.mimeType,
-      upsert: true,
-      cacheControl: "3600",
-    });
+  const { error: receiptUpdateError } = await input.supabase.from("assistant_transfer_purchase_intents").update({
+    receipt_storage_path: storagePath,
+    receipt_mime_type: media.mimeType,
+    receipt_file_size: media.fileSize,
+    receipt_stored_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  }).eq("id", intentId).eq("studio_id", input.studioId).eq("student_id", input.studentId);
+  if (receiptUpdateError) throw new Error("transfer_receipt_storage_metadata_failed");
 
-  if (storageError) {
-    throw new Error("transfer_receipt_storage_failed");
-  }
-
-  const { error: receiptUpdateError } = await input.supabase
-    .from("assistant_transfer_purchase_intents")
-    .update({
-      receipt_storage_path: storagePath,
-      receipt_mime_type: media.mimeType,
-      receipt_file_size: media.fileSize,
-      receipt_stored_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", intentId)
-    .eq("studio_id", input.studioId)
-    .eq("student_id", input.studentId);
-
-  if (receiptUpdateError) {
-    throw new Error("transfer_receipt_storage_metadata_failed");
-  }
-
-  const { data: handoffData, error: handoffError } = await input.supabase.rpc(
-    "assistant_create_handoff",
-    {
+  const { data: policy } = await input.supabase.from("assistant_handoff_policies").select("enabled").eq("studio_id", input.studioId).eq("reason_code", "receipt_validation_failed").maybeSingle();
+  if (policy?.enabled === true) {
+    await input.supabase.rpc("assistant_create_handoff", {
       target_studio_id: input.studioId,
       target_conversation_id: input.conversationId,
       target_student_id: input.studentId,
-      target_reason_code: "transfer_receipt_review",
-      target_note:
-        `Comprobante recibido. Paquete activado provisionalmente: ${packageName}. ` +
-        `Intento: ${intentId || "sin referencia"}. Venta: ${saleId || "sin referencia"}. ` +
-        `Validar la transferencia; si falla, revocar el paquete provisional.`,
-    },
-  );
-
-  if (handoffError || !isObject(handoffData) || handoffData.ok !== true) {
-    throw new Error("transfer_receipt_handoff_failed");
+      target_reason_code: "receipt_validation_failed",
+      target_note: `Comprobante leído: monto coincide con el paquete. Paquete activado provisionalmente: ${packageName}. Intento: ${intentId}. Venta: ${saleId || "sin referencia"}. Validar que la transferencia haya ingresado antes de aprobar definitivamente.`,
+    });
   }
 
   return {
     handled: true as const,
     result,
-    reply:
-      `Recibí tu comprobante. Activé provisionalmente ${packageName} para que puedas continuar. ` +
-      "El pago queda pendiente de validación. Si al revisar la transferencia no se confirma correctamente, el paquete puede ser revocado.",
+    reply: `Recibí tu comprobante y el monto coincide con ${packageName}. Activé tu paquete provisionalmente para que puedas continuar. El pago queda pendiente de validación.`,
   };
 }
 
