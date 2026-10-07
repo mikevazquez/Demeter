@@ -15,6 +15,7 @@ import {
   metaTemplateKeyForNotification,
   META_WHATSAPP_TEMPLATE_PARAMETERS,
 } from "@/lib/notifications/meta-template-catalog";
+import { getChannelReadiness, type OutboundChannel } from "@/lib/notifications/channel-readiness";
 import { getAutomationTemplate, type AutomationCatalogCode } from "@/lib/automations/catalog";
 import {
   getMarketingCommunication,
@@ -459,6 +460,57 @@ export async function saveMarketingCommunicationAction(formData: FormData) {
   }
 
   const { supabase, studio } = await getAdminContext(CAPABILITIES.AUTOMATIONS_MANAGE);
+  const selectedChannels: OutboundChannel[] = ["push", "whatsapp", "email"].filter((channel) =>
+    formData.has(`${channel}_enabled`),
+  ) as OutboundChannel[];
+  if (selectedChannels.length) {
+    const [{ data: rawSnapshot }, pushConfig, diagnostics] = await Promise.all([
+      supabase.rpc("admin_notification_rules_snapshot", { p_studio_id: studio.id }),
+      formData.has("push_enabled")
+        ? createServiceClient().rpc("service_get_push_vapid_config")
+        : Promise.resolve({ error: null }),
+      formData.has("whatsapp_enabled")
+        ? getMetaWhatsAppAdminDiagnostics(studio.id)
+        : Promise.resolve(null),
+    ]);
+    const snapshot =
+      rawSnapshot && typeof rawSnapshot === "object" && !Array.isArray(rawSnapshot)
+        ? (rawSnapshot as { settings?: Record<string, unknown> })
+        : {};
+    const settings = snapshot.settings ?? {};
+    const templateKey = item.whatsappTemplateKey;
+    const templateName = templateKey ? diagnostics?.templateMappings[templateKey] : null;
+    const template = templateName
+      ? diagnostics?.templates.find(
+          (candidate) =>
+            candidate.name === templateName &&
+            candidate.language === diagnostics?.templateLanguage,
+        )
+      : null;
+    const readiness = getChannelReadiness({
+      globalEnabled: {
+        push: settings.push_enabled !== false,
+        whatsapp: settings.whatsapp_enabled === true,
+        email: settings.email_enabled === true,
+      },
+      pushProviderConfigured: !pushConfig.error,
+      whatsappConnected: diagnostics?.connected === true,
+      whatsappTemplateName: templateName ?? null,
+      whatsappTemplateLanguage: template?.language ?? diagnostics?.templateLanguage ?? "",
+      whatsappTemplateStatus: template?.status ?? null,
+      whatsappTemplateVariables: template?.variableCount ?? null,
+      expectedWhatsappVariables:
+        templateKey && isMetaWhatsAppTemplateKey(templateKey)
+          ? META_WHATSAPP_TEMPLATE_PARAMETERS[templateKey].length
+          : null,
+      emailProviderConfigured: false,
+    });
+    const unavailable = selectedChannels.find((channel) => !readiness[channel].ready);
+    if (unavailable) {
+      redirect(marketingUrl(marketingKey, { error: `channel_not_ready_${unavailable}` }));
+    }
+  }
+
   const { error } = await supabase.rpc("admin_save_notification_marketing_config", {
     p_studio_id: studio.id,
     p_marketing_key: marketingKey,
