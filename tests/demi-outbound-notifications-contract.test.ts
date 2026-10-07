@@ -20,6 +20,10 @@ describe("Demi outbound WhatsApp notifications", () => {
     "supabase/migrations/20261007100000_meta_whatsapp_marketing_templates.sql",
   );
   const deliveryWorker = source("supabase/functions/notification-delivery-worker/index.ts");
+  const packageRecoveryMigration = source(
+    "supabase/migrations/20261007212357_package_recovery_notification_runtime.sql",
+  );
+  const notificationEngine = source("supabase/functions/notification-engine-worker/index.ts");
 
   it("supports Meta templates for class cancellation and schedule changes", () => {
     expect(metaTemplate).toContain('"class_cancelled_student"');
@@ -72,12 +76,17 @@ describe("Demi outbound WhatsApp notifications", () => {
     );
   });
 
-  it("keeps the two package recovery messages as independent paused campaign drafts", () => {
+  it("connects package recovery to independent central rules that stay disabled until activated", () => {
     expect(marketingCatalog).toContain('key: "package-recovery-1"');
     expect(marketingCatalog).toContain('key: "package-recovery-2"');
-    expect(marketingCatalog).toContain('automationCodes: ["AUT-CAT-15"]');
-    expect(marketingCatalog).toContain('automationCodes: ["AUT-CAT-16"]');
-    expect(marketingCatalog).toContain("planned: true");
+    expect(marketingCatalog).toContain('eventDrivenRuleKeys: ["marketing.package_recovery_1"]');
+    expect(marketingCatalog).toContain('eventDrivenRuleKeys: ["marketing.package_recovery_2"]');
+    expect(packageRecoveryMigration).toContain("'package.expired_due', false, 1");
+    expect(packageRecoveryMigration).toContain("'payload_student'");
+    expect(notificationEngine).toContain('case "payload_student"');
+    expect(notificationEngine).toContain('rule.timing_strategy_key === "after_event"');
+    expect(deliveryWorker).toContain("packageRecoveryStillEligible");
+    expect(deliveryWorker).toContain('"package_renewed_before_recovery"');
   });
 
   it("keeps student-facing push copy warm and uses emojis in the message body", () => {
