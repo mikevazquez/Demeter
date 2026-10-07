@@ -801,8 +801,8 @@ select
   cc.crm_contact_id,
   cc.contact_name,
   jsonb_build_object('backfilled_from_whatsapp', true),
-  min(e.created_at),
-  max(e.created_at)
+  min(e.received_at),
+  max(e.received_at)
 from public.assistant_whatsapp_events e
 join public.assistant_conversations ac
   on ac.id = e.assistant_conversation_id
@@ -879,8 +879,8 @@ begin
     new.studio_id, 'meta_whatsapp', new.phone_number_id, new.contact_wa_id,
     v_person_id, v_student_id, v_crm_contact_id, v_display_name,
     jsonb_build_object('synced_from_whatsapp', true),
-    coalesce(new.provider_timestamp, new.created_at, clock_timestamp()),
-    coalesce(new.provider_timestamp, new.created_at, clock_timestamp())
+    coalesce(new.provider_timestamp, new.received_at, clock_timestamp()),
+    coalesce(new.provider_timestamp, new.received_at, clock_timestamp())
   )
   on conflict (studio_id, provider, provider_account_id, provider_contact_id)
   do update
