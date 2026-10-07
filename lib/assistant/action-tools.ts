@@ -3010,7 +3010,7 @@ async function prepareTransferPackageChoice(
 
   const commercialRaw = await getCommercialOptions(
     { supabase: ctx.supabase, studio: ctx.studio, studentId: ctx.studentId },
-    rawSessionRef ? { session_ref: rawSessionRef } : {},
+    { session_ref: rawSessionRef },
   );
   const commercial = asObject(commercialRaw);
   if (!commercial || commercial.ok !== true) return commercialRaw;
