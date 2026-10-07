@@ -467,28 +467,46 @@ export async function getCommercialOptions(
 }
 
 export async function getStudioInformation(ctx: AssistantToolContext) {
-  const { data: locations, error: locationError } = await ctx.supabase
-    .from("studio_locations")
-    .select("name,address")
-    .eq("studio_id", ctx.studio.id)
-    .eq("active", true)
-    .order("created_at")
-    .limit(10);
+  const [{ data: studioDetails, error: studioError }, { data: locations, error: locationError }] =
+    await Promise.all([
+      ctx.supabase
+        .from("studios")
+        .select("contact_phone,contact_email,website_url")
+        .eq("id", ctx.studio.id)
+        .maybeSingle(),
+      ctx.supabase
+        .from("studio_locations")
+        .select("name,address,is_primary")
+        .eq("studio_id", ctx.studio.id)
+        .eq("active", true)
+        .order("is_primary", { ascending: false })
+        .order("created_at")
+        .limit(10),
+    ]);
 
-  if (locationError) {
+  if (studioError || locationError) {
     return { ok: false, error: "studio_information_unavailable" };
   }
+
+  const normalizedLocations = (locations ?? []).map((location) => ({
+    name: location.name,
+    address: location.address,
+    is_primary: location.is_primary === true,
+    address_configured: Boolean(location.address?.trim()),
+  }));
+  const primaryLocation =
+    normalizedLocations.find((location) => location.is_primary) ?? normalizedLocations[0] ?? null;
 
   return {
     ok: true,
     name: ctx.studio.name,
     timezone: ctx.studio.timezone,
     currency: ctx.studio.currency,
-    locations: (locations ?? []).map((location) => ({
-      name: location.name,
-      address: location.address,
-      address_configured: Boolean(location.address?.trim()),
-    })),
+    contact_phone: studioDetails?.contact_phone ?? null,
+    contact_email: studioDetails?.contact_email ?? null,
+    website_url: studioDetails?.website_url ?? null,
+    primary_location: primaryLocation,
+    locations: normalizedLocations,
   };
 }
 

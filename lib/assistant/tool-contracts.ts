@@ -100,7 +100,8 @@ export const assistantReadToolDefinitions: AssistantToolDefinition[] = [
   {
     type: "function",
     name: "get_studio_information",
-    description: "Consulta nombre, ubicación/dirección y datos públicos de atención del estudio.",
+    description:
+      "Consulta el nombre, sede principal, domicilio, teléfono, correo y página web configurados por el estudio. Úsala siempre que pregunten dónde está el estudio, cómo llegar, cuál es su dirección, teléfono, correo, web o datos de contacto. No inventes datos que no estén configurados.",
     strict: true,
     parameters: {
       type: "object",

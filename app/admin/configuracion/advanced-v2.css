@@ -396,6 +396,51 @@
   box-shadow: 0 0 0 3px rgba(23, 168, 120, 0.08);
 }
 
+.advanced-v2-field textarea {
+  width: 100%;
+  min-height: 96px;
+  padding: 12px;
+  border: 1px solid #dce4eb;
+  border-radius: 13px;
+  outline: 0;
+  resize: vertical;
+  background: #fbfcfd;
+  color: var(--advanced-text);
+  font: inherit;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.advanced-v2-field textarea:focus {
+  border-color: #78cbb0;
+  box-shadow: 0 0 0 3px rgba(23, 168, 120, 0.08);
+}
+
+.advanced-v2-section-copy {
+  display: grid;
+  gap: 4px;
+  padding-top: 4px;
+}
+
+.advanced-v2-section-copy:not(:first-child) {
+  margin-top: 8px;
+  padding-top: 18px;
+  border-top: 1px solid var(--advanced-line);
+}
+
+.advanced-v2-section-copy h2 {
+  margin: 0;
+  color: var(--advanced-text);
+  font-size: 18px;
+}
+
+.advanced-v2-section-copy p {
+  margin: 0;
+  color: #718096;
+  font-size: 12px;
+  line-height: 1.55;
+}
+
 .advanced-v2-save {
   min-height: 50px;
   justify-self: end;

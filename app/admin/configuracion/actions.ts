@@ -249,3 +249,53 @@ export async function saveStudioBankTransferSettingsAction(formData: FormData) {
   revalidatePath("/admin/mas");
   redirect("/admin/configuracion/pagos?saved=transfer");
 }
+
+export async function saveStudioBusinessProfileAction(formData: FormData) {
+  const ctx = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
+
+  if (ctx.membership.role !== "owner") {
+    redirect("/admin?error=access");
+  }
+
+  const contactPhone = String(formData.get("contact_phone") ?? "").trim();
+  const contactEmail = String(formData.get("contact_email") ?? "").trim();
+  const websiteUrl = String(formData.get("website_url") ?? "").trim();
+  const locationName = String(formData.get("location_name") ?? "").trim() || "Principal";
+  const address = String(formData.get("address") ?? "").trim();
+
+  const invalid =
+    contactPhone.length > 40 ||
+    contactEmail.length > 160 ||
+    (contactEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactEmail)) ||
+    websiteUrl.length > 300 ||
+    (websiteUrl && !/^https?:\/\//i.test(websiteUrl)) ||
+    locationName.length > 100 ||
+    address.length > 500;
+
+  if (invalid) {
+    redirect("/admin/configuracion/empresa?error=business");
+  }
+
+  const { error } = await ctx.supabase.rpc("owner_update_studio_business_profile_v1", {
+    p_studio_id: ctx.studio.id,
+    p_contact_phone: contactPhone || null,
+    p_contact_email: contactEmail || null,
+    p_website_url: websiteUrl || null,
+    p_location_name: locationName,
+    p_address: address || null,
+  });
+
+  if (error) {
+    console.error("[studio.business-profile] Save failed", {
+      code: error.code,
+      message: error.message.slice(0, 160),
+    });
+    redirect("/admin/configuracion/empresa?error=business_save");
+  }
+
+  revalidatePath("/admin/mas");
+  revalidatePath("/admin/configuracion/empresa");
+  revalidatePath("/admin/integraciones/demi");
+  redirect("/admin/configuracion/empresa?saved=business");
+}
+
