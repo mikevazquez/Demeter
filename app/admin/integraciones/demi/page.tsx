@@ -3,7 +3,9 @@ import Link from "next/link";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getAdminContext } from "@/lib/auth/admin-context";
 
-import DemiChat from "./DemiChat";
+import DemiWorkbench from "./DemiWorkbench";
+import type { PromptVersion } from "@/lib/assistant/prompt-workbench";
+import "./workbench.css";
 import "./demi.css";
 
 function money(value: number | null) {
@@ -24,52 +26,33 @@ function monthStartIso() {
 export default async function DemiDemoPage() {
   const { supabase, studio } = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
 
-  const [
-    { data: config },
-    { data: monthCalls },
-    { count: conversations },
-    { data: students },
-    { data: prospectContacts },
-  ] = await Promise.all([
-    supabase
-      .from("assistant_configs")
-      .select(
-        "assistant_name,mode,model,reasoning_effort,monthly_budget_usd_micros,conversation_budget_usd_micros",
-      )
-      .eq("studio_id", studio.id)
-      .maybeSingle(),
-    supabase
-      .from("assistant_model_calls")
-      .select("estimated_cost_usd_micros,input_tokens,output_tokens")
-      .eq("studio_id", studio.id)
-      .gte("created_at", monthStartIso()),
-    supabase
-      .from("assistant_conversations")
-      .select("id", { count: "exact", head: true })
-      .eq("studio_id", studio.id),
-    supabase
-      .from("students")
-      .select("id,full_name")
-      .eq("studio_id", studio.id)
-      .eq("active", true)
-      .eq("lifecycle_status", "active")
-      .order("full_name")
-      .limit(60),
-    supabase
-      .from("crm_contacts")
-      .select("id,person_id,lifecycle_status")
-      .eq("studio_id", studio.id)
-      .is("converted_student_id", null)
-      .in("lifecycle_status", ["prospect", "trial"])
-      .order("created_at", { ascending: false })
-      .limit(40),
-  ]);
+  const [{ data: config }, { data: monthCalls }, { data: versions, error: versionsError }] =
+    await Promise.all([
+      supabase
+        .from("assistant_configs")
+        .select(
+          "assistant_name,mode,model,reasoning_effort,personality_instructions,monthly_budget_usd_micros,conversation_budget_usd_micros",
+        )
+        .eq("studio_id", studio.id)
+        .maybeSingle(),
+      supabase
+        .from("assistant_model_calls")
+        .select("estimated_cost_usd_micros,input_tokens,output_tokens")
+        .eq("studio_id", studio.id)
+        .gte("created_at", monthStartIso()),
+      supabase
+        .from("assistant_prompt_versions")
+        .select("id,kind,instructions,note,created_at")
+        .eq("studio_id", studio.id)
+        .order("created_at", { ascending: false })
+        .limit(50),
+    ]);
 
   if (!config) {
     return (
       <main className="demi-page">
-        <Link className="demi-back" href="/admin/integraciones">
-          ← Integraciones
+        <Link className="demi-back" href="/admin/notificaciones">
+          ← Comunicación
         </Link>
         <section className="demi-unavailable">
           <h1>Demi todavía no está configurada</h1>
@@ -78,35 +61,6 @@ export default async function DemiDemoPage() {
       </main>
     );
   }
-
-  const prospectPersonIds = (prospectContacts ?? [])
-    .map((contact) => contact.person_id)
-    .filter((id): id is string => Boolean(id));
-
-  const { data: prospectPersons } = prospectPersonIds.length
-    ? await supabase
-        .from("persons")
-        .select("id,first_name,last_name")
-        .eq("studio_id", studio.id)
-        .in("id", prospectPersonIds)
-    : { data: [] as Array<{ id: string; first_name: string; last_name: string | null }> };
-
-  const prospectPersonMap = new Map((prospectPersons ?? []).map((person) => [person.id, person]));
-
-  const prospects = (prospectContacts ?? [])
-    .map((contact) => {
-      const person = prospectPersonMap.get(contact.person_id);
-      if (!person) return null;
-      const name = [person.first_name, person.last_name].filter(Boolean).join(" ").trim();
-      return {
-        id: contact.id,
-        name: name || "Prospecto",
-        lifecycleStatus: contact.lifecycle_status,
-      };
-    })
-    .filter((prospect): prospect is { id: string; name: string; lifecycleStatus: string } =>
-      Boolean(prospect),
-    );
 
   const spent = (monthCalls ?? []).reduce(
     (total, row) => total + Number(row.estimated_cost_usd_micros ?? 0),
@@ -122,14 +76,14 @@ export default async function DemiDemoPage() {
     <main className="demi-page">
       <header className="demi-header">
         <div>
-          <Link className="demi-back" href="/admin/integraciones">
-            ← Integraciones
+          <Link className="demi-back" href="/admin/notificaciones">
+            ← Comunicación
           </Link>
-          <div className="demi-eyebrow">Asistente interno</div>
+          <div className="demi-eyebrow">Comportamiento y pruebas</div>
           <h1>🤖 {config.assistant_name}</h1>
           <p>
-            Conversa con el asistente usando datos reales de {studio.name}. Ya puede reservar,
-            cancelar, reagendar y entrar a lista de espera con confirmación explícita.
+            Configura cómo responde {config.assistant_name}, mejora sus instrucciones y prueba
+            conversaciones antes de activar una versión.
           </p>
         </div>
         <span className="demi-mode">Modo {config.mode}</span>
@@ -152,26 +106,19 @@ export default async function DemiDemoPage() {
           <small>{monthCalls?.length ?? 0} llamadas</small>
         </article>
         <article>
-          <span>Conversaciones</span>
-          <strong>{conversations ?? 0}</strong>
-          <small>Límite por conversación {money(config.conversation_budget_usd_micros)}</small>
+          <span>Límite por conversación</span>
+          <strong>{money(config.conversation_budget_usd_micros)}</strong>
+          <small>Incluye las pruebas de instrucciones</small>
         </article>
       </section>
 
-      <section className="demi-notice">
-        <strong>Regla de la demo:</strong> si Studio Flow no devuelve el dato, Demi debe decir que
-        no lo encontró. Para reservar, cancelar, reagendar o entrar a lista de espera, primero debe
-        validar el estado real y después pedir una confirmación nueva antes de ejecutar.
-      </section>
-
-      <DemiChat
+      <DemiWorkbench
         assistantName={config.assistant_name}
+        activeInstructions={config.personality_instructions}
+        versions={(versions ?? []) as PromptVersion[]}
+        storageReady={!versionsError}
         openAIConfigured={openAIConfigured}
-        students={(students ?? []).map((student) => ({
-          id: student.id,
-          name: student.full_name,
-        }))}
-        prospects={prospects}
+        sandbox={process.env.NEXT_PUBLIC_SUPABASE_URL?.includes("hedouonyhynuvwbckdlg") === true}
       />
     </main>
   );

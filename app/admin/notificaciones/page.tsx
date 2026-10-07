@@ -203,6 +203,9 @@ export default async function NotificationsPage({
             {tab.label}
           </Link>
         ))}
+        {ctx.can(CAPABILITIES.SETTINGS_WRITE) && (
+          <Link href="/admin/integraciones/demi">🤖 Demi</Link>
+        )}
       </nav>
 
       <Notice error={query.error} saved={query.saved} />
