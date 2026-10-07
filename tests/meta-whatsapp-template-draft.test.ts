@@ -1,8 +1,50 @@
 import { describe, expect, it } from "vitest";
 
-import { validateMetaWhatsAppTemplateDraft } from "../lib/notifications/meta-template-catalog";
+import {
+  metaTemplateKeyForNotification,
+  validateMetaWhatsAppTemplateDraft,
+} from "../lib/notifications/meta-template-catalog";
 
 describe("Meta WhatsApp template draft validation", () => {
+  it("covers every event type currently configured in the studio sandbox", () => {
+    const eventTypes = [
+      "account_created",
+      "attendance_no_show",
+      "class_cancelled_coach",
+      "class_cancelled_student",
+      "class_reminder",
+      "class_rescheduled",
+      "credit_restored",
+      "document_new_version",
+      "documents_pending",
+      "evaluation_completed",
+      "evaluation_invitation",
+      "evaluation_reminder",
+      "evaluation_scheduled",
+      "guardian_signature_pending",
+      "late_cancellation",
+      "package_activated",
+      "package_expired",
+      "package_expiring",
+      "password_reset",
+      "payment_confirmed",
+      "payment_pending",
+      "reservation_cancelled",
+      "reservation_cancelled_by_student",
+      "reservation_confirmed",
+      "reservation_modified",
+      "session_cancelled_by_studio",
+      "session_coach_changed",
+      "studio_closure",
+      "waitlist_expired",
+      "waitlist_promoted",
+    ];
+
+    expect(
+      eventTypes.every((eventType) => metaTemplateKeyForNotification(eventType) !== null),
+    ).toBe(true);
+  });
+
   it("accepts the exact ordered variables in a valid template", () => {
     expect(
       validateMetaWhatsAppTemplateDraft({
