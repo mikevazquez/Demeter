@@ -170,7 +170,7 @@ begin
   select * into v_template
   from public.class_templates
   where id=v_session.template_id and studio_id=target_studio_id and active=true;
-  if not found or coalesce(v_template.drop_in_price_minor,0)<=0 then
+  if not found or coalesce(15000,0)<=0 then
     return jsonb_build_object('ok',false,'reason_code','trial_price_unavailable');
   end if;
 
@@ -214,14 +214,14 @@ begin
   )
   values(
     target_studio_id,target_conversation_id,target_student_id,target_session_id,
-    v_product.id,v_template.drop_in_price_minor,v_currency,'awaiting_receipt',
+    v_product.id,15000,v_currency,'awaiting_receipt',
     'trial_class',case when v_session.requires_resource then target_resource_id else null end
   )
   returning id into v_intent_id;
 
   return jsonb_build_object(
     'ok',true,'status','awaiting_receipt','intent_id',v_intent_id,
-    'amount_minor',v_template.drop_in_price_minor,'currency',v_currency,
+    'amount_minor',15000,'currency',v_currency,
     'bank_details',jsonb_build_object(
       'bank_name',v_bank.bank_name,'account_holder',v_bank.account_holder,
       'clabe',v_bank.clabe,'account_number',v_bank.account_number,
