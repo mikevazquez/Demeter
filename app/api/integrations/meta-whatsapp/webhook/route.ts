@@ -1,6 +1,7 @@
 import { runAssistantTurn } from "@/lib/assistant/orchestrator";
 import { getStudentPackageStatus } from "@/lib/assistant/read-tools";
 import { readTransferReceipt } from "@/lib/assistant/receipt-reader";
+import { provisionStudentAccessWithServiceClient } from "@/lib/assistant/student-access";
 import {
   downloadMetaWhatsAppMedia,
   extractMetaInboundMessages,
@@ -438,6 +439,7 @@ async function activateTransferReceiptIfPending(input: {
   messageType: string;
   messageText: string;
   webhookConfig: MetaWhatsAppWebhookConfig;
+  activationUrl: string;
 }) {
   if (!input.studentId || !input.mediaId || !["image", "document"].includes(input.messageType)) {
     return { handled: false as const };
@@ -445,7 +447,7 @@ async function activateTransferReceiptIfPending(input: {
 
   const { data: pendingIntent, error: pendingError } = await input.supabase
     .from("assistant_transfer_purchase_intents")
-    .select("id,amount_minor,currency,status,expires_at")
+    .select("id,amount_minor,currency,status,expires_at,intent_kind")
     .eq("studio_id", input.studioId)
     .eq("conversation_id", input.conversationId)
     .eq("student_id", input.studentId)
@@ -478,72 +480,146 @@ async function activateTransferReceiptIfPending(input: {
       studioId: input.studioId,
       conversationId: input.conversationId,
       studentId: input.studentId,
-      note: "No se pudo leer el monto del comprobante con suficiente confianza. Revisar el archivo antes de activar cualquier paquete.",
+      note: pendingIntent?.intent_kind === "trial_class"
+        ? "No se pudo leer el monto del comprobante de primera clase con suficiente confianza. Revisar el archivo antes de confirmar la reserva."
+        : "No se pudo leer el monto del comprobante con suficiente confianza. Revisar el archivo antes de activar cualquier paquete.",
     });
     return {
       handled: true as const,
       result: { ok: false, reason_code: "receipt_amount_unreadable" },
-      reply: "Recibí tu comprobante, pero no pude leer el monto con suficiente seguridad. No activé ningún paquete y el pago quedó pendiente de revisión.",
+      reply:
+        pendingIntent?.intent_kind === "trial_class"
+          ? "Recibí tu comprobante, pero no pude leer el monto con suficiente seguridad. No confirmé tu primera clase y el pago quedó pendiente de revisión."
+          : "Recibí tu comprobante, pero no pude leer el monto con suficiente seguridad. No activé ningún paquete y el pago quedó pendiente de revisión.",
     };
   }
 
   if (pendingIntent) {
     const expectedAmount = Number(pendingIntent.amount_minor);
     const expectedCurrency = String(pendingIntent.currency ?? "MXN").toUpperCase();
+    const isTrialPayment = String(pendingIntent.intent_kind ?? "product_purchase") === "trial_class";
+    const paymentSubject = isTrialPayment ? "primera clase" : "paquete";
     const amountMatches =
       reading.amountMinor === expectedAmount &&
       (!reading.currency || reading.currency === expectedCurrency);
 
-    await input.supabase.from("assistant_transfer_purchase_intents").update({
-      receipt_storage_path: storagePath,
-      receipt_mime_type: media.mimeType,
-      receipt_file_size: media.fileSize,
-      receipt_stored_at: new Date().toISOString(),
-      receipt_detected_amount_minor: reading.amountMinor,
-      receipt_detected_currency: reading.currency,
-      receipt_detected_date: reading.date,
-      receipt_detected_reference: reading.reference,
-      receipt_detected_bank: reading.bank,
-      receipt_read_confidence: reading.confidence,
-      receipt_amount_matches: amountMatches,
-      receipt_read_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    }).eq("id", pendingIntent.id).eq("studio_id", input.studioId);
+    const { error: readingPersistError } = await input.supabase
+      .from("assistant_transfer_purchase_intents")
+      .update({
+        receipt_storage_path: storagePath,
+        receipt_mime_type: media.mimeType,
+        receipt_file_size: media.fileSize,
+        receipt_stored_at: new Date().toISOString(),
+        receipt_detected_amount_minor: reading.amountMinor,
+        receipt_detected_currency: reading.currency,
+        receipt_detected_date: reading.date,
+        receipt_detected_reference: reading.reference,
+        receipt_detected_bank: reading.bank,
+        receipt_read_confidence: reading.confidence,
+        receipt_amount_matches: amountMatches,
+        receipt_read_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", pendingIntent.id)
+      .eq("studio_id", input.studioId);
+
+    if (readingPersistError) throw new Error("transfer_receipt_reading_persist_failed");
 
     if (!amountMatches) {
       return {
         handled: true as const,
         result: { ok: false, reason_code: "receipt_amount_mismatch" },
-        reply: `Recibí tu comprobante, pero el monto que pude leer (${formatReceiptMoney(reading.amountMinor, expectedCurrency)}) no coincide con el paquete pendiente (${formatReceiptMoney(expectedAmount, expectedCurrency)}). No activé el paquete. Puedes enviarme el comprobante correcto.`,
+        reply: `Recibí tu comprobante, pero el monto que pude leer (${formatReceiptMoney(reading.amountMinor, expectedCurrency)}) no coincide con tu ${paymentSubject} pendiente (${formatReceiptMoney(expectedAmount, expectedCurrency)}). No confirmé nada. Puedes enviarme el comprobante correcto.`,
       };
     }
 
-    const { data, error } = await input.supabase.rpc("service_activate_transfer_receipt", {
-      target_studio_id: input.studioId,
-      target_conversation_id: input.conversationId,
-      target_student_id: input.studentId,
-      target_event_id: input.eventId,
-      target_provider_message_id: input.providerMessageId,
-      target_media_id: input.mediaId,
-    });
-    const result = isObject(data) ? data : null;
-    if (error) throw new Error("transfer_receipt_activation_failed");
+    const activationRequest = isTrialPayment
+      ? await input.supabase.rpc("service_activate_trial_transfer_receipt", {
+          target_studio_id: input.studioId,
+          target_conversation_id: input.conversationId,
+          target_student_id: input.studentId,
+          target_intent_id: pendingIntent.id,
+          target_event_id: input.eventId,
+          target_provider_message_id: input.providerMessageId,
+          target_media_id: input.mediaId,
+        })
+      : await input.supabase.rpc("service_activate_transfer_receipt", {
+          target_studio_id: input.studioId,
+          target_conversation_id: input.conversationId,
+          target_student_id: input.studentId,
+          target_event_id: input.eventId,
+          target_provider_message_id: input.providerMessageId,
+          target_media_id: input.mediaId,
+        });
+
+    const result = isObject(activationRequest.data) ? activationRequest.data : null;
+    if (activationRequest.error) throw new Error("transfer_receipt_activation_failed");
+
     if (!result || result.ok !== true) {
-      return { handled: false as const, reasonCode: String(result?.reason_code ?? "transfer_receipt_not_activated") };
+      const reasonCode = String(result?.reason_code ?? "transfer_receipt_not_activated");
+      if (
+        isTrialPayment &&
+        ["session_full", "resource_full", "resource_unavailable", "resource_not_available"].includes(
+          reasonCode,
+        )
+      ) {
+        await createReceiptValidationHandoff({
+          supabase: input.supabase,
+          studioId: input.studioId,
+          conversationId: input.conversationId,
+          studentId: input.studentId,
+          note:
+            "El comprobante de primera clase coincide con el monto, pero el lugar dejó de estar disponible antes de confirmar la reserva. Resolver otra clase o devolución.",
+        });
+
+        return {
+          handled: true as const,
+          result: { ok: false, reason_code: reasonCode },
+          reply:
+            "Recibí tu comprobante y el monto coincide, pero ese lugar dejó de estar disponible antes de que pudiera confirmar la reserva. No hice una reserva incorrecta. Lo revisaremos por este mismo chat para ofrecerte otra clase o resolver el pago.",
+        };
+      }
+
+      return { handled: false as const, reasonCode };
     }
 
-    const packageName = String(result.package_name ?? "tu paquete").trim() || "tu paquete";
+    const label = isTrialPayment
+      ? String(result.activity ?? "tu primera clase").trim() || "tu primera clase"
+      : String(result.package_name ?? "tu paquete").trim() || "tu paquete";
+
     await createReceiptValidationHandoff({
       supabase: input.supabase,
       studioId: input.studioId,
       conversationId: input.conversationId,
       studentId: input.studentId,
-      note: `Comprobante leído: monto coincide con ${packageName}. Paquete activado provisionalmente; validar que la transferencia haya ingresado antes de aprobar definitivamente.`,
+      note: isTrialPayment
+        ? `Comprobante leído: monto coincide con la primera clase ${label}. Reserva confirmada provisionalmente; validar que la transferencia haya ingresado antes de aprobar definitivamente.`
+        : `Comprobante leído: monto coincide con ${label}. Paquete activado provisionalmente; validar que la transferencia haya ingresado antes de aprobar definitivamente.`,
     });
+
+    let accessText = "";
+    if (isTrialPayment) {
+      const access = await provisionStudentAccessWithServiceClient({
+        supabase: input.supabase,
+        studioId: input.studioId,
+        studentId: input.studentId,
+        activationUrl: input.activationUrl,
+        mode: "provision",
+      });
+
+      if (access.generated === true && access.activation_url) {
+        accessText = ` Crea tu contraseña para entrar a la app aquí: ${access.activation_url}`;
+      } else if (access.already_has_access === true) {
+        accessText = " Tu acceso a la app ya está habilitado.";
+      }
+    }
+
     return {
       handled: true as const,
       result,
-      reply: `Recibí tu comprobante y el monto coincide con ${packageName}. Activé tu paquete provisionalmente para que puedas continuar. El pago queda pendiente de validación.`,
+      reply: isTrialPayment
+        ? `Recibí tu comprobante y el monto coincide. Tu primera clase de ${label} quedó confirmada. La transferencia queda pendiente de validación.${accessText}`
+        : `Recibí tu comprobante y el monto coincide con ${label}. Activé tu paquete provisionalmente para que puedas continuar. El pago queda pendiente de validación.`,
     };
   }
 
@@ -1088,7 +1164,35 @@ export async function POST(request: Request) {
     const inboundTurnId = String(prepared.inbound_turn_id ?? "").trim();
     const studentId = String(prepared.student_id ?? "").trim() || null;
     const crmContactId = String(prepared.crm_contact_id ?? "").trim() || null;
+    const crmConversationId = String(prepared.crm_conversation_id ?? "").trim() || null;
     const identityNeedsName = prepared.identity_needs_name === true;
+
+    if (message.referral && crmConversationId) {
+      const { error: attributionError } = await supabase.rpc(
+        "service_record_meta_whatsapp_referral",
+        {
+          target_studio_id: studioId,
+          target_crm_conversation_id: crmConversationId,
+          target_crm_contact_id: crmContactId,
+          target_referral: {
+            source_url: message.referral.sourceUrl,
+            source_type: message.referral.sourceType,
+            source_id: message.referral.sourceId,
+            headline: message.referral.headline,
+            body: message.referral.body,
+            media_type: message.referral.mediaType,
+            ctwa_clid: message.referral.ctwaClid,
+          },
+        },
+      );
+
+      if (attributionError) {
+        console.warn("demi_meta_webhook", {
+          stage: "attribution",
+          outcome: "referral_persist_failed",
+        });
+      }
+    }
 
     if (!conversationId || !inboundTurnId) {
       retryableFailure = true;
@@ -1153,6 +1257,7 @@ export async function POST(request: Request) {
           messageType: message.messageType,
           messageText: message.text,
           webhookConfig,
+          activationUrl: new URL("/login/student/activar", request.url).toString(),
         });
       } catch {
         retryableFailure = true;
