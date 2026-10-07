@@ -10,14 +10,9 @@ export type DemiAdminRuleCategory =
 
 export type DemiAdminAction =
   | {
-      type: "set_trial_policy";
-      field:
-        | "require_payment_before_booking"
-        | "require_payment_before_attendance"
-        | "allow_without_enrollment_until_first_attendance"
-        | "max_active_trial_reservations"
-        | "prepayment_after_no_shows";
-      value: boolean | number;
+      type: "set_booking_behavior";
+      field: "prospect_require_payment_before_booking";
+      value: boolean;
       label: string;
     }
   | {
@@ -80,13 +75,7 @@ function parseJson(text: string) {
   }
 }
 
-const trialFields = new Set([
-  "require_payment_before_booking",
-  "require_payment_before_attendance",
-  "allow_without_enrollment_until_first_attendance",
-  "max_active_trial_reservations",
-  "prepayment_after_no_shows",
-]);
+const bookingBehaviorFields = new Set(["prospect_require_payment_before_booking"]);
 const categories = new Set(["behavior", "commercial", "booking", "payment", "communication", "safety"]);
 
 function cleanPlan(raw: Record<string, unknown> | null): DemiAdminPlan | null {
@@ -106,12 +95,10 @@ function cleanPlan(raw: Record<string, unknown> | null): DemiAdminPlan | null {
     const type = String(row.type ?? "");
     const label = String(row.label ?? "").trim().slice(0, 240) || "Actualizar configuración";
 
-    if (type === "set_trial_policy") {
+    if (type === "set_booking_behavior") {
       const field = String(row.field ?? "");
-      if (!trialFields.has(field)) continue;
-      const value = row.value;
-      if (typeof value !== "boolean" && !(typeof value === "number" && Number.isInteger(value) && value >= 0 && value <= 100)) continue;
-      actions.push({ type, field: field as Extract<DemiAdminAction,{type:"set_trial_policy"}>["field"], value, label });
+      if (!bookingBehaviorFields.has(field) || typeof row.value !== "boolean") continue;
+      actions.push({ type, field: "prospect_require_payment_before_booking", value: row.value, label });
       continue;
     }
 
@@ -184,7 +171,7 @@ FORMATO:
 {"summary":"...","requires_development":false,"development_reason":null,"actions":[...]}
 
 ACCIONES PERMITIDAS:
-1. {"type":"set_trial_policy","field":"require_payment_before_booking|require_payment_before_attendance|allow_without_enrollment_until_first_attendance|max_active_trial_reservations|prepayment_after_no_shows","value":true|false|entero,"label":"..."}
+1. {"type":"set_booking_behavior","field":"prospect_require_payment_before_booking","value":true|false,"label":"..."}
 2. {"type":"set_handoff_policy","reason_code":"uno existente","enabled":true|false,"blocking":true|false,"label":"..."}
 3. {"type":"set_product","product_name":"nombre exacto existente","price_minor":entero_en_centavos,"active":true|false,"assistant_visible":true|false,"online_purchasable":true|false,"label":"..."}
 4. {"type":"set_class_price","activity_name":"nombre exacto existente","price_minor":entero_en_centavos_o_null,"label":"..."}
@@ -193,8 +180,10 @@ ACCIONES PERMITIDAS:
 REGLAS:
 - Usa únicamente nombres y reason_code que existan en CURRENT_STATE.
 - No inventes SQL, tablas, endpoints, código, IDs ni capacidades.
-- Si la petición cambia una regla operativa que tiene campo tipado, usa ese campo; no intentes resolverla solo con prompt.
-- Para que el lenguaje de Demi sea coherente con una regla operativa, añade también upsert_rule cuando sea útil.
+- CURRENT_STATE.studio_flow_rules son restricciones duras de Studio Flow y son SOLO LECTURA desde este configurador. Nunca propongas cambiarlas ni saltarlas.
+- CURRENT_STATE.demi_booking_behavior controla decisiones más estrictas de Demi. Demi puede ser más restrictiva que Studio Flow, nunca menos. Para prospectos que deban pagar antes de reservar usa set_booking_behavior.
+- Si Studio Flow prohíbe una acción, ninguna regla, prompt ni comportamiento de Demi puede habilitarla. Si el administrador pide algo que contradice una restricción dura, no lo representes como cambio aplicable: marca requires_development=true y explica que Studio Flow prevalece.
+- Para que el lenguaje de Demi sea coherente con un comportamiento, añade también upsert_rule cuando sea útil.
 - Los montos se expresan en centavos: $150 MXN = 15000.
 - Si la petición no puede representarse de forma fiel con las acciones permitidas, marca requires_development=true y explica por qué. Puedes incluir las acciones seguras que sí apliquen, pero no finjas que resuelven lo demás.
 - No apliques nada: solo prepara el plan.
