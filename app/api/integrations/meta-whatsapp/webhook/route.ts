@@ -215,11 +215,11 @@ async function activateTransferReceiptIfPending(input: {
 
   const { data: pendingIntent, error: pendingError } = await input.supabase
     .from("assistant_transfer_purchase_intents")
-    .select("id,amount_minor,currency,status,expires_at")
+    .select("id,amount_minor,currency,status,expires_at,intent_kind")
     .eq("studio_id", input.studioId)
     .eq("conversation_id", input.conversationId)
     .eq("student_id", input.studentId)
-    .eq("status", "pending_receipt")
+    .eq("status", "awaiting_receipt")
     .gt("expires_at", new Date().toISOString())
     .order("created_at", { ascending: false })
     .limit(1)
@@ -228,7 +228,12 @@ async function activateTransferReceiptIfPending(input: {
   if (pendingError) throw new Error("transfer_intent_lookup_failed");
   if (!pendingIntent) return { handled: false as const };
 
-  const media = await downloadMetaWhatsAppMedia({ config: input.webhookConfig, mediaId: input.mediaId });
+  const intentKind = String(pendingIntent.intent_kind ?? "product_purchase");
+  const isTrialPayment = intentKind === "trial_class";
+  const media = await downloadMetaWhatsAppMedia({
+    config: input.webhookConfig,
+    mediaId: input.mediaId,
+  });
   const reading = await readTransferReceipt({ bytes: media.bytes, mimeType: media.mimeType });
   const expectedAmount = Number(pendingIntent.amount_minor);
   const expectedCurrency = String(pendingIntent.currency ?? "MXN").toUpperCase();
@@ -238,76 +243,162 @@ async function activateTransferReceiptIfPending(input: {
     reading.amountMinor === expectedAmount &&
     (!reading.currency || reading.currency === expectedCurrency);
 
-  await input.supabase.from("assistant_transfer_purchase_intents").update({
-    receipt_detected_amount_minor: reading.amountMinor,
-    receipt_detected_currency: reading.currency,
-    receipt_detected_date: reading.date,
-    receipt_detected_reference: reading.reference,
-    receipt_detected_bank: reading.bank,
-    receipt_read_confidence: reading.confidence,
-    receipt_amount_matches: amountMatches,
-    receipt_read_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  }).eq("id", pendingIntent.id).eq("studio_id", input.studioId);
+  const { error: readingUpdateError } = await input.supabase
+    .from("assistant_transfer_purchase_intents")
+    .update({
+      receipt_detected_amount_minor: reading.amountMinor,
+      receipt_detected_currency: reading.currency,
+      receipt_detected_date: reading.date,
+      receipt_detected_reference: reading.reference,
+      receipt_detected_bank: reading.bank,
+      receipt_read_confidence: reading.confidence,
+      receipt_amount_matches: amountMatches,
+      receipt_read_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", pendingIntent.id)
+    .eq("studio_id", input.studioId);
+
+  if (readingUpdateError) throw new Error("transfer_receipt_reading_persist_failed");
 
   if (!amountMatches) {
-    const detected = reading.amountMinor == null ? null : new Intl.NumberFormat("es-MX", { style: "currency", currency: expectedCurrency }).format(reading.amountMinor / 100);
-    const expected = new Intl.NumberFormat("es-MX", { style: "currency", currency: expectedCurrency }).format(expectedAmount / 100);
+    const detected =
+      reading.amountMinor == null
+        ? null
+        : new Intl.NumberFormat("es-MX", {
+            style: "currency",
+            currency: expectedCurrency,
+          }).format(reading.amountMinor / 100);
+    const expected = new Intl.NumberFormat("es-MX", {
+      style: "currency",
+      currency: expectedCurrency,
+    }).format(expectedAmount / 100);
+    const subject = isTrialPayment ? "primera clase" : "paquete";
+
     return {
       handled: true as const,
-      result: { ok: false, reason_code: reading.amountMinor == null ? "receipt_amount_unreadable" : "receipt_amount_mismatch" },
+      result: {
+        ok: false,
+        reason_code:
+          reading.amountMinor == null ? "receipt_amount_unreadable" : "receipt_amount_mismatch",
+      },
       reply: detected
-        ? `Recibí tu comprobante, pero el monto que pude leer (${detected}) no coincide con el paquete pendiente (${expected}). No activé el paquete. Puedes enviarme el comprobante correcto.`
-        : "Recibí tu comprobante, pero no pude leer el monto con suficiente seguridad. No activé el paquete y lo dejé pendiente para revisión.",
+        ? `Recibí tu comprobante, pero el monto que pude leer (${detected}) no coincide con tu ${subject} pendiente (${expected}). No confirmé nada. Puedes enviarme el comprobante correcto.`
+        : `Recibí tu comprobante, pero no pude leer el monto con suficiente seguridad. No confirmé tu ${subject}; el pago sigue pendiente de revisión.`,
     };
   }
 
-  const { data, error } = await input.supabase.rpc("service_activate_transfer_receipt", {
-    target_studio_id: input.studioId,
-    target_conversation_id: input.conversationId,
-    target_student_id: input.studentId,
-    target_event_id: input.eventId,
-    target_provider_message_id: input.providerMessageId,
-    target_media_id: input.mediaId,
-  });
-  const result = isObject(data) ? data : null;
-  if (error) throw new Error("transfer_receipt_activation_failed");
-  if (!result || result.ok !== true) return { handled: false as const, reasonCode: String(result?.reason_code ?? "transfer_receipt_not_activated") };
+  const activationRequest = isTrialPayment
+    ? await input.supabase.rpc("service_activate_trial_transfer_receipt", {
+        target_studio_id: input.studioId,
+        target_conversation_id: input.conversationId,
+        target_student_id: input.studentId,
+        target_intent_id: pendingIntent.id,
+        target_event_id: input.eventId,
+        target_provider_message_id: input.providerMessageId,
+        target_media_id: input.mediaId,
+      })
+    : await input.supabase.rpc("service_activate_transfer_receipt", {
+        target_studio_id: input.studioId,
+        target_conversation_id: input.conversationId,
+        target_student_id: input.studentId,
+        target_event_id: input.eventId,
+        target_provider_message_id: input.providerMessageId,
+        target_media_id: input.mediaId,
+      });
 
-  const packageName = String(result.package_name ?? "tu paquete").trim() || "tu paquete";
-  const intentId = String(result.intent_id ?? "").trim();
+  const result = isObject(activationRequest.data) ? activationRequest.data : null;
+  if (activationRequest.error) throw new Error("transfer_receipt_activation_failed");
+
+  if (!result || result.ok !== true) {
+    const reasonCode = String(result?.reason_code ?? "transfer_receipt_not_activated");
+    if (isTrialPayment && ["session_full", "resource_full", "resource_unavailable"].includes(reasonCode)) {
+      await input.supabase.rpc("assistant_create_handoff", {
+        target_studio_id: input.studioId,
+        target_conversation_id: input.conversationId,
+        target_student_id: input.studentId,
+        target_reason_code: "receipt_validation_failed",
+        target_note:
+          "El comprobante de primera clase coincide con el monto, pero el lugar dejó de estar disponible antes de confirmar la reserva. Resolver alternativa o devolución dentro de este mismo chat.",
+      });
+      return {
+        handled: true as const,
+        result: { ok: false, reason_code: reasonCode },
+        reply:
+          "Recibí tu comprobante y el monto coincide, pero ese lugar dejó de estar disponible antes de que pudiera confirmar la reserva. No hice una reserva incorrecta. Lo voy a resolver por este mismo chat con otra clase disponible o con la revisión del pago.",
+      };
+    }
+
+    return {
+      handled: false as const,
+      reasonCode,
+    };
+  }
+
+  const label = isTrialPayment
+    ? String(result.activity ?? "tu primera clase").trim() || "tu primera clase"
+    : String(result.package_name ?? "tu paquete").trim() || "tu paquete";
+  const intentId = String(result.intent_id ?? pendingIntent.id).trim();
   const saleId = String(result.sale_id ?? "").trim();
   if (!UUID_RE.test(intentId)) throw new Error("transfer_receipt_intent_missing");
 
-  const extension = media.mimeType === "application/pdf" ? "pdf" : media.mimeType === "image/png" ? "png" : media.mimeType === "image/webp" ? "webp" : "jpg";
+  const extension =
+    media.mimeType === "application/pdf"
+      ? "pdf"
+      : media.mimeType === "image/png"
+        ? "png"
+        : media.mimeType === "image/webp"
+          ? "webp"
+          : "jpg";
   const storagePath = `${input.studioId}/${input.studentId}/${intentId}/receipt.${extension}`;
-  const { error: storageError } = await input.supabase.storage.from("transfer-receipts").upload(storagePath, media.bytes, { contentType: media.mimeType, upsert: true, cacheControl: "3600" });
+  const { error: storageError } = await input.supabase.storage
+    .from("transfer-receipts")
+    .upload(storagePath, media.bytes, {
+      contentType: media.mimeType,
+      upsert: true,
+      cacheControl: "3600",
+    });
   if (storageError) throw new Error("transfer_receipt_storage_failed");
 
-  const { error: receiptUpdateError } = await input.supabase.from("assistant_transfer_purchase_intents").update({
-    receipt_storage_path: storagePath,
-    receipt_mime_type: media.mimeType,
-    receipt_file_size: media.fileSize,
-    receipt_stored_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  }).eq("id", intentId).eq("studio_id", input.studioId).eq("student_id", input.studentId);
+  const { error: receiptUpdateError } = await input.supabase
+    .from("assistant_transfer_purchase_intents")
+    .update({
+      receipt_storage_path: storagePath,
+      receipt_mime_type: media.mimeType,
+      receipt_file_size: media.fileSize,
+      receipt_stored_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", intentId)
+    .eq("studio_id", input.studioId)
+    .eq("student_id", input.studentId);
   if (receiptUpdateError) throw new Error("transfer_receipt_storage_metadata_failed");
 
-  const { data: policy } = await input.supabase.from("assistant_handoff_policies").select("enabled").eq("studio_id", input.studioId).eq("reason_code", "receipt_validation_failed").maybeSingle();
+  const { data: policy } = await input.supabase
+    .from("assistant_handoff_policies")
+    .select("enabled")
+    .eq("studio_id", input.studioId)
+    .eq("reason_code", "receipt_validation_failed")
+    .maybeSingle();
+
   if (policy?.enabled === true) {
     await input.supabase.rpc("assistant_create_handoff", {
       target_studio_id: input.studioId,
       target_conversation_id: input.conversationId,
       target_student_id: input.studentId,
       target_reason_code: "receipt_validation_failed",
-      target_note: `Comprobante leído: monto coincide con el paquete. Paquete activado provisionalmente: ${packageName}. Intento: ${intentId}. Venta: ${saleId || "sin referencia"}. Validar que la transferencia haya ingresado antes de aprobar definitivamente.`,
+      target_note: isTrialPayment
+        ? `Comprobante leído: monto coincide con la primera clase. Reserva confirmada provisionalmente: ${label}. Intento: ${intentId}. Venta: ${saleId || "sin referencia"}. Validar que la transferencia haya ingresado antes de aprobar definitivamente.`
+        : `Comprobante leído: monto coincide con el paquete. Paquete activado provisionalmente: ${label}. Intento: ${intentId}. Venta: ${saleId || "sin referencia"}. Validar que la transferencia haya ingresado antes de aprobar definitivamente.`,
     });
   }
 
   return {
     handled: true as const,
     result,
-    reply: `Recibí tu comprobante y el monto coincide con ${packageName}. Activé tu paquete provisionalmente para que puedas continuar. El pago queda pendiente de validación.`,
+    reply: isTrialPayment
+      ? `Recibí tu comprobante y el monto coincide. Tu primera clase de ${label} quedó confirmada. La transferencia queda pendiente de validación.`
+      : `Recibí tu comprobante y el monto coincide con ${label}. Activé tu paquete provisionalmente para que puedas continuar. El pago queda pendiente de validación.`,
   };
 }
 
