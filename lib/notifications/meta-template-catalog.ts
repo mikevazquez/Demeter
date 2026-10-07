@@ -78,6 +78,17 @@ export function isMetaWhatsAppTemplateKey(value: string): value is MetaWhatsAppT
   return Object.prototype.hasOwnProperty.call(META_WHATSAPP_TEMPLATE_PARAMETERS, value);
 }
 
+export function metaWhatsAppStatusLabel(status: string) {
+  switch (status.trim().toUpperCase()) {
+    case "APPROVED":
+      return "Aprobada";
+    case "REJECTED":
+      return "Rechazada";
+    default:
+      return "Pendiente";
+  }
+}
+
 export function validateMetaWhatsAppTemplateDraft(input: {
   name: string;
   languageCode: string;
