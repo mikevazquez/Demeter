@@ -69,7 +69,10 @@ begin
       'class_reminder','class_cancelled_coach','class_cancelled_student','class_rescheduled',
       'evaluation_reminder','package_activated','package_expired','package_expiring',
       'session_cancelled_by_studio','challenge_invitation','workshop_event','referral_invitation',
-      'package_recovery_1','package_recovery_2'
+      'package_recovery_1','package_recovery_2','attendance_no_show','credit_restored',
+      'document_new_version','documents_pending','evaluation_completed','evaluation_invitation',
+      'evaluation_scheduled','guardian_signature_pending','password_reset','payment_confirmed',
+      'payment_pending','session_coach_changed','studio_closure','waitlist_expired'
     )
     or trim(template_entry.value) !~ '^[a-z0-9_]+$'
   ) then raise exception 'meta_templates_invalid'; end if;
