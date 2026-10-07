@@ -399,6 +399,51 @@ function renderMessage(delivery: DeliveryRow): RenderedMessage {
       };
     }
 
+    case "challenge_invitation":
+      return {
+        title: "Nuevo reto disponible",
+        body: `Ya puedes participar en ${safeText(variables.challenge_name) ?? "un nuevo reto"}.`,
+        url: "/student",
+        tag: `notification-${delivery.id}`,
+        providerTemplateKey: overrideProviderTemplate ?? "challenge_invitation",
+      };
+
+    case "workshop_event":
+      return {
+        title: "Nuevo evento en Demeter",
+        body: `${safeText(variables.event_name) ?? "Un taller especial"} · ${safeText(variables.event_date) ?? "próximamente"}.`,
+        url: "/student",
+        tag: `notification-${delivery.id}`,
+        providerTemplateKey: overrideProviderTemplate ?? "workshop_event",
+      };
+
+    case "referral_invitation":
+      return {
+        title: "Invita a alguien a Demeter",
+        body: "Comparte nuestra información con quien quiera probar una clase.",
+        url: "/student",
+        tag: `notification-${delivery.id}`,
+        providerTemplateKey: overrideProviderTemplate ?? "referral_invitation",
+      };
+
+    case "package_recovery_1":
+      return {
+        title: "Vuelve a tus clases",
+        body: "Tu paquete venció. Responde por WhatsApp y revisamos las opciones disponibles.",
+        url: "/student/paquete",
+        tag: `notification-${delivery.id}`,
+        providerTemplateKey: overrideProviderTemplate ?? "package_recovery_1",
+      };
+
+    case "package_recovery_2":
+      return {
+        title: "Te esperamos de vuelta",
+        body: "Responde por WhatsApp y te compartimos las opciones vigentes.",
+        url: "/student/paquete",
+        tag: `notification-${delivery.id}`,
+        providerTemplateKey: overrideProviderTemplate ?? "package_recovery_2",
+      };
+
     default:
       throw new Error(`notification_template_unsupported:${delivery.template_key}`);
   }
