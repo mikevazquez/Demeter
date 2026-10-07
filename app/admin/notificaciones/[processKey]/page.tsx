@@ -270,7 +270,7 @@ export default async function NotificationProcessPage({
         ? "Conexión y plantillas aprobadas"
         : "Falta una plantilla aprobada y asignada",
     },
-    email: { ready: false, label: "Proveedor de email no configurado" },
+    email: { ready: false, label: "Proveedor no configurado · falta integración de email" },
   };
 
   const leadTimeRule = rules.find((rule) => rule.timing_strategy_key === "before_session_start");
@@ -445,7 +445,8 @@ export default async function NotificationProcessPage({
           <div>
             <h2>Plantillas de WhatsApp</h2>
             <p>
-              Envía una plantilla a revisión en Meta y asígnala al evento después de su aprobación.
+              Plantilla administrada en Meta. Las plantillas de WhatsApp se administran en Meta;
+              envía una a revisión y asígnala al evento después de su aprobación.
             </p>
           </div>
           <span
