@@ -764,7 +764,13 @@ export async function POST(request: Request) {
           continue;
         }
 
-        reply = "Recibí tu archivo. Lo pasé a revisión humana dentro de este mismo chat.";
+        const caption = message.text.trim();
+        const paymentLanguage = /\\b(pagu[eé]|pago|pagado|transfer(?:encia|í|i)|comprobante|dep[oó]sito|deposit[eé])\\b/i.test(caption);
+
+        reply = paymentLanguage
+          ? "Recibí tu comprobante. No pude asociarlo automáticamente a una compra pendiente, así que lo dejé para validación del pago."
+          : "Recibí tu archivo. Lo dejé para revisión.";
+
         deterministicOutcome = "media_handoff";
       }
 
