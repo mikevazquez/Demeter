@@ -42,6 +42,7 @@ export default async function StudentFirstReservationPage({
     getAdminContext(CAPABILITIES.SCHEDULE_READ),
   ]);
 
+  const now = new Date().toISOString();
   const [{ data: student }, { data: sessions }] = await Promise.all([
     supabase
       .from("students")
@@ -51,10 +52,10 @@ export default async function StudentFirstReservationPage({
       .maybeSingle(),
     supabase
       .from("class_sessions")
-      .select("id,template_id,starts_at,capacity,status")
+      .select("id,template_id,starts_at,ends_at,capacity,status")
       .eq("studio_id", studio.id)
       .eq("status", "scheduled")
-      .gt("starts_at", new Date().toISOString())
+      .gt("ends_at", now)
       .order("starts_at")
       .limit(24),
   ]);
@@ -133,13 +134,13 @@ export default async function StudentFirstReservationPage({
         </section>
       ) : !(sessions ?? []).length ? (
         <section className="panel">
-          <div className="empty-state">No hay clases futuras programadas.</div>
+          <div className="empty-state">No hay clases próximas o en curso.</div>
         </section>
       ) : (
         <section className="panel">
           <div className="panel-heading">
             <div>
-              <p className="eyebrow">CLASES PRÓXIMAS</p>
+              <p className="eyebrow">CLASES DISPONIBLES</p>
               <h2>Selecciona una clase</h2>
             </div>
             <span className="count-badge">{sessions?.length ?? 0}</span>
