@@ -15,6 +15,16 @@ export type MetaWhatsAppWebhookConfig = {
   pilotWaIds: string[];
 };
 
+export type MetaInboundReferral = {
+  sourceUrl: string | null;
+  sourceType: string | null;
+  sourceId: string | null;
+  headline: string | null;
+  body: string | null;
+  mediaType: string | null;
+  ctwaClid: string | null;
+};
+
 export type MetaInboundMessage = {
   providerMessageId: string;
   fromWaId: string;
@@ -25,6 +35,7 @@ export type MetaInboundMessage = {
   messageType: string;
   text: string;
   mediaId: string | null;
+  referral: MetaInboundReferral | null;
 };
 
 export type MetaTextDeliveryResult =
@@ -294,6 +305,22 @@ function mediaIdForMessage(message: JsonObject, type: string) {
   return safeText(media.id);
 }
 
+function referralForMessage(message: JsonObject): MetaInboundReferral | null {
+  if (!isObject(message.referral)) return null;
+  const referral = message.referral;
+  const parsed: MetaInboundReferral = {
+    sourceUrl: safeText(referral.source_url),
+    sourceType: safeText(referral.source_type),
+    sourceId: safeText(referral.source_id),
+    headline: safeText(referral.headline),
+    body: safeText(referral.body),
+    mediaType: safeText(referral.media_type),
+    ctwaClid: safeText(referral.ctwa_clid),
+  };
+
+  return Object.values(parsed).some(Boolean) ? parsed : null;
+}
+
 export function extractMetaInboundMessages(body: unknown): MetaInboundMessage[] {
   const root = isObject(body) ? body : {};
   const entries = Array.isArray(root.entry) ? root.entry : [];
@@ -329,6 +356,7 @@ export function extractMetaInboundMessages(body: unknown): MetaInboundMessage[] 
           messageType,
           text: messageText(message, messageType),
           mediaId: mediaIdForMessage(message, messageType),
+          referral: referralForMessage(message),
         });
       }
     }
