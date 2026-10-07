@@ -504,14 +504,17 @@ export default async function NotificationProcessPage({
                     .filter((template) => template.name !== mappedName)
                     .map((template) => (
                       <p key={`${template.name}:${template.language}`}>
-                        {template.name} · {template.language} · {template.status}
+                        {template.name} · {template.language} · {template.category} ·{" "}
+                        {template.status}
                         {template.rejectedReason ? ` · Motivo: ${template.rejectedReason}` : ""}
                       </p>
                     ))}
                   {mappedName ? (
                     <p>
                       Plantilla asignada: <code>{mappedName}</code> ·{" "}
-                      {mappedTemplate?.status ?? "No encontrada en Meta"}
+                      {mappedTemplate
+                        ? `${mappedTemplate.status} · ${mappedTemplate.category} · ${mappedTemplate.language}`
+                        : "No encontrada en Meta"}
                     </p>
                   ) : null}
                   {supported ? (
