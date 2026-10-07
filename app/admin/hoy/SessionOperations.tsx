@@ -87,6 +87,7 @@ export function SessionOperations({
   const [showAddStudent, setShowAddStudent] = useState(false);
   const [newWalkin, setNewWalkin] = useState(false);
   const [paymentItem, setPaymentItem] = useState<RosterItem | null>(null);
+  const [cancelItem, setCancelItem] = useState<RosterItem | null>(null);
   const [feedback, setFeedback] = useState<{
     kind: "success" | "error";
     message: string;
@@ -423,32 +424,9 @@ export function SessionOperations({
                         <details className="today-student-more">
                           <summary aria-label={`Más acciones para ${item.studentName}`}>⋮</summary>
                           <div>
-                            <form action={cancelReservationFromToday} className="today-correction-form">
-                              <input type="hidden" name="session_id" value={sessionId} />
-                              <input type="hidden" name="reservation_id" value={item.id} />
-                              <input type="hidden" name="return_date" value={returnDate} />
-                              {returnTo ? (
-                                <input type="hidden" name="return_to" value={returnTo} />
-                              ) : null}
-                              <label className="today-cancel-reason-label">
-                                Motivo de cancelación
-                                <select name="reason" required defaultValue="">
-                                  <option value="" disabled>
-                                    Selecciona un motivo
-                                  </option>
-                                  <option value="schedule_conflict">Cambio de horario</option>
-                                  <option value="health">Salud</option>
-                                  <option value="work_school">Trabajo o estudios</option>
-                                  <option value="transport">Transporte</option>
-                                  <option value="price">Precio</option>
-                                  <option value="lost_interest">Ya no le interesa</option>
-                                  <option value="booking_error">Reserva por error</option>
-                                  <option value="other">Otro</option>
-                                  <option value="prefer_not_say">Prefiere no decirlo</option>
-                                </select>
-                              </label>
-                              <button type="submit">Cancelar reserva</button>
-                            </form>
+                            <button type="button" onClick={() => setCancelItem(item)}>
+                              Cancelar reserva
+                            </button>
                           </div>
                         </details>
                       ) : (
@@ -486,6 +464,77 @@ export function SessionOperations({
             ) : (
               <div className="today-drawer-empty">Todavía no hay alumnas en esta clase.</div>
             )}
+          </section>
+        </div>
+      ) : null}
+
+      {cancelItem ? (
+        <div
+          className="today-payment-backdrop"
+          role="presentation"
+          onMouseDown={(event) => {
+            if (event.currentTarget === event.target) setCancelItem(null);
+          }}
+        >
+          <section
+            className="today-payment-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="cancel-reservation-title"
+          >
+            <header>
+              <div>
+                <span className="today-payment-eyebrow">CANCELAR RESERVA</span>
+                <h3 id="cancel-reservation-title">Cancelar a {cancelItem.studentName}</h3>
+                <p>Selecciona el motivo para registrar la cancelación.</p>
+              </div>
+              <button
+                type="button"
+                className="today-payment-close"
+                onClick={() => setCancelItem(null)}
+                aria-label="Cerrar"
+              >
+                ×
+              </button>
+            </header>
+
+            <form action={cancelReservationFromToday}>
+              <input type="hidden" name="session_id" value={sessionId} />
+              <input type="hidden" name="reservation_id" value={cancelItem.id} />
+              <input type="hidden" name="return_date" value={returnDate} />
+              {returnTo ? <input type="hidden" name="return_to" value={returnTo} /> : null}
+
+              <label className="today-payment-field">
+                <span>Motivo de cancelación</span>
+                <select name="reason" required defaultValue="">
+                  <option value="" disabled>
+                    Selecciona un motivo
+                  </option>
+                  <option value="schedule_conflict">Cambio de horario</option>
+                  <option value="health">Salud</option>
+                  <option value="work_school">Trabajo o estudios</option>
+                  <option value="transport">Transporte</option>
+                  <option value="price">Precio</option>
+                  <option value="lost_interest">Ya no le interesa</option>
+                  <option value="booking_error">Reserva por error</option>
+                  <option value="other">Otro</option>
+                  <option value="prefer_not_say">Prefiere no decirlo</option>
+                </select>
+              </label>
+
+              <div className="today-payment-actions">
+                <button
+                  type="button"
+                  className="today-payment-cancel"
+                  onClick={() => setCancelItem(null)}
+                >
+                  Volver
+                </button>
+                <button type="submit" className="today-payment-confirm">
+                  Confirmar cancelación
+                </button>
+              </div>
+            </form>
           </section>
         </div>
       ) : null}
