@@ -192,7 +192,7 @@ function formatSessionStart(variables: JsonObject) {
   }
 }
 
-function renderMessage(delivery: DeliveryRow): RenderedMessage {
+function renderMessageContent(delivery: DeliveryRow): RenderedMessage {
   const variables = delivery.template_variables ?? {};
   const policy = delivery.channel_policy ?? {};
 
@@ -480,6 +480,52 @@ function renderMessage(delivery: DeliveryRow): RenderedMessage {
       }
       throw new Error(`notification_template_unsupported:${delivery.template_key}`);
   }
+}
+
+const PUSH_EMOJI_BY_TEMPLATE: Record<string, string> = {
+  account_created: "👋",
+  attendance_no_show: "⚠️",
+  reservation_cancelled: "❌",
+  reservation_cancelled_by_student: "❌",
+  late_cancellation: "⏰",
+  class_reminder: "⏰",
+  reservation_confirmed: "✅",
+  reservation_modified: "📝",
+  waitlist_promoted: "🎉",
+  credit_restored: "🎁",
+  document_new_version: "📄",
+  documents_pending: "📝",
+  evaluation_completed: "🏅",
+  evaluation_invitation: "✨",
+  evaluation_reminder: "📝",
+  evaluation_scheduled: "📅",
+  guardian_signature_pending: "✍️",
+  package_activated: "🎉",
+  package_expired: "⌛",
+  package_expiring: "⏳",
+  password_reset: "🔐",
+  payment_confirmed: "✅",
+  payment_pending: "💳",
+  session_cancelled_by_studio: "📢",
+  session_coach_changed: "👩‍🏫",
+  class_cancelled_coach: "📢",
+  class_cancelled_student: "❌",
+  class_rescheduled: "🗓️",
+  studio_closure: "📢",
+  waitlist_expired: "⏳",
+};
+
+function withPushEmoji(title: string, templateKey: string) {
+  const value = title.trim();
+  if (/^\p{Extended_Pictographic}/u.test(value)) return value;
+  return `${PUSH_EMOJI_BY_TEMPLATE[templateKey] ?? "📨"} ${value}`;
+}
+
+function renderMessage(delivery: DeliveryRow): RenderedMessage {
+  const message = renderMessageContent(delivery);
+  return delivery.channel_key === "push"
+    ? { ...message, title: withPushEmoji(message.title, delivery.template_key) }
+    : message;
 }
 
 async function loadDelivery(adminClient: SupabaseClient, deliveryId: string): Promise<DeliveryRow> {
