@@ -151,8 +151,10 @@ export function SessionOperations({
         setFeedback({
           kind: "error",
           message:
-            error === "correction_reason_required"
-              ? "La corrección requiere un motivo."
+            error === "cancel_reason_required"
+              ? "Selecciona un motivo para cancelar la reserva."
+              : error === "correction_reason_required"
+                ? "La corrección requiere un motivo."
               : error === "attendance_not_persisted"
                 ? "La corrección no se guardó. Intenta nuevamente."
                 : error === "attendance_payment_not_persisted"
@@ -428,6 +430,23 @@ export function SessionOperations({
                               {returnTo ? (
                                 <input type="hidden" name="return_to" value={returnTo} />
                               ) : null}
+                              <label className="today-cancel-reason-label">
+                                Motivo de cancelación
+                                <select name="reason" required defaultValue="">
+                                  <option value="" disabled>
+                                    Selecciona un motivo
+                                  </option>
+                                  <option value="schedule_conflict">Cambio de horario</option>
+                                  <option value="health">Salud</option>
+                                  <option value="work_school">Trabajo o estudios</option>
+                                  <option value="transport">Transporte</option>
+                                  <option value="price">Precio</option>
+                                  <option value="lost_interest">Ya no le interesa</option>
+                                  <option value="booking_error">Reserva por error</option>
+                                  <option value="other">Otro</option>
+                                  <option value="prefer_not_say">Prefiere no decirlo</option>
+                                </select>
+                              </label>
                               <button type="submit">Cancelar reserva</button>
                             </form>
                           </div>
