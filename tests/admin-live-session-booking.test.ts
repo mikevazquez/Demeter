@@ -9,9 +9,7 @@ function source(path: string) {
 
 describe("admin live class booking", () => {
   it("limits late booking to schedule staff while the session is in progress", () => {
-    const migration = source(
-      "supabase/migrations/20261007013000_admin_live_session_booking.sql",
-    );
+    const migration = source("supabase/migrations/20261007013000_admin_live_session_booking.sql");
 
     expect(migration).toContain("v_is_staff := private.has_capability");
     expect(migration).toContain("not v_is_staff");
@@ -21,9 +19,7 @@ describe("admin live class booking", () => {
   });
 
   it("preserves the production payment-pending package guard", () => {
-    const migration = source(
-      "supabase/migrations/20261007013000_admin_live_session_booking.sql",
-    );
+    const migration = source("supabase/migrations/20261007013000_admin_live_session_booking.sql");
 
     expect(migration).toContain("v_has_blocked_acquisition");
     expect(migration).toContain("payment_pending");
