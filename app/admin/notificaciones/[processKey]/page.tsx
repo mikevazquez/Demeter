@@ -252,7 +252,8 @@ export default async function NotificationProcessPage({
           (template) =>
             template.name === name &&
             template.language === metaDiagnostics.templateLanguage &&
-            template.status === "APPROVED",
+            template.status === "APPROVED" &&
+            template.variableCount === META_WHATSAPP_TEMPLATE_PARAMETERS[templateKey].length,
         ),
       );
     });
