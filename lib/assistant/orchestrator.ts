@@ -349,7 +349,7 @@ function confirmationReply(toolName: string, result: Record<string, unknown>) {
         : result.access_already_available === true
           ? " Tu acceso a la app ya estaba habilitado."
           : "";
-      return `Listo. Tu reserva de ${String(summary.activity ?? "la clase")} quedó confirmada para el ${formatDateForReply(summary.date)}, de ${formatTimeForReply(summary.starts_at_local)} a ${formatTimeForReply(summary.ends_at_local)}.${accessText} ¿El pago de ${price} lo harás en efectivo en el estudio o por transferencia?`;
+      return `¡Listo! 😊 Tu reserva de ${String(summary.activity ?? "la clase")} quedó confirmada.\n\n📅 ${formatDateForReply(summary.date)}\n🕐 ${formatTimeForReply(summary.starts_at_local)} a ${formatTimeForReply(summary.ends_at_local)}\n💳 Primera clase: ${price}.${accessText ? `\n\n${accessText.trim()}` : ""}\n\n¿Prefieres pagar los ${price} en efectivo en el estudio o por transferencia?`;
     }
 
     return `Listo. Tu reserva de ${String(summary.activity ?? "la clase")} quedó confirmada para el ${formatDateForReply(summary.date)}, de ${formatTimeForReply(summary.starts_at_local)} a ${formatTimeForReply(summary.ends_at_local)}.`;
