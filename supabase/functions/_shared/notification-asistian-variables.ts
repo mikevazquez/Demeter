@@ -200,6 +200,33 @@ export function buildAsistianVariables(
         hora: starts.hora,
       };
 
+    case "challenge_invitation":
+      return {
+        nombre: safeText(variables.recipient_name) ?? "Alumna",
+        reto: safeText(variables.challenge_name) ?? "un nuevo reto",
+      };
+
+    case "workshop_event":
+      return {
+        nombre: safeText(variables.recipient_name) ?? "Alumna",
+        evento: safeText(variables.event_name) ?? "un taller especial",
+        fecha: formatDateOnly(variables.event_date, variables.studio_timezone) ?? "próximamente",
+      };
+
+    case "referral_invitation":
+      return { nombre: safeText(variables.recipient_name) ?? "Alumna" };
+
+    case "package_recovery_1":
+      return {
+        nombre: safeText(variables.recipient_name) ?? "Alumna",
+        paquete: safeText(variables.previous_package_name) ?? "tus clases",
+        fecha_vencimiento:
+          formatDateOnly(variables.expires_on, variables.studio_timezone) ?? "la fecha indicada",
+      };
+
+    case "package_recovery_2":
+      return { nombre: safeText(variables.recipient_name) ?? "Alumna" };
+
     case "class_rescheduled": {
       const oldStarts = formatNotificationDateTimeParts(
         variables.old_starts_at,
