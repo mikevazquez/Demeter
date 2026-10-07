@@ -780,7 +780,35 @@ export async function POST(request: Request) {
     const inboundTurnId = String(prepared.inbound_turn_id ?? "").trim();
     const studentId = String(prepared.student_id ?? "").trim() || null;
     const crmContactId = String(prepared.crm_contact_id ?? "").trim() || null;
+    const crmConversationId = String(prepared.crm_conversation_id ?? "").trim() || null;
     const identityNeedsName = prepared.identity_needs_name === true;
+
+    if (message.referral && crmConversationId) {
+      const { error: attributionError } = await supabase.rpc(
+        "service_record_meta_whatsapp_referral",
+        {
+          target_studio_id: studioId,
+          target_crm_conversation_id: crmConversationId,
+          target_crm_contact_id: crmContactId,
+          target_referral: {
+            source_url: message.referral.sourceUrl,
+            source_type: message.referral.sourceType,
+            source_id: message.referral.sourceId,
+            headline: message.referral.headline,
+            body: message.referral.body,
+            media_type: message.referral.mediaType,
+            ctwa_clid: message.referral.ctwaClid,
+          },
+        },
+      );
+
+      if (attributionError) {
+        console.warn("demi_meta_webhook", {
+          stage: "attribution",
+          outcome: "referral_persist_failed",
+        });
+      }
+    }
 
     if (!conversationId || !inboundTurnId) {
       retryableFailure = true;
