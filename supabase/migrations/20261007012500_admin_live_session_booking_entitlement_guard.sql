@@ -120,6 +120,7 @@ begin
 end;
 $function$
 
+;
 
 revoke all on function public.booking_eligibility(uuid, uuid) from public, anon;
 grant execute on function public.booking_eligibility(uuid, uuid) to authenticated;
