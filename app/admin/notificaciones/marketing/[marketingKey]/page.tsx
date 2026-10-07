@@ -243,6 +243,14 @@ export default async function MarketingDetailPage({
             </div>
           </div>
 
+          {item.whatsappTemplateKey ? (
+            <div className="notification-info-box">
+              WhatsApp utilizará la plantilla de Meta <strong>{item.whatsappTemplateName}</strong>
+              {" · "}es_MX. El contenido aprobado se administra en Meta; Studio Flow completa sus
+              variables al ocurrir el evento.
+            </div>
+          ) : null}
+
           <div className="notification-message-form marketing-message-editor">
             <label>
               <span>Título</span>
