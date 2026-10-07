@@ -12,6 +12,7 @@ import {
   verifyMetaWebhookToken,
   type MetaWhatsAppWebhookConfig,
 } from "@/lib/assistant/meta-whatsapp-channel";
+import { extractMetaDeliveryStatuses, persistMetaDeliveryStatuses } from "@/lib/assistant/meta-delivery-status";
 import { createServiceClient } from "@/lib/supabase/service";
 
 export const runtime = "nodejs";
@@ -989,6 +990,29 @@ export async function POST(request: Request) {
     body = JSON.parse(rawBody);
   } catch {
     return json({ error: "invalid_json" }, 400);
+  }
+
+  // Meta sends outbound delivery receipts separately from inbound messages.
+  // Process signed receipts even when Demi is paused or in shadow mode.
+  const deliveryStatuses = extractMetaDeliveryStatuses(body);
+  if (deliveryStatuses.length) {
+    try {
+      const result = await persistMetaDeliveryStatuses(
+        supabase,
+        studioId,
+        deliveryStatuses,
+        webhookConfig.phoneNumberId,
+        webhookConfig.wabaId,
+      );
+      console.info("demi_meta_delivery_receipts", {
+        received: deliveryStatuses.length,
+        updated: result.updated,
+        ignored: result.ignored,
+      });
+    } catch {
+      // Let Meta retry without acknowledging a receipt that was not persisted.
+      return json({ error: "delivery_receipt_persist_failed" }, 503);
+    }
   }
 
   const messages = extractMetaInboundMessages(body);
