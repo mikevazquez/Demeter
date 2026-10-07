@@ -24,6 +24,16 @@
 .demi-settings-page .demi-kpis strong {
   color: #242133;
 }
+.demi-settings-page .demi-cost-note {
+  width: min(1180px, 100%);
+  margin: -0.15rem auto 1.25rem;
+  color: #655d72;
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+.demi-settings-page .demi-cost-note a {
+  color: #5e319b;
+}
 .demi-settings-page .demi-workbench {
   width: min(1180px, 100%);
   margin-inline: auto;
