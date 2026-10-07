@@ -123,6 +123,15 @@ export default async function MarketingDetailPage({
   const eventRules = (snapshot.rules ?? []).filter((rule) =>
     item.eventDrivenRuleKeys?.includes(rule.rule_key),
   );
+  const packageRecoveryFirstDelay = Math.max(
+    1,
+    Math.round(
+      Number(
+        (snapshot.rules ?? []).find((rule) => rule.rule_key === "marketing.package_recovery_1")
+          ?.timing_config.days_after ?? 7,
+      ),
+    ),
+  );
   const whatsappTemplateKey = item.whatsappTemplateKey;
   const whatsappTemplateName = whatsappTemplateKey
     ? metaDiagnostics.templateMappings[whatsappTemplateKey]
@@ -266,30 +275,13 @@ export default async function MarketingDetailPage({
                     name="first_delay_days"
                     min={1}
                     max={90}
-                    defaultValue={Math.max(
-                      1,
-                      Math.round(
-                        Number(
-                          eventRules.find((rule) => rule.rule_key.endsWith("_1"))?.timing_config
-                            ?.days_after ?? 7,
-                        ),
-                      ),
-                    )}
+                    defaultValue={packageRecoveryFirstDelay}
                     disabled={!canManage}
                   />
                 </label>
                 <p className="marketing-runtime-note">
                   El seguimiento se programará automáticamente al doble:{" "}
-                  {Math.max(
-                    1,
-                    Math.round(
-                      Number(
-                        eventRules.find((rule) => rule.rule_key.endsWith("_1"))?.timing_config
-                          ?.days_after ?? 7,
-                      ),
-                    ),
-                  ) * 2}{" "}
-                  días después del vencimiento.
+                  {packageRecoveryFirstDelay * 2} días después del vencimiento.
                 </p>
                 {canManage ? <button type="submit">Guardar tiempos</button> : null}
               </form>
