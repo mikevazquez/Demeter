@@ -1280,6 +1280,9 @@ async function executeBooking(ctx: AssistantActionToolContext, args: ExecuteBook
     access_error: accessProvision?.error ?? null,
     summary: {
       ...sessionInfo.summary,
+      ...(trialException && asObject(pending.confirmation_summary)
+        ? asObject(pending.confirmation_summary)
+        : {}),
       commercial_status: finalCommercialStatus,
       payment_pending: finalCommercialStatus === "payment_pending",
       trial_booking: trialException,
