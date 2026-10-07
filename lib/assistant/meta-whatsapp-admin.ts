@@ -6,6 +6,7 @@ import {
 } from "@/lib/assistant/meta-whatsapp-channel";
 import { normalizeMexicanPhone } from "@/lib/phone";
 import { createServiceClient } from "@/lib/supabase/service";
+import { validateMetaWhatsAppTemplateDraft } from "@/lib/notifications/meta-template-catalog";
 
 type JsonObject = Record<string, unknown>;
 
@@ -14,6 +15,12 @@ export type MetaApprovedTemplate = {
   language: string;
   category: string | null;
   testReady: boolean;
+};
+
+export type MetaTemplateStatus = MetaApprovedTemplate & {
+  status: string;
+  rejectedReason: string | null;
+  variableCount: number;
 };
 
 export type MetaWhatsAppAdminDiagnostics = {
@@ -25,6 +32,9 @@ export type MetaWhatsAppAdminDiagnostics = {
   qualityRating: string | null;
   subscribedApps: string[];
   approvedTemplates: MetaApprovedTemplate[];
+  templates: MetaTemplateStatus[];
+  templateMappings: Record<string, string>;
+  templateLanguage: string;
   errorCode: string | null;
 };
 
@@ -133,6 +143,21 @@ function componentNeedsParameters(value: unknown) {
   return value.some(visit);
 }
 
+function componentVariableCount(value: unknown) {
+  const numbers = new Set<number>();
+  const visit = (input: unknown) => {
+    if (typeof input === "string") {
+      for (const match of input.matchAll(/{{\s*(\d+)\s*}}/g)) numbers.add(Number(match[1]));
+    } else if (Array.isArray(input)) {
+      input.forEach(visit);
+    } else if (isObject(input)) {
+      Object.values(input).forEach(visit);
+    }
+  };
+  visit(value);
+  return numbers.size;
+}
+
 function approvedTemplates(body: JsonObject): MetaApprovedTemplate[] {
   const data = Array.isArray(body.data) ? body.data : [];
   const templates: MetaApprovedTemplate[] = [];
@@ -157,6 +182,32 @@ function approvedTemplates(body: JsonObject): MetaApprovedTemplate[] {
   );
 }
 
+function templatesWithStatus(body: JsonObject): MetaTemplateStatus[] {
+  const data = Array.isArray(body.data) ? body.data : [];
+  return data
+    .flatMap((item) => {
+      const row = isObject(item) ? item : {};
+      const name = textValue(row.name);
+      const language = textValue(row.language);
+      const status = textValue(row.status)?.toUpperCase();
+      if (!name || !language || !status) return [];
+      return [
+        {
+          name,
+          language,
+          status,
+          category: textValue(row.category),
+          testReady: !componentNeedsParameters(row.components),
+          rejectedReason: textValue(row.rejected_reason) ?? textValue(row.reason),
+          variableCount: componentVariableCount(row.components),
+        },
+      ];
+    })
+    .sort((left, right) =>
+      `${left.name}:${left.language}`.localeCompare(`${right.name}:${right.language}`),
+    );
+}
+
 export async function getMetaWhatsAppAdminDiagnostics(
   studioId: string,
 ): Promise<MetaWhatsAppAdminDiagnostics> {
@@ -171,7 +222,7 @@ export async function getMetaWhatsAppAdminDiagnostics(
       graphRequest(config, `${config.wabaId}/subscribed_apps?limit=50`),
       graphRequest(
         config,
-        `${config.wabaId}/message_templates?limit=100&fields=name,status,language,category,components`,
+        `${config.wabaId}/message_templates?limit=100&fields=name,status,language,category,components,rejected_reason`,
       ),
     ]);
 
@@ -184,6 +235,9 @@ export async function getMetaWhatsAppAdminDiagnostics(
       qualityRating: textValue(phone.quality_rating),
       subscribedApps: subscribedAppNames(subscriptions),
       approvedTemplates: approvedTemplates(templates),
+      templates: templatesWithStatus(templates),
+      templateMappings: config.templates,
+      templateLanguage: config.languageCode,
       errorCode: null,
     };
   } catch (error) {
@@ -196,9 +250,43 @@ export async function getMetaWhatsAppAdminDiagnostics(
       qualityRating: null,
       subscribedApps: [],
       approvedTemplates: [],
+      templates: [],
+      templateMappings: {},
+      templateLanguage: "es_MX",
       errorCode: error instanceof Error ? error.message : "meta_admin_check_failed",
     };
   }
+}
+
+export async function submitMetaWhatsAppTemplate(input: {
+  studioId: string;
+  name: string;
+  languageCode: string;
+  category: "UTILITY" | "MARKETING";
+  body: string;
+  expectedVariables: number;
+}) {
+  const config = await loadConfig(input.studioId);
+  const name = input.name.trim().toLowerCase();
+  const languageCode = input.languageCode.trim();
+  const body = input.body.trim();
+
+  const validationError = validateMetaWhatsAppTemplateDraft({ ...input, name, languageCode, body });
+  if (validationError) throw new Error(validationError);
+
+  const response = await graphRequest(config, `${config.wabaId}/message_templates`, {
+    method: "POST",
+    body: JSON.stringify({
+      name,
+      language: languageCode,
+      category: input.category,
+      components: [{ type: "BODY", text: body }],
+    }),
+  });
+
+  const id = textValue(response.id);
+  if (!id) throw new Error("meta_template_submission_id_missing");
+  return { id, status: textValue(response.status)?.toUpperCase() ?? "PENDING" };
 }
 
 export async function subscribeMetaWhatsAppApp(studioId: string) {
