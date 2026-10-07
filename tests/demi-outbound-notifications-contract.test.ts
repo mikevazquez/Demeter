@@ -14,6 +14,12 @@ describe("Demi outbound WhatsApp notifications", () => {
   );
   const processPage = source("app/admin/notificaciones/[processKey]/page.tsx");
   const notificationsPage = source("app/admin/notificaciones/page.tsx");
+  const marketingCatalog = source("lib/notifications/admin-catalog.ts");
+  const marketingPage = source("app/admin/notificaciones/marketing/[marketingKey]/page.tsx");
+  const marketingTemplateMigration = source(
+    "supabase/migrations/20261007100000_meta_whatsapp_marketing_templates.sql",
+  );
+  const deliveryWorker = source("supabase/functions/notification-delivery-worker/index.ts");
 
   it("supports Meta templates for class cancellation and schedule changes", () => {
     expect(metaTemplate).toContain('"class_cancelled_student"');
@@ -41,5 +47,36 @@ describe("Demi outbound WhatsApp notifications", () => {
     expect(processPage).not.toContain("Plantilla administrada en Assistian");
     expect(notificationsPage).not.toContain("Mensajes mediante Assistian");
     expect(notificationsPage).toContain("proveedor conectado");
+  });
+
+  it("maps the five approved marketing templates to their internal delivery keys", () => {
+    for (const [key, name] of [
+      ["challenge_invitation", "demeter_reto_invitation"],
+      ["workshop_event", "demeter_evento_taller"],
+      ["referral_invitation", "demeter_referidos"],
+      ["package_recovery_1", "demeter_recuperacion_paquete_1"],
+      ["package_recovery_2", "demeter_recuperacion_paquete_2"],
+    ]) {
+      expect(metaTemplate).toContain(`"${key}"`);
+      expect(marketingCatalog).toContain(`whatsappTemplateKey: "${key}"`);
+      expect(marketingCatalog).toContain(`whatsappTemplateName: "${name}"`);
+      expect(marketingTemplateMigration).toContain(`'${key}'`);
+      expect(variables).toContain(`case "${key}"`);
+      expect(deliveryWorker).toContain(`case "${key}"`);
+    }
+    expect(marketingPage).toContain("item.whatsappTemplateName");
+    expect(metaTemplate).toContain('challenge_invitation: ["nombre", "reto"]');
+    expect(metaTemplate).toContain('workshop_event: ["nombre", "evento", "fecha"]');
+    expect(metaTemplate).toContain(
+      'package_recovery_1: ["nombre", "paquete", "fecha_vencimiento"]',
+    );
+  });
+
+  it("keeps the two package recovery messages as independent paused campaign drafts", () => {
+    expect(marketingCatalog).toContain('key: "package-recovery-1"');
+    expect(marketingCatalog).toContain('key: "package-recovery-2"');
+    expect(marketingCatalog).toContain('automationCodes: ["AUT-CAT-15"]');
+    expect(marketingCatalog).toContain('automationCodes: ["AUT-CAT-16"]');
+    expect(marketingCatalog).toContain("planned: true");
   });
 });
