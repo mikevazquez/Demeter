@@ -3158,8 +3158,20 @@ async function prepareBankTransferPurchase(
 }
 
 async function escalateToHuman(ctx: AssistantActionToolContext, args: Record<string, unknown>) {
-  const reasonCode = String(args.reason_code ?? "human_review").trim() || "human_review";
+  const reasonCode = String(args.reason_code ?? "").trim();
   const note = String(args.note ?? "").trim() || null;
+  if (!reasonCode) return { ok: false, error: "handoff_reason_required" };
+
+  const { data: policy, error: policyError } = await ctx.supabase
+    .from("assistant_handoff_policies")
+    .select("reason_code,label,enabled,blocking")
+    .eq("studio_id", ctx.studio.id)
+    .eq("reason_code", reasonCode)
+    .maybeSingle();
+
+  if (policyError || !policy || policy.enabled !== true) {
+    return { ok: false, error: "handoff_reason_not_enabled", reason_code: reasonCode };
+  }
 
   const { data, error } = await ctx.supabase.rpc("assistant_create_handoff", {
     target_studio_id: ctx.studio.id,
@@ -3174,7 +3186,7 @@ async function escalateToHuman(ctx: AssistantActionToolContext, args: Record<str
     return { ok: false, error: "human_handoff_failed" };
   }
 
-  return { ok: true, status: "human_handoff", reason_code: reasonCode };
+  return { ok: true, status: "human_handoff", reason_code: reasonCode, blocking: policy.blocking === true };
 }
 
 async function recordTrialPaymentPreference(
