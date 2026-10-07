@@ -7,6 +7,7 @@ import { getAdminContext } from "@/lib/auth/admin-context";
 import { runAssistantTurn } from "@/lib/assistant/orchestrator";
 import { validPrompt, type TestPersona } from "@/lib/assistant/prompt-workbench";
 import { createTestSimulation, type TestSimulation } from "@/lib/assistant/test-simulation";
+import { proposeDemiAdminPlan, type DemiAdminPlan } from "@/lib/assistant/admin-copilot";
 
 const hash = (text: string) => createHash("sha256").update(text).digest("hex");
 
@@ -237,4 +238,137 @@ export async function reviewDemiLearning(proposalId: string, decision: "approved
   if (error) return { ok: false as const, error: "request_failed" };
   revalidatePath("/admin/integraciones/demi");
   return { ok: true as const, proposedInstruction: decision === "approved" ? proposal.proposed_instruction : null };
+}
+
+
+export async function proposeDemiAdminChange(instructionInput: string) {
+  const { supabase, studio, user } = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
+  const instruction = String(instructionInput ?? "").trim();
+  if (!instruction || instruction.length > 4000)
+    return { ok: false as const, error: "invalid_message" };
+
+  const [
+    { data: config },
+    { data: trialPolicy },
+    { data: handoffPolicies },
+    { data: products },
+    { data: activities },
+    { data: managedRules },
+  ] = await Promise.all([
+    supabase
+      .from("assistant_configs")
+      .select("assistant_name,model,reasoning_effort")
+      .eq("studio_id", studio.id)
+      .maybeSingle(),
+    supabase
+      .from("trial_booking_policies")
+      .select("enabled,allow_without_enrollment_until_first_attendance,max_active_trial_reservations,prepayment_after_no_shows,require_payment_before_attendance,require_payment_before_booking")
+      .eq("studio_id", studio.id)
+      .maybeSingle(),
+    supabase
+      .from("assistant_handoff_policies")
+      .select("reason_code,label,enabled,blocking")
+      .eq("studio_id", studio.id)
+      .order("sort_order", { ascending: true }),
+    supabase
+      .from("product_templates")
+      .select("name,price_minor,currency,active,assistant_visible,online_purchasable,product_type")
+      .eq("studio_id", studio.id)
+      .order("name", { ascending: true }),
+    supabase
+      .from("class_templates")
+      .select("name,active,drop_in_price_minor")
+      .eq("studio_id", studio.id)
+      .eq("active", true)
+      .order("name", { ascending: true }),
+    supabase
+      .from("assistant_admin_rules")
+      .select("rule_key,category,instruction,enabled")
+      .eq("studio_id", studio.id)
+      .order("updated_at", { ascending: false }),
+  ]);
+
+  if (!config) return { ok: false as const, error: "assistant_not_configured" };
+
+  try {
+    const plan = await proposeDemiAdminPlan({
+      instruction,
+      model: config.model,
+      state: {
+        studio: { name: studio.name, currency: studio.currency },
+        trial_policy: trialPolicy,
+        handoff_policies: handoffPolicies ?? [],
+        products: products ?? [],
+        activities: activities ?? [],
+        managed_rules: managedRules ?? [],
+      },
+    });
+
+    const { data: request, error } = await supabase
+      .from("assistant_admin_change_requests")
+      .insert({
+        studio_id: studio.id,
+        instruction,
+        summary: plan.summary,
+        plan,
+        status: "proposed",
+        created_by: user.id,
+      })
+      .select("id,instruction,summary,plan,status,created_at")
+      .single();
+    if (error || !request) return { ok: false as const, error: "request_failed" };
+    revalidatePath("/admin/integraciones/demi");
+    return { ok: true as const, request: { ...request, plan: request.plan as DemiAdminPlan } };
+  } catch (error) {
+    const code = error instanceof Error ? error.message : "request_failed";
+    return {
+      ok: false as const,
+      error: ["openai_not_configured", "admin_plan_failed", "admin_plan_invalid"].includes(code)
+        ? code
+        : "request_failed",
+    };
+  }
+}
+
+export async function applyDemiAdminChange(requestIdInput: string) {
+  const { supabase, studio } = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
+  const requestId = String(requestIdInput ?? "").trim();
+  if (!requestId) return { ok: false as const, error: "request_failed" };
+
+  const { data, error } = await supabase.rpc("admin_apply_demi_change_plan", {
+    p_studio_id: studio.id,
+    p_request_id: requestId,
+  });
+  const result = data as { ok?: boolean; error?: string } | null;
+  if (error || !result?.ok) {
+    await supabase
+      .from("assistant_admin_change_requests")
+      .update({
+        status: "failed",
+        error_code: result?.error ?? "request_failed",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("studio_id", studio.id)
+      .eq("id", requestId)
+      .eq("status", "proposed");
+    revalidatePath("/admin/integraciones/demi");
+    return { ok: false as const, error: "request_failed" };
+  }
+
+  revalidatePath("/admin/integraciones/demi");
+  return { ok: true as const };
+}
+
+export async function rejectDemiAdminChange(requestIdInput: string) {
+  const { supabase, studio } = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
+  const requestId = String(requestIdInput ?? "").trim();
+  const { error } = await supabase
+    .from("assistant_admin_change_requests")
+    .update({ status: "rejected", updated_at: new Date().toISOString() })
+    .eq("studio_id", studio.id)
+    .eq("id", requestId)
+    .eq("status", "proposed");
+  if (error) return { ok: false as const, error: "request_failed" };
+  revalidatePath("/admin/integraciones/demi");
+  return { ok: true as const };
 }
