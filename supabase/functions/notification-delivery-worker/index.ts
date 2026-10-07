@@ -590,6 +590,37 @@ async function loadDelivery(adminClient: SupabaseClient, deliveryId: string): Pr
   } as DeliveryRow;
 }
 
+async function packageRecoveryStillEligible(adminClient: SupabaseClient, delivery: DeliveryRow) {
+  if (!delivery.template_key.startsWith("package_recovery_")) return true;
+  const acquisitionId = safeUuid(delivery.template_variables.acquisition_id);
+  const studentId = delivery.recipient_entity_id;
+  if (!acquisitionId || !studentId) return false;
+
+  const { data: original, error: originalError } = await adminClient
+    .from("product_acquisitions")
+    .select("id,created_at")
+    .eq("id", acquisitionId)
+    .eq("studio_id", delivery.studio_id)
+    .eq("student_id", studentId)
+    .maybeSingle();
+
+  if (originalError) throw new Error("package_recovery_eligibility_lookup_failed");
+  if (!original) return false;
+
+  const { data: renewed, error: renewedError } = await adminClient
+    .from("product_acquisitions")
+    .select("id")
+    .eq("studio_id", delivery.studio_id)
+    .eq("student_id", studentId)
+    .eq("status", "active")
+    .is("refunded_at", null)
+    .gt("created_at", original.created_at)
+    .limit(1);
+
+  if (renewedError) throw new Error("package_recovery_eligibility_lookup_failed");
+  return (renewed ?? []).length === 0;
+}
+
 async function sendInbox(
   adminClient: SupabaseClient,
   delivery: DeliveryRow,
@@ -1127,6 +1158,25 @@ async function processDelivery(
     }
 
     attemptId = String(startedAttempt);
+
+    if (!(await packageRecoveryStillEligible(adminClient, delivery))) {
+      const { data, error } = await adminClient.rpc(
+        "system_mark_notification_delivery_attempt_skipped",
+        {
+          p_attempt_id: attemptId,
+          p_reason_code: "package_renewed_before_recovery",
+          p_reason_safe: "A newer active package was purchased before recovery delivery.",
+          p_response_snapshot: { eligibility: "renewed_package" },
+        },
+      );
+      if (error || data !== true) throw new Error("package_recovery_delivery_skip_failed");
+      return {
+        ok: true,
+        deliveryId: delivery.id,
+        channel: delivery.channel_key,
+        outcome: "skipped",
+      };
+    }
 
     const message = renderMessage(delivery);
 
