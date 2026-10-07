@@ -12,6 +12,12 @@ describe("KIOSCO-01 check-in contracts", () => {
   const attendedFeedMigration = source(
     "supabase/migrations/20260922183000_kiosco01_attended_active_feed.sql",
   );
+  const scanWindowMigration = source(
+    "supabase/migrations/20261007025001_checkin_scan_window_20m_before_30m_after.sql",
+  );
+  const tokenWindowMigration = source(
+    "supabase/migrations/20261007025003_student_qr_checkin_window_metadata.sql",
+  );
 
   it("creates one opaque token per valid reservation and never models waitlist as a QR source", () => {
     expect(migration).toContain("reservation_checkin_tokens");
@@ -32,11 +38,26 @@ describe("KIOSCO-01 check-in contracts", () => {
     expect(migration).toContain("new.status = 'cancelled'");
   });
 
-  it("uses the approved -30 minute to session-end check-in window", () => {
-    expect(migration).toContain("v_session.starts_at - interval '30 minutes'");
-    expect(migration).toContain("now() >= v_session.ends_at");
-    expect(migration).toContain("'too_early'");
-    expect(migration).toContain("'session_finished'");
+  it("uses the 20-minute before to 30-minute after-start QR window", () => {
+    expect(scanWindowMigration).toContain("v_checked_in_at := clock_timestamp()");
+    expect(scanWindowMigration).toContain(
+      "v_checked_in_at < v_session.starts_at - interval '20 minutes'",
+    );
+    expect(scanWindowMigration).toContain(
+      "'available_at', v_session.starts_at - interval '20 minutes'",
+    );
+    expect(scanWindowMigration).toContain(
+      "v_checked_in_at >= v_session.starts_at + interval '30 minutes'",
+    );
+    expect(scanWindowMigration).not.toContain("now() >= v_session.ends_at");
+    expect(scanWindowMigration).toContain("'too_early'");
+    expect(scanWindowMigration).toContain("'session_finished'");
+    expect(tokenWindowMigration).toContain(
+      "'check_in_opens_at', v_session.starts_at - interval '20 minutes'",
+    );
+    expect(tokenWindowMigration).toContain(
+      "'check_in_closes_at', v_session.starts_at + interval '30 minutes'",
+    );
   });
 
   it("marks attendance idempotently and emits one domain event", () => {

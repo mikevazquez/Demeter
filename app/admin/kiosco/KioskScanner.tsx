@@ -224,7 +224,8 @@ export function KioskScanner({ studioName }: { studioName: string }) {
               Escanea tu código QR
             </h1>
             <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-zinc-400 sm:text-base">
-              Acerca el código de tu reserva a la cámara para registrar tu asistencia.
+              El check-in se habilita 20 minutos antes de iniciar cada clase y se cierra 30 minutos
+              después. Acerca el código QR de tu reserva a la cámara.
             </p>
           </div>
 
