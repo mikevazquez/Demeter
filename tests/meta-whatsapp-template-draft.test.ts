@@ -2,8 +2,18 @@ import { describe, expect, it } from "vitest";
 
 import {
   metaTemplateKeyForNotification,
+  metaWhatsAppStatusLabel,
   validateMetaWhatsAppTemplateDraft,
 } from "../lib/notifications/meta-template-catalog";
+
+describe("Meta WhatsApp template status labels", () => {
+  it("shows only the approved, pending, or rejected state", () => {
+    expect(metaWhatsAppStatusLabel("APPROVED")).toBe("Aprobada");
+    expect(metaWhatsAppStatusLabel("PENDING_REVIEW")).toBe("Pendiente");
+    expect(metaWhatsAppStatusLabel("REJECTED")).toBe("Rechazada");
+    expect(metaWhatsAppStatusLabel("approved")).toBe("Aprobada");
+  });
+});
 
 describe("Meta WhatsApp template draft validation", () => {
   it("covers every event type currently configured in the studio sandbox", () => {
