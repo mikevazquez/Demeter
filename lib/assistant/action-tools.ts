@@ -609,6 +609,16 @@ async function prepareBooking(ctx: AssistantActionToolContext, args: PrepareBook
     Boolean(ctx.crmContactId && !studentId) || resolvedStudentType === "trial";
 
   if (shouldEvaluateTrial) {
+    const { data: trialPolicy, error: trialPolicyError } = await ctx.supabase
+      .from("trial_booking_policies")
+      .select("require_payment_before_booking")
+      .eq("studio_id", ctx.studio.id)
+      .maybeSingle();
+    if (trialPolicyError) {
+      return { ok: false, error: "trial_booking_policy_unavailable" };
+    }
+    const requirePaymentBeforeBooking = trialPolicy?.require_payment_before_booking === true;
+
     const { data: preview, error: previewError } = await ctx.supabase.rpc(
       "assistant_trial_booking_preview",
       {
@@ -718,6 +728,7 @@ async function prepareBooking(ctx: AssistantActionToolContext, args: PrepareBook
       commercial_status: "payment_pending",
       payment_pending: true,
       trial_booking: true,
+      payment_before_booking: requirePaymentBeforeBooking,
       no_show_count: Number(previewObject.no_show_count ?? 0),
       prepayment_threshold: Number(previewObject.prepayment_threshold ?? 2),
       amount_minor:
@@ -1058,6 +1069,110 @@ async function executeBooking(ctx: AssistantActionToolContext, args: ExecuteBook
   let finalStudentId = studentId;
 
   if (trialException) {
+    const { data: trialPolicy, error: trialPolicyError } = await ctx.supabase
+      .from("trial_booking_policies")
+      .select("require_payment_before_booking")
+      .eq("studio_id", ctx.studio.id)
+      .maybeSingle();
+
+    if (trialPolicyError) {
+      return { ok: false, error: "trial_booking_policy_unavailable" };
+    }
+
+    if (trialPolicy?.require_payment_before_booking === true) {
+      if (!ctx.serviceMode) {
+        return { ok: false, error: "trial_prepay_requires_service_mode" };
+      }
+
+      let paymentStudentId = studentId;
+      if (!paymentStudentId) {
+        const { data: ensuredStudent, error: ensureError } = await ctx.supabase.rpc(
+          "assistant_ensure_trial_student",
+          {
+            target_studio_id: ctx.studio.id,
+            target_crm_contact_id: crmContactId,
+          },
+        );
+        const ensured = asObject(ensuredStudent);
+        paymentStudentId = String(ensured?.student_id ?? "") || null;
+        if (ensureError || !ensured || ensured.ok !== true || !paymentStudentId) {
+          return { ok: false, error: "trial_identity_provision_failed" };
+        }
+      }
+
+      if (ctx.studentId !== paymentStudentId) {
+        ctx.studentId = paymentStudentId;
+        await ctx.supabase
+          .from("assistant_conversations")
+          .update({
+            student_id: paymentStudentId,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", ctx.conversationId)
+          .eq("studio_id", ctx.studio.id);
+      }
+
+      const { data: transferData, error: transferError } = await ctx.supabase.rpc(
+        "service_prepare_trial_transfer",
+        {
+          target_studio_id: ctx.studio.id,
+          target_conversation_id: ctx.conversationId,
+          target_student_id: paymentStudentId,
+          target_session_id: sessionId,
+          target_resource_id: resourceId,
+        },
+      );
+      const transfer = asObject(transferData);
+      if (transferError || !transfer || transfer.ok !== true) {
+        return {
+          ok: false,
+          error: "trial_payment_setup_failed",
+          ...safeBookingReason(transfer?.reason_code),
+        };
+      }
+
+      const intentId = String(transfer.intent_id ?? "").trim();
+      const executedAt = new Date().toISOString();
+      await ctx.supabase
+        .from("assistant_pending_actions")
+        .update({
+          status: "executed",
+          confirmed_at: executedAt,
+          executed_at: executedAt,
+          execution_ref: intentId ? `trial-payment:${intentId}` : "trial-payment:prepared",
+          updated_at: executedAt,
+        })
+        .eq("id", pending.id)
+        .eq("studio_id", ctx.studio.id)
+        .eq("status", "pending");
+
+      return {
+        ok: true,
+        status: "payment_required",
+        reservation_confirmed: false,
+        payment_required: true,
+        student_id: paymentStudentId,
+        intent_id: intentId || null,
+        amount_minor: Number(transfer.amount_minor ?? sessionInfo.summary.drop_in_price_minor ?? 0),
+        currency: String(transfer.currency ?? ctx.studio.currency),
+        bank_details: transfer.bank_details ?? null,
+        summary: {
+          ...sessionInfo.summary,
+          ...(asObject(pending.confirmation_summary) ?? {}),
+          commercial_status: "payment_pending",
+          payment_pending: true,
+          payment_before_booking: true,
+          trial_booking: true,
+          selected_resource: resourceId
+            ? {
+                resource_id: resourceId,
+                label: resourceLabel,
+              }
+            : null,
+        },
+      };
+    }
+
     const trialBookingRequest =
       resourceId && ctx.serviceMode
         ? await ctx.supabase.rpc("service_confirm_trial_booking_with_resource", {
