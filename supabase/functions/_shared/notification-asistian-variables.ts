@@ -86,6 +86,24 @@ export function formatNotificationDateTimeParts(value: unknown, timezoneValue: u
   }
 }
 
+function formatDateOnly(value: unknown, timezoneValue: unknown) {
+  const raw = safeText(value);
+  if (!raw) return null;
+  const date = new Date(/^\d{4}-\d{2}-\d{2}$/.test(raw) ? `${raw}T12:00:00Z` : raw);
+  if (!Number.isFinite(date.getTime())) return raw;
+  const timezone = safeText(timezoneValue) ?? "UTC";
+  try {
+    return new Intl.DateTimeFormat("es-MX", {
+      timeZone: timezone,
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    }).format(date);
+  } catch {
+    return raw;
+  }
+}
+
 export function buildAsistianVariables(
   providerTemplateKey: string,
   variables: NotificationTemplateVariables,
@@ -125,6 +143,7 @@ export function buildAsistianVariables(
               : "Cancelada";
 
       return {
+        nombre: safeText(variables.recipient_name) ?? "Alumna",
         clase: safeText(variables.class_name) ?? "Clase",
         fecha: starts.fecha,
         hora: starts.hora,
@@ -135,9 +154,31 @@ export function buildAsistianVariables(
             : status === "cancelled_on_time" || status === "cancelled_by_studio"
               ? true
               : null,
-        creditos_restantes: safeNumber(variables.credits_remaining),
       };
     }
+
+    case "evaluation_reminder":
+      return { ...common };
+
+    case "package_activated":
+      return {
+        nombre: safeText(variables.recipient_name) ?? "Alumna",
+        fecha_inicio: formatDateOnly(variables.starts_on, variables.studio_timezone),
+        fecha_vencimiento: formatDateOnly(variables.expires_on, variables.studio_timezone),
+      };
+
+    case "package_expired":
+      return {
+        nombre: safeText(variables.recipient_name) ?? "Alumna",
+        fecha_vencimiento: formatDateOnly(variables.expires_on, variables.studio_timezone),
+      };
+
+    case "package_expiring":
+      return {
+        nombre: safeText(variables.recipient_name) ?? "Alumna",
+        fecha_vencimiento: formatDateOnly(variables.expires_on, variables.studio_timezone),
+        dias_restantes: safeNumber(variables.days_before),
+      };
 
     case "class_cancelled_coach":
       return {
@@ -151,6 +192,7 @@ export function buildAsistianVariables(
       };
 
     case "class_cancelled_student":
+    case "session_cancelled_by_studio":
       return {
         nombre: safeText(variables.recipient_name) ?? "Alumna",
         clase: safeText(variables.class_name) ?? "Clase",

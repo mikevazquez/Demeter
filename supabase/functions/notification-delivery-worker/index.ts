@@ -235,6 +235,16 @@ function renderMessage(delivery: DeliveryRow): RenderedMessage {
         providerTemplateKey: overrideProviderTemplate ?? "reservation_confirmed",
       };
 
+    case "reservation_cancelled_by_student":
+      return {
+        title: "Reserva cancelada",
+        body: `Tu reserva de ${className} quedó cancelada.`,
+        url: "/student",
+        tag: `notification-${delivery.id}`,
+        // This operational notification uses the already approved generic cancellation template.
+        providerTemplateKey: overrideProviderTemplate ?? "reservation_cancelled",
+      };
+
     case "reservation_cancelled":
       return {
         title: "Reserva cancelada",
@@ -301,6 +311,55 @@ function renderMessage(delivery: DeliveryRow): RenderedMessage {
           ? `${className} de ${startLabel} se canceló por no alcanzar el mínimo de reservas. Tu crédito fue restaurado cuando correspondía.`
           : `${className} se canceló por no alcanzar el mínimo de reservas. Tu crédito fue restaurado cuando correspondía.`,
         url: "/student",
+        tag: `notification-${delivery.id}`,
+        providerTemplateKey: overrideProviderTemplate ?? "class_cancelled_student",
+      };
+
+    case "evaluation_reminder": {
+      const discipline = safeText(variables.discipline_name) ?? "tu disciplina";
+      return {
+        title: "Tu evaluación es pronto",
+        body: startLabel
+          ? `Tienes una evaluación de ${discipline} el ${startLabel}.`
+          : `Tienes una evaluación de ${discipline} programada pronto.`,
+        url: "/student/evaluaciones",
+        tag: `notification-${delivery.id}`,
+        providerTemplateKey: overrideProviderTemplate ?? "evaluation_reminder",
+      };
+    }
+
+    case "package_activated":
+      return {
+        title: "Paquete activo",
+        body: `Tu paquete quedó activo desde ${safeText(variables.starts_on) ?? "hoy"} y vence el ${safeText(variables.expires_on) ?? "la fecha indicada"}.`,
+        url: "/student/paquete",
+        tag: `notification-${delivery.id}`,
+        providerTemplateKey: overrideProviderTemplate ?? "package_activated",
+      };
+
+    case "package_expired":
+      return {
+        title: "Paquete vencido",
+        body: `Tu paquete venció el ${safeText(variables.expires_on) ?? "la fecha indicada"}. Consulta las opciones disponibles para seguir reservando.`,
+        url: "/student/paquete",
+        tag: `notification-${delivery.id}`,
+        providerTemplateKey: overrideProviderTemplate ?? "package_expired",
+      };
+
+    case "package_expiring":
+      return {
+        title: "Tu paquete está por vencer",
+        body: `Tu paquete vence el ${safeText(variables.expires_on) ?? "la fecha indicada"}.`,
+        url: "/student/paquete",
+        tag: `notification-${delivery.id}`,
+        providerTemplateKey: overrideProviderTemplate ?? "package_expiring",
+      };
+
+    case "session_cancelled_by_studio":
+      return {
+        title: "Clase cancelada por el estudio",
+        body: `${className} fue cancelada por el estudio.`,
+        url: "/student/mis-clases",
         tag: `notification-${delivery.id}`,
         providerTemplateKey: overrideProviderTemplate ?? "class_cancelled_student",
       };
