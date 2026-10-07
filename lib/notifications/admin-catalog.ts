@@ -297,6 +297,9 @@ export type MarketingDefinition = {
   description: string;
   category: "recuperacion" | "promociones" | "fidelizacion";
   automationCodes?: readonly string[];
+  /** Internal key mapped to an approved Meta Cloud API template. */
+  whatsappTemplateKey?: string;
+  whatsappTemplateName?: string;
   planned?: boolean;
   defaultAudience:
     | "all_eligible"
@@ -325,7 +328,7 @@ export const MARKETING_COMMUNICATIONS: readonly MarketingDefinition[] = [
     name: "Paquete por renovar",
     description: "Invita a renovar al acercarse el fin del paquete.",
     category: "recuperacion",
-    automationCodes: ["AUT-CAT-13", "AUT-CAT-15", "AUT-CAT-16"],
+    automationCodes: ["AUT-CAT-13"],
     defaultAudience: "package_expiring",
     defaultTitle: "Tu paquete está por vencer",
     defaultBody: "Aprovecha tus créditos antes de que termine la vigencia.",
@@ -356,6 +359,8 @@ export const MARKETING_COMMUNICATIONS: readonly MarketingDefinition[] = [
     description: "Invita a participar en retos activos del estudio.",
     category: "fidelizacion",
     planned: true,
+    whatsappTemplateKey: "challenge_invitation",
+    whatsappTemplateName: "demeter_reto_invitation",
     defaultAudience: "active_students",
     defaultTitle: "Nuevo reto disponible",
     defaultBody: "Ya puedes participar en el nuevo reto de Studio Flow.",
@@ -366,6 +371,8 @@ export const MARKETING_COMMUNICATIONS: readonly MarketingDefinition[] = [
     description: "Informa sobre talleres, workshops y clases especiales.",
     category: "promociones",
     planned: true,
+    whatsappTemplateKey: "workshop_event",
+    whatsappTemplateName: "demeter_evento_taller",
     defaultAudience: "all_eligible",
     defaultTitle: "Nuevo evento en el estudio",
     defaultBody: "Conoce los detalles y reserva tu lugar en Studio Flow.",
@@ -376,9 +383,37 @@ export const MARKETING_COMMUNICATIONS: readonly MarketingDefinition[] = [
     description: "Activa comunicaciones de recomendación y beneficios.",
     category: "fidelizacion",
     planned: true,
+    whatsappTemplateKey: "referral_invitation",
+    whatsappTemplateName: "demeter_referidos",
     defaultAudience: "active_students",
     defaultTitle: "Invita a alguien a entrenar contigo",
     defaultBody: "Comparte Studio Flow y consulta los beneficios disponibles para referidos.",
+  },
+  {
+    key: "package-recovery-1",
+    name: "Recuperación de paquete · primer mensaje",
+    description: "Contacta a exalumnas después del vencimiento del paquete.",
+    category: "recuperacion",
+    planned: true,
+    automationCodes: ["AUT-CAT-15"],
+    whatsappTemplateKey: "package_recovery_1",
+    whatsappTemplateName: "demeter_recuperacion_paquete_1",
+    defaultAudience: "package_expired",
+    defaultTitle: "Vuelve a tus clases",
+    defaultBody: "Tu paquete venció. Responde por WhatsApp y revisamos las opciones disponibles.",
+  },
+  {
+    key: "package-recovery-2",
+    name: "Recuperación de paquete · seguimiento",
+    description: "Envía un segundo seguimiento después del primer contacto.",
+    category: "recuperacion",
+    planned: true,
+    automationCodes: ["AUT-CAT-16"],
+    whatsappTemplateKey: "package_recovery_2",
+    whatsappTemplateName: "demeter_recuperacion_paquete_2",
+    defaultAudience: "package_expired",
+    defaultTitle: "Te esperamos de vuelta",
+    defaultBody: "Responde por WhatsApp y te compartimos las opciones vigentes.",
   },
   {
     key: "manual-campaigns",
