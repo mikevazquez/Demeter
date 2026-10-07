@@ -227,6 +227,77 @@ export function buildAsistianVariables(
     case "package_recovery_2":
       return { nombre: safeText(variables.recipient_name) ?? "Alumna" };
 
+    case "attendance_no_show":
+    case "credit_restored":
+    case "waitlist_expired":
+      return {
+        nombre: safeText(variables.recipient_name) ?? "Alumna",
+        clase: safeText(variables.class_name) ?? "Clase",
+        fecha: starts.fecha ?? "la fecha indicada",
+      };
+
+    case "document_new_version":
+    case "guardian_signature_pending":
+      return {
+        nombre: safeText(variables.recipient_name) ?? "Alumna",
+        documento:
+          safeText(variables.document_title) ?? safeText(variables.document_name) ?? "documento",
+      };
+
+    case "documents_pending":
+      return {
+        nombre: safeText(variables.recipient_name) ?? "Alumna",
+        documentos: safeText(variables.pending_documents) ?? "documentos pendientes",
+      };
+
+    case "evaluation_completed":
+    case "evaluation_invitation":
+      return {
+        nombre: safeText(variables.recipient_name) ?? "Alumna",
+        disciplina: safeText(variables.discipline_name) ?? "tu disciplina",
+      };
+
+    case "evaluation_scheduled":
+      return { ...common };
+
+    case "password_reset":
+      return { nombre: safeText(variables.recipient_name) ?? "Alumna" };
+
+    case "payment_confirmed":
+    case "payment_pending":
+      return {
+        nombre: safeText(variables.recipient_name) ?? "Alumna",
+        monto:
+          safeText(variables.amount_label) ??
+          safeNumber(variables.amount_minor)?.toLocaleString("es-MX") ??
+          "el monto indicado",
+        fecha:
+          formatDateOnly(variables.paid_at ?? variables.created_at, variables.studio_timezone) ??
+          "hoy",
+        fecha_vencimiento:
+          formatDateOnly(variables.due_on, variables.studio_timezone) ?? "la fecha indicada",
+      };
+
+    case "session_coach_changed":
+      return {
+        nombre: safeText(variables.recipient_name) ?? "Alumna",
+        clase: safeText(variables.class_name) ?? "Clase",
+        coach: safeText(variables.coach_name) ?? safeText(variables.coach) ?? "tu coach",
+        fecha: starts.fecha ?? "la fecha indicada",
+        hora: starts.hora ?? "la hora indicada",
+      };
+
+    case "studio_closure":
+      return {
+        nombre: safeText(variables.recipient_name) ?? "Alumna",
+        estudio: safeText(variables.studio_name) ?? "el estudio",
+        fecha:
+          formatDateOnly(
+            variables.closure_date ?? variables.event_date,
+            variables.studio_timezone,
+          ) ?? "la fecha indicada",
+      };
+
     case "class_rescheduled": {
       const oldStarts = formatNotificationDateTimeParts(
         variables.old_starts_at,
