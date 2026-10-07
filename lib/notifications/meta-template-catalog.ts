@@ -38,6 +38,20 @@ export const META_WHATSAPP_TEMPLATE_PARAMETERS = {
   referral_invitation: ["nombre"],
   package_recovery_1: ["nombre", "paquete", "fecha_vencimiento"],
   package_recovery_2: ["nombre"],
+  attendance_no_show: ["nombre", "clase", "fecha"],
+  credit_restored: ["nombre", "clase", "fecha"],
+  document_new_version: ["nombre", "documento"],
+  documents_pending: ["nombre", "documentos"],
+  evaluation_completed: ["nombre", "disciplina"],
+  evaluation_invitation: ["nombre", "disciplina"],
+  evaluation_scheduled: ["nombre", "disciplina", "fecha", "hora"],
+  guardian_signature_pending: ["nombre", "documento"],
+  password_reset: ["nombre"],
+  payment_confirmed: ["nombre", "monto", "fecha"],
+  payment_pending: ["nombre", "monto", "fecha_vencimiento"],
+  session_coach_changed: ["nombre", "clase", "coach", "fecha", "hora"],
+  studio_closure: ["nombre", "estudio", "fecha"],
+  waitlist_expired: ["nombre", "clase", "fecha"],
 } as const;
 
 export type MetaWhatsAppTemplateKey = keyof typeof META_WHATSAPP_TEMPLATE_PARAMETERS;
@@ -46,6 +60,9 @@ export const META_WHATSAPP_TEMPLATE_KEYS = Object.keys(
 ) as MetaWhatsAppTemplateKey[];
 
 const NOTIFICATION_TEMPLATE_ALIASES: Record<string, MetaWhatsAppTemplateKey> = {
+  account_created: "student_welcome",
+  late_cancellation: "reservation_cancelled",
+  reservation_modified: "class_rescheduled",
   reservation_cancelled_by_student: "reservation_cancelled",
   session_cancelled_by_studio: "class_cancelled_student",
 };
