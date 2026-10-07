@@ -279,6 +279,36 @@ function confirmationReply(toolName: string, result: Record<string, unknown>) {
 
   const summary = asObject(result.summary);
   if (toolName === "execute_booking" && summary) {
+    if (summary.trial_booking === true && result.status === "payment_required") {
+      const price =
+        formatMoney(result.amount_minor ?? summary.amount_minor ?? summary.drop_in_price_minor, result.currency ?? summary.currency) ??
+        "el costo indicado";
+      const bankDetails = asObject(result.bank_details);
+      const bankLines = bankDetails
+        ? [
+            bankDetails.bank_name ? `Banco: ${String(bankDetails.bank_name)}` : null,
+            bankDetails.account_holder ? `Titular: ${String(bankDetails.account_holder)}` : null,
+            bankDetails.clabe ? `CLABE: ${String(bankDetails.clabe)}` : null,
+            bankDetails.account_number ? `Cuenta: ${String(bankDetails.account_number)}` : null,
+            bankDetails.card_number
+              ? `Tarjeta para transferencia: ${String(bankDetails.card_number)}`
+              : null,
+            bankDetails.instructions ? String(bankDetails.instructions) : null,
+          ].filter(Boolean)
+        : [];
+
+      const details =
+        bankLines.length > 0
+          ? `\n\n${bankLines.join("\n")}`
+          : "";
+
+      return (
+        `Perfecto. Tu primera clase cuesta ${price}. Para apartar el lugar, primero realiza la transferencia.` +
+        details +
+        "\n\nEnvíame el comprobante por este mismo WhatsApp. Tu lugar todavía no está confirmado; cuando el monto del comprobante coincida, Studio Flow confirmará la reserva. La transferencia quedará sujeta a validación."
+      );
+    }
+
     if (summary.trial_booking === true) {
       const price =
         formatMoney(summary.amount_minor ?? summary.drop_in_price_minor, summary.currency) ??
@@ -598,6 +628,7 @@ async function tryServerSideConfirmation(input: OrchestratorInput, trace: Assist
           ? "prepared"
           : "executed";
 
+  const resultBankDetails = asObject(resultObject.bank_details);
   const auditResult =
     toolName === "execute_student_access_activation" || toolName === "execute_booking"
       ? {
@@ -606,6 +637,17 @@ async function tryServerSideConfirmation(input: OrchestratorInput, trace: Assist
             typeof resultObject.activation_url === "string"
               ? "[REDACTED]"
               : resultObject.activation_url,
+          bank_details: resultBankDetails
+            ? {
+                configured: true,
+                bank_name_present: Boolean(resultBankDetails.bank_name),
+                account_holder_present: Boolean(resultBankDetails.account_holder),
+                clabe_present: Boolean(resultBankDetails.clabe),
+                account_number_present: Boolean(resultBankDetails.account_number),
+                card_number_present: Boolean(resultBankDetails.card_number),
+                instructions_present: Boolean(resultBankDetails.instructions),
+              }
+            : resultObject.bank_details,
         }
       : resultObject;
 
@@ -885,12 +927,13 @@ export async function runAssistantTurn(input: OrchestratorInput) {
         "Nunca prometas 'atención humana', 'lo pasaré con una persona' ni una escalación equivalente solo en texto. Debes llamar escalate_to_human en ese mismo turno antes de afirmar que la conversación fue escalada.",
         "Los documentos se muestran y se exigen después de que la inscripción quede activa. Antes de ese momento no los menciones en la conversación.",
         "Para una reserva de prueba, jamás le digas a la persona 'pago pendiente', 'commercial_status', 'crédito' ni 'usa 1 crédito'. Son conceptos internos.",
-        "Si prepare_booking devuelve trial_booking=true, antes de confirmar menciona únicamente el precio real de la clase usando amount_minor/currency y pide una sola confirmación. Ejemplo de tono: 'Tu primera clase cuesta $150. ¿Confirmas la reserva?'.",
-        "Después de ejecutar una reserva de prueba, el servidor preguntará si pagará en efectivo en el estudio o por transferencia.",
-        "Si la persona responde efectivo, llama record_trial_payment_preference con cash. Si responde transferencia, llama record_trial_payment_preference con bank_transfer. Elegir método NO significa que el pago ya fue recibido.",
-        "Después de registrar cash, explica de forma natural: su primera clase cuesta el precio real devuelto, no paga inscripción en esa primera clase y, a partir de su siguiente reserva después de asistir, deberá cubrir la inscripción.",
-        "Después de registrar bank_transfer para una primera clase, si transfer_details_configured=false no inventes datos bancarios.",
-        "Si la persona dice en texto que ya envió un comprobante, no inventes la recepción del archivo. Si el comprobante realmente llegó como imagen o documento, el webhook activa provisionalmente el paquete y abre la revisión humana automáticamente. La validación definitiva sigue pendiente.",
+        "Si prepare_booking devuelve trial_booking=true y payment_before_booking=true, menciona el precio real usando amount_minor/currency y explica que el lugar se confirma con el pago. Pide una sola confirmación para preparar la transferencia. Ejemplo de tono: 'Tu primera clase cuesta $150 y el lugar se confirma con el pago. ¿Te preparo los datos para transferir?'. No afirmes que la reserva ya existe.",
+        "Cuando execute_booking devuelva status=payment_required para una primera clase, el servidor preparó la transferencia pero NO creó una reserva. No ofrezcas efectivo ni digas que el lugar está apartado. Pide el comprobante por este mismo WhatsApp y explica que el lugar se confirma cuando el monto coincida.",
+        "Solo si payment_before_booking=false aplica el flujo anterior: después de una reserva de prueba ya creada puede preguntarse si pagará en efectivo en el estudio o por transferencia, y record_trial_payment_preference registra esa elección.",
+        "Si payment_before_booking=false y la persona responde efectivo, llama record_trial_payment_preference con cash. Si responde transferencia, llama record_trial_payment_preference con bank_transfer. Elegir método NO significa que el pago ya fue recibido.",
+        "Después de registrar cash en el flujo legado, explica de forma natural: su primera clase cuesta el precio real devuelto, no paga inscripción en esa primera clase y, a partir de su siguiente reserva después de asistir, deberá cubrir la inscripción.",
+        "Después de registrar bank_transfer para una primera clase en el flujo legado, si transfer_details_configured=false no inventes datos bancarios.",
+        "Si la persona dice en texto que ya envió un comprobante, no inventes la recepción del archivo. Si el comprobante realmente llegó como imagen o documento, el webhook valida el monto y activa provisionalmente el paquete o confirma provisionalmente la primera clase según la intención de pago. La validación definitiva de la transferencia sigue pendiente.",
         "Para cancelar, primero usa get_student_reservations para localizar la reserva real. Si la persona no expresó un motivo, pregúntalo y no prepares todavía la cancelación.",
         "Nunca inventes ni completes un motivo de cancelación. Usa prepare_cancellation solo con un motivo expresado por la persona.",
         "Si prepare_cancellation devuelve status=executed, la cancelación estaba a tiempo y ya se realizó. No pidas otra confirmación. Responde de forma breve: confirma qué clase se canceló y, solo si credit_will_return=true, indica después que el crédito regresó para usarlo en otra clase.",
