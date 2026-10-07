@@ -9,9 +9,7 @@ function source(path: string) {
 
 describe("admin live class booking", () => {
   it("allows schedule staff to book only while a class is in progress", () => {
-    const migration = source(
-      "supabase/migrations/20261007011655_admin_live_session_booking.sql",
-    );
+    const migration = source("supabase/migrations/20261007011655_admin_live_session_booking.sql");
 
     expect(migration).toContain("v_is_staff := private.has_capability");
     expect(migration).toContain("not v_is_staff");
