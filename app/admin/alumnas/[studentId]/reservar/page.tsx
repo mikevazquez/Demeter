@@ -49,12 +49,13 @@ export default async function StudentFirstReservationPage({
 
   if (!student) notFound();
 
+  const now = new Date();
   const { data: sessions } = await supabase
     .from("class_sessions")
-    .select("id,template_id,starts_at,capacity,status")
+    .select("id,template_id,starts_at,ends_at,capacity,status")
     .eq("studio_id", studio.id)
     .eq("status", "scheduled")
-    .gt("starts_at", new Date().toISOString())
+    .gt("ends_at", now.toISOString())
     .order("starts_at")
     .limit(24);
 
@@ -127,13 +128,13 @@ export default async function StudentFirstReservationPage({
         </section>
       ) : !(sessions ?? []).length ? (
         <section className="panel">
-          <div className="empty-state">No hay clases futuras programadas.</div>
+          <div className="empty-state">No hay clases próximas o en curso.</div>
         </section>
       ) : (
         <section className="panel">
           <div className="panel-heading">
             <div>
-              <p className="eyebrow">CLASES PRÓXIMAS</p>
+              <p className="eyebrow">CLASES DISPONIBLES</p>
               <h2>Selecciona una clase</h2>
             </div>
             <span className="count-badge">{sessions?.length ?? 0}</span>
