@@ -5,5 +5,5 @@ import { CAPABILITIES } from "@/lib/auth/capabilities";
 
 export default async function CompanyCompatibilityPage() {
   await getAdminContext(CAPABILITIES.ADMIN_PORTAL);
-  redirect("/admin/mas");
+  redirect("/admin/configuracion/empresa");
 }
