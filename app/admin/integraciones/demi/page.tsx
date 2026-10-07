@@ -52,8 +52,38 @@ function money(value: number | null, usdToMxn: number) {
 }
 
 function monthStartIso() {
+  const timeZone = "America/Mexico_City";
   const now = new Date();
-  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString();
+  const monthParts = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+  }).formatToParts(now);
+  const year = Number(monthParts.find((part) => part.type === "year")?.value);
+  const month = Number(monthParts.find((part) => part.type === "month")?.value);
+  const guess = new Date(Date.UTC(year, month - 1, 1, 0, 0, 0));
+  const localParts = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(guess);
+  const value = (type: Intl.DateTimeFormatPartTypes) =>
+    Number(localParts.find((part) => part.type === type)?.value);
+  const localAsUtc = Date.UTC(
+    value("year"),
+    value("month") - 1,
+    value("day"),
+    value("hour"),
+    value("minute"),
+    value("second"),
+  );
+  const offsetMs = localAsUtc - guess.getTime();
+  return new Date(guess.getTime() - offsetMs).toISOString();
 }
 
 export default async function DemiDemoPage() {
@@ -65,6 +95,7 @@ export default async function DemiDemoPage() {
     { data: versions, error: versionsError },
     { data: handoffPolicies },
     { data: learningProposals },
+    { data: adminChanges },
     exchangeRate,
   ] = await Promise.all([
     supabase
@@ -96,6 +127,12 @@ export default async function DemiDemoPage() {
       .eq("studio_id", studio.id)
       .order("created_at", { ascending: false })
       .limit(50),
+    supabase
+      .from("assistant_admin_change_requests")
+      .select("id,instruction,summary,plan,status,error_code,created_at,applied_at")
+      .eq("studio_id", studio.id)
+      .order("created_at", { ascending: false })
+      .limit(20),
     getUsdToMxnRate(),
   ]);
 
@@ -181,6 +218,7 @@ export default async function DemiDemoPage() {
         sandbox={process.env.NEXT_PUBLIC_SUPABASE_URL?.includes("hedouonyhynuvwbckdlg") === true}
         handoffPolicies={handoffPolicies ?? []}
         learningProposals={learningProposals ?? []}
+        adminChanges={adminChanges ?? []}
       />
     </main>
   );
