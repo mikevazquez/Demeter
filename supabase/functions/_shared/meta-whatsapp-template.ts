@@ -14,11 +14,16 @@ export const META_WHATSAPP_TEMPLATE_KEYS = [
   "package_expired",
   "package_expiring",
   "session_cancelled_by_studio",
+  "challenge_invitation",
+  "workshop_event",
+  "referral_invitation",
+  "package_recovery_1",
+  "package_recovery_2",
 ] as const;
 
 export type MetaWhatsAppTemplateKey = (typeof META_WHATSAPP_TEMPLATE_KEYS)[number];
 
-const PARAMETER_ORDER: Record<MetaWhatsAppTemplateKey, readonly string[]> = {
+export const META_WHATSAPP_TEMPLATE_PARAMETERS: Record<MetaWhatsAppTemplateKey, readonly string[]> = {
   student_welcome: ["nombre"],
   reservation_confirmed: ["nombre", "disciplina", "fecha", "hora", "coach", "ubicacion"],
   reservation_cancelled: [
@@ -53,6 +58,11 @@ const PARAMETER_ORDER: Record<MetaWhatsAppTemplateKey, readonly string[]> = {
   package_expired: ["nombre", "fecha_vencimiento"],
   package_expiring: ["nombre", "fecha_vencimiento", "dias_restantes"],
   session_cancelled_by_studio: ["nombre", "clase", "fecha", "hora"],
+  challenge_invitation: ["nombre", "reto"],
+  workshop_event: ["nombre", "evento", "fecha"],
+  referral_invitation: ["nombre"],
+  package_recovery_1: ["nombre", "paquete", "fecha_vencimiento"],
+  package_recovery_2: ["nombre"],
 };
 
 function asTemplateText(value: unknown) {
@@ -98,7 +108,7 @@ export function buildMetaWhatsAppTemplatePayload(input: {
               : "Alumna",
         }
       : buildAsistianVariables(input.internalTemplate, input.variables);
-  const parameters = PARAMETER_ORDER[input.internalTemplate].map((key) => ({
+  const parameters = META_WHATSAPP_TEMPLATE_PARAMETERS[input.internalTemplate].map((key) => ({
     type: "text" as const,
     text: asTemplateText(mapped[key]),
   }));
