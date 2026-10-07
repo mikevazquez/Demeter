@@ -50,7 +50,7 @@ export default async function DemiDemoPage() {
 
   if (!config) {
     return (
-      <main className="demi-page">
+      <main className="demi-page demi-settings-page">
         <Link className="demi-back" href="/admin/notificaciones">
           ← Comunicación
         </Link>
@@ -73,7 +73,7 @@ export default async function DemiDemoPage() {
   const openAIConfigured = Boolean(process.env.OPENAI_API_KEY?.trim());
 
   return (
-    <main className="demi-page">
+    <main className="demi-page demi-settings-page">
       <header className="demi-header">
         <div>
           <Link className="demi-back" href="/admin/notificaciones">

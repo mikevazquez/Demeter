@@ -1,3 +1,33 @@
+.demi-page.demi-settings-page {
+  color: #242133;
+  background: #faf8fd;
+}
+.demi-settings-page .demi-header p,
+.demi-settings-page .demi-back,
+.demi-settings-page .demi-kpis small {
+  color: #655d72;
+}
+.demi-settings-page .demi-eyebrow {
+  color: #7045b4;
+}
+.demi-settings-page .demi-mode {
+  color: #226540;
+  background: #eaf6ee;
+  border-color: #c9e4d3;
+}
+.demi-settings-page .demi-kpis article,
+.demi-settings-page .demi-unavailable {
+  color: #242133;
+  background: #ffffff;
+  border-color: #e4dfed;
+}
+.demi-settings-page .demi-kpis strong {
+  color: #242133;
+}
+.demi-settings-page .demi-workbench {
+  width: min(1180px, 100%);
+  margin-inline: auto;
+}
 .demi-workbench {
   color: #202033;
   background: #fff;
