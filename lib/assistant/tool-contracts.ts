@@ -175,12 +175,12 @@ export type PrepareWaitlistJoinArgs = {
 };
 
 export type PrepareBankTransferPurchaseArgs = {
-  session_ref: string;
+  session_ref?: string;
   product_ref: string;
 };
 
 export type PrepareTransferPackageChoiceArgs = {
-  session_ref: string;
+  session_ref?: string;
   product_refs: string[];
 };
 
@@ -345,14 +345,14 @@ export const assistantActionToolDefinitions: AssistantToolDefinition[] = [
     type: "function",
     name: "prepare_transfer_package_choice",
     description:
-      "Guarda de forma persistente que la persona eligió transferencia y está eligiendo un paquete para una clase concreta. Llámala ANTES de mostrar la lista de paquetes y preguntar cuál prefiere. Pasa exactamente los product_ref de las opciones que vas a mostrar; así una respuesta posterior como '8 clases' continúa el flujo aunque pasen horas.",
+      "Guarda de forma persistente que la persona eligió transferencia y está eligiendo un paquete. Puede usarse con una clase concreta o para comprar el paquete sin reservar todavía. Llámala ANTES de mostrar la lista de paquetes y preguntar cuál prefiere. Pasa exactamente los product_ref de las opciones que vas a mostrar.",
     strict: true,
     parameters: {
       type: "object",
       properties: {
         session_ref: {
           type: "string",
-          description: "Referencia session:<uuid> de la clase objetivo.",
+          description: "Referencia session:<uuid> de la clase objetivo cuando exista. Omítela si la persona solo quiere comprar el paquete.",
         },
         product_refs: {
           type: "array",
@@ -363,7 +363,7 @@ export const assistantActionToolDefinitions: AssistantToolDefinition[] = [
             "Referencias product:<uuid> exactas de los paquetes compatibles que se mostrarán a la persona.",
         },
       },
-      required: ["session_ref", "product_refs"],
+      required: ["product_refs"],
       additionalProperties: false,
     },
   },
@@ -371,7 +371,7 @@ export const assistantActionToolDefinitions: AssistantToolDefinition[] = [
     type: "function",
     name: "prepare_bank_transfer_purchase",
     description:
-      "Prepara una compra por transferencia después de que la persona eligió un paquete concreto para una clase. Valida compatibilidad, guarda la intención pendiente y devuelve monto y datos bancarios reales. No activa créditos todavía; la activación provisional ocurre cuando llega el comprobante por WhatsApp.",
+      "Prepara una compra por transferencia después de que la persona eligió un paquete concreto. Puede vincularse a una clase o hacerse sin reservar ninguna clase. Guarda la intención pendiente y devuelve monto y datos bancarios reales. No activa créditos todavía; la activación provisional ocurre cuando llega un comprobante cuyo monto coincide.",
     strict: true,
     parameters: {
       type: "object",
@@ -386,7 +386,7 @@ export const assistantActionToolDefinitions: AssistantToolDefinition[] = [
             "Referencia product:<uuid> exacta del paquete seleccionado de get_commercial_options.",
         },
       },
-      required: ["session_ref", "product_ref"],
+      required: ["product_ref"],
       additionalProperties: false,
     },
   },
