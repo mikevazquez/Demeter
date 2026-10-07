@@ -9,6 +9,11 @@ export const META_WHATSAPP_TEMPLATE_KEYS = [
   "class_cancelled_coach",
   "class_cancelled_student",
   "class_rescheduled",
+  "evaluation_reminder",
+  "package_activated",
+  "package_expired",
+  "package_expiring",
+  "session_cancelled_by_studio",
 ] as const;
 
 export type MetaWhatsAppTemplateKey = (typeof META_WHATSAPP_TEMPLATE_KEYS)[number];
@@ -17,12 +22,12 @@ const PARAMETER_ORDER: Record<MetaWhatsAppTemplateKey, readonly string[]> = {
   student_welcome: ["nombre"],
   reservation_confirmed: ["nombre", "disciplina", "fecha", "hora", "coach", "ubicacion"],
   reservation_cancelled: [
+    "nombre",
     "clase",
     "fecha",
     "hora",
     "tipo_cancelacion",
     "credito_recuperado",
-    "creditos_restantes",
   ],
   waitlist_promoted: ["nombre", "disciplina", "fecha", "hora", "coach", "ubicacion"],
   class_reminder: ["nombre", "disciplina", "fecha", "hora", "coach", "ubicacion"],
@@ -43,6 +48,11 @@ const PARAMETER_ORDER: Record<MetaWhatsAppTemplateKey, readonly string[]> = {
     "fecha_nueva",
     "hora_nueva",
   ],
+  evaluation_reminder: ["nombre", "disciplina", "fecha", "hora"],
+  package_activated: ["nombre", "fecha_inicio", "fecha_vencimiento"],
+  package_expired: ["nombre", "fecha_vencimiento"],
+  package_expiring: ["nombre", "fecha_vencimiento", "dias_restantes"],
+  session_cancelled_by_studio: ["nombre", "clase", "fecha", "hora"],
 };
 
 function asTemplateText(value: unknown) {
