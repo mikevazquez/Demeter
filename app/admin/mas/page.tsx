@@ -67,6 +67,12 @@ const items: MoreItem[] = [
     capability: CAPABILITIES.REWARDS_READ,
   },
   {
+    title: "Información del estudio",
+    description: "Domicilio, teléfono, correo y página web que Demi puede consultar.",
+    href: "/admin/configuracion/empresa",
+    ownerOnly: true,
+  },
+  {
     title: "Integraciones",
     description: "Conecta Mercado Pago, Asistian, Meta y otros servicios externos.",
     href: "/admin/integraciones",
