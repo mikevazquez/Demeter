@@ -2076,3 +2076,166 @@ a.notification-process-row:hover {
     flex-direction: row;
   }
 }
+
+/* Make the automation list and editor visibly follow the prototype hierarchy. */
+.notification-process-title-line {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.notification-process-title-line > strong {
+  min-width: 0;
+}
+
+.notification-category-tag {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  min-height: 25px;
+  padding: 4px 9px;
+  border: 1px solid #d9eee5;
+  border-radius: 999px;
+  background: #edf8f3;
+  color: #28745d;
+  font-size: 11px;
+  font-weight: 750;
+  line-height: 1.2;
+}
+
+.notification-process-copy .notification-process-description {
+  display: block;
+  max-width: 620px;
+  margin-top: 5px;
+  color: #53657b !important;
+  font-size: 12px;
+  line-height: 1.4;
+  white-space: normal;
+}
+
+.notification-process-copy > small:last-child {
+  display: block;
+  width: fit-content;
+  margin-top: 6px;
+  padding: 4px 8px;
+  border-radius: 8px;
+  background: #f2f5f7;
+  color: #52647c !important;
+  font-size: 11px;
+  line-height: 1.35;
+  white-space: normal;
+}
+
+.notification-detail-header {
+  padding: 22px clamp(18px, 2.4vw, 28px) 25px;
+  border: 1px solid #e2e7ed;
+  border-radius: 22px;
+  background: linear-gradient(135deg, #fff 0%, #fff9fc 60%, #f2faf6 100%);
+  box-shadow: 0 9px 26px rgba(34, 52, 74, 0.05);
+}
+
+.notification-detail-header > a {
+  margin-bottom: 19px;
+}
+
+.notification-detail-title-row .notification-category-tag {
+  margin-bottom: 9px;
+  border-color: #f1d5e1;
+  background: #fff0f6;
+  color: #a91d5b;
+}
+
+.notification-section-title {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+
+.notification-step-index {
+  width: 31px;
+  height: 31px;
+  display: inline-grid;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 10px;
+  background: #17243a;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.notification-detail-card-heading .notification-section-title + p {
+  margin-left: 42px;
+}
+
+.notification-detail-card-heading .notification-section-title h2 {
+  margin: 0;
+}
+
+.notification-detail-card-heading > div {
+  min-width: 0;
+}
+
+.notification-detail-page > .notification-detail-card {
+  scroll-margin-top: 20px;
+}
+
+.notification-detail-page > .notification-detail-card:nth-of-type(2) {
+  border-top: 3px solid #cdebdc;
+}
+
+.notification-detail-page > .notification-detail-card:nth-of-type(3) {
+  border-top: 3px solid #dbe8f3;
+}
+
+.notification-detail-page > .notification-detail-card:nth-of-type(4) {
+  border-top: 3px solid #f3d7e3;
+}
+
+#mensajes .notification-message-card {
+  padding: 19px;
+}
+
+#mensajes .notification-message-preview {
+  min-height: 112px;
+}
+
+@media (max-width: 760px) {
+  .notification-detail-header {
+    padding: 18px;
+    border-radius: 19px;
+  }
+
+  .notification-detail-header > a {
+    margin-bottom: 16px;
+  }
+
+  .notification-process-title-line {
+    align-items: flex-start;
+  }
+
+  .notification-process-title-line > strong {
+    flex-basis: 100%;
+  }
+
+  .notification-process-copy .notification-process-description {
+    font-size: 12px;
+  }
+
+  .notification-detail-card-heading .notification-section-title + p {
+    margin-left: 0;
+  }
+
+  .notification-step-index {
+    width: 29px;
+    height: 29px;
+    border-radius: 9px;
+    font-size: 11px;
+  }
+
+  .notification-section-title {
+    gap: 9px;
+  }
+}
