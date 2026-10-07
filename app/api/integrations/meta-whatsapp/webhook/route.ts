@@ -198,6 +198,235 @@ async function createMediaHandoff(input: {
   return !error && isObject(data) && data.ok === true;
 }
 
+
+function normalizeReceiptText(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLocaleLowerCase("es-MX")
+    .replace(/[^a-z0-9$., ]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function formatReceiptMoney(amountMinor: number, currency = "MXN") {
+  return new Intl.NumberFormat("es-MX", {
+    style: "currency",
+    currency,
+    maximumFractionDigits: amountMinor % 100 === 0 ? 0 : 2,
+  }).format(amountMinor / 100);
+}
+
+function matchReceiptPackageOption(
+  message: string,
+  rawOptions: unknown,
+  allowSingleConfirmation = false,
+) {
+  if (!Array.isArray(rawOptions)) return null;
+  const options = rawOptions
+    .map((item) => (isObject(item) ? item : null))
+    .filter((item): item is JsonObject => Boolean(item));
+  if (!options.length) return null;
+
+  const normalized = normalizeReceiptText(message);
+  if (!normalized) return null;
+
+  if (
+    allowSingleConfirmation &&
+    options.length === 1 &&
+    ["si", "sí", "confirmo", "adelante", "dale", "va", "ok", "correcto"].includes(
+      message.trim().toLocaleLowerCase("es-MX"),
+    )
+  ) {
+    return options[0];
+  }
+
+  const optionNumber = normalized.match(/^([1-9][0-9]?)$/);
+  if (optionNumber) {
+    const selected = options.find((item) => Number(item.option_number) === Number(optionNumber[1]));
+    if (selected) return selected;
+  }
+
+  const classMatch = normalized.match(/\b(\d{1,3})\s*(?:clase|clases)\b/);
+  if (classMatch) {
+    const credits = Number(classMatch[1]);
+    const matches = options.filter(
+      (item) => item.unlimited !== true && Number(item.credit_limit) === credits,
+    );
+    if (matches.length === 1) return matches[0];
+  }
+
+  if (normalized.includes("ilimitado")) {
+    const matches = options.filter((item) => item.unlimited === true);
+    if (matches.length === 1) return matches[0];
+  }
+
+  const nameMatches = options.filter((item) => {
+    const name = normalizeReceiptText(String(item.name ?? ""));
+    return Boolean(name) && (normalized === name || normalized.includes(name));
+  });
+  return nameMatches.length === 1 ? nameMatches[0] : null;
+}
+
+async function createReceiptValidationHandoff(input: {
+  supabase: ReturnType<typeof createServiceClient>;
+  studioId: string;
+  conversationId: string;
+  studentId: string;
+  note: string;
+}) {
+  const { data: policy } = await input.supabase
+    .from("assistant_handoff_policies")
+    .select("enabled")
+    .eq("studio_id", input.studioId)
+    .eq("reason_code", "receipt_validation_failed")
+    .maybeSingle();
+  if (policy?.enabled !== true) return;
+
+  await input.supabase.rpc("assistant_create_handoff", {
+    target_studio_id: input.studioId,
+    target_conversation_id: input.conversationId,
+    target_student_id: input.studentId,
+    target_reason_code: "receipt_validation_failed",
+    target_note: input.note,
+  });
+}
+
+async function tryResolveReceiptPackageChoice(input: {
+  supabase: ReturnType<typeof createServiceClient>;
+  studioId: string;
+  conversationId: string;
+  studentId: string | null;
+  messageText: string;
+}) {
+  if (!input.studentId) return null;
+
+  const { data: pending, error } = await input.supabase
+    .from("assistant_pending_actions")
+    .select("id,action_payload,expires_at")
+    .eq("studio_id", input.studioId)
+    .eq("conversation_id", input.conversationId)
+    .eq("action_type", "commerce.receipt_package_choice")
+    .eq("status", "pending")
+    .gt("expires_at", new Date().toISOString())
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error || !pending) return null;
+  const payload = isObject(pending.action_payload) ? pending.action_payload : null;
+  if (!payload) return null;
+  const options = Array.isArray(payload.options) ? payload.options : [];
+  const selected = matchReceiptPackageOption(input.messageText, options, true);
+
+  if (!selected) {
+    const labels = options
+      .map((item) => (isObject(item) ? String(item.name ?? "").trim() : ""))
+      .filter(Boolean);
+    return {
+      reply:
+        labels.length > 1
+          ? `Para aplicar ese comprobante necesito saber a qué paquete corresponde. Puedes decirme: ${labels.join(", ")}.`
+          : "Para aplicar ese comprobante necesito que me confirmes si corresponde al paquete que te indiqué.",
+      outcome: "receipt_package_choice_waiting",
+    };
+  }
+
+  const productTemplateId = String(selected.product_template_id ?? "").trim();
+  const eventId = String(payload.event_id ?? "").trim();
+  const providerMessageId = String(payload.provider_message_id ?? "").trim();
+  const mediaId = String(payload.media_id ?? "").trim();
+  if (!UUID_RE.test(productTemplateId) || !UUID_RE.test(eventId) || !providerMessageId || !mediaId) {
+    return { reply: "No pude recuperar de forma segura ese comprobante. No activé ningún paquete.", outcome: "receipt_context_invalid" };
+  }
+
+  const { data: preparedData, error: preparedError } = await input.supabase.rpc(
+    "service_prepare_transfer_purchase",
+    {
+      target_studio_id: input.studioId,
+      target_conversation_id: input.conversationId,
+      target_student_id: input.studentId,
+      target_session_id: null,
+      target_product_template_id: productTemplateId,
+    },
+  );
+  const prepared = isObject(preparedData) ? preparedData : null;
+  if (preparedError || !prepared || prepared.ok !== true) {
+    return { reply: "No pude preparar ese paquete con seguridad. No hice ningún cambio.", outcome: "receipt_package_prepare_failed" };
+  }
+
+  const intentId = String(prepared.intent_id ?? "").trim();
+  if (!UUID_RE.test(intentId)) {
+    return { reply: "No pude preparar ese paquete con seguridad. No hice ningún cambio.", outcome: "receipt_package_prepare_failed" };
+  }
+
+  await input.supabase
+    .from("assistant_transfer_purchase_intents")
+    .update({
+      receipt_event_id: eventId,
+      receipt_provider_message_id: providerMessageId,
+      receipt_media_id: mediaId,
+      receipt_storage_path: payload.storage_path ?? null,
+      receipt_mime_type: payload.mime_type ?? null,
+      receipt_file_size: payload.file_size ?? null,
+      receipt_stored_at: payload.stored_at ?? new Date().toISOString(),
+      receipt_detected_amount_minor: payload.detected_amount_minor ?? null,
+      receipt_detected_currency: payload.detected_currency ?? null,
+      receipt_detected_date: payload.detected_date ?? null,
+      receipt_detected_reference: payload.detected_reference ?? null,
+      receipt_detected_bank: payload.detected_bank ?? null,
+      receipt_read_confidence: payload.read_confidence ?? null,
+      receipt_amount_matches: true,
+      receipt_read_at: payload.read_at ?? new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", intentId)
+    .eq("studio_id", input.studioId);
+
+  const { data: activationData, error: activationError } = await input.supabase.rpc(
+    "service_activate_transfer_receipt",
+    {
+      target_studio_id: input.studioId,
+      target_conversation_id: input.conversationId,
+      target_student_id: input.studentId,
+      target_event_id: eventId,
+      target_provider_message_id: providerMessageId,
+      target_media_id: mediaId,
+    },
+  );
+  const activation = isObject(activationData) ? activationData : null;
+  if (activationError || !activation || activation.ok !== true) {
+    return { reply: "No pude activar el paquete con ese comprobante. No hice ningún cambio definitivo.", outcome: "receipt_package_activation_failed" };
+  }
+
+  await input.supabase
+    .from("assistant_pending_actions")
+    .update({
+      status: "executed",
+      confirmed_at: new Date().toISOString(),
+      executed_at: new Date().toISOString(),
+      execution_ref: `transfer-intent:${intentId}`,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", pending.id)
+    .eq("studio_id", input.studioId)
+    .eq("status", "pending");
+
+  const packageName = String(activation.package_name ?? selected.name ?? "tu paquete");
+  await createReceiptValidationHandoff({
+    supabase: input.supabase,
+    studioId: input.studioId,
+    conversationId: input.conversationId,
+    studentId: input.studentId,
+    note: `Comprobante leído y asociado por monto a ${packageName}. Paquete activado provisionalmente; validar que la transferencia haya ingresado antes de aprobar definitivamente.`,
+  });
+
+  return {
+    reply: `Listo. El comprobante corresponde a ${packageName} y el monto coincide. Activé el paquete provisionalmente; el pago queda pendiente de validación.`,
+    outcome: "receipt_package_confirmed",
+  };
+}
+
 async function activateTransferReceiptIfPending(input: {
   supabase: ReturnType<typeof createServiceClient>;
   studioId: string;
@@ -207,6 +436,7 @@ async function activateTransferReceiptIfPending(input: {
   providerMessageId: string;
   mediaId: string | null;
   messageType: string;
+  messageText: string;
   webhookConfig: MetaWhatsAppWebhookConfig;
 }) {
   if (!input.studentId || !input.mediaId || !["image", "document"].includes(input.messageType)) {
@@ -219,95 +449,283 @@ async function activateTransferReceiptIfPending(input: {
     .eq("studio_id", input.studioId)
     .eq("conversation_id", input.conversationId)
     .eq("student_id", input.studentId)
-    .eq("status", "pending_receipt")
+    .eq("status", "awaiting_receipt")
     .gt("expires_at", new Date().toISOString())
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
-
   if (pendingError) throw new Error("transfer_intent_lookup_failed");
-  if (!pendingIntent) return { handled: false as const };
 
   const media = await downloadMetaWhatsAppMedia({ config: input.webhookConfig, mediaId: input.mediaId });
-  const reading = await readTransferReceipt({ bytes: media.bytes, mimeType: media.mimeType });
-  const expectedAmount = Number(pendingIntent.amount_minor);
-  const expectedCurrency = String(pendingIntent.currency ?? "MXN").toUpperCase();
-  const amountMatches =
-    reading.amountMinor != null &&
-    reading.confidence >= 0.75 &&
-    reading.amountMinor === expectedAmount &&
-    (!reading.currency || reading.currency === expectedCurrency);
+  let reading: Awaited<ReturnType<typeof readTransferReceipt>> | null = null;
+  try {
+    reading = await readTransferReceipt({ bytes: media.bytes, mimeType: media.mimeType });
+  } catch {
+    reading = null;
+  }
 
-  await input.supabase.from("assistant_transfer_purchase_intents").update({
-    receipt_detected_amount_minor: reading.amountMinor,
-    receipt_detected_currency: reading.currency,
-    receipt_detected_date: reading.date,
-    receipt_detected_reference: reading.reference,
-    receipt_detected_bank: reading.bank,
-    receipt_read_confidence: reading.confidence,
-    receipt_amount_matches: amountMatches,
-    receipt_read_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  }).eq("id", pendingIntent.id).eq("studio_id", input.studioId);
+  const extension = media.mimeType === "application/pdf" ? "pdf" : media.mimeType === "image/png" ? "png" : media.mimeType === "image/webp" ? "webp" : "jpg";
+  const provisionalKey = pendingIntent?.id ?? sha256Hex(input.providerMessageId).slice(0, 24);
+  const storagePath = `${input.studioId}/${input.studentId}/${provisionalKey}/receipt.${extension}`;
+  const { error: storageError } = await input.supabase.storage
+    .from("transfer-receipts")
+    .upload(storagePath, media.bytes, { contentType: media.mimeType, upsert: true, cacheControl: "3600" });
+  if (storageError) throw new Error("transfer_receipt_storage_failed");
 
-  if (!amountMatches) {
-    const detected = reading.amountMinor == null ? null : new Intl.NumberFormat("es-MX", { style: "currency", currency: expectedCurrency }).format(reading.amountMinor / 100);
-    const expected = new Intl.NumberFormat("es-MX", { style: "currency", currency: expectedCurrency }).format(expectedAmount / 100);
+  if (!reading || reading.amountMinor == null || reading.confidence < 0.75) {
+    await createReceiptValidationHandoff({
+      supabase: input.supabase,
+      studioId: input.studioId,
+      conversationId: input.conversationId,
+      studentId: input.studentId,
+      note: "No se pudo leer el monto del comprobante con suficiente confianza. Revisar el archivo antes de activar cualquier paquete.",
+    });
     return {
       handled: true as const,
-      result: { ok: false, reason_code: reading.amountMinor == null ? "receipt_amount_unreadable" : "receipt_amount_mismatch" },
-      reply: detected
-        ? `Recibí tu comprobante, pero el monto que pude leer (${detected}) no coincide con el paquete pendiente (${expected}). No activé el paquete. Puedes enviarme el comprobante correcto.`
-        : "Recibí tu comprobante, pero no pude leer el monto con suficiente seguridad. No activé el paquete y lo dejé pendiente para revisión.",
+      result: { ok: false, reason_code: "receipt_amount_unreadable" },
+      reply: "Recibí tu comprobante, pero no pude leer el monto con suficiente seguridad. No activé ningún paquete y el pago quedó pendiente de revisión.",
     };
   }
 
-  const { data, error } = await input.supabase.rpc("service_activate_transfer_receipt", {
-    target_studio_id: input.studioId,
-    target_conversation_id: input.conversationId,
-    target_student_id: input.studentId,
-    target_event_id: input.eventId,
-    target_provider_message_id: input.providerMessageId,
-    target_media_id: input.mediaId,
-  });
-  const result = isObject(data) ? data : null;
-  if (error) throw new Error("transfer_receipt_activation_failed");
-  if (!result || result.ok !== true) return { handled: false as const, reasonCode: String(result?.reason_code ?? "transfer_receipt_not_activated") };
+  if (pendingIntent) {
+    const expectedAmount = Number(pendingIntent.amount_minor);
+    const expectedCurrency = String(pendingIntent.currency ?? "MXN").toUpperCase();
+    const amountMatches =
+      reading.amountMinor === expectedAmount &&
+      (!reading.currency || reading.currency === expectedCurrency);
 
-  const packageName = String(result.package_name ?? "tu paquete").trim() || "tu paquete";
-  const intentId = String(result.intent_id ?? "").trim();
-  const saleId = String(result.sale_id ?? "").trim();
-  if (!UUID_RE.test(intentId)) throw new Error("transfer_receipt_intent_missing");
+    await input.supabase.from("assistant_transfer_purchase_intents").update({
+      receipt_storage_path: storagePath,
+      receipt_mime_type: media.mimeType,
+      receipt_file_size: media.fileSize,
+      receipt_stored_at: new Date().toISOString(),
+      receipt_detected_amount_minor: reading.amountMinor,
+      receipt_detected_currency: reading.currency,
+      receipt_detected_date: reading.date,
+      receipt_detected_reference: reading.reference,
+      receipt_detected_bank: reading.bank,
+      receipt_read_confidence: reading.confidence,
+      receipt_amount_matches: amountMatches,
+      receipt_read_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    }).eq("id", pendingIntent.id).eq("studio_id", input.studioId);
 
-  const extension = media.mimeType === "application/pdf" ? "pdf" : media.mimeType === "image/png" ? "png" : media.mimeType === "image/webp" ? "webp" : "jpg";
-  const storagePath = `${input.studioId}/${input.studentId}/${intentId}/receipt.${extension}`;
-  const { error: storageError } = await input.supabase.storage.from("transfer-receipts").upload(storagePath, media.bytes, { contentType: media.mimeType, upsert: true, cacheControl: "3600" });
-  if (storageError) throw new Error("transfer_receipt_storage_failed");
+    if (!amountMatches) {
+      return {
+        handled: true as const,
+        result: { ok: false, reason_code: "receipt_amount_mismatch" },
+        reply: `Recibí tu comprobante, pero el monto que pude leer (${formatReceiptMoney(reading.amountMinor, expectedCurrency)}) no coincide con el paquete pendiente (${formatReceiptMoney(expectedAmount, expectedCurrency)}). No activé el paquete. Puedes enviarme el comprobante correcto.`,
+      };
+    }
 
-  const { error: receiptUpdateError } = await input.supabase.from("assistant_transfer_purchase_intents").update({
-    receipt_storage_path: storagePath,
-    receipt_mime_type: media.mimeType,
-    receipt_file_size: media.fileSize,
-    receipt_stored_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  }).eq("id", intentId).eq("studio_id", input.studioId).eq("student_id", input.studentId);
-  if (receiptUpdateError) throw new Error("transfer_receipt_storage_metadata_failed");
-
-  const { data: policy } = await input.supabase.from("assistant_handoff_policies").select("enabled").eq("studio_id", input.studioId).eq("reason_code", "receipt_validation_failed").maybeSingle();
-  if (policy?.enabled === true) {
-    await input.supabase.rpc("assistant_create_handoff", {
+    const { data, error } = await input.supabase.rpc("service_activate_transfer_receipt", {
       target_studio_id: input.studioId,
       target_conversation_id: input.conversationId,
       target_student_id: input.studentId,
-      target_reason_code: "receipt_validation_failed",
-      target_note: `Comprobante leído: monto coincide con el paquete. Paquete activado provisionalmente: ${packageName}. Intento: ${intentId}. Venta: ${saleId || "sin referencia"}. Validar que la transferencia haya ingresado antes de aprobar definitivamente.`,
+      target_event_id: input.eventId,
+      target_provider_message_id: input.providerMessageId,
+      target_media_id: input.mediaId,
     });
+    const result = isObject(data) ? data : null;
+    if (error) throw new Error("transfer_receipt_activation_failed");
+    if (!result || result.ok !== true) {
+      return { handled: false as const, reasonCode: String(result?.reason_code ?? "transfer_receipt_not_activated") };
+    }
+
+    const packageName = String(result.package_name ?? "tu paquete").trim() || "tu paquete";
+    await createReceiptValidationHandoff({
+      supabase: input.supabase,
+      studioId: input.studioId,
+      conversationId: input.conversationId,
+      studentId: input.studentId,
+      note: `Comprobante leído: monto coincide con ${packageName}. Paquete activado provisionalmente; validar que la transferencia haya ingresado antes de aprobar definitivamente.`,
+    });
+    return {
+      handled: true as const,
+      result,
+      reply: `Recibí tu comprobante y el monto coincide con ${packageName}. Activé tu paquete provisionalmente para que puedas continuar. El pago queda pendiente de validación.`,
+    };
   }
 
+  const expectedCurrency = reading.currency || "MXN";
+  const { data: products, error: productError } = await input.supabase
+    .from("product_templates")
+    .select("id,name,price_minor,currency,credit_limit,unlimited,package_term,product_type,assistant_visible,reward_credit_wallet")
+    .eq("studio_id", input.studioId)
+    .eq("active", true)
+    .eq("price_minor", reading.amountMinor)
+    .neq("product_type", "enrollment");
+  if (productError) throw new Error("receipt_package_lookup_failed");
+
+  const candidates = (products ?? []).filter(
+    (item) =>
+      item.assistant_visible !== false &&
+      item.reward_credit_wallet !== true &&
+      (!reading.currency || String(item.currency ?? "").toUpperCase() === reading.currency),
+  );
+
+  if (!candidates.length) {
+    return {
+      handled: true as const,
+      result: { ok: false, reason_code: "receipt_amount_without_package_match" },
+      reply: `Gracias. Pude leer un pago de ${formatReceiptMoney(reading.amountMinor, expectedCurrency)}, pero no coincide exactamente con un paquete activo. ¿Qué estás pagando con esta transferencia?`,
+    };
+  }
+
+  const { data: recentUserTurns } = await input.supabase
+    .from("assistant_turns")
+    .select("content")
+    .eq("studio_id", input.studioId)
+    .eq("conversation_id", input.conversationId)
+    .eq("role", "user")
+    .order("created_at", { ascending: false })
+    .limit(6);
+
+  const context = normalizeReceiptText(
+    [input.messageText, ...(recentUserTurns ?? []).map((row) => String(row.content ?? ""))].join(" "),
+  );
+  const scored = candidates.map((item) => {
+    const name = normalizeReceiptText(String(item.name ?? ""));
+    let score = name && context.includes(name) ? 5 : 0;
+    if (item.unlimited === true && context.includes("ilimitado")) score = Math.max(score, 4);
+    const credits = Number(item.credit_limit ?? 0);
+    if (credits > 0 && new RegExp(`\\b${credits}\\s*(?:clase|clases)\\b`).test(context)) score = Math.max(score, 4);
+    const term = normalizeReceiptText(String(item.package_term ?? ""));
+    if (term && context.includes(term)) score = Math.max(score, 3);
+    return { item, score };
+  });
+  const bestScore = Math.max(...scored.map((row) => row.score));
+  const strongMatches = scored.filter((row) => row.score === bestScore && row.score >= 3);
+
+  if (strongMatches.length === 1) {
+    const product = strongMatches[0].item;
+    const { data: preparedData, error: preparedError } = await input.supabase.rpc(
+      "service_prepare_transfer_purchase",
+      {
+        target_studio_id: input.studioId,
+        target_conversation_id: input.conversationId,
+        target_student_id: input.studentId,
+        target_session_id: null,
+        target_product_template_id: product.id,
+      },
+    );
+    const prepared = isObject(preparedData) ? preparedData : null;
+    if (preparedError || !prepared || prepared.ok !== true) {
+      return { handled: true as const, result: { ok: false }, reply: "Pude leer el comprobante, pero no pude preparar el paquete con seguridad. No activé nada." };
+    }
+    const intentId = String(prepared.intent_id ?? "");
+    await input.supabase.from("assistant_transfer_purchase_intents").update({
+      receipt_storage_path: storagePath,
+      receipt_mime_type: media.mimeType,
+      receipt_file_size: media.fileSize,
+      receipt_stored_at: new Date().toISOString(),
+      receipt_detected_amount_minor: reading.amountMinor,
+      receipt_detected_currency: reading.currency,
+      receipt_detected_date: reading.date,
+      receipt_detected_reference: reading.reference,
+      receipt_detected_bank: reading.bank,
+      receipt_read_confidence: reading.confidence,
+      receipt_amount_matches: true,
+      receipt_read_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    }).eq("id", intentId).eq("studio_id", input.studioId);
+
+    const { data: activationData, error: activationError } = await input.supabase.rpc(
+      "service_activate_transfer_receipt",
+      {
+        target_studio_id: input.studioId,
+        target_conversation_id: input.conversationId,
+        target_student_id: input.studentId,
+        target_event_id: input.eventId,
+        target_provider_message_id: input.providerMessageId,
+        target_media_id: input.mediaId,
+      },
+    );
+    const activation = isObject(activationData) ? activationData : null;
+    if (activationError || !activation || activation.ok !== true) {
+      return { handled: true as const, result: { ok: false }, reply: "Pude identificar el paquete, pero no pude activarlo con seguridad. No hice ningún cambio definitivo." };
+    }
+    const packageName = String(activation.package_name ?? product.name ?? "tu paquete");
+    await createReceiptValidationHandoff({
+      supabase: input.supabase,
+      studioId: input.studioId,
+      conversationId: input.conversationId,
+      studentId: input.studentId,
+      note: `Comprobante asociado por contexto y monto a ${packageName}. Paquete activado provisionalmente; validar transferencia.`,
+    });
+    return {
+      handled: true as const,
+      result: activation,
+      reply: `Gracias. Leí un pago de ${formatReceiptMoney(reading.amountMinor, expectedCurrency)} y por el contexto corresponde a ${packageName}. Activé el paquete provisionalmente; el pago queda pendiente de validación.`,
+    };
+  }
+
+  const options = candidates.map((item, index) => ({
+    option_number: index + 1,
+    product_template_id: item.id,
+    name: item.name,
+    price_minor: item.price_minor,
+    currency: item.currency,
+    credit_limit: item.credit_limit,
+    unlimited: item.unlimited,
+    package_term: item.package_term,
+  }));
+  const expiresAt = new Date(Date.now() + 24 * 60 * 60_000).toISOString();
+  await input.supabase
+    .from("assistant_pending_actions")
+    .update({ status: "cancelled", updated_at: new Date().toISOString() })
+    .eq("studio_id", input.studioId)
+    .eq("conversation_id", input.conversationId)
+    .eq("action_type", "commerce.receipt_package_choice")
+    .eq("status", "pending");
+
+  await input.supabase.from("assistant_pending_actions").insert({
+    studio_id: input.studioId,
+    conversation_id: input.conversationId,
+    action_type: "commerce.receipt_package_choice",
+    action_token_hash: sha256Hex(`${input.providerMessageId}:${input.studentId}:receipt-choice`),
+    action_payload: {
+      options,
+      event_id: input.eventId,
+      provider_message_id: input.providerMessageId,
+      media_id: input.mediaId,
+      storage_path: storagePath,
+      mime_type: media.mimeType,
+      file_size: media.fileSize,
+      stored_at: new Date().toISOString(),
+      detected_amount_minor: reading.amountMinor,
+      detected_currency: reading.currency,
+      detected_date: reading.date,
+      detected_reference: reading.reference,
+      detected_bank: reading.bank,
+      read_confidence: reading.confidence,
+      read_at: new Date().toISOString(),
+    },
+    confirmation_summary: {
+      amount_minor: reading.amountMinor,
+      currency: expectedCurrency,
+      options,
+    },
+    status: "pending",
+    expires_at: expiresAt,
+  });
+
+  if (candidates.length === 1) {
+    const only = candidates[0];
+    return {
+      handled: true as const,
+      result: { ok: true, status: "package_confirmation_required" },
+      reply: `Gracias. Veo un pago de ${formatReceiptMoney(reading.amountMinor, expectedCurrency)}. Ese monto coincide con ${String(only.name)}. ¿Quieres que active ese paquete de forma provisional mientras validamos la transferencia?`,
+    };
+  }
+
+  const optionLines = options.map((item) => `${item.option_number}. ${String(item.name)}`);
   return {
     handled: true as const,
-    result,
-    reply: `Recibí tu comprobante y el monto coincide con ${packageName}. Activé tu paquete provisionalmente para que puedas continuar. El pago queda pendiente de validación.`,
+    result: { ok: true, status: "package_choice_required" },
+    reply:
+      `Gracias. Veo un pago de ${formatReceiptMoney(reading.amountMinor, expectedCurrency)} y hay más de un paquete con ese monto. ¿A cuál corresponde?\n\n` +
+      optionLines.join("\n"),
   };
 }
 
@@ -733,6 +1151,7 @@ export async function POST(request: Request) {
           providerMessageId: message.providerMessageId,
           mediaId: message.mediaId,
           messageType: message.messageType,
+          messageText: message.text,
           webhookConfig,
         });
       } catch {
@@ -831,6 +1250,64 @@ export async function POST(request: Request) {
       outcomes.push({
         provider_message_id: message.providerMessageId,
         outcome: deterministicOutcome,
+      });
+      continue;
+    }
+
+    const receiptChoice = await tryResolveReceiptPackageChoice({
+      supabase,
+      studioId,
+      conversationId,
+      studentId,
+      messageText: message.text,
+    });
+    if (receiptChoice) {
+      const reply = receiptChoice.reply;
+      if (sendReplies) {
+        const delivery = await sendMetaWhatsAppText({
+          config: webhookConfig,
+          recipientWaId: message.fromWaId,
+          text: reply,
+        });
+        if (delivery.status === "error") {
+          await recordFailedDelivery({
+            supabase,
+            studioId,
+            eventId: event.id,
+            conversationId,
+            recipientWaId: message.fromWaId,
+            reply,
+            errorCode: delivery.errorCode,
+            retryable: delivery.retryable,
+            httpStatus: delivery.httpStatus,
+            responseSnapshot: delivery.responseSnapshot,
+          });
+          retryableFailure = retryableFailure || delivery.retryable;
+          continue;
+        }
+        await persistAcceptedReply({
+          supabase,
+          studioId,
+          eventId: event.id,
+          conversationId,
+          inboundTurnId,
+          reply,
+          recipientWaId: message.fromWaId,
+          providerMessageId: delivery.providerMessageId,
+          httpStatus: delivery.httpStatus,
+          responseSnapshot: delivery.responseSnapshot,
+          trace: { deterministic: receiptChoice.outcome },
+        });
+      } else {
+        await markEvent(supabase, studioId, event.id, {
+          processing_status: "processed",
+          processing_result: { outcome: receiptChoice.outcome },
+          processed_at: new Date().toISOString(),
+        });
+      }
+      outcomes.push({
+        provider_message_id: message.providerMessageId,
+        outcome: receiptChoice.outcome,
       });
       continue;
     }

@@ -2997,60 +2997,38 @@ async function prepareTransferPackageChoice(
   ctx: AssistantActionToolContext,
   args: PrepareTransferPackageChoiceArgs,
 ) {
-  if (!ctx.studentId) {
-    return { ok: false, error: "identity_required" };
-  }
+  if (!ctx.studentId) return { ok: false, error: "identity_required" };
 
-  const sessionId = parseOpaqueRef(args.session_ref, "session");
-  if (!sessionId) return { ok: false, error: "invalid_session_ref" };
+  const rawSessionRef = args.session_ref?.trim() || null;
+  const sessionId = rawSessionRef ? parseOpaqueRef(rawSessionRef, "session") : null;
+  if (rawSessionRef && !sessionId) return { ok: false, error: "invalid_session_ref" };
 
   const requestedRefs = Array.from(
     new Set((args.product_refs ?? []).map((value) => String(value ?? "").trim()).filter(Boolean)),
   ).slice(0, 10);
-
-  if (!requestedRefs.length) {
-    return { ok: false, error: "transfer_package_options_required" };
-  }
+  if (!requestedRefs.length) return { ok: false, error: "transfer_package_options_required" };
 
   const commercialRaw = await getCommercialOptions(
-    {
-      supabase: ctx.supabase,
-      studio: ctx.studio,
-      studentId: ctx.studentId,
-    },
-    { session_ref: args.session_ref },
+    { supabase: ctx.supabase, studio: ctx.studio, studentId: ctx.studentId },
+    { session_ref: rawSessionRef },
   );
   const commercial = asObject(commercialRaw);
-
-  if (!commercial || commercial.ok !== true) {
-    return commercialRaw;
-  }
+  if (!commercial || commercial.ok !== true) return commercialRaw;
 
   const paymentOptions = Array.isArray(commercial.payment_options)
-    ? commercial.payment_options
-        .map((item) => asObject(item))
-        .filter((item): item is Record<string, unknown> => Boolean(item))
+    ? commercial.payment_options.map((item) => asObject(item)).filter((item): item is Record<string, unknown> => Boolean(item))
     : [];
-  const transferAvailable = paymentOptions.some(
-    (item) => String(item.code ?? "") === "bank_transfer",
-  );
-  if (!transferAvailable) {
+  if (!paymentOptions.some((item) => String(item.code ?? "") === "bank_transfer")) {
     return { ok: false, error: "bank_transfer_not_available" };
   }
 
   const commercialOptions = Array.isArray(commercial.options)
-    ? commercial.options
-        .map((item) => asObject(item))
-        .filter((item): item is Record<string, unknown> => Boolean(item))
+    ? commercial.options.map((item) => asObject(item)).filter((item): item is Record<string, unknown> => Boolean(item))
     : [];
-
   const selectedOptions = commercialOptions.filter((item) =>
     requestedRefs.includes(String(item.product_ref ?? "")),
   );
-
-  if (!selectedOptions.length) {
-    return { ok: false, error: "transfer_package_options_invalid" };
-  }
+  if (!selectedOptions.length) return { ok: false, error: "transfer_package_options_invalid" };
 
   const now = new Date().toISOString();
   await ctx.supabase
@@ -3062,8 +3040,7 @@ async function prepareTransferPackageChoice(
     .eq("status", "pending");
 
   const expiresAt = new Date(Date.now() + 24 * 60 * 60_000).toISOString();
-  const secretToken = randomUUID();
-  const tokenHash = createHash("sha256").update(secretToken).digest("hex");
+  const tokenHash = createHash("sha256").update(randomUUID()).digest("hex");
   const options = selectedOptions.map((item, index) => ({
     option_number: index + 1,
     product_ref: String(item.product_ref ?? ""),
@@ -3082,7 +3059,7 @@ async function prepareTransferPackageChoice(
     action_token_hash: tokenHash,
     action_payload: {
       stage: "package_choice",
-      session_ref: args.session_ref,
+      session_ref: rawSessionRef,
       session_id: sessionId,
       student_id: ctx.studentId,
       payment_method: "bank_transfer",
@@ -3090,24 +3067,21 @@ async function prepareTransferPackageChoice(
       prepared_turn_id: ctx.turnId,
     },
     confirmation_summary: {
-      session_ref: args.session_ref,
+      session_ref: rawSessionRef,
       payment_method: "bank_transfer",
       options,
     },
     status: "pending",
     expires_at: expiresAt,
   });
-
-  if (error) {
-    return { ok: false, error: "transfer_package_choice_create_failed" };
-  }
+  if (error) return { ok: false, error: "transfer_package_choice_create_failed" };
 
   return {
     ok: true,
     status: "package_choice_required",
     expires_at: expiresAt,
     payment_method: "bank_transfer",
-    session_ref: args.session_ref,
+    session_ref: rawSessionRef,
     options,
   };
 }
@@ -3116,16 +3090,13 @@ async function prepareBankTransferPurchase(
   ctx: AssistantActionToolContext,
   args: PrepareBankTransferPurchaseArgs,
 ) {
-  if (!ctx.serviceMode) {
-    return { ok: false, error: "bank_transfer_purchase_requires_service_mode" };
-  }
-  if (!ctx.studentId) {
-    return { ok: false, error: "identity_required" };
-  }
+  if (!ctx.serviceMode) return { ok: false, error: "bank_transfer_purchase_requires_service_mode" };
+  if (!ctx.studentId) return { ok: false, error: "identity_required" };
 
-  const sessionId = parseOpaqueRef(args.session_ref, "session");
+  const rawSessionRef = args.session_ref?.trim() || null;
+  const sessionId = rawSessionRef ? parseOpaqueRef(rawSessionRef, "session") : null;
   const productId = parseOpaqueRef(args.product_ref, "product");
-  if (!sessionId) return { ok: false, error: "invalid_session_ref" };
+  if (rawSessionRef && !sessionId) return { ok: false, error: "invalid_session_ref" };
   if (!productId) return { ok: false, error: "invalid_product_ref" };
 
   const { data, error } = await ctx.supabase.rpc("service_prepare_transfer_purchase", {
