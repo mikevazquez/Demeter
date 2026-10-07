@@ -303,7 +303,17 @@ export default async function NotificationsPage({
                             : "✓"}
                   </span>
                   <span className="notification-process-copy">
-                    <strong>{process.name}</strong>
+                    <span className="notification-process-title-line">
+                      <strong>{process.name}</strong>
+                      <span className="notification-category-tag">
+                        {NOTIFICATION_PROCESS_CATEGORIES.find(
+                          (category) => category.key === process.category,
+                        )?.label ?? "Proceso"}
+                      </span>
+                    </span>
+                    <small className="notification-process-description">
+                      {process.description}
+                    </small>
                     <small>{process.timingLabel}</small>
                   </span>
                   <span className="notification-channel-chips">
