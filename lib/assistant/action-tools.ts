@@ -637,7 +637,15 @@ async function prepareBooking(ctx: AssistantActionToolContext, args: PrepareBook
     }
 
     const previewObject = asObject(preview);
-    if (!previewObject || previewObject.ok !== true || previewObject.eligible !== true) {
+    const prepaidTrialOverridesLegacyNoShowBlock =
+      requirePaymentBeforeBooking &&
+      previewObject?.reason_code === "trial_prepayment_required";
+
+    if (
+      !previewObject ||
+      ((!previewObject.ok || previewObject.eligible !== true) &&
+        !prepaidTrialOverridesLegacyNoShowBlock)
+    ) {
       const reasonCode = String(previewObject?.reason_code ?? "booking_not_eligible");
 
       if (reasonCode === "trial_prepayment_required") {
