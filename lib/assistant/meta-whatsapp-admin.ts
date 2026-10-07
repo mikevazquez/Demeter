@@ -19,7 +19,6 @@ export type MetaApprovedTemplate = {
 
 export type MetaTemplateStatus = MetaApprovedTemplate & {
   status: string;
-  rejectedReason: string | null;
   variableCount: number;
 };
 
@@ -198,7 +197,6 @@ function templatesWithStatus(body: JsonObject): MetaTemplateStatus[] {
           status,
           category: textValue(row.category),
           testReady: !componentNeedsParameters(row.components),
-          rejectedReason: textValue(row.rejected_reason) ?? textValue(row.reason),
           variableCount: componentVariableCount(row.components),
         },
       ];
@@ -222,7 +220,7 @@ export async function getMetaWhatsAppAdminDiagnostics(
       graphRequest(config, `${config.wabaId}/subscribed_apps?limit=50`),
       graphRequest(
         config,
-        `${config.wabaId}/message_templates?limit=100&fields=name,status,language,category,components,rejected_reason`,
+        `${config.wabaId}/message_templates?limit=100&fields=name,status,language,category,components`,
       ),
     ]);
 
