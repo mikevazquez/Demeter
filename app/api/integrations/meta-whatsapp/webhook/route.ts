@@ -159,7 +159,8 @@ async function hasBlockingOpenHandoff(input: {
     throw new Error("assistant_handoff_lookup_failed");
   }
 
-  return (data ?? []).some((handoff) => handoff.reason_code !== "transfer_receipt_review");
+  const nonBlockingReasons = new Set(["transfer_receipt_review", "whatsapp_media_review"]);
+  return (data ?? []).some((handoff) => !nonBlockingReasons.has(handoff.reason_code));
 }
 
 async function createMediaHandoff(input: {
