@@ -3,17 +3,52 @@ import Link from "next/link";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getAdminContext } from "@/lib/auth/admin-context";
 
-import DemiChat from "./DemiChat";
+import DemiWorkbench from "./DemiWorkbench";
+import type { PromptVersion } from "@/lib/assistant/prompt-workbench";
+import "./workbench.css";
 import "./demi.css";
 
-function money(value: number | null) {
+const USD_TO_MXN_FALLBACK = 18.5;
+
+async function getUsdToMxnRate() {
+  try {
+    const response = await fetch("https://open.er-api.com/v6/latest/USD", {
+      next: { revalidate: 86_400 },
+    });
+    if (!response.ok) throw new Error("exchange_rate_unavailable");
+
+    const data = (await response.json()) as {
+      result?: string;
+      time_last_update_utc?: string;
+      rates?: { MXN?: number };
+    };
+    const rate = Number(data.rates?.MXN);
+    if (data.result !== "success" || !Number.isFinite(rate) || rate <= 0) {
+      throw new Error("exchange_rate_invalid");
+    }
+
+    return {
+      rate,
+      updatedAt: data.time_last_update_utc ?? "actualización diaria",
+      fallback: false,
+    };
+  } catch {
+    return {
+      rate: USD_TO_MXN_FALLBACK,
+      updatedAt: "tipo de cambio de referencia",
+      fallback: true,
+    };
+  }
+}
+
+function money(value: number | null, usdToMxn: number) {
   if (value == null) return "Sin límite";
-  return new Intl.NumberFormat("en-US", {
+  return new Intl.NumberFormat("es-MX", {
     style: "currency",
-    currency: "USD",
+    currency: "MXN",
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
-  }).format(value / 1_000_000);
+  }).format((value / 1_000_000) * usdToMxn);
 }
 
 function monthStartIso() {
@@ -27,14 +62,13 @@ export default async function DemiDemoPage() {
   const [
     { data: config },
     { data: monthCalls },
-    { count: conversations },
-    { data: students },
-    { data: prospectContacts },
+    { data: versions, error: versionsError },
+    exchangeRate,
   ] = await Promise.all([
     supabase
       .from("assistant_configs")
       .select(
-        "assistant_name,mode,model,reasoning_effort,monthly_budget_usd_micros,conversation_budget_usd_micros",
+        "assistant_name,mode,model,reasoning_effort,personality_instructions,monthly_budget_usd_micros,conversation_budget_usd_micros",
       )
       .eq("studio_id", studio.id)
       .maybeSingle(),
@@ -44,32 +78,19 @@ export default async function DemiDemoPage() {
       .eq("studio_id", studio.id)
       .gte("created_at", monthStartIso()),
     supabase
-      .from("assistant_conversations")
-      .select("id", { count: "exact", head: true })
-      .eq("studio_id", studio.id),
-    supabase
-      .from("students")
-      .select("id,full_name")
+      .from("assistant_prompt_versions")
+      .select("id,kind,instructions,note,created_at")
       .eq("studio_id", studio.id)
-      .eq("active", true)
-      .eq("lifecycle_status", "active")
-      .order("full_name")
-      .limit(60),
-    supabase
-      .from("crm_contacts")
-      .select("id,person_id,lifecycle_status")
-      .eq("studio_id", studio.id)
-      .is("converted_student_id", null)
-      .in("lifecycle_status", ["prospect", "trial"])
       .order("created_at", { ascending: false })
-      .limit(40),
+      .limit(50),
+    getUsdToMxnRate(),
   ]);
 
   if (!config) {
     return (
-      <main className="demi-page">
-        <Link className="demi-back" href="/admin/integraciones">
-          ← Integraciones
+      <main className="demi-page demi-settings-page">
+        <Link className="demi-back" href="/admin/notificaciones">
+          ← Comunicación
         </Link>
         <section className="demi-unavailable">
           <h1>Demi todavía no está configurada</h1>
@@ -78,35 +99,6 @@ export default async function DemiDemoPage() {
       </main>
     );
   }
-
-  const prospectPersonIds = (prospectContacts ?? [])
-    .map((contact) => contact.person_id)
-    .filter((id): id is string => Boolean(id));
-
-  const { data: prospectPersons } = prospectPersonIds.length
-    ? await supabase
-        .from("persons")
-        .select("id,first_name,last_name")
-        .eq("studio_id", studio.id)
-        .in("id", prospectPersonIds)
-    : { data: [] as Array<{ id: string; first_name: string; last_name: string | null }> };
-
-  const prospectPersonMap = new Map((prospectPersons ?? []).map((person) => [person.id, person]));
-
-  const prospects = (prospectContacts ?? [])
-    .map((contact) => {
-      const person = prospectPersonMap.get(contact.person_id);
-      if (!person) return null;
-      const name = [person.first_name, person.last_name].filter(Boolean).join(" ").trim();
-      return {
-        id: contact.id,
-        name: name || "Prospecto",
-        lifecycleStatus: contact.lifecycle_status,
-      };
-    })
-    .filter((prospect): prospect is { id: string; name: string; lifecycleStatus: string } =>
-      Boolean(prospect),
-    );
 
   const spent = (monthCalls ?? []).reduce(
     (total, row) => total + Number(row.estimated_cost_usd_micros ?? 0),
@@ -119,17 +111,17 @@ export default async function DemiDemoPage() {
   const openAIConfigured = Boolean(process.env.OPENAI_API_KEY?.trim());
 
   return (
-    <main className="demi-page">
+    <main className="demi-page demi-settings-page">
       <header className="demi-header">
         <div>
-          <Link className="demi-back" href="/admin/integraciones">
-            ← Integraciones
+          <Link className="demi-back" href="/admin/notificaciones">
+            ← Comunicación
           </Link>
-          <div className="demi-eyebrow">Asistente interno</div>
+          <div className="demi-eyebrow">Comportamiento y pruebas</div>
           <h1>🤖 {config.assistant_name}</h1>
           <p>
-            Conversa con el asistente usando datos reales de {studio.name}. Ya puede reservar,
-            cancelar, reagendar y entrar a lista de espera con confirmación explícita.
+            Configura cómo responde {config.assistant_name}, mejora sus instrucciones y prueba
+            conversaciones antes de activar una versión.
           </p>
         </div>
         <span className="demi-mode">Modo {config.mode}</span>
@@ -143,8 +135,8 @@ export default async function DemiDemoPage() {
         </article>
         <article>
           <span>Gasto del mes</span>
-          <strong>{money(spent)}</strong>
-          <small>Límite {money(config.monthly_budget_usd_micros)}</small>
+          <strong>{money(spent, exchangeRate.rate)}</strong>
+          <small>Límite aprox. {money(config.monthly_budget_usd_micros, exchangeRate.rate)}</small>
         </article>
         <article>
           <span>Tokens del mes</span>
@@ -152,26 +144,28 @@ export default async function DemiDemoPage() {
           <small>{monthCalls?.length ?? 0} llamadas</small>
         </article>
         <article>
-          <span>Conversaciones</span>
-          <strong>{conversations ?? 0}</strong>
-          <small>Límite por conversación {money(config.conversation_budget_usd_micros)}</small>
+          <span>Límite por conversación</span>
+          <strong>{money(config.conversation_budget_usd_micros, exchangeRate.rate)}</strong>
+          <small>Incluye las pruebas de instrucciones</small>
         </article>
       </section>
 
-      <section className="demi-notice">
-        <strong>Regla de la demo:</strong> si Studio Flow no devuelve el dato, Demi debe decir que
-        no lo encontró. Para reservar, cancelar, reagendar o entrar a lista de espera, primero debe
-        validar el estado real y después pedir una confirmación nueva antes de ejecutar.
-      </section>
+      <p className="demi-cost-note">
+        Montos estimados de uso de OpenAI en MXN. Tipo de cambio de referencia: 1 USD ={" "}
+        {new Intl.NumberFormat("es-MX", { maximumFractionDigits: 4 }).format(exchangeRate.rate)} MXN
+        {exchangeRate.fallback ? " (respaldo)" : ` · actualizado ${exchangeRate.updatedAt}`} ·{" "}
+        <a href="https://www.exchangerate-api.com" target="_blank" rel="noreferrer">
+          fuente del tipo de cambio
+        </a>
+      </p>
 
-      <DemiChat
+      <DemiWorkbench
         assistantName={config.assistant_name}
+        activeInstructions={config.personality_instructions}
+        versions={(versions ?? []) as PromptVersion[]}
+        storageReady={!versionsError}
         openAIConfigured={openAIConfigured}
-        students={(students ?? []).map((student) => ({
-          id: student.id,
-          name: student.full_name,
-        }))}
-        prospects={prospects}
+        sandbox={process.env.NEXT_PUBLIC_SUPABASE_URL?.includes("hedouonyhynuvwbckdlg") === true}
       />
     </main>
   );

@@ -109,15 +109,21 @@
 }
 
 .notification-tabs {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  overflow: hidden;
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 6px;
+  padding: 6px;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  overscroll-behavior-x: contain;
   border: 1px solid #262f3a;
   border-radius: 16px;
   background: #10161f;
 }
 
 .notification-tabs a {
+  flex: 1 0 auto;
+  min-width: 108px;
   min-height: 46px;
   display: grid;
   place-items: center;
@@ -125,6 +131,8 @@
   text-decoration: none;
   font-size: 11px;
   font-weight: 750;
+  white-space: nowrap;
+  border-radius: 11px;
 }
 
 .notification-tabs a.is-active {
@@ -794,9 +802,9 @@ a.notification-process-row:hover {
   }
 
   .notification-tabs a {
-    min-height: 42px;
-    padding-inline: 5px;
-    font-size: 9px;
+    min-height: 44px;
+    padding: 12px 16px;
+    font-size: 13px;
   }
 
   .notification-overview-card,
@@ -872,7 +880,6 @@ a.notification-process-row:hover {
 
 @media (max-width: 430px) {
   .notification-tabs {
-    grid-template-columns: repeat(4, minmax(72px, 1fr));
     overflow-x: auto;
   }
 
@@ -1074,11 +1081,23 @@ a.notification-process-row:hover {
 
 .notification-tabs a {
   color: #66758a !important;
+  padding: 12px 16px;
+  font-size: 13px;
+  line-height: 1.25;
 }
 .notification-tabs a.is-active {
   background: var(--notification-accent-soft) !important;
   color: var(--notification-accent-strong) !important;
-  box-shadow: inset 0 -2px 0 var(--notification-accent) !important;
+  box-shadow: none !important;
+}
+
+.notification-tabs a:hover {
+  background: #f2f7f5;
+}
+
+.notification-tabs a:focus-visible {
+  outline: 2px solid var(--notification-accent-strong);
+  outline-offset: -2px;
 }
 
 .notification-process-row:hover,

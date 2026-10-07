@@ -153,7 +153,7 @@ export default async function IntegrationsPage() {
           <IntegrationCard
             mark="D"
             name={demiConfig?.assistant_name ?? "Demi"}
-            description="Asistente conversacional propio de Studio Flow."
+            description="Instrucciones, mejoras con IA y pruebas de conversación."
             detail={
               demiConfig
                 ? `${demiConfig.model} · modo ${demiConfig.mode}`

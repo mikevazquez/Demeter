@@ -1,0 +1,339 @@
+.demi-page.demi-settings-page {
+  color: #242133;
+  background: #faf8fd;
+}
+.demi-settings-page .demi-header p,
+.demi-settings-page .demi-back,
+.demi-settings-page .demi-kpis small {
+  color: #655d72;
+}
+.demi-settings-page .demi-eyebrow {
+  color: #7045b4;
+}
+.demi-settings-page .demi-mode {
+  color: #226540;
+  background: #eaf6ee;
+  border-color: #c9e4d3;
+}
+.demi-settings-page .demi-kpis article,
+.demi-settings-page .demi-unavailable {
+  color: #242133;
+  background: #ffffff;
+  border-color: #e4dfed;
+}
+.demi-settings-page .demi-kpis strong {
+  color: #242133;
+}
+.demi-settings-page .demi-cost-note {
+  width: min(1180px, 100%);
+  margin: -0.15rem auto 1.25rem;
+  color: #655d72;
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+.demi-settings-page .demi-cost-note a {
+  color: #5e319b;
+}
+.demi-settings-page .demi-workbench {
+  width: min(1180px, 100%);
+  margin-inline: auto;
+}
+.demi-workbench {
+  color: #202033;
+  background: #fff;
+  border: 1px solid #e4dfed;
+  border-radius: 22px;
+  overflow: hidden;
+}
+.dw-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 22px 26px;
+  font-weight: 700;
+}
+.dw-badge {
+  background: #f0e9ff;
+  color: #613caf;
+  border-radius: 30px;
+  padding: 6px 12px;
+  font-size: 13px;
+}
+.dw-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 0 26px 20px;
+  border-bottom: 1px solid #e9e4ef;
+}
+.demi-workbench button {
+  border: 1px solid #dcd5e6;
+  border-radius: 12px;
+  background: #fff;
+  color: #343048;
+  padding: 12px 16px;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.demi-workbench button:hover {
+  background: #f6f2fc;
+}
+.demi-workbench button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.demi-workbench button:focus-visible,
+.demi-workbench textarea:focus-visible,
+.demi-workbench input:focus-visible,
+.demi-workbench select:focus-visible,
+.demi-workbench summary:focus-visible {
+  outline: 3px solid #b19ae6;
+  outline-offset: 3px;
+}
+.dw-tabs button[aria-pressed="true"] {
+  background: #f0e9ff;
+  color: #5e319b;
+  border-color: #cbb5ec;
+}
+.dw-content {
+  padding: 26px;
+  display: grid;
+  gap: 14px;
+}
+.dw-content h2 {
+  font-size: 23px;
+  margin: 0 0 8px;
+}
+.dw-content h3 {
+  font-size: 18px;
+  margin: 0 0 8px;
+}
+.dw-content p {
+  line-height: 1.6;
+  margin: 0;
+  color: #5d596e;
+}
+.dw-content label {
+  font-size: 14px;
+  font-weight: 650;
+  display: grid;
+  gap: 8px;
+}
+.dw-content label span {
+  font-weight: 400;
+  color: #716a7d;
+}
+.demi-workbench textarea,
+.demi-workbench input,
+.demi-workbench select {
+  width: 100%;
+  box-sizing: border-box;
+  font: inherit;
+  color: #242133;
+  background: #fff;
+  border: 1px solid #dcd5e6;
+  border-radius: 13px;
+  padding: 14px;
+}
+.demi-workbench textarea {
+  resize: vertical;
+  line-height: 1.6;
+}
+.demi-workbench .dw-prompt {
+  min-height: 380px;
+}
+.dw-meta {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+  color: #736b81;
+}
+.dw-content .dw-hint {
+  font-size: 13px;
+  color: #6f657e;
+}
+.dw-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.demi-workbench .dw-primary {
+  background: #6b42b5;
+  color: #fff;
+  border-color: #6b42b5;
+}
+.demi-workbench .dw-primary:hover {
+  background: #59349c;
+}
+.dw-success,
+.dw-error {
+  margin: 16px 26px;
+  padding: 14px;
+  border-radius: 12px;
+  line-height: 1.5;
+}
+.dw-success {
+  color: #17643b;
+  background: #e9f7ee;
+}
+.dw-error {
+  color: #972b3f;
+  background: #fff0f2;
+}
+.dw-content .dw-error {
+  margin: 0;
+}
+.dw-history,
+.dw-activation,
+.dw-proposal {
+  border: 1px solid #e2dbe9;
+  border-radius: 14px;
+  padding: 18px;
+}
+.demi-workbench summary {
+  cursor: pointer;
+  font-weight: 650;
+}
+.demi-workbench pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font: inherit;
+  font-size: 14px;
+  color: #393147;
+  line-height: 1.6;
+  max-height: 460px;
+  overflow-y: auto;
+}
+.dw-history article {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 0;
+  border-bottom: 1px solid #eee8f2;
+}
+.dw-history small {
+  display: block;
+  margin: 4px 0;
+  color: #746b80;
+}
+.dw-history p {
+  font-size: 13px;
+}
+.dw-compare {
+  display: grid;
+  gap: 16px;
+  margin: 16px 0;
+}
+.dw-test-controls {
+  display: flex;
+  align-items: end;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.dw-test-controls label {
+  flex: 1;
+  min-width: 190px;
+}
+.dw-content .dw-test-notice {
+  color: #655181;
+  font-size: 13px;
+  background: #f6f1fc;
+  padding: 14px;
+  border-radius: 12px;
+}
+.dw-chat {
+  height: 430px;
+  overflow-y: auto;
+  background: #fcfbfe;
+  border: 1px solid #eee8f3;
+  border-radius: 16px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.dw-empty {
+  margin: auto;
+  text-align: center;
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+}
+.dw-empty > span {
+  font-size: 48px;
+}
+.dw-message {
+  border: 1px solid #e9e1f1;
+  background: #fff;
+  border-radius: 16px;
+  padding: 14px 16px;
+  max-width: 85%;
+  align-self: flex-start;
+}
+.dw-message.is-user {
+  background: #efe6fc;
+  color: #412767;
+  align-self: flex-end;
+  border-color: #decdf3;
+}
+.dw-message small {
+  display: block;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+.dw-message p {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  color: inherit;
+}
+.dw-compose {
+  display: flex;
+  align-items: end;
+  gap: 12px;
+}
+.dw-compose textarea {
+  flex: 1;
+  min-width: 0;
+}
+.dw-thinking {
+  font-size: 13px;
+}
+@media (max-width: 640px) {
+  .dw-content,
+  .dw-status {
+    padding: 18px;
+  }
+  .dw-tabs {
+    padding: 0 18px 16px;
+    gap: 6px;
+  }
+  .dw-tabs button {
+    font-size: 13px;
+    padding: 10px;
+  }
+  .dw-chat {
+    height: 380px;
+    padding: 12px;
+  }
+  .dw-message {
+    max-width: 94%;
+  }
+  .dw-compose {
+    gap: 8px;
+  }
+  .dw-compose button {
+    padding: 12px;
+  }
+  .dw-history article {
+    align-items: start;
+    flex-wrap: wrap;
+  }
+  .dw-content .dw-prompt {
+    min-height: 340px;
+  }
+}
