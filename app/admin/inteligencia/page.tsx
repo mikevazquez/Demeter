@@ -93,6 +93,17 @@ type OnboardingRow = {
   completed_at: string | null;
 };
 
+type CrmConversationRow = {
+  id: string;
+  crm_contact_id: string | null;
+  student_id: string | null;
+  provider: string;
+  source: string | null;
+  campaign: string | null;
+  metadata: Record<string, unknown> | null;
+  started_at: string;
+};
+
 const views: { key: ViewKey; label: string }[] = [
   { key: "resumen", label: "Ahora" },
   { key: "dinero", label: "Ventas" },
@@ -330,6 +341,7 @@ export default async function IntelligencePage({
   const needsTemplates = view === "resumen" || view === "clases";
   const needsProductTemplates = view === "resumen" || view === "alumnas";
   const needsOnboarding = view === "alumnas";
+  const needsCrmConversations = view === "resumen" || view === "conversion";
 
   const [
     studentsResult,
@@ -341,6 +353,7 @@ export default async function IntelligencePage({
     templatesResult,
     productTemplatesResult,
     onboardingResult,
+    crmConversationsResult,
   ] = await Promise.all([
     needsStudents
       ? supabase
@@ -412,6 +425,15 @@ export default async function IntelligencePage({
           )
           .eq("studio_id", studio.id)
       : Promise.resolve({ data: [] as OnboardingRow[] }),
+    needsCrmConversations
+      ? supabase
+          .from("crm_conversations")
+          .select("id,crm_contact_id,student_id,provider,source,campaign,metadata,started_at")
+          .eq("studio_id", studio.id)
+          .gte("started_at", rangeStartIso)
+          .lt("started_at", currentEnd.toISOString())
+          .order("started_at", { ascending: false })
+      : Promise.resolve({ data: [] as CrmConversationRow[] }),
   ]);
 
   const students = (studentsResult.data ?? []) as StudentRow[];
@@ -423,6 +445,7 @@ export default async function IntelligencePage({
   const templates = (templatesResult.data ?? []) as ClassTemplateRow[];
   const productTemplates = (productTemplatesResult.data ?? []) as ProductTemplateRow[];
   const onboarding = (onboardingResult.data ?? []) as OnboardingRow[];
+  const crmConversations = (crmConversationsResult.data ?? []) as CrmConversationRow[];
 
   const sessionIds = sessions.map((session) => session.id);
   const reservationsResult = sessionIds.length
@@ -725,6 +748,38 @@ export default async function IntelligencePage({
   const trialConversion = safeRate(trialConverted, trialAttended);
   const previousTrialConversion = safeRate(trialPreviousConverted, trialPreviousAttended);
 
+  const currentConversations = crmConversations.filter((item) =>
+    isBetween(item.started_at, currentStart, currentEnd),
+  );
+  const previousConversations = crmConversations.filter((item) =>
+    isBetween(item.started_at, previousStart, currentStart),
+  );
+  const currentProspectIds = new Set(
+    currentConversations.map((item) => item.crm_contact_id).filter((id): id is string => Boolean(id)),
+  );
+  const previousProspectIds = new Set(
+    previousConversations
+      .map((item) => item.crm_contact_id)
+      .filter((id): id is string => Boolean(id)),
+  );
+  const hasMetaAdReferral = (item: CrmConversationRow) =>
+    item.source?.trim().toLowerCase() === "meta ads" ||
+    Boolean(
+      item.metadata &&
+        typeof item.metadata.meta_referral === "object" &&
+        item.metadata.meta_referral !== null,
+    );
+  const currentMetaAdConversations = currentConversations.filter(hasMetaAdReferral);
+  const currentMetaAdProspectIds = new Set(
+    currentMetaAdConversations
+      .map((item) => item.crm_contact_id)
+      .filter((id): id is string => Boolean(id)),
+  );
+  const currentDirectConversations = Math.max(
+    currentConversations.length - currentMetaAdConversations.length,
+    0,
+  );
+
   const expiredCurrent = commercialAcquisitions.filter(
     (item) =>
       !item.refunded_at &&
@@ -989,34 +1044,41 @@ export default async function IntelligencePage({
             <div className="intel-stack">
               <Section
                 title="Conversión de prueba"
-                description="El sistema actual empieza a medir desde la clase de prueba registrada."
+                description="Studio Flow ya registra el contacto de WhatsApp antes de crear la prueba."
               >
                 <div className="intel-bars">
                   <BarRow
+                    label="Prospectos rastreados"
+                    value={currentProspectIds.size}
+                    max={Math.max(currentProspectIds.size, trialCurrent.length, 1)}
+                    display={String(currentProspectIds.size)}
+                    tone="accent"
+                  />
+                  <BarRow
                     label="Pruebas registradas"
                     value={trialCurrent.length}
-                    max={Math.max(trialCurrent.length, 1)}
+                    max={Math.max(currentProspectIds.size, trialCurrent.length, 1)}
                     display={String(trialCurrent.length)}
                     tone="info"
                   />
                   <BarRow
                     label="Asistieron"
                     value={trialAttended}
-                    max={Math.max(trialCurrent.length, 1)}
+                    max={Math.max(currentProspectIds.size, trialCurrent.length, 1)}
                     display={String(trialAttended)}
                     tone="info"
                   />
                   <BarRow
                     label="Se convirtieron"
                     value={trialConverted}
-                    max={Math.max(trialCurrent.length, 1)}
+                    max={Math.max(currentProspectIds.size, trialCurrent.length, 1)}
                     display={String(trialConverted)}
                     tone="success"
                   />
                 </div>
                 <div className="intel-source-note">
-                  Registro → reserva todavía no tiene una fuente de leads previa a la clase de
-                  prueba.
+                  La atribución de anuncios de Meta se captura desde ahora cuando WhatsApp entrega
+                  la referencia del anuncio. El histórico previo no se reconstruye automáticamente.
                 </div>
               </Section>
 
@@ -1330,9 +1392,15 @@ export default async function IntelligencePage({
         <>
           <section className="intel-kpi-grid">
             <MetricCard
-              label="Pruebas registradas"
-              value={String(trialCurrent.length)}
-              delta={deltaText(trialCurrent.length, trialPrevious.length)}
+              label="Conversaciones rastreadas"
+              value={String(currentConversations.length)}
+              delta={deltaText(currentConversations.length, previousConversations.length)}
+              tone="info"
+            />
+            <MetricCard
+              label="Prospectos únicos"
+              value={String(currentProspectIds.size)}
+              delta={deltaText(currentProspectIds.size, previousProspectIds.size)}
               tone="info"
             />
             <MetricCard
@@ -1347,50 +1415,84 @@ export default async function IntelligencePage({
               delta={deltaText(trialConverted, trialPreviousConverted)}
               tone="positive"
             />
-            <MetricCard
-              label="Conversión"
-              value={pct(trialConversion, locale)}
-              delta={pointsDelta(trialConversion, previousTrialConversion)}
-              tone={trialConversion >= previousTrialConversion ? "positive" : "warning"}
-            />
           </section>
 
           <div className="intel-two-column">
             <div className="intel-stack">
               <Section
-                title="🎯 Embudo medible hoy"
-                description="La cohorte se toma por la fecha en que se creó la clase de prueba."
+                title="🎯 Embudo rastreable"
+                description="WhatsApp se registra desde el primer contacto; la prueba conserva su cohorte actual."
               >
                 <div className="intel-bars">
                   <BarRow
+                    label="Conversaciones"
+                    value={currentConversations.length}
+                    max={Math.max(currentConversations.length, trialCurrent.length, 1)}
+                    display={String(currentConversations.length)}
+                    tone="accent"
+                  />
+                  <BarRow
+                    label="Prospectos únicos"
+                    value={currentProspectIds.size}
+                    max={Math.max(currentConversations.length, trialCurrent.length, 1)}
+                    display={String(currentProspectIds.size)}
+                    tone="accent"
+                  />
+                  <BarRow
                     label="Pruebas registradas"
                     value={trialCurrent.length}
-                    max={Math.max(trialCurrent.length, 1)}
+                    max={Math.max(currentConversations.length, trialCurrent.length, 1)}
                     display={String(trialCurrent.length)}
                     tone="info"
                   />
                   <BarRow
                     label="Asistieron"
                     value={trialAttended}
-                    max={Math.max(trialCurrent.length, 1)}
+                    max={Math.max(currentConversations.length, trialCurrent.length, 1)}
                     display={String(trialAttended)}
                     tone="accent"
                   />
                   <BarRow
                     label="Se convirtieron"
                     value={trialConverted}
-                    max={Math.max(trialCurrent.length, 1)}
+                    max={Math.max(currentConversations.length, trialCurrent.length, 1)}
                     display={String(trialConverted)}
                     tone="success"
                   />
                 </div>
               </Section>
 
-              <Section title="Fuente pendiente: leads">
+              <Section
+                title="Origen de WhatsApp"
+                description="Atribución disponible dentro de Studio Flow para conversaciones nuevas."
+              >
+                <div className="intel-bars">
+                  <BarRow
+                    label="Meta Ads atribuidas"
+                    value={currentMetaAdConversations.length}
+                    max={Math.max(currentConversations.length, 1)}
+                    display={String(currentMetaAdConversations.length)}
+                    tone="success"
+                  />
+                  <BarRow
+                    label="Prospectos de Meta Ads"
+                    value={currentMetaAdProspectIds.size}
+                    max={Math.max(currentProspectIds.size, 1)}
+                    display={String(currentMetaAdProspectIds.size)}
+                    tone="info"
+                  />
+                  <BarRow
+                    label="WhatsApp directo / sin atribución"
+                    value={currentDirectConversations}
+                    max={Math.max(currentConversations.length, 1)}
+                    display={String(currentDirectConversations)}
+                    tone="warning"
+                  />
+                </div>
                 <div className="intel-source-note is-large">
-                  Para medir <strong>registro → reserva</strong> necesitamos persistir el lead antes
-                  de que exista una clase de prueba. Hoy Studio Flow comienza a tener trazabilidad
-                  cuando la prueba ya fue creada.
+                  La referencia del anuncio se guarda cuando Meta la envía en el mensaje de entrada.
+                  Las conversaciones históricas que llegaron antes de esta medición no pueden
+                  reconstruirse con precisión desde Studio Flow.
                 </div>
               </Section>
             </div>
@@ -1399,19 +1501,24 @@ export default async function IntelligencePage({
               <Section title="🧩 Fugas de la prueba">
                 <div className="intel-insight-list">
                   <Insight
-                    tone="warning"
+                    tone={trialNoShow > 0 ? "danger" : "positive"}
                     title="⚠️ No show"
                     body={
                       trialNoShow + " clases de prueba terminaron en no show durante el periodo."
                     }
                   />
                   <Insight
-                    tone="danger"
+                    tone={trialAttended - trialConverted > 0 ? "warning" : "positive"}
                     title="🚨 Asistieron y no compraron"
                     body={
                       Math.max(trialAttended - trialConverted, 0) +
                       " personas asistieron pero todavía no aparecen como convertidas."
                     }
+                  />
+                  <Insight
+                    tone={trialConversion >= 50 ? "positive" : "warning"}
+                    title="Conversión después de asistir"
+                    body={pct(trialConversion, locale) + " de quienes asistieron se convirtieron."}
                   />
                 </div>
               </Section>
