@@ -423,7 +423,7 @@ export function SessionOperations({
                         <details className="today-student-more">
                           <summary aria-label={`Más acciones para ${item.studentName}`}>⋮</summary>
                           <div>
-                            <form action={cancelReservationFromToday}>
+                            <form action={cancelReservationFromToday} className="today-correction-form">
                               <input type="hidden" name="session_id" value={sessionId} />
                               <input type="hidden" name="reservation_id" value={item.id} />
                               <input type="hidden" name="return_date" value={returnDate} />
