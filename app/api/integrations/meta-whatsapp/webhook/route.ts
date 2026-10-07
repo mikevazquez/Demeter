@@ -306,7 +306,7 @@ async function tryResolveReceiptPackageChoice(input: {
     .select("id,action_payload,expires_at")
     .eq("studio_id", input.studioId)
     .eq("conversation_id", input.conversationId)
-    .eq("action_type", "commerce.receipt_package_choice")
+    .eq("action_type", "commerce.transfer_package_choice")
     .eq("status", "pending")
     .gt("expires_at", new Date().toISOString())
     .order("created_at", { ascending: false })
@@ -315,7 +315,7 @@ async function tryResolveReceiptPackageChoice(input: {
 
   if (error || !pending) return null;
   const payload = isObject(pending.action_payload) ? pending.action_payload : null;
-  if (!payload) return null;
+  if (!payload || String(payload.stage ?? "") !== "receipt_package_choice") return null;
   const options = Array.isArray(payload.options) ? payload.options : [];
   const selected = matchReceiptPackageOption(input.messageText, options, true);
 
@@ -676,15 +676,16 @@ async function activateTransferReceiptIfPending(input: {
     .update({ status: "cancelled", updated_at: new Date().toISOString() })
     .eq("studio_id", input.studioId)
     .eq("conversation_id", input.conversationId)
-    .eq("action_type", "commerce.receipt_package_choice")
+    .eq("action_type", "commerce.transfer_package_choice")
     .eq("status", "pending");
 
-  await input.supabase.from("assistant_pending_actions").insert({
+  const { error: receiptChoiceError } = await input.supabase.from("assistant_pending_actions").insert({
     studio_id: input.studioId,
     conversation_id: input.conversationId,
-    action_type: "commerce.receipt_package_choice",
+    action_type: "commerce.transfer_package_choice",
     action_token_hash: sha256Hex(`${input.providerMessageId}:${input.studentId}:receipt-choice`),
     action_payload: {
+      stage: "receipt_package_choice",
       options,
       event_id: input.eventId,
       provider_message_id: input.providerMessageId,
@@ -709,6 +710,14 @@ async function activateTransferReceiptIfPending(input: {
     status: "pending",
     expires_at: expiresAt,
   });
+  if (receiptChoiceError) {
+    return {
+      handled: true as const,
+      result: { ok: false, reason_code: "receipt_package_choice_store_failed" },
+      reply: "Pude leer tu comprobante, pero no pude guardar la confirmación del paquete. No activé nada; puedes volver a enviarme el comprobante.",
+    };
+  }
+
 
   if (candidates.length === 1) {
     const only = candidates[0];
