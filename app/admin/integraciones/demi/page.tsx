@@ -65,6 +65,7 @@ export default async function DemiDemoPage() {
     { data: versions, error: versionsError },
     { data: handoffPolicies },
     { data: learningProposals },
+    { data: adminChanges },
     exchangeRate,
   ] = await Promise.all([
     supabase
@@ -96,6 +97,12 @@ export default async function DemiDemoPage() {
       .eq("studio_id", studio.id)
       .order("created_at", { ascending: false })
       .limit(50),
+    supabase
+      .from("assistant_admin_change_requests")
+      .select("id,instruction,summary,plan,status,error_code,created_at,applied_at")
+      .eq("studio_id", studio.id)
+      .order("created_at", { ascending: false })
+      .limit(20),
     getUsdToMxnRate(),
   ]);
 
@@ -181,6 +188,7 @@ export default async function DemiDemoPage() {
         sandbox={process.env.NEXT_PUBLIC_SUPABASE_URL?.includes("hedouonyhynuvwbckdlg") === true}
         handoffPolicies={handoffPolicies ?? []}
         learningProposals={learningProposals ?? []}
+        adminChanges={adminChanges ?? []}
       />
     </main>
   );
