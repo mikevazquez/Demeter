@@ -1,6 +1,10 @@
 import { readFileSync } from "node:fs";
 import { transformSync } from "esbuild";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import {
+  conversationGuidance,
+  needsFirstVisitGuidance,
+} from "../lib/assistant/conversation-guidance";
 import { validPrompt } from "../lib/assistant/prompt-workbench";
 
 // Load server modules with explicit fakes for external boundaries. No network or real DB.
@@ -63,6 +67,7 @@ function orchestratorHarness() {
         parsePostTrialEnrollmentMethod: () => "cash",
       },
       "./read-tools": { executeAssistantReadTool: read },
+      "./conversation-guidance": { conversationGuidance, needsFirstVisitGuidance },
       "./tool-contracts": {
         assistantReadToolDefinitions: [{ name: "get_activity_catalog", type: "function" }],
         assistantActionToolDefinitions: [{ name: "execute_booking", type: "function" }],
