@@ -18,6 +18,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const META_MEDIA_MESSAGE_TYPES = new Set(["image", "document", "audio", "video", "sticker"]);
 
 type JsonObject = Record<string, unknown>;
 
@@ -1213,7 +1214,81 @@ export async function POST(request: Request) {
       });
     }
 
-    if (message.mediaId || !["text", "button", "interactive"].includes(message.messageType)) {
+    if (message.messageType === "unsupported") {
+      const isClickToWhatsApp =
+        message.referralSourceType === "ad" || message.referralSourceType === "post";
+      const referralCopy = `${message.referralHeadline ?? ""} ${message.referralBody ?? ""}`.trim();
+      const isPoleReferral = /\bpole\b/i.test(referralCopy);
+      const reply = isClickToWhatsApp
+        ? isPoleReferral
+          ? "¡Hola! 👋 Gracias por escribir a Demeter. Claro, te ayudo a agendar tu primera clase de Pole. Puedes empezar desde cero. ¿Qué día u horario te acomoda?"
+          : "¡Hola! 👋 Gracias por escribir a Demeter. Claro, te ayudo a agendar tu primera clase. ¿Qué disciplina te interesa y qué día u horario te acomoda?"
+        : "Recibí tu mensaje, pero WhatsApp no me entregó su contenido en un formato que pueda leer. ¿Me lo reenvías como texto? Así te ayudo enseguida.";
+      const deterministicOutcome = isClickToWhatsApp
+        ? "unsupported_ad_lead"
+        : "unsupported_message";
+
+      if (sendReplies) {
+        const delivery = await sendMetaWhatsAppText({
+          config: webhookConfig,
+          recipientWaId: message.fromWaId,
+          text: reply,
+        });
+
+        if (delivery.status === "error") {
+          await recordFailedDelivery({
+            supabase,
+            studioId,
+            eventId: event.id,
+            conversationId,
+            recipientWaId: message.fromWaId,
+            reply,
+            errorCode: delivery.errorCode,
+            retryable: delivery.retryable,
+            httpStatus: delivery.httpStatus,
+            responseSnapshot: delivery.responseSnapshot,
+          });
+          retryableFailure = retryableFailure || delivery.retryable;
+          continue;
+        }
+
+        await persistAcceptedReply({
+          supabase,
+          studioId,
+          eventId: event.id,
+          conversationId,
+          inboundTurnId,
+          reply,
+          recipientWaId: message.fromWaId,
+          providerMessageId: delivery.providerMessageId,
+          httpStatus: delivery.httpStatus,
+          responseSnapshot: delivery.responseSnapshot,
+          trace: {
+            deterministic: deterministicOutcome,
+            referral_source_type: message.referralSourceType,
+            referral_source_id: message.referralSourceId,
+          },
+        });
+      } else {
+        await markEvent(supabase, studioId, event.id, {
+          processing_status: "processed",
+          processing_result: {
+            outcome: deterministicOutcome,
+            referral_source_type: message.referralSourceType,
+            referral_source_id: message.referralSourceId,
+          },
+          processed_at: new Date().toISOString(),
+        });
+      }
+
+      outcomes.push({
+        provider_message_id: message.providerMessageId,
+        outcome: deterministicOutcome,
+      });
+      continue;
+    }
+
+    if (message.mediaId || META_MEDIA_MESSAGE_TYPES.has(message.messageType)) {
       let transferReceipt: Awaited<ReturnType<typeof activateTransferReceiptIfPending>> | null =
         null;
 

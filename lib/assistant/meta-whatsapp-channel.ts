@@ -28,6 +28,10 @@ export type MetaInboundMessage = {
   messageType: string;
   text: string;
   mediaId: string | null;
+  referralSourceType: string | null;
+  referralSourceId: string | null;
+  referralHeadline: string | null;
+  referralBody: string | null;
 };
 
 export type MetaTextDeliveryResult =
@@ -335,6 +339,7 @@ export function extractMetaInboundMessages(body: unknown): MetaInboundMessage[] 
         const providerMessageId = safeText(message.id);
         const fromWaId = safeText(message.from);
         const messageType = safeText(message.type) ?? "unknown";
+        const referral = isObject(message.referral) ? message.referral : {};
         if (!providerMessageId || !fromWaId) continue;
 
         output.push({
@@ -347,6 +352,10 @@ export function extractMetaInboundMessages(body: unknown): MetaInboundMessage[] 
           messageType,
           text: messageText(message, messageType),
           mediaId: mediaIdForMessage(message, messageType),
+          referralSourceType: safeText(referral.source_type),
+          referralSourceId: safeText(referral.source_id),
+          referralHeadline: safeText(referral.headline),
+          referralBody: safeText(referral.body),
         });
       }
     }

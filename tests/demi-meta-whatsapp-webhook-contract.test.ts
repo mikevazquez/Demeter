@@ -94,6 +94,20 @@ describe("Demi Meta WhatsApp inbound contract", () => {
     expect(migration).toContain("insert into public.crm_contacts");
     expect(migration).toContain("'whatsapp'");
   });
+
+  it("does not misclassify unsupported or CTWA-origin messages as uploaded files", () => {
+    expect(channel).toContain("referralSourceType");
+    expect(channel).toContain("referralSourceId");
+    expect(channel).toContain("referralHeadline");
+    expect(channel).toContain("referralBody");
+    expect(route).toContain('if (message.messageType === "unsupported")');
+    expect(route).toContain('"unsupported_ad_lead"');
+    expect(route).toContain('"unsupported_message"');
+    expect(route).toContain("META_MEDIA_MESSAGE_TYPES.has(message.messageType)");
+    expect(route).not.toContain(
+      '!["text", "button", "interactive"].includes(message.messageType)',
+    );
+  });
 });
 
 describe("Meta inbound admin setup contract", () => {
