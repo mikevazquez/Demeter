@@ -102,7 +102,18 @@ export default async function MetaInboxIntegrationPage({
         </div>
       ) : connectionResult === "error" ? (
         <div className="integration-detail-v2-notice is-error">
-          {resultCode === "page_token_paste_format" ? (
+          {resultCode === "page_token_wrong_app" ? (
+            <>El token es válido, pero pertenece a una aplicación de Meta diferente.
+              Confirma que lo generaste desde la app Demeter.</>
+          ) : resultCode === "page_token_wrong_type" ? (
+            <>Meta reconoce el token, pero no es de tipo Page. Debes generar un
+              Facebook Page Access Token desde la fila Demeter Fitness Studio.</>
+          ) : resultCode === "page_token_app_id_required" ? (
+            <>Escribe el Meta App ID antes de verificar el token de la página.</>
+          ) : resultCode === "page_token_app_secret_required" ? (
+            <>No hay un App Secret configurado para verificar el token. Primero
+              guárdalo en la conexión segura.</>
+          ) : resultCode === "page_token_paste_format" ? (
             <>El valor pegado incluye texto adicional (por ejemplo «Bearer», comillas,
               espacios o una URL). Copia únicamente el token de acceso de la
               página de Demeter, sin prefijos. No se modificó la conexión.</>
@@ -240,14 +251,22 @@ export default async function MetaInboxIntegrationPage({
 
         <form className="integration-detail-v2-form" action={saveMetaInboxConnection}>
           <label className="integration-detail-v2-field">
+            <span>Meta App ID</span>
+            <input type="text" name="meta_app_id" inputMode="numeric"
+              autoComplete="off" pattern="[0-9]{5,32}"
+              defaultValue={queryValue(params.app_id) || (studio.id === "9fe23cfa-fb47-4670-afeb-ed4a56433772" ? "1035040259521693" : "")}
+              placeholder="ID de la app de Meta" />
+            <small>Al reemplazar el token de Messenger, comprobamos en Meta
+              que pertenece a esta aplicación y a la página correcta. El App ID
+              no es una contraseña.</small>
+          </label>
+          <label className="integration-detail-v2-field">
             <span>Facebook Page access token</span>
             <input type="password" name="page_access_token" autoComplete="new-password" />
-            <small>En Meta for Developers, dentro de la app Demeter, abre
-              Messenger → Configuración de la API → Generar tokens de acceso.
-              En la fila de Demeter Fitness Studio pulsa «Generar token» y copia
-              el valor completo, sin Bearer, comillas ni espacios. No uses el
-              App Secret, el Verify token ni el token de WhatsApp. Validaremos
-              que Meta lo reconoce antes de guardarlo.</small>
+            <small>El depurador de Meta ya confirmó el token de Demeter.
+              Pega ese mismo Page Access Token completo, sin Bearer, comillas
+              ni espacios. Studio Flow utilizará la comprobación oficial de Meta
+              para validar aplicación, página y permiso pages_messaging.</small>
           </label>
 
           <label className="integration-detail-v2-field">
