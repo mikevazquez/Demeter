@@ -263,7 +263,7 @@ export async function simulateAssistantAction(
       error ||
       !session ||
       session.status !== "scheduled" ||
-      new Date(session.starts_at).getTime() <= Date.now()
+      new Date(session.starts_at).getTime() <= Date.now() + 30 * 60_000
     ) {
       return result({ ok: false, error: "session_unavailable" });
     }
