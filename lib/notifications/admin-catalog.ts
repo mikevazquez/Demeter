@@ -157,7 +157,6 @@ export const NOTIFICATION_PROCESSES: readonly NotificationProcessDefinition[] = 
     ruleKeys: ["team.coach_roster_reminder"],
     timingLabel: "2 horas antes · configurable",
     recipientLabel: "Coach asignado",
-    planned: true,
   },
   {
     key: "minimum-cancelled-coach",
