@@ -1,3 +1,4 @@
+import { nameFromExplicitReply } from "@/lib/assistant/meta-prospect-name";
 import { runAssistantTurn } from "@/lib/assistant/orchestrator";
 import { getStudentPackageStatus } from "@/lib/assistant/read-tools";
 import {
@@ -514,7 +515,7 @@ export async function POST(request: Request) {
     const inboundTurnId = String(prepared.inbound_turn_id ?? "").trim();
     const studentId = String(prepared.student_id ?? "").trim() || null;
     const crmContactId = String(prepared.crm_contact_id ?? "").trim() || null;
-    const identityNeedsName = prepared.identity_needs_name === true;
+    let identityNeedsName = prepared.identity_needs_name === true;
 
     if (!conversationId || !inboundTurnId) {
       retryableFailure = true;
@@ -579,6 +580,49 @@ export async function POST(request: Request) {
         role: item.role as "user" | "assistant",
         content: item.content,
       }));
+
+    // Record a full name only after the prospect explicitly answers Demi's
+    // request. Never use a typed name to link or authenticate existing students.
+    if (!studentId && crmContactId) {
+      const { data: identity } = await supabase
+        .from("assistant_channel_identities")
+        .select("id,person_id,student_id,metadata")
+        .eq("studio_id", studioId)
+        .eq("provider", message.provider)
+        .eq("provider_account_id", message.providerAccountId)
+        .eq("provider_contact_id", message.providerContactId)
+        .eq("crm_contact_id", crmContactId)
+        .maybeSingle();
+
+      if (identity && !identity.student_id) {
+        const metadata = isObject(identity.metadata) ? identity.metadata : {};
+        if (metadata.name_confirmed === true) {
+          identityNeedsName = false;
+        } else if (identity.person_id) {
+          const confirmedName = nameFromExplicitReply(history);
+          if (confirmedName) {
+            const parts = confirmedName.split(" ");
+            const { error: personError } = await supabase
+              .from("persons")
+              .update({ first_name: parts[0], last_name: parts.slice(1).join(" ") })
+              .eq("id", identity.person_id)
+              .eq("studio_id", studioId);
+            if (!personError) {
+              const { error: identityError } = await supabase
+                .from("assistant_channel_identities")
+                .update({
+                  display_name: confirmedName,
+                  metadata: { ...metadata, name_confirmed: true },
+                })
+                .eq("id", identity.id)
+                .eq("studio_id", studioId)
+                .is("student_id", null);
+              if (!identityError) identityNeedsName = false;
+            }
+          }
+        }
+      }
+    }
 
     let studentCategory: string | null = null;
     if (studentId) {
