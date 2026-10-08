@@ -91,13 +91,33 @@ export default async function MetaInboxIntegrationPage({
         </article>
       </section>
 
-      {connectionResult === "saved" ? (
+      {connectionResult === "page_token_valid" ? (
         <div className="integration-detail-v2-notice">
-          Conexión de Instagram y Messenger guardada de forma segura.
+          Meta confirmó que el Facebook Page Access Token pertenece a la página
+          seleccionada. Token guardado de forma segura; listo para probar Messenger.
+        </div>
+      ) : connectionResult === "saved" ? (
+        <div className="integration-detail-v2-notice">
+          Conexión guardada de forma segura.
         </div>
       ) : connectionResult === "error" ? (
         <div className="integration-detail-v2-notice is-error">
-          No se pudo guardar la conexión{resultCode ? `: ${resultCode}` : "."}
+          {resultCode === "page_token_invalid" ? (
+            <>Meta rechazó el Facebook Page Access Token. Genera un token nuevo
+              en Messenger → Configuración de la API y vuelve a intentarlo.
+              La credencial anterior se conservó.</>
+          ) : resultCode === "page_token_wrong_page" ? (
+            <>El token es válido, pero no corresponde a Demeter Fitness Studio.
+              Selecciona la página correcta cuando generes el token. No se guardó.</>
+          ) : resultCode === "page_token_unavailable" ? (
+            <>No se pudo verificar el token con Meta. No se modificaron las credenciales;
+              vuelve a intentarlo cuando Meta esté disponible.</>
+          ) : resultCode === "page_credentials_pair_required" ? (
+            <>Para reemplazar el token de Messenger, introduce tanto Facebook Page
+              Access Token como Facebook Page ID. El resto puede quedar vacío.</>
+          ) : (
+            <>No se pudo guardar la conexión{resultCode ? `: ${resultCode}` : "."}</>
+          )}
         </div>
       ) : null}
 
@@ -206,11 +226,16 @@ export default async function MetaInboxIntegrationPage({
           <label className="integration-detail-v2-field">
             <span>Facebook Page access token</span>
             <input type="password" name="page_access_token" autoComplete="new-password" />
+            <small>Genera el token desde Meta for Developers → Messenger →
+              Configuración de la API → Demeter Fitness Studio. Pega solo el token,
+              sin la palabra Bearer. Lo verificaremos con Meta antes de guardarlo.</small>
           </label>
 
           <label className="integration-detail-v2-field">
             <span>Facebook Page ID</span>
-            <input type="text" name="page_id" inputMode="numeric" autoComplete="off" />
+            <input type="text" name="page_id" inputMode="numeric" autoComplete="off"
+              placeholder="104205921929310" />
+            <small>Para actualizar el token, escribe el ID de la página de Demeter: 104205921929310.</small>
           </label>
 
           <label className="integration-detail-v2-field">
