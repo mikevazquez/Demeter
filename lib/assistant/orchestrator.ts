@@ -289,6 +289,12 @@ function confirmationReply(toolName: string, result: Record<string, unknown>) {
           result.amount_minor ?? summary.amount_minor ?? summary.drop_in_price_minor,
           result.currency ?? summary.currency,
         ) ?? "el costo indicado";
+      if (result.simulated === true) {
+        return (
+          `En esta prueba confirmé que tu primera clase cuesta ${price} y que requiere transferencia antes de reservar. ` +
+          "No se generó un pago ni se creó una reserva. En el flujo real, Demi solicitará el comprobante y Studio Flow confirmará el lugar cuando valide el pago."
+        );
+      }
       const bankDetails = asObject(result.bank_details);
       const bankLines = bankDetails
         ? [
