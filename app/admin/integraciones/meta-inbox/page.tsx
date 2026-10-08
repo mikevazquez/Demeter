@@ -115,7 +115,7 @@ export default async function MetaInboxIntegrationPage({
           <div>
             <h2>Conexión de canales</h2>
             <p>
-              Las credenciales se guardan cifradas. Studio Flow no vuelve a mostrar los tokens ni
+              Puedes configurar Messenger primero e Instagram después. Deja los campos del otro canal vacíos. Las credenciales se guardan cifradas y no se vuelven a mostrar; Studio Flow no vuelve a mostrar los tokens ni
               el App Secret después de guardarlos.
             </p>
           </div>
@@ -154,12 +154,12 @@ export default async function MetaInboxIntegrationPage({
         <form className="integration-detail-v2-form" action={saveMetaInboxConnection}>
           <label className="integration-detail-v2-field">
             <span>Facebook Page access token</span>
-            <input type="password" name="page_access_token" required autoComplete="new-password" />
+            <input type="password" name="page_access_token" autoComplete="new-password" />
           </label>
 
           <label className="integration-detail-v2-field">
             <span>Facebook Page ID</span>
-            <input type="text" name="page_id" required inputMode="numeric" autoComplete="off" />
+            <input type="text" name="page_id" inputMode="numeric" autoComplete="off" />
           </label>
 
           <label className="integration-detail-v2-field">
@@ -167,7 +167,7 @@ export default async function MetaInboxIntegrationPage({
             <input
               type="password"
               name="instagram_access_token"
-              required
+             
               autoComplete="new-password"
             />
           </label>
@@ -177,7 +177,7 @@ export default async function MetaInboxIntegrationPage({
             <input
               type="text"
               name="instagram_user_id"
-              required
+             
               inputMode="numeric"
               autoComplete="off"
             />
@@ -196,7 +196,7 @@ export default async function MetaInboxIntegrationPage({
 
           <label className="integration-detail-v2-field">
             <span>Meta App Secret</span>
-            <input type="password" name="app_secret" required autoComplete="new-password" />
+            <input type="password" name="app_secret" autoComplete="new-password" />
             <small>Escríbelo directamente aquí. No lo compartas por chat.</small>
           </label>
 
