@@ -207,7 +207,7 @@ export async function continueMetaTrialTransfer(input: {
     });
     return {
       reply: matches
-        ? "Ya recibí tu comprobante. Para registrar la solicitud, ¿me compartes tu nombre completo?"
+        ? "Ya recibí tu comprobante. Para registrar la solicitud, ¿me compartes tu nombre completo y tu celular de 10 dígitos en un solo mensaje?"
         : "Recibí tu comprobante. El monto todavía necesita revisión; no he reservado el lugar. Para registrar tu solicitud, ¿me compartes tu nombre completo?",
       outcome: matches ? "meta_trial_receipt_collected" : "meta_trial_receipt_needs_review",
     };
