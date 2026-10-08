@@ -176,7 +176,7 @@ begin
     case when nullif(trim(coalesce(p_last_name,'')),'') is not null and v_email is not null then 'complete'::public.profile_completeness_status else 'incomplete'::public.profile_completeness_status end)
   returning id into v_student_id;
   return v_student_id;
-end;$function$
+end;$function$;
 
 
 -- Preserve student-only identity resolution when the phone is also a coach contact.
@@ -207,7 +207,7 @@ begin
   update public.students set full_name = v_full_name, phone = p_phone, email = nullif(lower(trim(coalesce(p_email, ''))), ''), updated_at = now() where id = p_student_id;
   update public.students set profile_status = private.student_profile_status(p_student_id), updated_at = now() where id = p_student_id;
 end;
-$function$
+$function$;
 
 
 -- Preserve student-only identity resolution when the phone is also a coach contact.
@@ -273,7 +273,7 @@ begin
     'already_in_roster', v_already_in_roster
   );
 end;
-$function$
+$function$;
 
 
 -- Preserve student-only identity resolution when the phone is also a coach contact.
@@ -785,7 +785,7 @@ begin
     'identity_needs_name', v_identity_needs_name
   );
 end;
-$function$
+$function$;
 
 
 -- Preserve student-only identity resolution when the phone is also a coach contact.
