@@ -9,6 +9,7 @@ type Summary = Record<string, unknown>;
 export type TestSimulation = {
   persona: TestPersona;
   identityNeedsName: boolean;
+  paymentBeforeBooking?: boolean;
   pending?: { tool: string; summary: Summary; preparedTurnId: string } | null;
   reservations: Summary[];
   credits: number;
@@ -113,6 +114,17 @@ export async function simulateAssistantAction(
     }
     state.pending = null;
     if (tool === "execute_booking") {
+      if (state.persona === "prospect" && pending.summary.payment_before_booking === true) {
+        return result({
+          ok: true,
+          status: "payment_required",
+          reservation_confirmed: false,
+          payment_required: true,
+          amount_minor: pending.summary.amount_minor,
+          currency: pending.summary.currency,
+          summary: pending.summary,
+        });
+      }
       state.reservations.push({
         ...pending.summary,
         reservation_ref: `reservation:test-${input.turnId}`,
@@ -202,7 +214,7 @@ export async function simulateAssistantAction(
     }
     const { data: template } = await input.supabase
       .from("class_templates")
-      .select("name")
+      .select("name,drop_in_price_minor")
       .eq("studio_id", input.studio.id)
       .eq("id", session.template_id)
       .maybeSingle();
@@ -213,6 +225,7 @@ export async function simulateAssistantAction(
         minute: "2-digit",
         hourCycle: "h23",
       }).format(new Date(date));
+    const isTrialBooking = state.persona === "prospect" && tool === "prepare_booking";
     const target = {
       session_ref: sessionRef,
       activity: template?.name ?? "Clase",
@@ -221,6 +234,14 @@ export async function simulateAssistantAction(
       ),
       starts_at_local: localTime(session.starts_at),
       ends_at_local: localTime(session.ends_at),
+      ...(isTrialBooking
+        ? {
+            trial_booking: true,
+            payment_before_booking: state.paymentBeforeBooking === true,
+            amount_minor: Number(template?.drop_in_price_minor ?? 0),
+            currency: input.studio.currency,
+          }
+        : {}),
     };
     if (state.persona === "student" && tool === "prepare_booking" && state.credits <= 0)
       return result({ ok: false, error: "no_credits" });
