@@ -4,7 +4,7 @@ import { headers } from "next/headers";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getAdminContext } from "@/lib/auth/admin-context";
 
-import { saveMetaInboxConnection, saveMetaInboxPilotContacts } from "./actions";
+import { diagnoseMetaInboxApp, saveMetaInboxConnection, saveMetaInboxPilotContacts } from "./actions";
 import "../integrations-v2.css";
 
 function asObject(value: unknown) {
@@ -59,6 +59,7 @@ export default async function MetaInboxIntegrationPage({
 
   const connectionResult = queryValue(params.connection);
   const pilotResult = queryValue(params.pilot);
+  const appCheckResult = queryValue(params.app_check);
   const resultCode = queryValue(params.code);
 
   return (
@@ -109,6 +110,53 @@ export default async function MetaInboxIntegrationPage({
           No se pudo guardar el piloto{resultCode ? `: ${resultCode}` : "."}
         </div>
       ) : null}
+
+      <section className="integration-detail-v2-card">
+        <div className="integration-detail-v2-card-heading">
+          <div>
+            <h2>Diagnóstico de credenciales Meta</h2>
+            <p>
+              Comprueba directamente con Meta si el identificador de aplicación corresponde
+              al App Secret guardado. No es necesario volver a pegar el secreto.
+            </p>
+          </div>
+        </div>
+        {appCheckResult === "valid" ? (
+          <div className="integration-detail-v2-notice">
+            Meta confirmó que el App ID y el App Secret guardado corresponden a la misma aplicación.
+            Si la firma de los mensajes falla, revisa qué aplicación tiene registrado el webhook.
+          </div>
+        ) : appCheckResult === "mismatch" ? (
+          <div className="integration-detail-v2-notice is-error">
+            Meta rechazó el App ID y el App Secret guardado. Revisa la clave secreta
+            en la misma aplicación donde configuraste el webhook.
+          </div>
+        ) : appCheckResult === "not_configured" ? (
+          <div className="integration-detail-v2-notice is-error">
+            No hay una conexión válida guardada para este estudio de Sandbox.
+          </div>
+        ) : appCheckResult === "invalid_id" ? (
+          <div className="integration-detail-v2-notice is-error">
+            Ingresa un App ID numérico válido.
+          </div>
+        ) : appCheckResult === "unavailable" ? (
+          <div className="integration-detail-v2-notice is-error">
+            Meta no pudo completar la verificación. No se modificaron las credenciales.
+            Intenta de nuevo más tarde.
+          </div>
+        ) : null}
+        <form className="integration-detail-v2-form" action={diagnoseMetaInboxApp}>
+          <label className="integration-detail-v2-field">
+            <span>Identificador de la app (App ID)</span>
+            <input type="text" name="app_id" inputMode="numeric"
+              autoComplete="off" required pattern="[0-9]{5,32}"
+              defaultValue={queryValue(params.app_id) ?? ""} />
+          </label>
+          <button className="integration-detail-v2-button" type="submit">
+            Verificar App ID y App Secret en Meta
+          </button>
+        </form>
+      </section>
 
       <section className="integration-detail-v2-card">
         <div className="integration-detail-v2-card-heading">
