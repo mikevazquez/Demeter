@@ -54,7 +54,7 @@ describe("Demi Meta Inbox multichannel contract", () => {
     );
     expect(route).not.toContain("link_meta_inbox_identity_by_phone");
     expect(orchestrator).toContain(
-      "no uses un teléfono escrito en el chat como prueba de identidad",
+      "No uses un teléfono escrito en el chat como prueba de identidad",
     );
   });
 
