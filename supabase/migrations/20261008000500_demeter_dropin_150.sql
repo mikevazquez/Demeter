@@ -71,7 +71,7 @@ begin
         online_purchasable
       ) values (
         v_studio_id,
-        'Clase suelta · ' || v_candidate.discipline_name,
+        'Clase suelta · ' || v_candidate.discipline_name || ' · $150',
         '1 clase de ' || v_candidate.discipline_name,
         'single_class'::public.product_type,
         15000,
