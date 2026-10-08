@@ -128,8 +128,9 @@ export default async function MetaInboxIntegrationPage({
           </div>
         ) : appCheckResult === "mismatch" ? (
           <div className="integration-detail-v2-notice is-error">
-            Meta rechazó el App ID y el App Secret guardado. Revisa la clave secreta
-            en la misma aplicación donde configuraste el webhook.
+            Meta rechazó el App ID y el App Secret guardado. Copia el App Secret desde
+            la aplicación correcta de Meta. En «Conexión de canales» reemplaza solo esa
+            clave; puedes dejar los tokens de página vacíos para conservarlos.
           </div>
         ) : appCheckResult === "not_configured" ? (
           <div className="integration-detail-v2-notice is-error">
@@ -163,8 +164,10 @@ export default async function MetaInboxIntegrationPage({
           <div>
             <h2>Conexión de canales</h2>
             <p>
-              Puedes configurar Messenger primero e Instagram después. Deja los campos del otro canal vacíos. Las credenciales se guardan cifradas y no se vuelven a mostrar; Studio Flow no vuelve a mostrar los tokens ni
-              el App Secret después de guardarlos.
+              Puedes configurar Messenger primero e Instagram después. Si solo actualizarás
+              el Meta App Secret, deja los campos de tokens e identificadores de ambos
+              canales vacíos: Studio Flow conservará los valores actuales. Las credenciales
+              se guardan cifradas y no se vuelven a mostrar.
             </p>
           </div>
         </div>
