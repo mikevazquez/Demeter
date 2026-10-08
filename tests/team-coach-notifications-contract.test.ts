@@ -35,7 +35,7 @@ describe("Equipo notifications sandbox contract", () => {
     const grants = src("supabase/migrations/20261008112000_fix_instructor_authenticated_grants.sql");
     expect(grants).toContain("grant select, insert, update on table public.instructors to authenticated");
     expect(grants).toContain("grant select, insert, update, delete on table public.instructor_disciplines to authenticated");
-    expect(grants).not.toMatch(/grant\\s+.*\\s+to\\s+anon/i);
+    expect(grants).not.toMatch(/grant\s+.*\s+to\s+anon/i);
   });
   it("creates the coach only in the studio selected by the admin", () => {
     const scoped = src("supabase/migrations/20261008113000_scoped_instructor_creation.sql");
