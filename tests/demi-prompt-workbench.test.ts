@@ -210,6 +210,36 @@ describe("Demi prompt workbench", () => {
     expect(h.action).not.toHaveBeenCalled();
     expect(h.writes).toEqual([]);
   });
+  it("does not ask for a second confirmation after a simulated cancellation executes", async () => {
+    const h = orchestratorHarness();
+    const summary = {
+      activity: "Pole Fitness",
+      date: "2099-01-01",
+      starts_at_local: "12:00",
+      ends_at_local: "13:00",
+      credit_will_return: true,
+    };
+    h.input.testSimulation!.pending = {
+      tool: "execute_cancellation",
+      summary,
+      preparedTurnId: "previous-turn",
+    };
+    h.simulate.mockResolvedValue({ ok: true, simulated: true, status: "executed", summary });
+
+    const result = await h.run(h.input);
+
+    expect(result.reply).toContain("Listo. Cancelé tu reserva de Pole Fitness");
+    expect(result.reply).toContain("El crédito regresó a tu cuenta.");
+    expect(result.reply).not.toContain("¿Confirmas");
+    expect(h.simulate).toHaveBeenCalledOnce();
+    expect(h.simulate).toHaveBeenCalledWith(
+      expect.objectContaining({ turnId: "turn", currentUserMessage: "Sí, confirmo" }),
+      "execute_cancellation",
+      {},
+    );
+    expect(h.action).not.toHaveBeenCalled();
+    expect(h.writes).toEqual([]);
+  });
   it("does not create real human handoffs from a test reply", async () => {
     const h = orchestratorHarness();
     vi.stubEnv("OPENAI_API_KEY", "test");
