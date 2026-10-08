@@ -469,7 +469,7 @@ export default async function StudentReservePage({
                       <div>
                         <div>
                           <p className="text-[11px] font-semibold text-amber-100">
-                            Esta clase no está incluida en tu paquete
+                            {bookingReasonCopy(session.eligibility?.reason_code)}
                           </p>
                           <p className="mt-0.5 text-[10px] text-zinc-500">
                             Clase suelta ·{" "}
