@@ -186,12 +186,14 @@ export async function searchClassAvailability(
   }
 
   const activityNeedle = rawArgs.activity_query ? normalize(rawArgs.activity_query) : null;
+  const earliestBookableStart = Date.now() + 30 * 60_000;
   const exactTemplateMatchExists = activityNeedle
     ? templates.some((item) => normalize(item.name) === activityNeedle)
     : false;
   const matches = [];
 
   for (const session of sessions ?? []) {
+    if (new Date(session.starts_at).getTime() <= earliestBookableStart) continue;
     const template = templateMap.get(session.template_id);
     if (!template?.active) continue;
     const discipline = template.discipline_id
