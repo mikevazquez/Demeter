@@ -11,7 +11,7 @@ CREATE OR REPLACE FUNCTION public.service_activate_trial_transfer_receipt(target
  LANGUAGE plpgsql
  SECURITY DEFINER
  SET search_path TO ''
-AS $function$
+AS $function$;
 declare
   v_intent public.assistant_transfer_purchase_intents%rowtype;
   v_booking jsonb;
