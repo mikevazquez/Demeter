@@ -332,6 +332,31 @@ export function formatMoney(minor: number, currency = "MXN") {
   return new Intl.NumberFormat("es-MX", { style: "currency", currency }).format(minor / 100);
 }
 
+export function bookingReasonCopyForStudent(
+  reason: string | null | undefined,
+  acquisitions: StudentAcquisition[],
+  classDate: string,
+) {
+  if (reason === "no_active_product") {
+    const hasExpiredPackage = acquisitions.some(
+      (item) =>
+        item.status === "active" &&
+        !item.reward_credit_wallet &&
+        ["package", "membership"].includes(item.product_type) &&
+        item.expires_on < classDate,
+    );
+
+    if (hasExpiredPackage) return "Tu paquete ya venció";
+  }
+
+  if (reason === "no_credits") return "Ya no tienes créditos disponibles";
+  if (reason === "outside_product" || reason === "outside_product_schedule") {
+    return "Esta clase no está incluida en tu paquete";
+  }
+
+  return bookingReasonCopy(reason);
+}
+
 export function bookingReasonCopy(reason?: string | null) {
   const messages: Record<string, string> = {
     session_full: "Clase llena",
