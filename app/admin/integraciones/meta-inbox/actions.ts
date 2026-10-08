@@ -18,6 +18,7 @@ function safeCode(error: unknown) {
 export async function saveMetaInboxConnection(formData: FormData) {
   const pageAccessToken = String(formData.get("page_access_token") ?? "").trim();
   const pageId = String(formData.get("page_id") ?? "").trim();
+  const metaAppId = String(formData.get("meta_app_id") ?? "").trim();
   const instagramAccessToken = String(formData.get("instagram_access_token") ?? "").trim();
   const instagramUserId = String(formData.get("instagram_user_id") ?? "").trim();
   const graphApiVersion = String(formData.get("graph_api_version") ?? "").trim();
@@ -39,54 +40,91 @@ export async function saveMetaInboxConnection(formData: FormData) {
       redirect("/admin/integraciones/meta-inbox?connection=error&code=page_credentials_pair_required");
     }
     type PageTokenStatus =
-      | "valid" | "invalid" | "wrong_page" | "unavailable" | "expired"
-      | "malformed" | "permissions" | "paste_format";
+      | "valid" | "invalid" | "wrong_page" | "wrong_app" | "wrong_type"
+      | "unavailable" | "expired" | "malformed" | "permissions"
+      | "paste_format" | "app_id_required" | "app_secret_required";
     let pageTokenStatus: PageTokenStatus = "unavailable";
 
-    // Catch common copy/paste errors locally; never return or log the token.
+    // Meta's Access Token Debugger is authoritative for PAGE tokens; a /me lookup
+    // can be restricted even when pages_messaging is valid. Do not trust /{pageId}
+    // alone: it can be publicly readable with an unrelated token.
     if (/^(?:Bearer\s+|access_token\s*=|https?:\/\/|["'])/i.test(pageAccessToken)
       || /\s/.test(pageAccessToken)
       || /["']$/.test(pageAccessToken)) {
       pageTokenStatus = "paste_format";
+    } else if (!/^[0-9]{5,32}$/.test(metaAppId)) {
+      pageTokenStatus = "app_id_required";
     } else if (/^v[0-9]+\.[0-9]+$/.test(graphApiVersion)) {
       try {
-        const response = await fetch(
-          `https://graph.facebook.com/${graphApiVersion}/me?fields=id`,
-          {
+        const service = createServiceClient();
+        const { data: currentConnection, error: connectionError } = await service.rpc(
+          "service_get_meta_inbox_webhook_config",
+          { target_studio_id: studio.id },
+        );
+        const existing = currentConnection && typeof currentConnection === "object"
+          && !Array.isArray(currentConnection)
+          ? currentConnection as Record<string, unknown> : null;
+        const savedSecret = typeof existing?.app_secret === "string"
+          ? existing.app_secret.trim() : "";
+        const secretForCheck = appSecret || savedSecret;
+
+        if (connectionError || !secretForCheck) {
+          pageTokenStatus = "app_secret_required";
+        } else {
+          // Meta's documented /debug_token endpoint uses input_token as a query
+          // parameter. This request is server-to-Meta only over HTTPS; no token
+          // or raw URL is logged or returned to the client.
+          const url = new URL(
+            "https://graph.facebook.com/" + graphApiVersion + "/debug_token",
+          );
+          url.searchParams.set("input_token", pageAccessToken);
+          const response = await fetch(url, {
+            method: "GET",
             headers: {
-              authorization: `Bearer ${pageAccessToken}`,
+              authorization: "Bearer " + metaAppId + "|" + secretForCheck,
               accept: "application/json",
             },
             cache: "no-store",
             signal: AbortSignal.timeout(10000),
-          },
-        );
-        const responseData: unknown = await response.json().catch(() => null);
-        const value = responseData && typeof responseData === "object" && !Array.isArray(responseData)
-          ? responseData as Record<string, unknown> : null;
+          });
+          const raw: unknown = await response.json().catch(() => null);
+          const payload = raw && typeof raw === "object" && !Array.isArray(raw)
+            ? raw as Record<string, unknown> : null;
+          const debugData = payload?.data && typeof payload.data === "object"
+            && !Array.isArray(payload.data)
+            ? payload.data as Record<string, unknown> : null;
 
-        if (response.ok) {
-          pageTokenStatus = String(value?.id ?? "") === pageId ? "valid" : "wrong_page";
-        } else {
-          const metaError = value?.error && typeof value.error === "object"
-            ? value.error as Record<string, unknown> : null;
-          const metaCode = typeof metaError?.code === "number" ? metaError.code : null;
-          const metaSubcode = typeof metaError?.error_subcode === "number"
-            ? metaError.error_subcode : null;
-          const metaMessage = typeof metaError?.message === "string" ? metaError.message : "";
-
-          if (metaCode === 190) {
-            pageTokenStatus = [458, 463, 467].includes(metaSubcode ?? -1)
-              ? "expired"
-              : /cannot parse access token/i.test(metaMessage)
-                ? "malformed"
-                : "invalid";
-          } else if (metaCode === 10 || metaCode === 200 || response.status === 403) {
-            pageTokenStatus = "permissions";
-          } else if (metaCode === 100 && /access.token/i.test(metaMessage)) {
-            pageTokenStatus = "malformed";
+          if (response.ok && debugData) {
+            const permissionList = Array.isArray(debugData.scopes)
+              ? debugData.scopes : [];
+            if (debugData.is_valid !== true) {
+              pageTokenStatus = "invalid";
+            } else if (String(debugData.app_id ?? "") !== metaAppId) {
+              pageTokenStatus = "wrong_app";
+            } else if (String(debugData.type ?? "").toUpperCase() !== "PAGE") {
+              pageTokenStatus = "wrong_type";
+            } else if (String(debugData.profile_id ?? "") !== pageId) {
+              pageTokenStatus = "wrong_page";
+            } else if (!permissionList.includes("pages_messaging")) {
+              pageTokenStatus = "permissions";
+            } else {
+              pageTokenStatus = "valid";
+            }
           } else {
-            pageTokenStatus = "unavailable";
+            const err = payload?.error && typeof payload.error === "object"
+              && !Array.isArray(payload.error)
+              ? payload.error as Record<string, unknown> : null;
+            const metaCode = typeof err?.code === "number" ? err.code : null;
+            const subcode = typeof err?.error_subcode === "number"
+              ? err.error_subcode : null;
+            if (metaCode === 190) {
+              pageTokenStatus = [458, 463, 467].includes(subcode ?? -1)
+                ? "expired" : "invalid";
+            } else if (metaCode === 10 || metaCode === 200) {
+              pageTokenStatus = "permissions";
+            } else {
+              pageTokenStatus = "unavailable";
+            }
           }
         }
       } catch {
