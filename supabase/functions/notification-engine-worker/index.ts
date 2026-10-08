@@ -67,6 +67,8 @@ type ReservationContext = {
   studio: JsonObject | null;
   template: JsonObject | null;
   discipline: JsonObject | null;
+  coachName: string | null;
+  locationName: string | null;
 };
 
 type EventContext = {
@@ -78,6 +80,8 @@ type EventContext = {
   studio: JsonObject | null;
   template: JsonObject | null;
   discipline: JsonObject | null;
+  coachName: string | null;
+  locationName: string | null;
 };
 
 function response(body: JsonObject, status = 200) {
@@ -229,7 +233,7 @@ async function loadReservationContext(
   if (sessionId) {
     const { data, error } = await adminClient
       .from("class_sessions")
-      .select("id,template_id,starts_at,ends_at,status,coach_user_id,instructor_id")
+      .select("id,template_id,starts_at,ends_at,status,coach_user_id,instructor_id,location_id")
       .eq("id", sessionId)
       .eq("studio_id", event.studio_id)
       .maybeSingle();
@@ -272,6 +276,66 @@ async function loadReservationContext(
 
   if (disciplineError) throw new Error("discipline_context_lookup_failed");
 
+  // A session can link either to an instructor record or to a user profile.
+  // Resolve the displayed coach name instead of expecting it in the event payload.
+  let coachName: string | null = null;
+  const instructorId = safeText(session?.instructor_id);
+  if (instructorId) {
+    const { data: instructor, error: instructorError } = await adminClient
+      .from("instructors")
+      .select("person_id")
+      .eq("id", instructorId)
+      .eq("studio_id", event.studio_id)
+      .maybeSingle();
+    if (instructorError) throw new Error("notification_instructor_lookup_failed");
+    if (instructor?.person_id) {
+      const { data: person, error: personError } = await adminClient
+        .from("persons")
+        .select("first_name,last_name")
+        .eq("id", instructor.person_id)
+        .eq("studio_id", event.studio_id)
+        .maybeSingle();
+      if (personError) throw new Error("notification_coach_name_lookup_failed");
+      coachName = [safeText(person?.first_name), safeText(person?.last_name)].filter(Boolean).join(" ") || null;
+    }
+  }
+  if (!coachName && safeText(session?.coach_user_id)) {
+    const { data: profile, error: profileError } = await adminClient
+      .from("profiles")
+      .select("full_name")
+      .eq("id", safeText(session?.coach_user_id))
+      .maybeSingle();
+    if (profileError) throw new Error("notification_coach_profile_lookup_failed");
+    coachName = safeText(profile?.full_name);
+  }
+
+  // Prefer the session's location. Fall back to an active studio location.
+  let locationName: string | null = null;
+  const locationId = safeText(session?.location_id);
+  if (locationId) {
+    const { data: location, error: locationError } = await adminClient
+      .from("studio_locations")
+      .select("name,address")
+      .eq("id", locationId)
+      .eq("studio_id", event.studio_id)
+      .maybeSingle();
+    if (locationError) throw new Error("notification_location_lookup_failed");
+    locationName = safeText(location?.address) ?? safeText(location?.name);
+  }
+  if (!locationName) {
+    const { data: locations, error: locationsError } = await adminClient
+      .from("studio_locations")
+      .select("name,address")
+      .eq("studio_id", event.studio_id)
+      .eq("active", true)
+      .limit(2);
+    if (locationsError) throw new Error("notification_studio_locations_lookup_failed");
+    // Never substitute an ambiguous location when the studio has multiple sites.
+    if (locations?.length === 1) {
+      locationName = safeText(locations[0].address) ?? safeText(locations[0].name);
+    }
+  }
+
   return {
     reservation,
     student,
@@ -279,6 +343,8 @@ async function loadReservationContext(
     studio: (studioData ?? null) as JsonObject | null,
     template,
     discipline: (disciplineData ?? null) as JsonObject | null,
+    coachName,
+    locationName,
   };
 }
 
@@ -745,6 +811,8 @@ function buildTemplateVariables(context: EventContext, recipient: Recipient): Js
     discipline_name: safeText(context.discipline?.name),
     studio_name: safeText(context.studio?.name),
     studio_timezone: safeText(context.studio?.timezone),
+    coach: context.coachName ?? safeText(context.payload.coach) ?? "Por confirmar",
+    location: context.locationName ?? safeText(context.payload.location) ?? "Ubicación por confirmar",
   };
 }
 
