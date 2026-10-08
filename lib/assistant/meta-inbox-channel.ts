@@ -71,7 +71,7 @@ export function verifyMetaInboxWebhookToken(expected: string, received: string |
 
 export function verifyMetaInboxWebhookSignature(
   appSecret: string,
-  rawBody: string,
+  rawBody: string | Buffer,
   headerValue: string | null,
 ) {
   const match = /^sha256=([0-9a-f]{64})$/i.exec(headerValue?.trim() ?? "");
