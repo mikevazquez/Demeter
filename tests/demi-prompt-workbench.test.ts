@@ -194,6 +194,15 @@ describe("Demi prompt workbench", () => {
     );
 
     expect(mod.isExplicitAssistantConfirmation("Sí, confirmo.")).toBe(true);
+    expect(mod.isExplicitAssistantConfirmation("Sí, prepárame los datos para transferir.")).toBe(
+      true,
+    );
+    expect(mod.isExplicitAssistantConfirmation("No, prepárame los datos para transferir.")).toBe(
+      false,
+    );
+    expect(mod.isExplicitAssistantConfirmation("¿Sí, prepárame los datos para transferir?")).toBe(
+      false,
+    );
     expect(mod.isExplicitAssistantConfirmation("Confirmo")).toBe(true);
     expect(mod.isExplicitAssistantConfirmation("Sí, cancélala.")).toBe(true);
     expect(mod.isExplicitAssistantConfirmation("Sí, reagéndala.")).toBe(true);
@@ -642,5 +651,59 @@ describe("Demi prompt workbench", () => {
     expect(state.reservations).toHaveLength(0);
     expect(writes).toEqual([]);
     expect(reads).toContain("studio_bank_transfer_settings");
+  });
+});
+
+describe("Demi shared commercial price", () => {
+  it.each([15000, 0, null])("returns class price %s without requiring a package", async (price) => {
+    const mod = serverModule<typeof import("../lib/assistant/read-tools")>(
+      "lib/assistant/read-tools.ts",
+      {},
+    );
+    const sessionId = "11111111-1111-4111-8111-111111111111";
+    const scopes: string[] = [];
+    const supabase = {
+      from: (table: string) => {
+        const response = {
+          data:
+            table === "class_sessions"
+              ? { id: sessionId, template_id: "template", recurring_schedule_id: null }
+              : table === "class_templates"
+                ? {
+                    id: "template",
+                    name: "Pole Fitness",
+                    discipline_id: "discipline",
+                    drop_in_price_minor: price,
+                  }
+                : [],
+          error: null,
+        };
+        const chain: any = {
+          select: () => chain,
+          eq: (key: string, value: string) => {
+            if (key === "studio_id") scopes.push(value);
+            return chain;
+          },
+          order: () => chain,
+          limit: () => chain,
+          maybeSingle: async () => response,
+          then: (resolve: (value: unknown) => unknown) => Promise.resolve(response).then(resolve),
+        };
+        return chain;
+      },
+    };
+    const result = await mod.getCommercialOptions(
+      {
+        supabase,
+        studio: { id: "studio", name: "UAT", timezone: "America/Mexico_City", currency: "MXN" },
+      } as any,
+      { session_ref: `session:${sessionId}` },
+    );
+    expect(result).toMatchObject({
+      ok: true,
+      options: [],
+      single_class: price == null ? null : { price_minor: price, currency: "MXN" },
+    });
+    expect(scopes).toEqual(["studio", "studio", "studio", "studio"]);
   });
 });

@@ -965,6 +965,7 @@ export async function runAssistantTurn(input: OrchestratorInput) {
         firstVisitGuidance
           ? "Si pregunta por precios, responde primero con las opciones vigentes de Studio Flow. No presentes todos los paquetes si no lo pidió; recomienda solo una opción oficial y compatible con la clase o frecuencia que busca. No ocultes una clase suelta si Studio Flow la ofrece para esa reserva."
           : "",
+        "Para el precio de una clase concreta, consulta get_commercial_options con su session_ref. El campo single_class informa el precio vigente de clase suelta; úsalo aunque no haya paquetes en options. No confundas una lista vacía de paquetes con la ausencia de precio de clase. La elegibilidad y cualquier condición de primera clase se validan al preparar la reserva.",
         firstVisitGuidance
           ? "No uses listas memorizadas de horarios, precios, promociones, métodos de pago, enlaces, reglas de cancelación o servicios. Consulta la herramienta correspondiente y usa únicamente sus resultados. Nunca prometas disponibilidad sin buscarla."
           : "",
