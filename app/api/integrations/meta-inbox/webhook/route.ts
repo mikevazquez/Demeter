@@ -285,6 +285,22 @@ export async function GET(request: Request) {
   if (!config) return new Response("receiver_not_configured", { status: 503 });
 
   const url = new URL(request.url);
+  // Operational probe for DNS/TLS validation. Never bypass Meta's challenge
+  // check for requests containing webhook verification parameters.
+  if (
+    url.searchParams.get("health") === "meta-inbox" &&
+    !url.searchParams.has("hub.mode") &&
+    !url.searchParams.has("hub.verify_token") &&
+    !url.searchParams.has("hub.challenge")
+  ) {
+    return new Response("meta-inbox-ready", {
+      status: 200,
+      headers: {
+        "content-type": "text/plain; charset=utf-8",
+        "cache-control": "no-store",
+      },
+    });
+  }
   const mode = url.searchParams.get("hub.mode");
   const token = url.searchParams.get("hub.verify_token");
   const challenge = url.searchParams.get("hub.challenge");
