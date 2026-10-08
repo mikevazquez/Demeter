@@ -828,10 +828,23 @@ export async function runAssistantTurn(input: OrchestratorInput) {
     throw new Error("openai_not_configured");
   }
 
+  // In Meta channels, an unverified existing student must never acquire
+  // private-account capabilities. Only first-class prospect bookings are
+  // eligible, and Studio Flow remains the authority on payment and capacity.
+  const metaProspectBookingTools = new Set(["prepare_booking", "execute_booking"]);
+  const metaProspectBookingEnabled =
+    isMetaInboxChannel && input.studentId === null && Boolean(input.crmContactId);
+
   const tools = input.improvePrompt
     ? []
     : isMetaInboxChannel
-      ? [...assistantReadToolDefinitions]
+      ? [
+          ...assistantReadToolDefinitions,
+          ...(metaProspectBookingEnabled
+            ? assistantActionToolDefinitions.filter((tool) =>
+                metaProspectBookingTools.has(tool.name))
+            : []),
+        ]
       : [...assistantReadToolDefinitions, ...assistantActionToolDefinitions];
 
   const managedRules = input.improvePrompt
@@ -871,7 +884,10 @@ export async function runAssistantTurn(input: OrchestratorInput) {
           ? "En Instagram y Facebook Messenger, Studio Flow conserva la identidad técnica del remitente por cuenta y canal. No uses un teléfono escrito en el chat como prueba de identidad y no reveles datos privados de una alumna basándote solo en lo que afirma la persona."
           : "En WhatsApp, el número de teléfono normalizado es el identificador único. Studio Flow resuelve la identidad únicamente por ese número. El nombre se usa para registrar el prospecto, nunca para cambiar la identidad.",
         isMetaInboxChannel
-          ? "En esta UAT de Instagram/Messenger puedes informar, orientar y conservar el prospecto en CRM. Las reservas, pagos y datos privados siguen por WhatsApp o por la app hasta que Studio Flow incorpore verificación segura de identidad para estos canales. No prometas ni ejecutes acciones sensibles desde este canal."
+          ? metaProspectBookingEnabled
+            ? "En este piloto de Instagram/Messenger puedes preparar y ejecutar ÚNICAMENTE una primera reserva de prospecto usando prepare_booking y execute_booking. Respeta el precio, el cupo, el pago previo y la confirmación exigida por Studio Flow. Nunca digas que el lugar está reservado si la herramienta devuelve payment_required; no puedes recibir ni validar comprobantes de transferencia por estos canales todavía. Si la herramienta no puede ejecutar de forma segura, explica brevemente que la reserva no se confirmó. No uses este canal para cancelar, reagendar, consultar información privada, modificar paquetes ni cobrar."
+            : "En Instagram/Messenger solo puedes ofrecer información pública y seguimiento CRM para perfiles sin verificación de identidad. No puedes reservar, cancelar, reagendar, cobrar ni revelar información privada de alumnas existentes; orienta hacia el acceso seguro de Studio Flow sin inventar una verificación."
+
           : "Al iniciar una conversación de WhatsApp, usa primero la identidad resuelta por Studio Flow a partir del teléfono. Si coincide con una alumna existente, conserva esa identidad y atiéndela según su etapa real. Si no coincide con una alumna, Studio Flow debe conservarla como prospecto usando automáticamente el teléfono y el nombre de perfil de WhatsApp, sin pedir esos datos en el saludo.",
         "Un prospecto pasa a flujo de prueba cuando solicita agendar su primera clase. En ese momento, si su nombre completo aún no está confirmado, solicítalo una sola vez; después usa la identidad actualizada para preparar y confirmar la reserva. La reserva de prueba debe conservar payment_pending=true cuando así lo devuelva Studio Flow; no inventes que el pago está liquidado.",
         "Las reglas comerciales, de inscripción, prueba, no show, reservas, precios y pagos viven en Studio Flow. Consúltalas con las herramientas disponibles y respeta sus resultados; nunca inventes ni mantengas reglas paralelas.",
@@ -891,7 +907,7 @@ export async function runAssistantTurn(input: OrchestratorInput) {
                 : "Studio Flow no pudo confirmar si este teléfono corresponde a una ficha o prospecto. No lo adivines. Evita acciones dependientes de identidad y solicita únicamente el dato mínimo necesario o escala si no puede resolverse con seguridad.",
         input.identityNeedsName === true
           ? isMetaInboxChannel
-            ? "El contacto todavía no tiene un nombre confirmado. No lo preguntes mientras solo pide información. Si muestra intención concreta de reservar, puedes pedir su nombre completo para continuar el seguimiento comercial, pero no ejecutes la reserva desde esta UAT."
+            ? "El contacto todavía no tiene un nombre confirmado. No lo preguntes mientras solo pide información. Si desea reservar su primera clase, pide su nombre completo una sola vez y espera un nuevo mensaje para preparar la reserva; nunca confirmes sin la herramienta de Studio Flow."
             : "El prospecto todavía no tiene un nombre confirmado para una reserva en Studio Flow. NO le preguntes su nombre mientras solo pide información. Conserva el nombre de perfil de WhatsApp como nombre provisional del contacto. Únicamente cuando exprese intención concreta de agendar su primera clase, pide su nombre completo. Cuando responda, Studio Flow actualizará el contacto y entonces podrás preparar la reserva de prueba con el estado de pago que determine el flujo oficial."
           : "",
         input.crmContactId && !input.studentId
@@ -1159,7 +1175,11 @@ export async function runAssistantTurn(input: OrchestratorInput) {
 
     const isReadTool = assistantReadToolNames.has(toolName);
     const isActionTool = assistantActionToolNames.has(toolName);
-    if ((!isReadTool && !isActionTool) || !callId) {
+    // Defense in depth: never run hidden or injected action calls that weren't
+    // specifically exposed for this channel and this verified CRM lifecycle.
+    const permittedMetaAction = !isMetaInboxChannel ||
+      (metaProspectBookingEnabled && metaProspectBookingTools.has(toolName));
+    if ((!isReadTool && !isActionTool) || !permittedMetaAction || !callId) {
       trace.toolCalls.push({ name: toolName || "unknown", status: "blocked" });
       responseInput.push({
         type: "function_call_output",
