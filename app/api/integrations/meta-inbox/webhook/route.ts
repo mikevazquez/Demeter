@@ -355,7 +355,7 @@ export async function POST(request: Request) {
       request.headers.get("x-hub-signature-256"),
     )
   ) {
-    console.warn("[demi-meta-inbox] invalid_signature", { has_signature_header: request.headers.has("x-hub-signature-256") });
+    console.warn("[demi-meta-inbox] invalid_signature", { has_signature_header: request.headers.has("x-hub-signature-256"), valid_signature_header_format: /^sha256=[0-9a-f]{64}$/i.test(request.headers.get("x-hub-signature-256")?.trim() ?? "") });
     return json({ error: "invalid_signature" }, 401);
   }
 
