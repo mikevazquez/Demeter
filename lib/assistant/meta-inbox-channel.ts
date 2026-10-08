@@ -110,12 +110,9 @@ function parseConfig(value: unknown): MetaInboxWebhookConfig | null {
   const verifyToken = safeText(value.verify_token);
 
   if (
-    !pageAccessToken ||
-    !pageId ||
-    !/^\d+$/.test(pageId) ||
-    !instagramAccessToken ||
-    !instagramUserId ||
-    !/^\d+$/.test(instagramUserId) ||
+    !(pageAccessToken && pageId || instagramAccessToken && instagramUserId) ||
+    (Boolean(pageAccessToken || pageId) && !(pageAccessToken && /^\d+$/.test(pageId))) ||
+    (Boolean(instagramAccessToken || instagramUserId) && !(instagramAccessToken && /^\d+$/.test(instagramUserId))) ||
     !graphApiVersion ||
     !/^v\d+\.\d+$/.test(graphApiVersion) ||
     !appSecret ||
