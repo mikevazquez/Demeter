@@ -216,6 +216,15 @@ function renderMessageContent(delivery: DeliveryRow): RenderedMessage {
   const startLabel = formatSessionStart(variables);
 
   switch (delivery.template_key) {
+    case "coach_roster_reminder":
+      return {
+        title: "Tu próxima clase 👩‍🏫",
+        body: `${className}${startLabel ? ` · ${startLabel}` : ""}. ${String(variables.roster_count ?? 0)} alumnas: ${safeText(variables.roster_names) ?? "Sin reservas"}`,
+        url: "/coach/clases",
+        tag: `notification-${delivery.id}`,
+        providerTemplateKey: "coach_roster_reminder",
+      };
+
     case "class_reminder":
       return {
         title: "Tu clase es pronto",

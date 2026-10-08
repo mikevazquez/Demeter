@@ -20,8 +20,9 @@ export async function createInstructor(formData: FormData) {
   if (!firstName) redirect("/admin/instructores?error=first_name_required");
   if (rawPhone && !phone) redirect("/admin/instructores?error=phone_invalid");
 
-  const { supabase } = await getAdminContext(CAPABILITIES.INSTRUCTORS_WRITE);
-  const { data, error } = await supabase.rpc("admin_create_instructor", {
+  const { supabase, studio } = await getAdminContext(CAPABILITIES.INSTRUCTORS_WRITE);
+  const { data, error } = await supabase.rpc("admin_create_instructor_scoped", {
+    p_studio_id: studio.id,
     p_first_name: firstName,
     p_last_name: lastName || null,
     p_phone: phone,
@@ -29,7 +30,16 @@ export async function createInstructor(formData: FormData) {
     p_bio: bio,
   });
 
-  if (error || !data) redirect("/admin/instructores?error=create_failed");
+  if (error || !data) {
+    // Safe diagnostic only; never log names, phone numbers or email addresses.
+    console.error("[instructors:create] failed", { code: error?.code ?? "no_result" });
+    const reason = error?.code === "23505"
+      ? "contact_in_use"
+      : error?.code === "42501"
+        ? "not_allowed"
+        : "create_failed";
+    redirect(`/admin/instructores?error=${reason}`);
+  }
   revalidatePath("/admin/instructores");
   redirect(`/admin/instructores/${data}?created=1`);
 }
@@ -51,4 +61,21 @@ export async function setInstructorStatus(formData: FormData) {
   revalidatePath("/admin/instructores");
   revalidatePath(`/admin/instructores/${instructorId}`);
   redirect(`/admin/instructores/${instructorId}?saved=status`);
+}
+
+export async function updateInstructorPhone(formData: FormData) {
+  const instructorId = String(formData.get("instructor_id") ?? "").trim();
+  const rawPhone = String(formData.get("phone") ?? "").trim();
+  const phone = rawPhone ? normalizeMexicanPhone(rawPhone) : null;
+  if (!instructorId) redirect("/admin/instructores?error=instructor_required");
+  if (rawPhone && !phone) redirect(`/admin/instructores/${instructorId}?error=phone_invalid`);
+  const { supabase } = await getAdminContext(CAPABILITIES.INSTRUCTORS_WRITE);
+  const { error } = await supabase.rpc("admin_update_instructor_phone", {
+    p_instructor_id: instructorId,
+    p_phone: phone,
+  });
+  if (error) redirect(`/admin/instructores/${instructorId}?error=phone_update_failed`);
+  revalidatePath("/admin/instructores");
+  revalidatePath(`/admin/instructores/${instructorId}`);
+  redirect(`/admin/instructores/${instructorId}?saved=phone`);
 }

@@ -503,7 +503,11 @@ export default async function NotificationProcessPage({
                 template.name.startsWith(`demeter_${templateKey}_`),
               );
               const variables = supported ? META_WHATSAPP_TEMPLATE_PARAMETERS[templateKey] : [];
-              const suggestedName = `demeter_${templateKey}_${new Date().toISOString().slice(0, 10).replaceAll("-", "")}`;
+              const suggestedName = templateKey === "coach_roster_reminder"
+                ? "demeter_coach_lista_alumnas_v1"
+                : templateKey === "class_cancelled_coach"
+                  ? "demeter_coach_cancelacion_minimo_v1"
+                  : `demeter_${templateKey}_${new Date().toISOString().slice(0, 10).replaceAll("-", "")}`;
               const compatibleApproved = metaDiagnostics.templates.filter(
                 (template) =>
                   template.status === "APPROVED" &&
@@ -589,6 +593,11 @@ export default async function NotificationProcessPage({
                           </span>
                           <textarea
                             name="meta_body"
+                            defaultValue={templateKey === "coach_roster_reminder"
+                              ? "Hola {{1}} 👋 Tu clase {{2}} del {{3}} a las {{4}} tiene {{5}} alumnas reservadas. Lista: {{6}}. Consulta tu agenda en Studio Flow si hay cambios."
+                              : templateKey === "class_cancelled_coach"
+                                ? "Hola {{1}}, tu clase {{2}} del {{3}} a las {{4}} fue cancelada por no alcanzar el mínimo de reservas. Mínimo: {{5}}. Reservas al revisar: {{6}}. No necesitas asistir."
+                                : undefined}
                             rows={4}
                             required
                             maxLength={1024}

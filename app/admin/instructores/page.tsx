@@ -39,7 +39,7 @@ export default async function InstructorsPage({
   const status = params.status === "inactive" ? "inactive" : "active";
   const canWrite = can(CAPABILITIES.INSTRUCTORS_WRITE);
 
-  const { data: instructors } = await supabase
+  const { data: instructors, error: instructorsError } = await supabase
     .from("instructors")
     .select("id, person_id, status, bio, created_at")
     .eq("studio_id", studio.id)
@@ -83,9 +83,13 @@ export default async function InstructorsPage({
       ? "El nombre es obligatorio."
       : params.error === "phone_invalid"
         ? "Ingresa un teléfono válido."
-        : params.error
-          ? "No se pudo crear el integrante."
-          : null;
+        : params.error === "contact_in_use"
+          ? "El teléfono o correo ya está registrado en el estudio. Revisa el integrante existente o usa otro dato."
+          : params.error === "not_allowed"
+            ? "Tu acceso no permite crear integrantes en este estudio."
+            : params.error
+              ? "No se pudo crear el integrante. Intenta nuevamente."
+              : null;
 
   return (
     <main className="team-v2">
@@ -141,6 +145,11 @@ export default async function InstructorsPage({
       </header>
 
       {errorMessage ? <div className="team-v2-notice is-error">{errorMessage}</div> : null}
+      {instructorsError ? (
+        <div className="team-v2-notice is-error">
+          No pudimos cargar la lista del equipo. Actualiza la página para volver a intentarlo.
+        </div>
+      ) : null}
 
       <div className="team-v2-toolbar">
         <nav className="team-v2-tabs" aria-label="Estado del equipo">
@@ -162,7 +171,7 @@ export default async function InstructorsPage({
         </form>
       </div>
 
-      {rows.length === 0 ? (
+      {instructorsError ? null : rows.length === 0 ? (
         <section className="team-v2-empty">
           <strong>{query ? "No encontramos resultados" : "No hay integrantes aquí"}</strong>
           <p>

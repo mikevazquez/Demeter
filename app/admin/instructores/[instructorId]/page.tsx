@@ -5,7 +5,7 @@ import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getAdminContext } from "@/lib/auth/admin-context";
 
 import { InstructorAccessProvisioner } from "./InstructorAccessProvisioner";
-import { setInstructorStatus } from "../actions";
+import { setInstructorStatus, updateInstructorPhone } from "../actions";
 import "../team-v2.css";
 
 export default async function InstructorProfilePage({
@@ -149,6 +149,13 @@ export default async function InstructorProfilePage({
               <div>
                 <strong>Teléfono</strong>
                 <span>{phone || "Sin teléfono"}</span>
+                {canWrite ? (
+                  <form action={updateInstructorPhone} style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 8 }}>
+                    <input type="hidden" name="instructor_id" value={instructor.id} />
+                    <input name="phone" type="tel" aria-label="Teléfono del coach" placeholder="33 1234 5678" defaultValue={phone ?? ""} style={{ minWidth: 160, padding: 8, border: "1px solid #aaa", borderRadius: 8 }} />
+                    <button type="submit" style={{ padding: "8px 12px", borderRadius: 8 }}>Guardar teléfono</button>
+                  </form>
+                ) : null}
               </div>
             </div>
             <div className="team-v2-detail-row">

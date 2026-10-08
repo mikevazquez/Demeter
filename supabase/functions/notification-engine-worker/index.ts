@@ -354,6 +354,29 @@ async function buildContext(
 ): Promise<EventContext> {
   const reservationContext = await loadReservationContext(adminClient, event);
   const payload = { ...event.payload };
+  if (event.event_type === "team.coach_roster_due") {
+    const sessionId = safeText(reservationContext.session?.id);
+    if (sessionId) {
+      const { data: reservations, error: rosterError } = await adminClient
+        .from("reservations")
+        .select("student_id")
+        .eq("studio_id", event.studio_id)
+        .eq("session_id", sessionId)
+        .eq("status", "reserved");
+      if (rosterError) throw new Error("coach_roster_lookup_failed");
+      const studentIds = [...new Set((reservations ?? [])
+        .map((item) => safeText(item.student_id)).filter((id): id is string => Boolean(id)))];
+      const { data: students, error: studentsError } = studentIds.length
+        ? await adminClient.from("students").select("id,full_name")
+          .eq("studio_id", event.studio_id).in("id", studentIds)
+        : { data: [], error: null };
+      if (studentsError) throw new Error("coach_roster_students_lookup_failed");
+      const namesById = new Map((students ?? []).map((item) => [String(item.id), safeText(item.full_name)]));
+      const names = studentIds.map((id) => namesById.get(id) ?? "Alumna").sort((a,b) => a.localeCompare(b, "es"));
+      payload.roster_count = studentIds.length;
+      payload.roster_names = names.length ? names.join(", ") : "Sin alumnas reservadas";
+    }
+  }
   if (event.event_type === "package.expired_due") {
     const acquisitionId =
       safeText(event.payload.acquisition_id) ??
