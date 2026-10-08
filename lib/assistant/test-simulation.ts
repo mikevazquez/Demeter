@@ -100,7 +100,12 @@ export function simulatedReadTool(state: TestSimulation, tool: string) {
     return {
       ok: true,
       simulated: true,
-      student_state: { category },
+      student_state: {
+        category,
+        ...(state.persona === "former_student"
+          ? { lifecycle_status: "inactive", enrollment_status: "expired", has_current_package: false, has_expired_package: true }
+          : {}),
+      },
       current_package: hasActivePackage
         ? {
             name: "Paquete de prueba: 8 clases",
@@ -130,6 +135,14 @@ export async function simulateAssistantAction(
 ) {
   const { state } = input;
   const result = (data: Summary): Summary & { simulated: true } => ({ simulated: true, ...data });
+  if (tool === "prepare_booking" && state.persona === "former_student") {
+    return result({
+      ok: false,
+      error: "enrollment_required",
+      reason_code: "enrollment_required",
+      reason_message: "Tu inscripción está vencida. Puedes renovar la inscripción por separado o elegir un paquete que la incluya. Después podrás reservar una clase.",
+    });
+  }
   if (tool === "prepare_booking" && state.identityNeedsName) {
     return result({
       ok: false,
