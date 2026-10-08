@@ -1,12 +1,14 @@
+import { isFirstVisitPersona, type TestPersona } from "./prompt-workbench";
+
 type AudienceInput = {
   studentId?: string | null;
   crmContactId?: string | null;
   studentCategory?: string | null;
-  testSimulation?: { persona: "student" | "prospect" } | null;
+  testSimulation?: { persona: TestPersona } | null;
 };
 
 export function needsFirstVisitGuidance(input: AudienceInput): boolean {
-  if (input.testSimulation) return input.testSimulation.persona === "prospect";
+  if (input.testSimulation) return isFirstVisitPersona(input.testSimulation.persona);
   if (input.studentId) {
     return ["trial_pending", "trial_cancelled", "trial_no_show"].includes(
       input.studentCategory ?? "",
@@ -28,14 +30,17 @@ export function conversationGuidance(input: AudienceInput): string {
       "Si ya pide reservar pero todavía no eligió una clase, no respondas pidiendo únicamente su nombre. Consulta search_class_availability en ese mismo turno y ofrece hasta tres opciones reales de la actividad solicitada. Si 'pole' puede referirse a Pole Fitness o Pole Exotic, muestra opciones pertinentes de ambas y pregunta cuál prefiere. Cuando elija una clase, solicita el nombre completo solo si falta y continúa con la preparación oficial de la reserva.",
       "Si acepta revisar horarios, consulta search_class_availability y ofrece opciones reales. Si elige una clase, prepara la reserva con las herramientas oficiales y continúa hasta su confirmación o hasta explicar un bloqueo real. Nunca conviertas 'gracias', 'me gusta' o una pregunta de ubicación en una orden de reserva.",
     );
-  } else if (input.studentId || input.testSimulation?.persona === "student") {
+  } else if (
+    input.studentId ||
+    (input.testSimulation && input.testSimulation.persona !== "unresolved_identity")
+  ) {
     shared.push(
       "Para alumnas, resuelve primero su solicitud concreta: créditos, vigencia, reservas, cambios o pagos. No la trates como prospecto ni le ofrezcas primera clase. Sugiere renovación únicamente cuando los datos actuales de Studio Flow y su solicitud la hagan relevante.",
       "Si Studio Flow indica trial_attended, la primera visita ya ocurrió: ayuda a continuar con opciones comerciales e inscripción vigentes, sin volver a ofrecer la excepción de primera clase. Si indica former_student, revisa su situación y orienta su regreso sin asumir beneficios de primer ingreso.",
     );
   } else {
     shared.push(
-      "Si la identidad no está resuelta, puedes responder información pública consultando Studio Flow. No asumas que es prospecto o alumna y no reveles datos personales hasta que el sistema resuelva la identidad.",
+      "Si la identidad no está resuelta, puedes responder información pública consultando Studio Flow. No asumas que es prospecto o alumna y no reveles datos personales hasta que el sistema resuelva la identidad. Si pregunta por datos personales, explica brevemente que no puedes confirmarlos sin verificar la cuenta asociada a este número; no menciones simulaciones, perfiles de prueba, selectores, herramientas internas ni pidas documentos o números por chat.",
     );
   }
   return shared.join("\n");

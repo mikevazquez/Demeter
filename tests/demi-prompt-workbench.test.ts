@@ -5,7 +5,12 @@ import {
   conversationGuidance,
   needsFirstVisitGuidance,
 } from "../lib/assistant/conversation-guidance";
-import { validPrompt } from "../lib/assistant/prompt-workbench";
+import {
+  isActiveStudentPersona,
+  isFirstVisitPersona,
+  testPersonaLabel,
+  validPrompt,
+} from "../lib/assistant/prompt-workbench";
 
 // Load server modules with explicit fakes for external boundaries. No network or real DB.
 function serverModule<T>(path: string, dependencies: Record<string, unknown>) {
@@ -23,7 +28,7 @@ function serverModule<T>(path: string, dependencies: Record<string, unknown>) {
   return loadedModule.exports as T;
 }
 
-function fakeDatabase() {
+function fakeDatabase(pendingAction: Record<string, unknown> | null = null) {
   const writes: string[] = [];
   const reads: string[] = [];
   const supabase = {
@@ -41,7 +46,10 @@ function fakeDatabase() {
           return chain;
         },
         single: async () => ({ data: { id: "model-call" }, error: null }),
-        maybeSingle: async () => ({ data: null, error: null }),
+        maybeSingle: async () => ({
+          data: table === "assistant_pending_actions" ? pendingAction : null,
+          error: null,
+        }),
         then: (resolve: (value: unknown) => unknown) =>
           Promise.resolve({ data: [], error: null }).then(resolve),
       };
@@ -51,11 +59,18 @@ function fakeDatabase() {
   return { supabase, reads, writes };
 }
 
-function orchestratorHarness() {
+function orchestratorHarness(pendingAction: Record<string, unknown> | null = null) {
   const action = vi.fn().mockRejectedValue(new Error("Real actions must never execute in a test"));
   const simulate = vi.fn().mockResolvedValue({ ok: true, simulated: true });
   const read = vi.fn().mockResolvedValue({ ok: true, activities: [] });
-  const db = fakeDatabase();
+  const db = fakeDatabase(pendingAction);
+  const actionModule = serverModule<typeof import("../lib/assistant/action-tools")>(
+    "lib/assistant/action-tools.ts",
+    {
+      "node:crypto": { createHash: vi.fn(), randomUUID: vi.fn() },
+      "./read-tools": { getCommercialOptions: vi.fn() },
+    },
+  );
   const mod = serverModule<typeof import("../lib/assistant/orchestrator")>(
     "lib/assistant/orchestrator.ts",
     {
@@ -63,11 +78,13 @@ function orchestratorHarness() {
       "./test-simulation": { simulateAssistantAction: simulate, simulatedReadTool: () => null },
       "./action-tools": {
         executeAssistantActionTool: action,
-        isExplicitAssistantConfirmation: () => true,
-        parsePostTrialEnrollmentMethod: () => "cash",
+        isExplicitAssistantConfirmation: actionModule.isExplicitAssistantConfirmation,
+        parsePostTrialEnrollmentMethod: (message: string) =>
+          message.toLocaleLowerCase("es-MX").includes("efectivo") ? "cash" : null,
       },
       "./read-tools": { executeAssistantReadTool: read },
       "./conversation-guidance": { conversationGuidance, needsFirstVisitGuidance },
+      "./prompt-workbench": { testPersonaLabel },
       "./tool-contracts": {
         assistantReadToolDefinitions: [{ name: "get_activity_catalog", type: "function" }],
         assistantActionToolDefinitions: [{ name: "execute_booking", type: "function" }],
@@ -122,6 +139,46 @@ afterEach(() => {
 });
 
 describe("Demi prompt workbench", () => {
+  it("builds isolated lifecycle fixtures for conversational UAT", () => {
+    const mod = serverModule<typeof import("../lib/assistant/test-simulation")>(
+      "lib/assistant/test-simulation.ts",
+      {
+        "./action-tools": { isExplicitAssistantConfirmation: vi.fn() },
+        "./prompt-workbench": { isActiveStudentPersona, isFirstVisitPersona },
+      },
+    );
+    const pending = mod.createTestSimulation("trial_pending_reserved");
+    const noShow = mod.createTestSimulation("trial_no_show");
+    const attended = mod.createTestSimulation("trial_attended");
+    const active = mod.createTestSimulation("student_reserved");
+    const former = mod.createTestSimulation("former_student");
+    const unknown = mod.createTestSimulation("unresolved_identity");
+
+    expect(mod.simulatedReadTool(pending, "get_student_package_status")).toMatchObject({
+      student_state: { category: "trial_pending" },
+    });
+    expect(mod.simulatedReadTool(noShow, "get_student_package_status")).toMatchObject({
+      student_state: { category: "trial_no_show" },
+    });
+    expect(mod.simulatedReadTool(attended, "get_student_package_status")).toMatchObject({
+      student_state: { category: "trial_attended" },
+    });
+    expect(mod.simulatedReadTool(active, "get_student_reservations")).toMatchObject({
+      reservations: [{ reservation_ref: "reservation:test-student_reserved" }],
+    });
+    expect(mod.simulatedReadTool(former, "get_student_package_status")).toMatchObject({
+      student_state: { category: "former_student" },
+      current_package: null,
+    });
+    expect(mod.simulatedReadTool(unknown, "get_student_package_status")).toMatchObject({
+      ok: false,
+      error: "identity_required",
+    });
+    expect(isFirstVisitPersona("trial_cancelled")).toBe(true);
+    expect(isActiveStudentPersona("student_reserved")).toBe(true);
+    expect(testPersonaLabel("unresolved_identity")).toContain("identidad resuelta");
+  });
+
   it("validates empty and oversized prompts", () => {
     expect(validPrompt(" ")).toBe(false);
     expect(validPrompt("x".repeat(24001))).toBe(false);
@@ -138,6 +195,8 @@ describe("Demi prompt workbench", () => {
 
     expect(mod.isExplicitAssistantConfirmation("Sí, confirmo.")).toBe(true);
     expect(mod.isExplicitAssistantConfirmation("Confirmo")).toBe(true);
+    expect(mod.isExplicitAssistantConfirmation("Sí, cancélala.")).toBe(true);
+    expect(mod.isExplicitAssistantConfirmation("Sí, reagéndala.")).toBe(true);
     expect(mod.isExplicitAssistantConfirmation("¿Sí, confirmo?")).toBe(false);
     expect(mod.isExplicitAssistantConfirmation("Gracias")).toBe(false);
   });
@@ -209,6 +268,76 @@ describe("Demi prompt workbench", () => {
     );
     expect(h.action).not.toHaveBeenCalled();
     expect(h.writes).toEqual([]);
+  });
+  it("does not confirm a prospect reservation before a simulated transfer is paid", async () => {
+    const h = orchestratorHarness();
+    const summary = {
+      activity: "Pole Fitness",
+      date: "2099-01-01",
+      starts_at_local: "12:00",
+      ends_at_local: "13:00",
+      trial_booking: true,
+      payment_before_booking: true,
+      amount_minor: 15000,
+      currency: "MXN",
+    };
+    h.input.testSimulation!.pending = {
+      tool: "execute_booking",
+      summary,
+      preparedTurnId: "previous-turn",
+    };
+    h.simulate.mockResolvedValue({
+      ok: true,
+      simulated: true,
+      status: "payment_required",
+      reservation_confirmed: false,
+      amount_minor: 15000,
+      currency: "MXN",
+      bank_details: {
+        bank_name: "Banco de prueba",
+        account_holder: "Titular de prueba",
+        clabe: "CLABE_DE_PRUEBA",
+      },
+      summary,
+    });
+
+    const result = await h.run(h.input);
+
+    expect(result.reply).toContain("primero realiza la transferencia");
+    expect(result.reply).toContain("CLABE: CLABE_DE_PRUEBA");
+    expect(result.reply).toContain("Envíame el comprobante por este mismo chat");
+    expect(result.reply).toContain("no se generó un pago ni se creó una reserva");
+    expect(result.reply).not.toContain("quedó confirmada");
+    expect(h.simulate).toHaveBeenCalledOnce();
+    expect(h.action).not.toHaveBeenCalled();
+    expect(h.writes).toEqual([]);
+  });
+  it("executes a real pending booking on the first 'Sí, confirmo' without another model turn", async () => {
+    const summary = {
+      activity: "Pole Fitness",
+      date: "2099-01-01",
+      starts_at_local: "12:00",
+      ends_at_local: "13:00",
+    };
+    const h = orchestratorHarness({
+      id: "pending-action",
+      action_type: "booking.create",
+      expires_at: "2099-01-01T00:00:00.000Z",
+    });
+    h.input.testSimulation = undefined;
+    h.action.mockResolvedValue({ ok: true, status: "executed", summary });
+
+    const result = await h.run(h.input);
+
+    expect(result.reply).toContain("Tu reserva de Pole Fitness quedó confirmada");
+    expect(h.action).toHaveBeenCalledOnce();
+    expect(h.action).toHaveBeenCalledWith(
+      expect.objectContaining({ currentUserMessage: "Sí, confirmo" }),
+      "execute_booking",
+      {},
+    );
+    expect(h.simulate).not.toHaveBeenCalled();
+    expect(h.writes).toEqual(["assistant_tool_executions"]);
   });
   it("does not ask for a second confirmation after a simulated cancellation executes", async () => {
     const h = orchestratorHarness();
@@ -319,6 +448,7 @@ describe("Demi prompt workbench", () => {
         "./action-tools": {
           isExplicitAssistantConfirmation: (message: string) => message === "Sí, confirmo",
         },
+        "./prompt-workbench": { isActiveStudentPersona, isFirstVisitPersona },
       },
     );
     const state = mod.createTestSimulation("student");
@@ -348,6 +478,13 @@ describe("Demi prompt workbench", () => {
     expect(booked.ok).toBe(true);
     expect(state.credits).toBe(7);
     expect(state.reservations).toHaveLength(1);
+    const duplicateBookingConfirmation = await mod.simulateAssistantAction(
+      { ...simulationInput, turnId: "duplicate", currentUserMessage: "Sí, confirmo" },
+      "execute_booking",
+      {},
+    );
+    expect(duplicateBookingConfirmation.ok).toBe(false);
+    expect(state.reservations).toHaveLength(1);
     await mod.simulateAssistantAction(
       { ...simulationInput, turnId: "third" },
       "prepare_cancellation",
@@ -374,6 +511,7 @@ describe("Demi prompt workbench", () => {
         "./action-tools": {
           isExplicitAssistantConfirmation: (message: string) => message === "Sí, confirmo",
         },
+        "./prompt-workbench": { isActiveStudentPersona, isFirstVisitPersona },
       },
     );
     const state = mod.createTestSimulation("prospect");
@@ -399,5 +537,110 @@ describe("Demi prompt workbench", () => {
     expect(mod.confirmSimulatedProspectName(state, "La opción 2, por favor")).toBe(false);
     expect(mod.confirmSimulatedProspectName(state, "Me llamo Andrea López")).toBe(true);
     expect(state.identityNeedsName).toBe(false);
+
+    const combinedMessageState = mod.createTestSimulation("prospect");
+    expect(
+      mod.confirmSimulatedProspectName(
+        combinedMessageState,
+        "Me llamo Valeria Demo y sí quiero reservar esa clase.",
+      ),
+    ).toBe(true);
+    expect(combinedMessageState.identityNeedsName).toBe(false);
+  });
+
+  it("keeps a prospect trial reservation pending until transfer when Sandbox policy requires prepayment", async () => {
+    const writes: string[] = [];
+    const reads: string[] = [];
+    const supabase = {
+      from: (table: string) => {
+        reads.push(table);
+        const chain: Record<string, unknown> = {
+          select: () => chain,
+          eq: () => chain,
+          insert: () => {
+            writes.push(table);
+            throw new Error("Unexpected write");
+          },
+          update: () => {
+            writes.push(table);
+            throw new Error("Unexpected write");
+          },
+          maybeSingle: async () => ({
+            data:
+              table === "class_sessions"
+                ? {
+                    id: "11111111-1111-1111-1111-111111111111",
+                    template_id: "template",
+                    status: "scheduled",
+                    starts_at: "2099-01-01T18:00:00Z",
+                    ends_at: "2099-01-01T19:00:00Z",
+                  }
+                : table === "class_templates"
+                  ? { name: "Pole Fitness", drop_in_price_minor: 15000 }
+                  : table === "studio_bank_transfer_settings"
+                    ? {
+                        bank_name: "Banco de prueba",
+                        account_holder: "Titular de prueba",
+                        clabe: "CLABE_DE_PRUEBA",
+                        account_number: null,
+                        card_number: null,
+                        instructions: "Usa tu nombre como concepto.",
+                      }
+                    : null,
+            error: null,
+          }),
+        };
+        return chain;
+      },
+    };
+    const mod = serverModule<typeof import("../lib/assistant/test-simulation")>(
+      "lib/assistant/test-simulation.ts",
+      {
+        "./action-tools": {
+          isExplicitAssistantConfirmation: (message: string) => message === "Sí, confirmo",
+        },
+        "./prompt-workbench": { isActiveStudentPersona, isFirstVisitPersona },
+      },
+    );
+    const state = mod.createTestSimulation("prospect");
+    state.identityNeedsName = false;
+    state.paymentBeforeBooking = true;
+    const input = {
+      state,
+      supabase,
+      studio: { id: "studio", timezone: "America/Mexico_City", currency: "MXN" },
+      turnId: "prepare-turn",
+      currentUserMessage: "Quiero reservar",
+    } as unknown as Parameters<typeof mod.simulateAssistantAction>[0];
+
+    const prepared = await mod.simulateAssistantAction(input, "prepare_booking", {
+      session_ref: "session:11111111-1111-1111-1111-111111111111",
+    });
+    expect(prepared).toMatchObject({
+      ok: true,
+      simulated: true,
+      status: "confirmation_required",
+      summary: { trial_booking: true, payment_before_booking: true, amount_minor: 15000 },
+    });
+
+    const afterConfirmation = await mod.simulateAssistantAction(
+      { ...input, turnId: "confirm-turn", currentUserMessage: "Sí, confirmo" },
+      "execute_booking",
+      {},
+    );
+    expect(afterConfirmation).toMatchObject({
+      ok: true,
+      simulated: true,
+      status: "payment_required",
+      reservation_confirmed: false,
+      bank_details: {
+        bank_name: "Banco de prueba",
+        account_holder: "Titular de prueba",
+        clabe: "CLABE_DE_PRUEBA",
+      },
+    });
+    expect(state.reservations).toHaveLength(0);
+    expect(writes).toEqual([]);
+    expect(reads).toContain("studio_bank_transfer_settings");
   });
 });

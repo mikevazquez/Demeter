@@ -8,14 +8,52 @@ import {
   type PromptVersion,
   type TestPersona,
 } from "@/lib/assistant/prompt-workbench";
-import { saveDemiPrompt, activateDemiPrompt, testDemiPrompt, setDemiHandoffPolicy, reviewDemiLearning, proposeDemiAdminChange, applyDemiAdminChange, rejectDemiAdminChange } from "./workbench-actions";
+import {
+  saveDemiPrompt,
+  activateDemiPrompt,
+  testDemiPrompt,
+  setDemiHandoffPolicy,
+  reviewDemiLearning,
+  proposeDemiAdminChange,
+  applyDemiAdminChange,
+  rejectDemiAdminChange,
+} from "./workbench-actions";
 
 type Message = { role: "user" | "assistant"; content: string };
-type HandoffPolicy = { id:string; reason_code:string; label:string; description:string; enabled:boolean; blocking:boolean; sort_order:number };
-type LearningProposal = { id:string; title:string; evidence:string; proposed_instruction:string; status:string; created_at:string };
-type AdminPlanAction = { type:string; label:string; [key:string]:unknown };
-type AdminPlan = { summary:string; requires_development:boolean; development_reason:string|null; actions:AdminPlanAction[] };
-type AdminChange = { id:string; instruction:string; summary:string; plan:AdminPlan; status:string; error_code?:string|null; created_at:string; applied_at?:string|null };
+type HandoffPolicy = {
+  id: string;
+  reason_code: string;
+  label: string;
+  description: string;
+  enabled: boolean;
+  blocking: boolean;
+  sort_order: number;
+};
+type LearningProposal = {
+  id: string;
+  title: string;
+  evidence: string;
+  proposed_instruction: string;
+  status: string;
+  created_at: string;
+};
+type AdminPlanAction = { type: string; label: string; [key: string]: unknown };
+type AdminPlan = {
+  summary: string;
+  requires_development: boolean;
+  development_reason: string | null;
+  actions: AdminPlanAction[];
+};
+type AdminChange = {
+  id: string;
+  instruction: string;
+  summary: string;
+  plan: AdminPlan;
+  status: string;
+  error_code?: string | null;
+  created_at: string;
+  applied_at?: string | null;
+};
 
 export default function DemiWorkbench({
   assistantName,
@@ -40,7 +78,9 @@ export default function DemiWorkbench({
 }) {
   const router = useRouter();
   const initial = versions[0]?.kind === "draft" ? versions[0] : null;
-  const [tab, setTab] = useState<"configure" | "instructions" | "improve" | "test" | "learning" | "handoff">("configure");
+  const [tab, setTab] = useState<
+    "configure" | "instructions" | "improve" | "test" | "learning" | "handoff"
+  >("configure");
   const [draft, setDraft] = useState(initial?.instructions ?? activeInstructions);
   const [saved, setSaved] = useState(initial);
   const [history, setHistory] = useState(versions);
@@ -168,29 +208,47 @@ export default function DemiWorkbench({
                   <small>Plan propuesto</small>
                   <h3>{adminRequest.summary}</h3>
                 </div>
-                <span className={adminRequest.plan.requires_development ? "dw-plan-badge is-warning" : "dw-plan-badge"}>
-                  {adminRequest.plan.requires_development ? "Requiere desarrollo" : "Listo para aplicar"}
+                <span
+                  className={
+                    adminRequest.plan.requires_development
+                      ? "dw-plan-badge is-warning"
+                      : "dw-plan-badge"
+                  }
+                >
+                  {adminRequest.plan.requires_development
+                    ? "Requiere desarrollo"
+                    : "Listo para aplicar"}
                 </span>
               </div>
               {adminRequest.plan.requires_development && (
                 <p className="dw-plan-warning">
-                  {adminRequest.plan.development_reason || "Parte de esta instrucción todavía no está parametrizada en Studio Flow."}
+                  {adminRequest.plan.development_reason ||
+                    "Parte de esta instrucción todavía no está parametrizada en Studio Flow."}
                 </p>
               )}
               <div className="dw-admin-actions-list">
                 {adminRequest.plan.actions.map((action, index) => (
                   <article key={index}>
                     <span>✓</span>
-                    <div><strong>{action.label}</strong><small>{action.type.replaceAll("_", " ")}</small></div>
+                    <div>
+                      <strong>{action.label}</strong>
+                      <small>{action.type.replaceAll("_", " ")}</small>
+                    </div>
                   </article>
                 ))}
-                {!adminRequest.plan.actions.length && <p className="dw-hint">No hay cambios automáticos seguros para aplicar.</p>}
+                {!adminRequest.plan.actions.length && (
+                  <p className="dw-hint">No hay cambios automáticos seguros para aplicar.</p>
+                )}
               </div>
               <div className="dw-actions">
                 <button
                   className="dw-primary"
                   type="button"
-                  disabled={busy || adminRequest.plan.requires_development || !adminRequest.plan.actions.length}
+                  disabled={
+                    busy ||
+                    adminRequest.plan.requires_development ||
+                    !adminRequest.plan.actions.length
+                  }
                   onClick={() =>
                     perform(async () => {
                       const result = await applyDemiAdminChange(adminRequest.id);
@@ -230,12 +288,23 @@ export default function DemiWorkbench({
               <article key={change.id}>
                 <div>
                   <strong>{change.instruction}</strong>
-                  <small>{new Date(change.created_at).toLocaleString("es-MX")} · {change.status === "applied" ? "Aplicado" : change.status === "proposed" ? "Pendiente" : change.status === "rejected" ? "Descartado" : "Falló"}</small>
+                  <small>
+                    {new Date(change.created_at).toLocaleString("es-MX")} ·{" "}
+                    {change.status === "applied"
+                      ? "Aplicado"
+                      : change.status === "proposed"
+                        ? "Pendiente"
+                        : change.status === "rejected"
+                          ? "Descartado"
+                          : "Falló"}
+                  </small>
                   <p>{change.summary}</p>
                 </div>
               </article>
             ))}
-            {!adminChanges.length && <p className="dw-hint">Todavía no hay cambios hechos desde el portal.</p>}
+            {!adminChanges.length && (
+              <p className="dw-hint">Todavía no hay cambios hechos desde el portal.</p>
+            )}
           </details>
         </div>
       )}
@@ -465,28 +534,117 @@ export default function DemiWorkbench({
 
       {tab === "learning" && (
         <div className="dw-content">
-          <header><h2>Aprendizajes propuestos</h2><p>Demi puede detectar correcciones, pero nunca cambia sus reglas sola. Tú decides qué incorporar.</p></header>
-          {!learningProposals.length && <p className="dw-hint">Todavía no hay aprendizajes pendientes o revisados.</p>}
+          <header>
+            <h2>Aprendizajes propuestos</h2>
+            <p>
+              Demi puede detectar correcciones, pero nunca cambia sus reglas sola. Tú decides qué
+              incorporar.
+            </p>
+          </header>
+          {!learningProposals.length && (
+            <p className="dw-hint">Todavía no hay aprendizajes pendientes o revisados.</p>
+          )}
           <div className="dw-settings-list">
-            {learningProposals.map((item) => <article key={item.id} className="dw-setting-card">
-              <div><strong>{item.title}</strong><small>{new Date(item.created_at).toLocaleString("es-MX")} · {item.status === "pending" ? "Pendiente" : item.status === "approved" ? "Aprobado" : "Rechazado"}</small>
-              {item.evidence && <p>{item.evidence}</p>}<p><b>Propuesta:</b> {item.proposed_instruction}</p></div>
-              {item.status === "pending" && <div className="dw-actions">
-                <button className="dw-primary" type="button" disabled={busy} onClick={() => perform(async()=>{const x=await reviewDemiLearning(item.id,"approved"); if(!x.ok)return setError(promptWorkbenchError(x.error)); if(x.proposedInstruction){setDraft((v)=>v+"\n"+x.proposedInstruction); setSaved(null);} setNotice("Aprendizaje aprobado y agregado al borrador. Falta probarlo y activarlo."); router.refresh();})}>Aprobar</button>
-                <button type="button" disabled={busy} onClick={() => perform(async()=>{const x=await reviewDemiLearning(item.id,"rejected"); if(!x.ok)return setError(promptWorkbenchError(x.error)); setNotice("Aprendizaje descartado."); router.refresh();})}>Descartar</button>
-              </div>}
-            </article>)}
+            {learningProposals.map((item) => (
+              <article key={item.id} className="dw-setting-card">
+                <div>
+                  <strong>{item.title}</strong>
+                  <small>
+                    {new Date(item.created_at).toLocaleString("es-MX")} ·{" "}
+                    {item.status === "pending"
+                      ? "Pendiente"
+                      : item.status === "approved"
+                        ? "Aprobado"
+                        : "Rechazado"}
+                  </small>
+                  {item.evidence && <p>{item.evidence}</p>}
+                  <p>
+                    <b>Propuesta:</b> {item.proposed_instruction}
+                  </p>
+                </div>
+                {item.status === "pending" && (
+                  <div className="dw-actions">
+                    <button
+                      className="dw-primary"
+                      type="button"
+                      disabled={busy}
+                      onClick={() =>
+                        perform(async () => {
+                          const x = await reviewDemiLearning(item.id, "approved");
+                          if (!x.ok) return setError(promptWorkbenchError(x.error));
+                          if (x.proposedInstruction) {
+                            setDraft((v) => v + "\n" + x.proposedInstruction);
+                            setSaved(null);
+                          }
+                          setNotice(
+                            "Aprendizaje aprobado y agregado al borrador. Falta probarlo y activarlo.",
+                          );
+                          router.refresh();
+                        })
+                      }
+                    >
+                      Aprobar
+                    </button>
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onClick={() =>
+                        perform(async () => {
+                          const x = await reviewDemiLearning(item.id, "rejected");
+                          if (!x.ok) return setError(promptWorkbenchError(x.error));
+                          setNotice("Aprendizaje descartado.");
+                          router.refresh();
+                        })
+                      }
+                    >
+                      Descartar
+                    </button>
+                  </div>
+                )}
+              </article>
+            ))}
           </div>
         </div>
       )}
       {tab === "handoff" && (
         <div className="dw-content">
-          <header><h2>Cuándo pasa a una persona</h2><p>Solo los motivos activados permiten una escalación automática. Los demás casos los debe intentar resolver Demi con Studio Flow.</p></header>
+          <header>
+            <h2>Cuándo pasa a una persona</h2>
+            <p>
+              Solo los motivos activados permiten una escalación automática. Los demás casos los
+              debe intentar resolver Demi con Studio Flow.
+            </p>
+          </header>
           <div className="dw-settings-list">
-            {handoffPolicies.map((item) => <article key={item.id} className="dw-setting-card">
-              <div><strong>{item.label}</strong><small>{item.blocking ? "Pausa la conversación automática" : "Revisión sin bloquear a Demi"}</small><p>{item.description}</p></div>
-              <label className="dw-switch"><input type="checkbox" checked={item.enabled} disabled={busy} onChange={(e)=>perform(async()=>{const x=await setDemiHandoffPolicy(item.id,e.target.checked); if(!x.ok)return setError(promptWorkbenchError(x.error)); setNotice(e.target.checked ? "Motivo activado." : "Motivo desactivado."); router.refresh();})}/><span>{item.enabled ? "Activo" : "Inactivo"}</span></label>
-            </article>)}
+            {handoffPolicies.map((item) => (
+              <article key={item.id} className="dw-setting-card">
+                <div>
+                  <strong>{item.label}</strong>
+                  <small>
+                    {item.blocking
+                      ? "Pausa la conversación automática"
+                      : "Revisión sin bloquear a Demi"}
+                  </small>
+                  <p>{item.description}</p>
+                </div>
+                <label className="dw-switch">
+                  <input
+                    type="checkbox"
+                    checked={item.enabled}
+                    disabled={busy}
+                    onChange={(e) =>
+                      perform(async () => {
+                        const x = await setDemiHandoffPolicy(item.id, e.target.checked);
+                        if (!x.ok) return setError(promptWorkbenchError(x.error));
+                        setNotice(e.target.checked ? "Motivo activado." : "Motivo desactivado.");
+                        router.refresh();
+                      })
+                    }
+                  />
+                  <span>{item.enabled ? "Activo" : "Inactivo"}</span>
+                </label>
+              </article>
+            ))}
           </div>
         </div>
       )}
@@ -510,7 +668,14 @@ export default function DemiWorkbench({
                 }}
               >
                 <option value="prospect">🌱 Prospecto nuevo</option>
+                <option value="trial_pending_reserved">🗓️ Prueba pendiente con reserva</option>
+                <option value="trial_cancelled">↩️ Prueba cancelada</option>
+                <option value="trial_no_show">⏳ Prueba con ausencia</option>
+                <option value="trial_attended">✅ Prueba ya asistida</option>
                 <option value="student">🎓 Alumna con paquete ficticio</option>
+                <option value="student_reserved">📅 Alumna activa con reserva</option>
+                <option value="former_student">🌿 Exalumna</option>
+                <option value="unresolved_identity">🔒 Identidad no resuelta</option>
               </select>
             </label>
             <button type="button" onClick={clearTest} disabled={busy}>

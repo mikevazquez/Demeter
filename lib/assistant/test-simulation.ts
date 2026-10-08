@@ -3,23 +3,44 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { AssistantStudioContext } from "./read-tools";
 import { isExplicitAssistantConfirmation } from "./action-tools";
-import type { TestPersona } from "./prompt-workbench";
+import { isActiveStudentPersona, isFirstVisitPersona, type TestPersona } from "./prompt-workbench";
 
 type Summary = Record<string, unknown>;
 export type TestSimulation = {
   persona: TestPersona;
   identityNeedsName: boolean;
+  paymentBeforeBooking?: boolean;
   pending?: { tool: string; summary: Summary; preparedTurnId: string } | null;
   reservations: Summary[];
   credits: number;
 };
 
 export function createTestSimulation(persona: TestPersona): TestSimulation {
+  const hasUpcomingReservation =
+    persona === "trial_pending_reserved" || persona === "student_reserved";
+  const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000);
+  const reservationDate = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Mexico_City",
+  }).format(tomorrow);
   return {
     persona,
     identityNeedsName: persona === "prospect",
-    reservations: [],
-    credits: persona === "student" ? 8 : 0,
+    reservations: hasUpcomingReservation
+      ? [
+          {
+            reservation_ref: `reservation:test-${persona}`,
+            activity: "Pole Fitness",
+            date: reservationDate,
+            starts_at_local: "18:00",
+            ends_at_local: "19:00",
+            location: "Estudio Demeter",
+            space: null,
+            credit_cost: 1,
+            status: "reserved",
+          },
+        ]
+      : [],
+    credits: isActiveStudentPersona(persona) ? 8 : 0,
   };
 }
 
@@ -31,6 +52,7 @@ export function confirmSimulatedProspectName(state: TestSimulation, message: str
   const candidate = cleanedMessage
     .replace(/^(?:me llamo|mi nombre es|soy)\s+/i, "")
     .replace(/^(?:sí[,!\s]+|claro[,!\s]+|ok[,!\s]+|va[,!\s]+)/i, "")
+    .replace(/\s+y\s+(?=(?:sí|claro|ok|quiero|me gustaría|puedes|por favor)(?:\s|$)).*$/i, "")
     .replace(/[.,!?]+$/g, "")
     .trim();
   const parts = candidate.split(/\s+/).filter(Boolean);
@@ -46,19 +68,46 @@ export function confirmSimulatedProspectName(state: TestSimulation, message: str
 }
 
 export function simulatedReadTool(state: TestSimulation, tool: string) {
+  if (
+    state.persona === "unresolved_identity" &&
+    (tool === "get_student_package_status" || tool === "get_student_reservations")
+  ) {
+    return {
+      ok: false,
+      simulated: true,
+      error: "identity_required",
+      reason_message: "No se puede consultar información personal sin identidad resuelta.",
+    };
+  }
   if (tool === "get_student_package_status") {
+    const category =
+      state.persona === "unresolved_identity"
+        ? "unresolved"
+        : state.persona === "prospect"
+          ? "prospect"
+          : state.persona === "trial_pending_reserved"
+            ? "trial_pending"
+            : state.persona === "trial_cancelled"
+              ? "trial_cancelled"
+              : state.persona === "trial_no_show"
+                ? "trial_no_show"
+                : state.persona === "trial_attended"
+                  ? "trial_attended"
+                  : state.persona === "former_student"
+                    ? "former_student"
+                    : "active_student";
+    const hasActivePackage = isActiveStudentPersona(state.persona);
     return {
       ok: true,
       simulated: true,
-      student_state: { category: state.persona === "student" ? "active_student" : "prospect" },
-      current_package:
-        state.persona === "student"
-          ? {
-              name: "Paquete de prueba: 8 clases",
-              available_credits: state.credits,
-              unlimited: false,
-            }
-          : null,
+      student_state: { category },
+      current_package: hasActivePackage
+        ? {
+            name: "Paquete de prueba: 8 clases",
+            available_credits: state.credits,
+            unlimited: false,
+          }
+        : null,
       packages: [],
     };
   }
@@ -113,17 +162,35 @@ export async function simulateAssistantAction(
     }
     state.pending = null;
     if (tool === "execute_booking") {
+      if (isFirstVisitPersona(state.persona) && pending.summary.payment_before_booking === true) {
+        const { data: transferSettings } = await input.supabase
+          .from("studio_bank_transfer_settings")
+          .select("bank_name,account_holder,clabe,account_number,card_number,instructions")
+          .eq("studio_id", input.studio.id)
+          .eq("enabled", true)
+          .maybeSingle();
+        return result({
+          ok: true,
+          status: "payment_required",
+          reservation_confirmed: false,
+          payment_required: true,
+          amount_minor: pending.summary.amount_minor,
+          currency: pending.summary.currency,
+          bank_details: transferSettings ?? null,
+          summary: pending.summary,
+        });
+      }
       state.reservations.push({
         ...pending.summary,
         reservation_ref: `reservation:test-${input.turnId}`,
         status: "reserved",
       });
-      if (state.persona === "student") state.credits = Math.max(0, state.credits - 1);
+      if (isActiveStudentPersona(state.persona)) state.credits = Math.max(0, state.credits - 1);
     } else if (tool === "execute_cancellation") {
       state.reservations = state.reservations.filter(
         (row) => row.reservation_ref !== pending.summary.reservation_ref,
       );
-      if (state.persona === "student" && pending.summary.credit_will_return === true)
+      if (isActiveStudentPersona(state.persona) && pending.summary.credit_will_return === true)
         state.credits += 1;
     } else if (tool === "execute_reschedule") {
       const from = pending.summary.from as Summary;
@@ -175,7 +242,7 @@ export async function simulateAssistantAction(
     }
     summary =
       tool === "prepare_cancellation"
-        ? { ...existing, credit_will_return: state.persona === "student" }
+        ? { ...existing, credit_will_return: isActiveStudentPersona(state.persona) }
         : { from: existing };
   }
   const sessionRef = String(args.target_session_ref ?? args.session_ref ?? "");
@@ -202,7 +269,7 @@ export async function simulateAssistantAction(
     }
     const { data: template } = await input.supabase
       .from("class_templates")
-      .select("name")
+      .select("name,drop_in_price_minor")
       .eq("studio_id", input.studio.id)
       .eq("id", session.template_id)
       .maybeSingle();
@@ -213,6 +280,7 @@ export async function simulateAssistantAction(
         minute: "2-digit",
         hourCycle: "h23",
       }).format(new Date(date));
+    const isTrialBooking = isFirstVisitPersona(state.persona) && tool === "prepare_booking";
     const target = {
       session_ref: sessionRef,
       activity: template?.name ?? "Clase",
@@ -221,8 +289,16 @@ export async function simulateAssistantAction(
       ),
       starts_at_local: localTime(session.starts_at),
       ends_at_local: localTime(session.ends_at),
+      ...(isTrialBooking
+        ? {
+            trial_booking: true,
+            payment_before_booking: state.paymentBeforeBooking === true,
+            amount_minor: Number(template?.drop_in_price_minor ?? 0),
+            currency: input.studio.currency,
+          }
+        : {}),
     };
-    if (state.persona === "student" && tool === "prepare_booking" && state.credits <= 0)
+    if (isActiveStudentPersona(state.persona) && tool === "prepare_booking" && state.credits <= 0)
       return result({ ok: false, error: "no_credits" });
     summary = tool === "prepare_reschedule" ? { ...summary, to: target } : target;
   }

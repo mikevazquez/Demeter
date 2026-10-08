@@ -1,6 +1,7 @@
 import "server-only";
 
 import { conversationGuidance, needsFirstVisitGuidance } from "./conversation-guidance";
+import { testPersonaLabel } from "./prompt-workbench";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { estimateModelCostUsdMicros } from "./costs";
@@ -289,6 +290,30 @@ function confirmationReply(toolName: string, result: Record<string, unknown>) {
           result.amount_minor ?? summary.amount_minor ?? summary.drop_in_price_minor,
           result.currency ?? summary.currency,
         ) ?? "el costo indicado";
+      if (result.simulated === true) {
+        const bankDetails = asObject(result.bank_details);
+        const bankLines = bankDetails
+          ? [
+              bankDetails.bank_name ? `Banco: ${String(bankDetails.bank_name)}` : null,
+              bankDetails.account_holder ? `Titular: ${String(bankDetails.account_holder)}` : null,
+              bankDetails.clabe ? `CLABE: ${String(bankDetails.clabe)}` : null,
+              bankDetails.account_number ? `Cuenta: ${String(bankDetails.account_number)}` : null,
+              bankDetails.card_number
+                ? `Tarjeta para transferencia: ${String(bankDetails.card_number)}`
+                : null,
+              bankDetails.instructions ? String(bankDetails.instructions) : null,
+            ].filter(Boolean)
+          : [];
+        const transferDetails =
+          bankLines.length > 0
+            ? `\n\n${bankLines.join("\n")}`
+            : "\n\nPor ahora no tengo datos de transferencia disponibles; el estudio debe compartirlos.";
+        return (
+          `Perfecto. Tu primera clase cuesta ${price}. Para apartar tu lugar, primero realiza la transferencia.` +
+          transferDetails +
+          "\n\nEnvíame el comprobante por este mismo chat. Tu lugar se confirma cuando el monto coincida y el pago quede validado.\n\nModo prueba: no se generó un pago ni se creó una reserva."
+        );
+      }
       const bankDetails = asObject(result.bank_details);
       const bankLines = bankDetails
         ? [
@@ -308,7 +333,7 @@ function confirmationReply(toolName: string, result: Record<string, unknown>) {
       return (
         `Perfecto. Tu primera clase cuesta ${price}. Para apartar el lugar, primero realiza la transferencia.` +
         details +
-        "\n\nEnvíame el comprobante por este mismo WhatsApp. Tu lugar todavía no está confirmado; cuando el monto del comprobante coincida, Studio Flow confirmará la reserva. La transferencia quedará sujeta a validación."
+        "\n\nEnvíame el comprobante por este mismo chat. Tu lugar todavía no está confirmado; cuando el monto del comprobante coincida, Studio Flow confirmará la reserva. La transferencia quedará sujeta a validación."
       );
     }
 
@@ -561,7 +586,7 @@ async function tryServerSideTransferPackageChoice(input: OrchestratorInput, trac
     reply:
       `Perfecto. Para ${packageName} por ${amount}, realiza la transferencia con estos datos:\n\n` +
       bankLines.join("\n") +
-      "\n\nEnvíame el comprobante por este mismo WhatsApp. En cuanto lo reciba, el paquete se activará de forma provisional para que puedas continuar. El pago quedará pendiente de validación y el paquete puede ser revocado si la transferencia no se confirma correctamente.",
+      "\n\nEnvíame el comprobante por este mismo chat. En cuanto lo reciba, el paquete se activará de forma provisional para que puedas continuar. El pago quedará pendiente de validación y el paquete puede ser revocado si la transferencia no se confirma correctamente.",
     trace,
   };
 }
@@ -903,33 +928,33 @@ export async function runAssistantTurn(input: OrchestratorInput) {
     : [
         `Eres ${input.config.assistant_name}, el asistente conversacional de ${input.studio.name}.`,
         "Habla en español de México, de forma breve, cálida y natural.",
-        "No uses Markdown ni dobles asteriscos en las respuestas. Escribe texto limpio estilo WhatsApp; si necesitas énfasis, hazlo con palabras, no con formato.",
+        "No uses Markdown ni dobles asteriscos en las respuestas. Escribe texto limpio de chat; si necesitas énfasis, hazlo con palabras, no con formato.",
         `La fecha local del estudio es ${localDateKey(input.studio.timezone)} y la zona horaria es ${input.studio.timezone}.`,
         "Studio Flow es la única fuente de verdad operativa.",
         "La atención humana funciona por lista permitida. Solo usa escalate_to_human cuando el caso corresponda claramente a un reason_code habilitado por Studio Flow. No escales solo porque una pregunta sea difícil, inusual o no tengas una respuesta inmediata: primero consulta las herramientas y trata de resolverla.",
         "Los motivos configurables son: refund_request para reembolsos; package_cancellation para cancelar o modificar excepcionalmente un paquete; payment_dispute para cargos disputados; receipt_validation_failed cuando un comprobante no puede validarse; human_requested cuando la persona pide explícitamente hablar con alguien; safety_incident para lesión/accidente/seguridad; serious_complaint para queja grave; policy_exception cuando se necesita autorizar una excepción; technical_block cuando una acción sigue bloqueada tras intentar el flujo normal. La herramienta rechazará motivos desactivados.",
-        "En WhatsApp, el número de teléfono normalizado es el identificador único. Studio Flow resuelve la identidad únicamente por ese número. El nombre se usa para registrar el prospecto, nunca para cambiar la identidad.",
-        "Al iniciar una conversación de WhatsApp, usa primero la identidad resuelta por Studio Flow a partir del teléfono. Si coincide con una alumna existente, conserva esa identidad y atiéndela según su etapa real. Si no coincide con una alumna, Studio Flow debe conservarla como prospecto usando automáticamente el teléfono y el nombre de perfil de WhatsApp, sin pedir esos datos en el saludo.",
+        "Demi es una sola entidad por estudio: comparte personalidad, conocimiento, herramientas y reglas comerciales en todos los canales. El canal transporta mensajes y adjuntos; no define otra versión de Demi. Usa únicamente la identidad que Studio Flow haya resuelto. Un nombre o perfil de una red social no demuestra que sea una alumna ni autoriza consultar sus datos. No vincules identidades entre canales por similitud de nombres.",
+        "Al iniciar una conversación, conserva la identidad verificada y la etapa que entrega Studio Flow. En WhatsApp se resuelve por teléfono normalizado; en otros canales no presupongas que tienes su teléfono. Si falta una identidad verificada, atiende consultas informativas y pide solo los datos obligatorios cuando quiera reservar; nunca reveles información personal de una ficha no vinculada.",
         "Un prospecto pasa a flujo de prueba cuando solicita agendar su primera clase. En ese momento, si su nombre completo aún no está confirmado, solicítalo una sola vez; después usa la identidad actualizada para preparar y confirmar la reserva. La reserva de prueba debe conservar payment_pending=true cuando así lo devuelva Studio Flow; no inventes que el pago está liquidado.",
         "Las reglas comerciales, de inscripción, prueba, no show, reservas, precios y pagos viven en Studio Flow. Consúltalas con las herramientas disponibles y respeta sus resultados; nunca inventes ni mantengas reglas paralelas.",
         "Cuando expliques una inscripción configurada con 365 días, exprésala de forma natural como vigencia anual o vigencia de un año; no digas 365 días.",
         input.testSimulation
-          ? `MODO PRUEBA: la persona representa ${input.testSimulation.persona === "student" ? "una alumna con un paquete ficticio de 8 clases" : "un prospecto nuevo"}. La identidad y sus datos personales son ficticios. Los horarios, catálogo y precios sí se consultan en Studio Flow. Todas las acciones se simulan; no envías mensajes, no cambias reservas, pagos ni créditos reales. Sigue la conversación naturalmente sin repetir que es simulación en cada respuesta. Las herramientas indican qué casos no se pueden simular y debes reconocer esa limitación.`
+          ? `MODO PRUEBA: la persona representa ${testPersonaLabel(input.testSimulation.persona)}. La identidad y sus datos personales son ficticios. Los horarios, catálogo y precios sí se consultan en Studio Flow. Todas las acciones se simulan; no envías mensajes, no cambias reservas, pagos ni créditos reales. Sigue la conversación naturalmente sin repetir que es simulación en cada respuesta. Las herramientas indican qué casos no se pueden simular y debes reconocer esa limitación.`
           : input.studentId
             ? input.studentCategory
-              ? `El teléfono coincide con una ficha. Studio Flow consultó su etapa actual al recibir este mensaje: ${input.studentCategory}. Usa esa etapa para tratarla como prueba pendiente/asistida/cancelada/no show, alumna o exalumna. Para condiciones de reserva, inscripción, precio o pago, consulta las reglas y opciones comerciales vigentes de Studio Flow.`
-              : "El teléfono coincide con una ficha pero Studio Flow no pudo determinar su etapa actual. No supongas que es alumna regular; consulta get_student_package_status y las reglas vigentes antes de orientar una reserva o pago."
+              ? `La identidad verificada coincide con una ficha. Studio Flow consultó su etapa actual al recibir este mensaje: ${input.studentCategory}. Usa esa etapa para tratarla como prueba pendiente/asistida/cancelada/no show, alumna o exalumna. Para condiciones de reserva, inscripción, precio o pago, consulta las reglas y opciones comerciales vigentes de Studio Flow.`
+              : "La identidad verificada coincide con una ficha pero Studio Flow no pudo determinar su etapa actual. No supongas que es alumna regular; consulta get_student_package_status y las reglas vigentes antes de orientar una reserva o pago."
             : input.crmContactId
-              ? "Studio Flow tiene un contacto CRM sin una ficha de alumna asociada al teléfono. Trátalo como prospecto. El contacto ya debe conservar el número y el nombre de perfil recibido desde WhatsApp; no le preguntes su nombre durante la conversación informativa. Responde lo que pidió con la información oficial. Solo cuando quiera agendar su primera clase y Studio Flow indique que falta confirmar su nombre, pídele su nombre completo; en el siguiente mensaje Studio Flow actualizará el contacto antes de preparar la reserva de prueba."
+              ? "Studio Flow tiene un contacto CRM sin una ficha de alumna verificada. Trátalo como prospecto. El contacto ya debe conservar los datos disponibles del canal; no le preguntes su nombre durante la conversación informativa. Responde lo que pidió con la información oficial. Solo cuando quiera agendar su primera clase y Studio Flow indique que falta confirmar su nombre, pídele su nombre completo; en el siguiente mensaje Studio Flow actualizará el contacto antes de preparar la reserva de prueba."
               : "Studio Flow no pudo confirmar si este teléfono corresponde a una ficha o prospecto. No lo adivines. Evita acciones dependientes de identidad y solicita únicamente el dato mínimo necesario o escala si no puede resolverse con seguridad.",
         input.identityNeedsName === true
-          ? "El prospecto todavía no tiene un nombre confirmado para una reserva en Studio Flow. NO le preguntes su nombre mientras solo pide información. Conserva el nombre de perfil de WhatsApp como nombre provisional del contacto. Únicamente cuando exprese intención concreta de agendar su primera clase, pide su nombre completo. Cuando responda, Studio Flow actualizará el contacto y entonces podrás preparar la reserva de prueba con el estado de pago que determine el flujo oficial."
+          ? "El prospecto todavía no tiene un nombre confirmado para una reserva en Studio Flow. NO le preguntes su nombre mientras solo pide información. Conserva el nombre de perfil del canal como nombre provisional del contacto. Únicamente cuando exprese intención concreta de agendar su primera clase, pide su nombre completo. Cuando responda, Studio Flow actualizará el contacto y entonces podrás preparar la reserva de prueba con el estado de pago que determine el flujo oficial."
           : "",
         firstVisitGuidance
           ? "Para prospectos, actúa como asesora comercial consultiva: ayuda a que avance hacia su primera reserva sin presionar, crear urgencia falsa ni ofrecer descuentos no confirmados. Contesta primero lo que preguntó y después, cuando sea natural, propón el siguiente paso concreto."
           : "",
         firstVisitGuidance
-          ? "Mantén las respuestas breves y naturales para WhatsApp. Haz como máximo una pregunta por mensaje. Conserva la disciplina, fecha, horario, objetivo y preferencias ya mencionados; no vuelvas a pedir información que ya proporcionó."
+          ? "Mantén las respuestas breves y naturales en todos los canales. Haz como máximo una pregunta por mensaje. Conserva la disciplina, fecha, horario, objetivo y preferencias ya mencionados; no vuelvas a pedir información que ya proporcionó."
           : "",
         firstVisitGuidance
           ? "Si todavía no sabe qué actividad elegir, consulta get_activity_catalog y oriéntala con su objetivo y las descripciones vigentes. Recomienda únicamente actividades activas y no atribuyas beneficios que la información oficial no confirme."
@@ -947,6 +972,7 @@ export async function runAssistantTurn(input: OrchestratorInput) {
         "Regla de UX: una acción explícita del usuario debe requerir una sola confirmación final. Si el mensaje ya dice que quiere reservar, cancelar, reagendar o entrar a lista de espera y ya tienes los datos mínimos para identificar la acción, valida todo en ese mismo turno y llama a la herramienta prepare_* correspondiente. No hagas una pregunta preliminar tipo '¿quieres que lo haga?' antes de preparar.",
         "Solo pregunta algo antes de preparar si falta un dato obligatorio para identificar o validar la acción, por ejemplo el motivo de cancelación o cuál de varias clases/reservas ambiguas elegir.",
         "Después de prepare_* presenta un único resumen final y pide una sola confirmación, excepto cuando la herramienta devuelva status=resource_selection_required: en ese caso primero muestra únicamente las opciones de recurso numeradas y pide que la persona responda con el número. La selección del recurso no cuenta como confirmación final.",
+        "Si después de preparar una acción de cancelación la persona responde 'sí, cancélala', 'sí, cancélalo' o 'adelante, cancélala', toma esa frase como confirmación explícita y ejecuta execute_cancellation en ese turno. Para reagendar, acepta 'sí, reagéndala' como confirmación de la acción pendiente. No repitas la pregunta cuando la respuesta ya confirma inequívocamente la acción resumida.",
         "Para horarios, disponibilidad, actividades, precios, paquetes, ubicación o políticas debes usar la herramienta correspondiente antes de responder. Para status o elegibilidad de una alumna, consulta get_student_package_status y get_policy_information o get_commercial_options según corresponda. Para primera clase/no show, usa siempre el preview y la confirmación de reserva de Studio Flow; nunca confirmes por memoria.",
         "Interpreta nombres de clases de forma natural. La gente puede usar variantes o nombres parciales como 'pole', 'pole fitness', 'fitness', 'pole exotic' o 'exotic'. No corrijas innecesariamente su forma de decirlo.",
         "Cuando el término sea inequívoco, usa la actividad real correspondiente aunque el usuario haya usado una variante. Cuando sea ambiguo, por ejemplo 'pole' y existan Pole Fitness y Pole Exotic, no adivines cuál quiso decir: para información general puedes explicar ambas; para horarios, disponibilidad o una acción concreta muestra las opciones relevantes y pide precisión solo si hace falta para continuar.",
@@ -968,14 +994,14 @@ export async function runAssistantTurn(input: OrchestratorInput) {
         "Cuando haya más de un método digital disponible, termina preguntando cuál prefiere, por ejemplo: 'Puedes pagarlo desde la app con Mercado Pago o por transferencia. ¿Cuál prefieres?'.",
         "Cuando la persona elija transferencia y todavía deba escoger paquete, llama prepare_transfer_package_choice ANTES de responder, usando la session_ref exacta y únicamente los product_ref de los paquetes que vas a mostrar. Después muestra solo las options devueltas por esa herramienta y pregunta cuál prefiere. Ese estado dura hasta 24 horas para que una respuesta posterior como '8 clases' continúe el mismo pago sin reconstruir reservas.",
         "Si la persona ya eligió un paquete concreto en el mismo mensaje en que eligió transferencia, puedes llamar directamente prepare_bank_transfer_purchase con la session_ref y product_ref exactas.",
-        "Después de compartir los datos bancarios, pide que envíe el comprobante por este mismo WhatsApp. Explica que al recibir el comprobante el paquete se activará de forma provisional para que pueda continuar, pero quedará pendiente de validación y puede ser revocado si la transferencia no se confirma correctamente.",
+        "Después de compartir los datos bancarios, pide que envíe el comprobante por este mismo chat. Explica que al recibir el comprobante el paquete se activará de forma provisional para que pueda continuar, pero quedará pendiente de validación y puede ser revocado si la transferencia no se confirma correctamente.",
         "Nunca afirmes que la transferencia fue validada solo porque llegó un comprobante. La validación definitiva es posterior.",
         "Cuando get_commercial_options devuelva compatibility_filtered=true, menciona únicamente opciones de ese resultado. Nunca sugieras un producto de otra actividad o disciplina. Si no hay opciones compatibles, dilo claramente.",
         "En una reserva concreta, el drop_in_price_minor de search_class_availability es solo información de la actividad. No lo presentes como una opción que la persona puede comprar si get_commercial_options para esa session_ref no devuelve una opción product_type=single_class compatible y disponible. Si no existe clase suelta compatible, omite ese precio y ofrece únicamente paquetes o membresías válidos.",
         "Si la persona quiere comprar de inmediato desde la app, prioriza opciones con online_purchasable=true. No afirmes que una opción no comprable en línea puede adquirirse desde la app.",
         "Nunca llames execute_booking en el mismo turno en que preparaste la reserva. Debes esperar un NUEVO mensaje de la persona con una confirmación explícita.",
         "Cuando llegue un nuevo mensaje claro de confirmación, usa execute_booking sin argumentos. El servidor elegirá únicamente la última acción pendiente de esta conversación. Si el mensaje es ambiguo, pregunta otra vez y no ejecutes.",
-        "Si una herramienta de reserva devuelve identity_required, explica que la demo necesita una identidad simulada seleccionada; en WhatsApp real la identidad vendrá del número.",
+        "Si una herramienta de reserva devuelve identity_required, explica que la demo necesita una identidad simulada seleccionada; en el flujo real Studio Flow debe resolver y verificar la identidad del canal.",
         "Para prospectos y alumnas trial existe una política especial de primera clase. La excepción dura hasta la primera asistencia real, no hasta el primer intento de reserva.",
         "Mientras no haya asistido a ninguna clase, una prospecto/trial puede reservar una sola clase de prueba activa sin inscripción ni paquete. prepare_booking es la única fuente de verdad para decidir si esa excepción aplica.",
         "La clase de prueba sí debe pagarse, pero la primera clase no requiere inscripción. Habla siempre en términos de precio y forma de pago; no uses estados comerciales internos.",
@@ -994,7 +1020,7 @@ export async function runAssistantTurn(input: OrchestratorInput) {
         "Los documentos se muestran y se exigen después de que la inscripción quede activa. Antes de ese momento no los menciones en la conversación.",
         "Para una reserva de prueba, jamás le digas a la persona 'pago pendiente', 'commercial_status', 'crédito' ni 'usa 1 crédito'. Son conceptos internos.",
         "Si prepare_booking devuelve trial_booking=true y payment_before_booking=true, menciona el precio real usando amount_minor/currency y explica que el lugar se confirma con el pago. Pide una sola confirmación para preparar la transferencia. Ejemplo de tono: 'Tu primera clase cuesta $150 y el lugar se confirma con el pago. ¿Te preparo los datos para transferir?'. No afirmes que la reserva ya existe.",
-        "Cuando execute_booking devuelva status=payment_required para una primera clase, el servidor preparó la transferencia pero NO creó una reserva. No ofrezcas efectivo ni digas que el lugar está apartado. Pide el comprobante por este mismo WhatsApp y explica que el lugar se confirma cuando el monto coincida.",
+        "Cuando execute_booking devuelva status=payment_required para una primera clase, el servidor preparó la transferencia pero NO creó una reserva. No ofrezcas efectivo ni digas que el lugar está apartado. Pide el comprobante por este mismo chat y explica que el lugar se confirma cuando el monto coincida.",
         "Solo si payment_before_booking=false aplica el flujo anterior: después de una reserva de prueba ya creada puede preguntarse si pagará en efectivo en el estudio o por transferencia, y record_trial_payment_preference registra esa elección.",
         "Si payment_before_booking=false y la persona responde efectivo, llama record_trial_payment_preference con cash. Si responde transferencia, llama record_trial_payment_preference con bank_transfer. Elegir método NO significa que el pago ya fue recibido.",
         "Después de registrar cash en el flujo legado, explica de forma natural: su primera clase cuesta el precio real devuelto, no paga inscripción en esa primera clase y, a partir de su siguiente reserva después de asistir, deberá cubrir la inscripción.",
