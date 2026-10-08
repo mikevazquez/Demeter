@@ -48,7 +48,7 @@ export default async function InstructorProfilePage({
       .maybeSingle(),
     supabase
       .from("person_contacts")
-      .select("kind, value, is_primary")
+      .select("kind, value, is_primary, phone_role")
       .eq("person_id", instructor.person_id),
     supabase
       .from("instructor_disciplines")
@@ -88,7 +88,7 @@ export default async function InstructorProfilePage({
   const linkedIds = new Set((links ?? []).map((item) => item.discipline_id));
   const templateMap = new Map((templates ?? []).map((item) => [item.id, item.name]));
   const name = [person?.first_name, person?.last_name].filter(Boolean).join(" ") || "Integrante";
-  const phone = contacts?.find((item) => item.kind === "phone")?.value;
+  const phone = contacts?.find((item) => item.kind === "phone" && item.phone_role === "coach")?.value;
   const primaryEmail = contacts?.find(
     (item) => item.kind === "email" && item.is_primary === true,
   )?.value;
@@ -124,9 +124,9 @@ export default async function InstructorProfilePage({
       {query.created ? (
         <div className="team-v2-notice is-success">Integrante creado correctamente.</div>
       ) : null}
-      {query.saved ? <div className="team-v2-notice is-success">Estado actualizado.</div> : null}
+      {query.saved ? <div className="team-v2-notice is-success">{query.saved === "phone" ? "Teléfono guardado correctamente." : "Estado actualizado."}</div> : null}
       {query.error ? (
-        <div className="team-v2-notice is-error">No se pudo guardar el cambio.</div>
+        <div className="team-v2-notice is-error">{query.error === "phone_in_use" ? "Este número ya está registrado para otro coach. Puede coincidir con el de una alumna, pero no con el de otro coach." : query.error === "phone_invalid" ? "Ingresa un número de celular válido." : "No se pudo guardar el cambio."}</div>
       ) : null}
 
       <section className="team-v2-detail-grid">

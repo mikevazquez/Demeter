@@ -657,7 +657,7 @@ async function resolveRecipients(
           .maybeSingle(),
         adminClient
           .from("person_contacts")
-          .select("kind,value,is_primary")
+          .select("kind,value,is_primary,phone_role")
           .eq("studio_id", context.event.studio_id)
           .eq("person_id", instructor.person_id)
           .order("is_primary", { ascending: false }),
@@ -667,7 +667,7 @@ async function resolveRecipients(
         throw new Error("session_instructor_context_failed");
       }
 
-      const phone = safeText((contacts ?? []).find((contact) => contact.kind === "phone")?.value);
+      const phone = safeText((contacts ?? []).find((contact) => contact.kind === "phone" && contact.phone_role === "coach")?.value);
       const email = safeText((contacts ?? []).find((contact) => contact.kind === "email")?.value);
       const fullName =
         [safeText(person?.first_name), safeText(person?.last_name)].filter(Boolean).join(" ") ||

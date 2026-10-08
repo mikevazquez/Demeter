@@ -54,7 +54,7 @@ export default async function InstructorsPage({
     personIds.length
       ? supabase
           .from("person_contacts")
-          .select("person_id, kind, value, is_primary")
+          .select("person_id, kind, value, is_primary, phone_role")
           .in("person_id", personIds)
       : Promise.resolve({ data: [] }),
   ]);
@@ -68,7 +68,7 @@ export default async function InstructorsPage({
       const personContacts = (contacts ?? []).filter(
         (item) => item.person_id === instructor.person_id,
       );
-      const phone = personContacts.find((item) => item.kind === "phone")?.value ?? "";
+      const phone = personContacts.find((item) => item.kind === "phone" && item.phone_role === "coach")?.value ?? "";
       const email = personContacts.find((item) => item.kind === "email")?.value ?? "";
       return { ...instructor, name, phone, email };
     })
@@ -84,7 +84,7 @@ export default async function InstructorsPage({
       : params.error === "phone_invalid"
         ? "Ingresa un teléfono válido."
         : params.error === "contact_in_use"
-          ? "El teléfono o correo ya está registrado en el estudio. Revisa el integrante existente o usa otro dato."
+          ? "El número ya pertenece a otro coach, o el correo ya está registrado. Un coach sí puede compartir teléfono con una alumna."
           : params.error === "not_allowed"
             ? "Tu acceso no permite crear integrantes en este estudio."
             : params.error
