@@ -45,9 +45,9 @@ begin
     limit 1;
 
     if v_product_id is null then
-      v_price_label := trim(
-        trailing '.00' from
-        to_char(v_candidate.price_minor / 100.0, 'FM999999990.00')
+      v_price_label := to_char(
+        v_candidate.price_minor / 100.0,
+        'FM999999990.00'
       );
 
       insert into public.product_templates (
