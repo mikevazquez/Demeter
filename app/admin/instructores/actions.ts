@@ -52,3 +52,20 @@ export async function setInstructorStatus(formData: FormData) {
   revalidatePath(`/admin/instructores/${instructorId}`);
   redirect(`/admin/instructores/${instructorId}?saved=status`);
 }
+
+export async function updateInstructorPhone(formData: FormData) {
+  const instructorId = String(formData.get("instructor_id") ?? "").trim();
+  const rawPhone = String(formData.get("phone") ?? "").trim();
+  const phone = rawPhone ? normalizeMexicanPhone(rawPhone) : null;
+  if (!instructorId) redirect("/admin/instructores?error=instructor_required");
+  if (rawPhone && !phone) redirect(`/admin/instructores/${instructorId}?error=phone_invalid`);
+  const { supabase } = await getAdminContext(CAPABILITIES.INSTRUCTORS_WRITE);
+  const { error } = await supabase.rpc("admin_update_instructor_phone", {
+    p_instructor_id: instructorId,
+    p_phone: phone,
+  });
+  if (error) redirect(`/admin/instructores/${instructorId}?error=phone_update_failed`);
+  revalidatePath("/admin/instructores");
+  revalidatePath(`/admin/instructores/${instructorId}`);
+  redirect(`/admin/instructores/${instructorId}?saved=phone`);
+}
