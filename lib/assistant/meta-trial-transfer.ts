@@ -215,7 +215,7 @@ export async function continueMetaTrialTransfer(input: {
   let combinedCellphone: string | null = null;
   if (stage === "meta_awaiting_name") {
     const raw = input.message.text.trim();
-    const parsed = /^(.+?)(?:\s*[,;\n]\s*|\s+(?:celular|tel[eé]fono|n[uú]mero)\s*:?\s*)([0-9][0-9\s()-]{8,16})$/iu.exec(raw);
+    const parsed = /^(.+?)(?:\s*[,;\n]\s*|\s+(?:(?:celular|tel[eé]fono|n[uú]mero)\s*:?\s*)?)([0-9][0-9\s()-]{8,16})$/iu.exec(raw);
     const nameCandidate = parsed?.[1]?.trim().replace(/^(?:mi nombre es|soy|me llamo)\s+/i, "");
     const digits = parsed?.[2]?.replace(/[\s()-]/g, "");
     const name = nameCandidate && /^[\p{L}]+(?:[ '-][\p{L}]+){1,5}$/u.test(nameCandidate.trim())
