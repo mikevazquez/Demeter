@@ -6,8 +6,8 @@ import { describe, expect, it } from "vitest";
 describe("Demi prospect sales guidance", () => {
   const source = readFileSync(join(process.cwd(), "lib/assistant/orchestrator.ts"), "utf8");
 
-  it("keeps consultative selling limited to CRM prospects", () => {
-    expect(source).toContain("input.crmContactId && !input.studentId");
+  it("selects first visit guidance from the resolved lifecycle", () => {
+    expect(source).toContain("needsFirstVisitGuidance(input)");
     expect(source).toContain("asesora comercial consultiva");
     expect(source).toContain("sin presionar");
     expect(source).toContain("Contesta primero lo que preguntó");

@@ -5,8 +5,18 @@ import { revalidatePath } from "next/cache";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { runAssistantTurn } from "@/lib/assistant/orchestrator";
-import { validPrompt, type TestPersona } from "@/lib/assistant/prompt-workbench";
-import { createTestSimulation, type TestSimulation } from "@/lib/assistant/test-simulation";
+import { loadDemiRuntimeConfig } from "@/lib/assistant/runtime-config";
+import {
+  isFirstVisitPersona,
+  isTestPersona,
+  validPrompt,
+  type TestPersona,
+} from "@/lib/assistant/prompt-workbench";
+import {
+  confirmSimulatedProspectName,
+  createTestSimulation,
+  type TestSimulation,
+} from "@/lib/assistant/test-simulation";
 import { proposeDemiAdminPlan, type DemiAdminPlan } from "@/lib/assistant/admin-copilot";
 
 const hash = (text: string) => createHash("sha256").update(text).digest("hex");
@@ -57,15 +67,8 @@ export async function testDemiPrompt(input: {
   if (!validPrompt(input.instructions)) return { ok: false as const, error: "invalid_prompt" };
   const message = String(input.message ?? "").trim();
   if (!message || message.length > 2000) return { ok: false as const, error: "invalid_message" };
-  if (input.persona !== "prospect" && input.persona !== "student")
-    return { ok: false as const, error: "request_failed" };
-  const { data: config, error: configError } = await supabase
-    .from("assistant_configs")
-    .select(
-      "assistant_name,model,reasoning_effort,monthly_budget_usd_micros,conversation_budget_usd_micros,max_model_calls_per_turn,max_tool_calls_per_turn",
-    )
-    .eq("studio_id", studio.id)
-    .maybeSingle();
+  if (!isTestPersona(input.persona)) return { ok: false as const, error: "request_failed" };
+  const { data: config, error: configError } = await loadDemiRuntimeConfig(supabase, studio.id);
   if (configError || !config) return { ok: false as const, error: "assistant_not_configured" };
 
   const promptHash = hash(input.instructions);
@@ -108,6 +111,34 @@ export async function testDemiPrompt(input: {
     if (error || !data) return { ok: false as const, error: "request_failed" };
     conversationId = data.id;
   }
+
+  if (!input.improve && isFirstVisitPersona(input.persona)) {
+    const [
+      { data: trialPolicy, error: trialPolicyError },
+      { data: bookingBehavior, error: bookingBehaviorError },
+    ] = await Promise.all([
+      supabase
+        .from("trial_booking_policies")
+        .select("require_payment_before_booking")
+        .eq("studio_id", studio.id)
+        .maybeSingle(),
+      supabase
+        .from("assistant_booking_behaviors")
+        .select("prospect_require_payment_before_booking")
+        .eq("studio_id", studio.id)
+        .maybeSingle(),
+    ]);
+
+    // A policy lookup failure must never turn into a simulated booking without payment.
+    // Keep the conversation usable, but require payment in the sandbox when policy data
+    // cannot be read. The production booking guard remains independent of this simulation.
+    state.paymentBeforeBooking =
+      Boolean(trialPolicyError || bookingBehaviorError) ||
+      trialPolicy?.require_payment_before_booking === true ||
+      bookingBehavior?.prospect_require_payment_before_booking === true;
+  }
+
+  if (!input.improve) confirmSimulatedProspectName(state, message);
 
   // A lease prevents two browser tabs from executing the same simulated turn concurrently.
   const lockUntil = new Date(Date.now() + 120_000).toISOString();
@@ -161,6 +192,7 @@ export async function testDemiPrompt(input: {
         .map((row) => ({ role: row.role as "user" | "assistant", content: row.content })),
       testSimulation: state,
       improvePrompt: input.improve === true,
+      identityNeedsName: state.identityNeedsName,
     });
     if (input.improve && !validPrompt(result.reply)) throw new Error("invalid_prompt");
     const { error: replyError } = await supabase.from("assistant_turns").insert({
@@ -211,10 +243,14 @@ export async function testDemiPrompt(input: {
 
 export async function setDemiHandoffPolicy(policyId: string, enabled: boolean) {
   const { supabase, studio } = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
-  const { error } = await supabase.from("assistant_handoff_policies").update({
-    enabled,
-    updated_at: new Date().toISOString(),
-  }).eq("studio_id", studio.id).eq("id", policyId);
+  const { error } = await supabase
+    .from("assistant_handoff_policies")
+    .update({
+      enabled,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("studio_id", studio.id)
+    .eq("id", policyId);
   if (error) return { ok: false as const, error: "request_failed" };
   revalidatePath("/admin/integraciones/demi");
   return { ok: true as const };
@@ -225,21 +261,30 @@ export async function reviewDemiLearning(proposalId: string, decision: "approved
   const { data: proposal, error: readError } = await supabase
     .from("assistant_learning_proposals")
     .select("id,proposed_instruction,status")
-    .eq("studio_id", studio.id).eq("id", proposalId).maybeSingle();
+    .eq("studio_id", studio.id)
+    .eq("id", proposalId)
+    .maybeSingle();
   if (readError || !proposal || proposal.status !== "pending")
     return { ok: false as const, error: "request_failed" };
 
-  const { error } = await supabase.from("assistant_learning_proposals").update({
-    status: decision,
-    reviewed_at: new Date().toISOString(),
-    reviewed_by: user.id,
-    updated_at: new Date().toISOString(),
-  }).eq("studio_id", studio.id).eq("id", proposalId).eq("status", "pending");
+  const { error } = await supabase
+    .from("assistant_learning_proposals")
+    .update({
+      status: decision,
+      reviewed_at: new Date().toISOString(),
+      reviewed_by: user.id,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("studio_id", studio.id)
+    .eq("id", proposalId)
+    .eq("status", "pending");
   if (error) return { ok: false as const, error: "request_failed" };
   revalidatePath("/admin/integraciones/demi");
-  return { ok: true as const, proposedInstruction: decision === "approved" ? proposal.proposed_instruction : null };
+  return {
+    ok: true as const,
+    proposedInstruction: decision === "approved" ? proposal.proposed_instruction : null,
+  };
 }
-
 
 export async function proposeDemiAdminChange(instructionInput: string) {
   const { supabase, studio, user } = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
@@ -263,7 +308,9 @@ export async function proposeDemiAdminChange(instructionInput: string) {
       .maybeSingle(),
     supabase
       .from("trial_booking_policies")
-      .select("enabled,allow_without_enrollment_until_first_attendance,max_active_trial_reservations,prepayment_after_no_shows,require_payment_before_attendance,require_payment_before_booking")
+      .select(
+        "enabled,allow_without_enrollment_until_first_attendance,max_active_trial_reservations,prepayment_after_no_shows,require_payment_before_attendance,require_payment_before_booking",
+      )
       .eq("studio_id", studio.id)
       .maybeSingle(),
     supabase

@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { runAssistantTurn } from "@/lib/assistant/orchestrator";
+import { loadDemiRuntimeConfig } from "@/lib/assistant/runtime-config";
 import { createServiceClient } from "@/lib/supabase/service";
 
 type SendDemiInput = {
@@ -35,13 +36,7 @@ export async function sendDemiMessage(input: SendDemiInput) {
   }
 
   const { supabase, studio } = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
-  const { data: config, error: configError } = await supabase
-    .from("assistant_configs")
-    .select(
-      "assistant_name,mode,model,reasoning_effort,personality_instructions,monthly_budget_usd_micros,conversation_budget_usd_micros,max_model_calls_per_turn,max_tool_calls_per_turn",
-    )
-    .eq("studio_id", studio.id)
-    .maybeSingle();
+  const { data: config, error: configError } = await loadDemiRuntimeConfig(supabase, studio.id);
 
   if (configError || !config) {
     return { ok: false as const, error: "assistant_not_configured" };

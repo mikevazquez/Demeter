@@ -17,11 +17,9 @@ describe("Demi identity, CRM lifecycle, and first trial flow", () => {
   );
 
   it("answers prospect questions and requires a saved name only before booking", () => {
+    expect(orchestrator).toContain("NO le preguntes su nombre mientras solo pide información");
     expect(orchestrator).toContain(
-      "Puedes responder su pregunta actual usando las herramientas oficiales",
-    );
-    expect(orchestrator).toContain(
-      "no prepares una reserva de prueba hasta que Studio Flow confirme",
+      "no afirmes ni prepares la reserva hasta que Studio Flow confirme",
     );
     expect(orchestrator).not.toContain("if (input.identityNeedsName === true) {");
     expect(route).toContain("const identityNeedsName = prepared.identity_needs_name === true;");
@@ -31,7 +29,7 @@ describe("Demi identity, CRM lifecycle, and first trial flow", () => {
   });
 
   it("uses phone identity and asks Studio Flow for the person's current lifecycle", () => {
-    expect(orchestrator).toContain("número de teléfono normalizado es el identificador único");
+    expect(orchestrator).toContain("En WhatsApp se resuelve por teléfono normalizado");
     expect(orchestrator).toContain("get_student_package_status");
     expect(readTools).toContain("student_type,trial_status");
     expect(readTools).toContain('"trial_no_show"');

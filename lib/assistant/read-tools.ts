@@ -291,6 +291,7 @@ export async function getCommercialOptions(
     discipline_id: string;
     recurring_schedule_id: string | null;
     activity: string;
+    drop_in_price_minor: number | null;
   } | null = null;
 
   if (requestedSessionRef) {
@@ -309,7 +310,7 @@ export async function getCommercialOptions(
 
     const { data: template, error: templateError } = await ctx.supabase
       .from("class_templates")
-      .select("id,name,discipline_id")
+      .select("id,name,discipline_id,drop_in_price_minor")
       .eq("studio_id", ctx.studio.id)
       .eq("id", session.template_id)
       .maybeSingle();
@@ -325,6 +326,7 @@ export async function getCommercialOptions(
       discipline_id: template.discipline_id,
       recurring_schedule_id: session.recurring_schedule_id,
       activity: template.name,
+      drop_in_price_minor: template.drop_in_price_minor ?? null,
     };
   }
 
@@ -426,6 +428,10 @@ export async function getCommercialOptions(
           session_ref: sessionScope.session_ref,
           activity: sessionScope.activity,
           compatibility_filtered: true,
+          single_class:
+            sessionScope.drop_in_price_minor != null
+              ? { price_minor: sessionScope.drop_in_price_minor, currency: ctx.studio.currency }
+              : null,
         }
       : { compatibility_filtered: false }),
     payment_options: [
