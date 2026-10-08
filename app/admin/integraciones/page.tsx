@@ -59,7 +59,6 @@ export default async function IntegrationsPage() {
     { count: mercadoPagoAttempts },
     { count: onlineProducts },
     { data: whatsappProvider },
-    { data: demiConfig },
   ] = await Promise.all([
     supabase
       .from("asistian_webhook_events")
@@ -88,11 +87,7 @@ export default async function IntegrationsPage() {
       .eq("channel_key", "whatsapp")
       .eq("provider_key", "meta_whatsapp")
       .maybeSingle(),
-    supabase
-      .from("assistant_configs")
-      .select("assistant_name,mode,model")
-      .eq("studio_id", studio.id)
-      .maybeSingle(),
+
   ]);
 
   const asistianConnected = (asistianEvents ?? 0) > 0 || (asistianMappings ?? 0) > 0;
@@ -150,19 +145,7 @@ export default async function IntegrationsPage() {
             href="/admin/integraciones/meta-whatsapp"
           />
 
-          <IntegrationCard
-            mark="D"
-            name={demiConfig?.assistant_name ?? "Demi"}
-            description="Instrucciones, mejoras con IA y pruebas de conversación."
-            detail={
-              demiConfig
-                ? `${demiConfig.model} · modo ${demiConfig.mode}`
-                : "Configura el asistente para este estudio"
-            }
-            status={demiConfig?.mode === "demo" ? "Demo" : "Configurar"}
-            tone={demiConfig?.mode === "demo" ? "active" : "available"}
-            href="/admin/integraciones/demi"
-          />
+
         </div>
       </section>
 
