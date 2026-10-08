@@ -221,10 +221,24 @@ export function isExplicitAssistantConfirmation(value: string) {
   const accepted = new Set([
     "si",
     "si por favor",
+    "si confirmo",
+    "si preparame los datos para transferir",
+    "si prepara los datos para transferir",
+    "si enviame los datos para transferir",
     "confirmo",
     "confirmado",
     "confirma",
     "confirmala",
+    "si cancelala",
+    "cancelala",
+    "si cancelalo",
+    "cancelalo",
+    "si reagendala",
+    "reagendala",
+    "si reagendalo",
+    "reagendalo",
+    "si muevela",
+    "muevela",
     "adelante",
     "hazlo",
     "reservala",
@@ -573,19 +587,21 @@ async function createResourceSelectionPending(
 }
 
 async function getDemiTrialPrepaymentRequirement(ctx: AssistantActionToolContext) {
-  const [{ data: studioPolicy, error: studioPolicyError }, { data: demiBehavior, error: demiBehaviorError }] =
-    await Promise.all([
-      ctx.supabase
-        .from("trial_booking_policies")
-        .select("require_payment_before_booking")
-        .eq("studio_id", ctx.studio.id)
-        .maybeSingle(),
-      ctx.supabase
-        .from("assistant_booking_behaviors")
-        .select("prospect_require_payment_before_booking")
-        .eq("studio_id", ctx.studio.id)
-        .maybeSingle(),
-    ]);
+  const [
+    { data: studioPolicy, error: studioPolicyError },
+    { data: demiBehavior, error: demiBehaviorError },
+  ] = await Promise.all([
+    ctx.supabase
+      .from("trial_booking_policies")
+      .select("require_payment_before_booking")
+      .eq("studio_id", ctx.studio.id)
+      .maybeSingle(),
+    ctx.supabase
+      .from("assistant_booking_behaviors")
+      .select("prospect_require_payment_before_booking")
+      .eq("studio_id", ctx.studio.id)
+      .maybeSingle(),
+  ]);
 
   if (studioPolicyError || demiBehaviorError) {
     return { ok: false as const, error: "trial_booking_policy_unavailable" };
@@ -660,8 +676,7 @@ async function prepareBooking(ctx: AssistantActionToolContext, args: PrepareBook
 
     const previewObject = asObject(preview);
     const prepaidTrialOverridesLegacyNoShowBlock =
-      requirePaymentBeforeBooking &&
-      previewObject?.reason_code === "trial_prepayment_required";
+      requirePaymentBeforeBooking && previewObject?.reason_code === "trial_prepayment_required";
 
     if (
       !previewObject ||
@@ -1189,9 +1204,7 @@ async function executeBooking(ctx: AssistantActionToolContext, args: ExecuteBook
         payment_required: true,
         student_id: paymentStudentId,
         intent_id: intentId || null,
-        amount_minor: Number(
-          transfer.amount_minor ?? sessionInfo.summary.drop_in_price_minor ?? 0,
-        ),
+        amount_minor: Number(transfer.amount_minor ?? sessionInfo.summary.drop_in_price_minor ?? 0),
         currency: String(transfer.currency ?? ctx.studio.currency),
         bank_details: transfer.bank_details ?? null,
         summary: {
@@ -3169,14 +3182,18 @@ async function prepareTransferPackageChoice(
   if (!commercial || commercial.ok !== true) return commercialRaw;
 
   const paymentOptions = Array.isArray(commercial.payment_options)
-    ? commercial.payment_options.map((item) => asObject(item)).filter((item): item is Record<string, unknown> => Boolean(item))
+    ? commercial.payment_options
+        .map((item) => asObject(item))
+        .filter((item): item is Record<string, unknown> => Boolean(item))
     : [];
   if (!paymentOptions.some((item) => String(item.code ?? "") === "bank_transfer")) {
     return { ok: false, error: "bank_transfer_not_available" };
   }
 
   const commercialOptions = Array.isArray(commercial.options)
-    ? commercial.options.map((item) => asObject(item)).filter((item): item is Record<string, unknown> => Boolean(item))
+    ? commercial.options
+        .map((item) => asObject(item))
+        .filter((item): item is Record<string, unknown> => Boolean(item))
     : [];
   const selectedOptions = commercialOptions.filter((item) =>
     requestedRefs.includes(String(item.product_ref ?? "")),
@@ -3310,7 +3327,12 @@ async function escalateToHuman(ctx: AssistantActionToolContext, args: Record<str
     return { ok: false, error: "human_handoff_failed" };
   }
 
-  return { ok: true, status: "human_handoff", reason_code: reasonCode, blocking: policy.blocking === true };
+  return {
+    ok: true,
+    status: "human_handoff",
+    reason_code: reasonCode,
+    blocking: policy.blocking === true,
+  };
 }
 
 async function recordTrialPaymentPreference(

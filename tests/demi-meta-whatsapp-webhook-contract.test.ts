@@ -81,7 +81,10 @@ describe("Demi Meta WhatsApp inbound contract", () => {
   it("keeps transfer review non-blocking but stops for real human takeover", () => {
     expect(route).toContain("prepared.handoff_open === true");
     expect(route).toContain("hasBlockingOpenHandoff");
-    expect(route).toContain('handoff.reason_code !== "transfer_receipt_review"');
+    expect(route).toContain(
+      '!["transfer_receipt_review", "whatsapp_media_review"].includes(reason)',
+    );
+    expect(route).toContain("policy.enabled === true && policy.blocking === true");
     expect(route).toContain('"non_blocking_transfer_review"');
     expect(route).toContain('"human_takeover_active"');
     expect(route).toContain('"whatsapp_media_review"');
@@ -104,9 +107,7 @@ describe("Demi Meta WhatsApp inbound contract", () => {
     expect(route).toContain('"unsupported_ad_lead"');
     expect(route).toContain('"unsupported_message"');
     expect(route).toContain("META_MEDIA_MESSAGE_TYPES.has(message.messageType)");
-    expect(route).not.toContain(
-      '!["text", "button", "interactive"].includes(message.messageType)',
-    );
+    expect(route).not.toContain('!["text", "button", "interactive"].includes(message.messageType)');
   });
 });
 

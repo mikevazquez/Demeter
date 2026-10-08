@@ -1,6 +1,8 @@
 import { runAssistantTurn } from "@/lib/assistant/orchestrator";
+import { loadDemiRuntimeConfig } from "@/lib/assistant/runtime-config";
 import { getStudentPackageStatus } from "@/lib/assistant/read-tools";
 import { readTransferReceipt } from "@/lib/assistant/receipt-reader";
+import { trialReceiptConfirmation } from "@/lib/assistant/receipt-confirmation";
 import { provisionStudentAccessWithServiceClient } from "@/lib/assistant/student-access";
 import {
   downloadMetaWhatsAppMedia,
@@ -12,7 +14,10 @@ import {
   verifyMetaWebhookToken,
   type MetaWhatsAppWebhookConfig,
 } from "@/lib/assistant/meta-whatsapp-channel";
-import { extractMetaDeliveryStatuses, persistMetaDeliveryStatuses } from "@/lib/assistant/meta-delivery-status";
+import {
+  extractMetaDeliveryStatuses,
+  persistMetaDeliveryStatuses,
+} from "@/lib/assistant/meta-delivery-status";
 import { createServiceClient } from "@/lib/supabase/service";
 
 export const runtime = "nodejs";
@@ -132,13 +137,7 @@ async function loadRuntimeContext(
   const [{ data: studio, error: studioError }, { data: config, error: configError }] =
     await Promise.all([
       supabase.from("studios").select("id,name,timezone,currency").eq("id", studioId).maybeSingle(),
-      supabase
-        .from("assistant_configs")
-        .select(
-          "assistant_name,mode,model,reasoning_effort,personality_instructions,monthly_budget_usd_micros,conversation_budget_usd_micros,max_model_calls_per_turn,max_tool_calls_per_turn",
-        )
-        .eq("studio_id", studioId)
-        .maybeSingle(),
+      loadDemiRuntimeConfig(supabase, studioId),
     ]);
 
   if (studioError || !studio) throw new Error("studio_not_found");
@@ -163,7 +162,9 @@ async function hasBlockingOpenHandoff(input: {
     throw new Error("assistant_handoff_lookup_failed");
   }
 
-  const reasonCodes = [...new Set((data ?? []).map((handoff) => String(handoff.reason_code ?? "")).filter(Boolean))];
+  const reasonCodes = [
+    ...new Set((data ?? []).map((handoff) => String(handoff.reason_code ?? "")).filter(Boolean)),
+  ];
   if (!reasonCodes.length) return false;
   const { data: policies, error: policyError } = await input.supabase
     .from("assistant_handoff_policies")
@@ -200,7 +201,6 @@ async function createMediaHandoff(input: {
 
   return !error && isObject(data) && data.ok === true;
 }
-
 
 function normalizeReceiptText(value: string) {
   return value
@@ -339,8 +339,16 @@ async function tryResolveReceiptPackageChoice(input: {
   const eventId = String(payload.event_id ?? "").trim();
   const providerMessageId = String(payload.provider_message_id ?? "").trim();
   const mediaId = String(payload.media_id ?? "").trim();
-  if (!UUID_RE.test(productTemplateId) || !UUID_RE.test(eventId) || !providerMessageId || !mediaId) {
-    return { reply: "No pude recuperar de forma segura ese comprobante. No activé ningún paquete.", outcome: "receipt_context_invalid" };
+  if (
+    !UUID_RE.test(productTemplateId) ||
+    !UUID_RE.test(eventId) ||
+    !providerMessageId ||
+    !mediaId
+  ) {
+    return {
+      reply: "No pude recuperar de forma segura ese comprobante. No activé ningún paquete.",
+      outcome: "receipt_context_invalid",
+    };
   }
 
   const { data: preparedData, error: preparedError } = await input.supabase.rpc(
@@ -355,12 +363,18 @@ async function tryResolveReceiptPackageChoice(input: {
   );
   const prepared = isObject(preparedData) ? preparedData : null;
   if (preparedError || !prepared || prepared.ok !== true) {
-    return { reply: "No pude preparar ese paquete con seguridad. No hice ningún cambio.", outcome: "receipt_package_prepare_failed" };
+    return {
+      reply: "No pude preparar ese paquete con seguridad. No hice ningún cambio.",
+      outcome: "receipt_package_prepare_failed",
+    };
   }
 
   const intentId = String(prepared.intent_id ?? "").trim();
   if (!UUID_RE.test(intentId)) {
-    return { reply: "No pude preparar ese paquete con seguridad. No hice ningún cambio.", outcome: "receipt_package_prepare_failed" };
+    return {
+      reply: "No pude preparar ese paquete con seguridad. No hice ningún cambio.",
+      outcome: "receipt_package_prepare_failed",
+    };
   }
 
   await input.supabase
@@ -399,7 +413,10 @@ async function tryResolveReceiptPackageChoice(input: {
   );
   const activation = isObject(activationData) ? activationData : null;
   if (activationError || !activation || activation.ok !== true) {
-    return { reply: "No pude activar el paquete con ese comprobante. No hice ningún cambio definitivo.", outcome: "receipt_package_activation_failed" };
+    return {
+      reply: "No pude activar el paquete con ese comprobante. No hice ningún cambio definitivo.",
+      outcome: "receipt_package_activation_failed",
+    };
   }
 
   await input.supabase
@@ -460,7 +477,10 @@ async function activateTransferReceiptIfPending(input: {
     .maybeSingle();
   if (pendingError) throw new Error("transfer_intent_lookup_failed");
 
-  const media = await downloadMetaWhatsAppMedia({ config: input.webhookConfig, mediaId: input.mediaId });
+  const media = await downloadMetaWhatsAppMedia({
+    config: input.webhookConfig,
+    mediaId: input.mediaId,
+  });
   let reading: Awaited<ReturnType<typeof readTransferReceipt>> | null = null;
   try {
     reading = await readTransferReceipt({ bytes: media.bytes, mimeType: media.mimeType });
@@ -468,12 +488,23 @@ async function activateTransferReceiptIfPending(input: {
     reading = null;
   }
 
-  const extension = media.mimeType === "application/pdf" ? "pdf" : media.mimeType === "image/png" ? "png" : media.mimeType === "image/webp" ? "webp" : "jpg";
+  const extension =
+    media.mimeType === "application/pdf"
+      ? "pdf"
+      : media.mimeType === "image/png"
+        ? "png"
+        : media.mimeType === "image/webp"
+          ? "webp"
+          : "jpg";
   const provisionalKey = pendingIntent?.id ?? sha256Hex(input.providerMessageId).slice(0, 24);
   const storagePath = `${input.studioId}/${input.studentId}/${provisionalKey}/receipt.${extension}`;
   const { error: storageError } = await input.supabase.storage
     .from("transfer-receipts")
-    .upload(storagePath, media.bytes, { contentType: media.mimeType, upsert: true, cacheControl: "3600" });
+    .upload(storagePath, media.bytes, {
+      contentType: media.mimeType,
+      upsert: true,
+      cacheControl: "3600",
+    });
   if (storageError) throw new Error("transfer_receipt_storage_failed");
 
   if (!reading || reading.amountMinor == null || reading.confidence < 0.75) {
@@ -482,9 +513,10 @@ async function activateTransferReceiptIfPending(input: {
       studioId: input.studioId,
       conversationId: input.conversationId,
       studentId: input.studentId,
-      note: pendingIntent?.intent_kind === "trial_class"
-        ? "No se pudo leer el monto del comprobante de primera clase con suficiente confianza. Revisar el archivo antes de confirmar la reserva."
-        : "No se pudo leer el monto del comprobante con suficiente confianza. Revisar el archivo antes de activar cualquier paquete.",
+      note:
+        pendingIntent?.intent_kind === "trial_class"
+          ? "No se pudo leer el monto del comprobante de primera clase con suficiente confianza. Revisar el archivo antes de confirmar la reserva."
+          : "No se pudo leer el monto del comprobante con suficiente confianza. Revisar el archivo antes de activar cualquier paquete.",
     });
     return {
       handled: true as const,
@@ -499,7 +531,8 @@ async function activateTransferReceiptIfPending(input: {
   if (pendingIntent) {
     const expectedAmount = Number(pendingIntent.amount_minor);
     const expectedCurrency = String(pendingIntent.currency ?? "MXN").toUpperCase();
-    const isTrialPayment = String(pendingIntent.intent_kind ?? "product_purchase") === "trial_class";
+    const isTrialPayment =
+      String(pendingIntent.intent_kind ?? "product_purchase") === "trial_class";
     const paymentSubject = isTrialPayment ? "primera clase" : "paquete";
     const amountMatches =
       reading.amountMinor === expectedAmount &&
@@ -561,17 +594,19 @@ async function activateTransferReceiptIfPending(input: {
       const reasonCode = String(result?.reason_code ?? "transfer_receipt_not_activated");
       if (
         isTrialPayment &&
-        ["session_full", "resource_full", "resource_unavailable", "resource_not_available"].includes(
-          reasonCode,
-        )
+        [
+          "session_full",
+          "resource_full",
+          "resource_unavailable",
+          "resource_not_available",
+        ].includes(reasonCode)
       ) {
         await createReceiptValidationHandoff({
           supabase: input.supabase,
           studioId: input.studioId,
           conversationId: input.conversationId,
           studentId: input.studentId,
-          note:
-            "El comprobante de primera clase coincide con el monto, pero el lugar dejó de estar disponible antes de confirmar la reserva. Resolver otra clase o devolución.",
+          note: "El comprobante de primera clase coincide con el monto, pero el lugar dejó de estar disponible antes de confirmar la reserva. Resolver otra clase o devolución.",
         });
 
         return {
@@ -620,7 +655,7 @@ async function activateTransferReceiptIfPending(input: {
       handled: true as const,
       result,
       reply: isTrialPayment
-        ? `Recibí tu comprobante y el monto coincide. Tu primera clase de ${label} quedó confirmada. La transferencia queda pendiente de validación.${accessText}`
+        ? trialReceiptConfirmation(label, accessText)
         : `Recibí tu comprobante y el monto coincide con ${label}. Activé tu paquete provisionalmente para que puedas continuar. El pago queda pendiente de validación.`,
     };
   }
@@ -628,7 +663,9 @@ async function activateTransferReceiptIfPending(input: {
   const expectedCurrency = reading.currency || "MXN";
   const { data: products, error: productError } = await input.supabase
     .from("product_templates")
-    .select("id,name,price_minor,currency,credit_limit,unlimited,package_term,product_type,assistant_visible,reward_credit_wallet")
+    .select(
+      "id,name,price_minor,currency,credit_limit,unlimited,package_term,product_type,assistant_visible,reward_credit_wallet",
+    )
     .eq("studio_id", input.studioId)
     .eq("active", true)
     .eq("price_minor", reading.amountMinor)
@@ -660,14 +697,17 @@ async function activateTransferReceiptIfPending(input: {
     .limit(6);
 
   const context = normalizeReceiptText(
-    [input.messageText, ...(recentUserTurns ?? []).map((row) => String(row.content ?? ""))].join(" "),
+    [input.messageText, ...(recentUserTurns ?? []).map((row) => String(row.content ?? ""))].join(
+      " ",
+    ),
   );
   const scored = candidates.map((item) => {
     const name = normalizeReceiptText(String(item.name ?? ""));
     let score = name && context.includes(name) ? 5 : 0;
     if (item.unlimited === true && context.includes("ilimitado")) score = Math.max(score, 4);
     const credits = Number(item.credit_limit ?? 0);
-    if (credits > 0 && new RegExp(`\\b${credits}\\s*(?:clase|clases)\\b`).test(context)) score = Math.max(score, 4);
+    if (credits > 0 && new RegExp(`\\b${credits}\\s*(?:clase|clases)\\b`).test(context))
+      score = Math.max(score, 4);
     const term = normalizeReceiptText(String(item.package_term ?? ""));
     if (term && context.includes(term)) score = Math.max(score, 3);
     return { item, score };
@@ -689,24 +729,33 @@ async function activateTransferReceiptIfPending(input: {
     );
     const prepared = isObject(preparedData) ? preparedData : null;
     if (preparedError || !prepared || prepared.ok !== true) {
-      return { handled: true as const, result: { ok: false }, reply: "Pude leer el comprobante, pero no pude preparar el paquete con seguridad. No activé nada." };
+      return {
+        handled: true as const,
+        result: { ok: false },
+        reply:
+          "Pude leer el comprobante, pero no pude preparar el paquete con seguridad. No activé nada.",
+      };
     }
     const intentId = String(prepared.intent_id ?? "");
-    await input.supabase.from("assistant_transfer_purchase_intents").update({
-      receipt_storage_path: storagePath,
-      receipt_mime_type: media.mimeType,
-      receipt_file_size: media.fileSize,
-      receipt_stored_at: new Date().toISOString(),
-      receipt_detected_amount_minor: reading.amountMinor,
-      receipt_detected_currency: reading.currency,
-      receipt_detected_date: reading.date,
-      receipt_detected_reference: reading.reference,
-      receipt_detected_bank: reading.bank,
-      receipt_read_confidence: reading.confidence,
-      receipt_amount_matches: true,
-      receipt_read_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    }).eq("id", intentId).eq("studio_id", input.studioId);
+    await input.supabase
+      .from("assistant_transfer_purchase_intents")
+      .update({
+        receipt_storage_path: storagePath,
+        receipt_mime_type: media.mimeType,
+        receipt_file_size: media.fileSize,
+        receipt_stored_at: new Date().toISOString(),
+        receipt_detected_amount_minor: reading.amountMinor,
+        receipt_detected_currency: reading.currency,
+        receipt_detected_date: reading.date,
+        receipt_detected_reference: reading.reference,
+        receipt_detected_bank: reading.bank,
+        receipt_read_confidence: reading.confidence,
+        receipt_amount_matches: true,
+        receipt_read_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", intentId)
+      .eq("studio_id", input.studioId);
 
     const { data: activationData, error: activationError } = await input.supabase.rpc(
       "service_activate_transfer_receipt",
@@ -721,7 +770,12 @@ async function activateTransferReceiptIfPending(input: {
     );
     const activation = isObject(activationData) ? activationData : null;
     if (activationError || !activation || activation.ok !== true) {
-      return { handled: true as const, result: { ok: false }, reply: "Pude identificar el paquete, pero no pude activarlo con seguridad. No hice ningún cambio definitivo." };
+      return {
+        handled: true as const,
+        result: { ok: false },
+        reply:
+          "Pude identificar el paquete, pero no pude activarlo con seguridad. No hice ningún cambio definitivo.",
+      };
     }
     const packageName = String(activation.package_name ?? product.name ?? "tu paquete");
     await createReceiptValidationHandoff({
@@ -1367,7 +1421,10 @@ export async function POST(request: Request) {
         }
 
         const caption = message.text.trim();
-        const paymentLanguage = /\\b(pagu[eé]|pago|pagado|transfer(?:encia|í|i)|comprobante|dep[oó]sito|deposit[eé])\\b/i.test(caption);
+        const paymentLanguage =
+          /\\b(pagu[eé]|pago|pagado|transfer(?:encia|í|i)|comprobante|dep[oó]sito|deposit[eé])\\b/i.test(
+            caption,
+          );
 
         reply = paymentLanguage
           ? "Recibí tu comprobante. No pude asociarlo automáticamente a una compra pendiente, así que lo dejé para validación del pago."
@@ -1550,14 +1607,25 @@ export async function POST(request: Request) {
 
     // Learn safely: a user correction becomes a reviewable proposal, never an automatic prompt change.
     const currentMessage = message.text.trim();
-    const normalizedCorrection = currentMessage.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("es-MX");
-    const correctionSignal = /\b(no,? eso no|eso no es|te equivocaste|esta mal|incorrecto|no es asi|quise decir|me explique mal)\b/.test(normalizedCorrection);
+    const normalizedCorrection = currentMessage
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLocaleLowerCase("es-MX");
+    const correctionSignal =
+      /\b(no,? eso no|eso no es|te equivocaste|esta mal|incorrecto|no es asi|quise decir|me explique mal)\b/.test(
+        normalizedCorrection,
+      );
     if (correctionSignal) {
-      const previousAssistant = [...history].reverse().find((row) => row.role === "assistant")?.content ?? "";
+      const previousAssistant =
+        [...history].reverse().find((row) => row.role === "assistant")?.content ?? "";
       if (previousAssistant) {
-        const { data: existingProposal } = await supabase.from("assistant_learning_proposals")
-          .select("id").eq("studio_id", studioId).eq("conversation_id", conversationId)
-          .eq("source_turn_id", inboundTurnId).maybeSingle();
+        const { data: existingProposal } = await supabase
+          .from("assistant_learning_proposals")
+          .select("id")
+          .eq("studio_id", studioId)
+          .eq("conversation_id", conversationId)
+          .eq("source_turn_id", inboundTurnId)
+          .maybeSingle();
         if (!existingProposal) {
           await supabase.from("assistant_learning_proposals").insert({
             studio_id: studioId,
