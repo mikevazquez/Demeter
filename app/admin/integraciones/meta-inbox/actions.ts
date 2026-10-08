@@ -24,10 +24,9 @@ export async function saveMetaInboxConnection(formData: FormData) {
   const appSecret = String(formData.get("app_secret") ?? "").trim();
   const verifyToken = String(formData.get("verify_token") ?? "").trim();
 
-  if (
-    !graphApiVersion ||
-    ((!pageAccessToken || !pageId) && (!instagramAccessToken || !instagramUserId))
-  ) {
+  // Channel credentials already on file are preserved by the secure RPC.
+  // Allow an administrator to update an App Secret without re-entering Page tokens.
+  if (!graphApiVersion) {
     redirect("/admin/integraciones/meta-inbox?connection=error&code=required_fields");
   }
 
@@ -138,5 +137,5 @@ export async function diagnoseMetaInboxApp(formData: FormData) {
     result = "unavailable";
   }
 
-  redirect(`/admin/integraciones/meta-inbox?app_check=${result}`);
+  redirect(`/admin/integraciones/meta-inbox?app_check=${result}&app_id=${encodeURIComponent(appId)}`);
 }
