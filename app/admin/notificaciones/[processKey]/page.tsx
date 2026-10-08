@@ -589,6 +589,11 @@ export default async function NotificationProcessPage({
                           </span>
                           <textarea
                             name="meta_body"
+                            defaultValue={templateKey === "coach_roster_reminder"
+                              ? "Hola {{1}} 👋 Tu clase {{2}} del {{3}} a las {{4}} tiene {{5}} alumnas reservadas. Lista: {{6}}. Consulta tu agenda en Studio Flow si hay cambios."
+                              : templateKey === "class_cancelled_coach"
+                                ? "Hola {{1}}, tu clase {{2}} del {{3}} a las {{4}} fue cancelada por no alcanzar el mínimo de reservas. Mínimo: {{5}}. Reservas al revisar: {{6}}. No necesitas asistir."
+                                : undefined}
                             rows={4}
                             required
                             maxLength={1024}
