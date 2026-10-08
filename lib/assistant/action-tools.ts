@@ -1123,6 +1123,24 @@ async function executeBooking(ctx: AssistantActionToolContext, args: ExecuteBook
         paymentStudentId = String(ensured?.student_id ?? "") || null;
 
         if (ensureError || !ensured || ensured.ok !== true || !paymentStudentId) {
+          if (!ensureError && ensured?.reason_code === "phone_required") {
+            return {
+              ok: false,
+              error: "prospect_phone_required",
+              reason_code: "phone_required",
+              reason_message:
+                "Para continuar con tu primera clase necesito un número de celular con lada. Compártelo aquí; no confirmaré tu lugar hasta completar el proceso de pago.",
+            };
+          }
+          if (!ensureError && ensured?.reason_code === "phone_ambiguous") {
+            return {
+              ok: false,
+              error: "prospect_phone_ambiguous",
+              reason_code: "phone_ambiguous",
+              reason_message:
+                "El teléfono ya está asociado a otra ficha. Por seguridad no puedo usarlo para identificarte automáticamente.",
+            };
+          }
           return { ok: false, error: "trial_identity_provision_failed" };
         }
       }
