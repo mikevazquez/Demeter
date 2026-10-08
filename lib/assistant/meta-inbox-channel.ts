@@ -28,6 +28,7 @@ export type MetaInboxInboundMessage = {
   timestamp: string | null;
   messageType: "text" | "postback" | "attachment" | "unknown";
   text: string;
+  attachmentUrl: string | null;
 };
 
 export type MetaInboxDeliveryResult =
@@ -196,14 +197,22 @@ export function extractMetaInboxMessages(body: unknown): MetaInboxInboundMessage
       let messageType: MetaInboxInboundMessage["messageType"] = "unknown";
       let text = "";
       let providerMessageId = "";
+      let attachmentUrl: string | null = null;
 
       if (message) {
         providerMessageId = safeText(message.mid) ?? "";
         const directText = safeText(message.text);
-        if (directText) {
+        const attachments = Array.isArray(message.attachments) ? message.attachments : [];
+        const firstAttachment = isObject(attachments[0]) ? attachments[0] : null;
+        const payload = firstAttachment && isObject(firstAttachment.payload) ? firstAttachment.payload : {};
+        if (firstAttachment && ["image", "file"].includes(String(firstAttachment.type ?? ""))) {
+          messageType = "attachment";
+          text = directText ? `[archivo recibido] ${directText}` : "[archivo recibido]";
+          attachmentUrl = safeText(payload.url);
+        } else if (directText) {
           messageType = "text";
           text = directText;
-        } else if (Array.isArray(message.attachments) && message.attachments.length) {
+        } else if (attachments.length) {
           messageType = "attachment";
           text = "[archivo recibido]";
         }
@@ -233,11 +242,54 @@ export function extractMetaInboxMessages(body: unknown): MetaInboxInboundMessage
         timestamp,
         messageType,
         text,
+        attachmentUrl,
       });
     }
   }
 
   return output;
+}
+
+
+const META_RECEIPT_MIMES = new Set(["image/jpeg", "image/png", "image/webp", "application/pdf"]);
+
+/**
+ * Meta supplies a short-lived CDN URL in a signed webhook. Never fetch an
+ * arbitrary user-provided URL; allow only Meta CDN hostnames and no redirects.
+ */
+export async function downloadMetaInboxAttachment(urlText: string) {
+  let url: URL;
+  try {
+    url = new URL(urlText);
+  } catch {
+    throw new Error("meta_attachment_url_invalid");
+  }
+  const hostname = url.hostname.toLowerCase();
+  const allowed = ["fbcdn.net", "fbsbx.com", "cdninstagram.com", "facebook.com"];
+  if (
+    url.protocol !== "https:" ||
+    url.username ||
+    url.password ||
+    url.port ||
+    !allowed.some((suffix) => hostname === suffix || hostname.endsWith("." + suffix))
+  ) {
+    throw new Error("meta_attachment_url_forbidden");
+  }
+  const response = await fetch(url, {
+    redirect: "error",
+    cache: "no-store",
+    signal: AbortSignal.timeout(12000),
+  });
+  if (!response.ok) throw new Error("meta_attachment_download_failed");
+  const advertised = Number(response.headers.get("content-length") ?? "0");
+  if (advertised > 10 * 1024 * 1024) throw new Error("meta_attachment_too_large");
+  const mimeType = (response.headers.get("content-type") ?? "").split(";")[0].trim().toLowerCase();
+  if (!META_RECEIPT_MIMES.has(mimeType)) throw new Error("meta_attachment_type_unsupported");
+  const bytes = new Uint8Array(await response.arrayBuffer());
+  if (!bytes.length || bytes.byteLength > 10 * 1024 * 1024) {
+    throw new Error("meta_attachment_size_invalid");
+  }
+  return { bytes, mimeType, fileSize: bytes.byteLength };
 }
 
 function errorSnapshot(value: unknown): JsonObject {
