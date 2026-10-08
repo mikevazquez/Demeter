@@ -74,7 +74,11 @@ export async function updateInstructorPhone(formData: FormData) {
     p_instructor_id: instructorId,
     p_phone: phone,
   });
-  if (error) redirect(`/admin/instructores/${instructorId}?error=phone_update_failed`);
+  if (error) {
+    console.error("[instructors:phone] failed", { code: error.code });
+    const reason = error.code === "23505" ? "phone_in_use" : "phone_update_failed";
+    redirect(`/admin/instructores/${instructorId}?error=${reason}`);
+  }
   revalidatePath("/admin/instructores");
   revalidatePath(`/admin/instructores/${instructorId}`);
   redirect(`/admin/instructores/${instructorId}?saved=phone`);
