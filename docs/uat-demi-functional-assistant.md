@@ -1,6 +1,6 @@
 # Demi: atención y conversión
 
-Estado: Preview `84ad1e6` en estado READY, aislado a Studio Flow Sandbox. Los cambios de simulación documentados abajo están en validación local; todavía no se vuelven a desplegar. UAT parcial; no valida conversaciones reales de WhatsApp.
+Estado: Preview `cad46e6` en estado READY, en la rama de desarrollo y aislado a Studio Flow Sandbox. UAT parcial; no valida conversaciones reales de WhatsApp.
 
 ## Objetivo
 
@@ -53,7 +53,7 @@ Ejecutar UAT con acciones simuladas y entorno aislado. Validar fuentes faltantes
 - Acceso validado: el login llegó al selector, la selección de Demeter abrió Admin y la sesión sobrevivió una recarga en Preview. El rebote anterior no se reprodujo; no hay evidencia para atribuirlo a un defecto persistente de autenticación.
 - UAT del banco de pruebas: una consulta de domicilio/interés en Pole Fitness devolvió la dirección configurada y horarios actuales; “gracias” recibió una cortesía breve sin insistencia. Una petición directa de agendar consultó horarios reales y ofreció opciones.
 - UAT del banco de pruebas: una alumna ficticia preguntó por créditos y vencimiento. Demi consultó el paquete simulado, reportó 8 créditos y dijo que no había fecha de vencimiento configurada, sin inventarla. También consultó horarios actuales y preparó una reserva simulada.
-- Se detectó que el modo simulación podía pedir dos confirmaciones para esa reserva: no aplicaba el encaminamiento determinista de confirmación que sí usa el flujo de WhatsApp. Se alineó el simulador con esa ruta y se añadió una prueba unitaria; falta validar el cambio en la siguiente Preview.
+- Se detectó que el modo simulación podía pedir dos confirmaciones para esa reserva: no aplicaba el encaminamiento determinista que usa el flujo de WhatsApp. Se alineó el simulador con esa ruta, se añadieron pruebas y el build quedó READY. Falta repetir el UAT conversacional en el nuevo Preview; el acceso SSO de este host no se pudo completar en esta sesión.
 - Al elegir horario, Demi pidió el nombre completo; después presentó resumen y pidió confirmación. Se corrigió la simulación para representar el nombre pendiente de un prospecto nuevo.
 - La respuesta “Sí, confirmo.” inicialmente no ejecutó la reserva simulada porque no estaba reconocida como confirmación explícita. Se agregó esa forma al validador y se verificó en Preview: Demi confirmó la reserva simulada correctamente.
 - Todas las acciones de ese recorrido ocurrieron en la simulación de Sandbox. No se creó una reserva comercial real ni se envió ningún mensaje a clientes.
