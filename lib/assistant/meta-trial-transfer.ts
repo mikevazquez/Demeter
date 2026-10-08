@@ -370,6 +370,26 @@ export async function continueMetaTrialTransfer(input: {
       .eq("studio_id", input.studioId).eq("id", intentId).eq("student_id", newStudentId);
     if (receiptError) throw new Error("meta_trial_receipt_link_failed");
 
+    // Create a provisional reservation only when the receipt amount matches.
+    // Studio Flow revalidates capacity and trial eligibility atomically.
+    // payment_pending remains true; this is not a bank payment approval.
+    let reservationId: string | null = null;
+    if (payload.receipt_amount_matches === true) {
+      const { data: bookingData, error: bookingError } = await input.supabase.rpc(
+        "assistant_confirm_trial_booking", {
+          target_studio_id: input.studioId,
+          target_session_id: String(payload.session_id),
+          target_student_id: newStudentId,
+          target_crm_contact_id: null,
+          target_assistant_conversation_id: input.conversationId,
+        },
+      );
+      const booking = object(bookingData);
+      if (!bookingError && booking.ok === true && booking.payment_pending === true) {
+        reservationId = String(booking.reservation_id ?? "") || null;
+      }
+    }
+
     await createReviewHandoff(input.supabase, input.studioId, input.conversationId, newStudentId,
       "Primera clase: comprobante recibido por " + input.provider +
       ", importe " + (payload.receipt_amount_matches === true ? "coincidente" : "por revisar") +
@@ -380,14 +400,20 @@ export async function continueMetaTrialTransfer(input: {
         status: "executed",
         executed_at: new Date().toISOString(),
         execution_ref: "meta-trial-review:" + intentId,
-        action_payload: { ...payload, stage: "meta_receipt_under_review", student_id: newStudentId },
+        action_payload: { ...payload, stage: "meta_receipt_under_review", student_id: newStudentId, reservation_id: reservationId },
         updated_at: new Date().toISOString(),
       })
       .eq("id", pending.id).eq("studio_id", input.studioId).eq("status", "pending");
     if (completedError) throw new Error("meta_trial_completion_failed");
 
+    if (reservationId) {
+      return {
+        reply: "Tu reserva de primera clase ya quedó creada. Importante: el comprobante sigue pendiente de validación. Si el pago no es válido, la reserva puede ser revocada. Te avisaremos por este chat.",
+        outcome: "meta_trial_provisional_booking_created",
+      };
+    }
     return {
-      reply: "Gracias. Ya registré tu nombre, celular y comprobante. El pago quedó para validación y tu lugar aún no está confirmado. Te avisaremos por este chat cuando se revise.",
+      reply: "Ya registré tus datos y recibí el comprobante. La reserva aún no se creó porque el pago necesita revisión o el cupo cambió. Te avisaremos por este chat.",
       outcome: "meta_trial_registered_for_payment_review",
     };
   }
