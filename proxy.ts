@@ -1,7 +1,18 @@
-import type { NextRequest } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 import { updateSession } from "@/lib/supabase/proxy";
 
 export async function proxy(request: NextRequest) {
+  // The public Meta sandbox hostname is reserved exclusively for Meta's signed webhook.
+  // Do not expose the rest of the admin or API surface through this custom domain.
+  if (request.nextUrl.hostname.toLowerCase() === "meta-sandbox.demeterfitness.com") {
+    if (request.nextUrl.pathname !== "/api/integrations/meta-inbox/webhook") {
+      return new NextResponse("Not Found", { status: 404 });
+    }
+    if (request.method !== "GET" && request.method !== "POST") {
+      return new NextResponse("Method Not Allowed", { status: 405 });
+    }
+    return NextResponse.next();
+  }
   return updateSession(request);
 }
 
