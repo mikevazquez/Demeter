@@ -39,7 +39,7 @@ export async function saveMetaInboxConnection(formData: FormData) {
       redirect("/admin/integraciones/meta-inbox?connection=error&code=page_credentials_pair_required");
     }
     let pageTokenStatus: "valid" | "invalid" | "wrong_page" | "unavailable" = "unavailable";
-    if (/^v[0-9]+\\.[0-9]+$/.test(graphApiVersion)) {
+    if (/^v[0-9]+\.[0-9]+$/.test(graphApiVersion)) {
       try {
         const response = await fetch(
           `https://graph.facebook.com/${graphApiVersion}/me?fields=id`,
