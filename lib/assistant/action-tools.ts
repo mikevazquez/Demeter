@@ -28,6 +28,7 @@ type AssistantActionToolContext = {
   studentId: string | null;
   crmContactId: string | null;
   identityNeedsName?: boolean;
+  channel?: string;
   activationUrl: string | null;
   serviceMode?: boolean;
   currentUserMessage: string;
@@ -603,7 +604,10 @@ async function getDemiTrialPrepaymentRequirement(ctx: AssistantActionToolContext
 }
 
 async function prepareBooking(ctx: AssistantActionToolContext, args: PrepareBookingArgs) {
-  if (ctx.identityNeedsName === true && !ctx.studentId) {
+  const metaProspect =
+    (ctx.channel === "instagram" || ctx.channel === "facebook_messenger") &&
+    !ctx.studentId && Boolean(ctx.crmContactId);
+  if (ctx.identityNeedsName === true && !ctx.studentId && !metaProspect) {
     return {
       ok: false,
       reason_code: "prospect_name_required",
@@ -771,6 +775,79 @@ async function prepareBooking(ctx: AssistantActionToolContext, args: PrepareBook
       currency: String(previewObject.currency ?? ctx.studio.currency),
       enrollment_required_now: false,
     };
+
+    if (metaProspect) {
+      // Messenger/Instagram prospects receive payment instructions first.
+      // No personal data, payment intent, or reservation is created here.
+      if (!requirePaymentBeforeBooking) {
+        return { ok: false, error: "meta_transfer_first_policy_unavailable" };
+      }
+      if (sessionInfo.session.requires_resource) {
+        return {
+          ok: false,
+          error: "resource_selection_required",
+          reason_message: "Esta clase necesita elegir un aparato. Todavía no puedo completar esa selección por este canal.",
+        };
+      }
+      const [{ data: bank, error: bankError }, { data: methods, error: methodError }] =
+        await Promise.all([
+          ctx.supabase
+            .from("studio_bank_transfer_settings")
+            .select("enabled,bank_name,account_holder,clabe,account_number,card_number")
+            .eq("studio_id", ctx.studio.id)
+            .maybeSingle(),
+          ctx.supabase
+            .from("studio_payment_methods")
+            .select("code,category,active")
+            .eq("studio_id", ctx.studio.id)
+            .eq("active", true),
+        ]);
+      if (
+        bankError || methodError || bank?.enabled !== true ||
+        !String(bank.bank_name ?? "").trim() ||
+        !String(bank.account_holder ?? "").trim() ||
+        ![bank.clabe, bank.account_number, bank.card_number].some((value) => String(value ?? "").trim()) ||
+        !(methods ?? []).some((method) => method.code === "bank_transfer" || method.category === "transfer")
+      ) {
+        return { ok: false, error: "bank_transfer_not_available" };
+      }
+
+      await ctx.supabase.from("assistant_pending_actions")
+        .update({ status: "cancelled", updated_at: new Date().toISOString() })
+        .eq("studio_id", ctx.studio.id)
+        .eq("conversation_id", ctx.conversationId)
+        .eq("action_type", "booking.create")
+        .eq("status", "pending");
+
+      const expiresAt = new Date(Date.now() + 24 * 60 * 60_000).toISOString();
+      const { error: pendingError } = await ctx.supabase.from("assistant_pending_actions")
+        .insert({
+          studio_id: ctx.studio.id,
+          conversation_id: ctx.conversationId,
+          action_type: "booking.create",
+          action_token_hash: createHash("sha256").update(randomUUID()).digest("hex"),
+          action_payload: {
+            stage: "meta_offer_transfer",
+            session_id: sessionId,
+            crm_contact_id: ctx.crmContactId,
+            amount_minor: Number(confirmationSummary.amount_minor),
+            currency: String(confirmationSummary.currency),
+            prepared_turn_id: ctx.turnId,
+          },
+          confirmation_summary: confirmationSummary,
+          status: "pending",
+          expires_at: expiresAt,
+        });
+      if (pendingError) return { ok: false, error: "pending_action_create_failed" };
+      return {
+        ok: true,
+        status: "payment_offer",
+        amount_minor: Number(confirmationSummary.amount_minor),
+        currency: String(confirmationSummary.currency),
+        summary: confirmationSummary,
+        reservation_confirmed: false,
+      };
+    }
 
     if (sessionInfo.session.requires_resource) {
       return createResourceSelectionPending(ctx, {
