@@ -130,11 +130,11 @@ export async function testDemiPrompt(input: {
         .maybeSingle(),
     ]);
 
-    if (trialPolicyError || bookingBehaviorError) {
-      return { ok: false as const, error: "booking_policy_unavailable" };
-    }
-
+    // A policy lookup failure must never turn into a simulated booking without payment.
+    // Keep the conversation usable, but require payment in the sandbox when policy data
+    // cannot be read. The production booking guard remains independent of this simulation.
     state.paymentBeforeBooking =
+      Boolean(trialPolicyError || bookingBehaviorError) ||
       trialPolicy?.require_payment_before_booking === true ||
       bookingBehavior?.prospect_require_payment_before_booking === true;
   }
