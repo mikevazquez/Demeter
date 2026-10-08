@@ -242,14 +242,14 @@ export async function continueMetaTrialTransfer(input: {
     await updateStage(input.supabase, input.studioId, pending.id, {
       ...payload, stage: "meta_awaiting_phone",
     });
-    return { reply: "Gracias. Ahora compárteme tu número de celular de 10 dígitos, sin lada.", outcome: "meta_trial_phone_requested" };
+    return { reply: "Gracias. Ahora compárteme tu número de celular de 10 dígitos.", outcome: "meta_trial_phone_requested" };
   }
 
   if (stage === "meta_awaiting_phone") {
     const supplied = input.message.text.trim();
     const digits = supplied.replace(/[\s()-]/g, "");
     if (!/^[0-9]{10}$/.test(digits)) {
-      return { reply: "Necesito solamente tu celular de 10 dígitos, sin lada.", outcome: "meta_trial_phone_waiting" };
+      return { reply: "Compárteme tu número de celular de 10 dígitos, por favor.", outcome: "meta_trial_phone_waiting" };
     }
     const normalized = "+52" + digits;
     const { data: identity, error: identityError } = await input.supabase
