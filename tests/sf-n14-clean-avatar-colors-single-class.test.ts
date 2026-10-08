@@ -85,7 +85,7 @@ describe("SF-N14 clean avatar, activity colors and single-class purchase", () =>
     expect(singleMigration).toContain("set drop_in_price_minor = 15000");
     expect(singleMigration).toContain("'Clase suelta · Danza Aérea'");
     expect(singleMigration).toContain("'single_class'::public.product_type");
-    expect(reserve).toContain("bookingReasonCopy(session.eligibility?.reason_code)");
+    expect(reserve).toContain("bookingReasonCopyForStudent");
     expect(reserve).toContain("PurchaseSingleClassButton");
     expect(reserve).toContain("justify-end");
     expect(reserve).toContain("Ver paquetes");
