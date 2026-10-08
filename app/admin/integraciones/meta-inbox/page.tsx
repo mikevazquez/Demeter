@@ -102,7 +102,23 @@ export default async function MetaInboxIntegrationPage({
         </div>
       ) : connectionResult === "error" ? (
         <div className="integration-detail-v2-notice is-error">
-          {resultCode === "page_token_invalid" ? (
+          {resultCode === "page_token_paste_format" ? (
+            <>El valor pegado incluye texto adicional (por ejemplo «Bearer», comillas,
+              espacios o una URL). Copia únicamente el token de acceso de la
+              página de Demeter, sin prefijos. No se modificó la conexión.</>
+          ) : resultCode === "page_token_malformed" ? (
+            <>Meta no reconoce el texto como un access token. Confirma que copiaste
+              «Generar token» en la fila de Demeter Fitness Studio dentro de
+              Messenger → Configuración de la API, no el App Secret, Verify token
+              ni un token de WhatsApp. No se guardó el valor.</>
+          ) : resultCode === "page_token_expired" ? (
+            <>Meta indica que el token caducó o fue invalidado. Genera uno nuevo
+              para la página Demeter Fitness Studio y vuelve a comprobarlo.</>
+          ) : resultCode === "page_token_permissions" ? (
+            <>Meta rechazó los permisos de este token. Comprueba que tengas la
+              tarea de mensajes de la página y el permiso pages_messaging en
+              la app Demeter. No se modificó la conexión.</>
+          ) : resultCode === "page_token_invalid" ? (
             <>Meta rechazó el Facebook Page Access Token. Genera un token nuevo
               en Messenger → Configuración de la API y vuelve a intentarlo.
               La credencial anterior se conservó.</>
@@ -226,9 +242,12 @@ export default async function MetaInboxIntegrationPage({
           <label className="integration-detail-v2-field">
             <span>Facebook Page access token</span>
             <input type="password" name="page_access_token" autoComplete="new-password" />
-            <small>Genera el token desde Meta for Developers → Messenger →
-              Configuración de la API → Demeter Fitness Studio. Pega solo el token,
-              sin la palabra Bearer. Lo verificaremos con Meta antes de guardarlo.</small>
+            <small>En Meta for Developers, dentro de la app Demeter, abre
+              Messenger → Configuración de la API → Generar tokens de acceso.
+              En la fila de Demeter Fitness Studio pulsa «Generar token» y copia
+              el valor completo, sin Bearer, comillas ni espacios. No uses el
+              App Secret, el Verify token ni el token de WhatsApp. Validaremos
+              que Meta lo reconoce antes de guardarlo.</small>
           </label>
 
           <label className="integration-detail-v2-field">
