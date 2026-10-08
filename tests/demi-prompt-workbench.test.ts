@@ -5,7 +5,7 @@ import {
   conversationGuidance,
   needsFirstVisitGuidance,
 } from "../lib/assistant/conversation-guidance";
-import { validPrompt } from "../lib/assistant/prompt-workbench";
+import { isActiveStudentPersona, isFirstVisitPersona, testPersonaLabel, validPrompt } from "../lib/assistant/prompt-workbench";
 
 // Load server modules with explicit fakes for external boundaries. No network or real DB.
 function serverModule<T>(path: string, dependencies: Record<string, unknown>) {
@@ -133,6 +133,47 @@ afterEach(() => {
 });
 
 describe("Demi prompt workbench", () => {
+  it("builds isolated lifecycle fixtures for conversational UAT", () => {
+    const mod = serverModule<typeof import("../lib/assistant/test-simulation")>(
+      "lib/assistant/test-simulation.ts",
+      {
+        "./action-tools": { isExplicitAssistantConfirmation: vi.fn() },
+        "./prompt-workbench": { isActiveStudentPersona, isFirstVisitPersona },
+      },
+    );
+    const pending = mod.createTestSimulation("trial_pending_reserved");
+    const noShow = mod.createTestSimulation("trial_no_show");
+    const attended = mod.createTestSimulation("trial_attended");
+    const active = mod.createTestSimulation("student_reserved");
+    const former = mod.createTestSimulation("former_student");
+    const unknown = mod.createTestSimulation("unresolved_identity");
+
+    expect(mod.simulatedReadTool(pending, "get_student_package_status")).toMatchObject({
+      student_state: { category: "trial_pending" },
+    });
+    expect(mod.simulatedReadTool(noShow, "get_student_package_status")).toMatchObject({
+      student_state: { category: "trial_no_show" },
+    });
+    expect(mod.simulatedReadTool(attended, "get_student_package_status")).toMatchObject({
+      student_state: { category: "trial_attended" },
+    });
+    expect(mod.simulatedReadTool(active, "get_student_reservations")).toMatchObject({
+      reservations: [{ reservation_ref: "reservation:test-student_reserved" }],
+    });
+    expect(mod.simulatedReadTool(former, "get_student_package_status")).toMatchObject({
+      student_state: { category: "former_student" },
+      current_package: null,
+    });
+    expect(mod.simulatedReadTool(unknown, "get_student_package_status")).toMatchObject({
+      ok: false,
+      error: "identity_required",
+    });
+    expect(isFirstVisitPersona("trial_cancelled")).toBe(true);
+    expect(isActiveStudentPersona("student_reserved")).toBe(true);
+    expect(testPersonaLabel("unresolved_identity")).toContain("identidad resuelta");
+  });
+
+
   it("validates empty and oversized prompts", () => {
     expect(validPrompt(" ")).toBe(false);
     expect(validPrompt("x".repeat(24001))).toBe(false);

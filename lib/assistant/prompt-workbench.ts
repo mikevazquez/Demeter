@@ -8,7 +8,48 @@ export type PromptVersion = {
   created_at: string;
 };
 
-export type TestPersona = "prospect" | "student";
+export const TEST_PERSONAS = [
+  "prospect",
+  "trial_pending_reserved",
+  "trial_cancelled",
+  "trial_no_show",
+  "trial_attended",
+  "student",
+  "student_reserved",
+  "former_student",
+  "unresolved_identity",
+] as const;
+
+export type TestPersona = (typeof TEST_PERSONAS)[number];
+
+export function isTestPersona(value: unknown): value is TestPersona {
+  return typeof value === "string" && TEST_PERSONAS.includes(value as TestPersona);
+}
+
+export function testPersonaLabel(persona: TestPersona): string {
+  const labels: Record<TestPersona, string> = {
+    prospect: "prospecto nuevo",
+    trial_pending_reserved: "persona con prueba pendiente y reserva ficticia",
+    trial_cancelled: "persona con prueba cancelada",
+    trial_no_show: "persona con ausencia a prueba",
+    trial_attended: "persona que ya asistió a su prueba",
+    student: "alumna activa con paquete ficticio de 8 clases",
+    student_reserved: "alumna activa con paquete y reserva ficticios",
+    former_student: "exalumna sin paquete activo",
+    unresolved_identity: "persona sin identidad resuelta",
+  };
+  return labels[persona];
+}
+
+export function isFirstVisitPersona(persona: TestPersona): boolean {
+  return ["prospect", "trial_pending_reserved", "trial_cancelled", "trial_no_show"].includes(
+    persona,
+  );
+}
+
+export function isActiveStudentPersona(persona: TestPersona): boolean {
+  return persona === "student" || persona === "student_reserved";
+}
 
 export function validPrompt(value: unknown): value is string {
   return typeof value === "string" && value.trim().length > 0 && value.length <= MAX_PROMPT_LENGTH;

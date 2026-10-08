@@ -58,3 +58,12 @@ Ejecutar UAT con acciones simuladas y entorno aislado. Validar fuentes faltantes
 - Al elegir horario, Demi pidió el nombre completo; después presentó resumen y pidió confirmación. Se corrigió la simulación para representar el nombre pendiente de un prospecto nuevo.
 - Todas las acciones de ese recorrido ocurren en la simulación de Sandbox. No se crea una reserva comercial ni se genera o valida un pago real; no se envían mensajes a clientes.
 - UAT aún pendiente: probar más consultas y acciones de alumnas activas; exalumnas; pruebas canceladas/no-show; exclusiones de elegibilidad; cancelación a tiempo y tardía; reglas de pago/prepago. El banco actual solo ofrece los perfiles de prospecto nuevo y alumna con paquete ficticio, y no modela esos estados ni la elegibilidad real. Se requiere ampliar el banco o hacer UAT operativo controlado en Sandbox antes de afirmar cobertura. No aprobar ni promover hasta cerrar esos casos; “UAT aprobado” y “Autorizo promoción” siguen siendo pasos separados.
+
+## UAT conversacional adicional — 2026-10-08
+
+Se amplió el banco de pruebas con fixtures ficticios para prueba pendiente con reserva, prueba cancelada/no-show/asistida, alumna activa con reserva, exalumna e identidad no resuelta. Todas las acciones siguen siendo simuladas; el perfil con reserva incluye una cita ficticia para probar consulta, cancelación y reagenda sin tocar reservas comerciales.
+
+Pruebas manuales previas en la pestaña Preview ya autenticada `demeterbueno-3mayhk3r0-demeter3.vercel.app/admin/integraciones/demi`: domicilio con rechazo explícito respetado; consulta fuera de catálogo respondida sin inventar la actividad ni la promoción; alumna ficticia sin reserva activa identificada correctamente al pedir cancelar. El Preview abierto mostraba “Modo Pilot” y no se verificó que correspondiera a la última compilación; sus respuestas no certifican la versión más reciente.
+
+Los perfiles nuevos requieren una nueva compilación Preview y todavía no cuentan con UAT conversacional de modelo. Después de desplegar esta rama, ejecutar y registrar: prueba pendiente con reserva (qué llevar, no duplicar), prueba cancelada/no-show (requisitos y prepago actuales), prueba asistida (continuación sin beneficio de primera visita), exalumna (sin asumir primer ingreso), identidad no resuelta (solo información pública) y cancelación/reagenda con reserva ficticia (consulta de reserva, motivo, confirmación y crédito simulado). No se deben ejecutar pagos, mensajes ni escrituras comerciales reales.
+

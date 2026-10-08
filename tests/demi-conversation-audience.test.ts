@@ -30,6 +30,18 @@ describe("Demi first visit audience", () => {
     ).toBe(false);
   });
 
+  it("covers trial lifecycle fixtures in the workbench without applying sales to attended or former students", () => {
+    for (const persona of ["trial_pending_reserved", "trial_cancelled", "trial_no_show"] as const) {
+      expect(needsFirstVisitGuidance({ testSimulation: { persona } })).toBe(true);
+    }
+    for (const persona of ["trial_attended", "student", "student_reserved", "former_student"] as const) {
+      expect(needsFirstVisitGuidance({ testSimulation: { persona } })).toBe(false);
+    }
+    expect(
+      conversationGuidance({ testSimulation: { persona: "unresolved_identity" } }),
+    ).toContain("Si la identidad no está resuelta");
+  });
+
   it("moves an explicit first booking request to real class options before collecting the name", () => {
     const guidance = conversationGuidance({ crmContactId: "contact" });
     expect(guidance).toContain("no respondas pidiendo únicamente su nombre");

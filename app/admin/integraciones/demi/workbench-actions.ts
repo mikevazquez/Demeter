@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { runAssistantTurn } from "@/lib/assistant/orchestrator";
-import { validPrompt, type TestPersona } from "@/lib/assistant/prompt-workbench";
+import { isFirstVisitPersona, isTestPersona, validPrompt, type TestPersona } from "@/lib/assistant/prompt-workbench";
 import {
   confirmSimulatedProspectName,
   createTestSimulation,
@@ -61,8 +61,7 @@ export async function testDemiPrompt(input: {
   if (!validPrompt(input.instructions)) return { ok: false as const, error: "invalid_prompt" };
   const message = String(input.message ?? "").trim();
   if (!message || message.length > 2000) return { ok: false as const, error: "invalid_message" };
-  if (input.persona !== "prospect" && input.persona !== "student")
-    return { ok: false as const, error: "request_failed" };
+  if (!isTestPersona(input.persona)) return { ok: false as const, error: "request_failed" };
   const { data: config, error: configError } = await supabase
     .from("assistant_configs")
     .select(
@@ -113,7 +112,7 @@ export async function testDemiPrompt(input: {
     conversationId = data.id;
   }
 
-  if (!input.improve && input.persona === "prospect") {
+  if (!input.improve && isFirstVisitPersona(input.persona)) {
     const [
       { data: trialPolicy, error: trialPolicyError },
       { data: bookingBehavior, error: bookingBehaviorError },

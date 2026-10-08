@@ -1,6 +1,7 @@
 import "server-only";
 
 import { conversationGuidance, needsFirstVisitGuidance } from "./conversation-guidance";
+import { testPersonaLabel } from "./prompt-workbench";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { estimateModelCostUsdMicros } from "./costs";
@@ -938,7 +939,7 @@ export async function runAssistantTurn(input: OrchestratorInput) {
         "Las reglas comerciales, de inscripción, prueba, no show, reservas, precios y pagos viven en Studio Flow. Consúltalas con las herramientas disponibles y respeta sus resultados; nunca inventes ni mantengas reglas paralelas.",
         "Cuando expliques una inscripción configurada con 365 días, exprésala de forma natural como vigencia anual o vigencia de un año; no digas 365 días.",
         input.testSimulation
-          ? `MODO PRUEBA: la persona representa ${input.testSimulation.persona === "student" ? "una alumna con un paquete ficticio de 8 clases" : "un prospecto nuevo"}. La identidad y sus datos personales son ficticios. Los horarios, catálogo y precios sí se consultan en Studio Flow. Todas las acciones se simulan; no envías mensajes, no cambias reservas, pagos ni créditos reales. Sigue la conversación naturalmente sin repetir que es simulación en cada respuesta. Las herramientas indican qué casos no se pueden simular y debes reconocer esa limitación.`
+          ? `MODO PRUEBA: la persona representa ${testPersonaLabel(input.testSimulation.persona)}. La identidad y sus datos personales son ficticios. Los horarios, catálogo y precios sí se consultan en Studio Flow. Todas las acciones se simulan; no envías mensajes, no cambias reservas, pagos ni créditos reales. Sigue la conversación naturalmente sin repetir que es simulación en cada respuesta. Las herramientas indican qué casos no se pueden simular y debes reconocer esa limitación.`
           : input.studentId
             ? input.studentCategory
               ? `El teléfono coincide con una ficha. Studio Flow consultó su etapa actual al recibir este mensaje: ${input.studentCategory}. Usa esa etapa para tratarla como prueba pendiente/asistida/cancelada/no show, alumna o exalumna. Para condiciones de reserva, inscripción, precio o pago, consulta las reglas y opciones comerciales vigentes de Studio Flow.`

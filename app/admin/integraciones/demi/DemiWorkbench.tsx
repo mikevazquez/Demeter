@@ -510,7 +510,14 @@ export default function DemiWorkbench({
                 }}
               >
                 <option value="prospect">🌱 Prospecto nuevo</option>
+                <option value="trial_pending_reserved">🗓️ Prueba pendiente con reserva</option>
+                <option value="trial_cancelled">↩️ Prueba cancelada</option>
+                <option value="trial_no_show">⏳ Prueba con ausencia</option>
+                <option value="trial_attended">✅ Prueba ya asistida</option>
                 <option value="student">🎓 Alumna con paquete ficticio</option>
+                <option value="student_reserved">📅 Alumna activa con reserva</option>
+                <option value="former_student">🌿 Exalumna</option>
+                <option value="unresolved_identity">🔒 Identidad no resuelta</option>
               </select>
             </label>
             <button type="button" onClick={clearTest} disabled={busy}>
