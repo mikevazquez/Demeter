@@ -79,7 +79,9 @@ describe("Demi Meta Inbox multichannel contract", () => {
     expect(trial).toContain('"service_prepare_trial_transfer"');
     expect(trial).toContain('"receipt_validation_failed"');
     expect(trial).not.toContain('"service_activate_trial_transfer_receipt"');
-    expect(trial).not.toContain('"assistant_confirm_trial_booking"');
+    expect(trial).toContain('"assistant_confirm_trial_booking"');
+    expect(trial).toContain('booking.payment_pending === true');
+    expect(trial).toContain("la reserva puede ser revocada");
   });
 
   it("stores Meta receipts privately and does not trust arbitrary attachment URLs", () => {
