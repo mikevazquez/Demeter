@@ -61,7 +61,7 @@ describe("Demi Meta Inbox multichannel contract", () => {
   it("limits Meta pilot actions to first-class transfer preparation", () => {
     expect(orchestrator).toContain('new Set(["prepare_booking"])');
     expect(orchestrator).toContain("metaProspectBookingEnabled");
-    expect(orchestrator).toContain("metaProspectBookingTools.has(tool.name)");
+    expect(orchestrator).toContain("metaProspectBookingTools.has(toolName)");
     expect(orchestrator).toContain("permittedMetaAction");
     expect(orchestrator).toContain('resultObject.status === "payment_offer"');
   });
