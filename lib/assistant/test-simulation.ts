@@ -115,6 +115,12 @@ export async function simulateAssistantAction(
     state.pending = null;
     if (tool === "execute_booking") {
       if (state.persona === "prospect" && pending.summary.payment_before_booking === true) {
+        const { data: transferSettings } = await input.supabase
+          .from("studio_bank_transfer_settings")
+          .select("bank_name,account_holder,clabe,account_number,card_number,instructions")
+          .eq("studio_id", input.studio.id)
+          .eq("enabled", true)
+          .maybeSingle();
         return result({
           ok: true,
           status: "payment_required",
@@ -122,6 +128,7 @@ export async function simulateAssistantAction(
           payment_required: true,
           amount_minor: pending.summary.amount_minor,
           currency: pending.summary.currency,
+          bank_details: transferSettings ?? null,
           summary: pending.summary,
         });
       }
