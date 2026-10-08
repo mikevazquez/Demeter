@@ -9,7 +9,7 @@ import { getAdminContext } from "@/lib/auth/admin-context";
 function safeCode(error: unknown) {
   const message = error instanceof Error ? error.message : "";
   const match = message.match(
-    /(meta_page_access_token_invalid|meta_page_id_invalid|meta_instagram_access_token_invalid|meta_instagram_user_id_invalid|meta_graph_api_version_invalid|meta_app_secret_invalid|meta_verify_token_invalid|meta_inbox_not_configured|meta_instagram_pilot_contact_invalid|meta_messenger_pilot_contact_invalid|forbidden)/,
+    /(meta_page_access_token_invalid|meta_page_id_invalid|meta_instagram_access_token_invalid|meta_instagram_user_id_invalid|meta_graph_api_version_invalid|meta_app_secret_invalid|meta_verify_token_invalid|meta_page_credentials_incomplete|meta_instagram_credentials_incomplete|meta_channel_credentials_required|meta_inbox_not_configured|meta_instagram_pilot_contact_invalid|meta_messenger_pilot_contact_invalid|forbidden)/,
   );
   return match?.[1] ?? "save_failed";
 }
@@ -24,12 +24,8 @@ export async function saveMetaInboxConnection(formData: FormData) {
   const verifyToken = String(formData.get("verify_token") ?? "").trim();
 
   if (
-    !pageAccessToken ||
-    !pageId ||
-    !instagramAccessToken ||
-    !instagramUserId ||
     !graphApiVersion ||
-    !appSecret
+    ((!pageAccessToken || !pageId) && (!instagramAccessToken || !instagramUserId))
   ) {
     redirect("/admin/integraciones/meta-inbox?connection=error&code=required_fields");
   }
