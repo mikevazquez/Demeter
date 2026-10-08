@@ -678,7 +678,7 @@ describe("Demi shared commercial price", () => {
                 : [],
           error: null,
         };
-        const chain: any = {
+        const chain: Record<string, unknown> = {
           select: () => chain,
           eq: (key: string, value: string) => {
             if (key === "studio_id") scopes.push(value);
@@ -696,7 +696,7 @@ describe("Demi shared commercial price", () => {
       {
         supabase,
         studio: { id: "studio", name: "UAT", timezone: "America/Mexico_City", currency: "MXN" },
-      } as any,
+      } as unknown as import("../lib/assistant/read-tools").AssistantToolContext,
       { session_ref: `session:${sessionId}` },
     );
     expect(result).toMatchObject({

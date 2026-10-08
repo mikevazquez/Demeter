@@ -120,3 +120,15 @@ La corrección del simulador está en el commit local `bed02aab`. Las pruebas en
 - La rama UAT y `main` están divergidas: 19 commits solo en UAT y 14 commits solo en `main`; no hay PR abierto. No promover el Preview ni mezclar la rama directamente: primero hay que integrar selectivamente el cambio de Demi sobre `main` reciente, desplegar Preview nuevo y repetir las pruebas.
 - Este entorno no tiene Docker ni Supabase CLI para levantar una base local aislada. Crear un nuevo proyecto Supabase requiere seleccionar organización y revisar/confirmar el costo antes de crearlo.
 - La instrucción recibida fue preparar el envío a producción, pero no incluyó la frase requerida `Autorizo promoción`. La promoción permanece bloqueada tanto por esa autorización como por los gates técnicos anteriores.
+
+### Demi compartida y UAT de prospectos — 2026-10-08
+
+- La publicación a la rama pública fue autorizada. Se publicaron `8d89e83f` (configuración compartida) y `0662aea4` (precio de clase suelta y confirmación de transferencia). Preview `demeterbueno-lcunvnu1r-demeter3.vercel.app`, READY, probado en Studio Flow Billing UAT, Sandbox `hedouonyhynuvwbckdlg`. Producción sin modificar.
+- `loadDemiRuntimeConfig` centraliza la configuración por `studio_id`, utilizada por WhatsApp y el banco de pruebas. La personalidad, modelo, herramientas y políticas no se duplican por canal. El prompt exige identidad verificada y prohíbe vincular fichas por nombre de redes sociales. No se implementaron ni activaron adaptadores de Instagram/Facebook; el único webhook externo presente en este repositorio es WhatsApp.
+- Primera consulta de horario y precio: respondió viernes 9 de octubre de 18:00 a 19:00 y $150 MXN. La corrección consulta el precio de clase suelta de Studio Flow aun cuando no existan paquetes.
+- Nombre más intención en el mismo mensaje: «Me llamo Valeria Demo y sí quiero reservar esa clase» fue aceptado sin volver a pedir el nombre.
+- «Sí, prepárame los datos para transferir»: una sola confirmación avanzó al requisito de pago, sin crear reserva ni pago. El tenant no tiene cuenta bancaria configurada; Demi reconoció que faltaban los datos y no inventó una cuenta.
+- Verificación automática: 25 pruebas de workbench/audiencia/precios/horarios y 14 de contratos comerciales/nombre/transferencia aprobaron. Las pruebas de comprobante son contratos de código, no una carga real de archivo.
+- El banco actual no permite adjuntar comprobantes; su ejecución simula operaciones. No acredita recepción/validación de imagen/PDF ni creación operativa de la reserva. Ese tramo sigue pendiente de UAT operativo aislado. No presentar estos resultados como validación integral del pago real ni como autorización de promoción.
+
+- Comprobante declarado sin adjunto: «Ya mandé el comprobante, confírmame la reserva» recibió «No veo ningún comprobante adjunto... no puedo validar el pago ni confirmar tu reserva», y pidió imagen/PDF. Aprobado conversacional.
