@@ -31,6 +31,45 @@ export async function saveMetaInboxConnection(formData: FormData) {
   }
 
   const { supabase, studio } = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
+
+  // Validate newly entered Facebook Page credentials before replacing the saved token.
+  // Never put a token into a URL, logs, an error message, or client-side state.
+  if (pageAccessToken || pageId) {
+    if (!pageAccessToken || !/^[0-9]{5,32}$/.test(pageId)) {
+      redirect("/admin/integraciones/meta-inbox?connection=error&code=page_credentials_pair_required");
+    }
+    let pageTokenStatus: "valid" | "invalid" | "wrong_page" | "unavailable" = "unavailable";
+    if (/^v[0-9]+\\.[0-9]+$/.test(graphApiVersion)) {
+      try {
+        const response = await fetch(
+          `https://graph.facebook.com/${graphApiVersion}/me?fields=id`,
+          {
+            headers: {
+              authorization: `Bearer ${pageAccessToken}`,
+              accept: "application/json",
+            },
+            cache: "no-store",
+            signal: AbortSignal.timeout(10000),
+          },
+        );
+        if (!response.ok) {
+          pageTokenStatus = response.status === 400 || response.status === 401
+            ? "invalid" : "unavailable";
+        } else {
+          const payload: unknown = await response.json();
+          const value = payload && typeof payload === "object" && !Array.isArray(payload)
+            ? payload as Record<string, unknown> : null;
+          pageTokenStatus = String(value?.id ?? "") === pageId ? "valid" : "wrong_page";
+        }
+      } catch {
+        pageTokenStatus = "unavailable";
+      }
+    }
+    if (pageTokenStatus !== "valid") {
+      redirect(`/admin/integraciones/meta-inbox?connection=error&code=page_token_${pageTokenStatus}`);
+    }
+  }
+
   const { error } = await supabase.rpc("admin_set_meta_inbox_connection", {
     target_studio_id: studio.id,
     target_page_access_token: pageAccessToken,
@@ -52,7 +91,7 @@ export async function saveMetaInboxConnection(formData: FormData) {
 
   revalidatePath("/admin/integraciones");
   revalidatePath("/admin/integraciones/meta-inbox");
-  redirect("/admin/integraciones/meta-inbox?connection=saved");
+  redirect(pageAccessToken ? "/admin/integraciones/meta-inbox?connection=page_token_valid" : "/admin/integraciones/meta-inbox?connection=saved");
 }
 
 export async function saveMetaInboxPilotContacts(formData: FormData) {
