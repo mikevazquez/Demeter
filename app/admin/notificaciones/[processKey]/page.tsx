@@ -503,7 +503,11 @@ export default async function NotificationProcessPage({
                 template.name.startsWith(`demeter_${templateKey}_`),
               );
               const variables = supported ? META_WHATSAPP_TEMPLATE_PARAMETERS[templateKey] : [];
-              const suggestedName = `demeter_${templateKey}_${new Date().toISOString().slice(0, 10).replaceAll("-", "")}`;
+              const suggestedName = templateKey === "coach_roster_reminder"
+                ? "demeter_coach_lista_alumnas_v1"
+                : templateKey === "class_cancelled_coach"
+                  ? "demeter_coach_cancelacion_minimo_v1"
+                  : `demeter_${templateKey}_${new Date().toISOString().slice(0, 10).replaceAll("-", "")}`;
               const compatibleApproved = metaDiagnostics.templates.filter(
                 (template) =>
                   template.status === "APPROVED" &&
