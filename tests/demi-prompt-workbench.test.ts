@@ -245,13 +245,20 @@ describe("Demi prompt workbench", () => {
       reservation_confirmed: false,
       amount_minor: 15000,
       currency: "MXN",
+      bank_details: {
+        bank_name: "Banco de prueba",
+        account_holder: "Titular de prueba",
+        clabe: "CLABE_DE_PRUEBA",
+      },
       summary,
     });
 
     const result = await h.run(h.input);
 
-    expect(result.reply).toContain("requiere transferencia antes de reservar");
-    expect(result.reply).toContain("No se generó un pago ni se creó una reserva");
+    expect(result.reply).toContain("primero realiza la transferencia");
+    expect(result.reply).toContain("CLABE: CLABE_DE_PRUEBA");
+    expect(result.reply).toContain("Envíame el comprobante por este mismo chat");
+    expect(result.reply).toContain("no se generó un pago ni se creó una reserva");
     expect(result.reply).not.toContain("quedó confirmada");
     expect(h.simulate).toHaveBeenCalledOnce();
     expect(h.action).not.toHaveBeenCalled();
@@ -484,8 +491,10 @@ describe("Demi prompt workbench", () => {
 
   it("keeps a prospect trial reservation pending until transfer when Sandbox policy requires prepayment", async () => {
     const writes: string[] = [];
+    const reads: string[] = [];
     const supabase = {
       from: (table: string) => {
+        reads.push(table);
         const chain: Record<string, unknown> = {
           select: () => chain,
           eq: () => chain,
@@ -507,7 +516,18 @@ describe("Demi prompt workbench", () => {
                     starts_at: "2099-01-01T18:00:00Z",
                     ends_at: "2099-01-01T19:00:00Z",
                   }
-                : { name: "Pole Fitness", drop_in_price_minor: 15000 },
+                : table === "class_templates"
+                  ? { name: "Pole Fitness", drop_in_price_minor: 15000 }
+                  : table === "studio_bank_transfer_settings"
+                    ? {
+                        bank_name: "Banco de prueba",
+                        account_holder: "Titular de prueba",
+                        clabe: "CLABE_DE_PRUEBA",
+                        account_number: null,
+                        card_number: null,
+                        instructions: "Usa tu nombre como concepto.",
+                      }
+                    : null,
             error: null,
           }),
         };
@@ -553,8 +573,14 @@ describe("Demi prompt workbench", () => {
       simulated: true,
       status: "payment_required",
       reservation_confirmed: false,
+      bank_details: {
+        bank_name: "Banco de prueba",
+        account_holder: "Titular de prueba",
+        clabe: "CLABE_DE_PRUEBA",
+      },
     });
     expect(state.reservations).toHaveLength(0);
     expect(writes).toEqual([]);
+    expect(reads).toContain("studio_bank_transfer_settings");
   });
 });
