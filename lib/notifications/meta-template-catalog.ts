@@ -11,6 +11,7 @@ export const META_WHATSAPP_TEMPLATE_PARAMETERS = {
   ],
   waitlist_promoted: ["nombre", "disciplina", "fecha", "hora", "coach", "ubicacion"],
   class_reminder: ["nombre", "disciplina", "fecha", "hora", "coach", "ubicacion"],
+  coach_roster_reminder: ["coach", "clase", "fecha", "hora", "total", "alumnas"],
   class_cancelled_coach: [
     "coach",
     "clase",
