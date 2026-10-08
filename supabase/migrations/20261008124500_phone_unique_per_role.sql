@@ -856,5 +856,4 @@ begin
     'lifecycle_status',coalesce(v_crm.lifecycle_status,'trial')
   );
 end;
-$function$
-
+$function$;
