@@ -221,6 +221,7 @@ export function isExplicitAssistantConfirmation(value: string) {
   const accepted = new Set([
     "si",
     "si por favor",
+    "si confirmo",
     "confirmo",
     "confirmado",
     "confirma",

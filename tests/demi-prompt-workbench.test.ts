@@ -127,6 +127,20 @@ describe("Demi prompt workbench", () => {
     expect(validPrompt("x".repeat(24001))).toBe(false);
     expect(validPrompt("Instrucciones claras")).toBe(true);
   });
+  it("recognizes natural explicit booking confirmations without accepting questions", () => {
+    const mod = serverModule<typeof import("../lib/assistant/action-tools")>(
+      "lib/assistant/action-tools.ts",
+      {
+        "node:crypto": { createHash: vi.fn(), randomUUID: vi.fn() },
+        "./read-tools": { getCommercialOptions: vi.fn() },
+      },
+    );
+
+    expect(mod.isExplicitAssistantConfirmation("Sí, confirmo.")).toBe(true);
+    expect(mod.isExplicitAssistantConfirmation("Confirmo")).toBe(true);
+    expect(mod.isExplicitAssistantConfirmation("¿Sí, confirmo?")).toBe(false);
+    expect(mod.isExplicitAssistantConfirmation("Gracias")).toBe(false);
+  });
   it("skips automatic enrollment, payment selection and confirmation actions in test mode", async () => {
     const h = orchestratorHarness();
     vi.stubEnv("OPENAI_API_KEY", "test");
