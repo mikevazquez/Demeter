@@ -20,7 +20,8 @@ function object(value: unknown): JsonObject {
 }
 
 function affirmative(value: string) {
-  return /^(?:s[ií]|claro|ok|va|dale|adelante|por favor|m[aá]ndame(?:los)?|env[ií]ame(?:los)?)(?:\b|[,.! ])/i.test(value.trim());
+  const normalized = value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase();
+  return /^(?:si|claro|ok|va|dale|adelante|por favor|mandame(?:los)?|enviame(?:los)?)(?:$|[,.!?\s])/i.test(normalized);
 }
 
 function money(amountMinor: number, currency: string) {
