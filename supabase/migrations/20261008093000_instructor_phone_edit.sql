@@ -20,12 +20,12 @@ begin
   elsif exists(select 1 from public.person_contacts
                where studio_id=v_studio_id and person_id=v_person_id and kind='phone') then
     update public.person_contacts
-    set value=v_phone,updated_at=now()
+    set value='+'||v_phone,updated_at=now()
     where id=(select id from public.person_contacts
               where studio_id=v_studio_id and person_id=v_person_id and kind='phone'
               order by is_primary desc,created_at limit 1);
   else
     insert into public.person_contacts(studio_id,person_id,kind,value,is_primary)
-    values(v_studio_id,v_person_id,'phone',v_phone,true);
+    values(v_studio_id,v_person_id,'phone','+'||v_phone,true);
   end if;
 end $$;
