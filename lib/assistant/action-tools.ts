@@ -618,6 +618,10 @@ async function getDemiTrialPrepaymentRequirement(ctx: AssistantActionToolContext
   };
 }
 
+function isSessionBookableNow(session: { status: string; starts_at: string }, now = Date.now()) {
+  return session.status === "scheduled" && new Date(session.starts_at).getTime() > now + 30 * 60_000;
+}
+
 async function prepareBooking(ctx: AssistantActionToolContext, args: PrepareBookingArgs) {
   if (ctx.identityNeedsName === true && !ctx.studentId) {
     return {
@@ -636,6 +640,9 @@ async function prepareBooking(ctx: AssistantActionToolContext, args: PrepareBook
   const sessionInfo = await getSessionSummary(ctx, sessionId);
   if (!sessionInfo) {
     return { ok: false, error: "session_not_found" };
+  }
+  if (!isSessionBookableNow(sessionInfo.session)) {
+    return { ok: false, error: "booking_not_eligible", ...safeBookingReason("session_not_bookable") };
   }
 
   const studentId = ctx.studentId;
@@ -1105,6 +1112,9 @@ async function executeBooking(ctx: AssistantActionToolContext, args: ExecuteBook
   const sessionInfo = await getSessionSummary(ctx, sessionId);
   if (!sessionInfo) {
     return { ok: false, error: "session_not_found" };
+  }
+  if (!isSessionBookableNow(sessionInfo.session)) {
+    return { ok: false, error: "booking_not_eligible", ...safeBookingReason("session_not_bookable") };
   }
   const resourceId = String(payload.resource_id ?? "") || null;
   const resourceLabel = String(payload.resource_label ?? "") || null;
