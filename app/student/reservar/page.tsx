@@ -2,7 +2,8 @@ import Link from "next/link";
 
 import {
   bookingReasonCopy,
-  getStudentStudioContext,
+  bookingReasonCopyForStudent,
+  getStudentPortalContext,
   localDateKey,
   type StudentSession,
 } from "@/lib/student/portal";
@@ -110,12 +111,12 @@ function statusClass(session: StudentSession, waitlisted = false) {
   return "border-amber-400/25 bg-amber-400/[0.08] text-amber-200";
 }
 
-function statusCopy(session: StudentSession, waitlisted = false) {
+function statusCopy(session: StudentSession, waitlisted = false, unavailableCopy?: string) {
   if (session.status === "cancelled") return "Cancelada";
   if (session.is_reserved) return "Ya reservada";
   if (waitlisted) return "En lista de espera";
   if (session.eligibility?.eligible) return "Disponible";
-  return bookingReasonCopy(session.eligibility?.reason_code);
+  return unavailableCopy ?? bookingReasonCopy(session.eligibility?.reason_code);
 }
 
 export default async function StudentReservePage({
@@ -126,7 +127,7 @@ export default async function StudentReservePage({
   const query = await searchParams;
   const rewardMode = query.credit === "reward";
   const rewardSuffix = rewardMode ? "&credit=reward" : "";
-  const { supabase, studio, membership } = await getStudentStudioContext();
+  const { supabase, studio, membership, snapshot } = await getStudentPortalContext();
 
   const today = localDateKey(new Date(), studio.timezone);
   const requestedDate = safeDate(query.date, today);
@@ -389,6 +390,12 @@ export default async function StudentReservePage({
               const style = activityStyleMap.get(session.activity);
               const activityColor = style?.color ?? "#FF0A8A";
               const dropInPriceMinor = style?.dropInPriceMinor ?? null;
+              const classDate = localDateKey(new Date(session.starts_at), studio.timezone);
+              const eligibilityCopy = bookingReasonCopyForStudent(
+                session.eligibility?.reason_code,
+                snapshot.acquisitions,
+                classDate,
+              );
               const canBuySingleClass =
                 !cancelled &&
                 !reserved &&
@@ -447,7 +454,7 @@ export default async function StudentReservePage({
                           waitlisted,
                         )}`}
                       >
-                        {statusCopy(session, waitlisted)}
+                        {statusCopy(session, waitlisted, eligibilityCopy)}
                       </span>
                       <span aria-hidden="true" className="text-xl text-zinc-500">
                         ›
@@ -469,7 +476,7 @@ export default async function StudentReservePage({
                       <div>
                         <div>
                           <p className="text-[11px] font-semibold text-amber-100">
-                            Esta clase no está incluida en tu paquete
+                            {eligibilityCopy}
                           </p>
                           <p className="mt-0.5 text-[10px] text-zinc-500">
                             Clase suelta ·{" "}

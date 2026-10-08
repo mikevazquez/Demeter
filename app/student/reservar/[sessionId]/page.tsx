@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import {
-  bookingReasonCopy,
+  bookingReasonCopyForStudent,
   formatDateTime,
   formatMoney,
   getStudentPortalContext,
@@ -16,7 +16,12 @@ import PurchaseSingleClassButton from "../PurchaseSingleClassButton";
 import WaitlistControl from "../WaitlistControl";
 import { BookingRestrictionCard } from "../BookingRestrictionCard";
 
-const DROP_IN_REASONS = new Set(["no_active_product", "outside_product", "no_credits"]);
+const DROP_IN_REASONS = new Set([
+  "no_active_product",
+  "outside_product",
+  "outside_product_schedule",
+  "no_credits",
+]);
 
 type StudentWaitlistItem = {
   session_id: string;
@@ -45,7 +50,7 @@ export default async function StudentSessionDetailPage({
   params: Promise<{ sessionId: string }>;
   searchParams: Promise<{ date?: string; credit?: string }>;
 }) {
-  const [{ sessionId }, query, { supabase, studio, membership }] = await Promise.all([
+  const [{ sessionId }, query, { supabase, studio, membership, snapshot }] = await Promise.all([
     params,
     searchParams,
     getStudentPortalContext(),
@@ -86,6 +91,11 @@ export default async function StudentSessionDetailPage({
     reason === "enrollment_required" &&
     (enrollmentMode === "single_class_booking" || enrollmentMode === "single_class_next_purchase");
   const sessionDate = localDateKey(new Date(session.starts_at), studio.timezone);
+  const eligibilityCopy = bookingReasonCopyForStudent(
+    reason,
+    snapshot.acquisitions,
+    sessionDate,
+  );
   const returnDate =
     query.date && /^\d{4}-\d{2}-\d{2}$/.test(query.date) ? query.date : sessionDate;
   const showDropIn =
@@ -270,7 +280,7 @@ export default async function StudentSessionDetailPage({
               returnTo={`/student/reservar/${session.session_id}?date=${returnDate}${rewardSuffix}`}
             />
           ) : (
-            <p className="text-sm font-semibold text-amber-100">{bookingReasonCopy(reason)}</p>
+            <p className="text-sm font-semibold text-amber-100">{eligibilityCopy}</p>
           )}
           {showDropIn ? (
             <p className="mt-2 text-xs leading-5 text-zinc-400">
