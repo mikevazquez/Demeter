@@ -336,7 +336,8 @@ export async function POST(request: Request) {
     return json({ error: "receiver_not_configured" }, 503);
   }
 
-  const rawBody = await request.text();
+  const rawBytes = Buffer.from(await request.arrayBuffer());
+  const rawBody = rawBytes.toString("utf8");
   let webhookConfig;
   try {
     webhookConfig = await loadMetaInboxWebhookConfig(supabase, studioId);
@@ -351,7 +352,7 @@ export async function POST(request: Request) {
   if (
     !verifyMetaInboxWebhookSignature(
       webhookConfig.appSecret,
-      rawBody,
+      rawBytes,
       request.headers.get("x-hub-signature-256"),
     )
   ) {
