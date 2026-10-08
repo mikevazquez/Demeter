@@ -1206,7 +1206,7 @@ async function executeBooking(ctx: AssistantActionToolContext, args: ExecuteBook
               error: "prospect_phone_required",
               reason_code: "phone_required",
               reason_message:
-                "Para continuar con tu primera clase necesito un número de celular con lada. Compártelo aquí; no confirmaré tu lugar hasta completar el proceso de pago.",
+                "Para continuar con tu primera clase necesito un número de celular de 10 dígitos. Compártelo aquí; no confirmaré tu lugar hasta completar el proceso de pago.",
             };
           }
           if (!ensureError && ensured?.reason_code === "phone_ambiguous") {
