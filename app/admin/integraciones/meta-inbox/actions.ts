@@ -38,8 +38,17 @@ export async function saveMetaInboxConnection(formData: FormData) {
     if (!pageAccessToken || !/^[0-9]{5,32}$/.test(pageId)) {
       redirect("/admin/integraciones/meta-inbox?connection=error&code=page_credentials_pair_required");
     }
-    let pageTokenStatus: "valid" | "invalid" | "wrong_page" | "unavailable" = "unavailable";
-    if (/^v[0-9]+\.[0-9]+$/.test(graphApiVersion)) {
+    type PageTokenStatus =
+      | "valid" | "invalid" | "wrong_page" | "unavailable" | "expired"
+      | "malformed" | "permissions" | "paste_format";
+    let pageTokenStatus: PageTokenStatus = "unavailable";
+
+    // Catch common copy/paste errors locally; never return or log the token.
+    if (/^(?:Bearer\\s+|access_token\\s*=|https?:\\/\\/|["'])/i.test(pageAccessToken)
+      || /\\s/.test(pageAccessToken)
+      || /["']$/.test(pageAccessToken)) {
+      pageTokenStatus = "paste_format";
+    } else if (/^v[0-9]+\\.[0-9]+$/.test(graphApiVersion)) {
       try {
         const response = await fetch(
           `https://graph.facebook.com/${graphApiVersion}/me?fields=id`,
@@ -52,14 +61,33 @@ export async function saveMetaInboxConnection(formData: FormData) {
             signal: AbortSignal.timeout(10000),
           },
         );
-        if (!response.ok) {
-          pageTokenStatus = response.status === 400 || response.status === 401
-            ? "invalid" : "unavailable";
-        } else {
-          const payload: unknown = await response.json();
-          const value = payload && typeof payload === "object" && !Array.isArray(payload)
-            ? payload as Record<string, unknown> : null;
+        const responseData: unknown = await response.json().catch(() => null);
+        const value = responseData && typeof responseData === "object" && !Array.isArray(responseData)
+          ? responseData as Record<string, unknown> : null;
+
+        if (response.ok) {
           pageTokenStatus = String(value?.id ?? "") === pageId ? "valid" : "wrong_page";
+        } else {
+          const metaError = value?.error && typeof value.error === "object"
+            ? value.error as Record<string, unknown> : null;
+          const metaCode = typeof metaError?.code === "number" ? metaError.code : null;
+          const metaSubcode = typeof metaError?.error_subcode === "number"
+            ? metaError.error_subcode : null;
+          const metaMessage = typeof metaError?.message === "string" ? metaError.message : "";
+
+          if (metaCode === 190) {
+            pageTokenStatus = [458, 463, 467].includes(metaSubcode ?? -1)
+              ? "expired"
+              : /cannot parse access token/i.test(metaMessage)
+                ? "malformed"
+                : "invalid";
+          } else if (metaCode === 10 || metaCode === 200 || response.status === 403) {
+            pageTokenStatus = "permissions";
+          } else if (metaCode === 100 && /access.token/i.test(metaMessage)) {
+            pageTokenStatus = "malformed";
+          } else {
+            pageTokenStatus = "unavailable";
+          }
         }
       } catch {
         pageTokenStatus = "unavailable";
