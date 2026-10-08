@@ -58,16 +58,69 @@ describe("Demi Meta Inbox multichannel contract", () => {
     );
   });
 
-  it("keeps the first UAT read-only for sensitive customer actions", () => {
-    expect(orchestrator).toContain("isMetaInboxChannel");
-    expect(orchestrator).toContain("isMetaInboxChannel");
-    expect(orchestrator).toContain("? [...assistantReadToolDefinitions]");
-    expect(orchestrator).toContain(
-      ": [...assistantReadToolDefinitions, ...assistantActionToolDefinitions]",
-    );
-    expect(orchestrator).toContain(
-      "reservas, pagos y datos privados siguen por WhatsApp o por la app",
-    );
+  it("limits Meta pilot actions to first-class transfer preparation", () => {
+    expect(orchestrator).toContain('new Set(["prepare_booking"])');
+    expect(orchestrator).toContain("metaProspectBookingEnabled");
+    expect(orchestrator).toContain("metaProspectBookingTools.has(tool.name)");
+    expect(orchestrator).toContain("permittedMetaAction");
+    expect(orchestrator).toContain('resultObject.status === "payment_offer"');
+  });
+
+  it("offers transfer before personal data and never books on a bare receipt", () => {
+    const actionTools = source("lib/assistant/action-tools.ts");
+    const trial = source("lib/assistant/meta-trial-transfer.ts");
+    expect(actionTools).toContain('stage: "meta_offer_transfer"');
+    expect(actionTools).toContain('status: "payment_offer"');
+    expect(trial).toContain('stage: "meta_awaiting_receipt"');
+    expect(trial).toContain('stage: "meta_awaiting_name"');
+    expect(trial).toContain('stage: "meta_awaiting_phone"');
+    expect(trial).toContain('^[0-9]{10}
+
+  it("protects secrets in Vault and the admin UI", () => {
+    expect(migration).toContain("'meta_inbox_connection:' || target_studio_id::text");
+    expect(migration).toContain("vault.create_secret");
+    expect(migration).toContain("vault.update_secret");
+    expect(page).toContain('type="password"');
+    expect(page).toContain('name="page_access_token"');
+    expect(page).toContain('name="instagram_access_token"');
+    expect(page).toContain('name="app_secret"');
+  });
+
+  it("makes the integration discoverable in Studio Flow", () => {
+    expect(integrations).toContain('href="/admin/integraciones/meta-inbox"');
+    expect(integrations).toContain("Meta · Instagram + Facebook");
+  });
+
+  it("extends the assistant conversation channel without rewriting history", () => {
+    expect(migration).toContain("'instagram'");
+    expect(migration).toContain("'facebook_messenger'");
+    expect(migration).not.toContain("delete from public.assistant_conversations");
+  });
+
+  it("preserves demo/off privacy and pilot allowlists", () => {
+    expect(route).toContain("if (!runAssistant)");
+    expect(route).toContain('"assistant_mode_not_live"');
+    expect(route).toContain('liveMode === "pilot"');
+    expect(route).toContain("pilotContactIds[message.provider]");
+    expect(route).toContain('"pilot_contact_not_allowed"');
+  });
+});
+);
+    expect(trial).toContain('"assistant_ensure_trial_student"');
+    expect(trial).toContain('"service_prepare_trial_transfer"');
+    expect(trial).toContain('"receipt_validation_failed"');
+    expect(trial).not.toContain('"service_activate_trial_transfer_receipt"');
+    expect(trial).not.toContain('"assistant_confirm_trial_booking"');
+  });
+
+  it("stores Meta receipts privately and does not trust arbitrary attachment URLs", () => {
+    const trial = source("lib/assistant/meta-trial-transfer.ts");
+    expect(channel).toContain("downloadMetaInboxAttachment");
+    expect(channel).toContain('url.protocol !== "https:"');
+    expect(channel).toContain('redirect: "error"');
+    expect(trial).toContain('storage.from("transfer-receipts")');
+    expect(trial).toContain("receipt_amount_matches");
+    expect(route).toContain("continueMetaTrialTransfer");
   });
 
   it("protects secrets in Vault and the admin UI", () => {
