@@ -113,6 +113,32 @@ export async function testDemiPrompt(input: {
     conversationId = data.id;
   }
 
+  if (!input.improve && input.persona === "prospect") {
+    const [
+      { data: trialPolicy, error: trialPolicyError },
+      { data: bookingBehavior, error: bookingBehaviorError },
+    ] = await Promise.all([
+      supabase
+        .from("trial_booking_policies")
+        .select("require_payment_before_booking")
+        .eq("studio_id", studio.id)
+        .maybeSingle(),
+      supabase
+        .from("assistant_booking_behaviors")
+        .select("prospect_require_payment_before_booking")
+        .eq("studio_id", studio.id)
+        .maybeSingle(),
+    ]);
+
+    if (trialPolicyError || bookingBehaviorError) {
+      return { ok: false as const, error: "booking_policy_unavailable" };
+    }
+
+    state.paymentBeforeBooking =
+      trialPolicy?.require_payment_before_booking === true ||
+      bookingBehavior?.prospect_require_payment_before_booking === true;
+  }
+
   if (!input.improve) confirmSimulatedProspectName(state, message);
 
   // A lease prevents two browser tabs from executing the same simulated turn concurrently.
