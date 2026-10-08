@@ -183,6 +183,33 @@ describe("Demi prompt workbench", () => {
       ),
     ).toBe(true);
   });
+  it("executes a pending simulated action on one explicit confirmation", async () => {
+    const h = orchestratorHarness();
+    const summary = {
+      activity: "Pole Fitness",
+      date: "2099-01-01",
+      starts_at_local: "12:00",
+      ends_at_local: "13:00",
+    };
+    h.input.testSimulation!.pending = {
+      tool: "execute_booking",
+      summary,
+      preparedTurnId: "previous-turn",
+    };
+    h.simulate.mockResolvedValue({ ok: true, simulated: true, status: "executed", summary });
+
+    const result = await h.run(h.input);
+
+    expect(result.reply).toContain("Tu reserva de Pole Fitness quedó confirmada");
+    expect(h.simulate).toHaveBeenCalledOnce();
+    expect(h.simulate).toHaveBeenCalledWith(
+      expect.objectContaining({ turnId: "turn", currentUserMessage: "Sí, confirmo" }),
+      "execute_booking",
+      {},
+    );
+    expect(h.action).not.toHaveBeenCalled();
+    expect(h.writes).toEqual([]);
+  });
   it("does not create real human handoffs from a test reply", async () => {
     const h = orchestratorHarness();
     vi.stubEnv("OPENAI_API_KEY", "test");

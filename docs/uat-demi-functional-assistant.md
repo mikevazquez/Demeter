@@ -1,6 +1,6 @@
 # Demi: atención y conversión
 
-Estado: cambio local en rama feat/demi-commercial-lifecycle. Sin despliegue ni escritura en bases de datos. No es una validación de comportamiento del modelo en WhatsApp.
+Estado: Preview `84ad1e6` en estado READY, aislado a Studio Flow Sandbox. Los cambios de simulación documentados abajo están en validación local; todavía no se vuelven a desplegar. UAT parcial; no valida conversaciones reales de WhatsApp.
 
 ## Objetivo
 
@@ -46,12 +46,15 @@ Ejecutar UAT con acciones simuladas y entorno aislado. Validar fuentes faltantes
 
 ## Validación prepromoción
 
-- Catorce pruebas focalizadas de Demi aprobadas; typecheck aprobado; lint global sin errores y con 19 advertencias.
-- La suite completa queda en 805/887 aprobadas. Las mismas 82 pruebas fallan en la rama base `origin/main` (801/883); la comparación no encontró fallos nuevos y las cuatro pruebas añadidas pasan.
-- El formato global falla en 16 archivos que no pertenecen al diff de Demi; todos los archivos modificados por este cambio pasan Prettier.
-- El deployment de Preview `054a9b7` quedó `READY`. El build de Vercel completó compilación y TypeScript, y verificó aislamiento hacia Studio Flow Sandbox.
-- Acceso de Preview revalidado: el inicio de sesión llegó al selector, la selección de Demeter abrió Admin y una recarga conservó la sesión. El rebote anterior no se reprodujo; no se hizo cambio de código de autenticación, por lo que su causa original sigue sin confirmarse.
-- UAT en el banco de pruebas de Demi: una consulta de domicilio/interés en Pole Fitness devolvió la dirección configurada y tres horarios consultados; al responder “gracias”, Demi cerró con una cortesía breve sin insistir. Una petición directa de agendar consultó horarios reales y ofreció opciones.
-- Bloqueo de validación comercial: al seleccionar un horario, la prueba preparó la reserva sin pedir nombre. El flujo real sí tiene una validación `identityNeedsName`, pero el banco de pruebas no establece ese estado para su prospecto ficticio ni simula la captura del nombre. Por ello, este resultado no permite aprobar el flujo real de reserva; hay que corregir la simulación o validar ese caso mediante un recorrido aislado que cubra identidad.
-- Las pruebas conversacionales se ejecutaron en Preview/Sandbox y simularon acciones; no se creó una reserva comercial ni se envió ningún mensaje a clientes.
-- Antes de promover falta completar el UAT con modelo y herramientas en Preview, incluyendo identidad/nombre, confirmación de reserva y reglas de pago. Las pruebas automatizadas no verifican por sí solas reservas reales de extremo a extremo. UAT aprobado y autorización de promoción son pasos separados.
+- Catorce pruebas focalizadas de Demi aprobadas; typecheck aprobado; lint focalizado sin errores (una advertencia preexistente en `orchestrator.ts`).
+- La suite completa queda en 808/890 aprobadas. Las mismas 82 pruebas fallan en la rama base `origin/main`; la comparación no encontró fallos nuevos.
+- La verificación Prettier pasa en `orchestrator.ts` y `tests/demi-prompt-workbench.test.ts`. `action-tools.ts` tiene deriva de formato previa; el chequeo global tampoco está limpio.
+- El build de Vercel compiló, pasó TypeScript y verificó aislamiento hacia Studio Flow Sandbox.
+- Acceso validado: el login llegó al selector, la selección de Demeter abrió Admin y la sesión sobrevivió una recarga en Preview. El rebote anterior no se reprodujo; no hay evidencia para atribuirlo a un defecto persistente de autenticación.
+- UAT del banco de pruebas: una consulta de domicilio/interés en Pole Fitness devolvió la dirección configurada y horarios actuales; “gracias” recibió una cortesía breve sin insistencia. Una petición directa de agendar consultó horarios reales y ofreció opciones.
+- UAT del banco de pruebas: una alumna ficticia preguntó por créditos y vencimiento. Demi consultó el paquete simulado, reportó 8 créditos y dijo que no había fecha de vencimiento configurada, sin inventarla. También consultó horarios actuales y preparó una reserva simulada.
+- Se detectó que el modo simulación podía pedir dos confirmaciones para esa reserva: no aplicaba el encaminamiento determinista de confirmación que sí usa el flujo de WhatsApp. Se alineó el simulador con esa ruta y se añadió una prueba unitaria; falta validar el cambio en la siguiente Preview.
+- Al elegir horario, Demi pidió el nombre completo; después presentó resumen y pidió confirmación. Se corrigió la simulación para representar el nombre pendiente de un prospecto nuevo.
+- La respuesta “Sí, confirmo.” inicialmente no ejecutó la reserva simulada porque no estaba reconocida como confirmación explícita. Se agregó esa forma al validador y se verificó en Preview: Demi confirmó la reserva simulada correctamente.
+- Todas las acciones de ese recorrido ocurrieron en la simulación de Sandbox. No se creó una reserva comercial real ni se envió ningún mensaje a clientes.
+- UAT aún pendiente: probar más consultas y acciones de alumnas activas; exalumnas; pruebas canceladas/no-show; exclusiones de elegibilidad; cancelación a tiempo y tardía; reglas de pago/prepago. El banco actual solo ofrece los perfiles de prospecto nuevo y alumna con paquete ficticio, y no modela esos estados ni la elegibilidad real. Se requiere ampliar el banco o hacer UAT operativo controlado en Sandbox antes de afirmar cobertura. No aprobar ni promover hasta cerrar esos casos; “UAT aprobado” y “Autorizo promoción” siguen siendo pasos separados.

@@ -676,6 +676,43 @@ async function tryServerSideConfirmation(input: OrchestratorInput, trace: Assist
   };
 }
 
+async function trySimulatedConfirmation(input: OrchestratorInput, trace: AssistantTrace) {
+  const currentUserMessage =
+    [...input.history].reverse().find((message) => message.role === "user")?.content ?? "";
+  const pending = input.testSimulation?.pending;
+
+  if (!pending || !isExplicitAssistantConfirmation(currentUserMessage)) return null;
+  if (
+    ![
+      "execute_booking",
+      "execute_cancellation",
+      "execute_reschedule",
+      "execute_waitlist_join",
+      "execute_student_access_activation",
+    ].includes(pending.tool)
+  )
+    return null;
+
+  const result = await simulateAssistantAction(
+    {
+      state: input.testSimulation!,
+      supabase: input.supabase,
+      studio: input.studio,
+      turnId: input.turnId,
+      currentUserMessage,
+    },
+    pending.tool,
+    {},
+  );
+  const resultObject = asObject(result) ?? { ok: false, error: "invalid_tool_result" };
+  trace.toolCalls.push({
+    name: pending.tool,
+    status: resultObject.ok === false ? "blocked" : "executed",
+  });
+
+  return { reply: confirmationReply(pending.tool, resultObject), trace };
+}
+
 async function tryServerSidePostTrialEnrollmentMethod(
   input: OrchestratorInput,
   trace: AssistantTrace,
@@ -820,6 +857,11 @@ export async function runAssistantTurn(input: OrchestratorInput) {
 
     const serverConfirmation = await tryServerSideConfirmation(input, trace);
     if (serverConfirmation) return serverConfirmation;
+  }
+
+  if (input.testSimulation && !input.improvePrompt) {
+    const simulatedConfirmation = await trySimulatedConfirmation(input, trace);
+    if (simulatedConfirmation) return simulatedConfirmation;
   }
 
   const apiKey = process.env.OPENAI_API_KEY?.trim();
