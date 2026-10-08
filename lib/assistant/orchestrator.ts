@@ -1179,7 +1179,7 @@ export async function runAssistantTurn(input: OrchestratorInput) {
     // specifically exposed for this channel and this verified CRM lifecycle.
     const permittedMetaAction = !isMetaInboxChannel ||
       (metaProspectBookingEnabled && metaProspectBookingTools.has(toolName));
-    if ((!isReadTool && !isActionTool) || !permittedMetaAction || !callId) {
+    if ((!isReadTool && !isActionTool) || (isActionTool && !permittedMetaAction) || !callId) {
       trace.toolCalls.push({ name: toolName || "unknown", status: "blocked" });
       responseInput.push({
         type: "function_call_output",
