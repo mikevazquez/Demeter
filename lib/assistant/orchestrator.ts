@@ -1289,6 +1289,19 @@ export async function runAssistantTurn(input: OrchestratorInput) {
     });
 
     trace.toolCalls.push({ name: toolName, status: toolStatus });
+    if (
+      isMetaInboxChannel &&
+      toolName === "prepare_booking" &&
+      resultObject?.ok === true &&
+      resultObject.status === "payment_offer"
+    ) {
+      const price = formatMoney(resultObject.amount_minor, resultObject.currency) ?? "el precio indicado";
+      return {
+        reply: "Tu primera clase cuesta " + price +
+          ". Para reservarla necesitas realizar el pago primero. ¿Quieres que te mande los datos para transferir?",
+        trace,
+      };
+    }
     responseInput.push({
       type: "function_call_output",
       call_id: callId,
