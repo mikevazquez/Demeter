@@ -320,8 +320,14 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  // Operational diagnostics contain only delivery stages and counts, never message bodies,
+  // sender identifiers, access tokens, or signature values.
+  console.info("[demi-meta-inbox] incoming_post");
   const studioId = studioIdFromRequest(request);
-  if (!studioId) return json({ error: "invalid_studio" }, 400);
+  if (!studioId) {
+    console.warn("[demi-meta-inbox] invalid_studio");
+    return json({ error: "invalid_studio" }, 400);
+  }
 
   let supabase: ReturnType<typeof createServiceClient>;
   try {
@@ -337,7 +343,10 @@ export async function POST(request: Request) {
   } catch {
     return json({ error: "receiver_not_configured" }, 503);
   }
-  if (!webhookConfig) return json({ error: "receiver_not_configured" }, 503);
+  if (!webhookConfig) {
+    console.warn("[demi-meta-inbox] missing_webhook_config");
+    return json({ error: "receiver_not_configured" }, 503);
+  }
 
   if (
     !verifyMetaInboxWebhookSignature(
@@ -346,6 +355,7 @@ export async function POST(request: Request) {
       request.headers.get("x-hub-signature-256"),
     )
   ) {
+    console.warn("[demi-meta-inbox] invalid_signature");
     return json({ error: "invalid_signature" }, 401);
   }
 
@@ -357,6 +367,12 @@ export async function POST(request: Request) {
   }
 
   const messages = extractMetaInboxMessages(body);
+  console.info("[demi-meta-inbox] signature_valid", {
+    message_count: messages.length,
+    object_type: typeof (body as { object?: unknown })?.object === "string"
+      ? (body as { object: string }).object.slice(0, 24)
+      : "unknown",
+  });
   if (!messages.length) return json({ ok: true, accepted: true, messages: 0 });
 
   let runtimeContext;
@@ -372,6 +388,7 @@ export async function POST(request: Request) {
   const liveMode = String(runtimeContext.config.mode ?? "");
   const sendReplies = liveMode === "pilot" || liveMode === "active";
   const runAssistant = sendReplies || liveMode === "shadow";
+  console.info("[demi-meta-inbox] runtime_mode", { mode: liveMode, message_count: messages.length });
   let retryableFailure = false;
   const outcomes: JsonObject[] = [];
 
