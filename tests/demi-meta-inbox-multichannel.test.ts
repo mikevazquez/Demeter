@@ -74,38 +74,7 @@ describe("Demi Meta Inbox multichannel contract", () => {
     expect(trial).toContain('stage: "meta_awaiting_receipt"');
     expect(trial).toContain('stage: "meta_awaiting_name"');
     expect(trial).toContain('stage: "meta_awaiting_phone"');
-    expect(trial).toContain('^[0-9]{10}
-
-  it("protects secrets in Vault and the admin UI", () => {
-    expect(migration).toContain("'meta_inbox_connection:' || target_studio_id::text");
-    expect(migration).toContain("vault.create_secret");
-    expect(migration).toContain("vault.update_secret");
-    expect(page).toContain('type="password"');
-    expect(page).toContain('name="page_access_token"');
-    expect(page).toContain('name="instagram_access_token"');
-    expect(page).toContain('name="app_secret"');
-  });
-
-  it("makes the integration discoverable in Studio Flow", () => {
-    expect(integrations).toContain('href="/admin/integraciones/meta-inbox"');
-    expect(integrations).toContain("Meta · Instagram + Facebook");
-  });
-
-  it("extends the assistant conversation channel without rewriting history", () => {
-    expect(migration).toContain("'instagram'");
-    expect(migration).toContain("'facebook_messenger'");
-    expect(migration).not.toContain("delete from public.assistant_conversations");
-  });
-
-  it("preserves demo/off privacy and pilot allowlists", () => {
-    expect(route).toContain("if (!runAssistant)");
-    expect(route).toContain('"assistant_mode_not_live"');
-    expect(route).toContain('liveMode === "pilot"');
-    expect(route).toContain("pilotContactIds[message.provider]");
-    expect(route).toContain('"pilot_contact_not_allowed"');
-  });
-});
-);
+    expect(trial).toContain('^[0-9]{10}$');
     expect(trial).toContain('"assistant_ensure_trial_student"');
     expect(trial).toContain('"service_prepare_trial_transfer"');
     expect(trial).toContain('"receipt_validation_failed"');
