@@ -39,7 +39,7 @@ describe("Demi first visit audience", () => {
     }
     expect(
       conversationGuidance({ testSimulation: { persona: "unresolved_identity" } }),
-    ).toContain("Si la identidad no está resuelta");
+    ).toContain("no menciones simulaciones, perfiles de prueba");
   });
 
   it("moves an explicit first booking request to real class options before collecting the name", () => {

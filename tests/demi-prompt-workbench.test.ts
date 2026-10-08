@@ -190,6 +190,8 @@ describe("Demi prompt workbench", () => {
 
     expect(mod.isExplicitAssistantConfirmation("Sí, confirmo.")).toBe(true);
     expect(mod.isExplicitAssistantConfirmation("Confirmo")).toBe(true);
+    expect(mod.isExplicitAssistantConfirmation("Sí, cancélala.")).toBe(true);
+    expect(mod.isExplicitAssistantConfirmation("Sí, reagéndala.")).toBe(true);
     expect(mod.isExplicitAssistantConfirmation("¿Sí, confirmo?")).toBe(false);
     expect(mod.isExplicitAssistantConfirmation("Gracias")).toBe(false);
   });
