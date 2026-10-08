@@ -101,10 +101,10 @@ function parsePilotIds(value: unknown): Record<MetaInboxProvider, string[]> {
 function parseConfig(value: unknown): MetaInboxWebhookConfig | null {
   if (!isObject(value)) return null;
 
-  const pageAccessToken = safeText(value.page_access_token);
-  const pageId = safeText(value.page_id);
-  const instagramAccessToken = safeText(value.instagram_access_token);
-  const instagramUserId = safeText(value.instagram_user_id);
+  const pageAccessToken = safeText(value.page_access_token) ?? "";
+  const pageId = safeText(value.page_id) ?? "";
+  const instagramAccessToken = safeText(value.instagram_access_token) ?? "";
+  const instagramUserId = safeText(value.instagram_user_id) ?? "";
   const graphApiVersion = safeText(value.graph_api_version);
   const appSecret = safeText(value.app_secret);
   const verifyToken = safeText(value.verify_token);
