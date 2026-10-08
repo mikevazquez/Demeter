@@ -1,4 +1,5 @@
 import { nameFromExplicitReply } from "@/lib/assistant/meta-prospect-name";
+import { continueMetaTrialTransfer } from "@/lib/assistant/meta-trial-transfer";
 import { runAssistantTurn } from "@/lib/assistant/orchestrator";
 import { getStudentPackageStatus } from "@/lib/assistant/read-tools";
 import {
@@ -409,7 +410,7 @@ export async function POST(request: Request) {
   }
 
   for (const message of messages) {
-    if (!["text", "postback"].includes(message.messageType) || !message.text.trim()) {
+    if (!["text", "postback", "attachment"].includes(message.messageType) || !message.text.trim()) {
       outcomes.push({
         provider_message_id: message.providerMessageId,
         outcome: "unsupported_message_type",
@@ -581,9 +582,44 @@ export async function POST(request: Request) {
         content: item.content,
       }));
 
+    // Meta first-class payment is a deterministic state machine: no repeated
+    // confirmations, no name/phone until a receipt has actually arrived.
+    let deterministicReply: { reply: string; outcome: string } | null = null;
+    if (sendReplies) {
+      try {
+        deterministicReply = await continueMetaTrialTransfer({
+          supabase,
+          studioId,
+          conversationId,
+          crmContactId,
+          studentId,
+          provider: message.provider,
+          providerAccountId: message.providerAccountId,
+          providerContactId: message.providerContactId,
+          eventId: event.id,
+          message,
+          history,
+        });
+      } catch (error) {
+        retryableFailure = true;
+        await markEvent(supabase, studioId, event.id, {
+          processing_status: "error",
+          processing_result: { outcome: "meta_trial_payment_processing_failed" },
+          last_error_code: error instanceof Error ? error.message : "meta_trial_payment_processing_failed",
+        });
+        continue;
+      }
+    }
+    if (message.messageType === "attachment" && !deterministicReply) {
+      deterministicReply = {
+        reply: "Recibí tu archivo, pero no tengo una solicitud de transferencia activa para asociarlo. Dime qué primera clase quieres tomar y revisamos la disponibilidad.",
+        outcome: "meta_attachment_unmatched",
+      };
+    }
+
     // Record a full name only after the prospect explicitly answers Demi's
     // request. Never use a typed name to link or authenticate existing students.
-    if (!studentId && crmContactId) {
+    if (!deterministicReply && !studentId && crmContactId) {
       const { data: identity } = await supabase
         .from("assistant_channel_identities")
         .select("id,person_id,student_id,metadata")
@@ -627,7 +663,7 @@ export async function POST(request: Request) {
     // For a prospective first class, collect the required phone only after
     // Demi explicitly requested it. A phone supplied in chat is never proof of
     // ownership of an existing student account.
-    if (!studentId && crmContactId) {
+    if (!deterministicReply && !studentId && crmContactId) {
       const lastTwo = history.slice(-2);
       if (
         lastTwo.length === 2 &&
@@ -700,7 +736,9 @@ export async function POST(request: Request) {
 
     let assistantResult;
     try {
-      assistantResult = await runAssistantTurn({
+      assistantResult = deterministicReply
+        ? { reply: deterministicReply.reply, trace: { deterministic: deterministicReply.outcome } }
+        : await runAssistantTurn({
         supabase,
         studio: {
           id: runtimeContext.studio.id,
