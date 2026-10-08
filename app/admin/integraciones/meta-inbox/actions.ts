@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getAdminContext } from "@/lib/auth/admin-context";
+import { createServiceClient } from "@/lib/supabase/service";
 
 function safeCode(error: unknown) {
   const message = error instanceof Error ? error.message : "";
@@ -76,4 +77,66 @@ export async function saveMetaInboxPilotContacts(formData: FormData) {
 
   revalidatePath("/admin/integraciones/meta-inbox");
   redirect("/admin/integraciones/meta-inbox?pilot=saved");
+}
+
+
+// Credential diagnostic runs only by an authorized studio administrator. Secrets stay server-side.
+export async function diagnoseMetaInboxApp(formData: FormData) {
+  const appId = String(formData.get("app_id") ?? "").trim();
+  if (!/^[0-9]{5,32}$/.test(appId)) {
+    redirect("/admin/integraciones/meta-inbox?app_check=invalid_id");
+  }
+
+  const { studio } = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
+  let result: "valid" | "mismatch" | "not_configured" | "unavailable" = "unavailable";
+
+  try {
+    const service = createServiceClient();
+    const { data, error } = await service.rpc("service_get_meta_inbox_webhook_config", {
+      target_studio_id: studio.id,
+    });
+    const connection = data && typeof data === "object" && !Array.isArray(data)
+      ? (data as Record<string, unknown>)
+      : null;
+    const secret = typeof connection?.app_secret === "string" ? connection.app_secret.trim() : "";
+    const apiVersion = typeof connection?.graph_api_version === "string" ? connection.graph_api_version.trim() : "";
+
+    if (error || !secret || !/^v[0-9]+\.[0-9]+$/.test(apiVersion)) {
+      result = "not_configured";
+    } else {
+      // App access token: only send over HTTPS in an authorization header.
+      // Never return, persist, or log the Meta App Secret or resulting token.
+      const url = new URL(`https://graph.facebook.com/${apiVersion}/${appId}`);
+      url.searchParams.set("fields", "id,name");
+      const response = await fetch(url, {
+        method: "GET",
+        headers: {
+          authorization: `Bearer ${appId}|${secret}`,
+          accept: "application/json",
+        },
+        cache: "no-store",
+        signal: AbortSignal.timeout(10000),
+      });
+      const payload: unknown = await response.json().catch(() => null);
+      const value = payload && typeof payload === "object" && !Array.isArray(payload)
+        ? (payload as Record<string, unknown>)
+        : null;
+      const metaError = value?.error && typeof value.error === "object"
+        ? (value.error as Record<string, unknown>)
+        : null;
+      const errorCode = typeof metaError?.code === "number" ? metaError.code : null;
+
+      if (response.ok && String(value?.id ?? "") === appId) {
+        result = "valid";
+      } else if ((response.status === 400 || response.status === 401) && (errorCode === 190 || errorCode === 102)) {
+        result = "mismatch";
+      } else {
+        result = "unavailable";
+      }
+    }
+  } catch {
+    result = "unavailable";
+  }
+
+  redirect(`/admin/integraciones/meta-inbox?app_check=${result}`);
 }
