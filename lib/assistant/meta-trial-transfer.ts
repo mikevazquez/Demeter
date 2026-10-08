@@ -2,7 +2,6 @@ import "server-only";
 
 import { createHash } from "node:crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { nameFromExplicitReply } from "./meta-prospect-name";
 import { readTransferReceipt } from "./receipt-reader";
 import {
   downloadMetaInboxAttachment,
@@ -213,9 +212,18 @@ export async function continueMetaTrialTransfer(input: {
     };
   }
 
+  let combinedCellphone: string | null = null;
   if (stage === "meta_awaiting_name") {
-    const name = nameFromExplicitReply(input.history);
-    if (!name) return { reply: "¿Me compartes tu nombre completo, por favor?", outcome: "meta_trial_name_waiting" };
+    const raw = input.message.text.trim();
+    const parsed = /^(.+?)(?:\s*[,;\n]\s*|\s+(?:celular|tel[eé]fono|n[uú]mero)\s*:?\s*)([0-9][0-9\s()-]{8,16})$/iu.exec(raw);
+    const nameCandidate = parsed?.[1]?.trim().replace(/^(?:mi nombre es|soy|me llamo)\s+/i, "");
+    const digits = parsed?.[2]?.replace(/[\s()-]/g, "");
+    const name = nameCandidate && /^[\p{L}]+(?:[ '-][\p{L}]+){1,5}$/u.test(nameCandidate.trim())
+      ? nameCandidate.trim() : null;
+    if (!name || !digits || !/^[0-9]{10}$/.test(digits)) {
+      return { reply: "Compárteme tu nombre completo y celular de 10 dígitos en un solo mensaje, por favor. Por ejemplo: Ana López, 3312345678.", outcome: "meta_trial_contact_details_waiting" };
+    }
+    combinedCellphone = digits;
     const { data: identity, error: identityError } = await input.supabase
       .from("assistant_channel_identities")
       .select("id,person_id,student_id,metadata")
@@ -240,16 +248,14 @@ export async function continueMetaTrialTransfer(input: {
       }).eq("id", identity.id).eq("studio_id", input.studioId).is("student_id", null);
     if (metadataError) throw new Error("meta_trial_identity_update_failed");
     await updateStage(input.supabase, input.studioId, pending.id, {
-      ...payload, stage: "meta_awaiting_phone",
+      ...payload, stage: "meta_awaiting_phone", collected_phone: combinedCellphone,
     });
-    return { reply: "Gracias. Ahora compárteme tu número de celular de 10 dígitos.", outcome: "meta_trial_phone_requested" };
   }
 
-  if (stage === "meta_awaiting_phone") {
-    const supplied = input.message.text.trim();
-    const digits = supplied.replace(/[\s()-]/g, "");
+  if (stage === "meta_awaiting_phone" || combinedCellphone) {
+    const digits = combinedCellphone ?? String(payload.collected_phone ?? input.message.text.trim()).replace(/[\s()-]/g, "");
     if (!/^[0-9]{10}$/.test(digits)) {
-      return { reply: "Compárteme tu número de celular de 10 dígitos, por favor.", outcome: "meta_trial_phone_waiting" };
+      return { reply: "Compárteme tu nombre completo y celular de 10 dígitos en un solo mensaje, por favor.", outcome: "meta_trial_phone_waiting" };
     }
     const normalized = "+52" + digits;
     const { data: identity, error: identityError } = await input.supabase
