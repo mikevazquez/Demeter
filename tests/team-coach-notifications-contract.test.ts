@@ -31,6 +31,20 @@ describe("Equipo notifications sandbox contract", () => {
     expect(delivery).toContain('case "coach_roster_reminder"');
     expect(catalog).toContain('category: "equipo"');
   });
+  it("restores team read/write privileges without exposing records to anon", () => {
+    const grants = src("supabase/migrations/20261008112000_fix_instructor_authenticated_grants.sql");
+    expect(grants).toContain("grant select, insert, update on table public.instructors to authenticated");
+    expect(grants).toContain("grant select, insert, update, delete on table public.instructor_disciplines to authenticated");
+    expect(grants).not.toMatch(/grant\\s+.*\\s+to\\s+anon/i);
+  });
+  it("creates the coach only in the studio selected by the admin", () => {
+    const scoped = src("supabase/migrations/20261008113000_scoped_instructor_creation.sql");
+    const action = src("app/admin/instructores/actions.ts");
+    expect(scoped).toContain("private.has_capability(p_studio_id,'instructors.write')");
+    expect(scoped).toContain("security definer");
+    expect(action).toContain('rpc("admin_create_instructor_scoped"');
+    expect(action).toContain("p_studio_id: studio.id");
+  });
   it("requires instructors.write and isolates coach phone to studio", () => {
     expect(phone).toContain("private.has_capability(v_studio_id,'instructors.write')");
     expect(phone).toContain("where studio_id=v_studio_id and person_id=v_person_id");
