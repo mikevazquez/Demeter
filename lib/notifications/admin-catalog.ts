@@ -1,6 +1,6 @@
 export type NotificationChannelKey = "inbox" | "push" | "whatsapp" | "email";
 export type NotificationProcessCategory =
-  "reservas" | "paquetes" | "evaluaciones" | "documentos" | "cuenta";
+  "reservas" | "paquetes" | "evaluaciones" | "documentos" | "cuenta" | "equipo";
 
 export const NOTIFICATION_EMOJI_BY_KEY: Readonly<Record<string, string>> = {
   "reservation-confirmed": "✅",
@@ -63,6 +63,7 @@ export const NOTIFICATION_PROCESS_CATEGORIES = [
   { key: "evaluaciones", label: "Evaluaciones" },
   { key: "documentos", label: "Documentos" },
   { key: "cuenta", label: "Cuenta" },
+  { key: "equipo", label: "👩‍🏫 Equipo" },
 ] as const;
 
 export const NOTIFICATION_PROCESSES: readonly NotificationProcessDefinition[] = [
@@ -149,10 +150,20 @@ export const NOTIFICATION_PROCESSES: readonly NotificationProcessDefinition[] = 
     essential: true,
   },
   {
+    key: "coach-class-roster",
+    name: "Lista de alumnas antes de clase",
+    description: "Aviso configurable al coach asignado con clase, fecha, horario, total de alumnas y nombres. Requiere activar la automatización y aprobar la plantilla en Meta.",
+    category: "equipo",
+    ruleKeys: ["team.coach_roster_reminder"],
+    timingLabel: "2 horas antes · configurable",
+    recipientLabel: "Coach asignado",
+    planned: true,
+  },
+  {
     key: "minimum-cancelled-coach",
-    name: "Aviso al coach por mínimo de reservas",
-    description: "Avisa al coach cuando una clase no alcanza el mínimo.",
-    category: "reservas",
+    name: "Clase cancelada por cupo insuficiente · Coach",
+    description: "Avisa al coach asignado al cancelarse una clase por no alcanzar el mínimo.",
+    category: "equipo",
     ruleKeys: ["p0.session.minimum_cancelled_coach"],
     timingLabel: "Al cancelar la sesión · inmediata",
     recipientLabel: "Coach asignado",
