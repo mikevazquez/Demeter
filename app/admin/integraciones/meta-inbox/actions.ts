@@ -44,11 +44,11 @@ export async function saveMetaInboxConnection(formData: FormData) {
     let pageTokenStatus: PageTokenStatus = "unavailable";
 
     // Catch common copy/paste errors locally; never return or log the token.
-    if (/^(?:Bearer\\s+|access_token\\s*=|https?:\\/\\/|["'])/i.test(pageAccessToken)
-      || /\\s/.test(pageAccessToken)
+    if (/^(?:Bearer\s+|access_token\s*=|https?:\/\/|["'])/i.test(pageAccessToken)
+      || /\s/.test(pageAccessToken)
       || /["']$/.test(pageAccessToken)) {
       pageTokenStatus = "paste_format";
-    } else if (/^v[0-9]+\\.[0-9]+$/.test(graphApiVersion)) {
+    } else if (/^v[0-9]+\.[0-9]+$/.test(graphApiVersion)) {
       try {
         const response = await fetch(
           `https://graph.facebook.com/${graphApiVersion}/me?fields=id`,
