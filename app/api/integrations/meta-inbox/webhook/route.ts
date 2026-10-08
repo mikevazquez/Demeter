@@ -624,6 +624,59 @@ export async function POST(request: Request) {
       }
     }
 
+    // For a prospective first class, collect the required phone only after
+    // Demi explicitly requested it. A phone supplied in chat is never proof of
+    // ownership of an existing student account.
+    if (!studentId && crmContactId) {
+      const lastTwo = history.slice(-2);
+      if (
+        lastTwo.length === 2 &&
+        lastTwo[0].role === "assistant" &&
+        /(?:número de celular|número de teléfono|teléfono con lada)/i.test(lastTwo[0].content) &&
+        lastTwo[1].role === "user"
+      ) {
+        const supplied = lastTwo[1].content.trim();
+        const digits = supplied.replace(/[^0-9]/g, "");
+        const normalized = digits.length === 10
+          ? "+52" + digits
+          : digits.length === 12 && digits.startsWith("52")
+            ? "+" + digits
+            : null;
+
+        if (normalized) {
+          const { data: identity } = await supabase
+            .from("assistant_channel_identities")
+            .select("id,person_id,student_id,metadata")
+            .eq("studio_id", studioId)
+            .eq("provider", message.provider)
+            .eq("provider_account_id", message.providerAccountId)
+            .eq("provider_contact_id", message.providerContactId)
+            .eq("crm_contact_id", crmContactId)
+            .maybeSingle();
+
+          if (identity?.person_id && !identity.student_id) {
+            const { data: existingPhone } = await supabase
+              .from("person_contacts")
+              .select("id")
+              .eq("studio_id", studioId)
+              .eq("person_id", identity.person_id)
+              .eq("kind", "phone")
+              .limit(1)
+              .maybeSingle();
+            if (!existingPhone) {
+              await supabase.from("person_contacts").insert({
+                studio_id: studioId,
+                person_id: identity.person_id,
+                kind: "phone",
+                value: normalized,
+                is_primary: true,
+              });
+            }
+          }
+        }
+      }
+    }
+
     let studentCategory: string | null = null;
     if (studentId) {
       try {
