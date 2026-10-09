@@ -541,3 +541,15 @@ describe("Inteligencia metrics reference", () => {
     expect(html).toContain("discipline=pole");
   });
 });
+
+it("counts evening purchases on the studio's local date", async () => {
+  vi.setSystemTime(new Date("2026-10-10T02:30:00Z"));
+  seed("product_acquisitions", [
+    acquisition("evening", {
+      created_at: "2026-10-10T01:00:00Z",
+      starts_on: "2026-10-09",
+      expires_on: "2026-10-11",
+    }),
+  ]);
+  expect(metric(await render("alumnas"), "Activas")).toBe("1");
+});

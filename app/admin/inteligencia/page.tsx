@@ -617,9 +617,10 @@ export default async function IntelligencePage({
     const studentIds = new Set<string>();
     for (const item of commercialAcquisitions) {
       if (item.refunded_at || item.status === "cancelled") continue;
-      const start = item.starts_on ?? item.created_at.slice(0, 10);
+      const createdDate = isoDateKey(new Date(item.created_at), timeZone);
+      const start = item.starts_on ?? createdDate;
       const end = item.expires_on;
-      if (start > atDate || item.created_at.slice(0, 10) > atDate) continue;
+      if (start > atDate || createdDate > atDate) continue;
       if (end && end < atDate) continue;
       studentIds.add(item.student_id);
     }
