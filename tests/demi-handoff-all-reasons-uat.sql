@@ -6,7 +6,7 @@ declare source uuid:='9fe23cfa-fb47-4670-afeb-ed4a56433772'; owner uuid; r jsonb
 begin
 select user_id into owner from public.studio_memberships where studio_id=source and active and role='owner' limit 1;
 r:=public.service_create_demi_uat_run(source,owner,'M17-all-reasons'); s:=(r->>'studio_id')::uuid;
-st:=(r#>>'{fixtures,people,student_active,student_id}')::uuid;
+st:=(r#>>'{fixtures,people,trial_reserved,student_id}')::uuid;
 select jsonb_build_object('student_type',student_type,'trial_status',trial_status) into states from public.students where id=st;
 perform set_config('request.jwt.claim.sub',owner::text,true);
 perform set_config('request.jwt.claims',jsonb_build_object('role','service_role','sub',owner)::text,true);
@@ -16,6 +16,7 @@ for policy in select reason_code from public.assistant_handoff_policies where st
  result:=public.assistant_create_handoff(s,c,st,policy.reason_code,'UAT: resumen y dato pendiente para revisión manual.');
  if result->>'ok'<>'true' or result->>'references_saved'<>'true' then raise exception 'create_%:%',policy.reason_code,result; end if;
  h:=(result->>'handoff_id')::uuid;
+ if not exists(select 1 from public.assistant_handoffs h2, jsonb_array_elements(h2.context->'reservations') ref where h2.id=h and ref->>'id' in(select id::text from public.reservations where studio_id=s and student_id=st)) then raise exception 'existing_reservation_reference_missing'; end if;
  if not exists(select 1 from public.assistant_handoffs where id=h and studio_id=s and conversation_id=c and student_id=st and reason_code=policy.reason_code and status='open' and context->>'conversation_id'=c::text and context->>'student_id'=st::text and context ? 'reservations' and context ? 'sales' and context ? 'payments' and context ? 'tool_errors' and note is not null) then raise exception 'handoff_not_localizable'; end if;
  result:=public.assistant_create_handoff(s,c,st,policy.reason_code,'UAT: referencia adicional conservada.');
  if result->>'handoff_id'<>h::text or (select count(*) from public.assistant_handoffs where conversation_id=c)<>1 or not exists(select 1 from public.assistant_handoffs where id=h and note like '%referencia adicional%') then raise exception 'handoff_replay'; end if;

@@ -1,5 +1,6 @@
 -- Execute only in hedouonyhynuvwbckdlg. Synthetic tenant; all writes rolled back.
 begin;
+set local role service_role;
 set local request.jwt.claim.role='service_role';
 set local request.jwt.claims='{"role":"service_role"}';
 do $uat$
@@ -104,6 +105,8 @@ begin
  result:=public.service_activate_trial_transfer_receipt(s,conversation,student,intent,event,'uat-'||event,'uat-media');
  if not coalesce((result->>'ok')::boolean,false) then raise exception 'M12_activate:%',result; end if;
  reservation:=(result->>'reservation_id')::uuid;
+ execute 'set local role authenticated';
+ perform set_config('request.jwt.claims',jsonb_build_object('role','authenticated','sub',owner)::text,true);
  result:=public.admin_review_transfer_purchase(intent,'rejected','Rechazo ficticio UAT');
  if not coalesce((result->>'ok')::boolean,false) or (select status from public.assistant_transfer_purchase_intents where id=intent)<>'rejected' then raise exception 'M12_review:%',result; end if;
  if (select status::text from public.reservations where id=reservation)='reserved' then raise exception 'M12_reservation_not_revoked'; end if;

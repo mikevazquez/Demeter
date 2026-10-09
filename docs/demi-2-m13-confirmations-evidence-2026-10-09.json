@@ -1,0 +1,37 @@
+{
+  "case_id": "M13",
+  "master_status": "partial",
+  "three_confirmation_variants": [
+    {
+      "confirmation": "Sí",
+      "run_id": "1b72b4fc-612a-4256-939d-74b9479cde76",
+      "studio_id": "8eb2efb6-5de1-4b44-89a5-8eea93d678ca",
+      "reservations_before": 0,
+      "reservations_after": 1,
+      "reservations_after_repeat": 1,
+      "passed": true,
+      "reply_captured": "Listo. Tu reserva de Pole Fitness UAT quedó confirmada para el viernes, 9 de octubre, de 9:10 p. m. a 10:10 p. m.."
+    },
+    {
+      "confirmation": "Sí, confirmo",
+      "run_id": "3824b915-e141-45f7-8cdc-d1fee42f38c6",
+      "studio_id": "87edd33d-9e7d-421c-a9ac-c7b9be6a55ac",
+      "reservations_before": 0,
+      "reservations_after": 1,
+      "reservations_after_repeat": 1,
+      "passed": true,
+      "reply_captured": "Listo. Tu reserva de Pole Fitness UAT quedó confirmada para el viernes, 9 de octubre, de 9:10 p. m. a 10:10 p. m.."
+    },
+    {
+      "confirmation": "Sí, confirmo la reserva",
+      "run_id": "7718f256-a7c1-4b2d-9cf9-f6ca7aca0122",
+      "studio_id": "8d68290d-1e6b-4af2-9dab-6d724c715a2a",
+      "reservations_before": 0,
+      "reservations_after": 1,
+      "reservations_after_repeat": 1,
+      "passed": true,
+      "reply_captured": "Listo. Tu reserva de Pole Fitness UAT quedó confirmada para el viernes, 9 de octubre, de 9:14 p. m. a 10:14 p. m.."
+    }
+  ],
+  "remaining": "Cash conversation/absence/debt and final commercial-offer repetition; native cash/absence/debt passed."
+}
