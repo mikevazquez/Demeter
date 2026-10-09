@@ -1,4 +1,7 @@
 import Link from "next/link";
+import { contactStage } from "@/lib/student-crm";
+import { contactConversations } from "@/lib/student-crm-conversations";
+import ContactConversation from "../ContactConversation";
 import PendingActionButton from "@/app/admin/components/PendingActionButton";
 import StudentLifecycleActions from "./StudentLifecycleActions";
 import StudentLifecycleNoticeDialog from "./StudentLifecycleNoticeDialog";
@@ -164,6 +167,7 @@ export default async function StudentProfilePage({
   const view = (
     [
       "summary",
+      "conversation",
       "packages",
       "rewards",
       "evaluations",
@@ -176,6 +180,7 @@ export default async function StudentProfilePage({
       : "summary"
   ) as
     | "summary"
+    | "conversation"
     | "packages"
     | "rewards"
     | "evaluations"
@@ -186,7 +191,7 @@ export default async function StudentProfilePage({
   const { data: student } = await supabase
     .from("students")
     .select(
-      "id, person_id, user_id, full_name, email, phone, lifecycle_status, profile_status, created_at, archived_at",
+      "id, person_id, user_id, full_name, email, phone, lifecycle_status, profile_status, student_type, trial_status, created_at, archived_at",
     )
     .eq("id", studentId)
     .eq("studio_id", studio.id)
@@ -392,7 +397,7 @@ export default async function StudentProfilePage({
         productIds.length
           ? supabase
               .from("product_templates")
-              .select("id,name,package_term")
+              .select("id,name,package_term,price_minor")
               .eq("studio_id", studio.id)
               .in("id", productIds)
           : Promise.resolve({ data: [] }),
@@ -941,6 +946,7 @@ export default async function StudentProfilePage({
   const currentPackageView = currentAcquisition
     ? {
         name: productMap.get(currentAcquisition.product_template_id)?.name ?? "Paquete",
+        priceMinor: productMap.get(currentAcquisition.product_template_id)?.price_minor ?? null,
         unlimited: currentAcquisition.unlimited,
         availableCredits: currentAcquisition.unlimited
           ? null
@@ -1027,10 +1033,34 @@ export default async function StudentProfilePage({
     transfer_review: "No se pudo actualizar la validación de la transferencia.",
   };
 
+  const communications = await contactConversations(
+    supabase,
+    studio.id,
+    [student.id],
+    [],
+    can(CAPABILITIES.SETTINGS_WRITE),
+  );
+  const contactMessages = communications.messages.get(student.id) ?? [];
+
   return (
-    <main className="dashboard-shell profile360-page admin-ux04-profile360">
+    <main className="dashboard-shell profile360-page admin-ux04-profile360 crm-page">
       <Profile360Overview
         activeView={view}
+        stage={contactStage(student)}
+        canEdit={canEdit}
+        canReadProducts={canReadProducts}
+        showRewards={canReadRewards}
+        internalNote={
+          scalarValue(
+            valueMap.get(
+              (definitions ?? []).find((item) =>
+                ["notes", "internal_note", "notas", "nota_interna"].includes(item.key),
+              )?.id ?? "",
+            ),
+          ) || null
+        }
+        messages={contactMessages}
+        channel={communications.channels.get(student.id)}
         student={{
           id: student.id,
           userId: student.user_id,
@@ -1113,6 +1143,16 @@ export default async function StudentProfilePage({
           Primera reserva registrada. {studio.name} mantuvo la misma alumna y aplicó las reglas
           reales de paquete, inscripción, créditos y cupo.
         </div>
+      ) : null}
+
+      {view === "conversation" ? (
+        <ContactConversation
+          messages={contactMessages}
+          canReadMessages={communications.canReadMessages}
+          unavailable={communications.unavailable}
+          locale={locale}
+          timeZone={timeZone}
+        />
       ) : null}
 
       {view === "profile" ? (
