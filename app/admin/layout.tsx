@@ -119,12 +119,11 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
         ...(can(CAPABILITIES.STUDENTS_READ)
           ? [
               {
-                href: "/admin/alumnas",
-                label: "Alumnas",
+                href: "/admin/crm",
+                label: "CRM",
                 enabled: true,
-                activeFor: ["/admin/ventas"],
+                activeFor: ["/admin/ventas", "/admin/alumnas"],
               },
-              { href: "/admin/crm", label: "CRM", enabled: true },
             ]
           : []),
         ...(can(CAPABILITIES.REPORTS_READ)
@@ -194,7 +193,14 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
           ? [{ href: "/admin/agenda", label: "Agenda", enabled: true }]
           : []),
         ...(can(CAPABILITIES.STUDENTS_READ)
-          ? [{ href: "/admin/alumnas", label: "Alumnas", enabled: true }]
+          ? [
+              {
+                href: "/admin/crm",
+                label: "CRM",
+                enabled: true,
+                activeFor: ["/admin/alumnas", "/admin/ventas"],
+              },
+            ]
           : []),
         ...(hasMoreDestinations
           ? [
@@ -267,7 +273,7 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
         {!instructorOnly ? (
           <>
             <header className="admin-utility-bar">
-              <form action="/admin/alumnas" method="get" className="admin-global-search">
+              <form action="/admin/crm" method="get" className="admin-global-search">
                 <span aria-hidden="true">⌕</span>
                 <input
                   name="q"

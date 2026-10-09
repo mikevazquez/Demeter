@@ -35,7 +35,7 @@ export const loadCrm = cache(async () => {
   ] = await Promise.all([
     rows(
       "students",
-      "id,person_id,full_name,email,phone,student_type,trial_status,created_at,archived_at",
+      "id,person_id,full_name,email,phone,student_type,trial_status,lifecycle_status,created_at,archived_at",
     ),
     rows("crm_contacts", "id,person_id,source,created_at,converted_student_id"),
     rows("persons", "id,first_name,last_name"),
@@ -100,7 +100,7 @@ export const loadCrm = cache(async () => {
       >[0]["packages"],
       followup: f as Parameters<typeof projectContact>[0]["followup"],
     });
-    const rawChannel = String(conv[0]?.channel || c?.source || "").toLowerCase();
+    const rawChannel = String(c?.source || conv[conv.length - 1]?.channel || "").toLowerCase();
     const channel = rawChannel.includes("whatsapp")
       ? "WhatsApp"
       : rawChannel.includes("instagram")
@@ -121,8 +121,13 @@ export const loadCrm = cache(async () => {
           "Contacto sin nombre",
       ),
       phone: String(s?.phone || phone?.value || ""),
-      email: String(s?.email || ""),
+      email: String(
+        s?.email || phones.find((v) => v.person_id === id && v.kind === "email")?.value || "",
+      ),
+      lastChannel: String(conv[0]?.channel || "Sin identificar"),
       channel,
+      lifecycleStatus: String(s?.lifecycle_status || "active"),
+      joinedAt: String(c?.created_at || s?.created_at),
       createdAt: String(conv[0]?.last_activity_at || c?.created_at || s?.created_at),
       state,
       followup: {

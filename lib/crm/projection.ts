@@ -50,9 +50,9 @@ export function projectContact(input: {
     state.personType = "trial";
     state.reservationId = input.reservation?.id || null;
     state.stage =
-      input.trialStatus === "attended"
+      (input.reservation?.status || input.trialStatus) === "attended"
         ? "attended"
-        : input.trialStatus === "no_show"
+        : (input.reservation?.status || input.trialStatus) === "no_show"
           ? "not_attended"
           : "scheduled";
   }

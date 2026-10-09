@@ -213,6 +213,7 @@ async function getAcquisitionEditContext(studentId: string, acquisitionId: strin
 function revalidateAcquisitionViews(studentId: string) {
   revalidatePath(`/admin/alumnas/${studentId}`);
   revalidatePath("/admin/alumnas");
+  revalidatePath("/admin/crm", "layout");
   revalidatePath("/student");
   revalidatePath("/student/paquete");
 }
@@ -247,6 +248,7 @@ export async function updateStudent(formData: FormData) {
 
   revalidatePath(`/admin/alumnas/${studentId}`);
   revalidatePath("/admin/alumnas");
+  revalidatePath("/admin/crm", "layout");
   redirect(`/admin/alumnas/${studentId}?saved=1`);
 }
 
@@ -270,6 +272,7 @@ export async function unlockMedalsAccess(formData: FormData) {
 
   revalidatePath(`/admin/alumnas/${studentId}`);
   revalidatePath("/admin/alumnas");
+  revalidatePath("/admin/crm", "layout");
   revalidatePath("/student");
   revalidatePath("/student/recompensas");
   redirect(`/admin/alumnas/${studentId}?view=rewards&saved=medals_access_unlocked`);
@@ -301,6 +304,7 @@ export async function updateCommunicationPreferences(formData: FormData) {
 
   revalidatePath(`/admin/alumnas/${studentId}`);
   revalidatePath("/admin/alumnas");
+  revalidatePath("/admin/crm", "layout");
   redirect(`/admin/alumnas/${studentId}?saved=communication_preferences#comunicacion`);
 }
 
@@ -366,6 +370,7 @@ export async function updateDynamicProfileFields(formData: FormData) {
 
   revalidatePath(`/admin/alumnas/${studentId}`);
   revalidatePath("/admin/alumnas");
+  revalidatePath("/admin/crm", "layout");
   redirect(`/admin/alumnas/${studentId}?saved=fields`);
 }
 
@@ -388,6 +393,7 @@ export async function setStudentLifecycle(formData: FormData) {
 
   revalidatePath(`/admin/alumnas/${studentId}`);
   revalidatePath("/admin/alumnas");
+  revalidatePath("/admin/crm", "layout");
   revalidatePath("/admin");
   revalidatePath("/student");
   redirect(`/admin/alumnas/${studentId}?lifecycle=${encodeURIComponent(status)}#estado-alumna`);
@@ -413,6 +419,7 @@ export async function deleteStudent(formData: FormData) {
 
   revalidatePath(`/admin/alumnas/${studentId}`);
   revalidatePath("/admin/alumnas");
+  revalidatePath("/admin/crm", "layout");
   revalidatePath("/admin");
   revalidatePath("/student");
   revalidatePath("/student/paquete");
@@ -555,6 +562,7 @@ export async function reviewStudentTransferPurchaseAction(formData: FormData) {
 
   revalidatePath(`/admin/alumnas/${studentId}`);
   revalidatePath("/admin/alumnas");
+  revalidatePath("/admin/crm", "layout");
   revalidatePath("/admin/configuracion/pagos");
   revalidatePath("/admin");
   revalidatePath("/admin/hoy");

@@ -4,6 +4,9 @@ import Link from "next/link";
 type Alert = { title: string; detail: string };
 
 type Props = {
+  embedded?: boolean;
+  hideNavigation?: boolean;
+  baseHref?: string;
   activeView:
     | "summary"
     | "packages"
@@ -100,6 +103,9 @@ function localDate(timeZone: string) {
 }
 
 export default function Profile360Overview({
+  embedded = false,
+  hideNavigation = false,
+  baseHref,
   activeView,
   student,
   birthDate,
@@ -118,7 +124,8 @@ export default function Profile360Overview({
   locale,
   currency,
 }: Props) {
-  const href = (view: string) => "/admin/alumnas/" + student.id + "?view=" + view;
+  const href = (view: string) =>
+    baseHref ? `${baseHref}?tab=profile&view=${view}` : `/admin/alumnas/${student.id}?view=${view}`;
   const today = localDate(timeZone);
   const currentEnrollment =
     enrollment?.status === "active" &&
@@ -139,108 +146,115 @@ export default function Profile360Overview({
 
   return (
     <>
-      <section className="profile360-approved-header">
-        <Link className="profile360-back" href="/admin/alumnas">
-          ← Alumnas
-        </Link>
+      {!embedded && (
+        <section className="profile360-approved-header">
+          <Link className="profile360-back" href="/admin/alumnas">
+            ← Alumnas
+          </Link>
 
-        <div className="profile360-approved-person">
-          <span className="profile360-avatar" aria-hidden="true">
-            {initials(student.fullName)}
-            {student.userId ? (
-              <Image
-                src={"/admin/alumnas/" + student.id + "/avatar"}
-                alt=""
-                width={82}
-                height={82}
-                unoptimized
-              />
-            ) : null}
-          </span>
+          <div className="profile360-approved-person">
+            <span className="profile360-avatar" aria-hidden="true">
+              {initials(student.fullName)}
+              {student.userId ? (
+                <Image
+                  src={"/admin/alumnas/" + student.id + "/avatar"}
+                  alt=""
+                  width={82}
+                  height={82}
+                  unoptimized
+                />
+              ) : null}
+            </span>
 
-          <div className="profile360-approved-copy">
-            <div className="profile360-approved-title">
-              <h1>{student.fullName}</h1>
+            <div className="profile360-approved-copy">
+              <div className="profile360-approved-title">
+                <h1>{student.fullName}</h1>
+              </div>
+
+              <div className="profile360-approved-contact">
+                <span>{student.phone}</span>
+                {student.email ? <span>{student.email}</span> : null}
+                <span>
+                  {birthDate ? formatDate(birthDate, locale) + " · " : ""}
+                  En el estudio desde{" "}
+                  {new Intl.DateTimeFormat(locale, {
+                    month: "short",
+                    year: "numeric",
+                  }).format(new Date(student.createdAt))}
+                </span>
+              </div>
             </div>
 
-            <div className="profile360-approved-contact">
-              <span>{student.phone}</span>
-              {student.email ? <span>{student.email}</span> : null}
-              <span>
-                {birthDate ? formatDate(birthDate, locale) + " · " : ""}
-                En el estudio desde{" "}
-                {new Intl.DateTimeFormat(locale, {
-                  month: "short",
-                  year: "numeric",
-                }).format(new Date(student.createdAt))}
+            <div className="profile360-approved-meta">
+              <span className="profile360-level-pill">
+                {levelTitle ? "Medalla " + levelTitle : "Sin medalla"}
               </span>
+              <span
+                className={
+                  "profile360-state-pill is-" +
+                  (student.lifecycleStatus === "inactive" ? "inactive" : "active")
+                }
+              >
+                {student.lifecycleStatus === "inactive" ? "Inactiva" : "Activa"}
+              </span>
+              <span
+                className={
+                  "profile360-portal-pill " + (student.portalEntered ? "is-entered" : "is-pending")
+                }
+              >
+                {student.portalEntered ? "Portal: ingresó" : "Portal: sin ingresar"}
+              </span>
+              {canSell && !currentEnrollment ? (
+                <Link
+                  className="profile360-edit-link"
+                  href={"/admin/ventas/nueva?student_id=" + student.id}
+                >
+                  Agregar inscripción
+                </Link>
+              ) : null}
+              <Link className="profile360-edit-link" href={href("profile")}>
+                Editar
+              </Link>
             </div>
           </div>
+        </section>
+      )}
 
-          <div className="profile360-approved-meta">
-            <span className="profile360-level-pill">
-              {levelTitle ? "Medalla " + levelTitle : "Sin medalla"}
-            </span>
-            <span
-              className={
-                "profile360-state-pill is-" +
-                (student.lifecycleStatus === "inactive" ? "inactive" : "active")
-              }
+      {!hideNavigation && (
+        <nav className="profile360-approved-tabs" aria-label="Perfil 360">
+          <Link className={activeView === "summary" ? "is-active" : ""} href={href("summary")}>
+            Resumen
+          </Link>
+          <Link className={activeView === "packages" ? "is-active" : ""} href={href("packages")}>
+            Paquetes
+          </Link>
+          <Link className={activeView === "rewards" ? "is-active" : ""} href={href("rewards")}>
+            Progreso
+          </Link>
+          {showEvaluations ? (
+            <Link
+              className={activeView === "evaluations" ? "is-active" : ""}
+              href={href("evaluations")}
             >
-              {student.lifecycleStatus === "inactive" ? "Inactiva" : "Activa"}
-            </span>
-            <span
-              className={
-                "profile360-portal-pill " + (student.portalEntered ? "is-entered" : "is-pending")
-              }
-            >
-              {student.portalEntered ? "Portal: ingresó" : "Portal: sin ingresar"}
-            </span>
-            {canSell && !currentEnrollment ? (
-              <Link
-                className="profile360-edit-link"
-                href={"/admin/ventas/nueva?student_id=" + student.id}
-              >
-                Agregar inscripción
-              </Link>
-            ) : null}
-            <Link className="profile360-edit-link" href={href("profile")}>
-              Editar
+              Evaluaciones
             </Link>
-          </div>
-        </div>
-      </section>
-
-      <nav className="profile360-approved-tabs" aria-label="Perfil 360">
-        <Link className={activeView === "summary" ? "is-active" : ""} href={href("summary")}>
-          Resumen
-        </Link>
-        <Link className={activeView === "packages" ? "is-active" : ""} href={href("packages")}>
-          Paquetes
-        </Link>
-        <Link className={activeView === "rewards" ? "is-active" : ""} href={href("rewards")}>
-          Progreso
-        </Link>
-        {showEvaluations ? (
-          <Link
-            className={activeView === "evaluations" ? "is-active" : ""}
-            href={href("evaluations")}
-          >
-            Evaluaciones
+          ) : null}
+          {showDocuments ? (
+            <Link
+              className={activeView === "documents" ? "is-active" : ""}
+              href={href("documents")}
+            >
+              Documentos
+            </Link>
+          ) : null}
+          <Link className={activeView === "history" ? "is-active" : ""} href={href("history")}>
+            Actividad
           </Link>
-        ) : null}
-        {showDocuments ? (
-          <Link className={activeView === "documents" ? "is-active" : ""} href={href("documents")}>
-            Documentos
+          <Link className={activeView === "profile" ? "is-active" : ""} href={href("profile")}>
+            Datos
           </Link>
-        ) : null}
-        <Link className={activeView === "history" ? "is-active" : ""} href={href("history")}>
-          Actividad
-        </Link>
-        <Link className={activeView === "profile" ? "is-active" : ""} href={href("profile")}>
-          Datos
-        </Link>
-      </nav>
+        </nav>
+      )}
 
       {activeView === "summary" ? (
         <div className="profile360-approved-summary">

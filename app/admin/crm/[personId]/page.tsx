@@ -5,7 +5,21 @@ import { getAdminContext } from "@/lib/auth/admin-context";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { typeLabels, stageLabels, personTypes, nextAction } from "@/lib/crm/demi-state";
 import FollowupForm from "../FollowupForm";
-export default async function ContactPage({ params }: { params: Promise<{ personId: string }> }) {
+import StudentRecord from "../../alumnas/[studentId]/StudentRecord";
+import ContactReservations from "../ContactReservations";
+import { prepareContactRecord } from "../actions";
+import PendingActionButton from "../../components/PendingActionButton";
+export default async function ContactPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ personId: string }>;
+  searchParams: Promise<Record<string, string | undefined>>;
+}) {
+  const query = await searchParams;
+  const tab = ["conversation", "activity", "profile", "notes", "followup"].includes(query.tab || "")
+    ? query.tab!
+    : "conversation";
   const { personId } = await params;
   const data = await loadCrm();
   const c = data.contacts.find((c) => c.id === personId);
@@ -43,23 +57,60 @@ export default async function ContactPage({ params }: { params: Promise<{ person
     : { data: [], error: null };
   if (turnsResult.error) throw new Error("crm_messages_unavailable");
 
+  const base = `/admin/crm/${c.id}`;
+  const qual = { pending: "Pendiente", qualified: "Apta", not_qualified: "No apta" }[
+    c.state.qualification
+  ];
   return (
     <>
       <Link className="crm-back" href="/admin/crm">
         ← Contactos
       </Link>
       <header className="crm-heading">
-        <div>
-          <span className="crm-eyebrow">FICHA DEL CONTACTO</span>
-          <h1>{c.name}</h1>
-          <p>
-            {c.phone || "Sin teléfono"} {c.email && `· ${c.email}`}
-          </p>
+        <div className="crm-contact-title">
+          <span className="crm-avatar">
+            {c.name
+              .split(/\s+/)
+              .filter(Boolean)
+              .slice(0, 2)
+              .map((n) => n[0])
+              .join("")}
+          </span>
+          <div>
+            <h1>{c.name}</h1>
+            <p>
+              {c.channel} · {c.phone || "Sin teléfono"}
+              {c.followup.location && ` · ${c.followup.location}`}
+            </p>
+            {c.followup.interest && <p>{c.followup.interest}</p>}
+          </div>
         </div>
-        <span className={`crm-badge ${c.state.personType}`}>
-          {c.reviewReason ? "Por verificar" : typeLabels[c.state.personType]}
-        </span>
+        <span className={`crm-badge ${c.state.qualification}`}>{qual}</span>
       </header>
+      {query.error && (
+        <p role="alert" className="notice error">
+          {query.error.includes("session_not_started")
+            ? "La clase todavía no comienza."
+            : query.error.includes("session_ended")
+              ? "La clase ya terminó; revisa el cierre de asistencia."
+              : "No se pudo guardar el cambio. Revisa los datos y los permisos."}
+        </p>
+      )}
+      {query.created && (
+        <p role="status" className="notice success">
+          Asistencia registrada. El historial se conservó.
+        </p>
+      )}
+      <div className="crm-contact-actions">
+        <Link className="crm-secondary" href={`${base}?tab=followup`}>
+          Gestionar estado y seguimiento
+        </Link>
+        {c.studentId && data.canEdit && (
+          <Link className="crm-secondary" href={`${base}?tab=profile&view=profile`}>
+            Editar datos
+          </Link>
+        )}
+      </div>
       <div className="crm-journey" aria-label="Recorrido del contacto">
         {personTypes.map((t) => (
           <span key={t} className={!c.reviewReason && c.state.personType === t ? "current" : ""}>
@@ -67,63 +118,67 @@ export default async function ContactPage({ params }: { params: Promise<{ person
           </span>
         ))}
       </div>
-      <div className="crm-detail-grid">
+      <section className="crm-panel crm-state-bar">
+        <div>
+          <strong>{c.reviewReason ? "Por verificar" : typeLabels[c.state.personType]}</strong> ·{" "}
+          {c.reviewReason || stageLabels[c.state.stage]}
+        </div>
+        <span className="crm-badge">
+          Pago:{" "}
+          {
+            {
+              none: "Sin registro",
+              awaiting_receipt: "Espera de comprobante",
+              under_review: "En revisión",
+              validated: "Validado",
+              rejected: "Rechazado",
+              cash_due: "Efectivo pendiente",
+            }[c.state.payment]
+          }
+        </span>
+        <span className="crm-badge">
+          Paquete: {{ none: "Sin paquete", active: "Vigente", expired: "Vencido" }[c.state.package]}
+        </span>
+        <p className="crm-help">
+          Próxima acción:{" "}
+          {c.reviewReason
+            ? "Verificar inscripción"
+            : c.state.human ||
+                c.state.qualification === "not_qualified" ||
+                c.state.stage === "not_booked"
+              ? nextAction(c.state)
+              : c.followup.next_action || nextAction(c.state)}
+          {c.followup.next_action_on && ` · ${c.followup.next_action_on}`}
+        </p>
+        {c.state.qualification === "not_qualified" && (
+          <p className="crm-paused">Seguimiento pausado · {c.followup.qualification_reason}</p>
+        )}
+      </section>
+      {c.studentId && (
+        <ContactReservations
+          studentId={c.studentId}
+          personId={c.id}
+          trial={c.state.personType === "trial"}
+        />
+      )}
+      <nav className="crm-tabs" aria-label="Ficha del contacto">
+        {[
+          ["conversation", "Conversación"],
+          ["activity", "Actividad"],
+          ["profile", "Perfil"],
+          ["notes", "Notas"],
+        ].map(([key, label]) => (
+          <Link
+            key={key}
+            href={`${base}?tab=${key}`}
+            aria-current={tab === key ? "page" : undefined}
+          >
+            {label}
+          </Link>
+        ))}
+      </nav>
+      {tab === "conversation" && (
         <section className="crm-panel">
-          <h2>Estado actual</h2>
-          <dl className="crm-facts">
-            <div>
-              <dt>Etapa</dt>
-              <dd>{c.reviewReason || stageLabels[c.state.stage]}</dd>
-            </div>
-            <div>
-              <dt>Canal de origen</dt>
-              <dd>{c.channel}</dd>
-            </div>
-            <div>
-              <dt>Paquete</dt>
-              <dd>
-                {{ none: "Sin paquete", active: "Vigente", expired: "Vencido" }[c.state.package]}
-              </dd>
-            </div>
-            <div>
-              <dt>Próxima acción</dt>
-              <dd>
-                {c.reviewReason
-                  ? "Verificar inscripción"
-                  : c.state.human ||
-                      c.state.qualification === "not_qualified" ||
-                      c.state.stage === "not_booked"
-                    ? nextAction(c.state)
-                    : c.followup.next_action || nextAction(c.state)}
-              </dd>
-            </div>
-          </dl>
-          <p className="crm-help">
-            El tipo se actualiza con la inscripción y la prueba registradas en Studio Flow. Un
-            paquete vencido conserva el tipo Alumna mientras la inscripción siga vigente.
-          </p>
-          {c.studentId && (
-            <Link className="crm-back" href={`/admin/alumnas/${c.studentId}`}>
-              Abrir perfil operativo →
-            </Link>
-          )}
-          <div className="crm-facts">
-            <div>
-              <dt>Pago de inscripción</dt>
-              <dd>
-                {
-                  {
-                    none: "Sin registro",
-                    awaiting_receipt: "Espera de comprobante",
-                    under_review: "En revisión",
-                    validated: "Validado",
-                    rejected: "Rechazado",
-                    cash_due: "Efectivo pendiente",
-                  }[c.state.payment]
-                }
-              </dd>
-            </div>
-          </div>
           <h2>Conversaciones</h2>
           {turnsResult.data
             ?.slice()
@@ -155,65 +210,140 @@ export default async function ContactPage({ params }: { params: Promise<{ person
             esta ficha.
           </p>
         </section>
+      )}
+      {tab === "followup" && (
         <section className="crm-panel">
-          <FollowupForm contact={c} canEdit={data.canEdit} />
+          <FollowupForm key={c.followup.revision} contact={c} canEdit={data.canEdit} />
         </section>
-      </div>
-      <section className="crm-panel crm-history">
-        <h2>Historial de seguimiento</h2>
-        {history?.length ? (
-          history.map((h) => {
-            const a = h.after_data as Record<string, string>;
-            const before = h.before_data as Record<string, string> | null;
-            return (
-              <article className="crm-history-item" key={h.id}>
-                <strong>
-                  {new Date(h.created_at).toLocaleString("es-MX", { timeZone: studio.timezone })}
-                </strong>
-                <p>
-                  {before ? "Actualización de seguimiento" : "Primer seguimiento registrado"} ·{" "}
-                  {a.qualification === "not_qualified"
-                    ? "No apta"
-                    : a.qualification === "qualified"
-                      ? "Apta"
-                      : "Pendiente"}
-                </p>
-                {a.qualification_reason && <p>{a.qualification_reason}</p>}
-                <details>
-                  <summary>Ver cambios</summary>
-                  {Object.keys(a)
-                    .filter(
-                      (k) =>
-                        !["studio_id", "person_id", "updated_at", "revision"].includes(k) &&
-                        String(before?.[k] ?? "") !== String(a[k] ?? ""),
-                    )
-                    .map((k) => (
-                      <p key={k}>
-                        {(
-                          {
-                            notes: "Notas",
-                            location: "Ubicación",
-                            interest: "Interés",
-                            next_action: "Próxima acción",
-                            next_action_on: "Fecha",
-                            prospect_stage: "Etapa",
-                            qualification: "Calificación",
-                            qualification_reason: "Motivo",
-                            human_reason: "Atención humana",
-                            human_summary: "Resumen",
-                          } as Record<string, string>
-                        )[k] || k}
-                        : {before?.[k] || "—"} → {a[k] || "—"}
-                      </p>
-                    ))}
-                </details>
-              </article>
-            );
-          })
-        ) : (
-          <p>Todavía no hay cambios de seguimiento.</p>
-        )}
-      </section>
+      )}
+      {tab === "notes" && (
+        <section className="crm-panel">
+          <FollowupForm key={c.followup.revision} contact={c} canEdit={data.canEdit} notesOnly />
+        </section>
+      )}
+      {tab === "profile" && (
+        <>
+          <section className="crm-panel">
+            <h2>Datos del contacto</h2>
+            <dl className="crm-profile-facts">
+              {[
+                ["Nombre", c.name],
+                ["Teléfono", c.phone],
+                ["Correo", c.email],
+                ["Canal de origen", c.channel],
+                ["Último canal", c.lastChannel],
+                ["Ubicación", c.followup.location],
+                ["Interés", c.followup.interest],
+                ["Calificación", qual],
+                [
+                  "Fecha de ingreso",
+                  new Date(c.joinedAt).toLocaleDateString("es-MX", { timeZone: studio.timezone }),
+                ],
+              ].map(([label, value]) => (
+                <div key={label}>
+                  <dt>{label}</dt>
+                  <dd>{value || "Sin registrar"}</dd>
+                </div>
+              ))}
+            </dl>
+          </section>
+          {!c.studentId && data.canEdit && (
+            <section className="crm-panel">
+              <h2>Completar expediente</h2>
+              <p className="crm-help">
+                Habilita los datos personales, paquetes, documentos y reservas sobre esta misma
+                persona. El tipo permanece Prospecto hasta registrar su prueba.
+              </p>
+              <form action={prepareContactRecord.bind(null, c.id)}>
+                <PendingActionButton className="crm-primary" pendingLabel="Preparando…">
+                  Habilitar expediente operativo
+                </PendingActionButton>
+              </form>
+            </section>
+          )}
+          {c.studentId ? (
+            <StudentRecord
+              params={Promise.resolve({ studentId: c.studentId })}
+              searchParams={Promise.resolve(query)}
+              crmHref={base}
+            />
+          ) : (
+            <section className="crm-panel">
+              <FollowupForm key={c.followup.revision} contact={c} canEdit={data.canEdit} />
+            </section>
+          )}
+        </>
+      )}
+      {tab === "activity" && (
+        <>
+          <section className="crm-panel crm-history">
+            <h2>Historial de seguimiento</h2>
+            {history?.length ? (
+              history.map((h) => {
+                const a = h.after_data as Record<string, string>;
+                const before = h.before_data as Record<string, string> | null;
+                return (
+                  <article className="crm-history-item" key={h.id}>
+                    <strong>
+                      {new Date(h.created_at).toLocaleString("es-MX", {
+                        timeZone: studio.timezone,
+                      })}
+                    </strong>
+                    <p>
+                      {before ? "Actualización de seguimiento" : "Primer seguimiento registrado"} ·{" "}
+                      {a.qualification === "not_qualified"
+                        ? "No apta"
+                        : a.qualification === "qualified"
+                          ? "Apta"
+                          : "Pendiente"}
+                    </p>
+                    {a.qualification_reason && <p>{a.qualification_reason}</p>}
+                    <details>
+                      <summary>Ver cambios</summary>
+                      {Object.keys(a)
+                        .filter(
+                          (k) =>
+                            !["studio_id", "person_id", "updated_at", "revision"].includes(k) &&
+                            String(before?.[k] ?? "") !== String(a[k] ?? ""),
+                        )
+                        .map((k) => (
+                          <p key={k}>
+                            {(
+                              {
+                                notes: "Notas",
+                                location: "Ubicación",
+                                interest: "Interés",
+                                next_action: "Próxima acción",
+                                next_action_on: "Fecha",
+                                prospect_stage: "Etapa",
+                                qualification: "Calificación",
+                                qualification_reason: "Motivo",
+                                human_reason: "Atención humana",
+                                human_summary: "Resumen",
+                              } as Record<string, string>
+                            )[k] || k}
+                            : {before?.[k] || "—"} → {a[k] || "—"}
+                          </p>
+                        ))}
+                    </details>
+                  </article>
+                );
+              })
+            ) : (
+              <p>Todavía no hay cambios de seguimiento.</p>
+            )}
+          </section>
+
+          {c.studentId && (
+            <StudentRecord
+              params={Promise.resolve({ studentId: c.studentId })}
+              searchParams={Promise.resolve({ ...query, view: "history" })}
+              crmHref={base}
+              hideNavigation
+            />
+          )}
+        </>
+      )}
     </>
   );
 }

@@ -51,6 +51,24 @@ describe("CRM projection from authoritative Studio Flow records", () => {
         },
       }),
     ).toMatchObject({ personType: "trial", stage: "scheduled" }));
+  it("reflects recorded attendance even when cached trial status is pending", () =>
+    expect(
+      projectContact({
+        ...base,
+        studentType: "trial",
+        trialStatus: "pending",
+        reservation: { id: "r", status: "attended", commercial_status: "confirmed" },
+      }),
+    ).toMatchObject({ personType: "trial", stage: "attended" }));
+  it("reflects no show from the recorded reservation", () =>
+    expect(
+      projectContact({
+        ...base,
+        studentType: "trial",
+        trialStatus: "pending",
+        reservation: { id: "r", status: "no_show", commercial_status: "confirmed" },
+      }),
+    ).toMatchObject({ personType: "trial", stage: "not_attended" }));
   it("preserves Trial after rejected payment", () =>
     expect(
       projectContact({

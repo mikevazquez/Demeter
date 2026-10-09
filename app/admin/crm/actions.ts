@@ -2,6 +2,55 @@
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+import { setAttendanceFromToday } from "../actions";
+
+export async function prepareContactRecord(personId: string) {
+  const { supabase, studio } = await getAdminContext(CAPABILITIES.STUDENTS_WRITE);
+  const { data: contact, error: readError } = await supabase
+    .from("crm_contacts")
+    .select("id")
+    .eq("studio_id", studio.id)
+    .eq("person_id", personId)
+    .maybeSingle();
+  if (readError || !contact)
+    redirect(`/admin/crm/${encodeURIComponent(personId)}?error=contact_record`);
+  const { data, error } = await supabase.rpc("assistant_ensure_trial_student", {
+    target_studio_id: studio.id,
+    target_crm_contact_id: contact.id,
+  });
+  if (error || !data?.ok)
+    redirect(
+      `/admin/crm/${personId}?error=${encodeURIComponent(data?.reason_code || "contact_record")}`,
+    );
+  revalidatePath("/admin/crm", "layout");
+  redirect(`/admin/crm/${personId}?tab=profile&view=profile`);
+}
+
+export async function setCrmAttendance(personId: string, form: FormData) {
+  const { supabase, studio } = await getAdminContext(CAPABILITIES.ATTENDANCE_WRITE);
+  const { data: student } = await supabase
+    .from("students")
+    .select("id")
+    .eq("studio_id", studio.id)
+    .eq("person_id", personId)
+    .is("archived_at", null)
+    .maybeSingle();
+  const { data: reservation } = student
+    ? await supabase
+        .from("reservations")
+        .select("id,session_id")
+        .eq("studio_id", studio.id)
+        .eq("student_id", student.id)
+        .eq("id", String(form.get("reservation_id") || ""))
+        .maybeSingle()
+    : { data: null };
+  if (!reservation) redirect(`/admin/crm/${encodeURIComponent(personId)}?error=attendance`);
+  form.set("session_id", reservation.session_id);
+  form.set("return_to", `/admin/crm/${personId}?tab=activity`);
+  revalidatePath("/admin/crm", "layout");
+  await setAttendanceFromToday(form);
+}
 export async function saveFollowup(
   _previous: { error?: string; saved?: boolean },
   form: FormData,

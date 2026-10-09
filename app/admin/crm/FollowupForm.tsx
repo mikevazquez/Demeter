@@ -6,9 +6,11 @@ import { stageLabels, stages } from "@/lib/crm/demi-state";
 export default function FollowupForm({
   contact,
   canEdit,
+  notesOnly = false,
 }: {
   contact: CrmContact;
   canEdit: boolean;
+  notesOnly?: boolean;
 }) {
   const [result, action, pending] = useActionState(saveFollowup, {});
   const f = contact.followup;
@@ -17,93 +19,108 @@ export default function FollowupForm({
     setDraft({ ...draft, [e.target.name]: e.target.value });
   return (
     <form action={action} className="crm-followup" onReset={(e) => e.preventDefault()}>
-      <h2>Seguimiento de Demi</h2>
+      <h2>{notesOnly ? "Notas internas del contacto" : "Seguimiento de Demi"}</h2>
       <input type="hidden" name="person_id" value={contact.id} />
       <input type="hidden" name="revision" value={f.revision} />
       <fieldset disabled={!canEdit || pending}>
+        {notesOnly &&
+          Object.entries(f)
+            .filter(([key]) => key !== "notes" && key !== "revision")
+            .map(([key, value]) => (
+              <input type="hidden" key={key} name={key} value={String(value)} />
+            ))}
         <div className="crm-form-grid">
-          <label>
-            Etapa del prospecto
-            <select
-              name="prospect_stage"
-              value={draft.prospect_stage}
-              onChange={change}
-              disabled={!!contact.reviewReason || contact.state.personType !== "prospect"}
-            >
-              {stages.prospect
-                .filter((s) => s !== "not_qualified")
-                .map((s) => (
-                  <option key={s} value={s}>
-                    {stageLabels[s]}
-                  </option>
-                ))}
-            </select>
-          </label>
-          {(!!contact.reviewReason || contact.state.personType !== "prospect") && (
-            <input type="hidden" name="prospect_stage" value={f.prospect_stage} />
+          {!notesOnly && (
+            <>
+              <label>
+                Etapa del prospecto
+                <select
+                  name="prospect_stage"
+                  value={draft.prospect_stage}
+                  onChange={change}
+                  disabled={!!contact.reviewReason || contact.state.personType !== "prospect"}
+                >
+                  {stages.prospect
+                    .filter((s) => s !== "not_qualified")
+                    .map((s) => (
+                      <option key={s} value={s}>
+                        {stageLabels[s]}
+                      </option>
+                    ))}
+                </select>
+              </label>
+              {(!!contact.reviewReason || contact.state.personType !== "prospect") && (
+                <input type="hidden" name="prospect_stage" value={f.prospect_stage} />
+              )}
+              <label>
+                Calificación
+                <select name="qualification" value={draft.qualification} onChange={change}>
+                  <option value="pending">Pendiente</option>
+                  <option value="qualified">Apta</option>
+                  <option value="not_qualified">No apta</option>
+                </select>
+              </label>
+              <label>
+                Motivo si no es apta
+                <input
+                  name="qualification_reason"
+                  required={draft.qualification === "not_qualified"}
+                  value={draft.qualification_reason}
+                  onChange={change}
+                  maxLength={1000}
+                  placeholder="Distancia, horarios incompatibles…"
+                />
+              </label>
+              <label>
+                Ubicación
+                <input name="location" value={draft.location} onChange={change} maxLength={200} />
+              </label>
+              <label>
+                Interés
+                <input name="interest" value={draft.interest} onChange={change} maxLength={300} />
+              </label>
+              <label>
+                Atención humana
+                <select name="human_reason" value={draft.human_reason} onChange={change}>
+                  <option value="">Sin solicitud</option>
+                  <option value="requested">Solicitada por la persona</option>
+                  <option value="refund">Reembolso</option>
+                  <option value="policy_exception">Excepción a políticas</option>
+                  <option value="complaint">Queja</option>
+                  <option value="sensitive_topic">Tema sensible</option>
+                  <option value="persistent_error">Error persistente</option>
+                </select>
+              </label>
+              <label className="crm-wide">
+                Resumen para atención humana
+                <textarea
+                  name="human_summary"
+                  required={!!draft.human_reason}
+                  value={draft.human_summary}
+                  onChange={change}
+                  maxLength={2000}
+                />
+              </label>
+              <label>
+                Próxima acción
+                <input
+                  name="next_action"
+                  value={draft.next_action}
+                  onChange={change}
+                  maxLength={500}
+                />
+              </label>
+              <label>
+                Fecha de seguimiento
+                <input
+                  type="date"
+                  name="next_action_on"
+                  value={draft.next_action_on}
+                  onChange={change}
+                />
+              </label>
+            </>
           )}
-          <label>
-            Calificación
-            <select name="qualification" value={draft.qualification} onChange={change}>
-              <option value="pending">Pendiente</option>
-              <option value="qualified">Apta</option>
-              <option value="not_qualified">No apta</option>
-            </select>
-          </label>
-          <label>
-            Motivo si no es apta
-            <input
-              name="qualification_reason"
-              required={draft.qualification === "not_qualified"}
-              value={draft.qualification_reason}
-              onChange={change}
-              maxLength={1000}
-              placeholder="Distancia, horarios incompatibles…"
-            />
-          </label>
-          <label>
-            Ubicación
-            <input name="location" value={draft.location} onChange={change} maxLength={200} />
-          </label>
-          <label>
-            Interés
-            <input name="interest" value={draft.interest} onChange={change} maxLength={300} />
-          </label>
-          <label>
-            Atención humana
-            <select name="human_reason" value={draft.human_reason} onChange={change}>
-              <option value="">Sin solicitud</option>
-              <option value="requested">Solicitada por la persona</option>
-              <option value="refund">Reembolso</option>
-              <option value="policy_exception">Excepción a políticas</option>
-              <option value="complaint">Queja</option>
-              <option value="sensitive_topic">Tema sensible</option>
-              <option value="persistent_error">Error persistente</option>
-            </select>
-          </label>
-          <label className="crm-wide">
-            Resumen para atención humana
-            <textarea
-              name="human_summary"
-              required={!!draft.human_reason}
-              value={draft.human_summary}
-              onChange={change}
-              maxLength={2000}
-            />
-          </label>
-          <label>
-            Próxima acción
-            <input name="next_action" value={draft.next_action} onChange={change} maxLength={500} />
-          </label>
-          <label>
-            Fecha de seguimiento
-            <input
-              type="date"
-              name="next_action_on"
-              value={draft.next_action_on}
-              onChange={change}
-            />
-          </label>
           <label className="crm-wide">
             Notas
             <textarea name="notes" value={draft.notes} onChange={change} maxLength={6000} />
@@ -111,7 +128,7 @@ export default function FollowupForm({
         </div>
         {canEdit && (
           <button className="crm-primary" type="submit">
-            {pending ? "Guardando…" : "Guardar seguimiento"}
+            {pending ? "Guardando…" : notesOnly ? "Guardar notas" : "Guardar seguimiento"}
           </button>
         )}
       </fieldset>

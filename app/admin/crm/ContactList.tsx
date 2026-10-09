@@ -42,12 +42,21 @@ function ChannelIcon({ channel }: { channel: string }) {
   );
 }
 const qualifications = { pending: "Pendiente", qualified: "Apta", not_qualified: "No apta" };
-export default function ContactList({ contacts }: { contacts: CrmContact[] }) {
-  const [query, setQuery] = useState("");
+export default function ContactList({
+  contacts,
+  canEdit,
+  initialQuery = "",
+}: {
+  contacts: CrmContact[];
+  canEdit: boolean;
+  initialQuery?: string;
+}) {
+  const [query, setQuery] = useState(initialQuery);
   const [type, setType] = useState("all");
   const [channel, setChannel] = useState("all");
   const [qualification, setQualification] = useState("all");
   const [order, setOrder] = useState("recent");
+  const [operational, setOperational] = useState("all");
   const filtered = contacts
     .filter(
       (c) =>
@@ -56,6 +65,10 @@ export default function ContactList({ contacts }: { contacts: CrmContact[] }) {
             ? !!c.reviewReason
             : !c.reviewReason && c.state.personType === type)) &&
         (channel === "all" || c.channel === channel) &&
+        (operational === "all" ||
+          (operational === "active" || operational === "inactive"
+            ? c.lifecycleStatus === operational
+            : c.state.package === operational)) &&
         (qualification === "all" || c.state.qualification === qualification) &&
         [c.name, c.phone, c.email, c.channel]
           .join(" ")
@@ -71,10 +84,15 @@ export default function ContactList({ contacts }: { contacts: CrmContact[] }) {
     <>
       <header className="crm-heading">
         <div>
-          <span className="crm-eyebrow">STUDIO FLOW · DEMI</span>
+          <span className="crm-eyebrow">RELACIÓN CON ALUMNAS · DEMI</span>
           <h1>CRM de alumnas</h1>
           <p>Identifica a cada contacto y acompaña su siguiente paso.</p>
         </div>
+        {canEdit && (
+          <Link className="crm-primary" href="/admin/crm/nuevo">
+            + Nuevo contacto
+          </Link>
+        )}
       </header>
       <div className="crm-summary">
         {personTypes.map((t) => (
@@ -121,6 +139,16 @@ export default function ContactList({ contacts }: { contacts: CrmContact[] }) {
                   {typeLabels[t]}
                 </option>
               ))}
+            </select>
+          </label>
+          <label>
+            Estado operativo
+            <select value={operational} onChange={(e) => setOperational(e.target.value)}>
+              <option value="all">Todos</option>
+              <option value="active">Acceso activo</option>
+              <option value="inactive">Acceso inactivo</option>
+              <option value="expired">Paquete vencido</option>
+              <option value="none">Sin paquete</option>
             </select>
           </label>
           <label>

@@ -1,0 +1,2282 @@
+import Link from "next/link";
+import PendingActionButton from "@/app/admin/components/PendingActionButton";
+import StudentLifecycleActions from "./StudentLifecycleActions";
+import StudentLifecycleNoticeDialog from "./StudentLifecycleNoticeDialog";
+import Profile360Overview from "./Profile360Overview";
+import StudentPackageCard from "./StudentPackageCard";
+import StudentPortalAccessSection from "./StudentPortalAccessSection";
+import StudentEvaluationsPanel from "./StudentEvaluationsPanel";
+import StudentDocumentsPanel from "./StudentDocumentsPanel";
+import { notFound } from "next/navigation";
+import { CAPABILITIES } from "@/lib/auth/capabilities";
+import { getAdminContext } from "@/lib/auth/admin-context";
+import { createServiceClient } from "@/lib/supabase/service";
+import {
+  unlockMedalsAccess,
+  updateCommunicationPreferences,
+  updateDynamicProfileFields,
+  updateStudent,
+  reviewStudentTransferPurchaseAction,
+} from "./actions";
+
+const structuralFieldKeys = new Set(["first_name", "last_name", "phone", "email"]);
+
+const lifecycleCopy: Record<string, string> = {
+  active: "Activa",
+  inactive: "Inactiva",
+};
+
+const acquisitionStatusCopy: Record<string, string> = {
+  active: "Activa",
+  expired: "Vencida",
+  cancelled: "Cancelada",
+};
+
+const communicationOriginCopy: Record<string, string> = {
+  admin: "Administración",
+  student: "Alumna",
+  system: "Sistema",
+  integration: "Integración",
+};
+
+const communicationFieldCopy: Record<string, string> = {
+  operational: "Operativas",
+  reminders: "Recordatorios",
+  retention: "Retención / seguimiento",
+  promotions: "Promociones",
+  whatsapp_blocked: "Bloqueo total de WhatsApp",
+};
+
+function optionValues(options: unknown): string[] {
+  if (Array.isArray(options))
+    return options.filter((value): value is string => typeof value === "string");
+
+  if (options && typeof options === "object" && "choices" in options) {
+    const choices = (options as { choices?: unknown }).choices;
+    if (Array.isArray(choices)) {
+      return choices.filter((value): value is string => typeof value === "string");
+    }
+  }
+
+  return [];
+}
+
+function scalarValue(value: unknown): string {
+  if (typeof value === "string" || typeof value === "number") return String(value);
+  return "";
+}
+
+function formatDate(value: string, locale: string) {
+  return new Intl.DateTimeFormat(locale, {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  }).format(new Date(`${value}T12:00:00Z`));
+}
+
+function formatDateTime(value: string, timeZone: string, locale: string) {
+  return new Intl.DateTimeFormat(locale, {
+    dateStyle: "medium",
+    timeStyle: "short",
+    timeZone,
+  }).format(new Date(value));
+}
+
+function rewardStatusLabel(status: string) {
+  const labels: Record<string, string> = {
+    blocked: "Bloqueada",
+    available: "Disponible",
+    reserved: "Reservada",
+    redeemed: "Usada",
+    expired: "Vencida",
+    revoked: "Revocada",
+  };
+  return labels[status] ?? status;
+}
+
+function rewardBenefitLabel(kind: string, benefit: unknown, locale: string, currency: string) {
+  const data = benefit && typeof benefit === "object" ? (benefit as Record<string, unknown>) : {};
+  if (kind === "credits" && typeof data.credits === "number") {
+    return String(data.credits) + (data.credits === 1 ? " crédito" : " créditos");
+  }
+  if (kind === "percentage_discount" && typeof data.percentage === "number") {
+    return String(data.percentage) + "% de descuento";
+  }
+  if (kind === "fixed_discount" && typeof data.amount_minor === "number") {
+    return (
+      new Intl.NumberFormat(locale, {
+        style: "currency",
+        currency,
+        maximumFractionDigits: 0,
+      }).format(data.amount_minor / 100) + " de descuento"
+    );
+  }
+  if (kind === "validity_extension" && typeof data.days === "number") {
+    return String(data.days) + (data.days === 1 ? " día extra" : " días extra");
+  }
+  const labels: Record<string, string> = {
+    surcharge_waiver: "Recargo bonificado",
+    special_benefit: "Beneficio especial",
+    badge: "Insignia",
+    custom_manual: "Beneficio manual",
+  };
+  return labels[kind] ?? "Recompensa";
+}
+
+function localDateKey(timeZone: string) {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(new Date());
+  const year = parts.find((part) => part.type === "year")?.value ?? "0000";
+  const month = parts.find((part) => part.type === "month")?.value ?? "00";
+  const day = parts.find((part) => part.type === "day")?.value ?? "00";
+  return year + "-" + month + "-" + day;
+}
+
+export default async function StudentRecord({
+  params,
+  searchParams,
+  crmHref,
+  hideNavigation = false,
+}: {
+  crmHref?: string;
+  hideNavigation?: boolean;
+  params: Promise<{ studentId: string }>;
+  searchParams: Promise<{
+    saved?: string;
+    error?: string;
+    alta?: string;
+    sale?: string;
+    lifecycle?: string;
+    lifecycle_error?: string;
+    evaluation_error?: string;
+    document_result?: string;
+    document_error?: string;
+    transfer_review?: string;
+    view?: string;
+  }>;
+}) {
+  const [{ studentId }, query, { supabase, studio, can }] = await Promise.all([
+    params,
+    searchParams,
+    getAdminContext(CAPABILITIES.STUDENTS_READ),
+  ]);
+  const requestedView = String(query.view ?? "summary");
+  const view = (
+    [
+      "summary",
+      "packages",
+      "rewards",
+      "evaluations",
+      "documents",
+      "followup",
+      "history",
+      "profile",
+    ].includes(requestedView)
+      ? requestedView
+      : "summary"
+  ) as
+    | "summary"
+    | "packages"
+    | "rewards"
+    | "evaluations"
+    | "documents"
+    | "followup"
+    | "history"
+    | "profile";
+  const { data: student } = await supabase
+    .from("students")
+    .select(
+      "id, person_id, user_id, full_name, email, phone, lifecycle_status, profile_status, created_at, archived_at",
+    )
+    .eq("id", studentId)
+    .eq("studio_id", studio.id)
+    .maybeSingle();
+
+  if (!student || student.lifecycle_status === "archived") notFound();
+
+  const canEdit = can(CAPABILITIES.STUDENTS_WRITE);
+  const canReadSchedule = can(CAPABILITIES.SCHEDULE_READ);
+  const canReadSales = can(CAPABILITIES.SALES_READ);
+  const canManageSales = can(CAPABILITIES.SALES_WRITE);
+  const canReadRewards = can(CAPABILITIES.REWARDS_READ);
+  const canManageRewards = can(CAPABILITIES.REWARDS_MANAGE);
+  const canReadEvaluations = can(CAPABILITIES.EVALUATIONS_READ);
+  const canReadDocuments = can(CAPABILITIES.DOCUMENTS_READ);
+  const canArchive = can(CAPABILITIES.STUDENTS_ARCHIVE);
+  const canReadProducts = can(CAPABILITIES.PRODUCTS_READ);
+  const canEditAcquisitions = can(CAPABILITIES.PRODUCTS_WRITE) || can(CAPABILITIES.SALES_WRITE);
+
+  const secondaryReads = Promise.all([
+    canArchive
+      ? supabase
+          .from("student_lifecycle_events")
+          .select("id, from_status, to_status, created_at")
+          .eq("student_id", student.id)
+          .eq("studio_id", studio.id)
+          .order("created_at", { ascending: false })
+          .limit(12)
+      : Promise.resolve({ data: [] }),
+    canReadSales
+      ? supabase
+          .from("student_operating_charges")
+          .select(
+            "id,charge_type,amount_minor,currency,status,created_at,resolved_at,resolution_note,reservation_id",
+          )
+          .eq("studio_id", studio.id)
+          .eq("student_id", student.id)
+          .order("created_at", { ascending: false })
+          .limit(30)
+      : Promise.resolve({ data: [] }),
+    canReadSchedule
+      ? supabase
+          .from("reservations")
+          .select("id,session_id,acquisition_id,status,credits_held,cancelled_at")
+          .eq("studio_id", studio.id)
+          .eq("student_id", student.id)
+          .order("booked_at", { ascending: false })
+      : Promise.resolve({ data: [] }),
+    canReadSales
+      ? supabase
+          .from("sales")
+          .select("id,folio,total_minor,status,created_at")
+          .eq("studio_id", studio.id)
+          .eq("student_id", student.id)
+          .order("created_at", { ascending: false })
+      : Promise.resolve({ data: [] }),
+    supabase
+      .from("student_enrollments")
+      .select("id,status,starts_on,expires_on,created_at")
+      .eq("studio_id", studio.id)
+      .eq("student_id", student.id)
+      .order("created_at", { ascending: false }),
+    canReadRewards
+      ? supabase
+          .from("reward_status_memberships")
+          .select("current_level_key")
+          .eq("studio_id", studio.id)
+          .eq("student_id", student.id)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
+    canReadRewards
+      ? supabase
+          .from("reward_onboarding")
+          .select(
+            "documents_completed_at,profile_completed_at,app_installed_at,notifications_enabled_at,first_reservation_at,first_attendance_at,access_unlocked_at,access_method,access_reason",
+          )
+          .eq("studio_id", studio.id)
+          .eq("student_id", student.id)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
+    canReadRewards
+      ? supabase
+          .from("reward_instances")
+          .select("id", { count: "exact", head: true })
+          .eq("studio_id", studio.id)
+          .eq("student_id", student.id)
+          .eq("status", "available")
+      : Promise.resolve({ data: null, count: 0 }),
+    canReadRewards
+      ? supabase
+          .from("reward_achievement_unlocks")
+          .select("id,title_snapshot,achievement_key,level_key,unlocked_at")
+          .eq("studio_id", studio.id)
+          .eq("student_id", student.id)
+          .order("unlocked_at", { ascending: false })
+          .limit(20)
+      : Promise.resolve({ data: [] }),
+    canReadRewards
+      ? supabase
+          .from("reward_status_months")
+          .select("id,resulting_level_key,closed_at,period_start")
+          .eq("studio_id", studio.id)
+          .eq("student_id", student.id)
+          .eq("is_closed", true)
+          .not("resulting_level_key", "is", null)
+          .order("period_start", { ascending: false })
+          .limit(20)
+      : Promise.resolve({ data: [] }),
+    canReadRewards
+      ? supabase
+          .from("reward_instances")
+          .select("id,reward_key,status,kind,benefit_definition,expires_at,redeemed_at,created_at")
+          .eq("studio_id", studio.id)
+          .eq("student_id", student.id)
+          .order("created_at", { ascending: false })
+          .limit(30)
+      : Promise.resolve({ data: [] }),
+    canReadEvaluations
+      ? supabase
+          .from("student_discipline_levels")
+          .select("discipline_id,discipline_technical_level_id")
+          .eq("studio_id", studio.id)
+          .eq("student_id", student.id)
+      : Promise.resolve({ data: [] }),
+    student.user_id
+      ? supabase.auth.admin.getUserById(student.user_id)
+      : Promise.resolve({ data: { user: null } }),
+  ]);
+
+  const [
+    { data: person },
+    { data: contacts },
+    { data: definitions },
+    { data: fieldValues },
+    acquisitionResult,
+    communicationPreferencesResult,
+    communicationPreferenceEventsResult,
+  ] = await Promise.all([
+    student.person_id
+      ? supabase
+          .from("persons")
+          .select("id, first_name, last_name")
+          .eq("id", student.person_id)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
+    student.person_id
+      ? supabase
+          .from("person_contacts")
+          .select("kind, value, is_primary")
+          .eq("person_id", student.person_id)
+          .order("kind")
+      : Promise.resolve({ data: [] }),
+    supabase
+      .from("profile_field_definitions")
+      .select("id, key, label, field_type, required, options, sort_order")
+      .eq("studio_id", studio.id)
+      .eq("entity_type", "student")
+      .eq("active", true)
+      .order("sort_order")
+      .order("label"),
+    student.person_id
+      ? supabase
+          .from("profile_field_values")
+          .select("definition_id, value")
+          .eq("person_id", student.person_id)
+      : Promise.resolve({ data: [] }),
+    canReadProducts
+      ? supabase
+          .from("product_acquisitions")
+          .select(
+            "id,product_template_id,status,starts_on,expires_on,unlimited,credit_limit,refunded_at,created_at,activation_mode,access_blocked,validity_days_snapshot,sale_line_id",
+          )
+          .eq("student_id", student.id)
+          .eq("studio_id", studio.id)
+          .order("created_at", { ascending: false })
+      : Promise.resolve({ data: [] }),
+    student.person_id
+      ? supabase
+          .from("person_communication_preferences")
+          .select(
+            "operational_enabled,reminders_enabled,retention_enabled,promotions_enabled,whatsapp_blocked,updated_origin,updated_at",
+          )
+          .eq("studio_id", studio.id)
+          .eq("person_id", student.person_id)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
+    student.person_id
+      ? supabase
+          .from("person_communication_preference_events")
+          .select("id,origin,changed_fields,reason,created_at")
+          .eq("studio_id", studio.id)
+          .eq("person_id", student.person_id)
+          .order("created_at", { ascending: false })
+          .limit(8)
+      : Promise.resolve({ data: [] }),
+  ]);
+
+  const acquisitions = acquisitionResult.data ?? [];
+  const acquisitionIds = acquisitions.map((item) => item.id);
+  const productIds = [...new Set(acquisitions.map((item) => item.product_template_id))];
+  const [{ data: acquisitionProducts }, { data: ledgerRows }] = canReadProducts
+    ? await Promise.all([
+        productIds.length
+          ? supabase
+              .from("product_templates")
+              .select("id,name,package_term")
+              .eq("studio_id", studio.id)
+              .in("id", productIds)
+          : Promise.resolve({ data: [] }),
+        acquisitionIds.length
+          ? supabase
+              .from("credit_ledger")
+              .select("acquisition_id,quantity")
+              .eq("studio_id", studio.id)
+              .in("acquisition_id", acquisitionIds)
+          : Promise.resolve({ data: [] }),
+      ])
+    : [{ data: [] }, { data: [] }];
+
+  const productMap = new Map((acquisitionProducts ?? []).map((item) => [item.id, item]));
+  const balanceMap = new Map<string, number>();
+  for (const row of ledgerRows ?? []) {
+    balanceMap.set(row.acquisition_id, (balanceMap.get(row.acquisition_id) ?? 0) + row.quantity);
+  }
+
+  const phone = contacts?.find((item) => item.kind === "phone")?.value ?? student.phone;
+  const email = contacts?.find((item) => item.kind === "email")?.value ?? student.email ?? "";
+  const firstName = person?.first_name ?? student.full_name.split(" ")[0] ?? "";
+  const lastName = person?.last_name ?? student.full_name.split(" ").slice(1).join(" ");
+  const communicationPreferenceRow = communicationPreferencesResult.data;
+  const communicationPreferences = {
+    operational: communicationPreferenceRow?.operational_enabled ?? true,
+    reminders: communicationPreferenceRow?.reminders_enabled ?? true,
+    retention: communicationPreferenceRow?.retention_enabled ?? true,
+    promotions: communicationPreferenceRow?.promotions_enabled ?? true,
+    whatsappBlocked: communicationPreferenceRow?.whatsapp_blocked ?? false,
+  };
+  const communicationPreferenceEvents = communicationPreferenceEventsResult.data ?? [];
+  const [
+    lifecycleEventsResult,
+    operatingChargesResult,
+    reservationRowsResult,
+    studentSalesResult,
+    enrollmentRowsResult,
+    statusMembershipResult,
+    onboardingResult,
+    rewardCountResult,
+    achievementRowsResult,
+    levelUnlockRowsResult,
+    rewardRowsResult,
+    studentLevelRowsResult,
+    authUserResult,
+  ] = await secondaryReads;
+
+  const lifecycleEvents = lifecycleEventsResult.data ?? [];
+  const operatingCharges = operatingChargesResult.data ?? [];
+  const pendingOperatingCharges = (operatingCharges ?? []).filter(
+    (charge) => charge.status === "pending",
+  );
+  const { data: transferPurchases } = canReadSales
+    ? await supabase
+        .from("assistant_transfer_purchase_intents")
+        .select(
+          "id,status,product_template_id,amount_minor,currency,receipt_received_at,receipt_storage_path,receipt_mime_type,receipt_file_size,receipt_stored_at,created_at,validated_at,rejected_at,review_note,sale_id,acquisition_id",
+        )
+        .eq("studio_id", studio.id)
+        .eq("student_id", student.id)
+        .order("created_at", { ascending: false })
+        .limit(20)
+    : { data: [] };
+  const transferPurchaseRows = transferPurchases ?? [];
+  const transferReceiptUrlMap = new Map<string, string>();
+  if (canReadSales) {
+    const receiptRows = transferPurchaseRows.filter(
+      (item) => typeof item.receipt_storage_path === "string" && item.receipt_storage_path,
+    );
+    if (receiptRows.length) {
+      const serviceClient = createServiceClient();
+      const signed = await Promise.all(
+        receiptRows.map(async (item) => {
+          const path = String(item.receipt_storage_path);
+          const { data, error } = await serviceClient.storage
+            .from("transfer-receipts")
+            .createSignedUrl(path, 600);
+          return {
+            id: item.id,
+            signedUrl: error ? null : (data?.signedUrl ?? null),
+          };
+        }),
+      );
+
+      for (const item of signed) {
+        if (item.signedUrl) transferReceiptUrlMap.set(item.id, item.signedUrl);
+      }
+    }
+  }
+  const pendingTransferReviews = transferPurchaseRows.filter(
+    (item) => item.status === "provisional_active",
+  );
+  const timeZone = studio.timezone;
+  const locale = studio.locale;
+  const currency = studio.currency;
+  const today = localDateKey(timeZone);
+  const liveAcquisitions = acquisitions.filter(
+    (item) => item.status === "active" && !item.refunded_at,
+  );
+  const currentAcquisition =
+    liveAcquisitions
+      .filter(
+        (item) =>
+          (!item.starts_on || item.starts_on <= today) &&
+          (!item.expires_on || item.expires_on >= today),
+      )
+      .sort((a, b) =>
+        String(b.starts_on ?? b.created_at).localeCompare(String(a.starts_on ?? a.created_at)),
+      )[0] ?? null;
+  const scheduledAcquisitions = liveAcquisitions
+    .filter((item) => Boolean(item.starts_on && item.starts_on > today))
+    .sort((a, b) => String(a.starts_on).localeCompare(String(b.starts_on)));
+  const scheduledAcquisition = scheduledAcquisitions[0] ?? null;
+  const scheduledAcquisitionIds = new Set(scheduledAcquisitions.map((item) => item.id));
+  const historicalAcquisitions = acquisitions.filter(
+    (item) => item.id !== currentAcquisition?.id && !scheduledAcquisitionIds.has(item.id),
+  );
+
+  const dynamicDefinitions = (definitions ?? []).filter(
+    (definition) => !structuralFieldKeys.has(definition.key),
+  );
+  const valueMap = new Map((fieldValues ?? []).map((item) => [item.definition_id, item.value]));
+  const birthDateDefinition = (definitions ?? []).find(
+    (definition) => definition.key === "birth_date",
+  );
+  const birthDateValue = birthDateDefinition ? valueMap.get(birthDateDefinition.id) : null;
+  const birthDate = typeof birthDateValue === "string" ? birthDateValue : null;
+
+  type PackageClassEvent = {
+    id: string;
+    acquisitionId: string | null;
+    status: string;
+    className: string;
+    startsAt: string;
+    cancelledAt: string | null;
+    creditsHeld: number;
+  };
+  const packageClassEvents = new Map<string, PackageClassEvent[]>();
+  const generalClassEvents: PackageClassEvent[] = [];
+
+  let nextClass: { name: string; startsAt: string } | null = null;
+  if (canReadSchedule) {
+    const reservationRows = reservationRowsResult.data ?? [];
+    const allSessionIds = [...new Set(reservationRows.map((item) => item.session_id))];
+    const { data: sessionRows } = allSessionIds.length
+      ? await supabase
+          .from("class_sessions")
+          .select("id,template_id,starts_at")
+          .eq("studio_id", studio.id)
+          .in("id", allSessionIds)
+      : { data: [] };
+
+    const templateIds = [...new Set((sessionRows ?? []).map((item) => item.template_id))];
+    const { data: templateRows } = templateIds.length
+      ? await supabase
+          .from("class_templates")
+          .select("id,name")
+          .eq("studio_id", studio.id)
+          .in("id", templateIds)
+      : { data: [] };
+
+    const sessionMap = new Map((sessionRows ?? []).map((item) => [item.id, item]));
+    const templateNameMap = new Map((templateRows ?? []).map((item) => [item.id, item.name]));
+
+    for (const reservation of reservationRows) {
+      const session = sessionMap.get(reservation.session_id);
+      if (!session) continue;
+      const event: PackageClassEvent = {
+        id: reservation.id,
+        acquisitionId: reservation.acquisition_id,
+        status: reservation.status,
+        className: templateNameMap.get(session.template_id) ?? "Clase",
+        startsAt: session.starts_at,
+        cancelledAt: reservation.cancelled_at,
+        creditsHeld: reservation.credits_held ?? 0,
+      };
+      generalClassEvents.push(event);
+      if (reservation.acquisition_id) {
+        const list = packageClassEvents.get(reservation.acquisition_id) ?? [];
+        list.push(event);
+        packageClassEvents.set(reservation.acquisition_id, list);
+      }
+    }
+
+    for (const events of packageClassEvents.values()) {
+      events.sort((a, b) => b.startsAt.localeCompare(a.startsAt));
+    }
+    generalClassEvents.sort((a, b) => b.startsAt.localeCompare(a.startsAt));
+
+    if (currentAcquisition) {
+      const upcoming = (packageClassEvents.get(currentAcquisition.id) ?? [])
+        .filter((event) => event.status === "reserved" && new Date(event.startsAt) > new Date())
+        .sort((a, b) => a.startsAt.localeCompare(b.startsAt))[0];
+      if (upcoming) {
+        nextClass = { name: upcoming.className, startsAt: upcoming.startsAt };
+      }
+    }
+  }
+
+  type StudentSaleHistory = {
+    id: string;
+    folio: string;
+    totalMinor: number;
+    status: string;
+    createdAt: string;
+    netPaidMinor: number;
+    balanceMinor: number;
+    stateLabel: string;
+  };
+
+  let historicalValueMinor: number | null = null;
+  let pendingBalanceMinor = 0;
+  let studentSalesHistory: StudentSaleHistory[] = [];
+
+  if (canReadSales) {
+    const studentSales = studentSalesResult.data ?? [];
+    const saleIds = studentSales.map((sale) => sale.id);
+    const { data: payments } = saleIds.length
+      ? await supabase
+          .from("payments")
+          .select("sale_id,kind,amount_minor")
+          .eq("studio_id", studio.id)
+          .in("sale_id", saleIds)
+      : { data: [] };
+
+    const grossPaidBySale = new Map<string, number>();
+    const refundsBySale = new Map<string, number>();
+
+    for (const payment of payments ?? []) {
+      const target = payment.kind === "refund" ? refundsBySale : grossPaidBySale;
+      target.set(payment.sale_id, (target.get(payment.sale_id) ?? 0) + payment.amount_minor);
+    }
+
+    studentSalesHistory = studentSales.map((sale) => {
+      const grossPaid = grossPaidBySale.get(sale.id) ?? 0;
+      const refunded = refundsBySale.get(sale.id) ?? 0;
+      const netPaidMinor = grossPaid - refunded;
+      const balanceMinor = Math.max(0, sale.total_minor - netPaidMinor);
+      const stateLabel =
+        sale.status === "voided"
+          ? "Anulada"
+          : refunded > 0
+            ? refunded >= grossPaid && grossPaid > 0
+              ? "Reembolsada"
+              : "Con reembolso"
+            : netPaidMinor <= 0
+              ? "Pendiente"
+              : netPaidMinor < sale.total_minor
+                ? "Parcial"
+                : "Pagada";
+
+      return {
+        id: sale.id,
+        folio: sale.folio,
+        totalMinor: sale.total_minor,
+        status: sale.status,
+        createdAt: sale.created_at,
+        netPaidMinor,
+        balanceMinor,
+        stateLabel,
+      };
+    });
+
+    const confirmedSales = studentSalesHistory.filter((sale) => sale.status === "confirmed");
+    historicalValueMinor = confirmedSales.reduce((sum, sale) => sum + sale.netPaidMinor, 0);
+    pendingBalanceMinor = confirmedSales.reduce((sum, sale) => sum + sale.balanceMinor, 0);
+  }
+
+  const enrollmentRows = enrollmentRowsResult.data ?? [];
+  const enrollment =
+    enrollmentRows.find(
+      (item) =>
+        item.status === "active" &&
+        (!item.starts_on || item.starts_on <= today) &&
+        (!item.expires_on || item.expires_on >= today),
+    ) ??
+    enrollmentRows[0] ??
+    null;
+
+  let levelTitle: string | null = null;
+  let rewardOnboarding: {
+    documentsCompletedAt: string | null;
+    profileCompletedAt: string | null;
+    appInstalledAt: string | null;
+    notificationsEnabledAt: string | null;
+    firstReservationAt: string | null;
+    firstAttendanceAt: string | null;
+    accessUnlockedAt: string | null;
+    accessMethod: string | null;
+    accessReason: string | null;
+  } | null = null;
+  let rewardsAvailable: number | null = null;
+  let technicalLevels: Array<{ disciplineName: string; levelTitle: string }> = [];
+  let rewardAchievements: Array<{
+    id: string;
+    title: string;
+    levelKey: string | null;
+    unlockedAt: string;
+  }> = [];
+  let rewardLevelHistory: Array<{
+    id: string;
+    title: string;
+    levelOrder: number;
+    unlockedAt: string;
+  }> = [];
+  let rewardInstancesDetail: Array<{
+    id: string;
+    rewardKey: string | null;
+    status: string;
+    kind: string;
+    expiresAt: string | null;
+    redeemedAt: string | null;
+    createdAt: string;
+    benefitDefinition: unknown;
+  }> = [];
+  if (canReadRewards) {
+    const statusMembership = statusMembershipResult.data;
+    const onboardingRow = onboardingResult.data;
+    const achievementRows = achievementRowsResult.data ?? [];
+    const levelUnlockRows = levelUnlockRowsResult.data ?? [];
+    const rewardRows = rewardRowsResult.data ?? [];
+
+    rewardOnboarding = onboardingRow
+      ? {
+          documentsCompletedAt: onboardingRow.documents_completed_at,
+          profileCompletedAt: onboardingRow.profile_completed_at,
+          appInstalledAt: onboardingRow.app_installed_at,
+          notificationsEnabledAt: onboardingRow.notifications_enabled_at,
+          firstReservationAt: onboardingRow.first_reservation_at,
+          firstAttendanceAt: onboardingRow.first_attendance_at,
+          accessUnlockedAt: onboardingRow.access_unlocked_at,
+          accessMethod: onboardingRow.access_method,
+          accessReason: onboardingRow.access_reason,
+        }
+      : null;
+
+    if (statusMembership?.current_level_key) {
+      const { data: statusLevel } = await supabase
+        .from("reward_status_level_definitions")
+        .select("title")
+        .eq("studio_id", studio.id)
+        .eq("level_key", statusMembership.current_level_key)
+        .maybeSingle();
+
+      levelTitle = statusLevel?.title ?? null;
+    }
+
+    rewardsAvailable = rewardCountResult.count ?? 0;
+
+    rewardAchievements = (achievementRows ?? []).map((item) => ({
+      id: item.id,
+      title: item.title_snapshot || item.achievement_key || "Logro",
+      levelKey: item.level_key,
+      unlockedAt: item.unlocked_at,
+    }));
+    const medalTitles: Record<string, { title: string; order: number }> = {
+      bronze: { title: "Bronce", order: 1 },
+      silver: { title: "Plata", order: 2 },
+      gold: { title: "Oro", order: 3 },
+      diamond: { title: "Diamante", order: 4 },
+    };
+    rewardLevelHistory = (levelUnlockRows ?? []).flatMap((item) => {
+      const medal = item.resulting_level_key ? medalTitles[item.resulting_level_key] : null;
+      if (!medal) return [];
+      return [
+        {
+          id: item.id,
+          title: medal.title,
+          levelOrder: medal.order,
+          unlockedAt: item.closed_at ?? `${item.period_start}T12:00:00Z`,
+        },
+      ];
+    });
+    rewardInstancesDetail = (rewardRows ?? []).map((item) => ({
+      id: item.id,
+      rewardKey: item.reward_key,
+      status: item.status,
+      kind: item.kind,
+      expiresAt: item.expires_at,
+      redeemedAt: item.redeemed_at,
+      createdAt: item.created_at,
+      benefitDefinition: item.benefit_definition,
+    }));
+  }
+
+  if (canReadEvaluations) {
+    const studentLevelRows = studentLevelRowsResult.data ?? [];
+    const disciplineIds = [
+      ...new Set(studentLevelRows.map((item) => item.discipline_id).filter(Boolean)),
+    ];
+    const disciplineLevelIds = [
+      ...new Set(
+        studentLevelRows.map((item) => item.discipline_technical_level_id).filter(Boolean),
+      ),
+    ];
+
+    const [{ data: disciplineRows }, { data: disciplineLevelRows }] = await Promise.all([
+      disciplineIds.length
+        ? supabase.from("disciplines").select("id,name").in("id", disciplineIds)
+        : Promise.resolve({ data: [] }),
+      disciplineLevelIds.length
+        ? supabase
+            .from("discipline_technical_levels")
+            .select("id,technical_level_id")
+            .in("id", disciplineLevelIds)
+        : Promise.resolve({ data: [] }),
+    ]);
+
+    const technicalLevelIds = [
+      ...new Set(
+        (disciplineLevelRows ?? []).map((item) => item.technical_level_id).filter(Boolean),
+      ),
+    ];
+    const { data: technicalLevelRows } = technicalLevelIds.length
+      ? await supabase
+          .from("technical_level_definitions")
+          .select("id,title")
+          .in("id", technicalLevelIds)
+      : { data: [] };
+
+    const disciplineNameMap = new Map((disciplineRows ?? []).map((item) => [item.id, item.name]));
+    const disciplineTechnicalLevelMap = new Map(
+      (disciplineLevelRows ?? []).map((item) => [item.id, item.technical_level_id]),
+    );
+    const technicalLevelTitleMap = new Map(
+      (technicalLevelRows ?? []).map((item) => [item.id, item.title]),
+    );
+
+    technicalLevels = (studentLevelRows ?? [])
+      .map((item) => {
+        const technicalLevelId = disciplineTechnicalLevelMap.get(
+          item.discipline_technical_level_id,
+        );
+        const disciplineName = disciplineNameMap.get(item.discipline_id);
+        const technicalLevelTitle = technicalLevelId
+          ? technicalLevelTitleMap.get(technicalLevelId)
+          : null;
+        return disciplineName && technicalLevelTitle
+          ? { disciplineName, levelTitle: technicalLevelTitle }
+          : null;
+      })
+      .filter((item): item is { disciplineName: string; levelTitle: string } => Boolean(item))
+      .sort((left, right) => left.disciplineName.localeCompare(right.disciplineName, "es"));
+  }
+
+  type ProfileHistoryEvent = {
+    id: string;
+    at: string;
+    kind: "class" | "package" | "sale" | "reward" | "status";
+    title: string;
+    detail: string;
+    href?: string;
+  };
+  const profileHistoryEvents: ProfileHistoryEvent[] = [];
+
+  for (const event of generalClassEvents) {
+    const classTitleMap: Record<string, string> = {
+      reserved: "Clase reservada",
+      attended: "Asistió a clase",
+      cancelled_on_time: "Canceló clase a tiempo",
+      cancelled_late: "Cancelación tardía",
+      no_show: "No show",
+      cancelled_by_studio: "Clase cancelada por el estudio",
+    };
+    const isCancellation = ["cancelled_on_time", "cancelled_late", "cancelled_by_studio"].includes(
+      event.status,
+    );
+    profileHistoryEvents.push({
+      id: "class:" + event.id,
+      at: isCancellation && event.cancelledAt ? event.cancelledAt : event.startsAt,
+      kind: "class",
+      title: classTitleMap[event.status] ?? "Actividad de clase",
+      detail: isCancellation
+        ? `${event.className} · clase programada ${formatDateTime(event.startsAt, timeZone, locale)}`
+        : event.className,
+    });
+  }
+
+  for (const acquisition of acquisitions) {
+    profileHistoryEvents.push({
+      id: "package:" + acquisition.id,
+      at: acquisition.created_at,
+      kind: "package",
+      title: acquisition.id === currentAcquisition?.id ? "Paquete actual" : "Paquete registrado",
+      detail: productMap.get(acquisition.product_template_id)?.name ?? "Paquete",
+    });
+  }
+
+  for (const transfer of transferPurchaseRows) {
+    const amount = new Intl.NumberFormat(locale, {
+      style: "currency",
+      currency: transfer.currency ?? currency,
+    }).format(Number(transfer.amount_minor ?? 0) / 100);
+    const packageName = productMap.get(transfer.product_template_id)?.name ?? "Paquete";
+    const title =
+      transfer.status === "validated"
+        ? "Transferencia validada"
+        : transfer.status === "rejected"
+          ? "Transferencia rechazada"
+          : transfer.status === "provisional_active"
+            ? "Comprobante de transferencia recibido"
+            : transfer.status === "awaiting_receipt"
+              ? "Transferencia pendiente de comprobante"
+              : "Movimiento de transferencia";
+
+    profileHistoryEvents.push({
+      id: "transfer:" + transfer.id,
+      at:
+        transfer.validated_at ??
+        transfer.rejected_at ??
+        transfer.receipt_received_at ??
+        transfer.created_at,
+      kind: "sale",
+      title,
+      detail: `${packageName} · ${amount}`,
+      href: `/admin/alumnas/${student.id}?view=packages#transferencias`,
+    });
+  }
+
+  for (const achievement of rewardAchievements) {
+    profileHistoryEvents.push({
+      id: "reward:" + achievement.id,
+      at: achievement.unlockedAt,
+      kind: "reward",
+      title: "Logro desbloqueado",
+      detail: achievement.title,
+    });
+  }
+
+  for (const event of lifecycleEvents) {
+    profileHistoryEvents.push({
+      id: "status:" + event.id,
+      at: event.created_at,
+      kind: "status",
+      title: "Cambio de estado",
+      detail:
+        (lifecycleCopy[event.from_status] ?? event.from_status) +
+        " → " +
+        (lifecycleCopy[event.to_status] ?? event.to_status),
+    });
+  }
+
+  profileHistoryEvents.sort((a, b) => b.at.localeCompare(a.at));
+
+  const currentPackageView = currentAcquisition
+    ? {
+        name: productMap.get(currentAcquisition.product_template_id)?.name ?? "Paquete",
+        unlimited: currentAcquisition.unlimited,
+        availableCredits: currentAcquisition.unlimited
+          ? null
+          : (balanceMap.get(currentAcquisition.id) ?? 0),
+        creditLimit: currentAcquisition.credit_limit,
+        startsOn: currentAcquisition.starts_on,
+        expiresOn: currentAcquisition.expires_on,
+      }
+    : null;
+
+  const alerts: Array<{ title: string; detail: string }> = [];
+  if (student.lifecycle_status === "active" && !currentAcquisition && !scheduledAcquisition) {
+    const latestRelevant = acquisitions.find((item) => !item.refunded_at && item.expires_on);
+    alerts.push({
+      title: latestRelevant?.expires_on ? "Paquete vencido" : "Sin paquete activo",
+      detail: latestRelevant?.expires_on
+        ? "El último paquete venció " + formatDate(latestRelevant.expires_on, locale) + "."
+        : "No hay un paquete vigente o programado.",
+    });
+  }
+  if (
+    currentAcquisition &&
+    !currentAcquisition.unlimited &&
+    (balanceMap.get(currentAcquisition.id) ?? 0) <= 0
+  ) {
+    alerts.push({
+      title: "Sin créditos disponibles",
+      detail: "El paquete continúa registrado, pero ya no tiene créditos disponibles.",
+    });
+  }
+  if (currentAcquisition && !nextClass) {
+    alerts.push({
+      title: "Sin próxima clase",
+      detail: "No hay una reserva futura asociada al paquete actual.",
+    });
+  }
+  if (pendingTransferReviews.length > 0) {
+    alerts.push({
+      title: "Transferencia pendiente de validar",
+      detail:
+        pendingTransferReviews.length === 1
+          ? "Hay un comprobante asociado a esta alumna pendiente de validación."
+          : `Hay ${pendingTransferReviews.length} comprobantes asociados a esta alumna pendientes de validación.`,
+    });
+  }
+  if (currentAcquisition?.access_blocked || pendingBalanceMinor > 0) {
+    alerts.push({
+      title: "Saldo pendiente",
+      detail:
+        pendingBalanceMinor > 0
+          ? "Quedan " +
+            new Intl.NumberFormat(locale, {
+              style: "currency",
+              currency,
+              maximumFractionDigits: 2,
+            }).format(pendingBalanceMinor / 100) +
+            " por cobrar."
+          : "El paquete está bloqueado por una condición de pago pendiente.",
+    });
+  }
+  if (enrollment && enrollment.status !== "active") {
+    alerts.push({
+      title: "Inscripción no vigente",
+      detail: enrollment.expires_on
+        ? "La última inscripción terminó " + formatDate(enrollment.expires_on, locale) + "."
+        : "Revisa el estado de inscripción de la alumna.",
+    });
+  }
+
+  const portalEntered = Boolean(authUserResult.data?.user?.last_sign_in_at);
+
+  const errorCopy: Record<string, string> = {
+    phone_exists: "Ese teléfono ya pertenece a otra alumna.",
+    profile_fields: "No se pudieron guardar los campos adicionales. Revisa sus valores.",
+    acquisition_forbidden: "Tu rol no puede modificar adquisiciones.",
+    acquisition_not_found: "La adquisición ya no está disponible.",
+    acquisition_date_invalid: "Selecciona una fecha de inicio válida.",
+    credits_invalid: "Indica créditos disponibles válidos y un motivo obligatorio.",
+    adjustment_reason_required: "El motivo del ajuste de créditos es obligatorio.",
+    unlimited_acquisition: "Una adquisición ilimitada no admite ajuste manual de créditos.",
+    acquisition_not_editable: "Esta adquisición ya no puede modificarse.",
+    communication_preferences:
+      "No se pudieron guardar las preferencias de comunicación. Inténtalo de nuevo.",
+    transfer_review: "No se pudo actualizar la validación de la transferencia.",
+  };
+
+  return (
+    <main className="dashboard-shell profile360-page admin-ux04-profile360">
+      <Profile360Overview
+        embedded={!!crmHref}
+        hideNavigation={hideNavigation}
+        baseHref={crmHref}
+        activeView={view}
+        student={{
+          id: student.id,
+          userId: student.user_id,
+          fullName: student.full_name,
+          lifecycleStatus: student.lifecycle_status,
+          phone,
+          email: email || null,
+          createdAt: student.created_at,
+          portalEntered,
+        }}
+        birthDate={birthDate}
+        levelTitle={levelTitle}
+        rewardsAvailable={rewardsAvailable}
+        technicalLevels={technicalLevels}
+        showEvaluations={canReadEvaluations}
+        showDocuments={canReadDocuments}
+        canSell={can(CAPABILITIES.SALES_WRITE)}
+        currentPackage={currentPackageView}
+        nextClass={nextClass}
+        historicalValueMinor={historicalValueMinor}
+        enrollment={
+          enrollment
+            ? {
+                status: enrollment.status,
+                startsOn: enrollment.starts_on,
+                expiresOn: enrollment.expires_on,
+              }
+            : null
+        }
+        alerts={alerts}
+        timeZone={timeZone}
+        locale={locale}
+        currency={currency}
+      />
+
+      <StudentLifecycleNoticeDialog
+        result={
+          query.lifecycle === "active" || query.lifecycle === "inactive"
+            ? query.lifecycle
+            : undefined
+        }
+        error={query.lifecycle_error}
+      />
+
+      {query.error ? (
+        <div className="notice error">
+          {errorCopy[query.error] ?? "No se pudo guardar el cambio."}
+        </div>
+      ) : null}
+
+      {query.transfer_review === "approved" ? (
+        <div className="notice success">
+          Transferencia validada. El paquete de esta alumna quedó confirmado.
+        </div>
+      ) : null}
+
+      {query.transfer_review === "rejected" ? (
+        <div className="notice success">
+          Transferencia rechazada. El paquete provisional fue revocado y el historial se conservó.
+        </div>
+      ) : null}
+
+      {query.alta === "finalizada" || query.alta === "sin_paquete" ? (
+        <div className="notice success">
+          {query.alta === "finalizada"
+            ? "Alta registrada. La alumna, su compra y sus condiciones quedaron vinculadas al mismo expediente."
+            : "Alta registrada sin paquete. El expediente queda disponible para operar cuando corresponda."}
+          {query.sale ? (
+            <div className="toolbar-actions mt-3">
+              <Link className="ghost-button" href={`/admin/ventas/${query.sale}`}>
+                Ver venta
+              </Link>
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+
+      {query.alta === "reserva_realizada" ? (
+        <div className="notice success">
+          Primera reserva registrada. {studio.name} mantuvo la misma alumna y aplicó las reglas
+          reales de paquete, inscripción, créditos y cupo.
+        </div>
+      ) : null}
+
+      {view === "profile" ? (
+        <section className="profile360-view-panel profile360-data-view">
+          <div className="profile360-view-heading">
+            <div>
+              <p className="eyebrow">DATOS</p>
+              <h2>Datos y preferencias</h2>
+              <p>Información personal y comunicación de la alumna.</p>
+            </div>
+          </div>
+          <details id="datos-personales" className="profile360-detail scroll-mt-6">
+            <summary>
+              <span>
+                <strong>Datos y contacto</strong>
+                <small>Ver o editar información personal</small>
+              </span>
+              <span aria-hidden="true">›</span>
+            </summary>
+            <section className="panel">
+              <div className="panel-heading">
+                <div>
+                  <p className="eyebrow">EXPEDIENTE</p>
+                  <h2>Datos generales</h2>
+                </div>
+                <span className="count-badge">
+                  {student.profile_status === "complete" ? "Completo" : "Incompleto"}
+                </span>
+              </div>
+
+              {canEdit ? (
+                <form action={updateStudent} className="compact-form">
+                  <input type="hidden" name="student_id" value={student.id} />
+                  <div className="form-split">
+                    <input
+                      name="first_name"
+                      required
+                      defaultValue={firstName}
+                      placeholder="Nombre"
+                    />
+                    <input name="last_name" defaultValue={lastName ?? ""} placeholder="Apellido" />
+                  </div>
+                  <input
+                    name="phone"
+                    type="tel"
+                    required
+                    defaultValue={phone}
+                    placeholder="Teléfono"
+                  />
+                  <input name="email" type="email" defaultValue={email} placeholder="Correo" />
+                  <PendingActionButton className="primary-button" pendingLabel="Guardando…">
+                    Guardar cambios
+                  </PendingActionButton>
+                </form>
+              ) : (
+                <div className="student-list">
+                  <div className="student-row">
+                    <div>
+                      <strong>{student.full_name}</strong>
+                      <span>{phone}</span>
+                      {email ? <span>{email}</span> : null}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </section>
+          </details>
+
+          {student.person_id ? (
+            <details id="comunicacion" className="profile360-detail scroll-mt-6">
+              <summary>
+                <span>
+                  <strong>Preferencias de comunicación</strong>
+                  <small>WhatsApp, recordatorios y promociones</small>
+                </span>
+                <span aria-hidden="true">›</span>
+              </summary>
+              <section className="panel">
+                <div className="panel-heading">
+                  <div>
+                    <p className="eyebrow">COMUNICACIÓN · AUT-05</p>
+                    <h2>Preferencias de comunicación</h2>
+                    <p>
+                      Estas preferencias pertenecen a la persona y prevalecen sobre una
+                      configuración global más permisiva. Un teléfono inválido se trata por separado
+                      como error de datos.
+                    </p>
+                  </div>
+                  <span className="status-pill">
+                    {communicationPreferences.whatsappBlocked
+                      ? "WhatsApp bloqueado"
+                      : "WhatsApp permitido"}
+                  </span>
+                </div>
+
+                {canEdit ? (
+                  <form action={updateCommunicationPreferences} className="compact-form">
+                    <input type="hidden" name="student_id" value={student.id} />
+                    <div className="grid gap-3 md:grid-cols-2">
+                      <label className="rounded-xl border border-white/10 bg-black/20 p-3">
+                        <span className="flex items-center gap-3">
+                          <input
+                            type="checkbox"
+                            name="operational_enabled"
+                            value="true"
+                            defaultChecked={communicationPreferences.operational}
+                          />
+                          <strong>Operativas</strong>
+                        </span>
+                        <small>Reservas, cancelaciones, pagos y activaciones.</small>
+                      </label>
+                      <label className="rounded-xl border border-white/10 bg-black/20 p-3">
+                        <span className="flex items-center gap-3">
+                          <input
+                            type="checkbox"
+                            name="reminders_enabled"
+                            value="true"
+                            defaultChecked={communicationPreferences.reminders}
+                          />
+                          <strong>Recordatorios</strong>
+                        </span>
+                        <small>Recordatorios relacionados con reservas futuras.</small>
+                      </label>
+                      <label className="rounded-xl border border-white/10 bg-black/20 p-3">
+                        <span className="flex items-center gap-3">
+                          <input
+                            type="checkbox"
+                            name="retention_enabled"
+                            value="true"
+                            defaultChecked={communicationPreferences.retention}
+                          />
+                          <strong>Retención / seguimiento</strong>
+                        </span>
+                        <small>Seguimientos de experiencia, vencimiento e inactividad.</small>
+                      </label>
+                      <label className="rounded-xl border border-white/10 bg-black/20 p-3">
+                        <span className="flex items-center gap-3">
+                          <input
+                            type="checkbox"
+                            name="promotions_enabled"
+                            value="true"
+                            defaultChecked={communicationPreferences.promotions}
+                          />
+                          <strong>Promociones</strong>
+                        </span>
+                        <small>Beneficios, campañas y comunicaciones comerciales.</small>
+                      </label>
+                    </div>
+
+                    <label className="rounded-xl border border-white/10 bg-black/20 p-3">
+                      <span className="flex items-center gap-3">
+                        <input
+                          type="checkbox"
+                          name="whatsapp_blocked"
+                          value="true"
+                          defaultChecked={communicationPreferences.whatsappBlocked}
+                        />
+                        <strong>Bloquear todas las comunicaciones por WhatsApp</strong>
+                      </span>
+                      <small>Este bloqueo prevalece sobre las cuatro categorías anteriores.</small>
+                    </label>
+
+                    <label className="grid gap-1 text-sm text-zinc-300">
+                      Motivo del cambio (opcional)
+                      <input
+                        type="text"
+                        name="reason"
+                        maxLength={1000}
+                        placeholder="Ej. La alumna solicitó no recibir promociones"
+                        className="rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 text-white"
+                      />
+                    </label>
+
+                    <PendingActionButton
+                      className="primary-button"
+                      pendingLabel="Guardando preferencias…"
+                    >
+                      Guardar preferencias
+                    </PendingActionButton>
+                  </form>
+                ) : (
+                  <div className="student-list">
+                    {[
+                      ["Operativas", communicationPreferences.operational],
+                      ["Recordatorios", communicationPreferences.reminders],
+                      ["Retención / seguimiento", communicationPreferences.retention],
+                      ["Promociones", communicationPreferences.promotions],
+                    ].map(([label, enabled]) => (
+                      <div className="student-row" key={String(label)}>
+                        <div>
+                          <strong>{String(label)}</strong>
+                          <span>{enabled ? "Permitidas" : "Desactivadas"}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <div className="mt-6">
+                  <div className="panel-heading">
+                    <div>
+                      <p className="eyebrow">AUDITORÍA</p>
+                      <h3>Últimos cambios</h3>
+                    </div>
+                    <span className="count-badge">{communicationPreferenceEvents.length}</span>
+                  </div>
+
+                  {!communicationPreferenceEvents.length ? (
+                    <div className="empty-state">
+                      No hay cambios registrados. Se aplican las preferencias permitidas por
+                      defecto.
+                    </div>
+                  ) : (
+                    <div className="student-list">
+                      {communicationPreferenceEvents.map((event) => {
+                        const changedFields = Array.isArray(event.changed_fields)
+                          ? event.changed_fields
+                              .map(
+                                (field) => communicationFieldCopy[String(field)] ?? String(field),
+                              )
+                              .join(", ")
+                          : "Preferencias";
+
+                        return (
+                          <div className="student-row" key={event.id}>
+                            <div>
+                              <strong>{changedFields}</strong>
+                              <span>
+                                {communicationOriginCopy[event.origin] ?? event.origin} ·{" "}
+                                {formatDateTime(event.created_at, timeZone, locale)}
+                              </span>
+                              {event.reason ? <span>{event.reason}</span> : null}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </section>
+            </details>
+          ) : null}
+        </section>
+      ) : null}
+
+      {view === "packages" && canReadProducts ? (
+        <section id="paquetes-y-creditos" className="profile360-packages-view">
+          <div className="profile360-view-heading">
+            <div>
+              <p className="eyebrow">PAQUETES Y CRÉDITOS</p>
+              <h2>Consumo e historial de paquetes</h2>
+              <p>
+                Revisa exactamente qué ocurrió con cada paquete, sus créditos, clases e incidencias.
+              </p>
+            </div>
+          </div>
+
+          {canReadSales ? (
+            <div id="transferencias" className="profile360-package-group scroll-mt-6">
+              <div className="profile360-package-group-heading">
+                <strong>Pagos por transferencia</strong>
+                <span>
+                  {pendingTransferReviews.length
+                    ? `${pendingTransferReviews.length} pendiente${
+                        pendingTransferReviews.length === 1 ? "" : "s"
+                      }`
+                    : "Sin pendientes"}
+                </span>
+              </div>
+
+              {transferPurchaseRows.length ? (
+                <div className="grid gap-3">
+                  {transferPurchaseRows.map((item) => {
+                    const amount = new Intl.NumberFormat(locale, {
+                      style: "currency",
+                      currency: item.currency ?? currency,
+                    }).format(Number(item.amount_minor ?? 0) / 100);
+                    const packageName = productMap.get(item.product_template_id)?.name ?? "Paquete";
+                    const statusLabel =
+                      item.status === "provisional_active"
+                        ? "Pendiente de validar"
+                        : item.status === "validated"
+                          ? "Validada"
+                          : item.status === "rejected"
+                            ? "Rechazada"
+                            : item.status === "awaiting_receipt"
+                              ? "Esperando comprobante"
+                              : item.status === "cancelled"
+                                ? "Cancelada"
+                                : item.status === "expired"
+                                  ? "Vencida"
+                                  : item.status;
+                    const eventAt =
+                      item.receipt_received_at ??
+                      item.validated_at ??
+                      item.rejected_at ??
+                      item.created_at;
+
+                    return (
+                      <article
+                        key={item.id}
+                        className="rounded-2xl border border-white/10 bg-white/[0.03] p-4"
+                      >
+                        <div className="flex flex-wrap items-start justify-between gap-3">
+                          <div>
+                            <strong className="text-sm text-white">{packageName}</strong>
+                            <p className="mt-1 text-xs text-zinc-400">{amount}</p>
+                            <p className="mt-1 text-xs text-zinc-500">
+                              {item.receipt_received_at
+                                ? "Comprobante recibido · "
+                                : "Solicitud creada · "}
+                              {formatDateTime(eventAt, timeZone, locale)}
+                            </p>
+                            {item.review_note ? (
+                              <p className="mt-2 text-xs text-zinc-400">{item.review_note}</p>
+                            ) : null}
+                            {transferReceiptUrlMap.get(item.id) ? (
+                              <div className="mt-3 overflow-hidden rounded-2xl border border-white/10 bg-black/30">
+                                <iframe
+                                  title={`Comprobante de transferencia de ${packageName}`}
+                                  src={transferReceiptUrlMap.get(item.id)}
+                                  className="h-72 w-full bg-white"
+                                />
+                                <div className="flex items-center justify-between gap-3 px-3 py-2">
+                                  <span className="text-[11px] text-zinc-500">
+                                    Comprobante guardado de forma privada
+                                  </span>
+                                  <a
+                                    href={transferReceiptUrlMap.get(item.id)}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="text-xs font-semibold text-fuchsia-300 hover:text-fuchsia-200"
+                                  >
+                                    Abrir
+                                  </a>
+                                </div>
+                              </div>
+                            ) : item.receipt_received_at ? (
+                              <p className="mt-3 text-xs text-amber-300">
+                                Comprobante recibido; el archivo todavía no está disponible para
+                                vista.
+                              </p>
+                            ) : null}
+                          </div>
+                          <span
+                            className={
+                              item.status === "validated"
+                                ? "text-xs font-semibold text-emerald-300"
+                                : item.status === "provisional_active"
+                                  ? "text-xs font-semibold text-amber-300"
+                                  : item.status === "rejected"
+                                    ? "text-xs font-semibold text-rose-300"
+                                    : "text-xs font-semibold text-zinc-400"
+                            }
+                          >
+                            {statusLabel}
+                          </span>
+                        </div>
+
+                        {item.status === "provisional_active" && canManageSales ? (
+                          <form
+                            action={reviewStudentTransferPurchaseAction}
+                            className="mt-4 flex flex-wrap gap-2"
+                          >
+                            <input type="hidden" name="student_id" value={student.id} />
+                            <input type="hidden" name="intent_id" value={item.id} />
+                            <PendingActionButton
+                              name="decision"
+                              value="approved"
+                              pendingLabel="Validando…"
+                              className="primary-button"
+                            >
+                              Validar transferencia
+                            </PendingActionButton>
+                            <PendingActionButton
+                              name="decision"
+                              value="rejected"
+                              pendingLabel="Revocando…"
+                              className="ghost-button"
+                            >
+                              Rechazar y revocar
+                            </PendingActionButton>
+                          </form>
+                        ) : null}
+                      </article>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="empty-state">
+                  No hay pagos por transferencia asociados a esta alumna.
+                </div>
+              )}
+            </div>
+          ) : null}
+
+          {canReadSales ? (
+            <div className="profile360-package-group">
+              <div className="profile360-package-group-heading">
+                <strong>Penalizaciones operativas</strong>
+                <span>{pendingOperatingCharges.length} pendientes</span>
+              </div>
+
+              {(operatingCharges ?? []).length ? (
+                <div className="grid gap-3">
+                  {(operatingCharges ?? []).map((charge) => {
+                    const amount = new Intl.NumberFormat(locale, {
+                      style: "currency",
+                      currency: charge.currency ?? currency,
+                    }).format(Number(charge.amount_minor ?? 0) / 100);
+                    const label =
+                      charge.charge_type === "late_cancellation" ? "Cancelación tardía" : "No-show";
+
+                    return (
+                      <article
+                        key={charge.id}
+                        className="rounded-2xl border border-white/10 bg-white/[0.03] p-4"
+                      >
+                        <div className="flex flex-wrap items-start justify-between gap-3">
+                          <div>
+                            <strong className="text-sm text-white">{label}</strong>
+                            <p className="mt-1 text-xs text-zinc-500">
+                              {formatDateTime(charge.created_at, timeZone, locale)}
+                            </p>
+                            {charge.resolution_note ? (
+                              <p className="mt-1 text-xs text-zinc-400">{charge.resolution_note}</p>
+                            ) : null}
+                          </div>
+                          <div className="text-right">
+                            <strong className="text-sm text-white">{amount}</strong>
+                            <p
+                              className={
+                                charge.status === "pending"
+                                  ? "mt-1 text-xs text-amber-300"
+                                  : charge.status === "paid"
+                                    ? "mt-1 text-xs text-emerald-300"
+                                    : "mt-1 text-xs text-zinc-500"
+                              }
+                            >
+                              {charge.status === "pending"
+                                ? "Pendiente"
+                                : charge.status === "paid"
+                                  ? "Pagada"
+                                  : charge.status === "waived"
+                                    ? "Condonada"
+                                    : "Anulada"}
+                            </p>
+                          </div>
+                        </div>
+                      </article>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="empty-state">No hay penalizaciones registradas.</div>
+              )}
+            </div>
+          ) : null}
+
+          {currentAcquisition ? (
+            <StudentPackageCard
+              studentId={student.id}
+              kind="current"
+              acquisition={{
+                id: currentAcquisition.id,
+                name: productMap.get(currentAcquisition.product_template_id)?.name ?? "Paquete",
+                statusLabel: "Activo",
+                startsOn: currentAcquisition.starts_on,
+                expiresOn: currentAcquisition.expires_on,
+                unlimited: currentAcquisition.unlimited,
+                availableCredits: currentAcquisition.unlimited
+                  ? null
+                  : (balanceMap.get(currentAcquisition.id) ?? 0),
+                accessBlocked: currentAcquisition.access_blocked,
+                activationMode: currentAcquisition.activation_mode,
+              }}
+              classes={packageClassEvents.get(currentAcquisition.id) ?? []}
+              editable={canEditAcquisitions && !currentAcquisition.refunded_at}
+              timeZone={timeZone}
+              locale={locale}
+            />
+          ) : (
+            <div className="empty-state">No hay paquete actual.</div>
+          )}
+
+          {scheduledAcquisitions.length ? (
+            <div className="profile360-package-group">
+              <div className="profile360-package-group-heading">
+                <strong>Próximos paquetes</strong>
+                <span>{scheduledAcquisitions.length}</span>
+              </div>
+              {scheduledAcquisitions.map((acquisition) => (
+                <StudentPackageCard
+                  key={acquisition.id}
+                  studentId={student.id}
+                  kind="scheduled"
+                  acquisition={{
+                    id: acquisition.id,
+                    name: productMap.get(acquisition.product_template_id)?.name ?? "Paquete",
+                    statusLabel: "Programado",
+                    startsOn: acquisition.starts_on,
+                    expiresOn: acquisition.expires_on,
+                    unlimited: acquisition.unlimited,
+                    availableCredits: acquisition.unlimited
+                      ? null
+                      : (balanceMap.get(acquisition.id) ?? 0),
+                    accessBlocked: acquisition.access_blocked,
+                    activationMode: acquisition.activation_mode,
+                  }}
+                  classes={packageClassEvents.get(acquisition.id) ?? []}
+                  editable={false}
+                  timeZone={timeZone}
+                  locale={locale}
+                />
+              ))}
+            </div>
+          ) : null}
+
+          <div className="profile360-package-group">
+            <div className="profile360-package-group-heading">
+              <strong>Historial de paquetes</strong>
+              <span>{historicalAcquisitions.length}</span>
+            </div>
+            {historicalAcquisitions.length ? (
+              historicalAcquisitions.map((acquisition) => {
+                const isExpiredByDate =
+                  Boolean(acquisition.expires_on) && String(acquisition.expires_on) < today;
+                const statusLabel = acquisition.refunded_at
+                  ? "Reembolsado"
+                  : isExpiredByDate
+                    ? "Vencido"
+                    : (acquisitionStatusCopy[acquisition.status] ?? "Histórico");
+                return (
+                  <StudentPackageCard
+                    key={acquisition.id}
+                    studentId={student.id}
+                    kind="historical"
+                    acquisition={{
+                      id: acquisition.id,
+                      name: productMap.get(acquisition.product_template_id)?.name ?? "Paquete",
+                      statusLabel,
+                      startsOn: acquisition.starts_on,
+                      expiresOn: acquisition.expires_on,
+                      unlimited: acquisition.unlimited,
+                      availableCredits: acquisition.unlimited
+                        ? null
+                        : (balanceMap.get(acquisition.id) ?? 0),
+                      accessBlocked: acquisition.access_blocked,
+                      activationMode: acquisition.activation_mode,
+                    }}
+                    classes={packageClassEvents.get(acquisition.id) ?? []}
+                    editable={false}
+                    timeZone={timeZone}
+                    locale={locale}
+                  />
+                );
+              })
+            ) : (
+              <div className="empty-state">Todavía no hay paquetes anteriores.</div>
+            )}
+          </div>
+        </section>
+      ) : null}
+
+      {view === "rewards" ? (
+        <section className="profile360-view-panel">
+          <div className="profile360-view-heading">
+            <div>
+              <p className="eyebrow">PROGRESO</p>
+              <h2>Medallas, logros y recompensas</h2>
+              <p>
+                Las medallas representan progreso y beneficios de Rewards; son independientes de los
+                niveles técnicos por disciplina.
+              </p>
+            </div>
+          </div>
+
+          {rewardOnboarding ? (
+            <div className="mb-5 rounded-3xl border border-fuchsia-500/20 bg-fuchsia-500/[0.04] p-4 sm:p-5">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <p className="eyebrow">ACTIVACIÓN DE MEDALLAS</p>
+                  <h3 className="mt-1 text-lg font-semibold text-white">
+                    {rewardOnboarding.accessUnlockedAt
+                      ? "Acceso a Medallas habilitado"
+                      : "Activando Medallas"}
+                  </h3>
+                  <p className="mt-1 text-xs text-zinc-400">
+                    {
+                      [
+                        rewardOnboarding.documentsCompletedAt,
+                        rewardOnboarding.profileCompletedAt,
+                        rewardOnboarding.appInstalledAt,
+                        rewardOnboarding.notificationsEnabledAt,
+                        rewardOnboarding.firstReservationAt,
+                        rewardOnboarding.firstAttendanceAt,
+                      ].filter(Boolean).length
+                    }{" "}
+                    de 6 pasos completados
+                  </p>
+                </div>
+                <span className="status-pill">
+                  {rewardOnboarding.accessUnlockedAt ? "Acceso activo" : "En activación"}
+                </span>
+              </div>
+
+              <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                {[
+                  ["Documentos", rewardOnboarding.documentsCompletedAt],
+                  ["Perfil", rewardOnboarding.profileCompletedAt],
+                  ["App instalada", rewardOnboarding.appInstalledAt],
+                  ["Notificaciones Push", rewardOnboarding.notificationsEnabledAt],
+                  ["Primera reserva", rewardOnboarding.firstReservationAt],
+                  ["Primera asistencia", rewardOnboarding.firstAttendanceAt],
+                ].map(([label, value]) => (
+                  <div
+                    key={label}
+                    className="flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-black/20 px-3.5 py-3"
+                  >
+                    <span className="text-sm font-medium text-white">{label}</span>
+                    <span className={value ? "text-xs text-emerald-300" : "text-xs text-zinc-500"}>
+                      {value ? "✓ " + formatDateTime(String(value), timeZone, locale) : "Pendiente"}
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              {rewardOnboarding.accessUnlockedAt ? (
+                <p className="mt-3 text-xs text-zinc-500">
+                  Acceso habilitado por{" "}
+                  {rewardOnboarding.accessMethod === "admin"
+                    ? "excepción administrativa"
+                    : rewardOnboarding.accessMethod === "legacy"
+                      ? "migración del sistema anterior"
+                      : "onboarding"}
+                  {rewardOnboarding.accessReason ? " · " + rewardOnboarding.accessReason : ""}
+                </p>
+              ) : canManageRewards ? (
+                <form
+                  action={unlockMedalsAccess}
+                  className="mt-4 rounded-2xl border border-white/10 bg-black/20 p-3.5"
+                >
+                  <input type="hidden" name="student_id" value={student.id} />
+                  <label className="block text-xs font-medium text-zinc-300">
+                    Habilitar acceso a Medallas manualmente
+                    <textarea
+                      name="reason"
+                      required
+                      rows={2}
+                      placeholder="Motivo de la excepción"
+                      className="mt-2 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-sm text-white outline-none placeholder:text-zinc-600 focus:border-fuchsia-500/50"
+                    />
+                  </label>
+                  <PendingActionButton
+                    pendingLabel="Habilitando…"
+                    className="mt-3 min-h-10 rounded-xl border border-fuchsia-500/40 bg-fuchsia-500/[0.08] px-4 text-xs font-semibold text-fuchsia-200"
+                  >
+                    Habilitar acceso a Medallas
+                  </PendingActionButton>
+                  <p className="mt-2 text-[11px] text-zinc-500">
+                    Esta acción es excepcional y queda registrada con motivo y administrador.
+                  </p>
+                </form>
+              ) : null}
+            </div>
+          ) : null}
+
+          <div className="profile360-approved-indicators">
+            <article>
+              <span>Medalla actual</span>
+              <strong>
+                {levelTitle
+                  ? "Medalla " + levelTitle
+                  : rewardOnboarding?.accessUnlockedAt
+                    ? "Sin medalla"
+                    : "En activación"}
+              </strong>
+            </article>
+            <article>
+              <span>Recompensas disponibles</span>
+              <strong>{rewardsAvailable ?? 0}</strong>
+            </article>
+            <article>
+              <span>Logros obtenidos</span>
+              <strong>{rewardAchievements.length}</strong>
+            </article>
+            <article>
+              <span>Ciclos con Medalla</span>
+              <strong>{rewardLevelHistory.length}</strong>
+            </article>
+          </div>
+
+          <div className="profile360-rewards-section">
+            <div className="profile360-package-group-heading">
+              <strong>Recompensas</strong>
+              <span>{rewardInstancesDetail.length}</span>
+            </div>
+            {rewardInstancesDetail.length ? (
+              <div className="profile360-reward-list">
+                {rewardInstancesDetail.map((reward) => (
+                  <article key={reward.id}>
+                    <div>
+                      <strong>
+                        {rewardBenefitLabel(
+                          reward.kind,
+                          reward.benefitDefinition,
+                          locale,
+                          currency,
+                        )}
+                      </strong>
+                      <span>
+                        {reward.expiresAt
+                          ? "Vence " + formatDateTime(reward.expiresAt, timeZone, locale)
+                          : "Sin vencimiento registrado"}
+                      </span>
+                    </div>
+                    <span className="status-pill">{rewardStatusLabel(reward.status)}</span>
+                  </article>
+                ))}
+              </div>
+            ) : (
+              <div className="empty-state">No hay recompensas registradas.</div>
+            )}
+          </div>
+
+          <div className="profile360-rewards-section">
+            <div className="profile360-package-group-heading">
+              <strong>Logros</strong>
+              <span>{rewardAchievements.length}</span>
+            </div>
+            {rewardAchievements.length ? (
+              <div className="profile360-history-list">
+                {rewardAchievements.map((achievement) => (
+                  <article key={achievement.id}>
+                    <div className="profile360-history-dot is-reward" aria-hidden="true" />
+                    <div>
+                      <strong>{achievement.title}</strong>
+                      <span>{formatDateTime(achievement.unlockedAt, timeZone, locale)}</span>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            ) : (
+              <div className="empty-state">Todavía no hay logros desbloqueados.</div>
+            )}
+          </div>
+
+          {rewardLevelHistory.length ? (
+            <div className="profile360-rewards-section">
+              <div className="profile360-package-group-heading">
+                <strong>Historial de Medallas</strong>
+                <span>{rewardLevelHistory.length}</span>
+              </div>
+              <div className="profile360-history-list">
+                {rewardLevelHistory.map((level) => (
+                  <article key={level.id}>
+                    <div className="profile360-history-dot is-level" aria-hidden="true" />
+                    <div>
+                      <strong>{level.title}</strong>
+                      <span>
+                        Medalla {level.title} · {formatDateTime(level.unlockedAt, timeZone, locale)}
+                      </span>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </div>
+          ) : null}
+        </section>
+      ) : null}
+
+      {view === "evaluations" && canReadEvaluations ? (
+        <StudentEvaluationsPanel
+          studentId={student.id}
+          timeZone={timeZone}
+          locale={locale}
+          error={query.evaluation_error}
+        />
+      ) : null}
+
+      {view === "documents" && canReadDocuments ? (
+        <StudentDocumentsPanel
+          studentId={student.id}
+          timeZone={timeZone}
+          locale={locale}
+          result={query.document_result}
+          error={query.document_error}
+        />
+      ) : null}
+
+      {view === "followup" ? (
+        <section className="profile360-view-panel">
+          <div className="panel-heading">
+            <div>
+              <p className="eyebrow">SEGUIMIENTO</p>
+              <h2>Situaciones actuales</h2>
+            </div>
+            <span className="count-badge">{alerts.length}</span>
+          </div>
+          {alerts.length ? (
+            <div className="profile360-approved-alert-list">
+              {alerts.map((alert) => (
+                <div key={alert.title + alert.detail}>
+                  <strong>{alert.title}</strong>
+                  <span>{alert.detail}</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="empty-state">Sin seguimiento pendiente.</div>
+          )}
+        </section>
+      ) : null}
+      {view === "history" ? (
+        <div className="profile360-history-stack">
+          {canReadSales ? (
+            <section className="profile360-view-panel profile360-sales-history">
+              <div className="profile360-view-heading">
+                <div>
+                  <p className="eyebrow">COMPRAS Y PAGOS</p>
+                  <h2>Historial de ventas</h2>
+                  <p>Consulta las compras, pagos y saldos registrados para esta alumna.</p>
+                </div>
+                {can(CAPABILITIES.SALES_WRITE) && student.lifecycle_status !== "inactive" ? (
+                  <Link
+                    className="profile360-sale-history-action"
+                    href={"/admin/ventas/nueva?student_id=" + student.id}
+                  >
+                    + Registrar venta
+                  </Link>
+                ) : null}
+              </div>
+
+              <div className="profile360-sales-history-meta">
+                <span>{studentSalesHistory.length} ventas</span>
+                <span>
+                  Total pagado:{" "}
+                  {new Intl.NumberFormat(locale, {
+                    style: "currency",
+                    currency,
+                    maximumFractionDigits: 0,
+                  }).format(
+                    studentSalesHistory.reduce(
+                      (sum, sale) => sum + Math.max(0, sale.netPaidMinor),
+                      0,
+                    ) / 100,
+                  )}
+                </span>
+              </div>
+
+              {studentSalesHistory.length ? (
+                <div className="profile360-sales-list">
+                  {studentSalesHistory.map((sale) => (
+                    <Link
+                      key={sale.id}
+                      href={"/admin/ventas/" + sale.id}
+                      className="profile360-sale-row"
+                    >
+                      <span>
+                        <strong>{sale.folio}</strong>
+                        <small>{formatDateTime(sale.createdAt, timeZone, locale)}</small>
+                      </span>
+                      <span className="profile360-sale-values">
+                        <span>
+                          <small>Total</small>
+                          <strong>
+                            {new Intl.NumberFormat(locale, {
+                              style: "currency",
+                              currency,
+                              maximumFractionDigits: 0,
+                            }).format(sale.totalMinor / 100)}
+                          </strong>
+                        </span>
+                        <span>
+                          <small>Pagado</small>
+                          <strong>
+                            {new Intl.NumberFormat(locale, {
+                              style: "currency",
+                              currency,
+                              maximumFractionDigits: 0,
+                            }).format(sale.netPaidMinor / 100)}
+                          </strong>
+                        </span>
+                        {sale.balanceMinor > 0 ? (
+                          <span>
+                            <small>Saldo</small>
+                            <strong>
+                              {new Intl.NumberFormat(locale, {
+                                style: "currency",
+                                currency,
+                                maximumFractionDigits: 0,
+                              }).format(sale.balanceMinor / 100)}
+                            </strong>
+                          </span>
+                        ) : null}
+                      </span>
+                      <span className="profile360-sale-state">{sale.stateLabel}</span>
+                    </Link>
+                  ))}
+                </div>
+              ) : (
+                <div className="empty-state">Todavía no hay ventas registradas.</div>
+              )}
+            </section>
+          ) : null}
+
+          <section className="profile360-view-panel">
+            <div className="profile360-view-heading">
+              <div>
+                <p className="eyebrow">ACTIVIDAD</p>
+                <h2>Historial general</h2>
+                <p>Clases, paquetes, Rewards y cambios de estado.</p>
+              </div>
+              <span className="count-badge">{profileHistoryEvents.length}</span>
+            </div>
+
+            {profileHistoryEvents.length ? (
+              <div className="profile360-history-list">
+                {profileHistoryEvents.slice(0, 60).map((event) => (
+                  <article key={event.id}>
+                    <div className={"profile360-history-dot is-" + event.kind} aria-hidden="true" />
+                    <div>
+                      <strong>{event.title}</strong>
+                      <span>{event.detail}</span>
+                      <small>{formatDateTime(event.at, timeZone, locale)}</small>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            ) : (
+              <div className="empty-state">Todavía no hay actividad histórica para mostrar.</div>
+            )}
+          </section>
+        </div>
+      ) : null}
+
+      {view === "profile" ? (
+        <>
+          <details id="campos-adicionales" className="profile360-detail scroll-mt-6">
+            <summary>
+              <span>
+                <strong>Información adicional</strong>
+                <small>Campos configurables del expediente</small>
+              </span>
+              <span aria-hidden="true">›</span>
+            </summary>
+            <section className="panel">
+              <div className="panel-heading">
+                <div>
+                  <p className="eyebrow">CAMPOS ADICIONALES</p>
+                  <h2>Información configurable</h2>
+                </div>
+                <span className="count-badge">{dynamicDefinitions.length}</span>
+              </div>
+
+              {dynamicDefinitions.length === 0 ? (
+                <div className="empty-state">
+                  No hay campos adicionales configurados para alumnas. El expediente base ya usa
+                  nombre, apellido, teléfono y correo.
+                </div>
+              ) : canEdit ? (
+                <form action={updateDynamicProfileFields} className="compact-form">
+                  <input type="hidden" name="student_id" value={student.id} />
+                  {dynamicDefinitions.map((definition) => {
+                    const fieldName = `field_${definition.id}`;
+                    const currentValue = valueMap.get(definition.id);
+                    const options = optionValues(definition.options);
+
+                    if (definition.field_type === "long_text") {
+                      return (
+                        <label key={definition.id}>
+                          <span>
+                            {definition.label}
+                            {definition.required ? " *" : ""}
+                          </span>
+                          <textarea
+                            name={fieldName}
+                            required={definition.required}
+                            defaultValue={scalarValue(currentValue)}
+                          />
+                        </label>
+                      );
+                    }
+
+                    if (definition.field_type === "boolean") {
+                      return (
+                        <label key={definition.id} className="checkbox-field">
+                          <input
+                            name={fieldName}
+                            type="checkbox"
+                            value="true"
+                            defaultChecked={currentValue === true}
+                          />
+                          <span>{definition.label}</span>
+                        </label>
+                      );
+                    }
+
+                    if (definition.field_type === "single_select") {
+                      return (
+                        <label key={definition.id}>
+                          <span>
+                            {definition.label}
+                            {definition.required ? " *" : ""}
+                          </span>
+                          <select
+                            name={fieldName}
+                            required={definition.required}
+                            defaultValue={scalarValue(currentValue)}
+                          >
+                            <option value="">Seleccionar</option>
+                            {options.map((option) => (
+                              <option key={option} value={option}>
+                                {option}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                      );
+                    }
+
+                    if (definition.field_type === "multi_select") {
+                      const selected = Array.isArray(currentValue)
+                        ? currentValue.filter((value): value is string => typeof value === "string")
+                        : [];
+                      return (
+                        <label key={definition.id}>
+                          <span>
+                            {definition.label}
+                            {definition.required ? " *" : ""}
+                          </span>
+                          <select
+                            name={fieldName}
+                            multiple
+                            required={definition.required}
+                            defaultValue={selected}
+                          >
+                            {options.map((option) => (
+                              <option key={option} value={option}>
+                                {option}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                      );
+                    }
+
+                    return (
+                      <label key={definition.id}>
+                        <span>
+                          {definition.label}
+                          {definition.required ? " *" : ""}
+                        </span>
+                        <input
+                          name={fieldName}
+                          type={
+                            definition.field_type === "number" ? "number" : definition.field_type
+                          }
+                          required={definition.required}
+                          defaultValue={scalarValue(currentValue)}
+                        />
+                      </label>
+                    );
+                  })}
+                  <PendingActionButton className="primary-button" pendingLabel="Guardando…">
+                    Guardar campos adicionales
+                  </PendingActionButton>
+                </form>
+              ) : (
+                <div className="student-list">
+                  {dynamicDefinitions.map((definition) => {
+                    const currentValue = valueMap.get(definition.id);
+                    const displayValue = Array.isArray(currentValue)
+                      ? currentValue.join(", ")
+                      : typeof currentValue === "boolean"
+                        ? currentValue
+                          ? "Sí"
+                          : "No"
+                        : scalarValue(currentValue) || "Sin dato";
+
+                    return (
+                      <div className="student-row" key={definition.id}>
+                        <div>
+                          <strong>{definition.label}</strong>
+                          <span>{displayValue}</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </section>
+          </details>
+        </>
+      ) : null}
+
+      {view === "profile" ? <StudentPortalAccessSection studentId={student.id} /> : null}
+
+      {view === "profile" && canArchive ? (
+        <details id="estado-alumna" className="profile360-detail scroll-mt-6">
+          <summary>
+            <span>
+              <strong>Estado e historial</strong>
+              <small>Administración del ciclo de la alumna</small>
+            </span>
+            <span aria-hidden="true">›</span>
+          </summary>
+          <section className="panel">
+            <p className="eyebrow">ADMINISTRACIÓN</p>
+            <h2>Estado de la alumna</h2>
+            <p className="mt-2 text-sm leading-6 text-zinc-400">
+              {student.lifecycle_status === "active"
+                ? "Inactivar conserva el expediente y las reservas futuras existentes, pero deshabilita el acceso y bloquea nuevas reservas."
+                : "Reactivar recupera el mismo expediente y vuelve a habilitar el acceso y las nuevas reservas."}
+            </p>
+
+            <StudentLifecycleActions
+              studentId={student.id}
+              status={student.lifecycle_status === "inactive" ? "inactive" : "active"}
+            />
+
+            <div id="historial" className="mt-6 scroll-mt-6 border-t border-white/10 pt-5">
+              <div className="panel-heading">
+                <div>
+                  <p className="eyebrow">HISTORIAL</p>
+                  <h3>Cambios de estado</h3>
+                </div>
+                <span className="count-badge">{lifecycleEvents.length}</span>
+              </div>
+
+              {lifecycleEvents.length === 0 ? (
+                <div className="empty-state">Todavía no hay cambios de estado registrados.</div>
+              ) : (
+                <div className="grid gap-2">
+                  {lifecycleEvents.map((event) => (
+                    <div
+                      key={event.id}
+                      className={[
+                        "flex flex-wrap items-center justify-between gap-3 rounded-xl",
+                        "border border-white/10 bg-white/[0.03] px-4 py-3",
+                      ].join(" ")}
+                    >
+                      <strong className="text-sm text-white">
+                        {lifecycleCopy[event.from_status] ?? event.from_status} →{" "}
+                        {lifecycleCopy[event.to_status] ?? event.to_status}
+                      </strong>
+                      <span className="text-xs text-zinc-500">
+                        {formatDateTime(event.created_at, timeZone, locale)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </section>
+        </details>
+      ) : null}
+    </main>
+  );
+}
