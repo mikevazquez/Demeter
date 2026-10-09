@@ -4,7 +4,6 @@ import { createHash, randomUUID } from "node:crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { getCommercialOptions, type AssistantStudioContext } from "./read-tools";
-import { requiresProspectNameBeforeBooking } from "./conversation-guidance";
 import type {
   ExecuteBookingArgs,
   ExecuteCancellationArgs,
@@ -658,7 +657,7 @@ async function prepareBooking(ctx: AssistantActionToolContext, args: PrepareBook
     if (!prepaymentPolicy.ok) return prepaymentPolicy;
 
     const requirePaymentBeforeBooking = prepaymentPolicy.effectiveRequiresPayment;
-    if (requiresProspectNameBeforeBooking(ctx.identityNeedsName === true && !studentId, requirePaymentBeforeBooking)) {
+    if (ctx.identityNeedsName === true && !studentId && !requirePaymentBeforeBooking) {
       return {
         ok: false,
         reason_code: "prospect_name_required",

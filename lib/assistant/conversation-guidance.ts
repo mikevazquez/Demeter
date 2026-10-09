@@ -17,10 +17,6 @@ export function needsFirstVisitGuidance(input: AudienceInput): boolean {
   return Boolean(input.crmContactId);
 }
 
-export function requiresProspectNameBeforeBooking(identityNeedsName: boolean, paymentBeforeBooking: boolean): boolean {
-  return identityNeedsName && !paymentBeforeBooking;
-}
-
 export function conversationGuidance(input: AudienceInput): string {
   const shared = [
     "Tu trabajo es resolver la necesidad actual y ayudar a completar el siguiente paso útil. Responde primero la pregunta; no sustituyas una respuesta por una venta.",

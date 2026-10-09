@@ -23,7 +23,7 @@ describe("Demi identity, CRM lifecycle, and first trial flow", () => {
     );
     expect(orchestrator).not.toContain("if (input.identityNeedsName === true) {");
     expect(route).toContain("const identityNeedsName = prepared.identity_needs_name === true;");
-    expect(actionTools).toContain("requiresProspectNameBeforeBooking(ctx.identityNeedsName === true && !studentId, requirePaymentBeforeBooking)");
+    expect(actionTools).toContain("ctx.identityNeedsName === true && !studentId && !requirePaymentBeforeBooking");
     expect(actionTools).toContain('reason_code: "prospect_name_required"');
     expect(orchestrator).toContain("reason_code=prospect_name_required");
   });
