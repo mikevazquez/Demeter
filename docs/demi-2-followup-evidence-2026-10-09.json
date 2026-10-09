@@ -1,0 +1,50 @@
+{
+  "automated_tests": {
+    "passed": 1082,
+    "failed": 0
+  },
+  "typecheck": "passed",
+  "build": "passed",
+  "lint": {
+    "errors": 0,
+    "preexisting_warnings": 1
+  },
+  "facebook_live": {
+    "runId": "63d7ae35-5a9f-480a-aea7-9bea8439e509",
+    "studioId": "23ad2da8-046c-4aea-b769-e0a001227405",
+    "duplicate": {
+      "baseline": {
+        "events": 1,
+        "turns": 2,
+        "calls": 4
+      },
+      "after": {
+        "events": 1,
+        "turns": 2,
+        "calls": 4
+      }
+    },
+    "receipt_before_personal_data": true,
+    "one_new_student_and_reservation": true,
+    "payments_minor": 15000,
+    "groups": 1,
+    "students": 12,
+    "external_real_facebook_inbound": false
+  },
+  "external_link_sql": {
+    "passed": 7,
+    "rollback": true,
+    "provider_request": false
+  },
+  "sql_variants_accumulated": 93,
+  "qr": {
+    "reservation_id": "4aab740d-dfbf-4373-81e3-f598cbc15da6",
+    "native_token_available": true,
+    "portal_and_channel_delivery": "pending"
+  },
+  "masters": {
+    "partial": 18,
+    "fully_approved": 0
+  },
+  "new_configuration_preview": "pending"
+}

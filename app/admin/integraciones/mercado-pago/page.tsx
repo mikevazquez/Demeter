@@ -4,6 +4,7 @@ import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getAdminContext } from "@/lib/auth/admin-context";
 
 import "../integrations-v2.css";
+import { saveFirstClassPaymentLink } from "./actions";
 
 function checkoutStatusLabel(status: string) {
   const labels: Record<string, string> = {
@@ -20,7 +21,12 @@ function checkoutStatusLabel(status: string) {
   return labels[status] ?? status;
 }
 
-export default async function MercadoPagoIntegrationPage() {
+export default async function MercadoPagoIntegrationPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ link_error?: string; link_saved?: string }>;
+}) {
+  const query = await searchParams;
   const { supabase, studio } = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
 
   const [
@@ -55,6 +61,17 @@ export default async function MercadoPagoIntegrationPage() {
       .limit(8),
   ]);
 
+  const [{ data: classes }, { data: firstClassLinks }] = await Promise.all([
+    supabase
+      .from("class_templates")
+      .select("id,name,drop_in_price_minor")
+      .eq("studio_id", studio.id)
+      .order("name"),
+    supabase
+      .from("demi_first_class_payment_links")
+      .select("class_template_id,checkout_url,amount_minor,enabled")
+      .eq("studio_id", studio.id),
+  ]);
   const money = (minor: number, currency: string) =>
     new Intl.NumberFormat(studio.locale, {
       style: "currency",
@@ -73,6 +90,71 @@ export default async function MercadoPagoIntegrationPage() {
           <p>Cobros en línea para compras realizadas por alumnas.</p>
         </div>
       </header>
+
+      <section className="integration-detail-v2-card">
+        <h2>Primera clase con Demi</h2>
+        <p>
+          Configura un enlace de cobro público de Mercado Pago para cada clase. Demi lo compartirá
+          antes de pedir nombre y celular; esperará el comprobante y revisará el cupo antes de
+          reservar.
+        </p>
+        <p>
+          El importe del enlace debe coincidir con el precio de la primera clase. Usa un enlace
+          público del estudio, no el checkout privado de una compra de otra alumna.
+        </p>
+        {query.link_error && (
+          <p role="alert">
+            No se guardó el enlace. Revisa el dominio de Mercado Pago y que el importe coincida con
+            el precio de la clase.
+          </p>
+        )}
+        {query.link_saved && <p role="status">Enlace actualizado.</p>}
+        {(classes ?? [])
+          .filter((c) => c.drop_in_price_minor > 0)
+          .map((c) => {
+            const saved = firstClassLinks?.find((l) => l.class_template_id === c.id);
+            return (
+              <form
+                key={c.id}
+                action={saveFirstClassPaymentLink}
+                className="space-y-3 border-b py-4"
+              >
+                <h3>{c.name}</h3>
+                <input type="hidden" name="class_template_id" value={c.id} />
+                <label>
+                  Enlace público de Mercado Pago
+                  <input
+                    name="checkout_url"
+                    type="url"
+                    defaultValue={saved?.checkout_url ?? ""}
+                    placeholder="https://mpago.la/…"
+                  />
+                </label>
+                <label>
+                  Importe del enlace ({studio.currency})
+                  <input
+                    name="amount"
+                    type="number"
+                    min="0.01"
+                    step="0.01"
+                    required
+                    defaultValue={(saved?.amount_minor ?? c.drop_in_price_minor) / 100}
+                  />
+                </label>
+                <p>
+                  Precio actual de primera clase: {money(c.drop_in_price_minor, studio.currency)}
+                </p>
+                <label>
+                  <input name="enabled" type="checkbox" defaultChecked={saved?.enabled ?? false} />{" "}
+                  Ofrecer este enlace
+                </label>
+                <button type="submit" className="integration-detail-v2-button">
+                  Guardar enlace
+                </button>
+              </form>
+            );
+          })}
+      </section>
 
       <section className="integration-detail-v2-summary">
         <article>

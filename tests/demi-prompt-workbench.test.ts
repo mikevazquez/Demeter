@@ -310,7 +310,10 @@ describe("Demi prompt workbench", () => {
       expect(outcome.reply.includes("pueden cancelarse si no se valida")).toBe(result.expected);
     },
   );
-  it("does not repeat a complete revocation notice already present in the model reply", async () => {
+  it.each([
+    "El pago sigue pendiente de validación. La reserva podría cancelarse si la transferencia no se confirma correctamente.",
+    "Si la transferencia no se confirma correctamente, la reserva podría cancelarse.",
+  ])("does not repeat a complete revocation notice: %s", async (text) => {
     const h = orchestratorHarness();
     h.simulate.mockResolvedValue({
       ok: true,
@@ -319,8 +322,6 @@ describe("Demi prompt workbench", () => {
       payment_validation_required: true,
     });
     vi.stubEnv("OPENAI_API_KEY", "test");
-    const text =
-      "El pago sigue pendiente de validación. La reserva podría cancelarse si la transferencia no se confirma correctamente.";
     vi.stubGlobal(
       "fetch",
       vi

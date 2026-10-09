@@ -1247,15 +1247,23 @@ async function prepareFirstClassPayment(
     .eq("code", "bank_transfer")
     .eq("active", true)
     .maybeSingle();
-  if (
-    method.error ||
-    !method.data ||
-    bank.error ||
-    !bank.data ||
-    !bank.data.bank_name ||
-    !bank.data.account_holder ||
-    !(bank.data.clabe || bank.data.account_number || bank.data.card_number)
-  )
+  const bankAvailable =
+    !method.error &&
+    Boolean(method.data) &&
+    !bank.error &&
+    Boolean(
+      bank.data?.bank_name &&
+      bank.data?.account_holder &&
+      (bank.data?.clabe || bank.data?.account_number || bank.data?.card_number),
+    );
+  const options = await ctx.supabase.rpc("service_get_demi_first_class_payment_options", {
+    p_studio: ctx.studio.id,
+    p_session: sessionId,
+  });
+  const externalCheckout = !options.error
+    ? asObject(asObject(options.data)?.external_checkout)
+    : null;
+  if (!bankAvailable && !externalCheckout)
     return { ok: false, reason_code: "transfer_details_unavailable" };
   const prepared = await ctx.supabase.rpc("service_prepare_demi_prospect_payment", {
     p_studio: ctx.studio.id,
@@ -1269,13 +1277,25 @@ async function prepareFirstClassPayment(
     return { ok: false, reason_code: payment?.reason_code ?? "trial_payment_setup_failed" };
   if (!["awaiting_receipt", "awaiting_participants"].includes(String(payment.status)))
     return { ok: false, reason_code: "payment_requires_review", reservation_confirmed: false };
+  const matchingCheckout =
+    externalCheckout?.amount_minor === payment.amount_minor &&
+    externalCheckout?.currency === payment.currency
+      ? externalCheckout
+      : null;
+  if (!bankAvailable && !matchingCheckout)
+    return {
+      ok: false,
+      reason_code: "external_checkout_amount_mismatch",
+      reservation_confirmed: false,
+    };
   return {
     ...payment,
     status:
       payment.status === "awaiting_receipt" ? "payment_required" : "participant_data_required",
     reservation_confirmed: false,
     receipt_required: payment.status === "awaiting_receipt",
-    bank_details: bank.data,
+    bank_details: bankAvailable ? bank.data : null,
+    external_checkout: matchingCheckout,
     summary: {
       ...info.summary,
       trial_booking: true,

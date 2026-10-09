@@ -122,7 +122,11 @@ describe("Repeated booking confirmation uses persisted payment and reservation s
   );
 });
 
-function firstPaymentHarness(studentId: string | null = null, bankEnabled = true) {
+function firstPaymentHarness(
+  studentId: string | null = null,
+  bankEnabled = true,
+  externalCheckout: Record<string, unknown> | null = null,
+) {
   const source = readFileSync("lib/assistant/action-tools.ts", "utf8").replace(
     'import "server-only";',
     "",
@@ -134,15 +138,18 @@ function firstPaymentHarness(studentId: string | null = null, bankEnabled = true
     "exports",
     transformSync(source, { loader: "ts", format: "cjs" }).code,
   )(() => ({}), loadedModule, loadedModule.exports);
-  const rpc = vi.fn(async () => ({
-    data: {
-      ok: true,
-      group_id: "group",
-      status: "awaiting_receipt",
-      participant_count: 1,
-      amount_minor: 15000,
-      currency: "MXN",
-    },
+  const rpc = vi.fn(async (name: string) => ({
+    data:
+      name === "service_get_demi_first_class_payment_options"
+        ? { ok: true, external_checkout: externalCheckout }
+        : {
+            ok: true,
+            group_id: "group",
+            status: "awaiting_receipt",
+            participant_count: 1,
+            amount_minor: 15000,
+            currency: "MXN",
+          },
     error: null,
   }));
   const writes = vi.fn(() => {
@@ -236,6 +243,41 @@ describe("First-class payment prepares only a quote for a verified prospect", ()
       ok: false,
       reason_code: "transfer_details_unavailable",
     });
-    expect(h.rpc).not.toHaveBeenCalled();
+    expect(
+      h.rpc.mock.calls.some(([name]) => name === "service_prepare_demi_prospect_payment"),
+    ).toBe(false);
+  });
+  it("offers the configured external link without creating a student or reservation", async () => {
+    const checkout = {
+      url: "https://mpago.la/UAT-FICTICIO-NO-PAGAR",
+      amount_minor: 15000,
+      currency: "MXN",
+      receipt_required: true,
+      test_only: true,
+    };
+    const h = firstPaymentHarness(null, false, checkout);
+    expect(await h.execute()).toMatchObject({
+      ok: true,
+      external_checkout: checkout,
+      bank_details: null,
+      reservation_confirmed: false,
+      receipt_required: true,
+    });
+    expect(h.writes).not.toHaveBeenCalled();
+  });
+  it.each([
+    { amount_minor: 10000, currency: "MXN" },
+    { amount_minor: 15000, currency: "USD" },
+  ])("rejects an external link that does not match the quote: %j", async (amount) => {
+    const h = firstPaymentHarness(null, false, {
+      url: "https://mpago.la/UAT-FICTICIO-NO-PAGAR",
+      ...amount,
+    });
+    expect(await h.execute()).toMatchObject({
+      ok: false,
+      reason_code: "external_checkout_amount_mismatch",
+      reservation_confirmed: false,
+    });
+    expect(h.writes).not.toHaveBeenCalled();
   });
 });
