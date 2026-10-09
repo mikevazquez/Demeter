@@ -101,7 +101,7 @@ export const assistantReadToolDefinitions: AssistantToolDefinition[] = [
     type: "function",
     name: "get_studio_information",
     description:
-      "Consulta el nombre, sede principal, domicilio, teléfono, correo y página web configurados por el estudio. Úsala siempre que pregunten dónde está el estudio, cómo llegar, cuál es su dirección, teléfono, correo, web o datos de contacto. No inventes datos que no estén configurados.",
+      "Consulta las disciplinas activas, preparación oficial para la primera clase, nombre, sede, domicilio y contacto configurados. Úsala siempre al preguntar disciplinas o preparación, ubicación o contacto. active_disciplines define la oferta, aunque falten horarios. Si falta la preparación o el dato solicitado, reconoce el faltante y ejecuta escalate_to_human con human_requested para que el equipo responda la consulta; no inventes indicaciones.",
     strict: true,
     parameters: {
       type: "object",

@@ -480,6 +480,7 @@ export async function getStudioInformation(ctx: AssistantToolContext) {
     { data: studioDetails, error: studioError },
     { data: locations, error: locationError },
     { data: preparation, error: preparationError },
+    { data: disciplines, error: disciplinesError },
   ] = await Promise.all([
     ctx.supabase
       .from("studios")
@@ -501,9 +502,15 @@ export async function getStudioInformation(ctx: AssistantToolContext) {
       .eq("rule_key", "first_class_preparation")
       .eq("enabled", true)
       .maybeSingle(),
+    ctx.supabase
+      .from("disciplines")
+      .select("id,name")
+      .eq("studio_id", ctx.studio.id)
+      .eq("active", true)
+      .order("name"),
   ]);
 
-  if (studioError || locationError || preparationError) {
+  if (studioError || locationError || preparationError || disciplinesError) {
     return { ok: false, error: "studio_information_unavailable" };
   }
 
@@ -527,6 +534,7 @@ export async function getStudioInformation(ctx: AssistantToolContext) {
     primary_location: primaryLocation,
     locations: normalizedLocations,
     first_class_preparation: preparation?.instruction?.trim() || null,
+    active_disciplines: disciplines ?? [],
   };
 }
 
