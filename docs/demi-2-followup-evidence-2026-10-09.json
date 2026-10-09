@@ -36,11 +36,13 @@
     "rollback": true,
     "provider_request": false
   },
-  "sql_variants_accumulated": 93,
+  "sql_variants_accumulated": 97,
   "qr": {
     "reservation_id": "4aab740d-dfbf-4373-81e3-f598cbc15da6",
     "native_token_available": true,
-    "portal_and_channel_delivery": "pending"
+    "portal_and_channel_delivery": "pending",
+    "native_controls_passed": 4,
+    "rollback": true
   },
   "masters": {
     "partial": 18,

@@ -676,7 +676,7 @@ export async function POST(request: Request) {
             crmContactId,
             identityNeedsName,
             channel: message.channel,
-            activationUrl: null,
+            activationUrl: new URL("/login/student/activar", request.url).toString(),
             serviceMode: true,
             history,
           });

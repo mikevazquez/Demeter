@@ -358,7 +358,7 @@ export async function sendDemiUatMessage(form: FormData) {
       () =>
         (channel === "facebook_messenger" ? receiveMetaInbox : receiveWhatsApp)(
           new Request(
-            `https://demi-uat.invalid/api/integrations/${channel === "facebook_messenger" ? "meta-inbox" : "meta-whatsapp"}/webhook?studio=${ctx.run.studio_id}`,
+            `${process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000"}/api/integrations/${channel === "facebook_messenger" ? "meta-inbox" : "meta-whatsapp"}/webhook?studio=${ctx.run.studio_id}`,
             {
               method: "POST",
               headers: {
