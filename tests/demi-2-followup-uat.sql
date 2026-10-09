@@ -58,6 +58,11 @@ begin
  r:=public.service_revalidate_demi_followup(f.id,f.lease_token,t+interval '1 day');
  if coalesce((r->>'eligible')::boolean,false) or exists(select 1 from public.demi_followups where studio_id=s and source_ref='uat-reply' and state in ('pending','processing')) then raise exception 'reply_did_not_stop'; end if;
  results:=results||jsonb_build_array(jsonb_build_object('case','M04','variant','reply_stops_claimed_and_pending_reactivates_notqualified','passed',true));
+ insert into public.assistant_conversations(id,studio_id,channel,context) values(gen_random_uuid(),s,'whatsapp',jsonb_build_object('crm_contact_id',contact)) returning id into c;
+ insert into public.assistant_turns(studio_id,conversation_id,direction,role,content) values(s,c,'outbound','assistant','UAT respuesta real persistida');
+ if (select count(*) from public.demi_followups where studio_id=s and conversation_id=c and state='pending')<>2 then raise exception 'assistant_reply_no_schedule'; end if;
+ results:=results||jsonb_build_array(jsonb_build_object('case','M04','variant','assistant_reply_schedules_without_model_action','passed',true));
+ update public.demi_followups set state='cancelled' where studio_id=s and person_id=person and state='pending';
  student:=(run#>>'{fixtures,people,student_active,student_id}')::uuid;
  c:=gen_random_uuid();insert into public.assistant_conversations(id,studio_id,student_id,channel) values(c,s,student,'internal_demo');
  r:=public.service_schedule_demi_followups(s,c,'enrollment','uat-enrollment',t);

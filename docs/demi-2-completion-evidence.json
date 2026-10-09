@@ -94,12 +94,12 @@
       {
         "results": [
           {
-            "case": "M09",
+            "case": "M04",
             "passed": true,
             "variant": "two_steps_configured_interval_idempotent"
           },
           {
-            "case": "M09",
+            "case": "M04",
             "passed": true,
             "variant": "silence_not_booked_preserves_prospect"
           },
@@ -114,7 +114,7 @@
             "variant": "optout_blocks_all_pending_and_future"
           },
           {
-            "case": "M09",
+            "case": "M03",
             "passed": true,
             "variant": "not_qualified_requires_reason_and_stops"
           },
@@ -122,6 +122,11 @@
             "case": "M04",
             "passed": true,
             "variant": "reply_stops_claimed_and_pending_reactivates_notqualified"
+          },
+          {
+            "case": "M04",
+            "passed": true,
+            "variant": "assistant_reply_schedules_without_model_action"
           },
           {
             "case": "M16",
@@ -235,5 +240,25 @@
         ]
       }
     ]
+  },
+  "preview": {
+    "commit": "4604a10",
+    "url": "https://demeterbueno-mttv2dgb1-demeter3.vercel.app",
+    "run_id": "45c95aa6-6ebf-4531-954f-3aceadc85d47",
+    "studio_id": "9344d366-8d96-4609-badb-fe7f1bd52948",
+    "authenticated_pages": ["/admin/mas/demi/uat", "/admin/mas/demi/seguimientos"],
+    "worker_invocation": "passed",
+    "real_model_queries": ["prospect", "student_active"],
+    "student_booking": {
+      "confirmation": "Sí, confirmo la reserva.",
+      "reserved_count": 1
+    },
+    "group_prepare": {
+      "participant_count": 2,
+      "amount_minor": 30000,
+      "status": "awaiting_receipt"
+    },
+    "transport": "captured",
+    "external_provider_verified": false
   }
 }

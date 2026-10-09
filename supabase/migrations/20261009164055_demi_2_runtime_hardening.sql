@@ -111,4 +111,3 @@ begin
  end if;
  return jsonb_build_object('ok',true,'stage',p_stage,'qualification',q);
 end; $$;
-

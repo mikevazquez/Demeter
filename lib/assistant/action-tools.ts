@@ -672,7 +672,20 @@ async function prepareBooking(ctx: AssistantActionToolContext, args: PrepareBook
       .not("acquisition_id", "is", null)
       .limit(1);
     if (paidCreditError) return { ok: false, error: "trial_credit_unavailable" };
-    hasPaidTrialCredit = Boolean(paidTrials?.length);
+    if (paidTrials?.length) {
+      const creditEligibility = ctx.serviceMode
+        ? await ctx.supabase.rpc("service_booking_eligibility", {
+            target_studio_id: ctx.studio.id,
+            target_session_id: sessionId,
+            target_student_id: studentId,
+          })
+        : await ctx.supabase.rpc("booking_eligibility", {
+            target_session_id: sessionId,
+            target_student_id: studentId,
+          });
+      if (creditEligibility.error) return { ok: false, error: "trial_credit_unavailable" };
+      hasPaidTrialCredit = asObject(creditEligibility.data)?.eligible === true;
+    }
   }
   const shouldEvaluateTrial =
     Boolean(ctx.crmContactId && !studentId) ||
