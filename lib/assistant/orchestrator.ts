@@ -1254,9 +1254,14 @@ export async function runAssistantTurn(input: OrchestratorInput) {
     if (functionCalls.length === 0) {
       const text = outputText(output);
       if (!text) throw new Error("assistant_empty_response");
-      const customerText = provisionalTransferBooking
-        ? `${text}\n\nEl pago continúa en revisión. Las reservas que dependen de ese pago pueden cancelarse si no se valida.`
-        : text;
+      const revocationAlreadyExplained =
+        /(?:puede(?:n)?|podr[aá](?:n)?)\s+(?:ser\s+)?(?:cancelad[ao]s?|cancelarse|revocad[ao]s?|revocarse)\b[\s\S]{0,180}\bsi\b[\s\S]{0,100}\bno\b[\s\S]{0,100}(?:valid|confirm)/i.test(
+          text,
+        );
+      const customerText =
+        provisionalTransferBooking && !revocationAlreadyExplained
+          ? `${text}\n\nEl pago continúa en revisión. Las reservas que dependen de ese pago pueden cancelarse si no se valida.`
+          : text;
       const safeReply = await ensureHumanHandoffForReply(input, trace, customerText, modelCallId);
       return { reply: safeReply, trace };
     }

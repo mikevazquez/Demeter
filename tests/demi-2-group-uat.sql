@@ -75,6 +75,12 @@ begin
  if r->>'status'<>'partial' or (r->>'reserved_count')::integer<>1 or (r->>'unallocated_minor')::integer<>15000 then raise exception 'partial_result:%',r; end if;
  if (select count(*) from public.demi_group_participants where group_id=g and reservation_id is not null)<>1 or not exists(select 1 from public.assistant_handoffs where studio_id=s and conversation_id=c and reason_code='group_partial' and status='open') then raise exception 'partial_oversold_or_lost_handoff'; end if;
  out:=out||jsonb_build_array(jsonb_build_object('case','M06','variant','capacity_changed_partial_success_no_oversell_human_review','passed',true));
+ if exists(select 1 from public.students where studio_id=s and phone='+529998880005') then raise exception 'failed_group_participant_became_trial'; end if;
+ out:=out||jsonb_build_array(jsonb_build_object('case','M06','variant','failed_participant_rolls_back_trial_profile','passed',true));
+ perform public.service_cancel_reservation(s,(select student_id from public.demi_group_participants where group_id=g and ordinal=1),(select reservation_id from public.demi_group_participants where group_id=g and ordinal=1),'UAT partial group cancellation');
+ r:=public.service_complete_demi_group(s,c,g,'[{"name":"UAT Parcial Uno","phone":"9998880004"},{"name":"UAT Parcial Dos","phone":"9998880005"}]'::jsonb);
+ if r->>'status'<>'partial' or (r->>'reserved_count')::integer<>1 or not exists(select 1 from jsonb_array_elements(r->'participants') p where p->>'reservation_status'='cancelled_on_time' and p->>'reservation_confirmed'='false') then raise exception 'partial_cancelled_replay:%',r; end if;
+ out:=out||jsonb_build_array(jsonb_build_object('case','M09','variant','partial_retry_preserves_cancelled_slot_and_counts_only_active_reservation','passed',true));
  perform set_config('uat.group_results',out::text,true);
 end $$;
 select current_setting('uat.group_results')::jsonb as results;

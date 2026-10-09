@@ -310,6 +310,39 @@ describe("Demi prompt workbench", () => {
       expect(outcome.reply.includes("pueden cancelarse si no se valida")).toBe(result.expected);
     },
   );
+  it("does not repeat a complete revocation notice already present in the model reply", async () => {
+    const h = orchestratorHarness();
+    h.simulate.mockResolvedValue({
+      ok: true,
+      status: "provisional",
+      reserved_count: 1,
+      payment_validation_required: true,
+    });
+    vi.stubEnv("OPENAI_API_KEY", "test");
+    const text =
+      "El pago sigue pendiente de validación. La reserva puede cancelarse si la transferencia no se confirma correctamente.";
+    vi.stubGlobal(
+      "fetch",
+      vi
+        .fn()
+        .mockResolvedValueOnce(
+          new Response(
+            JSON.stringify({
+              output: [
+                {
+                  type: "function_call",
+                  name: "complete_group_booking",
+                  call_id: "call-1",
+                  arguments: "{}",
+                },
+              ],
+            }),
+          ),
+        )
+        .mockResolvedValueOnce(new Response(JSON.stringify(reply(text)))),
+    );
+    expect((await h.run(h.input)).reply).toBe(text);
+  });
   it("executes a pending simulated action on one explicit confirmation", async () => {
     const h = orchestratorHarness();
     const summary = {
