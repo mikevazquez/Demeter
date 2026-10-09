@@ -112,7 +112,11 @@ function orchestratorHarness(
           "complete_group_booking",
         ].map((name) => ({ name, type: "function" })),
         assistantReadToolNames: new Set(["get_activity_catalog"]),
-        assistantActionToolNames: new Set(["execute_booking", "complete_group_booking"]),
+        assistantActionToolNames: new Set([
+          "execute_booking",
+          "complete_group_booking",
+          "prepare_student_access_activation",
+        ]),
       },
     },
   );
@@ -345,6 +349,36 @@ describe("Demi prompt workbench", () => {
         .mockResolvedValueOnce(new Response(JSON.stringify(reply(text)))),
     );
     expect((await h.run(h.input)).reply).toBe(text);
+  });
+  it("asks to confirm prepared access even when enrollment is still unpaid", async () => {
+    const h = orchestratorHarness();
+    h.simulate.mockResolvedValue({
+      ok: true,
+      status: "confirmation_required",
+      summary: { post_trial: true, enrollment_required: true },
+    });
+    vi.stubEnv("OPENAI_API_KEY", "test");
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            output: [
+              {
+                type: "function_call",
+                name: "prepare_student_access_activation",
+                call_id: "access-1",
+                arguments: "{}",
+              },
+            ],
+          }),
+        ),
+      );
+    vi.stubGlobal("fetch", fetchMock);
+    const result = await h.run(h.input);
+    expect(result.reply).toContain("¿Confirmas que active tu acceso?");
+    expect(result.reply).not.toContain("inscripción");
+    expect(fetchMock).toHaveBeenCalledOnce();
   });
   it("executes a pending simulated action on one explicit confirmation", async () => {
     const h = orchestratorHarness();
