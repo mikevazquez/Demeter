@@ -7,7 +7,8 @@ import { createMercadoPagoOrderAction } from "@/app/student/actions";
 const errorCopy: Record<string, string> = {
   checkout_failed: "No pudimos iniciar el pago. Intenta de nuevo.",
   invalid_request: "No pudimos identificar el paquete. Actualiza la página e inténtalo de nuevo.",
-  checkout_origin_not_allowed: "No pudimos validar el sitio para iniciar el pago. Actualiza la página e inténtalo de nuevo.",
+  checkout_origin_not_allowed:
+    "No pudimos validar el sitio para iniciar el pago. Actualiza la página e inténtalo de nuevo.",
   mercadopago_not_configured: "Mercado Pago todavía no está configurado para este ambiente.",
   product_not_available_online: "Este paquete ya no está disponible para compra online.",
   request_key_reused_for_different_product: "No pudimos reutilizar este intento de compra.",
