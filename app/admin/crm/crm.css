@@ -523,3 +523,88 @@
     flex-basis: 100%;
   }
 }
+
+/* One visual system for CRM follow-up and the existing Studio Flow record. */
+.flow-crm {
+  --crm-ink: #202941;
+  --crm-muted: #69738b;
+  --crm-line: #e7eaf2;
+  --crm-violet: #7044db;
+  --crm-violet-soft: #f2edff;
+  color: var(--crm-ink);
+}
+.flow-crm .crm-heading h1,
+.flow-crm .crm-panel h2,
+.flow-crm .admin-ux04-profile360 h1,
+.flow-crm .admin-ux04-profile360 h2,
+.flow-crm .admin-ux04-profile360 h3 {
+  color: var(--crm-ink);
+}
+.flow-crm .crm-panel,
+.flow-crm .crm-stat,
+.flow-crm .admin-ux04-profile360 .profile360-approved-person,
+.flow-crm .admin-ux04-profile360 .profile360-approved-tabs,
+.flow-crm .admin-ux04-profile360 .profile360-approved-package,
+.flow-crm .admin-ux04-profile360 .profile360-approved-alerts,
+.flow-crm .admin-ux04-profile360 .profile360-view-panel,
+.flow-crm .admin-ux04-profile360 .profile360-detail {
+  border-color: var(--crm-line);
+  border-radius: 16px;
+  background: #fff;
+  background-image: none;
+  box-shadow: none;
+}
+.flow-crm .admin-ux04-profile360 .profile360-approved-person { padding: 16px; }
+.flow-crm .admin-ux04-profile360 .profile360-avatar {
+  border-color: #ded4ff;
+  background: var(--crm-violet-soft);
+  color: #6948cb;
+  box-shadow: none;
+}
+.flow-crm .admin-ux04-profile360 .profile360-approved-title h1 { color: var(--crm-ink); }
+.flow-crm .admin-ux04-profile360 .profile360-approved-contact,
+.flow-crm .admin-ux04-profile360 .profile360-approved-package-balance span,
+.flow-crm .admin-ux04-profile360 .profile360-approved-package-expiry span,
+.flow-crm .admin-ux04-profile360 .profile360-approved-next > span { color: var(--crm-muted); }
+.flow-crm .admin-ux04-profile360 .profile360-level-pill,
+.flow-crm .admin-ux04-profile360 .profile360-edit-link {
+  border-color: #ded4ff;
+  background: var(--crm-violet-soft);
+  color: #6948cb;
+}
+.flow-crm .admin-ux04-profile360 .profile360-approved-tabs { gap: 4px; padding: 4px; }
+.flow-crm .admin-ux04-profile360 .profile360-approved-tabs a {
+  min-height: 40px;
+  border-radius: 10px;
+  color: var(--crm-muted);
+  font-size: 12px;
+}
+.flow-crm .admin-ux04-profile360 .profile360-approved-tabs a.is-active {
+  background: var(--crm-violet-soft);
+  color: var(--crm-violet);
+}
+.flow-crm .admin-ux04-profile360 .profile360-approved-tabs a.is-active::after { display: none; }
+.flow-crm .admin-ux04-profile360 .profile360-approved-package-balance,
+.flow-crm .admin-ux04-profile360 .profile360-approved-package-expiry,
+.flow-crm .admin-ux04-profile360 .profile360-approved-indicators article {
+  border-color: var(--crm-line);
+  border-radius: 12px;
+  background: #fafbfe;
+}
+.flow-crm .admin-ux04-profile360 .profile360-approved-package-balance strong,
+.flow-crm .admin-ux04-profile360 .profile360-approved-package-expiry strong,
+.flow-crm .admin-ux04-profile360 .profile360-approved-indicators strong { color: var(--crm-ink); }
+.flow-crm .admin-ux04-profile360 .profile360-approved-indicators span,
+.flow-crm .admin-ux04-profile360 .profile360-view-heading p,
+.flow-crm .admin-ux04-profile360 .eyebrow { color: var(--crm-muted); }
+.flow-crm .admin-ux04-profile360 .profile360-approved-package-row,
+.flow-crm .admin-ux04-profile360 .profile360-approved-summary { gap: 12px; }
+.flow-crm .admin-ux04-profile360 [class*="text-white"],
+.flow-crm .admin-ux04-profile360 [class*="text-zinc-"] { color: var(--crm-ink) !important; }
+.flow-crm .admin-ux04-profile360 [class*="bg-black"],
+.flow-crm .admin-ux04-profile360 [class*="bg-white/"],
+.flow-crm .admin-ux04-profile360 [class*="border-white/"] {
+  border-color: var(--crm-line) !important;
+  background-color: #fafbfe !important;
+}
+.flow-crm .admin-ux04-profile360 a:not(.profile360-approved-tabs a) { color: var(--crm-violet); }

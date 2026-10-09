@@ -231,7 +231,8 @@ export default async function ContactPage({
       )}
       {tab === "profile" && (
         <>
-          <section className="crm-panel">
+          {!c.studentId && (
+            <section className="crm-panel">
             <h2>Datos del contacto</h2>
             <dl className="crm-profile-facts">
               {[
@@ -255,6 +256,7 @@ export default async function ContactPage({
               ))}
             </dl>
           </section>
+          )}
           {!c.studentId && data.canEdit && (
             <section className="crm-panel">
               <h2>Completar expediente</h2>
@@ -272,7 +274,7 @@ export default async function ContactPage({
           {c.studentId ? (
             <StudentRecord
               params={Promise.resolve({ studentId: c.studentId })}
-              searchParams={Promise.resolve(query)}
+              searchParams={Promise.resolve({ ...query, view: query.view ?? "profile" })}
               crmHref={base}
             />
           ) : (
