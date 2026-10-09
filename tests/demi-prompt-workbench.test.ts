@@ -513,6 +513,28 @@ describe("Demi prompt workbench", () => {
     expect(writes).toEqual([]);
   });
 
+  it("blocks a second simulated trial booking while one remains active", async () => {
+    const mod = serverModule<typeof import("../lib/assistant/test-simulation")>(
+      "lib/assistant/test-simulation.ts",
+      {
+        "./action-tools": { isExplicitAssistantConfirmation: vi.fn() },
+        "./prompt-workbench": { isActiveStudentPersona, isFirstVisitPersona },
+      },
+    );
+    const state = mod.createTestSimulation("trial_pending_reserved");
+    const input = {
+      state,
+      supabase: { from: () => { throw new Error("Existing booking must block a second preparation"); } },
+      studio: { id: "studio", timezone: "America/Mexico_City" },
+      turnId: "second-booking",
+      currentUserMessage: "Quiero reservar otra clase",
+    } as unknown as Parameters<typeof mod.simulateAssistantAction>[0];
+
+    expect(await mod.simulateAssistantAction(input, "prepare_booking", {
+      session_ref: "session:11111111-1111-1111-1111-111111111111",
+    })).toMatchObject({ ok: false, reason_code: "trial_reservation_exists", simulated: true });
+  });
+
   it("requires a new prospect to confirm a full name before simulated booking", async () => {
     const mod = serverModule<typeof import("../lib/assistant/test-simulation")>(
       "lib/assistant/test-simulation.ts",

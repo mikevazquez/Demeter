@@ -135,6 +135,14 @@ export async function simulateAssistantAction(
 ) {
   const { state } = input;
   const result = (data: Summary): Summary & { simulated: true } => ({ simulated: true, ...data });
+  if (tool === "prepare_booking" && isFirstVisitPersona(state.persona) && state.reservations.length > 0) {
+    return result({
+      ok: false,
+      error: "trial_reservation_exists",
+      reason_code: "trial_reservation_exists",
+      reason_message: "Ya tienes una clase de prueba reservada. Puedes modificar o cancelar esa reserva, pero no crear otra hasta completar tu inscripción.",
+    });
+  }
   if (tool === "prepare_booking" && state.persona === "former_student") {
     return result({
       ok: false,

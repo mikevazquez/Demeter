@@ -2,6 +2,15 @@ import { describe, expect, it } from "vitest";
 import { conversationGuidance } from "../lib/assistant/conversation-guidance";
 
 describe("Demi conversation guidance for UAT rules", () => {
+  it("blocks a second trial booking when a trial reservation already exists", () => {
+    const guidance = conversationGuidance({
+      studentCategory: "trial_pending",
+      testSimulation: { persona: "trial_pending_reserved" },
+    });
+    expect(guidance).toContain("consulta get_student_reservations");
+    expect(guidance).toContain("no ofrezcas otra reserva ni otro pago");
+  });
+
   it("does not request prospect identity or prepare a booking before payment proof", () => {
     const guidance = conversationGuidance({ testSimulation: { persona: "prospect" } });
 
