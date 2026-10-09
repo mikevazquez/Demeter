@@ -16,7 +16,7 @@ for policy in select reason_code from public.assistant_handoff_policies where st
  result:=public.assistant_create_handoff(s,c,st,policy.reason_code,'UAT: resumen y dato pendiente para revisión manual.');
  if result->>'ok'<>'true' or result->>'references_saved'<>'true' then raise exception 'create_%:%',policy.reason_code,result; end if;
  h:=(result->>'handoff_id')::uuid;
- if not exists(select 1 from public.assistant_handoffs where id=h and studio_id=s and conversation_id=c and student_id=st and reason_code=policy.reason_code and status='open' and context->>'conversation_id'=c::text and context->>'student_id'=st::text and note is not null) then raise exception 'handoff_not_localizable'; end if;
+ if not exists(select 1 from public.assistant_handoffs where id=h and studio_id=s and conversation_id=c and student_id=st and reason_code=policy.reason_code and status='open' and context->>'conversation_id'=c::text and context->>'student_id'=st::text and context ? 'reservations' and context ? 'sales' and context ? 'payments' and context ? 'tool_errors' and note is not null) then raise exception 'handoff_not_localizable'; end if;
  result:=public.assistant_create_handoff(s,c,st,policy.reason_code,'UAT: referencia adicional conservada.');
  if result->>'handoff_id'<>h::text or (select count(*) from public.assistant_handoffs where conversation_id=c)<>1 or not exists(select 1 from public.assistant_handoffs where id=h and note like '%referencia adicional%') then raise exception 'handoff_replay'; end if;
  result:=public.admin_claim_demi_handoff(s,h);

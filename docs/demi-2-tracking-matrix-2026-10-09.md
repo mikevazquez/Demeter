@@ -1,6 +1,6 @@
 # Matriz de seguimiento Demi 2.0 — 9 octubre 2026
 
-**18 casos maestros parciales; ninguno aprobado integralmente.** Cada fila distingue variantes que pasaron de lo que falta para cerrar el caso. Las correcciones detectadas se detallan debajo.
+**1/18 casos maestros aprobado (5.6 %); 17 parciales (94.4 %).** M03 pasó sus criterios de negocio. El transporte externo permanece en M01 y no se da por aprobado. Cada fila distingue variantes que pasaron de lo que falta para cerrar el caso. Las correcciones detectadas se detallan debajo.
 
 Validación: 1103/1103 pruebas automáticas, typecheck y compilación correctos; lint sin errores (un aviso preexistente). Histórico: 97 variantes SQL; nueva ejecución de 24 controles de Mercado Pago, nueve motivos humanos y nueve controles de seguimiento con el rol real service_role. Estos conjuntos se solapan y no se suman como casos maestros. Se creó una orden real de prueba de Mercado Pago; compra pendiente del usuario.
 
@@ -8,14 +8,14 @@ Validación: 1103/1103 pruebas automáticas, typecheck y compilación correctos;
 
 | Medida | Resultado | Interpretación |
 | --- | --- | --- |
-| Casos maestros aprobados integralmente | 0/18 (0 %) | Ningún caso tiene todavía toda la evidencia necesaria para su cierre. |
-| Casos maestros parciales | 18/18 (100 %) | Todos tienen verificaciones aprobadas y pendientes identificados. |
-| Casos maestros por cerrar | 18/18 (100 %) | Porcentaje de cierres pendientes, no de esfuerzo ni de implementación restante. |
+| Casos maestros aprobados integralmente | 1/18 (5.6 %) | M03 tiene evidencia de V1–V3; ver documento de evidencia específico. |
+| Casos maestros parciales | 17/18 (94.4 %) | Los restantes tienen verificaciones aprobadas y pendientes identificados. |
+| Casos maestros por cerrar | 17/18 (94.4 %) | Porcentaje de cierres pendientes, no de esfuerzo ni de implementación restante. |
 | Pruebas automáticas aprobadas en la última ejecución registrada | 1103/1103 (100 %) | Regresión técnica; no son 1086 casos UAT de negocio. |
 | Verificaciones SQL registradas | 97 | Evidencia técnica acumulada; no existe un total exhaustivo de variantes pendientes para calcular su porcentaje. |
 | Decisión de promoción | No lista | Faltan pagos nuevos, transporte externo y variantes de negocio. No se ha publicado esta rama en producción. |
 
-Los resultados son los de la última ejecución guardada, no una nueva corrida de pruebas. No se registran casos maestros cerrados como fallidos: los 18 permanecen parciales; los defectos encontrados y corregidos conservan su historial.
+Los resultados son los de la última ejecución guardada, no una nueva corrida de pruebas. No se registran casos maestros cerrados como fallidos: M03 pasó y 17 permanecen parciales; los defectos encontrados y corregidos conservan su historial.
 
 ### Política de pagos confirmada con el usuario
 
@@ -37,7 +37,7 @@ La actualización de esta matriz no aprueba un caso ni sustituye su ejecución. 
 | -------------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ | ------------------------------------------------------------ |
 | M01 Canales                | Parcial | Bienvenida WhatsApp recibida; Facebook integrado y recorrido interno completo.                                                    | Entrada y entrega reales de Meta en los canales conectados.                          | Conectar Instagram.                                          |
 | M02 Identidad              | Parcial | Cruces de estudio/conversación y apropiación de teléfonos existentes bloqueados.                                                  | Ambigüedad conversacional y vínculo verificado entre canales.                        | Ninguno por ahora.                                           |
-| M03 No clasifica           | Parcial | Rechazo con motivo, parada de seguimientos y reactivación ante respuesta.                                                         | Objeción sin rechazo y consultas configuradas restantes.                             | Ninguno por ahora.                                           |
+| M03 No clasifica           | Aprobado | V1–V3: configuración oficial, disciplina distinta, distancia sin descarte, rechazo/opt-out y retorno con histórico; faltantes canalizados. | Ninguno en el caso de negocio; transporte externo se sigue en M01. | Ninguno por ahora.                                           |
 | M04 Seguimientos           | Parcial | Dos mensajes, intervalos, deduplicación y cancelación de pendientes/reclamados.                                                   | Recorrido conversacional completo y entrega real de seguimientos.                    | Ninguno por ahora.                                           |
 | M05 Pago antes de datos    | Parcial | WhatsApp/Facebook: comprobante antes de ficha/reserva; enlace público con siete controles SQL y formulario verificado.            | Liga individual y validación automática MP implementadas; 24 controles nativos pasaron. Falta pago nuevo y webhook real. Bancomer/OXXO a Bancomer mantienen comprobante y revisión manual. | Participar en pago de prueba cuando la ruta esté preparada, si se requiere. |
 | M06 Grupo                  | Parcial | Pagador separado, participantes mixtos, reservas individuales, total conciliado y reenvío sin duplicados.                         | Variantes conversacionales restantes y canalización del importe no asignado a revisión humana.           | Ninguno por ahora.                                           |
@@ -86,4 +86,6 @@ Los pendientes externos no cierran con pruebas internas. El receptor de producci
 - Se detectó consejo genérico de preparación sin configuración oficial; el getter y el prompt ahora requieren first_class_preparation configurado. Pendiente repetición conversacional en el siguiente preview.
 - Typecheck pasó; regresión específica: 26/26 y regresión completa posterior: 1103/1103. El lint completo detectó un error preexistente en el editor Demi; se corrigió y el lint de los archivos afectados pasó sin errores.
 
-Se conservan 0/18 cierres integrales hasta terminar las variantes y el transporte externo que corresponden. No se ha promovido producción.
+Actualización posterior: M03 aprobado en el banco UAT; 1/18 casos (5.6 %), 17/18 por cerrar (94.4 %). Transporte externo pendiente en M01. Evidencia: demi-2-m03-evidence-2026-10-09.json. No se ha promovido producción.
+
+La regresión posterior a la consulta completa de disciplinas pasó: 1103/1103; lint global sin errores (18 avisos preexistentes). La preparación oficial ausente también se probó sin pedir explícitamente atención humana: Demi creó technical_block y reconoció el faltante sin consejos inventados.
